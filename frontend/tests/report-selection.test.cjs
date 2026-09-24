@@ -12,7 +12,8 @@ const compiled = ts.transpileModule(source, {
 const moduleObject = { exports: {} };
 vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports, require });
 const { reportSelectionKey, savedForSelection, responseMatchesSelection,
-  savedMethodForSelection, responseMatchesMethodSelection } = moduleObject.exports;
+  savedMethodForSelection, responseMatchesMethodSelection,
+  savedOpenmmForSelection, responseMatchesOpenmmSelection } = moduleObject.exports;
 
 test("historic report references bind to exact interaction, not latest result", () => {
   const reports = [
@@ -56,4 +57,21 @@ test("method reports stay bound to their exact result across history and asynchr
   assert.equal(responseMatchesMethodSelection(a, a, "run-a", "result-b", artifact), false);
   assert.equal(responseMatchesMethodSelection(a, a, "run-a", "result-a",
     { manifest: { ...artifact.manifest, schema: "report_manifest@1" } }), false);
+});
+
+test("OpenMM reports remain bound to method, run, and historical result", () => {
+  const reports = [
+    { handle: "sasa-a", result_handle: "result-a", analysis_type: "interface_sasa" },
+    { handle: "openmm-a", result_handle: "result-a", analysis_type: "openmm_protein_minimize" },
+    { handle: "openmm-b", result_handle: "result-b", analysis_type: "openmm_protein_minimize" },
+  ];
+  assert.equal(savedOpenmmForSelection(reports, "result-a").handle, "openmm-a");
+  assert.equal(savedOpenmmForSelection(reports, "result-b").handle, "openmm-b");
+  const key = reportSelectionKey("run-a", "result-a");
+  const artifact = { manifest: { schema: "method_report_manifest@1", analysis_type: "openmm_protein_minimize", result_handle: "result-a" } };
+  assert.equal(responseMatchesOpenmmSelection(key, key, "run-a", "result-a", artifact), true);
+  assert.equal(responseMatchesOpenmmSelection(key, reportSelectionKey("run-b", "result-a"), "run-a", "result-a", artifact), false);
+  assert.equal(responseMatchesOpenmmSelection(key, reportSelectionKey("run-a", "result-b"), "run-a", "result-a", artifact), false);
+  assert.equal(responseMatchesOpenmmSelection(key, key, "run-a", "result-a", { manifest: { ...artifact.manifest, analysis_type: "interface_sasa" } }), false);
+  assert.equal(responseMatchesOpenmmSelection(key, key, "run-a", "result-a", { manifest: { ...artifact.manifest, result_handle: "result-b" } }), false);
 });

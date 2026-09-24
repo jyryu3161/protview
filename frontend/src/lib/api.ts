@@ -12,7 +12,7 @@ export interface ResidueList { model_number: number; residues: ResidueItem[]; li
 export interface ObjectMeta { handle: string; kind: string; schema: string; fmt: string; size: number; produced_by: string | null; summary: Record<string, unknown>; null_result: boolean }
 export interface Page<T> { meta: ObjectMeta; rows: T[]; total: number; offset: number; limit: number }
 export interface Capabilities { mode: "local_only"; supported: Record<string, string>; unavailable: Record<string, string>;
-  methods?: { interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
+  methods?: { openmm_protein_minimize?: { available: boolean; method_id?: string; distribution_version?: string; engine_build?: string; unit?: string; limitations?: string; explanation?: string }; interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
     engine_version?: string; unit?: string; limitations?: string; explanation?: string } } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
@@ -35,6 +35,17 @@ export interface MethodReportArtifact { handle: string; markdown_handle: string;
   schema: "method_report_manifest@1"; analysis_type: "interface_sasa"; result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
+export interface OpenmmJob { job_id: string; run_id: string; protocol_id: string; status: string; blocked_reason: string | null;
+  failure: { error: string; message: string } | null; input_handles: string[]; output_handles: string[];
+  attempt_ordinal: number; cancel_requested: boolean; timeout_s: number }
+export interface OpenmmResult { schema: "openmm_protein_minimization@1"; structure: string; minimized_structure: string;
+  before_kJ_mol: number; after_kJ_mol: number; potential_change_kJ_mol: number; job_id: string;
+  atom_count: number; heavy_atom_count: number; added_hydrogen_count: number;
+  excluded: { residue: ResidueRef; atom_count: number; reason: string }[]; convergence: string }
+export interface OpenmmReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "openmm_protein_minimize"; result_handle: string;
+  prepared_handle: string; snapshot: { event_seq: number } }; markdown: string }
+
 export type CommandResult = { ok: true; handle: Handle } | ({ ok: false } & ToolError) | { ok: false; approval: { gate: string; tool: string; reason: string } } | { ok: false; loop_stop: { reason: string } };
 
 export class ApiError extends Error {
@@ -77,6 +88,19 @@ export const api = {
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   interactions: (id: string, handle: string, offset = 0, limit = 50) =>
     request<Page<InteractionRow>>(runPath(id, `/objects?${handleParam(handle)}&offset=${offset}&limit=${limit}`)),
+  openmmPreflight: (id: string, structure: string) => request<{ available: boolean; structure: string; heavy_atom_count: number;
+    excluded: { residue: ResidueRef; atom_count: number; reason: string }[] }>(runPath(id, `/jobs/preflight?structure=${encodeURIComponent(structure)}`)),
+  jobs: (id: string) => request<OpenmmJob[]>(runPath(id, "/jobs")),
+  job: (id: string, jobId: string) => request<OpenmmJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`)),
+  submitOpenmm: (id: string, structure: string) => request<OpenmmJob>(runPath(id, "/jobs"), {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ protocol_id: "openmm_protein_minimize", args: { structure, selection_policy: "protein_only", hydrogen_policy: "rebuild_pH7" }, timeout_s: 60 }),
+  }),
+  startJob: (id: string, jobId: string) => request<OpenmmJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}/start`), { method: "POST" }),
+  retryJob: (id: string, jobId: string) => request<OpenmmJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}/retry`), { method: "POST" }),
+  approveOpenmm: (id: string) => request<{ approved: boolean }>(runPath(id, "/jobs/approve"), { method: "POST" }),
+  cancelJob: (id: string, jobId: string) => request<{ status: string; job: OpenmmJob }>(runPath(id, `/jobs/${encodeURIComponent(jobId)}/cancel`), { method: "POST" }),
+  openmm: (id: string, handle: string) => request<{ meta: ObjectMeta; result: OpenmmResult }>(runPath(id, `/openmm_minimization?${handleParam(handle)}`)),
   sasa: (id: string, handle: string) => request<{ meta: ObjectMeta; result: SasaResult }>(runPath(id, `/interface_sasa?${handleParam(handle)}`)),
   reports: (id: string) => request<SavedReportRef[]>(runPath(id, "/reports")),
   report: (id: string, handle: string) => request<ReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
@@ -84,7 +108,11 @@ export const api = {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ interaction_handle: interactionHandle }),
   }),
+  openmmReport: (id: string, handle: string) => request<OpenmmReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
   methodReport: (id: string, handle: string) => request<MethodReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
+  createOpenmmReport: (id: string, resultHandle: string) => request<OpenmmReportArtifact>(runPath(id, "/method_reports"), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }),
+  }),
   createMethodReport: (id: string, resultHandle: string) => request<MethodReportArtifact>(runPath(id, "/method_reports"), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }),
   }),

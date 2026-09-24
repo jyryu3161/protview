@@ -110,7 +110,7 @@ def structure_residues(store, handle: str) -> dict[str, Any]:
 
 def structure_bytes(store, handle: str) -> tuple[bytes, str]:
     meta = store.meta(handle)
-    if meta["kind"] == "prepared_structure":
+    if meta["kind"] in {"prepared_structure", "openmm_minimized_structure"}:
         coordinates = store.load(handle)["coordinates"]
         return store.load(coordinates), store.meta(coordinates)["fmt"]
     if meta["kind"] != "structure":

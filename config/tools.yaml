@@ -77,6 +77,19 @@ tools:
     emits: alignment
     params: { method: { type: str, enum: [sequence_then_ca, ca_only], default: sequence_then_ca } }
 
+  # Fixed asynchronous protein-only OpenMM lane; execution is JobQueue, not Run.call.
+  - name: openmm_protein_minimize
+    level: L3
+    version: '1'
+    accepts: { structure: [prepared_structure] }
+    emits: openmm_minimization
+    cost_class: expensive
+    typical_runtime_s: 60
+    params:
+      selection_policy: { type: str, enum: [protein_only], required: true }
+      hydrogen_policy: { type: str, enum: [rebuild_pH7], required: true }
+    description: Fixed protein-only Amber14-all plus GBn2 potential and bounded minimization, kJ/mol; durable_job lane
+
   # ---------------- L3 energetic (PyRosetta, job queue, expensive) --------------------------
   - name: relax_structure
     level: L3

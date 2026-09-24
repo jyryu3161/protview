@@ -1,3 +1,11 @@
+# M6 review continuity after M7
+
+Current shared-source refresh: APPROVED by GPT-6 Astra, 2026-09-24, after terminal M7 correction87994. The original M6 review below is a historical snapshot, including its then-pending M7/recorder statements. M6 was subsequently actually recorded and committed as50569ee. Current shared-source coverage and exact reviewed files are in `phases/protview-methods/reviews/step0.md` and `docs/M7_OPENMM_REVIEW.md`; full host288/0, actual old/new browser behavior and exact engine-free legacy report recovery support the refresh. Parent still performs the final ordered extension recording/--verify after these document writes. Historical MVP reviews are unchanged.
+
+Current follow-up: the first extension --verify encountered a test-only barrier publication race. Sol68295 corrected atomic marker publication; focused real host parent-loss test1/0skip passed, with product/scientific/UI files unchanged. Current approved inventories include its new test hash. Ordered full gate reruns remain parent-owned; see the current step0/step1 reviews for the preserved failure history.
+
+## Historical M6 review at its accepted commit
+
 # M6 independent scientific and integration review
 
 Reviewer: GPT-6 Astra. Implementation: GPT-6 Sol. Date: 2026-09-24. Final correction session99489 was terminal before this review. Branch: `phase/m6-interface-sasa`.

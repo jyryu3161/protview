@@ -4,7 +4,7 @@
 
 M0–M5는 기준 커밋 `d22fe15`에서 실제 테스트·브라우저 검증·GPT-6 Astra 검토와 최종 `--verify`를 통과했습니다. [기존 단계 기록](phases/protview-mvp/index.json)은 그 기준의 이력입니다. 이후 확장으로 바뀐 공유 파일의 현재 검토를 대신하지 않으며, 사용할 수 없는 에너지 엔진의 과학적 검증을 뜻하지 않습니다.
 
-M6 단백질–리간드 SASA는 실제 수치·호스트 테스트·브라우저 검증과 [GPT-6 Astra 검토](docs/M6_SASA_REVIEW.md)를 통과했습니다. 이 확장 검토가 변경된 공유 파일과 기존 기능의 회귀 검증을 담당합니다. 실제 단계 기록 여부와 현재 해시의 게이트 상태는 [확장 단계 기록](phases/protview-methods/index.json)을 따릅니다. M7 OpenMM 단백질 전용 최소화는 아직 구현·승인 전입니다. 기존 M0–M5에는 단계별 Git 브랜치가 없었으며, 실제 확장 작업은 기준 커밋 이후 `phase/m6-interface-sasa`에서 진행했습니다.
+M6 단백질–리간드 SASA는 실제 수치·호스트 테스트·브라우저 검증과 [GPT-6 Astra 검토](docs/M6_SASA_REVIEW.md)를 통과했습니다. 이 확장 검토가 변경된 공유 파일과 기존 기능의 회귀 검증을 담당합니다. 실제 단계 기록 여부와 현재 해시의 게이트 상태는 [확장 단계 기록](phases/protview-methods/index.json)을 따릅니다. M7 OpenMM 단백질 전용 최소화도 실제 계산·독립 전위 재계산·호스트 288개 검사(건너뜀 0개)·브라우저 검증과 [Astra 검토](docs/M7_OPENMM_REVIEW.md)를 통과했습니다. 최종 단계 기록과 현재 해시의 `--verify` 결과는 확장 단계 기록을 따릅니다. 기존 M0–M5에는 단계별 Git 브랜치가 없었으며, 실제 확장 작업은 `phase/m6-interface-sasa`의 승인 커밋 `50569ee` 이후 그 커밋에서 만든 `phase/m7-openmm-minimization`에서 이어졌습니다.
 
 ## 설치와 실행
 
@@ -67,9 +67,15 @@ GPT-6 Astra가 설계와 검토를 맡고 GPT-6 Sol이 구현합니다. `../kbas
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
-.venv/bin/python scripts/execute.py protview-mvp --dry-run
+.venv/bin/python scripts/execute.py protview-methods --dry-run
 ```
 
-각 단계의 추가 검사 명령은 `phases/protview-mvp/stepN.md`와 `index.json`에 있습니다. 전체 `--verify`는 모든 단계가 구현·검토된 뒤의 최종 게이트입니다. 단계 검사만으로 미검토 단계를 완료로 표시하지 않습니다.
+현재 확장의 검사 명령은 `phases/protview-methods/stepN.md`와 `index.json`에 있습니다. 기존 MVP 명세는 `phases/protview-mvp/`에 보존되어 있습니다. 전체 `--verify`는 모든 단계가 구현·검토된 뒤의 최종 게이트입니다. 단계 검사만으로 미검토 단계를 완료로 표시하지 않습니다.
 
 제공된 `agent_protein_viewer_plan_v05.md`, `molecular-workspace.zip` 및 `references/molecular-workspace/`는 원본 참고 자료로 보존합니다. 제품에 채택한 범위와 현재 동작은 위의 설계 문서 및 실제 검증 기록을 따릅니다.
+
+### OpenMM protein-only potential (M7)
+
+The local method-job panel preflights a prepared standard protein, shows explicit exclusions, then requires `protein_only` and `rebuild_pH7` confirmation before submission. Start requests first-expensive approval; approval is a separate recorded UI action. Status, bounded retry, cancel, exact kJ/mol result, minimized-protein viewer and separate Markdown/JSON method report are available through the same run. Install from `backend/pyproject.toml` in the project environment; OpenMM is pinned to 8.6.0. See [docs/M7_OPENMM.md](docs/M7_OPENMM.md) for the fixed settings, evidence, unsupported inputs and scientific limits. M7 scientific, host/browser and Astra review evidence passed; the phase index records the actual acceptance/review binding and final verification state.
+
+The worker durably records validated hydrogenated preparation and System bytes before its first protocol potential evaluation. Failed, cancelled or interrupted attempts can retain a preparation handle without an energy result; the job API returns the exact prepared input handle for UI selection. Missing OpenMM, mismatched fixed force-field files, or unavailable pinned raw process identity prevent unsafe dispatch before budget reservation. The queue and guardian require psutil 7.2.2 on Darwin or Linux for new launches; legacy active public-time records cannot authorize signals. The UI preflight uses the exact prepared-structure query, refreshes the charged budget after job transitions, resets input-specific policy acknowledgments, and keeps saved result/report read errors separate. Actual host and browser checks passed. The auxiliary canvas caption may still say “latest pipeline structure” while minimized coordinates are shown; the protein-only method panel and return-to-original action identify the separate result.

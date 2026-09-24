@@ -15,6 +15,7 @@ PROTOCOLS = {
     "interface_analyzer": ("score_interface", "pyrosetta"),
     "residue_energies": ("residue_energies", "pyrosetta"),
 }
+JOB_PROTOCOLS = {**PROTOCOLS, "openmm_protein_minimize": ("openmm_protein_minimize", "openmm")}
 
 
 def protocol_capabilities() -> dict[str, Any]:
@@ -50,6 +51,10 @@ def register(reg: ToolRegistry) -> None:
             raise AssertionError("unreachable")
 
         reg.register(tool, unavailable_reason=reason)(unavailable)
+
+    @reg.register("openmm_protein_minimize", unavailable_reason="use the durable JobQueue lane")
+    def queued_only(ctx: ToolContext, **kwargs: object) -> Handle:
+        raise ToolFailure(FailureClass.precondition, "submit through the durable method job lane")
 
     @reg.register("define_mutations")
     def define_mutations(ctx: ToolContext, structure: str, mutations: list) -> Handle:

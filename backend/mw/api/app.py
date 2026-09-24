@@ -20,10 +20,13 @@ from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE
 from ..jobs.queue import JobQueue
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
+from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
 from ..tools.energetic import protocol_capabilities
+from ..tools.openmm_method import capability as openmm_capability
+from ..tools.openmm_method import preflight as openmm_preflight
 from ..tools.structural import structure_bytes, structure_residues, validate_upload
 from ..workflows import InspectionRequest, inspect_complex
 from ..workspace import build_registry, new_run
@@ -57,7 +60,7 @@ class Command(BaseModel):
 class JobSubmit(BaseModel):
     protocol_id: str
     args: dict[str, Any] = Field(default_factory=dict)
-    timeout_s: float = Field(default=900, gt=0, le=900, allow_inf_nan=False)
+    timeout_s: float = Field(default=60, gt=0, le=900, allow_inf_nan=False)
     model_config = {"extra": "forbid"}
 
 
@@ -138,7 +141,8 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
                                          "protocol_id", "tool_id", "status", "created",
                                          "finished", "timeout_s", "attempt_id", "attempt_ordinal",
                                          "blocked_reason", "cancel_requested", "cleanup_status",
-                                         "failure", "output_handles")} | {"started": intent.get("ts"),
+                                         "failure", "input_handles", "output_handles",
+                                         "preparation_handle", "preparation_attempt_id")} | {"started": intent.get("ts"),
                                                                   "remaining_wall_s_at_dispatch":
                                                                       intent.get("remaining_wall_s")}
 
@@ -212,7 +216,7 @@ def capabilities() -> dict[str, Any]:
         sasa = engine_capability()
     except (AttributeError, ImportError, OSError, PackageNotFoundError, RuntimeError, ToolFailure, ValueError) as exc:
         sasa = {"available": False, "reason_code": "engine_missing_or_invalid", "explanation": str(exc)}
-    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa}, "supported": {
+    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability()}, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
         "jobs": "event-backed local job records and POSIX lifecycle supervision",
@@ -223,14 +227,19 @@ def capabilities() -> dict[str, Any]:
             "hbond_or_affinity": "geometric proximity is not chemical or energetic validation",
             "prolif_plip": "adapters and mapping validation are not implemented",
             "pocket_detection": "no implemented adapter",
-            **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items()},
+            **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items() if not item["available"]},
             "model_decisions": "internal Jev adapter requires explicit online run configuration and credentials; no public decision route"}}
 
 
 @app.get("/tools")
 def tools(levels: str = "L2,L4") -> list[dict[str, Any]]:
-    return [spec.model_dump() for spec in REGISTRY.visible(set(levels.split(",")))
-            if spec.name in SUPPORTED_TOOLS]
+    selected = set(levels.split(","))
+    records = [spec.model_dump() for spec in REGISTRY.visible(selected)
+               if spec.name in SUPPORTED_TOOLS]
+    if "L3" in selected:
+        records.append({**REGISTRY.specs["openmm_protein_minimize"].model_dump(),
+                        "execution_lane": "durable_job", "submit_protocol_id": "openmm_protein_minimize"})
+    return records
 
 
 @app.post("/runs", status_code=201)
@@ -374,7 +383,13 @@ def create_report(rid: str, body: ReportRequest) -> dict[str, Any]:
 @app.post("/runs/{rid}/method_reports", status_code=201)
 def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
     try:
-        return build_method_report(_run(rid), body.result_handle)
+        run = _run(rid)
+        kind = run.store.meta(body.result_handle)["kind"]
+        if kind == "interface_sasa":
+            return build_method_report(run, body.result_handle)
+        if kind == "openmm_minimization":
+            return build_openmm_report(run, body.result_handle)
+        raise EvidenceError("wrong_method_result_kind")
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
@@ -393,7 +408,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
             _saved_any_report(run, event["report_handle"])
         return [{"handle": e["report_handle"],
                  **({"interaction_handle": e["interaction_handle"]} if e["type"] == "report_created" else
-                    {"result_handle": e["result_handle"], "analysis_type": "interface_sasa"}),
+                    {"result_handle": e["result_handle"], "analysis_type": run.store.load(e["report_handle"])["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
     except (EvidenceError, KeyError, ValueError) as exc:
@@ -405,7 +420,12 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"]) == ("report_manifest", "report_manifest@1"):
         return saved_report(run, handle)
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
-        return saved_method_report(run, handle)
+        report = run.store.load(handle)
+        if report.get("analysis_type") == "interface_sasa":
+            return saved_method_report(run, handle)
+        if report.get("analysis_type") == "openmm_protein_minimize":
+            return saved_openmm_report(run, handle)
+        raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
 
@@ -448,6 +468,30 @@ def budget(rid: str) -> dict[str, Any]:
     return _run(rid).budget_snapshot()
 
 
+@app.get("/runs/{rid}/jobs/preflight")
+def job_preflight(rid: str, structure: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        selected = openmm_preflight(run.store, structure, seed=run.seed)
+        return {"available": True, "structure": structure, "selection_policy": "protein_only",
+                "hydrogen_policy": "rebuild_pH7", "heavy_atom_count": selected["heavy_atom_count"],
+                "excluded": selected["excluded"],
+                "source_hydrogens_removed": selected["source_hydrogens_removed"],
+                "method": selected["method"], "budget": run.budget_snapshot()}
+    except ToolFailure as error:
+        return _tool_error(error)
+
+
+@app.post("/runs/{rid}/jobs/approve")
+def approve_job(rid: str) -> dict[str, Any]:
+    run = _run(rid)
+    if not any(e["type"] == "approval_requested" and e.get("gate") == "expensive_first_call"
+               and e.get("tool") == "openmm_protein_minimize" for e in run.events.read()):
+        raise HTTPException(412, detail={"error": "precondition", "message": "no pending OpenMM approval request"})
+    run.approve("expensive_first_call", by="human_api")
+    return {"approved": True, "budget": run.budget_snapshot()}
+
+
 @app.get("/runs/{rid}/jobs")
 def jobs(rid: str) -> list[dict[str, Any]]:
     return [_public_job(job) for job in JobQueue(_run(rid)).list()]
@@ -468,6 +512,33 @@ def submit_job(rid: str, body: JobSubmit) -> Any:
         return result if result.get("plan_only") else _public_job(result)
     except ToolFailure as error:
         return _tool_error(error)
+
+
+@app.post("/runs/{rid}/jobs/{job_id}/start")
+def start_job(rid: str, job_id: str) -> Any:
+    try:
+        return _public_job(JobQueue(_run(rid)).start(job_id))
+    except KeyError as exc:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
+    except ApprovalRequired as exc:
+        return JSONResponse(status_code=409, content={"ok": False, "approval": {
+            "gate": exc.gate, "tool": exc.tool, "reason": exc.reason}})
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
+    except ToolFailure as error:
+        return _tool_error(error)
+
+
+@app.post("/runs/{rid}/jobs/{job_id}/retry")
+def retry_job(rid: str, job_id: str) -> Any:
+    try:
+        return _public_job(JobQueue(_run(rid)).retry(job_id))
+    except KeyError as exc:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
+    except ToolFailure as error:
+        return _tool_error(error)
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
 
 
 @app.post("/runs/{rid}/jobs/{job_id}/cancel")
@@ -509,14 +580,27 @@ def interface_sasa(rid: str, handle: str) -> dict[str, Any]:
         raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
 
 
+@app.get("/runs/{rid}/openmm_minimization")
+def openmm_minimization(rid: str, handle: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        return {"meta": _object(run, handle), "result": validated_openmm(run, handle)}
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
+
+
 @app.get("/runs/{rid}/structures/residues")
 def residues(rid: str, handle: str) -> Any:
     run = _run(rid)
     meta = _object(run, handle)
-    if meta["kind"] not in {"structure", "prepared_structure"}:
+    if meta["kind"] not in {"structure", "prepared_structure", "openmm_minimized_structure"}:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a structure"})
     try:
+        if meta["kind"] == "openmm_minimized_structure":
+            validated_minimized_structure(run, handle)
         return structure_residues(run.store, handle)
+    except EvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
     except ToolFailure as error:
         return _tool_error(error)
     except ValueError as exc:
@@ -527,10 +611,14 @@ def residues(rid: str, handle: str) -> Any:
 def coordinates(rid: str, handle: str) -> Response:
     run = _run(rid)
     meta = _object(run, handle)
-    if meta["kind"] not in {"structure", "prepared_structure"}:
+    if meta["kind"] not in {"structure", "prepared_structure", "openmm_minimized_structure"}:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a structure"})
     try:
+        if meta["kind"] == "openmm_minimized_structure":
+            validated_minimized_structure(run, handle)
         raw, fmt = structure_bytes(run.store, handle)
+    except EvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
     except ToolFailure as error:
         return _tool_error(error)
     except ValueError as exc:

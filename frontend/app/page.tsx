@@ -5,11 +5,13 @@ import {
   BudgetMeter, Button, HandleChip, InspectorSection, InteractionTable, MolstarViewer,
   Segmented, StepList, WorkspaceShell, type Step, type ViewerRepresentation,
 } from "@/components";
-import { api, displayedEgressMode, type Capabilities, type MethodReportArtifact, type ObjectMeta, type ReportArtifact, type ResidueList, type RunSummary, type SasaResult, type SavedReportRef, type UploadResult } from "@/lib/api";
+import { api, displayedEgressMode, type Capabilities, type MethodReportArtifact, type ObjectMeta, type OpenmmJob, type OpenmmResult, type OpenmmReportArtifact, type ReportArtifact, type ResidueList, type RunSummary, type SasaResult, type SavedReportRef, type UploadResult } from "@/lib/api";
 import type { BudgetSnapshot, Handle, InteractionRow, ResidueRef, RunEvent } from "@/lib/contracts";
 import { latestHandles, resultEvents, resultId, type CacheEvent } from "@/lib/event-model";
 import { formatArea2 as area2 } from "@/lib/area-format";
-import { reportSelectionKey, responseMatchesMethodSelection, responseMatchesSelection, savedForSelection, savedMethodForSelection } from "@/lib/report-selection";
+import { currentOpenmmAction, currentOpenmmBudgetRequest, formatEnergy2, openmmContextChange, selectedOpenmmReadError,
+  type OpenmmActionIdentity, type OpenmmContext } from "@/lib/openmm-action";
+import { reportSelectionKey, responseMatchesMethodSelection, responseMatchesOpenmmSelection, responseMatchesSelection, savedForSelection, savedMethodForSelection, savedOpenmmForSelection } from "@/lib/report-selection";
 import type { ViewerSource } from "@/components/MolstarViewer";
 
 type Handles = { loaded?: Handle; prepared?: Handle; interactions?: Handle; sasa?: Handle };
@@ -18,7 +20,7 @@ type RowsState =
   | { key: string; status: "ready"; rows: InteractionRow[]; total: number }
   | { key: string; status: "error"; message: string };
 type MetaState = { key: string; status: "ready"; meta: ObjectMeta } | { key: string; status: "error"; message: string };
-type StructureData = { key: string; source: ViewerSource; residues: ResidueList; kind: "structure" | "prepared_structure" };
+type StructureData = { key: string; source: ViewerSource; residues: ResidueList; kind: "structure" | "prepared_structure" | "openmm_minimized_structure" };
 type StructureState = { key: string; status: "ready"; data: StructureData } | { key: string; status: "error"; message: string };
 type ViewerState = { key: string; source: ViewerSource; status: "loading" | "ready" | "error"; message?: string };
 type ViewIntent = "latest_result" | "latest_pipeline" | "step";
@@ -98,19 +100,52 @@ export default function WorkspacePage() {
   const [sasaState, setSasaState] = useState<SasaState | null>(null);
   const [sasaRetry, setSasaRetry] = useState(0);
   const [methodReportState, setMethodReportState] = useState<MethodReportState | null>(null);
+  const [openmmJobs, setOpenmmJobs] = useState<OpenmmJob[]>([]);
+  const [openmmJobId, setOpenmmJobId] = useState<string | null>(null);
+  const [openmmPreflight, setOpenmmPreflight] = useState<{ key: string; heavy_atom_count: number; excluded: { residue: ResidueRef; atom_count: number; reason: string }[] } | null>(null);
+  const [proteinOnlyAccepted, setProteinOnlyAccepted] = useState(false);
+  const [hydrogenAccepted, setHydrogenAccepted] = useState(false);
+  const [openmmBusy, setOpenmmBusy] = useState(false);
+  const [openmmError, setOpenmmError] = useState("");
+  const [openmmResultError, setOpenmmResultError] = useState<{ key: string; message: string } | null>(null);
+  const [openmmReportError, setOpenmmReportError] = useState<{ key: string; message: string } | null>(null);
+  const [openmmResult, setOpenmmResult] = useState<{ key: string; value: OpenmmResult } | null>(null);
+  const [openmmReport, setOpenmmReport] = useState<{ key: string; artifact: OpenmmReportArtifact } | null>(null);
+  const [openmmViewHandle, setOpenmmViewHandle] = useState<string | null>(null);
+  const [openmmReadRetry, setOpenmmReadRetry] = useState(0);
+  const [openmmReportRetry, setOpenmmReportRetry] = useState(0);
+  const openmmActionRef = useRef(0);
+  const openmmRunRef = useRef<string | null>(null);
+  const openmmInputRef = useRef<string | undefined>(undefined);
+  const openmmJobRef = useRef<string | null>(null);
+  const openmmOutputRef = useRef<string | undefined>(undefined);
+  const openmmContextRef = useRef<OpenmmContext | null>(null);
+  const budgetRequestRef = useRef(0);
   const methodReportKeyRef = useRef<string | null>(null);
   const epoch = useRef(0);
   const runId = run?.run_id;
+  openmmRunRef.current = runId ?? null;
+
+  const refreshOpenmmBudget = useCallback(async (id: string, jobId: string, ticket: number) => {
+    const request = ++budgetRequestRef.current;
+    try {
+      const snapshot = await api.budget(id);
+      if (currentOpenmmBudgetRequest({ request, epoch: ticket, runId: id, jobId },
+        { request: budgetRequestRef.current, epoch: epoch.current,
+          runId: openmmRunRef.current, jobId: openmmJobRef.current })) setBudget(snapshot);
+    } catch { /* A later poll or run reopen can retry the read. */ }
+  }, []);
 
   const reopen = useCallback(async (id: string) => {
     const ticket = ++epoch.current;
     setError("");
-    const [summary, log, limits, reports] = await Promise.all([api.run(id), api.allEvents(id), api.budget(id), api.reports(id)]);
+    const [summary, log, limits, reports, jobs] = await Promise.all([api.run(id), api.allEvents(id), api.budget(id), api.reports(id), api.jobs(id)]);
     if (ticket !== epoch.current) return;
     const latest = latestHandles(log);
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
+    setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmViewHandle(null);
     setPipelineResidues(null); setInspectedStructure(null); setViewerState(null);
     setUpload(pendingUpload?.type === "upload_received" ? { upload_id: pendingUpload.upload_id, format: pendingUpload.format as UploadInfo["format"], size: pendingUpload.size } : null);
     setModelIndex(0); setViewIntent("latest_result"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setHighlight(null); setFocusedResidue(null); setFocusError(null); setLigandIndex(""); setOffset(0);
@@ -171,20 +206,20 @@ export default function WorkspacePage() {
   const selectedInteraction = selectedTool === "compute_interactions" && !!selectedHandle;
   const selectedSasa = selectedTool === "compute_interface_sasa" && !!selectedHandle;
   const selectedMeasurement = selectedInteraction || selectedSasa;
-  const expectedKind = selectedMeasurement ? "prepared_structure" : selectedStructure
+  const expectedKind = openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
     ? selectedTool === "load_structure" ? "structure" : "prepared_structure"
     : handles.prepared ? "prepared_structure" : "structure";
-  const associationError = selectedMeasurement && objectMeta &&
+  const associationError = !openmmViewHandle && selectedMeasurement && objectMeta &&
     (selectedHandle?.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") || objectMeta.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") ||
       objectMeta.schema !== (selectedSasa ? "interface_sasa@1" : "interaction_set@1") ||
       typeof objectMeta.summary.structure !== "string" || !objectMeta.summary.structure)
       ? "측정 객체에 확인 가능한 입력 구조가 없습니다." :
-    selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
+    !openmmViewHandle && selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
       ? "선택한 단계의 구조 종류가 객체 메타데이터와 일치하지 않습니다." : null;
-  const targetHandle = selectedMeasurement
+  const targetHandle = openmmViewHandle ?? (selectedMeasurement
     ? !associationError && objectMeta ? String(objectMeta.summary.structure) : null
     : selectedStructure ? !associationError && objectMeta ? objectMeta.handle : null
-      : pipelineHandle?.handle ?? null;
+      : pipelineHandle?.handle ?? null);
   const targetKey = runId && targetHandle ? JSON.stringify([runId, targetHandle, inspectionRevision]) : null;
   const viewerContextKey = targetKey ? JSON.stringify([targetKey, viewIntent, selectedStep?.callId ?? null]) : null;
   const displayData = inspectedStructure?.key === targetKey && inspectedStructure.status === "ready" ? inspectedStructure.data : null;
@@ -192,12 +227,52 @@ export default function WorkspacePage() {
   const displayResidues = displayData?.residues ?? null;
   const viewerReady = !!viewerContextKey && viewerState?.key === viewerContextKey &&
     viewerState.status === "ready" && viewerState.source === displaySource;
-  const focusEnabled = viewerReady && !busy;
+  const focusEnabled = viewerReady && !busy && !openmmViewHandle;
   const selectedFocus = viewerReady && focusedResidue?.key === viewerContextKey ? focusedResidue.residue : null;
   const displayedError = associationError ?? (selectedMeta?.status === "error" && (selectedMeasurement || selectedStructure)
     ? `선택한 객체의 메타데이터를 읽지 못했습니다: ${selectedMeta.message}` : null) ??
     (targetKey && inspectedStructure?.key === targetKey && inspectedStructure.status === "error" ? inspectedStructure.message : null) ??
     (viewerContextKey && viewerState?.key === viewerContextKey && viewerState.status === "error" ? viewerState.message : null);
+  const activeOpenmmJob = openmmJobs.find(job => job.job_id === openmmJobId) ?? null;
+  const openmmOutput = activeOpenmmJob?.status === "done" ? activeOpenmmJob.output_handles[0] : undefined;
+  const openmmResultKey = reportSelectionKey(runId, openmmOutput);
+  const selectedOpenmmResult = openmmResult?.key === openmmResultKey ? openmmResult.value : null;
+  const savedOpenmmReport = savedOpenmmForSelection(savedReports, openmmOutput);
+  const selectedOpenmmReport = openmmReport?.key === openmmResultKey ? openmmReport.artifact : null;
+  const openmmReportErrorKey = JSON.stringify([openmmResultKey, savedOpenmmReport?.handle ?? null]);
+  const activeOpenmmResultError = selectedOpenmmReadError(openmmResultError, openmmResultKey);
+  const activeOpenmmReportError = selectedOpenmmReadError(openmmReportError, openmmReportErrorKey);
+  const openmmInput = displayData?.kind === "prepared_structure" ? displayData.source.handle : handles.prepared?.handle;
+  openmmInputRef.current = openmmInput;
+  openmmJobRef.current = openmmJobId;
+  openmmOutputRef.current = openmmOutput;
+  function actionIdentity(): OpenmmActionIdentity {
+    setOpenmmBusy(false);
+    return { epoch: epoch.current, runId: openmmRunRef.current, input: openmmInputRef.current,
+      jobId: openmmJobRef.current, result: openmmOutputRef.current, action: ++openmmActionRef.current };
+  }
+  function actionCurrent(request: OpenmmActionIdentity): boolean {
+    return currentOpenmmAction(request, { epoch: epoch.current, runId: openmmRunRef.current,
+      input: openmmInputRef.current, jobId: openmmJobRef.current,
+      result: openmmOutputRef.current, action: openmmActionRef.current });
+  }
+  useEffect(() => { setOpenmmBusy(false); }, [runId, openmmInput, openmmJobId, openmmOutput]);
+  useEffect(() => {
+    const change = openmmContextChange(openmmContextRef.current, { runId, input: openmmInput, jobId: openmmJobId });
+    if (change.resetPolicy) {
+      setProteinOnlyAccepted(false);
+      setHydrogenAccepted(false);
+    }
+    if (change.resetErrors)
+      setOpenmmError("");
+    if (change.resetErrors) {
+      setOpenmmResultError(null);
+      setOpenmmReportError(null);
+    }
+    openmmContextRef.current = { runId, input: openmmInput, jobId: openmmJobId };
+  }, [runId, openmmInput, openmmJobId]);
+  const openmmPreflightKey = reportSelectionKey(runId, openmmInput);
+  const activeOpenmmPreflight = openmmPreflight?.key === openmmPreflightKey ? openmmPreflight : null;
   const displayDiffersFromPipeline = !!selectedHandle && !!targetHandle && targetHandle !== pipelineHandle?.handle;
   const mutationDisabled = !!busy || inspecting || (!!selectedHandle && (!targetHandle || displayDiffersFromPipeline));
 
@@ -352,6 +427,155 @@ export default function WorkspacePage() {
     return () => { active = false; };
   }, [runId, handles.prepared?.handle]);
 
+  useEffect(() => {
+    if (!runId || !openmmJobId) return;
+    let active = true;
+    const ticket = epoch.current;
+    let observedStatus: string | null = null;
+    const poll = async () => {
+      try {
+        const job = await api.job(runId, openmmJobId);
+        if (active && ticket === epoch.current && openmmRunRef.current === runId &&
+            openmmJobRef.current === openmmJobId && job.run_id === runId && job.job_id === openmmJobId) {
+          setOpenmmJobs(old => [job, ...old.filter(item => item.job_id !== job.job_id)]);
+          if (observedStatus !== job.status) {
+            observedStatus = job.status;
+            if (job.attempt_ordinal > 0 || ["done", "failed", "cancelled", "interrupted"].includes(job.status))
+              void refreshOpenmmBudget(runId, openmmJobId, ticket);
+          }
+        }
+      } catch (e) { if (active && ticket === epoch.current && openmmJobRef.current === openmmJobId)
+        setOpenmmError(e instanceof Error ? e.message : String(e)); }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 1000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [runId, openmmJobId, refreshOpenmmBudget]);
+
+  useEffect(() => {
+    if (!runId || !openmmOutput || !openmmResultKey) return;
+    let active = true;
+    const ticket = epoch.current;
+    setOpenmmResult(null);
+    api.openmm(runId, openmmOutput).then(response => {
+      if (active && ticket === epoch.current && openmmOutputRef.current === openmmOutput &&
+          openmmJobRef.current === openmmJobId && response.meta.handle === openmmOutput && response.meta.kind === "openmm_minimization" &&
+          response.result.schema === "openmm_protein_minimization@1" && response.result.job_id === openmmJobId)
+        { setOpenmmResult({ key: openmmResultKey, value: response.result }); setOpenmmResultError(null); }
+      else if (active && ticket === epoch.current && openmmOutputRef.current === openmmOutput)
+        setOpenmmResultError({ key: openmmResultKey, message: "OpenMM 결과가 선택한 작업과 일치하지 않습니다." });
+    }).catch(e => { if (active && ticket === epoch.current && openmmOutputRef.current === openmmOutput) {
+      setOpenmmResult(null); setOpenmmResultError({ key: openmmResultKey, message: e instanceof Error ? e.message : String(e) });
+    } });
+    return () => { active = false; };
+  }, [runId, openmmOutput, openmmJobId, openmmResultKey, openmmReadRetry]);
+
+  useEffect(() => {
+    if (!runId || !savedOpenmmReport || !openmmResultKey) return;
+    let active = true;
+    const ticket = epoch.current;
+    setOpenmmReport(null);
+    api.openmmReport(runId, savedOpenmmReport.handle).then(artifact => {
+      if (active && ticket === epoch.current && openmmOutputRef.current === openmmOutput && openmmOutput &&
+          responseMatchesOpenmmSelection(openmmResultKey, reportSelectionKey(runId, openmmOutput), runId, openmmOutput, artifact))
+        { setOpenmmReport({ key: openmmResultKey, artifact }); setOpenmmReportError(null); }
+      else if (active && ticket === epoch.current && openmmOutputRef.current === openmmOutput)
+        setOpenmmReportError({ key: openmmReportErrorKey, message: "저장된 OpenMM 보고서가 선택한 결과와 일치하지 않습니다." });
+    }).catch(e => { if (active && ticket === epoch.current && openmmOutputRef.current === openmmOutput) {
+      setOpenmmReport(null); setOpenmmReportError({ key: openmmReportErrorKey, message: e instanceof Error ? e.message : String(e) });
+    } });
+    return () => { active = false; };
+  }, [runId, savedOpenmmReport?.handle, openmmResultKey, openmmReportErrorKey, openmmOutput, openmmReportRetry]);
+
+  async function checkOpenmmInput() {
+    if (!runId || !openmmInput || !openmmPreflightKey) return;
+    const request = actionIdentity();
+    setOpenmmError("");
+    try {
+      const value = await api.openmmPreflight(runId, openmmInput);
+      if (actionCurrent(request) && value.structure === openmmInput)
+        setOpenmmPreflight({ key: openmmPreflightKey, heavy_atom_count: value.heavy_atom_count, excluded: value.excluded });
+    } catch (e) { if (actionCurrent(request)) { setOpenmmPreflight(null); setOpenmmError(e instanceof Error ? e.message : String(e)); } }
+  }
+
+  async function submitOpenmm() {
+    if (!runId || !openmmInput || !activeOpenmmPreflight || !proteinOnlyAccepted || !hydrogenAccepted) return;
+    const id = runId, input = openmmInput;
+    const request = actionIdentity();
+    setOpenmmError(""); setOpenmmBusy(true);
+    try {
+      const job = await api.submitOpenmm(id, input);
+      if (actionCurrent(request) && job.run_id === id && job.input_handles?.[0] === input) {
+        openmmJobRef.current = job.job_id;
+        setOpenmmJobs(old => [job, ...old.filter(item => item.job_id !== job.job_id)]);
+        setOpenmmJobId(job.job_id);
+      }
+    } catch (e) { if (actionCurrent(request)) setOpenmmError(e instanceof Error ? e.message : String(e)); }
+    finally { if (actionCurrent(request)) setOpenmmBusy(false); }
+  }
+
+  async function startOpenmm(expectedJobId?: string) {
+    if (!runId || !activeOpenmmJob) return;
+    const id = runId, jobId = activeOpenmmJob.job_id;
+    if (expectedJobId && expectedJobId !== jobId) return;
+    const request = actionIdentity();
+    setOpenmmError(""); setOpenmmBusy(true);
+    try {
+      const job = await api.startJob(id, jobId);
+      if (actionCurrent(request) && job.run_id === id && job.job_id === jobId) {
+        setOpenmmJobs(old => [job, ...old.filter(item => item.job_id !== jobId)]);
+        void refreshOpenmmBudget(id, jobId, request.epoch);
+      }
+    } catch (e) {
+      if (actionCurrent(request) && !(e instanceof Error && e.message === "HTTP 409")) setOpenmmError(e instanceof Error ? e.message : String(e));
+    } finally { if (actionCurrent(request)) setOpenmmBusy(false); }
+  }
+
+  async function approveOpenmm() {
+    if (!runId || !activeOpenmmJob) return;
+    const id = runId, jobId = activeOpenmmJob.job_id, request = actionIdentity();
+    setOpenmmBusy(true);
+    try { await api.approveOpenmm(id); if (actionCurrent(request)) { setOpenmmError(""); await startOpenmm(jobId); } }
+    catch (e) { if (actionCurrent(request)) setOpenmmError(e instanceof Error ? e.message : String(e)); }
+    finally { if (actionCurrent(request)) setOpenmmBusy(false); }
+  }
+
+  async function cancelOpenmm() {
+    if (!runId || !activeOpenmmJob) return;
+    const request = actionIdentity(), jobId = activeOpenmmJob.job_id, id = runId;
+    try {
+      const response = await api.cancelJob(id, jobId);
+      if (actionCurrent(request) && response.job.run_id === id && response.job.job_id === jobId)
+        setOpenmmJobs(old => [response.job, ...old.filter(item => item.job_id !== response.job.job_id)]);
+    } catch (e) { if (actionCurrent(request)) setOpenmmError(e instanceof Error ? e.message : String(e)); }
+  }
+
+  async function retryOpenmm() {
+    if (!runId || !activeOpenmmJob) return;
+    const request = actionIdentity(), jobId = activeOpenmmJob.job_id, id = runId;
+    try {
+      const job = await api.retryJob(id, jobId);
+      if (actionCurrent(request) && job.run_id === id && job.job_id === jobId) {
+        setOpenmmJobs(old => [job, ...old.filter(item => item.job_id !== job.job_id)]);
+        setOpenmmError("");
+      }
+    } catch (e) { if (actionCurrent(request)) setOpenmmError(e instanceof Error ? e.message : String(e)); }
+  }
+
+  async function createOpenmmReport() {
+    if (!runId || !openmmOutput || !openmmResultKey || !selectedOpenmmResult) return;
+    const id = runId, result = openmmOutput;
+    const request = actionIdentity();
+    try {
+      const artifact = await api.createOpenmmReport(id, result);
+      if (actionCurrent(request) && responseMatchesOpenmmSelection(openmmResultKey, reportSelectionKey(id, result), id, result, artifact)) {
+        setOpenmmReport({ key: openmmResultKey, artifact });
+        const reports = await api.reports(id);
+        if (actionCurrent(request)) setSavedReports(reports);
+      }
+    } catch (e) { if (actionCurrent(request)) setOpenmmError(e instanceof Error ? e.message : String(e)); }
+  }
+
   async function switchRun(id: string) {
     setBusy("run 불러오는 중…"); setError("");
     try { await reopen(id); }
@@ -456,8 +680,8 @@ export default function WorkspacePage() {
           ? "이 측정의 입력 구조는 최신 전처리 구조와 다릅니다. 최신 파이프라인의 도구는 여기에서 사용할 수 없습니다."
           : displayDiffersFromPipeline ? "표시 중인 결과의 구조가 최신 파이프라인과 다릅니다. 새 계산은 최신 파이프라인에서 실행합니다."
             : "선택한 단계 검사 중 · 새 계산은 최신 파이프라인에서 실행합니다."}</span>
-          <Button size="sm" onClick={() => { setViewIntent("latest_pipeline"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setOffset(0); setHighlight(null); setFocusedResidue(null); setFocusError(null); }}>최신 구조로 돌아가기</Button></div>}
-        {steps.length ? <StepList steps={steps} selected={selectedStep?.n} onSelect={step => { setViewIntent("step"); setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0); setHighlight(null); setFocusedResidue(null); setFocusError(null); }} />
+          <Button size="sm" onClick={() => { setOpenmmViewHandle(null); setViewIntent("latest_pipeline"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setOffset(0); setHighlight(null); setFocusedResidue(null); setFocusError(null); }}>최신 구조로 돌아가기</Button></div>}
+        {steps.length ? <StepList steps={steps} selected={selectedStep?.n} onSelect={step => { setOpenmmViewHandle(null); setViewIntent("step"); setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0); setHighlight(null); setFocusedResidue(null); setFocusError(null); }} />
           : <p className="mw-empty-note">파일을 업로드하면 실제 도구 호출이 여기에 기록됩니다.</p>}
       </>,
       models: <div className="mw-rail-group">
@@ -525,7 +749,7 @@ export default function WorkspacePage() {
         <dt>null_result</dt><dd>{String(objectMeta.null_result)}</dd>
         {Object.entries(objectMeta.summary).filter(([, value]) => typeof value === "number" || typeof value === "string").map(([key, value]) => <Fragment key={key}><dt>{key}</dt><dd>{String(value)}</dd></Fragment>)}
       </dl></InspectorSection>}
-      {interactionHandle && <InspectorSection flush>
+      {interactionHandle && !openmmViewHandle && <InspectorSection flush>
         <div className="mw-table-head"><strong>기하 접촉{currentRows?.status === "ready" ? ` · ${currentRows.total}건` : ""}</strong><span>heavy atom distance · Å</span></div>
         {!currentRows ? <p className="mw-empty-note" role="status">측정 행을 불러오는 중…</p>
           : currentRows.status === "error" ? <div className="mw-table-error" role="alert"><p>측정 행을 불러오지 못했습니다: {currentRows.message}</p><Button size="sm" onClick={() => setRowsRetry(value => value + 1)}>다시 시도</Button></div>
@@ -551,7 +775,7 @@ export default function WorkspacePage() {
             capabilities?.methods?.interface_sasa?.available !== true}
             onClick={() => { if (displaySource && selectedFocus) void calculateExactSasa(displaySource.handle, selectedFocus); }}>선택한 리간드 SASA 계산</Button>
         </InspectorSection>}
-      {sasaHandle && <InspectorSection flush>
+      {sasaHandle && !openmmViewHandle && <InspectorSection flush>
         <div className="mw-table-head"><strong>단백질–리간드 SASA · Å²</strong><span>Lee–Richards 100 slices</span></div>
         {!activeSasa ? <p className="mw-empty-note" role="status">SASA 결과를 불러오는 중…</p>
           : activeSasa.status === "error" ? <div className="mw-table-error" role="alert"><p>SASA 결과를 불러오지 못했습니다: {activeSasa.message}</p>
@@ -616,6 +840,63 @@ export default function WorkspacePage() {
           </div>
           <pre className="mw-report-preview" aria-label="저장된 보고서 미리보기">{activeReport.artifact.markdown}</pre>
         </>}
+      </InspectorSection>}
+      {capabilities?.methods?.openmm_protein_minimize && <InspectorSection>
+        <span className="mw-eyebrow">OpenMM 단백질 전용 최소화 · kJ/mol</span>
+        <p className="mw-capability">Amber14-all + GBn2, CPU 1 thread, NoCutoff, 최대 50회. 단백질만 남기고 물·리간드·이온·비단백질은 제외합니다. 이 전위 에너지는 결합 친화도 또는 안정성 예측이 아닙니다.</p>
+        <p className="mw-capability">{capabilities.methods.openmm_protein_minimize.available
+          ? `${capabilities.methods.openmm_protein_minimize.method_id} · OpenMM ${capabilities.methods.openmm_protein_minimize.distribution_version} (${capabilities.methods.openmm_protein_minimize.engine_build})`
+          : `사용 불가: ${capabilities.methods.openmm_protein_minimize.explanation ?? "엔진 확인 실패"}`}</p>
+        {openmmInput && <p className="mw-capability mw-mono">입력 {openmmInput}</p>}
+        <Button size="sm" disabled={!openmmInput || openmmBusy || capabilities.methods.openmm_protein_minimize.available !== true}
+          onClick={() => void checkOpenmmInput()}>단백질 입력·제외 항목 확인</Button>
+        {activeOpenmmPreflight && <>
+          <p className="mw-capability">단백질 중원자 {activeOpenmmPreflight.heavy_atom_count}개; 제외 성분 {activeOpenmmPreflight.excluded.length}개.</p>
+          <div className="mw-table-scroll" role="region" aria-label="OpenMM 제외 성분" tabIndex={0}>
+            {activeOpenmmPreflight.excluded.map((item, index) => <p key={`${identity(item.residue)}-${index}`} className="mw-capability">{displayResidue(item.residue)} · {item.reason} · {item.atom_count} atoms</p>)}
+          </div>
+          <label><input type="checkbox" checked={proteinOnlyAccepted} onChange={e => setProteinOnlyAccepted(e.target.checked)} /> protein_only 선택과 제외 항목을 확인했습니다.</label>
+          <label><input type="checkbox" checked={hydrogenAccepted} onChange={e => setHydrogenAccepted(e.target.checked)} /> 기존 수소 제거 후 pH 7.0에서 수소를 다시 만듭니다 (rebuild_pH7).</label>
+          <Button size="sm" disabled={openmmBusy || !proteinOnlyAccepted || !hydrogenAccepted}
+            onClick={() => void submitOpenmm()}>OpenMM 작업 제출</Button>
+        </>}
+        {openmmJobs.length > 0 && <label>작업 <select className="mw-select" value={openmmJobId ?? ""} onChange={e => { openmmJobRef.current = e.target.value; openmmOutputRef.current = undefined; setOpenmmJobId(e.target.value); setOpenmmViewHandle(null); }}>
+          {openmmJobs.map(job => <option key={job.job_id} value={job.job_id}>{job.job_id.slice(0, 18)} · {job.status}</option>)}
+        </select></label>}
+        {activeOpenmmJob && <>
+          <p className="mw-capability mw-mono">상태 {activeOpenmmJob.status} · 시도 {activeOpenmmJob.attempt_ordinal} · {activeOpenmmJob.job_id}</p>
+          {activeOpenmmJob.failure && <p role="alert" className="mw-table-error">{activeOpenmmJob.failure.error}: {activeOpenmmJob.failure.message}</p>}
+          {activeOpenmmJob.status === "queued" || activeOpenmmJob.status === "claimed" ? <Button size="sm" disabled={openmmBusy} onClick={() => void startOpenmm()}>작업 시작</Button> : null}
+          {["failed", "interrupted"].includes(activeOpenmmJob.status) && activeOpenmmJob.attempt_ordinal < 4 &&
+            <Button size="sm" disabled={openmmBusy} onClick={() => void retryOpenmm()}>실패한 작업 재시도</Button>}
+          {activeOpenmmJob.blocked_reason === "approval_or_cancel" && <Button size="sm" disabled={openmmBusy} onClick={() => void approveOpenmm()}>고비용 계산 승인 후 시작</Button>}
+          {["queued", "claimed", "running"].includes(activeOpenmmJob.status) && <Button size="sm" onClick={() => void cancelOpenmm()}>작업 취소</Button>}
+        </>}
+        {selectedOpenmmResult && <>
+          <dl className="mw-kv mw-inspector-kv">
+            <dt>시작 전위</dt><dd>{formatEnergy2(selectedOpenmmResult.before_kJ_mol)} kJ/mol</dd>
+            <dt>최소화 후 전위</dt><dd>{formatEnergy2(selectedOpenmmResult.after_kJ_mol)} kJ/mol</dd>
+            <dt>전위 변화</dt><dd>{formatEnergy2(selectedOpenmmResult.potential_change_kJ_mol)} kJ/mol</dd>
+            <dt>결과 원자</dt><dd>{selectedOpenmmResult.atom_count} (추가 수소 {selectedOpenmmResult.added_hydrogen_count})</dd>
+          </dl>
+          <p className="mw-capability">수렴을 주장하지 않습니다. 원래 복합체 접촉표는 이 단백질 전용 좌표의 측정값이 아닙니다.</p>
+          <Button size="sm" onClick={() => { setOpenmmViewHandle(selectedOpenmmResult.minimized_structure); setHighlight(null); setFocusedResidue(null); }}>최소화 단백질 좌표 보기</Button>
+          {openmmViewHandle && <Button size="sm" onClick={() => setOpenmmViewHandle(null)}>원래 구조로 돌아가기</Button>}
+          {!savedOpenmmReport && <Button size="sm" onClick={() => void createOpenmmReport()}>OpenMM 방법 보고서 만들기</Button>}
+        </>}
+        {selectedOpenmmReport && runId && <>
+          <p className="mw-capability">저장된 OpenMM 방법 보고서 · 이벤트 #{selectedOpenmmReport.manifest.snapshot.event_seq}</p>
+          <div className="mw-report-downloads">
+            <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, selectedOpenmmReport.handle, "markdown")}>Markdown 다운로드</a>
+            <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, selectedOpenmmReport.handle, "json")}>정확한 JSON 다운로드</a>
+          </div>
+          <pre className="mw-report-preview" aria-label="저장된 OpenMM 보고서 미리보기">{selectedOpenmmReport.markdown}</pre>
+        </>}
+        {openmmOutput && !selectedOpenmmResult && <Button size="sm" onClick={() => setOpenmmReadRetry(n => n + 1)}>저장된 OpenMM 결과 다시 읽기</Button>}
+        {savedOpenmmReport && !selectedOpenmmReport && <Button size="sm" onClick={() => setOpenmmReportRetry(n => n + 1)}>저장된 OpenMM 보고서 다시 읽기</Button>}
+        {activeOpenmmResultError && <p role="alert" className="mw-table-error">{activeOpenmmResultError}</p>}
+        {activeOpenmmReportError && <p role="alert" className="mw-table-error">{activeOpenmmReportError}</p>}
+        {openmmError && <p role="alert" className="mw-table-error">{openmmError}</p>}
       </InspectorSection>}
       {budget && <InspectorSection><span className="mw-eyebrow">실제 예산</span><BudgetMeter budget={budget} /></InspectorSection>}
       {capabilities?.methods?.interface_sasa && <InspectorSection><span className="mw-eyebrow">지원하는 로컬 방법</span>
