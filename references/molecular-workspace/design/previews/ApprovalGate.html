@@ -1,0 +1,19 @@
+<!-- @dsCard group="Run" height=272 -->
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head><link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../components.css"><meta charset="utf-8"><title>ApprovalGate — preview</title>
+<style>html,body{margin:0} body{background:var(--surface-100)} .pad{padding:var(--space-4)}</style></head>
+<body>
+<div class="mw-root pad">
+<div class="mw-gate" style="max-width:440px">
+<div class="mw-row"><span class="mw-eyebrow">checkpoint_and_ask</span><span class="mw-cost mw-cost--expensive">$$$ expensive · 첫 호출</span></div>
+<h3 class="mw-gate__title">relax_structure를 실행할까요?</h3>
+<p class="mw-gate__why">예상 3분, expensive 예산 6/8 사용 중. 입력 구조는 prepare_structure #05의 결과입니다.</p>
+<pre class="mw-gate__plan">다음 계획 ◆ jev
+ 1  relax_structure   structure 7a10…e2
+ 2  estimate_stability  mutations 3건</pre>
+<div class="mw-gate__actions"><button class="mw-btn mw-btn--ghost">여기서 멈춤</button><button class="mw-btn">드라이런으로</button><button class="mw-btn mw-btn--primary">실행</button></div>
+</div>
+</div>
+</body>
+</html>

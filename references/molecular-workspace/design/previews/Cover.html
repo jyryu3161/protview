@@ -1,0 +1,59 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head><link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../components.css">
+<meta charset="utf-8">
+<title>Molecular Workspace</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--surface-000); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; width:960px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:496px; height:288px; }
+  .brand { fill:var(--brand); }
+  .deep { fill:var(--ink); }
+  .mid { fill:var(--ink-muted); }
+  .jev { fill:var(--prov-jev); }
+  .turn { fill:var(--focus); }
+  .blk { rx:var(--radius-md); }
+  .chip { rx:var(--radius-xs); }
+  .dot { fill:var(--surface-000); }
+  .dot.sel { fill:var(--brand); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-size:68px; line-height:.95; font-weight:600; letter-spacing:-.02em; color:var(--ink); }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; color:var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 496 288" width="496" height="288">
+<!--
+  blocks      brand 144×256 bled off the top (the identity teal, largest) · ink 176×208 bleeding off the right edge (the dense data field) · ink-muted 128×96 · prov-jev 128×32 and focus 64×32 as chip-sized blocks (a decision, a "your turn") — ≈30% of 960×288
+  arrangement one tall teal slab, a stepped stack of mid blocks, the ink field at right; all bottoms on one line space-6 above the edge, space-4 gutters
+  pattern     dot grid, from "precise, dense, 4px grid, mono data": ground-coloured dots cut into the ink field at a space-5 pitch, five in brand as the selected residues
+  scales      sides in space-4 multiples; gutters space-4; pitch space-5; corners radius-md on blocks, radius-xs on the chip blocks
+-->
+<rect class="brand blk" x="0" y="-16" width="144" height="256" rx="6"/>
+<rect class="jev chip" x="160" y="48" width="128" height="32" rx="2"/>
+<rect class="turn chip" x="160" y="96" width="64" height="32" rx="2"/>
+<rect class="mid blk" x="160" y="144" width="128" height="96" rx="6"/>
+<rect class="deep blk" x="304" y="32" width="208" height="208" rx="6"/>
+<g>
+<circle class="dot" cx="328" cy="56" r="3"/><circle class="dot" cx="352" cy="56" r="3"/><circle class="dot" cx="376" cy="56" r="3"/><circle class="dot" cx="400" cy="56" r="3"/><circle class="dot" cx="424" cy="56" r="3"/><circle class="dot" cx="448" cy="56" r="3"/><circle class="dot" cx="472" cy="56" r="3"/>
+<circle class="dot" cx="328" cy="80" r="3"/><circle class="dot" cx="352" cy="80" r="3"/><circle class="dot" cx="376" cy="80" r="3"/><circle class="dot" cx="400" cy="80" r="3"/><circle class="dot sel" cx="424" cy="80" r="4"/><circle class="dot" cx="448" cy="80" r="3"/><circle class="dot" cx="472" cy="80" r="3"/>
+<circle class="dot" cx="328" cy="104" r="3"/><circle class="dot" cx="352" cy="104" r="3"/><circle class="dot sel" cx="376" cy="104" r="4"/><circle class="dot" cx="400" cy="104" r="3"/><circle class="dot" cx="424" cy="104" r="3"/><circle class="dot" cx="448" cy="104" r="3"/><circle class="dot" cx="472" cy="104" r="3"/>
+<circle class="dot" cx="328" cy="128" r="3"/><circle class="dot" cx="352" cy="128" r="3"/><circle class="dot" cx="376" cy="128" r="3"/><circle class="dot sel" cx="400" cy="128" r="4"/><circle class="dot" cx="424" cy="128" r="3"/><circle class="dot" cx="448" cy="128" r="3"/><circle class="dot" cx="472" cy="128" r="3"/>
+<circle class="dot" cx="328" cy="152" r="3"/><circle class="dot" cx="352" cy="152" r="3"/><circle class="dot" cx="376" cy="152" r="3"/><circle class="dot" cx="400" cy="152" r="3"/><circle class="dot" cx="424" cy="152" r="3"/><circle class="dot sel" cx="448" cy="152" r="4"/><circle class="dot" cx="472" cy="152" r="3"/>
+<circle class="dot" cx="328" cy="176" r="3"/><circle class="dot" cx="352" cy="176" r="3"/><circle class="dot sel" cx="376" cy="176" r="4"/><circle class="dot" cx="400" cy="176" r="3"/><circle class="dot" cx="424" cy="176" r="3"/><circle class="dot" cx="448" cy="176" r="3"/><circle class="dot" cx="472" cy="176" r="3"/>
+<circle class="dot" cx="328" cy="200" r="3"/><circle class="dot" cx="352" cy="200" r="3"/><circle class="dot" cx="376" cy="200" r="3"/><circle class="dot" cx="400" cy="200" r="3"/><circle class="dot" cx="424" cy="200" r="3"/><circle class="dot" cx="448" cy="200" r="3"/><circle class="dot" cx="472" cy="200" r="3"/>
+</g>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Molecular<br>Workspace</h1>
+<p class="tag">좌표는 로컬에, 판단은 compact state로.</p>
+</div>
+</div>
+</body>
+</html>

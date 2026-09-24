@@ -1,0 +1,50 @@
+# Molecular Workspace — runtime defaults. Everything here is recorded in run_started.
+runtime:
+  mode: dry_run                 # dry_run | run   (dry_run: expensive tools return stubs)
+  budget:
+    wall_clock_s: 1800
+    expensive_calls: 8
+    external_tokens: 120000
+    usd: 2.00
+  on_exhaustion: checkpoint_and_ask
+  loop_guards:
+    no_progress_steps: 4
+    repeated_call_hash: 2
+    oscillation_window: 6
+  retry:                        # mirrors mw/runtime/guards.py DEFAULT_RETRY (documentation)
+    transient: { max: 3, backoff: exponential, base_s: 2 }
+    input_invalid: { max: 1, requires_different_args: true }
+    precondition: { max: 1, must_run_prerequisite: true }
+    resource_exceeded: { max: 0 }
+    fatal: { max: 0 }
+  approval_gates: [expensive_first_call, write_outside_run_dir, egress_l2_plus, final_selection, budget]
+  toolset_default_levels: [L5]
+
+egress:
+  mode: local_only              # online | local_only | dry_run
+  allow_sequence: false         # sequence text never leaves unless explicitly allowed per run
+  fetch_sources: [rcsb, afdb, uniprot]   # every fetch is logged in egress.jsonl
+
+openrouter:
+  api_key_source: keyring       # keyring (service "molecular-workspace", user "openrouter") | env OPENROUTER_API_KEY
+  roles:
+    jev:
+      model: typesafe/jev-1.13          # pinned (plan §7.1). Change => rerun benchmarks.
+      temperature: 0
+      max_tokens: 512
+      provider: { data_collection: deny, zdr: true, require_parameters: true, allow_fallbacks: false }
+    frontier:
+      model: CHANGE_ME/frontier-model   # set your pinned frontier model id
+      temperature: 0.2
+      max_tokens: 4096
+      provider: { data_collection: deny, zdr: true, require_parameters: true, allow_fallbacks: false }
+  cache_dir: .cache/llm
+
+rosetta:
+  workers: 2
+  default_scorefxn: ref2015_cart
+  job_timeout_s: 900
+  energy_unit: REU              # display may convert; storage never does
+
+paths:
+  runs_dir: runs

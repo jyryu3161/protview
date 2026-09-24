@@ -1,0 +1,9 @@
+# Declarative pipeline (plan §3.4 P1): fixed order, no agent judgement, deterministic cost.
+# `$input` is the pipeline argument; `$N` is the handle emitted by step N (1-based).
+pipeline: inspect_complex
+version: "0.1"
+steps:
+  - load_structure: { source: $input }
+  - prepare_structure: { structure: $1, waters: keep_bridging }
+  - compute_interactions: { structure: $2 }
+  - compile_state: { inputs: [$2, $3] }

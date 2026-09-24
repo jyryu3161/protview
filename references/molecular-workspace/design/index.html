@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko" data-theme="dark"><head><meta charset="utf-8"><title>Molecular Workspace — component gallery</title>
+<link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components.css">
+<style>body{margin:0;background:var(--surface-000);color:var(--ink);font-family:var(--font-sans)}header{position:sticky;top:0;z-index:1;display:flex;gap:12px;align-items:center;padding:12px 24px;background:var(--surface-100);border-bottom:1px solid var(--line)}
+main{padding:24px;display:flex;flex-direction:column;gap:24px}h2{font:600 11px/14px var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);margin:0 0 8px}iframe{width:100%;max-width:1280px;border:1px solid var(--line);border-radius:6px;background:var(--surface-100)}</style></head>
+<body class="mw-root"><header><b>Molecular Workspace</b><span class="mw-muted">정적 레퍼런스 — 구현 시 모양의 기준</span><span style="flex:1"></span><button class="mw-btn" id="t">테마 전환</button></header><main><section><h2>ApprovalGate</h2><iframe src="previews/ApprovalGate.html" style="height:280px;" loading="lazy"></iframe></section>
+<section><h2>BudgetMeter</h2><iframe src="previews/BudgetMeter.html" style="height:136px;" loading="lazy"></iframe></section>
+<section><h2>Button</h2><iframe src="previews/Button.html" style="height:104px;" loading="lazy"></iframe></section>
+<section><h2>CommandBar</h2><iframe src="previews/CommandBar.html" style="height:238px;" loading="lazy"></iframe></section>
+<section><h2>Cover</h2><iframe src="previews/Cover.html" style="height:296px;" loading="lazy"></iframe></section>
+<section><h2>DdgTable</h2><iframe src="previews/DdgTable.html" style="height:238px;" loading="lazy"></iframe></section>
+<section><h2>DecisionTag</h2><iframe src="previews/DecisionTag.html" style="height:80px;" loading="lazy"></iframe></section>
+<section><h2>EgressGate</h2><iframe src="previews/EgressGate.html" style="height:184px;" loading="lazy"></iframe></section>
+<section><h2>EnergyBreakdown</h2><iframe src="previews/EnergyBreakdown.html" style="height:308px;" loading="lazy"></iframe></section>
+<section><h2>ExplainPanel</h2><iframe src="previews/ExplainPanel.html" style="height:228px;" loading="lazy"></iframe></section>
+<section><h2>FailureBadge</h2><iframe src="previews/FailureBadge.html" style="height:104px;" loading="lazy"></iframe></section>
+<section><h2>GoalComposer</h2><iframe src="previews/GoalComposer.html" style="height:308px;" loading="lazy"></iframe></section>
+<section><h2>HandleChip</h2><iframe src="previews/HandleChip.html" style="height:120px;" loading="lazy"></iframe></section>
+<section><h2>InteractionTable</h2><iframe src="previews/InteractionTable.html" style="height:240px;" loading="lazy"></iframe></section>
+<section><h2>InterfaceScorecard</h2><iframe src="previews/InterfaceScorecard.html" style="height:232px;" loading="lazy"></iframe></section>
+<section><h2>JobQueue</h2><iframe src="previews/JobQueue.html" style="height:208px;" loading="lazy"></iframe></section>
+<section><h2>ModelPanel</h2><iframe src="previews/ModelPanel.html" style="height:238px;" loading="lazy"></iframe></section>
+<section><h2>ModelRoute</h2><iframe src="previews/ModelRoute.html" style="height:338px;" loading="lazy"></iframe></section>
+<section><h2>PAEPlot</h2><iframe src="previews/PAEPlot.html" style="height:238px;" loading="lazy"></iframe></section>
+<section><h2>PromptInspector</h2><iframe src="previews/PromptInspector.html" style="height:308px;" loading="lazy"></iframe></section>
+<section><h2>ResidueId</h2><iframe src="previews/ResidueId.html" style="height:96px;" loading="lazy"></iframe></section>
+<section><h2>ScaleLegend</h2><iframe src="previews/ScaleLegend.html" style="height:148px;" loading="lazy"></iframe></section>
+<section><h2>Segmented</h2><iframe src="previews/Segmented.html" style="height:80px;" loading="lazy"></iframe></section>
+<section><h2>SequenceTrack</h2><iframe src="previews/SequenceTrack.html" style="height:158px;" loading="lazy"></iframe></section>
+<section><h2>StepRow</h2><iframe src="previews/StepRow.html" style="height:244px;" loading="lazy"></iframe></section>
+<section><h2>ToolError</h2><iframe src="previews/ToolError.html" style="height:158px;" loading="lazy"></iframe></section>
+<section><h2>WorkspaceShell</h2><iframe src="previews/WorkspaceShell.html" style="height:728px;width:1280px" loading="lazy"></iframe></section></main>
+<script>document.getElementById('t').onclick=()=>{const r=document.documentElement;const n=r.dataset.theme==='dark'?'light':'dark';r.dataset.theme=n;document.querySelectorAll('iframe').forEach(f=>{try{f.contentDocument.documentElement.dataset.theme=n}catch(e){}})}</script></body></html>

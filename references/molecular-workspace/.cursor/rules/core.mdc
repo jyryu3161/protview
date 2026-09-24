@@ -1,0 +1,7 @@
+---
+description: Molecular Workspace core invariants
+alwaysApply: true
+---
+Follow CLAUDE.md at the repo root. Key invariants: tools return handles not data; failure taxonomy
+(scientific_null is not a failure); everything runs through Run.call; events.jsonl is the source of truth;
+all egress through EgressGate; tokens only in frontend styles (no hex); energies in REU.

@@ -1,0 +1,130 @@
+# Tool contracts (plan §3.3, §5.2). The orchestrator enforces `accepts` BEFORE execution.
+# Keep ≤ 20 tools. Prefer params over new tools. enum > free string.
+tools:
+  # ---------------- L1 viewer (UI-side; executed by the frontend, logged as events) --------
+  - name: snapshot
+    level: L1
+    emits: viewer_state
+    read_only: true
+    params: { label: { type: str } }
+    description: 현재 뷰어 상태(카메라, 표현, 선택)를 viewer_state 핸들로 저장
+
+  # ---------------- L2 structural ---------------------------------------------------------
+  - name: load_structure
+    level: L2
+    emits: structure
+    params:
+      source: { type: str, required: true }          # local path, or "pdb:7XYZ" / "afdb:P12345" (egress fetch)
+      model_index: { type: int, default: 0, min: 0 }
+    description: 구조 파일을 불러와 structure 핸들로 만든다. 원격 소스는 EgressGate.fetch를 거친다.
+
+  - name: prepare_structure
+    level: L2
+    accepts: { structure: [structure] }
+    emits: prepared_structure
+    params:
+      altloc: { type: str, enum: [highest_occupancy, first], default: highest_occupancy }
+      waters: { type: str, enum: [strip_all, keep_bridging, keep_all], default: keep_bridging }
+      hydrogens: { type: str, enum: [strip, keep], default: strip }
+      protonation_ph: { type: float, default: 7.4, min: 0, max: 14 }
+      missing_residues: { type: str, enum: [leave_gaps, model], default: leave_gaps }
+      symmetry_mates: { type: str, enum: [ignore, include_contacts], default: ignore }
+    description: 준비 결정을 전부 preparation_manifest로 기록하며 구조를 준비한다
+
+  - name: detect_pockets
+    level: L2
+    accepts: { structure: [prepared_structure, relaxed_structure] }
+    emits: pocket_set
+    params:
+      engine: { type: str, enum: [fpocket, p2rank], default: fpocket }
+      top_k: { type: int, default: 3, min: 1, max: 20 }
+    typical_runtime_s: 5
+
+  - name: compute_interactions
+    level: L2
+    accepts: { structure: [prepared_structure, relaxed_structure] }
+    emits: interaction_set
+    params:
+      ligand: { type: str }                              # residue name (e.g. "LIG"); default = first non-polymer
+      cutoff_A: { type: float, default: 4.0, min: 2.5, max: 6.0 }
+      types: { type: list, enum: [hbond, hydrophobic, salt_bridge, pi_stack, cation_pi, metal, water_bridge],
+               default: [hbond, hydrophobic, salt_bridge, metal] }
+      engine: { type: str, enum: [geometric, prolif, plip, consensus], default: geometric }
+
+  - name: measure
+    level: L2
+    accepts: { structure: [structure, prepared_structure, relaxed_structure] }
+    emits: measurement
+    read_only: true
+    params:
+      what: { type: str, enum: [distance, angle, rmsd, sasa], required: true }
+
+  - name: align
+    level: L2
+    accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }
+    emits: alignment
+    params: { method: { type: str, enum: [sequence_then_ca, ca_only], default: sequence_then_ca } }
+
+  # ---------------- L3 energetic (PyRosetta, job queue, expensive) --------------------------
+  - name: relax_structure
+    level: L3
+    accepts: { structure: [prepared_structure] }
+    emits: relaxed_structure
+    cost_class: expensive
+    typical_runtime_s: 180
+    params:
+      scorefxn: { type: str, enum: [ref2015, ref2015_cart], default: ref2015_cart }
+      nstruct: { type: int, default: 1, min: 1, max: 20 }
+      constrain_to_start: { type: bool, default: true }
+
+  - name: estimate_stability
+    level: L3
+    accepts: { structure: [relaxed_structure], mutations: [mutation_set] }
+    emits: energy_table
+    cost_class: expensive
+    typical_runtime_s: 300
+    params:
+      protocol: { type: str, enum: [cartesian_ddg], default: cartesian_ddg }
+      iterations: { type: int, default: 3, min: 1, max: 10 }
+
+  - name: score_interface
+    level: L3
+    accepts: { structure: [prepared_structure, relaxed_structure] }
+    emits: interface_scores
+    cost_class: moderate
+    params: { interface: { type: str, required: true } }     # e.g. "A_B"
+
+  - name: residue_energies
+    level: L3
+    accepts: { structure: [relaxed_structure] }
+    emits: residue_energy_table
+    cost_class: moderate
+    params: { scorefxn: { type: str, enum: [ref2015, ref2015_cart], default: ref2015_cart } }
+
+  # ---------------- L4 state ---------------------------------------------------------------
+  - name: define_mutations
+    level: L4
+    accepts: { structure: [prepared_structure, relaxed_structure] }
+    emits: mutation_set
+    params:
+      mutations: { type: list, required: true }            # [{chain_auth, seq_auth, icode, to}]
+    description: 사람이 칠한 design 마스크나 Frontier 제안을 mutation_set 핸들로 고정
+
+  - name: compile_state
+    level: L4
+    accepts: { inputs: [structure, prepared_structure, relaxed_structure, pocket_set, interaction_set, energy_table, interface_scores] }
+    emits: compact_state
+    params: { token_budget: { type: int, default: 2000, min: 200, max: 8000 } }
+
+  # ---------------- L5 workspace (what the agent sees by default) -------------------------
+  - name: inspect_complex
+    level: L5
+    emits: compact_state
+    params: { source: { type: str, required: true } }
+    description: 파이프라인 pipelines/inspect_complex.yaml 을 결정론으로 실행
+
+  - name: rank_candidates
+    level: L5
+    accepts: { table: [energy_table] }
+    emits: ranking
+    params: { strategy: { type: str, enum: [rule, jev], default: rule } }

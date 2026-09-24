@@ -1,0 +1,5 @@
+/* App-level glue only. Component styles live in src/design/components.css; values in tokens.css. */
+html, body { margin: 0; height: 100%; background: var(--surface-000); color: var(--ink); }
+select.mw-select { appearance: none; padding-right: var(--space-2); cursor: pointer; }
+select.mw-select::after { content: none; }
+.mw-cmd input::placeholder { color: var(--ink-muted); }

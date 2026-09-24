@@ -1,0 +1,394 @@
+{
+  "testModules": [
+    {
+      "moduleId": "scripts/test_execute.py",
+      "tests": [
+        {
+          "name": "test_returns_kst_timestamp",
+          "fullName": "scripts/test_execute.py::TestStamp::test_returns_kst_timestamp",
+          "state": "passed"
+        },
+        {
+          "name": "test_format_is_iso",
+          "fullName": "scripts/test_execute.py::TestStamp::test_format_is_iso",
+          "state": "passed"
+        },
+        {
+          "name": "test_is_current_time",
+          "fullName": "scripts/test_execute.py::TestStamp::test_is_current_time",
+          "state": "passed"
+        },
+        {
+          "name": "test_roundtrip",
+          "fullName": "scripts/test_execute.py::TestJsonHelpers::test_roundtrip",
+          "state": "passed"
+        },
+        {
+          "name": "test_save_ensures_ascii_false",
+          "fullName": "scripts/test_execute.py::TestJsonHelpers::test_save_ensures_ascii_false",
+          "state": "passed"
+        },
+        {
+          "name": "test_save_indented",
+          "fullName": "scripts/test_execute.py::TestJsonHelpers::test_save_indented",
+          "state": "passed"
+        },
+        {
+          "name": "test_load_nonexistent_raises",
+          "fullName": "scripts/test_execute.py::TestJsonHelpers::test_load_nonexistent_raises",
+          "state": "passed"
+        },
+        {
+          "name": "test_loads_docs",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_loads_docs",
+          "state": "passed"
+        },
+        {
+          "name": "test_does_not_inject_root_instruction_files",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_does_not_inject_root_instruction_files",
+          "state": "passed"
+        },
+        {
+          "name": "test_excludes_docs_subdirectories",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_excludes_docs_subdirectories",
+          "state": "passed"
+        },
+        {
+          "name": "test_sections_separated_by_divider",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_sections_separated_by_divider",
+          "state": "passed"
+        },
+        {
+          "name": "test_docs_sorted_alphabetically",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_docs_sorted_alphabetically",
+          "state": "passed"
+        },
+        {
+          "name": "test_no_docs_dir",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_no_docs_dir",
+          "state": "passed"
+        },
+        {
+          "name": "test_empty_project",
+          "fullName": "scripts/test_execute.py::TestLoadGuardrails::test_empty_project",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_completed_with_summary",
+          "fullName": "scripts/test_execute.py::TestBuildStepContext::test_includes_completed_with_summary",
+          "state": "passed"
+        },
+        {
+          "name": "test_excludes_pending",
+          "fullName": "scripts/test_execute.py::TestBuildStepContext::test_excludes_pending",
+          "state": "passed"
+        },
+        {
+          "name": "test_excludes_completed_without_summary",
+          "fullName": "scripts/test_execute.py::TestBuildStepContext::test_excludes_completed_without_summary",
+          "state": "passed"
+        },
+        {
+          "name": "test_empty_when_no_completed",
+          "fullName": "scripts/test_execute.py::TestBuildStepContext::test_empty_when_no_completed",
+          "state": "passed"
+        },
+        {
+          "name": "test_has_header",
+          "fullName": "scripts/test_execute.py::TestBuildStepContext::test_has_header",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_project_name",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_project_name",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_guardrails",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_guardrails",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_step_context",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_step_context",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_commit_example",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_commit_example",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_rules",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_rules",
+          "state": "passed"
+        },
+        {
+          "name": "test_no_retry_section_by_default",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_no_retry_section_by_default",
+          "state": "passed"
+        },
+        {
+          "name": "test_retry_section_with_prev_error",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_retry_section_with_prev_error",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_max_retries",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_max_retries",
+          "state": "passed"
+        },
+        {
+          "name": "test_includes_index_path",
+          "fullName": "scripts/test_execute.py::TestBuildPreamble::test_includes_index_path",
+          "state": "passed"
+        },
+        {
+          "name": "test_completed",
+          "fullName": "scripts/test_execute.py::TestUpdateTopIndex::test_completed",
+          "state": "passed"
+        },
+        {
+          "name": "test_error",
+          "fullName": "scripts/test_execute.py::TestUpdateTopIndex::test_error",
+          "state": "passed"
+        },
+        {
+          "name": "test_blocked",
+          "fullName": "scripts/test_execute.py::TestUpdateTopIndex::test_blocked",
+          "state": "passed"
+        },
+        {
+          "name": "test_other_phases_unchanged",
+          "fullName": "scripts/test_execute.py::TestUpdateTopIndex::test_other_phases_unchanged",
+          "state": "passed"
+        },
+        {
+          "name": "test_nonexistent_dir_is_noop",
+          "fullName": "scripts/test_execute.py::TestUpdateTopIndex::test_nonexistent_dir_is_noop",
+          "state": "passed"
+        },
+        {
+          "name": "test_no_top_index_file",
+          "fullName": "scripts/test_execute.py::TestUpdateTopIndex::test_no_top_index_file",
+          "state": "passed"
+        },
+        {
+          "name": "test_already_on_branch",
+          "fullName": "scripts/test_execute.py::TestCheckoutBranch::test_already_on_branch",
+          "state": "passed"
+        },
+        {
+          "name": "test_branch_exists_checkout",
+          "fullName": "scripts/test_execute.py::TestCheckoutBranch::test_branch_exists_checkout",
+          "state": "passed"
+        },
+        {
+          "name": "test_branch_not_exists_create",
+          "fullName": "scripts/test_execute.py::TestCheckoutBranch::test_branch_not_exists_create",
+          "state": "passed"
+        },
+        {
+          "name": "test_checkout_fails_exits",
+          "fullName": "scripts/test_execute.py::TestCheckoutBranch::test_checkout_fails_exits",
+          "state": "passed"
+        },
+        {
+          "name": "test_no_git_exits",
+          "fullName": "scripts/test_execute.py::TestCheckoutBranch::test_no_git_exits",
+          "state": "passed"
+        },
+        {
+          "name": "test_two_phase_commit",
+          "fullName": "scripts/test_execute.py::TestCommitStep::test_two_phase_commit",
+          "state": "passed"
+        },
+        {
+          "name": "test_no_code_changes_skips_feat_commit",
+          "fullName": "scripts/test_execute.py::TestCommitStep::test_no_code_changes_skips_feat_commit",
+          "state": "passed"
+        },
+        {
+          "name": "test_invokes_codex_with_correct_args",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_invokes_codex_with_correct_args",
+          "state": "passed"
+        },
+        {
+          "name": "test_keeps_agents_md_autoload",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_keeps_agents_md_autoload",
+          "state": "passed"
+        },
+        {
+          "name": "test_runs_project_hooks",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_runs_project_hooks",
+          "state": "passed"
+        },
+        {
+          "name": "test_pins_model_and_reasoning_effort",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_pins_model_and_reasoning_effort",
+          "state": "passed"
+        },
+        {
+          "name": "test_saves_output_json",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_saves_output_json",
+          "state": "passed"
+        },
+        {
+          "name": "test_nonexistent_step_file_exits",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_nonexistent_step_file_exits",
+          "state": "passed"
+        },
+        {
+          "name": "test_timeout_is_1800",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_timeout_is_1800",
+          "state": "passed"
+        },
+        {
+          "name": "test_step_can_raise_its_own_timeout",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_step_can_raise_its_own_timeout",
+          "state": "passed"
+        },
+        {
+          "name": "test_timeout_is_reported_not_raised",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_timeout_is_reported_not_raised",
+          "state": "passed"
+        },
+        {
+          "name": "test_timeout_is_not_retried",
+          "fullName": "scripts/test_execute.py::TestInvokeCodex::test_timeout_is_not_retried",
+          "state": "passed"
+        },
+        {
+          "name": "test_context_manager",
+          "fullName": "scripts/test_execute.py::TestProgressIndicator::test_context_manager",
+          "state": "passed"
+        },
+        {
+          "name": "test_elapsed_increases",
+          "fullName": "scripts/test_execute.py::TestProgressIndicator::test_elapsed_increases",
+          "state": "passed"
+        },
+        {
+          "name": "test_no_args_exits",
+          "fullName": "scripts/test_execute.py::TestMainCli::test_no_args_exits",
+          "state": "passed"
+        },
+        {
+          "name": "test_invalid_phase_dir_exits",
+          "fullName": "scripts/test_execute.py::TestMainCli::test_invalid_phase_dir_exits",
+          "state": "passed"
+        },
+        {
+          "name": "test_missing_index_exits",
+          "fullName": "scripts/test_execute.py::TestMainCli::test_missing_index_exits",
+          "state": "passed"
+        },
+        {
+          "name": "test_error_step_exits_1",
+          "fullName": "scripts/test_execute.py::TestCheckBlockers::test_error_step_exits_1",
+          "state": "passed"
+        },
+        {
+          "name": "test_blocked_step_exits_2",
+          "fullName": "scripts/test_execute.py::TestCheckBlockers::test_blocked_step_exits_2",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "moduleId": "scripts/test_codex_hooks.py",
+      "tests": [
+        {
+          "name": "test_blocks_dangerous_command[rm -rf build]",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_blocks_dangerous_command[rm -rf build]",
+          "state": "passed"
+        },
+        {
+          "name": "test_blocks_dangerous_command[git push --force origin main]",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_blocks_dangerous_command[git push --force origin main]",
+          "state": "passed"
+        },
+        {
+          "name": "test_blocks_dangerous_command[git reset --hard HEAD~1]",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_blocks_dangerous_command[git reset --hard HEAD~1]",
+          "state": "passed"
+        },
+        {
+          "name": "test_blocks_dangerous_command[psql -c 'DROP TABLE example_records']",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_blocks_dangerous_command[psql -c 'DROP TABLE example_records']",
+          "state": "passed"
+        },
+        {
+          "name": "test_allows_safe_command[pytest -q]",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_allows_safe_command[pytest -q]",
+          "state": "passed"
+        },
+        {
+          "name": "test_allows_safe_command[git status]",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_allows_safe_command[git status]",
+          "state": "passed"
+        },
+        {
+          "name": "test_allows_safe_command[rm build/tmp.txt]",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_allows_safe_command[rm build/tmp.txt]",
+          "state": "passed"
+        },
+        {
+          "name": "test_accepts_argv_list_command",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_accepts_argv_list_command",
+          "state": "passed"
+        },
+        {
+          "name": "test_missing_command_is_allowed",
+          "fullName": "scripts/test_codex_hooks.py::TestPreToolUse::test_missing_command_is_allowed",
+          "state": "passed"
+        },
+        {
+          "name": "test_default_checks_are_ruff_and_pytest",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_default_checks_are_ruff_and_pytest",
+          "state": "passed"
+        },
+        {
+          "name": "test_all_pass_returns_none",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_all_pass_returns_none",
+          "state": "passed"
+        },
+        {
+          "name": "test_failure_blocks_with_output_in_reason",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_failure_blocks_with_output_in_reason",
+          "state": "passed"
+        },
+        {
+          "name": "test_allowed_nonzero_code_passes",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_allowed_nonzero_code_passes",
+          "state": "passed"
+        },
+        {
+          "name": "test_stop_hook_active_does_not_block_again",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_stop_hook_active_does_not_block_again",
+          "state": "passed"
+        },
+        {
+          "name": "test_missing_tool_is_reported",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_missing_tool_is_reported",
+          "state": "passed"
+        },
+        {
+          "name": "test_uses_project_venv_python_when_present",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_uses_project_venv_python_when_present",
+          "state": "passed"
+        },
+        {
+          "name": "test_falls_back_to_current_python_without_venv",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_falls_back_to_current_python_without_venv",
+          "state": "passed"
+        },
+        {
+          "name": "test_reason_is_truncated",
+          "fullName": "scripts/test_codex_hooks.py::TestStop::test_reason_is_truncated",
+          "state": "passed"
+        }
+      ]
+    }
+  ]
+}

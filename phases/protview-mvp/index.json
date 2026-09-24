@@ -1,0 +1,678 @@
+{
+  "project": "ProtView",
+  "phase": "protview-mvp",
+  "steps": [
+    {
+      "step": 0,
+      "name": "objects-preparation",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_core.py",
+          "backend/tests/test_structural.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw/core",
+          "backend/mw/tools"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T04:23:15+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_core.py",
+              "backend/tests/test_structural.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "......................                                                   [100%]\n22 passed in 0.75s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw/core",
+              "backend/mw/tools"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T04:23:15+00:00",
+        "report": "phases/protview-mvp/reviews/step0.md",
+        "report_sha256": "75da5c1ad82bf06e9970ae6d1b8efd13ae4542b8a3133da3fe70ebe0b5df5a2d",
+        "reviewed_files": {
+          "backend/mw/core/handles.py": "9cd1a69029e6947da251b40eb63cf5f1712acb68dbbc34e9d94e1f5a200424be",
+          "backend/mw/core/events.py": "d8ded6e0d6f86d8f38e2ddeb7c8c9d65053bdb1d78169c7cc6fc8e00d618e66a",
+          "backend/mw/core/contracts.py": "d1a33ae61baa3d15374527af37ac5705681bffb933a91cc510210af77e133c29",
+          "backend/mw/core/residue.py": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5",
+          "backend/mw/runtime/orchestrator.py": "ab7bf5ae59c9bcd192bb5ffd7978301eb29bea097e0ca728c55dddfc08eaf448",
+          "backend/mw/tools/structural.py": "cbfea5950e822f3b904ecfe40a3d5e4d9a9758e035a62150916c4682417037f1",
+          "backend/mw/tools/registry.py": "1a5e38af67c7514ce8cf2847b8d92acca3e8a9e19ea5fbe6122d6d18026a4fc1",
+          "backend/mw/workspace.py": "d81e16b2bc4d1abc982a0d88c7f2634d793229942086250d31ad0bdb7da1a26c",
+          "backend/mw/api/app.py": "f9851a8ffe556ccd5639898969038de192b45bb988f1fe66b6ffbd3017491ca4",
+          "config/tools.yaml": "d8761067f68f382724769731efa14848bc35406dc637aef37bf70f7c0e597992",
+          "backend/tests/test_core.py": "b0e9e48b42ebb559962fbdafbbfd5ebb9af107106ba906a19ae463ec6724b629",
+          "backend/tests/test_structural.py": "3c0a132f42a8b4e0cfbbad94466ffaf2f5c386c030a764c65f2f3c14879b20a5",
+          "backend/tests/test_api.py": "24ed59e8b591bab704b62a49b837bb348d30e164b6c5e837f1c559ece0310574",
+          "backend/tests/test_runtime.py": "8a80d9d07001a3a39ba9211867a75976af805e21fa61eb1efdac01671c9a890b",
+          "backend/tests/fixtures/mini_complex.pdb": "47aedbf763bb9773b9c6b7176bab095ff50a985a5abf16f6cc9ab09967468349",
+          "backend/mw/jobs/queue.py": "d607fc7377f40bad87efe37a8b02dce1cbcafa2e8e726f793f8a03c1d34c5910",
+          "backend/mw/tools/energetic.py": "7e3b2b4e231e0fac68643e057be546b5c7025617079f43cf808cec05fe6d2cf7",
+          "backend/tests/test_jobs.py": "fe10c2605c3c3fd6e834d81c96157fa52a0a0f36e3214b364933921f5d2c22ae",
+          "backend/pyproject.toml": "ecf5b4f1e46def6eabf14a6480e0f1c64c1ff93a05591aa909015e718eed6b47",
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "backend/mw/workflows.py": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c",
+          "backend/tests/test_reports.py": "120413dbf4fa2d2d0162f023f9f50e0129ca69bd17722d0d8650c8722823bb08"
+        },
+        "spec_sha256": "106a74c00077326ced4de66037037af9d3318d44b4f7069eef768bf4336ee4d6",
+        "acceptance_checks_sha256": "4c7d2eb71a3c4efbe2a0ae3201de481b1b7d5b63a2d35cba7f8d23d83cc75aab"
+      },
+      "completed_at": "2026-09-24T04:23:15+00:00"
+    },
+    {
+      "step": 1,
+      "name": "viewer-structural-api",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_api.py",
+          "backend/tests/test_structural.py",
+          "-q"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "typecheck"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "build"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T04:23:27+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_api.py",
+              "backend/tests/test_structural.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "....................                                                     [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n20 passed, 1 warning in 0.81s\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "typecheck"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 typecheck\n> tsc --noEmit\n\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "build"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 build\n> NEXT_TELEMETRY_DISABLED=1 next build\n\n   ▲ Next.js 15.5.26\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 1848ms\n   Linting and checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/5) ...\n   Generating static pages (1/5) \n   Generating static pages (2/5) \n   Generating static pages (3/5) \n ✓ Generating static pages (5/5)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                    9.06 kB         124 kB\n├ ○ /_not-found                            999 B         104 kB\n└ ○ /gallery                             4.45 kB         119 kB\n+ First Load JS shared by all             103 kB\n  ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB\n  ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB\n  └ other shared chunks (total)          2.14 kB\n\n\n○  (Static)  prerendered as static content\n\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T04:23:27+00:00",
+        "report": "phases/protview-mvp/reviews/step1.md",
+        "report_sha256": "dbb968b54d9c92647d9fa34ca57a4963a292a6fc1cfcbd6e060bdb8a2fea69f8",
+        "reviewed_files": {
+          "backend/mw/api/app.py": "f9851a8ffe556ccd5639898969038de192b45bb988f1fe66b6ffbd3017491ca4",
+          "backend/mw/core/handles.py": "9cd1a69029e6947da251b40eb63cf5f1712acb68dbbc34e9d94e1f5a200424be",
+          "backend/mw/core/events.py": "d8ded6e0d6f86d8f38e2ddeb7c8c9d65053bdb1d78169c7cc6fc8e00d618e66a",
+          "backend/mw/core/contracts.py": "d1a33ae61baa3d15374527af37ac5705681bffb933a91cc510210af77e133c29",
+          "backend/mw/core/residue.py": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5",
+          "backend/mw/runtime/orchestrator.py": "ab7bf5ae59c9bcd192bb5ffd7978301eb29bea097e0ca728c55dddfc08eaf448",
+          "backend/mw/tools/structural.py": "cbfea5950e822f3b904ecfe40a3d5e4d9a9758e035a62150916c4682417037f1",
+          "backend/mw/tools/registry.py": "1a5e38af67c7514ce8cf2847b8d92acca3e8a9e19ea5fbe6122d6d18026a4fc1",
+          "backend/mw/workspace.py": "d81e16b2bc4d1abc982a0d88c7f2634d793229942086250d31ad0bdb7da1a26c",
+          "config/tools.yaml": "d8761067f68f382724769731efa14848bc35406dc637aef37bf70f7c0e597992",
+          "backend/tests/test_api.py": "24ed59e8b591bab704b62a49b837bb348d30e164b6c5e837f1c559ece0310574",
+          "backend/tests/test_structural.py": "3c0a132f42a8b4e0cfbbad94466ffaf2f5c386c030a764c65f2f3c14879b20a5",
+          "backend/tests/test_core.py": "b0e9e48b42ebb559962fbdafbbfd5ebb9af107106ba906a19ae463ec6724b629",
+          "backend/tests/test_runtime.py": "8a80d9d07001a3a39ba9211867a75976af805e21fa61eb1efdac01671c9a890b",
+          "backend/tests/fixtures/mini_complex.pdb": "47aedbf763bb9773b9c6b7176bab095ff50a985a5abf16f6cc9ab09967468349",
+          "frontend/app/page.tsx": "915cd1cc45c2dcb76f026a43f295bb4f157063bb01585d5d72a3a3bbc7096998",
+          "frontend/app/layout.tsx": "44c0b811a6f93ca990558c7ede50cbb1282c3498be63bc24d5a0ad970a191464",
+          "frontend/app/globals.css": "fb22c88834557f7def68e6c2686e89c20407f4af355831966bac8e053ab38630",
+          "frontend/app/gallery/page.tsx": "93e695acbb82ffd3041bceaf135b2fc0c6717b3f88ebb893bc60075504c93df9",
+          "frontend/src/components/MolstarViewer.tsx": "2dae0698939eb5b6fb7a7266e565ede7beea1bdd838da560eb772449bac499a0",
+          "frontend/src/components/data.tsx": "ee57d7688f3d0ae05981799e58d2d6b0b60650dceb0d38d7e412f4a35273ecad",
+          "frontend/src/components/primitives.tsx": "acef53ebac7b1baa9bda987b84d88c5aab83bcf74a196b91f3921f8c676c3c53",
+          "frontend/src/components/shell.tsx": "4e2d7e9073e346e8fb81458f395108ec2e10365d7db0cd8044fc2e3c0cf014b5",
+          "frontend/src/components/run.tsx": "4b913639b8562c62f03c2aaee5eb03efe0967d18f1bf169d3f521ec913b1e0d8",
+          "frontend/src/lib/api.ts": "74d0b165dbfb922106588ed0ff7ac4b29e8027fd3dd9fa8ae135d1af13148e00",
+          "frontend/src/lib/contracts.ts": "b2df6e5462c4006cf6ff949d09209943f1d89f02b573c3f9fca4081985e97594",
+          "frontend/src/lib/event-model.ts": "c9743d5cd3486ab38642e011d45c907de3097d3b96c5d0d8c7448ff23cfcae8f",
+          "frontend/tests/event-model.test.cjs": "6605703a58c0db21429b0dc9ae218b42bc6b3ab342546275b82c49c9f81c4b0f",
+          "frontend/tests/mode-badge.test.cjs": "1286a53b5b89653b4585b5ec9ddd1a2897441ce0719143bb34e3fcd425edbfc5",
+          "frontend/src/design/components.css": "733f8cef515224f9805bc6e76d2e07a0c57a0184e4733a8cb21578459941ae8a",
+          "frontend/package.json": "3c65992fb4e0e94d2cc9f71abf97d762eb340ae53e649630c6db96c4295893ee",
+          "frontend/package-lock.json": "dbde13795b7e50e3b160264bc79973177a97b0a785697ec72d78eefc4286071b",
+          "frontend/next.config.mjs": "3fc6772b3e773d8893767be7919eb3ff81a3ac67bf73a9c987995d899d3d88a4",
+          "frontend/tsconfig.json": "9528321fe13e6d2897b5a6ac6977e8f0d026be49fbe9e7ee206335bc7b1ee22f",
+          "docs/M1_API.md": "7f4f61fdfbf653ab5e9dd2ca6993d7d795034f6f7056474c6520623364c0a795",
+          "docs/M1_VIEWER.md": "185b9ef74aab20de06a96ebd93c77f35d846d128747e7e971528314fe0d5629b",
+          "docs/reviews/M1_BACKEND_REVIEW.md": "0d9924c48461b66197351108af475deaf7d82d6ce3d80bb7f2e11a8ed4120364",
+          "docs/reviews/M1_FRONTEND_REVIEW.md": "83c6340d90e6c4ff942fe126528ccdbeb935ee0e93a144605deda5a13b8baaa4",
+          "docs/reviews/M2_RUNTIME_REVIEW.md": "11298d6a9fb80466fa9be8052f53e0ee773de0bb7e7a74b56c4cca7ea6b86f82",
+          "docs/reviews/M2_FRONTEND_REVIEW.md": "a01df5198e5a9c4468fa1de842d6d5657489ed2b1ab72ceeceff3dc1f3219728",
+          "docs/reviews/M3_EGRESS_REVIEW.md": "3de1554fe674393543c16bf64e850f71e75a4024f5478559de656b00ca19ea2a",
+          "backend/mw/jobs/queue.py": "d607fc7377f40bad87efe37a8b02dce1cbcafa2e8e726f793f8a03c1d34c5910",
+          "backend/mw/tools/energetic.py": "7e3b2b4e231e0fac68643e057be546b5c7025617079f43cf808cec05fe6d2cf7",
+          "backend/tests/test_jobs.py": "fe10c2605c3c3fd6e834d81c96157fa52a0a0f36e3214b364933921f5d2c22ae",
+          "backend/pyproject.toml": "ecf5b4f1e46def6eabf14a6480e0f1c64c1ff93a05591aa909015e718eed6b47",
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "backend/mw/workflows.py": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c",
+          "backend/tests/test_reports.py": "120413dbf4fa2d2d0162f023f9f50e0129ca69bd17722d0d8650c8722823bb08",
+          "frontend/src/lib/report-selection.ts": "a0058321bd76ad7144ce28cb3faac1bc84d396a491b06285bcc1f4c8f290a2a3",
+          "frontend/tests/report-selection.test.cjs": "a5696892dc4498ba04d53a382afacafb31c9305663148494ed70714c100d1047"
+        },
+        "spec_sha256": "07781f6e77eb217e014ff3e9635158bac845cb60bd8cd9af7ed143139f1937b4",
+        "acceptance_checks_sha256": "5bbea5cfbdf61de7dcc0eb77a6d3dabab769d18c5a358ee36aa0347e00cf8c24"
+      },
+      "completed_at": "2026-09-24T04:23:27+00:00"
+    },
+    {
+      "step": 2,
+      "name": "bounded-runtime",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_runtime.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw/runtime"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "test:events"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T04:23:40+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_runtime.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "........................                                                 [100%]\n24 passed in 1.08s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw/runtime"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "test:events"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 test:events\n> node --test tests/*.test.cjs\n\n✔ reopened cache reads move the latest pipeline through physical lineage (1.207208ms)\n✔ cache reads require the physical call key and source success in sequence (0.172709ms)\n✔ conflicting cache observation identities cannot select another output (0.113708ms)\n✔ canonical JSON args accept reordered objects and preserve array order (0.145458ms)\n✔ cache reads need their original input and exact output reference (0.170458ms)\n✔ read-only mode badge renders effective local, online and dry run mode (5.7415ms)\n✔ historic report references bind to exact interaction, not latest result (0.439583ms)\n✔ stale asynchronous report responses cannot cross run or selection (0.112ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 196.251833\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T04:23:40+00:00",
+        "report": "phases/protview-mvp/reviews/step2.md",
+        "report_sha256": "c403651d5e7e4eaa482219eb17b608dc43c4615122a16b1a59c1c422285aa9cd",
+        "reviewed_files": {
+          "backend/mw/core/events.py": "d8ded6e0d6f86d8f38e2ddeb7c8c9d65053bdb1d78169c7cc6fc8e00d618e66a",
+          "backend/mw/core/handles.py": "9cd1a69029e6947da251b40eb63cf5f1712acb68dbbc34e9d94e1f5a200424be",
+          "backend/mw/core/contracts.py": "d1a33ae61baa3d15374527af37ac5705681bffb933a91cc510210af77e133c29",
+          "backend/mw/core/errors.py": "07115fb19278a0ccea0dffaaea7f724699542211f673c840d8cb13fb3a2771b3",
+          "backend/mw/core/residue.py": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5",
+          "backend/mw/runtime/orchestrator.py": "ab7bf5ae59c9bcd192bb5ffd7978301eb29bea097e0ca728c55dddfc08eaf448",
+          "backend/mw/runtime/guards.py": "809809af1383012f0e5de93e4254235dcff2c0922681b2214cd87c1894a224ee",
+          "backend/mw/api/app.py": "f9851a8ffe556ccd5639898969038de192b45bb988f1fe66b6ffbd3017491ca4",
+          "backend/mw/workspace.py": "d81e16b2bc4d1abc982a0d88c7f2634d793229942086250d31ad0bdb7da1a26c",
+          "backend/mw/tools/registry.py": "1a5e38af67c7514ce8cf2847b8d92acca3e8a9e19ea5fbe6122d6d18026a4fc1",
+          "backend/mw/tools/structural.py": "cbfea5950e822f3b904ecfe40a3d5e4d9a9758e035a62150916c4682417037f1",
+          "backend/mw/tools/energetic.py": "7e3b2b4e231e0fac68643e057be546b5c7025617079f43cf808cec05fe6d2cf7",
+          "config/tools.yaml": "d8761067f68f382724769731efa14848bc35406dc637aef37bf70f7c0e597992",
+          "backend/tests/test_core.py": "b0e9e48b42ebb559962fbdafbbfd5ebb9af107106ba906a19ae463ec6724b629",
+          "backend/tests/test_structural.py": "3c0a132f42a8b4e0cfbbad94466ffaf2f5c386c030a764c65f2f3c14879b20a5",
+          "backend/tests/test_api.py": "24ed59e8b591bab704b62a49b837bb348d30e164b6c5e837f1c559ece0310574",
+          "backend/tests/test_runtime.py": "8a80d9d07001a3a39ba9211867a75976af805e21fa61eb1efdac01671c9a890b",
+          "backend/tests/fixtures/mini_complex.pdb": "47aedbf763bb9773b9c6b7176bab095ff50a985a5abf16f6cc9ab09967468349",
+          "docs/M2_RUNTIME.md": "863f8a44ccd3c04b061e9350fb8df98ec9cbc9abf5b85cb4902d89e2a2dfa513",
+          "docs/RUNTIME_CONTRACT.md": "bed5d46327934ab709810f436fe4112e1ec30ee1e31d9ef843c2c4328a96f4a0",
+          "frontend/src/lib/event-model.ts": "c9743d5cd3486ab38642e011d45c907de3097d3b96c5d0d8c7448ff23cfcae8f",
+          "frontend/tests/event-model.test.cjs": "6605703a58c0db21429b0dc9ae218b42bc6b3ab342546275b82c49c9f81c4b0f",
+          "frontend/tests/mode-badge.test.cjs": "1286a53b5b89653b4585b5ec9ddd1a2897441ce0719143bb34e3fcd425edbfc5",
+          "frontend/src/components/shell.tsx": "4e2d7e9073e346e8fb81458f395108ec2e10365d7db0cd8044fc2e3c0cf014b5",
+          "frontend/app/page.tsx": "915cd1cc45c2dcb76f026a43f295bb4f157063bb01585d5d72a3a3bbc7096998",
+          "frontend/src/lib/contracts.ts": "b2df6e5462c4006cf6ff949d09209943f1d89f02b573c3f9fca4081985e97594",
+          "frontend/src/lib/api.ts": "74d0b165dbfb922106588ed0ff7ac4b29e8027fd3dd9fa8ae135d1af13148e00",
+          "frontend/src/components/run.tsx": "4b913639b8562c62f03c2aaee5eb03efe0967d18f1bf169d3f521ec913b1e0d8",
+          "frontend/src/components/MolstarViewer.tsx": "2dae0698939eb5b6fb7a7266e565ede7beea1bdd838da560eb772449bac499a0",
+          "frontend/package.json": "3c65992fb4e0e94d2cc9f71abf97d762eb340ae53e649630c6db96c4295893ee",
+          "frontend/package-lock.json": "dbde13795b7e50e3b160264bc79973177a97b0a785697ec72d78eefc4286071b",
+          "docs/reviews/M2_RUNTIME_REVIEW.md": "11298d6a9fb80466fa9be8052f53e0ee773de0bb7e7a74b56c4cca7ea6b86f82",
+          "docs/reviews/M2_FRONTEND_REVIEW.md": "a01df5198e5a9c4468fa1de842d6d5657489ed2b1ab72ceeceff3dc1f3219728",
+          "backend/mw/egress/gate.py": "4448cf76cedfd8f552cb51620a91b2103363b0da9134530f419d5f4e70436513",
+          "backend/mw/llm/openrouter.py": "6a6dd9a3b0eeada88e023fb3e5d49b6ec9c858d9b60ab151063f4de76398aa12",
+          "backend/tests/test_llm_egress.py": "f246a6394d70a5c44c165644761c81028c287efd4e443674026b733a386ee56d",
+          "backend/pyproject.toml": "ecf5b4f1e46def6eabf14a6480e0f1c64c1ff93a05591aa909015e718eed6b47",
+          "config/default.yaml": "1dde935f086a626c2ac1bee1bf8c541416602db2c863f8ea50a044e53fe58a5c",
+          "docs/M3_EGRESS.md": "d050bff4eca2ff2715d7be36463832a89d9e73cec208ab635acd954591e6406f",
+          "docs/reviews/M3_EGRESS_REVIEW.md": "3de1554fe674393543c16bf64e850f71e75a4024f5478559de656b00ca19ea2a",
+          "backend/mw/jobs/queue.py": "d607fc7377f40bad87efe37a8b02dce1cbcafa2e8e726f793f8a03c1d34c5910",
+          "backend/tests/test_jobs.py": "fe10c2605c3c3fd6e834d81c96157fa52a0a0f36e3214b364933921f5d2c22ae",
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "backend/mw/workflows.py": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c",
+          "backend/tests/test_reports.py": "120413dbf4fa2d2d0162f023f9f50e0129ca69bd17722d0d8650c8722823bb08",
+          "frontend/src/lib/report-selection.ts": "a0058321bd76ad7144ce28cb3faac1bc84d396a491b06285bcc1f4c8f290a2a3",
+          "frontend/tests/report-selection.test.cjs": "a5696892dc4498ba04d53a382afacafb31c9305663148494ed70714c100d1047",
+          "frontend/app/globals.css": "fb22c88834557f7def68e6c2686e89c20407f4af355831966bac8e053ab38630"
+        },
+        "spec_sha256": "ed9b0917bde8146f6c94da6409d3771c3a98cad2d6a01db16bfb142ae950f76e",
+        "acceptance_checks_sha256": "c0bbaf3d7ba7ba30fd9c19282dc469ec36e5610337b58dccc61346cfa7fe04d0"
+      },
+      "completed_at": "2026-09-24T04:23:40+00:00"
+    },
+    {
+      "step": 3,
+      "name": "local-egress",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_llm_egress.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw/egress",
+          "backend/mw/llm"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T04:23:54+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_llm_egress.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "................................................................         [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n64 passed, 1 warning in 1.36s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw/egress",
+              "backend/mw/llm"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T04:23:54+00:00",
+        "report": "phases/protview-mvp/reviews/step3.md",
+        "report_sha256": "b1c659d9e6c6d39eb3042155fc409dcc868a602bcb7c192e39930b0746473456",
+        "reviewed_files": {
+          "backend/mw/egress/gate.py": "4448cf76cedfd8f552cb51620a91b2103363b0da9134530f419d5f4e70436513",
+          "backend/mw/llm/openrouter.py": "6a6dd9a3b0eeada88e023fb3e5d49b6ec9c858d9b60ab151063f4de76398aa12",
+          "backend/mw/llm/prompts.py": "9101497a8c2db6faee2d240cbeb2b815f52e3d97f1c8abca4c3046a29ff4c4bf",
+          "backend/mw/llm/verifier.py": "fef5dbd1023267603d7c247570e1d151a887d74861f433911015c1c08f785c0b",
+          "backend/mw/runtime/orchestrator.py": "ab7bf5ae59c9bcd192bb5ffd7978301eb29bea097e0ca728c55dddfc08eaf448",
+          "backend/mw/runtime/guards.py": "809809af1383012f0e5de93e4254235dcff2c0922681b2214cd87c1894a224ee",
+          "backend/mw/core/events.py": "d8ded6e0d6f86d8f38e2ddeb7c8c9d65053bdb1d78169c7cc6fc8e00d618e66a",
+          "backend/mw/core/residue.py": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5",
+          "backend/mw/workspace.py": "d81e16b2bc4d1abc982a0d88c7f2634d793229942086250d31ad0bdb7da1a26c",
+          "backend/mw/api/app.py": "f9851a8ffe556ccd5639898969038de192b45bb988f1fe66b6ffbd3017491ca4",
+          "config/default.yaml": "1dde935f086a626c2ac1bee1bf8c541416602db2c863f8ea50a044e53fe58a5c",
+          "backend/tests/test_llm_egress.py": "f246a6394d70a5c44c165644761c81028c287efd4e443674026b733a386ee56d",
+          "frontend/src/components/shell.tsx": "4e2d7e9073e346e8fb81458f395108ec2e10365d7db0cd8044fc2e3c0cf014b5",
+          "frontend/app/page.tsx": "915cd1cc45c2dcb76f026a43f295bb4f157063bb01585d5d72a3a3bbc7096998",
+          "frontend/src/lib/api.ts": "74d0b165dbfb922106588ed0ff7ac4b29e8027fd3dd9fa8ae135d1af13148e00",
+          "docs/M3_EGRESS.md": "d050bff4eca2ff2715d7be36463832a89d9e73cec208ab635acd954591e6406f",
+          "docs/EGRESS_CONTRACT.md": "749941e90468b9683f9f2b0e6d730034fbbfa878154fe69224b860c745eba4d4",
+          "backend/pyproject.toml": "ecf5b4f1e46def6eabf14a6480e0f1c64c1ff93a05591aa909015e718eed6b47",
+          "frontend/package.json": "3c65992fb4e0e94d2cc9f71abf97d762eb340ae53e649630c6db96c4295893ee",
+          "frontend/tests/mode-badge.test.cjs": "1286a53b5b89653b4585b5ec9ddd1a2897441ce0719143bb34e3fcd425edbfc5",
+          "frontend/tests/event-model.test.cjs": "6605703a58c0db21429b0dc9ae218b42bc6b3ab342546275b82c49c9f81c4b0f",
+          "frontend/src/lib/event-model.ts": "c9743d5cd3486ab38642e011d45c907de3097d3b96c5d0d8c7448ff23cfcae8f",
+          "docs/reviews/M3_EGRESS_REVIEW.md": "3de1554fe674393543c16bf64e850f71e75a4024f5478559de656b00ca19ea2a",
+          "backend/mw/jobs/queue.py": "d607fc7377f40bad87efe37a8b02dce1cbcafa2e8e726f793f8a03c1d34c5910",
+          "backend/mw/tools/energetic.py": "7e3b2b4e231e0fac68643e057be546b5c7025617079f43cf808cec05fe6d2cf7",
+          "backend/tests/test_jobs.py": "fe10c2605c3c3fd6e834d81c96157fa52a0a0f36e3214b364933921f5d2c22ae",
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "backend/mw/workflows.py": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c",
+          "backend/tests/test_reports.py": "120413dbf4fa2d2d0162f023f9f50e0129ca69bd17722d0d8650c8722823bb08",
+          "frontend/src/lib/report-selection.ts": "a0058321bd76ad7144ce28cb3faac1bc84d396a491b06285bcc1f4c8f290a2a3",
+          "frontend/tests/report-selection.test.cjs": "a5696892dc4498ba04d53a382afacafb31c9305663148494ed70714c100d1047",
+          "frontend/app/globals.css": "fb22c88834557f7def68e6c2686e89c20407f4af355831966bac8e053ab38630"
+        },
+        "spec_sha256": "fbf8baebf1be9773832178e70706ea6e598399e253b5c1023713befcadaf9fc1",
+        "acceptance_checks_sha256": "2c50bfc66b160325953883bbdde96c01e6408c5d04f848a697772ec22cd89198"
+      },
+      "completed_at": "2026-09-24T04:23:54+00:00"
+    },
+    {
+      "step": 4,
+      "name": "jobs-capabilities",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_jobs.py",
+          "backend/tests/test_runtime.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw/jobs",
+          "backend/mw/tools/energetic.py"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T04:24:21+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_jobs.py",
+              "backend/tests/test_runtime.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "........................................................................ [ 90%]\n........                                                                 [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n80 passed, 1 warning in 11.91s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw/jobs",
+              "backend/mw/tools/energetic.py"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T04:24:21+00:00",
+        "report": "phases/protview-mvp/reviews/step4.md",
+        "report_sha256": "cd91461b7db1e5609481a877fdc93d531a9258b4ee3b37823982e26af553d7c1",
+        "reviewed_files": {
+          "backend/mw/jobs/queue.py": "d607fc7377f40bad87efe37a8b02dce1cbcafa2e8e726f793f8a03c1d34c5910",
+          "backend/mw/jobs/guardian.py": "3bbd5942a67de9983d1abdc5e09e540a47ebb8c6817f8c371774e23c09105dda",
+          "backend/mw/jobs/lifecycle_fixture.py": "aeeb5e9934f13e1062ede672a4940942778c7335cd8739086d60cdefdf8a5ed8",
+          "backend/mw/jobs/rosetta_worker.py": "a29e0601851b17b26d6843a01d48df318d271e5165bd703b35d80ade8dc0ffd9",
+          "backend/mw/runtime/orchestrator.py": "ab7bf5ae59c9bcd192bb5ffd7978301eb29bea097e0ca728c55dddfc08eaf448",
+          "backend/mw/core/events.py": "d8ded6e0d6f86d8f38e2ddeb7c8c9d65053bdb1d78169c7cc6fc8e00d618e66a",
+          "backend/mw/tools/energetic.py": "7e3b2b4e231e0fac68643e057be546b5c7025617079f43cf808cec05fe6d2cf7",
+          "backend/mw/api/app.py": "f9851a8ffe556ccd5639898969038de192b45bb988f1fe66b6ffbd3017491ca4",
+          "backend/tests/test_jobs.py": "fe10c2605c3c3fd6e834d81c96157fa52a0a0f36e3214b364933921f5d2c22ae",
+          "backend/tests/test_runtime.py": "8a80d9d07001a3a39ba9211867a75976af805e21fa61eb1efdac01671c9a890b",
+          "backend/tests/test_api.py": "24ed59e8b591bab704b62a49b837bb348d30e164b6c5e837f1c559ece0310574",
+          "backend/pyproject.toml": "ecf5b4f1e46def6eabf14a6480e0f1c64c1ff93a05591aa909015e718eed6b47",
+          "docs/M4_JOBS.md": "d40e358e9c7c2bcdbac6d0c4972e7bec5acb600c58b1f881b2d22a7a3df8b613",
+          "docs/JOBS_CONTRACT.md": "09ec023c899828c11994aaba616d3211b3c0f052f502c7b107a9e779b0868454",
+          "docs/JOBS_POSIX_ADDENDUM.md": "2202ea1d6c2ed9b3108302b249fef3e739725afa130764b13a545b0ae69a0850",
+          "docs/RUNTIME_CONTRACT.md": "bed5d46327934ab709810f436fe4112e1ec30ee1e31d9ef843c2c4328a96f4a0",
+          "docs/reviews/M4_JOBS_REVIEW.md": "d8323ae21e3f9b37195e15a782c854d5800b3bd766dd2fda9b6d499ee8733861",
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "backend/mw/workflows.py": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c",
+          "backend/tests/test_reports.py": "120413dbf4fa2d2d0162f023f9f50e0129ca69bd17722d0d8650c8722823bb08"
+        },
+        "spec_sha256": "b77e311c11e54f3204e94363c582107b824464ceaf12e5854630d48e4cfe9306",
+        "acceptance_checks_sha256": "b315fc4ca229878f108d89081b521be13eb93b209d01760317abdb4ef749f7b3"
+      },
+      "completed_at": "2026-09-24T04:24:21+00:00"
+    },
+    {
+      "step": 5,
+      "name": "reports-release",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw",
+          "backend/tests"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "scripts/test_execute.py",
+          "scripts/test_codex_hooks.py",
+          "-q"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "typecheck"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "build"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T04:25:16+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "........................................................................ [ 38%]\n........................................................................ [ 76%]\n.............................................                            [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n189 passed, 1 warning in 14.92s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw",
+              "backend/tests"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "scripts/test_execute.py",
+              "scripts/test_codex_hooks.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "...................................................                      [100%]\n51 passed in 3.59s\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "typecheck"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 typecheck\n> tsc --noEmit\n\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "build"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 build\n> NEXT_TELEMETRY_DISABLED=1 next build\n\n   ▲ Next.js 15.5.26\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 1810ms\n   Linting and checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/5) ...\n   Generating static pages (1/5) \n   Generating static pages (2/5) \n   Generating static pages (3/5) \n ✓ Generating static pages (5/5)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                    9.06 kB         124 kB\n├ ○ /_not-found                            999 B         104 kB\n└ ○ /gallery                             4.45 kB         119 kB\n+ First Load JS shared by all             103 kB\n  ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB\n  ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB\n  └ other shared chunks (total)          2.14 kB\n\n\n○  (Static)  prerendered as static content\n\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T04:25:16+00:00",
+        "report": "phases/protview-mvp/reviews/step5.md",
+        "report_sha256": "e4e8293485e2477b66feb080710b62d78acc9b8113f8c72c9a030f08c64333b9",
+        "reviewed_files": {
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "backend/mw/workflows.py": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c",
+          "backend/mw/api/app.py": "f9851a8ffe556ccd5639898969038de192b45bb988f1fe66b6ffbd3017491ca4",
+          "backend/mw/runtime/orchestrator.py": "ab7bf5ae59c9bcd192bb5ffd7978301eb29bea097e0ca728c55dddfc08eaf448",
+          "backend/mw/core/events.py": "d8ded6e0d6f86d8f38e2ddeb7c8c9d65053bdb1d78169c7cc6fc8e00d618e66a",
+          "backend/mw/core/handles.py": "9cd1a69029e6947da251b40eb63cf5f1712acb68dbbc34e9d94e1f5a200424be",
+          "backend/mw/core/contracts.py": "d1a33ae61baa3d15374527af37ac5705681bffb933a91cc510210af77e133c29",
+          "backend/mw/core/residue.py": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5",
+          "backend/mw/tools/structural.py": "cbfea5950e822f3b904ecfe40a3d5e4d9a9758e035a62150916c4682417037f1",
+          "backend/mw/llm/verifier.py": "fef5dbd1023267603d7c247570e1d151a887d74861f433911015c1c08f785c0b",
+          "backend/tests/test_reports.py": "120413dbf4fa2d2d0162f023f9f50e0129ca69bd17722d0d8650c8722823bb08",
+          "backend/tests/test_runtime.py": "8a80d9d07001a3a39ba9211867a75976af805e21fa61eb1efdac01671c9a890b",
+          "backend/tests/test_llm_egress.py": "f246a6394d70a5c44c165644761c81028c287efd4e443674026b733a386ee56d",
+          "frontend/app/page.tsx": "915cd1cc45c2dcb76f026a43f295bb4f157063bb01585d5d72a3a3bbc7096998",
+          "frontend/app/globals.css": "fb22c88834557f7def68e6c2686e89c20407f4af355831966bac8e053ab38630",
+          "frontend/src/lib/api.ts": "74d0b165dbfb922106588ed0ff7ac4b29e8027fd3dd9fa8ae135d1af13148e00",
+          "frontend/src/lib/report-selection.ts": "a0058321bd76ad7144ce28cb3faac1bc84d396a491b06285bcc1f4c8f290a2a3",
+          "frontend/tests/report-selection.test.cjs": "a5696892dc4498ba04d53a382afacafb31c9305663148494ed70714c100d1047",
+          "frontend/src/design/components.css": "733f8cef515224f9805bc6e76d2e07a0c57a0184e4733a8cb21578459941ae8a",
+          "frontend/package.json": "3c65992fb4e0e94d2cc9f71abf97d762eb340ae53e649630c6db96c4295893ee",
+          "backend/pyproject.toml": "ecf5b4f1e46def6eabf14a6480e0f1c64c1ff93a05591aa909015e718eed6b47",
+          "config/pipelines/inspect_complex.yaml": "e44b33dc4bb886e873695cfd8234cd190ffc38a0b00a46b0959cd40a9d5c4921",
+          "README.md": "02812361dfee5a8d88c5ba9c153639405062176648b9b220af639486766f8dea",
+          "docs/M5_REPORTS.md": "4c006f9fa9968cbae10054862997886616651a8da20f1ef9001a7654357aae8f",
+          "docs/REPORT_CONTRACT.md": "8b015bc698fe16a362a4d154f99469866a4cd1115947e82e8982ba96c7918ffd",
+          "docs/reviews/HARNESS_REVIEW.md": "b97940d7d4bb13c1649f8a21affe32973306a20a014b18d4deefb1f3ec53691b",
+          "docs/reviews/M5_REPORTS_REVIEW.md": "425b7e23cdf536f69a2f9af020b1988b5b12164a1871b9f77f230fea59272ad4"
+        },
+        "spec_sha256": "e8ef305c27035e9634e1e9177ce7435e3a6b91391a29057f9f1fe6720babe610",
+        "acceptance_checks_sha256": "c14758ed8092e205a46af9e5a6f10108b75541bc2cfc8dfb738792c38e6a3872"
+      },
+      "completed_at": "2026-09-24T04:25:16+00:00"
+    }
+  ],
+  "completed_at": "2026-09-24T04:26:15+00:00"
+}

@@ -1,0 +1,19 @@
+<!-- @dsCard group="Input" height=230 -->
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head><link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../components.css"><meta charset="utf-8"><title>CommandBar — preview</title>
+<style>html,body{margin:0} body{background:var(--surface-100)} .pad{padding:var(--space-4)}</style></head>
+<body>
+<div class="mw-root pad">
+<div class="mw-cmd" style="max-width:640px">
+<div class="mw-cmd__input"><span class="mw-cmd__prompt">›</span><span>compute_interactions</span><span class="mw-cmd__arg">structure=<b>#1</b></span><span class="mw-cmd__arg">pocket=<b>P1</b></span><span class="mw-cmd__arg">cutoff_A=</span><span class="mw-cmd__caret"></span></div>
+<ul class="mw-cmd__menu">
+<li aria-selected="true"><span>cutoff_A: float</span><span class="desc">접촉 거리 상한 (기본 4.0, 범위 2.5–6.0)</span><span class="mw-cost">cheap</span></li>
+<li><span>types: enum[]</span><span class="desc">hbond · hydrophobic · salt_bridge · pi_stack · cation_pi · metal · water_bridge</span><span class="mw-cost">—</span></li>
+<li><span>engine: enum</span><span class="desc">consensus · prolif · plip</span><span class="mw-cost">—</span></li>
+</ul>
+<div class="mw-cmd__preview">{"tool":"compute_interactions","args":{"structure":"obj://…/04be…7d","pocket":"obj://…/p1","cutoff_A":4.0}}</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!-- @dsCard group="Layout" height=720 width=1280 subtitle="상단 바 · Run/Models 레일 · Mol* 캔버스 + 서열·명령줄 · Inspector" -->
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head><link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../components.css"><meta charset="utf-8"><title>WorkspaceShell — preview</title>
+<style>
+html,body{margin:0;height:720px;background:var(--surface-000)}
+.mw-root{height:720px;background:var(--surface-000)}
+.grow{flex:1}
+.center{display:flex;flex-direction:column;min-height:0;gap:1px;background:var(--surface-000)}
+.center .mw-canvas{flex:1}
+.strip{background:var(--surface-100);padding:var(--space-2) var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)}
+.rib{fill:none;stroke:var(--ink-muted);stroke-width:10;stroke-linecap:round;opacity:.55}
+.rib2{fill:none;stroke:var(--brand);stroke-width:10;stroke-linecap:round}
+.lig{fill:none;stroke:var(--ink);stroke-width:3}
+.atom{fill:var(--ink)}
+.hb{stroke:var(--int-hbond);stroke-width:2;stroke-dasharray:4 3}
+.hp{stroke:var(--int-hydrophobic);stroke-width:1.5}
+.me{stroke:var(--int-metal);stroke-width:2}
+.overlay{position:absolute;display:flex;gap:var(--space-2)}
+.legend{position:absolute;right:var(--space-3);bottom:var(--space-3);background:var(--surface-100);border:1px solid var(--line);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);display:flex;flex-direction:column;gap:var(--space-1)}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:var(--space-1) var(--space-2);font-size:12px;line-height:16px}
+.kv dt{color:var(--ink-muted);font-family:var(--font-mono)} .kv dd{margin:0;font-family:var(--font-mono)}
+.sec{padding:var(--space-3);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:var(--space-2)}
+</style></head>
+<body>
+<div class="mw-root mw-shell">
+  <header class="mw-topbar">
+    <span class="mw-mono" style="font-weight:500">run_20260923_a91</span>
+    <span class="mw-muted" style="font-size:13px">inspect_complex → estimate_stability</span>
+    <span class="grow"></span>
+    <div class="mw-seg" role="group" aria-label="egress mode"><button aria-pressed="false"><span class="mw-dot" style="color:var(--egress-online)"></span>online</button><button aria-pressed="true"><span class="mw-dot" style="color:var(--egress-local)"></span>local_only</button><button aria-pressed="false">dry_run</button></div>
+    <span class="mw-cost mw-cost--expensive">expensive 6/8</span>
+    <button class="mw-btn mw-btn--ghost">명령 <span class="mw-kbd">⌘K</span></button>
+    <button class="mw-btn mw-btn--stop">■ 중단</button>
+  </header>
+
+  <aside class="mw-panel">
+    <div class="mw-tabs" role="tablist"><button role="tab" aria-selected="true">Run · 8</button><button role="tab" aria-selected="false">Models · 4</button><button role="tab" aria-selected="false">Jobs · 1</button></div>
+    <ol class="mw-steps" style="border-top:0">
+      <li class="mw-step"><span class="mw-step__n">#01</span><span class="mw-step__g mw-s-done">✓</span><span class="mw-step__tool">load_structure</span><span class="mw-step__meta">↺ cached</span></li>
+      <li class="mw-step"><span class="mw-step__n">#02</span><span class="mw-step__g mw-s-done">✓</span><span class="mw-step__tool">prepare_structure</span><span class="mw-step__meta"><span class="mw-badge mw-p-rule">≡ rule</span></span></li>
+      <li class="mw-step" aria-selected="true"><span class="mw-step__n">#03</span><span class="mw-step__g mw-s-done">✓</span><span class="mw-step__tool">compute_interactions</span><span class="mw-step__meta">2.1s</span></li>
+      <li class="mw-step"><span class="mw-step__n">#04</span><span class="mw-step__g mw-s-done">✓</span><span class="mw-step__tool">compile_state</span><span class="mw-step__meta"><span class="mw-badge mw-p-jev">◆ jev</span></span></li>
+      <li class="mw-step"><span class="mw-step__n">#05</span><span class="mw-step__g mw-s-done">✓</span><span class="mw-step__tool">detect_pockets</span><span class="mw-step__meta"><span class="mw-badge mw-f-null">∅ null</span></span></li>
+      <li class="mw-step"><span class="mw-step__n">#06</span><span class="mw-step__g mw-s-done">✓</span><span class="mw-step__tool">plan</span><span class="mw-step__meta"><span class="mw-badge mw-p-frontier">✦ frontier</span></span></li>
+      <li class="mw-step"><span class="mw-step__n">#07</span><span class="mw-step__g mw-s-failed">✕</span><span class="mw-step__tool">estimate_stability</span><span class="mw-step__meta"><span class="mw-badge mw-f-precondition">⇢ precond</span></span></li>
+      <li class="mw-step"><span class="mw-step__n">#08</span><span class="mw-step__g mw-s-pending">○</span><span class="mw-step__tool mw-muted">relax_structure</span><span class="mw-step__meta"><span class="mw-cost mw-cost--expensive">$$$</span></span></li>
+    </ol>
+    <div style="padding:var(--space-3);margin-top:auto">
+      <div class="mw-gate" style="box-shadow:none;padding:var(--space-3);gap:var(--space-2)">
+        <span class="mw-eyebrow">checkpoint_and_ask</span>
+        <p class="mw-gate__title" style="font-size:14px;line-height:20px">relax_structure를 실행할까요?</p>
+        <p class="mw-gate__why">expensive 첫 호출 · 예상 3분</p>
+        <div class="mw-gate__actions"><button class="mw-btn mw-btn--sm mw-btn--ghost">여기서 멈춤</button><button class="mw-btn mw-btn--sm mw-btn--primary">실행</button></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="center"><main class="mw-canvas">
+    <div class="overlay" style="left:var(--space-3);top:var(--space-3)">
+      <div class="mw-seg" role="group" aria-label="view"><button aria-pressed="true">cartoon</button><button aria-pressed="false">surface</button><button aria-pressed="false">pLDDT</button></div>
+      <span class="mw-handle"><span class="mw-handle__kind">viewer_state</span><span class="mw-handle__ref">step #03</span></span>
+    </div>
+    <svg viewBox="0 0 600 596" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-label="뷰어 자리표시">
+      <path class="rib" d="M60 470 C140 380 90 300 180 260 S300 300 320 220 S260 120 360 100 S520 160 540 90"/>
+      <path class="rib" d="M80 140 C160 170 200 120 250 170 S230 330 330 360 S470 330 520 420"/>
+      <path class="rib2" d="M250 170 C270 200 250 250 280 280"/>
+      <path class="lig" d="M300 300 l30 -12 l24 16 l-4 30 l-30 12 l-24 -16 z M354 304 l28 -10"/>
+      <circle class="atom" cx="300" cy="300" r="4"/><circle class="atom" cx="354" cy="304" r="4"/><circle class="atom" cx="382" cy="294" r="4"/>
+      <line class="hb" x1="280" y1="280" x2="300" y2="300"/>
+      <line class="hb" x1="382" y1="294" x2="418" y2="250"/>
+      <line class="hp" x1="324" y1="346" x2="330" y2="360"/>
+      <line class="me" x1="350" y1="334" x2="372" y2="372"/>
+    </svg>
+    <div class="legend">
+      <span class="mw-int mw-int--dashed mw-i-hbond">hbond 12</span>
+      <span class="mw-int mw-i-hydrophobic">hydrophobic 26</span>
+      <span class="mw-int mw-i-metal">metal 1</span>
+    </div>
+  </main>
+  <div class="strip">
+    <div class="mw-seq">
+      <div class="mw-seq__row"><span class="mw-seq__lab">#2 A 40–91</span><span class="mw-seq__cells mw-seq__aa"><span class="">M</span><span class="">K</span><span class="">T</span><span class="">A</span><span class="">Y</span><span class="">I</span><span class="">A</span><span class="">K</span><span class="sel">Q</span><span class="sel">R</span><span class="">Q</span><span class="">I</span><span class="sel">S</span><span class="">F</span><span class="">V</span><span class="">K</span><span class="">S</span><span class="">H</span><span class="">F</span><span class="">S</span><span class="">R</span><span class="">Q</span><span class="">L</span><span class="">E</span><span class="">E</span><span class="">R</span><span class="">L</span><span class="">G</span><span class="">L</span><span class="">I</span><span class="">E</span><span class="">V</span><span class="">Q</span><span class="">A</span><span class="">P</span><span class="">I</span><span class="">L</span><span class="">S</span><span class="">R</span><span class="">V</span><span class="">G</span><span class="">D</span><span class="">G</span><span class="">T</span><span class="">Q</span><span class="">D</span><span class="">N</span><span class="">L</span><span class="">S</span><span class="">G</span><span class="">A</span><span class="">E</span></span></div>
+      <div class="mw-seq__row"><span class="mw-seq__lab">design</span><span class="mw-seq__cells"><span class="m-f">M</span><span class="m-f">K</span><span class="m-f">T</span><span class="m-f">A</span><span class="m-f">Y</span><span class="m-r">I</span><span class="m-r">A</span><span class="m-r">K</span><span class="m-d">Q</span><span class="m-d">R</span><span class="m-r">Q</span><span class="m-r">I</span><span class="m-d">S</span><span class="m-r">F</span><span class="m-r">V</span><span class="m-r">K</span><span class="m-f">S</span><span class="m-f">H</span><span class="m-f">F</span><span class="m-f">S</span><span class="m-f">R</span><span class="m-f">Q</span><span class="m-f">L</span><span class="m-f">E</span><span class="m-f">E</span><span class="m-f">R</span><span class="m-f">L</span><span class="m-f">G</span><span class="m-f">L</span><span class="m-f">I</span><span class="m-f">E</span><span class="m-f">V</span><span class="m-f">Q</span><span class="m-f">A</span><span class="m-f">P</span><span class="m-f">I</span><span class="m-f">L</span><span class="m-f">S</span><span class="m-f">R</span><span class="m-f">V</span><span class="m-f">G</span><span class="m-f">D</span><span class="m-f">G</span><span class="m-f">T</span><span class="m-f">Q</span><span class="m-f">D</span><span class="m-f">N</span><span class="m-f">L</span><span class="m-f">S</span><span class="m-f">G</span><span class="m-f">A</span><span class="m-f">E</span></span></div>
+    </div>
+    <div class="mw-cmd"><div class="mw-cmd__input"><span class="mw-cmd__prompt">›</span><span>relax_structure</span><span class="mw-cmd__arg">structure=<b>#2</b></span><span class="mw-cmd__arg">scorefxn=<b>ref2015_cart</b></span><span class="mw-cmd__caret"></span></div></div>
+  </div>
+  </div>
+
+  <aside class="mw-panel">
+    <div class="mw-panel__head"><span class="mw-eyebrow">Inspector · step #03</span><button class="mw-btn mw-btn--sm mw-btn--ghost">materialize</button></div>
+    <div class="sec">
+      <span class="mw-handle"><span class="mw-handle__kind">interaction_set</span><span class="mw-handle__ref">obj://run_a91/<b>9f3c…a1</b></span><span class="mw-handle__schema">@1.2</span></span>
+      <dl class="kv"><dt>n_edges</dt><dd>47</dd><dt>n_hbond</dt><dd>12</dd><dt>n_hydrophobic</dt><dd>26</dd><dt>produced_by</dt><dd>call_0007</dd></dl>
+    </div>
+    <div class="sec" style="padding:0;border-bottom:0">
+      <table class="mw-table">
+        <thead><tr><th>잔기</th><th>유형</th><th style="text-align:right">거리</th></tr></thead>
+        <tbody>
+          <tr><td><span class="mw-res"><span class="mw-res__name">ASP</span>A/100A</span></td><td><span class="mw-int mw-int--dashed mw-i-hbond">hbond</span></td><td class="num">2.80 <small>Å</small></td></tr>
+          <tr><td><span class="mw-res"><span class="mw-res__name">LEU</span>A/48</span></td><td><span class="mw-int mw-i-hydrophobic">hydrophobic</span></td><td class="num">3.91 <small>Å</small></td></tr>
+          <tr><td><span class="mw-res"><span class="mw-res__name">HIS</span>A/45</span></td><td><span class="mw-int mw-i-metal">metal</span></td><td class="num">2.05 <small>Å</small></td></tr>
+          <tr><td><span class="mw-res"><span class="mw-res__name">TYR</span>B/212</span></td><td><span class="mw-int mw-int--dashed mw-i-hbond">hbond</span></td><td class="num">3.02 <small>Å</small></td></tr>
+          <tr><td><span class="mw-res"><span class="mw-res__name">VAL</span>A/52</span></td><td><span class="mw-int mw-i-hydrophobic">hydrophobic</span></td><td class="num">4.12 <small>Å</small></td></tr>
+        </tbody>
+      </table>
+      <div class="mw-muted" style="font-size:12px;padding:var(--space-2) var(--space-3)">preview 5 / 47 · 나머지는 materialize</div>
+    </div>
+  </aside>
+</div>
+</body>
+</html>
