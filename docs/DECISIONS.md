@@ -49,3 +49,11 @@ Bring only generic phase executor, hooks, command templates and their relevant t
 ## Deferred scope
 
 Multi-user accounts, cloud deployment, public sharing, AG-UI/A2A, plugins, GUI pipeline editing, MD trajectories, PAE analysis, conservation databases, comprehensive pocket methods, remote structure lookup, multi-model comparative analysis, Rosetta mutation design and unvalidated energetic protocols are outside the selected release unless explicitly added with implementation and evidence. These omissions must remain visible in capability documentation; they do not justify weakening the implemented local viewer/runtime contracts.
+
+## D11 — User-authorized alternative local methods after M0–M5
+
+The subsequent user request adds real FreeSASA protein–ligand exposure/burial geometry in M6 and OpenMM protein-only Amber/GBn2 potential/minimization in M7. They have distinct names, units, preparation assumptions, runtime lanes and reports; neither substitutes numerical values into Rosetta/ΔΔG/affinity labels. Follow docs/ALTERNATIVE_METHODS_CONTRACT.md and the protview-methods phase group. Existing optional Rosetta protocols remain honestly unavailable. New capabilities require actual product-path scientific and lifecycle evidence, not import detection. Historical report bytes and local-only behavior remain preserved. Before M6 approval, independent single/separated-sphere tests rejected FreeSASA2.2.1 Shrake–Rupley1000 output. M6 now fixes Lee–Richards100slices/probe1.4Å/thread1, which passed analytic checks; retain the failed engine evidence and do not patch numbers. The contract defines precise algorithm metadata and0.5% analytic overlap tolerance.
+
+## D12 — Honest Git history and current review scope
+
+M0–M5 used phase gates and Astra reviews without per-phase Git branches/commits. Commit d22fe15 on master is the actual completed baseline, not reconstructed history. Extension work starts on phase/m6-interface-sasa; after its real accepted commit, phase/m7-openmm-minimization starts from it. Parent records actual commits only. Shared-source modifications can stale earlier review hashes: refresh affected gates or document a complete extension supersession before describing current verification; do not edit old scientific results or pretend stale completion is fresh.

@@ -537,6 +537,9 @@ class Run:
                 raise ValueError("load_structure key requires bound source bytes")
             effective["_source_sha256"] = hashlib.sha256(source_bytes).hexdigest()
             effective["_source_format"] = source_format
+        if tool == "compute_interface_sasa":
+            from ..tools.sasa import dependencies
+            effective["_scientific_dependencies"] = dependencies()
         return idempotency_key(tool, version, effective)
 
     def _verified(self, event: dict[str, Any], expected_kind: str) -> Handle:

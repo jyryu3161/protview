@@ -11,7 +11,8 @@ const compiled = ts.transpileModule(source, {
 }).outputText;
 const moduleObject = { exports: {} };
 vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports, require });
-const { reportSelectionKey, savedForSelection, responseMatchesSelection } = moduleObject.exports;
+const { reportSelectionKey, savedForSelection, responseMatchesSelection,
+  savedMethodForSelection, responseMatchesMethodSelection } = moduleObject.exports;
 
 test("historic report references bind to exact interaction, not latest result", () => {
   const reports = [
@@ -35,4 +36,24 @@ test("stale asynchronous report responses cannot cross run or selection", () => 
   assert.equal(responseMatchesSelection(a, a, "run-a", "interaction-b", artifact), false);
   assert.equal(responseMatchesSelection(a, a, "run-a", "interaction-a",
     { manifest: { interaction_handle: "interaction-b" } }), false);
+});
+
+test("method reports stay bound to their exact result across history and asynchronous responses", () => {
+  const reports = [
+    { handle: "legacy", interaction_handle: "result-a" },
+    { handle: "sasa-a", result_handle: "result-a", analysis_type: "interface_sasa" },
+    { handle: "sasa-b", result_handle: "result-b", analysis_type: "interface_sasa" },
+  ];
+  assert.equal(savedMethodForSelection(reports, "result-a").handle, "sasa-a");
+  assert.equal(savedMethodForSelection(reports, "result-b").handle, "sasa-b");
+  assert.equal(savedMethodForSelection(reports, "missing"), undefined);
+  const a = reportSelectionKey("run-a", "result-a");
+  const b = reportSelectionKey("run-a", "result-b");
+  const artifact = { manifest: { schema: "method_report_manifest@1", analysis_type: "interface_sasa", result_handle: "result-a" } };
+  assert.equal(responseMatchesMethodSelection(a, a, "run-a", "result-a", artifact), true);
+  assert.equal(responseMatchesMethodSelection(a, b, "run-a", "result-a", artifact), false);
+  assert.equal(responseMatchesMethodSelection(a, a, "run-b", "result-a", artifact), false);
+  assert.equal(responseMatchesMethodSelection(a, a, "run-a", "result-b", artifact), false);
+  assert.equal(responseMatchesMethodSelection(a, a, "run-a", "result-a",
+    { manifest: { ...artifact.manifest, schema: "report_manifest@1" } }), false);
 });

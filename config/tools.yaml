@@ -52,6 +52,17 @@ tools:
       engine: { type: str, enum: [geometric], default: geometric }
     description: 선택한 리간드 인스턴스와 단백질의 실제 중원자 거리만 측정한다
 
+  - name: compute_interface_sasa
+    level: L2
+    version: '1'
+    accepts: { structure: [prepared_structure] }
+    emits: interface_sasa
+    cost_class: moderate
+    typical_runtime_s: 8
+    params:
+      ligand: { type: dict, required: true }
+    description: 선택한 단백질과 단일 리간드의 FreeSASA Lee-Richards 100-slice 노출 및 매몰 면적을 Å²로 계산한다
+
   - name: measure
     level: L2
     accepts: { structure: [structure, prepared_structure, relaxed_structure] }

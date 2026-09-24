@@ -9,7 +9,7 @@ import yaml
 
 from .runtime.guards import Budget, BudgetLimits, LoopGuard
 from .runtime.orchestrator import Run
-from .tools import energetic, structural
+from .tools import energetic, sasa, structural
 from .tools.registry import ToolRegistry
 
 ROOT = Path(__file__).resolve().parents[2]          # repo root
@@ -23,6 +23,7 @@ def load_config(path: Path | None = None) -> dict[str, Any]:
 def build_registry(tools_yaml: Path | None = None) -> ToolRegistry:
     reg = ToolRegistry.from_yaml(tools_yaml or CONFIG / "tools.yaml")
     structural.register(reg)
+    sasa.register(reg)
     energetic.register(reg)
     return reg
 

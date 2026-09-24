@@ -11,13 +11,29 @@ export interface ResidueItem extends ResidueRef { atom_count: number; category: 
 export interface ResidueList { model_number: number; residues: ResidueItem[]; ligands: ResidueRef[] }
 export interface ObjectMeta { handle: string; kind: string; schema: string; fmt: string; size: number; produced_by: string | null; summary: Record<string, unknown>; null_result: boolean }
 export interface Page<T> { meta: ObjectMeta; rows: T[]; total: number; offset: number; limit: number }
-export interface Capabilities { mode: "local_only"; supported: Record<string, string>; unavailable: Record<string, string> }
-export interface SavedReportRef { handle: string; interaction_handle: string; markdown_handle: string; created_seq: number; snapshot_event_seq: number }
+export interface Capabilities { mode: "local_only"; supported: Record<string, string>; unavailable: Record<string, string>;
+  methods?: { interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
+    engine_version?: string; unit?: string; limitations?: string; explanation?: string } } }
+export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
+  markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
   interaction_handle: string; prepared_handle: string; source_handle: string;
   counts: { atom_pairs: number; contacting_residues: number; by_type: Record<string, number> };
   minimum_distance_A: number | null; scientific_null: boolean;
   snapshot: { event_seq: number }; capabilities: { protocols: Record<string, { available: boolean; reason_code: string; explanation: string }> };
+}; markdown: string }
+export interface SasaResidueRow { residue: ResidueRef; atom_indices: number[]; isolated_A2: number; bound_A2: number; buried_A2: number }
+export interface SasaResult { schema: "interface_sasa@1"; structure: string; ligand: ResidueRef;
+  selection: { excluded: { residue: ResidueRef; atom_count: number; reason: string }[]; hydrogen_policy: string };
+  method: { method_id: string; algorithm: string; n_slices: number; engine_version: string; probe_radius_A: number; threads: number };
+  atom_counts: { protein: number; ligand: number; excluded_residues: number };
+  summary: Record<"protein_sasa_isolated_A2" | "ligand_sasa_isolated_A2" | "complex_sasa_A2" |
+    "protein_sasa_bound_A2" | "ligand_sasa_bound_A2" | "protein_burial_A2" |
+    "ligand_burial_A2" | "total_sasa_loss_A2", number>;
+  residues: SasaResidueRow[] }
+export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "interface_sasa"; result_handle: string;
+  prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
 export type CommandResult = { ok: true; handle: Handle } | ({ ok: false } & ToolError) | { ok: false; approval: { gate: string; tool: string; reason: string } } | { ok: false; loop_stop: { reason: string } };
 
@@ -45,7 +61,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions", args: Record<string, unknown>) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa", args: Record<string, unknown>) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }) }),
   events: (id: string, after = 0, limit = 500) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`)),
   async allEvents(id: string): Promise<RunEvent[]> {
@@ -61,11 +77,16 @@ export const api = {
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   interactions: (id: string, handle: string, offset = 0, limit = 50) =>
     request<Page<InteractionRow>>(runPath(id, `/objects?${handleParam(handle)}&offset=${offset}&limit=${limit}`)),
+  sasa: (id: string, handle: string) => request<{ meta: ObjectMeta; result: SasaResult }>(runPath(id, `/interface_sasa?${handleParam(handle)}`)),
   reports: (id: string) => request<SavedReportRef[]>(runPath(id, "/reports")),
   report: (id: string, handle: string) => request<ReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
   createReport: (id: string, interactionHandle: string) => request<ReportArtifact>(runPath(id, "/reports"), {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ interaction_handle: interactionHandle }),
+  }),
+  methodReport: (id: string, handle: string) => request<MethodReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
+  createMethodReport: (id: string, resultHandle: string) => request<MethodReportArtifact>(runPath(id, "/method_reports"), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }),
   }),
   reportDownload: (id: string, handle: string, format: "markdown" | "json") =>
     `/api${runPath(id, `/reports/download?${handleParam(handle)}&format=${format}`)}`,

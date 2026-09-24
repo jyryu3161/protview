@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import uuid
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from typing import Any, Literal
 
@@ -18,6 +19,7 @@ from pydantic import BaseModel, Field
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE
 from ..jobs.queue import JobQueue
+from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
@@ -29,7 +31,7 @@ from ..workspace import build_registry, new_run
 RUNS_DIR = Path(os.environ.get("MW_RUNS_DIR", "runs"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
-SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compile_state"}
+SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa", "compile_state"}
 
 app = FastAPI(title="ProtView local API")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -62,6 +64,11 @@ class JobSubmit(BaseModel):
 class ReportRequest(BaseModel):
     interaction_handle: str
     prepared_handle: str | None = None
+    model_config = {"extra": "forbid"}
+
+
+class MethodReportRequest(BaseModel):
+    result_handle: str
     model_config = {"extra": "forbid"}
 
 
@@ -200,11 +207,16 @@ def _object(run: Run, handle: str) -> dict[str, Any]:
 @app.get("/capabilities")
 def capabilities() -> dict[str, Any]:
     matrix = protocol_capabilities()
-    return {"mode": "local_only", "energy_protocols": matrix, "supported": {
+    try:
+        from ..tools.sasa import engine_capability
+        sasa = engine_capability()
+    except (AttributeError, ImportError, OSError, PackageNotFoundError, RuntimeError, ToolFailure, ValueError) as exc:
+        sasa = {"available": False, "reason_code": "engine_missing_or_invalid", "explanation": str(exc)}
+    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa}, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
         "jobs": "event-backed local job records and POSIX lifecycle supervision",
-        "reports": "offline, selected-interaction evidence reports with Markdown and JSON downloads",
+        "reports": "offline selected-interaction and interface-SASA evidence reports with Markdown and JSON downloads",
         "inspect_complex": "fixed local workflow over validated run calls"},
         "unavailable": {
             "remote_structure_lookup": "no M1 fetch adapter; local upload only",
@@ -295,7 +307,7 @@ async def upload(rid: str, request: Request, filename: str = Query(...)) -> dict
 def command(rid: str, cmd: Command) -> Any:
     run = _run(rid)
     if cmd.tool not in SUPPORTED_TOOLS:
-        return _tool_error(ToolFailure(FailureClass.input_invalid, f"unsupported M1 tool '{cmd.tool}'"))
+        return _tool_error(ToolFailure(FailureClass.input_invalid, f"unsupported tool '{cmd.tool}'"))
     args = dict(cmd.args)
     source_bytes = None
     source_format = None
@@ -359,19 +371,48 @@ def create_report(rid: str, body: ReportRequest) -> dict[str, Any]:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
+@app.post("/runs/{rid}/method_reports", status_code=201)
+def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
+    try:
+        return build_method_report(_run(rid), body.result_handle)
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+
+
 @app.get("/runs/{rid}/reports")
 def list_reports(rid: str) -> list[dict[str, Any]]:
     run = _run(rid)
-    records = [e for e in run.events.read() if e["type"] == "report_created"]
-    return [{"handle": e["report_handle"], "interaction_handle": e["interaction_handle"],
-             "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
-             "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
+    records = [e for e in run.events.read() if e["type"] in {"report_created", "method_report_created"}]
+    try:
+        for event in records:
+            expected = (("report_manifest", "report_manifest@1") if event["type"] == "report_created" else
+                        ("method_report_manifest", "method_report_manifest@1"))
+            meta = run.store.meta(event["report_handle"])
+            if (meta["kind"], meta["schema"]) != expected:
+                raise EvidenceError("report_event_type_mismatch")
+            _saved_any_report(run, event["report_handle"])
+        return [{"handle": e["report_handle"],
+                 **({"interaction_handle": e["interaction_handle"]} if e["type"] == "report_created" else
+                    {"result_handle": e["result_handle"], "analysis_type": "interface_sasa"}),
+                 "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
+                 "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+
+
+def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
+    meta = run.store.meta(handle)
+    if (meta["kind"], meta["schema"]) == ("report_manifest", "report_manifest@1"):
+        return saved_report(run, handle)
+    if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
+        return saved_method_report(run, handle)
+    raise EvidenceError("wrong_report_kind")
 
 
 @app.get("/runs/{rid}/reports/selected")
 def report_detail(rid: str, handle: str) -> dict[str, Any]:
     try:
-        return saved_report(_run(rid), handle)
+        return _saved_any_report(_run(rid), handle)
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
@@ -379,7 +420,7 @@ def report_detail(rid: str, handle: str) -> dict[str, Any]:
 @app.get("/runs/{rid}/reports/download")
 def report_download(rid: str, handle: str, format: Literal["markdown", "json"] = "markdown") -> Response:
     try:
-        result = saved_report(_run(rid), handle)
+        result = _saved_any_report(_run(rid), handle)
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
     suffix = handle.rsplit("/", 1)[-1][:12]
@@ -456,6 +497,16 @@ def materialize(rid: str, handle: str, columns: str | None = None, offset: int =
 @app.get("/runs/{rid}/objects/meta")
 def object_meta(rid: str, handle: str) -> dict[str, Any]:
     return _object(_run(rid), handle)
+
+
+@app.get("/runs/{rid}/interface_sasa")
+def interface_sasa(rid: str, handle: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        data, _ = validated_sasa(run.store, handle)
+        return {"meta": _object(run, handle), "result": data}
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
 
 
 @app.get("/runs/{rid}/structures/residues")

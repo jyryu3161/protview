@@ -1,0 +1,220 @@
+{
+  "project": "ProtView",
+  "phase": "protview-methods",
+  "steps": [
+    {
+      "step": 0,
+      "name": "interface-sasa",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_sasa.py",
+          "backend/tests/test_reports.py",
+          "backend/tests/test_api.py",
+          "backend/tests/test_runtime.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw",
+          "backend/tests"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "test:events"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "typecheck"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "build"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-24T09:03:16+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_sasa.py",
+              "backend/tests/test_reports.py",
+              "backend/tests/test_api.py",
+              "backend/tests/test_runtime.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "..........................................................               [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n58 passed, 1 warning in 4.52s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw",
+              "backend/tests"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "test:events"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 test:events\n> node --test tests/*.test.cjs\n\n✔ SASA display uses decimal half-up and suppresses negative zero (0.396583ms)\n✔ reopened cache reads move the latest pipeline through physical lineage (1.313167ms)\n✔ cache reads require the physical call key and source success in sequence (0.190416ms)\n✔ conflicting cache observation identities cannot select another output (0.119625ms)\n✔ canonical JSON args accept reordered objects and preserve array order (0.167417ms)\n✔ cache reads need their original input and exact output reference (0.202792ms)\n✔ latest SASA result follows exact prepared input and verified cache lineage (0.188542ms)\n✔ read-only mode badge renders effective local, online and dry run mode (6.9115ms)\n✔ historic report references bind to exact interaction, not latest result (5.266625ms)\n✔ stale asynchronous report responses cannot cross run or selection (0.119542ms)\n✔ method reports stay bound to their exact result across history and asynchronous responses (0.11375ms)\nℹ tests 11\nℹ suites 0\nℹ pass 11\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 283.538292\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "typecheck"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 typecheck\n> tsc --noEmit\n\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "build"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 build\n> NEXT_TELEMETRY_DISABLED=1 next build\n\n   ▲ Next.js 15.5.26\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 3.3s\n   Linting and checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/5) ...\n   Generating static pages (1/5) \n   Generating static pages (2/5) \n   Generating static pages (3/5) \n ✓ Generating static pages (5/5)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                    11.1 kB         126 kB\n├ ○ /_not-found                            999 B         104 kB\n└ ○ /gallery                             4.45 kB         119 kB\n+ First Load JS shared by all             103 kB\n  ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB\n  ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB\n  └ other shared chunks (total)          2.14 kB\n\n\n○  (Static)  prerendered as static content\n\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-24T09:03:16+00:00",
+        "report": "phases/protview-methods/reviews/step0.md",
+        "report_sha256": "86fdd35d75b503914b4b1a3a79d074715c3b1557ca7319d5f81da33b4fc4b213",
+        "reviewed_files": {
+          "AGENTS.md": "0e733c3b0bfe8b4b78dbfa37a94f8138ed9126b965334bd5d80136cd9f9c7565",
+          "README.md": "7b2fb641801e25f334fc8eb7338a7c6890de33fae19988f99141744dd5fa2637",
+          "backend/mw/tools/sasa.py": "bd80c53cdcd5c39654994e0abb41d6aa43fb4d2893fa865ed10cbe3a42872981",
+          "backend/mw/method_reports.py": "ea2b709b56ce0bcafbf03cf070617fe4122e534575afdd0a86cb066ed19dbb13",
+          "backend/mw/api/app.py": "29100c7c5c89facab2a760bc538c73e607cdfddf1ae01d07e88542c24cbf238e",
+          "backend/mw/runtime/orchestrator.py": "294e6b283d9102aa70abdf623101166fa6743726338197165c1694d3eab71a48",
+          "backend/mw/workspace.py": "292b889cc783ab858a4653554cfedb6a9e5a7b431d0274ed44a42c0328636ae0",
+          "backend/pyproject.toml": "02bedea8679cc9f8652c06489ecac4eacab650f3da52b4a90c21da2b9b4a1e77",
+          "backend/tests/test_sasa.py": "51ea2ffc516c6baefbbce28796e231ec2545e6f93ff25f6e2c6169a40556c1d0",
+          "backend/tests/test_api.py": "3ff823ea3f5b22ba5830bf2d29d0b956563c3bf69e31388811cd8a455e17bfb0",
+          "config/tools.yaml": "f0521afcfb835e082577943e60ff8bfc71b55b9b266f485fb7b2f9727e420f8d",
+          "frontend/app/page.tsx": "a96c10dd7ec0a89a25a1a9bf03d6caac68b4a02ec9f3c30941cb413e2c222327",
+          "frontend/src/lib/api.ts": "715efa2f5da67d7edbe61cebbda2226c54017e0facf237216c38c70704baaf77",
+          "frontend/src/lib/event-model.ts": "b125cd2da55d872cebe84297b134039adaed42f45cc576df2a98b6d378c89e06",
+          "frontend/src/lib/report-selection.ts": "59547911ffd1b09e9ab07ba70e72d8a807a00b99a4604e7b29d686af7913a41e",
+          "frontend/src/lib/area-format.ts": "3c8279e92e8bf0beb570cd0f4563083b86e8e75929a26e74c0af6fff5e6b414e",
+          "frontend/tests/event-model.test.cjs": "0728e8b6bd4625e69f61d98cb64e8bd6aaba484d7d33cf10a7050d271dc314a4",
+          "frontend/tests/report-selection.test.cjs": "54af80bb349d77ce2f4de2492e47680360499172eb5e41de3e76862a51d80683",
+          "frontend/tests/area-format.test.cjs": "a1fc00e6ab44ca6db5271175a8bc8e8ac96c376e46c46482cafea1edfaca86e8",
+          "docs/ALTERNATIVE_METHODS_CONTRACT.md": "40df47ec5d64cf0988f8e8b1a6861955480cc64a3ef50421320dbc03b0747762",
+          "docs/ARCHITECTURE.md": "57bdca6e1d1974bbdc80310af365f5907878203d547c66251c8b6d0cb1da8947",
+          "docs/DECISIONS.md": "dececf0d4babc47171b5e1aa6716b10c7f9ac710c6ada2065a24f0948093a426",
+          "docs/IMPLEMENTATION_PLAN.md": "6036e45e1315b8891373c22c1384c4715e571a242d75909a8c597bb1d9f0dab2",
+          "docs/M6_SASA.md": "f93a4b08664a6d6c7a00e4c6abe8326fb03c6457d4f55fe7e01a57a931357beb",
+          "backend/mw/core/residue.py": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5",
+          "backend/mw/tools/structural.py": "cbfea5950e822f3b904ecfe40a3d5e4d9a9758e035a62150916c4682417037f1",
+          "backend/mw/reports.py": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f",
+          "frontend/src/components/MolstarViewer.tsx": "2dae0698939eb5b6fb7a7266e565ede7beea1bdd838da560eb772449bac499a0",
+          "frontend/package.json": "3c65992fb4e0e94d2cc9f71abf97d762eb340ae53e649630c6db96c4295893ee",
+          "docs/M6_SASA_REVIEW.md": "b0293b55791455181341950261e3e1d557d79b4bcf07d56f8dc3afef8fce050e"
+        },
+        "spec_sha256": "addd9473ab2a86ee0c205eb14492d904965f5544720a9d0ef5d008fb47ab099e",
+        "acceptance_checks_sha256": "d4ba442065b4df789b785e1e0c7837228a538c3b351d5a4d4353b7a5ac3d16ab"
+      },
+      "completed_at": "2026-09-24T09:03:16+00:00"
+    },
+    {
+      "step": 1,
+      "name": "openmm-minimization",
+      "status": "pending",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_openmm.py",
+          "backend/tests/test_jobs.py",
+          "backend/tests/test_runtime.py",
+          "backend/tests/test_reports.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw",
+          "backend/tests"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "scripts/test_execute.py",
+          "scripts/test_codex_hooks.py",
+          "-q"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "test:events"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "typecheck"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "build"
+        ]
+      ]
+    }
+  ]
+}

@@ -5,13 +5,14 @@ import {
   BudgetMeter, Button, HandleChip, InspectorSection, InteractionTable, MolstarViewer,
   Segmented, StepList, WorkspaceShell, type Step, type ViewerRepresentation,
 } from "@/components";
-import { api, displayedEgressMode, type Capabilities, type ObjectMeta, type ReportArtifact, type ResidueList, type RunSummary, type SavedReportRef, type UploadResult } from "@/lib/api";
+import { api, displayedEgressMode, type Capabilities, type MethodReportArtifact, type ObjectMeta, type ReportArtifact, type ResidueList, type RunSummary, type SasaResult, type SavedReportRef, type UploadResult } from "@/lib/api";
 import type { BudgetSnapshot, Handle, InteractionRow, ResidueRef, RunEvent } from "@/lib/contracts";
 import { latestHandles, resultEvents, resultId, type CacheEvent } from "@/lib/event-model";
-import { reportSelectionKey, responseMatchesSelection, savedForSelection } from "@/lib/report-selection";
+import { formatArea2 as area2 } from "@/lib/area-format";
+import { reportSelectionKey, responseMatchesMethodSelection, responseMatchesSelection, savedForSelection, savedMethodForSelection } from "@/lib/report-selection";
 import type { ViewerSource } from "@/components/MolstarViewer";
 
-type Handles = { loaded?: Handle; prepared?: Handle; interactions?: Handle };
+type Handles = { loaded?: Handle; prepared?: Handle; interactions?: Handle; sasa?: Handle };
 type UploadInfo = Pick<UploadResult, "upload_id" | "format" | "size"> & { model_numbers?: number[] };
 type RowsState =
   | { key: string; status: "ready"; rows: InteractionRow[]; total: number }
@@ -24,14 +25,17 @@ type ViewIntent = "latest_result" | "latest_pipeline" | "step";
 type PipelineResidues = { key: string; residues: ResidueList };
 type ReportState = { key: string; status: "pending" } | { key: string; status: "ready"; artifact: ReportArtifact } |
   { key: string; status: "error"; message: string };
+type SasaState = { key: string; status: "ready"; result: SasaResult } | { key: string; status: "error"; message: string };
+type MethodReportState = { key: string; status: "pending" } | { key: string; status: "ready"; artifact: MethodReportArtifact } |
+  { key: string; status: "error"; message: string };
 const contactTypes = ["contact", "polar_contact", "hydrophobic_contact"] as const;
 
 function identity(ref: ResidueRef) {
   return [ref.model_number ?? "", ref.chain_auth, ref.chain_label ?? "", ref.seq_auth, ref.seq_label ?? "", ref.icode ?? "", ref.resname].join("/");
 }
 function displayResidue(ref: ResidueRef) {
-  return `${ref.resname} ${ref.chain_auth}/${ref.seq_auth}${ref.icode || ""}` +
-    (ref.chain_label && ref.chain_label !== ref.chain_auth ? ` · label ${ref.chain_label}${ref.seq_label ?? ""}` : "");
+  return `${ref.resname} auth ${ref.chain_auth}/${ref.seq_auth}${ref.icode || ""}` +
+    ` · label ${ref.chain_label ?? "unknown"}/${ref.seq_label ?? "unknown"} · model ${ref.model_number ?? "unknown"}`;
 }
 function timeline(events: RunEvent[]): Step[] {
   const validCache = new Set(resultEvents(events).filter((event): event is CacheEvent => event.type === "cache_hit"));
@@ -91,6 +95,10 @@ export default function WorkspacePage() {
   const [savedReports, setSavedReports] = useState<SavedReportRef[]>([]);
   const [reportState, setReportState] = useState<ReportState | null>(null);
   const reportKeyRef = useRef<string | null>(null);
+  const [sasaState, setSasaState] = useState<SasaState | null>(null);
+  const [sasaRetry, setSasaRetry] = useState(0);
+  const [methodReportState, setMethodReportState] = useState<MethodReportState | null>(null);
+  const methodReportKeyRef = useRef<string | null>(null);
   const epoch = useRef(0);
   const runId = run?.run_id;
 
@@ -102,7 +110,7 @@ export default function WorkspacePage() {
     const latest = latestHandles(log);
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
-    setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null);
+    setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
     setPipelineResidues(null); setInspectedStructure(null); setViewerState(null);
     setUpload(pendingUpload?.type === "upload_received" ? { upload_id: pendingUpload.upload_id, format: pendingUpload.format as UploadInfo["format"], size: pendingUpload.size } : null);
     setModelIndex(0); setViewIntent("latest_result"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setHighlight(null); setFocusedResidue(null); setFocusError(null); setLigandIndex(""); setOffset(0);
@@ -130,7 +138,7 @@ export default function WorkspacePage() {
   const selectedStep = steps.find(step => step.n === selectedStepNumber);
   const selectedOutput = [...resultEvents(events)].reverse().find(e => resultId(e) === selectedStep?.callId);
   const latestResult = [...resultEvents(events)].reverse().find(e =>
-    (e.tool === "load_structure" || e.tool === "prepare_structure" || e.tool === "compute_interactions"));
+    (e.tool === "load_structure" || e.tool === "prepare_structure" || e.tool === "compute_interactions" || e.tool === "compute_interface_sasa"));
   const pipelineHandle = handles.prepared ?? handles.loaded;
   const selectedHandle = viewIntent === "step"
     ? selectedOutput?.output
@@ -140,10 +148,17 @@ export default function WorkspacePage() {
     : viewIntent === "latest_pipeline" ? handles.interactions ? "compute_interactions" : handles.prepared ? "prepare_structure" : handles.loaded ? "load_structure" : undefined
       : latestResult?.tool;
   const interactionHandle = selectedTool === "compute_interactions" ? selectedHandle : undefined;
+  const sasaHandle = selectedTool === "compute_interface_sasa" ? selectedHandle : undefined;
   const reportKey = reportSelectionKey(runId, interactionHandle?.handle);
   reportKeyRef.current = reportKey;
   const activeReport = reportState?.key === reportKey ? reportState : null;
   const savedReport = savedForSelection(savedReports, interactionHandle?.handle);
+  const methodReportKey = reportSelectionKey(runId, sasaHandle?.handle);
+  methodReportKeyRef.current = methodReportKey;
+  const activeMethodReport = methodReportState?.key === methodReportKey ? methodReportState : null;
+  const savedMethodReport = savedMethodForSelection(savedReports, sasaHandle?.handle);
+  const sasaKey = reportSelectionKey(runId, sasaHandle?.handle);
+  const activeSasa = sasaState?.key === sasaKey ? sasaState : null;
   const interactionKey = runId && interactionHandle ? JSON.stringify([runId, interactionHandle.handle, offset]) : null;
   const currentRows = rowsState?.key === interactionKey ? rowsState : null;
   const metaKey = runId && selectedHandle ? JSON.stringify([runId, selectedHandle.handle]) : null;
@@ -154,15 +169,19 @@ export default function WorkspacePage() {
   const inspecting = viewIntent === "step";
   const selectedStructure = selectedHandle && (selectedTool === "load_structure" || selectedTool === "prepare_structure");
   const selectedInteraction = selectedTool === "compute_interactions" && !!selectedHandle;
-  const expectedKind = selectedInteraction ? "prepared_structure" : selectedStructure
+  const selectedSasa = selectedTool === "compute_interface_sasa" && !!selectedHandle;
+  const selectedMeasurement = selectedInteraction || selectedSasa;
+  const expectedKind = selectedMeasurement ? "prepared_structure" : selectedStructure
     ? selectedTool === "load_structure" ? "structure" : "prepared_structure"
     : handles.prepared ? "prepared_structure" : "structure";
-  const associationError = selectedInteraction && objectMeta &&
-    (selectedHandle?.kind !== "interaction_set" || objectMeta.kind !== "interaction_set" || typeof objectMeta.summary.structure !== "string" || !objectMeta.summary.structure)
+  const associationError = selectedMeasurement && objectMeta &&
+    (selectedHandle?.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") || objectMeta.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") ||
+      objectMeta.schema !== (selectedSasa ? "interface_sasa@1" : "interaction_set@1") ||
+      typeof objectMeta.summary.structure !== "string" || !objectMeta.summary.structure)
       ? "측정 객체에 확인 가능한 입력 구조가 없습니다." :
     selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
       ? "선택한 단계의 구조 종류가 객체 메타데이터와 일치하지 않습니다." : null;
-  const targetHandle = selectedInteraction
+  const targetHandle = selectedMeasurement
     ? !associationError && objectMeta ? String(objectMeta.summary.structure) : null
     : selectedStructure ? !associationError && objectMeta ? objectMeta.handle : null
       : pipelineHandle?.handle ?? null;
@@ -175,7 +194,7 @@ export default function WorkspacePage() {
     viewerState.status === "ready" && viewerState.source === displaySource;
   const focusEnabled = viewerReady && !busy;
   const selectedFocus = viewerReady && focusedResidue?.key === viewerContextKey ? focusedResidue.residue : null;
-  const displayedError = associationError ?? (selectedMeta?.status === "error" && (selectedInteraction || selectedStructure)
+  const displayedError = associationError ?? (selectedMeta?.status === "error" && (selectedMeasurement || selectedStructure)
     ? `선택한 객체의 메타데이터를 읽지 못했습니다: ${selectedMeta.message}` : null) ??
     (targetKey && inspectedStructure?.key === targetKey && inspectedStructure.status === "error" ? inspectedStructure.message : null) ??
     (viewerContextKey && viewerState?.key === viewerContextKey && viewerState.status === "error" ? viewerState.message : null);
@@ -196,6 +215,60 @@ export default function WorkspacePage() {
     }).catch(e => { if (active) setReportState({ key: reportKey, status: "error", message: e instanceof Error ? e.message : String(e) }); });
     return () => { active = false; };
   }, [runId, reportKey, savedReport?.handle, interactionHandle?.handle]);
+
+  useEffect(() => {
+    if (!runId || !sasaHandle || !sasaKey) return;
+    let active = true;
+    setSasaState(null);
+    api.sasa(runId, sasaHandle.handle).then(response => {
+      if (!active) return;
+      if (response.meta.handle !== sasaHandle.handle || response.meta.kind !== "interface_sasa" ||
+          response.meta.schema !== "interface_sasa@1" || response.result.schema !== "interface_sasa@1" ||
+          response.result.structure !== response.meta.summary.structure ||
+          JSON.stringify(response.result.ligand) !== JSON.stringify(response.meta.summary.ligand)) {
+        setSasaState({ key: sasaKey, status: "error", message: "SASA 응답이 선택한 결과와 일치하지 않습니다." });
+        return;
+      }
+      setSasaState({ key: sasaKey, status: "ready", result: response.result });
+    }).catch(e => { if (active) setSasaState({ key: sasaKey, status: "error", message: e instanceof Error ? e.message : String(e) }); });
+    return () => { active = false; };
+  }, [runId, sasaHandle?.handle, sasaKey, sasaRetry]);
+
+  useEffect(() => {
+    if (!runId || !methodReportKey || !savedMethodReport || !sasaHandle) return;
+    let active = true;
+    setMethodReportState({ key: methodReportKey, status: "pending" });
+    api.methodReport(runId, savedMethodReport.handle).then(artifact => {
+      if (!active) return;
+      if (!responseMatchesMethodSelection(methodReportKey, methodReportKeyRef.current, runId, sasaHandle.handle, artifact))
+        setMethodReportState({ key: methodReportKey, status: "error", message: "저장된 방법 보고서가 선택한 결과와 일치하지 않습니다." });
+      else setMethodReportState({ key: methodReportKey, status: "ready", artifact });
+    }).catch(e => { if (active) setMethodReportState({ key: methodReportKey, status: "error", message: e instanceof Error ? e.message : String(e) }); });
+    return () => { active = false; };
+  }, [runId, methodReportKey, savedMethodReport?.handle, sasaHandle?.handle]);
+
+  async function createSelectedMethodReport() {
+    if (!runId || !sasaHandle || !methodReportKey || activeMethodReport?.status === "pending") return;
+    const key = methodReportKey;
+    const selected = sasaHandle.handle;
+    const ticket = epoch.current;
+    setMethodReportState({ key, status: "pending" });
+    try {
+      const artifact = savedMethodReport ? await api.methodReport(runId, savedMethodReport.handle)
+        : await api.createMethodReport(runId, selected);
+      if (ticket !== epoch.current || methodReportKeyRef.current !== key) return;
+      if (!responseMatchesMethodSelection(key, methodReportKeyRef.current, runId, selected, artifact))
+        throw new Error("방법 보고서가 선택한 결과와 일치하지 않습니다.");
+      setMethodReportState({ key, status: "ready", artifact });
+      if (!savedMethodReport) {
+        const refreshed = await api.reports(runId);
+        if (ticket === epoch.current && methodReportKeyRef.current === key) setSavedReports(refreshed);
+      }
+    } catch (e) {
+      if (ticket === epoch.current && methodReportKeyRef.current === key)
+        setMethodReportState({ key, status: "error", message: e instanceof Error ? e.message : String(e) });
+    }
+  }
 
   async function createSelectedReport() {
     if (!runId || !interactionHandle || !reportKey || activeReport?.status === "pending") return;
@@ -306,7 +379,7 @@ export default function WorkspacePage() {
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(""); }
   }
-  async function call(tool: "load_structure" | "prepare_structure" | "compute_interactions", args: Record<string, unknown>) {
+  async function call(tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa", args: Record<string, unknown>) {
     if (!runId || mutationDisabled) return;
     setBusy(`${tool} 실행 중…`); setError("");
     try {
@@ -320,6 +393,27 @@ export default function WorkspacePage() {
       if (tool === "load_structure") setUpload(null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(""); }
+  }
+  async function calculateExactSasa(structure: string, ligand: ResidueRef) {
+    if (!runId || busy || !viewerReady || displaySource?.handle !== structure ||
+        !displayResidues?.ligands.some(candidate => identity(candidate) === identity(ligand))) return;
+    const id = runId;
+    const ticket = epoch.current;
+    setBusy("compute_interface_sasa 실행 중…"); setError("");
+    try {
+      const result = await api.command(id, "compute_interface_sasa", { structure, ligand });
+      if (ticket !== epoch.current) return;
+      if (!result.ok) { setError("message" in result ? result.message : "SASA 계산을 시작할 수 없습니다."); return; }
+      await reopen(id);
+      setBusy("");
+    } catch (e) { if (ticket === epoch.current) setError(e instanceof Error ? e.message : String(e)); }
+    finally { if (ticket === epoch.current) setBusy(""); }
+  }
+  async function calculateInspectedSasa() {
+    if (!selectedInteraction || !objectMeta || objectMeta.kind !== "interaction_set" ||
+        objectMeta.schema !== "interaction_set@1" || typeof objectMeta.summary.structure !== "string" ||
+        !objectMeta.summary.ligand || typeof objectMeta.summary.ligand !== "object") return;
+    await calculateExactSasa(objectMeta.summary.structure, objectMeta.summary.ligand as ResidueRef);
   }
   function selectFromViewer(ref: ResidueRef) {
     if (!focusEnabled || !viewerContextKey) return;
@@ -389,7 +483,7 @@ export default function WorkspacePage() {
         if (found) { setFocusedResidue({ key: viewerContextKey, residue }); setFocusError(null); }
         else { setFocusedResidue(null); setFocusError({ key: viewerContextKey, message: "선택한 잔기를 표시 중인 구조에서 찾지 못했습니다." }); }
       }}
-      emptyMessage={displayedError ?? (targetHandle ? "선택한 구조를 불러오는 중…" : selectedInteraction || selectedStructure ? "선택한 객체의 입력 구조를 확인하는 중…" : undefined)}
+      emptyMessage={displayedError ?? (targetHandle ? "선택한 구조를 불러오는 중…" : selectedMeasurement || selectedStructure ? "선택한 객체의 입력 구조를 확인하는 중…" : undefined)}
       emptyIsError={!!displayedError} />}
     canvasOverlayTopLeft={<Segmented label="표현 방식" value={representation} onChange={setRepresentation} options={[
       { value: "cartoon", label: "cartoon" }, { value: "ball-and-stick", label: "ball-and-stick" }, { value: "surface", label: "surface" },
@@ -416,6 +510,8 @@ export default function WorkspacePage() {
         <label>cutoff <input className="mw-number" type="number" min="2.5" max="6" step="0.1" value={cutoff} disabled={mutationDisabled} onChange={e => setCutoff(Number(e.target.value))} /> Å</label>
         <Button variant="primary" size="sm" disabled={mutationDisabled || !latestResidues || ligandIndex === "" || !Number.isFinite(cutoff) || cutoff < 2.5 || cutoff > 6}
           onClick={() => call("compute_interactions", { structure: handles.prepared!.handle, ligand: latestResidues!.ligands[Number(ligandIndex)], cutoff_A: cutoff, types: contactTypes, engine: "geometric" })}>기하 접촉 계산</Button>
+        <Button size="sm" disabled={mutationDisabled || !latestResidues || ligandIndex === "" || capabilities?.methods?.interface_sasa?.available !== true}
+          onClick={() => call("compute_interface_sasa", { structure: handles.prepared!.handle, ligand: latestResidues!.ligands[Number(ligandIndex)] })}>선택한 리간드 SASA 계산</Button>
         {noLigands && <span className="mw-muted">리간드가 없어 접촉을 계산할 수 없습니다.</span>}
       </div>}
       {busy && <span role="status" className="mw-muted">{busy}</span>}
@@ -442,6 +538,67 @@ export default function WorkspacePage() {
           : <p className="mw-empty-note">측정은 성공했습니다. 선택한 조건에서 접촉이 없습니다 (scientific_null).</p>}
         <p className="mw-empty-note">거리 기반 접촉이며 수소결합, 친화도 또는 안정성의 검증 결과가 아닙니다.</p>
       </InspectorSection>}
+      {selectedInteraction && objectMeta?.kind === "interaction_set" && viewerReady &&
+        <InspectorSection><span className="mw-eyebrow">이 측정의 정확한 입력</span>
+          <p className="mw-capability">선택한 접촉의 전처리 구조와 리간드 인스턴스로 SASA를 계산합니다.</p>
+          <Button size="sm" disabled={!!busy || capabilities?.methods?.interface_sasa?.available !== true}
+            onClick={() => void calculateInspectedSasa()}>이 입력의 SASA 계산</Button></InspectorSection>}
+      {selectedStructure && expectedKind === "prepared_structure" && objectMeta?.kind === "prepared_structure" &&
+        <InspectorSection><span className="mw-eyebrow">표시 중인 전처리 구조의 SASA</span>
+          <p className="mw-capability">Models에서 정확한 리간드 인스턴스를 선택하고 뷰어 초점이 확인되면 계산할 수 있습니다.</p>
+          <Button size="sm" disabled={!!busy || !viewerReady || !selectedFocus ||
+            !displayResidues?.ligands.some(candidate => identity(candidate) === identity(selectedFocus)) ||
+            capabilities?.methods?.interface_sasa?.available !== true}
+            onClick={() => { if (displaySource && selectedFocus) void calculateExactSasa(displaySource.handle, selectedFocus); }}>선택한 리간드 SASA 계산</Button>
+        </InspectorSection>}
+      {sasaHandle && <InspectorSection flush>
+        <div className="mw-table-head"><strong>단백질–리간드 SASA · Å²</strong><span>Lee–Richards 100 slices</span></div>
+        {!activeSasa ? <p className="mw-empty-note" role="status">SASA 결과를 불러오는 중…</p>
+          : activeSasa.status === "error" ? <div className="mw-table-error" role="alert"><p>SASA 결과를 불러오지 못했습니다: {activeSasa.message}</p>
+              <Button size="sm" onClick={() => setSasaRetry(value => value + 1)}>다시 시도</Button></div>
+            : <>
+              <p className="mw-capability mw-mono">{activeSasa.result.method.method_id} · FreeSASA {activeSasa.result.method.engine_version} · probe {activeSasa.result.method.probe_radius_A} Å · {activeSasa.result.method.threads} thread</p>
+              <p className="mw-capability">리간드: {displayResidue(activeSasa.result.ligand)} · 단백질 중원자 {activeSasa.result.atom_counts.protein}개 · 리간드 중원자 {activeSasa.result.atom_counts.ligand}개 · 제외 잔기 {activeSasa.result.atom_counts.excluded_residues}개</p>
+              <dl className="mw-kv mw-inspector-kv">
+                <dt>단백질 매몰</dt><dd>{area2(activeSasa.result.summary.protein_burial_A2)} Å²</dd>
+                <dt>리간드 매몰</dt><dd>{area2(activeSasa.result.summary.ligand_burial_A2)} Å²</dd>
+                <dt>총 SASA 손실</dt><dd>{area2(activeSasa.result.summary.total_sasa_loss_A2)} Å²</dd>
+                <dt>분리 단백질 SASA</dt><dd>{area2(activeSasa.result.summary.protein_sasa_isolated_A2)} Å²</dd>
+                <dt>분리 리간드 SASA</dt><dd>{area2(activeSasa.result.summary.ligand_sasa_isolated_A2)} Å²</dd>
+                <dt>결합체 SASA</dt><dd>{area2(activeSasa.result.summary.complex_sasa_A2)} Å²</dd>
+              </dl>
+              {!focusEnabled && <p className="mw-empty-note" role={displayedError ? "alert" : "status"}>잔기 초점 사용 불가: {displayedError ?? "해당 구조가 뷰어에 표시될 때까지 기다리세요."}</p>}
+              {focusError?.key === viewerContextKey && <p className="mw-empty-note" role="alert">{focusError.message}</p>}
+              <div className="mw-table-scroll" role="region" aria-label="단백질 잔기 SASA 측정 행" tabIndex={0}>
+                <table className="mw-table"><thead><tr><th>단백질 잔기 (auth/label/model)</th><th>분리 Å²</th><th>결합 Å²</th><th>매몰 Å²</th></tr></thead>
+                  <tbody>{activeSasa.result.residues.map((row, index) => <tr key={`${identity(row.residue)}-${index}`}>
+                    <td><button type="button" disabled={!focusEnabled || displaySource?.handle !== activeSasa.result.structure}
+                      onClick={() => focusResidue(row.residue)}>{displayResidue(row.residue)}</button></td>
+                    <td>{area2(row.isolated_A2)}</td><td>{area2(row.bound_A2)}</td><td>{area2(row.buried_A2)}</td>
+                  </tr>)}</tbody></table>
+              </div>
+              <p className="mw-empty-note">0.00 Å² 매몰은 유효한 측정값입니다. 이 값은 용매 접근 기하이며 친화도나 에너지가 아닙니다.</p>
+            </>}
+      </InspectorSection>}
+      {sasaHandle && runId && <InspectorSection>
+        <span className="mw-eyebrow">선택한 SASA 결과의 로컬 방법 보고서</span>
+        <p className="mw-capability mw-mono">결과 {sasaHandle.handle}</p>
+        {!savedMethodReport && activeMethodReport?.status !== "ready" && <Button size="sm" onClick={() => void createSelectedMethodReport()}
+          disabled={activeMethodReport?.status === "pending" || activeSasa?.status !== "ready"}>방법 보고서 만들기</Button>}
+        {activeMethodReport?.status === "pending" && <p role="status" className="mw-muted">방법 보고서를 불러오는 중…</p>}
+        {activeMethodReport?.status === "error" && <div role="alert" className="mw-table-error"><p>방법 보고서를 불러오지 못했습니다: {activeMethodReport.message}</p>
+          <Button size="sm" onClick={() => void createSelectedMethodReport()}>다시 시도</Button></div>}
+        {activeMethodReport?.status === "ready" && activeSasa?.status === "ready" &&
+          (activeMethodReport.artifact.manifest.prepared_handle !== activeSasa.result.structure ?
+            <p role="alert" className="mw-table-error">보고서의 입력 구조가 선택한 SASA 결과와 다릅니다.</p> : <>
+              <p className="mw-capability">저장된 방법 보고서 · 증거 이벤트 #{activeMethodReport.artifact.manifest.snapshot.event_seq}</p>
+              <div className="mw-report-downloads">
+                <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, activeMethodReport.artifact.handle, "markdown")}>Markdown 다운로드</a>
+                <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, activeMethodReport.artifact.handle, "json")}>정확한 JSON 다운로드</a>
+              </div>
+              <pre className="mw-report-preview" aria-label="저장된 방법 보고서 미리보기">{activeMethodReport.artifact.markdown}</pre>
+            </>)}
+      </InspectorSection>}
       {interactionHandle && runId && <InspectorSection>
         <span className="mw-eyebrow">선택한 측정의 로컬 보고서</span>
         <p className="mw-capability mw-mono">결과 {interactionHandle.handle}</p>
@@ -461,6 +618,10 @@ export default function WorkspacePage() {
         </>}
       </InspectorSection>}
       {budget && <InspectorSection><span className="mw-eyebrow">실제 예산</span><BudgetMeter budget={budget} /></InspectorSection>}
+      {capabilities?.methods?.interface_sasa && <InspectorSection><span className="mw-eyebrow">지원하는 로컬 방법</span>
+        <p className="mw-capability"><b>단백질–리간드 SASA</b><br />{capabilities.methods.interface_sasa.available
+          ? `${capabilities.methods.interface_sasa.method_id} · ${capabilities.methods.interface_sasa.algorithm} ${capabilities.methods.interface_sasa.n_slices} slices · Å² · ${capabilities.methods.interface_sasa.limitations}`
+          : `사용 불가: ${capabilities.methods.interface_sasa.explanation ?? "엔진을 확인할 수 없습니다."}`}</p></InspectorSection>}
       {capabilities && <InspectorSection><span className="mw-eyebrow">현재 사용 불가</span>{Object.entries(capabilities.unavailable).map(([name, reason]) => <p className="mw-capability" key={name}><b>{name}</b><br />{reason}</p>)}</InspectorSection>}
     </>}
   />;

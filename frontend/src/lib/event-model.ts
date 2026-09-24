@@ -3,7 +3,7 @@ import type { Handle, RunEvent } from "./contracts";
 export type SuccessEvent = Extract<RunEvent, { type: "tool_succeeded" }>;
 export type CacheEvent = Extract<RunEvent, { type: "cache_hit" }>;
 export type ResultEvent = SuccessEvent | CacheEvent;
-export type PipelineHandles = { loaded?: Handle; prepared?: Handle; interactions?: Handle };
+export type PipelineHandles = { loaded?: Handle; prepared?: Handle; interactions?: Handle; sasa?: Handle };
 
 function canonicalJson(value: unknown): string | null {
   try {
@@ -73,5 +73,7 @@ export function latestHandles(events: RunEvent[]): PipelineHandles {
     e.output.kind === "prepared_structure" && inputOf(e) === loaded.output.handle);
   const interactions = prepared && [...results].reverse().find(e => e.tool === "compute_interactions" &&
     e.output.kind === "interaction_set" && inputOf(e) === prepared.output.handle);
-  return { loaded: loaded?.output, prepared: prepared?.output, interactions: interactions?.output };
+  const sasa = prepared && [...results].reverse().find(e => e.tool === "compute_interface_sasa" &&
+    e.output.kind === "interface_sasa" && inputOf(e) === prepared.output.handle);
+  return { loaded: loaded?.output, prepared: prepared?.output, interactions: interactions?.output, sasa: sasa?.output };
 }
