@@ -13,6 +13,9 @@ import { currentOpenmmAction, currentOpenmmBudgetRequest, formatEnergy2, openmmC
   type OpenmmActionIdentity, type OpenmmContext } from "@/lib/openmm-action";
 import { reportSelectionKey, responseMatchesMethodSelection, responseMatchesOpenmmSelection, responseMatchesSelection, savedForSelection, savedMethodForSelection, savedOpenmmForSelection } from "@/lib/report-selection";
 import type { ViewerSource } from "@/components/MolstarViewer";
+import type { ViewerBridge } from "@/components/MolstarViewer";
+import { ViewerAgentPanel } from "@/components/ViewerAgentPanel";
+import { advanceSceneGeneration } from "@/lib/viewer-scene";
 
 type Handles = { loaded?: Handle; prepared?: Handle; interactions?: Handle; sasa?: Handle };
 type UploadInfo = Pick<UploadResult, "upload_id" | "format" | "size"> & { model_numbers?: number[] };
@@ -82,6 +85,7 @@ export default function WorkspacePage() {
   const [ligandIndex, setLigandIndex] = useState("");
   const [cutoff, setCutoff] = useState(4.0);
   const [representation, setRepresentation] = useState<ViewerRepresentation>("cartoon");
+  const [viewerScopeRevision, setViewerScopeRevision] = useState(0);
   const [highlight, setHighlight] = useState<{ key: string; residue: ResidueRef } | null>(null);
   const [focusedResidue, setFocusedResidue] = useState<{ key: string; residue: ResidueRef } | null>(null);
   const [focusError, setFocusError] = useState<{ key: string; message: string } | null>(null);
@@ -92,7 +96,7 @@ export default function WorkspacePage() {
   const [selectedStepNumber, setSelectedStepNumber] = useState<number | null>(null);
   const [inspectionRevision, setInspectionRevision] = useState(0);
   const [metaState, setMetaState] = useState<MetaState | null>(null);
-  const [busy, setBusy] = useState("");
+  const [busy, setBusy] = useState("서버 연결 중…");
   const [error, setError] = useState("");
   const [savedReports, setSavedReports] = useState<SavedReportRef[]>([]);
   const [reportState, setReportState] = useState<ReportState | null>(null);
@@ -107,6 +111,7 @@ export default function WorkspacePage() {
   const [hydrogenAccepted, setHydrogenAccepted] = useState(false);
   const [openmmBusy, setOpenmmBusy] = useState(false);
   const [openmmError, setOpenmmError] = useState("");
+  const [openmmPlan, setOpenmmPlan] = useState<{ key: string; message: string } | null>(null);
   const [openmmResultError, setOpenmmResultError] = useState<{ key: string; message: string } | null>(null);
   const [openmmReportError, setOpenmmReportError] = useState<{ key: string; message: string } | null>(null);
   const [openmmResult, setOpenmmResult] = useState<{ key: string; value: OpenmmResult } | null>(null);
@@ -123,6 +128,10 @@ export default function WorkspacePage() {
   const budgetRequestRef = useRef(0);
   const methodReportKeyRef = useRef<string | null>(null);
   const epoch = useRef(0);
+  const viewerBridgeRef = useRef<ViewerBridge | null>(null);
+  const manualViewerInvalidator = useRef<(() => void) | null>(null);
+  const viewerClientId = useRef<string | null>(null);
+  if (!viewerClientId.current && typeof window !== "undefined") viewerClientId.current = crypto.randomUUID();
   const runId = run?.run_id;
   openmmRunRef.current = runId ?? null;
 
@@ -145,8 +154,14 @@ export default function WorkspacePage() {
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
-    setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmViewHandle(null);
-    setPipelineResidues(null); setInspectedStructure(null); setViewerState(null);
+    setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmPlan(null); setOpenmmViewHandle(null);
+    // A completed contact/SASA/report call can reopen the same immutable
+    // prepared handle. Keep its validated residue list in that case: the
+    // loading effect is keyed by run+handle and will not rerun for identical
+    // inputs. A changed handle still invalidates the list and triggers fetch.
+    const preparedKey = latest.prepared ? JSON.stringify([id, latest.prepared.handle]) : null;
+    setPipelineResidues(previous => previous?.key === preparedKey ? previous : null);
+    setInspectedStructure(null); setViewerState(null);
     setUpload(pendingUpload?.type === "upload_received" ? { upload_id: pendingUpload.upload_id, format: pendingUpload.format as UploadInfo["format"], size: pendingUpload.size } : null);
     setModelIndex(0); setViewIntent("latest_result"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setHighlight(null); setFocusedResidue(null); setFocusError(null); setLigandIndex(""); setOffset(0);
     window.history.replaceState(null, "", `/?run=${encodeURIComponent(id)}`);
@@ -222,6 +237,9 @@ export default function WorkspacePage() {
       : pipelineHandle?.handle ?? null);
   const targetKey = runId && targetHandle ? JSON.stringify([runId, targetHandle, inspectionRevision]) : null;
   const viewerContextKey = targetKey ? JSON.stringify([targetKey, viewIntent, selectedStep?.callId ?? null]) : null;
+  const sceneToken = useRef<{ key: string | null; generation: number }>({ key: null, generation: 0 });
+  sceneToken.current = advanceSceneGeneration(sceneToken.current,
+    JSON.stringify([viewerContextKey, viewerScopeRevision]));
   const displayData = inspectedStructure?.key === targetKey && inspectedStructure.status === "ready" ? inspectedStructure.data : null;
   const displaySource = displayData?.source ?? null;
   const displayResidues = displayData?.residues ?? null;
@@ -268,6 +286,7 @@ export default function WorkspacePage() {
     if (change.resetErrors) {
       setOpenmmResultError(null);
       setOpenmmReportError(null);
+      setOpenmmPlan(null);
     }
     openmmContextRef.current = { runId, input: openmmInput, jobId: openmmJobId };
   }, [runId, openmmInput, openmmJobId]);
@@ -490,7 +509,7 @@ export default function WorkspacePage() {
   async function checkOpenmmInput() {
     if (!runId || !openmmInput || !openmmPreflightKey) return;
     const request = actionIdentity();
-    setOpenmmError("");
+    setOpenmmError(""); setOpenmmPlan(null);
     try {
       const value = await api.openmmPreflight(runId, openmmInput);
       if (actionCurrent(request) && value.structure === openmmInput)
@@ -502,13 +521,23 @@ export default function WorkspacePage() {
     if (!runId || !openmmInput || !activeOpenmmPreflight || !proteinOnlyAccepted || !hydrogenAccepted) return;
     const id = runId, input = openmmInput;
     const request = actionIdentity();
-    setOpenmmError(""); setOpenmmBusy(true);
+    setOpenmmError(""); setOpenmmPlan(null); setOpenmmBusy(true);
     try {
-      const job = await api.submitOpenmm(id, input);
-      if (actionCurrent(request) && job.run_id === id && job.input_handles?.[0] === input) {
-        openmmJobRef.current = job.job_id;
-        setOpenmmJobs(old => [job, ...old.filter(item => item.job_id !== job.job_id)]);
-        setOpenmmJobId(job.job_id);
+      const result = await api.submitOpenmm(id, input);
+      if (actionCurrent(request)) {
+        if ("plan_only" in result) {
+          if (result.plan_only === true && result.protocol_id === "openmm_protein_minimize" &&
+              result.reason_code === "dry_run" && result.available === false &&
+              Array.isArray(result.output_handles) && result.output_handles.length === 0 &&
+              result.normalized_parameters?.structure === input) {
+            setOpenmmPlan({ key: reportSelectionKey(id, input)!,
+              message: "dry-run 계획만 반환되었습니다. 작업은 생성되지 않았고 계산·예산은 사용되지 않았습니다." });
+          } else setOpenmmError("예상하지 못한 dry-run 계획 응답입니다.");
+        } else if (result.run_id === id && result.input_handles?.[0] === input && typeof result.job_id === "string") {
+          openmmJobRef.current = result.job_id;
+          setOpenmmJobs(old => [result, ...old.filter(item => item.job_id !== result.job_id)]);
+          setOpenmmJobId(result.job_id);
+        } else setOpenmmError("제출 응답이 현재 구조와 일치하지 않습니다.");
       }
     } catch (e) { if (actionCurrent(request)) setOpenmmError(e instanceof Error ? e.message : String(e)); }
     finally { if (actionCurrent(request)) setOpenmmBusy(false); }
@@ -594,6 +623,10 @@ export default function WorkspacePage() {
   }
   async function doUpload(file: File | undefined) {
     if (!file || mutationDisabled) return;
+    if (file.size > 25 * 1024 * 1024) {
+      setError("업로드 파일이 25 MiB 제한을 초과했습니다. 더 작은 PDB 또는 mmCIF 파일을 선택하세요.");
+      return;
+    }
     setBusy("로컬 파일 업로드 중…"); setError("");
     try {
       let id = runId;
@@ -639,15 +672,32 @@ export default function WorkspacePage() {
         !objectMeta.summary.ligand || typeof objectMeta.summary.ligand !== "object") return;
     await calculateExactSasa(objectMeta.summary.structure, objectMeta.summary.ligand as ResidueRef);
   }
-  function selectFromViewer(ref: ResidueRef) {
-    if (!focusEnabled || !viewerContextKey) return;
-    setHighlight(previous => previous?.key === viewerContextKey && identity(previous.residue) === identity(ref)
-      ? previous : { key: viewerContextKey, residue: ref });
-    setFocusedResidue({ key: viewerContextKey, residue: ref });
+  function selectFromViewer(ref: ResidueRef | null) {
+    // Native canvas picks remain available in a displayed minimized scene and
+    // while a scientific mutation is busy; table/ligand focus buttons retain
+    // their separate focusEnabled guard.
+    if (!viewerReady || !viewerContextKey) return;
+    if (!ref) {
+      manualViewerInvalidator.current?.();
+      setHighlight(null); setFocusedResidue(null); setFocusError(null);
+      return;
+    }
+    const matches = displayResidues?.residues.filter(item => item.model_number === ref.model_number &&
+      item.chain_auth === ref.chain_auth && item.seq_auth === ref.seq_auth &&
+      (item.icode ?? "") === (ref.icode ?? "") && item.resname === ref.resname &&
+      (item.chain_label == null || item.chain_label === ref.chain_label) &&
+      (item.seq_label == null || item.seq_label === ref.seq_label)) ?? [];
+    if (matches.length !== 1) return;
+    manualViewerInvalidator.current?.();
+    const exact = matches[0];
+    setHighlight(previous => previous?.key === viewerContextKey && identity(previous.residue) === identity(exact)
+      ? previous : { key: viewerContextKey, residue: exact });
+    setFocusedResidue({ key: viewerContextKey, residue: exact });
     setFocusError(null);
   }
   function focusResidue(ref: ResidueRef) {
     if (!focusEnabled || !viewerContextKey) return;
+    manualViewerInvalidator.current?.();
     setFocusedResidue(null); setFocusError(null);
     setHighlight({ key: viewerContextKey, residue: ref });
   }
@@ -685,7 +735,7 @@ export default function WorkspacePage() {
           : <p className="mw-empty-note">파일을 업로드하면 실제 도구 호출이 여기에 기록됩니다.</p>}
       </>,
       models: <div className="mw-rail-group">
-        {displayData && <><span className="mw-eyebrow">{viewerReady ? "표시 중인 구조" : displayedError ? "표시 실패한 구조" : "불러오는 구조"} · {viewIntent === "step" ? "선택한 단계" : viewIntent === "latest_result" ? "최근 결과" : "최신 파이프라인"}</span><HandleChip handle={{ handle: displayData.source.handle, kind: displayData.kind }} />
+        {displayData && <><span className="mw-eyebrow">{viewerReady ? "표시 중인 구조" : displayedError ? "표시 실패한 구조" : "불러오는 구조"} · {openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계" : viewIntent === "latest_result" ? "최근 결과" : "최신 파이프라인"}</span><HandleChip handle={{ handle: displayData.source.handle, kind: displayData.kind }} />
           <span className="mw-muted">model {displayResidues?.model_number ?? "—"} · {displayResidues?.residues.length ?? "—"} residues</span></>}
         {displayedError && <span className="mw-workflow-error" role="alert">{displayedError}</span>}
         {displayedError && <Button size="sm" onClick={() => { setInspectionRevision(value => value + 1); setHighlight(null); setFocusedResidue(null); setFocusError(null); }}>구조 다시 시도</Button>}
@@ -698,6 +748,8 @@ export default function WorkspacePage() {
     }}
     canvas={<MolstarViewer key={viewerContextKey ?? "no-structure"} source={displaySource} representation={representation}
       highlight={viewerReady && highlight?.key === viewerContextKey ? highlight.residue : null}
+      onBridge={bridge => { viewerBridgeRef.current = bridge; }}
+      onManualInteraction={() => manualViewerInvalidator.current?.()}
       onSelect={selectFromViewer}
       onLoadState={(loadedSource, status, message) => {
         if (viewerContextKey && loadedSource === displaySource) setViewerState({ key: viewerContextKey, source: loadedSource, status, message });
@@ -709,12 +761,32 @@ export default function WorkspacePage() {
       }}
       emptyMessage={displayedError ?? (targetHandle ? "선택한 구조를 불러오는 중…" : selectedMeasurement || selectedStructure ? "선택한 객체의 입력 구조를 확인하는 중…" : undefined)}
       emptyIsError={!!displayedError} />}
-    canvasOverlayTopLeft={<Segmented label="표현 방식" value={representation} onChange={setRepresentation} options={[
+    canvasOverlayTopLeft={<Segmented label="표현 방식" value={representation} onChange={value => {
+      manualViewerInvalidator.current?.(); setRepresentation(value);
+    }} options={[
       { value: "cartoon", label: "cartoon" }, { value: "ball-and-stick", label: "ball-and-stick" }, { value: "surface", label: "surface" },
     ]} />}
-    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
+    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
       {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}</>}
-    strip={<div className="mw-workflow">
+    strip={<><ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
+      runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
+      sourceHandle={displaySource?.handle ?? null} viewerReady={viewerReady} bridgeRef={viewerBridgeRef}
+      representation={representation} selected={selectedFocus} residues={displayResidues} dryRun={run?.dry_run ?? false}
+      onRepresentation={setRepresentation}
+      onSelection={ref => { if (viewerContextKey) {
+        if (ref) { setFocusedResidue({ key: viewerContextKey, residue: ref }); setFocusError(null); }
+        else { setFocusedResidue(null); setHighlight(null); setFocusError(null); }
+      } }}
+      onMode={enabled => setRun(previous => previous ? { ...previous, egress: enabled ? "online" : "local_only" } : previous)}
+      onBudgetRefresh={() => { if (runId) {
+        const id = runId, ticket = epoch.current;
+        void api.budget(id).then(value => {
+          if (openmmRunRef.current === id && epoch.current === ticket) setBudget(value);
+        }).catch(() => undefined);
+      } }}
+      onScopeChange={() => setViewerScopeRevision(value => value + 1)}
+      registerInvalidator={value => { manualViewerInvalidator.current = value; }} />
+    <div className="mw-workflow">
       <div className="mw-workflow-row"><label className="mw-file">로컬 구조 파일 <input type="file" accept=".pdb,.cif,.mmcif" disabled={mutationDisabled} onChange={e => { const file = e.target.files?.[0]; doUpload(file); e.target.value = ""; }} /></label>
         {upload && <><span className="mw-mono mw-muted">{upload.format} · {upload.size.toLocaleString()} bytes</span>
           {upload.model_numbers ? <label>model <select className="mw-select" value={modelIndex} disabled={mutationDisabled} onChange={e => setModelIndex(Number(e.target.value))}>{upload.model_numbers.map((number, index) => <option key={index} value={index}>{index} · #{number}</option>)}</select></label>
@@ -740,7 +812,7 @@ export default function WorkspacePage() {
       </div>}
       {busy && <span role="status" className="mw-muted">{busy}</span>}
       {error && <span role="alert" className="mw-workflow-error">{error}</span>}
-    </div>}
+    </div></>}
     inspectorTitle={selectedStep ? `Inspector · #${String(selectedStep.n).padStart(2, "0")}` : "Inspector · 측정"}
     inspector={<>
       {selectedMeta?.status === "error" && <InspectorSection><p className="mw-table-error" role="alert">객체 메타데이터를 읽지 못했습니다: {selectedMeta.message}</p></InspectorSection>}
@@ -859,6 +931,7 @@ export default function WorkspacePage() {
           <label><input type="checkbox" checked={hydrogenAccepted} onChange={e => setHydrogenAccepted(e.target.checked)} /> 기존 수소 제거 후 pH 7.0에서 수소를 다시 만듭니다 (rebuild_pH7).</label>
           <Button size="sm" disabled={openmmBusy || !proteinOnlyAccepted || !hydrogenAccepted}
             onClick={() => void submitOpenmm()}>OpenMM 작업 제출</Button>
+          {openmmPlan?.key === openmmPreflightKey && <p role="status" className="mw-capability">{openmmPlan.message}</p>}
         </>}
         {openmmJobs.length > 0 && <label>작업 <select className="mw-select" value={openmmJobId ?? ""} onChange={e => { openmmJobRef.current = e.target.value; openmmOutputRef.current = undefined; setOpenmmJobId(e.target.value); setOpenmmViewHandle(null); }}>
           {openmmJobs.map(job => <option key={job.job_id} value={job.job_id}>{job.job_id.slice(0, 18)} · {job.status}</option>)}

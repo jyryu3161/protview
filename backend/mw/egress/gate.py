@@ -184,6 +184,11 @@ class EgressGate:
         self.transport = transport
         self.credential_resolver = credential_resolver
 
+    async def request_viewer(self, run: Run, state: Any, intent_id: str) -> Any:
+        """M8 viewer scope, using this same gate's owned HTTP transport."""
+        from .viewer import request_viewer
+        return await request_viewer(self, run, state, intent_id)
+
     @staticmethod
     def _audit(run: Run, stage: str, audit_id: str, **fields: Any) -> None:
         run.events.append("egress", stage=stage, audit_id=audit_id, **fields)

@@ -29,6 +29,9 @@ EventType = Literal[
     "job_worker_started", "job_retry_queued",
     "job_cleanup_verified",
     "workflow_started", "workflow_step_completed", "workflow_outcome", "report_created",
+    "viewer_consent_changed", "viewer_session_created", "viewer_scene_updated",
+    "viewer_intent_requested", "viewer_intent_outcome", "viewer_intent_cancelled",
+    "viewer_command_ack", "viewer_dispatch_started",
 ]
 DecisionSource = Literal["rule", "jev", "frontier", "human"]
 

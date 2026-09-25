@@ -1,0 +1,52 @@
+{
+  "status": "pass",
+  "reviewer": "GPT-6 Astra",
+  "reviewed_at_utc": "2026-09-25T00:16:17.121405+00:00",
+  "scope": "Independent deterministic regression probes, run after final backend source freeze. No real network/key/provider calls. Actual child crash uses owned temporary process only.",
+  "metadata_note": "Original scripts retain mutable_source:true from their initial provisional review; unchanged scripts were rerun now. This wrapper verifies before/after/current source hashes and does not rewrite original evidence.",
+  "results": [
+    {
+      "result": "/tmp/protview-qa/m8-astra-incremental-probe-results.json",
+      "result_sha256": "134e84eb40aa7d6b25230d6f540443abaccb5e4f86d760e3ef7a538e5c3099f1",
+      "source_hashes": {
+        "backend/mw/viewer_intents.py": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c",
+        "backend/mw/egress/viewer.py": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267",
+        "backend/mw/api/app.py": "64ca5df73a67c8b70a95e8d9be7e6628e47d6f586b953f07b24ac18454a3bafe",
+        "backend/mw/runtime/orchestrator.py": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c"
+      },
+      "source_before_equals_after": true
+    },
+    {
+      "result": "/tmp/protview-qa/m8-astra-concurrency-corrected-probe-results.json",
+      "result_sha256": "b52d89d4f3fb00c7ae0459d045b832b5677d3180a20f1fe4f6c126eb816f61b3",
+      "source_hashes": {
+        "backend/mw/viewer_intents.py": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c",
+        "backend/mw/egress/viewer.py": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267",
+        "backend/mw/api/app.py": "64ca5df73a67c8b70a95e8d9be7e6628e47d6f586b953f07b24ac18454a3bafe",
+        "backend/mw/runtime/orchestrator.py": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c"
+      },
+      "source_before_equals_after": true
+    },
+    {
+      "result": "/tmp/protview-qa/m8-astra-session-race-probe-results.json",
+      "result_sha256": "86b70de517e96977fc3b29f1305ca4aceb2ccf83d05fa79bcf1545b67193a70b",
+      "source_hashes": {
+        "backend/mw/viewer_intents.py": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c",
+        "backend/mw/egress/viewer.py": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267",
+        "backend/mw/api/app.py": "64ca5df73a67c8b70a95e8d9be7e6628e47d6f586b953f07b24ac18454a3bafe",
+        "backend/mw/runtime/orchestrator.py": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c"
+      },
+      "source_before_equals_after": true
+    }
+  ],
+  "checks": [
+    "outer cancellation awaits HTTP child cleanup before releasing run owner",
+    "disable/re-enable cannot revive old consent epoch or ACK",
+    "cancelled run dispatch count zero",
+    "malformed answer list and mutated outbound model rejected",
+    "child crash after dispatch audit reopens without exception",
+    "same UUID two-thread race produces one request event and one transport attempt",
+    "audit elapsed beyond wall budget prevents dispatch",
+    "session generation race preserves newest generation current"
+  ]
+}

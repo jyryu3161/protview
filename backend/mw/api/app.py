@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE
+from ..egress.gate import EgressGate
 from ..jobs.queue import JobQueue
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
@@ -28,6 +29,28 @@ from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
 from ..tools.openmm_method import preflight as openmm_preflight
 from ..tools.structural import structure_bytes, structure_residues, validate_upload
+from ..viewer_intents import (
+    ACTIVE_INTENTS,
+    ViewerError,
+    acknowledge,
+    cancel_intent,
+    compile_answers,
+    create_session,
+    effective_online,
+    finish_intent,
+    intent_live,
+    intent_public,
+    list_intents,
+    local_answers,
+    online_status,
+    projected_state,
+    projection_preview,
+    request_intent,
+    session_public,
+    set_online,
+    update_scene,
+)
+from ..viewer_intents import QUESTION_VERSION as VIEWER_QUESTION_VERSION
 from ..workflows import InspectionRequest, inspect_complex
 from ..workspace import build_registry, new_run
 
@@ -41,6 +64,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http
                    allow_methods=["*"], allow_headers=["*"])
 REGISTRY = build_registry()
 RUNS: dict[str, Run] = {}
+VIEWER_GATE = EgressGate()
 
 
 class NewRun(BaseModel):
@@ -73,6 +97,60 @@ class ReportRequest(BaseModel):
 class MethodReportRequest(BaseModel):
     result_handle: str
     model_config = {"extra": "forbid"}
+
+
+class ViewerSessionRequest(BaseModel):
+    client_instance_id: str
+    scene_generation: int
+    structure_handle: str
+    representation: Literal["cartoon", "ball_and_stick", "surface"] = "cartoon"
+    scope_chain_auth: str | None = None
+    scope_target: dict[str, Any] | None = None
+    selected_target: dict[str, Any] | None = None
+    model_config = {"extra": "forbid"}
+
+
+class ViewerSceneUpdate(BaseModel):
+    representation: Literal["cartoon", "ball_and_stick", "surface"]
+    selected_alias: str | None
+    action_revision: int
+    model_config = {"extra": "forbid"}
+
+
+class ViewerOnlineRequest(BaseModel):
+    enabled: bool
+    model_config = {"extra": "forbid"}
+
+
+class ViewerIntentRequest(BaseModel):
+    client_instance_id: str
+    viewer_session_id: str
+    scene_generation: int
+    request_id: str
+    prompt: str
+    model_config = {"extra": "forbid"}
+
+
+class ViewerAckRequest(BaseModel):
+    command_id: str
+    status: Literal["applied", "no_change", "failed"]
+    reason_code: str | None = None
+    client_instance_id: str
+    viewer_session_id: str
+    scene_generation: int
+    action_revision: int
+    model_config = {"extra": "forbid"}
+
+
+class ViewerCancelRequest(BaseModel):
+    client_instance_id: str
+    viewer_session_id: str
+    scene_generation: int
+    model_config = {"extra": "forbid"}
+
+
+def _viewer_error(error: ViewerError) -> HTTPException:
+    return HTTPException(error.status, detail={"error": error.code, "message": error.message})
 
 
 def _run_path(rid: str) -> Path:
@@ -219,6 +297,7 @@ def capabilities() -> dict[str, Any]:
     return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability()}, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
+        "viewer_intents": "typed local viewer commands; optional explicit online Jev interpretation is credential and budget dependent",
         "jobs": "event-backed local job records and POSIX lifecycle supervision",
         "reports": "offline selected-interaction and interface-SASA evidence reports with Markdown and JSON downloads",
         "inspect_complex": "fixed local workflow over validated run calls"},
@@ -228,7 +307,7 @@ def capabilities() -> dict[str, Any]:
             "prolif_plip": "adapters and mapping validation are not implemented",
             "pocket_detection": "no implemented adapter",
             **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items() if not item["available"]},
-            "model_decisions": "internal Jev adapter requires explicit online run configuration and credentials; no public decision route"}}
+            "general_model_decisions": "no autonomous scientific tool, job, report, or general decision route"}}
 
 
 @app.get("/tools")
@@ -269,6 +348,129 @@ def list_runs() -> list[dict[str, Any]]:
 @app.get("/runs/{rid}")
 def get_run(rid: str) -> dict[str, Any]:
     return _summary(_run(rid))
+
+
+@app.post("/runs/{rid}/viewer/sessions", status_code=201)
+def viewer_session_create(rid: str, body: ViewerSessionRequest) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        session = create_session(run, **body.model_dump())
+        return {**session, "projection": projection_preview(session)}
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+    except (EvidenceError, ToolFailure, ValueError, KeyError) as exc:
+        raise HTTPException(422, detail={"error": "scene_invalid", "message": "displayed structure is invalid"}) from exc
+
+
+@app.get("/runs/{rid}/viewer/sessions/{session_id}")
+def viewer_session_get(rid: str, session_id: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        session = session_public(run, session_id)
+        return {**session, "projection": projection_preview(session)}
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/sessions/{session_id}/state")
+def viewer_scene_state(rid: str, session_id: str, body: ViewerSceneUpdate) -> dict[str, Any]:
+    try:
+        return update_scene(_run(rid), session_id, **body.model_dump())
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/online")
+def viewer_online_get(rid: str) -> dict[str, Any]:
+    return online_status(_run(rid))
+
+
+@app.post("/runs/{rid}/viewer/online")
+def viewer_online_change(rid: str, body: ViewerOnlineRequest) -> dict[str, Any]:
+    try:
+        return set_online(_run(rid), body.enabled)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/intents", status_code=201)
+async def viewer_intent_create(rid: str, body: ViewerIntentRequest) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        intent_id, session, duplicate = request_intent(run, **body.model_dump())
+        if duplicate:
+            return intent_public(run, intent_id)
+        if body.prompt.strip().startswith("/"):
+            try:
+                answers = local_answers(body.prompt, session)
+                status, commands, reason = compile_answers(answers, session, intent_id=intent_id)
+                return finish_intent(run, intent_id, status=status, reason_code=reason,
+                                     commands=commands, question_version="local_commands@1")
+            except ViewerError as exc:
+                return finish_intent(run, intent_id, status="unsupported", reason_code=exc.code)
+        if not effective_online(run) or run.dry_run:
+            return finish_intent(run, intent_id, status="unsupported",
+                                 reason_code="dry_run" if run.dry_run else "online_not_enabled")
+        state = projected_state(session, body.prompt)
+        ACTIVE_INTENTS.add(intent_id)
+        try:
+            result = await VIEWER_GATE.request_viewer(run, state, intent_id)
+        finally:
+            ACTIVE_INTENTS.discard(intent_id)
+        metadata = {"projection_sha256": result.projection_sha256,
+                    "question_version": VIEWER_QUESTION_VERSION,
+                    "requested_model": result.requested_model,
+                    "served_model": result.served_model, "audit_id": result.audit_id,
+                    "usage": result.usage}
+        if result.status != "accepted" or result.answers is None:
+            return finish_intent(run, intent_id,
+                                 status="cancelled" if result.reason_code == "cancelled" else "rejected",
+                                 reason_code=result.reason_code,
+                                 **metadata)
+        latest_session = session_public(run, session["viewer_session_id"])
+        if (not intent_live(run, intent_id) or not latest_session["current"] or
+                latest_session["action_revision"] != session["action_revision"]):
+            return finish_intent(run, intent_id, status="cancelled", reason_code="scene_or_mode_changed",
+                                 **metadata)
+        try:
+            status, commands, reason = compile_answers(result.answers, session, intent_id=intent_id)
+        except ViewerError as exc:
+            return finish_intent(run, intent_id, status="rejected", reason_code=exc.code, **metadata)
+        return finish_intent(run, intent_id, status=status, reason_code=reason,
+                             commands=commands, **metadata)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+    except ToolFailure as exc:
+        return _tool_error(exc)
+
+
+@app.get("/runs/{rid}/viewer/intents")
+def viewer_intent_list(rid: str) -> list[dict[str, Any]]:
+    return list_intents(_run(rid))
+
+
+@app.get("/runs/{rid}/viewer/intents/{intent_id}")
+def viewer_intent_get(rid: str, intent_id: str) -> dict[str, Any]:
+    try:
+        return intent_public(_run(rid), intent_id)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/intents/{intent_id}/cancel")
+def viewer_intent_cancel(rid: str, intent_id: str, body: ViewerCancelRequest | None = None) -> dict[str, Any]:
+    try:
+        return cancel_intent(_run(rid), intent_id, **(body.model_dump() if body else {}))
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/intents/{intent_id}/ack")
+def viewer_intent_ack(rid: str, intent_id: str, body: ViewerAckRequest) -> dict[str, Any]:
+    try:
+        return acknowledge(_run(rid), intent_id, **body.model_dump())
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
 
 
 @app.post("/runs/{rid}/uploads", status_code=201)

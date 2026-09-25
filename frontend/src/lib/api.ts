@@ -1,6 +1,7 @@
 /** Loopback-only M1 API client. See docs/M1_API.md. */
 import type { BudgetSnapshot, EgressMode, Handle, InteractionRow, ResidueRef, RunEvent, ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
+import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 
 export interface RunSummary { run_id: string; goal: string; context: string[]; dry_run: boolean; egress: EgressMode; last_seq: number }
 export function displayedEgressMode(run: RunSummary | null): EgressMode {
@@ -38,6 +39,9 @@ export interface MethodReportArtifact { handle: string; markdown_handle: string;
 export interface OpenmmJob { job_id: string; run_id: string; protocol_id: string; status: string; blocked_reason: string | null;
   failure: { error: string; message: string } | null; input_handles: string[]; output_handles: string[];
   attempt_ordinal: number; cancel_requested: boolean; timeout_s: number }
+export interface OpenmmPlanOnly { plan_only: true; protocol_id: "openmm_protein_minimize";
+  reason_code: "dry_run"; available: false; output_handles: []; normalized_parameters: { structure: string; [key: string]: unknown } }
+export type OpenmmSubmission = OpenmmJob | OpenmmPlanOnly;
 export interface OpenmmResult { schema: "openmm_protein_minimization@1"; structure: string; minimized_structure: string;
   before_kJ_mol: number; after_kJ_mol: number; potential_change_kJ_mol: number; job_id: string;
   atom_count: number; heavy_atom_count: number; added_hydrogen_count: number;
@@ -67,6 +71,31 @@ function runPath(runId: string, tail = "") { return `/runs/${encodeURIComponent(
 function handleParam(handle: string) { return `handle=${encodeURIComponent(handle)}`; }
 
 export const api = {
+  viewerSession: (id: string, body: { client_instance_id: string; scene_generation: number;
+    structure_handle: string; representation: ViewerRepresentationValue;
+    scope_chain_auth?: string | null; scope_target?: ResidueRef | null; selected_target?: ResidueRef | null }) =>
+    request<ViewerSession>(runPath(id, "/viewer/sessions"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  viewerSessionState: (id: string, sessionId: string, body: { representation: ViewerRepresentationValue;
+    selected_alias: string | null; action_revision: number }) =>
+    request<ViewerSession>(runPath(id, `/viewer/sessions/${encodeURIComponent(sessionId)}/state`),
+      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  viewerOnline: (id: string) => request<ViewerOnlineStatus>(runPath(id, "/viewer/online")),
+  setViewerOnline: (id: string, enabled: boolean) => request<ViewerOnlineStatus>(runPath(id, "/viewer/online"),
+    { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled }) }),
+  viewerIntent: (id: string, body: { client_instance_id: string; viewer_session_id: string;
+    scene_generation: number; request_id: string; prompt: string }, signal?: AbortSignal) =>
+    request<ViewerIntent>(runPath(id, "/viewer/intents"),
+      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal }),
+  viewerIntentGet: (id: string, intentId: string) => request<ViewerIntent>(runPath(id, `/viewer/intents/${encodeURIComponent(intentId)}`)),
+  viewerIntents: (id: string) => request<ViewerIntent[]>(runPath(id, "/viewer/intents")),
+  viewerIntentCancel: (id: string, intentId: string, scope?: { client_instance_id: string;
+    viewer_session_id: string; scene_generation: number }) => request<ViewerIntent>(runPath(id, `/viewer/intents/${encodeURIComponent(intentId)}/cancel`),
+      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(scope ?? null) }),
+  viewerAck: (id: string, intentId: string, body: { command_id: string; status: "applied" | "no_change" | "failed";
+    reason_code?: string | null; client_instance_id: string; viewer_session_id: string;
+    scene_generation: number; action_revision: number }) =>
+    request<ViewerIntent>(runPath(id, `/viewer/intents/${encodeURIComponent(intentId)}/ack`),
+      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
   capabilities: () => request<Capabilities>("/capabilities"),
   runs: () => request<RunSummary[]>("/runs"),
   run: (id: string) => request<RunSummary>(runPath(id)),
@@ -92,7 +121,7 @@ export const api = {
     excluded: { residue: ResidueRef; atom_count: number; reason: string }[] }>(runPath(id, `/jobs/preflight?structure=${encodeURIComponent(structure)}`)),
   jobs: (id: string) => request<OpenmmJob[]>(runPath(id, "/jobs")),
   job: (id: string, jobId: string) => request<OpenmmJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`)),
-  submitOpenmm: (id: string, structure: string) => request<OpenmmJob>(runPath(id, "/jobs"), {
+  submitOpenmm: (id: string, structure: string) => request<OpenmmSubmission>(runPath(id, "/jobs"), {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ protocol_id: "openmm_protein_minimize", args: { structure, selection_policy: "protein_only", hydrogen_policy: "rebuild_pH7" }, timeout_s: 60 }),
   }),

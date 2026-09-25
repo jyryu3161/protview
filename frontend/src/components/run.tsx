@@ -18,7 +18,14 @@ export interface Step {
 }
 export function StepRow({ step, selected, onSelect }: { step: Step; selected?: boolean; onSelect?: (s: Step) => void }) {
   return (
-    <li className="mw-step" aria-selected={selected} onClick={() => onSelect?.(step)}>
+    <li className="mw-step" aria-selected={selected} role={onSelect ? "button" : undefined}
+      aria-pressed={onSelect ? !!selected : undefined} tabIndex={onSelect ? 0 : undefined}
+      onClick={() => onSelect?.(step)}
+      onKeyDown={event => {
+        if (!onSelect || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        onSelect(step);
+      }}>
       <span className="mw-step__n">#{String(step.n).padStart(2, "0")}</span>
       <span className={`mw-step__g mw-s-${step.state}`}>{STEP_GLYPH[step.state]}</span>
       <span className={`mw-step__tool${step.state === "pending" ? " mw-muted" : ""}`}>{step.tool}</span>

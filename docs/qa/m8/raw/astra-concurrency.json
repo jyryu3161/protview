@@ -1,0 +1,40 @@
+{
+  "mutable_source": true,
+  "before": {
+    "backend/mw/viewer_intents.py": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c",
+    "backend/mw/egress/viewer.py": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267",
+    "backend/mw/api/app.py": "64ca5df73a67c8b70a95e8d9be7e6628e47d6f586b953f07b24ac18454a3bafe",
+    "backend/mw/runtime/orchestrator.py": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c"
+  },
+  "crash_after_dispatch_audit": {
+    "exit": 86,
+    "reopen_mutation": {
+      "error": null
+    }
+  },
+  "request_uuid_race": {
+    "duplicate_flags": [
+      true,
+      false
+    ],
+    "requested_events": 1,
+    "transport_count": 1,
+    "outcomes": [
+      "accepted",
+      "rejected"
+    ]
+  },
+  "dispatch_audit_deadline": {
+    "transport_count": 0,
+    "timeout_values": [],
+    "status": "rejected",
+    "wall_charge": 2000.002667290857
+  },
+  "after": {
+    "backend/mw/viewer_intents.py": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c",
+    "backend/mw/egress/viewer.py": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267",
+    "backend/mw/api/app.py": "64ca5df73a67c8b70a95e8d9be7e6628e47d6f586b953f07b24ac18454a3bafe",
+    "backend/mw/runtime/orchestrator.py": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c"
+  },
+  "source_stable": true
+}
