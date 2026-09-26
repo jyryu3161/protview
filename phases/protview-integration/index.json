@@ -1,0 +1,158 @@
+{
+  "project": "ProtView",
+  "phase": "protview-integration",
+  "steps": [
+    {
+      "step": 0,
+      "name": "integration-closure",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          "node",
+          "--check",
+          "frontend/tests/offscreen/normal-flow.cjs"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "test:events"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "scripts/test_execute.py",
+          "scripts/test_codex_hooks.py",
+          "-q"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-26T22:48:52+00:00",
+        "checks": [
+          {
+            "command": [
+              "node",
+              "--check",
+              "frontend/tests/offscreen/normal-flow.cjs"
+            ],
+            "exit_code": 0,
+            "output_tail": ""
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "test:events"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 test:events\n> node --test tests/*.test.cjs\n\n✔ SASA display uses decimal half-up and suppresses negative zero (0.390208ms)\n✔ reopened cache reads move the latest pipeline through physical lineage (1.301541ms)\n✔ cache reads require the physical call key and source success in sequence (0.179333ms)\n✔ conflicting cache observation identities cannot select another output (0.117917ms)\n✔ canonical JSON args accept reordered objects and preserve array order (0.160667ms)\n✔ cache reads need their original input and exact output reference (0.177125ms)\n✔ latest SASA result follows exact prepared input and verified cache lineage (0.185458ms)\n✔ read-only mode badge renders effective local, online and dry run mode (5.080416ms)\n✔ late OpenMM action cannot commit after run, input, job, result or newer action changes (0.413709ms)\n✔ energy display uses checked decimal half-up for positive and negative ties (0.144625ms)\n✔ policy and visible errors reset only when their OpenMM context changes (0.367375ms)\n✔ result and report failures stay independent in either completion order (0.084333ms)\n✔ a delayed budget response cannot replace another run or newer job snapshot (0.074ms)\n✔ OpenMM page actions use the live identity guard on success, error and cleanup (0.953209ms)\n✔ OpenMM preflight uses canonical structure query while object reads retain handle (47.296458ms)\n✔ historic report references bind to exact interaction, not latest result (0.401583ms)\n✔ stale asynchronous report responses cannot cross run or selection (0.094458ms)\n✔ method reports stay bound to their exact result across history and asynchronous responses (0.105584ms)\n✔ OpenMM reports remain bound to method, run, and historical result (0.089167ms)\n✔ manual scene change immediately updates the visible outbound projection (0.497125ms)\n✔ late plan is rejected after manual revision, source or scene changes (0.086625ms)\n✔ catalog scope and displayed source each advance the same client generation (0.070208ms)\n✔ orbit-only camera reset counts as an observed change (0.086291ms)\n✔ Enter and button share offline, dry-run and prompt validation (0.116292ms)\nℹ tests 24\nℹ suites 0\nℹ pass 24\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 220.745041\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "scripts/test_execute.py",
+              "scripts/test_codex_hooks.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "...................................................                      [100%]\n51 passed in 3.96s\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-26T22:48:52+00:00",
+        "report": "phases/protview-integration/reviews/step0.md",
+        "report_sha256": "ba198e7a59ab1d88ed0d3c8486e080be926faf52618f6f6e6ee43e5bdf4df513",
+        "reviewed_files": {
+          "frontend/tests/offscreen/normal-flow.cjs": "30f71ba9bd19e9f41f1ebfae025fc97c823f8596449346bcb307df151309e7b7",
+          "docs/INTEGRATION_CLOSURE.md": "05f94f6d1627a1d6af5b007095d41326521726188ec5d80cb202aaa6099c753c",
+          "docs/POST_M8_PLAN.md": "e7a6f8e7d8c6001782b3bd5850765da679d78f1cd8be507c7a158a0ae1917d5d",
+          "docs/qa/closure-20260927/archive.json": "8f97d010cc04f30b1b8377e55071a4e6bb2394fc747b5dfe4e11007d42a2aa85",
+          "docs/qa/closure-20260927/evidence-audit.json": "2d39d6e73ab21e0c261df46d10747926f4d1b543bb57a24444f2abf0c89b676c",
+          "docs/qa/closure-20260927/run-ledger.json": "86d2b7132b288a1883e98a9cbc764723b6382d2a27be5774a985cd97fc190fd5",
+          "docs/qa/closure-20260927/raw/commands/dry-run-command.log": "a7a64652e1a93883e96c14f5d092e92bb5775c8f83bfb850e8991a57d342d5cd",
+          "docs/qa/closure-20260927/raw/commands/frontend-tests.log": "f7444412d34a573986d914077aa397d23b37abfba2e8945def0d631862e12542",
+          "docs/qa/closure-20260927/raw/commands/harness-tests.log": "6c86aa428dbc4166f9f852faa0f4e70f028e69b5fe2fcab4bb95583ce2f3a4fd",
+          "docs/qa/closure-20260927/raw/commands/keyboard-command.log": "d0f3e5d2e6e759a0fb2033cb9518b685528d122b72054c1100b7bf88d672c1b2",
+          "docs/qa/closure-20260927/raw/commands/m8-current-verify.log": "7dc8c8cce0971406cecd9122bf212a6bb40dc41c841c0c5b4fdcb9d503834af6",
+          "docs/qa/closure-20260927/raw/commands/node-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "docs/qa/closure-20260927/raw/commands/normal-command.log": "72bd81a0b919ed1eab530bf5f9ad8bc1fe830681e73de34efa0515e5f59d2733",
+          "docs/qa/closure-20260927/raw/commands/normal-corrected-command.log": "0ea7797ded2bf96dff4234f77d963f364d8963964790f88f8d592c48dc3c6e98",
+          "docs/qa/closure-20260927/raw/commands/normal-final-command.log": "6a7b19812b21110f4db9fed85f5b7199241fe3665fa268d56e02ee4bcc257c4f",
+          "docs/qa/closure-20260927/raw/commands/openmm-command.log": "43651ce76bf7ad8686429032a1f0edb8de4fd6421ea4537a7b70ab543aa2e381",
+          "docs/qa/closure-20260927/raw/default-service/default-runs-read.json": "b5815b22f82e5e2a677a39a6123db72cb9e109d82c60d59908f3ccfcba004ae9",
+          "docs/qa/closure-20260927/raw/dry-run/B03-reopen.page.png": "c42679568e56eddc154bb62b949c8e7d585212f9ceaecdfa2872b5a895f39f2e",
+          "docs/qa/closure-20260927/raw/dry-run/B03-submit.page.png": "70ccd20f3c3cc9c38920efe926c2825f832622b0be5dcd716b2eec2c773b5488",
+          "docs/qa/closure-20260927/raw/dry-run/B03-submit.paint.png": "70ccd20f3c3cc9c38920efe926c2825f832622b0be5dcd716b2eec2c773b5488",
+          "docs/qa/closure-20260927/raw/dry-run/baseline.json": "307c03fd75b16fb17c98e7e2cfcf48434cad3b202053d638c596ecad801d6d18",
+          "docs/qa/closure-20260927/raw/dry-run/dry-run.jsonl": "90a11118c5fc7aeeae4e57a80b9af421b2161ebba7519764bb969c4d776f3faa",
+          "docs/qa/closure-20260927/raw/keyboard/baseline.json": "803aa2697cbdcb99601f8def9d01f7a3e6fbeb8ba76f9c4632fe281381604f71",
+          "docs/qa/closure-20260927/raw/keyboard/history-keyboard.json": "de61a2821c60d898b29a0bd033078386545585385bd91e786b727e90b6737b9e",
+          "docs/qa/closure-20260927/raw/keyboard/history-keyboard.page.png": "9a2c97e9f30cfdac45f2e9cb6e886a42d0e489fc99dc1db09a8434070d4a7385",
+          "docs/qa/closure-20260927/raw/keyboard/history-keyboard.paint.png": "9a2c97e9f30cfdac45f2e9cb6e886a42d0e489fc99dc1db09a8434070d4a7385",
+          "docs/qa/closure-20260927/raw/normal/C03.page.png": "6a9282d40732cb7dede60ca0fc1f2623d8f926a05a11464ccbdcaec487dd8e56",
+          "docs/qa/closure-20260927/raw/normal/C03.paint.png": "6a9282d40732cb7dede60ca0fc1f2623d8f926a05a11464ccbdcaec487dd8e56",
+          "docs/qa/closure-20260927/raw/normal/R01.page.png": "db19856669d45055f7f2f681e1e22d83a101406c2f2961114f7dd675a9fabf7f",
+          "docs/qa/closure-20260927/raw/normal/R01.paint.png": "db19856669d45055f7f2f681e1e22d83a101406c2f2961114f7dd675a9fabf7f",
+          "docs/qa/closure-20260927/raw/normal/R03-json.page.png": "352664c77bc508a9378b90678ed073445020576949771995c98710470f1d4319",
+          "docs/qa/closure-20260927/raw/normal/R03-md.page.png": "2cf18256e357b19331c49b18b30b6618893ab3a93556f1385f8653bf9eb1ecd1",
+          "docs/qa/closure-20260927/raw/normal/R03.page.png": "686cba2fe8f13280ec047e5f7865a189b90e76586877920636c9dfb6e629facd",
+          "docs/qa/closure-20260927/raw/normal/R03.paint.png": "686cba2fe8f13280ec047e5f7865a189b90e76586877920636c9dfb6e629facd",
+          "docs/qa/closure-20260927/raw/normal/V01-surface.page.png": "a4ebf1268fadf7d3d30d12b419f808ffaf7eb7bb80a7a5b9a13ca4bc6314c0e9",
+          "docs/qa/closure-20260927/raw/normal/V01-surface.paint.png": "a4ebf1268fadf7d3d30d12b419f808ffaf7eb7bb80a7a5b9a13ca4bc6314c0e9",
+          "docs/qa/closure-20260927/raw/normal/baseline.json": "0d6be022c4f5e74afa02733568593108d47b18c020a76f3817f0d61818e35084",
+          "docs/qa/closure-20260927/raw/normal/downloads/1790462528662-20057-1-protview-report-85338ac69d2d.md": "5f504a96ac193da6b07ed00487bac7e58ef4a315cfa8fc24c17ce74ffc4948d1",
+          "docs/qa/closure-20260927/raw/normal/downloads/1790462528960-20057-2-protview-report-85338ac69d2d.json": "4a99f21be3ffd3eb12f10f48ae5e4e31924d5206589a500e91cdf790eeb4f783",
+          "docs/qa/closure-20260927/raw/normal/downloads/1790462531527-20057-3-protview-report-4f7fa1c8f946.md": "3388ffed55ed995c1eae5e19662334612c815de2de49bf351074ea8095e7e9fd",
+          "docs/qa/closure-20260927/raw/normal/downloads/1790462532020-20057-4-protview-report-4f7fa1c8f946.json": "21ca9f4840634fa6c6de430ea1c4ca21b9fe38e1e26922febfba713188c3c52e",
+          "docs/qa/closure-20260927/raw/normal/normal-flow.jsonl": "697cf6b33438063b9ed4701df5f74860fc63feccd518cce6c51973f607bd9279",
+          "docs/qa/closure-20260927/raw/normal-corrected/R01-failure.page.png": "97e92695af2eaca01f6d8dac5c19b4ebb214c0a3dd72d5f35d91109e70f1cd79",
+          "docs/qa/closure-20260927/raw/normal-corrected/R01-failure.paint.png": "97e92695af2eaca01f6d8dac5c19b4ebb214c0a3dd72d5f35d91109e70f1cd79",
+          "docs/qa/closure-20260927/raw/normal-corrected/baseline.json": "35829a311768cc39a1300d534ed4597aed61f33f0368b3698fa492599611e140",
+          "docs/qa/closure-20260927/raw/normal-corrected/normal-flow.jsonl": "85a9d3a593b94c99575ba8ab9af8b5f44a72d9b7cfe66154b68eb5bb11c9090a",
+          "docs/qa/closure-20260927/raw/normal-final/C03.page.png": "782feb653c112d6a199fd3f4bdd99d55b145b60aa91fb78206d4aa579c815c66",
+          "docs/qa/closure-20260927/raw/normal-final/R01.page.png": "4850b89d63d7a95a3a25257ea5857b23ecf04451b34d0b4e0c0ae591930019ee",
+          "docs/qa/closure-20260927/raw/normal-final/R01.paint.png": "4850b89d63d7a95a3a25257ea5857b23ecf04451b34d0b4e0c0ae591930019ee",
+          "docs/qa/closure-20260927/raw/normal-final/R02-json.page.png": "de2b3f350e989bbcc69ab74c2875e055df448f6ad5e0a4b474eee9792b4f8347",
+          "docs/qa/closure-20260927/raw/normal-final/R02-md.page.png": "789410353a26c23cac446b7147745c5cb4621c86c130584b90f2f1d3118ea4f0",
+          "docs/qa/closure-20260927/raw/normal-final/R03-json.page.png": "13b29efb85a005b76fd5e1ef3c9e0e7fe0baf6df9813ecf9fd64b8069df6e7ef",
+          "docs/qa/closure-20260927/raw/normal-final/R03-md.page.png": "33faf7bf49152b3c8294bd54f7d0c05f6c756db216784b6b487b0f777bd5992c",
+          "docs/qa/closure-20260927/raw/normal-final/R03.page.png": "ecc0eab013deea0766016f8b09dd1d902f77d47e56f2a51de0c8cb7e1794fef6",
+          "docs/qa/closure-20260927/raw/normal-final/R03.paint.png": "ecc0eab013deea0766016f8b09dd1d902f77d47e56f2a51de0c8cb7e1794fef6",
+          "docs/qa/closure-20260927/raw/normal-final/V01-surface.paint.png": "6dd085454828d13d47d6262d94448db5c3c6508bc74b2942cae7638ca4fa2a94",
+          "docs/qa/closure-20260927/raw/normal-final/baseline.json": "d23f9fd6a705124c3c8a4b57454aa2a1499a0c123f0b9780df636b1f417d8752",
+          "docs/qa/closure-20260927/raw/normal-final/downloads/1790462716523-21921-1-protview-report-ddb317614af2.md": "37bf30e74e24ab7a6aae6f1ee4b798f53675af7aede064eba5a0279b8f8c1aed",
+          "docs/qa/closure-20260927/raw/normal-final/downloads/1790462716825-21921-2-protview-report-ddb317614af2.json": "68dd517f7459f832a79188ac5b0cd5a00e90ea081961b1aa484a5da740c9353d",
+          "docs/qa/closure-20260927/raw/normal-final/downloads/1790462719722-21921-3-protview-report-743efbe3851e.md": "c866542ab0f1f4ef41a9afd88b04875b47f45db778051ceba30e388af322d56d",
+          "docs/qa/closure-20260927/raw/normal-final/downloads/1790462720219-21921-4-protview-report-743efbe3851e.json": "f24c4866be9f8da5341d0a3d57672bc04c65f92e87fcbef13bd7834bed133df0",
+          "docs/qa/closure-20260927/raw/normal-final/normal-flow.jsonl": "6204045fde2e0686709638c533582ba987af50c81096b29c72b6cb5b1a52bf2d",
+          "docs/qa/closure-20260927/raw/openmm/O06.page.png": "ef62cb515b0364954c7ec0ad94736001ee6fe3dd4235b475d12570b891712e5e",
+          "docs/qa/closure-20260927/raw/openmm/O06.paint.png": "ef62cb515b0364954c7ec0ad94736001ee6fe3dd4235b475d12570b891712e5e",
+          "docs/qa/closure-20260927/raw/openmm/O07-minimized.page.png": "e957ddbb963cc67d5b155aa7afbd9e1c4d4bd2030434229c8b67ae1d9c54fc3d",
+          "docs/qa/closure-20260927/raw/openmm/O07-minimized.paint.png": "90da651a1244958c6971c6a639fecbe7009019728c7fd1853e5b5d4ac327eb62",
+          "docs/qa/closure-20260927/raw/openmm/O07-original.page.png": "cc2322e2f67ab7d45c11885a166f8c2271b43020009210ed5605e00937c5fb68",
+          "docs/qa/closure-20260927/raw/openmm/O08-create.page.png": "16759b992b504ca5ea03e0134b7fa43d0aec75463a74c087c11de9ddf6c94495",
+          "docs/qa/closure-20260927/raw/openmm/O08-json.page.png": "c8cc067a93a64b3cdcba645bf16da390bc13d03f4af349f3e356af0b2743b7ac",
+          "docs/qa/closure-20260927/raw/openmm/O08-md.page.png": "352c5f0324cf7f38ec53a572d26bc6d648caef3db6f57adb8926cddc0828b233",
+          "docs/qa/closure-20260927/raw/openmm/baseline.json": "791f380790e8d8ee3a0ce48327a5bbb5533a3fcada38ff4dc65cfd759e1a511a",
+          "docs/qa/closure-20260927/raw/openmm/downloads/1790462557355-20219-1-protview-report-140d54e23646.md": "16ce54b57fe2b31e9b0f9bc802303d4e89c1dc8c223763f3dd7a541fb08600ee",
+          "docs/qa/closure-20260927/raw/openmm/downloads/1790462558165-20219-2-protview-report-140d54e23646.json": "279d5807bc5554526ed1217672130a008a55597e61b9001ac36d105e8a989ff3",
+          "docs/qa/closure-20260927/raw/openmm/openmm-full.jsonl": "445a4d7bf580af1c0efdf61d941ec35c3573f28e72300b2fee92d6ebfe7b2b0c"
+        },
+        "spec_sha256": "fa57edf0ab6bbe7aa4666cdf71a18828384167033d9a7fe85fb955009d7f8a9f",
+        "acceptance_checks_sha256": "3d4dbec361586a54617e8a174d70ecd5a5e4bea9904e31f991397fb4f1ef0026"
+      },
+      "completed_at": "2026-09-26T22:48:52+00:00"
+    }
+  ],
+  "completed_at": "2026-09-26T22:49:11+00:00"
+}

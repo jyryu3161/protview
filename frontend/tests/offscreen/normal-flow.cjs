@@ -138,6 +138,51 @@ async function validateReportDownload(page, section, runId, file, suffix) {
     selectedUrl: selectedUrl.toString(), downloadUrl: downloadUrl.toString(), savedArtifactMatched: true };
 }
 
+async function createAndWaitForSavedReport(page, section, runId, createPath, buttonName, previewName) {
+  const base = `/api/runs/${encodeURIComponent(runId)}`;
+  const created = page.waitForResponse(response => response.request().method() === "POST" &&
+    new URL(response.url()).pathname === `${base}/${createPath}`, { timeout: 30000 });
+  // Creating a report refreshes the saved-report list, then a separate effect
+  // re-reads the saved artifact. Capture only after that final read is shown.
+  const savedRead = page.waitForResponse(response => response.request().method() === "GET" &&
+    new URL(response.url()).pathname === `${base}/reports/selected`, { timeout: 30000 });
+  await section.getByRole("button", { name: buttonName }).click();
+  const createResponse = await created;
+  assert.equal(createResponse.status(), 201, "Report creation failed");
+  const createdArtifact = await createResponse.json();
+  const readResponse = await savedRead;
+  assert.equal(readResponse.status(), 200, "Saved report reload failed");
+  const savedArtifact = await readResponse.json();
+  assert.equal(savedArtifact.handle, createdArtifact.handle, "Reloaded a different saved report");
+  const preview = section.getByLabel(previewName);
+  await preview.waitFor({ state: "visible", timeout: 30000 });
+  await section.getByRole("link", { name: "Markdown 다운로드" }).waitFor({ state: "visible" });
+  await section.getByRole("link", { name: "정확한 JSON 다운로드" }).waitFor({ state: "visible" });
+  assert.equal(await preview.textContent(), savedArtifact.markdown, "Saved preview differs from reloaded report");
+  assert.equal(await section.getByRole("status").count(), 0, "Report remained pending at capture");
+  return savedArtifact;
+}
+
+async function assertSavedReportView(page, section, artifact, previewName) {
+  const preview = section.getByLabel(previewName);
+  assert.equal(await preview.isVisible(), true, "Saved preview is no longer visible");
+  const markdown = await preview.textContent();
+  assert.ok(markdown, "Saved preview is empty");
+  assert.equal(markdown, artifact.markdown, "Saved preview changed from the reloaded report");
+  assert.equal(await section.getByRole("status").count(), 0, "Saved report returned to loading state");
+  for (const name of ["Markdown 다운로드", "정확한 JSON 다운로드"]) {
+    const link = section.getByRole("link", { name });
+    assert.equal(await link.isVisible(), true, `${name} is no longer visible`);
+    const href = await link.getAttribute("href");
+    assert.ok(href, `${name} has no href`);
+    assert.equal(new URL(href, page.url()).searchParams.get("handle"), artifact.handle,
+      `${name} targets a different saved report`);
+  }
+  return { reportHandle: artifact.handle, previewLength: markdown.length,
+    markdownSha256: crypto.createHash("sha256").update(markdown).digest("hex"),
+    pending: false, downloadLinksMatchReport: true };
+}
+
 async function runNormalFlow(input) {
   const session = await launchOffscreen({ ...input, interactive: false });
   const { app, page, artifacts } = session;
@@ -146,7 +191,7 @@ async function runNormalFlow(input) {
   const fixtureSha256 = sha256(input.fixture);
   const source = sourceDigest();
 
-  async function step(caseId, inputDescription, action, observe) {
+  async function step(caseId, inputDescription, action, observe, afterCapture) {
     const before = await status(app, page);
     const started = Date.now();
     let row;
@@ -155,6 +200,7 @@ async function runNormalFlow(input) {
       const assertion = await observe(await status(app, page));
       const proof = await capture(app, page, artifacts, caseId);
       assert.equal(proof.status.blockedRequests.length, 0, "renderer attempted non-loopback request");
+      if (afterCapture) assertion.postCapture = await afterCapture(proof);
       row = { caseId, status: "pass", source, input: inputDescription,
         before, after: proof.status, assertion, screenshot: proof.screenshot,
         paint: proof.paint, durationMs: Date.now() - started };
@@ -398,10 +444,12 @@ async function runNormalFlow(input) {
       await waitForViewer(page, viewer => viewer.sessionId !== prior.sessionId ||
         viewer.generation !== prior.generation);
     }, async after => ({ viewer: assertViewer(after), contactSectionVisible: await geometrySection.isVisible() }));
+    let geometryReport;
     await step("R01", "Click geometry report create", async () => {
-      await geometrySection.getByRole("button", { name: "보고서 만들기" }).click();
-      await geometrySection.getByLabel("저장된 보고서 미리보기").waitFor({ timeout: 30000 });
-    }, async () => ({ previewLength: (await geometrySection.getByLabel("저장된 보고서 미리보기").innerText()).length }));
+      geometryReport = await createAndWaitForSavedReport(page, geometrySection, runId, "reports", "보고서 만들기",
+        "저장된 보고서 미리보기");
+    }, async () => assertSavedReportView(page, geometrySection, geometryReport, "저장된 보고서 미리보기"),
+    async () => assertSavedReportView(page, geometrySection, geometryReport, "저장된 보고서 미리보기"));
 
     for (const [suffix, name] of [["md", "Markdown 다운로드"], ["json", "정확한 JSON 다운로드"]]) {
       let downloaded;
@@ -446,10 +494,12 @@ async function runNormalFlow(input) {
       await waitForViewer(page, viewer => viewer.sessionId !== prior.sessionId ||
         viewer.generation !== prior.generation);
     }, async after => ({ viewer: assertViewer(after), sasaSectionVisible: await sasaSection.isVisible() }));
+    let sasaReport;
     await step("R03", "Click SASA method report create", async () => {
-      await sasaSection.getByRole("button", { name: "방법 보고서 만들기" }).click();
-      await sasaSection.getByLabel("저장된 방법 보고서 미리보기").waitFor({ timeout: 30000 });
-    }, async () => ({ previewLength: (await sasaSection.getByLabel("저장된 방법 보고서 미리보기").innerText()).length }));
+      sasaReport = await createAndWaitForSavedReport(page, sasaSection, runId, "method_reports", "방법 보고서 만들기",
+        "저장된 방법 보고서 미리보기");
+    }, async () => assertSavedReportView(page, sasaSection, sasaReport, "저장된 방법 보고서 미리보기"),
+    async () => assertSavedReportView(page, sasaSection, sasaReport, "저장된 방법 보고서 미리보기"));
 
     for (const [suffix, name] of [["md", "Markdown 다운로드"], ["json", "정확한 JSON 다운로드"]]) {
       let downloaded;

@@ -1,0 +1,101 @@
+{
+  "audit_kind": "read_only_recomputation_of_historical_m8_evidence",
+  "audited_at_utc": "2026-09-26T22:40:54.667938+00:00",
+  "git_head_at_audit": "392d45a6fbf797ce76eb83b852c05f829d4108f1",
+  "archive": {
+    "declared_files": 73,
+    "present": 73,
+    "sha256_and_byte_length_matches": 73,
+    "mismatches": []
+  },
+  "review_binding": {
+    "phase": "protview-agent-ui",
+    "step": 0,
+    "verdict": "approved",
+    "declared_reviewed_files": 119,
+    "present": 119,
+    "current_sha256_matches": 119,
+    "mismatches": [],
+    "report_path": "phases/protview-agent-ui/reviews/step0.md",
+    "report_sha256_matches": true
+  },
+  "coverage_links": {
+    "declared_inventory_count": 86,
+    "actual_cases": 86,
+    "declared_passed": 86,
+    "actual_pass_verdicts": 86,
+    "declared_pending": 0,
+    "actual_nonpass_verdicts": 0,
+    "evidence_references": 219,
+    "present": 219,
+    "row_out_of_range": [],
+    "case_id_mismatches": [],
+    "plan_sha256_matches": true
+  },
+  "selected_final_raw_rows": {
+    "docs/qa/m8/raw/normal.jsonl": {
+      "rows": 37,
+      "actual_row_states": {
+        "pass": 37
+      },
+      "source_provenance": {
+        "sourceSha256": "51730d31a4be1af9430eb237f16058d4a8f1add196c263c5f0bf104e51a66a36",
+        "buildId": "h7QAs9MaiL9s-g_4SQQIy"
+      },
+      "source_provenance_consistent": true,
+      "sha256": "0c22514040918b481d95735d168b3b8bd353b4cd1b2151f8bd307039b19add17"
+    },
+    "docs/qa/m8/raw/canvas-pick-final.jsonl": {
+      "rows": 5,
+      "actual_row_states": {
+        "pass": 5
+      },
+      "source_provenance": {
+        "sourceSha256": "51730d31a4be1af9430eb237f16058d4a8f1add196c263c5f0bf104e51a66a36",
+        "buildId": "h7QAs9MaiL9s-g_4SQQIy"
+      },
+      "source_provenance_consistent": true,
+      "sha256": "c2f1a13fce84904bce7d0b4b828163fba4996b3e03f46e47997c251dfb987617"
+    },
+    "docs/qa/m8/raw/canvas-minimized-final.jsonl": {
+      "rows": 3,
+      "actual_row_states": {
+        "pass": 3
+      },
+      "source_provenance": {
+        "sourceSha256": "51730d31a4be1af9430eb237f16058d4a8f1add196c263c5f0bf104e51a66a36",
+        "buildId": "h7QAs9MaiL9s-g_4SQQIy"
+      },
+      "source_provenance_consistent": true,
+      "sha256": "a2f9142dbfcc4a3f9694c92ddf9684d35b362a04a905543fbe0beac9cc39f602"
+    },
+    "docs/qa/m8/raw/canvas-busy-final.jsonl": {
+      "rows": 4,
+      "actual_row_states": {
+        "pass": 4
+      },
+      "source_provenance": {
+        "sourceSha256": "51730d31a4be1af9430eb237f16058d4a8f1add196c263c5f0bf104e51a66a36",
+        "buildId": "h7QAs9MaiL9s-g_4SQQIy"
+      },
+      "source_provenance_consistent": true,
+      "sha256": "352279b26af697862f5be26654d4ac0bf5ca8207a1e086297df64dcf5e7e8b1f"
+    },
+    "docs/qa/m8/raw/agent-adversarial-final.jsonl": {
+      "rows": 25,
+      "actual_row_states": {
+        "pass": 24,
+        "observed": 1
+      },
+      "source_provenance": null,
+      "source_provenance_consistent": null,
+      "sha256": "8c531befe3a746c95c98fc5062f475bad015fe7616247bc45b2e11cfb738cd37"
+    }
+  },
+  "limitations": [
+    "This audits preserved historical evidence and current file hashes; it does not rerun controls or scientific calculations.",
+    "The final agent fixture contains 24 pass rows and one observed fixture-summary row; the observed row is not counted as a passed case.",
+    "The 86-item ledger combines runs across source/build times, as documented in the original QA results.",
+    "Fresh closure offscreen runs and any post-merge artifact manifest are pending parent execution."
+  ]
+}

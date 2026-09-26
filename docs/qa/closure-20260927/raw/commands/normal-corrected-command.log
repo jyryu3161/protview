@@ -1,0 +1,12 @@
+
+> molecular-workspace-web@0.1.0 test:offscreen:normal
+> node tests/offscreen/normal-flow.cjs --url http://127.0.0.1:3000 --fixture ../backend/tests/fixtures/public_1hsg.cif --artifacts /tmp/protview-qa-20260927/normal-corrected
+
+Normal flow QA failed: AssertionError [ERR_ASSERTION]: Report creation failed
+
+201 !== 200
+
+    at createAndWaitForSavedReport (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/normal-flow.cjs:151:10)
+    at async /Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/normal-flow.cjs:449:24
+    at async step (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/normal-flow.cjs:199:7)
+    at async runNormalFlow (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/normal-flow.cjs:448:5)

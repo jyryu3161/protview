@@ -1,0 +1,8 @@
+  PASS: .venv/bin/python -m pytest backend/tests/test_agent_viewer.py backend/tests/test_llm_egress.py backend/tests/test_runtime.py -q
+  PASS: .venv/bin/python -m pytest backend/tests -q
+  PASS: .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks
+  PASS: .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py -q
+  PASS: npm --prefix frontend run test:events
+  PASS: npm --prefix frontend run typecheck
+  PASS: npm --prefix frontend run build
+Phase protview-agent-ui: all checks and reviews verified

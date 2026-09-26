@@ -1,0 +1,244 @@
+{
+  "source": "read-only FastAPI GET against isolated MW_RUNS_DIR=/tmp/protview-qa-20260927/runs before service shutdown",
+  "runs": {
+    "normal_first": {
+      "run_id": "run_a904c9f472de48e3b7818a2503a78d98",
+      "dry_run": false,
+      "effective_egress": "local_only",
+      "budget": {
+        "wall_clock_s": {
+          "used": 0.37336333421990275,
+          "limit": 1800.0
+        },
+        "expensive_calls": {
+          "used": 0,
+          "limit": 8
+        },
+        "external_tokens": {
+          "used": 0,
+          "limit": 120000
+        },
+        "usd": {
+          "used": 0,
+          "limit": 2.0
+        }
+      },
+      "jobs": [],
+      "event_count": 64,
+      "event_type_counts": {
+        "goal": 1,
+        "method_report_created": 1,
+        "object_created": 11,
+        "report_created": 1,
+        "run_started": 1,
+        "tool_called": 4,
+        "tool_succeeded": 4,
+        "upload_received": 1,
+        "viewer_command_ack": 4,
+        "viewer_intent_outcome": 4,
+        "viewer_intent_requested": 4,
+        "viewer_scene_updated": 13,
+        "viewer_session_created": 7,
+        "wall_charged": 8
+      },
+      "viewer_intent_source_counts": {
+        "local_command": 4
+      },
+      "viewer_intents_api_count": 4,
+      "outbound_event_count": 0
+    },
+    "normal_interim": {
+      "run_id": "run_a0ca323ad5214f0e94c7db093c4765da",
+      "dry_run": false,
+      "effective_egress": "local_only",
+      "budget": {
+        "wall_clock_s": {
+          "used": 0.1241369592025876,
+          "limit": 1800.0
+        },
+        "expensive_calls": {
+          "used": 0,
+          "limit": 8
+        },
+        "external_tokens": {
+          "used": 0,
+          "limit": 120000
+        },
+        "usd": {
+          "used": 0,
+          "limit": 2.0
+        }
+      },
+      "jobs": [],
+      "event_count": 53,
+      "event_type_counts": {
+        "goal": 1,
+        "object_created": 8,
+        "report_created": 1,
+        "run_started": 1,
+        "tool_called": 3,
+        "tool_succeeded": 3,
+        "upload_received": 1,
+        "viewer_command_ack": 4,
+        "viewer_intent_outcome": 4,
+        "viewer_intent_requested": 4,
+        "viewer_scene_updated": 13,
+        "viewer_session_created": 4,
+        "wall_charged": 6
+      },
+      "viewer_intent_source_counts": {
+        "local_command": 4
+      },
+      "viewer_intents_api_count": 4,
+      "outbound_event_count": 0
+    },
+    "normal_final": {
+      "run_id": "run_900004d13d6648caa3af0734ef83001a",
+      "dry_run": false,
+      "effective_egress": "local_only",
+      "budget": {
+        "wall_clock_s": {
+          "used": 0.36469966638833284,
+          "limit": 1800.0
+        },
+        "expensive_calls": {
+          "used": 0,
+          "limit": 8
+        },
+        "external_tokens": {
+          "used": 0,
+          "limit": 120000
+        },
+        "usd": {
+          "used": 0,
+          "limit": 2.0
+        }
+      },
+      "jobs": [],
+      "event_count": 64,
+      "event_type_counts": {
+        "goal": 1,
+        "method_report_created": 1,
+        "object_created": 11,
+        "report_created": 1,
+        "run_started": 1,
+        "tool_called": 4,
+        "tool_succeeded": 4,
+        "upload_received": 1,
+        "viewer_command_ack": 4,
+        "viewer_intent_outcome": 4,
+        "viewer_intent_requested": 4,
+        "viewer_scene_updated": 13,
+        "viewer_session_created": 7,
+        "wall_charged": 8
+      },
+      "viewer_intent_source_counts": {
+        "local_command": 4
+      },
+      "viewer_intents_api_count": 4,
+      "outbound_event_count": 0
+    },
+    "openmm": {
+      "run_id": "run_e665f09046f644229e00a06e887f7d86",
+      "dry_run": false,
+      "effective_egress": "local_only",
+      "budget": {
+        "wall_clock_s": {
+          "used": 11.022022833582014,
+          "limit": 1800.0
+        },
+        "expensive_calls": {
+          "used": 1,
+          "limit": 8
+        },
+        "external_tokens": {
+          "used": 0,
+          "limit": 120000
+        },
+        "usd": {
+          "used": 0,
+          "limit": 2.0
+        }
+      },
+      "jobs": [
+        {
+          "job_id": "job_2156d5151b774f4d89f1905e737f4faa",
+          "protocol_id": "openmm_protein_minimize",
+          "status": "done",
+          "attempt_ordinal": 1,
+          "output_handles": [
+            "obj://run_e665f09046f644229e00a06e887f7d86/openmm_minimization/5e71752c6b1191d78f7a8aa8713699215819b22a37f8ecacad690a22a63f4858"
+          ],
+          "cleanup_status": "verified"
+        }
+      ],
+      "event_count": 46,
+      "event_type_counts": {
+        "approval_requested": 1,
+        "approval_resolved": 1,
+        "budget_reserved": 1,
+        "goal": 1,
+        "job_blocked": 1,
+        "job_claimed": 1,
+        "job_cleanup_verified": 1,
+        "job_dispatch_intent": 1,
+        "job_execution_authorized": 1,
+        "job_launch_identity": 1,
+        "job_preparation_recorded": 1,
+        "job_result_candidate": 1,
+        "job_submitted": 1,
+        "job_terminal": 1,
+        "job_worker_started": 1,
+        "method_report_created": 1,
+        "object_created": 13,
+        "run_started": 1,
+        "tool_called": 2,
+        "tool_succeeded": 2,
+        "upload_received": 1,
+        "viewer_session_created": 5,
+        "wall_charged": 6
+      },
+      "viewer_intent_source_counts": {},
+      "viewer_intents_api_count": 0,
+      "outbound_event_count": 0
+    },
+    "dry_run": {
+      "run_id": "run_2b1393a9618e4edf8b414fc93e54ea44",
+      "dry_run": true,
+      "effective_egress": "local_only",
+      "budget": {
+        "wall_clock_s": {
+          "used": 0.027294084429740906,
+          "limit": 1800.0
+        },
+        "expensive_calls": {
+          "used": 0,
+          "limit": 8
+        },
+        "external_tokens": {
+          "used": 0,
+          "limit": 120000
+        },
+        "usd": {
+          "used": 0,
+          "limit": 2.0
+        }
+      },
+      "jobs": [],
+      "event_count": 19,
+      "event_type_counts": {
+        "goal": 1,
+        "object_created": 5,
+        "run_started": 1,
+        "tool_called": 2,
+        "tool_succeeded": 2,
+        "upload_received": 1,
+        "viewer_session_created": 3,
+        "wall_charged": 4
+      },
+      "viewer_intent_source_counts": {},
+      "viewer_intents_api_count": 0,
+      "outbound_event_count": 0
+    }
+  }
+}
