@@ -1,0 +1,190 @@
+{
+  "status": "pass",
+  "source_artifact": "/tmp/protview-qa/m8-extra-v12-queuefix-final-command/V12.jsonl",
+  "runId": "run_502d5bd708f242ab887070e87c6c9049",
+  "session": {
+    "viewer_session_id": "7c46b662-aa87-4cf2-acd4-96445b2a939c",
+    "client_instance_id": "091cb73a-dc8d-4a43-af23-676fd5bff7d5",
+    "scene_generation": 2,
+    "structure_handle": "obj://run_502d5bd708f242ab887070e87c6c9049/structure/25095d41baa6499109bb093fbd4466f00b59b17ddb55b58b20dced6c34ae2d01",
+    "catalog_hash": "8c6a14cac6e5b3fa1f355e4ab3af209d3f5d94556bdb0f0f7868851a18769761",
+    "catalog": [
+      {
+        "alias": "t0001",
+        "category": "polymer",
+        "chain_auth": "A",
+        "icode": "A",
+        "model_number": 1,
+        "seq_auth": 100
+      },
+      {
+        "alias": "t0002",
+        "category": "polymer",
+        "chain_auth": "A",
+        "model_number": 1,
+        "seq_auth": 101
+      },
+      {
+        "alias": "t0003",
+        "category": "nonpolymer",
+        "chain_auth": "B",
+        "model_number": 1,
+        "seq_auth": 301
+      },
+      {
+        "alias": "t0004",
+        "category": "nonpolymer",
+        "chain_auth": "C",
+        "model_number": 1,
+        "seq_auth": 302
+      },
+      {
+        "alias": "t0005",
+        "category": "water",
+        "chain_auth": "W",
+        "model_number": 1,
+        "seq_auth": 401
+      }
+    ],
+    "scope_complete": true,
+    "representation": "ball_and_stick",
+    "selected_alias": null,
+    "action_revision": 17,
+    "targets": [
+      {
+        "alias": "t0001",
+        "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "A",
+          "model_number": 1,
+          "resname": "ASP",
+          "seq_auth": 100,
+          "seq_label": null
+        }
+      },
+      {
+        "alias": "t0002",
+        "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LEU",
+          "seq_auth": 101,
+          "seq_label": null
+        }
+      },
+      {
+        "alias": "t0003",
+        "residue": {
+          "chain_auth": "B",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 301,
+          "seq_label": null
+        }
+      },
+      {
+        "alias": "t0004",
+        "residue": {
+          "chain_auth": "C",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "ZN",
+          "seq_auth": 302,
+          "seq_label": null
+        }
+      },
+      {
+        "alias": "t0005",
+        "residue": {
+          "chain_auth": "W",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "HOH",
+          "seq_auth": 401,
+          "seq_label": null
+        }
+      }
+    ],
+    "current": true,
+    "projection": {
+      "schema": "viewer_intent@1",
+      "representation": "ball_and_stick",
+      "selected_target": null,
+      "scope_complete": true,
+      "catalog": [
+        {
+          "alias": "t0001",
+          "category": "polymer",
+          "chain_auth": "A",
+          "icode": "A",
+          "model_number": 1,
+          "seq_auth": 100
+        },
+        {
+          "alias": "t0002",
+          "category": "polymer",
+          "chain_auth": "A",
+          "model_number": 1,
+          "seq_auth": 101
+        },
+        {
+          "alias": "t0003",
+          "category": "nonpolymer",
+          "chain_auth": "B",
+          "model_number": 1,
+          "seq_auth": 301
+        },
+        {
+          "alias": "t0004",
+          "category": "nonpolymer",
+          "chain_auth": "C",
+          "model_number": 1,
+          "seq_auth": 302
+        },
+        {
+          "alias": "t0005",
+          "category": "water",
+          "chain_auth": "W",
+          "model_number": 1,
+          "seq_auth": 401
+        }
+      ]
+    }
+  },
+  "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_502d5bd708f242ab887070e87c6c9049/structure/25095d41baa6499109bb093fbd4466f00b59b17ddb55b58b20dced6c34ae2d01",
+    "sessionId": "7c46b662-aa87-4cf2-acd4-96445b2a939c",
+    "generation": 2,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "camera": {
+      "position": [
+        2.2768541499444988,
+        -0.3954818466600091,
+        17.405573370521477
+      ],
+      "target": [
+        2.2768541499444988,
+        -0.3954818466600091,
+        0.30599993923351887
+      ],
+      "radius": 8.179654315830213,
+      "distance": 17.099573431287958
+    },
+    "lastAck": {
+      "commandId": "a38f3c07-dc40-44b3-aa2a-644e0ae19993",
+      "status": "applied",
+      "reasonCode": null
+    }
+  },
+  "assertion": "Actual final blank click leaves both native selection and server selected_alias null; no extra commands or model request were sent for this read."
+}

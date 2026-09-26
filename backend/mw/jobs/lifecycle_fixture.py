@@ -24,11 +24,13 @@ def main() -> int:
         "psutil_version": psutil.__version__, "environment_keys": sorted(os.environ),
     }))
     if mode in {"grandchild", "leader_exit"}:
-        code = """import json, os, psutil, signal, time
+        code = f"""import json, os, signal, sys, time
 from pathlib import Path
+sys.path.insert(0, {str(Path(__file__).resolve().parent)!r})
+from process_identity import capture
 signal.signal(signal.SIGTERM, signal.SIG_IGN)
 with Path('grandchild.ready').open('x') as stream:
-    json.dump({'pid': os.getpid(), 'create_time': psutil.Process().create_time()}, stream)
+    json.dump({{'pid': os.getpid(), 'start_identity': capture(os.getpid())}}, stream)
     stream.flush()
     os.fsync(stream.fileno())
 time.sleep(30)

@@ -144,3 +144,22 @@ test("cache reads need their original input and exact output reference", () => {
   assert.equal(resultEvents([call, success, read, legacy]).length, 3);
   assert.equal(resultId(legacy), "legacy_cache_4");
 });
+
+test("latest SASA result follows exact prepared input and verified cache lineage", () => {
+  const loaded = handle("structure", "loaded");
+  const prepared = handle("prepared_structure", "prepared");
+  const sasa = handle("interface_sasa", "sasa");
+  const events = [
+    called(1, "load", "load_structure", { source: "u" }), succeeded(2, "load", "load_structure", loaded),
+    called(3, "prep", "prepare_structure", { structure: loaded.handle }), succeeded(4, "prep", "prepare_structure", prepared),
+    called(5, "calc", "compute_interface_sasa", { structure: prepared.handle, ligand: { seq_auth: 5 } }),
+    succeeded(6, "calc", "compute_interface_sasa", sasa),
+    cache(7, "read", "calc", "compute_interface_sasa", { structure: prepared.handle, ligand: { seq_auth: 5 } }, sasa),
+  ];
+  assert.equal(latestHandles(events).sasa.handle, sasa.handle);
+  assert.equal(resultEvents(events).at(-1).observation_id, "read");
+  assert.equal(latestHandles([...events, called(8, "other", "load_structure", { source: "v" }),
+    succeeded(9, "other", "load_structure", handle("structure", "other"))]).sasa, undefined);
+  assert.equal(resultEvents([...events, { ...events[6], seq: 8, observation_id: "forged",
+    args: { structure: "obj://r/prepared_structure/foreign", ligand: { seq_auth: 5 } } }]).at(-1).observation_id, "read");
+});

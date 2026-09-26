@@ -1,0 +1,2015 @@
+{
+  "status": "all 86 click inventory items completed; phase review/check records are authoritative separately",
+  "plan_sha256": "8c53eb6443e81a3d3bc6da9b7a532c678ccb78f179a382a62acbb42962743bf7",
+  "inventory_count": 86,
+  "passed": 86,
+  "pending": 0,
+  "normalization": "Independent root assessment of completed assertions and concrete observations, not raw result status alone. Some original root JSON result.status fields were overwritten by renderer snapshots; originals are preserved. Row indexes are one-based JSONL records or JSON array entries. Earlier failed cases remain excluded from acceptance. Narrow B03/A10 fixes get targeted final-source rechecks; unrelated validated paths are not falsely claimed rerun on the final build.",
+  "cases": [
+    {
+      "id": "W01",
+      "verdict": "pass",
+      "interaction": "Initial load, empty run, no structure",
+      "expected_observation": "Explicit empty state; no fabricated canvas/result; offline badge",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 1,
+          "case_id": "W01-empty"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 1,
+          "case_id": "W01-empty"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "W02",
+      "verdict": "pass",
+      "interaction": "New run button",
+      "expected_observation": "New durable run, default local_only, no copied approvals/model dispatch",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 1,
+          "case_id": "W02"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "W03",
+      "verdict": "pass",
+      "interaction": "Saved-run selector",
+      "expected_observation": "Exact selected history/source; old reports unchanged",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 1,
+          "case_id": "W03-saved-selector"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/default-service.json",
+          "row": null,
+          "case_id": "default service saved-run and keyboard replay"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "W04",
+      "verdict": "pass",
+      "interaction": "RUN and MODELS tabs",
+      "expected_observation": "Correct content/count/selection; no dead placeholder",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 5,
+          "case_id": "W04-models"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 6,
+          "case_id": "W04-run"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "W05",
+      "verdict": "pass",
+      "interaction": "Theme button both directions",
+      "expected_observation": "Canvas/background and panels update; molecule remains rendered",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 7,
+          "case_id": "W05-away"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 8,
+          "case_id": "W05-restore"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "W06",
+      "verdict": "pass",
+      "interaction": "Keyboard navigation/Enter and scrolling",
+      "expected_observation": "Usable actual focus; controls and right inspector accessible; no clipped essential actions",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/extra.json",
+          "row": 4,
+          "case_id": "W06-inspector-scroll"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/default-service.json",
+          "row": null,
+          "case_id": "default service saved-run and keyboard replay"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/keyboard.json",
+          "row": null,
+          "case_id": "Enter and Space"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I01",
+      "verdict": "pass",
+      "interaction": "File input PDB and mmCIF",
+      "expected_observation": "Real upload feedback; correct model choices and source hash",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 2,
+          "case_id": "I01"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 14,
+          "case_id": "V11-synthetic_identifiers.cif"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 15,
+          "case_id": "V11-synthetic_model5_identifiers.cif"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I02",
+      "verdict": "pass",
+      "interaction": "File input malformed/empty/oversize",
+      "expected_observation": "Explicit bounded error; no success/scientific_null/canvas substitution",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 2,
+          "case_id": "I02-malformed.pdb"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 3,
+          "case_id": "I02-empty.pdb"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 4,
+          "case_id": "I02-oversize.pdb"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I03",
+      "verdict": "pass",
+      "interaction": "Model selector each fixture model then load",
+      "expected_observation": "Correct original model numbers; exact displayed bytes/identities",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 3,
+          "case_id": "I03"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 3,
+          "case_id": "I03-model1"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 4,
+          "case_id": "I03-model2"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I04",
+      "verdict": "pass",
+      "interaction": "Load repeatedly/same-name changed bytes",
+      "expected_observation": "Correct idempotence/source identity; changed bytes do not reuse stale structure",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 12,
+          "case_id": "I04-same-source-cache"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 13,
+          "case_id": "I04-same-name-changed"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I05",
+      "verdict": "pass",
+      "interaction": "Altloc highest_occupancy and first",
+      "expected_observation": "Actual selected coordinates/policy manifest differ as expected",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 5,
+          "case_id": "I05-highest"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 6,
+          "case_id": "I05-first"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I06",
+      "verdict": "pass",
+      "interaction": "Water strip_all and keep_all",
+      "expected_observation": "Counts/components/exclusions and source preservation match policies",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 7,
+          "case_id": "I06-I07-strip_all-strip"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 8,
+          "case_id": "I06-I07-keep_all-strip"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 9,
+          "case_id": "I06-I07-keep_all-keep"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 10,
+          "case_id": "I06-I07-strip_all-keep"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I07",
+      "verdict": "pass",
+      "interaction": "Hydrogen strip and keep",
+      "expected_observation": "Actual policy/counts; no invented coordinates",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 7,
+          "case_id": "I06-I07-strip_all-strip"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 8,
+          "case_id": "I06-I07-keep_all-strip"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 9,
+          "case_id": "I06-I07-keep_all-keep"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 10,
+          "case_id": "I06-I07-strip_all-keep"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I08",
+      "verdict": "pass",
+      "interaction": "Prepare button/repeated prepare",
+      "expected_observation": "Linked to current loaded input; exact result handle/cache observation",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 4,
+          "case_id": "I08"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 11,
+          "case_id": "I08-repeated"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V01",
+      "verdict": "pass",
+      "interaction": "Cartoon, ball-and-stick, surface buttons",
+      "expected_observation": "Actual committed Mol* representation and completed frame for each",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 20,
+          "case_id": "V01-surface"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 21,
+          "case_id": "V01-ball-and-stick"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 22,
+          "case_id": "V01-cartoon"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V02",
+      "verdict": "pass",
+      "interaction": "Canvas drag/orbit and wheel",
+      "expected_observation": "Actual camera changes; structure identity retained",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 23,
+          "case_id": "V02-orbit"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 24,
+          "case_id": "V02-wheel"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V03",
+      "verdict": "pass",
+      "interaction": "New zoom-in/zoom-out/reset controls",
+      "expected_observation": "Correct observed camera direction/reset or honest limit no_change",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 25,
+          "case_id": "V03-in"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 26,
+          "case_id": "V03-out"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 27,
+          "case_id": "V03-reset"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V04",
+      "verdict": "pass",
+      "interaction": "Ligand instance buttons in MODELS",
+      "expected_observation": "Exact full ligand identity, nonempty loci, visible selection/focus",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 16,
+          "case_id": "V04"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 17,
+          "case_id": "V04-return"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V05",
+      "verdict": "pass",
+      "interaction": "Contact-row click and keyboard activation",
+      "expected_observation": "Exact residue/camera acknowledgment, never wrong model/structure",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 18,
+          "case_id": "V05-click"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 7,
+          "case_id": "V05-keyboard-contact"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V06",
+      "verdict": "pass",
+      "interaction": "Clear-selection control",
+      "expected_observation": "Mol* selection, local highlight and legend all cleared",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 19,
+          "case_id": "V06"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V07",
+      "verdict": "pass",
+      "interaction": "History step click, including cache observation",
+      "expected_observation": "Correct exact source; no latest/history mixed table or camera",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 2,
+          "case_id": "V07-history-cache"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V08",
+      "verdict": "pass",
+      "interaction": "Return to latest structure",
+      "expected_observation": "Latest correctly linked pipeline, highlights/overrides cleared; mutations enabled only appropriately",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 3,
+          "case_id": "V08-return-latest"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V09",
+      "verdict": "pass",
+      "interaction": "Structure-read503, then retry",
+      "expected_observation": "Error not empty molecule; old focus cannot apply; real retry restores matching source",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 4,
+          "case_id": "V09-structure-503-retry"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V10",
+      "verdict": "pass",
+      "interaction": "Rapid delayed A→B source switch",
+      "expected_observation": "Late A bytes/ack cannot replace B or mark B as A-ready",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 5,
+          "case_id": "V10-late-source"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "V11",
+      "verdict": "pass",
+      "interaction": "Model5/insertion/label fixture focus",
+      "expected_observation": "Complete identity matches actual loci; no auth-only collision",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 14,
+          "case_id": "V11-synthetic_identifiers.cif"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 15,
+          "case_id": "V11-synthetic_model5_identifiers.cif"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C01",
+      "verdict": "pass",
+      "interaction": "Ligand dropdown each distinct instance",
+      "expected_observation": "Same-name ligands distinguish exact model/chain/icode/label",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 9,
+          "case_id": "C01"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 5,
+          "case_id": "C01-duplicate-identities"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C02",
+      "verdict": "pass",
+      "interaction": "Cutoff input2.5,4,6 and invalid bounds/NaN",
+      "expected_observation": "Valid calls use entered range; invalid button/HTTP path fails honestly",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 10,
+          "case_id": "C02-invalid"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 11,
+          "case_id": "C02-four"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 19,
+          "case_id": "C02-valid-2.5"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 6,
+          "case_id": "C02-valid-2.5"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 7,
+          "case_id": "C02-valid-6"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 8,
+          "case_id": "C02-invalid-2.4"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 9,
+          "case_id": "C02-invalid-6.1"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 10,
+          "case_id": "C02-invalid-empty"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C03",
+      "verdict": "pass",
+      "interaction": "Compute contacts",
+      "expected_observation": "Actual1HSG97 rows/units/provenance; no scientific claims beyond geometry",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 12,
+          "case_id": "C03"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C04",
+      "verdict": "pass",
+      "interaction": "Next/previous page buttons",
+      "expected_observation": "All97 rows reachable, page boundaries correct, no duplicate/lost rows",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 13,
+          "case_id": "C04-next"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 14,
+          "case_id": "C04-previous"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C05",
+      "verdict": "pass",
+      "interaction": "Horizontal table scroll",
+      "expected_observation": "Distances/identities remain reachable and match selected row",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 15,
+          "case_id": "C05"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C06",
+      "verdict": "pass",
+      "interaction": "Zero-contact result",
+      "expected_observation": "Valid scientific_null distinguished from failed row load",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 11,
+          "case_id": "C06-zero-contact"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C07",
+      "verdict": "pass",
+      "interaction": "Row-read503 and retry",
+      "expected_observation": "Error without false scientific_null; exact rows restored",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 6,
+          "case_id": "C07-rows-503-retry"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "C08",
+      "verdict": "pass",
+      "interaction": "No ligand and missing preparation",
+      "expected_observation": "Clear disabled reason; no accidental first ligand or stale prepared input",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 21,
+          "case_id": "C08-no-ligand"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "S01",
+      "verdict": "pass",
+      "interaction": "Latest selected-ligand SASA button",
+      "expected_observation": "Real engine result with exact selected input/ligand, method and Å²",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 32,
+          "case_id": "S01-input"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 33,
+          "case_id": "S01"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "S02",
+      "verdict": "pass",
+      "interaction": "“This input's SASA” from historical contact",
+      "expected_observation": "Binds that contact's prepared input/ligand, not latest",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 14,
+          "case_id": "S02-historical-contact-SASA"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "S03",
+      "verdict": "pass",
+      "interaction": "Prepared-history ligand focus then SASA",
+      "expected_observation": "Requires actual confirmed ligand focus, correct full identity",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 15,
+          "case_id": "S03-prepared-history-focused-SASA"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "S04",
+      "verdict": "pass",
+      "interaction": "SASA residue row button",
+      "expected_observation": "Exact residue focus on its input; does not focus latest foreign structure",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 9,
+          "case_id": "S04-sasa-row-focus"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/extra.json",
+          "row": 1,
+          "case_id": "S04-row-exact"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "S05",
+      "verdict": "pass",
+      "interaction": "Zero-burial synthetic case",
+      "expected_observation": "Legitimate0.00Å², separate nonempty atoms/rows/provenance",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-fixed.jsonl",
+          "row": 12,
+          "case_id": "S05-zero-burial"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "S06",
+      "verdict": "pass",
+      "interaction": "SASA-result503 and retry",
+      "expected_observation": "Independent error/recovery without stale totals",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 8,
+          "case_id": "S06-sasa-503-retry"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "R01",
+      "verdict": "pass",
+      "interaction": "Geometry report create",
+      "expected_observation": "Exact selected measurement; all rows/units/evidence",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 28,
+          "case_id": "R01-history"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 29,
+          "case_id": "R01"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "R02",
+      "verdict": "pass",
+      "interaction": "Geometry Markdown/JSON downloads",
+      "expected_observation": "Bytes equal saved preview/manifest, no new calculation",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 30,
+          "case_id": "R02-md"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 31,
+          "case_id": "R02-json"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "R03",
+      "verdict": "pass",
+      "interaction": "SASA report create and both downloads",
+      "expected_observation": "Full atom/residue data, method/area claims, exact selected result",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 34,
+          "case_id": "R03-history"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 35,
+          "case_id": "R03"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 36,
+          "case_id": "R03-md"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/normal.jsonl",
+          "row": 37,
+          "case_id": "R03-json"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "R04",
+      "verdict": "pass",
+      "interaction": "Report reload/reopen",
+      "expected_observation": "Existing exact bytes; no POST/model/tool rerun solely to read",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 13,
+          "case_id": "R04-report-reload"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/default-service.json",
+          "row": null,
+          "case_id": "default service saved-run and keyboard replay"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "R05",
+      "verdict": "pass",
+      "interaction": "Geometry/SASA report failures and retries",
+      "expected_observation": "Explicit error/no false preview; other measured result remains",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 10,
+          "case_id": "R05-geometry"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 11,
+          "case_id": "R05-sasa"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "R06",
+      "verdict": "pass",
+      "interaction": "Held B report response after selecting A",
+      "expected_observation": "A preview/download cannot be overwritten by B",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 12,
+          "case_id": "R06-late-report"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O01",
+      "verdict": "pass",
+      "interaction": "OpenMM preflight on1HSG",
+      "expected_observation": "Actual missing-OXT typed message, no reservation/energy",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/extra.json",
+          "row": 3,
+          "case_id": "O01-1hsg-preflight"
+        }
+      ],
+      "note": "Verified unsupported input: missing terminal OXT on real 1HSG; no energy or reservation."
+    },
+    {
+      "id": "O02",
+      "verdict": "pass",
+      "interaction": "OpenMM1UBQ exclusions disclosure",
+      "expected_observation": "Protein-only/58waters/complete input and H policy visible",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 6,
+          "case_id": "O02"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-queued-cancel.jsonl",
+          "row": 6,
+          "case_id": "O02"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 6,
+          "case_id": "O02"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O03",
+      "verdict": "pass",
+      "interaction": "Each policy checkbox + submit disabled states",
+      "expected_observation": "Both explicit policies required; input/run change resets them",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 7,
+          "case_id": "O03-protein"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 8,
+          "case_id": "O03-hydrogen"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-queued-cancel.jsonl",
+          "row": 7,
+          "case_id": "O03-protein"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-queued-cancel.jsonl",
+          "row": 8,
+          "case_id": "O03-hydrogen"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 7,
+          "case_id": "O03-protein"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 8,
+          "case_id": "O03-hydrogen"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O04",
+      "verdict": "pass",
+      "interaction": "Submit and start without prior approval",
+      "expected_observation": "Queued/approval required; no premature expense/engine launch",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 9,
+          "case_id": "O04-queued"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 10,
+          "case_id": "O04-unapproved-start"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-queued-cancel.jsonl",
+          "row": 9,
+          "case_id": "O04-queued"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 9,
+          "case_id": "O04-queued"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 10,
+          "case_id": "O04-unapproved-start"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O05",
+      "verdict": "pass",
+      "interaction": "Explicit high-cost approval then start",
+      "expected_observation": "Actual worker, one reservation, live state/budget refresh",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 11,
+          "case_id": "O05"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 11,
+          "case_id": "O05"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O06",
+      "verdict": "pass",
+      "interaction": "Actual normal completion",
+      "expected_observation": "Native finite potentials kJ/mol, counts, no convergence/affinity claims",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 12,
+          "case_id": "O06"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O07",
+      "verdict": "pass",
+      "interaction": "Minimized coordinates / original return",
+      "expected_observation": "Actual separate source and truthful minimized legend; original contacts not applied",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 13,
+          "case_id": "O07-minimized"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 14,
+          "case_id": "O07-original"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O08",
+      "verdict": "pass",
+      "interaction": "OpenMM report create and both downloads",
+      "expected_observation": "Exact native values/rounding/System/mapping links",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 15,
+          "case_id": "O08-create"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 16,
+          "case_id": "O08-md"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-full.jsonl",
+          "row": 17,
+          "case_id": "O08-json"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O09",
+      "verdict": "pass",
+      "interaction": "Job selection/reopen",
+      "expected_observation": "Correct job/input/result; immutable report and preparation survive",
+      "execution": "documented local state setup followed by actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-persistence.jsonl",
+          "row": 1,
+          "case_id": "O09-job-selector"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-persistence.jsonl",
+          "row": 5,
+          "case_id": "O09-reopen"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O10",
+      "verdict": "pass",
+      "interaction": "Queued cancellation",
+      "expected_observation": "No launched attempt/expensive charge",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-queued-cancel.jsonl",
+          "row": 10,
+          "case_id": "O10"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O11",
+      "verdict": "pass",
+      "interaction": "Running cancellation after worker_started",
+      "expected_observation": "Actual cleanup, charged once, no energy; preparation only if actually completed",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-running-cancel.jsonl",
+          "row": 12,
+          "case_id": "O11"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O12",
+      "verdict": "pass",
+      "interaction": "Retry a genuine failed/cancelled attempt",
+      "expected_observation": "Explicit bounded new attempt, correct job/input/settings/charge; no bypass of approval/cleanup",
+      "execution": "documented local state setup followed by actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-retry.jsonl",
+          "row": 1,
+          "case_id": "O12"
+        }
+      ],
+      "note": "Real timeout created through isolated local API setup; actual retry button queues bounded next attempt on same job. Setup is not claimed as a UI click."
+    },
+    {
+      "id": "O13",
+      "verdict": "pass",
+      "interaction": "Result503 and report503 separately, retries",
+      "expected_observation": "One successful parallel read cannot erase the other's error",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-read-retry.jsonl",
+          "row": 1,
+          "case_id": "O13-fault"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-read-retry.jsonl",
+          "row": 2,
+          "case_id": "O13-result-retry"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-read-retry.jsonl",
+          "row": 3,
+          "case_id": "O13-report-retry"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "O14",
+      "verdict": "pass",
+      "interaction": "Late submit/start/approve/create across run switch",
+      "expected_observation": "No stale UI mutation or unintended second start",
+      "execution": "actual product clicks with loopback delay/read-failure injection",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-late-result.jsonl",
+          "row": 1,
+          "case_id": "O14-late-result"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-late-report.jsonl",
+          "row": 1,
+          "case_id": "O14-late-report"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-post-submit.jsonl",
+          "row": 1,
+          "case_id": "O14-submit"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-post-start.jsonl",
+          "row": 1,
+          "case_id": "O14-start"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-post-approve.jsonl",
+          "row": 1,
+          "case_id": "O14-approve"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-post-create.jsonl",
+          "row": 1,
+          "case_id": "O14-create"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "B01",
+      "verdict": "pass",
+      "interaction": "Budget topbar and detailed meter",
+      "expected_observation": "Actual recorded expense/wall/token/USD, including failures/cancel",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/openmm-persistence.jsonl",
+          "row": 2,
+          "case_id": "B01-full"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-persistence.jsonl",
+          "row": 3,
+          "case_id": "B01-queued-cancel"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/openmm-persistence.jsonl",
+          "row": 4,
+          "case_id": "B01-running-cancel"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "B02",
+      "verdict": "pass",
+      "interaction": "Capability unavailable entries",
+      "expected_observation": "PyRosetta methods honestly unavailable; no fake score or enabled dead action",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/read-recovery.jsonl",
+          "row": 16,
+          "case_id": "B02-capability"
+        }
+      ],
+      "note": "Verified unavailable Rosetta methods and general autonomous scientific planner; typed viewer interpreter is supported."
+    },
+    {
+      "id": "B03",
+      "verdict": "pass",
+      "interaction": "Dry-run/offline recorded run reopen",
+      "expected_observation": "Accurate badge and blocked physical/model behavior",
+      "execution": "documented local state setup followed by actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 1,
+          "case_id": "B03-badge"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 2,
+          "case_id": "B03-upload"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 3,
+          "case_id": "B03-load"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 4,
+          "case_id": "B03-prepare"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 5,
+          "case_id": "B03-preflight"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 6,
+          "case_id": "B03-submit"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/dry-run-feedback.jsonl",
+          "row": 7,
+          "case_id": "B03-reopen"
+        }
+      ],
+      "note": "Dry-run returns visible plan-only status, creates zero jobs, consumes zero computation/budget; reopen clears transient notice."
+    },
+    {
+      "id": "B04",
+      "verdict": "pass",
+      "interaction": "Busy/history/minimized disabled controls",
+      "expected_observation": "Reason explained; no hidden action despite disabled UI",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/extra.json",
+          "row": 2,
+          "case_id": "B04-history-disabled"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/extra.json",
+          "row": 5,
+          "case_id": "B04-latest-enabled"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "B05",
+      "verdict": "pass",
+      "interaction": "Gallery route, if retained",
+      "expected_observation": "Explicit design examples; unimplemented demo controls cannot masquerade as production capabilities",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/gallery.json",
+          "row": null,
+          "case_id": "B05"
+        }
+      ],
+      "note": "Gallery is explicitly labeled design fixtures; its controls issue no scientific API requests."
+    },
+    {
+      "id": "A01",
+      "verdict": "pass",
+      "interaction": "Prompt composer empty/oversize, submit button, Enter shortcut",
+      "expected_observation": "Validation and accessible busy state; exactly one intent per submit",
+      "execution": "actual local/live controls and separately labeled fixture cases",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 22,
+          "case_id": "A01-A03-offline-validation"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 1,
+          "case_id": "A01-A02-local-composer"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A02",
+      "verdict": "pass",
+      "interaction": "Local command examples across all six action kinds",
+      "expected_observation": "Actual representation/selection/camera ack; source=local_command; zero transport",
+      "execution": "actual local/live controls and separately labeled fixture cases",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-v2.json",
+          "row": 4,
+          "case_id": "A02-local-zoomout-after-cap"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 1,
+          "case_id": "A01-A02-local-composer"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A03",
+      "verdict": "pass",
+      "interaction": "Natural-language send while local_only",
+      "expected_observation": "Honest offline guidance; no fake model result or hidden transmission",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 22,
+          "case_id": "A01-A03-offline-validation"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A04",
+      "verdict": "pass",
+      "interaction": "Payload preview/target catalog/scope selection",
+      "expected_observation": "Exact source/session and safe identifiers, no coordinates/sequence/source path/key",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 16,
+          "case_id": "A04-large-unscoped"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+          "row": 17,
+          "case_id": "A04-large-exact-scope"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/live-v1.jsonl",
+          "row": 2,
+          "case_id": "A04-preview"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/live-v1.jsonl",
+          "row": 4,
+          "case_id": "A04-preview"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/root-observation-reconciliation.json",
+          "row": null,
+          "case_id": "A04"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/scope-after.json",
+          "row": null,
+          "case_id": "scope rebind and current projection"
+        }
+      ],
+      "note": "Root A150 snapshot was correct but one embedded intent observation pointed to a prior intent; independently reconciled exact command/session/source against durable events."
+    },
+    {
+      "id": "A05",
+      "verdict": "pass",
+      "interaction": "Explicit online enable/disable and cap display",
+      "expected_observation": "Persisted truthful mode/scoped consent; no automatic OpenMM approval",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-v1.jsonl",
+          "row": 5,
+          "case_id": "A05-enable"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A06",
+      "verdict": "pass",
+      "interaction": "Actual live compound representation+residue prompt",
+      "expected_observation": "Real served pin+usage, typed plan, nonempty exact loci and final rendered change",
+      "execution": "actual production OpenRouter response and Mol* application",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-v1.jsonl",
+          "row": 6,
+          "case_id": "A06-live-residue"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A07",
+      "verdict": "pass",
+      "interaction": "Actual live ligand+camera prompt",
+      "expected_observation": "Correct distinct ligand alias/model; real zoom/focus acknowledgment",
+      "execution": "actual production OpenRouter response and Mol* application",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-v1.jsonl",
+          "row": 7,
+          "case_id": "A07-live-ligand"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A08",
+      "verdict": "pass",
+      "interaction": "Actual live clear/reset/representation prompt",
+      "expected_observation": "Actual state cleared/reset and changed representation, not only transcript text",
+      "execution": "actual production OpenRouter response and Mol* application",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-v2.json",
+          "row": 1,
+          "case_id": "A08-v2-before"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/live-v2.json",
+          "row": 2,
+          "case_id": "A08-v2-fourth-live"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/live-summary.json",
+          "row": null,
+          "case_id": "A08"
+        }
+      ],
+      "note": "v1 third live response failed selection-clear semantics. Same prompt with viewer_questions@2 passed on fourth physical call; v1 failure retained."
+    },
+    {
+      "id": "A09",
+      "verdict": "pass",
+      "interaction": "Double click/same request retry",
+      "expected_observation": "One physical outbound request; duplicate plan cannot apply twice",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 2,
+          "case_id": "A09"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A10",
+      "verdict": "pass",
+      "interaction": "Stop before dispatch / during response / during application",
+      "expected_observation": "Visible cancelled/partial status; no late unacknowledged command; honest charges/delivery",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 3,
+          "case_id": "A10-before-admission"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 4,
+          "case_id": "A10-before-local-admission"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 5,
+          "case_id": "A10-during-response"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 7,
+          "case_id": "A10-during-ack"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 8,
+          "case_id": "A10-selection-during-ack"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 9,
+          "case_id": "A10-stop-manual-race"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 10,
+          "case_id": "A10-lost-ack"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 11,
+          "case_id": "A10-precommand-focus-preserved"
+        }
+      ],
+      "note": "Final fixture11 verifies pre-admission/response/partial surface/partial selection Stop, cancelled zero ACK with actual toolbar/preview agreement, later local command, newer manual action priority, ACK loss and pre-command focus preservation. Original fixture7 during-ACK capture exposed stale toolbar/projection and is superseded only for repaired behavior."
+    },
+    {
+      "id": "A11",
+      "verdict": "pass",
+      "interaction": "Disable online during pending request",
+      "expected_observation": "New dispatch denied and old plan invalidated; no claims of unsending a delivered request",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 6,
+          "case_id": "A11"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A12",
+      "verdict": "pass",
+      "interaction": "Switch run/model/history/minimized source before response",
+      "expected_observation": "No cross-scene command or stale applied acknowledgment",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 2,
+          "case_id": "A12-history-raw"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 3,
+          "case_id": "A12-model-2-to-1-history"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 4,
+          "case_id": "A12-model-busy-retry"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 5,
+          "case_id": "A12-minimized-source"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 12,
+          "case_id": "A12"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 2,
+          "case_id": "A12-history-raw"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 3,
+          "case_id": "A12-model-2-to-1-history"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 4,
+          "case_id": "A12-model-busy-retry"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 5,
+          "case_id": "A12-minimized-source"
+        }
+      ],
+      "note": "Run/history/model/minimized switches checked. New scientific load during held request is visibly serialized as busy; after release the same model load succeeds, old intent has zero ACK and becomes detached."
+    },
+    {
+      "id": "A13",
+      "verdict": "pass",
+      "interaction": "Manual viewer action while model pending",
+      "expected_observation": "Newer user intent preserved; old plan stale/rejected",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 13,
+          "case_id": "A13"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 14,
+          "case_id": "A13-canvas-orbit"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A14",
+      "verdict": "pass",
+      "interaction": "Unavailable key/provider, timeout, invalid model/choice",
+      "expected_observation": "Visible failure; no fallback disguised as model; usage still settled when known",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 15,
+          "case_id": "A14-no-key"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 16,
+          "case_id": "A14-wrong-model"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 17,
+          "case_id": "A14-invalid-choice"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 18,
+          "case_id": "A14-timeout"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A15",
+      "verdict": "pass",
+      "interaction": "Ambiguous/unlisted target, malformed plan, injection text",
+      "expected_observation": "No arbitrary code/files/tools; exact aliases only; no unintended first target",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 1,
+          "case_id": "A15-clarification"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 19,
+          "case_id": "A15-unlisted-target"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 20,
+          "case_id": "A15-injection"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-source-transitions.jsonl",
+          "row": 1,
+          "case_id": "A15-clarification"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A16",
+      "verdict": "pass",
+      "interaction": "Request cap/budget exhausted; toggle off/on",
+      "expected_observation": "No transport; consent counter cannot reset silently",
+      "execution": "actual local/live controls and separately labeled fixture cases",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-v2.json",
+          "row": 3,
+          "case_id": "A16-live-cap-toggle"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/live-summary.json",
+          "row": null,
+          "case_id": "A16"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 21,
+          "case_id": "A16"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A17",
+      "verdict": "pass",
+      "interaction": "WebGL not-ready/failure or lost command ack",
+      "expected_observation": "No applied claim; safe manual/retry path without duplicate model call",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 22,
+          "case_id": "A17"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 10,
+          "case_id": "A10-lost-ack"
+        }
+      ],
+      "note": "Actual WEBGL_lose_context verifies no false applied ACK. A10-lost-ack returns a deliberate loopback ACK failure after real application: native state, toolbar and preview agree; server records zero ACK and detached, never fabricated success."
+    },
+    {
+      "id": "A18",
+      "verdict": "pass",
+      "interaction": "Reload intent history and stale browser session",
+      "expected_observation": "No automatic resend or command replay; prior browser ack remains attributed",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 23,
+          "case_id": "A18"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A19",
+      "verdict": "pass",
+      "interaction": "Multiple browser clients/same run",
+      "expected_observation": "Session/generation separation; one client cannot acknowledge another's plan",
+      "execution": "actual Electron clicks with isolated provider/error fixture",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/agent-adversarial-final.jsonl",
+          "row": 24,
+          "case_id": "A19"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "A20",
+      "verdict": "pass",
+      "interaction": "Final end-to-end user prompt demonstration",
+      "expected_observation": "Actual user text→production gate→pinned served response→typed commands→Mol* applied ack with source-bound evidence",
+      "execution": "actual production OpenRouter response and Mol* application",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/live-summary.json",
+          "row": null,
+          "case_id": "A20"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "I09",
+      "verdict": "pass",
+      "interaction": "Reopen pending upload, numeric model-index fallback",
+      "expected_observation": "Actual numeric input selects the requested zero-based model and original model identity; invalid negative/fractional indices cannot submit, unavailable index produces an honest error",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/model-index-reopen.jsonl",
+          "row": 1,
+          "case_id": "I09-upload-pending"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/model-index-reopen.jsonl",
+          "row": 2,
+          "case_id": "I09-reopen-numeric"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/model-index-reopen.jsonl",
+          "row": 3,
+          "case_id": "I09-invalid-negative"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/model-index-reopen.jsonl",
+          "row": 4,
+          "case_id": "I09-invalid-fraction"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/model-index-reopen.jsonl",
+          "row": 5,
+          "case_id": "I09-out-of-range"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/model-index-reopen.jsonl",
+          "row": 6,
+          "case_id": "I09-model2-load"
+        }
+      ],
+      "note": "Actual upload-before-load reopen restores numeric index. -1/0.5 disabled; index2 gives explicit out-of-range failure without a successful load; index1 loads actual model2 including auth A100A."
+    },
+    {
+      "id": "V12",
+      "verdict": "pass",
+      "interaction": "Direct residue pick on the Mol* canvas",
+      "expected_observation": "Actual canvas pointer click resolves a nonempty residue in the displayed structure; observed selection and local identity/legend agree, without invoking a focus handler directly",
+      "execution": "actual product clicks",
+      "evidence": [
+        {
+          "artifact": "docs/qa/m8/raw/canvas-pick-final.jsonl",
+          "row": 1,
+          "case_id": "V12-setup"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-pick-final.jsonl",
+          "row": 2,
+          "case_id": "V12-pick"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-pick-final.jsonl",
+          "row": 3,
+          "case_id": "V12-different-residue"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-pick-final.jsonl",
+          "row": 4,
+          "case_id": "V12-next-local-command"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-pick-final.jsonl",
+          "row": 5,
+          "case_id": "V12-blank-clear"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-minimized-final.jsonl",
+          "row": 1,
+          "case_id": "V12-minimized-setup"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-minimized-final.jsonl",
+          "row": 2,
+          "case_id": "V12-minimized-native-pick"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-minimized-final.jsonl",
+          "row": 3,
+          "case_id": "V12-minimized-blank-clear"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-busy-final.jsonl",
+          "row": 1,
+          "case_id": "V12-busy-setup"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-busy-final.jsonl",
+          "row": 2,
+          "case_id": "V12-busy-held-real-command"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-busy-final.jsonl",
+          "row": 3,
+          "case_id": "V12-busy-native-pick"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-busy-final.jsonl",
+          "row": 4,
+          "case_id": "V12-busy-blank-clear"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-server-final.json",
+          "row": null,
+          "case_id": "independent server/native final comparison"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-server-normal.json",
+          "row": null,
+          "case_id": "persisted monotonic scene-state reconciliation"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-server-minimized.json",
+          "row": null,
+          "case_id": "persisted monotonic scene-state reconciliation"
+        },
+        {
+          "artifact": "docs/qa/m8/raw/canvas-server-busy.json",
+          "row": null,
+          "case_id": "persisted monotonic scene-state reconciliation"
+        }
+      ],
+      "note": "Final queuefix build: native single-residue click, replacement, next local zoom, blank clear; minimized scene and actual held scientific POST busy state. Full authoritative identity/legend/preview verified; no revision-CAS error. Independent server read confirms final state. Earlier native-focus-only defect and later revision race are preserved in before artifacts and excluded from acceptance."
+    }
+  ],
+  "excluded_failed_evidence": [
+    {
+      "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+      "row": 2,
+      "case_id": "I02-malformed.pdb",
+      "reason": "Original failed assertion; corrected evidence is separate. A08 v1 applied model answer but failed desired clear semantics."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+      "row": 18,
+      "case_id": "C01-duplicate-identities",
+      "reason": "Original failed assertion; corrected evidence is separate. A08 v1 applied model answer but failed desired clear semantics."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/inputs-earlier.jsonl",
+      "row": 20,
+      "case_id": "C02-valid-6",
+      "reason": "Original failed assertion; corrected evidence is separate. A08 v1 applied model answer but failed desired clear semantics."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/live-v1.jsonl",
+      "row": 8,
+      "case_id": "A08-live-clear-reset",
+      "reason": "Original failed assertion; corrected evidence is separate. A08 v1 applied model answer but failed desired clear semantics."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/agent-adversarial.jsonl",
+      "row": 7,
+      "case_id": "A10-during-ack",
+      "reason": "Original narrower cancellation assertions passed but root screenshot inspection exposed stale toolbar/projection; final fixture11 supersedes this behavior."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/canvas-pick-before.jsonl",
+      "row": 1,
+      "case_id": "V12-plain-atom",
+      "reason": "Actual native camera hit but no residue selection; product defect subsequently fixed."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/canvas-state-before-serialization.jsonl",
+      "row": 3,
+      "case_id": "V12-different-residue",
+      "reason": "Original state-only assertion passed, but root screenshot exposed revision-CAS error; final queuefix includes no-error assertions and server reconciliation."
+    },
+    {
+      "artifact": "docs/qa/m8/raw/canvas-pick-probe-field-error.jsonl",
+      "row": 2,
+      "case_id": "V12-pick",
+      "reason": "Runner queried selected_alias instead of actual outbound selected_target; native selection was already applied. Runner corrected and retested; not a product failure."
+    }
+  ]
+}

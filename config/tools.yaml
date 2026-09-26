@@ -52,6 +52,17 @@ tools:
       engine: { type: str, enum: [geometric], default: geometric }
     description: 선택한 리간드 인스턴스와 단백질의 실제 중원자 거리만 측정한다
 
+  - name: compute_interface_sasa
+    level: L2
+    version: '1'
+    accepts: { structure: [prepared_structure] }
+    emits: interface_sasa
+    cost_class: moderate
+    typical_runtime_s: 8
+    params:
+      ligand: { type: dict, required: true }
+    description: 선택한 단백질과 단일 리간드의 FreeSASA Lee-Richards 100-slice 노출 및 매몰 면적을 Å²로 계산한다
+
   - name: measure
     level: L2
     accepts: { structure: [structure, prepared_structure, relaxed_structure] }
@@ -65,6 +76,19 @@ tools:
     accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }
     emits: alignment
     params: { method: { type: str, enum: [sequence_then_ca, ca_only], default: sequence_then_ca } }
+
+  # Fixed asynchronous protein-only OpenMM lane; execution is JobQueue, not Run.call.
+  - name: openmm_protein_minimize
+    level: L3
+    version: '1'
+    accepts: { structure: [prepared_structure] }
+    emits: openmm_minimization
+    cost_class: expensive
+    typical_runtime_s: 60
+    params:
+      selection_policy: { type: str, enum: [protein_only], required: true }
+      hydrogen_policy: { type: str, enum: [rebuild_pH7], required: true }
+    description: Fixed protein-only Amber14-all plus GBn2 potential and bounded minimization, kJ/mol; durable_job lane
 
   # ---------------- L3 energetic (PyRosetta, job queue, expensive) --------------------------
   - name: relax_structure

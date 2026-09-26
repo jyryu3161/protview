@@ -18,11 +18,26 @@ from fastapi.testclient import TestClient
 
 from mw.api import app as api_module
 from mw.core.errors import FailureClass, ToolFailure
-from mw.jobs.queue import JobQueue, _guardian_argv, _members, _message, _same_identity, _send, _worker_environment
+from mw.jobs.process_identity import KIND, VERSION, IdentityUnavailable, capture, matches, valid
+from mw.jobs.queue import (
+    JobQueue,
+    _guardian_argv,
+    _members,
+    _message,
+    _same_identity,
+    _send,
+    _signal_member,
+    _worker_environment,
+)
 from mw.runtime.guards import Budget, BudgetLimits
 from mw.runtime.orchestrator import ApprovalRequired, Run, RunCancelled
 from mw.tools import energetic
 from mw.workspace import build_registry, new_run
+
+
+def fixture_start(value: float) -> dict:
+    """Synthetic raw identity for deterministic policy fixtures, never an observed process."""
+    return {"kind": KIND, "platform": sys.platform, "psutil_version": VERSION, "value": value}
 
 
 def run_at(tmp_path: Path, *, dry_run: bool = False) -> Run:
@@ -53,10 +68,10 @@ def wait_ready(run: Run, job_id: str, timeout: float = 3) -> dict:
             try:
                 reported = json.loads(paths[0].read_text())
                 proc = psutil.Process(reported["pid"])
-                assert proc.create_time() == reported["create_time"]
+                assert matches(proc.pid, reported["start_identity"])
                 assert proc.status() != psutil.STATUS_ZOMBIE
-                return {"pid": proc.pid, "create_time": proc.create_time(),
-                        "uid": proc.uids().real, "pgid": os.getpgid(proc.pid)}
+                return {"pid": proc.pid, "start_identity": capture(proc.pid),
+                        "uid": proc.uids().real, "pgid": os.getpgid(proc.pid), "session": os.getsid(proc.pid)}
             except (json.JSONDecodeError, OSError, psutil.NoSuchProcess):
                 pass
         time.sleep(0.01)
@@ -66,19 +81,19 @@ def wait_ready(run: Run, job_id: str, timeout: float = 3) -> dict:
 def assert_not_running(member: dict) -> None:
     try:
         proc = psutil.Process(member["pid"])
-        assert proc.create_time() != member["create_time"] or proc.status() == psutil.STATUS_ZOMBIE
+        assert not matches(proc.pid, member["start_identity"]) or proc.status() == psutil.STATUS_ZOMBIE
     except psutil.NoSuchProcess:
         pass
 
 
 def cleanup_test_owned(members: list[dict]) -> None:
-    # Test-only teardown keeps the original observed PID/create_time/UID/group tuple.
+    # Test-only teardown keeps the original observed PID/raw-start/UID/group tuple.
     # It can clean a verified grandchild after its guardian has already exited.
     for sig in (signal.SIGTERM, signal.SIGKILL):
         for member in members:
             try:
                 proc = psutil.Process(member["pid"])
-                if (proc.create_time() == member["create_time"] and
+                if (matches(proc.pid, member["start_identity"]) and
                         proc.uids().real == member["uid"] == os.getuid() and
                         os.getpgid(proc.pid) == member["pgid"] and
                         proc.status() != psutil.STATUS_ZOMBIE):
@@ -95,7 +110,7 @@ def cleanup_test_owned(members: list[dict]) -> None:
 def member_running(member: dict) -> bool:
     try:
         proc = psutil.Process(member["pid"])
-        return proc.create_time() == member["create_time"] and proc.status() != psutil.STATUS_ZOMBIE
+        return matches(proc.pid, member["start_identity"]) and proc.status() != psutil.STATUS_ZOMBIE
     except (psutil.NoSuchProcess, psutil.AccessDenied, ProcessLookupError, PermissionError):
         return False
 
@@ -112,13 +127,13 @@ def cleanup_fixture(queue: JobQueue, job_id: str, observed: list[dict] | None = 
         for event in events:
             if (event["type"] == "job_worker_started" and event.get("job_id") == job_id and
                     event.get("attempt_id") == attempt_id):
-                known.append({"pid": event["pid"], "create_time": event["create_time"],
-                              "uid": identity["uid"], "pgid": pgid})
+                known.append({"pid": event["pid"], "start_identity": event["start_identity"],
+                              "uid": identity["uid"], "pgid": pgid, "session": identity["session"]})
         for ready in (queue.run.run_dir / "jobs" / job_id / attempt_id).glob("grandchild.ready"):
             try:
                 value = json.loads(ready.read_text())
-                known.append({"pid": value["pid"], "create_time": value["create_time"],
-                              "uid": identity["uid"], "pgid": pgid})
+                known.append({"pid": value["pid"], "start_identity": value["start_identity"],
+                              "uid": identity["uid"], "pgid": pgid, "session": identity["session"]})
             except (OSError, ValueError, KeyError):
                 pass
     cleanup_test_owned(known)
@@ -314,7 +329,7 @@ def test_attempt_charges_supervision_cleanup_and_finalization_once(tmp_path, mon
     queue.claim_next("owner")
     before = run.budget.wall_clock_s
     identity = {"pid": 999999, "pgid": 999999, "session": 999999,
-                "create_time": 1.0, "uid": os.getuid()}
+                "start_identity": fixture_start(1.0), "uid": os.getuid()}
     calls = []
 
     def supervise(*args):
@@ -393,6 +408,30 @@ def test_missing_bootstrap_identity_stays_cleanup_pending(tmp_path):
     assert not any(e["type"] == "job_cleanup_verified" for e in run.events.read())
 
 
+def test_legacy_active_public_time_cannot_authorize_signal_or_replacement(tmp_path, monkeypatch):
+    """Synthetic historical active record; no process or signal is created."""
+    run, queue = queue_at(tmp_path)
+    run.approve("expensive_first_call")
+    job = queue.submit_fixture()
+    queue.claim_next("owner")
+    with run._owner():
+        run.reserve_attempt("attempt_legacy", job["job_id"], "lifecycle_fixture", {}, job_id=job["job_id"])
+    run.events.append("job_dispatch_intent", job_id=job["job_id"], attempt_id="attempt_legacy",
+                      launch_nonce="private", ordinal=1, remaining_wall_s=10, timeout_s=10)
+    legacy = {"nonce": "private", "pid": 410001, "pgid": 410001, "session": 410001,
+              "create_time": 100.0, "uid": os.getuid()}
+    run.events.append("job_launch_identity", job_id=job["job_id"], attempt_id="attempt_legacy", identity=legacy)
+    monkeypatch.setattr("mw.jobs.queue._members", lambda pgid: [{"pid": 410001, "uid": os.getuid()}])
+    monkeypatch.setattr(os, "kill", lambda *_: pytest.fail("legacy identity signalled"))
+    monkeypatch.setattr(os, "killpg", lambda *_: pytest.fail("legacy group signalled"))
+    state = queue.reconcile_run()[0]
+    assert state["status"] == "running" and state["cleanup_status"] == "pending"
+    assert run.budget.expensive_calls == 1
+    with pytest.raises(ToolFailure):
+        queue.retry(job["job_id"])
+    assert not any(e["type"] == "job_cleanup_verified" for e in run.events.read())
+
+
 def test_supervision_error_and_terminal_work_charged_once(tmp_path, monkeypatch):
     run, queue = queue_at(tmp_path)
     run.approve("expensive_first_call")
@@ -466,7 +505,7 @@ def test_guardian_uses_venv_and_minimal_environment_with_sentinels(tmp_path, mon
         assert hello and hello["kind"] == "HELLO" and hello["nonce"] == nonce
         assert hello["pid"] == proc.pid == hello["pgid"] == hello["session"]
         assert json.loads((tmp_path / "bootstrap.receipt").read_text()) == {
-            key: hello[key] for key in ("nonce", "pid", "pgid", "session", "create_time", "uid")}
+            key: hello[key] for key in ("nonce", "pid", "pgid", "session", "start_identity", "uid")}
         assert _same_identity(hello)
         runtime = hello["runtime"]
         assert runtime["prefix"] == sys.prefix
@@ -493,7 +532,7 @@ def test_stopped_control_drains_queued_started_before_real_result(tmp_path, reas
     parent, child = socket.socketpair()
     try:
         common = {"nonce": "private", "job_id": "job_probe", "attempt_id": "attempt_probe"}
-        _send(child, {"kind": "STARTED", **common, "pid": 123, "create_time": 1.0})
+        _send(child, {"kind": "STARTED", **common, "pid": 123, "start_identity": fixture_start(1.0)})
         _send(child, {"kind": "RESULT", **common, "reason": "stopped", "clean": False,
                       "direct_child_reaped": True, "returncode": None})
         result = queue._stopped_result(parent, "job_probe", "attempt_probe", "private",
@@ -544,18 +583,175 @@ def test_stopped_control_rejects_malformed_result_and_partial_frame(tmp_path):
         child.close()
 
 
+def test_worker_start_rejects_bool_pid_and_public_time_identity(tmp_path):
+    run, queue = queue_at(tmp_path)
+    common = {"kind": "STARTED", "nonce": "private", "job_id": "job_probe",
+              "attempt_id": "attempt_probe", "start_identity": fixture_start(1.0)}
+    for message in ({**common, "pid": True},
+                    {**common, "pid": 123, "start_identity": {"create_time": 1.0}}):
+        with pytest.raises(ValueError, match="invalid worker start"):
+            queue._record_control(message, "job_probe", "attempt_probe", "private")
+    assert not any(e["type"] == "job_worker_started" for e in run.events.read())
+
+
+def test_group_enumeration_recheck_failure_is_not_empty(monkeypatch):
+    pid = os.getpid()
+    start = capture(pid)
+    observations = iter((start, IdentityUnavailable("fixture second read denied")))
+
+    def observed(_pid):
+        result = next(observations)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(psutil, "pids", lambda: [pid])
+    monkeypatch.setattr("mw.jobs.queue.capture", observed)
+    with pytest.raises(IdentityUnavailable, match="second read denied"):
+        _members(os.getpgid(pid))
+
+
+def test_guardian_enumeration_failure_reaps_only_direct_child(monkeypatch):
+    before_import = list(sys.path)
+    from mw.jobs import guardian
+    assert sys.path == before_import  # importing for a policy test must not shadow stdlib queue
+
+    calls = []
+
+    class OwnedChild:
+        returncode = None
+
+        def poll(self):
+            return self.returncode
+
+        def kill(self):
+            calls.append("direct_child_kill")
+            self.returncode = -signal.SIGKILL
+
+        def wait(self, timeout):
+            calls.append(("direct_child_reap", timeout))
+            return self.returncode
+
+    monkeypatch.setattr(guardian, "members", lambda *_: (_ for _ in ()).throw(guardian.IdentityUnavailable("denied")))
+    monkeypatch.setattr(os, "kill", lambda *_: pytest.fail("unverified PID signal"))
+    monkeypatch.setattr(os, "killpg", lambda *_: pytest.fail("unverified group signal"))
+    assert guardian.cleanup(410001, 410001, OwnedChild()) == (False, [])
+    assert calls == ["direct_child_kill", ("direct_child_reap", 1)]
+
+
 def test_mismatched_identity_never_signalled(monkeypatch, tmp_path):
     _, queue = queue_at(tmp_path)
     identity = {"pid": os.getpid(), "pgid": os.getpgrp(), "session": os.getsid(0),
-                "create_time": psutil.Process(os.getpid()).create_time() + 100,
+                "start_identity": fixture_start(capture(os.getpid())["value"] + 100),
                 "uid": os.getuid()}
     assert not _same_identity(identity)
     monkeypatch.setattr("mw.jobs.queue._members", lambda pgid: [{
-        "pid": os.getpid(), "create_time": identity["create_time"], "uid": os.getuid()}])
+        "pid": os.getpid(), "start_identity": identity["start_identity"], "uid": os.getuid(), "session": os.getsid(0)}])
     called = []
     monkeypatch.setattr(os, "kill", lambda *args: called.append(args))
     assert not queue._cleanup_owned(identity)
     assert called == []
+
+
+def test_raw_start_policy_rejects_forged_and_malformed_records_without_signal(monkeypatch):
+    """Deterministic PID-reuse policy fixture, not observed OS PID reuse."""
+    pid = os.getpid()
+    genuine = capture(pid)
+    forged = {**genuine, "value": genuine["value"] + 1}
+    called = []
+    monkeypatch.setattr(os, "kill", lambda *args: called.append(args))
+    member = {"pid": pid, "uid": os.getuid(), "session": os.getsid(pid), "start_identity": forged,
+              "create_time": psutil.Process(pid).create_time()}  # matching public diagnostic cannot rescue raw mismatch
+    _signal_member(member, os.getpgid(pid), signal.SIGTERM)
+    assert not matches(pid, forged) and called == []
+    bad = [None, [], {**genuine, "kind": "public_wall_start"},
+           {**genuine, "platform": "linux" if sys.platform == "darwin" else "darwin"},
+           {**genuine, "psutil_version": "7.2.1"},
+           {key: value for key, value in genuine.items() if key != "value"},
+           {**genuine, "value": True}, {**genuine, "value": float("nan")},
+           {**genuine, "value": float("inf")}, {**genuine, "value": float("-inf")},
+           {**genuine, "value": 10**500}, {**genuine, "value": -(10**500)}]
+    for record in bad:
+        assert not valid(record) and not matches(pid, record)
+        _signal_member({**member, "start_identity": record}, os.getpgid(pid), signal.SIGTERM)
+    assert called == []
+
+
+@pytest.mark.parametrize("oversized", [10**500, -(10**500)])
+def test_raw_identity_oversized_integer_fails_closed_in_metadata_paths(monkeypatch, oversized):
+    import mw.jobs.process_identity as adapter
+
+    record = fixture_start(oversized)
+    assert not valid(record)
+    assert not matches(410001, record)
+
+    values = {None: oversized, 410001: oversized}
+
+    class FakeProcess:
+        def __init__(self, pid=None):
+            self._proc = self
+            self.pid = pid
+
+        def create_time(self, *, monotonic):
+            assert monotonic is True
+            return values[self.pid]
+
+    monkeypatch.setattr(adapter.psutil, "Process", FakeProcess)
+    with pytest.raises(IdentityUnavailable, match="invalid raw psutil start identity"):
+        adapter.supported()
+
+    values[None] = 1.0
+    adapter.supported()
+    with pytest.raises(IdentityUnavailable, match="invalid raw psutil start identity"):
+        capture(410001)
+    assert not matches(410001, fixture_start(1.0))
+
+
+@needs_process_table
+def test_raw_identity_survives_process_local_public_clock_offsets():
+    """No OS clock changes; independent interpreter reads the same live PID."""
+    if sys.platform != "darwin":
+        pytest.skip("Darwin public clock compensation is platform specific")
+    import psutil._psosx as osx
+
+    pid = os.getpid()
+    original = osx.INIT_BOOT_TIME
+    baseline = osx.boot_time()
+    public = []
+    raw = []
+    try:
+        for offset in (0, 2, -2):
+            osx.INIT_BOOT_TIME = baseline + offset
+            public.append(psutil.Process(pid).create_time())
+            raw.append(capture(pid))
+    finally:
+        osx.INIT_BOOT_TIME = original
+    script = "import json,sys; from mw.jobs.process_identity import capture; print(json.dumps(capture(int(sys.argv[1]))))"
+    independent = json.loads(subprocess.check_output([sys.executable, "-c", script, str(pid)], text=True))
+    assert public[0] != public[1] and public[0] != public[2]
+    assert raw[0] == raw[1] == raw[2] == independent
+
+
+@pytest.mark.parametrize("broken", ["version", "platform", "internal"])
+def test_identity_unavailable_prevents_reservation_and_launch(tmp_path, monkeypatch, broken):
+    import mw.jobs.process_identity as adapter
+
+    run, queue = queue_at(tmp_path)
+    run.approve("expensive_first_call")
+    job = queue.submit_fixture()
+    queue.claim_next("owner")
+    queue._popen = lambda *args, **kwargs: pytest.fail("unsupported identity launched a process")
+    if broken == "version":
+        monkeypatch.setattr(adapter.psutil, "__version__", "7.2.1")
+    elif broken == "platform":
+        monkeypatch.setattr(adapter, "PLATFORMS", set())
+    else:
+        monkeypatch.setattr(adapter.psutil, "Process", lambda *_: object())
+    with pytest.raises(ToolFailure) as exc:
+        queue.execute_claim(job["job_id"], "owner")
+    assert exc.value.detail["reason_code"] == "process_identity_unavailable"
+    assert run.budget.expensive_calls == 0
+    assert not any(e["type"] == "job_dispatch_intent" for e in run.events.read())
 
 
 @pytest.mark.parametrize("mode", ["stranger", "known_survivor", "loss_during_scan",
@@ -564,11 +760,11 @@ def test_cleanup_cohort_survives_anchor_loss_without_signalling_strangers(monkey
     """All process observations and signals are fixtures; no OS signal is sent."""
     uid = os.getuid()
     anchor = {"pid": 410001, "pgid": 410001, "session": 410001,
-              "create_time": 100.0, "uid": uid}
-    leader = {"pid": 410001, "create_time": 100.0, "uid": uid}
-    helper = {"pid": 410002, "create_time": 101.0, "uid": uid}
-    stranger = {"pid": 410003, "create_time": 200.0, "uid": uid}
-    reused = {"pid": helper["pid"], "create_time": 202.0, "uid": uid}
+              "start_identity": fixture_start(100.0), "uid": uid}
+    leader = {"pid": 410001, "start_identity": fixture_start(100.0), "uid": uid, "session": 410001}
+    helper = {"pid": 410002, "session": 410001, "start_identity": fixture_start(101.0), "uid": uid}
+    stranger = {"pid": 410003, "session": 410001, "start_identity": fixture_start(200.0), "uid": uid}
+    reused = {"pid": helper["pid"], "start_identity": fixture_start(202.0), "uid": uid, "session": 410001}
     state = {"anchor_alive": True, "clock": 0.0, "scans": 0, "signals": [], "killed": set()}
 
     def same_identity(_identity):
@@ -585,14 +781,14 @@ def test_cleanup_cohort_survives_anchor_loss_without_signalling_strangers(monkey
                 [helper] if mode == "known_survivor" else (
                     [reused] if mode == "reused_member_pid" else [stranger]))
         return [dict(member) for member in found
-                if (member["pid"], member["create_time"]) not in state["killed"]]
+                if (member["pid"], member["start_identity"]["value"]) not in state["killed"]]
 
     def signal_member(member, _pgid, sig):
         state["signals"].append((member["pid"], sig))
         if mode != "loss_during_scan":
             state["anchor_alive"] = False
         if sig == signal.SIGKILL:
-            state["killed"].add((member["pid"], member["create_time"]))
+            state["killed"].add((member["pid"], member["start_identity"]["value"]))
 
     def monotonic():
         state["clock"] += 0.005
@@ -898,7 +1094,7 @@ def test_parent_group_verification_requires_direct_child_reap_ack(tmp_path, monk
     job = queue.submit_fixture()
     queue.claim_next("owner")
     identity = {"pid": 999999, "pgid": 999999, "session": 999999,
-                "create_time": 1.0, "uid": os.getuid()}
+                "start_identity": fixture_start(1.0), "uid": os.getuid()}
 
     def synthetic_guardian(job_record, attempt_id, nonce, attempt_dir, deadline, dispatch):
         dispatch.update(spawned=True, authorized=True, reaped=True)
@@ -1049,7 +1245,7 @@ def test_actual_creation_mismatch_refuses_signal(tmp_path):
                                stderr=subprocess.DEVNULL)
     try:
         identity = {"pid": process.pid, "pgid": process.pid, "session": process.pid,
-                    "create_time": psutil.Process(process.pid).create_time() + 1,
+                    "start_identity": fixture_start(capture(process.pid)["value"] + 1),
                     "uid": os.getuid()}
         assert not queue._cleanup_owned(identity)
         assert process.poll() is None

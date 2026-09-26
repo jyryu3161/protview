@@ -1,0 +1,106 @@
+{
+  "status": "pass",
+  "case": "A04-large-exact-scope",
+  "note": "Original root probe read first historical intent by mistake. Final renderer and exact command acknowledgment are reconciled with durable events; original evidence preserved.",
+  "runId": "run_80f8739755ba482f8d5a6b161f147127",
+  "viewer": {
+    "ready": true,
+    "sourceHandle": "obj://run_80f8739755ba482f8d5a6b161f147127/structure/32f71083f3d2f1e885bfe141cec731e1d2348b5e5cafed5ce0799b01626c5eb9",
+    "sessionId": "f28a889a-8049-4305-b459-2b6102a6c3a8",
+    "generation": 41,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 150,
+      "seq_label": 150,
+      "icode": "",
+      "resname": "ALA"
+    },
+    "camera": {
+      "position": [
+        -7.618999958038329,
+        -2.437999963760376,
+        67.3948177995907
+      ],
+      "target": [
+        -7.618999958038329,
+        -2.437999963760376,
+        52.49999999999999
+      ],
+      "radius": 5.700000000000007,
+      "distance": 14.894817799590705
+    },
+    "lastAck": {
+      "commandId": "7e36e9fb-b865-45b9-850c-d1d9cb7c268a",
+      "status": "applied",
+      "reasonCode": null
+    }
+  },
+  "ack_event": {
+    "command_id": "7e36e9fb-b865-45b9-850c-d1d9cb7c268a",
+    "intent_id": "ce323717-3f68-4eec-8fb2-ccdd3941edee",
+    "reason_code": null,
+    "seq": 21,
+    "status": "applied",
+    "ts": 1790293000.96661,
+    "type": "viewer_command_ack"
+  },
+  "outcome_event": {
+    "commands": [
+      {
+        "action_revision": 1,
+        "axis": "selection",
+        "catalog_hash": "1775f7c26010b0287dc38752945880d45fdf5a64a5d86be9f6aeebd1f2f385c4",
+        "client_instance_id": "01a58cff-80b1-425f-add2-28353583f677",
+        "command_id": "49848529-e8c7-43df-be46-22eb378056c4",
+        "intent_id": "ce323717-3f68-4eec-8fb2-ccdd3941edee",
+        "scene_generation": 41,
+        "schema": "viewer_plan@1",
+        "structure_handle": "obj://run_80f8739755ba482f8d5a6b161f147127/structure/32f71083f3d2f1e885bfe141cec731e1d2348b5e5cafed5ce0799b01626c5eb9",
+        "target": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "ALA",
+          "seq_auth": 150,
+          "seq_label": null
+        },
+        "value": "select",
+        "viewer_session_id": "f28a889a-8049-4305-b459-2b6102a6c3a8"
+      },
+      {
+        "action_revision": 1,
+        "axis": "camera",
+        "catalog_hash": "1775f7c26010b0287dc38752945880d45fdf5a64a5d86be9f6aeebd1f2f385c4",
+        "client_instance_id": "01a58cff-80b1-425f-add2-28353583f677",
+        "command_id": "7e36e9fb-b865-45b9-850c-d1d9cb7c268a",
+        "intent_id": "ce323717-3f68-4eec-8fb2-ccdd3941edee",
+        "scene_generation": 41,
+        "schema": "viewer_plan@1",
+        "structure_handle": "obj://run_80f8739755ba482f8d5a6b161f147127/structure/32f71083f3d2f1e885bfe141cec731e1d2348b5e5cafed5ce0799b01626c5eb9",
+        "target": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "ALA",
+          "seq_auth": 150,
+          "seq_label": null
+        },
+        "value": "focus_selected",
+        "viewer_session_id": "f28a889a-8049-4305-b459-2b6102a6c3a8"
+      }
+    ],
+    "intent_id": "ce323717-3f68-4eec-8fb2-ccdd3941edee",
+    "question_version": "local_commands@1",
+    "reason_code": "accepted",
+    "seq": 19,
+    "status": "planned",
+    "ts": 1790293000.935346,
+    "type": "viewer_intent_outcome"
+  }
+}

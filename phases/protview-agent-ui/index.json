@@ -1,0 +1,289 @@
+{
+  "project": "ProtView",
+  "phase": "protview-agent-ui",
+  "steps": [
+    {
+      "step": 0,
+      "name": "agent-viewer",
+      "status": "completed",
+      "acceptance_checks": [
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests/test_agent_viewer.py",
+          "backend/tests/test_llm_egress.py",
+          "backend/tests/test_runtime.py",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "backend/tests",
+          "-q"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "ruff",
+          "check",
+          "backend/mw",
+          "backend/tests",
+          "scripts",
+          ".codex/hooks"
+        ],
+        [
+          ".venv/bin/python",
+          "-m",
+          "pytest",
+          "scripts/test_execute.py",
+          "scripts/test_codex_hooks.py",
+          "-q"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "test:events"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "typecheck"
+        ],
+        [
+          "npm",
+          "--prefix",
+          "frontend",
+          "run",
+          "build"
+        ]
+      ],
+      "verification": {
+        "ran_at": "2026-09-25T00:48:07+00:00",
+        "checks": [
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests/test_agent_viewer.py",
+              "backend/tests/test_llm_egress.py",
+              "backend/tests/test_runtime.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "........................................................................ [ 66%]\n.....................................                                    [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n109 passed, 1 warning in 5.70s\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "backend/tests",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "........................................................................ [ 27%]\n........................................................................ [ 55%]\n........................................................................ [ 83%]\n..........................................                               [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n258 passed, 1 warning in 136.82s (0:02:16)\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "ruff",
+              "check",
+              "backend/mw",
+              "backend/tests",
+              "scripts",
+              ".codex/hooks"
+            ],
+            "exit_code": 0,
+            "output_tail": "All checks passed!\n"
+          },
+          {
+            "command": [
+              ".venv/bin/python",
+              "-m",
+              "pytest",
+              "scripts/test_execute.py",
+              "scripts/test_codex_hooks.py",
+              "-q"
+            ],
+            "exit_code": 0,
+            "output_tail": "...................................................                      [100%]\n51 passed in 5.28s\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "test:events"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 test:events\n> node --test tests/*.test.cjs\n\n✔ SASA display uses decimal half-up and suppresses negative zero (0.391208ms)\n✔ reopened cache reads move the latest pipeline through physical lineage (1.306041ms)\n✔ cache reads require the physical call key and source success in sequence (0.18125ms)\n✔ conflicting cache observation identities cannot select another output (0.11975ms)\n✔ canonical JSON args accept reordered objects and preserve array order (0.156792ms)\n✔ cache reads need their original input and exact output reference (0.176916ms)\n✔ latest SASA result follows exact prepared input and verified cache lineage (0.17125ms)\n✔ read-only mode badge renders effective local, online and dry run mode (5.733708ms)\n✔ late OpenMM action cannot commit after run, input, job, result or newer action changes (0.923708ms)\n✔ energy display uses checked decimal half-up for positive and negative ties (0.341583ms)\n✔ policy and visible errors reset only when their OpenMM context changes (0.832958ms)\n✔ result and report failures stay independent in either completion order (0.203625ms)\n✔ a delayed budget response cannot replace another run or newer job snapshot (0.328625ms)\n✔ OpenMM page actions use the live identity guard on success, error and cleanup (0.8695ms)\n✔ OpenMM preflight uses canonical structure query while object reads retain handle (59.251791ms)\n✔ historic report references bind to exact interaction, not latest result (0.410083ms)\n✔ stale asynchronous report responses cannot cross run or selection (0.101958ms)\n✔ method reports stay bound to their exact result across history and asynchronous responses (0.3735ms)\n✔ OpenMM reports remain bound to method, run, and historical result (0.875833ms)\n✔ manual scene change immediately updates the visible outbound projection (0.505084ms)\n✔ late plan is rejected after manual revision, source or scene changes (0.089542ms)\n✔ catalog scope and displayed source each advance the same client generation (0.06625ms)\n✔ orbit-only camera reset counts as an observed change (0.094458ms)\n✔ Enter and button share offline, dry-run and prompt validation (0.119209ms)\nℹ tests 24\nℹ suites 0\nℹ pass 24\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 298.921958\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "typecheck"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 typecheck\n> tsc --noEmit\n\n"
+          },
+          {
+            "command": [
+              "npm",
+              "--prefix",
+              "frontend",
+              "run",
+              "build"
+            ],
+            "exit_code": 0,
+            "output_tail": "\n> molecular-workspace-web@0.1.0 build\n> NEXT_TELEMETRY_DISABLED=1 next build\n\n   ▲ Next.js 15.5.26\n\n   Creating an optimized production build ...\n ✓ Compiled successfully in 3.0s\n   Linting and checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/5) ...\n   Generating static pages (1/5) \n   Generating static pages (2/5) \n   Generating static pages (3/5) \n ✓ Generating static pages (5/5)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                 Size  First Load JS\n┌ ○ /                                    20.1 kB         137 kB\n├ ○ /_not-found                            999 B         104 kB\n└ ○ /gallery                             4.45 kB         122 kB\n+ First Load JS shared by all             103 kB\n  ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB\n  ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB\n  └ other shared chunks (total)           2.2 kB\n\n\n○  (Static)  prerendered as static content\n\n"
+          }
+        ],
+        "passed": true
+      },
+      "review": {
+        "model": "gpt-6-astra",
+        "verdict": "approved",
+        "reviewed_at": "2026-09-25T00:48:07+00:00",
+        "report": "phases/protview-agent-ui/reviews/step0.md",
+        "report_sha256": "5185ad8c5b0d0aefba89e2d8f51b1a3282c5ba188791fcf95c957f10fc12a515",
+        "reviewed_files": {
+          ".gitignore": "4a9c6ddb92fa7683232c6e0d36ea9e2c3f57d3dec6b78045b0bf04e7c973ee76",
+          "AGENTS.md": "5aaa19fb53691c4fd8276bd586b9790ce2b41fc8eb04824406fb722335c9f9de",
+          "README.md": "87c9846e267e235ccc65148b0a23c521ad331852c9457499fde555e3077c0a62",
+          "backend/mw/api/app.py": "64ca5df73a67c8b70a95e8d9be7e6628e47d6f586b953f07b24ac18454a3bafe",
+          "backend/mw/core/events.py": "1c16d163eed63ab934f18c5d5eb021bce554f90a013b914fd89d39bb0b1e810f",
+          "backend/mw/egress/gate.py": "81d90c011db0f60ab33a15115d231ad8c05b404fc78e559b14e66627ebc148ec",
+          "backend/mw/egress/viewer.py": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267",
+          "backend/mw/runtime/orchestrator.py": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c",
+          "backend/mw/viewer_intents.py": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c",
+          "backend/tests/offscreen_agent_fixture/README.md": "281c5aec8fcf2f54e95cfcd989d7ec161f1edc799950134d8ab61e0577f12cfe",
+          "backend/tests/offscreen_agent_fixture/qa.cjs": "fb1ba18d01d4b325e528d966655ef3ae159844730f9fcfbcddeccef4c7b5b79b",
+          "backend/tests/offscreen_agent_fixture/server.py": "527dba53da28db19bb4c23200ac16fb2ac950bc1490d11969cdbb564c9d2e321",
+          "backend/tests/test_agent_viewer.py": "dbf0f779d83f6ca0165e1ee498177f6a8ff5072455f79346bcdf50e65b118e5e",
+          "docs/ARCHITECTURE.md": "51409150ecc53cbaf789abae894756a1bd565000ca7401a5467c75e0345d1999",
+          "docs/DECISIONS.md": "b0b07a3d3731db3ee85e9f3f08907a47ee2534cb098cfcfb8b044fb4ce8537fa",
+          "docs/IMPLEMENTATION_PLAN.md": "a3acf8910ef1507874c6848e0321ee66a9c45a81574dc3ddae119ea6a490a44d",
+          "docs/M8_AGENT_VIEWER.md": "3f156cf55123f67c610f458d67bdaa55571c0d2e71fdc4bd393417f04d87313f",
+          "docs/M8_AGENT_VIEWER_CONTRACT.md": "0156d5ae3a5e44fed18456971689abe0d6d0e07bf58c61dc578c85ec2a594fc5",
+          "docs/M8_AGENT_VIEWER_REVIEW.md": "5185ad8c5b0d0aefba89e2d8f51b1a3282c5ba188791fcf95c957f10fc12a515",
+          "docs/M8_OFFSCREEN_QA_PLAN.md": "8c53eb6443e81a3d3bc6da9b7a532c678ccb78f179a382a62acbb42962743bf7",
+          "docs/M8_QA_RESULTS.md": "f85e189707826f6a94387a9cbb9516c6bdb8fce73810ed48e279341c9368e148",
+          "docs/qa/m8/COVERAGE.md": "9fd118167b3a0f4c3ed662b82e5bd450d4aca4209ad4b07830c4529320f5d08f",
+          "docs/qa/m8/archive.json": "e255d6f9a9941927b6debd545e68f2fec921bba988596f64ce138ba1663f69cb",
+          "docs/qa/m8/coverage.json": "ebb35b112c2fc215f2b53c8ec0642fbdf97ccd58ecb48ed8fac483e71ba36cb7",
+          "docs/qa/m8/raw/agent-adversarial-before-v12.jsonl": "e2de0bbecf3814bec03aef67eec20eea30e183dea807eda5610776446ad7afe5",
+          "docs/qa/m8/raw/agent-adversarial-final.jsonl": "8c531befe3a746c95c98fc5062f475bad015fe7616247bc45b2e11cfb738cd37",
+          "docs/qa/m8/raw/agent-adversarial.jsonl": "7a5f6f87668819043514ecb32909491b5e32ed25ed79f1e41a0afc7ebf48d3e2",
+          "docs/qa/m8/raw/agent-source-transition-attempt5.jsonl": "b9347e292e897b69f23392372e2d60825be5e80c401d49baf6278e94cac7cd40",
+          "docs/qa/m8/raw/agent-source-transitions.jsonl": "c564c1f0c574ee13bc047f5ba498950f9b2007d20e4ecdc2fc81cad88f986698",
+          "docs/qa/m8/raw/astra-boundaries.json": "134e84eb40aa7d6b25230d6f540443abaccb5e4f86d760e3ef7a538e5c3099f1",
+          "docs/qa/m8/raw/astra-concurrency.json": "b52d89d4f3fb00c7ae0459d045b832b5677d3180a20f1fe4f6c126eb816f61b3",
+          "docs/qa/m8/raw/astra-session-cas.json": "86b70de517e96977fc3b29f1305ca4aceb2ccf83d05fa79bcf1545b67193a70b",
+          "docs/qa/m8/raw/astra-stable-wrapper.json": "05ee83787dca918df078ef1a4bdf3c488510ac4b94affc6b474a34dd92cb95d0",
+          "docs/qa/m8/raw/canvas-busy-final.jsonl": "352279b26af697862f5be26654d4ac0bf5ca8207a1e086297df64dcf5e7e8b1f",
+          "docs/qa/m8/raw/canvas-minimized-final.jsonl": "a2f9142dbfcc4a3f9694c92ddf9684d35b362a04a905543fbe0beac9cc39f602",
+          "docs/qa/m8/raw/canvas-modifiers-before.jsonl": "5198103c6357bf736c6a6f1bc5dc1e8358461c89f79fe4ae8388d64b7f0ecd46",
+          "docs/qa/m8/raw/canvas-pick-before.jsonl": "c381c7a30907736db023eb9b94d485bc6d735e2266866864e490b94634e56da8",
+          "docs/qa/m8/raw/canvas-pick-final.jsonl": "c2f1a13fce84904bce7d0b4b828163fba4996b3e03f46e47997c251dfb987617",
+          "docs/qa/m8/raw/canvas-pick-probe-field-error.jsonl": "21ea335ef51911bafcb9ec9666a0c4cf26fc46a54bd01ac734cb4d1ea728e83e",
+          "docs/qa/m8/raw/canvas-server-busy.json": "158931a8dc0aaa74e5a791088b4014b1346d1d0288e3e4bf1dcbf736eafd375a",
+          "docs/qa/m8/raw/canvas-server-final.json": "d7f63627c6fd46f99404700f3005f327cc7f2ecf4ad7a10f508a052d0e0fc240",
+          "docs/qa/m8/raw/canvas-server-minimized.json": "1bf275b02e6d43d333a6343c2edf0ce23fa14951523ea913f20e68bc2b8b347f",
+          "docs/qa/m8/raw/canvas-server-normal.json": "3d6ff947838165a438521c59abf52979667954e6091a9ef18ddd58740315566e",
+          "docs/qa/m8/raw/canvas-state-before-serialization.jsonl": "59e9abc80a53b9476b55c21a287e4cf0190fc974fd9ceb5b97b1185914582833",
+          "docs/qa/m8/raw/default-service.json": "8f4e86c8f42e3d22ad007a50e91138880e84a55df3c30e1bf8a0651a5414244d",
+          "docs/qa/m8/raw/demo-copy.json": "54beddbd56ba491f0c72389a513d235f2ccbfe210283f8ee454e7f25ec44e1c3",
+          "docs/qa/m8/raw/dry-run-before-feedback.jsonl": "80ca95ac3e9bffeb40d7fd0b2c850de1aa4c946501cc40478f710e4ea13a23b8",
+          "docs/qa/m8/raw/dry-run-feedback.jsonl": "d5f05ed4ba2427a7cc28ec8d3258455f7549d63014accd9a21b7ff99f4910a2c",
+          "docs/qa/m8/raw/extra.json": "db84b5ecd5ea4866f9653bed978cb82f2991beadb3d6d85765500d9df99222a5",
+          "docs/qa/m8/raw/gallery.json": "55db3f7e2e21d7fbcee9844a37567bdf88b4c4bf0a691813c208431c337003f1",
+          "docs/qa/m8/raw/host-baseline.json": "3ebd8f7bd43413f989334b19bb102b53b897db460ccb3111b9858541c9a91518",
+          "docs/qa/m8/raw/inputs-earlier.jsonl": "80fa404a05378670821238004a60f5610fd7657dd9a7c538ed1defc0d9816e56",
+          "docs/qa/m8/raw/inputs-fixed.jsonl": "f340e13c91aaa17b0eba17242f4103a9439981c7571f87a22f4bb605692f9173",
+          "docs/qa/m8/raw/keyboard.json": "03a26b4cdbd2b0bb9a2405f2dbe9723014e69ab2a8a3b0876049c210ce626b5a",
+          "docs/qa/m8/raw/live-summary.json": "42820d08a52044c597878dbccb90c3a81d25bef5f59d518b04b4de96673a77fa",
+          "docs/qa/m8/raw/live-v1-events.json": "754909ef7839af99b9ef15b57478c3ffd3d024f406c77bb5537acb856c47e84b",
+          "docs/qa/m8/raw/live-v1-semantic-failure.json": "b3ee6db8d8ae549600295384cfdc7a19dddba2a78a773945ad8413b90b2bd2a6",
+          "docs/qa/m8/raw/live-v1.jsonl": "4cec32c82f5627941e91ac4786d5254b1ac32ac6fc48a2a5873e0a05fb9733ec",
+          "docs/qa/m8/raw/live-v2-events.json": "ec841ec32b8424d7c90483c758e74ed0858328f4142665e737d20b6b6bff86fe",
+          "docs/qa/m8/raw/live-v2.json": "daa684c771952822f3e29996f9952a125d63f1365c33fdaf30844f0bdec4086c",
+          "docs/qa/m8/raw/model-index-reopen.jsonl": "2e6472a129a8ebf12bad247abfbaade30bf0194244b25269158ff681456317d6",
+          "docs/qa/m8/raw/normal-before-v12.jsonl": "b3a61cf932a501aacf14b1a640a18bc3efc852c9d828207e1550246fec465de3",
+          "docs/qa/m8/raw/normal.jsonl": "0c22514040918b481d95735d168b3b8bd353b4cd1b2151f8bd307039b19add17",
+          "docs/qa/m8/raw/openmm-full.jsonl": "1dcbe002fac8756ced3f2fa2d8eb5d577eed68e5d284b8bf0df09173035ae058",
+          "docs/qa/m8/raw/openmm-late-report.jsonl": "9567694363a3742cc1d746ce1da118f5e8f95048dfaf761d505b493de8e66b4e",
+          "docs/qa/m8/raw/openmm-late-result.jsonl": "e9ab26aeb483024bc343c911c4f0b3f346ae77b23c4cf08a94979550081eefc7",
+          "docs/qa/m8/raw/openmm-persistence.jsonl": "0b40b497e195bb780219824d8f222c21ddc3cc3064f5d75faf86c3326090e0a6",
+          "docs/qa/m8/raw/openmm-post-approve.jsonl": "7d48ea0878737b23bf3940a2863807626cc5e31d5a739d89bb83158d4899c246",
+          "docs/qa/m8/raw/openmm-post-create.jsonl": "30d07408c9bd8bea9a0f4fc65c7072c291566a66378b609fcc2d7e3cd4535f86",
+          "docs/qa/m8/raw/openmm-post-start.jsonl": "36d3e72c3c8949e04c8fbe3b632a9c76509cc364eeefb256f2574c4392321c78",
+          "docs/qa/m8/raw/openmm-post-submit.jsonl": "268c546c53cb4efff23d7a8690ffd46a4ec5bc80acfbfbfe603c9fe51ac9630e",
+          "docs/qa/m8/raw/openmm-queued-cancel.jsonl": "5c91d543686c991d7784d713a7d09c2f37f6444397bbe159e41514b416744cbc",
+          "docs/qa/m8/raw/openmm-read-retry.jsonl": "ffebe600ad3aab7fdea255e4ae8bab4fafcdd34d5167376c01e16c9cc1d3ae26",
+          "docs/qa/m8/raw/openmm-retry.jsonl": "5ccadcfb1c658c58c092e0dfb5a87c865436f54b48111a96f818ce22159d10ba",
+          "docs/qa/m8/raw/openmm-running-cancel.jsonl": "ce1fac3b620661cb82c01ce916248406648faa320421e683c494c589d277d869",
+          "docs/qa/m8/raw/preservation.json": "6d711f15b49968f6cf9686bf9ba3a120eed52adaa9f4f705098c6fd17faeaf8f",
+          "docs/qa/m8/raw/probe-I09.cjs": "5dc455f7c1d3b87d9a72a5a0ea462873ed5e76f4177e6ec9e47c1cac94dff5e6",
+          "docs/qa/m8/raw/probe-V12-contexts.cjs": "5c219e2ff23ef22685e22df8e8cc9523a9c515d8ca0b7489178b17dc220919f9",
+          "docs/qa/m8/raw/probe-V12.cjs": "af24c665322ef79ec186376e7f28fde645d32559e6c37318d6721d3b28006d2c",
+          "docs/qa/m8/raw/read-recovery.jsonl": "06388c49ac52523404f81300828f1299e2f25d2eb15d2cff3dc0514eea413fac",
+          "docs/qa/m8/raw/root-observation-reconciliation.json": "95fb32580a7c436796b590b5f70e90d762d2e5494ef3aa3ee6e77fd2a5c26082",
+          "docs/qa/m8/raw/scope-after.json": "f01ca39aa4868c06968c488d0856e7c91f6e7033f6c84a11409bfbe2d7c67b71",
+          "docs/qa/m8/raw/scope-before.json": "18015188a7fd6eaa59bc19661296cab28305913b54aadbcdd5407bf82567c992",
+          "docs/qa/m8/raw/synthetic-inputs.json": "db2c4911d81a62395dad7dbd5543f748ff9e2196279c0c842b09b9a727aeb1d1",
+          "docs/qa/m8/screenshots/ack-loss-after.png": "7ad4e3245ac993465ca506c55f8eb9ee65ceeeca6e14c869fa9232c6ee6ee172",
+          "docs/qa/m8/screenshots/actual-offscreen-paint.png": "c3ecaa8fa564e42abda763489458dceea2fa7fca7a46476c14cec6c95537dfb4",
+          "docs/qa/m8/screenshots/agent-minimized-transition.png": "2d987487b81000caa8e4572fc4373bb7b7ec6e50adb14c046ae1cf4cc8ad9309",
+          "docs/qa/m8/screenshots/canvas-pick-after.png": "09c6a99cf3fde90d1c693b06f0abe4b105c203ca25e2f637f904660c3131dff1",
+          "docs/qa/m8/screenshots/canvas-pick-before.png": "441ca36978792bbde8ebc5fd2bbf0a8a457189655f9bd0449a01ed8e0fb7baa1",
+          "docs/qa/m8/screenshots/canvas-revision-race.png": "1b0bdbf056539b3919299e47313fe229f9534697eb802405f48665c2c7ac3f0b",
+          "docs/qa/m8/screenshots/dry-run-plan-feedback.png": "0b74335abef4e4c3eb954923710675f174093414edb55d9c520e227a3dd28849",
+          "docs/qa/m8/screenshots/live-clear-reset.png": "c3ecaa8fa564e42abda763489458dceea2fa7fca7a46476c14cec6c95537dfb4",
+          "docs/qa/m8/screenshots/live-ligand-zoom.png": "b7ba6224fef17ebcf9a4a6bff25c0c55c184a0c23a17e809091d0921e91a5f78",
+          "docs/qa/m8/screenshots/live-surface-residue.png": "cfdfc1f949c012c4b76efefa6ec99630e7ff8f2fcd0ce1a194887b6a936f85a2",
+          "docs/qa/m8/screenshots/stop-partial-after.png": "0404dbc00d545f4c607f0c6f098c485e4751dc8a10dae41aa4cd9af3a0468645",
+          "docs/qa/m8/screenshots/stop-partial-before.png": "6f7b9880b6fc1eff89fbd08e327e33930ff103fdd8e2adf47e85b359c0e15fc2",
+          "docs/qa/m8/screenshots/stop-selection-after.png": "e3b8528dbf4c7362b66bee80dffe5dd5442b71677a41acfb0ecb83ecbbecf6ef",
+          "frontend/app/page.tsx": "f5cf291545ef87c9be66f8f9c572fe65fc2b42ca29b0f8480015a7eebd2ada44",
+          "frontend/package-lock.json": "3125f791bf8f7763c64b494502acea3f66283f9db4ef45392665a7552ea74f54",
+          "frontend/package.json": "4a4294083fbc5365d36579bf2c70fb168fa8713439e92fd08e14abd5ca7f0dc2",
+          "frontend/src/components/MolstarViewer.tsx": "fe8b5ee89c9fd6b95e39dffba4d78075ff449106ee31388bbcb695a3aecc06f0",
+          "frontend/src/components/ViewerAgentPanel.tsx": "cc7b057385f905c15d61911aec425c5fc6a305a3a8940b210867c49943aab79d",
+          "frontend/src/components/run.tsx": "f48948b7b3e481f527d18cf482cf3a19f78486ff8b768da77b661b2c51ac300a",
+          "frontend/src/design/components.css": "23c02a98cb889ea15e1e4f69104c0b8cea5b736f1260e462a878b20621da6563",
+          "frontend/src/lib/api.ts": "a2c29d82242b9fc790f16458b46a4ba6be180431900a54492bb8fc68ebf65acf",
+          "frontend/src/lib/viewer-agent.ts": "359ea05ae9c4f3827cb4727a30931f727bd474f8020ba1f802c9ca1b8d5338bf",
+          "frontend/src/lib/viewer-scene.ts": "59c59921d9203edb4a1ecf29cfcc91e0a3c6bdeae7c1b62544e5f7c76df319cc",
+          "frontend/tests/offscreen/README.md": "4021b9ab29ac9c9801f74bbfc0e1922418cc596786b6b8a891d96db0f6be4510",
+          "frontend/tests/offscreen/driver.cjs": "85769a0e1735e381c0318ab21a8186565532f2481e8d700a08bc8ef5e0bc00b2",
+          "frontend/tests/offscreen/dry-run.cjs": "2277c802c478faf4dc4626f7086a8c4316ac2d88da299d53062bdb2aa1199ed0",
+          "frontend/tests/offscreen/history-keyboard.cjs": "45a27745579f728a725bbe88b5fc2912edfc6c680ae14a7f2dfac708d9a12da6",
+          "frontend/tests/offscreen/main.cjs": "4787a2cf01b476cc0e6b7fbb85bc59328f0ef22040c4915730ce80539114bd13",
+          "frontend/tests/offscreen/normal-flow.cjs": "418b4f04c9a0e4ef7a0304600ae48fd68cc590fff9724f92f7e5a603488b9bce",
+          "frontend/tests/offscreen/openmm-faults.cjs": "078fe49eee966e616c37b38332b20ca6f784ebec1a1d6623aa41e03113d9de80",
+          "frontend/tests/offscreen/openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+          "frontend/tests/offscreen/openmm-persistence.cjs": "37c908f6dd528e3bccd7a0ab7bb62de49dd03e1e15a198300c1d584cb9494239",
+          "frontend/tests/offscreen/openmm-post-races.cjs": "bfe5ac32ad49552496733fc0f1421c949dfa28ed692a4588ab0a88b4071891be",
+          "frontend/tests/offscreen/openmm-retry.cjs": "df56ad552337a038b0cd4259b78f5226d92317fd35d72bbb0c85ea1b3788e93c",
+          "frontend/tests/viewer-scene.test.cjs": "10dfdc09c294cfb36e589bbe7986e63a3a33a116e7710459e9927f70fb7105d7"
+        },
+        "spec_sha256": "d2855a34e3f29ffc96ede8364fff191d79263a6a0ff3ed62439e4150372a4dec",
+        "acceptance_checks_sha256": "b15017cd68c6bcd18f969a030a39f86647d703ecee4fe2929e9f690ca5f8b3b4"
+      },
+      "completed_at": "2026-09-25T00:48:07+00:00"
+    }
+  ],
+  "completed_at": "2026-09-26T22:41:39+00:00"
+}

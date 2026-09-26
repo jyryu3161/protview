@@ -1,6 +1,7 @@
 """Fixed POSIX launch anchor. Invoked only by the local queue with an inherited control fd."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -15,9 +16,18 @@ from pathlib import Path
 
 import psutil
 
+# -I deliberately removes the project import path when run as a script. Add
+# only the fixed sibling directory in that launch, not during package imports.
+if __package__:
+    from .process_identity import IdentityUnavailable, capture, matches, supported
+else:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from process_identity import IdentityUnavailable, capture, matches, supported
+
 MAX_CONTROL = 8192
 MAX_RESULT = 8192
 FIXTURE = Path(__file__).with_name("lifecycle_fixture.py")
+OPENMM = Path(__file__).with_name("openmm_worker.py")
 FIXTURE_MODES = {"normal", "nonzero", "malformed", "oversize", "wrong_id", "invalid",
                  "sleep", "grandchild", "leader_exit"}
 
@@ -70,9 +80,15 @@ def members(pgid: int, own: int) -> list[dict]:
             if os.getpgid(pid) != pgid:
                 continue
             proc = psutil.Process(pid)
+            start = capture(pid)
             if proc.status() == psutil.STATUS_ZOMBIE:
                 continue
-            result.append({"pid": pid, "create_time": proc.create_time(), "uid": proc.uids().real})
+            uid = proc.uids().real
+            session = os.getsid(pid)
+            if capture(pid) != start:
+                raise IdentityUnavailable("process identity changed during group enumeration")
+            if os.getpgid(pid) == pgid:
+                result.append({"pid": pid, "start_identity": start, "uid": uid, "session": session})
         except (psutil.NoSuchProcess, ProcessLookupError):
             continue
     return result
@@ -80,12 +96,17 @@ def members(pgid: int, own: int) -> list[dict]:
 
 def signal_member(entry: dict, pgid: int, sig: int) -> None:
     try:
+        if (any(type(entry[key]) is not int or entry[key] <= 0 for key in ("pid", "session")) or
+                type(entry["uid"]) is not int or entry["uid"] < 0 or
+                not matches(entry["pid"], entry["start_identity"])):
+            return
         proc = psutil.Process(entry["pid"])
-        if (proc.create_time() == entry["create_time"] and proc.uids().real == entry["uid"] == os.getuid() and
-                os.getpgid(entry["pid"]) == pgid and
-                proc.status() != psutil.STATUS_ZOMBIE):
+        if (matches(entry["pid"], entry["start_identity"]) and
+                proc.uids().real == entry["uid"] == os.getuid() and
+                os.getpgid(entry["pid"]) == pgid and os.getsid(entry["pid"]) == entry["session"] and
+                proc.status() != psutil.STATUS_ZOMBIE and matches(entry["pid"], entry["start_identity"])):
             os.kill(entry["pid"], sig)
-    except (psutil.NoSuchProcess, ProcessLookupError):
+    except (KeyError, TypeError, psutil.Error, ProcessLookupError, OSError):
         pass
 
 
@@ -111,11 +132,17 @@ def cleanup(pgid: int, own: int, child: subprocess.Popen | None) -> tuple[bool, 
         while time.monotonic() < end and members(pgid, own):
             time.sleep(0.02)
         return not members(pgid, own), list(known.values())
-    except (OSError, psutil.Error):
-        # The authenticated guardian owns this fresh session. If enumeration is
-        # unavailable, fail closed by killing its entire group, including itself.
-        os.killpg(pgid, signal.SIGKILL)
-        raise
+    except (OSError, psutil.Error, IdentityUnavailable):
+        # Enumeration failure never grants blanket group signal authority.
+        # The still-owned, unreaped direct Popen child remains safe to stop.
+        if child is not None:
+            try:
+                if child.poll() is None:
+                    child.kill()
+                child.wait(timeout=1)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        return False, list(known.values())
 
 
 def receipt(identity: dict) -> None:
@@ -135,10 +162,14 @@ def receipt(identity: dict) -> None:
 def main(fd: int) -> int:
     sock = socket.socket(fileno=fd)
     input_data = read_small_json("input.json", 4096)
-    if (set(input_data) != {"nonce", "job_id", "attempt_id", "adapter", "fixture_mode"} or
+    adapter = input_data.get("adapter")
+    expected = ({"nonce", "job_id", "attempt_id", "adapter", "fixture_mode"} if adapter == "internal_lifecycle_fixture" else
+                {"nonce", "job_id", "attempt_id", "adapter", "input_sha256"})
+    if (set(input_data) != expected or
             not isinstance(input_data["nonce"], str) or not re.fullmatch(r"[0-9a-f]{32}", input_data["nonce"]) or
-            input_data["adapter"] != "internal_lifecycle_fixture" or
-            input_data["fixture_mode"] not in FIXTURE_MODES or
+            adapter not in {"internal_lifecycle_fixture", "openmm_protein_minimize_v1"} or
+            (adapter == "internal_lifecycle_fixture" and input_data["fixture_mode"] not in FIXTURE_MODES) or
+            (adapter == "openmm_protein_minimize_v1" and not re.fullmatch(r"[0-9a-f]{64}", input_data["input_sha256"])) or
             any(not isinstance(input_data[key], str) or not re.fullmatch(r"[a-z0-9_]{1,100}", input_data[key])
                 for key in ("job_id", "attempt_id"))):
         return 2
@@ -148,8 +179,9 @@ def main(fd: int) -> int:
     session = os.getsid(own)
     if own != pgid or own != session:
         return 2
+    supported()
     identity = {"nonce": nonce, "pid": own, "pgid": pgid, "session": session,
-                "create_time": psutil.Process(own).create_time(), "uid": os.getuid()}
+                "start_identity": capture(own), "uid": os.getuid()}
     receipt(identity)
     send(sock, {"kind": "HELLO", **identity,
                 "runtime": {"prefix": sys.prefix, "executable": sys.executable,
@@ -158,10 +190,8 @@ def main(fd: int) -> int:
     command = receive(sock, 3)
     if command is None or command.get("kind") != "GO" or command.get("nonce") != nonce:
         return 0
-    if input_data.get("adapter") != "internal_lifecycle_fixture":
-        send(sock, {"kind": "RESULT", "error": "adapter_unavailable"})
-        return 3
-    child = subprocess.Popen([sys.executable, "-I", str(FIXTURE)], stdin=subprocess.DEVNULL,
+    worker = FIXTURE if adapter == "internal_lifecycle_fixture" else OPENMM
+    child = subprocess.Popen([sys.executable, "-I", str(worker)], stdin=subprocess.DEVNULL,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              close_fds=True, cwd=Path.cwd(), env={"PATH": "/usr/bin:/bin", "LANG": "C",
                                                                    "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1",
@@ -170,7 +200,7 @@ def main(fd: int) -> int:
     try:
         send(sock, {"kind": "STARTED", "nonce": nonce,
                     "job_id": input_data["job_id"], "attempt_id": input_data["attempt_id"], "pid": child.pid,
-                    "create_time": psutil.Process(child.pid).create_time()})
+                    "start_identity": capture(child.pid)})
         while child.poll() is None:
             command = receive(sock, 0.025)
             if command is None or command.get("kind") == "STOP":
@@ -183,15 +213,25 @@ def main(fd: int) -> int:
         returncode = child.poll()
         try:
             unexpected = members(pgid, own)
-        except (OSError, psutil.Error):
+        except (OSError, psutil.Error, IdentityUnavailable):
             unexpected = [{"enumeration_failed": True}]
         clean, known = cleanup(pgid, own, child)
     payload = None
-    try:
-        payload = read_small_json("result.json", MAX_RESULT)
-        json.dumps(payload, allow_nan=False)  # reject nonfinite fixture data before IPC
-    except (OSError, ValueError, TypeError):
-        payload = None
+    if adapter == "internal_lifecycle_fixture":
+        try:
+            payload = read_small_json("result.json", MAX_RESULT)
+            json.dumps(payload, allow_nan=False)  # reject nonfinite fixture data before IPC
+        except (OSError, ValueError, TypeError):
+            payload = None
+    elif reason == "completed" and returncode == 0:
+        try:
+            path = Path("result.json")
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 64_000_000:
+                raise ValueError("invalid scientific output")
+            raw = path.read_bytes()
+            payload = {"output_sha256": hashlib.sha256(raw).hexdigest(), "output_bytes": len(raw)}
+        except (OSError, ValueError):
+            payload = None
     try:
         send(sock, {"kind": "RESULT", "nonce": nonce,
                     "job_id": input_data["job_id"], "attempt_id": input_data["attempt_id"],

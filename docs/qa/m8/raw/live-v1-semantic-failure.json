@@ -1,0 +1,27 @@
+{
+  "runId": "run_92d70145e57b4d3ba52a4591e204324b",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ {\n+   chain_auth: 'B',\n+   chain_label: 'C',\n+   icode: '',\n+   model_number: 1,\n+   resname: 'MK1',\n+   seq_auth: 902,\n+   seq_label: null\n+ }\n- null\n",
+  "requests": [
+    {
+      "client_instance_id": "e8559b3f-518e-4532-82ab-8e394c173d50",
+      "viewer_session_id": "c959d317-ba15-426a-b832-6fc20dfca82d",
+      "scene_generation": 3,
+      "request_id": "817570c3-9a93-4840-aa44-21ef242c114b",
+      "prompt": "표현 방식을 surface로 바꾸고, model 1의 auth chain A residue 25 (label A/25) 잔기를 선택한 뒤 그 잔기에 카메라 초점을 맞춰줘."
+    },
+    {
+      "client_instance_id": "e8559b3f-518e-4532-82ab-8e394c173d50",
+      "viewer_session_id": "7e529adb-b66b-47a7-b746-3cfaf7cf57f3",
+      "scene_generation": 4,
+      "request_id": "cab31efd-4ef5-403a-915d-ab21575ff193",
+      "prompt": "표현 방식을 ball and stick으로 바꾸고, model 1 auth chain B residue 902 (label chain C)의 리간드를 선택한 뒤 현재 카메라에서 한 단계 확대해줘."
+    },
+    {
+      "client_instance_id": "e8559b3f-518e-4532-82ab-8e394c173d50",
+      "viewer_session_id": "7e529adb-b66b-47a7-b746-3cfaf7cf57f3",
+      "scene_generation": 4,
+      "request_id": "ee30791f-eb4f-4e21-a155-3cab39c823b0",
+      "prompt": "표현 방식을 cartoon으로 바꾸고 현재 선택을 해제한 뒤 카메라 시점을 초기화해줘."
+    }
+  ]
+}

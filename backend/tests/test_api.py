@@ -277,7 +277,8 @@ def test_invalid_upload_command_handle_and_run(api, pdb_path, monkeypatch):
     assert client.get("/runs/linked_run").status_code == 400
     assert client.get("/capabilities").json()["mode"] == "local_only"
     assert {tool["name"] for tool in client.get("/tools", params={"levels": "L1,L2,L3,L4,L5"}).json()} == {
-        "load_structure", "prepare_structure", "compute_interactions", "compile_state"}
+            "load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
+            "openmm_protein_minimize", "compile_state"}
 
 
 def test_upload_parent_symlink_never_reads_or_writes_outside(api, pdb_path, tmp_path):

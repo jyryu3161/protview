@@ -285,6 +285,11 @@ class Run:
                 self.budget.charge(wall_clock_s=event.get("duration_s", 0))
             elif kind == "approval_resolved" and event.get("gate") == "expensive_first_call":
                 self.approved_expensive = bool(event["approved"])
+            elif kind == "viewer_consent_changed":
+                if event.get("policy") != "viewer_model@1" or type(event.get("enabled")) is not bool:
+                    raise ValueError("invalid viewer consent event")
+                self.egress_config = {**self.egress_config,
+                                      "mode": "online" if event["enabled"] else "local_only"}
             elif kind in ("run_cancelled", "cancel_requested"):
                 self.cancelled = True
             elif kind == "branch_proposed":
@@ -537,6 +542,9 @@ class Run:
                 raise ValueError("load_structure key requires bound source bytes")
             effective["_source_sha256"] = hashlib.sha256(source_bytes).hexdigest()
             effective["_source_format"] = source_format
+        if tool == "compute_interface_sasa":
+            from ..tools.sasa import dependencies
+            effective["_scientific_dependencies"] = dependencies()
         return idempotency_key(tool, version, effective)
 
     def _verified(self, event: dict[str, Any], expected_kind: str) -> Handle:

@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import uuid
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from typing import Any, Literal
 
@@ -17,25 +18,53 @@ from pydantic import BaseModel, Field
 
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE
+from ..egress.gate import EgressGate
 from ..jobs.queue import JobQueue
+from ..method_reports import build_method_report, saved_method_report, validated_sasa
+from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
 from ..tools.energetic import protocol_capabilities
+from ..tools.openmm_method import capability as openmm_capability
+from ..tools.openmm_method import preflight as openmm_preflight
 from ..tools.structural import structure_bytes, structure_residues, validate_upload
+from ..viewer_intents import (
+    ACTIVE_INTENTS,
+    ViewerError,
+    acknowledge,
+    cancel_intent,
+    compile_answers,
+    create_session,
+    effective_online,
+    finish_intent,
+    intent_live,
+    intent_public,
+    list_intents,
+    local_answers,
+    online_status,
+    projected_state,
+    projection_preview,
+    request_intent,
+    session_public,
+    set_online,
+    update_scene,
+)
+from ..viewer_intents import QUESTION_VERSION as VIEWER_QUESTION_VERSION
 from ..workflows import InspectionRequest, inspect_complex
 from ..workspace import build_registry, new_run
 
 RUNS_DIR = Path(os.environ.get("MW_RUNS_DIR", "runs"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
-SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compile_state"}
+SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa", "compile_state"}
 
 app = FastAPI(title="ProtView local API")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
                    allow_methods=["*"], allow_headers=["*"])
 REGISTRY = build_registry()
 RUNS: dict[str, Run] = {}
+VIEWER_GATE = EgressGate()
 
 
 class NewRun(BaseModel):
@@ -55,7 +84,7 @@ class Command(BaseModel):
 class JobSubmit(BaseModel):
     protocol_id: str
     args: dict[str, Any] = Field(default_factory=dict)
-    timeout_s: float = Field(default=900, gt=0, le=900, allow_inf_nan=False)
+    timeout_s: float = Field(default=60, gt=0, le=900, allow_inf_nan=False)
     model_config = {"extra": "forbid"}
 
 
@@ -63,6 +92,65 @@ class ReportRequest(BaseModel):
     interaction_handle: str
     prepared_handle: str | None = None
     model_config = {"extra": "forbid"}
+
+
+class MethodReportRequest(BaseModel):
+    result_handle: str
+    model_config = {"extra": "forbid"}
+
+
+class ViewerSessionRequest(BaseModel):
+    client_instance_id: str
+    scene_generation: int
+    structure_handle: str
+    representation: Literal["cartoon", "ball_and_stick", "surface"] = "cartoon"
+    scope_chain_auth: str | None = None
+    scope_target: dict[str, Any] | None = None
+    selected_target: dict[str, Any] | None = None
+    model_config = {"extra": "forbid"}
+
+
+class ViewerSceneUpdate(BaseModel):
+    representation: Literal["cartoon", "ball_and_stick", "surface"]
+    selected_alias: str | None
+    action_revision: int
+    model_config = {"extra": "forbid"}
+
+
+class ViewerOnlineRequest(BaseModel):
+    enabled: bool
+    model_config = {"extra": "forbid"}
+
+
+class ViewerIntentRequest(BaseModel):
+    client_instance_id: str
+    viewer_session_id: str
+    scene_generation: int
+    request_id: str
+    prompt: str
+    model_config = {"extra": "forbid"}
+
+
+class ViewerAckRequest(BaseModel):
+    command_id: str
+    status: Literal["applied", "no_change", "failed"]
+    reason_code: str | None = None
+    client_instance_id: str
+    viewer_session_id: str
+    scene_generation: int
+    action_revision: int
+    model_config = {"extra": "forbid"}
+
+
+class ViewerCancelRequest(BaseModel):
+    client_instance_id: str
+    viewer_session_id: str
+    scene_generation: int
+    model_config = {"extra": "forbid"}
+
+
+def _viewer_error(error: ViewerError) -> HTTPException:
+    return HTTPException(error.status, detail={"error": error.code, "message": error.message})
 
 
 def _run_path(rid: str) -> Path:
@@ -131,7 +219,8 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
                                          "protocol_id", "tool_id", "status", "created",
                                          "finished", "timeout_s", "attempt_id", "attempt_ordinal",
                                          "blocked_reason", "cancel_requested", "cleanup_status",
-                                         "failure", "output_handles")} | {"started": intent.get("ts"),
+                                         "failure", "input_handles", "output_handles",
+                                         "preparation_handle", "preparation_attempt_id")} | {"started": intent.get("ts"),
                                                                   "remaining_wall_s_at_dispatch":
                                                                       intent.get("remaining_wall_s")}
 
@@ -200,25 +289,36 @@ def _object(run: Run, handle: str) -> dict[str, Any]:
 @app.get("/capabilities")
 def capabilities() -> dict[str, Any]:
     matrix = protocol_capabilities()
-    return {"mode": "local_only", "energy_protocols": matrix, "supported": {
+    try:
+        from ..tools.sasa import engine_capability
+        sasa = engine_capability()
+    except (AttributeError, ImportError, OSError, PackageNotFoundError, RuntimeError, ToolFailure, ValueError) as exc:
+        sasa = {"available": False, "reason_code": "engine_missing_or_invalid", "explanation": str(exc)}
+    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability()}, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
+        "viewer_intents": "typed local viewer commands; optional explicit online Jev interpretation is credential and budget dependent",
         "jobs": "event-backed local job records and POSIX lifecycle supervision",
-        "reports": "offline, selected-interaction evidence reports with Markdown and JSON downloads",
+        "reports": "offline selected-interaction and interface-SASA evidence reports with Markdown and JSON downloads",
         "inspect_complex": "fixed local workflow over validated run calls"},
         "unavailable": {
             "remote_structure_lookup": "no M1 fetch adapter; local upload only",
             "hbond_or_affinity": "geometric proximity is not chemical or energetic validation",
             "prolif_plip": "adapters and mapping validation are not implemented",
             "pocket_detection": "no implemented adapter",
-            **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items()},
-            "model_decisions": "internal Jev adapter requires explicit online run configuration and credentials; no public decision route"}}
+            **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items() if not item["available"]},
+            "general_model_decisions": "no autonomous scientific tool, job, report, or general decision route"}}
 
 
 @app.get("/tools")
 def tools(levels: str = "L2,L4") -> list[dict[str, Any]]:
-    return [spec.model_dump() for spec in REGISTRY.visible(set(levels.split(",")))
-            if spec.name in SUPPORTED_TOOLS]
+    selected = set(levels.split(","))
+    records = [spec.model_dump() for spec in REGISTRY.visible(selected)
+               if spec.name in SUPPORTED_TOOLS]
+    if "L3" in selected:
+        records.append({**REGISTRY.specs["openmm_protein_minimize"].model_dump(),
+                        "execution_lane": "durable_job", "submit_protocol_id": "openmm_protein_minimize"})
+    return records
 
 
 @app.post("/runs", status_code=201)
@@ -248,6 +348,129 @@ def list_runs() -> list[dict[str, Any]]:
 @app.get("/runs/{rid}")
 def get_run(rid: str) -> dict[str, Any]:
     return _summary(_run(rid))
+
+
+@app.post("/runs/{rid}/viewer/sessions", status_code=201)
+def viewer_session_create(rid: str, body: ViewerSessionRequest) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        session = create_session(run, **body.model_dump())
+        return {**session, "projection": projection_preview(session)}
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+    except (EvidenceError, ToolFailure, ValueError, KeyError) as exc:
+        raise HTTPException(422, detail={"error": "scene_invalid", "message": "displayed structure is invalid"}) from exc
+
+
+@app.get("/runs/{rid}/viewer/sessions/{session_id}")
+def viewer_session_get(rid: str, session_id: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        session = session_public(run, session_id)
+        return {**session, "projection": projection_preview(session)}
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/sessions/{session_id}/state")
+def viewer_scene_state(rid: str, session_id: str, body: ViewerSceneUpdate) -> dict[str, Any]:
+    try:
+        return update_scene(_run(rid), session_id, **body.model_dump())
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/online")
+def viewer_online_get(rid: str) -> dict[str, Any]:
+    return online_status(_run(rid))
+
+
+@app.post("/runs/{rid}/viewer/online")
+def viewer_online_change(rid: str, body: ViewerOnlineRequest) -> dict[str, Any]:
+    try:
+        return set_online(_run(rid), body.enabled)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/intents", status_code=201)
+async def viewer_intent_create(rid: str, body: ViewerIntentRequest) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        intent_id, session, duplicate = request_intent(run, **body.model_dump())
+        if duplicate:
+            return intent_public(run, intent_id)
+        if body.prompt.strip().startswith("/"):
+            try:
+                answers = local_answers(body.prompt, session)
+                status, commands, reason = compile_answers(answers, session, intent_id=intent_id)
+                return finish_intent(run, intent_id, status=status, reason_code=reason,
+                                     commands=commands, question_version="local_commands@1")
+            except ViewerError as exc:
+                return finish_intent(run, intent_id, status="unsupported", reason_code=exc.code)
+        if not effective_online(run) or run.dry_run:
+            return finish_intent(run, intent_id, status="unsupported",
+                                 reason_code="dry_run" if run.dry_run else "online_not_enabled")
+        state = projected_state(session, body.prompt)
+        ACTIVE_INTENTS.add(intent_id)
+        try:
+            result = await VIEWER_GATE.request_viewer(run, state, intent_id)
+        finally:
+            ACTIVE_INTENTS.discard(intent_id)
+        metadata = {"projection_sha256": result.projection_sha256,
+                    "question_version": VIEWER_QUESTION_VERSION,
+                    "requested_model": result.requested_model,
+                    "served_model": result.served_model, "audit_id": result.audit_id,
+                    "usage": result.usage}
+        if result.status != "accepted" or result.answers is None:
+            return finish_intent(run, intent_id,
+                                 status="cancelled" if result.reason_code == "cancelled" else "rejected",
+                                 reason_code=result.reason_code,
+                                 **metadata)
+        latest_session = session_public(run, session["viewer_session_id"])
+        if (not intent_live(run, intent_id) or not latest_session["current"] or
+                latest_session["action_revision"] != session["action_revision"]):
+            return finish_intent(run, intent_id, status="cancelled", reason_code="scene_or_mode_changed",
+                                 **metadata)
+        try:
+            status, commands, reason = compile_answers(result.answers, session, intent_id=intent_id)
+        except ViewerError as exc:
+            return finish_intent(run, intent_id, status="rejected", reason_code=exc.code, **metadata)
+        return finish_intent(run, intent_id, status=status, reason_code=reason,
+                             commands=commands, **metadata)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+    except ToolFailure as exc:
+        return _tool_error(exc)
+
+
+@app.get("/runs/{rid}/viewer/intents")
+def viewer_intent_list(rid: str) -> list[dict[str, Any]]:
+    return list_intents(_run(rid))
+
+
+@app.get("/runs/{rid}/viewer/intents/{intent_id}")
+def viewer_intent_get(rid: str, intent_id: str) -> dict[str, Any]:
+    try:
+        return intent_public(_run(rid), intent_id)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/intents/{intent_id}/cancel")
+def viewer_intent_cancel(rid: str, intent_id: str, body: ViewerCancelRequest | None = None) -> dict[str, Any]:
+    try:
+        return cancel_intent(_run(rid), intent_id, **(body.model_dump() if body else {}))
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/intents/{intent_id}/ack")
+def viewer_intent_ack(rid: str, intent_id: str, body: ViewerAckRequest) -> dict[str, Any]:
+    try:
+        return acknowledge(_run(rid), intent_id, **body.model_dump())
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
 
 
 @app.post("/runs/{rid}/uploads", status_code=201)
@@ -295,7 +518,7 @@ async def upload(rid: str, request: Request, filename: str = Query(...)) -> dict
 def command(rid: str, cmd: Command) -> Any:
     run = _run(rid)
     if cmd.tool not in SUPPORTED_TOOLS:
-        return _tool_error(ToolFailure(FailureClass.input_invalid, f"unsupported M1 tool '{cmd.tool}'"))
+        return _tool_error(ToolFailure(FailureClass.input_invalid, f"unsupported tool '{cmd.tool}'"))
     args = dict(cmd.args)
     source_bytes = None
     source_format = None
@@ -359,19 +582,59 @@ def create_report(rid: str, body: ReportRequest) -> dict[str, Any]:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
+@app.post("/runs/{rid}/method_reports", status_code=201)
+def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
+    try:
+        run = _run(rid)
+        kind = run.store.meta(body.result_handle)["kind"]
+        if kind == "interface_sasa":
+            return build_method_report(run, body.result_handle)
+        if kind == "openmm_minimization":
+            return build_openmm_report(run, body.result_handle)
+        raise EvidenceError("wrong_method_result_kind")
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+
+
 @app.get("/runs/{rid}/reports")
 def list_reports(rid: str) -> list[dict[str, Any]]:
     run = _run(rid)
-    records = [e for e in run.events.read() if e["type"] == "report_created"]
-    return [{"handle": e["report_handle"], "interaction_handle": e["interaction_handle"],
-             "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
-             "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
+    records = [e for e in run.events.read() if e["type"] in {"report_created", "method_report_created"}]
+    try:
+        for event in records:
+            expected = (("report_manifest", "report_manifest@1") if event["type"] == "report_created" else
+                        ("method_report_manifest", "method_report_manifest@1"))
+            meta = run.store.meta(event["report_handle"])
+            if (meta["kind"], meta["schema"]) != expected:
+                raise EvidenceError("report_event_type_mismatch")
+            _saved_any_report(run, event["report_handle"])
+        return [{"handle": e["report_handle"],
+                 **({"interaction_handle": e["interaction_handle"]} if e["type"] == "report_created" else
+                    {"result_handle": e["result_handle"], "analysis_type": run.store.load(e["report_handle"])["analysis_type"]}),
+                 "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
+                 "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+
+
+def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
+    meta = run.store.meta(handle)
+    if (meta["kind"], meta["schema"]) == ("report_manifest", "report_manifest@1"):
+        return saved_report(run, handle)
+    if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
+        report = run.store.load(handle)
+        if report.get("analysis_type") == "interface_sasa":
+            return saved_method_report(run, handle)
+        if report.get("analysis_type") == "openmm_protein_minimize":
+            return saved_openmm_report(run, handle)
+        raise EvidenceError("unknown_method_report_type")
+    raise EvidenceError("wrong_report_kind")
 
 
 @app.get("/runs/{rid}/reports/selected")
 def report_detail(rid: str, handle: str) -> dict[str, Any]:
     try:
-        return saved_report(_run(rid), handle)
+        return _saved_any_report(_run(rid), handle)
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
@@ -379,7 +642,7 @@ def report_detail(rid: str, handle: str) -> dict[str, Any]:
 @app.get("/runs/{rid}/reports/download")
 def report_download(rid: str, handle: str, format: Literal["markdown", "json"] = "markdown") -> Response:
     try:
-        result = saved_report(_run(rid), handle)
+        result = _saved_any_report(_run(rid), handle)
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
     suffix = handle.rsplit("/", 1)[-1][:12]
@@ -407,6 +670,30 @@ def budget(rid: str) -> dict[str, Any]:
     return _run(rid).budget_snapshot()
 
 
+@app.get("/runs/{rid}/jobs/preflight")
+def job_preflight(rid: str, structure: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        selected = openmm_preflight(run.store, structure, seed=run.seed)
+        return {"available": True, "structure": structure, "selection_policy": "protein_only",
+                "hydrogen_policy": "rebuild_pH7", "heavy_atom_count": selected["heavy_atom_count"],
+                "excluded": selected["excluded"],
+                "source_hydrogens_removed": selected["source_hydrogens_removed"],
+                "method": selected["method"], "budget": run.budget_snapshot()}
+    except ToolFailure as error:
+        return _tool_error(error)
+
+
+@app.post("/runs/{rid}/jobs/approve")
+def approve_job(rid: str) -> dict[str, Any]:
+    run = _run(rid)
+    if not any(e["type"] == "approval_requested" and e.get("gate") == "expensive_first_call"
+               and e.get("tool") == "openmm_protein_minimize" for e in run.events.read()):
+        raise HTTPException(412, detail={"error": "precondition", "message": "no pending OpenMM approval request"})
+    run.approve("expensive_first_call", by="human_api")
+    return {"approved": True, "budget": run.budget_snapshot()}
+
+
 @app.get("/runs/{rid}/jobs")
 def jobs(rid: str) -> list[dict[str, Any]]:
     return [_public_job(job) for job in JobQueue(_run(rid)).list()]
@@ -427,6 +714,33 @@ def submit_job(rid: str, body: JobSubmit) -> Any:
         return result if result.get("plan_only") else _public_job(result)
     except ToolFailure as error:
         return _tool_error(error)
+
+
+@app.post("/runs/{rid}/jobs/{job_id}/start")
+def start_job(rid: str, job_id: str) -> Any:
+    try:
+        return _public_job(JobQueue(_run(rid)).start(job_id))
+    except KeyError as exc:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
+    except ApprovalRequired as exc:
+        return JSONResponse(status_code=409, content={"ok": False, "approval": {
+            "gate": exc.gate, "tool": exc.tool, "reason": exc.reason}})
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
+    except ToolFailure as error:
+        return _tool_error(error)
+
+
+@app.post("/runs/{rid}/jobs/{job_id}/retry")
+def retry_job(rid: str, job_id: str) -> Any:
+    try:
+        return _public_job(JobQueue(_run(rid)).retry(job_id))
+    except KeyError as exc:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
+    except ToolFailure as error:
+        return _tool_error(error)
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
 
 
 @app.post("/runs/{rid}/jobs/{job_id}/cancel")
@@ -458,14 +772,37 @@ def object_meta(rid: str, handle: str) -> dict[str, Any]:
     return _object(_run(rid), handle)
 
 
+@app.get("/runs/{rid}/interface_sasa")
+def interface_sasa(rid: str, handle: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        data, _ = validated_sasa(run.store, handle)
+        return {"meta": _object(run, handle), "result": data}
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
+
+
+@app.get("/runs/{rid}/openmm_minimization")
+def openmm_minimization(rid: str, handle: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        return {"meta": _object(run, handle), "result": validated_openmm(run, handle)}
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
+
+
 @app.get("/runs/{rid}/structures/residues")
 def residues(rid: str, handle: str) -> Any:
     run = _run(rid)
     meta = _object(run, handle)
-    if meta["kind"] not in {"structure", "prepared_structure"}:
+    if meta["kind"] not in {"structure", "prepared_structure", "openmm_minimized_structure"}:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a structure"})
     try:
+        if meta["kind"] == "openmm_minimized_structure":
+            validated_minimized_structure(run, handle)
         return structure_residues(run.store, handle)
+    except EvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
     except ToolFailure as error:
         return _tool_error(error)
     except ValueError as exc:
@@ -476,10 +813,14 @@ def residues(rid: str, handle: str) -> Any:
 def coordinates(rid: str, handle: str) -> Response:
     run = _run(rid)
     meta = _object(run, handle)
-    if meta["kind"] not in {"structure", "prepared_structure"}:
+    if meta["kind"] not in {"structure", "prepared_structure", "openmm_minimized_structure"}:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a structure"})
     try:
+        if meta["kind"] == "openmm_minimized_structure":
+            validated_minimized_structure(run, handle)
         raw, fmt = structure_bytes(run.store, handle)
+    except EvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
     except ToolFailure as error:
         return _tool_error(error)
     except ValueError as exc:
