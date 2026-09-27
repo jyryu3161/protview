@@ -1,0 +1,92 @@
+# 엔지니어링 노트
+
+## 함정
+
+### psutil 공개 `create_time()`이 같은 프로세스인데 2초 다르게 나온다 (Darwin)
+- **증상**: M7 호스트 테스트에서 작업 프로세스의 공개 생성 시각이 인증된 STARTED 관측값과 정확히 2초 차이 났고, 새 guardian의 신원 인증이 실패했다.
+- **원인**: psutil 7.2.2의 Darwin 구현은 공개 `create_time()`을 import한 프로세스의 `INIT_BOOT_TIME`과 현재 부팅 시각으로 보정한다. 인터프리터마다 보정값이 달라질 수 있다. psutil 자체의 PID 재사용 판정은 보정하지 않은 내부 값을 쓴다.
+- **대응**: 프로세스 신원은 `backend/mw/jobs/process_identity.py`의 어댑터만 쓴다. 이 어댑터는 `psutil.Process(pid)._proc.create_time(monotonic=True)`를 `{"kind":"psutil_raw_start_v1","platform":"darwin|linux","psutil_version":"7.2.2","value":…}` 형식으로 기록한다. 공개 `create_time`은 진단용으로만 쓰고, 신호 전송 권한 판단에는 쓰지 않는다. psutil 버전을 올리면 private 경로가 바뀔 수 있으므로 어댑터가 dispatch 전에 거부한다. 새 버전은 어댑터를 다시 검증해야 쓸 수 있다.
+- **검증**: `pytest backend/tests/test_jobs.py -q`. 옛 공개 시각 형식의 활성 기록은 신호를 보낼 권한이 없다.
+
+### Mol*가 붙인 label과 Gemmi label이 다르다
+- **증상**: 일반 PDB에서 잔기를 클릭하면 Mol*는 `label_asym_id=A`를 내놓는데, 서버의 Gemmi 잔기는 `chain_label=Axp`, `seq_label=null`이다. label로 매칭하면 선택·초점·저장된 보기가 틀린 잔기를 가리키거나 실패한다.
+- **원인**: Mol* 파서는 PDB에 없는 label을 자체적으로 합성한다. Gemmi는 subchain을 다르게 부여한다. 둘 다 "틀린" 것은 아니며, 서로 다른 표시 체계다.
+- **대응**: 브라우저 ↔ 서버 대응에는 Mol* `StructureProperties.atom.sourceIndex`(`atomicHierarchy.atomSourceIndex`, 입력 파일 행 번호)만 쓴다. 이 대응은 서버가 제공한 바이트의 SHA-256에 묶어 두고, 로드한 모델에 대해 일대일인지 검증한다. 역방향(잔기 → Mol* loci)은 7개 필드를 null까지 정확히 매칭해 그 잔기의 모든 site를 모은 뒤 loci를 만든다. Gemmi의 subchain을 Mol* label 선택자에 그대로 넣으면 안 된다. PDB serial, Mol* element index, 좌표 최근접 매칭도 대안이 될 수 없다.
+- **검증**: 오프스크린 M8 normal-flow에서 리간드 → 접촉 행 초점이 새 잔기를 정확히 잡고 카메라가 바뀌는지, M9에서 선택 잔기가 있는 보기를 저장·복원했을 때 7필드가 같은지 확인한다.
+
+### 같은 바인딩을 다시 알리면 대기 중인 초점 작업이 취소된다
+- **증상**: 서버가 초점 동작을 확인하면서 기존과 같은 바인딩을 다시 publish하자, 대기 중이던 native focus가 "새 사용자 동작"으로 간주되어 스스로 취소됐다.
+- **대응**: `ViewerBinding` 6필드(`sessionId`, `clientId`, `generation`, `sourceHandle`, `catalogHash`, `actionRevision`) 중 하나라도 바뀔 때만 작업을 무효화한다. 카탈로그 검증과 준비 상태 갱신은 관찰일 뿐이므로 `onSelect`를 호출하거나 저장된 보기 복원을 취소하면 안 된다. 실제 포인터 클릭(같은 잔기를 다시 누른 경우 포함), 빈 캔버스 클릭, 회전은 계속 취소를 일으켜야 한다.
+
+### FreeSASA Shrake–Rupley는 해석 검사를 통과하지 못했다
+- **증상**: Shrake–Rupley 1000점 설정의 단일 구·분리 구 SASA가 해석값과 0.5% 허용 오차 밖으로 어긋났다.
+- **대응**: Lee–Richards 100 slices, probe 1.4 Å, 스레드 1로 고정했다. 설정을 바꾸려면 해석 검사를 먼저 통과시켜야 하고, 숫자를 보정해서 맞추면 안 된다. 실패 증거는 보존 대상이다.
+
+### 결정 캐시의 "성공"과 실제 전송은 다르다
+- **증상**: 온라인 run에서 캐시 적중이 나도 `sent=false`여야 하는데, 모드가 online이라는 이유로 전송된 것처럼 표시하기 쉽다.
+- **대응**: 전송 여부는 `true|false|unknown` 세 값으로 기록한다. 서버 응답이 있으면 true(4xx 포함), 시간 초과나 연결 오류는 unknown, 캐시 적중과 거부는 false다. unknown인 요청은 재시작해도 자동으로 다시 보내지 않는다.
+
+### M11 화학 작업 시작이 전역 동시 실행 검사에서 거부된다
+- **증상**: 화학 작업 시작이 run/job 이름이 담긴 진단과 함께 거부된다.
+- **원인**: 무거운 작업 프로세스의 동시 실행을 관리하려고 runs 루트 전체를 훑는 검사가 있는데, 한도가 run 항목 1,000개, 이벤트 로그 256 MiB, 잠금 대기 1초다. 한도를 넘거나, 정리되지 않은 guardian이 있으면 입장을 막는다.
+- **대응**: 진단에 나온 run/job의 supervisor부터 정리한다. 공간이 필요하면 서비스를 멈추고, 보관할 run에 running·cleanup-pending 작업이 없는지 확인한 뒤, run 디렉터리 **전체**(이벤트와 객체 포함)를 오프라인 보관소에 복사한다. 파일 해시를 검증하고, 디렉터리를 runs 루트 밖으로 옮긴 다음, 옮긴 위치를 기록한다. 보관한 run은 디렉터리 전체를 되돌려 놓기 전까지 API로 열 수 없다. 이벤트 로그를 자르거나 객체를 그 자리에서 지우면 안 된다. 예약 전에 거부된 시도는 과금되지 않았으므로 조건을 해결한 뒤 다시 시작하면 된다.
+
+### 프런트엔드 CSS 수정이 토큰 재생성 후 사라진다
+- **증상**: `frontend/src/design/components.css`에 추가한 스타일이 `npm --prefix frontend run tokens` 실행 뒤 없어진다.
+- **원인**: 이 파일은 `design/build_tokens.py`가 `design/components.css`를 복사해서 만드는 생성물이다(첫 줄에 "edit the source" 주석이 있다). 복사하면서 원격 Google Fonts `@import`는 뺀다.
+- **대응**: 스타일은 `design/components.css`에서 고치고 tokens 스크립트로 복사한다. 앱은 `@fontsource` 로컬 글꼴만 쓴다.
+- **검증**: tokens 실행 뒤 `git diff frontend/src/design/components.css`가 의도한 변경만 보여야 한다.
+
+### `.env`가 있는데 온라인 모드가 사용할 수 없음으로 나온다
+- **증상**: 루트 `.env`에 `OPENROUTER_API_KEY`를 넣었는데 뷰어 온라인 해석이 unavailable로 표시된다.
+- **원인**: 게이트는 환경변수를 먼저 보고, 없으면 루트 `.env`를 읽는다. 이때 `.env`가 일반 파일이 아니거나(심볼릭 링크 등) 그룹·기타 사용자 권한 비트가 하나라도 있으면 조용히 무시한다.
+- **대응**: `chmod 600 .env`로 권한을 맞추거나 환경변수로 넘긴다. 키 노출을 막기 위한 동작이므로 완화하지 않는다.
+
+### 과거 단계 `--verify`가 실패한다
+- **증상**: `scripts/execute.py <phase> --verify`가 완료된 M0–M10 단계를 오래된 검토(stale)로 판정한다.
+- **원인**: 검토 기록은 당시 파일의 SHA-256에 묶여 있다. 그 뒤 README.md 같은 공유 파일이 바뀌면 해시가 달라진다(현재 M11 작업 중 README 변경으로 대부분의 과거 단계가 이 상태다).
+- **대응**: 과거 검토 파일이나 해시를 고쳐서 통과시키지 않는다. 현재 작업의 검토에서 바뀐 공유 소스와 회귀를 다시 검증하고, 어떤 과거 범위를 대체했는지 명시한다.
+- **부작용 주의**: `--verify`는 실패할 때 `phases/index.json`과 그룹 `index.json`의 상태를 `error`로 고쳐 쓴다. 실행 전에 두 파일을 복사해 두고, 끝나면 복사본으로 되돌린다. `git checkout`은 커밋되지 않은 다른 단계 기록까지 되돌릴 수 있어 쓰지 않는다.
+
+## 동작 원리
+
+### handle과 복구
+객체를 저장할 때는 먼저 정규화한 내용(JSON은 canonical JSON)으로 `sha256(kind, schema, raw)`를 계산하고 handle을 정한다. 그다음 객체 파일을 `O_NOFOLLOW`·0600으로 쓰고, 전체 payload(base64 포함)가 든 `object_created` 이벤트를 추가·fsync한 뒤 SQLite 색인을 갱신한다. 복구(`ObjectStore.rebuild_from_events`)는 이벤트를 순서대로 읽어 객체와 색인을 다시 만든다. 이미 있는 객체는 바이트가 같은지 확인하고, 다르면 실패한다. 그래서 객체 디렉터리와 SQLite를 지워도 되지만, `events.jsonl`은 잃으면 복구할 수 없다.
+
+### 실행 소유권
+run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS advisory lock)을 잡고 실행한다. 잠금을 잡은 뒤 새 이벤트를 다시 읽고 판단한다. 두 번째 API 프로세스가 떠 있어도 같은 캐시 키를 두 번 실행하거나 마지막 예산 단위를 두 번 쓰지 못한다. 취소·종료 전이는 긴 실행 잠금이 아니라 짧은 `transitions.lock`을 쓰므로, 긴 작업이 도는 중에도 취소가 바로 전달된다. 잠금 파일이 있다거나 running 이벤트가 있다는 사실만으로는 작업이 살아 있다는 증거가 되지 않는다. OS 잠금과 검증된 프로세스 신원만 근거가 된다.
+
+### 작업 프로세스 시작 핸드셰이크
+1. run 소유권을 잡은 상태에서 검증·승인·예산을 확인하고, 시도 예약과 `dispatch_intent`(무작위 launch nonce 포함)를 먼저 기록한다.
+2. guardian을 `start_new_session=True`, 최소 환경(LANG=C, PYTHONUTF8=1, 전용 TMPDIR, 자격 증명 없음)으로 띄운다. guardian은 과학 엔진을 import하지 않은 채 자기 PID·PGID·세션·raw 시작 신원을 receipt 파일에 fsync하고, 전용 socketpair로 HELLO를 보낸다.
+3. 부모가 nonce와 신원을 검증해 `launch_identity`·`execution_authorized`를 기록한 뒤 GO를 보내야 guardian이 과학 작업 프로세스를 띄운다.
+4. GO 전에 채널이 끊기면 과학 작업 없이 종료하고, GO 후에 끊기면 그룹을 정리한다. 부모 API가 죽었다고 과학 작업이 계속 돌지는 않는다.
+
+신원이 불확실하면(권한 거부, 열거 실패, 신원 불일치) `cleanup_pending`으로 두고 대체 시도를 막는다. PID를 추측해서 신호를 보내지 않는다.
+
+### 뷰어 세션과 세대
+뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
+
+## 체크리스트
+
+### 새 과학 도구 추가
+1. 결과 스키마를 정한다: 단위, 방법·버전, 한계, 입력 handle, 정확한 식별자.
+2. `config/tools.yaml`(accepts, emits, cost_class, params 범위), `backend/mw/tools/` 구현, `workspace.py`의 `build_registry()` 등록, `app.py`의 `SUPPORTED_TOOLS`에 추가한다. 비싼 계산이면 JobQueue 프로토콜로 만든다.
+3. 독립적인 수치 oracle 테스트를 쓴다(자기 함수와 비교하는 것은 oracle이 아니다). 좌표를 바꾸면 결과가 바뀌는지, scientific_null, 잘못된 입력, 식별자 경계(null label, 삽입 코드, altloc, 비첫 모델)를 확인한다.
+4. events-only 복구 테스트: 원본 업로드·객체·SQLite를 지운 뒤 복구된 바이트가 같은지, 엔진 없이 다시 열리는지 확인한다.
+5. 보고서를 만든다면 필드 단위 증거 검증에 새 필드 경로와 단위를 추가하고, 잘못된 행·단위·구조로 같은 숫자를 주장했을 때 거부되는지 테스트한다.
+6. `/capabilities`와 UI의 사용 불가 표시가 같은 이유를 말하는지 확인한다.
+7. 검증: 전체 게이트 명령과, UI가 있으면 오프스크린 컨트롤 검증까지 실행한다.
+
+### UI 컨트롤 변경
+1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.
+2. 백엔드와 프런트엔드를 loopback으로 띄운다: `.venv/bin/python -m uvicorn mw.api.app:app --host 127.0.0.1 --port 8000`과 `npm --prefix frontend run start -- -p 3000`.
+3. `npm --prefix frontend run test:offscreen -- --url http://127.0.0.1:3000`으로 `isOffscreen=true`, GPU 켜짐, paint 프레임, 외부 요청 0건을 확인한다.
+4. 해당 흐름 스크립트(`test:offscreen:normal`, `:scenes`, `:chemical` 등)를 돌리고, 공유 뷰어·페이지 코드를 바꿨다면 M8 normal, M9 scenes, M10 comparison 회귀도 함께 돌린다.
+5. 실패한 실행은 지우지 말고 회귀 증거로 남긴다.
+
+### 제품의 실제 OpenRouter 호출이 필요할 때
+1. 사용자에게 필요한 횟수와 이유를 말하고 한도를 받는다.
+2. 전용 QA run에서 온라인 모드와 뷰어 동의를 켠다.
+3. 호출마다 served model, 사용량, 발행한 명령, Mol* 확인을 기록한다. 키, 헤더, 원시 provider 오류는 기록하지 않는다.
+4. 한도를 다 쓰면 결과를 그대로 보고한다. 추가 호출을 하려고 새 run을 몰래 열지 않는다.

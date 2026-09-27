@@ -1,43 +1,57 @@
-# ProtView agent rules
+# ProtView
 
-## Purpose and authority
+로컬 PDB/mmCIF 구조를 불러와 전처리하고, Mol*로 렌더링하고, 실제 좌표로 기하 접촉·SASA·단백질 전위·원자 거리·강체 정렬을 계산해, 근거가 필드 단위로 연결된 보고서를 만드는 단일 사용자 작업 공간이다. 연구실·팀 구성원이 각자 자기 컴퓨터나 혼자 쓰는 서버에 설치해 쓴다. FastAPI 백엔드(Python 3.11)와 Next.js 프런트엔드로 이루어져 있고, 기본 작업은 네트워크나 API 키 없이 끝난다. M0–M10은 끝났고, M11(ProLIF 화학 상호작용)을 구현하는 중이다.
 
-Build a local, single-user protein structure workspace with real structure calculations, a traceable handle-based runtime, and an offline default. Read docs/ARCHITECTURE.md, docs/DECISIONS.md and docs/IMPLEMENTATION_PLAN.md before implementation. The supplied agent_protein_viewer_plan_v05.md and molecular-workspace.zip are references, not claims that their scaffold already works. Selected scope and explicitly deferred capabilities are recorded in DECISIONS.md.
+## 프로젝트 구조
 
-The user's current instructions take precedence over inherited harness templates. Implementation and reversible validation are already authorized; do not insert a new user approval between development phases. Product runtime approval gates for expensive computation remain application features.
+```
+protview/
+├── CLAUDE.md / AGENTS.md          → 이 파일. 프로젝트 개요, 필수 규칙 요약, 작업 전 확인 사항
+├── docs/
+│   ├── system-architecture.md     → 구성 요소, 의존 방향, 업로드→보고서 흐름, 외부 경계
+│   ├── business-rules.md          → 식별자, 전처리, 계산 방법별 의미·단위·한계, 보고서 증거, 예산·재시도
+│   ├── security.md                → 신뢰 모델, 외부 전송 허용 목록, 자격 증명, 감사 기록, 입력 제한
+│   ├── standards.md               → 역할 분담, 과학 결과 규칙, 수정 금지 파일, Git, 검증 게이트, 모듈 경계
+│   ├── engineering-notes.md       → 알려진 함정(증상→원인→대응), 동작 원리, 반복 작업 체크리스트
+│   ├── operations.md              → 설치, 실행, 환경 설정, 검증·오프스크린 QA 명령, run 보관
+│   ├── contracts.md               → loopback HTTP API 계약(입력·출력·오류), 과거 단계 실행기 CLI
+│   ├── tracking/
+│   │   ├── status.md              → 완료·검증 상태와 남은 작업(M11→M12→M13)
+│   │   ├── decisions/index.md     → 결정 기록 목록(0001–0012)
+│   │   └── findings.md            → 지금 해결하지 못한 문제와 그 이유
+│   └── (대문자 문서들)             → M0–M13 단계별 원본 설계·계약·검토 기록. 수정·이동 금지
+├── backend/AGENTS.md              → mw 패키지: API, 런타임, 객체·이벤트, 도구, 작업 큐, 외부 게이트
+├── frontend/AGENTS.md             → Next.js 화면, Mol* 브리지, 오프스크린 QA 하네스
+└── scripts/AGENTS.md              → 과거 단계 실행기, 훅 테스트, ProLIF 작업 환경 설치
+```
 
-## Model responsibilities
+## 필수 규칙 (요약. 전체 규칙은 docs/standards.md)
 
-- GPT-6 Astra owns architecture, scientific-contract decisions and implementation review.
-- GPT-6 Sol implements application code, scripts, harness changes and tests.
-- Use these roles when assigning agents or invoking the phase runner. Do not silently substitute a different model. Record an actual model limitation rather than relabeling the executing model.
-- Astra review findings must be resolved or explicitly documented as outside the selected scope before a phase is marked complete.
+1. **과학 값을 만들어 내지 않는다.** 실제 엔진 실행 결과만 고유 단위로 기록한다. 구현하지 않았거나 설치되지 않은 기능은 숫자 없이 "사용할 수 없음"과 이유를 보여 준다. 기하 접촉을 수소결합이라 부르지 않고, SASA·OpenMM·RMSD 값을 ΔΔG·친화도·안정성·Rosetta 이름으로 바꾸지 않는다.
+2. **로컬 전용이 기본이다.** 외부 HTTP는 `EgressGate`만 보낸다. 좌표·구조 파일·서열·경로·키는 절대 외부로 나가지 않는다. 서버는 `127.0.0.1`에만 바인딩한다. 제품이 실제로 OpenRouter를 호출하는 검증은 사용자가 정해 준 횟수 안에서만 한다.
+3. **기록은 불변이다.** 객체, 이벤트, 저장된 보고서 바이트를 바꾸지 않는다. 완료된 단계 검토에 해시로 묶인 대문자 `docs/*.md`, `phases/*/reviews/`, `phases/*/step*.md`, 원본 참고 자료를 수정·이동하지 않는다. 이 디스크는 대소문자를 구분하지 않으므로 대문자 문서와 소문자만 다른 이름의 파일을 만들지 않는다.
+4. **식별자를 보존한다.** 잔기 7필드(model, chain_auth/label, seq_auth/label, icode, resname)와 AtomRef를 null까지 그대로 유지한다. 리간드 인스턴스를 이름으로 합치거나 첫 번째를 고르지 않는다.
+5. **구현자와 검토자를 분리한다.** 메인 세션은 조율, 설계 결정, Git, 단계 기록을 맡는다. 구현은 Opus 5.5 구현 서브에이전트가, 검토는 그 코드를 쓰지 않은 새 Opus 5.5 서브에이전트가 한다. 커밋과 push는 사용자가 요청할 때만 하고, 파일 경로를 지정해서 스테이징한다.
 
-## Phase workflow
+## 작업 전 확인
 
-Work in order M0 through M5. Each phase has a self-contained phases/<task>/stepN.md with prerequisites, scope and executable acceptance commands. The phase index records actual status and evidence, not planned success. Each step declares acceptance_checks as command argv arrays. The executor records real verification output and an Astra review report bound to reviewed file SHA-256 hashes; --verify must pass before completion. The harness must preserve unrelated changes and must not push without explicit authorization.
+- 항상: `docs/standards.md`, `docs/engineering-notes.md`, 작업할 모듈의 `AGENTS.md`, `docs/tracking/status.md`.
+- **M11 화학 작업**: `docs/business-rules.md`의 "M11 화학 입력 규칙"과 원본 상세 계약 `docs/M11_CHEMICAL_INTERACTIONS_CONTRACT.md`, `docs/M11_BACKEND_API.md`, `docs/M11_OFFSCREEN_QA_PLAN.md`. `docs/tracking/findings.md`의 `/tmp` QA 입력 문제.
+- **M12·M13 착수**: `docs/M12_POCKET_DETECTION_CONTRACT.md`, `docs/M13_WORKFLOWS_CONTRACT.md`. 이 계약들은 작성 당시 기준이므로, 착수 시점의 실제 스키마·도구 버전과 맞는지 다시 확인한다.
+- **뷰어·선택·저장된 보기를 바꿀 때**: `docs/engineering-notes.md`의 Mol* label 함정과 바인딩 재발행 함정, `frontend/AGENTS.md`의 브리지 불변 조건.
+- **작업 큐·프로세스를 바꿀 때**: `docs/engineering-notes.md`의 psutil 신원 함정과 시작 핸드셰이크, `backend/AGENTS.md`의 예약·잠금 규칙.
+- **외부 요청·모델 관련**: `docs/security.md` 전체. 새 외부 필드를 추가하려면 허용 목록 투영과 동의 설계가 먼저 필요하다.
+- **보고서나 새 결과 종류를 추가할 때**: `docs/business-rules.md`의 보고서 규칙과 `docs/engineering-notes.md`의 "새 과학 도구 추가" 체크리스트.
+- **과거 단계 `--verify`를 돌릴 때**: `docs/engineering-notes.md`의 오래된 검토 함정. 해시를 고쳐서 통과시키지 않는다.
 
-A gate requires implemented behavior, relevant tests, and Astra review. Passing tests alone does not prove scientific correctness or completion. API/frontend integration must be exercised with actual input bytes. Optional licensed or external capabilities may be unavailable, but the capability response, UI and report must state the specific limitation consistently. Do not mark unimplemented paths as supported.
+## 문제 대응
 
-## Critical invariants
+즉시 사용자에게 알릴 것:
+- 좌표, 구조 파일, 서열, 경로, API 키가 외부 요청·이벤트·로그·보고서·커밋에 들어갔거나 들어갈 수 있는 경로를 발견한 경우.
+- 저장된 보고서 바이트, 불변 객체, 이벤트 로그, 해시로 묶인 과거 문서가 바뀌었거나 복구할 수 없게 된 경우.
+- 화면이나 보고서에 계산하지 않은 수치, fixture 값, 다른 방법 이름으로 바꾼 값이 과학 결과로 표시되는 경우.
+- 잔기·원자·리간드 식별자가 섞이거나 잘못 매칭되어 다른 원자의 값이 표시되는 경우.
+- 예산·승인 없이 비싼 계산이나 외부 호출이 시작되거나, 작업 프로세스가 정리되지 않고 남는 경우.
+- 서버가 loopback이 아닌 주소로 열려 있는 경우.
 
-1. Never fabricate, tune, replace or hard-code experimental values to produce a desired result. Test fixtures must be identified as fixtures. Runtime UI and reports consume computed handles, not design mock data. Dry-run outputs are plans/simulations and cannot be used as measured scientific evidence.
-2. Distances are coordinates-derived measurements in angstroms. A geometric polar contact is not a validated hydrogen bond, salt bridge, affinity or stability prediction. Energies require a real supported backend and retain their native units and provenance.
-3. Preserve auth identifiers, label identifiers, insertion codes, model choice, and explicit preparation decisions. Never silently apply an unsupported preparation option.
-4. Tools exchange opaque typed handles. Immutable scientific objects and completed call provenance are durable; retries and restarts must not silently change them. Events alone must restore the selected small-structure workload without original input paths.
-5. local_only is the default. No external network request, remote font, telemetry, fetched example structure or model call is required for the main workflow. External adapters use the single egress gate; credentials never enter events, UI or reports.
-6. scientific_null is a successful empty result. Retries, repeated calls, no-progress loops, budgets, cancellation and restart have bounded behavior. Failed expensive attempts consume budget too.
-7. Bind the development service to loopback by default. Restrict run identifiers, object access and writes to their intended roots. Tool inputs are validated before execution.
-8. Preserve the supplied source documents and archive. From ../kbase_kinase copy only generic harness/script infrastructure, never its scientific code, domain data or conclusions.
-
-## Validation
-
-Use the phase commands in docs/IMPLEMENTATION_PLAN.md and the actual step files. Python checks use the project environment; frontend checks use the lockfile. Maintain meaningful tests for numerical geometry, identifier preservation, replay, runtime failure/timeout behavior and egress denial. Show errors and unavailable capabilities honestly. Record browser evidence for a real structure rendered by the implemented viewer.
-
-## Authorized M6–M7 method extension and real Git history
-
-The user subsequently requested useful alternatives to PyRosetta. Design/review remains GPT-6 Astra and implementation remains GPT-6 Sol. Follow docs/ALTERNATIVE_METHODS_CONTRACT.md and phases/protview-methods/step0.md, step1.md. Do not alter completed MVP specs or manufacture historical phase branches: M0–M5 used reviews/checks without commits, and d22fe15 on master is the honest baseline. Current M6 branch is phase/m6-interface-sasa; parent commits its actually accepted result before creating phase/m7-openmm-minimization from it. New index statuses start pending; no tests/review evidence may be prefilled. Parent owns Git transitions and final phase recording. New scientific values must come from actual FreeSASA/OpenMM execution with explicit native units/assumptions; never rename them as Rosetta, ΔΔG, affinity or stability. Preserve old immutable reports and explicitly refresh or supersede stale shared-source review coverage at each new gate.
-
-## Authorized M8 prompt/viewer and actual offscreen continuation
-
-The 2026-09-25 user request authorizes actual prompt-to-model-to-viewer implementation and real offscreen testing of all product controls. Baseline e0abffc remains historical; use the actual phase/m8-agent-viewer branch and protview-agent-ui phase group. Follow docs/M8_AGENT_VIEWER_CONTRACT.md and M8_OFFSCREEN_QA_PLAN.md. Astra designs/reviews; Sol implements/fixes/tests, including the separate Electron offscreen QA harness. No phase completion or successful click evidence may be prefilled. Only explicit online viewer consent permits its bounded new prompt projection; default local_only and all old scientific/job/credential boundaries remain. Parent owns at most4 necessary live model calls under the dedicated QA cap; prior M6/M7 no-more-call instructions describe those completed phases, not blanket permission to run unbounded new requests. Preserve old reports and current shared-source coverage through a new explicit extension review.
+그 밖의 문제는 원인을 추적해 해결을 먼저 시도한다. 그 자리에서 해결할 수 없으면 이유와 함께 `docs/tracking/findings.md`에 기록한다.
