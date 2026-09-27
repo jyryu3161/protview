@@ -37,13 +37,17 @@ function options(argv) {
     value[name] = argv[++i];
   }
   if (!value.artifacts || !modes.has(value.mode)) throw new Error(
-    "Usage: chemical-flow.cjs --mode create|attach|reopen|restrictions|faults|replay --artifacts /tmp/... [--url http://127.0.0.1:3000] [--run run_...] [--receptor prepared.pdb --sdf pose.sdf] [--complex obj://... --mapping exact.json --sidecar bonds.json --ligand exact-residue.json] [--result obj://... --report obj://... --scene obj://...]");
+    "Usage: chemical-flow.cjs --mode create|attach|reopen|restrictions|faults|replay --artifacts tests/offscreen/artifacts/m11-... [--url http://127.0.0.1:3000] [--run run_...] [--receptor ../backend/tests/fixtures/chemical/prolif-vina-rec.pdb --sdf ../backend/tests/fixtures/chemical/prolif-vina-output.sdf] [--complex obj://... --mapping <setup-out>/m11-attach-mapping-run.json --sidecar <setup-out>/m11-attach-bonds-run.json --ligand <setup-out>/m11-attach-ligand-instance-run.json] [--result obj://... --report obj://... --scene obj://...]. Synthetic inputs: scripts/m11_qa_inputs.py; run-bound attach inputs: scripts/m11_attach_browser_setup.py.");
   const url = new URL(value.url);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) || !["http:", "https:"].includes(url.protocol))
     throw new Error("Only loopback service is permitted");
   if (value.run) assert.match(value.run, /^run_[a-f0-9]+$/);
   for (const key of ["receptor", "sdf", "sidecar", "mapping", "ligand"])
-    if (value[key]) value[key] = path.resolve(value[key]);
+    if (value[key]) {
+      value[key] = path.resolve(value[key]);
+      if (!fs.statSync(value[key], { throwIfNoEntry: false })?.isFile())
+        throw new Error(`--${key} input file not found: ${value[key]}`);
+    }
   if (["create", "prepare-only", "job-controls", "running-cancel"].includes(value.mode)) assert.ok(value.receptor && value.sdf);
   if (value.mode === "retry-failed") assert.ok(value.run && value.job);
   if (value.mode === "detect-controls") assert.ok(value.run && value.graph);
