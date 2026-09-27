@@ -86,7 +86,7 @@ test("OpenMM page actions use the live identity guard on success, error and clea
   assert.doesNotMatch(resultEffect, /setOpenmmReportError\(/);
   assert.doesNotMatch(reportEffect, /setOpenmmResultError\(/);
   assert.match(page, /setOpenmmViewHandle\(null\); setViewIntent\("latest_pipeline"\)/);
-  assert.match(page, /onSelect=\{step => \{ setOpenmmViewHandle\(null\); setViewIntent\("step"\)/);
+  assert.match(page, /onSelect=\{step => \{ exitSceneOverride\(\); setOpenmmViewHandle\(null\); setViewIntent\("step"\)/);
   assert.match(page, /refreshOpenmmBudget\(runId, openmmJobId, ticket\)/);
   assert.match(page, /currentOpenmmBudgetRequest\(\{ request, epoch: ticket, runId: id, jobId \}/);
 });

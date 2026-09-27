@@ -1,0 +1,8 @@
+Scene offscreen QA failed: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(viewer.sourceHandle && viewer.sessionId && viewer.generation)
+
+    at assertNative (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:142:10)
+    at restoreScene (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:175:3)
+    at async step (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:240:16)
+    at async run (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:334:9)

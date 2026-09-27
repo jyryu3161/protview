@@ -15,6 +15,8 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from pydantic import ValidationError as PydanticValidationError
+from starlette.concurrency import run_in_threadpool
 
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE
@@ -25,6 +27,17 @@ from ..openmm_reports import build_openmm_report, saved_openmm_report, validated
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
+from ..saved_scenes import (
+    FigureSave,
+    SceneSave,
+    figure_detail,
+    figure_download,
+    list_figures,
+    list_scenes,
+    save_figure,
+    save_scene,
+    scene_detail,
+)
 from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
 from ..tools.openmm_method import preflight as openmm_preflight
@@ -58,6 +71,8 @@ RUNS_DIR = Path(os.environ.get("MW_RUNS_DIR", "runs"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa", "compile_state"}
+SCENE_BODY_LIMIT = 64 * 1024
+FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 
 app = FastAPI(title="ProtView local API")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -376,6 +391,88 @@ def viewer_session_get(rid: str, session_id: str) -> dict[str, Any]:
 def viewer_scene_state(rid: str, session_id: str, body: ViewerSceneUpdate) -> dict[str, Any]:
     try:
         return update_scene(_run(rid), session_id, **body.model_dump())
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+async def _bounded_scene_body(request: Request, limit: int) -> bytes:
+    declared = request.headers.get("content-length")
+    if declared is not None:
+        try:
+            if int(declared) > limit:
+                raise HTTPException(413, detail={"error": "resource_exceeded", "message": "viewer payload exceeds limit"})
+        except ValueError as exc:
+            raise HTTPException(400, detail={"error": "input_invalid", "message": "invalid content length"}) from exc
+    chunks = bytearray()
+    async for chunk in request.stream():
+        if len(chunks) + len(chunk) > limit:
+            raise HTTPException(413, detail={"error": "resource_exceeded", "message": "viewer payload exceeds limit"})
+        chunks.extend(chunk)
+    return bytes(chunks)
+
+
+@app.post("/runs/{rid}/viewer/scenes", status_code=201)
+async def viewer_scene_save(rid: str, request: Request) -> dict[str, Any]:
+    try:
+        body = SceneSave.model_validate_json(await _bounded_scene_body(request, SCENE_BODY_LIMIT))
+        return await run_in_threadpool(lambda: save_scene(_run(rid), body))
+    except PydanticValidationError as exc:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid scene payload"}) from exc
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/scenes")
+def viewer_scenes(rid: str, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    try:
+        return list_scenes(_run(rid), offset, limit)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/scenes/selected")
+def viewer_scene_selected(rid: str, handle: str) -> dict[str, Any]:
+    try:
+        return scene_detail(_run(rid), handle)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.post("/runs/{rid}/viewer/figures", status_code=201)
+async def viewer_figure_save(rid: str, request: Request) -> dict[str, Any]:
+    try:
+        body = FigureSave.model_validate_json(await _bounded_scene_body(request, FIGURE_BODY_LIMIT))
+        return await run_in_threadpool(lambda: save_figure(_run(rid), body))
+    except PydanticValidationError as exc:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid figure payload"}) from exc
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/figures")
+def viewer_figures(rid: str, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    try:
+        return list_figures(_run(rid), offset, limit)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/figures/selected")
+def viewer_figure_selected(rid: str, handle: str) -> dict[str, Any]:
+    try:
+        return figure_detail(_run(rid), handle)
+    except ViewerError as exc:
+        raise _viewer_error(exc) from exc
+
+
+@app.get("/runs/{rid}/viewer/figures/download")
+def viewer_figure_download(rid: str, handle: str, format: Literal["png", "json"]) -> Response:
+    try:
+        raw = figure_download(_run(rid), handle, format)
+        suffix = handle.rsplit("/", 1)[-1][:12]
+        return Response(content=raw, media_type="image/png" if format == "png" else "application/json",
+                        headers={"Content-Disposition": f'attachment; filename="protview-figure-{suffix}.{format}"',
+                                 "Cache-Control": "no-store"})
     except ViewerError as exc:
         raise _viewer_error(exc) from exc
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ResidueRef } from "@/lib/contracts";
 import type { ViewerCommand } from "@/lib/viewer-agent";
 import { cameraChanged } from "@/lib/viewer-scene";
+import { bindingMatches, exactResidue, sceneMatches, type NativeCameraState, type NativeSceneState } from "@/lib/saved-scene";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -17,6 +18,7 @@ export interface MolstarViewerProps {
   source?: ViewerSource | null;
   representation: ViewerRepresentation;
   highlight?: ResidueRef | null;
+  residues?: ResidueRef[];
   onSelect?: (residue: ResidueRef | null) => void;
   onLoadState?: (source: ViewerSource, state: "loading" | "ready" | "error", message?: string) => void;
   onFocusResult?: (source: ViewerSource, residue: ResidueRef, found: boolean) => void;
@@ -29,24 +31,33 @@ export interface MolstarViewerProps {
 type Plugin = import("molstar/lib/mol-plugin/context").PluginContext;
 type StructureSelector = Awaited<ReturnType<Plugin["builders"]["structure"]["createStructure"]>>;
 type RepresentationSelector = Awaited<ReturnType<Plugin["builders"]["structure"]["representation"]["addRepresentation"]>>;
+type ImagePass = ReturnType<NonNullable<Plugin["canvas3d"]>["getImagePass"]>;
 export interface ViewerBinding { sessionId: string; clientId: string; generation: number; sourceHandle: string; catalogHash: string; actionRevision: number }
 export interface ViewerQaSnapshot {
   ready: boolean; sourceHandle: string | null; sessionId: string | null; generation: number | null;
   representation: ViewerRepresentation | null; molstarRepresentation: string | null;
   selection: ResidueRef | null;
   camera: { position: number[]; target: number[]; radius: number; distance: number } | null;
+  nativeCamera: NativeCameraState | null; theme: "dark" | "light";
+  backgroundColor: number | null;
   lastAck: { commandId: string; status: "applied" | "no_change" | "failed"; reasonCode: string | null } | null;
 }
 export interface ViewerBridge {
   bind(binding: ViewerBinding | null): void;
   snapshot(): ViewerQaSnapshot;
   apply(command: ViewerCommand): Promise<{ status: "applied" | "no_change" | "failed"; reasonCode: string | null }>;
+  captureScene(expected: ViewerBinding): Promise<NativeSceneState>;
+  restoreScene(expected: ViewerBinding, scene: NativeSceneState): Promise<NativeSceneState>;
+  captureFigure(expected: ViewerBinding, scene: NativeSceneState): Promise<{ state: NativeSceneState; pngBase64: string; width: number; height: number }>;
+  invalidate(): void;
+  cancelNative(): void;
 }
 type Instance = { plugin: Plugin; structure: StructureSelector; source: ViewerSource; ligand?: StructureSelector;
   repr?: RepresentationSelector; ligandRepr?: RepresentationSelector; queue: Promise<void>;
   representation: ViewerRepresentation; binding: ViewerBinding | null; selected: ResidueRef | null;
   readSelected: () => ResidueRef | null; suppressSelectionCallback: boolean; lastAck: ViewerQaSnapshot["lastAck"];
-  canvas: HTMLCanvasElement; contextLost: boolean };
+  canvas: HTMLCanvasElement; contextLost: boolean; manualRevision: number; operationToken: number;
+  ownThemeMutation: "dark" | "light" | null; imagePass: ImagePass | null };
 
 declare global { interface Window { __protviewQaSnapshot?: () => ViewerQaSnapshot } }
 
@@ -72,6 +83,23 @@ function cameraSnapshot(plugin: Plugin): ViewerQaSnapshot["camera"] {
   return { position, target, radius: state.radius, distance };
 }
 
+function nativeCamera(plugin: Plugin): NativeCameraState | null {
+  const state = plugin.canvas3d?.camera.getSnapshot();
+  if (!state) return null;
+  return { mode: state.mode, fov: state.fov, position: Array.from(state.position),
+    up: Array.from(state.up), target: Array.from(state.target), radius: state.radius,
+    radiusMax: state.radiusMax, fog: state.fog, clipFar: state.clipFar,
+    minNear: state.minNear, minFar: state.minFar };
+}
+
+function currentTheme(): "dark" | "light" {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+async function settledFrame(): Promise<void> {
+  await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+}
+
 function residueSchema(ref: ResidueRef) {
   const items: Record<string, string | number> = {
     auth_asym_id: ref.chain_auth,
@@ -85,7 +113,7 @@ function residueSchema(ref: ResidueRef) {
 }
 
 /** Canvas-only Mol*: no download action, remote extension, or automatic property service. */
-export function MolstarViewer({ source, representation, highlight, onSelect, onLoadState, onFocusResult, onBridge, onManualInteraction, emptyMessage, emptyIsError }: MolstarViewerProps) {
+export function MolstarViewer({ source, representation, highlight, residues, onSelect, onLoadState, onFocusResult, onBridge, onManualInteraction, emptyMessage, emptyIsError }: MolstarViewerProps) {
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<Instance | null>(null);
   const requestedRepresentation = useRef(representation);
@@ -94,6 +122,7 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
   const focusCallback = useRef(onFocusResult);
   const bridgeCallback = useRef(onBridge);
   const manualCallback = useRef(onManualInteraction);
+  const authoritativeRows = useRef(residues);
   const [state, setState] = useState<"empty" | "loading" | "ready" | "error">("empty");
   const [error, setError] = useState("");
   requestedRepresentation.current = representation;
@@ -102,6 +131,7 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
   focusCallback.current = onFocusResult;
   bridgeCallback.current = onBridge;
   manualCallback.current = onManualInteraction;
+  authoritativeRows.current = residues;
 
   useEffect(() => {
     const parent = host.current;
@@ -124,7 +154,10 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
       loadCallback.current?.(source, "error", "WebGL context lost");
     };
     canvas.addEventListener("webglcontextlost", lost);
-    const manual = (event: Event) => { if (event.isTrusted) manualCallback.current?.(); };
+    const manual = (event: Event) => { if (event.isTrusted) {
+      if (instance.current?.canvas === canvas) instance.current.manualRevision += 1;
+      manualCallback.current?.();
+    } };
     canvas.addEventListener("pointerdown", manual);
     canvas.addEventListener("wheel", manual);
     parent.appendChild(mount);
@@ -183,7 +216,14 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
           plugin?.canvas3d?.setProps({ renderer: { backgroundColor: Color(Number.parseInt(canvasColor.slice(1), 16)) } });
       };
       updateBackground();
-      themeObserver = new MutationObserver(updateBackground);
+      themeObserver = new MutationObserver(() => {
+        if (instance.current?.canvas === canvas) {
+          const current = instance.current;
+          if (current.ownThemeMutation === currentTheme()) current.ownThemeMutation = null;
+          else { current.ownThemeMutation = null; current.manualRevision += 1; }
+        }
+        updateBackground();
+      });
       themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
       if (!source.text.trim()) throw new Error("구조 파일이 비어 있습니다.");
 
@@ -197,7 +237,8 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
       const current: Instance = { plugin, structure, source, ligand, queue: Promise.resolve(),
         representation: requestedRepresentation.current, binding: null, selected: null,
         readSelected: () => null, suppressSelectionCallback: false, lastAck: null,
-        canvas, contextLost: false };
+        canvas, contextLost: false, manualRevision: 0, operationToken: 0,
+        ownThemeMutation: null, imagePass: null };
       instance.current = current;
       current.repr = await addRepresentation(plugin, structure, requestedRepresentation.current);
       if (ligand && requestedRepresentation.current !== "ball-and-stick")
@@ -227,6 +268,7 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
         if (cancelled) return;
         current.selected = current.readSelected();
         if (current.suppressSelectionCallback || selectionNotificationQueued) return;
+        current.manualRevision += 1;
         // selectOnly can emit an intermediate deselection before its final
         // selection. Report the settled native state once per click so manual
         // scene revision advances only once.
@@ -238,8 +280,81 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
           selectedCallback.current?.(current.selected);
         });
       });
+      const attached = (expected: ViewerBinding, token: number) => instance.current === current &&
+        !current.contextLost && !current.canvas.getContext("webgl2")?.isContextLost() &&
+        bindingMatches(current.binding, expected) && current.source.handle === expected.sourceHandle &&
+        current.operationToken === token;
+      const bound = (expected: ViewerBinding, token: number) => attached(expected, token) &&
+        !!current.repr?.obj?.data?.repr;
+      const exactSelection = () => {
+        const actual = current.readSelected();
+        if (!actual) return null;
+        const matches = authoritativeRows.current?.filter(ref => matchesAuthoritative(actual, ref));
+        if (matches?.length !== 1) throw new Error("선택한 잔기의 원본 식별자를 확인할 수 없습니다.");
+        return exactResidue(matches[0]);
+      };
+      const observedSelection = () => { try { return exactSelection(); } catch { return null; } };
+      const readScene = (): NativeSceneState => {
+        const camera = nativeCamera(plugin!);
+        if (!camera) throw new Error("Mol* camera is unavailable");
+        return { structure_handle: current.source.handle, selection: exactSelection(),
+          representation: current.representation === "ball-and-stick" ? "ball_and_stick" : current.representation,
+          camera, theme: currentTheme() };
+      };
+      const checkOperation = (expected: ViewerBinding, token: number, revision: number) => {
+        if (!bound(expected, token) || current.manualRevision !== revision)
+          throw new Error("수동 장면 변경으로 뷰어 작업이 취소되었습니다.");
+      };
+      const waitCameraSettled = async (expected: ViewerBinding, token: number, revision: number) => {
+        const started = performance.now();
+        let previous = "", stable = 0;
+        while (performance.now() - started < 5000) {
+          await settledFrame();
+          checkOperation(expected, token, revision);
+          const camera = plugin!.canvas3d?.camera;
+          const snapshot = nativeCamera(plugin!);
+          if (!camera || !snapshot) throw new Error("Mol* 카메라를 읽을 수 없습니다.");
+          const serialized = JSON.stringify(snapshot);
+          stable = !camera.transition.inTransition && serialized === previous ? stable + 1 : 0;
+          if (stable >= 2) return;
+          previous = serialized;
+        }
+        throw new Error("Mol* 카메라가 5초 안에 안정되지 않았습니다.");
+      };
+      const waitSceneRestored = async (expected: ViewerBinding, token: number, revision: number,
+                                       scene: NativeSceneState): Promise<NativeSceneState> => {
+        const started = performance.now();
+        let stable = 0;
+        while (performance.now() - started < 5000) {
+          await settledFrame();
+          checkOperation(expected, token, revision);
+          const restored = readScene();
+          stable = sceneMatches(restored, scene) && !plugin!.canvas3d!.camera.transition.inTransition ? stable + 1 : 0;
+          if (stable >= 2) return restored;
+        }
+        throw new Error("Mol* 복원 상태가 저장된 보기와 일치하지 않습니다.");
+      };
+      const enqueue = <T,>(work: () => Promise<T>): Promise<T> => {
+        const task = current.queue.then(work);
+        current.queue = task.then(() => undefined, () => undefined);
+        return task;
+      };
+      const guarded = <T,>(expected: ViewerBinding, work: (token: number) => Promise<T>, timeoutMs = 15000): Promise<T> => {
+        const token = current.operationToken;
+        // A timed-out native operation stays in the queue until it settles.
+        // Every continuation must reject its invalidated token before mutating.
+        const operation = enqueue(() => work(token));
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        const deadline = new Promise<never>((_, reject) => {
+          timeout = setTimeout(() => { current.operationToken += 1; reject(new Error("뷰어 작업 시간이 초과되었습니다.")); }, timeoutMs);
+        });
+        return Promise.race([operation, deadline]).finally(() => clearTimeout(timeout)).then(value => {
+          if (!bound(expected, token)) throw new Error("장면이 변경되어 작업 결과를 사용할 수 없습니다.");
+          return value;
+        });
+      };
       const bridge: ViewerBridge = {
-        bind: binding => { if (instance.current === current) current.binding = binding; },
+        bind: binding => { if (instance.current === current) { current.operationToken += 1; current.binding = binding; } },
         snapshot: () => {
           const ready = instance.current === current && !current.contextLost &&
             !current.canvas.getContext("webgl2")?.isContextLost() && !!current.repr?.obj?.data?.repr;
@@ -247,8 +362,11 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
             sessionId: current.binding?.sessionId ?? null, generation: current.binding?.generation ?? null,
             representation: ready ? current.representation : null,
             molstarRepresentation: ready ? current.repr?.obj?.data?.repr?.label ?? null : null,
-            selection: ready ? current.readSelected() : null,
-            camera: ready ? cameraSnapshot(plugin!) : null, lastAck: current.lastAck };
+            selection: ready ? observedSelection() : null,
+            camera: ready ? cameraSnapshot(plugin!) : null,
+            nativeCamera: ready ? nativeCamera(plugin!) : null,
+            theme: currentTheme(), backgroundColor: plugin!.canvas3d?.props.renderer.backgroundColor ?? null,
+            lastAck: current.lastAck };
         },
         apply: async command => {
           const execute = async () => {
@@ -344,6 +462,111 @@ export function MolstarViewer({ source, representation, highlight, onSelect, onL
           current.lastAck = { commandId: command.command_id, status: outcome.status, reasonCode: outcome.reasonCode };
           return outcome;
         },
+        invalidate: () => { current.operationToken += 1; current.binding = null; },
+        cancelNative: () => { current.operationToken += 1; },
+        captureScene: expected => guarded(expected, async token => {
+          if (!bound(expected, token)) throw new Error("구조를 표시한 뒤 보기를 저장하세요.");
+          const revision = current.manualRevision;
+          await waitCameraSettled(expected, token, revision);
+          const state = readScene();
+          checkOperation(expected, token, revision);
+          return state;
+        }),
+        restoreScene: (expected, scene) => guarded(expected, async token => {
+          if (!bound(expected, token) || scene.structure_handle !== current.source.handle)
+            throw new Error("저장된 장면의 구조가 현재 뷰어와 다릅니다.");
+          const revision = current.manualRevision;
+          const next = scene.representation === "ball_and_stick" ? "ball-and-stick" : scene.representation;
+          if (current.representation !== next) {
+            if (current.repr) await plugin!.state.data.build().delete(current.repr.ref).commit();
+            if (!attached(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+            current.repr = await addRepresentation(plugin!, current.structure, next);
+            if (!attached(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+            if (current.ligandRepr) await plugin!.state.data.build().delete(current.ligandRepr.ref).commit();
+            if (!attached(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+            current.ligandRepr = current.ligand && next !== "ball-and-stick"
+              ? await addRepresentation(plugin!, current.ligand, "ball-and-stick") : undefined;
+            if (!attached(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+            current.representation = next;
+          }
+          if (!bound(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+          current.suppressSelectionCallback = true;
+          try {
+            plugin!.managers.interactivity.lociSelects.deselectAll();
+            if (scene.selection) {
+              const structure = current.structure.obj?.data;
+              if (!structure || structure.models[0]?.modelNum !== scene.selection.model_number)
+                throw new Error("저장된 잔기 모델이 표시된 구조와 다릅니다.");
+              const loci = StructureElement.Loci.fromSchema(structure,
+                residueSchema(scene.selection) as Parameters<typeof StructureElement.Loci.fromSchema>[1]);
+              if (StructureElement.Loci.isEmpty(loci)) throw new Error("저장된 잔기를 찾지 못했습니다.");
+              plugin!.managers.interactivity.lociSelects.select({ loci });
+            }
+          } finally { current.suppressSelectionCallback = false; }
+          if (!bound(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+          if (currentTheme() !== scene.theme) {
+            current.ownThemeMutation = scene.theme;
+            document.documentElement.dataset.theme = scene.theme;
+          }
+          updateBackground();
+          await settledFrame();
+          if (!bound(expected, token) || current.manualRevision !== revision || currentTheme() !== scene.theme)
+            throw new Error("복원 중 장면이 변경되었습니다.");
+          await waitCameraSettled(expected, token, revision);
+          const camera = plugin!.canvas3d!.camera;
+          camera.setState(scene.camera as Parameters<typeof camera.setState>[0], 0);
+          return waitSceneRestored(expected, token, revision, scene);
+        }),
+        captureFigure: (expected, scene) => guarded(expected, async token => {
+          if (!bound(expected, token)) throw new Error("구조를 표시한 뒤 이미지를 내보내세요.");
+          const revision = current.manualRevision;
+          await waitCameraSettled(expected, token, revision);
+          const before = readScene();
+          if (!sceneMatches(before, scene) || !bound(expected, token) || revision !== current.manualRevision)
+            throw new Error("현재 장면이 저장된 보기와 다릅니다. 먼저 복원하세요.");
+          const { Task } = await import("molstar/lib/mol-task");
+          if (!bound(expected, token) || revision !== current.manualRevision) throw new Error("이미지 캡처 중 장면이 변경되었습니다.");
+          const imageData = await plugin!.runTask(Task.create("Capture molecular viewport", async ctx => {
+            if (!bound(expected, token) || revision !== current.manualRevision) throw new Error("이미지 캡처 중 장면이 변경되었습니다.");
+            plugin!.animationLoop.stop({ noDraw: true });
+            try {
+              plugin!.canvas3d!.commit(true);
+              const pass = current.imagePass ?? (current.imagePass = plugin!.canvas3d!.getImagePass({}));
+              const canvas3d = plugin!.canvas3d!;
+              const { colorBufferFloat, textureFloat } = canvas3d.webgl.extensions;
+              // Mol*'s native screenshot path forces a complete multisample
+              // render. The default temporal mode can return a blank target.
+              pass.setProps({ multiSample: { ...canvas3d.props.multiSample, mode: "on",
+                sampleLevel: colorBufferFloat && textureFloat ? 4 : 2, reuseOcclusion: false },
+                postprocessing: { ...canvas3d.props.postprocessing },
+                marking: { ...canvas3d.props.marking },
+                illumination: { ...canvas3d.props.illumination, enabled: false } });
+              await pass.updateBackground();
+              if (!bound(expected, token) || revision !== current.manualRevision) throw new Error("이미지 캡처 중 장면이 변경되었습니다.");
+              return await pass.getImageData(ctx, 1200, 800);
+            } finally { if (instance.current === current && !current.contextLost) plugin!.animationLoop.start({ immediate: true }); }
+          }));
+          if (!bound(expected, token) || revision !== current.manualRevision) throw new Error("이미지 캡처 중 장면이 변경되었습니다.");
+          let visible = 0;
+          for (let i = 3; i < imageData.data.length; i += 4) if (imageData.data[i] > 0) { visible++; break; }
+          if (!visible) throw new Error("Mol*가 빈 이미지를 반환했습니다. 다시 렌더링한 뒤 내보내세요.");
+          const encoding = document.createElement("canvas");
+          encoding.width = imageData.width; encoding.height = imageData.height;
+          const context = encoding.getContext("2d");
+          if (!context) throw new Error("PNG 인코딩 캔버스를 만들 수 없습니다.");
+          context.putImageData(imageData, 0, 0);
+          const blob = await new Promise<Blob>((resolve, reject) => encoding.toBlob(value =>
+            value ? resolve(value) : reject(new Error("PNG 인코딩에 실패했습니다.")), "image/png"));
+          if (blob.size > 8 * 1024 * 1024) throw new Error("PNG 크기가 8 MiB 제한을 초과했습니다.");
+          const bytes = new Uint8Array(await blob.arrayBuffer());
+          let binary = "";
+          for (let i = 0; i < bytes.length; i += 32768)
+            binary += String.fromCharCode(...bytes.subarray(i, i + 32768));
+          const after = readScene();
+          if (!bound(expected, token) || revision !== current.manualRevision || !sceneMatches(after, scene))
+            throw new Error("이미지 인코딩 중 장면이 변경되었습니다.");
+          return { state: after, pngBase64: btoa(binary), width: imageData.width, height: imageData.height };
+        }),
       };
       window.__protviewQaSnapshot = bridge.snapshot;
       bridgeCallback.current?.(bridge);

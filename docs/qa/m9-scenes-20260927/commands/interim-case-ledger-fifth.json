@@ -1,0 +1,141 @@
+[
+  {
+    "artifact": "normal-fifth/normal-flow.jsonl",
+    "sha256": "8aae1a32c55bf664be5fd8c3a8cbdb8358e1f51303d0f231a90822445c32106b",
+    "pass": 37,
+    "failures": []
+  },
+  {
+    "artifact": "normal-first/normal-flow.jsonl",
+    "sha256": "e343b4a976eda30a9e81777a550d4d22ebefad88860e4c29c47c289e3b36e979",
+    "pass": 37,
+    "failures": []
+  },
+  {
+    "artifact": "openmm-second/openmm-full.jsonl",
+    "sha256": "3ab1c3f7eaffdfc7e1476e2e6236d4a94b193311cce3d37ce1bc544e753d9219",
+    "pass": 17,
+    "failures": []
+  },
+  {
+    "artifact": "scenes-core-corrected/scenes-core.jsonl",
+    "sha256": "f3a357e712a8d4445d63e9b661610a44603985d908f03b22a4480122cfc47541",
+    "pass": 1,
+    "failures": [
+      {
+        "caseId": "V04-original-source",
+        "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(viewer.sourceHandle && viewer.sessionId && viewer.generation)\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-corrected-second/scenes-core.jsonl",
+    "sha256": "0be1abd270127291f7c72719414d589b392c59169aee3d7336d4b699392ee730",
+    "pass": 32,
+    "failures": [
+      {
+        "caseId": "V08-select",
+        "error": "AssertionError [ERR_ASSERTION]: Scene save failed: {\"detail\":{\"error\":\"input_invalid\",\"message\":\"invalid scene payload\"}}\n\n422 !== 201\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-fifth/scenes-core.jsonl",
+    "sha256": "67e210de92371071705e0a71185a491f9a3dce05144dea2da3decce6806f562b",
+    "pass": 32,
+    "failures": [
+      {
+        "caseId": "V08-select",
+        "error": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('\ubcf4\uae30 \uc800\uc7a5 \uc644\ub8cc \u00b7 \uc120\ud0dd\ub41c MK1 \ub9ac\uac04\ub4dc', { exact: true }) to be visible\u001b[22m\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-fifth-second/scenes-core.jsonl",
+    "sha256": "87beaa1951c492b78f63d00d23a41a82880cdc5f50092e4fcd18dc0c578f0b0e",
+    "pass": 34,
+    "failures": [
+      {
+        "caseId": "V08-restore-selected",
+        "error": "TimeoutError: locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('\uc800\uc7a5\ub41c \ubcf4\uae30 \ubcf5\uc6d0 \uc644\ub8cc \u00b7 \uc120\ud0dd\ub41c MK1 \ub9ac\uac04\ub4dc', { exact: true }) to be visible\u001b[22m\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-final-candidate/scenes-core.jsonl",
+    "sha256": "a32a154a3055c97d42332e97f62e35ba6f614c3e98f0b6e0cf6a24c186e4f57e",
+    "pass": 34,
+    "failures": [
+      {
+        "caseId": "V08-restore-selected",
+        "error": "TimeoutError: locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('combobox', { name: '\uc800\uc7a5\ub41c \ubcf4\uae30' })\u001b[22m\n\u001b[2m    - locator resolved to <select class=\"mw-select\">\u2026</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - did not find some options\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - did not find some options\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    60 \u00d7 waiting for element to be visible and enabled\u001b[22m\n\u001b[2m       - did not find some options\u001b[22m\n\u001b[2m     - retrying select option action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-first/scenes-core.jsonl",
+    "sha256": "98bdae6de52355ae6f70b7eb6323e1f84b4d6c799ea62b0a4e8a68e0ca5a18d8",
+    "pass": 7,
+    "failures": [
+      {
+        "caseId": "V05-minimized",
+        "error": "TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event \"response\""
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-second/scenes-core.jsonl",
+    "sha256": "4374cc91e6e36bb0aa3e3a3fe613170257a60d7a0e3b8ff6345fb087212adf69",
+    "pass": 10,
+    "failures": [
+      {
+        "caseId": "V10-source-openmm_minimized_structure",
+        "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(viewer.sourceHandle && viewer.sessionId && viewer.generation)\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-core-third/scenes-core.jsonl",
+    "sha256": "8cd6bd33309ab2f27f752dd8210e10dac0f96ace3a9c927c25e3b7587df730a4",
+    "pass": 27,
+    "failures": [
+      {
+        "caseId": "V16-png",
+        "error": "AssertionError [ERR_ASSERTION]: PNG appears blank/flat: 1 sampled colors"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-identity-corrected/scenes-identity.jsonl",
+    "sha256": "95e846a8bf606e5931be8973ba71cdc9b6a8a94f588de378439a695b9cab36bc",
+    "pass": 2,
+    "failures": [
+      {
+        "caseId": "V08-identity-model-selection",
+        "error": "AssertionError [ERR_ASSERTION]: Scene save failed: {\"detail\":{\"error\":\"input_invalid\",\"message\":\"invalid scene payload\"}}\n\n422 !== 201\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-identity-first/scenes-identity.jsonl",
+    "sha256": "957b1b005b12301924f7fdd8ad83575992c9133915c3e1f2ff5de893ccc623ce",
+    "pass": 2,
+    "failures": [
+      {
+        "caseId": "V08-identity-model-selection",
+        "error": "TimeoutError: locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('model', { exact: true })\u001b[22m\n"
+      }
+    ]
+  },
+  {
+    "artifact": "scenes-restore-manual-fifth/scenes-restore-manual.jsonl",
+    "sha256": "2a67cdf6f06cf98a66f9a083c2eeebd42bb54d7188e2a782238d2855bb2a03a8",
+    "pass": 1,
+    "failures": [
+      {
+        "caseId": "V17-manual-before-restore-session",
+        "error": "AssertionError [ERR_ASSERTION]: Late restore overwrote the newer manual camera orbit\n\nfalse !== true\n"
+      }
+    ]
+  }
+]

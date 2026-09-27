@@ -2,6 +2,10 @@
 import type { BudgetSnapshot, EgressMode, Handle, InteractionRow, ResidueRef, RunEvent, ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
+import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
+
+export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
+  scene_generation: number; action_revision: number; request_id: string }
 
 export interface RunSummary { run_id: string; goal: string; context: string[]; dry_run: boolean; egress: EgressMode; last_seq: number }
 export function displayedEgressMode(run: RunSummary | null): EgressMode {
@@ -71,6 +75,17 @@ function runPath(runId: string, tail = "") { return `/runs/${encodeURIComponent(
 function handleParam(handle: string) { return `handle=${encodeURIComponent(handle)}`; }
 
 export const api = {
+  savedScenes: (id: string, offset = 0) => request<SavedPage<SavedSceneDetail>>(runPath(id, `/viewer/scenes?offset=${offset}&limit=50`)),
+  savedScene: (id: string, handle: string, signal?: AbortSignal) => request<SavedSceneDetail>(runPath(id, `/viewer/scenes/selected?${handleParam(handle)}`), { signal }),
+  saveScene: (id: string, body: SceneBindingRequest & NativeSceneState & { schema: "viewer_scene@1"; name: string }) =>
+    request<SavedSceneDetail>(runPath(id, "/viewer/scenes"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  savedFigures: (id: string, offset = 0) => request<SavedPage<SavedFigureDetail>>(runPath(id, `/viewer/figures?offset=${offset}&limit=50`)),
+  savedFigure: (id: string, handle: string) => request<SavedFigureDetail>(runPath(id, `/viewer/figures/selected?${handleParam(handle)}`)),
+  saveFigure: (id: string, body: SceneBindingRequest & NativeSceneState & { schema: "viewer_figure@1";
+    scene_handle: string; png_base64: string }) => request<SavedFigureDetail>(runPath(id, "/viewer/figures"),
+    { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  figureDownload: (id: string, handle: string, format: "png" | "json") =>
+    `/api${runPath(id, `/viewer/figures/download?${handleParam(handle)}&format=${format}`)}`,
   viewerSession: (id: string, body: { client_instance_id: string; scene_generation: number;
     structure_handle: string; representation: ViewerRepresentationValue;
     scope_chain_auth?: string | null; scope_target?: ResidueRef | null; selected_target?: ResidueRef | null }) =>

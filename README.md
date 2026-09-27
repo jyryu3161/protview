@@ -45,6 +45,8 @@ run 데이터는 기본적으로 루트의 `runs/`에 저장됩니다. 별도 �
 
 뷰어 요청 패널의 로컬 명령(`/representation surface`, `/zoom in`, `/clear`, `/reset`)은 offline에서도 작동합니다. 자연어 요청은 해당 run에서 **온라인 해석 허용**을 명시적으로 켠 뒤 보냅니다. 예: “표현 방식을 cartoon으로 바꾸고 현재 선택을 해제한 뒤 카메라 시점을 초기화해줘.” 입력 문장과 제한된 대상 식별자가 전송되며 좌표·구조 파일·서열·경로는 전송하지 않습니다. run별 실제 요청 한도는 4회이고, 이 동의는 과학 계산 승인을 부여하지 않습니다. 설정과 전송·취소·적용 확인 계약은 [M8 구현 안내](docs/M8_AGENT_VIEWER.md)를 따릅니다.
 
+M9의 저장된 보기는 현재 표시된 원본·과거 전처리·OpenMM 최소화 구조의 정확한 source/model, 선택 잔기, 표현, 카메라, 테마를 이름과 함께 보관합니다. 복원은 새 로컬 뷰어 세션에서만 이루어지며, 선택한 보기의 실제 Mol* 뷰포트를 PNG와 출처 JSON 한 쌍으로 내보낼 수 있습니다. 이 그림은 새로운 과학 측정이 아닙니다. 사용 순서, 재시도, 저장 한도와 한계는 [M9 저장 보기·그림 안내](docs/M9_SCENES_EXPORT.md)를 따릅니다. 최종 완료 여부는 [M9 단계 기록](phases/protview-scenes/index.json)에 따릅니다.
+
 M6에서는 전처리 구조의 정확한 리간드 인스턴스를 선택하거나 접촉 결과의 정확한 입력을 선택하여 FreeSASA Lee–Richards 100-slice SASA를 계산합니다. 단백질 매몰, 리간드 매몰, 총 SASA 손실과 잔기별 값을 Å²로 표시합니다. 선택한 SASA 결과의 별도 방법 보고서를 Markdown/JSON으로 저장하고 다시 열 수 있습니다. 이 면적은 친화도나 에너지가 아닙니다. 방법·한계·검증 범위는 [M6 기록](docs/M6_SASA.md)을 따릅니다.
 
 접촉이 없는 정상 결과는 `scientific_null`로 표시됩니다. 읽기나 계산 실패와 리간드 부재/다중 선택 요구는 별도 상태입니다. 거리는 Å 단위이며, 기하학적 polar/hydrophobic contact는 검증된 수소결합·친화도·안정성·에너지를 뜻하지 않습니다. 지원하지 않는 전처리와 과학 계산은 거부하거나 사용 불가로 표시합니다. PyRosetta relax, Cartesian ddG, interface analysis, residue energies는 실제 구현·검증된 엔진이 없어 사용할 수 없으며 보고서에 점수나 순위가 없습니다. `/gallery`는 디자인 예시입니다.
@@ -59,6 +61,7 @@ M6에서는 전처리 구조의 정확한 리간드 인스턴스를 선택하거
 - [구조 API](docs/M1_API.md), [뷰어 동작과 검증](docs/M1_VIEWER.md), [M1 승인 검토](phases/protview-mvp/reviews/step1.md)
 - [실행·복구 계약](docs/RUNTIME_CONTRACT.md), [외부 요청 계약](docs/EGRESS_CONTRACT.md), [작업 계약](docs/JOBS_CONTRACT.md), [보고서 계약](docs/REPORT_CONTRACT.md)
 - [M8 에이전트 계약](docs/M8_AGENT_VIEWER_CONTRACT.md), [오프스크린 검증 계획](docs/M8_OFFSCREEN_QA_PLAN.md), [실제 검증 결과](docs/M8_QA_RESULTS.md)
+- [M9 저장 보기·PNG 사용 안내](docs/M9_SCENES_EXPORT.md), [M9 계약](docs/M9_SCENES_EXPORT_CONTRACT.md), [M9 오프스크린 검증 계획](docs/M9_OFFSCREEN_QA_PLAN.md)
 - [단계 실행기 사용법](docs/HARNESS.md)
 
 GPT-6 Astra가 설계와 검토를 맡고 GPT-6 Sol이 구현합니다. `../kbase_kinase`에서는 범용 단계 실행기·훅·관련 검사만 가져와 이 프로젝트에 맞게 수정했습니다. 실행기는 단계 검사와 파일 해시가 연결된 검토 기록을 요구하며, Git 커밋이나 push를 자동으로 수행하지 않습니다.

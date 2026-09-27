@@ -13,9 +13,11 @@ import { currentOpenmmAction, currentOpenmmBudgetRequest, formatEnergy2, openmmC
   type OpenmmActionIdentity, type OpenmmContext } from "@/lib/openmm-action";
 import { reportSelectionKey, responseMatchesMethodSelection, responseMatchesOpenmmSelection, responseMatchesSelection, savedForSelection, savedMethodForSelection, savedOpenmmForSelection } from "@/lib/report-selection";
 import type { ViewerSource } from "@/components/MolstarViewer";
-import type { ViewerBridge } from "@/components/MolstarViewer";
-import { ViewerAgentPanel } from "@/components/ViewerAgentPanel";
+import type { ViewerBinding, ViewerBridge } from "@/components/MolstarViewer";
+import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgentPanel";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
+import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
+import type { ViewerSession } from "@/lib/viewer-agent";
 
 type Handles = { loaded?: Handle; prepared?: Handle; interactions?: Handle; sasa?: Handle };
 type UploadInfo = Pick<UploadResult, "upload_id" | "format" | "size"> & { model_numbers?: number[] };
@@ -41,6 +43,13 @@ function identity(ref: ResidueRef) {
 function displayResidue(ref: ResidueRef) {
   return `${ref.resname} auth ${ref.chain_auth}/${ref.seq_auth}${ref.icode || ""}` +
     ` · label ${ref.chain_label ?? "unknown"}/${ref.seq_label ?? "unknown"} · model ${ref.model_number ?? "unknown"}`;
+}
+function beforeDeadline<T>(task: Promise<T>, milliseconds: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("구조 읽기 제한 시간이 초과되었습니다.")), milliseconds);
+  });
+  return Promise.race([task, timeout]).finally(() => clearTimeout(timer));
 }
 function timeline(events: RunEvent[]): Step[] {
   const validCache = new Set(resultEvents(events).filter((event): event is CacheEvent => event.type === "cache_hit"));
@@ -86,6 +95,18 @@ export default function WorkspacePage() {
   const [cutoff, setCutoff] = useState(4.0);
   const [representation, setRepresentation] = useState<ViewerRepresentation>("cartoon");
   const [viewerScopeRevision, setViewerScopeRevision] = useState(0);
+  const [sceneName, setSceneName] = useState("");
+  const [savedScenes, setSavedScenes] = useState<SavedSceneDetail[]>([]);
+  const [savedFigures, setSavedFigures] = useState<SavedFigureDetail[]>([]);
+  const [selectedSceneHandle, setSelectedSceneHandle] = useState("");
+  const [selectedFigureHandle, setSelectedFigureHandle] = useState("");
+  const [sceneReadRetry, setSceneReadRetry] = useState(0);
+  const [sceneOverride, setSceneOverride] = useState<{ scene: SavedSceneDetail; token: number } | null>(null);
+  const [restorePendingToken, setRestorePendingToken] = useState<number | null>(null);
+  const [sceneBusy, setSceneBusy] = useState("");
+  const [sceneError, setSceneError] = useState("");
+  const [sceneStatus, setSceneStatus] = useState("");
+  const [viewerSession, setViewerSession] = useState<ViewerSession | null>(null);
   const [highlight, setHighlight] = useState<{ key: string; residue: ResidueRef } | null>(null);
   const [focusedResidue, setFocusedResidue] = useState<{ key: string; residue: ResidueRef } | null>(null);
   const [focusError, setFocusError] = useState<{ key: string; message: string } | null>(null);
@@ -129,6 +150,13 @@ export default function WorkspacePage() {
   const methodReportKeyRef = useRef<string | null>(null);
   const epoch = useRef(0);
   const viewerBridgeRef = useRef<ViewerBridge | null>(null);
+  const sceneControllerRef = useRef<SceneController | null>(null);
+  const registerSceneController = useCallback((controller: SceneController | null) => { sceneControllerRef.current = controller; }, []);
+  const sceneEpoch = useRef(0);
+  const pendingRestoreTokenRef = useRef<number | null>(null);
+  const sceneActionEpoch = useRef(0);
+  const sceneReadAbort = useRef<AbortController | null>(null);
+  const sceneContextRef = useRef<string | null>(null);
   const manualViewerInvalidator = useRef<(() => void) | null>(null);
   const viewerClientId = useRef<string | null>(null);
   if (!viewerClientId.current && typeof window !== "undefined") viewerClientId.current = crypto.randomUUID();
@@ -147,6 +175,9 @@ export default function WorkspacePage() {
 
   const reopen = useCallback(async (id: string) => {
     const ticket = ++epoch.current;
+    sceneActionEpoch.current += 1; sceneReadAbort.current?.abort(); sceneReadAbort.current = null;
+    sceneEpoch.current += 1; pendingRestoreTokenRef.current = null;
+    setRestorePendingToken(null); setSceneBusy(""); setSceneError("");
     setError("");
     const [summary, log, limits, reports, jobs] = await Promise.all([api.run(id), api.allEvents(id), api.budget(id), api.reports(id), api.jobs(id)]);
     if (ticket !== epoch.current) return;
@@ -154,6 +185,8 @@ export default function WorkspacePage() {
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
+    sceneEpoch.current += 1; setSceneOverride(null); setRestorePendingToken(null); setViewerSession(null); setSceneBusy(""); setSceneError(""); setSceneStatus("");
+    setSavedScenes([]); setSavedFigures([]); setSelectedSceneHandle(""); setSelectedFigureHandle("");
     setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmPlan(null); setOpenmmViewHandle(null);
     // A completed contact/SASA/report call can reopen the same immutable
     // prepared handle. Keep its validated residue list in that case: the
@@ -221,22 +254,23 @@ export default function WorkspacePage() {
   const selectedInteraction = selectedTool === "compute_interactions" && !!selectedHandle;
   const selectedSasa = selectedTool === "compute_interface_sasa" && !!selectedHandle;
   const selectedMeasurement = selectedInteraction || selectedSasa;
-  const expectedKind = openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
+  const expectedKind = sceneOverride ? sceneOverride.scene.value.structure_kind : openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
     ? selectedTool === "load_structure" ? "structure" : "prepared_structure"
     : handles.prepared ? "prepared_structure" : "structure";
-  const associationError = !openmmViewHandle && selectedMeasurement && objectMeta &&
+  const associationError = !sceneOverride && !openmmViewHandle && selectedMeasurement && objectMeta &&
     (selectedHandle?.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") || objectMeta.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") ||
       objectMeta.schema !== (selectedSasa ? "interface_sasa@1" : "interaction_set@1") ||
       typeof objectMeta.summary.structure !== "string" || !objectMeta.summary.structure)
       ? "측정 객체에 확인 가능한 입력 구조가 없습니다." :
-    !openmmViewHandle && selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
+    !sceneOverride && !openmmViewHandle && selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
       ? "선택한 단계의 구조 종류가 객체 메타데이터와 일치하지 않습니다." : null;
-  const targetHandle = openmmViewHandle ?? (selectedMeasurement
+  const targetHandle = sceneOverride?.scene.value.structure_handle ?? openmmViewHandle ?? (selectedMeasurement
     ? !associationError && objectMeta ? String(objectMeta.summary.structure) : null
     : selectedStructure ? !associationError && objectMeta ? objectMeta.handle : null
       : pipelineHandle?.handle ?? null);
-  const targetKey = runId && targetHandle ? JSON.stringify([runId, targetHandle, inspectionRevision]) : null;
-  const viewerContextKey = targetKey ? JSON.stringify([targetKey, viewIntent, selectedStep?.callId ?? null]) : null;
+  const targetKey = runId && targetHandle ? JSON.stringify([runId, targetHandle, inspectionRevision, sceneOverride?.token ?? null]) : null;
+  const viewerContextKey = targetKey ? JSON.stringify([targetKey, viewIntent, selectedStep?.callId ?? null, sceneOverride?.token ?? null]) : null;
+  sceneContextRef.current = viewerContextKey;
   const sceneToken = useRef<{ key: string | null; generation: number }>({ key: null, generation: 0 });
   sceneToken.current = advanceSceneGeneration(sceneToken.current,
     JSON.stringify([viewerContextKey, viewerScopeRevision]));
@@ -245,7 +279,13 @@ export default function WorkspacePage() {
   const displayResidues = displayData?.residues ?? null;
   const viewerReady = !!viewerContextKey && viewerState?.key === viewerContextKey &&
     viewerState.status === "ready" && viewerState.source === displaySource;
-  const focusEnabled = viewerReady && !busy && !openmmViewHandle;
+  const bridgeState = viewerBridgeRef.current?.snapshot();
+  const sceneSessionReady = viewerReady && !!viewerSession &&
+    viewerSession.structure_handle === displaySource?.handle &&
+    viewerSession.scene_generation === sceneToken.current.generation &&
+    bridgeState?.ready === true && bridgeState.sessionId === viewerSession.viewer_session_id &&
+    bridgeState.generation === viewerSession.scene_generation;
+  const focusEnabled = viewerReady && !busy && !openmmViewHandle && !sceneOverride;
   const selectedFocus = viewerReady && focusedResidue?.key === viewerContextKey ? focusedResidue.residue : null;
   const displayedError = associationError ?? (selectedMeta?.status === "error" && (selectedMeasurement || selectedStructure)
     ? `선택한 객체의 메타데이터를 읽지 못했습니다: ${selectedMeta.message}` : null) ??
@@ -292,8 +332,79 @@ export default function WorkspacePage() {
   }, [runId, openmmInput, openmmJobId]);
   const openmmPreflightKey = reportSelectionKey(runId, openmmInput);
   const activeOpenmmPreflight = openmmPreflight?.key === openmmPreflightKey ? openmmPreflight : null;
-  const displayDiffersFromPipeline = !!selectedHandle && !!targetHandle && targetHandle !== pipelineHandle?.handle;
-  const mutationDisabled = !!busy || inspecting || (!!selectedHandle && (!targetHandle || displayDiffersFromPipeline));
+  const displayDiffersFromPipeline = !!targetHandle && targetHandle !== pipelineHandle?.handle;
+  const mutationDisabled = !!busy || !!sceneOverride || inspecting || (!!selectedHandle && (!targetHandle || displayDiffersFromPipeline));
+
+  useEffect(() => {
+    if (!runId) return;
+    let active = true;
+    const ticket = epoch.current;
+    void Promise.all([api.savedScenes(runId), api.savedFigures(runId)]).then(async ([scenes, figures]) => {
+      const [moreScenes, moreFigures] = await Promise.all([
+        scenes.total > scenes.rows.length ? api.savedScenes(runId, 50) : Promise.resolve(null),
+        figures.total > figures.rows.length ? api.savedFigures(runId, 50) : Promise.resolve(null),
+      ]);
+      if (!active || ticket !== epoch.current) return;
+      const sceneRows = [...scenes.rows, ...(moreScenes?.rows ?? [])];
+      const figureRows = [...figures.rows, ...(moreFigures?.rows ?? [])];
+      setSavedScenes(previous => mergeSavedRows(previous, sceneRows));
+      setSavedFigures(previous => mergeSavedRows(previous, figureRows));
+      setSelectedSceneHandle(previous => previous || sceneRows[0]?.handle || "");
+      setSelectedFigureHandle(previous => previous || figureRows[0]?.handle || "");
+      setSceneError("");
+    }).catch(e => { if (active && ticket === epoch.current) setSceneError(`저장된 보기 목록을 읽지 못했습니다: ${e instanceof Error ? e.message : String(e)}`); });
+    return () => { active = false; };
+  }, [runId, sceneReadRetry]);
+
+  const restoredSceneToken = useRef(0);
+  useEffect(() => {
+    if (!sceneOverride) return;
+    const token = sceneOverride.token;
+    const timeout = setTimeout(() => {
+      if (sceneEpoch.current === token && restoredSceneToken.current !== token) {
+        sceneEpoch.current += 1; viewerBridgeRef.current?.invalidate();
+        pendingRestoreTokenRef.current = null;
+        setRestorePendingToken(null);
+        setSceneBusy(""); setSceneError("저장된 보기 준비가 30초 안에 끝나지 않았습니다. 다시 읽어 복원하세요.");
+      }
+    }, 30000);
+    return () => clearTimeout(timeout);
+  }, [sceneOverride]);
+  useEffect(() => {
+    if (!sceneOverride || !runId || !viewerReady || !viewerSession || !displaySource || !viewerContextKey ||
+        sceneEpoch.current !== sceneOverride.token || pendingRestoreTokenRef.current !== sceneOverride.token ||
+        restoredSceneToken.current === sceneOverride.token ||
+        viewerSession.scene_generation !== sceneToken.current.generation ||
+        viewerSession.structure_handle !== sceneOverride.scene.value.structure_handle) return;
+    const current = sceneOverride;
+    const binding: ViewerBinding = { sessionId: viewerSession.viewer_session_id,
+      clientId: viewerSession.client_instance_id, generation: viewerSession.scene_generation,
+      sourceHandle: viewerSession.structure_handle, catalogHash: viewerSession.catalog_hash,
+      actionRevision: viewerSession.action_revision };
+    const bridge = viewerBridgeRef.current;
+    if (!bridge) return;
+    restoredSceneToken.current = current.token;
+    setSceneBusy("복원 중"); setSceneError("");
+    void bridge.restoreScene(binding, current.scene.value).then(restored => {
+      if (sceneEpoch.current !== current.token || !sceneMatches(restored, current.scene.value)) return;
+      restoredSceneToken.current = current.token;
+      pendingRestoreTokenRef.current = null;
+      setRestorePendingToken(null);
+      setRepresentation(current.scene.value.representation === "ball_and_stick" ? "ball-and-stick" : current.scene.value.representation);
+      setFocusedResidue(current.scene.value.selection ? { key: viewerContextKey, residue: current.scene.value.selection } : null);
+      setHighlight(null); setSceneStatus(`저장된 보기 복원 완료 · ${current.scene.value.name}`);
+    }).catch(e => {
+      if (sceneEpoch.current === current.token) { pendingRestoreTokenRef.current = null; setRestorePendingToken(null);
+        setSceneError(`저장된 보기 복원 실패: ${e instanceof Error ? e.message : String(e)}`); }
+    }).finally(() => { if (sceneEpoch.current === current.token) setSceneBusy(""); });
+  }, [sceneOverride, runId, viewerReady, viewerSession, displaySource, viewerContextKey]);
+
+  useEffect(() => {
+    if (sceneOverride && displayedError) {
+      setSceneBusy("");
+      setSceneError(`저장된 보기의 구조를 불러오지 못했습니다: ${displayedError}`);
+    }
+  }, [sceneOverride, displayedError]);
 
   useEffect(() => {
     if (!runId || !reportKey || !savedReport) return;
@@ -422,9 +533,9 @@ export default function WorkspacePage() {
     setInspectedStructure(null);
     (async () => {
       try {
-        const meta = await api.meta(runId, targetHandle);
+        const meta = await beforeDeadline(api.meta(runId, targetHandle), 30000);
         if (meta.handle !== targetHandle || meta.kind !== expectedKind) throw new Error("입력 구조의 handle 또는 종류가 측정 기록과 일치하지 않습니다.");
-        const [source, residues] = await Promise.all([api.structure(runId, targetHandle), api.residues(runId, targetHandle)]);
+        const [source, residues] = await beforeDeadline(Promise.all([api.structure(runId, targetHandle), api.residues(runId, targetHandle)]), 30000);
         if (source.handle !== targetHandle) throw new Error("구조 바이트의 handle이 측정 기록과 일치하지 않습니다.");
         if (active) setInspectedStructure({ key: targetKey, status: "ready", data: { key: targetKey, source, residues, kind: expectedKind } });
       } catch (e) {
@@ -677,6 +788,7 @@ export default function WorkspacePage() {
     // while a scientific mutation is busy; table/ligand focus buttons retain
     // their separate focusEnabled guard.
     if (!viewerReady || !viewerContextKey) return;
+    cancelPendingRestore();
     if (!ref) {
       manualViewerInvalidator.current?.();
       setHighlight(null); setFocusedResidue(null); setFocusError(null);
@@ -697,13 +809,148 @@ export default function WorkspacePage() {
   }
   function focusResidue(ref: ResidueRef) {
     if (!focusEnabled || !viewerContextKey) return;
+    cancelPendingRestore();
     manualViewerInvalidator.current?.();
     setFocusedResidue(null); setFocusError(null);
     setHighlight({ key: viewerContextKey, residue: ref });
   }
   function toggleTheme() {
+    cancelPendingRestore();
+    manualViewerInvalidator.current?.();
     const root = document.documentElement;
     root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+  }
+
+  function bindingFor(session: ViewerSession): ViewerBinding {
+    return { sessionId: session.viewer_session_id, clientId: session.client_instance_id,
+      generation: session.scene_generation, sourceHandle: session.structure_handle,
+      catalogHash: session.catalog_hash, actionRevision: session.action_revision };
+  }
+  function requestBinding(session: ViewerSession) {
+    return { client_instance_id: session.client_instance_id, viewer_session_id: session.viewer_session_id,
+      scene_generation: session.scene_generation, action_revision: session.action_revision,
+      request_id: crypto.randomUUID() };
+  }
+  function sameSceneAction(action: number, ticket: number, context: string | null): boolean {
+    return sceneActionEpoch.current === action && epoch.current === ticket && sceneContextRef.current === context;
+  }
+  function matchesCurrentNative(bridge: ViewerBridge, session: ViewerSession, captured: NativeSceneState): boolean {
+    const snapshot = bridge.snapshot();
+    return snapshot.ready && snapshot.sourceHandle === session.structure_handle &&
+      snapshot.sessionId === session.viewer_session_id && snapshot.generation === session.scene_generation &&
+      !!snapshot.nativeCamera && !!snapshot.representation &&
+      sceneMatches({ structure_handle: snapshot.sourceHandle, selection: snapshot.selection,
+        representation: snapshot.representation === "ball-and-stick" ? "ball_and_stick" : snapshot.representation,
+        camera: snapshot.nativeCamera, theme: snapshot.theme }, captured);
+  }
+  function cancelPendingRestore() {
+    if (!sceneReadAbort.current && pendingRestoreTokenRef.current === null) return;
+    sceneActionEpoch.current += 1;
+    sceneReadAbort.current?.abort(); sceneReadAbort.current = null;
+    if (pendingRestoreTokenRef.current !== null) sceneEpoch.current += 1;
+    pendingRestoreTokenRef.current = null; setRestorePendingToken(null);
+    viewerBridgeRef.current?.cancelNative();
+    setSceneBusy(""); setSceneError("수동 뷰어 작업으로 저장된 보기 복원이 취소되었습니다.");
+  }
+  function exitSceneOverride() {
+    sceneActionEpoch.current += 1; sceneEpoch.current += 1;
+    sceneReadAbort.current?.abort(); sceneReadAbort.current = null;
+    pendingRestoreTokenRef.current = null;
+    viewerBridgeRef.current?.invalidate(); void sceneControllerRef.current?.detach();
+    setSceneOverride(null); setRestorePendingToken(null); setSceneBusy(""); setSceneError(""); setSceneStatus("");
+    setHighlight(null); setFocusedResidue(null); setFocusError(null);
+  }
+  async function saveCurrentScene() {
+    if (!runId || !sceneSessionReady || !sceneName.trim() || sceneBusy) return;
+    const ticket = epoch.current, action = ++sceneActionEpoch.current;
+    const context = viewerContextKey, name = sceneName.trim(), id = runId;
+    setSceneBusy("저장 중"); setSceneError(""); setSceneStatus("");
+    try {
+      const session = await sceneControllerRef.current?.settledSession();
+      const bridge = viewerBridgeRef.current;
+      if (!sameSceneAction(action, ticket, context)) return;
+      if (!session || !bridge || session.structure_handle !== displaySource?.handle) throw new Error("현재 뷰어 세션이 안정될 때까지 기다리세요.");
+      const native = await bridge.captureScene(bindingFor(session));
+      if (!sameSceneAction(action, ticket, context)) return;
+      const saved = await api.saveScene(id, { ...requestBinding(session), schema: "viewer_scene@1", name, ...native });
+      const currentSession = await sceneControllerRef.current?.settledSession();
+      if (!sameSceneAction(action, ticket, context)) return;
+      if (!currentSession ||
+          currentSession.viewer_session_id !== session.viewer_session_id ||
+          currentSession.action_revision !== session.action_revision ||
+          !matchesCurrentNative(bridge, session, native)) {
+        setSavedScenes(previous => mergeSavedRows(previous, [saved]));
+        setSceneStatus("보기는 저장되었지만 현재 장면이 바뀌었습니다. 저장된 보기에서 다시 선택하세요.");
+        return;
+      }
+      setSavedScenes(previous => previous.some(row => row.handle === saved.handle) ? previous : [...previous, saved]);
+      setSelectedSceneHandle(saved.handle); setSceneName(""); setSceneStatus(`보기 저장 완료 · ${saved.value.name}`);
+    } catch (e) { if (sameSceneAction(action, ticket, context)) setSceneError(`보기 저장 실패: ${e instanceof Error ? e.message : String(e)}`); }
+    finally { if (sceneActionEpoch.current === action && ticket === epoch.current) setSceneBusy(""); }
+  }
+  async function restoreSavedScene() {
+    if (!runId || !selectedSceneHandle) return;
+    const ticket = epoch.current, action = ++sceneActionEpoch.current;
+    const context = viewerContextKey, id = runId, selected = selectedSceneHandle;
+    // A newer read owns the restore result immediately. In particular, an
+    // older native restore must not finish while this detail GET is held and
+    // then clear the newer request's status or apply its camera.
+    if (pendingRestoreTokenRef.current !== null) {
+      sceneEpoch.current += 1;
+      pendingRestoreTokenRef.current = null;
+      setRestorePendingToken(null);
+      viewerBridgeRef.current?.cancelNative();
+    }
+    sceneReadAbort.current?.abort();
+    const controller = new AbortController(); sceneReadAbort.current = controller;
+    manualViewerInvalidator.current?.();
+    setSceneBusy("읽는 중"); setSceneError(""); setSceneStatus("");
+    try {
+      const detail = await api.savedScene(id, selected, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]));
+      if (!sameSceneAction(action, ticket, context) || detail.handle !== selected) return;
+      const token = ++sceneEpoch.current;
+      pendingRestoreTokenRef.current = token;
+      setRepresentation(detail.value.representation === "ball_and_stick" ? "ball-and-stick" : detail.value.representation);
+      setSceneOverride({ scene: detail, token }); setRestorePendingToken(token);
+      setHighlight(null); setFocusedResidue(null); setFocusError(null);
+      setSceneBusy("구조를 불러오는 중");
+    } catch (e) { if (sameSceneAction(action, ticket, context)) { setSceneError(`저장된 보기 읽기 실패: ${e instanceof Error ? e.message : String(e)}`); setSceneBusy(""); } }
+    finally { if (sceneReadAbort.current === controller) sceneReadAbort.current = null; }
+  }
+  function returnToCurrentStructure() {
+    exitSceneOverride();
+    setInspectionRevision(value => value + 1);
+  }
+  async function exportCurrentFigure() {
+    if (!runId || !selectedSceneHandle || !sceneSessionReady || sceneBusy) return;
+    const ticket = epoch.current, action = ++sceneActionEpoch.current;
+    const context = viewerContextKey, id = runId, selected = selectedSceneHandle;
+    setSceneBusy("PNG 생성 중"); setSceneError(""); setSceneStatus("");
+    try {
+      const scene = await api.savedScene(id, selected);
+      if (!sameSceneAction(action, ticket, context) || scene.handle !== selected) return;
+      const session = await sceneControllerRef.current?.settledSession();
+      const bridge = viewerBridgeRef.current;
+      if (!sameSceneAction(action, ticket, context)) return;
+      if (!session || !bridge || session.structure_handle !== scene.value.structure_handle) throw new Error("저장된 보기의 구조와 현재 세션이 다릅니다.");
+      const image = await bridge.captureFigure(bindingFor(session), scene.value);
+      if (!sameSceneAction(action, ticket, context)) return;
+      const figure = await api.saveFigure(id, { ...requestBinding(session), schema: "viewer_figure@1",
+        scene_handle: scene.handle, ...image.state, png_base64: image.pngBase64 });
+      const currentSession = await sceneControllerRef.current?.settledSession();
+      if (!sameSceneAction(action, ticket, context)) return;
+      if (!currentSession ||
+          currentSession.viewer_session_id !== session.viewer_session_id ||
+          currentSession.action_revision !== session.action_revision ||
+          !matchesCurrentNative(bridge, session, image.state)) {
+        setSavedFigures(previous => mergeSavedRows(previous, [figure]));
+        setSceneStatus("그림은 저장되었지만 현재 장면이 바뀌었습니다. 저장된 그림에서 다시 선택하세요.");
+        return;
+      }
+      setSavedFigures(previous => previous.some(row => row.handle === figure.handle) ? previous : [...previous, figure]);
+      setSelectedFigureHandle(figure.handle); setSceneStatus(`PNG 및 출처 JSON 저장 완료 · ${figure.handle}`);
+    } catch (e) { if (sameSceneAction(action, ticket, context)) setSceneError(`PNG 내보내기 실패: ${e instanceof Error ? e.message : String(e)}`); }
+    finally { if (sceneActionEpoch.current === action && ticket === epoch.current) setSceneBusy(""); }
   }
 
   const latestUpload = [...events].reverse().find(e => e.type === "upload_received");
@@ -730,8 +977,8 @@ export default function WorkspacePage() {
           ? "이 측정의 입력 구조는 최신 전처리 구조와 다릅니다. 최신 파이프라인의 도구는 여기에서 사용할 수 없습니다."
           : displayDiffersFromPipeline ? "표시 중인 결과의 구조가 최신 파이프라인과 다릅니다. 새 계산은 최신 파이프라인에서 실행합니다."
             : "선택한 단계 검사 중 · 새 계산은 최신 파이프라인에서 실행합니다."}</span>
-          <Button size="sm" onClick={() => { setOpenmmViewHandle(null); setViewIntent("latest_pipeline"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setOffset(0); setHighlight(null); setFocusedResidue(null); setFocusError(null); }}>최신 구조로 돌아가기</Button></div>}
-        {steps.length ? <StepList steps={steps} selected={selectedStep?.n} onSelect={step => { setOpenmmViewHandle(null); setViewIntent("step"); setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0); setHighlight(null); setFocusedResidue(null); setFocusError(null); }} />
+          <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("latest_pipeline"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setOffset(0); }}>최신 구조로 돌아가기</Button></div>}
+        {steps.length ? <StepList steps={steps} selected={selectedStep?.n} onSelect={step => { exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("step"); setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0); }} />
           : <p className="mw-empty-note">파일을 업로드하면 실제 도구 호출이 여기에 기록됩니다.</p>}
       </>,
       models: <div className="mw-rail-group">
@@ -747,9 +994,10 @@ export default function WorkspacePage() {
       jobs: null,
     }}
     canvas={<MolstarViewer key={viewerContextKey ?? "no-structure"} source={displaySource} representation={representation}
+      residues={displayResidues?.residues}
       highlight={viewerReady && highlight?.key === viewerContextKey ? highlight.residue : null}
       onBridge={bridge => { viewerBridgeRef.current = bridge; }}
-      onManualInteraction={() => manualViewerInvalidator.current?.()}
+      onManualInteraction={() => { cancelPendingRestore(); manualViewerInvalidator.current?.(); }}
       onSelect={selectFromViewer}
       onLoadState={(loadedSource, status, message) => {
         if (viewerContextKey && loadedSource === displaySource) setViewerState({ key: viewerContextKey, source: loadedSource, status, message });
@@ -762,16 +1010,26 @@ export default function WorkspacePage() {
       emptyMessage={displayedError ?? (targetHandle ? "선택한 구조를 불러오는 중…" : selectedMeasurement || selectedStructure ? "선택한 객체의 입력 구조를 확인하는 중…" : undefined)}
       emptyIsError={!!displayedError} />}
     canvasOverlayTopLeft={<Segmented label="표현 방식" value={representation} onChange={value => {
-      manualViewerInvalidator.current?.(); setRepresentation(value);
+      cancelPendingRestore(); manualViewerInvalidator.current?.(); setRepresentation(value);
     }} options={[
       { value: "cartoon", label: "cartoon" }, { value: "ball-and-stick", label: "ball-and-stick" }, { value: "surface", label: "surface" },
     ]} />}
-    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
+    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
       {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}</>}
     strip={<><ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
       runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
       sourceHandle={displaySource?.handle ?? null} viewerReady={viewerReady} bridgeRef={viewerBridgeRef}
       representation={representation} selected={selectedFocus} residues={displayResidues} dryRun={run?.dry_run ?? false}
+      restoreTarget={sceneOverride?.scene.value.selection ?? null} onSession={setViewerSession}
+      restorePending={!!sceneOverride && restorePendingToken === sceneOverride.token}
+      onManualSceneAction={cancelPendingRestore}
+      onSessionError={message => { if (sceneOverride && sceneEpoch.current === sceneOverride.token) {
+        sceneEpoch.current += 1; viewerBridgeRef.current?.invalidate(); setSceneBusy("");
+        pendingRestoreTokenRef.current = null;
+        setRestorePendingToken(null);
+        setSceneError(`저장된 보기 세션을 만들지 못했습니다: ${message}`);
+      } }}
+      registerSceneController={registerSceneController}
       onRepresentation={setRepresentation}
       onSelection={ref => { if (viewerContextKey) {
         if (ref) { setFocusedResidue({ key: viewerContextKey, residue: ref }); setFocusError(null); }
@@ -786,6 +1044,29 @@ export default function WorkspacePage() {
       } }}
       onScopeChange={() => setViewerScopeRevision(value => value + 1)}
       registerInvalidator={value => { manualViewerInvalidator.current = value; }} />
+    <div className="mw-workflow" aria-label="저장된 보기와 그림">
+      <div className="mw-workflow-row"><label>보기 이름 <input className="mw-input" type="text" maxLength={80} value={sceneName} onChange={e => setSceneName(e.target.value)} /></label>
+        <Button size="sm" disabled={!runId || !sceneSessionReady || !sceneName.trim() || !!sceneBusy} title={!viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : "현재 장면을 저장합니다"} onClick={() => void saveCurrentScene()}>현재 보기 저장</Button>
+        <label>저장된 보기 <select className="mw-select" value={selectedSceneHandle} onChange={e => setSelectedSceneHandle(e.target.value)}>
+          <option value="">보기 선택</option>{savedScenes.map(scene => <option key={scene.handle} value={scene.handle}>{scene.value.name} · {scene.value.structure_kind} · {scene.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
+        </select></label>
+        <Button size="sm" disabled={!runId || !selectedSceneHandle} onClick={() => void restoreSavedScene()}>저장된 보기 복원</Button>
+        {sceneOverride && <Button size="sm" onClick={returnToCurrentStructure}>현재 구조로 돌아가기</Button>}
+        <Button size="sm" disabled={!runId || !selectedSceneHandle || !sceneSessionReady || !!sceneBusy} title={!viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : !selectedSceneHandle ? "저장된 보기를 먼저 선택하세요" : "현재 장면이 선택한 저장 보기와 정확히 일치해야 합니다"} onClick={() => void exportCurrentFigure()}>현재 보기 PNG 내보내기</Button>
+      </div>
+      <div className="mw-workflow-row"><label>저장된 그림 <select className="mw-select" value={selectedFigureHandle} onChange={e => setSelectedFigureHandle(e.target.value)}>
+        <option value="">그림 선택</option>{savedFigures.map(figure => <option key={figure.handle} value={figure.handle}>{figure.value.scene_handle.split("/").at(-1)?.slice(0, 12)} · {figure.value.width}×{figure.value.height} · {figure.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
+      </select></label>
+        {runId && selectedFigureHandle && <><a href={api.figureDownload(runId, selectedFigureHandle, "png")} download>PNG 다운로드</a>
+          <a href={api.figureDownload(runId, selectedFigureHandle, "json")} download>JSON 출처 다운로드</a></>}
+        <Button size="sm" disabled={!runId} onClick={() => setSceneReadRetry(value => value + 1)}>저장된 보기 다시 읽기</Button>
+        {viewerReady && !sceneSessionReady && <span role="status" className="mw-muted">뷰어 세션 준비 중…</span>}
+        {sceneBusy && <span role="status" className="mw-muted">{sceneBusy}…</span>}
+        {sceneStatus && <span role="status" className="mw-muted">{sceneStatus}</span>}
+        {sceneError && <span role="alert" className="mw-workflow-error">{sceneError}</span>}
+      </div>
+      <p className="mw-muted">PNG는 현재 장면을 Mol*에서 로컬로 렌더링한 그림입니다. 저장된 보기와 장면이 일치하고 뷰어가 준비된 경우에만 내보낼 수 있습니다. 새 과학 계산 결과가 아닙니다.</p>
+    </div>
     <div className="mw-workflow">
       <div className="mw-workflow-row"><label className="mw-file">로컬 구조 파일 <input type="file" accept=".pdb,.cif,.mmcif" disabled={mutationDisabled} onChange={e => { const file = e.target.files?.[0]; doUpload(file); e.target.value = ""; }} /></label>
         {upload && <><span className="mw-mono mw-muted">{upload.format} · {upload.size.toLocaleString()} bytes</span>
@@ -953,8 +1234,8 @@ export default function WorkspacePage() {
             <dt>결과 원자</dt><dd>{selectedOpenmmResult.atom_count} (추가 수소 {selectedOpenmmResult.added_hydrogen_count})</dd>
           </dl>
           <p className="mw-capability">수렴을 주장하지 않습니다. 원래 복합체 접촉표는 이 단백질 전용 좌표의 측정값이 아닙니다.</p>
-          <Button size="sm" onClick={() => { setOpenmmViewHandle(selectedOpenmmResult.minimized_structure); setHighlight(null); setFocusedResidue(null); }}>최소화 단백질 좌표 보기</Button>
-          {openmmViewHandle && <Button size="sm" onClick={() => setOpenmmViewHandle(null)}>원래 구조로 돌아가기</Button>}
+          <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(selectedOpenmmResult.minimized_structure); }}>최소화 단백질 좌표 보기</Button>
+          {openmmViewHandle && <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(null); }}>원래 구조로 돌아가기</Button>}
           {!savedOpenmmReport && <Button size="sm" onClick={() => void createOpenmmReport()}>OpenMM 방법 보고서 만들기</Button>}
         </>}
         {selectedOpenmmReport && runId && <>

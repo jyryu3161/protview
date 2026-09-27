@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import type { ResidueRef } from "@/lib/contracts";
+import { desiredSceneSelection, restoreCatalogScope } from "@/lib/saved-scene";
 import { api, ApiError, type ResidueList } from "@/lib/api";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "@/lib/viewer-agent";
 import { commandTargetsCurrentScene, viewerPromptAllowed, withViewerSceneUpdate } from "@/lib/viewer-scene";
@@ -59,6 +60,17 @@ export interface ViewerAgentPanelProps {
   onBudgetRefresh: () => void;
   onScopeChange: () => void;
   registerInvalidator: (invalidate: (() => void) | null) => void;
+  restoreTarget?: ResidueRef | null;
+  restorePending?: boolean;
+  onManualSceneAction?: () => void;
+  onSession?: (session: ViewerSession | null) => void;
+  onSessionError?: (message: string) => void;
+  registerSceneController?: (controller: SceneController | null) => void;
+}
+
+export interface SceneController {
+  settledSession(): Promise<ViewerSession | null>;
+  detach(): Promise<void>;
 }
 
 export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
@@ -67,6 +79,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   const [online, setOnline] = useState<ViewerOnlineStatus | null>(null);
   const [scope, setScope] = useState("");
   const [scopeTarget, setScopeTarget] = useState("");
+  const [scopeTouched, setScopeTouched] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [intent, setIntent] = useState<ViewerIntent | null>(null);
   const [history, setHistory] = useState<ViewerIntent[]>([]);
@@ -83,6 +96,8 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   const onlineMutationRef = useRef(0);
   const ledgerReadRef = useRef(0);
   const chains = useMemo(() => [...new Set(p.residues?.residues.map(item => item.chain_auth) ?? [])], [p.residues]);
+  const restoredScope = restoreCatalogScope(p.residues?.residues ?? null, p.restoreTarget ?? null);
+  const shownScopeTarget = !scopeTouched && restoredScope.kind === "exact" ? restoredScope.index : scopeTarget;
 
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false;
     if (preparingRef.current) preparingRef.current.stopped = true;
@@ -98,25 +113,34 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   }, [p.runId]);
   useEffect(() => {
     nativeSyncRef.current = null;
-    sessionRef.current = null; setSession(null); setIntent(null); p.bridgeRef.current?.bind(null);
+    sessionRef.current = null; setSession(null); setIntent(null); p.bridgeRef.current?.bind(null); p.onSession?.(null);
     if (!p.runId || !p.sourceHandle || !p.viewerReady || !p.bridgeRef.current || p.sceneGeneration < 1) return;
+    if (!scopeTouched && restoredScope.kind === "missing") {
+      const message = "저장된 대상이 구조의 정확한 잔기 목록에 없습니다.";
+      setError(message); p.onSessionError?.(message); return;
+    }
     const id = p.runId, handle = p.sourceHandle;
     let active = true;
     void api.viewerSession(id, { client_instance_id: p.clientId, scene_generation: p.sceneGeneration,
       structure_handle: handle, representation: backendRepresentation(p.representation),
-      ...(scope ? { scope_chain_auth: scope } : {}),
-      ...(scopeTarget && p.residues ? { scope_target: p.residues.residues[Number(scopeTarget) - 1] } : {}) }).then(value => {
+      ...(!scopeTouched && restoredScope.kind === "exact" && p.restoreTarget ? { scope_target: p.restoreTarget } :
+        { ...(scope ? { scope_chain_auth: scope } : {}),
+          ...(scopeTarget && p.residues ? { scope_target: p.residues.residues[Number(scopeTarget) - 1] } : {}) }),
+      ...(p.restorePending && p.restoreTarget ? { selected_target: p.restoreTarget } : {}) }).then(value => {
       if (!active || p.bridgeRef.current?.snapshot().sourceHandle !== handle) return;
-      sessionRef.current = value; setSession(value); p.bridgeRef.current?.bind(binding(value)); setError("");
+      sessionRef.current = value; setSession(value); p.bridgeRef.current?.bind(binding(value)); p.onSession?.(value); setError("");
     }).catch(e => {
-      if (active) setError(e instanceof ApiError && e.code === "scope_required"
-        ? "대상이 256개를 넘어 체인 범위를 먼저 선택해야 합니다." : e instanceof Error ? e.message : "장면을 만들 수 없습니다.");
+      if (active) {
+        const message = e instanceof ApiError && e.code === "scope_required"
+          ? "대상이 256개를 넘어 체인 범위를 먼저 선택해야 합니다." : e instanceof Error ? e.message : "장면을 만들 수 없습니다.";
+        setError(message); p.onSessionError?.(message);
+      }
     });
-    return () => { active = false; p.bridgeRef.current?.bind(null); };
+    return () => { active = false; p.bridgeRef.current?.bind(null); p.onSession?.(null); };
   // The exact scene identity and local scope own session creation. Representation
   // changes are synchronized separately so they do not create a new session.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.runId, p.sourceHandle, p.viewerReady, p.sceneGeneration, p.clientId, scope, scopeTarget]);
+  }, [p.runId, p.sourceHandle, p.viewerReady, p.sceneGeneration, p.clientId, scope, scopeTarget, scopeTouched, p.restoreTarget]);
 
   const invalidate = useCallback(async (representation?: ViewerRepresentationValue, selectedAlias?: string | null) => {
     const current = sessionRef.current;
@@ -159,7 +183,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
     if (!saved) return null;
     const merged = { ...next, ...saved, projection: next.projection };
     if (sameScene(sessionRef.current) && sessionRef.current!.action_revision === next.action_revision) {
-      sessionRef.current = merged; setSession(merged); p.bridgeRef.current?.bind(binding(merged));
+      sessionRef.current = merged; setSession(merged); p.bridgeRef.current?.bind(binding(merged)); p.onSession?.(merged);
       return merged;
     }
     return null;
@@ -235,7 +259,9 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   useEffect(() => {
     const current = sessionRef.current;
     if (!current) return;
-    const selected = p.selected;
+    // The fresh session is seeded with the saved target before native restore.
+    // Ignore the still-empty page selection only for that pending transaction.
+    const selected = desiredSceneSelection(!!p.restorePending, p.restoreTarget ?? null, p.selected);
     const selectedAlias = selected ? current.targets.find(item => sameRef(item.residue, selected))?.alias ?? null : null;
     const rep = backendRepresentation(p.representation);
     const nativeSync = nativeSyncRef.current;
@@ -246,7 +272,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
     if (current.representation !== rep || current.selected_alias !== selectedAlias) {
       void invalidate(rep, selectedAlias).catch(e => setError(e instanceof Error ? e.message : "장면 동기화 실패"));
     }
-  }, [p.representation, p.selected, session, invalidate]);
+  }, [p.representation, p.selected, p.restorePending, p.restoreTarget, session, invalidate]);
 
   const stop = useCallback(async () => {
     const pending = pendingRef.current;
@@ -280,16 +306,40 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
       void refreshLedger(); }
   }, [p.runId, reconcileNativeState, refreshLedger]);
 
+  useEffect(() => {
+    p.registerSceneController?.({
+      settledSession: async () => {
+        const queue = sceneMutationRef.current;
+        await queue.tail;
+        const current = sessionRef.current;
+        if (pendingRef.current || preparingRef.current || busy || !current ||
+            current.viewer_session_id !== p.bridgeRef.current?.snapshot().sessionId) return null;
+        return current;
+      },
+      detach: async () => {
+        const bridge = p.bridgeRef.current;
+        const previous = sessionRef.current;
+        bridge?.invalidate();
+        if (pendingRef.current || preparingRef.current) await stop();
+        if (!mountedRef.current || p.bridgeRef.current !== bridge || sessionRef.current !== previous) return;
+        sessionRef.current = null; setSession(null); p.onSession?.(null);
+      },
+    });
+    return () => p.registerSceneController?.(null);
+  }, [p.registerSceneController, p.bridgeRef, p.onSession, busy, stop]);
+
   const changeScope = (chain: string, target: string) => {
+    p.onManualSceneAction?.();
     if (pendingRef.current) void stop();
     p.bridgeRef.current?.bind(null);
-    setScope(chain); setScopeTarget(target); p.onScopeChange();
+    setScopeTouched(true); setScope(chain); setScopeTarget(target); p.onScopeChange();
   };
 
   const submit = useCallback(async (value: string, local = false) => {
     const current = sessionRef.current;
     if (!p.runId || !current || !p.bridgeRef.current?.snapshot().ready || busy || submittingRef.current ||
         !viewerPromptAllowed(value, online?.enabled ?? false, p.dryRun)) return;
+    p.onManualSceneAction?.();
     submittingRef.current = true;
     const preparation = { stopped: false };
     preparingRef.current = preparation;
@@ -390,7 +440,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
       {online && <span className="mw-muted">온라인 요청 {online.used}/{online.request_cap}</span>}
       {!p.dryRun && <label className="mw-agent-mode"><input type="checkbox" checked={online?.enabled ?? false}
         onChange={event => void changeOnline(event.target.checked)} /> 온라인 해석 허용</label>}
-      {busy && <button type="button" className="mw-btn mw-btn--sm" onClick={() => void stop()}>요청 중단</button>}
+      {busy && <button type="button" className="mw-btn mw-btn--sm" onClick={() => { p.onManualSceneAction?.(); void stop(); }}>요청 중단</button>}
     </div>
     <div className="mw-agent-row">
       <label className="mw-agent-prompt-label" htmlFor="viewer-prompt">요청</label>
@@ -405,7 +455,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
         onChange={event => changeScope(event.target.value, "")} disabled={!p.residues || busy}>
         <option value="">전체</option>{chains.map(chain => <option key={chain} value={chain}>{chain || "(빈 체인)"}</option>)}
       </select></label>
-      <label>정확한 대상 범위 <select className="mw-select" aria-label="뷰어 정확한 대상 범위" value={scopeTarget}
+      <label>정확한 대상 범위 <select className="mw-select" aria-label="뷰어 정확한 대상 범위" value={shownScopeTarget}
         onChange={event => changeScope("", event.target.value)} disabled={!p.residues || busy}>
         <option value="">전체</option>{p.residues?.residues.map((item, index) => <option key={`${index}-${item.chain_auth}-${item.seq_auth}`} value={index + 1}>
           {item.resname} · model {item.model_number} · auth {item.chain_auth}/{item.seq_auth}{item.icode || ""} · label {item.chain_label ?? "—"}/{item.seq_label ?? "—"}

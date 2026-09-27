@@ -1,0 +1,9 @@
+  PASS: .venv/bin/python -m pytest backend/tests/test_saved_scenes.py backend/tests/test_agent_viewer.py backend/tests/test_core.py -q
+  PASS: .venv/bin/python -m pytest backend/tests -q
+  PASS: .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks
+  PASS: .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py -q
+  PASS: npm --prefix frontend run test:events
+  PASS: npm --prefix frontend run typecheck
+  PASS: npm --prefix frontend run build
+  PASS: node --check frontend/tests/offscreen/scenes-flow.cjs
+Step 0: accepted with Astra review evidence
