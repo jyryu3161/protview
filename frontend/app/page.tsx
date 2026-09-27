@@ -18,6 +18,10 @@ import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgent
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
+import { atomLabel, catalogAttemptKey, catalogForAttempt, catalogResponseCurrent,
+  comparisonViewChangeRevokes, comparisonViewIntentKey,
+  sameComparisonAction, sameResidueRef, singleSourceSceneCompatible,
+  type AtomCatalog, type AtomDistance, type AtomRefV1, type RigidAlignment } from "@/lib/comparison";
 
 type Handles = { loaded?: Handle; prepared?: Handle; interactions?: Handle; sasa?: Handle };
 type UploadInfo = Pick<UploadResult, "upload_id" | "format" | "size"> & { model_numbers?: number[] };
@@ -38,7 +42,8 @@ type MethodReportState = { key: string; status: "pending" } | { key: string; sta
 const contactTypes = ["contact", "polar_contact", "hydrophobic_contact"] as const;
 
 function identity(ref: ResidueRef) {
-  return [ref.model_number ?? "", ref.chain_auth, ref.chain_label ?? "", ref.seq_auth, ref.seq_label ?? "", ref.icode ?? "", ref.resname].join("/");
+  return JSON.stringify([ref.model_number, ref.chain_auth, ref.chain_label, ref.seq_auth,
+    ref.seq_label, ref.icode, ref.resname]);
 }
 function displayResidue(ref: ResidueRef) {
   return `${ref.resname} auth ${ref.chain_auth}/${ref.seq_auth}${ref.icode || ""}` +
@@ -96,6 +101,57 @@ export default function WorkspacePage() {
   const [representation, setRepresentation] = useState<ViewerRepresentation>("cartoon");
   const [viewerScopeRevision, setViewerScopeRevision] = useState(0);
   const [sceneName, setSceneName] = useState("");
+  const [atomCatalogState, setAtomCatalogState] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
+  const [atomCatalogError, setAtomCatalogError] = useState("");
+  const [atomReadRetry, setAtomReadRetry] = useState(0);
+  const atomCatalogRequestRef = useRef<string | null>(null);
+  const [movingCatalogState, setMovingCatalogState] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
+  const [referenceDraftCatalog, setReferenceDraftCatalog] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
+  const [movingDraftCatalog, setMovingDraftCatalog] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
+  const [referenceDraftError, setReferenceDraftError] = useState("");
+  const [movingDraftError, setMovingDraftError] = useState("");
+  const [movingReadRetry, setMovingReadRetry] = useState(0);
+  const [draftReadRetry, setDraftReadRetry] = useState(0);
+  const movingReadRequestRef = useRef<string | null>(null);
+  const referenceDraftRequestRef = useRef<string | null>(null);
+  const movingDraftRequestRef = useRef<string | null>(null);
+  const [movingSourceState, setMovingSourceState] = useState<{ key: string; source: ViewerSource } | null>(null);
+  const [measureMode, setMeasureMode] = useState(false);
+  const [pendingAtom, setPendingAtom] = useState<AtomRefV1 | null>(null);
+  const [lastPickedAtom, setLastPickedAtom] = useState<{ ref: AtomRefV1; layer: "reference" | "moving";
+    sourceCoordinate_A: number[]; displayCoordinate_A: number[] } | null>(null);
+  const [measurementSelection, setMeasurementSelection] = useState<{ handle: string; result: AtomDistance | RigidAlignment } | null>(null);
+  const [distanceSourceHandle, setDistanceSourceHandle] = useState("");
+  const [comparisonContext, setComparisonContext] = useState<{ handle: string; result: RigidAlignment } | null>(null);
+  const [comparisonReference, setComparisonReference] = useState("");
+  const [comparisonMoving, setComparisonMoving] = useState("");
+  const [referenceSite, setReferenceSite] = useState("");
+  const [movingSite, setMovingSite] = useState("");
+  const [correspondence, setCorrespondence] = useState<{ reference: AtomRefV1; moving: AtomRefV1 }[]>([]);
+  const [pairPickSide, setPairPickSide] = useState<"reference" | "moving" | null>(null);
+  const [pickedPairHalf, setPickedPairHalf] = useState<AtomRefV1 | null>(null);
+  const [comparisonAligned, setComparisonAligned] = useState(true);
+  const [referenceVisible, setReferenceVisible] = useState(true);
+  const [movingVisible, setMovingVisible] = useState(true);
+  const [focusPair, setFocusPair] = useState<{ reference: AtomRefV1; moving: AtomRefV1; token: number } | null>(null);
+  const [comparisonBusy, setComparisonBusy] = useState("");
+  const comparisonBusyRef = useRef(false);
+  const [comparisonError, setComparisonError] = useState("");
+  const [comparisonReport, setComparisonReport] = useState<{ handle: string; resultHandle: string; markdown: string } | null>(null);
+  const comparisonActionRef = useRef(0);
+  const comparisonScopeRef = useRef("");
+  const comparisonActionViewRef = useRef<string | null>(null);
+  const comparisonReadControllerRef = useRef<AbortController | null>(null);
+  const nextComparisonSignal = () => {
+    comparisonReadControllerRef.current?.abort();
+    const controller = new AbortController(); comparisonReadControllerRef.current = controller;
+    return AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]);
+  };
+  const revokeComparisonAction = () => {
+    comparisonReadControllerRef.current?.abort(); comparisonActionRef.current += 1;
+    comparisonActionViewRef.current = null;
+    comparisonBusyRef.current = false; setComparisonBusy("");
+  };
   const [savedScenes, setSavedScenes] = useState<SavedSceneDetail[]>([]);
   const [savedFigures, setSavedFigures] = useState<SavedFigureDetail[]>([]);
   const [selectedSceneHandle, setSelectedSceneHandle] = useState("");
@@ -254,7 +310,16 @@ export default function WorkspacePage() {
   const selectedInteraction = selectedTool === "compute_interactions" && !!selectedHandle;
   const selectedSasa = selectedTool === "compute_interface_sasa" && !!selectedHandle;
   const selectedMeasurement = selectedInteraction || selectedSasa;
-  const expectedKind = sceneOverride ? sceneOverride.scene.value.structure_kind : openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
+  const sourceOptions = [...new Map(events.filter((e): e is Extract<RunEvent, { type: "object_created" }> => e.type === "object_created" &&
+    ["structure", "prepared_structure", "openmm_minimized_structure"].includes(e.kind))
+    .map(e => [e.handle, { handle: e.handle, kind: e.kind }])).values()];
+  const measurementOptions = [...new Map(events.filter((e): e is Extract<RunEvent, { type: "object_created" }> => e.type === "object_created" &&
+    ["atom_distance", "rigid_alignment"].includes(e.kind))
+    .map(e => [e.handle, { handle: e.handle, kind: e.kind }])).values()];
+  const comparisonReferenceKind = sourceOptions.find(item => item.handle === comparisonContext?.result.reference_handle)?.kind as
+    StructureData["kind"] | undefined;
+  const distanceSourceKind = sourceOptions.find(item => item.handle === distanceSourceHandle)?.kind as StructureData["kind"] | undefined;
+  const expectedKind = comparisonContext ? comparisonReferenceKind ?? "structure" : distanceSourceHandle ? distanceSourceKind ?? "structure" : sceneOverride ? sceneOverride.scene.value.structure_kind : openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
     ? selectedTool === "load_structure" ? "structure" : "prepared_structure"
     : handles.prepared ? "prepared_structure" : "structure";
   const associationError = !sceneOverride && !openmmViewHandle && selectedMeasurement && objectMeta &&
@@ -264,28 +329,142 @@ export default function WorkspacePage() {
       ? "측정 객체에 확인 가능한 입력 구조가 없습니다." :
     !sceneOverride && !openmmViewHandle && selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
       ? "선택한 단계의 구조 종류가 객체 메타데이터와 일치하지 않습니다." : null;
-  const targetHandle = sceneOverride?.scene.value.structure_handle ?? openmmViewHandle ?? (selectedMeasurement
+  const targetHandle = comparisonContext?.result.reference_handle ?? (distanceSourceHandle || null) ?? sceneOverride?.scene.value.structure_handle ?? openmmViewHandle ?? (selectedMeasurement
     ? !associationError && objectMeta ? String(objectMeta.summary.structure) : null
     : selectedStructure ? !associationError && objectMeta ? objectMeta.handle : null
       : pipelineHandle?.handle ?? null);
-  const targetKey = runId && targetHandle ? JSON.stringify([runId, targetHandle, inspectionRevision, sceneOverride?.token ?? null]) : null;
-  const viewerContextKey = targetKey ? JSON.stringify([targetKey, viewIntent, selectedStep?.callId ?? null, sceneOverride?.token ?? null]) : null;
+  const targetKey = runId && targetHandle ? JSON.stringify([runId, targetHandle, inspectionRevision,
+    sceneOverride?.token ?? null, comparisonContext?.handle ?? null]) : null;
+  const viewerContextKey = targetKey ? JSON.stringify([targetKey, viewIntent, selectedStep?.callId ?? null,
+    sceneOverride?.token ?? null, comparisonContext?.handle ?? null]) : null;
   sceneContextRef.current = viewerContextKey;
   const sceneToken = useRef<{ key: string | null; generation: number }>({ key: null, generation: 0 });
   sceneToken.current = advanceSceneGeneration(sceneToken.current,
     JSON.stringify([viewerContextKey, viewerScopeRevision]));
   const displayData = inspectedStructure?.key === targetKey && inspectedStructure.status === "ready" ? inspectedStructure.data : null;
   const displaySource = displayData?.source ?? null;
+  const atomCatalogKey = runId && displaySource
+    ? catalogAttemptKey(runId, displaySource.handle, inspectionRevision, atomReadRetry) : null;
+  const movingReadKey = runId && comparisonContext
+    ? catalogAttemptKey(runId, comparisonContext.result.moving_handle, comparisonContext.handle, movingReadRetry) : null;
+  const referenceDraftKey = runId && comparisonReference
+    ? catalogAttemptKey(runId, comparisonReference, draftReadRetry) : null;
+  const movingDraftKey = runId && comparisonMoving
+    ? catalogAttemptKey(runId, comparisonMoving, draftReadRetry) : null;
+  atomCatalogRequestRef.current = atomCatalogKey;
+  movingReadRequestRef.current = movingReadKey;
+  referenceDraftRequestRef.current = referenceDraftKey;
+  movingDraftRequestRef.current = movingDraftKey;
+  const atomCatalog = catalogForAttempt(atomCatalogState, atomCatalogKey);
+  const movingCatalog = catalogForAttempt(movingCatalogState, movingReadKey);
+  const movingSource = movingSourceState?.key === movingReadKey ? movingSourceState.source : null;
+  const refDraft = catalogForAttempt(referenceDraftCatalog, referenceDraftKey);
+  const movDraft = catalogForAttempt(movingDraftCatalog, movingDraftKey);
+  const comparisonViewKey = comparisonViewIntentKey({ runId: runId ?? null, view: viewIntent,
+    stepNumber: selectedStepNumber,
+    latestHandle: latestResult?.output?.handle ?? null,
+    pipelineHandle: (handles.interactions ?? pipelineHandle)?.handle ?? null,
+    inspectionRevision, sceneToken: sceneOverride?.token ?? null,
+    openmmHandle: openmmViewHandle, distanceHandle: distanceSourceHandle || null,
+    comparisonHandle: comparisonContext?.handle ?? null });
+  const comparisonScope = JSON.stringify([runId, comparisonReference, comparisonMoving,
+    correspondence.map(pair => [pair.reference.site_index, pair.moving.site_index]),
+    comparisonViewKey, measurementSelection?.handle ?? null]);
+  comparisonScopeRef.current = comparisonScope;
+  const beginComparisonAction = () => {
+    comparisonActionViewRef.current = comparisonViewKey;
+    return ++comparisonActionRef.current;
+  };
+  const comparisonActionCurrent = (action: number, id: string, scope: string, ticket: number) =>
+    sameComparisonAction({ action: comparisonActionRef.current, epoch: epoch.current,
+      runId: runId ?? "", scope: comparisonScopeRef.current },
+    { action, epoch: ticket, runId: id, scope });
+  useEffect(() => {
+    setComparisonContext(null); setMeasurementSelection(null); setDistanceSourceHandle(""); setPendingAtom(null); setMeasureMode(false);
+    comparisonReadControllerRef.current?.abort(); comparisonActionRef.current += 1;
+    setCorrespondence([]); setComparisonReference(""); setComparisonMoving("");
+    setAtomCatalogState(null); setMovingCatalogState(null); setMovingSourceState(null);
+  }, [runId]);
+  useEffect(() => {
+    setPendingAtom(null); setLastPickedAtom(null); setPairPickSide(null);
+    if (comparisonViewChangeRevokes(comparisonViewKey, comparisonActionViewRef.current)) {
+      comparisonReadControllerRef.current?.abort(); comparisonActionRef.current += 1;
+      comparisonBusyRef.current = false; setComparisonBusy("");
+    }
+  }, [comparisonViewKey]);
+  useEffect(() => {
+    setPendingAtom(null); setLastPickedAtom(null); setPairPickSide(null);
+  }, [displaySource?.handle]);
+  useEffect(() => {
+    if (!runId || !displaySource || !atomCatalogKey) return;
+    let active = true;
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]);
+    const key = atomCatalogKey;
+    setAtomCatalogError("");
+    api.allAtoms(runId, displaySource.handle, signal).then(catalog => {
+      if (active && catalogResponseCurrent(key, atomCatalogRequestRef.current,
+        catalog.structure_handle, displaySource.handle)) setAtomCatalogState({ key, catalog });
+    }).catch(e => { if (active && atomCatalogRequestRef.current === key)
+      setAtomCatalogError(`원자 목록 읽기 실패: ${e instanceof Error ? e.message : String(e)}`); });
+    return () => { active = false; controller.abort(); };
+  }, [atomCatalogKey]);
+  useEffect(() => {
+    if (!runId || !comparisonContext || !movingReadKey) return;
+    let active = true;
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]);
+    const handle = comparisonContext.result.moving_handle, key = movingReadKey;
+    Promise.all([api.structure(runId, handle, signal), api.allAtoms(runId, handle, signal)]).then(([source, catalog]) => {
+      if (!active || movingReadRequestRef.current !== key || source.handle !== handle ||
+          catalog.structure_handle !== handle) return;
+      setMovingSourceState({ key, source }); setMovingCatalogState({ key, catalog }); setComparisonError("");
+    }).catch(e => { if (active && movingReadRequestRef.current === key)
+      setComparisonError(`이동 구조 읽기 실패: ${e instanceof Error ? e.message : String(e)}`); });
+    return () => { active = false; controller.abort(); };
+  }, [movingReadKey]);
+  useEffect(() => {
+    if (!runId || !comparisonReference || !referenceDraftKey) return;
+    let active = true;
+    const controller = new AbortController();
+    const key = referenceDraftKey;
+    setReferenceDraftError("");
+    api.allAtoms(runId, comparisonReference, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)])).then(catalog => {
+      if (active && catalogResponseCurrent(key, referenceDraftRequestRef.current,
+        catalog.structure_handle, comparisonReference)) {
+        setReferenceDraftCatalog({ key, catalog }); setReferenceDraftError(""); }
+    }).catch(e => { if (active && referenceDraftRequestRef.current === key)
+      setReferenceDraftError(`기준 원자 목록 읽기 실패: ${e instanceof Error ? e.message : String(e)}`); });
+    return () => { active = false; controller.abort(); };
+  }, [referenceDraftKey]);
+  useEffect(() => {
+    if (!runId || !comparisonMoving || !movingDraftKey) return;
+    let active = true;
+    const controller = new AbortController();
+    const key = movingDraftKey;
+    setMovingDraftError("");
+    api.allAtoms(runId, comparisonMoving, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)])).then(catalog => {
+      if (active && catalogResponseCurrent(key, movingDraftRequestRef.current,
+        catalog.structure_handle, comparisonMoving)) {
+        setMovingDraftCatalog({ key, catalog }); setMovingDraftError(""); }
+    }).catch(e => { if (active && movingDraftRequestRef.current === key)
+      setMovingDraftError(`이동 원자 목록 읽기 실패: ${e instanceof Error ? e.message : String(e)}`); });
+    return () => { active = false; controller.abort(); };
+  }, [movingDraftKey]);
   const displayResidues = displayData?.residues ?? null;
   const viewerReady = !!viewerContextKey && viewerState?.key === viewerContextKey &&
     viewerState.status === "ready" && viewerState.source === displaySource;
+  const m10SceneBlocked = !singleSourceSceneCompatible(!!comparisonContext, measureMode,
+    !!pendingAtom, !!measurementSelection);
   const bridgeState = viewerBridgeRef.current?.snapshot();
   const sceneSessionReady = viewerReady && !!viewerSession &&
     viewerSession.structure_handle === displaySource?.handle &&
     viewerSession.scene_generation === sceneToken.current.generation &&
-    bridgeState?.ready === true && bridgeState.sessionId === viewerSession.viewer_session_id &&
+    bridgeState?.ready === true && bridgeState.catalogReady === true &&
+    bridgeState.sessionId === viewerSession.viewer_session_id &&
     bridgeState.generation === viewerSession.scene_generation;
-  const focusEnabled = viewerReady && !busy && !openmmViewHandle && !sceneOverride;
+  const focusEnabled = viewerReady && bridgeState?.catalogReady === true && !busy &&
+    !openmmViewHandle && !sceneOverride && !comparisonContext;
   const selectedFocus = viewerReady && focusedResidue?.key === viewerContextKey ? focusedResidue.residue : null;
   const displayedError = associationError ?? (selectedMeta?.status === "error" && (selectedMeasurement || selectedStructure)
     ? `선택한 객체의 메타데이터를 읽지 못했습니다: ${selectedMeta.message}` : null) ??
@@ -382,7 +561,7 @@ export default function WorkspacePage() {
       sourceHandle: viewerSession.structure_handle, catalogHash: viewerSession.catalog_hash,
       actionRevision: viewerSession.action_revision };
     const bridge = viewerBridgeRef.current;
-    if (!bridge) return;
+    if (!bridge || !bridge.snapshot().catalogReady) return;
     restoredSceneToken.current = current.token;
     setSceneBusy("복원 중"); setSceneError("");
     void bridge.restoreScene(binding, current.scene.value).then(restored => {
@@ -397,7 +576,7 @@ export default function WorkspacePage() {
       if (sceneEpoch.current === current.token) { pendingRestoreTokenRef.current = null; setRestorePendingToken(null);
         setSceneError(`저장된 보기 복원 실패: ${e instanceof Error ? e.message : String(e)}`); }
     }).finally(() => { if (sceneEpoch.current === current.token) setSceneBusy(""); });
-  }, [sceneOverride, runId, viewerReady, viewerSession, displaySource, viewerContextKey]);
+  }, [sceneOverride, runId, viewerReady, viewerSession, displaySource, viewerContextKey, bridgeState?.catalogReady]);
 
   useEffect(() => {
     if (sceneOverride && displayedError) {
@@ -787,18 +966,14 @@ export default function WorkspacePage() {
     // Native canvas picks remain available in a displayed minimized scene and
     // while a scientific mutation is busy; table/ligand focus buttons retain
     // their separate focusEnabled guard.
-    if (!viewerReady || !viewerContextKey) return;
+    if (!viewerReady || !viewerContextKey || measureMode || pairPickSide || comparisonContext) return;
     cancelPendingRestore();
     if (!ref) {
       manualViewerInvalidator.current?.();
       setHighlight(null); setFocusedResidue(null); setFocusError(null);
       return;
     }
-    const matches = displayResidues?.residues.filter(item => item.model_number === ref.model_number &&
-      item.chain_auth === ref.chain_auth && item.seq_auth === ref.seq_auth &&
-      (item.icode ?? "") === (ref.icode ?? "") && item.resname === ref.resname &&
-      (item.chain_label == null || item.chain_label === ref.chain_label) &&
-      (item.seq_label == null || item.seq_label === ref.seq_label)) ?? [];
+    const matches = displayResidues?.residues.filter(item => sameResidueRef(item, ref)) ?? [];
     if (matches.length !== 1) return;
     manualViewerInvalidator.current?.();
     const exact = matches[0];
@@ -811,7 +986,7 @@ export default function WorkspacePage() {
     if (!focusEnabled || !viewerContextKey) return;
     cancelPendingRestore();
     manualViewerInvalidator.current?.();
-    setFocusedResidue(null); setFocusError(null);
+    setFocusError(null);
     setHighlight({ key: viewerContextKey, residue: ref });
   }
   function toggleTheme() {
@@ -861,7 +1036,7 @@ export default function WorkspacePage() {
     setHighlight(null); setFocusedResidue(null); setFocusError(null);
   }
   async function saveCurrentScene() {
-    if (!runId || !sceneSessionReady || !sceneName.trim() || sceneBusy) return;
+    if (!runId || !sceneSessionReady || !sceneName.trim() || sceneBusy || m10SceneBlocked) return;
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
     const context = viewerContextKey, name = sceneName.trim(), id = runId;
     setSceneBusy("저장 중"); setSceneError(""); setSceneStatus("");
@@ -890,6 +1065,7 @@ export default function WorkspacePage() {
   }
   async function restoreSavedScene() {
     if (!runId || !selectedSceneHandle) return;
+    revokeComparisonAction(); setPendingAtom(null);
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
     const context = viewerContextKey, id = runId, selected = selectedSceneHandle;
     // A newer read owns the restore result immediately. In particular, an
@@ -908,6 +1084,8 @@ export default function WorkspacePage() {
     try {
       const detail = await api.savedScene(id, selected, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]));
       if (!sameSceneAction(action, ticket, context) || detail.handle !== selected) return;
+      setComparisonContext(null); setDistanceSourceHandle(""); setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
+      setMeasurementSelection(null); setComparisonReport(null); setFocusPair(null); setLastPickedAtom(null);
       const token = ++sceneEpoch.current;
       pendingRestoreTokenRef.current = token;
       setRepresentation(detail.value.representation === "ball_and_stick" ? "ball-and-stick" : detail.value.representation);
@@ -921,8 +1099,145 @@ export default function WorkspacePage() {
     exitSceneOverride();
     setInspectionRevision(value => value + 1);
   }
+  function onComparisonAtomPick(ref: AtomRefV1, layer: "reference" | "moving") {
+    if (comparisonBusyRef.current || comparisonBusy) return;
+    setComparisonError("");
+    const selectedCatalog = layer === "moving" ? movingCatalog : atomCatalog;
+    const sourceCoordinate_A = selectedCatalog?.rows.find(row => row.ref.site_index === ref.site_index)?.coordinate_A;
+    const nativePick = viewerBridgeRef.current?.snapshot().lastAtomPick;
+    if (sourceCoordinate_A && nativePick?.ref.site_index === ref.site_index && nativePick.layer === layer)
+      setLastPickedAtom({ ref, layer, sourceCoordinate_A, displayCoordinate_A: nativePick.worldCoordinate_A });
+    if (pairPickSide) {
+      const wanted = pairPickSide === "reference" ? comparisonReference : comparisonMoving;
+      if (ref.structure_handle !== wanted) {
+        setComparisonError(`선택한 ${pairPickSide === "reference" ? "기준" : "이동"} 구조의 원자를 클릭하세요.`);
+        return;
+      }
+      if (ref.atom_name !== "CA" || !selectedCatalog?.rows.find(row =>
+          row.ref.site_index === ref.site_index)?.protein) {
+        setComparisonError("대응에는 단백질 CA 원자만 사용할 수 있습니다."); return; }
+      if (pairPickSide === "reference") setReferenceSite(String(ref.site_index));
+      else setMovingSite(String(ref.site_index));
+      setPairPickSide(null);
+      return;
+    }
+    if (!measureMode) return;
+    if (!pendingAtom) { setPendingAtom(ref); return; }
+    if (pendingAtom.structure_handle !== ref.structure_handle) {
+      setPendingAtom(null);
+      setComparisonError("서로 다른 층의 원자는 측정할 수 없습니다. 같은 구조에서 첫 원자를 다시 선택하세요.");
+      return;
+    }
+    const id = runId, first = pendingAtom;
+    setPendingAtom(null);
+    if (!id) return;
+    const ticket = epoch.current, action = beginComparisonAction(), scope = comparisonScope;
+    const signal = nextComparisonSignal();
+    comparisonBusyRef.current = true; setComparisonBusy("원자 거리 계산 중");
+    void api.command(id, "measure_distance", { structure: ref.structure_handle, first, second: ref }, signal)
+      .then(async response => {
+        if (!response.ok) throw new Error("message" in response ? response.message : "거리 계산을 완료하지 못했습니다.");
+        const selected = await api.measurement(id, response.handle.handle, signal);
+        const log = await api.allEvents(id, signal);
+        if (!comparisonActionCurrent(action, id, scope, ticket) || selected.result.schema !== "atom_distance@1" ||
+            selected.meta.handle !== response.handle.handle) return;
+        comparisonBusyRef.current = false; setComparisonBusy("");
+        setMeasurementSelection({ handle: response.handle.handle, result: selected.result });
+        setComparisonReport(null); setEvents(log);
+      }).catch(e => { if (comparisonActionCurrent(action, id, scope, ticket))
+        setComparisonError(e instanceof Error ? e.message : String(e)); })
+      .finally(() => { if (comparisonActionCurrent(action, id, scope, ticket)) {
+        comparisonBusyRef.current = false; setComparisonBusy(""); } });
+  }
+  function addCorrespondence() {
+    const a = refDraft?.rows.find(row => row.ref.site_index === Number(referenceSite));
+    const b = movDraft?.rows.find(row => row.ref.site_index === Number(movingSite));
+    if (!referenceSite || !movingSite || !a || !b || !a.protein || !b.protein ||
+        a.ref.atom_name !== "CA" || b.ref.atom_name !== "CA") {
+      setComparisonError("양쪽 구조의 정확한 단백질 CA site를 선택하세요."); return;
+    }
+    if (correspondence.some(pair => pair.reference.site_index === a.ref.site_index ||
+        pair.moving.site_index === b.ref.site_index)) {
+      setComparisonError("같은 CA site는 한 번만 대응시킬 수 있습니다."); return;
+    }
+    revokeComparisonAction();
+    setCorrespondence(previous => [...previous, { reference: a.ref, moving: b.ref }]);
+    setReferenceSite(""); setMovingSite(""); setComparisonError("");
+  }
+  async function computeAlignment() {
+    if (!runId || !comparisonReference || !comparisonMoving || correspondence.length < 3 || comparisonBusy) return;
+    const id = runId, ticket = epoch.current, action = beginComparisonAction(), scope = comparisonScope;
+    const signal = nextComparisonSignal();
+    comparisonBusyRef.current = true; setComparisonBusy("명시한 CA 대응 정렬 계산 중"); setComparisonError("");
+    try {
+      const response = await api.command(id, "align_structures", { reference: comparisonReference,
+        moving: comparisonMoving, pairs: correspondence }, signal);
+      if (!response.ok) throw new Error("message" in response ? response.message : "정렬 계산을 완료하지 못했습니다.");
+      const selected = await api.measurement(id, response.handle.handle, signal);
+      const log = await api.allEvents(id, signal);
+      if (!comparisonActionCurrent(action, id, scope, ticket) || selected.result.schema !== "rigid_alignment@1" ||
+          selected.meta.handle !== response.handle.handle || selected.result.reference_handle !== comparisonReference ||
+          selected.result.moving_handle !== comparisonMoving) return;
+      comparisonBusyRef.current = false; setComparisonBusy("");
+      manualViewerInvalidator.current?.(); viewerBridgeRef.current?.invalidate();
+      exitSceneOverride(); setOpenmmViewHandle(null); setHighlight(null); setFocusedResidue(null);
+      setDistanceSourceHandle(""); setFocusPair(null); setComparisonContext({ handle: response.handle.handle, result: selected.result });
+      setMeasurementSelection({ handle: response.handle.handle, result: selected.result });
+      setComparisonAligned(true); setReferenceVisible(true); setMovingVisible(true);
+      setMeasureMode(false); setPendingAtom(null); setComparisonReport(null);
+      setEvents(log);
+    } catch (e) { if (comparisonActionCurrent(action, id, scope, ticket))
+      setComparisonError(e instanceof Error ? e.message : String(e)); }
+    finally { if (comparisonActionCurrent(action, id, scope, ticket)) {
+      comparisonBusyRef.current = false; setComparisonBusy(""); } }
+  }
+  async function reopenMeasurement(handle: string) {
+    if (!runId || !handle) return;
+    const id = runId, ticket = epoch.current, action = beginComparisonAction(), scope = comparisonScope;
+    const signal = nextComparisonSignal();
+    comparisonBusyRef.current = true; setComparisonBusy("저장된 측정 읽는 중"); setComparisonError("");
+    try {
+      const { meta, result } = await api.measurement(id, handle, signal);
+      if (!comparisonActionCurrent(action, id, scope, ticket) || meta.handle !== handle) return;
+      comparisonBusyRef.current = false; setComparisonBusy("");
+      setMeasurementSelection({ handle, result }); setComparisonReport(null); setFocusPair(null);
+      if (result.schema === "rigid_alignment@1") {
+        manualViewerInvalidator.current?.(); viewerBridgeRef.current?.invalidate();
+        exitSceneOverride(); setOpenmmViewHandle(null); setDistanceSourceHandle(""); setComparisonContext({ handle, result });
+        setComparisonReference(result.reference_handle); setComparisonMoving(result.moving_handle);
+        setCorrespondence(result.pairs.map(pair => ({ reference: pair.reference, moving: pair.moving })));
+        setComparisonAligned(true); setReferenceVisible(true); setMovingVisible(true);
+      } else {
+        manualViewerInvalidator.current?.(); viewerBridgeRef.current?.invalidate();
+        exitSceneOverride(); setOpenmmViewHandle(null); setComparisonContext(null);
+        setDistanceSourceHandle(result.structure_handle); setMeasureMode(true);
+      }
+    } catch (e) { if (comparisonActionCurrent(action, id, scope, ticket))
+      setComparisonError(e instanceof Error ? e.message : String(e)); }
+    finally { if (comparisonActionCurrent(action, id, scope, ticket)) {
+      comparisonBusyRef.current = false; setComparisonBusy(""); } }
+  }
+  async function createComparisonReport() {
+    if (!runId || !measurementSelection) return;
+    const id = runId, selected = measurementSelection.handle, ticket = epoch.current;
+    const action = beginComparisonAction(), scope = comparisonScope;
+    const signal = nextComparisonSignal();
+    comparisonBusyRef.current = true; setComparisonBusy("측정 보고서 저장 중"); setComparisonError("");
+    try {
+      const existing = savedReports.find(row => row.result_handle === selected &&
+        ["atom_distance", "rigid_alignment"].includes(row.analysis_type ?? ""));
+      const artifact = existing ? await api.methodReport(id, existing.handle, signal) : await api.createMethodReport(id, selected, signal);
+      if (!comparisonActionCurrent(action, id, scope, ticket) || artifact.manifest.result_handle !== selected) return;
+      setComparisonReport({ handle: artifact.handle, resultHandle: selected, markdown: artifact.markdown });
+      if (!existing) { const refreshed = await api.reports(id, signal);
+        if (comparisonActionCurrent(action, id, scope, ticket)) setSavedReports(refreshed); }
+    } catch (e) { if (comparisonActionCurrent(action, id, scope, ticket))
+      setComparisonError(e instanceof Error ? e.message : String(e)); }
+    finally { if (comparisonActionCurrent(action, id, scope, ticket)) {
+      comparisonBusyRef.current = false; setComparisonBusy(""); } }
+  }
   async function exportCurrentFigure() {
-    if (!runId || !selectedSceneHandle || !sceneSessionReady || sceneBusy) return;
+    if (!runId || !selectedSceneHandle || !sceneSessionReady || sceneBusy || m10SceneBlocked) return;
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
     const context = viewerContextKey, id = runId, selected = selectedSceneHandle;
     setSceneBusy("PNG 생성 중"); setSceneError(""); setSceneStatus("");
@@ -993,9 +1308,21 @@ export default function WorkspacePage() {
       </div>,
       jobs: null,
     }}
-    canvas={<MolstarViewer key={viewerContextKey ?? "no-structure"} source={displaySource} representation={representation}
+    canvas={<MolstarViewer key={`${viewerContextKey ?? "no-structure"}:${comparisonContext ? movingSource?.handle ?? "moving-loading" : "single"}`}
+      source={comparisonContext && (!movingSource || !movingCatalog || !atomCatalog) ? null : displaySource}
+      representation={representation}
       residues={displayResidues?.residues}
-      highlight={viewerReady && highlight?.key === viewerContextKey ? highlight.residue : null}
+      highlight={!comparisonContext && viewerReady && highlight?.key === viewerContextKey ? highlight.residue : null}
+      atomCatalog={atomCatalog} measureMode={measureMode || !!pairPickSide} onAtomPick={onComparisonAtomPick}
+      comparison={comparisonContext && movingSource && movingCatalog ? { source: movingSource, catalog: movingCatalog,
+        alignment: comparisonContext.result, aligned: comparisonAligned, referenceVisible, movingVisible } : null}
+      focusPair={focusPair}
+      selectedAtoms={pendingAtom ? [pendingAtom] : measurementSelection?.result.schema === "atom_distance@1" &&
+        [displaySource?.handle, movingSource?.handle].includes(measurementSelection.result.structure_handle)
+        ? [measurementSelection.result.first, measurementSelection.result.second] : []}
+      distanceResult={measurementSelection?.result.schema === "atom_distance@1" &&
+        [displaySource?.handle, movingSource?.handle].includes(measurementSelection.result.structure_handle)
+        ? measurementSelection.result : null}
       onBridge={bridge => { viewerBridgeRef.current = bridge; }}
       onManualInteraction={() => { cancelPendingRestore(); manualViewerInvalidator.current?.(); }}
       onSelect={selectFromViewer}
@@ -1005,18 +1332,24 @@ export default function WorkspacePage() {
       onFocusResult={(focusedSource, residue, found) => {
         if (!viewerReady || !viewerContextKey || focusedSource !== displaySource || highlight?.key !== viewerContextKey || identity(highlight.residue) !== identity(residue)) return;
         if (found) { setFocusedResidue({ key: viewerContextKey, residue }); setFocusError(null); }
-        else { setFocusedResidue(null); setFocusError({ key: viewerContextKey, message: "선택한 잔기를 표시 중인 구조에서 찾지 못했습니다." }); }
+        else {
+          const observed = viewerBridgeRef.current?.snapshot();
+          if (observed?.catalogReady && !observed.selectionError)
+            setFocusedResidue(observed.selection ? { key: viewerContextKey, residue: observed.selection } : null);
+          setFocusError({ key: viewerContextKey, message: "선택한 잔기를 표시 중인 구조에서 찾지 못했습니다." });
+        }
       }}
       emptyMessage={displayedError ?? (targetHandle ? "선택한 구조를 불러오는 중…" : selectedMeasurement || selectedStructure ? "선택한 객체의 입력 구조를 확인하는 중…" : undefined)}
       emptyIsError={!!displayedError} />}
-    canvasOverlayTopLeft={<Segmented label="표현 방식" value={representation} onChange={value => {
+    canvasOverlayTopLeft={comparisonContext ? <span className="mw-muted">기준 · 파랑 / 이동 · 주황 · {comparisonAligned ? "정렬" : "원래 좌표"}</span>
+      : <Segmented label="표현 방식" value={representation} onChange={value => {
       cancelPendingRestore(); manualViewerInvalidator.current?.(); setRepresentation(value);
     }} options={[
       { value: "cartoon", label: "cartoon" }, { value: "ball-and-stick", label: "ball-and-stick" }, { value: "surface", label: "surface" },
     ]} />}
-    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
+    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{comparisonContext ? `두 구조 비교 · 기준 ${comparisonContext.result.reference_model_number} / 이동 ${comparisonContext.result.moving_model_number}` : sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
       {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}</>}
-    strip={<><ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
+    strip={<>{comparisonContext ? <p className="mw-muted">두 구조 비교 중에는 한 구조용 프롬프트 명령을 사용할 수 없습니다.</p> : <ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
       runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
       sourceHandle={displaySource?.handle ?? null} viewerReady={viewerReady} bridgeRef={viewerBridgeRef}
       representation={representation} selected={selectedFocus} residues={displayResidues} dryRun={run?.dry_run ?? false}
@@ -1043,17 +1376,99 @@ export default function WorkspacePage() {
         }).catch(() => undefined);
       } }}
       onScopeChange={() => setViewerScopeRevision(value => value + 1)}
-      registerInvalidator={value => { manualViewerInvalidator.current = value; }} />
+      registerInvalidator={value => { manualViewerInvalidator.current = value; }} />}
+    <div className="mw-workflow" aria-label="원자 거리와 두 구조 비교">
+      <div className="mw-workflow-row">
+        <Button size="sm" disabled={!viewerReady || !atomCatalog || bridgeState?.catalogReady !== true ||
+          (!measureMode && bridgeState?.representation !== "ball-and-stick")} onClick={() => {
+          revokeComparisonAction();
+          setHighlight(null); setFocusedResidue(null); setFocusError(null);
+          if (measureMode) { setMeasurementSelection(null); setComparisonReport(null);
+            setLastPickedAtom(null); setDistanceSourceHandle(""); }
+          setMeasureMode(value => !value); setPairPickSide(null); setPendingAtom(null); setComparisonError("");
+        }}>{measureMode ? "원자 거리 측정 끝내기" : "원자 거리 측정"}</Button>
+        {!measureMode && viewerReady && bridgeState?.representation !== "ball-and-stick" &&
+          <span className="mw-muted">원자 선택 전에 ball-and-stick 표시를 선택하세요.</span>}
+        {measureMode && <><Button size="sm" disabled={!pendingAtom} onClick={() => setPendingAtom(null)}>첫 원자 취소</Button>
+          <Button size="sm" onClick={() => { revokeComparisonAction(); setPendingAtom(null); setMeasurementSelection(null);
+            setDistanceSourceHandle(""); setComparisonReport(null); setLastPickedAtom(null); }}>측정 지우기</Button>
+          <span className="mw-muted">{pendingAtom ? `첫 원자: ${atomLabel(pendingAtom)}` : "Mol* 화면에서 첫 원자, 두 번째 원자를 클릭하세요."}</span></>}
+      {comparisonContext && <Button size="sm" onClick={() => { revokeComparisonAction(); viewerBridgeRef.current?.invalidate();
+          setComparisonContext(null); setPairPickSide(null); setMeasureMode(false); setPendingAtom(null);
+          setMeasurementSelection(null); setComparisonReport(null); setLastPickedAtom(null);
+          setFocusPair(null); setInspectionRevision(value => value + 1); }}>단일 구조로 돌아가기</Button>}
+      </div>
+      {lastPickedAtom && <p className="mw-capability">선택 원자 {atomLabel(lastPickedAtom.ref, lastPickedAtom.layer)} · 원본 좌표 [{lastPickedAtom.sourceCoordinate_A.join(", ")}] Å · 화면 좌표 [{lastPickedAtom.displayCoordinate_A.map(value => value.toFixed(3)).join(", ")}] Å</p>}
+      {atomCatalogError && <p role="alert" className="mw-workflow-error">{atomCatalogError}</p>}
+      {(atomCatalogError || displayedError) && <Button size="sm" onClick={() => {
+        setInspectionRevision(value => value + 1); setAtomReadRetry(value => value + 1);
+      }}>기준 구조·원자 다시 읽기</Button>}
+      {comparisonContext && (!movingCatalog || !movingSource || displayedError) &&
+        <Button size="sm" onClick={() => setMovingReadRetry(value => value + 1)}>이동 구조·원자 다시 읽기</Button>}
+      {referenceDraftError && <p role="alert" className="mw-workflow-error">{referenceDraftError}</p>}
+      {movingDraftError && <p role="alert" className="mw-workflow-error">{movingDraftError}</p>}
+      {comparisonReference && comparisonMoving && (!refDraft || !movDraft) && <Button size="sm" onClick={() => setDraftReadRetry(value => value + 1)}>대응 원자 목록 다시 읽기</Button>}
+      {measurementSelection?.result.schema === "atom_distance@1" && <p className="mw-capability">원자 거리 {measurementSelection.result.distance_A.toFixed(3)} Å · {atomLabel(measurementSelection.result.first)} ↔ {atomLabel(measurementSelection.result.second)} · 원본 좌표의 유클리드 거리</p>}
+      <div className="mw-workflow-row"><label>저장된 거리·정렬 결과 <select className="mw-select" value={measurementSelection?.handle ?? ""}
+        onChange={e => { if (!e.target.value) { revokeComparisonAction(); setMeasurementSelection(null); setDistanceSourceHandle("");
+          setComparisonReport(null); } else void reopenMeasurement(e.target.value); }}><option value="">결과 선택</option>
+        {measurementOptions.map(item => <option key={item.handle} value={item.handle}>{item.kind} · {item.handle.split("/").at(-1)?.slice(0, 12)}</option>)}</select></label>
+        {measurementSelection && <Button size="sm" disabled={!!comparisonBusy} onClick={() => void createComparisonReport()}>측정 보고서 만들기</Button>}
+      </div>
+      {comparisonReport && comparisonReport.resultHandle === measurementSelection?.handle && runId && <><div className="mw-report-downloads">
+        <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, comparisonReport.handle, "markdown")}>Markdown 다운로드</a>
+        <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, comparisonReport.handle, "json")}>정확한 JSON 다운로드</a>
+      </div><pre className="mw-report-preview" aria-label="원자 측정 보고서 미리보기">{comparisonReport.markdown}</pre></>}
+      <div className="mw-workflow-row"><label>기준 구조 <select className="mw-select" value={comparisonReference} onChange={e => {
+        revokeComparisonAction();
+        setComparisonReference(e.target.value); setCorrespondence([]); setReferenceSite(""); setComparisonContext(null); setDistanceSourceHandle(""); setFocusPair(null);
+      }}><option value="">구조 선택</option>{sourceOptions.map(item => <option key={item.handle} value={item.handle}>{item.kind} · {item.handle.split("/").at(-1)?.slice(0, 12)}</option>)}</select></label>
+        <label>이동 구조 <select className="mw-select" value={comparisonMoving} onChange={e => {
+          revokeComparisonAction();
+          setComparisonMoving(e.target.value); setCorrespondence([]); setMovingSite(""); setComparisonContext(null); setDistanceSourceHandle(""); setFocusPair(null);
+        }}><option value="">구조 선택</option>{sourceOptions.filter(item => item.handle !== comparisonReference).map(item => <option key={item.handle} value={item.handle}>{item.kind} · {item.handle.split("/").at(-1)?.slice(0, 12)}</option>)}</select></label>
+      </div>
+      {comparisonReference && comparisonMoving && <><div className="mw-workflow-row">
+        <label>기준 CA site <select className="mw-select" value={referenceSite} onChange={e => setReferenceSite(e.target.value)}><option value="">정확한 원자 선택</option>
+          {refDraft?.rows.filter(row => row.protein && row.ref.atom_name === "CA").map(row => <option key={row.ref.site_index} value={row.ref.site_index}>{atomLabel(row.ref, "기준")}</option>)}</select></label>
+        <Button size="sm" disabled={!viewerReady || bridgeState?.catalogReady !== true || displaySource?.handle !== comparisonReference} onClick={() => { setPairPickSide("reference"); setMeasureMode(true); }}>기준 CA 화면 선택</Button>
+        <label>이동 CA site <select className="mw-select" value={movingSite} onChange={e => setMovingSite(e.target.value)}><option value="">정확한 원자 선택</option>
+          {movDraft?.rows.filter(row => row.protein && row.ref.atom_name === "CA").map(row => <option key={row.ref.site_index} value={row.ref.site_index}>{atomLabel(row.ref, "이동")}</option>)}</select></label>
+        <Button size="sm" disabled={!viewerReady || bridgeState?.catalogReady !== true || !comparisonContext || comparisonMoving !== comparisonContext.result.moving_handle} onClick={() => { setPairPickSide("moving"); setMeasureMode(true); }}>이동 CA 화면 선택</Button>
+        <Button size="sm" disabled={!referenceSite || !movingSite} onClick={addCorrespondence}>대응 추가</Button>
+      </div>
+      <div className="mw-table-scroll" role="region" aria-label="명시한 CA 대응" tabIndex={0}><table className="mw-table"><thead><tr><th>기준 CA</th><th>이동 CA</th><th>작업</th></tr></thead><tbody>
+        {correspondence.map((pair, index) => <tr key={`${pair.reference.site_index}:${pair.moving.site_index}`}>
+          <td>{atomLabel(pair.reference, "기준")}</td><td>{atomLabel(pair.moving, "이동")}</td><td>
+            <Button size="sm" onClick={() => { revokeComparisonAction(); setFocusPair(null);
+              setCorrespondence(rows => rows.filter((_, i) => i !== index)); }}>대응 제거</Button>
+            {comparisonContext && <Button size="sm" onClick={() => setFocusPair(previous =>
+              ({ ...pair, token: (previous?.token ?? 0) + 1 }))}>대응 원자 초점</Button>}
+          </td></tr>)}
+      </tbody></table></div>
+      <div className="mw-workflow-row"><Button size="sm" disabled={correspondence.length < 3 || correspondence.length > 1000 || !!comparisonBusy ||
+          !refDraft || !movDraft || comparisonReference === comparisonMoving} onClick={() => void computeAlignment()}>정렬 계산</Button>
+        <span className="mw-muted">명시한 단백질 CA 대응 {correspondence.length}개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음</span></div></>}
+      {comparisonContext && <><p className="mw-capability">정렬 RMSD {comparisonContext.result.rmsd_A.toFixed(4)} Å · 원래 RMSD {comparisonContext.result.unaligned_rmsd_A.toFixed(4)} Å · {comparisonContext.result.pair_count}쌍</p>
+        <div className="mw-workflow-row"><label><input type="radio" name="comparison-coordinates" checked={comparisonAligned} onChange={() => setComparisonAligned(true)} /> 정렬 좌표</label>
+          <label><input type="radio" name="comparison-coordinates" checked={!comparisonAligned} onChange={() => setComparisonAligned(false)} /> 원래 좌표</label>
+          <label><input type="checkbox" checked={referenceVisible} onChange={e => setReferenceVisible(e.target.checked)} /> 기준 구조 표시</label>
+          <label><input type="checkbox" checked={movingVisible} onChange={e => setMovingVisible(e.target.checked)} /> 이동 구조 표시</label></div>
+        <p className="mw-muted">파랑: 기준 구조 · 주황: 이동 구조. 정렬은 화면 변환이며 저장된 구조 좌표를 변경하지 않습니다.</p></>}
+      {comparisonBusy && <span role="status" className="mw-muted">{comparisonBusy}…</span>}
+      {comparisonError && <p role="alert" className="mw-workflow-error">{comparisonError}</p>}
+    </div>
     <div className="mw-workflow" aria-label="저장된 보기와 그림">
       <div className="mw-workflow-row"><label>보기 이름 <input className="mw-input" type="text" maxLength={80} value={sceneName} onChange={e => setSceneName(e.target.value)} /></label>
-        <Button size="sm" disabled={!runId || !sceneSessionReady || !sceneName.trim() || !!sceneBusy} title={!viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : "현재 장면을 저장합니다"} onClick={() => void saveCurrentScene()}>현재 보기 저장</Button>
+        <Button size="sm" disabled={m10SceneBlocked || !runId || !sceneSessionReady || !sceneName.trim() || !!sceneBusy} title={m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 보기를 저장하세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : "현재 장면을 저장합니다"} onClick={() => void saveCurrentScene()}>현재 보기 저장</Button>
         <label>저장된 보기 <select className="mw-select" value={selectedSceneHandle} onChange={e => setSelectedSceneHandle(e.target.value)}>
           <option value="">보기 선택</option>{savedScenes.map(scene => <option key={scene.handle} value={scene.handle}>{scene.value.name} · {scene.value.structure_kind} · {scene.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
         </select></label>
         <Button size="sm" disabled={!runId || !selectedSceneHandle} onClick={() => void restoreSavedScene()}>저장된 보기 복원</Button>
         {sceneOverride && <Button size="sm" onClick={returnToCurrentStructure}>현재 구조로 돌아가기</Button>}
-        <Button size="sm" disabled={!runId || !selectedSceneHandle || !sceneSessionReady || !!sceneBusy} title={!viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : !selectedSceneHandle ? "저장된 보기를 먼저 선택하세요" : "현재 장면이 선택한 저장 보기와 정확히 일치해야 합니다"} onClick={() => void exportCurrentFigure()}>현재 보기 PNG 내보내기</Button>
+        <Button size="sm" disabled={m10SceneBlocked || !runId || !selectedSceneHandle || !sceneSessionReady || !!sceneBusy} title={m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 PNG를 내보내세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : !selectedSceneHandle ? "저장된 보기를 먼저 선택하세요" : "현재 장면이 선택한 저장 보기와 정확히 일치해야 합니다"} onClick={() => void exportCurrentFigure()}>현재 보기 PNG 내보내기</Button>
       </div>
+      {m10SceneBlocked && <p className="mw-muted" role="status">원자 측정 표시와 두 구조 비교는 단일 구조 보기·PNG에 기록되지 않습니다. 측정을 지우거나 단일 구조로 돌아간 뒤 저장하세요.</p>}
       <div className="mw-workflow-row"><label>저장된 그림 <select className="mw-select" value={selectedFigureHandle} onChange={e => setSelectedFigureHandle(e.target.value)}>
         <option value="">그림 선택</option>{savedFigures.map(figure => <option key={figure.handle} value={figure.handle}>{figure.value.scene_handle.split("/").at(-1)?.slice(0, 12)} · {figure.value.width}×{figure.value.height} · {figure.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
       </select></label>

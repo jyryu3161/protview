@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-27T01:04:29.423177+00:00",
+  "build_id": "9PU1pKbewscjTqgy6C30X",
+  "build_exit_code": 0,
+  "source_files_verified": 80,
+  "hash_mismatches": [],
+  "qa_released": false,
+  "reason": "Astra review found initial catalog arrival/native startup readiness race; services stay stopped pending repair.",
+  "review_finding": "Reference validation effect lacks state/native-ready dependency; catalog arriving after startup snapshot but before instance assignment can remain unvalidated indefinitely."
+}

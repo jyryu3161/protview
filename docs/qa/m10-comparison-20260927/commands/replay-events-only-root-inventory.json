@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-09-27T02:14:47.344559+00:00",
+  "original_qa_path_absent": true,
+  "retained_original_path": "/tmp/protview-m10-qa-20260927/retained-original-runs",
+  "fresh_replay_root": "/tmp/protview-m10-qa-20260927/replay-runs",
+  "inventory_before_service_start": [
+    {
+      "path": "run_2eb9c02c2e9e4a6bbbd81dc64edebc09/events.jsonl",
+      "bytes": 63235,
+      "sha256": "a3a814ab0c379e48f1255d86b48c1b430d4dd11b451f4978f15b1ad8e4114861",
+      "lines": 79
+    },
+    {
+      "path": "run_4974f234b9af49b5a4ece82cccc4e08f/events.jsonl",
+      "bytes": 76162,
+      "sha256": "91863264f6f7f7be1de3db846d216fb8b67934276c06e39ad7d033f13a9704c1",
+      "lines": 34
+    },
+    {
+      "path": "run_900004d13d6648caa3af0734ef83001a/events.jsonl",
+      "bytes": 5192425,
+      "sha256": "fd57bdf2545e0284c94c179ffc78ebfe797484e21a83e4c21b804ea8b18f445d",
+      "lines": 221
+    },
+    {
+      "path": "run_d255a3a831d04be3946c1916519c9509/events.jsonl",
+      "bytes": 3545242,
+      "sha256": "f273942190805071be0a721129a943c92e3840108d0363da611c6f19ab9591e6",
+      "lines": 67
+    },
+    {
+      "path": "run_df5884d3230144838d1e907899590970/events.jsonl",
+      "bytes": 10448,
+      "sha256": "34f3f14f323b39126d133e7c332682caa28d6296914b582ca25c869a814cf778",
+      "lines": 19
+    },
+    {
+      "path": "run_e665f09046f644229e00a06e887f7d86/events.jsonl",
+      "bytes": 13490833,
+      "sha256": "ab99e3238f819c79b00a36ab1e71dd8530fd68a67a0140b78488f73df61b3f70",
+      "lines": 767
+    }
+  ],
+  "only_event_logs": true,
+  "objects_uploads_indices_present": false,
+  "symlinks_present": false,
+  "default_user_runs_touched": false,
+  "recovery_executed_at_inventory": false,
+  "operational_note": "Initial post-copy inventory assertion mistakenly required directory entries to be named events.jsonl. It failed before service startup; corrected read-only inventory explicitly distinguishes directories/files and verifies all copied bytes. No event/object contents changed."
+}

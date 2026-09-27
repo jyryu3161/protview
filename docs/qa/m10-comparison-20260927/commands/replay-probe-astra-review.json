@@ -1,0 +1,18 @@
+{
+  "recorded_at": "2026-09-27T00:51:55.870449+00:00",
+  "reviewer": "/root/astra_completion_audit",
+  "model": "gpt-6-astra",
+  "file": "commands/replay_probe.py",
+  "sha256": "6909fbac6316f3c6c41632432d30ee4a563d684df2c7152fea81fe8cd660dfaf",
+  "result": "meaningful exact immutable-byte and event-prefix verification; no code blocker",
+  "remaining_parent_evidence": [
+    "Pre-server fresh replay root recursive inventory contains only events and no symlinks/objects/uploads.",
+    "Original upload storage unavailable at its original paths.",
+    "Retain separate replay tests that patch SVD and Run.call to fail; helper cannot detect silent unlogged computation."
+  ],
+  "allowed_new_event_scope": [
+    "viewer_session_created",
+    "viewer_scene_updated"
+  ],
+  "phase_approval": false
+}

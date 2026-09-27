@@ -1,0 +1,48 @@
+...F....                                                                 [100%]
+=================================== FAILURES ===================================
+__________ test_three_planar_pairs_and_near_or_coincident_degeneracy ___________
+
+tmp_path = PosixPath('/private/var/folders/ms/sx754_r951x77jlgckb9vyx00000gn/T/pytest-of-jaeyongryu/pytest-2653/test_three_planar_pairs_and_ne0')
+
+    def test_three_planar_pairs_and_near_or_coincident_degeneracy(tmp_path):
+        run = new_run(tmp_path, run_id="rank")
+        ref = _load(run, "m10-reference.pdb")
+        mov = _load(run, "m10-moving.pdb")
+        a, b = atom_rows(run.store, ref), atom_rows(run.store, mov)
+        planar = run.store.load(run.call("align_structures", {"reference": ref, "moving": mov,
+            "pairs": _pairs(a, b)[:3]}).handle)
+        assert planar["pair_count"] == 3 and planar["rmsd_A"] <= 1e-8
+        assert planar["fit_singular_values_A2"][2] <= 1e-8
+        near = _load(run, "m10-near-degenerate.cif")
+        with pytest.raises(ToolFailure) as error:
+            run.call("align_structures", {"reference": ref, "moving": near,
+>               "pairs": _pairs(a, atom_rows(run.store, near))})
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/test_comparison.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+backend/tests/test_comparison.py:33: in _pairs
+    return [{"reference": _atom(ref, seq, "CA", alt), "moving": _atom(mov, seq, "CA", alt)}
+backend/tests/test_comparison.py:33: in <listcomp>
+    return [{"reference": _atom(ref, seq, "CA", alt), "moving": _atom(mov, seq, "CA", alt)}
+                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = {'schema': 'atom_catalog@1', 'structure_handle': 'obj://rank/structure/eb9cdb636d21fc5b11d15e95f679718f53cf2b89061b858...b', 'viewer_source_sha256': '82521ddfe25afa7515d28912c57213f857801a30893cdad473eebdaa1ca54430', 'model_number': 1, ...}
+seq = 10, name = 'CA', alt = 'A'
+
+    def _atom(catalog, seq: int, name: str, alt: str = "") -> dict:
+>       return next(row["ref"] for row in catalog["rows"] if row["ref"]["residue"]["seq_auth"] == seq
+                    and row["ref"]["atom_name"] == name and row["ref"]["altloc"] == alt)
+E       StopIteration
+
+backend/tests/test_comparison.py:28: StopIteration
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_comparison.py::test_three_planar_pairs_and_near_or_coincident_degeneracy
+1 failed, 7 passed, 1 warning in 0.67s

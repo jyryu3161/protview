@@ -8,6 +8,7 @@ select.mw-select::after { content: none; }
 .mw-molstar-canvas { display: block; width: 100%; height: 100%; }
 .mw-molstar-message { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-muted); background: var(--canvas); }
 .mw-molstar-error { color: var(--fail-fatal); }
+.mw-molstar-pick-error { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; padding: 8px 10px; color: var(--fail-fatal); background: var(--surface-200); border: 1px solid var(--fail-fatal); pointer-events: none; font-size: 12px; }
 .mw-workflow { display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow: auto; }
 .mw-workflow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: 12px; }
 .mw-workflow-row label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -29,6 +30,11 @@ select.mw-select::after { content: none; }
 .mw-table-head span { color: var(--ink-muted); }
 .mw-table-scroll { max-width: 100%; min-width: 0; overflow-x: auto; }
 .mw-table-scroll .mw-table { min-width: 420px; }
+.mw-workflow[aria-label="원자 거리와 두 구조 비교"] .mw-table-scroll {
+  flex: 0 0 auto;
+  max-height: 160px;
+  overflow: auto;
+}
 .mw-table-error { padding: var(--space-3); color: var(--fail-fatal); font-size: 12px; line-height: 17px; overflow-wrap: anywhere; }
 .mw-table-error p { margin: 0 0 var(--space-2); }
 .mw-inspector-kv { grid-template-columns: minmax(0, 38%) minmax(0, 1fr); min-width: 0; width: 100%; }

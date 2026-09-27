@@ -105,6 +105,10 @@ function cameraChanged(before, after, field) {
     return a.some((value, index) => Math.abs(value - b[index]) > 1e-5);
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) > 1e-5;
 }
+function sameResidue(actual, expected) {
+  return !!actual && !!expected && ["model_number", "chain_auth", "chain_label", "seq_auth",
+    "seq_label", "icode", "resname"].every(field => actual[field] === expected[field]);
+}
 
 async function validateReportDownload(page, section, runId, file, suffix) {
   const label = suffix === "md" ? "Markdown 다운로드" : "정확한 JSON 다운로드";
@@ -313,13 +317,23 @@ async function runNormalFlow(input) {
       return { cutoff: await page.getByLabel("cutoff").inputValue(), computeEnabled: true };
     });
 
+    let interactionHandle;
     await step("C03", "Click 기하 접촉 계산 at 4 Å", async () => {
+      const completed = page.waitForResponse(response => response.request().method() === "POST" &&
+        new URL(response.url()).pathname === `/api/runs/${encodeURIComponent(runId)}/commands` &&
+        response.request().postDataJSON()?.tool === "compute_interactions", { timeout: 30000 });
       await page.getByRole("button", { name: "기하 접촉 계산" }).click();
+      const response = await completed;
+      assert.equal(response.status(), 200, `Guarded interaction call failed: ${await response.text()}`);
+      const result = await response.json();
+      assert.equal(result.ok, true, `Guarded interaction call did not return a result: ${JSON.stringify(result)}`);
+      assert.equal(result.handle.kind, "interaction_set");
+      interactionHandle = result.handle.handle;
       await page.getByText(/기하 접촉 · 97건/).waitFor({ timeout: 30000 });
     }, async () => {
       const text = await page.getByText(/기하 접촉 · 97건/).innerText();
       assert.match(text, /97건/);
-      return { measuredRows: 97, label: text };
+      return { measuredRows: 97, label: text, interactionHandle };
     });
 
     const contactRows = page.getByRole("region", { name: "기하 접촉 측정 행" });
@@ -369,12 +383,60 @@ async function runNormalFlow(input) {
       await contactRows.locator("tbody tr").first().waitFor({ timeout: 20000 });
     }, async after => ({ viewer: assertViewer(after), tab: "run" }));
 
-    await step("V05-click", "Click first measured contact row to focus its protein residue", async () => {
-      const prior = await waitForViewer(page);
-      await contactRows.locator("tbody tr").first().click();
+    let expectedContactFocus;
+    await step("V05-click", "Click first measured contact row and require its exact guarded-API residue plus native camera focus", async () => {
+      assert.ok(interactionHandle, "Computed interaction handle was not recorded from the guarded call");
+      await page.getByText("1–50 / 97").waitFor({ timeout: 10000 });
+      const url = new URL(`/api/runs/${encodeURIComponent(runId)}/objects`, page.url());
+      url.searchParams.set("handle", interactionHandle);
+      url.searchParams.set("offset", "0");
+      url.searchParams.set("limit", "50");
+      const response = await fetch(url);
+      assert.equal(response.status, 200, "Displayed contact page could not be read from its immutable interaction handle");
+      const measuredPage = await response.json();
+      assert.equal(measuredPage.meta?.handle, interactionHandle);
+      assert.equal(measuredPage.meta?.kind, "interaction_set");
+      assert.equal(measuredPage.offset, 0);
+      assert.equal(measuredPage.limit, 50);
+      assert.equal(measuredPage.total, 97);
+      assert.equal(measuredPage.rows?.length, 50);
+      assert.equal(await contactRows.locator("tbody tr").count(), measuredPage.rows.length);
+      const residue = measuredPage.rows[0]?.residue;
+      assert.ok(residue, "First immutable interaction row has no residue identity");
+      for (const field of ["model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname"])
+        assert.ok(Object.hasOwn(residue, field), `Measured contact residue lacks ${field}`);
+      const row = contactRows.locator("tbody tr").first();
+      const cursor = await row.evaluate(element => getComputedStyle(element).cursor);
+      assert.equal(cursor, "pointer", "Measured contact row is not enabled for manual focus");
+      const prior = await waitForViewer(page, viewer => viewer.catalogReady === true &&
+        viewer.selectionError == null && viewer.sourceHandle);
+      expectedContactFocus = { sourceHandle: prior.sourceHandle, interactionHandle,
+        readUrl: url.toString(), offset: 0, limit: 50, total: measuredPage.total,
+        firstMeasuredRow: measuredPage.rows[0], residue, priorCamera: prior.camera,
+        priorSelection: prior.selection, rowCursor: cursor };
+      await row.click();
       await waitForViewer(page, viewer => viewer.sourceHandle === prior.sourceHandle &&
-        viewer.selection !== null && JSON.stringify(viewer.selection) !== JSON.stringify(prior.selection));
-    }, async after => ({ selection: assertViewer(after).selection, camera: after.viewer.camera }));
+        viewer.catalogReady === true && viewer.selectionError == null &&
+        sameResidue(viewer.selection, residue) &&
+        cameraChanged(prior, viewer, "target"));
+    }, async after => {
+      const viewer = assertViewer(after);
+      assert.ok(expectedContactFocus);
+      assert.equal(viewer.sourceHandle, expectedContactFocus.sourceHandle);
+      assert.deepEqual(viewer.selection, expectedContactFocus.residue,
+        "Native selection differs from the exact first displayed interaction row");
+      assert.equal(cameraChanged({ camera: expectedContactFocus.priorCamera }, viewer, "target"), true,
+        "Contact-row click did not move the native camera target");
+      return { interactionHandle: expectedContactFocus.interactionHandle,
+        guardedPageUrl: expectedContactFocus.readUrl, offset: expectedContactFocus.offset,
+        limit: expectedContactFocus.limit, total: expectedContactFocus.total,
+        firstMeasuredRow: expectedContactFocus.firstMeasuredRow,
+        rowCursor: expectedContactFocus.rowCursor,
+        priorSelection: expectedContactFocus.priorSelection,
+        nativeSelection: viewer.selection,
+        priorCamera: expectedContactFocus.priorCamera,
+        nativeCamera: viewer.camera, directManualFocus: true };
+    });
 
     const viewerControls = page.locator('section[aria-label="뷰어 요청"]');
     await step("V06", "Click local clear-selection control", async () => {

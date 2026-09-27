@@ -71,6 +71,29 @@ tools:
     params:
       what: { type: str, enum: [distance, angle, rmsd, sasa], required: true }
 
+  - name: measure_distance
+    level: L2
+    version: '1'
+    accepts: { structure: [structure, prepared_structure, openmm_minimized_structure] }
+    emits: atom_distance
+    params:
+      first: { type: dict, required: true }
+      second: { type: dict, required: true }
+    typical_runtime_s: 2
+    description: 원본 좌표에서 동일 구조의 정확한 원자 두 개의 유클리드 거리를 Å로 측정한다
+
+  - name: align_structures
+    level: L2
+    version: '1'
+    accepts:
+      reference: [structure, prepared_structure, openmm_minimized_structure]
+      moving: [structure, prepared_structure, openmm_minimized_structure]
+    emits: rigid_alignment
+    params:
+      pairs: { type: list, required: true }
+    typical_runtime_s: 5
+    description: 명시한 단백질 CA 쌍 3–1000개에 float64 고유 회전 Kabsch를 맞춘다
+
   - name: align
     level: L2
     accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }

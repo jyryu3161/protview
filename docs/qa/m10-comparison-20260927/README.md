@@ -1,0 +1,11 @@
+# M10 actual comparison and lifecycle evidence
+
+This archive preserves executed local Electron offscreen work for M10, including failed earlier candidates and corrected harness mistakes. The current QA build is `cjYPdV6dj3ZdSKSJLhpz2` (eleventh); runtime source snapshots and readiness records bind it to 80 file hashes. Historical runs keep their actual build attribution. All synthetic coordinate and fault fixtures are labeled; actual source observations determine scientific values.
+
+`case-ledger.json` indexes raw case outcomes. `retention.json` identifies omitted redundant successful paint images; all page images, downloads, raw rows, failed paint images and representative first/last paints remain. Browser profiles, caches and reconstructed storage files are excluded. Historical absolute `/tmp` paths inside raw evidence are intentionally unchanged; relative archive paths preserve their layout. `manifest.json` binds retained files. No artifact is rewritten to turn a failure into success.
+
+The parent moved the isolated original QA `runs` directory to `retained-original-runs` and copied only six event logs into `replay-runs`. The user's default repository runs were untouched. `commands/replay-events-only-root-inventory.json` records the pre-service inventory and an honestly corrected directory-versus-file assertion before startup. Lossless before/after event streams are under `events/`; original runs outside the six selected replay inputs are also preserved.
+
+`commands/replay-before.json`, `replay-prebrowser-verification.json` and `replay-after.json` record all 88 object files and 150 exact API response checks over six selected runs. After browser replay, only viewer session/scene-state observations were appended; no scientific, job, budget, report creation or egress event was added. Existing M9's immutable subset was separately checked: 53 original objects and 16 figure/report downloads stayed byte-identical.
+
+Final source/scientific interpretation and explicit supersession of stale shared-source review coverage belong to `phases/protview-comparison/reviews/step0.md`. The phase index records the actual mandatory command and verification results; this archive alone does not predeclare that gate or Git commit.

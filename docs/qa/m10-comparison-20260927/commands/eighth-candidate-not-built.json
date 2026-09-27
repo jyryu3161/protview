@@ -1,0 +1,29 @@
+{
+  "recorded_at": "2026-09-27T01:34:19.992422+00:00",
+  "built": false,
+  "released_to_qa": false,
+  "phase_approval": false,
+  "findings": [
+    "Legacy UI representation reconciliation tied to M8 operationToken can self-cancel on Panel representation prop sync with new actionRevision; use dedicated representation intent instead"
+  ],
+  "files": [
+    {
+      "path": "frontend/src/components/MolstarViewer.tsx",
+      "reported_sha256": "825047414cadba9fa5faae3ad0569dcc8d5991f3f3021d28802fcbe153d9f678",
+      "observed_sha256": "825047414cadba9fa5faae3ad0569dcc8d5991f3f3021d28802fcbe153d9f678",
+      "copied": true
+    },
+    {
+      "path": "frontend/src/lib/saved-scene.ts",
+      "reported_sha256": "5e23d6b1aa94a47fddc2b7776135a1502fd1d06a6bb4ac2ad70cbb1fbf3efc01",
+      "observed_sha256": "5e23d6b1aa94a47fddc2b7776135a1502fd1d06a6bb4ac2ad70cbb1fbf3efc01",
+      "copied": true
+    },
+    {
+      "path": "frontend/tests/saved-scene.test.cjs",
+      "reported_sha256": "d541af1c46ca884f7c547f96e24b15aeb13d229b099026edb5461cf92cd0d6c0",
+      "observed_sha256": "d541af1c46ca884f7c547f96e24b15aeb13d229b099026edb5461cf92cd0d6c0",
+      "copied": true
+    }
+  ]
+}

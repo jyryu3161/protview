@@ -47,6 +47,8 @@ run 데이터는 기본적으로 루트의 `runs/`에 저장됩니다. 별도 �
 
 M9의 저장된 보기는 현재 표시된 원본·과거 전처리·OpenMM 최소화 구조의 정확한 source/model, 선택 잔기, 표현, 카메라, 테마를 이름과 함께 보관합니다. 복원은 새 로컬 뷰어 세션에서만 이루어지며, 선택한 보기의 실제 Mol* 뷰포트를 PNG와 출처 JSON 한 쌍으로 내보낼 수 있습니다. 이 그림은 새로운 과학 측정이 아닙니다. 사용 순서, 재시도, 저장 한도와 한계는 [M9 저장 보기·그림 안내](docs/M9_SCENES_EXPORT.md)를 따릅니다. 최종 완료 여부는 [M9 단계 기록](phases/protview-scenes/index.json)에 따릅니다.
 
+M10의 원자 거리 측정과 두 구조 정렬은 명시적으로 선택한 원자 site와 단백질 CA 대응을 사용합니다. 원본 구조 좌표는 바뀌지 않으며, 두 구조 비교와 원자 측정 표시는 M9 단일 구조 보기로 저장하거나 PNG로 내보낼 수 없습니다. 사용법과 결과 한계는 [M10 원자 거리·정렬 안내](docs/M10_MEASUREMENT_ALIGNMENT.md)를 따릅니다. 완료 여부는 [M10 단계 기록](phases/protview-comparison/index.json)에 따릅니다.
+
 M6에서는 전처리 구조의 정확한 리간드 인스턴스를 선택하거나 접촉 결과의 정확한 입력을 선택하여 FreeSASA Lee–Richards 100-slice SASA를 계산합니다. 단백질 매몰, 리간드 매몰, 총 SASA 손실과 잔기별 값을 Å²로 표시합니다. 선택한 SASA 결과의 별도 방법 보고서를 Markdown/JSON으로 저장하고 다시 열 수 있습니다. 이 면적은 친화도나 에너지가 아닙니다. 방법·한계·검증 범위는 [M6 기록](docs/M6_SASA.md)을 따릅니다.
 
 접촉이 없는 정상 결과는 `scientific_null`로 표시됩니다. 읽기나 계산 실패와 리간드 부재/다중 선택 요구는 별도 상태입니다. 거리는 Å 단위이며, 기하학적 polar/hydrophobic contact는 검증된 수소결합·친화도·안정성·에너지를 뜻하지 않습니다. 지원하지 않는 전처리와 과학 계산은 거부하거나 사용 불가로 표시합니다. PyRosetta relax, Cartesian ddG, interface analysis, residue energies는 실제 구현·검증된 엔진이 없어 사용할 수 없으며 보고서에 점수나 순위가 없습니다. `/gallery`는 디자인 예시입니다.

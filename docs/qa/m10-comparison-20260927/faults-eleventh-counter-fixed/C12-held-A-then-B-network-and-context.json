@@ -1,0 +1,249 @@
+{
+  "fixture": "A immutable detail GET held while visible result selector switches to B",
+  "resultA": "obj://run_90a04e4a0ba34751a62e7fc31358334f/rigid_alignment/945b6f1c10d994a67c2fed1b7112640f3e9c7487fdbd1cd8c3f51aa0ca146dc3",
+  "resultB": "obj://run_90a04e4a0ba34751a62e7fc31358334f/atom_distance/5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728",
+  "sequence": "return single → clear choice → hold A → choose B → observe B → release A",
+  "trace": [
+    {
+      "at": "2026-09-27T02:08:42.780Z",
+      "event": "prior-meta-request",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.780Z",
+      "event": "prior-meta-route-held",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.780Z",
+      "event": "prior-meta-request",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.785Z",
+      "event": "context",
+      "stage": "immediately-after-return-single-click",
+      "selectorValue": "",
+      "native": null,
+      "visibleComparisonText": "원자 거리 측정\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음"
+    },
+    {
+      "at": "2026-09-27T02:08:42.791Z",
+      "event": "prior-meta-response",
+      "status": 200,
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.791Z",
+      "event": "prior-meta-finished",
+      "failure": null,
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.795Z",
+      "event": "context",
+      "stage": "after-clear-result-choice",
+      "selectorValue": "",
+      "native": null,
+      "visibleComparisonText": "원자 거리 측정\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음"
+    },
+    {
+      "at": "2026-09-27T02:08:42.802Z",
+      "event": "request",
+      "role": "held-A",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Frigid_alignment%2F945b6f1c10d994a67c2fed1b7112640f3e9c7487fdbd1cd8c3f51aa0ca146dc3"
+    },
+    {
+      "at": "2026-09-27T02:08:42.802Z",
+      "event": "route-held",
+      "role": "held-A",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Frigid_alignment%2F945b6f1c10d994a67c2fed1b7112640f3e9c7487fdbd1cd8c3f51aa0ca146dc3"
+    },
+    {
+      "at": "2026-09-27T02:08:42.804Z",
+      "event": "context",
+      "stage": "A-detail-held-before-B-choice",
+      "selectorValue": "",
+      "native": null,
+      "visibleComparisonText": "원자 거리 측정\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음\n저장된 측정 읽는 중…"
+    },
+    {
+      "at": "2026-09-27T02:08:42.810Z",
+      "event": "failed",
+      "role": "held-A",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Frigid_alignment%2F945b6f1c10d994a67c2fed1b7112640f3e9c7487fdbd1cd8c3f51aa0ca146dc3",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "at": "2026-09-27T02:08:42.810Z",
+      "event": "request",
+      "role": "winning-B",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fatom_distance%2F5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728"
+    },
+    {
+      "at": "2026-09-27T02:08:42.810Z",
+      "event": "route-held",
+      "role": "winning-B",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fatom_distance%2F5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728"
+    },
+    {
+      "at": "2026-09-27T02:08:42.810Z",
+      "event": "context",
+      "stage": "immediately-after-B-choice",
+      "selectorValue": "",
+      "native": null,
+      "visibleComparisonText": "원자 거리 측정\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음\n저장된 측정 읽는 중…"
+    },
+    {
+      "at": "2026-09-27T02:08:42.813Z",
+      "event": "context",
+      "stage": "B-detail-held-with-prior-source-meta-still-held",
+      "selectorValue": "",
+      "native": null,
+      "visibleComparisonText": "원자 거리 측정\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음\n저장된 측정 읽는 중…"
+    },
+    {
+      "at": "2026-09-27T02:08:42.815Z",
+      "event": "prior-meta-route-released-after-B-admission"
+    },
+    {
+      "at": "2026-09-27T02:08:42.820Z",
+      "event": "prior-meta-response",
+      "status": 200,
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.820Z",
+      "event": "prior-meta-finished",
+      "failure": null,
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.823Z",
+      "event": "prior-meta-request",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.833Z",
+      "event": "prior-meta-response",
+      "status": 200,
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.833Z",
+      "event": "prior-meta-finished",
+      "failure": null,
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/meta?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fstructure%2F7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f"
+    },
+    {
+      "at": "2026-09-27T02:08:42.930Z",
+      "event": "context",
+      "stage": "prior-single-source-native-ready-while-B-detail-held",
+      "selectorValue": "",
+      "native": {
+        "ready": true,
+        "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f",
+        "sessionId": "1ec22701-f7b9-48fb-a792-41507853be28",
+        "generation": 6,
+        "catalogReady": true,
+        "measureMode": false,
+        "layers": [
+          {
+            "layer": "reference",
+            "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f",
+            "visible": true
+          }
+        ]
+      },
+      "visibleComparisonText": "원자 거리 측정\n원자 선택 전에 ball-and-stick 표시를 선택하세요.\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음\n저장된 측정 읽는 중…"
+    },
+    {
+      "at": "2026-09-27T02:08:42.934Z",
+      "event": "B-detail-route-released-after-prior-native-ready",
+      "priorSourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f",
+      "priorSessionId": "1ec22701-f7b9-48fb-a792-41507853be28",
+      "priorCatalogReady": true
+    },
+    {
+      "at": "2026-09-27T02:08:42.940Z",
+      "event": "response",
+      "role": "winning-B",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fatom_distance%2F5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728",
+      "status": 200
+    },
+    {
+      "at": "2026-09-27T02:08:42.940Z",
+      "event": "finished",
+      "role": "winning-B",
+      "url": "http://127.0.0.1:3000/api/runs/run_90a04e4a0ba34751a62e7fc31358334f/objects/measurement?handle=obj%3A%2F%2Frun_90a04e4a0ba34751a62e7fc31358334f%2Fatom_distance%2F5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728"
+    },
+    {
+      "at": "2026-09-27T02:08:43.041Z",
+      "event": "context",
+      "stage": "B-native-applied-before-A-release",
+      "selectorValue": "obj://run_90a04e4a0ba34751a62e7fc31358334f/atom_distance/5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728",
+      "native": {
+        "ready": true,
+        "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/2a81eedc8757b5be9d1f6e6332eccab63a25e1262f118260a4d245280df79b2c",
+        "sessionId": "83f03a42-c5ee-4050-b4cc-3d6e737fdaab",
+        "generation": 7,
+        "catalogReady": true,
+        "measureMode": true,
+        "layers": [
+          {
+            "layer": "reference",
+            "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/2a81eedc8757b5be9d1f6e6332eccab63a25e1262f118260a4d245280df79b2c",
+            "visible": true
+          }
+        ]
+      },
+      "visibleComparisonText": "원자 거리 측정 끝내기\n첫 원자 취소\n측정 지우기\nMol* 화면에서 첫 원자, 두 번째 원자를 클릭하세요.\n\n원자 거리 5.000 Å · GLY A/11 · CA · model 1 · site 6 ↔ SER A/12A · CA · model 1 · site 10 · 원본 좌표의 유클리드 거리\n\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n측정 보고서 만들기\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음"
+    },
+    {
+      "at": "2026-09-27T02:08:43.084Z",
+      "event": "context",
+      "stage": "after-A-client-settlement",
+      "selectorValue": "obj://run_90a04e4a0ba34751a62e7fc31358334f/atom_distance/5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728",
+      "native": {
+        "ready": true,
+        "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/2a81eedc8757b5be9d1f6e6332eccab63a25e1262f118260a4d245280df79b2c",
+        "sessionId": "83f03a42-c5ee-4050-b4cc-3d6e737fdaab",
+        "generation": 7,
+        "catalogReady": true,
+        "measureMode": true,
+        "layers": [
+          {
+            "layer": "reference",
+            "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/2a81eedc8757b5be9d1f6e6332eccab63a25e1262f118260a4d245280df79b2c",
+            "visible": true
+          }
+        ]
+      },
+      "visibleComparisonText": "원자 거리 측정 끝내기\n첫 원자 취소\n측정 지우기\nMol* 화면에서 첫 원자, 두 번째 원자를 클릭하세요.\n\n원자 거리 5.000 Å · GLY A/11 · CA · model 1 · site 6 ↔ SER A/12A · CA · model 1 · site 10 · 원본 좌표의 유클리드 거리\n\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n측정 보고서 만들기\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음"
+    },
+    {
+      "at": "2026-09-27T02:08:43.229Z",
+      "event": "context",
+      "stage": "after-C12-step-and-route-cleanup",
+      "selectorValue": "obj://run_90a04e4a0ba34751a62e7fc31358334f/atom_distance/5a962be16c954181fcd53f904e51505f8c89f5a1a9eb5c41893ccb3599ca9728",
+      "native": {
+        "ready": true,
+        "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/2a81eedc8757b5be9d1f6e6332eccab63a25e1262f118260a4d245280df79b2c",
+        "sessionId": "83f03a42-c5ee-4050-b4cc-3d6e737fdaab",
+        "generation": 7,
+        "catalogReady": true,
+        "measureMode": true,
+        "layers": [
+          {
+            "layer": "reference",
+            "sourceHandle": "obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/2a81eedc8757b5be9d1f6e6332eccab63a25e1262f118260a4d245280df79b2c",
+            "visible": true
+          }
+        ]
+      },
+      "visibleComparisonText": "원자 거리 측정 끝내기\n첫 원자 취소\n측정 지우기\nMol* 화면에서 첫 원자, 두 번째 원자를 클릭하세요.\n\n원자 거리 5.000 Å · GLY A/11 · CA · model 1 · site 6 ↔ SER A/12A · CA · model 1 · site 10 · 원본 좌표의 유클리드 거리\n\n저장된 거리·정렬 결과\n결과 선택\nrigid_alignment · 945b6f1c10d9\natom_distance · 5a962be16c95\n측정 보고서 만들기\n기준 구조\n구조 선택\nstructure · 2a81eedc8757\nstructure · 7db8fdfd9543\n이동 구조\n구조 선택\nstructure · 7db8fdfd9543\n기준 CA site\n정확한 원자 선택\n기준 · ALA A/10 · CA alt A · model 1 · site 1\n기준 · ALA A/10 · CA alt B · model 1 · site 2\n기준 · GLY A/11 · CA · model 1 · site 6\n기준 · SER A/12A · CA · model 1 · site 10\n기준 · THR A/13 · CA · model 1 · site 14\n기준 CA 화면 선택\n이동 CA site\n정확한 원자 선택\n이동 · ALA A/10 · CA alt A · model 1 · site 1\n이동 · ALA A/10 · CA alt B · model 1 · site 2\n이동 · GLY A/11 · CA · model 1 · site 6\n이동 · SER A/12A · CA · model 1 · site 10\n이동 · THR A/13 · CA · model 1 · site 14\n이동 CA 화면 선택\n대응 추가\n기준 CA\t이동 CA\t작업\n기준 · ALA A/10 · CA alt A · model 1 · site 1\t이동 · ALA A/10 · CA alt A · model 1 · site 1\t대응 제거\n기준 · GLY A/11 · CA · model 1 · site 6\t이동 · GLY A/11 · CA · model 1 · site 6\t대응 제거\n기준 · SER A/12A · CA · model 1 · site 10\t이동 · SER A/12A · CA · model 1 · site 10\t대응 제거\n기준 · THR A/13 · CA · model 1 · site 14\t이동 · THR A/13 · CA · model 1 · site 14\t대응 제거\n정렬 계산\n명시한 단백질 CA 대응 4개 · 최소 3개, 최대 1000개 · 자동 짝짓기 없음"
+    }
+  ]
+}

@@ -1,0 +1,517 @@
+{
+  "scope": "Raw executed case counts only. Earlier failures and diagnostic cases are preserved; passing row counts alone are not phase approval. Current accepted component scope is documented in M10_OFFSCREEN_QA_PLAN.md and the Astra review.",
+  "flows": [
+    {
+      "path": "adapter-eleventh-build/comparison-adapter.jsonl",
+      "cases": 8,
+      "status_counts": {
+        "pass": 8
+      },
+      "failures": []
+    },
+    {
+      "path": "adapter-ninth-attached/comparison-adapter.jsonl",
+      "cases": 8,
+      "status_counts": {
+        "pass": 8
+      },
+      "failures": []
+    },
+    {
+      "path": "adapter-ninth-build/comparison-adapter.jsonl",
+      "cases": 4,
+      "status_counts": {
+        "pass": 3,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C15-pdb-local-focus",
+          "error": "AssertionError [ERR_ASSERTION]: Local focus failed: {\"intent_id\":\"13f7ec8b-5bf5-4ad6-9f98-f17e6291fe60\",\"status\":\"planned\",\"source\":\"local_command\",\"viewer_session_id\":\"a918e279-32c3-4457-a133-290b7c6524a4\",\"scene_generation\":4,\"structure_handle\":\"obj://run_ad04ad0e27de422b9a92b816cfe51f4f/structure/9d5f4eb18e29faa2308c95cff70bd6d22d5df97a90b8b16852dd525fe892aa2e\",\"catalog_hash\":\"dc2b5e22ceb2a65fbb64c877fdf05adb40c387d7ea19b08669cb265197ac1d21\",\"prompt_sha256\":\"3454f80238dc5319faa81ccfe53150a5db"
+        }
+      ]
+    },
+    {
+      "path": "adapter-ninth-status201/comparison-adapter.jsonl",
+      "cases": 8,
+      "status_counts": {
+        "pass": 7,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C15-pdb-selected-scene-reopen",
+          "error": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('combobox', { name: '저장된 보기' }).locator('option[value=\"obj://run_ad04ad0e27de422b9a92b816cfe51f4f/viewer_scene/a390bda758cb02b912a00455589e972716d04356d752cb9d1390f6862f44afc4\"]') to be visible\u001b[22m\n\u001b[2m    62 × locator resolved to hidden <option value=\"obj://run_ad04ad0e27de422b9a92b816cfe51f4f/viewer_scene/a390bda758cb02b912a00455589e972716d04356d752cb9d1390f6862f44afc4\">M10 Axp original PDB 179047"
+        }
+      ]
+    },
+    {
+      "path": "alignment-eleventh-build/comparison-alignment.jsonl",
+      "cases": 32,
+      "status_counts": {
+        "pass": 32
+      },
+      "failures": []
+    },
+    {
+      "path": "alignment-fifth/comparison-alignment.jsonl",
+      "cases": 22,
+      "status_counts": {
+        "pass": 21,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C08-pair-row-focus",
+          "error": "Error: Workflow button remained covered after real scrolling: [{\"attempt\":0,\"direction\":450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":558.5,\"width\":89.90625,\"height\":24}},{\"attempt\":1,\"direction\":450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":558.5,\"width\":89.90625,\"height\":24}},{\"attempt\":2,\"direction\":-450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":482.5,\"width\":89.90625,\"height\":24}},{\"attempt\":3,\"direction\":-450,\"pointer\":"
+        }
+      ]
+    },
+    {
+      "path": "alignment-fifth-build/comparison-alignment.jsonl",
+      "cases": 27,
+      "status_counts": {
+        "pass": 26,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C11-alignment-report",
+          "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[aria-label=\"원자 거리와 두 구조 비교\"]').getByRole('button', { name: '측정 보고서 만들기' })\u001b[22m\n"
+        }
+      ]
+    },
+    {
+      "path": "alignment-fifth-reselect/comparison-alignment.jsonl",
+      "cases": 32,
+      "status_counts": {
+        "pass": 32
+      },
+      "failures": []
+    },
+    {
+      "path": "alignment-first/comparison-alignment.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 16,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C09-same-source-overlay-distance",
+          "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_b264110670964b198466230e8cfc6864/structure/d86f7e75f2920254f9b00bdf07f09fc113e65df2564a9a9c8003d5605e5a444d\",\"sessionId\":null,\"generation\":null,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[1.5045342051982313,1.6076109200309026,18.730547051799093],\"target\":[1.5045342051982313,1.6076109200309026,1.9809601387385791],\"radius\":6.409789410587386,\"dist"
+        }
+      ]
+    },
+    {
+      "path": "alignment-fourth/comparison-alignment.jsonl",
+      "cases": 22,
+      "status_counts": {
+        "pass": 21,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C08-pair-row-focus",
+          "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[aria-label=\"원자 거리와 두 구조 비교\"]').getByRole('region', { name: '명시한 CA 대응' }).getByRole('button', { name: '대응 원자 초점' }).first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" class=\"mw-btn mw-btn--sm\">대응 원자 초점</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrol"
+        }
+      ]
+    },
+    {
+      "path": "alignment-ninth-build/comparison-alignment.jsonl",
+      "cases": 32,
+      "status_counts": {
+        "pass": 32
+      },
+      "failures": []
+    },
+    {
+      "path": "alignment-second/comparison-alignment.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 16,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C09-same-source-overlay-distance",
+          "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_9b5d359ea16f40088d85000bfa733a9f/structure/e4a46ef6d513a4707fd2008893381bf3c642c7cef91f2c0146a4c14892f2b164\",\"sessionId\":null,\"generation\":null,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[1.5045342051982313,1.6076109200309026,18.730547051799093],\"target\":[1.5045342051982313,1.6076109200309026,1.9809601387385791],\"radius\":6.409789410587386,\"dist"
+        }
+      ]
+    },
+    {
+      "path": "alignment-third/comparison-alignment.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 16,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C09-same-source-overlay-distance",
+          "error": "Error: Exact native pointer pick failed: {\"expectedSite\":10,\"expectedLayer\":\"reference\",\"acceptedBefore\":1,\"acceptedAfter\":1,\"nativeClickBefore\":2,\"nativeClickAfter\":3,\"lastNativeClickBefore\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measureMode\":true,\"accepted\":true,\"reason\":\"accepted\"},\"lastNativeClickAfter\":{\"kind\":\"bond-loci\",\"size\":null,\"pluginBusy\":false,\"measureMode\":true,\"accepted\":false,\"reason\":\"locus\"},\"nativeBusy\":false,\"nativeUpdating\":false,\"nativeAnimating\":false,\"camera"
+        }
+      ]
+    },
+    {
+      "path": "catalog-race-eleventh-build/comparison-catalog-race.jsonl",
+      "cases": 3,
+      "status_counts": {
+        "pass": 3
+      },
+      "failures": []
+    },
+    {
+      "path": "catalog-race-ninth-build/comparison-catalog-race.jsonl",
+      "cases": 3,
+      "status_counts": {
+        "pass": 3
+      },
+      "failures": []
+    },
+    {
+      "path": "faults-eleventh-build/comparison-faults.jsonl",
+      "cases": 5,
+      "status_counts": {
+        "pass": 4,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C12-held-A-then-B",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n3 !== 1\n"
+        }
+      ]
+    },
+    {
+      "path": "faults-eleventh-counter-fixed/comparison-faults.jsonl",
+      "cases": 15,
+      "status_counts": {
+        "pass": 15
+      },
+      "failures": []
+    },
+    {
+      "path": "faults-focus-probe/comparison-faults.jsonl",
+      "cases": 4,
+      "status_counts": {
+        "pass": 3,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C08-focus-then-manual-orbit",
+          "error": "Error: Workflow button remained covered after real scrolling: [{\"attempt\":0,\"direction\":450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":673.5,\"width\":89.90625,\"height\":24},\"hitState\":{\"exposed\":false,\"hitTag\":\"P\",\"hitClass\":\"mw-capability\",\"hitText\":\"정렬 RMSD 0.0000 Å · 원래 RMSD 11.2694 Å · 4쌍\",\"ancestors\":[{\"className\":\"\",\"scrollTop\":0,\"scrollHeight\":27,\"clientHeight\":27,\"rect\":{\"x\":873.96875,\"y\":671.5,\"width\":178.90625,\"height\":28}},{\"className\":\"\",\"scrollTop\":0,\"scrollHeig"
+        }
+      ]
+    },
+    {
+      "path": "faults-ninth-build/comparison-faults.jsonl",
+      "cases": 9,
+      "status_counts": {
+        "pass": 8,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C13-moving-bytes-503",
+          "error": "TimeoutError: locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[aria-label=\"원자 거리와 두 구조 비교\"]').getByRole('alert').filter({ hasText: /이동 구조 읽기 실패.*HTTP 503/ }) to be visible\u001b[22m\n"
+        }
+      ]
+    },
+    {
+      "path": "faults-ninth-reset/comparison-faults.jsonl",
+      "cases": 9,
+      "status_counts": {
+        "pass": 8,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C13-moving-bytes-503",
+          "error": "Error: Mol* observation did not become ready: null"
+        }
+      ]
+    },
+    {
+      "path": "faults-ninth-stable-single/comparison-faults.jsonl",
+      "cases": 14,
+      "status_counts": {
+        "pass": 13,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C13-malformed-catalog-retry",
+          "error": "Error: Mol* observation did not become ready: null"
+        }
+      ]
+    },
+    {
+      "path": "faults-tenth-build/comparison-faults.jsonl",
+      "cases": 5,
+      "status_counts": {
+        "pass": 4,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C12-held-A-then-B",
+          "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f\",\"sessionId\":\"565e8ab5-0927-4994-93a0-8e822256370d\",\"generation\":6,\"representation\":\"cartoon\",\"molstarRepresentation\":\"Cartoon\",\"selection\":null,\"selectionError\":null,\"camera\":{\"position\":[8.612534009606405,8.532551857663622,15.720184059372247],\"target\":[8.612534009606405,8.532551857663622,-0.087438081598"
+        }
+      ]
+    },
+    {
+      "path": "identity-ninth-build/comparison-identity.jsonl",
+      "cases": 6,
+      "status_counts": {
+        "pass": 6
+      },
+      "failures": []
+    },
+    {
+      "path": "measure-eleventh-build/comparison-measure.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 17
+      },
+      "failures": []
+    },
+    {
+      "path": "measure-fifth-build/comparison-measure.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 17
+      },
+      "failures": []
+    },
+    {
+      "path": "measure-first/comparison-measure.jsonl",
+      "cases": 15,
+      "status_counts": {
+        "pass": 14,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C02-residue-after-exit",
+          "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_28471cf883ee473fa78c96c8fca4d616/structure/72c422e02a479b03e5bb86f8499ad9fa81a149dca41a53cc0c30eacd355bfe16\",\"sessionId\":\"cc3dffe7-1022-4dd3-ab95-8cc311e7fb9c\",\"generation\":4,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[-0.6602328771785121,1.692073388118176,16.68780628406465],\"target\":[-0.6602328771785121,1.692073388118176,-0.09130876343814],\"ra"
+        }
+      ]
+    },
+    {
+      "path": "measure-fourth/comparison-measure.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 17
+      },
+      "failures": []
+    },
+    {
+      "path": "measure-ninth-attribution-ledger/comparison-measure.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 17
+      },
+      "failures": []
+    },
+    {
+      "path": "measure-ninth-build/comparison-measure.jsonl",
+      "cases": 9,
+      "status_counts": {
+        "pass": 8,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C02-repeat-reverse",
+          "error": "Error: Exact native pointer pick failed: {\"expectedSite\":1,\"expectedLayer\":\"reference\",\"acceptedBefore\":3,\"acceptedAfter\":3,\"nativeClickBefore\":4,\"nativeClickAfter\":5,\"lastNativeClickBefore\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measureMode\":true,\"accepted\":true,\"reason\":\"accepted\"},\"lastNativeClickAfter\":{\"kind\":\"empty-loci\",\"size\":null,\"pluginBusy\":false,\"measureMode\":true,\"accepted\":false,\"reason\":\"empty_loci\"},\"nativeBusy\":false,\"nativeUpdating\":false,\"nativeAnimating\":false,\"c"
+        }
+      ]
+    },
+    {
+      "path": "measure-ninth-samesite/comparison-measure.jsonl",
+      "cases": 17,
+      "status_counts": {
+        "pass": 17
+      },
+      "failures": []
+    },
+    {
+      "path": "measure-second/comparison-measure.jsonl",
+      "cases": 9,
+      "status_counts": {
+        "pass": 8,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C02-repeat-reverse",
+          "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_bafc4562cbe14a83942b1d8b8988c684/structure/d1484b22e53888fb378a0b3b73ded7e82bfeae7a9323f52e4ae4744e6fdc34e8\",\"sessionId\":\"75d47d2a-6f5a-468b-9881-34943c576734\",\"generation\":4,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[-0.6602328771785121,1.692073388118176,16.68780628406465],\"target\":[-0.6602328771785121,1.692073388118176,-0.09130876343814],\"ra"
+        }
+      ]
+    },
+    {
+      "path": "measure-third/comparison-measure.jsonl",
+      "cases": 15,
+      "status_counts": {
+        "pass": 14,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "C02-residue-after-exit",
+          "error": "Error: Ordinary residue pick failed after three real clicks: [{\"attempt\":1,\"selected\":false,\"observation\":null,\"nativeClickBefore\":6,\"nativeClickAfter\":7,\"lastNativeClick\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measureMode\":false,\"accepted\":false,\"reason\":\"inactive\"}},{\"attempt\":2,\"selected\":false,\"observation\":null,\"nativeClickBefore\":7,\"nativeClickAfter\":8,\"lastNativeClick\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measureMode\":false,\"accepted\":false,\"reason\":\"inactive\"}"
+        }
+      ]
+    },
+    {
+      "path": "normal-eleventh-build/normal-flow.jsonl",
+      "cases": 37,
+      "status_counts": {
+        "pass": 37
+      },
+      "failures": []
+    },
+    {
+      "path": "normal-fifth-build/normal-flow.jsonl",
+      "cases": 18,
+      "status_counts": {
+        "pass": 17,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "V05-click",
+          "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_a898eb3bf6ef4e3bb223a52b3e212cd2/prepared_structure/e0196dbf873377245e10210fecd74a2b25769f7984ccf60640c514e3142ce419\",\"sessionId\":\"e8585909-29e2-4c7f-88f4-50c9fe1e4ae3\",\"generation\":8,\"representation\":\"cartoon\",\"molstarRepresentation\":\"Cartoon\",\"selection\":{\"model_number\":1,\"chain_auth\":\"B\",\"chain_label\":\"C\",\"seq_auth\":902,\"seq_label\":null,\"icode\":\"\",\"resname\":\"MK1\"},\"selectionError\":null,\"camera\":{\"position\":["
+        }
+      ]
+    },
+    {
+      "path": "normal-ninth-build/normal-flow.jsonl",
+      "cases": 37,
+      "status_counts": {
+        "pass": 37
+      },
+      "failures": []
+    },
+    {
+      "path": "replay-alignment-eleventh/comparison-replay.jsonl",
+      "cases": 6,
+      "status_counts": {
+        "pass": 6
+      },
+      "failures": []
+    },
+    {
+      "path": "replay-distance-scene-eleventh/comparison-replay.jsonl",
+      "cases": 7,
+      "status_counts": {
+        "pass": 7
+      },
+      "failures": []
+    },
+    {
+      "path": "replay-m9-figures-eleventh/scenes-replay.jsonl",
+      "cases": 18,
+      "status_counts": {
+        "pass": 18
+      },
+      "failures": []
+    },
+    {
+      "path": "replay-m9-selected-eleventh/scenes-replay-scenes.jsonl",
+      "cases": 3,
+      "status_counts": {
+        "pass": 3
+      },
+      "failures": []
+    },
+    {
+      "path": "scene-midpick-eleventh-build/comparison-scene-midpick.jsonl",
+      "cases": 5,
+      "status_counts": {
+        "pass": 5
+      },
+      "failures": []
+    },
+    {
+      "path": "scenes-core-eleventh-build/scenes-core.jsonl",
+      "cases": 32,
+      "status_counts": {
+        "pass": 32
+      },
+      "failures": []
+    },
+    {
+      "path": "scenes-core-fifth-build/scenes-core.jsonl",
+      "cases": 9,
+      "status_counts": {
+        "pass": 8,
+        "fail": 1
+      },
+      "failures": [
+        {
+          "caseId": "V10-source-structure",
+          "error": "TimeoutError: locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('저장된 보기 복원 완료 · 원본 보기 A', { exact: true }) to be visible\u001b[22m\n"
+        }
+      ]
+    },
+    {
+      "path": "scenes-core-ninth-build/scenes-core.jsonl",
+      "cases": 32,
+      "status_counts": {
+        "pass": 32
+      },
+      "failures": []
+    },
+    {
+      "path": "scenes-detail-manual-eleventh-build/scenes-detail-manual.jsonl",
+      "cases": 3,
+      "status_counts": {
+        "pass": 3
+      },
+      "failures": []
+    },
+    {
+      "path": "scenes-detail-manual-ninth-build/scenes-detail-manual.jsonl",
+      "cases": 3,
+      "status_counts": {
+        "pass": 3
+      },
+      "failures": []
+    },
+    {
+      "path": "scenes-restore-manual-eleventh-build/scenes-restore-manual.jsonl",
+      "cases": 2,
+      "status_counts": {
+        "pass": 2
+      },
+      "failures": []
+    },
+    {
+      "path": "scenes-restore-manual-ninth-build/scenes-restore-manual.jsonl",
+      "cases": 2,
+      "status_counts": {
+        "pass": 2
+      },
+      "failures": []
+    },
+    {
+      "path": "source-matrix-eleventh-build/comparison-source-matrix.jsonl",
+      "cases": 8,
+      "status_counts": {
+        "pass": 8
+      },
+      "failures": []
+    },
+    {
+      "path": "source-matrix-ninth-build/comparison-source-matrix.jsonl",
+      "cases": 8,
+      "status_counts": {
+        "pass": 8
+      },
+      "failures": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+
+> molecular-workspace-web@0.1.0 test:offscreen:scenes
+> node tests/offscreen/scenes-flow.cjs --url http://127.0.0.1:3000 --run run_e665f09046f644229e00a06e887f7d86 --artifacts /tmp/protview-m10-qa-20260927/scenes-core-fifth-build --mode core
+
+Scene offscreen QA failed: locator.waitFor: Timeout 45000ms exceeded.
+Call log:
+[2m  - waiting for getByText('저장된 보기 복원 완료 · 원본 보기 A', { exact: true }) to be visible[22m
+
+    at restoreScene (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:202:79)
+    at async step (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:277:16)
+    at async run (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/scenes-flow.cjs:378:9)

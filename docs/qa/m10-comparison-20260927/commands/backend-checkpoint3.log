@@ -1,0 +1,84 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_catalog_preserves_duplicate_sites_altloc_insertion_and_model _______
+
+tmp_path = PosixPath('/private/var/folders/ms/sx754_r951x77jlgckb9vyx00000gn/T/pytest-of-jaeyongryu/pytest-2649/test_catalog_preserves_duplica0')
+
+    def test_catalog_preserves_duplicate_sites_altloc_insertion_and_model(tmp_path):
+        run = new_run(tmp_path, run_id="identities")
+        one = _load(run, "m10-identities.pdb", 0)
+        two = _load(run, "m10-identities.pdb", 1)
+        for handle, number in [(one, 1), (two, 2)]:
+>           catalog = atom_rows(run.store, handle)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/test_comparison.py:109: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = <mw.core.handles.ObjectStore object at 0x10f3c7a90>
+handle = 'obj://identities/structure/45ec3f667d92e669f0847039ea1c2ef74253c40d572ce19b5be1e0214d49c56a'
+
+    def atom_rows(store: Any, handle: str) -> dict[str, Any]:
+        """Rows are in the deterministic traversal of the exact served model."""
+        _source(store, handle)
+        raw, fmt = structure_bytes(store, handle)
+        # Raw served atom_site/PDB row order is Mol* sourceIndex order. Reconcile
+        # unique row IDs to immutable selected-source sites; never infer by name.
+        original = _parse(ToolContext(store=store, call_id="atom_catalog"), handle)
+        def traverse(st: Any) -> list[tuple[Any, Any, Any, bool]]:
+            return [(ch, res, atom, res.het_flag == "A" and gemmi.find_tabulated_residue(res.name).is_amino_acid())
+                    for ch in st[0] for res in ch for atom in res]
+    
+        source_atoms = traverse(original)
+        if len(source_atoms) > MAX_ATOMS:
+            raise ToolFailure(FailureClass.resource_exceeded, "source atom limit exceeded")
+        if fmt == "pdb":
+            viewer_records = []
+            for line in raw.decode().splitlines():
+                if line.startswith(("ATOM  ", "HETATM")):
+                    viewer_records.append({"id": int(line[6:11]), "name": line[12:16].strip(),
+                                           "altloc": line[16].strip(), "resname": line[17:20].strip(),
+                                           "chain_auth": line[21].strip(), "seq_auth": int(line[22:26]),
+                                           "icode": line[26].strip(), "model_number": original[0].num,
+                                           "element": line[76:78].strip().upper(),
+                                           "coordinate_A": [float(line[i:i + 8]) for i in (30, 38, 46)]})
+        else:
+            category = gemmi.cif.read_string(raw.decode()).sole_block().get_mmcif_category("_atom_site.")
+            try:
+                viewer_records = []
+                for i, serial in enumerate(category["id"]):
+                    value = lambda key, fallback=None: category.get(key, fallback)[i]  # noqa: E731
+                    viewer_records.append({"id": int(serial),
+                        "name": value("auth_atom_id", category["label_atom_id"]).strip(),
+                        "altloc": "" if value("label_alt_id") in {".", "?"} else value("label_alt_id"),
+                        "resname": value("auth_comp_id", category["label_comp_id"]),
+                        "chain_auth": value("auth_asym_id"), "seq_auth": int(value("auth_seq_id")),
+                        "icode": "" if value("pdbx_PDB_ins_code") in {".", "?"} else value("pdbx_PDB_ins_code"),
+                        "model_number": int(value("pdbx_PDB_model_num")),
+                        "element": value("type_symbol").upper(),
+                        "coordinate_A": [float(value(key)) for key in ("Cartn_x", "Cartn_y", "Cartn_z")]})
+            except (KeyError, ValueError, TypeError, IndexError) as exc:
+                raise ToolFailure(FailureClass.input_invalid, "served atom_site rows are malformed") from exc
+        serials = [atom.serial for _, _, atom, _ in source_atoms]
+        if (len(viewer_records) != len(source_atoms) or len(set(serials)) != len(serials) or
+                Counter(record["id"] for record in viewer_records) != Counter(serials)):
+            raise ToolFailure(FailureClass.input_invalid, "viewer atom rows cannot be bijectively mapped by source IDs")
+        source_to_viewer = {record["id"]: i for i, record in enumerate(viewer_records)}
+        rows = []
+        for i, (ch, res, atom, protein) in enumerate(source_atoms):
+            viewer_index = source_to_viewer[atom.serial]
+            record = viewer_records[viewer_index]
+            if (record["name"] != atom.name or record["altloc"] != atom.altloc.strip("\x00 ") or
+                    record["element"] != atom.element.name.upper() or
+                    (record["chain_auth"], record["seq_auth"], record["icode"], record["resname"],
+                     record["model_number"]) !=
+                    (ch.name, res.seqid.num, res.seqid.icode.strip(), res.name, original[0].num) or
+                    any(abs(x - y) > 1e-4 for x, y in zip(record["coordinate_A"],
+                                                          (atom.pos.x, atom.pos.y, atom.pos.z)))):
+>               raise ToolFailure(FailureClass.input_invalid, "viewer atom row cannot be reconciled to source")
+E               mw.core.errors.ToolFailure: viewer atom row cannot be reconciled to source
+
+backend/mw/tools/comparison.py:122: ToolFailure
+=========================== short test summary info ============================
+FAILED backend/tests/test_comparison.py::test_catalog_preserves_duplicate_sites_altloc_insertion_and_model
+1 failed, 2 passed in 0.19s

@@ -1,0 +1,40 @@
+
+> molecular-workspace-web@0.1.0 typecheck
+> tsc --noEmit
+
+app/page.tsx(285,18): error TS2339: Property 'handle' does not exist on type 'RunEvent'.
+  Property 'handle' does not exist on type '{ seq: number; ts: number; type: "run_started"; run_id: string; dry_run: boolean; seed: number; }'.
+app/page.tsx(285,38): error TS2339: Property 'handle' does not exist on type 'RunEvent'.
+  Property 'handle' does not exist on type '{ seq: number; ts: number; type: "run_started"; run_id: string; dry_run: boolean; seed: number; }'.
+app/page.tsx(285,54): error TS2339: Property 'kind' does not exist on type 'RunEvent'.
+  Property 'kind' does not exist on type '{ seq: number; ts: number; type: "run_started"; run_id: string; dry_run: boolean; seed: number; }'.
+app/page.tsx(288,18): error TS2339: Property 'handle' does not exist on type 'RunEvent'.
+  Property 'handle' does not exist on type '{ seq: number; ts: number; type: "run_started"; run_id: string; dry_run: boolean; seed: number; }'.
+app/page.tsx(288,38): error TS2339: Property 'handle' does not exist on type 'RunEvent'.
+  Property 'handle' does not exist on type '{ seq: number; ts: number; type: "run_started"; run_id: string; dry_run: boolean; seed: number; }'.
+app/page.tsx(288,54): error TS2339: Property 'kind' does not exist on type 'RunEvent'.
+  Property 'kind' does not exist on type '{ seq: number; ts: number; type: "run_started"; run_id: string; dry_run: boolean; seed: number; }'.
+app/page.tsx(1276,74): error TS18047: 'comparisonReport' is possibly 'null'.
+app/page.tsx(1277,74): error TS18047: 'comparisonReport' is possibly 'null'.
+app/page.tsx(1278,77): error TS18047: 'comparisonReport' is possibly 'null'.
+src/components/MolstarViewer.tsx(156,43): error TS2345: Argument of type '{ unit: Unit; indices: OrderedSet<number>; }[]' is not assignable to parameter of type 'ArrayLike<{ unit: Unit; indices: OrderedSet<UnitIndex>; }>'.
+  'number' index signatures are incompatible.
+    Type '{ unit: Unit; indices: OrderedSet<number>; }' is not assignable to type '{ unit: Unit; indices: OrderedSet<UnitIndex>; }'.
+      Types of property 'indices' are incompatible.
+        Type 'OrderedSet<number>' is not assignable to type 'OrderedSet<UnitIndex>'.
+          Type 'SortedArray<number>' is not assignable to type 'OrderedSet<UnitIndex>'.
+            Type 'SortedArray<number>' is not assignable to type 'SortedArray<UnitIndex>'.
+              Type 'number' is not assignable to type 'UnitIndex'.
+                Type 'number' is not assignable to type '{ readonly '@type': "unit-element-index"; }'.
+src/components/MolstarViewer.tsx(477,9): error TS2322: Type '() => { ready: boolean; sourceHandle: string | null; sessionId: string | null; generation: number | null; representation: ViewerRepresentation | null; molstarRepresentation: string | null; ... 8 more ...; layers: ({ ...; } | { ...; })[]; }' is not assignable to type '() => ViewerQaSnapshot'.
+  Call signature return types '{ ready: boolean; sourceHandle: string | null; sessionId: string | null; generation: number | null; representation: ViewerRepresentation | null; molstarRepresentation: string | null; ... 8 more ...; layers: ({ ...; } | { ...; })[]; }' and 'ViewerQaSnapshot' are incompatible.
+    The types of 'layers' are incompatible between these types.
+      Type '({ layer: "reference"; sourceHandle: string; visible: boolean; transform: number[]; nativeAtomCount: number; } | { layer: "moving"; sourceHandle: string; visible: boolean; transform: unknown[]; nativeAtomCount: number; })[]' is not assignable to type '{ layer: "reference" | "moving"; sourceHandle: string; visible: boolean; transform: number[]; nativeAtomCount: number; }[]'.
+        Type '{ layer: "reference"; sourceHandle: string; visible: boolean; transform: number[]; nativeAtomCount: number; } | { layer: "moving"; sourceHandle: string; visible: boolean; transform: unknown[]; nativeAtomCount: number; }' is not assignable to type '{ layer: "reference" | "moving"; sourceHandle: string; visible: boolean; transform: number[]; nativeAtomCount: number; }'.
+          Type '{ layer: "moving"; sourceHandle: string; visible: boolean; transform: unknown[]; nativeAtomCount: number; }' is not assignable to type '{ layer: "reference" | "moving"; sourceHandle: string; visible: boolean; transform: number[]; nativeAtomCount: number; }'.
+            Types of property 'transform' are incompatible.
+              Type 'unknown[]' is not assignable to type 'number[]'.
+                Type 'unknown' is not assignable to type 'number'.
+src/components/MolstarViewer.tsx(498,91): error TS2339: Property 'transform' does not exist on type '"" | { transform?: { params?: { data?: ArrayLike<number> | undefined; } | undefined; } | undefined; }'.
+  Property 'transform' does not exist on type '""'.
+src/components/MolstarViewer.tsx(846,39): error TS18048: 'annotation' is possibly 'undefined'.

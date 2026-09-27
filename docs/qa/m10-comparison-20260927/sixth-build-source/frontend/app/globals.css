@@ -1,0 +1,48 @@
+/* App-level glue only. Component styles live in src/design/components.css; values in tokens.css. */
+html, body { margin: 0; height: 100%; background: var(--surface-000); color: var(--ink); }
+select.mw-select { appearance: none; padding-right: var(--space-2); cursor: pointer; }
+select.mw-select::after { content: none; }
+.mw-cmd input::placeholder { color: var(--ink-muted); }
+.mw-molstar, .mw-molstar-host, .mw-molstar-mount { position: absolute; inset: 0; overflow: hidden; }
+.mw-molstar-mount { position: relative; width: 100%; height: 100%; }
+.mw-molstar-canvas { display: block; width: 100%; height: 100%; }
+.mw-molstar-message { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-muted); background: var(--canvas); }
+.mw-molstar-error { color: var(--fail-fatal); }
+.mw-molstar-pick-error { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; padding: 8px 10px; color: var(--fail-fatal); background: var(--surface-200); border: 1px solid var(--fail-fatal); pointer-events: none; font-size: 12px; }
+.mw-workflow { display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow: auto; }
+.mw-workflow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: 12px; }
+.mw-workflow-row label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.mw-workflow-row .mw-file { overflow: hidden; }
+.mw-workflow-row input[type="file"] { max-width: 230px; font: inherit; }
+.mw-workflow-row input::file-selector-button { background: var(--surface-200); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 4px 7px; cursor: pointer; }
+.mw-number { width: 58px; height: var(--control-sm); background: var(--surface-200); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 0 4px; font: inherit; }
+.mw-workflow-error { color: var(--fail-fatal); font-size: 12px; }
+.mw-rail-group { padding: var(--space-3); display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); border-bottom: 1px solid var(--line); }
+.mw-rail-group .mw-select { max-width: 100%; }
+.mw-inspection-context { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); border-bottom: 1px solid var(--line); color: var(--ink-muted); font-size: 12px; line-height: 17px; }
+.mw-ligand-item { border: 0; border-bottom: 1px solid var(--line); width: 100%; padding: 5px 0; text-align: left; color: var(--ink); background: transparent; cursor: pointer; font: 12px var(--font-mono); }
+.mw-ligand-item:hover { color: var(--brand); }
+.mw-ligand-item:disabled { color: var(--ink-muted); cursor: default; }
+.mw-empty-note { margin: 0; padding: var(--space-3); font-size: 12px; line-height: 17px; color: var(--ink-muted); }
+.mw-capability { margin: 0; font-size: 12px; line-height: 18px; color: var(--ink-muted); }
+.mw-capability b { color: var(--ink); font-family: var(--font-mono); font-weight: 500; }
+.mw-table-head { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3); border-bottom: 1px solid var(--line); font-size: 12px; }
+.mw-table-head span { color: var(--ink-muted); }
+.mw-table-scroll { max-width: 100%; min-width: 0; overflow-x: auto; }
+.mw-table-scroll .mw-table { min-width: 420px; }
+.mw-workflow[aria-label="원자 거리와 두 구조 비교"] .mw-table-scroll {
+  flex: 0 0 auto;
+  max-height: 160px;
+  overflow: auto;
+}
+.mw-table-error { padding: var(--space-3); color: var(--fail-fatal); font-size: 12px; line-height: 17px; overflow-wrap: anywhere; }
+.mw-table-error p { margin: 0 0 var(--space-2); }
+.mw-inspector-kv { grid-template-columns: minmax(0, 38%) minmax(0, 1fr); min-width: 0; width: 100%; }
+.mw-inspector-kv dt, .mw-inspector-kv dd { min-width: 0; overflow-wrap: anywhere; }
+.mw-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; font: 12px var(--font-mono); }
+.mw-i-contact { color: var(--ink-muted); }
+.mw-i-polar { color: var(--int-hbond); }
+@media (max-width: 1000px) { .mw-shell { grid-template-columns: 220px minmax(0,1fr) 280px; } .mw-topbar .mw-top-budget { display: none; } }
+/* Saved Markdown is displayed as text, without HTML or image parsing. */
+.mw-report-downloads { display: flex; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
+.mw-report-preview { max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 400 11px/16px var(--font-mono); color: var(--ink); background: var(--surface-200); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--space-2); }

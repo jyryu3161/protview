@@ -1,0 +1,176 @@
+/* GENERATED from design/tokens.json by design/build_tokens.py — do not edit */
+
+:root, [data-theme="dark"] {
+  --surface-000: #111416;
+  --canvas: #0b0e10;
+  --surface-100: #181c1f;
+  --surface-200: #20252a;
+  --surface-300: #2a3036;
+  --line: #2c3238;
+  --line-strong: #6c7780;
+  --ink: #e8ebe7;
+  --ink-muted: #9aa3a8;
+  --brand: #3cc4b0;
+  --brand-soft: #12302c;
+  --on-brand: #06201c;
+  --focus: #f5c542;
+  --fail-transient: #e6b450;
+  --fail-input: #f08a4b;
+  --fail-precondition: #86aeff;
+  --fail-resource: #f08cc0;
+  --result-null: #a9b4bb;
+  --fail-fatal: #ff6b6b;
+  --state-pending: var(--ink-muted);
+  --state-running: var(--brand);
+  --state-done: #8fd18a;
+  --state-failed: var(--fail-fatal);
+  --prov-rule: #c3cacf;
+  --prov-jev: #b8a2ff;
+  --prov-frontier: #b5d56a;
+  --prov-human: var(--ink);
+  --cost-expensive: var(--fail-transient);
+  --egress-local: var(--brand);
+  --egress-online: var(--prov-frontier);
+  --egress-blocked: var(--fail-fatal);
+  --int-hbond: #6fb6ff;
+  --int-hydrophobic: #cdb783;
+  --int-salt-bridge: #f2d25a;
+  --int-pi-stack: #6fd49a;
+  --int-cation-pi: #5fd3cf;
+  --int-metal: #d09bff;
+  --int-water-bridge: #9cc9ff;
+  --plddt-very-high: #0053d6;
+  --plddt-confident: #65cbf3;
+  --plddt-low: #ffdb13;
+  --plddt-very-low: #ff7d45;
+  --energy-favorable-strong: #5b96ff;
+  --energy-favorable: #8fb6f5;
+  --energy-neutral: #6c7780;
+  --energy-unfavorable: #f0a35e;
+  --energy-unfavorable-strong: #ff7a1a;
+  --mask-design: var(--brand);
+  --mask-repack: #7b8a96;
+  --on-mask-repack: var(--surface-100);
+  --mask-fixed: var(--surface-300);
+  --pae-0: #0b4f2c;
+  --pae-1: #2f8a4f;
+  --pae-2: #7cc48a;
+  --pae-3: #cfead3;
+  --pae-4: #f4f6f4;
+  --model-a: #e69f00;
+  --model-b: #56b4e9;
+  --model-c: #009e73;
+  --model-d: #cc79a7;
+  --stream-cursor: var(--prov-frontier);
+  --verify-dropped: var(--fail-input);
+  --shadow-pop: 0 8px 24px rgba(0,0,0,0.5);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --surface-000: #f7f7f4;
+  --canvas: #fcfcfa;
+  --surface-100: #ffffff;
+  --surface-200: #f0f1ec;
+  --surface-300: #e3e5de;
+  --line: #dcded7;
+  --line-strong: #868b83;
+  --ink: #16191b;
+  --ink-muted: #586065;
+  --brand: #0c7668;
+  --brand-soft: #dcf1ed;
+  --on-brand: #ffffff;
+  --focus: #9a5800;
+  --fail-transient: #7f5900;
+  --fail-input: #a8460b;
+  --fail-precondition: #2a57b8;
+  --fail-resource: #a32f6a;
+  --result-null: #505b62;
+  --fail-fatal: #bf2329;
+  --state-pending: var(--ink-muted);
+  --state-running: var(--brand);
+  --state-done: #2d7433;
+  --state-failed: var(--fail-fatal);
+  --prov-rule: #434c52;
+  --prov-jev: #5c42bd;
+  --prov-frontier: #4f7310;
+  --prov-human: var(--ink);
+  --cost-expensive: var(--fail-transient);
+  --egress-local: var(--brand);
+  --egress-online: var(--prov-frontier);
+  --egress-blocked: var(--fail-fatal);
+  --int-hbond: #1d62c4;
+  --int-hydrophobic: #7a6424;
+  --int-salt-bridge: #836700;
+  --int-pi-stack: #1d7543;
+  --int-cation-pi: #0f6e6b;
+  --int-metal: #7a3fc0;
+  --int-water-bridge: #2c62a8;
+  --plddt-very-high: #0053d6;
+  --plddt-confident: #65cbf3;
+  --plddt-low: #ffdb13;
+  --plddt-very-low: #ff7d45;
+  --energy-favorable-strong: #1f5fd1;
+  --energy-favorable: #4f86dc;
+  --energy-neutral: #8a9096;
+  --energy-unfavorable: #cc7420;
+  --energy-unfavorable-strong: #a8520a;
+  --mask-design: var(--brand);
+  --mask-repack: #7c848a;
+  --on-mask-repack: var(--ink);
+  --mask-fixed: var(--surface-300);
+  --pae-0: #0b4f2c;
+  --pae-1: #2f8a4f;
+  --pae-2: #7cc48a;
+  --pae-3: #cfead3;
+  --pae-4: #f4f6f4;
+  --model-a: #e69f00;
+  --model-b: #56b4e9;
+  --model-c: #009e73;
+  --model-d: #cc79a7;
+  --stream-cursor: var(--prov-frontier);
+  --verify-dropped: var(--fail-input);
+  --shadow-pop: 0 8px 24px rgba(22,25,27,0.14);
+  color-scheme: light;
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-pill: 999px;
+  --control-sm: 24px;
+  --control-md: 28px;
+  --row: 28px;
+  --topbar: 44px;
+  --rail: 320px;
+  --inspector: 360px;
+  --seq-cell: 14px;
+  --composer: 96px;
+  --font-sans: "IBM Plex Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+.t-display { font-family: var(--font-sans); font-size: 28px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; }
+
+.t-title { font-family: var(--font-sans); font-size: 16px; line-height: 22px; font-weight: 600; }
+
+.t-body { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
+
+.t-body-sm { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 400; }
+
+.t-label { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; }
+
+.t-eyebrow { font-family: var(--font-sans); font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; }
+
+.t-mono { font-family: var(--font-mono); font-size: 13px; line-height: 18px; font-weight: 400; }
+
+.t-mono-sm { font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 400; }
+
+.t-num { font-family: var(--font-mono); font-size: 13px; line-height: 18px; font-weight: 500; }

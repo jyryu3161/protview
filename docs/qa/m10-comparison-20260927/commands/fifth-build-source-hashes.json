@@ -1,0 +1,411 @@
+{
+  "recorded_at": "2026-09-27T01:08:13.051912+00:00",
+  "baseline_commit": "479d961",
+  "label": "Frozen fifth M10 runtime: native-startup catalog reconciliation and queued ordinary focus; actual QA pending",
+  "changed_from_fourth_build": [
+    "frontend/src/components/MolstarViewer.tsx",
+    "frontend/src/lib/comparison.ts"
+  ],
+  "files": [
+    {
+      "path": "backend/mw/__init__.py",
+      "bytes": 57,
+      "sha256": "095051ff323fac67de09767d04a07803ef09613a1bb65f60954658ff411b3074"
+    },
+    {
+      "path": "backend/mw/api/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/api/app.py",
+      "bytes": 42520,
+      "sha256": "b2cafd1f314298c68bf2dc5128b289b48dae2e3d120f29fd59bc1b3e027b295a"
+    },
+    {
+      "path": "backend/mw/comparison_reports.py",
+      "bytes": 22094,
+      "sha256": "d03540ea34bf5941f9169c085723c54d355808835bdfbd2d1f1f175bac5dc0fc"
+    },
+    {
+      "path": "backend/mw/core/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/core/contracts.py",
+      "bytes": 5654,
+      "sha256": "d1a33ae61baa3d15374527af37ac5705681bffb933a91cc510210af77e133c29"
+    },
+    {
+      "path": "backend/mw/core/errors.py",
+      "bytes": 1559,
+      "sha256": "07115fb19278a0ccea0dffaaea7f724699542211f673c840d8cb13fb3a2771b3"
+    },
+    {
+      "path": "backend/mw/core/events.py",
+      "bytes": 3704,
+      "sha256": "0a843089b15441c5950c3a3d2e15a6b35e6a1b64c0d52de4a26888a756d9afc5"
+    },
+    {
+      "path": "backend/mw/core/handles.py",
+      "bytes": 13343,
+      "sha256": "9cd1a69029e6947da251b40eb63cf5f1712acb68dbbc34e9d94e1f5a200424be"
+    },
+    {
+      "path": "backend/mw/core/residue.py",
+      "bytes": 962,
+      "sha256": "73bc7fcf208da9a5a1333c7ff7f4382ae214d56913d4bce88058ef4916804bd5"
+    },
+    {
+      "path": "backend/mw/egress/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/egress/gate.py",
+      "bytes": 21811,
+      "sha256": "81d90c011db0f60ab33a15115d231ad8c05b404fc78e559b14e66627ebc148ec"
+    },
+    {
+      "path": "backend/mw/egress/viewer.py",
+      "bytes": 17417,
+      "sha256": "6f27bf3b1914be33a1fbe391d6af8318fcf644b96c93bbe9dfd0ae10804d8267"
+    },
+    {
+      "path": "backend/mw/jobs/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/jobs/guardian.py",
+      "bytes": 10522,
+      "sha256": "c552018c5e36e370c5664d2d3a1d654887f817150ee1d187b3cc086590b6c81f"
+    },
+    {
+      "path": "backend/mw/jobs/lifecycle_fixture.py",
+      "bytes": 2410,
+      "sha256": "6224f9af47482d8226f7b408c8bbc52b50f009cfe646bef3ca849f8c7e8337a8"
+    },
+    {
+      "path": "backend/mw/jobs/openmm_worker.py",
+      "bytes": 11481,
+      "sha256": "60f422315c20556d458c74a28fae90b7e5c41d5fc98490e69d1d29577e847671"
+    },
+    {
+      "path": "backend/mw/jobs/process_identity.py",
+      "bytes": 2973,
+      "sha256": "36297149938cebb2059627f47a407a7504b984f77b19a902d08fe521313e579c"
+    },
+    {
+      "path": "backend/mw/jobs/queue.py",
+      "bytes": 63779,
+      "sha256": "494189ba256f6b6354ca9e967021fa89739c0b174f06eabb662acd0bc0b5aed2"
+    },
+    {
+      "path": "backend/mw/jobs/rosetta_worker.py",
+      "bytes": 566,
+      "sha256": "a29e0601851b17b26d6843a01d48df318d271e5165bd703b35d80ade8dc0ffd9"
+    },
+    {
+      "path": "backend/mw/llm/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/llm/openrouter.py",
+      "bytes": 6564,
+      "sha256": "6a6dd9a3b0eeada88e023fb3e5d49b6ec9c858d9b60ab151063f4de76398aa12"
+    },
+    {
+      "path": "backend/mw/llm/prompts.py",
+      "bytes": 1864,
+      "sha256": "9101497a8c2db6faee2d240cbeb2b815f52e3d97f1c8abca4c3046a29ff4c4bf"
+    },
+    {
+      "path": "backend/mw/llm/verifier.py",
+      "bytes": 1598,
+      "sha256": "fef5dbd1023267603d7c247570e1d151a887d74861f433911015c1c08f785c0b"
+    },
+    {
+      "path": "backend/mw/method_reports.py",
+      "bytes": 22963,
+      "sha256": "ea2b709b56ce0bcafbf03cf070617fe4122e534575afdd0a86cb066ed19dbb13"
+    },
+    {
+      "path": "backend/mw/openmm_bundle.py",
+      "bytes": 20274,
+      "sha256": "46b442be2f5e16cdc8869606587c9a9d6b920f6d0bd8d736fea329b6793d2b07"
+    },
+    {
+      "path": "backend/mw/openmm_reports.py",
+      "bytes": 18877,
+      "sha256": "ac7738fc039f817b02f045dc451ea7f7e6bc395ba434a31b20c61ccebf1afc6f"
+    },
+    {
+      "path": "backend/mw/reports.py",
+      "bytes": 28661,
+      "sha256": "2d684059ffc9723faae7bfd5a1320ca2ae6dee8bd8c1cf69fbe37e275ef4875f"
+    },
+    {
+      "path": "backend/mw/runtime/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/runtime/guards.py",
+      "bytes": 1643,
+      "sha256": "809809af1383012f0e5de93e4254235dcff2c0922681b2214cd87c1894a224ee"
+    },
+    {
+      "path": "backend/mw/runtime/orchestrator.py",
+      "bytes": 49513,
+      "sha256": "0471bbb83b01f39d561beeeffd9121da967911173f62fa3babefdebeb8c0fd0c"
+    },
+    {
+      "path": "backend/mw/saved_scenes.py",
+      "bytes": 25226,
+      "sha256": "dbde8a9ec031d661e61813300a9ec0e7cdfe14a9a7a5bb6b4566df5e4fe9144b"
+    },
+    {
+      "path": "backend/mw/tools/__init__.py",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "backend/mw/tools/comparison.py",
+      "bytes": 17071,
+      "sha256": "1926d149af33bcd210109f217bf0724d9a87b99cc9b6060366a6911bdba6f38e"
+    },
+    {
+      "path": "backend/mw/tools/energetic.py",
+      "bytes": 3370,
+      "sha256": "9d45e03ee9ee977b314eecd3e95bd8cd7f8f6f1b2c28551a2f557aa46de6304a"
+    },
+    {
+      "path": "backend/mw/tools/openmm_method.py",
+      "bytes": 12522,
+      "sha256": "7ea8ba6f3f775c0304f04f5adb2fee28d66d415421f7cb8ef5de30343d6ab4c7"
+    },
+    {
+      "path": "backend/mw/tools/registry.py",
+      "bytes": 2121,
+      "sha256": "1a5e38af67c7514ce8cf2847b8d92acca3e8a9e19ea5fbe6122d6d18026a4fc1"
+    },
+    {
+      "path": "backend/mw/tools/sasa.py",
+      "bytes": 15831,
+      "sha256": "bd80c53cdcd5c39654994e0abb41d6aa43fb4d2893fa865ed10cbe3a42872981"
+    },
+    {
+      "path": "backend/mw/tools/structural.py",
+      "bytes": 17567,
+      "sha256": "0f95c2fee9f5c795248bc19544db4d569b1a9ba80b99b90ef4c76d161b93652d"
+    },
+    {
+      "path": "backend/mw/viewer_intents.py",
+      "bytes": 33282,
+      "sha256": "987a1524b9f27801adc8eb8b3291211290f81da4ee78e61f1b3559b247f3af0c"
+    },
+    {
+      "path": "backend/mw/workflows.py",
+      "bytes": 28923,
+      "sha256": "258d02bc06909d2d06c2164346102fa7c74d716b2bf925fe89bbb8fba02d211c"
+    },
+    {
+      "path": "backend/mw/workspace.py",
+      "bytes": 1609,
+      "sha256": "dcd260688329e8b8ce9bd414a5adb4fb52c3a1bac443b004b54155d117a07404"
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "bytes": 733,
+      "sha256": "90bd8f9be6e55e56d63e9a5a1f3059b95f580a3e4562c3b3b7a3155a229eb956"
+    },
+    {
+      "path": "config/default.yaml",
+      "bytes": 1025,
+      "sha256": "1dde935f086a626c2ac1bee1bf8c541416602db2c863f8ea50a044e53fe58a5c"
+    },
+    {
+      "path": "config/pipelines/inspect_complex.yaml",
+      "bytes": 576,
+      "sha256": "e44b33dc4bb886e873695cfd8234cd190ffc38a0b00a46b0959cd40a9d5c4921"
+    },
+    {
+      "path": "config/tools.yaml",
+      "bytes": 7450,
+      "sha256": "a4d5b19b60c6a15617976938ba2ea153226bab124a4e40b45b75a0085cf8f680"
+    },
+    {
+      "path": "frontend/app/gallery/page.tsx",
+      "bytes": 6480,
+      "sha256": "93e695acbb82ffd3041bceaf135b2fc0c6717b3f88ebb893bc60075504c93df9"
+    },
+    {
+      "path": "frontend/app/globals.css",
+      "bytes": 4712,
+      "sha256": "0da268e32640fc7fca3e53cd8f642c41c02c245aca6701ec93817536e484f13d"
+    },
+    {
+      "path": "frontend/app/layout.tsx",
+      "bytes": 857,
+      "sha256": "44c0b811a6f93ca990558c7ede50cbb1282c3498be63bc24d5a0ad970a191464"
+    },
+    {
+      "path": "frontend/app/page.tsx",
+      "bytes": 128119,
+      "sha256": "760ee6b010d1ae3b6d7e540ae34b559ca96054dda51c4fb3e398e5139b801c7f"
+    },
+    {
+      "path": "frontend/next.config.mjs",
+      "bytes": 317,
+      "sha256": "3fc6772b3e773d8893767be7919eb3ff81a3ac67bf73a9c987995d899d3d88a4"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "bytes": 147633,
+      "sha256": "3125f791bf8f7763c64b494502acea3f66283f9db4ef45392665a7552ea74f54"
+    },
+    {
+      "path": "frontend/package.json",
+      "bytes": 1632,
+      "sha256": "7b09cc034a4aff61d1195668afe4050e9697f591c5e7d8346bc5eb789352ab8f"
+    },
+    {
+      "path": "frontend/src/components/MolstarViewer.tsx",
+      "bytes": 73653,
+      "sha256": "fd08e44f9149a54d86265d417aee32a30d93a2f494e8f373cdfde0b66800766d"
+    },
+    {
+      "path": "frontend/src/components/ViewerAgentPanel.tsx",
+      "bytes": 30185,
+      "sha256": "37087a3e8bf358a90bcd40fc308336fa51123b5c3c97b7dbe8dae1141884ecd7"
+    },
+    {
+      "path": "frontend/src/components/data.tsx",
+      "bytes": 3290,
+      "sha256": "ee57d7688f3d0ae05981799e58d2d6b0b60650dceb0d38d7e412f4a35273ecad"
+    },
+    {
+      "path": "frontend/src/components/energy.tsx",
+      "bytes": 6618,
+      "sha256": "9ea4ce8f4eaa17f3e588a5d1e0e28488b24729e774cb03f22eeb4419af96d7d2"
+    },
+    {
+      "path": "frontend/src/components/index.ts",
+      "bytes": 331,
+      "sha256": "07e20b9b53a55977ba18e6bd5aa558ee53d942a13888162471811a0f824162ea"
+    },
+    {
+      "path": "frontend/src/components/input.tsx",
+      "bytes": 6802,
+      "sha256": "4004a8b5f239f9f4800d6c32908e9aea6827e735726ed37deff1e6278fba3f04"
+    },
+    {
+      "path": "frontend/src/components/model.tsx",
+      "bytes": 5657,
+      "sha256": "e9bdcf64bd0e08f0b24360938733d6d949ef4605d04192f3153caef821249806"
+    },
+    {
+      "path": "frontend/src/components/primitives.tsx",
+      "bytes": 3648,
+      "sha256": "acef53ebac7b1baa9bda987b84d88c5aab83bcf74a196b91f3921f8c676c3c53"
+    },
+    {
+      "path": "frontend/src/components/run.tsx",
+      "bytes": 7975,
+      "sha256": "f48948b7b3e481f527d18cf482cf3a19f78486ff8b768da77b661b2c51ac300a"
+    },
+    {
+      "path": "frontend/src/components/shell.tsx",
+      "bytes": 4272,
+      "sha256": "4e2d7e9073e346e8fb81458f395108ec2e10365d7db0cd8044fc2e3c0cf014b5"
+    },
+    {
+      "path": "frontend/src/components/status.tsx",
+      "bytes": 1758,
+      "sha256": "0596e52c6b12f658c6b69092810d9bbcf98df9b20cfc2c340d188973c18970a8"
+    },
+    {
+      "path": "frontend/src/components/viewer.tsx",
+      "bytes": 9330,
+      "sha256": "35a24530c464fa6b1e7d7567626ef74be7421814d9b431bc3b59eae9f2e4c089"
+    },
+    {
+      "path": "frontend/src/design/components.css",
+      "bytes": 24459,
+      "sha256": "23c02a98cb889ea15e1e4f69104c0b8cea5b736f1260e462a878b20621da6563"
+    },
+    {
+      "path": "frontend/src/design/tokens.css",
+      "bytes": 5190,
+      "sha256": "bfb0555f9ce3e8606ffb3eb2d85ee8e2264093966f9a9048615d753abd9498d4"
+    },
+    {
+      "path": "frontend/src/design/tokens.ts",
+      "bytes": 1137,
+      "sha256": "5c53f186028cc73f30a1efff9856a0b5c82ea254e3d3ec2abb4c8f100fcdc6dd"
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "bytes": 17204,
+      "sha256": "16a7c021375a5be63da1290dca5faad0d4aedec34a395b54deb0bbf2731401cd"
+    },
+    {
+      "path": "frontend/src/lib/area-format.ts",
+      "bytes": 606,
+      "sha256": "3c8279e92e8bf0beb570cd0f4563083b86e8e75929a26e74c0af6fff5e6b414e"
+    },
+    {
+      "path": "frontend/src/lib/comparison.ts",
+      "bytes": 8152,
+      "sha256": "96229f9e9f63b5d11c09675548a5b6c4a3439f73835f029d0a302b490ca29b9f"
+    },
+    {
+      "path": "frontend/src/lib/contracts.ts",
+      "bytes": 4657,
+      "sha256": "b2df6e5462c4006cf6ff949d09209943f1d89f02b573c3f9fca4081985e97594"
+    },
+    {
+      "path": "frontend/src/lib/event-model.ts",
+      "bytes": 4728,
+      "sha256": "b125cd2da55d872cebe84297b134039adaed42f45cc576df2a98b6d378c89e06"
+    },
+    {
+      "path": "frontend/src/lib/openmm-action.ts",
+      "bytes": 2623,
+      "sha256": "1188b8726f157155dc759d5ec8159145fc7265d0ab4ee27f85bc798888883142"
+    },
+    {
+      "path": "frontend/src/lib/report-selection.ts",
+      "bytes": 2760,
+      "sha256": "b8f06ddf26c18f17bbc386268eff9f1951d5f5ca99d535e13bb73fab17f3e264"
+    },
+    {
+      "path": "frontend/src/lib/saved-scene.ts",
+      "bytes": 5457,
+      "sha256": "d02f9ba62f2ef6233ffdfa6d67e1c21016c11af3babd9af7142d20a35b8d702c"
+    },
+    {
+      "path": "frontend/src/lib/viewer-agent.ts",
+      "bytes": 2314,
+      "sha256": "359ea05ae9c4f3827cb4727a30931f727bd474f8020ba1f802c9ca1b8d5338bf"
+    },
+    {
+      "path": "frontend/src/lib/viewer-scene.ts",
+      "bytes": 2730,
+      "sha256": "59c59921d9203edb4a1ecf29cfcc91e0a3c6bdeae7c1b62544e5f7c76df319cc"
+    },
+    {
+      "path": "frontend/src/mock/run.ts",
+      "bytes": 6354,
+      "sha256": "8d26adf78e08317ced386572b5bb9a352a3824ac13b42adcb774811c39d6e8a6"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "bytes": 567,
+      "sha256": "9528321fe13e6d2897b5a6ac6977e8f0d026be49fbe9e7ee206335bc7b1ee22f"
+    }
+  ]
+}

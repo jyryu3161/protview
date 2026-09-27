@@ -1,0 +1,40 @@
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+______________ test_distance_exact_zero_source_binding_and_cache _______________
+
+tmp_path = PosixPath('/private/var/folders/ms/sx754_r951x77jlgckb9vyx00000gn/T/pytest-of-jaeyongryu/pytest-2648/test_distance_exact_zero_sourc0')
+
+    def test_distance_exact_zero_source_binding_and_cache(tmp_path):
+        run = new_run(tmp_path, run_id="distance")
+        handle = _load(run, "m10-reference.pdb")
+        rows = atom_rows(run.store, handle)
+        assert rows["total"] == 17
+>       assert rows["rows"][1]["ref"]["residue"]["chain_label"] is None
+E       AssertionError: assert 'Axp' is None
+
+backend/tests/test_comparison.py:37: AssertionError
+______ test_catalog_preserves_duplicate_sites_altloc_insertion_and_model _______
+
+tmp_path = PosixPath('/private/var/folders/ms/sx754_r951x77jlgckb9vyx00000gn/T/pytest-of-jaeyongryu/pytest-2648/test_catalog_preserves_duplica0')
+
+    def test_catalog_preserves_duplicate_sites_altloc_insertion_and_model(tmp_path):
+        run = new_run(tmp_path, run_id="identities")
+        one = _load(run, "m10-identities.pdb", 0)
+        two = _load(run, "m10-identities.pdb", 1)
+        for handle, number in [(one, 1), (two, 2)]:
+            catalog = atom_rows(run.store, handle)
+            ca_a = [row for row in catalog["rows"] if row["ref"]["atom_name"] == "CA"
+                    and row["ref"]["altloc"] == "A"]
+            assert len(ca_a) == 2
+            assert ca_a[0]["ref"]["site_index"] != ca_a[1]["ref"]["site_index"]
+            assert all(row["ref"]["residue"]["model_number"] == number for row in catalog["rows"])
+            assert all(row["ref"]["residue"]["icode"] == "A" for row in catalog["rows"])
+>           assert all(row["ref"]["residue"]["chain_label"] is None for row in catalog["rows"])
+E           assert False
+E            +  where False = all(<generator object test_catalog_preserves_duplicate_sites_altloc_insertion_and_model.<locals>.<genexpr> at 0x10d1fcad0>)
+
+backend/tests/test_comparison.py:115: AssertionError
+=========================== short test summary info ============================
+FAILED backend/tests/test_comparison.py::test_distance_exact_zero_source_binding_and_cache
+FAILED backend/tests/test_comparison.py::test_catalog_preserves_duplicate_sites_altloc_insertion_and_model
+2 failed, 1 passed in 0.16s

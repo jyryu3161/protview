@@ -3,6 +3,7 @@ import type { BudgetSnapshot, EgressMode, Handle, InteractionRow, ResidueRef, Ru
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
+import type { AtomCatalog, MeasurementResult } from "./comparison";
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -116,13 +117,13 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa", args: Record<string, unknown>) =>
-    request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }) }),
-  events: (id: string, after = 0, limit = 500) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`)),
-  async allEvents(id: string): Promise<RunEvent[]> {
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures", args: Record<string, unknown>, signal?: AbortSignal) =>
+    request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
+  events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
+  async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
     const all: RunEvent[] = [];
     for (;;) {
-      const page = await api.events(id, all.at(-1)?.seq ?? 0);
+      const page = await api.events(id, all.at(-1)?.seq ?? 0, 500, signal);
       all.push(...page);
       if (page.length < 500) return all;
     }
@@ -130,6 +131,21 @@ export const api = {
   budget: (id: string) => request<BudgetSnapshot>(runPath(id, "/budget")),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
+  atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>
+    request<AtomCatalog>(runPath(id, `/structures/atoms?${handleParam(handle)}&offset=${offset}&limit=${limit}`), { signal }),
+  async allAtoms(id: string, handle: string, signal?: AbortSignal): Promise<AtomCatalog> {
+    const first = await api.atoms(id, handle, 0, 500, signal);
+    const rows = [...first.rows];
+    while (rows.length < first.total) {
+      const next = await api.atoms(id, handle, rows.length, 500, signal);
+      if (next.viewer_source_sha256 !== first.viewer_source_sha256 || next.structure_handle !== handle ||
+          next.offset !== rows.length || !next.rows.length) throw new Error("원자 목록이 읽는 동안 변경되었습니다.");
+      rows.push(...next.rows);
+    }
+    return { ...first, rows };
+  },
+  measurement: (id: string, handle: string, signal?: AbortSignal) =>
+    request<{ meta: ObjectMeta; result: MeasurementResult }>(runPath(id, `/objects/measurement?${handleParam(handle)}`), { signal }),
   interactions: (id: string, handle: string, offset = 0, limit = 50) =>
     request<Page<InteractionRow>>(runPath(id, `/objects?${handleParam(handle)}&offset=${offset}&limit=${limit}`)),
   openmmPreflight: (id: string, structure: string) => request<{ available: boolean; structure: string; heavy_atom_count: number;
@@ -146,24 +162,24 @@ export const api = {
   cancelJob: (id: string, jobId: string) => request<{ status: string; job: OpenmmJob }>(runPath(id, `/jobs/${encodeURIComponent(jobId)}/cancel`), { method: "POST" }),
   openmm: (id: string, handle: string) => request<{ meta: ObjectMeta; result: OpenmmResult }>(runPath(id, `/openmm_minimization?${handleParam(handle)}`)),
   sasa: (id: string, handle: string) => request<{ meta: ObjectMeta; result: SasaResult }>(runPath(id, `/interface_sasa?${handleParam(handle)}`)),
-  reports: (id: string) => request<SavedReportRef[]>(runPath(id, "/reports")),
+  reports: (id: string, signal?: AbortSignal) => request<SavedReportRef[]>(runPath(id, "/reports"), { signal }),
   report: (id: string, handle: string) => request<ReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
   createReport: (id: string, interactionHandle: string) => request<ReportArtifact>(runPath(id, "/reports"), {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ interaction_handle: interactionHandle }),
   }),
   openmmReport: (id: string, handle: string) => request<OpenmmReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
-  methodReport: (id: string, handle: string) => request<MethodReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`)),
+  methodReport: (id: string, handle: string, signal?: AbortSignal) => request<MethodReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`), { signal }),
   createOpenmmReport: (id: string, resultHandle: string) => request<OpenmmReportArtifact>(runPath(id, "/method_reports"), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }),
   }),
-  createMethodReport: (id: string, resultHandle: string) => request<MethodReportArtifact>(runPath(id, "/method_reports"), {
-    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }),
+  createMethodReport: (id: string, resultHandle: string, signal?: AbortSignal) => request<MethodReportArtifact>(runPath(id, "/method_reports"), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }), signal,
   }),
   reportDownload: (id: string, handle: string, format: "markdown" | "json") =>
     `/api${runPath(id, `/reports/download?${handleParam(handle)}&format=${format}`)}`,
-  async structure(id: string, handle: string): Promise<ViewerSource> {
-    const response = await fetch(`/api${runPath(id, `/structures/bytes?${handleParam(handle)}`)}`, { cache: "no-store" });
+  async structure(id: string, handle: string, signal?: AbortSignal): Promise<ViewerSource> {
+    const response = await fetch(`/api${runPath(id, `/structures/bytes?${handleParam(handle)}`)}`, { cache: "no-store", signal });
     if (!response.ok) throw new ApiError(response.status, `구조 바이트 요청 실패: HTTP ${response.status}`);
     const rawFormat = response.headers.get("X-Structure-Format");
     if (rawFormat !== "pdb" && rawFormat !== "cif" && rawFormat !== "mmcif") throw new ApiError(500, "구조 형식 헤더가 없습니다.");

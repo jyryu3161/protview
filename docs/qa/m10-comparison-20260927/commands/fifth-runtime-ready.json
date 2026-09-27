@@ -1,0 +1,23 @@
+{
+  "recorded_at": "2026-09-27T01:08:52.873221+00:00",
+  "build_id": "rL7OQAY9ntXi-ZZRdhi2E",
+  "source_files_verified": 80,
+  "source_hash_mismatches": [],
+  "checks": [
+    {
+      "url": "http://127.0.0.1:8000/capabilities",
+      "status": 200,
+      "bytes": 3291
+    },
+    {
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "bytes": 12333
+    }
+  ],
+  "backend_exec_session": 1673,
+  "frontend_exec_session": 48653,
+  "listeners": "COMMAND     PID       USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\npython3.1 92118 jaeyongryu    6u  IPv4 0xcff4c7640198a357      0t0  TCP 127.0.0.1:8000 (LISTEN)\nnode      92146 jaeyongryu   12u  IPv4 0x8d2fb2c3bfba67e1      0t0  TCP 127.0.0.1:3000 (LISTEN)\n",
+  "astra_source_review": "cleared both prior lifecycle blockers for actual QA; no phase approval",
+  "qa_status": "READY; fifth actual QA results not yet asserted"
+}

@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-27T01:05:05.911002+00:00",
+  "reviewer": "/root/astra_completion_audit",
+  "model": "gpt-6-astra",
+  "candidate_build": "9PU1pKbewscjTqgy6C30X",
+  "reviewed_manifest": "fourth-build-source-hashes.json",
+  "result": "changes requested; no QA release",
+  "findings": [
+    {
+      "id": "catalog-startup-readiness",
+      "detail": "Catalog effect can run while instance missing after startup snapshot; native readiness does not rerun validation, leaving catalogReady false indefinitely.",
+      "required_fix": "Validate latest catalog when native ready with exact-byte/object-identity/current guards; meaningful delayed-catalog regression."
+    },
+    {
+      "id": "ordinary-focus-native-queue",
+      "detail": "Ordinary reverse-loci focus effect runs detached outside shared bounded queue/deadline.",
+      "required_fix": "Serialize reverse mapping plus selection/camera mutation with deadline/manual/token/stillCurrent guards and visible failure."
+    }
+  ],
+  "cleared_scope": [
+    "Exact seven-field native\u2194authoritative mapping preserves every requested residue site/source/model without global label relaxation.",
+    "Scoped comparison table flex/height/overflow repair appropriate.",
+    "41 frontend tests, typecheck, supplied file hashes and actual installed parser evidence reviewed."
+  ],
+  "phase_approval": false
+}

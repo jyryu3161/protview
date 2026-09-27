@@ -1,0 +1,23 @@
+{
+  "recorded_at": "2026-09-27T01:36:02.683813+00:00",
+  "build_id": "blIypqIx1eIBmbw0T3K0f",
+  "source_files_verified": 80,
+  "source_hash_mismatches": [],
+  "checks": [
+    {
+      "url": "http://127.0.0.1:8000/capabilities",
+      "status": 200,
+      "bytes": 3291
+    },
+    {
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "bytes": 12333
+    }
+  ],
+  "backend_exec_session": 74919,
+  "frontend_exec_session": 99491,
+  "listeners": "COMMAND    PID       USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\npython3.1 4309 jaeyongryu    6u  IPv4 0x8d61ed5fbd8e08b0      0t0  TCP 127.0.0.1:8000 (LISTEN)\nnode      4346 jaeyongryu   12u  IPv4 0x33858d3064267422      0t0  TCP 127.0.0.1:3000 (LISTEN)\n",
+  "astra_source_review": "cleared lifecycle batch for actual QA, not phase approval",
+  "qa_status": "READY; parent normal then M9 core/manual, no successful click result asserted"
+}

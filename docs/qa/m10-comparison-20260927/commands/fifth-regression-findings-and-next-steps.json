@@ -1,0 +1,76 @@
+{
+  "at": "2026-09-27T01:18:01.786124+00:00",
+  "build_id": "rL7OQAY9ntXi-ZZRdhi2E",
+  "status": "regressions found; services stopped; Sol authorized coordinated repair",
+  "actual_completed_scopes": {
+    "measure-fifth-build": {
+      "rows": 17,
+      "pass": 17,
+      "fail": 0,
+      "ordinary_original_pdb_verified": true
+    },
+    "alignment-fifth-reselect": {
+      "rows": 32,
+      "pass": 32,
+      "fail": 0,
+      "reports_downloaded": true
+    }
+  },
+  "regressions": {
+    "normal-fifth-build": {
+      "pass": 17,
+      "fail": 1,
+      "case": "V05-click",
+      "run": "run_a898eb3bf6ef4e3bb223a52b3e212cd2",
+      "finding": "Queued ordinary residue focus can be revoked by self-generated optimistic/ack session rebind and duplicate selected_alias clear revision."
+    },
+    "scenes-core-fifth-build": {
+      "pass": 8,
+      "fail": 1,
+      "case": "V10-source-structure",
+      "run": "run_e665f09046f644229e00a06e887f7d86",
+      "finding": "Catalog validation emits manual onSelect(null); page cancels pending saved-scene restore despite no user manual action."
+    }
+  },
+  "astra_design": [
+    "Preserve operation token only for identical nonnull binding re-publication across all seven fields; genuine changes and explicit invalidation still revoke.",
+    "Initial ordinary-focus invalidation atomically publishes intended cleared selected_alias with its revision, avoiding duplicate self-generated revision.",
+    "Catalog reconciliation emits readiness/state only, never manual onSelect; real selection/clear/orbit events retain cancellation."
+  ],
+  "remaining_actual_qa": [
+    "rerun ordinary normal flow and M9 scenes core after repair",
+    "M9 manual restore cancellation regression",
+    "M10 adapter selected-PDB local focus/clear/scene roundtrip",
+    "identity and real original/prepared/minimized source matrix",
+    "malformed catalog/moving-source503/contextloss/heldresult+run-switch",
+    "late catalog after native ready (does not prove startup interleaving)",
+    "events-only baseline/isolation/replay/whole-byte verification"
+  ],
+  "phase_complete": false,
+  "provider_calls": "none authorized/newly made in M10",
+  "note": "M9 core legitimately added scene objects before replay baseline; historical object/report subset must remain exact, but old scene-list API states now intentionally differ.",
+  "design_count_correction": {
+    "at": "2026-09-27T01:20:29.324926+00:00",
+    "reviewer": "/root/astra_completion_audit",
+    "detail": "Earlier seven binding fields wording was incorrect. Actual SceneBindingIdentity/ViewerBinding has six fields; seven applies to ResidueRef identity. Preserve separate instance/epoch/manual guards.",
+    "actual_binding_fields": [
+      "sessionId",
+      "clientId",
+      "generation",
+      "sourceHandle",
+      "catalogHash",
+      "actionRevision"
+    ]
+  },
+  "final_focus_design_decision": {
+    "at": "2026-09-27T01:22:37.550465+00:00",
+    "owner": "parent with Astra design review",
+    "decision": "Keep last confirmed focusedResidue and selected_alias while ordinary focus is pending. Use normal invalidation; publish the new target only after guarded native success. Do not falsely clear actual selection on failure.",
+    "replaces": "The earlier preemptive selected_alias:null plan and stale-old-alias suppression guard are superseded before freeze/QA.",
+    "reason": "Last confirmed selection is the actual native state until the focus mutation succeeds; retaining it avoids self-generated prop-sync revisions and recognizes genuine newer selection of the same old alias.",
+    "other_fixes_retained": [
+      "Identical nonnull bindings preserve operation token; real identity changes and explicit invalidation revoke.",
+      "Catalog validation only observes state/readiness; it does not dispatch manual selection."
+    ]
+  }
+}

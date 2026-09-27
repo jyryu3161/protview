@@ -1,0 +1,36 @@
+{
+  "recorded_at": "2026-09-27T02:04:07.792135+00:00",
+  "build_id": "eZeboVevPViw51lJN26Uu",
+  "phase_approval": false,
+  "case_summary": [
+    {
+      "caseId": "C00",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "caseId": "C13-detail-read-503",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "caseId": "C13-detail-retry",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "caseId": "C08-focus-then-manual-orbit",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "caseId": "C12-held-A-then-B",
+      "status": "fail",
+      "error": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_90a04e4a0ba34751a62e7fc31358334f/structure/7db8fdfd9543fe077b2279daa18ff26a7aa3bfeb56cb3658e09609b61fda876f\",\"sessionId\":\"565e8ab5-0927-4994-93a0-8e822256370d\",\"generation\":6,\"representation\":\"cartoon\",\"molstarRepresentation\":\"Cartoon\",\"selection\":null,\"selectionError\":null,\"camera\":{\"position\":[8.612534009606405"
+    }
+  ],
+  "diagnosis": "Astra source review confirmed an enabled latest result read is cancelled by prior ReturnSingle physical displaySource completion; logical desired-view intent repair authorized. Actual request timing was not fully recorded in this failed run.",
+  "catalog_retry_acceptance": "not reached; pending actual corrected catalog response and native overlay recovery",
+  "stop_record": "commands/tenth-services-stop.json",
+  "next": "eleventh candidate logical desired-view key; deterministic held-load/latest-result QA, stale read/source/run cancellation, catalog retry"
+}

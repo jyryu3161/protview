@@ -80,6 +80,26 @@ export function bindingMatches(actual: SceneBindingIdentity | null, expected: Sc
     actual.catalogHash === expected.catalogHash && actual.actionRevision === expected.actionRevision;
 }
 
+/** Only an identical, nonnull acknowledgement may preserve queued native work. */
+export function nativeTokenAfterBinding(token: number, previous: SceneBindingIdentity | null,
+                                        next: SceneBindingIdentity | null): number {
+  return next && bindingMatches(previous, next) ? token : token + 1;
+}
+
+/** An awaited native command survives only an identical binding and token. */
+export function nativeOperationBound(token: number, currentToken: number,
+                                     actual: SceneBindingIdentity | null,
+                                     expected: SceneBindingIdentity | null): boolean {
+  return token === currentToken && expected !== null && bindingMatches(actual, expected);
+}
+
+export function nativeRepresentationIntentCurrent(expected: { revision: number; source: object | null; representation: string },
+                                                  actual: { revision: number; source: object | null; representation: string;
+                                                    comparison: boolean }): boolean {
+  return expected.revision === actual.revision && expected.source === actual.source &&
+    expected.representation === actual.representation && !actual.comparison;
+}
+
 /** Strip row-only metadata before sending a strict durable residue identity. */
 export function exactResidue(ref: ResidueRef): ResidueRef {
   if (!Number.isInteger(ref.model_number)) throw new Error("Source residue has no model number");

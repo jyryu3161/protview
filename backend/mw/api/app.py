@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
+from ..comparison_reports import build_comparison_report, saved_comparison_report, validated_comparison_result
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE
 from ..egress.gate import EgressGate
@@ -38,6 +39,7 @@ from ..saved_scenes import (
     save_scene,
     scene_detail,
 )
+from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
 from ..tools.openmm_method import preflight as openmm_preflight
@@ -70,7 +72,8 @@ from ..workspace import build_registry, new_run
 RUNS_DIR = Path(os.environ.get("MW_RUNS_DIR", "runs"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
-SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa", "compile_state"}
+SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
+                   "measure_distance", "align_structures", "compile_state"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 
@@ -688,6 +691,8 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             return build_method_report(run, body.result_handle)
         if kind == "openmm_minimization":
             return build_openmm_report(run, body.result_handle)
+        if kind in {"atom_distance", "rigid_alignment"}:
+            return build_comparison_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
@@ -724,6 +729,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_method_report(run, handle)
         if report.get("analysis_type") == "openmm_protein_minimize":
             return saved_openmm_report(run, handle)
+        if report.get("analysis_type") in {"atom_distance", "rigid_alignment"}:
+            return saved_comparison_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -904,6 +911,33 @@ def residues(rid: str, handle: str) -> Any:
         return _tool_error(error)
     except ValueError as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": str(exc)}) from exc
+
+
+@app.get("/runs/{rid}/structures/atoms")
+def atoms(rid: str, handle: str, offset: int = Query(0, ge=0),
+          limit: int = Query(100, ge=1, le=500)) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        catalog = atom_rows(run.store, handle)
+        return {**{key: value for key, value in catalog.items() if key != "rows"},
+                "offset": offset, "limit": limit, "rows": catalog["rows"][offset:offset + limit]}
+    except ToolFailure as error:
+        raise HTTPException(422, detail=error.to_dict()) from error
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": str(exc)}) from exc
+
+
+@app.get("/runs/{rid}/objects/measurement")
+def measurement(rid: str, handle: str) -> dict[str, Any]:
+    run = _run(rid)
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) not in {("atom_distance", "atom_distance@1"),
+                                               ("rigid_alignment", "rigid_alignment@1")}:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "not a measurement handle"})
+    try:
+        return {"meta": meta, "result": validated_comparison_result(run.store, handle)}
+    except (EvidenceError, KeyError, ValueError) as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
 
 
 @app.get("/runs/{rid}/structures/bytes")

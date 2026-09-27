@@ -1,0 +1,19 @@
+# Documentation of the fixed code-owned driver in mw.workflows. This file is not
+# accepted as executable HTTP input and cannot add tools or change runtime guards.
+pipeline: inspect_complex
+version: "1"
+driver: mw.workflows.inspect_complex
+mode: finite_rules
+preparation_defaults:
+  altloc: highest_occupancy
+  waters: strip_all
+  hydrogens: strip
+  missing_residues: leave_gaps
+  symmetry_mates: ignore
+selection: exact_ligand_or_unique_only
+steps:
+  - load_structure
+  - prepare_structure
+  - resolve_ligand
+  - compute_interactions
+report: selected_interaction_handle_only

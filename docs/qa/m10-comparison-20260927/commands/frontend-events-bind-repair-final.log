@@ -1,0 +1,61 @@
+
+> molecular-workspace-web@0.1.0 test:events
+> node --test tests/*.test.cjs
+
+✔ SASA display uses decimal half-up and suppresses negative zero (0.413166ms)
+✔ installed Mol* PDB parser generates display labels distinct from authoritative Gemmi PDB labels (6.173875ms)
+✔ installed Mol* keeps exact input site indices for nonfirst model, insertion and duplicate alt sites (1.67975ms)
+✔ row-major backend fit becomes column-major native matrix without changing coordinates (0.94225ms)
+✔ atom label preserves model, insertion, altloc and exact site identity (0.265916ms)
+✔ same-run older distance, read, or report response cannot own newer comparison intent (0.084625ms)
+✔ queued native pair focus is revoked by pointer/orbit, source operation or newer pair (0.06375ms)
+✔ queued ordinary residue focus is revoked by manual action, source or catalog change (0.073292ms)
+✔ held ordinary focus is skipped after an orbit or newer focus intent (0.129292ms)
+✔ native operation deadline is bounded and fires its failure callback once (9.056167ms)
+✔ Measure accepts one atomic element only in ball-and-stick (0.4075ms)
+✔ M9 single-source scene cannot encode active M10 measurement or overlay visuals (0.144042ms)
+✔ native PDB source indices preserve authoritative Axp and null labels, including all alt sites (0.463875ms)
+✔ source row projection rejects mixed residues and retains exact mmCIF auth/label identities (0.128084ms)
+✔ catalog arriving during native initialization validates only after ready and cannot commit a stale read (0.190416ms)
+✔ catalog readiness observes pending selected and empty scenes without emitting manual selection (0.126291ms)
+✔ reopened cache reads move the latest pipeline through physical lineage (1.286792ms)
+✔ cache reads require the physical call key and source success in sequence (0.182125ms)
+✔ conflicting cache observation identities cannot select another output (0.118291ms)
+✔ canonical JSON args accept reordered objects and preserve array order (0.150459ms)
+✔ cache reads need their original input and exact output reference (0.177083ms)
+✔ latest SASA result follows exact prepared input and verified cache lineage (0.180125ms)
+✔ read-only mode badge renders effective local, online and dry run mode (6.0485ms)
+✔ late OpenMM action cannot commit after run, input, job, result or newer action changes (0.566959ms)
+✔ energy display uses checked decimal half-up for positive and negative ties (0.164292ms)
+✔ policy and visible errors reset only when their OpenMM context changes (0.391583ms)
+✔ result and report failures stay independent in either completion order (0.08975ms)
+✔ a delayed budget response cannot replace another run or newer job snapshot (0.078333ms)
+✔ OpenMM page actions use the live identity guard on success, error and cleanup (0.923209ms)
+✔ OpenMM preflight uses canonical structure query while object reads retain handle (53.202583ms)
+✔ historic report references bind to exact interaction, not latest result (0.381625ms)
+✔ stale asynchronous report responses cannot cross run or selection (0.095542ms)
+✔ method reports stay bound to their exact result across history and asynchronous responses (0.104875ms)
+✔ OpenMM reports remain bound to method, run, and historical result (0.088791ms)
+✔ full native camera accepts readback roundoff but preserves all eleven fields (0.566958ms)
+✔ selection retains model, insertion and nullable label identity (0.588833ms)
+✔ cloned bridge binding matches values; every stale field is rejected (0.090833ms)
+✔ identical acknowledgement preserves held native focus; every changed binding revokes it (0.145458ms)
+✔ catalog observation leaves held selected and empty restores intact; real clear and orbit revoke (0.170291ms)
+✔ delayed list read preserves local immutable saves and selected handle (0.117042ms)
+✔ saved selection seeds only pending restore; manual clear wins afterward (0.048ms)
+✔ restore scopes only catalogs above 256 and names the exact authoritative target (0.197459ms)
+✔ manual scene change immediately updates the visible outbound projection (0.628041ms)
+✔ ordinary focus keeps confirmed selection through matching acknowledgement and publishes success afterward (0.185041ms)
+✔ a genuinely newer manual action selecting the same old alias still revokes held focus (0.10525ms)
+✔ late plan is rejected after manual revision, source or scene changes (0.092166ms)
+✔ catalog scope and displayed source each advance the same client generation (0.071791ms)
+✔ orbit-only camera reset counts as an observed change (0.091541ms)
+✔ Enter and button share offline, dry-run and prompt validation (0.143375ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 258.96025

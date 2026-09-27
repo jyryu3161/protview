@@ -1,0 +1,7 @@
+M10 comparison offscreen QA failed: locator.waitFor: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for locator('[aria-label="원자 거리와 두 구조 비교"]').getByRole('alert').filter({ hasText: /이동 구조 읽기 실패.*HTTP 503/ }) to be visible[22m
+
+    at /Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/comparison-flow.cjs:1309:21
+    at async step (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/comparison-flow.cjs:743:16)
+    at async run (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/comparison-flow.cjs:1306:7)

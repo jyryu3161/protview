@@ -1,0 +1,21 @@
+# Atom distance and rigid comparison
+
+The atom-distance and rigid-comparison workspace uses local structure bytes and immutable same-run handles. A distance is a Euclidean separation in ångströms between two exact source atoms. An alignment is an unweighted rigid fit of only the protein CA pairs you enter; its RMSD does not measure binding, stability, or model quality.
+
+## Measure atoms
+
+Load a PDB or mmCIF structure, choose **ball-and-stick**, then use **원자 거리 측정** in **원자 거리와 두 구조 비교**. Click two individual atoms in the Mol* canvas; bond or multiatom loci are rejected. The first is highlighted; **첫 원자 취소** resets that pending choice. After the second click, the normal `measure_distance` tool records an immutable result and the canvas highlights both sites with a distance annotation. **측정 지우기** clears the current display; leaving Measure mode also clears its current endpoints and annotation. Saved results remain in **저장된 거리·정렬 결과**. During a two-layer comparison, both clicks must belong to the same source layer. A cross-layer click explains the mismatch and resets the first atom. The reported distance always uses original source coordinates, even when the moving layer is displayed after a rigid transform.
+
+The selected atom label includes the authoritative chain, residue number and insertion code, atom name, alternate location, model, and exact source site index. **선택 원자** shows the original coordinate separately from its displayed Mol* coordinate. An ambiguous native atom mapping fails rather than choosing another atom with a similar name or coordinate.
+
+Ordinary residue picking, row focus, local viewer commands, and saved single-source scenes use the same validated source-row mapping. This preserves the original seven-field residue identity even when a PDB parser generates different display labels (for example, native `A` versus the source's `Axp`). A selected residue includes every mapped site in that residue, including alternate locations. Until the complete atom catalog and native model mapping are checked against the exact displayed-byte SHA-256, selection-dependent controls wait or show an error; an unresolved selection is never saved as an empty one. If the catalog read fails, use the panel's retry control before selecting or saving.
+
+## Compare two structures
+
+Select two distinct source handles from the same run in **기준 구조** and **이동 구조**. In each **CA site** selector, choose the exact protein CA site, including any alternate site, and press **대응 추가**. You can remove a mistaken pair; a site cannot appear twice on either side. Add at least three and at most 1000 pairs, then press **정렬 계산**. The tool rejects collinear or nearly degenerate mappings and never infers chain correspondence. It computes a proper rotation and translation in float64, keeping the stored source structures unchanged.
+
+The two-layer canvas shows the reference in blue and moving source in orange. **정렬 좌표** applies the saved display transform; **원래 좌표** displays the moving source without it. Each layer has its own visibility checkbox. A **대응 원자 초점** row selects both exact sites and frames them together. **단일 구조로 돌아가기** leaves comparison. Existing saved single-source scenes can still be restored, but **현재 보기 저장** and single-source PNG export are disabled while an atom measurement or comparison is displayed because their schema does not represent those visuals. Restoring a saved scene clears the current M10 display while preserving immutable result/report history. The one-source prompt and interaction controls are unavailable during comparison.
+
+Use **저장된 거리·정렬 결과** to reopen a prior result. A distance reselects its exact source; an alignment restores its pair table and native overlay without fitting again. **측정 보고서 만들기** saves an immutable, field-cited Markdown report and JSON artifact. Links download the saved bytes; later measurements do not alter them. Reads and reports use the selected result handle, while calculations occur only through the normal run command lane.
+
+All catalog, source and result reads are local and bounded. If a read fails, the panel shows an error and a relevant retry control. No external structure fetch or provider call is part of these controls.

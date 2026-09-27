@@ -1,0 +1,40 @@
+# ProtView runtime defaults. Online Jev requires an explicit per-run egress configuration.
+runtime:
+  budget:
+    wall_clock_s: 1800
+    expensive_calls: 8
+    external_tokens: 120000
+    usd: 2.00
+  on_exhaustion: checkpoint_and_ask
+  loop_guards:
+    no_progress_steps: 4
+    repeated_call_hash: 2
+    oscillation_window: 6
+  retry:
+    transient: { max: 3, backoff: exponential, base_s: 2 }
+    input_invalid: { max: 1, requires_different_args: true }
+    precondition: { max: 1, must_run_prerequisite: true }
+    resource_exceeded: { max: 0 }
+    fatal: { max: 0 }
+
+egress:
+  mode: local_only
+
+jev:
+  enabled: false
+  endpoint: https://openrouter.ai/api/alpha/decisions
+  request_model: typesafe/jev-1.13
+  allowed_served_models: [typesafe/jev-1.13-20260917]
+  provider: { data_collection: deny, zdr: true, allow_fallbacks: false }
+  timeout_s: 15
+  reserve_external_tokens: 4096
+  reserve_usd: 0.05
+
+rosetta:
+  workers: 2
+  default_scorefxn: ref2015_cart
+  job_timeout_s: 900
+  energy_unit: REU
+
+paths:
+  runs_dir: runs

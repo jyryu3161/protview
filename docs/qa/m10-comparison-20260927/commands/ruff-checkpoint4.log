@@ -1,0 +1,31 @@
+B023 Function definition does not bind loop variable `i`
+  --> backend/mw/tools/comparison.py:94:80
+   |
+92 |             viewer_records = []
+93 |             for i, serial in enumerate(category["id"]):
+94 |                 value = lambda key, fallback=None: category.get(key, fallback)[i]  # noqa: E731
+   |                                                                                ^
+95 |                 viewer_records.append({"id": int(serial),
+96 |                     "name": value("auth_atom_id", category["label_atom_id"]).strip(),
+   |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E731`)
+  --> backend/mw/tools/comparison.py:94:84
+   |
+92 |             viewer_records = []
+93 |             for i, serial in enumerate(category["id"]):
+94 |                 value = lambda key, fallback=None: category.get(key, fallback)[i]  # noqa: E731
+   |                                                                                    ^^^^^^^^^^^^
+95 |                 viewer_records.append({"id": int(serial),
+96 |                     "name": value("auth_atom_id", category["label_atom_id"]).strip(),
+   |
+help: Remove unused `noqa` directive
+   |
+93 |             for i, serial in enumerate(category["id"]):
+   -                 value = lambda key, fallback=None: category.get(key, fallback)[i]  # noqa: E731
+94 +                 value = lambda key, fallback=None: category.get(key, fallback)[i]
+95 |                 viewer_records.append({"id": int(serial),
+   |
+
+Found 2 errors.
+[*] 1 fixable with the `--fix` option.

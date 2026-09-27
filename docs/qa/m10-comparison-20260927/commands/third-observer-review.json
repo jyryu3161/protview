@@ -1,0 +1,18 @@
+{
+  "recorded_at": "2026-09-27T00:47:39.163832+00:00",
+  "reviewer": "/root/astra_completion_audit",
+  "model": "gpt-6-astra",
+  "scope": "observer-only diff from second frozen runtime",
+  "file": "frontend/src/components/MolstarViewer.tsx",
+  "sha256": "dec4d55a056808b3174a9e6f2b793313995899f904f0f6223d1ac5f654abeae6",
+  "result": "no blocking finding",
+  "observations": [
+    "Seven observer fields are not read by product control flow.",
+    "Native busy reflects updating/animating read-only state.",
+    "Click counters/reasons preserve prior guards and callback order.",
+    "Pending queue counter decrements in finally including skipped/error work.",
+    "Bounded scalar/status metadata adds no paths, credentials, new coordinates, or egress."
+  ],
+  "qa_caveat": "lastNativeClick.accepted indicates native identity validation and callback dispatch, not page endpoint acceptance or a completed measurement. Require page/result evidence too.",
+  "phase_approval": false
+}

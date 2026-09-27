@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-09-27T02:15:11.553718+00:00",
+  "build_id": "cjYPdV6dj3ZdSKSJLhpz2",
+  "runtime_source_hashes_verified": 80,
+  "runs_root": "/tmp/protview-m10-qa-20260927/replay-runs",
+  "checks": [
+    {
+      "url": "http://127.0.0.1:8000/capabilities",
+      "status": 200,
+      "bytes": 3291
+    },
+    {
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "bytes": 12333
+    }
+  ],
+  "backend_exec_session": 40983,
+  "frontend_exec_session": 22156,
+  "listeners": "COMMAND     PID       USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\npython3.1 22437 jaeyongryu    6u  IPv4 0xeaf30bbfa5d5e384      0t0  TCP 127.0.0.1:8000 (LISTEN)\nnode      22460 jaeyongryu   12u  IPv4 0x1e48a8e0b7d9ecfb      0t0  TCP 127.0.0.1:3000 (LISTEN)\n",
+  "browser_qa_status": "READY after 6-run full restored-state verification; zero appended events so far",
+  "phase_approval": false,
+  "verified_at": "2026-09-27T02:15:43.763845+00:00"
+}

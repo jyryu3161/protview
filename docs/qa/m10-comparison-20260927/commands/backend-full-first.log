@@ -1,0 +1,63 @@
+...........................F............................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 76%]
+.................................................................        [100%]
+=================================== FAILURES ===================================
+__________________ test_invalid_upload_command_handle_and_run __________________
+
+api = (<starlette.testclient.TestClient object at 0x10961d390>, <module 'mw.api.app' from '/Users/jaeyongryu/Projects/protview/backend/mw/api/app.py'>)
+pdb_path = '/Users/jaeyongryu/Projects/protview/backend/tests/fixtures/mini_complex.pdb'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10f4a20d0>
+
+    def test_invalid_upload_command_handle_and_run(api, pdb_path, monkeypatch):
+        client, appmod = api
+        rid = new_run(client)
+        raw = Path(pdb_path).read_bytes()
+        other = new_run(client)
+        token = upload(client, rid, raw).json()["upload_id"]
+        for source in (pdb_path, "../etc/passwd", "/etc/passwd", "pdb:1HSG",
+                       token.replace(rid, other)):
+            response = call(client, other, "load_structure", {"source": source})
+            assert response.status_code == 422 and response.json()["error"] == "input_invalid"
+        assert upload(client, rid, raw, "wrong.cif").status_code == 422
+        assert upload(client, rid, b"invalid", "bad.pdb").status_code == 422
+        assert upload(client, rid, raw, "bad.xyz").status_code == 422
+        monkeypatch.setattr(appmod, "MAX_UPLOAD_BYTES", 10)
+        assert upload(client, rid, raw).status_code == 413
+        monkeypatch.setattr(appmod, "MAX_UPLOAD_BYTES", 25 * 1024 * 1024)
+        source = call(client, rid, "load_structure", {"source": token}).json()["handle"]
+        assert call(client, rid, "unknown_tool", {}).status_code == 422
+        assert call(client, other, "prepare_structure", {"structure": source["handle"]}).status_code == 422
+        assert call(client, rid, "compute_interactions", {"structure": source["handle"]}).status_code == 412
+        assert call(client, rid, "prepare_structure",
+                    {"structure": source["handle"], "waters": "model"}).status_code == 422
+        assert call(client, rid, "compile_state", {"inputs": source["handle"]}).status_code == 422
+        assert client.get(f"/runs/{other}/objects/meta", params={"handle": source["handle"]}).status_code == 404
+        assert client.get(f"/runs/{rid}/structures/bytes", params={"handle": source["summary"]["source_handle"]}).status_code == 422
+        assert client.get(f"/runs/{rid}/objects", params={"handle": source["handle"]}).status_code == 422
+        assert client.get(f"/runs/{rid}/objects", params={"handle": source["handle"], "limit": 101}).status_code == 422
+        assert client.get("/runs/..").status_code in {400, 404}
+        assert client.get("/runs/not_there").status_code == 404
+        (appmod.RUNS_DIR / "linked_run").symlink_to(appmod.RUNS_DIR.parent, target_is_directory=True)
+        assert client.get("/runs/linked_run").status_code == 400
+        assert client.get("/capabilities").json()["mode"] == "local_only"
+>       assert {tool["name"] for tool in client.get("/tools", params={"levels": "L1,L2,L3,L4,L5"}).json()} == {
+                "load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
+                "openmm_protein_minimize", "compile_state"}
+E       AssertionError: assert {'align_struc...istance', ...} == {'compile_sta...re_structure'}
+E         
+E         Extra items in the left set:
+E         'measure_distance'
+E         'align_structures'
+E         Use -v to get more diff
+
+backend/tests/test_api.py:279: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/jaeyongryu/Projects/protview/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_api.py::test_invalid_upload_command_handle_and_run
+1 failed, 280 passed, 1 warning in 100.65s (0:01:40)

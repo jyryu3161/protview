@@ -1,0 +1,1037 @@
+{
+  "recorded_at": "2026-09-27T00:55:33.742037+00:00",
+  "phase_complete": false,
+  "runtime_builds": {
+    "first": "wDrUZlkHDQUOuvgMrv90O",
+    "second": "jkx4dgdGFer4HBNz-6NK4",
+    "third": "CjoaJUK4W0Hx93XSkiveU"
+  },
+  "modes": [
+    {
+      "artifact_directory": "alignment-fifth",
+      "ledger": "alignment-fifth/comparison-alignment.jsonl",
+      "rows": 22,
+      "recorded_pass": 21,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-reference-upload",
+          "status": "pass",
+          "description": "Choose labeled synthetic reference bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-moving-upload",
+          "status": "pass",
+          "description": "Choose labeled known-rigid moving bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-source-selection",
+          "status": "pass",
+          "description": "Select explicit reference and moving immutable source handles",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-1",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-2",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-3",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-4",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-remove-readd",
+          "status": "pass",
+          "description": "Remove last explicit pair and add its exact CA sites again",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C06-duplicate-visible",
+          "status": "pass",
+          "description": "Attempt duplicate CA pair through visible selectors",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C07-known-rigid-fit",
+          "status": "pass",
+          "description": "Click Compute on four explicit CA correspondences",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-unaligned",
+          "status": "pass",
+          "description": "Click original coordinates and inspect native untransformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-full-unaligned-overview",
+          "status": "pass",
+          "description": "Zoom out using actual wheel until both complete native structures fit the viewport",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-realign",
+          "status": "pass",
+          "description": "Click aligned coordinates and inspect native transformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-reference",
+          "status": "pass",
+          "description": "Uncheck real 기준 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-moving",
+          "status": "pass",
+          "description": "Uncheck real 이동 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-same-source-overlay-distance",
+          "status": "pass",
+          "description": "After documented bond-hit limitation, pick a distinct native reference atom for source-distance check",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-cross-layer-rejection",
+          "status": "pass",
+          "description": "Click reference first, then moving atom with only its native layer visible",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C10-single-scene-disabled",
+          "status": "pass",
+          "description": "Inspect Save/Export disabled and prompt absent during two-layer comparison",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C10-reopen-alignment-result",
+          "status": "pass",
+          "description": "Choose immutable alignment handle in visible saved-result selector",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-pair-row-focus",
+          "status": "fail",
+          "description": "Click actual correspondence-row focus on the native two-layer overlay",
+          "error_excerpt": "Error: Workflow button remained covered after real scrolling: [{\"attempt\":0,\"direction\":450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":558.5,\"width\":89.90625,\"height\":24}},{\"attempt\":1,\"direction\":450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":558.5,\"width\":89.90625,\"height\":24}},{\"attempt\":2,\"direction\":-450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":482.5,\"width\":89.90625,\"hei"
+        }
+      ]
+    },
+    {
+      "artifact_directory": "alignment-first",
+      "ledger": "alignment-first/comparison-alignment.jsonl",
+      "rows": 17,
+      "recorded_pass": 16,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-reference-upload",
+          "status": "pass",
+          "description": "Choose labeled synthetic reference bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-moving-upload",
+          "status": "pass",
+          "description": "Choose labeled known-rigid moving bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-source-selection",
+          "status": "pass",
+          "description": "Select explicit reference and moving immutable source handles",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-1",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-2",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-3",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-4",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-remove-readd",
+          "status": "pass",
+          "description": "Remove last explicit pair and add its exact CA sites again",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C06-duplicate-visible",
+          "status": "pass",
+          "description": "Attempt duplicate CA pair through visible selectors",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C07-known-rigid-fit",
+          "status": "pass",
+          "description": "Click Compute on four explicit CA correspondences",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-unaligned",
+          "status": "pass",
+          "description": "Click original coordinates and inspect native untransformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-realign",
+          "status": "pass",
+          "description": "Click aligned coordinates and inspect native transformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-reference",
+          "status": "pass",
+          "description": "Uncheck real 기준 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-moving",
+          "status": "pass",
+          "description": "Uncheck real 이동 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-same-source-overlay-distance",
+          "status": "fail",
+          "description": "Hide moving layer; enter Measure; click two real reference CA atoms",
+          "error_excerpt": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_b264110670964b198466230e8cfc6864/structure/d86f7e75f2920254f9b00bdf07f09fc113e65df2564a9a9c8003d5605e5a444d\",\"sessionId\":null,\"generation\":null,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[1.5045342051982313,1.6076109200309026,18.730547051799093],\"target\":[1.5045342051982313,1.6076109200309026,1."
+        }
+      ]
+    },
+    {
+      "artifact_directory": "alignment-fourth",
+      "ledger": "alignment-fourth/comparison-alignment.jsonl",
+      "rows": 22,
+      "recorded_pass": 21,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-reference-upload",
+          "status": "pass",
+          "description": "Choose labeled synthetic reference bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-moving-upload",
+          "status": "pass",
+          "description": "Choose labeled known-rigid moving bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-source-selection",
+          "status": "pass",
+          "description": "Select explicit reference and moving immutable source handles",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-1",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-2",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-3",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-4",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-remove-readd",
+          "status": "pass",
+          "description": "Remove last explicit pair and add its exact CA sites again",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C06-duplicate-visible",
+          "status": "pass",
+          "description": "Attempt duplicate CA pair through visible selectors",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C07-known-rigid-fit",
+          "status": "pass",
+          "description": "Click Compute on four explicit CA correspondences",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-unaligned",
+          "status": "pass",
+          "description": "Click original coordinates and inspect native untransformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-full-unaligned-overview",
+          "status": "pass",
+          "description": "Zoom out using actual wheel until both complete native structures fit the viewport",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-realign",
+          "status": "pass",
+          "description": "Click aligned coordinates and inspect native transformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-reference",
+          "status": "pass",
+          "description": "Uncheck real 기준 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-moving",
+          "status": "pass",
+          "description": "Uncheck real 이동 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-same-source-overlay-distance",
+          "status": "pass",
+          "description": "After documented bond-hit limitation, pick a distinct native reference atom for source-distance check",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-cross-layer-rejection",
+          "status": "pass",
+          "description": "Click reference first, then moving atom with only its native layer visible",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C10-single-scene-disabled",
+          "status": "pass",
+          "description": "Inspect Save/Export disabled and prompt absent during two-layer comparison",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C10-reopen-alignment-result",
+          "status": "pass",
+          "description": "Choose immutable alignment handle in visible saved-result selector",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-pair-row-focus",
+          "status": "fail",
+          "description": "Click actual correspondence-row focus on the native two-layer overlay",
+          "error_excerpt": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[aria-label=\"원자 거리와 두 구조 비교\"]').getByRole('region', { name: '명시한 CA 대응' }).getByRole('button', { name: '대응 원자 초점' }).first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" class=\"mw-btn mw-btn--sm\">대응 원자 초점</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element i"
+        }
+      ]
+    },
+    {
+      "artifact_directory": "alignment-second",
+      "ledger": "alignment-second/comparison-alignment.jsonl",
+      "rows": 17,
+      "recorded_pass": 16,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-reference-upload",
+          "status": "pass",
+          "description": "Choose labeled synthetic reference bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-moving-upload",
+          "status": "pass",
+          "description": "Choose labeled known-rigid moving bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-source-selection",
+          "status": "pass",
+          "description": "Select explicit reference and moving immutable source handles",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-1",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-2",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-3",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-4",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-remove-readd",
+          "status": "pass",
+          "description": "Remove last explicit pair and add its exact CA sites again",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C06-duplicate-visible",
+          "status": "pass",
+          "description": "Attempt duplicate CA pair through visible selectors",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C07-known-rigid-fit",
+          "status": "pass",
+          "description": "Click Compute on four explicit CA correspondences",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-unaligned",
+          "status": "pass",
+          "description": "Click original coordinates and inspect native untransformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-realign",
+          "status": "pass",
+          "description": "Click aligned coordinates and inspect native transformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-reference",
+          "status": "pass",
+          "description": "Uncheck real 기준 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-moving",
+          "status": "pass",
+          "description": "Uncheck real 이동 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-same-source-overlay-distance",
+          "status": "fail",
+          "description": "Hide moving layer; enter Measure; click two real reference CA atoms",
+          "error_excerpt": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_9b5d359ea16f40088d85000bfa733a9f/structure/e4a46ef6d513a4707fd2008893381bf3c642c7cef91f2c0146a4c14892f2b164\",\"sessionId\":null,\"generation\":null,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[1.5045342051982313,1.6076109200309026,18.730547051799093],\"target\":[1.5045342051982313,1.6076109200309026,1."
+        }
+      ]
+    },
+    {
+      "artifact_directory": "alignment-third",
+      "ledger": "alignment-third/comparison-alignment.jsonl",
+      "rows": 17,
+      "recorded_pass": 16,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-reference-upload",
+          "status": "pass",
+          "description": "Choose labeled synthetic reference bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-moving-upload",
+          "status": "pass",
+          "description": "Choose labeled known-rigid moving bytes with real file chooser and load",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-source-selection",
+          "status": "pass",
+          "description": "Select explicit reference and moving immutable source handles",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-1",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-2",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-3",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-add-pair-4",
+          "status": "pass",
+          "description": "Choose exact CA altloc/site on both sides and click add",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C05-remove-readd",
+          "status": "pass",
+          "description": "Remove last explicit pair and add its exact CA sites again",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C06-duplicate-visible",
+          "status": "pass",
+          "description": "Attempt duplicate CA pair through visible selectors",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C07-known-rigid-fit",
+          "status": "pass",
+          "description": "Click Compute on four explicit CA correspondences",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-unaligned",
+          "status": "pass",
+          "description": "Click original coordinates and inspect native untransformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-realign",
+          "status": "pass",
+          "description": "Click aligned coordinates and inspect native transformed moving layer",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-reference",
+          "status": "pass",
+          "description": "Uncheck real 기준 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-hide-moving",
+          "status": "pass",
+          "description": "Uncheck real 이동 구조 표시 control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C09-same-source-overlay-distance",
+          "status": "fail",
+          "description": "Hide moving layer; enter Measure; click original exact reference CA pair",
+          "error_excerpt": "Error: Exact native pointer pick failed: {\"expectedSite\":10,\"expectedLayer\":\"reference\",\"acceptedBefore\":1,\"acceptedAfter\":1,\"nativeClickBefore\":2,\"nativeClickAfter\":3,\"lastNativeClickBefore\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measureMode\":true,\"accepted\":true,\"reason\":\"accepted\"},\"lastNativeClickAfter\":{\"kind\":\"bond-loci\",\"size\":null,\"pluginBusy\":false,\"measureMode\":true,\"accepted\":false,\"reason\":\"locus\"},\"nativeBusy\":false,\"nat"
+        }
+      ]
+    },
+    {
+      "artifact_directory": "faults-focus-probe",
+      "ledger": "faults-focus-probe/comparison-faults.jsonl",
+      "rows": 4,
+      "recorded_pass": 3,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C13-detail-read-503",
+          "status": "pass",
+          "description": "Inject a labeled single GET 503 while selecting an existing alignment result",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C13-detail-retry",
+          "status": "pass",
+          "description": "Retry unchanged saved alignment through visible result selector",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C08-focus-then-manual-orbit",
+          "status": "fail",
+          "description": "Use pair focus, then orbit with a real mouse drag and check retention",
+          "error_excerpt": "Error: Workflow button remained covered after real scrolling: [{\"attempt\":0,\"direction\":450,\"pointer\":{\"x\":1043,\"y\":594},\"targetBoxBefore\":{\"x\":950.96875,\"y\":673.5,\"width\":89.90625,\"height\":24},\"hitState\":{\"exposed\":false,\"hitTag\":\"P\",\"hitClass\":\"mw-capability\",\"hitText\":\"정렬 RMSD 0.0000 Å · 원래 RMSD 11.2694 Å · 4쌍\",\"ancestors\":[{\"className\":\"\",\"scrollTop\":0,\"scrollHeight\":27,\"clientHeight\":27,\"rect\":{\"x\":873.96875,\"y\":671.5,\"width\":178.90625,\"heig"
+        }
+      ]
+    },
+    {
+      "artifact_directory": "measure-first",
+      "ledger": "measure-first/comparison-measure.jsonl",
+      "rows": 15,
+      "recorded_pass": 14,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-distance-upload",
+          "status": "pass",
+          "description": "Choose labeled sparse PDB and load actual atoms",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-enter",
+          "status": "pass",
+          "description": "Choose visible ball-and-stick and enter atom Measure mode",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-pick",
+          "status": "pass",
+          "description": "Click first actual N atom in Mol*",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-undo-first",
+          "status": "pass",
+          "description": "Click visible first-atom undo control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-again",
+          "status": "pass",
+          "description": "Click first actual N atom after undo",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C03-two-click-5A",
+          "status": "pass",
+          "description": "Click second actual O atom and await guarded distance result",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-repeat-reverse",
+          "status": "pass",
+          "description": "Repeat real two-click measurement with reverse endpoint order",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-report",
+          "status": "pass",
+          "description": "Click create evidence-bound distance report",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-download-markdown",
+          "status": "pass",
+          "description": "Click actual markdown distance report browser download",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-download-json",
+          "status": "pass",
+          "description": "Click actual json distance report browser download",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-clear",
+          "status": "pass",
+          "description": "Click visible measurement clear control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-exit",
+          "status": "pass",
+          "description": "Exit atom Measure and restore ordinary residue picking",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-residue-after-exit",
+          "status": "fail",
+          "description": "Click actual N atom after exit and observe ordinary residue selection",
+          "error_excerpt": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_28471cf883ee473fa78c96c8fca4d616/structure/72c422e02a479b03e5bb86f8499ad9fa81a149dca41a53cc0c30eacd355bfe16\",\"sessionId\":\"cc3dffe7-1022-4dd3-ab95-8cc311e7fb9c\",\"generation\":4,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[-0.6602328771785121,1.692073388118176,16.68780628406465],\"target\":[-0.6602328"
+        }
+      ]
+    },
+    {
+      "artifact_directory": "measure-fourth",
+      "ledger": "measure-fourth/comparison-measure.jsonl",
+      "rows": 17,
+      "recorded_pass": 17,
+      "recorded_fail": 0,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-distance-upload",
+          "status": "pass",
+          "description": "Choose labeled sparse PDB and load actual atoms",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-enter",
+          "status": "pass",
+          "description": "Choose visible ball-and-stick and enter atom Measure mode",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-pick",
+          "status": "pass",
+          "description": "Click first actual N atom in Mol*",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-undo-first",
+          "status": "pass",
+          "description": "Click visible first-atom undo control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-again",
+          "status": "pass",
+          "description": "Click first actual N atom after undo",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C03-two-click-5A",
+          "status": "pass",
+          "description": "Click second actual O atom and await guarded distance result",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-repeat-reverse",
+          "status": "pass",
+          "description": "Repeat genuine two-click measurement in reverse order after native idle",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-report",
+          "status": "pass",
+          "description": "Click create evidence-bound distance report",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-download-markdown",
+          "status": "pass",
+          "description": "Click actual markdown distance report browser download",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-download-json",
+          "status": "pass",
+          "description": "Click actual json distance report browser download",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-clear",
+          "status": "pass",
+          "description": "Click visible measurement clear control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-exit",
+          "status": "pass",
+          "description": "Exit atom Measure and restore ordinary residue picking",
+          "error_excerpt": ""
+        },
+        {
+          "case": "F01-sparse-ordinary-click-diagnostic",
+          "status": "pass",
+          "description": "Observe ordinary clicks on a four-atom synthetic source without treating polymer classification as established",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C03-zero-distinct-api-fixture",
+          "status": "pass",
+          "description": "Labeled exact-site Run.call fixture for visually coincident distinct atoms",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C03-source-change-clears-first",
+          "status": "pass",
+          "description": "Pick a first atom, then load a different source through visible file chooser",
+          "error_excerpt": ""
+        }
+      ]
+    },
+    {
+      "artifact_directory": "measure-second",
+      "ledger": "measure-second/comparison-measure.jsonl",
+      "rows": 9,
+      "recorded_pass": 8,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-distance-upload",
+          "status": "pass",
+          "description": "Choose labeled sparse PDB and load actual atoms",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-enter",
+          "status": "pass",
+          "description": "Choose visible ball-and-stick and enter atom Measure mode",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-pick",
+          "status": "pass",
+          "description": "Click first actual N atom in Mol*",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-undo-first",
+          "status": "pass",
+          "description": "Click visible first-atom undo control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-again",
+          "status": "pass",
+          "description": "Click first actual N atom after undo",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C03-two-click-5A",
+          "status": "pass",
+          "description": "Click second actual O atom and await guarded distance result",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-repeat-reverse",
+          "status": "fail",
+          "description": "Repeat real two-click measurement with reverse endpoint order",
+          "error_excerpt": "Error: Mol* observation did not become ready: {\"ready\":true,\"sourceHandle\":\"obj://run_bafc4562cbe14a83942b1d8b8988c684/structure/d1484b22e53888fb378a0b3b73ded7e82bfeae7a9323f52e4ae4744e6fdc34e8\",\"sessionId\":\"75d47d2a-6f5a-468b-9881-34943c576734\",\"generation\":4,\"representation\":\"ball-and-stick\",\"molstarRepresentation\":\"Ball & Stick\",\"selection\":null,\"camera\":{\"position\":[-0.6602328771785121,1.692073388118176,16.68780628406465],\"target\":[-0.6602328"
+        }
+      ]
+    },
+    {
+      "artifact_directory": "measure-third",
+      "ledger": "measure-third/comparison-measure.jsonl",
+      "rows": 15,
+      "recorded_pass": 14,
+      "recorded_fail": 1,
+      "cases": [
+        {
+          "case": "C00",
+          "status": "pass",
+          "description": "Observe real GPU-enabled Mol* and fixture provenance",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-new-run",
+          "status": "pass",
+          "description": "Click new local-only run",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C01-distance-upload",
+          "status": "pass",
+          "description": "Choose labeled sparse PDB and load actual atoms",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-enter",
+          "status": "pass",
+          "description": "Choose visible ball-and-stick and enter atom Measure mode",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-pick",
+          "status": "pass",
+          "description": "Click first actual N atom in Mol*",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-undo-first",
+          "status": "pass",
+          "description": "Click visible first-atom undo control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-first-again",
+          "status": "pass",
+          "description": "Click first actual N atom after undo",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C03-two-click-5A",
+          "status": "pass",
+          "description": "Click second actual O atom and await guarded distance result",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-repeat-reverse",
+          "status": "pass",
+          "description": "Repeat genuine two-click measurement in reverse order after native idle",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-report",
+          "status": "pass",
+          "description": "Click create evidence-bound distance report",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-download-markdown",
+          "status": "pass",
+          "description": "Click actual markdown distance report browser download",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C11-distance-download-json",
+          "status": "pass",
+          "description": "Click actual json distance report browser download",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-clear",
+          "status": "pass",
+          "description": "Click visible measurement clear control",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-exit",
+          "status": "pass",
+          "description": "Exit atom Measure and restore ordinary residue picking",
+          "error_excerpt": ""
+        },
+        {
+          "case": "C02-residue-after-exit",
+          "status": "fail",
+          "description": "Click actual N atom after exit and observe ordinary residue selection",
+          "error_excerpt": "Error: Ordinary residue pick failed after three real clicks: [{\"attempt\":1,\"selected\":false,\"observation\":null,\"nativeClickBefore\":6,\"nativeClickAfter\":7,\"lastNativeClick\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measureMode\":false,\"accepted\":false,\"reason\":\"inactive\"}},{\"attempt\":2,\"selected\":false,\"observation\":null,\"nativeClickBefore\":7,\"nativeClickAfter\":8,\"lastNativeClick\":{\"kind\":\"element-loci\",\"size\":1,\"pluginBusy\":false,\"measur"
+        }
+      ]
+    }
+  ],
+  "interpretation": [
+    "F01 sparse ordinary-pick diagnostic rows marked pass mean the diagnostic executed; they explicitly do NOT establish C02 ordinary-selection acceptance. Actual null selection is now a confirmed shared PDB generated-label mismatch and requires a fix.",
+    "Second endpoint failures distinguished by third native observer: native idle resolves repeated measurement timing; strict bond-loci rejection explains projected-CA hit failure. Orbit on fourth run produced genuine same-source measurement.",
+    "Pair-row focus failure proved product layout: table clientHeight=0 under max-height flex workflow, physical click obscured. Scoped CSS repair required.",
+    "Source mapping and layout fixes occur only after preserved third runtime stopped and all Electron closed. No final acceptance claim."
+  ]
+}

@@ -1,0 +1,8 @@
+M10 comparison offscreen QA failed: locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('combobox', { name: '저장된 보기' }).locator('option[value="obj://run_ad04ad0e27de422b9a92b816cfe51f4f/viewer_scene/a390bda758cb02b912a00455589e972716d04356d752cb9d1390f6862f44afc4"]') to be visible[22m
+[2m    62 × locator resolved to hidden <option value="obj://run_ad04ad0e27de422b9a92b816cfe51f4f/viewer_scene/a390bda758cb02b912a00455589e972716d04356d752cb9d1390f6862f44afc4">M10 Axp original PDB 1790473196742 · structure · …</option>[22m
+
+    at async.before.before (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/comparison-flow.cjs:936:55)
+    at async step (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/comparison-flow.cjs:727:16)
+    at async run (/Users/jaeyongryu/Projects/protview/frontend/tests/offscreen/comparison-flow.cjs:932:7)
