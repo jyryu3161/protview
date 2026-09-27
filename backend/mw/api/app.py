@@ -18,11 +18,20 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
+from ..chemical_bundle import atom_catalog as chemical_atom_catalog
+from ..chemical_bundle import validated_graph as validated_chemical_graph
+from ..chemical_bundle import validated_result as validated_chemical_result
+from ..chemical_bundle import validated_source as validated_chemical_source
+from ..chemical_inputs import import_raw as import_chemical_raw
+from ..chemical_inputs import inspect as inspect_chemical_import
+from ..chemical_inputs import preview as preview_chemical
+from ..chemical_inputs import receptor_atom_page
+from ..chemical_reports import build_chemical_report, saved_chemical_report
 from ..comparison_reports import build_comparison_report, saved_comparison_report, validated_comparison_result
 from ..core.errors import FailureClass, ToolFailure
-from ..core.handles import RUN_ID_RE
+from ..core.handles import RUN_ID_RE, canonical_json
 from ..egress.gate import EgressGate
-from ..jobs.queue import JobQueue
+from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
 from ..reports import EvidenceError, build_inspection_report, saved_report
@@ -76,6 +85,10 @@ SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions"
                    "measure_distance", "align_structures", "compile_state"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
+CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
+CHEMICAL_REQUEST_LIMIT = 512 * 1024
+CHEMICAL_SOURCE_READ_LIMIT = 32 * 1024 * 1024
+CHEMICAL_MANIFEST_READ_LIMIT = 8 * 1024 * 1024
 
 app = FastAPI(title="ProtView local API")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -230,10 +243,42 @@ def _tool_error(error: ToolFailure) -> JSONResponse:
     return JSONResponse(status_code=status, content={"ok": False, **error.to_dict()})
 
 
+async def _bounded_chemical_body(request: Request, limit: int) -> bytes:
+    length = request.headers.get("content-length")
+    if length is not None and (not length.isdecimal() or int(length) > limit):
+        raise HTTPException(413, detail={"error": "resource_exceeded", "message": "chemical request too large"})
+    chunks, total = [], 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > limit:
+            raise HTTPException(413, detail={"error": "resource_exceeded", "message": "chemical request too large"})
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _chemical_json(raw: bytes) -> dict[str, Any]:
+    def unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError("duplicate chemical JSON key")
+            value[key] = item
+        return value
+
+    try:
+        body = json.loads(raw, object_pairs_hook=unique_pairs,
+                          parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+        if type(body) is not dict:
+            raise ValueError("expected JSON object")
+        return body
+    except (ValueError, UnicodeError) as exc:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid chemical JSON"}) from exc
+
+
 def _public_job(job: dict[str, Any]) -> dict[str, Any]:
     """Keep private launch nonce, owner token and process identities off HTTP."""
     intent = job.get("dispatch_intent") or {}
-    return {key: job.get(key) for key in ("job_id", "run_id", "root_call_id", "call_key",
+    result = {key: job.get(key) for key in ("job_id", "run_id", "root_call_id", "call_key",
                                          "protocol_id", "tool_id", "status", "created",
                                          "finished", "timeout_s", "attempt_id", "attempt_ordinal",
                                          "blocked_reason", "cancel_requested", "cleanup_status",
@@ -241,6 +286,14 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
                                          "preparation_handle", "preparation_attempt_id")} | {"started": intent.get("ts"),
                                                                   "remaining_wall_s_at_dispatch":
                                                                       intent.get("remaining_wall_s")}
+    if job.get("protocol_id") == "prolif_prepare_v1" and job.get("status") == "done":
+        result["artifacts"] = dict(zip(("preparation_manifest", "chemical_structure", "chemical_graph"),
+                                       job["output_handles"], strict=True))
+    elif job.get("protocol_id") == "prolif_detect_v1" and job.get("status") == "done":
+        result["artifacts"] = {"chemical_interaction_set": job["output_handles"][0]}
+    else:
+        result["artifacts"] = {}
+    return result
 
 
 def _upload_dir_fd(run: Run, *, create: bool) -> int:
@@ -300,8 +353,187 @@ def _object(run: Run, handle: str) -> dict[str, Any]:
         meta = run.store.meta(handle)
     except KeyError as exc:
         raise HTTPException(404, detail={"error": "not_found", "message": "unknown run handle"}) from exc
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid run handle"}) from exc
     return {key: meta[key] for key in ("handle", "kind", "schema", "fmt", "size", "produced_by",
                                         "summary", "null_result")}
+
+
+def _completed_chemical(run: Run, handle: str) -> None:
+    try:
+        require_completed_chemical_handle(run, handle)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise ToolFailure(FailureClass.input_invalid, "unknown or corrupt chemical object") from exc
+
+
+@app.post("/runs/{rid}/chemical/imports", status_code=201)
+async def chemical_import(rid: str, request: Request, kind: Literal["receptor", "ligand_sdf", "receptor_bonds"],
+                          filename: str) -> Any:
+    if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/octet-stream":
+        raise HTTPException(415, detail={"error": "input_invalid", "message": "expected octet-stream import"})
+    raw = await _bounded_chemical_body(request, CHEMICAL_IMPORT_LIMIT)
+    run = _run(rid)
+    try:
+        def write() -> dict[str, Any]:
+            with run._owner(), run._transition():
+                run.store.rebuild_from_events()
+                return import_chemical_raw(run.store, kind, filename, raw)
+
+        return await run_in_threadpool(write)
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical import"))
+
+
+@app.get("/runs/{rid}/chemical/imports/inspect")
+def chemical_import_inspect(rid: str, handle: str) -> Any:
+    try:
+        return inspect_chemical_import(_run(rid).store, handle)
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "unknown or corrupt chemical import"))
+
+
+@app.get("/runs/{rid}/chemical/imports/atoms")
+def chemical_import_atoms(rid: str, handle: str, model_number: int = Query(..., ge=1),
+                          offset: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000)) -> Any:
+    try:
+        return receptor_atom_page(_run(rid).store, handle, model_number, offset, limit)
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "unknown or corrupt chemical import"))
+
+
+@app.post("/runs/{rid}/chemical/preview")
+async def chemical_preview(rid: str, request: Request) -> Any:
+    body = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    try:
+        return await run_in_threadpool(lambda: preview_chemical(_run(rid).store, body))
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical preview request"))
+
+
+@app.get("/runs/{rid}/chemical/prerequisites")
+def chemical_prerequisites(rid: str, mode: Literal["create_new", "attach_existing"]) -> dict[str, Any]:
+    run = _run(rid)
+    imports = [event for event in run.events.read() if event["type"] == "object_created" and
+               event.get("kind") == "chemical_raw_input"]
+    count = {kind: 0 for kind in ("receptor", "ligand_sdf", "receptor_bonds")}
+    for event in imports:
+        input_kind = event.get("summary", {}).get("input_kind")
+        if input_kind in count:
+            count[input_kind] += 1
+    return {"schema": "chemical_prerequisites@1", "mode": mode,
+            "capability": chemical_capability(), "import_counts": count,
+            "requires": (["receptor", "ligand_sdf", "connectivity", "acknowledgement"] if mode == "create_new"
+                         else ["prepared_complex", "ligand_sdf", "connectivity", "mapping", "acknowledgement"]),
+            "starts_job": False}
+
+
+@app.get("/runs/{rid}/chemical/structures/view")
+def chemical_structure_view(rid: str, handle: str) -> Any:
+    run = _run(rid)
+    try:
+        _completed_chemical(run, handle)
+        source = validated_chemical_source(run.store, handle)
+        return {key: source[key] for key in ("schema", "handle", "format", "text", "model_number",
+                                              "viewer_source_sha256", "manifest_handle", "manifest_sha256")} | {
+                                                  "schema": "chemical_structure_view@1", "kind": "chemical_structure"}
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical source"))
+
+
+@app.get("/runs/{rid}/chemical/preparation-manifests")
+def chemical_preparation_manifest(rid: str, source_handle: str) -> Any:
+    """Read the exact saved preparation decisions bound to one same-run chemical source."""
+    run = _run(rid)
+    try:
+        _completed_chemical(run, source_handle)
+        source_meta = run.store.meta(source_handle)
+        if ((source_meta["kind"], source_meta["schema"], source_meta["fmt"]) !=
+                ("chemical_structure", "chemical_structure@1", "json") or
+                source_meta["size"] > CHEMICAL_SOURCE_READ_LIMIT):
+            raise ToolFailure(FailureClass.input_invalid, "invalid or oversized chemical source")
+        source_payload = run.store.load_bounded_json(source_handle, CHEMICAL_SOURCE_READ_LIMIT)
+        manifest_handle = source_payload["manifest_handle"]
+        _completed_chemical(run, manifest_handle)
+        manifest_meta = run.store.meta(manifest_handle)
+        if ((manifest_meta["kind"], manifest_meta["schema"], manifest_meta["fmt"]) !=
+                ("chemical_preparation_manifest", "chemical_preparation_manifest@1", "json") or
+                manifest_meta["size"] > CHEMICAL_MANIFEST_READ_LIMIT):
+            raise ToolFailure(FailureClass.input_invalid, "invalid or oversized chemical preparation manifest")
+        source = validated_chemical_source(run.store, source_handle)
+        manifest = run.store.load_bounded_json(manifest_handle, CHEMICAL_MANIFEST_READ_LIMIT)
+        if (source["manifest_handle"] != manifest_handle or
+                source["manifest_sha256"] != hashlib.sha256(canonical_json(manifest)).hexdigest()):
+            raise ToolFailure(FailureClass.input_invalid, "chemical source/manifest hash mismatch")
+        return {"meta": _object(run, manifest_handle), "manifest": manifest}
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid,
+                                       "invalid or corrupt chemical source/manifest"))
+
+
+@app.get("/runs/{rid}/chemical/structures/atoms")
+def chemical_structure_atoms(rid: str, handle: str, offset: int = Query(0, ge=0),
+                             limit: int = Query(100, ge=1, le=1000)) -> Any:
+    try:
+        run = _run(rid)
+        _completed_chemical(run, handle)
+        return chemical_atom_catalog(run.store, handle, offset, limit)
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical source"))
+
+
+@app.get("/runs/{rid}/chemical/graphs")
+def chemical_graph(rid: str, handle: str) -> Any:
+    run = _run(rid)
+    try:
+        _completed_chemical(run, handle)
+        return {"meta": _object(run, handle), "graph": validated_chemical_graph(run.store, handle)}
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical graph"))
+
+
+@app.get("/runs/{rid}/chemical/results")
+def chemical_result(rid: str, handle: str) -> Any:
+    run = _run(rid)
+    try:
+        _completed_chemical(run, handle)
+        return {"meta": _object(run, handle), "result": validated_chemical_result(run.store, handle)}
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical result"))
+
+
+@app.get("/runs/{rid}/chemical/results/rows")
+def chemical_result_rows(rid: str, handle: str, offset: int = Query(0, ge=0),
+                         limit: int = Query(50, ge=1, le=100),
+                         category: Literal["HBDonor", "HBAcceptor", "Hydrophobic", "Cationic", "Anionic"] | None = None) -> Any:
+    try:
+        run = _run(rid)
+        _completed_chemical(run, handle)
+        result = validated_chemical_result(run.store, handle)
+        rows = [row for row in result["rows"] if category is None or row["category"] == category]
+        return {"schema": "chemical_interaction_page@1", "handle": handle, "total": len(rows),
+                "offset": offset, "limit": limit, "rows": rows[offset:offset + limit]}
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid chemical result"))
 
 
 @app.get("/capabilities")
@@ -312,7 +544,8 @@ def capabilities() -> dict[str, Any]:
         sasa = engine_capability()
     except (AttributeError, ImportError, OSError, PackageNotFoundError, RuntimeError, ToolFailure, ValueError) as exc:
         sasa = {"available": False, "reason_code": "engine_missing_or_invalid", "explanation": str(exc)}
-    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability()}, "supported": {
+    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability(),
+            "chemical_interactions": chemical_capability()}, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
         "viewer_intents": "typed local viewer commands; optional explicit online Jev interpretation is credential and budget dependent",
@@ -322,7 +555,7 @@ def capabilities() -> dict[str, Any]:
         "unavailable": {
             "remote_structure_lookup": "no M1 fetch adapter; local upload only",
             "hbond_or_affinity": "geometric proximity is not chemical or energetic validation",
-            "prolif_plip": "adapters and mapping validation are not implemented",
+        "plip": "no validated PLIP adapter is implemented",
             "pocket_detection": "no implemented adapter",
             **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items() if not item["available"]},
             "general_model_decisions": "no autonomous scientific tool, job, report, or general decision route"}}
@@ -693,7 +926,12 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             return build_openmm_report(run, body.result_handle)
         if kind in {"atom_distance", "rigid_alignment"}:
             return build_comparison_report(run, body.result_handle)
+        if kind == "chemical_interaction_set":
+            _completed_chemical(run, body.result_handle)
+            return build_chemical_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
+    except ToolFailure as exc:
+        return _tool_error(exc)
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
@@ -712,10 +950,13 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
             _saved_any_report(run, event["report_handle"])
         return [{"handle": e["report_handle"],
                  **({"interaction_handle": e["interaction_handle"]} if e["type"] == "report_created" else
-                    {"result_handle": e["result_handle"], "analysis_type": run.store.load(e["report_handle"])["analysis_type"]}),
+                    {"result_handle": e["result_handle"],
+                     "analysis_type": (run.store.load_bounded_json(e["report_handle"], 8 * 1024 * 1024)
+                                       if run.store.meta(e["report_handle"])["summary"].get("analysis_type") ==
+                                       "chemical_interactions" else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
-    except (EvidenceError, KeyError, ValueError) as exc:
+    except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
@@ -724,13 +965,17 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"]) == ("report_manifest", "report_manifest@1"):
         return saved_report(run, handle)
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
-        report = run.store.load(handle)
+        report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
+                  if meta["summary"].get("analysis_type") == "chemical_interactions" else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
         if report.get("analysis_type") == "openmm_protein_minimize":
             return saved_openmm_report(run, handle)
         if report.get("analysis_type") in {"atom_distance", "rigid_alignment"}:
             return saved_comparison_report(run, handle)
+        if report.get("analysis_type") == "chemical_interactions":
+            _completed_chemical(run, report["result_handle"])
+            return saved_chemical_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -739,7 +984,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
 def report_detail(rid: str, handle: str) -> dict[str, Any]:
     try:
         return _saved_any_report(_run(rid), handle)
-    except (EvidenceError, KeyError, ValueError) as exc:
+    except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
@@ -747,7 +992,7 @@ def report_detail(rid: str, handle: str) -> dict[str, Any]:
 def report_download(rid: str, handle: str, format: Literal["markdown", "json"] = "markdown") -> Response:
     try:
         result = _saved_any_report(_run(rid), handle)
-    except (EvidenceError, KeyError, ValueError) as exc:
+    except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
     suffix = handle.rsplit("/", 1)[-1][:12]
     if format == "markdown":
@@ -791,9 +1036,15 @@ def job_preflight(rid: str, structure: str) -> dict[str, Any]:
 @app.post("/runs/{rid}/jobs/approve")
 def approve_job(rid: str) -> dict[str, Any]:
     run = _run(rid)
-    if not any(e["type"] == "approval_requested" and e.get("gate") == "expensive_first_call"
-               and e.get("tool") == "openmm_protein_minimize" for e in run.events.read()):
-        raise HTTPException(412, detail={"error": "precondition", "message": "no pending OpenMM approval request"})
+    decisions = [event for event in run.events.read()
+                 if event["type"] in {"approval_requested", "approval_resolved"} and
+                 event.get("gate") == "expensive_first_call"]
+    pending = decisions[-1] if decisions else None
+    approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions"}
+    active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
+    if (pending is None or pending["type"] != "approval_requested" or
+            pending.get("tool") not in approved_tools or pending["tool"] not in active):
+        raise HTTPException(412, detail={"error": "precondition", "message": "no pending supported job approval request"})
     run.approve("expensive_first_call", by="human_api")
     return {"approved": True, "budget": run.budget_snapshot()}
 
@@ -812,9 +1063,15 @@ def job_detail(rid: str, job_id: str) -> dict[str, Any]:
 
 
 @app.post("/runs/{rid}/jobs")
-def submit_job(rid: str, body: JobSubmit) -> Any:
+async def submit_job(rid: str, request: Request) -> Any:
+    raw = await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT)
     try:
-        result = JobQueue(_run(rid)).submit(body.protocol_id, body.args, timeout_s=body.timeout_s)
+        body = JobSubmit.model_validate(_chemical_json(raw))
+    except PydanticValidationError as exc:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid job request"}) from exc
+    try:
+        result = await run_in_threadpool(lambda: JobQueue(_run(rid)).submit(
+            body.protocol_id, body.args, timeout_s=body.timeout_s))
         return result if result.get("plan_only") else _public_job(result)
     except ToolFailure as error:
         return _tool_error(error)
@@ -832,6 +1089,9 @@ def start_job(rid: str, job_id: str) -> Any:
     except RunCancelled:
         return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
     except ToolFailure as error:
+        if error.detail.get("reason_code") in {"global_concurrency_busy", "global_job_cleanup_pending",
+                                               "global_job_ledger_unavailable"}:
+            return JSONResponse(status_code=409, content={"ok": False, **error.to_dict()})
         return _tool_error(error)
 
 
@@ -861,6 +1121,11 @@ def materialize(rid: str, handle: str, columns: str | None = None, offset: int =
                 limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
     run = _run(rid)
     meta = _object(run, handle)
+    if meta["kind"] in CHEMICAL_DERIVED_KINDS:
+        try:
+            _completed_chemical(run, handle)
+        except ToolFailure as exc:
+            return _tool_error(exc)
     selected = columns.split(",") if columns is not None else None
     try:
         rows = run.store.materialize(handle, selected, offset, limit)
@@ -873,7 +1138,14 @@ def materialize(rid: str, handle: str, columns: str | None = None, offset: int =
 
 @app.get("/runs/{rid}/objects/meta")
 def object_meta(rid: str, handle: str) -> dict[str, Any]:
-    return _object(_run(rid), handle)
+    run = _run(rid)
+    meta = _object(run, handle)
+    if meta["kind"] in CHEMICAL_DERIVED_KINDS:
+        try:
+            _completed_chemical(run, handle)
+        except ToolFailure as exc:
+            return _tool_error(exc)
+    return meta
 
 
 @app.get("/runs/{rid}/interface_sasa")

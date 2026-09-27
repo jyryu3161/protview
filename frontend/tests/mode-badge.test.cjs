@@ -18,7 +18,10 @@ function compiledModule(relativePath, requireModule = require) {
   return moduleObject.exports;
 }
 
-const { displayedEgressMode } = compiledModule("../src/lib/api.ts");
+const { displayedEgressMode } = compiledModule("../src/lib/api.ts", name =>
+  name === "./chemical" ? { collectChemicalAtomCatalog: () => {
+    throw new Error("Unrelated M11 collector must not run in mode-badge test");
+  } } : require(name));
 const { WorkspaceShell } = compiledModule("../src/components/shell.tsx", name =>
   name === "./primitives" ? { Button: () => null, Eyebrow: () => null,
     Kbd: () => null, Segmented: () => null } : require(name));

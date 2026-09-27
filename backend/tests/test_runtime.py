@@ -455,6 +455,30 @@ def test_unavailable_energy_protocol_is_rejected_before_approval_or_charge(tmp_p
                    for e in run.events.read())
 
 
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_job_only_tools_reject_ordinary_call_before_plan_or_charge(tmp_path, dry_run):
+    run = Run("r", tmp_path / "r", build_registry(), dry_run=dry_run)
+    prepared = run.store.put("prepared_structure", "prepared_structure@1", b"fixture", fmt="pdb")
+    graph = run.store.put("chemical_graph", "chemical_graph@1", {"fixture": True})
+    attempts = [
+        ("openmm_protein_minimize", {"structure": prepared.handle,
+                                     "selection_policy": "protein_only", "hydrogen_policy": "rebuild_pH7"}),
+        ("prepare_chemical_structure", {}),
+        ("compute_chemical_interactions", {"graph_handle": graph.handle,
+                                           "schema": "chemical_detect_request@1", "categories": []}),
+    ]
+    for name, arguments in attempts:
+        with pytest.raises(ToolFailure) as exc:
+            run.call(name, arguments)
+        assert exc.value.cls == FailureClass.precondition
+        assert exc.value.detail["reason_code"] == "job_only_tool"
+    assert run.budget.expensive_calls == 0
+    assert not any(event["type"] in {"approval_requested", "tool_called", "tool_succeeded"}
+                   for event in run.events.read())
+    assert not any(event["type"] == "object_created" and event.get("kind") == "planned_call"
+                   for event in run.events.read())
+
+
 def test_cache_verifies_payload_and_defaults_key(tmp_path):
     run = make_run(tmp_path)
     out = run.call("make", {})

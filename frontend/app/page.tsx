@@ -15,6 +15,7 @@ import { reportSelectionKey, responseMatchesMethodSelection, responseMatchesOpen
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerBinding, ViewerBridge } from "@/components/MolstarViewer";
 import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgentPanel";
+import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
@@ -101,6 +102,8 @@ export default function WorkspacePage() {
   const [representation, setRepresentation] = useState<ViewerRepresentation>("cartoon");
   const [viewerScopeRevision, setViewerScopeRevision] = useState(0);
   const [sceneName, setSceneName] = useState("");
+  const [chemicalActive, setChemicalActive] = useState(false);
+  const [chemicalSceneToRestore, setChemicalSceneToRestore] = useState<string | null>(null);
   const [atomCatalogState, setAtomCatalogState] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
   const [atomCatalogError, setAtomCatalogError] = useState("");
   const [atomReadRetry, setAtomReadRetry] = useState(0);
@@ -241,6 +244,7 @@ export default function WorkspacePage() {
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
+    setChemicalActive(false); setChemicalSceneToRestore(null);
     sceneEpoch.current += 1; setSceneOverride(null); setRestorePendingToken(null); setViewerSession(null); setSceneBusy(""); setSceneError(""); setSceneStatus("");
     setSavedScenes([]); setSavedFigures([]); setSelectedSceneHandle(""); setSelectedFigureHandle("");
     setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmPlan(null); setOpenmmViewHandle(null);
@@ -1063,11 +1067,11 @@ export default function WorkspacePage() {
     } catch (e) { if (sameSceneAction(action, ticket, context)) setSceneError(`보기 저장 실패: ${e instanceof Error ? e.message : String(e)}`); }
     finally { if (sceneActionEpoch.current === action && ticket === epoch.current) setSceneBusy(""); }
   }
-  async function restoreSavedScene() {
-    if (!runId || !selectedSceneHandle) return;
+  async function restoreSavedScene(requestedHandle?: string) {
+    if (!runId || !(requestedHandle ?? selectedSceneHandle)) return;
     revokeComparisonAction(); setPendingAtom(null);
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
-    const context = viewerContextKey, id = runId, selected = selectedSceneHandle;
+    const context = viewerContextKey, id = runId, selected = requestedHandle ?? selectedSceneHandle;
     // A newer read owns the restore result immediately. In particular, an
     // older native restore must not finish while this detail GET is held and
     // then clear the newer request's status or apply its camera.
@@ -1272,6 +1276,22 @@ export default function WorkspacePage() {
   const uploadedCount = events.filter(e => e.type === "upload_received").length;
   const noLigands = handles.prepared && latestResidues?.ligands.length === 0;
 
+  useEffect(() => {
+    if (chemicalActive || !chemicalSceneToRestore) return;
+    const handle = chemicalSceneToRestore;
+    setChemicalSceneToRestore(null);
+    setSelectedSceneHandle(handle);
+    void restoreSavedScene(handle);
+  // A chemical restore is intentionally admitted only after the ordinary viewer has remounted.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chemicalActive, chemicalSceneToRestore]);
+
+  if (chemicalActive && run) return <ChemicalWorkspace key={run.run_id} run={run} runs={runs}
+    events={events} capabilities={capabilities} onTheme={toggleTheme}
+    onExit={() => { setChemicalActive(false); setInspectionRevision(value => value + 1); }}
+    onSwitchRun={id => { setChemicalActive(false); void switchRun(id); }}
+    onRestoreScene={handle => { setChemicalSceneToRestore(handle); setChemicalActive(false); }} />;
+
   return <WorkspaceShell
     runId={runId} pipeline="load_structure → prepare_structure → compute_interactions"
     egress={displayedEgressMode(run)} onToggleTheme={toggleTheme} tabs={["run", "models"]}
@@ -1349,7 +1369,13 @@ export default function WorkspacePage() {
     ]} />}
     canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{comparisonContext ? `두 구조 비교 · 기준 ${comparisonContext.result.reference_model_number} / 이동 ${comparisonContext.result.moving_model_number}` : sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
       {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}</>}
-    strip={<>{comparisonContext ? <p className="mw-muted">두 구조 비교 중에는 한 구조용 프롬프트 명령을 사용할 수 없습니다.</p> : <ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
+    strip={<>{runId && <Button size="sm" onClick={() => {
+      cancelPendingRestore(); revokeComparisonAction(); viewerBridgeRef.current?.invalidate();
+      setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
+      setMeasurementSelection(null); setComparisonContext(null); setFocusPair(null);
+      setChemicalActive(true);
+    }}>화학 상호작용 작업 열기</Button>}
+    {comparisonContext ? <p className="mw-muted">두 구조 비교 중에는 한 구조용 프롬프트 명령을 사용할 수 없습니다.</p> : <ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
       runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
       sourceHandle={displaySource?.handle ?? null} viewerReady={viewerReady} bridgeRef={viewerBridgeRef}
       representation={representation} selected={selectedFocus} residues={displayResidues} dryRun={run?.dry_run ?? false}

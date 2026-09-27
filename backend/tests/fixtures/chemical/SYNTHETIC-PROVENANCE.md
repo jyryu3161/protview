@@ -1,0 +1,7 @@
+# Synthetic chemistry control
+
+`synthetic-pentavalent-carbon.sdf` is a locally generated V2000 test input (SHA-256 `8e049f31b45954570e16612288810015d16daebcfdf8b67dceae42c80b557a56`). It has one carbon covalently connected to five explicit hydrogens at distinct finite coordinates. The bounded import/preview lane intentionally accepts its syntax and mapping, while the pinned native RDKit/ProLIF preparation must reject the impossible valence and produce no chemical graph. It is a failure-control fixture, not an observed molecule or a valid scientific result.
+
+`synthetic-disconnected-methane-water.sdf` (SHA-256 `a782da654fe9e17cfdc7e15ad6bd6a6e4f6bd43299ab54b1b1cfd9ff989b8de2`) is a V2000 negative made with pinned RDKit 2026.03.6: `Chem.AddHs(Chem.MolFromSmiles("C.O"))`, `AllChem.EmbedMolecule(randomSeed=123)`, `MolToMolBlock`. Both fragments are individually bonded and have explicit H; the unsupported condition is two covalent components, not an isolated atom.
+
+`synthetic-atrop-biaryl.sdf` (SHA-256 `42eb164d07a3368f53599eee2053ec89d08c1ab475c4d46f8a7d7e2f5ebab646`) is a V2000 negative generated with pinned RDKit 2026.03.6 from `Clc1cccc(C)c1-c1c(C)cccc1Cl`, explicit H, embedding seed 123, and `BEGINWEDGE` on the first aromatic neighbor bond of the biaryl bridge. Reparse of these exact bytes yields `STEREOATROPCCW` on native bond index 7. This unsupported atropisomeric declaration must reject; it is distinct from changing an ordinary 3D wedge depiction cue. Neither synthetic fixture is an experimental structure or binding observation.

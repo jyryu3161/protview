@@ -45,6 +45,8 @@ export type RunEvent =
   | { seq: number; ts: number; type: "goal"; text: string; context: string[]; egress: EgressMode }
   | { seq: number; ts: number; type: "upload_received"; upload_id: string; sha256: string; size: number; format: string }
   | { seq: number; ts: number; type: "object_created"; handle: string; kind: string }
+  | { seq: number; ts: number; type: "job_terminal"; job_id: string; attempt_id: string | null;
+      status: string; output_handles: string[]; failure?: { error: string; message: string } | null }
   | { seq: number; ts: number; type: "tool_called"; tool: string; key: string; call_id: string;
       args: Record<string, unknown>; decided_by: DecisionSource; attempt: number; version: string }
   | { seq: number; ts: number; type: "tool_succeeded"; tool: string; key: string; call_id: string;

@@ -15,7 +15,11 @@ PROTOCOLS = {
     "interface_analyzer": ("score_interface", "pyrosetta"),
     "residue_energies": ("residue_energies", "pyrosetta"),
 }
-JOB_PROTOCOLS = {**PROTOCOLS, "openmm_protein_minimize": ("openmm_protein_minimize", "openmm")}
+JOB_PROTOCOLS = {**PROTOCOLS, "openmm_protein_minimize": ("openmm_protein_minimize", "openmm"),
+                 "prolif_prepare_v1": ("prepare_chemical_structure", "prolif"),
+                 "prolif_detect_v1": ("compute_chemical_interactions", "prolif")}
+JOB_ONLY_TOOLS = frozenset({"openmm_protein_minimize", "prepare_chemical_structure",
+                            "compute_chemical_interactions"})
 
 
 def protocol_capabilities() -> dict[str, Any]:
@@ -55,6 +59,9 @@ def register(reg: ToolRegistry) -> None:
     @reg.register("openmm_protein_minimize", unavailable_reason="use the durable JobQueue lane")
     def queued_only(ctx: ToolContext, **kwargs: object) -> Handle:
         raise ToolFailure(FailureClass.precondition, "submit through the durable method job lane")
+
+    for name in ("prepare_chemical_structure", "compute_chemical_interactions"):
+        reg.register(name, unavailable_reason="use the fixed durable chemical job lane")(queued_only)
 
     @reg.register("define_mutations")
     def define_mutations(ctx: ToolContext, structure: str, mutations: list) -> Handle:

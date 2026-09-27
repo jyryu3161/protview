@@ -1,5 +1,5 @@
 # Tool contracts (plan §3.3, §5.2). The orchestrator enforces `accepts` BEFORE execution.
-# Keep ≤ 20 tools. Prefer params over new tools. enum > free string.
+# Closed registry: new fixed durable methods are added only with reviewed protocols.
 tools:
   # ---------------- L1 viewer (UI-side; executed by the frontend, logged as events) --------
   - name: snapshot
@@ -112,6 +112,26 @@ tools:
       selection_policy: { type: str, enum: [protein_only], required: true }
       hydrogen_policy: { type: str, enum: [rebuild_pH7], required: true }
     description: Fixed protein-only Amber14-all plus GBn2 potential and bounded minimization, kJ/mol; durable_job lane
+
+  - name: prepare_chemical_structure
+    level: L3
+    version: '1'
+    emits: chemical_graph
+    cost_class: expensive
+    typical_runtime_s: 120
+    description: Fixed ProLIF prepared-chemistry conversion through the durable job lane only
+
+  - name: compute_chemical_interactions
+    level: L3
+    version: '1'
+    accepts: { graph_handle: [chemical_graph] }
+    emits: chemical_interaction_set
+    cost_class: expensive
+    typical_runtime_s: 120
+    params:
+      schema: { type: str, enum: [chemical_detect_request@1], required: true }
+      categories: { type: list, required: true }
+    description: Fixed ProLIF fingerprint over one immutable chemical graph through the durable job lane only
 
   # ---------------- L3 energetic (PyRosetta, job queue, expensive) --------------------------
   - name: relax_structure

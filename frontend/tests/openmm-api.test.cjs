@@ -16,7 +16,10 @@ test("OpenMM preflight uses canonical structure query while object reads retain 
     seen.push(url);
     return { ok: true, json: async () => ({}) };
   };
-  vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports, fetch, require });
+  vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports, fetch,
+    require: name => name === "./chemical" ? { collectChemicalAtomCatalog: () => {
+      throw new Error("Unrelated M11 collector must not run in OpenMM preflight test");
+    } } : require(name) });
   const { api } = moduleObject.exports;
   const structure = "obj://run-a/prepared_structure/abc";
   await api.openmmPreflight("run-a", structure);

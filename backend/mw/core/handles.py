@@ -137,7 +137,8 @@ class ObjectStore:
                 self.events.append("object_created", **payload)
                 self._install(payload, raw)
             else:
-                if self._raw(meta) != raw:
+                if (meta["schema"] != schema or meta["fmt"] != fmt or
+                        not self._existing_equals(meta, raw)):
                     raise ValueError("object handle collision or corrupt content")
                 if meta["summary"] != (summary or {}) or meta["null_result"] != null_result:
                     raise ValueError("conflicting metadata for identical object content")
@@ -163,7 +164,7 @@ class ObjectStore:
             except FileNotFoundError:
                 existing_fd = None
             if existing_fd is not None:
-                existing = self._decode_fd(existing_fd, fmt)
+                existing = self._decode_expected_fd(existing_fd, fmt, len(raw))
                 if existing != raw:
                     raise ValueError("corrupt existing object payload")
             else:
@@ -207,6 +208,31 @@ class ObjectStore:
                 import pyarrow.parquet as pq
                 return canonical_json(pq.read_table(stream).to_pylist())
             return stream.read()
+
+    @classmethod
+    def _decode_expected_fd(cls, descriptor: int, fmt: str, expected_len: int) -> bytes:
+        if fmt == "parquet":
+            return cls._decode_fd(descriptor, fmt)
+        with os.fdopen(descriptor, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_size != expected_len:
+                raise ValueError("corrupt existing object payload size")
+            return stream.read(expected_len + 1)
+
+    def _existing_equals(self, meta: dict[str, Any], expected: bytes) -> bool:
+        _, sha = self._check_handle(meta["handle"])
+        name = f"{sha}.{meta['fmt']}"
+        if meta["path"] != f"objects/{name}":
+            raise ValueError("unsafe object path")
+        obj_fd = self._open_obj_dir()
+        try:
+            descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                 dir_fd=obj_fd)
+            return self._decode_expected_fd(descriptor, meta["fmt"], len(expected)) == expected
+        except OSError as exc:
+            raise ValueError("unsafe object path") from exc
+        finally:
+            os.close(obj_fd)
 
     def rebuild_from_events(self) -> set[str]:
         """Publish a validated event-derived index in one SQLite transaction."""
@@ -267,6 +293,48 @@ class ObjectStore:
         meta = self.meta(handle)
         raw = self._raw(meta)
         return json.loads(raw) if meta["fmt"] in ("json", "parquet") else raw
+
+    def _raw_bounded(self, handle: str, max_bytes: int) -> tuple[dict[str, Any], bytes]:
+        """Read an object with a bound on the *actual* file, not index metadata."""
+        if type(max_bytes) is not int or max_bytes <= 0:
+            raise ValueError("invalid object byte limit")
+        meta = self.meta(handle)
+        _, sha = self._check_handle(handle)
+        name = f"{sha}.{meta['fmt']}"
+        if meta["path"] != f"objects/{name}" or meta["size"] > max_bytes:
+            raise ValueError("invalid or oversized object")
+        obj_fd = self._open_obj_dir()
+        try:
+            descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                 dir_fd=obj_fd)
+            with os.fdopen(descriptor, "rb") as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_size > max_bytes:
+                    raise ValueError("invalid or oversized object")
+                raw = stream.read(max_bytes + 1)
+                if len(raw) != info.st_size or len(raw) > max_bytes:
+                    raise ValueError("invalid or oversized object")
+        except OSError as exc:
+            raise ValueError("unsafe object path") from exc
+        finally:
+            os.close(obj_fd)
+        if object_sha(meta["kind"], meta["schema"], raw) != sha:
+            raise ValueError("corrupt object payload hash")
+        return meta, raw
+
+    def load_bounded_bytes(self, handle: str, max_bytes: int) -> bytes:
+        """Read bounded immutable raw bytes, including imported text formats."""
+        meta, raw = self._raw_bounded(handle, max_bytes)
+        if meta["fmt"] in ("json", "parquet"):
+            raise ValueError("object is not raw bytes")
+        return raw
+
+    def load_bounded_json(self, handle: str, max_bytes: int) -> Any:
+        """Read bounded immutable JSON without following a replaced object symlink."""
+        meta, raw = self._raw_bounded(handle, max_bytes)
+        if meta["fmt"] != "json":
+            raise ValueError("object is not JSON")
+        return json.loads(raw, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
 
     def materialize(self, handle: str, columns: Iterable[str] | None = None,
                     offset: int = 0, limit: int = 100) -> list[dict[str, Any]]:

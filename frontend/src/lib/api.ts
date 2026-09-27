@@ -3,7 +3,11 @@ import type { BudgetSnapshot, EgressMode, Handle, InteractionRow, ResidueRef, Ru
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
-import type { AtomCatalog, MeasurementResult } from "./comparison";
+import type { AtomCatalog, AtomRefV1, MeasurementResult } from "./comparison";
+import type { ChemicalCapability, ChemicalImport, ChemicalInspect, ChemicalJob,
+  ChemicalPreparationManifest, ChemicalPrepareArgs, ChemicalPreview, ChemicalResult, ChemicalResultPage,
+  ChemicalView } from "./chemical";
+import { collectChemicalAtomCatalog } from "./chemical";
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -19,7 +23,8 @@ export interface ObjectMeta { handle: string; kind: string; schema: string; fmt:
 export interface Page<T> { meta: ObjectMeta; rows: T[]; total: number; offset: number; limit: number }
 export interface Capabilities { mode: "local_only"; supported: Record<string, string>; unavailable: Record<string, string>;
   methods?: { openmm_protein_minimize?: { available: boolean; method_id?: string; distribution_version?: string; engine_build?: string; unit?: string; limitations?: string; explanation?: string }; interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
-    engine_version?: string; unit?: string; limitations?: string; explanation?: string } } }
+    engine_version?: string; unit?: string; limitations?: string; explanation?: string };
+    chemical_interactions?: ChemicalCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -58,16 +63,23 @@ export interface OpenmmReportArtifact { handle: string; markdown_handle: string;
 export type CommandResult = { ok: true; handle: Handle } | ({ ok: false } & ToolError) | { ok: false; approval: { gate: string; tool: string; reason: string } } | { ok: false; loop_stop: { reason: string } };
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string, public code?: string) { super(message); }
+  constructor(public status: number, message: string, public code?: string,
+    public approval?: { gate: string; tool: string; reason: string }) { super(message); }
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, { cache: "no-store", ...init });
   if (!response.ok) {
-    let data: { detail?: { message?: string; error?: string } | string; message?: string; error?: string } = {};
+    let data: { detail?: { message?: string; error?: string;
+      approval?: { gate: string; tool: string; reason: string } } | string;
+      message?: string; error?: string;
+      approval?: { gate: string; tool: string; reason: string } } = {};
     try { data = await response.json(); } catch { /* non-JSON server failure */ }
     const detail = typeof data.detail === "object" ? data.detail : undefined;
-    throw new ApiError(response.status, detail?.message ?? data.message ?? (typeof data.detail === "string" ? data.detail : `HTTP ${response.status}`), detail?.error ?? data.error);
+    const approval = detail?.approval ?? data.approval;
+    throw new ApiError(response.status,
+      detail?.message ?? data.message ?? approval?.reason ?? (typeof data.detail === "string" ? data.detail : `HTTP ${response.status}`),
+      detail?.error ?? data.error, approval);
   }
   return response.json() as Promise<T>;
 }
@@ -76,6 +88,72 @@ function runPath(runId: string, tail = "") { return `/runs/${encodeURIComponent(
 function handleParam(handle: string) { return `handle=${encodeURIComponent(handle)}`; }
 
 export const api = {
+  chemicalImport: (id: string, kind: ChemicalImport["kind"], file: File, signal?: AbortSignal) =>
+    request<ChemicalImport>(runPath(id, `/chemical/imports?kind=${kind}&filename=${encodeURIComponent(file.name)}`),
+      { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file, signal }),
+  chemicalInspect: (id: string, handle: string, signal?: AbortSignal) =>
+    request<ChemicalInspect>(runPath(id, `/chemical/imports/inspect?${handleParam(handle)}`), { signal }),
+  async chemicalStagingAtoms(id: string, handle: string, modelNumber: number, signal?: AbortSignal) {
+    const limit = 1000;
+    const path = (offset: number) => runPath(id, `/chemical/imports/atoms?${handleParam(handle)}&model_number=${modelNumber}&offset=${offset}&limit=${limit}`);
+    const first = await request<{ schema: "chemical_staging_atom_page@1"; input_handle: string;
+      model_number: number; total: number; offset: number; limit: number;
+      rows: { ref: AtomRefV1; coordinate_A: number[]; element: string; water: boolean }[] }>(path(0), { signal });
+    if (first.schema !== "chemical_staging_atom_page@1" || first.input_handle !== handle ||
+        first.model_number !== modelNumber || first.offset !== 0 || first.limit !== limit ||
+        !Number.isInteger(first.total) || first.total < 1 || first.total > 10000)
+      throw new Error("수용체 원자 목록의 첫 페이지 출처·크기가 다릅니다.");
+    const rows = [...first.rows];
+    const check = (page: typeof first, offset: number) => {
+      if (page.schema !== "chemical_staging_atom_page@1" || page.input_handle !== handle ||
+          page.model_number !== modelNumber || page.total !== first.total ||
+          page.offset !== offset || page.limit !== limit ||
+          page.rows.length !== Math.min(limit, first.total - offset) ||
+          page.rows.some(row => row.ref.structure_handle !== handle ||
+            row.ref.residue.model_number !== modelNumber || !Number.isInteger(row.ref.site_index) ||
+            row.ref.site_index < 0 || row.ref.site_index >= first.total || row.coordinate_A.length !== 3 ||
+            !row.coordinate_A.every(Number.isFinite)))
+        throw new Error("수용체 원자 목록의 페이지 출처·원자 좌표가 다릅니다.");
+    };
+    check(first, 0);
+    while (rows.length < first.total) {
+      const next = await request<typeof first>(path(rows.length), { signal });
+      check(next, rows.length);
+      rows.push(...next.rows);
+    }
+    if (new Set(rows.map(row => row.ref.site_index)).size !== first.total ||
+        new Set(rows.map(row => JSON.stringify(row.ref))).size !== first.total)
+      throw new Error("수용체 원자 목록의 출처 또는 site가 다릅니다.");
+    return rows;
+  },
+  chemicalPreview: (id: string, args: ChemicalPrepareArgs, signal?: AbortSignal) =>
+    request<ChemicalPreview>(runPath(id, "/chemical/preview"), {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify(args), signal }),
+  chemicalPrepareJob: (id: string, args: ChemicalPrepareArgs) =>
+    request<ChemicalJob>(runPath(id, "/jobs"), { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ protocol_id: "prolif_prepare_v1", args, timeout_s: 120 }) }),
+  chemicalDetectJob: (id: string, graph: string) =>
+    request<ChemicalJob>(runPath(id, "/jobs"), { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ protocol_id: "prolif_detect_v1", args: { schema: "chemical_detect_request@1",
+        graph_handle: graph, categories: ["HBDonor", "HBAcceptor", "Hydrophobic", "Cationic", "Anionic"] }, timeout_s: 120 }) }),
+  chemicalView: (id: string, handle: string, signal?: AbortSignal) =>
+    request<ChemicalView>(runPath(id, `/chemical/structures/view?${handleParam(handle)}`), { signal }),
+  chemicalPreparationManifest: (id: string, sourceHandle: string, signal?: AbortSignal) =>
+    request<{ meta: ObjectMeta; manifest: ChemicalPreparationManifest }>(
+      runPath(id, `/chemical/preparation-manifests?source_handle=${encodeURIComponent(sourceHandle)}`), { signal }),
+  chemicalAtoms: (id: string, handle: string, offset = 0, limit = 1000, signal?: AbortSignal) =>
+    request<AtomCatalog>(runPath(id, `/chemical/structures/atoms?${handleParam(handle)}&offset=${offset}&limit=${limit}`), { signal }),
+  async allChemicalAtoms(id: string, handle: string, signal?: AbortSignal): Promise<AtomCatalog> {
+    return collectChemicalAtomCatalog(handle,
+      (offset, limit) => api.chemicalAtoms(id, handle, offset, limit, signal));
+  },
+  chemicalGraph: (id: string, handle: string, signal?: AbortSignal) =>
+    request<{ meta: ObjectMeta; graph: Record<string, unknown> }>(runPath(id, `/chemical/graphs?${handleParam(handle)}`), { signal }),
+  chemicalResult: (id: string, handle: string, signal?: AbortSignal) =>
+    request<{ meta: ObjectMeta; result: ChemicalResult }>(runPath(id, `/chemical/results?${handleParam(handle)}`), { signal }),
+  chemicalRows: (id: string, handle: string, offset: number, category: string, limit = 50, signal?: AbortSignal) =>
+    request<ChemicalResultPage>(runPath(id, `/chemical/results/rows?${handleParam(handle)}&offset=${offset}&limit=${limit}${category ? `&category=${encodeURIComponent(category)}` : ""}`), { signal }),
   savedScenes: (id: string, offset = 0) => request<SavedPage<SavedSceneDetail>>(runPath(id, `/viewer/scenes?offset=${offset}&limit=50`)),
   savedScene: (id: string, handle: string, signal?: AbortSignal) => request<SavedSceneDetail>(runPath(id, `/viewer/scenes/selected?${handleParam(handle)}`), { signal }),
   saveScene: (id: string, body: SceneBindingRequest & NativeSceneState & { schema: "viewer_scene@1"; name: string }) =>
