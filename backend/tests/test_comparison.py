@@ -353,7 +353,7 @@ def test_http_catalog_commands_result_and_report_actual_bytes(tmp_path, monkeypa
 
     monkeypatch.setattr(appmod, "RUNS_DIR", tmp_path / "api-runs")
     appmod.RUNS.clear()
-    client = TestClient(appmod.app)
+    client = TestClient(appmod.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={"goal": "M10 local fixture"}).json()["run_id"]
     handles = []
     for filename in ("m10-reference.pdb", "m10-moving.pdb"):

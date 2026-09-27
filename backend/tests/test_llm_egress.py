@@ -564,7 +564,7 @@ def test_api_reopens_internal_online_and_dry_modes_while_default_creation_is_loc
     import mw.api.app as appmod
     monkeypatch.setattr(appmod, "RUNS_DIR", tmp_path / "runs")
     appmod.RUNS.clear()
-    client = TestClient(appmod.app)
+    client = TestClient(appmod.app, base_url="http://127.0.0.1")
     created = client.post("/runs", json={"goal": "fixture"})
     assert created.status_code == 201 and created.json()["egress"] == "local_only"
     for mode in ("online", "dry_run"):

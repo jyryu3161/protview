@@ -90,9 +90,40 @@ CHEMICAL_REQUEST_LIMIT = 512 * 1024
 CHEMICAL_SOURCE_READ_LIMIT = 32 * 1024 * 1024
 CHEMICAL_MANIFEST_READ_LIMIT = 8 * 1024 * 1024
 
+# Host header allowlist (DNS-rebinding guard). Only loopback names, optional port, case-insensitive.
+HOST_REJECT_STATUS = 400
+HOST_REJECT_MESSAGE = "Host header not allowed"
+_ALLOWED_HOST_RE = re.compile(r"(?:127\.0\.0\.1|localhost|\[::1\])(?::[0-9]{1,5})?", re.IGNORECASE)
+
+
+def host_allowed(headers: list[tuple[bytes, bytes]]) -> bool:
+    hosts = [value for name, value in headers if name.lower() == b"host"]
+    if len(hosts) != 1:
+        return False
+    try:
+        host = hosts[0].decode("ascii")
+    except UnicodeDecodeError:
+        return False
+    return _ALLOWED_HOST_RE.fullmatch(host) is not None
+
+
+class HostAllowlistMiddleware:
+    """Reject any HTTP request whose Host is not a loopback name, before routing or CORS."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] == "http" and not host_allowed(scope.get("headers") or []):
+            await JSONResponse({"detail": HOST_REJECT_MESSAGE}, status_code=HOST_REJECT_STATUS)(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
 app = FastAPI(title="ProtView local API")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
                    allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(HostAllowlistMiddleware)  # added last = outermost
 REGISTRY = build_registry()
 RUNS: dict[str, Run] = {}
 VIEWER_GATE = EgressGate()

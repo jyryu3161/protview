@@ -16,7 +16,7 @@ def api(tmp_path, monkeypatch):
     import mw.api.app as appmod
     monkeypatch.setattr(appmod, "RUNS_DIR", tmp_path / "runs")
     appmod.RUNS.clear()
-    return TestClient(appmod.app), appmod
+    return TestClient(appmod.app, base_url="http://127.0.0.1"), appmod
 
 
 def new_run(client):

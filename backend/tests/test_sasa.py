@@ -277,7 +277,7 @@ def test_http_real_bytes_method_report_download_and_reopen(tmp_path, monkeypatch
     import mw.api.app as appmod
     monkeypatch.setattr(appmod, "RUNS_DIR", tmp_path / "http-runs")
     appmod.RUNS.clear()
-    client = TestClient(appmod.app)
+    client = TestClient(appmod.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={}).json()["run_id"]
     upload = client.post(f"/runs/{rid}/uploads", params={"filename": "fixture.pdb"}, content=FIX.read_bytes())
     assert upload.status_code == 201
