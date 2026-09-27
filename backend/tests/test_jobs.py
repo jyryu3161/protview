@@ -183,7 +183,7 @@ def test_production_boundary_dry_run_and_api(tmp_path, monkeypatch):
     assert dry.budget.expensive_calls == 0
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     cap = client.get("/capabilities").json()
     assert len(cap["energy_protocols"]["protocols"]) == 4
     assert "jobs" in cap["supported"] and "jobs" not in cap["unavailable"]
@@ -887,7 +887,7 @@ def test_missing_terminal_output_and_private_api_events(tmp_path, monkeypatch):
                       launch_nonce="private_nonce", ordinal=1, remaining_wall_s=1, timeout_s=1)
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    response = TestClient(api_module.app).get("/runs/run_jobs/events").json()
+    response = TestClient(api_module.app, base_url="http://127.0.0.1").get("/runs/run_jobs/events").json()
     assert "private_nonce" not in json.dumps(response)
     missing = "obj://run_jobs/job_lifecycle/" + "0" * 64
     run.events.append("job_cleanup_verified", job_id=job["job_id"], attempt_id="attempt_one",

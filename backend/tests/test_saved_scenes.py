@@ -40,7 +40,7 @@ def _png(width=64, height=64, pixel=b"\x20\x80\xb0\xff"):
 def _setup(monkeypatch, tmp_path):
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={}).json()["run_id"]
     raw = (FIX / "mini_complex.pdb").read_bytes()
     upload = client.post(f"/runs/{rid}/uploads?filename=mini_complex.pdb", content=raw)

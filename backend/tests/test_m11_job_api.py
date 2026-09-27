@@ -37,7 +37,7 @@ def test_job_capability_uses_scientific_dependency_validation(monkeypatch):
     assert available["ligand_sdf_variant"] == "V2000"
     assert available["worker_sha256"] == expected["worker_sha256"]
     assert available["dependency_manifest_sha256"] == expected["lock_sha256"]
-    public = TestClient(api_module.app).get("/capabilities")
+    public = TestClient(api_module.app, base_url="http://127.0.0.1").get("/capabilities")
     assert public.status_code == 200
     assert public.json()["methods"]["chemical_interactions"]["ligand_sdf_variant"] == "V2000"
 
@@ -56,7 +56,7 @@ def test_job_capability_uses_scientific_dependency_validation(monkeypatch):
 def test_identical_sdf_import_under_alternate_filename_keeps_immutable_handle(tmp_path, monkeypatch):
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={"goal": "reimport selected SDF", "dry_run": False}).json()["run_id"]
     raw = (FIX / "prolif-vina-output.sdf").read_bytes()
     first = client.post(f"/runs/{rid}/chemical/imports",
@@ -80,7 +80,7 @@ def test_identical_sdf_import_under_alternate_filename_keeps_immutable_handle(tm
 def test_preparation_manifest_reader_rejects_wrong_kind_and_foreign_source(tmp_path, monkeypatch):
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     first = client.post("/runs", json={"goal": "read own source", "dry_run": False}).json()["run_id"]
     second = client.post("/runs", json={"goal": "read foreign source", "dry_run": False}).json()["run_id"]
     store = api_module._run(first).store
@@ -139,7 +139,7 @@ def test_identical_candidate_becomes_public_only_after_later_successful_attempt(
         run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
                           status=status, output_handles=outputs if status == "done" else [])
 
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     published("job_original", attempt_a, "cancelled")
     assert client.get(f"/runs/{run.run_id}/objects/meta", params={"handle": source.handle}).status_code == 422
     with pytest.raises(ToolFailure):
@@ -267,7 +267,7 @@ def _prepare_request(client: TestClient, rid: str) -> dict:
 def test_staging_atom_page_1000_shape_bounds_and_oversized_blob(tmp_path, monkeypatch):
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={"goal": "bounded M11 staging catalog",
                                       "dry_run": False}).json()["run_id"]
     handle = _import(client, rid, "receptor", FIX / "prolif-vina-rec.pdb")
@@ -345,7 +345,7 @@ def test_public_fixture_jobs_report_and_events_only_recovery(tmp_path, monkeypat
     root = tmp_path / "original"
     monkeypatch.setattr(api_module, "RUNS_DIR", root)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     created = client.post("/runs", json={"goal": "public ProLIF fixture integration", "dry_run": False})
     assert created.status_code == 201
     rid = created.json()["run_id"]
@@ -504,7 +504,7 @@ def test_native_candidates_cancel_before_terminal_remain_inaccessible_after_even
     root = tmp_path / "original"
     monkeypatch.setattr(api_module, "RUNS_DIR", root)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     prep_rid = client.post("/runs", json={"goal": "native preparation late cancellation",
                                            "dry_run": False}).json()["run_id"]
     prep_request = _prepare_request(client, prep_rid)
@@ -626,7 +626,7 @@ def test_native_worker_failure_charges_each_retry_without_publishing(tmp_path, m
     root = tmp_path / "failed"
     monkeypatch.setattr(api_module, "RUNS_DIR", root)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={"goal": "labeled invalid worker input fixture",
                                       "dry_run": False}).json()["run_id"]
     request = _prepare_request(client, rid)
@@ -668,7 +668,7 @@ def test_native_receptor_graph_failure_is_typed_with_exact_uploaded_atom_refs(tm
     root = tmp_path / "receptor_graph_failure"
     monkeypatch.setattr(api_module, "RUNS_DIR", root)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={"goal": "labeled zero-length receptor bond fixture",
                                      "dry_run": False}).json()["run_id"]
     request = _prepare_request(client, rid)
@@ -724,7 +724,7 @@ def test_chemical_import_body_bound_and_queued_cancel(tmp_path, monkeypatch):
     root = tmp_path / "cancel"
     monkeypatch.setattr(api_module, "RUNS_DIR", root)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={"goal": "chemical request bounds", "dry_run": False}).json()["run_id"]
     too_big = client.post(f"/runs/{rid}/chemical/imports",
                           params={"kind": "ligand_sdf", "filename": "fixture.sdf"},
@@ -784,7 +784,7 @@ def test_running_native_worker_cancel_and_timeout(tmp_path, monkeypatch):
         root = tmp_path / mode
         monkeypatch.setattr(api_module, "RUNS_DIR", root)
         api_module.RUNS.clear()
-        client = TestClient(api_module.app)
+        client = TestClient(api_module.app, base_url="http://127.0.0.1")
         rid = client.post("/runs", json={"goal": f"labeled {mode} native lifecycle fixture",
                                           "dry_run": False}).json()["run_id"]
         request = _prepare_request(client, rid)
@@ -825,7 +825,7 @@ def test_fixed_adapter_rejects_malformed_and_oversized_output(tmp_path, monkeypa
         root = tmp_path / mode
         monkeypatch.setattr(api_module, "RUNS_DIR", root)
         api_module.RUNS.clear()
-        client = TestClient(api_module.app)
+        client = TestClient(api_module.app, base_url="http://127.0.0.1")
         rid = client.post("/runs", json={"goal": f"labeled {mode} output fault fixture",
                                           "dry_run": False}).json()["run_id"]
         request = _prepare_request(client, rid)
@@ -857,7 +857,7 @@ def test_fixed_adapter_rejects_malformed_and_oversized_output(tmp_path, monkeypa
 def test_cross_run_busy_is_nonapproval_uncharged_and_resumable(tmp_path, monkeypatch):
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     first = client.post("/runs", json={"goal": "global slot holder fixture", "dry_run": False}).json()["run_id"]
     second = client.post("/runs", json={"goal": "public chemical contender", "dry_run": False}).json()["run_id"]
     request = _prepare_request(client, second)

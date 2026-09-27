@@ -427,7 +427,7 @@ def test_api_preflight_approval_timeout_and_cancel(tmp_path: Path, monkeypatch):
 
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path / "runs")
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     tool = next(item for item in client.get("/tools", params={"levels": "L3"}).json()
                 if item["name"] == "openmm_protein_minimize")
     assert tool["execution_lane"] == "durable_job"
@@ -482,7 +482,7 @@ def test_absent_openmm_is_http_precondition_without_reservation_or_launch(tmp_pa
                         lambda *a, **k: (_ for _ in ()).throw(AssertionError("template imported")))
     monkeypatch.setattr(JobQueue, "_supervise",
                         lambda *a, **k: (_ for _ in ()).throw(AssertionError("worker launched")))
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     preflight_response = client.get(f"/runs/{run.run_id}/jobs/preflight", params={"structure": structure})
     submit_response = client.post(f"/runs/{run.run_id}/jobs", json={
         "protocol_id": "openmm_protein_minimize", "args": {"structure": structure,
