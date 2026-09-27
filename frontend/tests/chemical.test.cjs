@@ -19,7 +19,8 @@ const comparison = load("comparison");
 const { exactChemicalRow, validateChemicalCatalog, chemicalAnnotationForRow,
   chemicalApprovalRequired, previewMatchesRequest, canonicalChemicalElement,
   canHydrateChemicalJobs, chemicalJobActionCurrent, chemicalCanCancel, declaredTerminalNames,
-  completedChemicalResultHandles, linkedChemicalJobs, waitForChemicalCameraSettle } =
+  completedChemicalResultHandles, linkedChemicalJobs, waitForChemicalCameraSettle, settleChemicalFocus,
+  chemicalFocusSettleTimeoutMs, chemicalFocusTimeoutMessage } =
   load("chemical", { "./comparison": comparison });
 const { chemicalFailureDetails } = load("chemical", { "./comparison": comparison });
 const { collectChemicalAtomCatalog } = load("chemical", { "./comparison": comparison });
@@ -230,19 +231,99 @@ test("default reopen keeps the newest pending preparation instead of following a
     "detect_new", "The newest preparation may show only its graph-compatible detection");
 });
 
-test("chemical focus waits past a delayed native transition and revokes on manual intent", async () => {
-  let frames = 0;
-  const next = async () => { frames += 1; };
-  const settled = await waitForChemicalCameraSettle(() => frames < 4, next, () => true,
-    () => frames * 16, 500);
-  assert.equal(settled, true);
-  assert.ok(frames >= 5);
-  frames = 0;
-  const revoked = await waitForChemicalCameraSettle(() => true, next, () => frames < 3,
-    () => frames * 16, 500);
-  assert.equal(revoked, false);
-  await assert.rejects(waitForChemicalCameraSettle(() => true, next, () => true,
-    () => frames++ * 16, 32), /정착 시간이 초과/);
+const savedScene = load("saved-scene");
+
+/** Frame-driven fake of the native camera probe used by the chemical row focus path. */
+function fakeCamera(script) {
+  const state = { frame: 0, now: 0 };
+  const probe = () => script(state.frame);
+  const nextFrame = async () => { state.frame += 1; state.now += 16; };
+  return { state, probe, nextFrame, now: () => state.now };
+}
+const calm = (camera, applied = true) => ({ inTransition: false, camera, applied });
+const moving = camera => ({ inTransition: true, camera, applied: true });
+
+test("chemical focus default settle bound is three seconds and tunable", () => {
+  assert.equal(chemicalFocusSettleTimeoutMs, 3000);
+  assert.match(chemicalFocusTimeoutMessage, /다시/, "Timeout must tell the user the focus is retryable");
+});
+
+test("chemical focus waits through transition, deferred apply and orbit inertia before settling", async () => {
+  // Frames 1-3: orbit inertia changes the camera; 4-6: transition; 7-9: calm but
+  // the deferred Mol* reset is still pending (not applied); afterwards applied and stable.
+  const fake = fakeCamera(frame => frame <= 3 ? calm(`orbit${frame}`) : frame <= 6 ? moving(`t${frame}`) :
+    frame <= 9 ? calm("old", false) : calm("focused"));
+  const settled = await waitForChemicalCameraSettle(fake.probe, fake.nextFrame, () => true, fake.now,
+    fake.now() + chemicalFocusSettleTimeoutMs);
+  assert.equal(settled, "focused");
+  assert.ok(fake.state.frame >= 12, "Two consecutive unchanged calm frames after apply are required");
+});
+
+test("chemical focus settle timeout is a retryable error and never reports applied", async () => {
+  const fake = fakeCamera(() => moving("spin"));
+  await assert.rejects(waitForChemicalCameraSettle(fake.probe, fake.nextFrame, () => true, fake.now,
+    fake.now() + 100), error => error.message === chemicalFocusTimeoutMessage);
+  const pending = fakeCamera(() => calm("old", false));
+  await assert.rejects(waitForChemicalCameraSettle(pending.probe, pending.nextFrame, () => true, pending.now,
+    pending.now() + 100), error => error.message === chemicalFocusTimeoutMessage,
+  "A calm camera that never reached the requested focus is not applied");
+  let readbacks = 0;
+  const drifting = fakeCamera(frame => calm(`drift${Math.floor(frame / 4)}`));
+  await assert.rejects(settleChemicalFocus(drifting.probe, drifting.nextFrame, () => true, drifting.now,
+    drifting.now() + 400, async () => { readbacks += 1; drifting.state.frame += 1; return readbacks; }),
+  error => error.message === chemicalFocusTimeoutMessage);
+});
+
+test("chemical focus readback retries when the camera moves during readback instead of failing", async () => {
+  let moved = false;
+  const fake = fakeCamera(() => calm(moved ? "focused-after" : "focused"));
+  const result = await settleChemicalFocus(fake.probe, fake.nextFrame, () => true, fake.now,
+    fake.now() + chemicalFocusSettleTimeoutMs, async () => { const first = !moved; moved = true; return first; });
+  assert.deepEqual({ ...result }, { value: false, camera: "focused-after" },
+    "Readback taken while the camera moved is discarded and repeated after the next settle");
+});
+
+test("real user actions during the settle wait revoke the pending chemical focus", async () => {
+  const binding = { sessionId: "", clientId: "c", generation: 2, sourceHandle: "obj://run/chemical_structure/a",
+    catalogHash: "h", actionRevision: 0 };
+  for (const action of ["pointer", "empty-click", "rotation", "rebind-different", "new-row"]) {
+    const live = { token: 4, revision: 9, intent: 1 };
+    const expected = { ...live };
+    const fake = fakeCamera(frame => {
+      if (frame === 3) {
+        if (action === "rebind-different")
+          live.token = savedScene.nativeTokenAfterBinding(live.token, binding, { ...binding, generation: 3 });
+        else if (action === "new-row") live.intent += 1;
+        else live.revision += 1; // trusted pointerdown/wheel or native selection change
+      }
+      return moving("spin");
+    });
+    const current = () => comparison.nativeIntentCurrent(expected, live);
+    assert.equal(await waitForChemicalCameraSettle(fake.probe, fake.nextFrame, current, fake.now,
+      fake.now() + chemicalFocusSettleTimeoutMs), null, action);
+    let readback = false;
+    assert.equal(await settleChemicalFocus(fakeCamera(() => moving("spin")).probe, fake.nextFrame, current,
+      fake.now, fake.now() + chemicalFocusSettleTimeoutMs, async () => { readback = true; }), null, action);
+    assert.equal(readback, false, `${action} must not read back a revoked focus`);
+  }
+});
+
+test("identical six-field republish and catalog observation do not revoke the pending chemical focus", async () => {
+  const binding = { sessionId: "", clientId: "c", generation: 2, sourceHandle: "obj://run/chemical_structure/a",
+    catalogHash: "h", actionRevision: 0 };
+  const live = { token: 4, revision: 9, intent: 1 };
+  const expected = { ...live };
+  let catalogObservations = 0;
+  const fake = fakeCamera(frame => {
+    if (frame === 2 || frame === 5) live.token = savedScene.nativeTokenAfterBinding(live.token, binding, { ...binding });
+    if (frame === 4) catalogObservations += 1; // catalog readiness is observed without a manual revision
+    return frame <= 6 ? moving("spin") : calm("focused");
+  });
+  const current = () => comparison.nativeIntentCurrent(expected, live);
+  const result = await settleChemicalFocus(fake.probe, fake.nextFrame, current, fake.now,
+    fake.now() + chemicalFocusSettleTimeoutMs, async () => "selection");
+  assert.equal(catalogObservations, 1);
+  assert.deepEqual({ ...result }, { value: "selection", camera: "focused" });
 });
 
 test("running cancellation remains available during held Start and invalidates its late response", () => {

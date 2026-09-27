@@ -12,7 +12,8 @@ import { alignmentMat4, atomPickFailure, catalogSelectionReadback, nativeDeadlin
   rowsForAuthoritativeResidue, sameAtomRef, sameResidueRef, transformPoint, validateReadyCatalog,
   type AtomCatalog, type AtomRefV1, type RigidAlignment } from "@/lib/comparison";
 import type { AtomDistance } from "@/lib/comparison";
-import { canonicalChemicalElement, waitForChemicalCameraSettle } from "@/lib/chemical";
+import { canonicalChemicalElement, chemicalFocusSettleTimeoutMs, settleChemicalFocus,
+  waitForChemicalCameraSettle, type ChemicalCameraProbe } from "@/lib/chemical";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -190,6 +191,20 @@ async function nativeAtomPoint(loci: Awaited<ReturnType<typeof atomLoci>>): Prom
   if (result.length !== 3 || result.some(value => !Number.isFinite(value)))
     throw new Error("화학 상호작용 원자 좌표가 유한하지 않습니다.");
   return result;
+}
+
+/** The same combined bounding sphere Mol*'s focusLoci uses, kept so the applied target can be read back. */
+async function chemicalFocusSphere(loci: Awaited<ReturnType<typeof atomLoci>>[]) {
+  const [{ Loci }, { BoundaryHelper }] = await Promise.all([
+    import("molstar/lib/mol-model/loci"), import("molstar/lib/mol-math/geometry/boundary-helper")]);
+  const spheres = loci.map(locus => Loci.getBoundingSphere(locus));
+  if (!spheres.length || spheres.some(sphere => !sphere)) throw new Error("화학 초점 원자 범위를 계산하지 못했습니다.");
+  if (spheres.length === 1) return spheres[0]!;
+  const helper = new BoundaryHelper("98");
+  for (const sphere of spheres) helper.includeSphere(sphere!);
+  helper.finishedIncludeStep();
+  for (const sphere of spheres) helper.radiusSphere(sphere!);
+  return helper.getSphere();
 }
 
 async function chemicalSelectedNativeIndices(current: Instance): Promise<number[]> {
@@ -1209,29 +1224,42 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
           nativeSourceIndex: mapped[0].viewer_source_index });
       }
       if (!active()) return;
+      // Orbit, zoom and representation changes may still be moving the camera or hold a
+      // deferred Mol* reset. Wait (bounded) instead of failing, then apply and wait again
+      // until the native camera reports this exact focus target, unchanged, for two frames.
+      const deadline = performance.now() + chemicalFocusSettleTimeoutMs;
+      const now = () => performance.now();
+      const probe = (target: ArrayLike<number> | null) => (): ChemicalCameraProbe | null => {
+        const camera = current.plugin.canvas3d?.camera, snapshot = nativeCamera(current.plugin);
+        if (!camera || !snapshot) return null;
+        return { inTransition: camera.transition.inTransition, camera: JSON.stringify(snapshot),
+          applied: !target || Math.hypot(...[0, 1, 2].map(i => snapshot.target[i] - target[i])) <= 1e-3 };
+      };
+      if (await waitForChemicalCameraSettle(probe(null), settledFrame, active, now, deadline) === null) return;
+      if (!active()) return;
+      const sphere = await chemicalFocusSphere(loci);
+      if (!active()) return;
       current.suppressSelectionCallback = true;
       try {
         current.plugin.managers.interactivity.lociSelects.deselectAll();
         for (const locus of loci) current.plugin.managers.interactivity.lociSelects.select({ loci: locus }, false);
       } finally { current.suppressSelectionCallback = false; }
       if (!active()) return;
-      current.plugin.managers.camera.focusLoci(loci, { durationMs: 0, minRadius: 2 });
-      if (!await waitForChemicalCameraSettle(
-        () => !!current.plugin.canvas3d?.camera.transition.inTransition,
-        settledFrame, active, () => performance.now())) return;
-      if (!active()) return;
-      const selectedNativeSourceIndices = await chemicalSelectedNativeIndices(current);
+      current.plugin.managers.camera.focusSphere(sphere, { durationMs: 0, minRadius: 2 });
+      const settled = await settleChemicalFocus(probe(Array.from(sphere.center)), settledFrame, active, now,
+        deadline, () => chemicalSelectedNativeIndices(current));
+      if (!settled || !active()) return;
+      const selectedNativeSourceIndices = settled.value;
       const expected = observed.map(atom => atom.nativeSourceIndex).sort((a, b) => a - b);
       if (JSON.stringify(selectedNativeSourceIndices) !== JSON.stringify(expected))
         throw new Error("화학 행의 실제 Mol* 선택 site가 요청한 정확한 원자와 다릅니다.");
-      if (current.plugin.canvas3d?.camera.transition.inTransition)
-        throw new Error("화학 원자 초점 카메라가 아직 이동 중입니다.");
       const settledCamera = nativeCamera(current.plugin);
       if (!settledCamera || !Number.isFinite(settledCamera.radius) || settledCamera.radius <= 0 ||
           [...settledCamera.position, ...settledCamera.target, ...settledCamera.up].some(value => !Number.isFinite(value)))
         throw new Error("화학 원자 초점 카메라를 읽지 못했습니다.");
       current.chemicalFocusReadback = { rowId: chemicalFocus.rowId,
         sourceHandle: current.source.handle, atoms: observed, selectedNativeSourceIndices, settledCamera };
+      setPickError("");
     }, active, error => { if (active()) setPickError(error instanceof Error ? error.message : String(error)); });
   }, [state, chemicalFocus?.token]);
 

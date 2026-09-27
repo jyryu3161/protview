@@ -38,21 +38,49 @@ export function linkedChemicalJobs(jobs: ChemicalJob[], resultHandle: string | n
   return { prepare, detect: graph ? detects.find(job => job.input_handles.includes(graph)) ?? null : null };
 }
 
-/** Wait through Mol*'s deferred focus request and transition without retaining a revoked intent. */
-export async function waitForChemicalCameraSettle(inTransition: () => boolean,
+/** Bound on waiting for the native camera around one chemical row focus (tunable). */
+export const chemicalFocusSettleTimeoutMs = 3000;
+export const chemicalFocusTimeoutMessage =
+  "화학 원자 초점 카메라가 제한 시간 안에 멈추지 않았습니다. 초점을 다시 시도하세요.";
+
+/** One native camera observation: `camera` is a serialized snapshot, `applied` whether the requested focus is in effect. */
+export interface ChemicalCameraProbe { inTransition: boolean; camera: string; applied: boolean }
+
+/**
+ * Wait through orbit inertia, Mol*'s deferred focus request and its transition. Resolves the
+ * settled camera after two consecutive unchanged calm frames, null once the intent is revoked,
+ * and throws the retryable timeout at `deadline` without ever reporting the focus applied.
+ */
+export async function waitForChemicalCameraSettle(probe: () => ChemicalCameraProbe | null,
   nextFrame: () => Promise<void>, current: () => boolean, now: () => number,
-  timeoutMs = 5000): Promise<boolean> {
-  const deadline = now() + timeoutMs;
+  deadline: number): Promise<string | null> {
   let calmFrames = 0;
-  await nextFrame();
-  while (current()) {
+  let previous: string | null = null;
+  for (;;) {
     await nextFrame();
-    if (!current()) return false;
-    calmFrames = inTransition() ? 0 : calmFrames + 1;
-    if (calmFrames >= 2) return true;
-    if (now() >= deadline) throw new Error("화학 원자 초점 카메라 정착 시간이 초과되었습니다.");
+    if (!current()) return null;
+    const state = probe();
+    const calm = !!state && !state.inTransition && state.applied;
+    calmFrames = calm && state.camera === previous ? calmFrames + 1 : 0;
+    previous = calm ? state.camera : null;
+    if (calmFrames >= 2) return state!.camera;
+    if (now() >= deadline) throw new Error(chemicalFocusTimeoutMessage);
   }
-  return false;
+}
+
+/** Settle, read back, and repeat the readback if the camera moved while it was being taken. */
+export async function settleChemicalFocus<T>(probe: () => ChemicalCameraProbe | null,
+  nextFrame: () => Promise<void>, current: () => boolean, now: () => number, deadline: number,
+  readback: () => Promise<T>): Promise<{ value: T; camera: string } | null> {
+  for (;;) {
+    const camera = await waitForChemicalCameraSettle(probe, nextFrame, current, now, deadline);
+    if (camera === null) return null;
+    const value = await readback();
+    if (!current()) return null;
+    const state = probe();
+    if (state && !state.inTransition && state.applied && state.camera === camera) return { value, camera };
+    if (now() >= deadline) throw new Error(chemicalFocusTimeoutMessage);
+  }
 }
 
 /** Compare new chemical-lane element symbols without changing durable AtomRefs. */
