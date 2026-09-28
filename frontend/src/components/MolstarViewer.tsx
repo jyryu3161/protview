@@ -14,6 +14,7 @@ import { alignmentMat4, atomPickFailure, catalogSelectionReadback, nativeDeadlin
 import type { AtomDistance } from "@/lib/comparison";
 import { canonicalChemicalElement, chemicalFocusSettleTimeoutMs, settleChemicalFocus,
   waitForChemicalCameraSettle, type ChemicalCameraProbe } from "@/lib/chemical";
+import { OVERLAY_LABEL, readbackMismatch, type PocketOverlayReadback, type PocketOverlayRequest } from "@/lib/pockets";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -48,6 +49,10 @@ export interface MolstarViewerProps {
     distance: { first: AtomRefV1; second: AtomRefV1; value_A: number; label: string };
     angle?: { donor: AtomRefV1; hydrogen: AtomRefV1; acceptor: AtomRefV1;
       value_deg: number } } | null;
+  /** M12: stored fpocket alpha spheres of one pocket on this exact source; drawn translucent and never pickable. */
+  pocketOverlay?: PocketOverlayRequest | null;
+  /** Reported only after Mol* readback (applied), after removal (null readback) or on failure (error). */
+  onPocketOverlay?: (key: string | null, readback: PocketOverlayReadback | null, error: string | null) => void;
 }
 
 type Plugin = import("molstar/lib/mol-plugin/context").PluginContext;
@@ -82,6 +87,7 @@ export interface ViewerQaSnapshot {
     angleNative_deg: number | null; nativeShapeRefs: string[] } | null;
   layers: { layer: "reference" | "moving"; sourceHandle: string; visible: boolean;
     transform: number[]; nativeAtomCount: number }[];
+  pocketOverlay: PocketOverlayReadback | null;
 }
 export interface ViewerBridge {
   bind(binding: ViewerBinding | null): void;
@@ -108,7 +114,10 @@ type Instance = { plugin: Plugin; structure: StructureSelector; source: ViewerSo
   chemicalAnnotationRefs: string[];
   chemicalFocusReadback: ViewerQaSnapshot["chemicalFocus"];
   chemicalAnnotationReadback: Omit<NonNullable<ViewerQaSnapshot["chemicalAnnotation"]>, "nativeShapeRefs"> | null;
-  validatedCatalogs: Map<string, { hash: string; catalog: AtomCatalog }> };
+  validatedCatalogs: Map<string, { hash: string; catalog: AtomCatalog }>;
+  pocketRepr?: PocketShapeRepr; pocketLiningRef?: string; pocketReadback: PocketOverlayReadback | null;
+  pocketFocus: { key: string; token: number } | null; pocketSessionKey: string; pocketEpoch: number };
+type PocketShapeRepr = import("molstar/lib/mol-repr/representation").Representation.Any;
 
 function nativeMainRepresentationReady(current: Instance): boolean {
   return !!current.repr?.ref && !!current.plugin.state.data.cells.get(current.repr.ref)?.obj?.data?.repr;
@@ -349,10 +358,62 @@ function qaAtomScreens(current: Instance, reference: AtomCatalog | null, moving:
   return result;
 }
 
+/** Loci over the displayed structure for an exact set of server-mapped sourceIndex sites (all must exist once). */
+async function sourceIndexLoci(current: Instance, expected: Set<number>, modelNumber: number) {
+  const structure = current.structure.obj?.data;
+  if (!structure) throw new Error("표시된 구조가 없습니다.");
+  const [{ StructureElement, Unit }, { OrderedSet }] = await Promise.all([
+    import("molstar/lib/mol-model/structure"), import("molstar/lib/mol-data/int")]);
+  const seen = new Set<number>();
+  const elements: { unit: typeof structure.units[number]; indices: ReturnType<typeof OrderedSet.ofSortedArray> }[] = [];
+  for (const unit of structure.units) {
+    if (!Unit.isAtomic(unit) || unit.model.modelNum !== modelNumber) throw new Error("Mol* 구조에 다른 원본 모델이 섞여 있습니다.");
+    const indices: number[] = [];
+    for (let index = 0; index < unit.elements.length; index++) {
+      const sourceIndex = unit.model.atomicHierarchy.atomSourceIndex.value(unit.elements[index]);
+      if (!expected.has(sourceIndex)) continue;
+      if (seen.has(sourceIndex)) throw new Error("Mol* 원자 site가 중복되었습니다.");
+      seen.add(sourceIndex); indices.push(index);
+    }
+    if (indices.length) elements.push({ unit, indices: OrderedSet.ofSortedArray(indices) });
+  }
+  if (seen.size !== expected.size || !elements.length) throw new Error("포켓 주변 원자 site가 Mol* 구조에 없습니다.");
+  return StructureElement.Loci(structure, elements as Parameters<typeof StructureElement.Loci>[1]);
+}
+
+/** Reads the alpha spheres Mol* actually holds in the scene: GPU position texture and packed size data. */
+function readPocketSpheres(current: Instance) {
+  const repr = current.pocketRepr;
+  const canvas3d = current.plugin.canvas3d;
+  if (!repr || !canvas3d) return null;
+  const inScene = new Set(canvas3d.getRenderObjects());
+  const objects = repr.renderObjects;
+  if (objects.length !== 1 || !inScene.has(objects[0])) throw new Error("알파 구 표현이 Mol* 장면에 없습니다.");
+  const object = objects[0];
+  const values = object.values as unknown as Record<string, { ref: { value: unknown } }>;
+  const count = Number(values.drawCount.ref.value) / 6;
+  const positions = (values.tPositionGroup.ref.value as { array: Float32Array }).array;
+  const sizeType = values.dSizeType.ref.value as string;
+  const sizeFactor = Number(values.uSizeFactor.ref.value);
+  const packed = (values.tSize.ref.value as { array: Uint8Array }).array;
+  const size = (group: number) => sizeType === "uniform" ? Number(values.uSize.ref.value)
+    : sizeType === "group" || sizeType === "groupInstance"
+      ? (packed[group * 3] * 65536 + packed[group * 3 + 1] * 256 + packed[group * 3 + 2] - 1) / 100 : Number.NaN;
+  if (!Number.isInteger(count) || count < 1 || positions.length < count * 4) throw new Error("알파 구 개수를 읽지 못했습니다.");
+  const centers: number[][] = [], radii: number[] = [];
+  for (let i = 0; i < count; i++) {
+    centers.push([positions[i * 4], positions[i * 4 + 1], positions[i * 4 + 2]]);
+    radii.push(size(positions[i * 4 + 3]) * sizeFactor);
+  }
+  return { centers, radii, visible: object.state.visible, pickable: object.state.pickable,
+    opacity: Number(values.uAlpha.ref.value) };
+}
+
 /** Canvas-only Mol*: no download action, remote extension, or automatic property service. */
 export function MolstarViewer({ source, representation, highlight, residues, onSelect, onLoadState, onFocusResult,
   onBridge, onManualInteraction, emptyMessage, emptyIsError, atomCatalog, measureMode = false, onAtomPick,
-  comparison, focusPair, selectedAtoms, distanceResult, chemicalFocus, chemicalAnnotation }: MolstarViewerProps) {
+  comparison, focusPair, selectedAtoms, distanceResult, chemicalFocus, chemicalAnnotation,
+  pocketOverlay, onPocketOverlay }: MolstarViewerProps) {
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<Instance | null>(null);
   const requestedRepresentation = useRef(representation);
@@ -388,6 +449,18 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
       revision: chemicalAnnotationIntent.current.revision + 1 };
   const measureRef = useRef(measureMode);
   const atomPickCallback = useRef(onAtomPick);
+  const pocketIntent = useRef({ key: "", revision: 0 });
+  const pocketKey = pocketOverlay ? JSON.stringify([pocketOverlay.key, pocketOverlay.sourceHandle,
+    pocketOverlay.showSpheres, pocketOverlay.showLining, pocketOverlay.opacity, pocketOverlay.focusToken]) : "";
+  if (pocketIntent.current.key !== pocketKey)
+    pocketIntent.current = { key: pocketKey, revision: pocketIntent.current.revision + 1 };
+  const pocketRef = useRef(pocketOverlay);
+  pocketRef.current = pocketOverlay;
+  const pocketCallback = useRef(onPocketOverlay);
+  pocketCallback.current = onPocketOverlay;
+  const [pocketSession, setPocketSession] = useState("");
+  const [pocketObserved, setPocketObserved] = useState<{ status: "none" | "pending" | "applied" | "error";
+    readback: PocketOverlayReadback | null; error: string }>({ status: "none", readback: null, error: "" });
   const [state, setState] = useState<"empty" | "loading" | "ready" | "error">("empty");
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -524,7 +597,7 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         !!comparisonRef.current?.aligned), lastAtomPick: null, atomPickRevision: 0,
         nativeClickRevision: 0, lastNativeClick: null, m10QueuePending: 0,
         chemicalAnnotationRefs: [], chemicalFocusReadback: null, chemicalAnnotationReadback: null,
-        validatedCatalogs: new Map() };
+        validatedCatalogs: new Map(), pocketReadback: null, pocketFocus: null, pocketSessionKey: "", pocketEpoch: 0 };
       instance.current = current;
       if (initialCatalog) {
         await validateNativeCatalog(structure.obj.data, initialCatalog);
@@ -739,6 +812,9 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         bind: binding => { if (instance.current === current) {
           current.operationToken = nativeTokenAfterBinding(current.operationToken, current.binding, binding);
           current.binding = binding;
+          // The pocket overlay is bound to the viewer session and scene generation (not to action revisions).
+          const sessionKey = binding ? `${binding.sessionId}:${binding.generation}` : "";
+          if (sessionKey !== current.pocketSessionKey) { current.pocketSessionKey = sessionKey; setPocketSession(sessionKey); }
         } },
         snapshot: () => {
           const ready = instance.current === current && !current.contextLost &&
@@ -765,6 +841,10 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
               current.chemicalAnnotationRefs.every(ref => !!current.plugin.state.data.cells.get(ref)?.obj)
               ? { ...current.chemicalAnnotationReadback,
                 nativeShapeRefs: [...current.chemicalAnnotationRefs] } : null,
+            pocketOverlay: current.pocketReadback && current.pocketRepr &&
+              current.plugin.canvas3d?.getRenderObjects().includes(current.pocketRepr.renderObjects[0]) &&
+              (!current.pocketLiningRef || !!current.plugin.state.data.cells.get(current.pocketLiningRef)?.obj)
+              ? current.pocketReadback : null,
             catalogReady: !!validatedCatalog(current, atomRows.current) &&
               (!comparisonRef.current || !!validatedCatalog(current, comparisonRef.current.catalog)),
             atomPickRevision: current.atomPickRevision, qaAtoms: qaAtomScreens(current, atomRows.current ?? null,
@@ -1331,6 +1411,155 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
 
   useEffect(() => {
     const current = instance.current;
+    if (!current || state !== "ready") return;
+    const overlay = pocketRef.current ?? null;
+    const intentRevision = pocketIntent.current.revision, sessionKey = current.pocketSessionKey;
+    const epoch = current.pocketEpoch;
+    const catalog = validatedCatalog(current, atomRows.current);
+    // Session/generation (binding), source, validated catalog and intent revision are re-checked around every await.
+    const active = () => instance.current === current && !current.contextLost &&
+      !current.canvas.getContext("webgl2")?.isContextLost() &&
+      pocketIntent.current.revision === intentRevision && current.pocketSessionKey === sessionKey &&
+      current.pocketEpoch === epoch &&
+      (!overlay || current.source.handle === overlay.sourceHandle) && !comparisonRef.current &&
+      validatedCatalog(current, atomRows.current) === catalog;
+    const publish = (status: "none" | "pending" | "applied" | "error", readback: PocketOverlayReadback | null, error = "") => {
+      setPocketObserved({ status, readback, error });
+      if (status !== "pending") pocketCallback.current?.(overlay?.key ?? null, readback, error || null);
+    };
+    const remove = async () => {
+      current.pocketReadback = null;
+      if (current.pocketRepr) {
+        current.plugin.canvas3d?.remove(current.pocketRepr);
+        current.pocketRepr.destroy();
+        current.pocketRepr = undefined;
+      }
+      if (current.pocketLiningRef) {
+        const ref = current.pocketLiningRef;
+        current.pocketLiningRef = undefined;
+        await current.plugin.state.data.build().delete(ref).commit();
+      }
+      current.plugin.canvas3d?.requestDraw();
+    };
+    current.queue = current.queue.then(() => {
+      if (!active()) return;
+      return nativeDeadline((async () => {
+        const previousFocusTarget = current.pocketReadback?.focusedTarget ?? null;
+        await remove();
+        if (!active()) return;
+        if (!overlay) { current.pocketFocus = null; publish("none", null); return; }
+        if (!catalog) { publish("pending", null); return; }
+        if (overlay.sourceHandle !== current.source.handle || catalog.structure_handle !== current.source.handle ||
+            overlay.modelNumber !== catalog.model_number || !overlay.spheres.length)
+          throw new Error("포켓 결과의 소스·모델이 표시된 구조와 다릅니다.");
+        // Lining atoms/residues map only through server AtomRef ↔ catalog row ↔ Mol* sourceIndex.
+        const liningSites = overlay.liningAtoms.map(ref => {
+          const rows = catalog.rows.filter(row => sameAtomRef(row.ref, ref));
+          if (rows.length !== 1) throw new Error("포켓 주변 원자를 원자 목록에서 정확히 찾지 못했습니다.");
+          return rows[0].viewer_source_index;
+        });
+        const residueSites = new Set<number>();
+        for (const residue of overlay.liningResidues) {
+          const rows = rowsForAuthoritativeResidue(catalog, residue);
+          if (!rows.length) throw new Error("포켓 주변 잔기를 원자 목록에서 찾지 못했습니다.");
+          for (const row of rows) residueSites.add(row.viewer_source_index);
+        }
+        if (new Set(liningSites).size !== liningSites.length || liningSites.some(site => !residueSites.has(site)))
+          throw new Error("포켓 주변 원자와 주변 잔기가 서로 맞지 않습니다.");
+        await sourceIndexLoci(current, new Set(liningSites), catalog.model_number);
+        if (!active()) return;
+        const [{ ShapeRepresentation }, { Shape }, { SpheresBuilder }, { Spheres }, { Color }, { StructureElement,
+          StructureProperties }, { Vec3 }] = await Promise.all([
+          import("molstar/lib/mol-repr/shape/representation"), import("molstar/lib/mol-model/shape"),
+          import("molstar/lib/mol-geo/geometry/spheres/spheres-builder"),
+          import("molstar/lib/mol-geo/geometry/spheres/spheres"), import("molstar/lib/mol-util/color"),
+          import("molstar/lib/mol-model/structure"), import("molstar/lib/mol-math/linear-algebra")]);
+        if (!active()) return;
+        // Stored centers and radii are passed unchanged; one group per sphere carries its own radius.
+        const builder = SpheresBuilder.create(overlay.spheres.length, 256);
+        overlay.spheres.forEach((sphere, index) => builder.add(sphere[0], sphere[1], sphere[2], index));
+        const shape = Shape.create(`${OVERLAY_LABEL} · rank ${overlay.rank}`, overlay, builder.getSpheres(),
+          () => Color(0x2aa198), group => overlay.spheres[group][3],
+          group => `${OVERLAY_LABEL} · rank ${overlay.rank} · 알파 구 ${group + 1}`);
+        const repr = ShapeRepresentation((_ctx: unknown, data: typeof shape) => data, Spheres.Utils);
+        await current.plugin.runTask(repr.createOrUpdate({ ...repr.props, alpha: overlay.opacity, sizeFactor: 1,
+          lodLevels: [], approximate: false, xrayShaded: false }, shape));
+        if (!active()) { repr.destroy(); return; }
+        repr.setState({ pickable: false, visible: overlay.showSpheres });
+        current.plugin.canvas3d?.add(repr);
+        current.pocketRepr = repr;
+        let liningResidueSites: number[] = [];
+        if (overlay.showLining) {
+          const loci = await sourceIndexLoci(current, residueSites, catalog.model_number);
+          if (!active()) return;
+          const component = await current.plugin.builders.structure.tryCreateComponent(current.structure,
+            { type: { name: "bundle", params: StructureElement.Bundle.fromLoci(loci) }, nullIfEmpty: true,
+              label: `${OVERLAY_LABEL} 주변 잔기` }, "pocket-lining");
+          if (!component) throw new Error("포켓 주변 잔기 표시를 만들지 못했습니다.");
+          if (!active()) { await current.plugin.state.data.build().delete(component.ref).commit(); return; }
+          current.pocketLiningRef = component.ref;
+          const liningRepr = await current.plugin.builders.structure.representation.addRepresentation(component,
+            { type: "ball-and-stick", color: "uniform", colorParams: { value: 0xe8a33d } });
+          if (!active()) return;
+          const native = liningRepr.cell?.obj?.data.repr;
+          if (!native) throw new Error("포켓 주변 잔기 표현을 확인하지 못했습니다.");
+          native.setState({ pickable: false });
+          const substructure = component.cell?.obj?.data;
+          if (!substructure) throw new Error("포켓 주변 잔기 구조를 읽지 못했습니다.");
+          for (const unit of substructure.units)
+            for (let index = 0; index < unit.elements.length; index++)
+              liningResidueSites.push(StructureProperties.atom.sourceIndex(
+                StructureElement.Location.create(substructure, unit, unit.elements[index])));
+          liningResidueSites = liningResidueSites.sort((a, b) => a - b);
+          if (liningResidueSites.length !== residueSites.size || liningResidueSites.some(site => !residueSites.has(site)) ||
+              native.renderObjects.some(object => object.state.pickable))
+            throw new Error("Mol* 주변 잔기 site가 서버 AtomRef와 다릅니다.");
+        }
+        current.plugin.canvas3d?.requestDraw();
+        await settledFrame();
+        if (!active()) return;
+        const observed = readPocketSpheres(current);
+        if (!observed) throw new Error("알파 구 표현을 읽지 못했습니다.");
+        const mismatch = readbackMismatch(overlay.spheres, observed.centers, observed.radii);
+        if (mismatch) throw new Error(mismatch);
+        if (observed.pickable || observed.visible !== overlay.showSpheres || Math.abs(observed.opacity - overlay.opacity) > 1e-6)
+          throw new Error("Mol* 알파 구 표시 상태가 요청과 다릅니다.");
+        let focusedTarget: number[] | null = current.pocketFocus?.key === overlay.key &&
+          current.pocketFocus.token === overlay.focusToken ? previousFocusTarget : null;
+        if (current.pocketFocus?.key !== overlay.key || current.pocketFocus.token !== overlay.focusToken) {
+          const revision = current.manualRevision;
+          current.plugin.managers.camera.focusSphere({ center: Vec3.create(...overlay.focus.center),
+            radius: overlay.focus.radius }, { durationMs: 0 });
+          current.pocketFocus = { key: overlay.key, token: overlay.focusToken };
+          for (let frame = 0; frame < 60 && active() && current.manualRevision === revision; frame++) {
+            await settledFrame();
+            const camera = nativeCamera(current.plugin);
+            if (camera && !current.plugin.canvas3d?.camera.transition.inTransition &&
+                Math.hypot(...[0, 1, 2].map(i => camera.target[i] - overlay.focus.center[i])) <= 1e-3) {
+              focusedTarget = camera.target; break;
+            }
+          }
+          if (!active()) return;
+        }
+        const readback: PocketOverlayReadback = { key: overlay.key, setHandle: overlay.setHandle,
+          sourceHandle: current.source.handle, rank: overlay.rank, sphereCount: observed.centers.length,
+          centers: observed.centers, radii: observed.radii, spheresVisible: observed.visible, pickable: false,
+          opacity: observed.opacity, liningAtomCount: liningSites.length,
+          liningResidueCount: overlay.liningResidues.length, liningVisible: overlay.showLining,
+          liningNativeSourceIndices: liningResidueSites, focusToken: overlay.focusToken, focusedTarget };
+        current.pocketReadback = readback;
+        publish("applied", readback);
+      })(), 15000, () => { if (current.pocketEpoch === epoch) current.pocketEpoch += 1; });
+    }).catch(async error => {
+      const timedOut = current.pocketEpoch !== epoch && pocketIntent.current.revision === intentRevision;
+      if (instance.current !== current || (!active() && !timedOut)) return;
+      await remove().catch(() => undefined);
+      publish("error", null, error instanceof Error ? error.message : String(error));
+    });
+  }, [state, pocketKey, catalogRevision, pocketSession]);
+
+  useEffect(() => {
+    const current = instance.current;
     if (!current || comparisonRef.current) return;
     const intentRevision = representationIntent.current.revision;
     let live = true;
@@ -1422,12 +1651,32 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
   }, [highlight, state, source, atomCatalog, catalogRevision]);
 
   return (
-    <div className="mw-molstar" aria-label="단백질 구조 뷰어">
+    <div className="mw-molstar" aria-label="단백질 구조 뷰어"
+      data-pocket-overlay={pocketObserved.status}
+      data-pocket-key={pocketObserved.readback?.key}
+      data-pocket-set-handle={pocketObserved.readback?.setHandle}
+      data-pocket-source-handle={pocketObserved.readback?.sourceHandle}
+      data-pocket-rank={pocketObserved.readback?.rank}
+      data-pocket-sphere-count={pocketObserved.readback?.sphereCount}
+      data-pocket-spheres={pocketObserved.readback ? JSON.stringify(pocketObserved.readback.centers.map((center, i) =>
+        [...center, pocketObserved.readback!.radii[i]])) : undefined}
+      data-pocket-spheres-visible={pocketObserved.readback ? String(pocketObserved.readback.spheresVisible) : undefined}
+      data-pocket-pickable={pocketObserved.readback ? "false" : undefined}
+      data-pocket-opacity={pocketObserved.readback?.opacity}
+      data-pocket-lining-atom-count={pocketObserved.readback?.liningAtomCount}
+      data-pocket-lining-residue-count={pocketObserved.readback?.liningResidueCount}
+      data-pocket-lining-visible={pocketObserved.readback ? String(pocketObserved.readback.liningVisible) : undefined}
+      data-pocket-lining-site-count={pocketObserved.readback?.liningNativeSourceIndices.length}
+      data-pocket-focus-token={pocketObserved.readback?.focusToken}
+      data-pocket-focused={pocketObserved.readback ? String(!!pocketObserved.readback.focusedTarget) : undefined}
+      data-pocket-error={pocketObserved.error || undefined}>
       <div ref={host} className="mw-molstar-host" />
       {state === "empty" && <div className={`mw-molstar-message${emptyIsError ? " mw-molstar-error" : ""}`} role={emptyIsError ? "alert" : "status"}>{emptyMessage ?? "로컬 PDB 또는 mmCIF 파일을 업로드하세요."}</div>}
       {state === "loading" && <div className="mw-molstar-message" role="status">구조를 불러오는 중…</div>}
       {state === "error" && <div className="mw-molstar-message mw-molstar-error" role="alert">{error}</div>}
       {state === "ready" && pickError && <div className="mw-molstar-pick-error" role="alert">{pickError}</div>}
+      {state === "ready" && pocketObserved.status === "error" &&
+        <div className="mw-molstar-pick-error" role="alert">포켓 오버레이 표시 실패: {pocketObserved.error}</div>}
     </div>
   );
 }

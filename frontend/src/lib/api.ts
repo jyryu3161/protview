@@ -7,6 +7,8 @@ import type { AtomCatalog, AtomRefV1, MeasurementResult } from "./comparison";
 import type { ChemicalCapability, ChemicalImport, ChemicalInspect, ChemicalJob,
   ChemicalPreparationManifest, ChemicalPrepareArgs, ChemicalPreview, ChemicalResult, ChemicalResultPage,
   ChemicalView } from "./chemical";
+import type { PocketCapability, PocketGeometry, PocketJob, PocketPreflight, PocketReportArtifact, PocketSetList,
+  PocketSummary } from "./pockets";
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -23,7 +25,7 @@ export interface Page<T> { meta: ObjectMeta; rows: T[]; total: number; offset: n
 export interface Capabilities { mode: "local_only"; supported: Record<string, string>; unavailable: Record<string, string>;
   methods?: { openmm_protein_minimize?: { available: boolean; method_id?: string; distribution_version?: string; engine_build?: string; unit?: string; limitations?: string; explanation?: string }; interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
     engine_version?: string; unit?: string; limitations?: string; explanation?: string };
-    chemical_interactions?: ChemicalCapability } }
+    chemical_interactions?: ChemicalCapability; pocket_detection?: PocketCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -42,7 +44,9 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
     "ligand_burial_A2" | "total_sasa_loss_A2", number>;
   residues: SasaResidueRow[] }
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
-  schema: "method_report_manifest@1"; analysis_type: "interface_sasa"; result_handle: string;
+  schema: "method_report_manifest@1";
+  analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection";
+  result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
 export interface OpenmmJob { job_id: string; run_id: string; protocol_id: string; status: string; blocked_reason: string | null;
@@ -249,6 +253,27 @@ export const api = {
   createMethodReport: (id: string, resultHandle: string, signal?: AbortSignal) => request<MethodReportArtifact>(runPath(id, "/method_reports"), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: resultHandle }), signal,
   }),
+  pocketPreflight: (id: string, structure: string, chains: string[], signal?: AbortSignal) =>
+    request<PocketPreflight>(runPath(id, `/pockets/preflight?structure=${encodeURIComponent(structure)}${
+      chains.map(chain => `&chains=${encodeURIComponent(chain)}`).join("")}`), { signal }),
+  pocketSets: (id: string, signal?: AbortSignal) =>
+    request<PocketSetList>(runPath(id, "/pockets?offset=0&limit=100"), { signal }),
+  pocketResult: (id: string, handle: string, signal?: AbortSignal) =>
+    request<PocketSummary>(runPath(id, `/pockets/result?${handleParam(handle)}`), { signal }),
+  pocketGeometry: (id: string, handle: string, rank: number, signal?: AbortSignal) =>
+    request<PocketGeometry>(runPath(id, `/pockets/geometry?${handleParam(handle)}&rank=${rank}`), { signal }),
+  /** chains: [] means every protein chain of the source (the server resolves the default into the call key). */
+  submitPockets: (id: string, structure: string, chains: string[]) => request<PocketJob>(runPath(id, "/jobs"), {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ protocol_id: "fpocket_detect_v1", args: { structure, chains }, timeout_s: 120 }) }),
+  pocketJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<PocketJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  pocketJobs: (id: string, signal?: AbortSignal) => request<PocketJob[]>(runPath(id, "/jobs"), { signal }),
+  createPocketReport: (id: string, setHandle: string, signal?: AbortSignal) =>
+    request<PocketReportArtifact>(runPath(id, "/method_reports"), { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: setHandle }), signal }),
+  pocketReport: (id: string, handle: string, signal?: AbortSignal) =>
+    request<PocketReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`), { signal }),
   reportDownload: (id: string, handle: string, format: "markdown" | "json") =>
     `/api${runPath(id, `/reports/download?${handleParam(handle)}&format=${format}`)}`,
   async structure(id: string, handle: string, signal?: AbortSignal): Promise<ViewerSource> {

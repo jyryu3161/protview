@@ -283,3 +283,22 @@
 .mw-chemical-row:disabled { opacity: .6; }
 .mw-chemical-row small { font: 11px/15px var(--font-mono); color: var(--ink-muted); overflow-wrap: anywhere; }
 .mw-chemical-job { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2); border: 1px solid var(--line); }
+
+/* M12 fpocket candidate cavities panel (shared by the main and chemical workspaces). */
+.mw-pocket { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; font-size: 12px; }
+.mw-pocket p { margin: 0; overflow-wrap: anywhere; }
+.mw-pocket-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mw-pocket-group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); }
+.mw-pocket-group > label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mw-pocket-chains { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); }
+.mw-pocket-chains legend { padding: 0 var(--space-1); color: var(--ink-muted); }
+.mw-pocket-chains label { display: inline-flex; align-items: center; gap: var(--space-1); }
+.mw-pocket-preflight { display: flex; flex-direction: column; gap: var(--space-1); }
+.mw-pocket-list-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); font-family: var(--font-mono); }
+.mw-pocket-list-head label { display: inline-flex; align-items: center; gap: var(--space-1); }
+.mw-pocket-blocked, .mw-pocket-notice { padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); color: var(--ink); }
+.mw-pocket-warning { padding: var(--space-2); border-left: 3px solid var(--fail-fatal); background: var(--surface-200); color: var(--ink); }
+.mw-pocket-warning-inline { color: var(--ink-muted); font: 11px/14px var(--font-sans); }
+.mw-pocket-history { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-1) 0; border-bottom: 1px solid var(--line); }
+.mw-pocket-history .mw-mono { overflow-wrap: anywhere; }
+.mw-pocket input[type="range"] { width: 120px; }

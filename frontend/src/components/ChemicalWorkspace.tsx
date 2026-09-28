@@ -18,6 +18,9 @@ import { canHydrateChemicalJobs, canonicalChemicalElement, chemicalAnnotationFor
 import { Button, InspectorSection, MolstarViewer, WorkspaceShell,
   type ViewerRepresentation } from "@/components";
 import type { ViewerBridge, ViewerSource } from "./MolstarViewer";
+import { PocketPanel } from "./PocketPanel";
+import { chemicalExclusive, featureGates, overlayContextDecision, type PocketOverlayReadback,
+  type PocketOverlayRequest } from "@/lib/pockets";
 
 type ChemicalDisplay = { generation: number; view: ChemicalView; source: ViewerSource;
   catalog: AtomCatalog; graphHandle: string; manifest: ChemicalPreparationManifest };
@@ -104,6 +107,12 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
   const [status, setStatus] = useState("");
   const [failure, setFailure] = useState("");
   const [readRevision, setReadRevision] = useState(0);
+  const [pocketState, setPocketState] = useState<{ request: PocketOverlayRequest; boundContext: string | null } | null>(null);
+  const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
+  const [pocketOverlayError, setPocketOverlayError] = useState<string | null>(null);
+  const [pocketNotice, setPocketNotice] = useState<string | null>(null);
+  const pocketKeyRef = useRef<string | null>(null);
+  pocketKeyRef.current = pocketState?.request.key ?? null;
   const uploadAction = useRef(0);
   const previewAction = useRef(0);
   const jobActionToken = useRef(0);
@@ -137,6 +146,37 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
     ? prepareJob.artifacts?.chemical_graph ?? prepareJob.output_handles[2] ?? null : null;
   const desiredSourceHandle = activeResult?.chemical_structure_handle ?? (resultHandle ? null : preparedSourceHandle);
   const desiredGraphHandle = activeResult?.graph_handle ?? (resultHandle ? null : preparedGraphHandle);
+  const pocketContext = display ? `chemical:${display.generation}` : null;
+  const pocketSources = useMemo(() => [...new Map(events.filter((event): event is Extract<RunEvent, { type: "object_created" }> =>
+    event.type === "object_created" && event.kind === "chemical_structure")
+    .map(event => [event.handle, { handle: event.handle, kind: "chemical_structure" as const }])).values()], [events]);
+  useEffect(() => {
+    const decision = overlayContextDecision(pocketState?.request ?? null, pocketState?.boundContext ?? null,
+      pocketContext, display?.view.handle ?? null, chemicalReady);
+    if (decision.action === "bind" && pocketContext)
+      setPocketState(previous => previous && previous.boundContext === null ? { ...previous, boundContext: pocketContext } : previous);
+    else if (decision.action === "clear") {
+      setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); setPocketNotice(decision.reason);
+    }
+  }, [pocketState, pocketContext, display?.view.handle, chemicalReady]);
+  const pocketOverlay = pocketState && pocketState.boundContext === pocketContext &&
+    display?.view.handle === pocketState.request.sourceHandle ? pocketState.request : null;
+  function requestPocketOverlay(request: PocketOverlayRequest | null) {
+    setPocketOverlayError(null); setPocketNotice(null);
+    if (!request) { setPocketState(null); setPocketReadback(null); return; }
+    // M11 annotation (lines, angle) and the pocket overlay are never shown together.
+    const exclusive = chemicalExclusive("overlay_on", { annotationVisible: annotationVisible && !!rowSelection,
+      overlayActive: !!pocketState });
+    setAnnotationVisible(exclusive.annotationVisible); setPocketNotice(exclusive.notice);
+    setPocketState(previous => ({ request, boundContext: previous && previous.request.key === request.key &&
+      previous.request.sourceHandle === request.sourceHandle ? previous.boundContext : null }));
+  }
+  function showAnnotation() {
+    const exclusive = chemicalExclusive("annotation_on", { annotationVisible, overlayActive: !!pocketState });
+    if (exclusive.clearOverlay) { setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); }
+    setPocketNotice(exclusive.notice);
+    setAnnotationVisible(true);
+  }
 
   const revoke = useCallback(() => {
     uploadAction.current += 1; previewAction.current += 1; jobActionToken.current += 1;
@@ -441,7 +481,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
     if (!display || !chemicalReady || !exactChemicalRow(row, display.view.handle)) {
       setFailure("검증된 현재 화학 구조에서만 정확한 원자를 표시할 수 있습니다."); return;
     }
-    setRowSelection(row); setFocusToken(value => value + 1); setAnnotationVisible(true);
+    setRowSelection(row); setFocusToken(value => value + 1); showAnnotation();
   }
   function chooseResult(handle: string) {
     revokeResult(); revokeReport(); setResultHandle(handle); setResult(null);
@@ -559,6 +599,12 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
     canvas={<MolstarViewer key={`chemical:${display?.generation ?? "none"}`} source={display?.source ?? null}
       representation={representation} atomCatalog={display?.catalog ?? null}
       chemicalFocus={focus} chemicalAnnotation={annotation}
+      pocketOverlay={pocketOverlay}
+      onPocketOverlay={(key, readback, overlayError) => {
+        if (key === null) { setPocketReadback(previous => previous === null ? previous : null); return; }
+        if (key !== pocketKeyRef.current) return;
+        setPocketReadback(readback); setPocketOverlayError(overlayError);
+      }}
       onBridge={value => { bridge.current = value; }}
       onLoadState={(source, state, message) => { if (source === display?.source) {
         setDisplayStatus(state); if (state === "error") setFailure(message ?? "화학 구조 표시 실패"); } }}
@@ -577,7 +623,9 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
       <Button size="sm" disabled>현재 보기 PNG 내보내기</Button><Button size="sm" disabled>원자 거리 측정</Button>
       <Button size="sm" disabled>두 구조 비교 추가</Button></div>
       <span className="mw-muted" role="status">Chemical sources are not supported by saved-scene/export schema v1.
-        화학 소스는 M8 세션, M10 측정·비교 입력에도 지원되지 않습니다. 주석을 숨겨도 제한은 유지됩니다.</span></div>}
+        화학 소스는 M8 세션, M10 측정·비교 입력에도 지원되지 않습니다. 주석을 숨겨도 제한은 유지됩니다.</span>
+      <span className="mw-muted" data-chemical-pocket-restriction>{featureGates({ sourceKind: "chemical_structure",
+        overlayActive: !!pocketState, comparisonActive: false }).m9}</span></div>}
     inspectorTitle="준비 입력과 실제 화학 상호작용"
     inspector={<div className="mw-chemical-stack">
       <InspectorSection><span className="mw-eyebrow">방법 지원과 전제 조건</span>
@@ -786,7 +834,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
             <p className="mw-mono">receptor native parent [{rowSelection.native_parent_indices.protein.join(", ")}]
               · within [{rowSelection.native_within_residue_indices.protein.join(", ")}]</p>
           </details>
-          <Button size="sm" onClick={() => setAnnotationVisible(value => !value)}>
+          <Button size="sm" onClick={() => { if (annotationVisible) setAnnotationVisible(false); else showAnnotation(); }}>
             {annotationVisible ? "기하 주석 숨기기" : "기하 주석 표시"}</Button>
           <Button size="sm" onClick={() => setFocusToken(value => value + 1)}>정확한 원자 다시 초점</Button></>}
       </InspectorSection>
@@ -799,6 +847,12 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
           <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, reportHandle, "markdown")}>Markdown 다운로드</a>
           <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, reportHandle, "json")}>정확한 JSON 다운로드</a></div>}
         {reportMarkdown && <pre className="mw-report-preview" aria-label="저장된 화학 보고서">{reportMarkdown}</pre>}</InspectorSection>
+      <InspectorSection><span className="mw-eyebrow">6 · fpocket 후보 공동 (화학 구조의 단백질 투영)</span>
+        <PocketPanel panel="chemical" run={run} capability={capabilities?.methods?.pocket_detection}
+          sourceOptions={pocketSources} displayedSourceHandle={display?.view.handle ?? null} viewerReady={chemicalReady}
+          blockedReason={null} overlay={pocketState?.request ?? null} overlayApplied={pocketReadback}
+          overlayError={pocketOverlayError} overlayNotice={pocketNotice} onOverlay={requestPocketOverlay}
+          onReturnToSource={() => requestPocketOverlay(null)} /></InspectorSection>
       {status && <InspectorSection><p role="status">{status}</p></InspectorSection>}
       {failure && <InspectorSection><p role="alert" className="mw-table-error">{failure}</p>
         <Button size="sm" onClick={() => setReadRevision(value => value + 1)}>저장된 데이터 다시 읽기</Button></InspectorSection>}
