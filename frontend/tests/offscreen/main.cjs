@@ -3,6 +3,7 @@
 // Electron main process for real, invisible offscreen QA. The renderer is the
 // production Next.js application; this file never injects product behavior.
 const { app, BrowserWindow, session } = require("electron");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -10,7 +11,7 @@ const url = process.env.PROTVIEW_OFFSCREEN_URL;
 const artifacts = path.resolve(process.env.PROTVIEW_OFFSCREEN_ARTIFACTS || path.join(process.cwd(), "tests/offscreen/artifacts"));
 const profile = path.join(artifacts, "browser-profile");
 const state = { paintCount: 0, lastPaintAt: null, lastSize: null, blockedRequests: [],
-  loopbackRequestCount: 0, loadError: null, downloads: [] };
+  loopbackRequestCount: 0, loadError: null, downloads: [], firstPaint: null };
 let lastImage = null;
 
 function isLoopback(value) {
@@ -88,8 +89,17 @@ app.whenReady().then(async () => {
     state.lastSize = image.getSize();
     state.lastDirtyRect = dirtyRect;
     lastImage = image;
-    if (state.paintCount === 1) {
-      fs.writeFileSync(path.join(artifacts, "paint-first.png"), image.toPNG());
+    // The earliest paint events can carry an empty bitmap; paint-first.png is
+    // the first frame with a non-zero size and non-empty PNG bytes.
+    if (!state.firstPaint && !image.isEmpty()) {
+      const size = image.getSize();
+      const png = size.width > 0 && size.height > 0 ? image.toPNG() : null;
+      if (png && png.length > 0) {
+        const output = path.join(artifacts, "paint-first.png");
+        fs.writeFileSync(output, png);
+        state.firstPaint = { path: output, paintOrdinal: state.paintCount, size, bytes: png.length,
+          sha256: crypto.createHash("sha256").update(png).digest("hex") };
+      }
     }
   });
 
