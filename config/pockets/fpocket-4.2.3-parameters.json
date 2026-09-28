@@ -1,0 +1,108 @@
+{
+  "schema": "fpocket_effective_parameters@1",
+  "engine": "fpocket",
+  "release": "4.2.3",
+  "build": "hb88c64c_2",
+  "source": {
+    "url": "https://github.com/Discngine/fpocket/archive/4.2.3.tar.gz",
+    "sha256": "62b3da6490eeab0db488f0182150d340de2be0be23f4fd1def9d5846ce724ede",
+    "sha256_matches_conda_recipe": true,
+    "conda_recipe_patches": [
+      {
+        "name": "fpocket.patch",
+        "sha256": "a40af53b4686c9473923aa178e99e9262a8982c2781dd5d0dc81e9b76da11d0c",
+        "effect": "src/fparams.c:125 and :296 only (residue_string pointer fix in the -P/--custom_pocket branch); no default, option table or getopt string changes"
+      }
+    ],
+    "note": "Line references are to the unpatched 4.2.3 tag tarball above. The patch changes no line counts."
+  },
+  "argv": ["<fpocket>", "-f", "protein.pdb", "-m", "3.4", "-M", "6.2", "-D", "2.4", "-C", "s", "-e", "e", "-i", "15",
+           "-p", "0.0", "--number_apol_asph_pocket", "3", "-v", "300", "-w", "p"],
+  "option_parsing": {
+    "getopt_string": "f:m:M:i:p:D:C:e:dxp:v:y:l:r:P:u:c:a:k:w:",
+    "getopt_ref": "src/fparams.c:158",
+    "long_option_table_ref": "src/fparams.c:128-150",
+    "opterr": 0,
+    "opterr_ref": "src/fparams.c:122",
+    "unknown_options": "silently ignored (opterr = 0 and the switch has no default case, src/fparams.c:162-395); exit 0 alone therefore does not prove an option was applied",
+    "short_A_absent": "'A' is not in the getopt string (src/fparams.c:158); short -A is ignored. The long option number_apol_asph_pocket maps to 'A' (src/fparams.c:139) and is handled by case M_PAR_MIN_APOL_NEIGH (src/fparams.c:377-381).",
+    "installed_build_check": "Installed bin/fpocket (sha256 a79058e4...2894) ran the argv above with exit 0 on the probe protein.pdb (2026-09-28)."
+  },
+  "effective_parameters": [
+    {"field": "pdb_path", "value": "protein.pdb", "source": "argv -f", "parse_ref": "src/fparams.c:321-326"},
+    {"field": "asph_min_size", "value": 3.4, "unit": "Å", "source": "argv -m (equals default)",
+     "default_ref": "headers/fparams.h:33 M_MIN_ASHAPE_SIZE_DEFAULT; src/fparams.c:68", "parse_ref": "src/fparams.c:327-331",
+     "used_ref": "src/voronoi.c:974,1016 (alpha sphere kept if min <= vertex–atom-centre distance <= max, tolerance 1e-3 headers/voronoi.h:39)"},
+    {"field": "asph_max_size", "value": 6.2, "unit": "Å", "source": "argv -M (equals default)",
+     "default_ref": "headers/fparams.h:35 M_MAX_ASHAPE_SIZE_DEFAULT; src/fparams.c:69", "parse_ref": "src/fparams.c:332-336",
+     "used_ref": "src/voronoi.c:975,1016"},
+    {"field": "clust_max_dist", "value": 2.4, "unit": "Å", "source": "argv -D (equals default)",
+     "default_ref": "headers/fparams.h:37 M_CLUST_MAX_DIST; src/fparams.c:75", "parse_ref": "src/fparams.c:347-351",
+     "used_ref": "src/fpocket.c:140 (cuttree_distance on the clustering tree)"},
+    {"field": "clustering_method", "value": "s", "meaning": "single linkage", "source": "argv -C (equals default)",
+     "default_ref": "headers/fparams.h:53 M_CLUSTERING_METHOD; src/fparams.c:77", "parse_ref": "src/fparams.c:360-365",
+     "used_ref": "src/fpocket.c:116,124-132; src/clusterlib.c:3979"},
+    {"field": "distance_measure", "value": "e", "meaning": "Euclidean", "source": "argv -e (equals default)",
+     "default_ref": "headers/fparams.h:51 M_DISTANCE_MEASURE; src/fparams.c:76", "parse_ref": "src/fparams.c:352-359",
+     "used_ref": "src/fpocket.c:116; src/clusterlib.c:1728"},
+    {"field": "min_pock_nb_asph", "value": 15, "unit": "alpha spheres", "source": "argv -i (equals default)",
+     "default_ref": "headers/fparams.h:47 M_MIN_POCK_NB_ASPH; src/fparams.c:73", "parse_ref": "src/fparams.c:337-341",
+     "used_ref": "src/refine.c:129 (pocket dropped if fewer alpha spheres)"},
+    {"field": "refine_min_apolar_asphere_prop", "value": 0.0, "unit": "fraction", "source": "argv -p (equals default)",
+     "default_ref": "headers/fparams.h:41 M_REFINE_MIN_PROP_APOL_AS; src/fparams.c:74", "parse_ref": "src/fparams.c:342-346",
+     "used_ref": "src/refine.c:130",
+     "as_written": "drop if n_vertices < min_pock_nb_asph || pasph < (refine_min_apolar_asphere_prop || as_density < min_as_density)",
+     "note": "The parenthesised operand is a C logical OR (0 or 1), not a proportion. With -p 0.0 a pocket is dropped by this clause when as_density < 0.7 and its apolar alpha-sphere proportion is < 1. Recorded as written; not reinterpreted."},
+    {"field": "min_apol_neigh", "value": 3, "unit": "atoms", "source": "argv --number_apol_asph_pocket (equals default)",
+     "default_ref": "headers/fparams.h:49 M_MIN_APOL_NEIGH_DEFAULT; src/fparams.c:67", "parse_ref": "src/fparams.c:139,377-381",
+     "used_ref": "src/voronoi.c:646-673 (alpha sphere is apolar if >= this many of its 4 contact atoms have electronegativity < 2.8)",
+     "note": "Despite the long option name, this is the minimum number of apolar contact atoms for an alpha sphere to be apolar (help text src/fparams.c:1006-1008)."},
+    {"field": "nb_mcv_iter", "value": 300, "unit": "Monte Carlo points per repeat", "source": "argv -v (equals default)",
+     "default_ref": "headers/fparams.h:43 M_MC_ITER; src/fparams.c:72", "parse_ref": "src/fparams.c:382-386",
+     "used_ref": "src/pocket.c:579,617 -> src/descriptors.c:246 -> src/voronoi.c:1150-1233 (100 repeats of niter points, src/voronoi.c:1161)"},
+    {"field": "write_par", "value": "p", "meaning": "PDB-format output files", "source": "argv -w",
+     "default_ref": "src/fparams.c:60,89 ('d' = same as input; becomes 'p' for a .pdb input, src/fparams.c:403-407)",
+     "parse_ref": "src/fparams.c:167-185", "used_ref": "src/fpout.c:100; src/writepocket.c:94,517"},
+    {"field": "min_as_density", "value": 0.7, "source": "default (no command-line option in 4.2.3)",
+     "default_ref": "headers/fparams.h:61 M_MIN_AS_DENSITY; src/fparams.c:84", "used_ref": "src/refine.c:130",
+     "note": "Compared against desc->as_density, which src/descriptors.c:209-228,257 computes as the mean pairwise distance (Å) between the pocket's alpha-sphere centres, despite the name 'density'."},
+    {"field": "basic_volume_div", "value": -1, "source": "default (no option in the 4.2.3 getopt string)",
+     "default_ref": "headers/fparams.h:45 M_BASIC_VOL_DIVISION; src/fparams.c:71",
+     "used_ref": "not consumed by the fpocket pipeline: only the deprecated parser (src/fparams.c:798) and print_fparams (src/fparams.c:1053) touch it; set_pocket_volume (src/pocket.c:405) is not called"},
+    {"field": "flag_do_asa_and_volume_calculations", "value": 1, "source": "default (no option)",
+     "default_ref": "src/fparams.c:82", "used_ref": "src/pocket.c:617; src/descriptors.c:243-248 (enables SASA, Monte Carlo volume and convex-hull volume)"},
+    {"field": "flag_do_grid_calculations", "value": 0, "source": "default (-x not given)", "default_ref": "src/fparams.c:78"},
+    {"field": "db_run", "value": 0, "source": "default (-d not given)", "default_ref": "headers/fparams.h:55 M_DB_RUN; src/fparams.c:83"},
+    {"field": "model_number", "value": 0, "source": "default (-l not given)", "default_ref": "src/fparams.c:80"},
+    {"field": "topology_path", "value": "", "source": "default (-y not given)", "default_ref": "src/fparams.c:85"},
+    {"field": "xlig_resnumber", "value": -1, "source": "default (-r and -a not given; enables normal clustering path src/fpocket.c:114)", "default_ref": "src/fparams.c:87"},
+    {"field": "xpocket_n", "value": 0, "source": "default (-P not given)", "default_ref": "src/fparams.c:90"},
+    {"field": "min_n_explicit_pocket_atoms", "value": 4, "source": "default (only used with -P)", "default_ref": "headers/fparams.h:63 M_MIN_N_EXPLICIT_POCKET; src/fparams.c:91"},
+    {"field": "n_chains_to_delete", "value": 0, "source": "default (-c/-k not given)", "default_ref": "src/fparams.c:92"},
+    {"field": "chain_is_kept", "value": 0, "source": "default", "default_ref": "src/fparams.c:88"},
+    {"field": "n_chains_as_ligand", "value": 0, "source": "default (-a not given)", "default_ref": "src/fparams.c:93"}
+  ],
+  "fixed_constants": [
+    {"name": "M_PROBE_SIZE", "value": 1.4, "unit": "Å", "ref": "headers/asa.h:43", "used_ref": "src/asa.c:302-330 (Total/Polar/Apolar SASA)"},
+    {"name": "M_PROBE_SIZE2", "value": 2.2, "unit": "Å", "ref": "headers/asa.h:44", "used_ref": "src/asa.c:361-398 (surf_*_vdw22, used by the druggability score)"},
+    {"name": "M_NSPIRAL", "value": 100, "unit": "surface points per atom", "ref": "headers/asa.h:41"},
+    {"name": "volume radius correction", "value": -1.6, "unit": "Å", "ref": "src/descriptors.c:246"},
+    {"name": "volume Monte Carlo repeats", "value": 100, "ref": "src/voronoi.c:1161"},
+    {"name": "M_REFINE_DIST", "value": 4.5, "ref": "headers/fparams.h:39", "used_ref": "defined but not referenced elsewhere in src/"}
+  ],
+  "randomness": {
+    "seed_control": "unsupported",
+    "refs": [
+      "src/voronoi.c:87 srand(time(NULL))",
+      "src/utils.c:71-95 start_rand_generator: srand((int)time(NULL)) (MD_USE_GSL not defined by the makefile)",
+      "src/utils.c:113-128 rand_uniform uses rand()",
+      "src/clusterlib.c:1782-1787 uniform(): seeds from time(0)"
+    ],
+    "note": "No command-line seed option exists. Monte Carlo volume uses rand_uniform, so Volume differs between fresh runs."
+  },
+  "help_banner": {
+    "text": "fpocket 4.0",
+    "ref": "src/fparams.c:957",
+    "note": "Banner string is present verbatim in the 4.2.3 tag; not a version mismatch of the installed build."
+  }
+}
