@@ -31,14 +31,18 @@ tools:
       symmetry_mates: { type: str, enum: [ignore], default: ignore }
     description: 준비 결정을 전부 preparation_manifest로 기록하며 구조를 준비한다
 
+  # Fixed asynchronous protein-only fpocket 4.2.3 lane (protocol fpocket_detect_v1); execution is JobQueue,
+  # not Run.call. The engine and argv are fixed; top-k is a display setting, never a calculation argument.
   - name: detect_pockets
-    level: L2
-    accepts: { structure: [prepared_structure, relaxed_structure] }
+    level: L3
+    version: '1'
+    accepts: { structure: [prepared_structure, chemical_structure, openmm_minimized_structure] }
     emits: pocket_set
+    cost_class: expensive
+    typical_runtime_s: 30
     params:
-      engine: { type: str, enum: [fpocket, p2rank], default: fpocket }
-      top_k: { type: int, default: 3, min: 1, max: 20 }
-    typical_runtime_s: 5
+      chains: { type: list, default: [] }                # chain_auth list; empty = every protein chain
+    description: 선택한 단백질 체인의 표준 잔기 중원자만 고정 fpocket 4.2.3으로 검출한 공동 후보(결합 부위·친화도·druggability 증거 아님); durable_job lane
 
   - name: compute_interactions
     level: L2
