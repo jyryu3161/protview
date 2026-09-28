@@ -389,6 +389,8 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
   const measureRef = useRef(measureMode);
   const atomPickCallback = useRef(onAtomPick);
   const [state, setState] = useState<"empty" | "loading" | "ready" | "error">("empty");
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const [error, setError] = useState("");
   const [pickError, setPickError] = useState("");
   const [catalogRevision, setCatalogRevision] = useState(0);
@@ -1364,6 +1366,10 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
       if (!nativeMainRepresentationReady(current)) throw new Error("분자 표현을 표시하지 못했습니다.");
       current.representation = representation;
       completed = true;
+      // The parent reads bridge readiness only while rendering. A rebuild that
+      // finishes after the scene-state round trip must re-announce readiness,
+      // or scene controls stay on "session preparing" until an unrelated render.
+      if (source && stateRef.current === "ready") loadCallback.current?.(source, "ready");
     }).catch(e => {
       if (instance.current === current && requestedSource.current === source) {
         const message = e instanceof Error ? e.message : String(e);

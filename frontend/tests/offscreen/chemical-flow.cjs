@@ -779,8 +779,7 @@ function blockerAtomLine(ref) {
   return `${residue.resname} ${residue.chain_auth}/${residue.seq_auth}${residue.icode || ""} · ${ref.atom_name}` +
     `${ref.altloc ? ` alt ${ref.altloc}` : ""} · model ${residue.model_number} · site ${ref.site_index}` +
     ` · model ${residue.model_number} · auth ${residue.chain_auth}/${residue.seq_auth}${residue.icode}` +
-    // JSX drops the source line break before "· label", so no space precedes it in the rendered text.
-    `· label ${residue.chain_label ?? "?"}/${residue.seq_label ?? "?"} · site ${ref.site_index}`;
+    ` · label ${residue.chain_label ?? "?"}/${residue.seq_label ?? "?"} · site ${ref.site_index}`;
 }
 const oracleIdentity = ref => JSON.stringify([ref.residue.model_number, ref.residue.chain_auth, ref.residue.chain_label,
   ref.residue.seq_auth, ref.residue.seq_label, ref.residue.icode, ref.residue.resname, ref.atom_name, ref.altloc,

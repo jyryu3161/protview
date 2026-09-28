@@ -12,7 +12,7 @@ const compiled = ts.transpileModule(source, { compilerOptions: {
 const moduleObject = { exports: {} };
 vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports, require, setTimeout, clearTimeout, Promise });
 const { alignmentMat4, transformPoint, atomLabel, sameAtomRef, sameComparisonAction,
-  catalogAttemptKey, catalogForAttempt, catalogResponseCurrent,
+  catalogAttemptKey, catalogForAttempt, catalogResponseCurrent, retainCatalogState,
   comparisonViewChangeRevokes, comparisonViewIntentKey,
   nativeIntentCurrent, ordinaryFocusCurrent, nativeDeadline, atomPickFailure, singleSourceSceneCompatible,
   sameResidueRef, residueFromNativeSites, rowsForAuthoritativeResidue,
@@ -285,4 +285,26 @@ test("catalog readiness observes pending selected and empty scenes without emitt
   const invalid = catalogSelectionReadback(() => { throw new Error("unknown site"); });
   assert.equal(invalid.selection, null);
   assert.match(invalid.error, /unknown site/);
+});
+
+test("a re-read of the same catalog attempt keeps the validated catalog object", () => {
+  // A saved-scene restore briefly clears the display source, so the same read attempt is fetched
+  // again. Mol* validation is bound to the catalog object; swapping in an equal copy mid-restore
+  // made the running restore read an unvalidated catalog.
+  const run = "run/a", handle = "structure/ref";
+  const key = catalogAttemptKey(run, handle, 2, 0);
+  const first = { structure_handle: handle, viewer_source_sha256: "a".repeat(64) };
+  const state = { key, catalog: first };
+  const copy = { ...first };
+  assert.equal(retainCatalogState(state, key, copy), state);
+  const retryKey = catalogAttemptKey(run, handle, 2, 1);
+  const fresh = (next, expectedKey, expectedCatalog) => {
+    assert.notEqual(next, state); assert.equal(next.key, expectedKey); assert.equal(next.catalog, expectedCatalog);
+  };
+  fresh(retainCatalogState(state, retryKey, copy), retryKey, copy);
+  const changed = { structure_handle: handle, viewer_source_sha256: "b".repeat(64) };
+  fresh(retainCatalogState(state, key, changed), key, changed);
+  const other = { structure_handle: "structure/other", viewer_source_sha256: "a".repeat(64) };
+  fresh(retainCatalogState(state, key, other), key, other);
+  fresh(retainCatalogState(null, key, copy), key, copy);
 });
