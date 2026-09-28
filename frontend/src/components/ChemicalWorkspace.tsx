@@ -542,7 +542,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
           <span className="mw-muted">로컬 세대 {display.generation} · 원자 {display.catalog.total}개</span>
           <details><summary>저장된 실제 준비 선택</summary>
             <p className="mw-mono">manifest {display.view.manifest_handle} · {display.view.manifest_sha256}</p>
-            <p>방식 {display.manifest.mode} · SDF 기록 #{display.manifest.request.sdf_record_index}
+            <p>방식 {display.manifest.mode} · SDF 기록 #{display.manifest.request.sdf_record_index}{" "}
               · pH 주석 {display.manifest.request.acknowledgement.ph_annotation ?? "없음"} (실험 검증 아님)</p>
             <p className="mw-mono">리간드 인스턴스 {JSON.stringify(display.manifest.request.mode === "create_new"
               ? display.manifest.request.ligand_instance : display.manifest.request.selected_ligand)}</p>
@@ -602,7 +602,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
             <label>정확한 리간드 인스턴스<select className="mw-select" value={ligandKey} onChange={e => {
               setLigandKey(e.target.value); setMapping([]); setPreview(null); }}><option value="">리간드 선택</option>
               {complexResidues.map(ref => <option key={refKey(ref)} value={refKey(ref)}>
-                {ref.resname} · model {ref.model_number} · auth {ref.chain_auth}/{ref.seq_auth}{ref.icode}
+                {ref.resname} · model {ref.model_number} · auth {ref.chain_auth}/{ref.seq_auth}{ref.icode}{" "}
                 · label {ref.chain_label ?? "?"}/{ref.seq_label ?? "?"}</option>)}</select></label>
             <label>리간드 H 처리<select className="mw-select" value={hydrogenPolicy}
               onChange={e => { setHydrogenPolicy(e.target.value as HydrogenPolicy); setMapping([]); setPreview(null); }}>
@@ -613,7 +613,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
           setRecordIndex(Number(e.target.value)); setMapping([]); setPreview(null); }}>
           {(inspection.ligand_sdf?.records ?? []).map(record => <option key={record.index} value={record.index}>
             #{record.index} {record.title} · {record.atom_count} atoms · H {record.hydrogen_count}</option>)}</select></label>
-        {selectedRecord && <p className="mw-muted">선택한 원본 기록: {selectedRecord.has_3d ? "3D" : "3D 좌표 없음"}
+        {selectedRecord && <p className="mw-muted">선택한 원본 기록: {selectedRecord.has_3d ? "3D" : "3D 좌표 없음"}{" "}
           · H {selectedRecord.hydrogen_count} · {selectedRecord.heavy_atom_count} heavy</p>}
         <label>수용체 결합 제공<select className="mw-select" value={connectivity}
           onChange={e => { setConnectivity(e.target.value as "pdb_conect" | "sidecar"); setPreview(null); }}>
@@ -623,8 +623,8 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
       <InspectorSection><span className="mw-eyebrow">2 · 매핑·말단·공급 화학 확인</span>
         <Button size="sm" disabled={previewBusy || !!uploading} onClick={() => void readPreview()}>
           {previewBusy ? "읽는 중…" : "준비 조건 미리보기"}</Button>
-        {preview && <><p role="status">{!previewCurrent ? "입력이 바뀌었습니다 · 다시 미리보기" : preview.ready ? "계산 준비 가능" : "준비 조건 미충족"}
-          · 수용체 {preview.included_receptor_atoms} · 물 제외 {preview.excluded_water_atoms}
+        {preview && <><p role="status">{!previewCurrent ? "입력이 바뀌었습니다 · 다시 미리보기" : preview.ready ? "계산 준비 가능" : "준비 조건 미충족"}{" "}
+          · 수용체 {preview.included_receptor_atoms} · 물 제외 {preview.excluded_water_atoms}{" "}
           · 리간드 {preview.selected_ligand_atoms}</p>
           {preview.blockers.map((blocker, i) => <div key={`${blocker.code}:${i}`} role="alert">
             <p>{blocker.code}: {blocker.message}</p>
@@ -653,7 +653,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
               return <label key={atom.sdf_atom_index}>SDF #{atom.sdf_atom_index} {atom.atom_name ?? "이름 없음"}
                 {atom.name_generated && " (SDF 원본 이름 없음 · 생성된 이름)"}
                 {atom.atom_map_tag && ` · map ${atom.atom_map_tag}`} · {atom.element} · {atom.hydrogen ? "H" : "heavy"}
-                {atom.formal_charge != null && ` · 공급 형식전하 ${atom.formal_charge}`}
+                {atom.formal_charge != null && ` · 공급 형식전하 ${atom.formal_charge}`}{" "}
                 · [{atom.coordinate_A.join(", ")}]
                 <select className="mw-select" value={choice ? JSON.stringify(choice.source_atom) : ""} onChange={e => {
                   const selected = candidates.find(row => JSON.stringify(row.ref) === e.target.value)?.ref;
@@ -672,7 +672,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
               onChange={e => setExtensions(previous => e.target.checked
                 ? [...previous, { residue: item.residue, atom_names: item.atom_names, approve_supplied_graph: true }]
                 : previous.filter(ext => refKey(ext.residue) !== refKey(item.residue)))} />
-            말단 확장 승인: {item.residue.resname} {item.residue.chain_auth}/{item.residue.seq_auth}
+            말단 확장 승인: {item.residue.resname} {item.residue.chain_auth}/{item.residue.seq_auth}{" "}
             · {item.atom_names.join(", ")}</label>
             <small>말단 {item.terminal_anchor ?? "검증 전"} · 실제 원자 {item.resolved_atoms?.length ?? 0}개
               · 부착 결합 {item.attachment_bonds?.length ?? 0}개</small>
@@ -700,7 +700,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
                 { residue: terminalCandidate, atom_names: names, approve_supplied_graph: true }]);
             }}>정확한 말단 원자 선언</Button></div>
           {extensions.map(item => <div key={`declared:${refKey(item.residue)}`} className="mw-chemical-inline mw-mono">
-            선언: {item.residue.resname} {item.residue.chain_auth}/{item.residue.seq_auth}{item.residue.icode}
+            선언: {item.residue.resname} {item.residue.chain_auth}/{item.residue.seq_auth}{item.residue.icode}{" "}
             · {item.atom_names.join(", ")} · 공급 그래프 승인
             <Button size="sm" aria-label={`말단 선언 제거 ${refKey(item.residue)}`}
               onClick={() => setExtensions(previous => previous.filter(entry => refKey(entry.residue) !== refKey(item.residue)))}>

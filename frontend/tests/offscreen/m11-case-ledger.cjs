@@ -76,7 +76,8 @@ const CASE_PLAN = {
     backend: [T(JA, "test_public_fixture_jobs_report_and_events_only_recovery"),
       T(JA, "test_native_candidates_cancel_before_terminal_remain_inaccessible_after_events_only_replay")] },
   H17: { title: "M8 normal, M9 scenes/export, M10 measure/alignment regressions",
-    ui: ["regression-m8-normal", "regression-m9-scenes-core", "regression-m10-measure", "regression-m10-alignment"],
+    ui: ["regression-m8-normal", "regression-m9-openmm", "regression-m9-scenes-core", "regression-m10-measure",
+      "regression-m10-alignment"],
     backend: ["full backend gate: .venv/bin/python -m pytest backend/tests -q"] },
 };
 
