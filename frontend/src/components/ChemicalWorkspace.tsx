@@ -19,7 +19,7 @@ import { Button, InspectorSection, MolstarViewer, WorkspaceShell,
   type ViewerRepresentation } from "@/components";
 import type { ViewerBridge, ViewerSource } from "./MolstarViewer";
 import { PocketPanel } from "./PocketPanel";
-import { chemicalExclusive, featureGates, overlayContextDecision, type PocketOverlayReadback,
+import { chemicalExclusive, featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback,
   type PocketOverlayRequest } from "@/lib/pockets";
 
 type ChemicalDisplay = { generation: number; view: ChemicalView; source: ViewerSource;
@@ -161,7 +161,11 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
   }, [pocketState, pocketContext, display?.view.handle, chemicalReady]);
   const pocketOverlay = pocketState && pocketState.boundContext === pocketContext &&
     display?.view.handle === pocketState.request.sourceHandle ? pocketState.request : null;
+  // Host-side stale guard read by late callbacks: this workspace's run and its chemical pocket sources.
+  const pocketHostRef = useRef<{ runId: string | null; sourceHandles: string[] }>({ runId: null, sourceHandles: [] });
+  pocketHostRef.current = { runId, sourceHandles: pocketSources.map(item => item.handle) };
   function requestPocketOverlay(request: PocketOverlayRequest | null) {
+    if (!pocketRequestAccepted(request, pocketHostRef.current)) return;
     setPocketOverlayError(null); setPocketNotice(null);
     if (!request) { setPocketState(null); setPocketReadback(null); return; }
     // M11 annotation (lines, angle) and the pocket overlay are never shown together.
