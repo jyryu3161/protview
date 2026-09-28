@@ -351,3 +351,55 @@ test("custom terminal declaration resolves exact existing names and rejects ambi
   assert.throws(() => declaredTerminalNames(residueRef, "CAY, ZZ", atoms), /ZZ/);
   assert.throws(() => declaredTerminalNames(residueRef, "OY", [...atoms, atom(12, "A", 12, "OY", "O")]), /모호/);
 });
+
+const { readChemicalAtomCatalog, chemicalStartProgressed, chemicalSubmitStatus } =
+  load("chemical", { "./comparison": comparison });
+
+test("chemical source catalog gives every page its own read deadline instead of one shared budget", async () => {
+  // Release3 attach: one 30 s signal spanned view + all catalog pages + graph + manifest, so a
+  // slow but healthy backend timed out the whole display. Virtual clock: 3 pages × 30 ms, 50 ms deadline.
+  const rows = [0, 1, 2].map(viewer_source_index => ({ viewer_source_index,
+    ref: { ...donor, atom_name: `A${viewer_source_index}`, site_index: viewer_source_index },
+    coordinate_A: [viewer_source_index, 0, 0], protein: false }));
+  const page = (offset, limit) => ({ schema: "atom_catalog@1", structure_handle: source,
+    viewer_source_sha256: "a".repeat(64), model_number: 2, total: rows.length,
+    offset, limit, rows: rows.slice(offset, offset + limit) });
+  let now = 0;
+  const signals = [];
+  const newSignal = () => { const signal = { deadline: now + 50 }; signals.push(signal); return signal; };
+  const fetchPage = async (offset, limit, signal) => {
+    now += 30;
+    if (now > signal.deadline) throw new Error("signal timed out");
+    return page(offset, limit);
+  };
+  const combined = await readChemicalAtomCatalog(source, fetchPage, newSignal, 1);
+  assert.deepEqual(Array.from(combined.rows, row => row.ref.site_index), [0, 1, 2]);
+  assert.equal(signals.length, 3, "each catalog page must receive a fresh deadline");
+  now = 0;
+  const shared = newSignal();
+  await assert.rejects(collectChemicalAtomCatalog(source, (offset, limit) => fetchPage(offset, limit, shared), 1),
+    /signal timed out/, "the former shared budget reproduces the release3 display timeout");
+});
+
+test("a lost Start response adopts durable progress but keeps a still-queued job a failure", () => {
+  const job = { run_id: "run_a", job_id: "job_a", protocol_id: "prolif_detect_v1", status: "queued",
+    attempt_ordinal: 0 };
+  for (const status of ["running", "done", "failed", "interrupted", "cancelled"])
+    assert.equal(chemicalStartProgressed(job, { ...job, status }), true, status);
+  assert.equal(chemicalStartProgressed(job, { ...job, status: "queued" }), false);
+  assert.equal(chemicalStartProgressed(job, { ...job, status: "claimed" }), false);
+  assert.equal(chemicalStartProgressed(job, { ...job, status: "queued", attempt_ordinal: 1 }), true);
+  assert.equal(chemicalStartProgressed(job, { ...job, job_id: "job_b", status: "done" }), false);
+  assert.equal(chemicalStartProgressed(job, { ...job, run_id: "run_b", status: "done" }), false);
+  assert.equal(chemicalStartProgressed(job, { ...job, protocol_id: "prolif_prepare_v1", status: "done" }), false);
+});
+
+test("an idempotent submission that returns an existing job is not announced as newly saved", () => {
+  assert.match(chemicalSubmitStatus("detect", { job_id: "job_a", status: "queued" }), /저장되었습니다/);
+  const reused = chemicalSubmitStatus("detect", { job_id: "job_a", status: "done" });
+  assert.match(reused, /기존 작업/);
+  assert.match(reused, /job_a/);
+  assert.match(reused, /done/);
+  assert.match(chemicalSubmitStatus("prepare", { job_id: "job_p", status: "queued" }), /준비 작업이 저장되었습니다/);
+  assert.match(chemicalSubmitStatus("prepare", { job_id: "job_p", status: "failed" }), /기존 작업.*failed/);
+});

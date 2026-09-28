@@ -8,8 +8,8 @@ import type { AtomCatalog, AtomRefV1 } from "@/lib/comparison";
 import { atomLabel, sameResidueRef } from "@/lib/comparison";
 import { canHydrateChemicalJobs, canonicalChemicalElement, chemicalAnnotationForRow, chemicalApprovalRequired,
   chemicalCanCancel, chemicalFailureDetails, chemicalJobActionCurrent, completedChemicalResultHandles, linkedChemicalJobs,
-  chemicalCategories, declaredTerminalNames, exactChemicalRow,
-  previewMatchesRequest, validateChemicalCatalog,
+  chemicalCategories, chemicalReadTimeoutMs, chemicalStartProgressed, chemicalSubmitStatus, declaredTerminalNames,
+  exactChemicalRow, previewMatchesRequest, readChemicalAtomCatalog, validateChemicalCatalog,
   type ChemicalAck, type ChemicalCategory, type ChemicalImport, type ChemicalInspect,
   type ChemicalJob, type ChemicalJobFailure, type ChemicalLigandAtom, type ChemicalMapping, type ChemicalMode,
   type ChemicalPreparationManifest, type ChemicalPrepareArgs, type ChemicalPreview,
@@ -288,10 +288,13 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
     const target = desiredSourceHandle, graph = desiredGraphHandle;
     let live = true; const controller = new AbortController();
     setDisplayStatus("loading"); setDisplay(null); setRowSelection(null);
-    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]);
-    void Promise.all([api.chemicalView(runId, target, signal),
-      api.allChemicalAtoms(runId, target, signal), api.chemicalGraph(runId, graph, signal),
-      api.chemicalPreparationManifest(runId, target, signal)]).then(async ([view, catalog, graphRead, saved]) => {
+    // Each read gets its own bound; one shared deadline over every catalog page timed out valid sources.
+    const signal = () => AbortSignal.any([controller.signal, AbortSignal.timeout(chemicalReadTimeoutMs)]);
+    void Promise.all([api.chemicalView(runId, target, signal()),
+      readChemicalAtomCatalog(target, (offset, limit, pageSignal) =>
+        api.chemicalAtoms(runId, target, offset, limit, pageSignal), signal),
+      api.chemicalGraph(runId, graph, signal()),
+      api.chemicalPreparationManifest(runId, target, signal())]).then(async ([view, catalog, graphRead, saved]) => {
       const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(view.text))),
         byte => byte.toString(16).padStart(2, "0")).join("");
       if (!live) return;
@@ -366,7 +369,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
       if (jobActionToken.current === ticket && job.run_id === runId && job.protocol_id === "prolif_prepare_v1") {
         jobSelectionRevision.current += 1; setPrepareJob(job); setDetectJob(null);
         setJobHistory(previous => [job, ...previous.filter(saved => saved.job_id !== job.job_id)]);
-        setStatus("준비 작업이 저장되었습니다. 시작을 누르면 실제 계산이 실행됩니다."); } }
+        setStatus(chemicalSubmitStatus("prepare", job)); } }
     catch (e) { if (jobActionToken.current === ticket) setFailure(`준비 작업 저장 실패: ${errorText(e)}`); }
     finally { if (jobActionToken.current === ticket) setJobBusy(false); }
   }
@@ -378,7 +381,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
       if (jobActionToken.current === ticket && job.run_id === runId && job.protocol_id === "prolif_detect_v1") {
         jobSelectionRevision.current += 1; setDetectJob(job);
         setJobHistory(previous => [job, ...previous.filter(saved => saved.job_id !== job.job_id)]);
-        setStatus("화학 상호작용 작업이 저장되었습니다. 별도로 시작하세요."); } }
+        setStatus(chemicalSubmitStatus("detect", job)); } }
     catch (e) { if (jobActionToken.current === ticket) setFailure(`상호작용 작업 저장 실패: ${errorText(e)}`); }
     finally { if (jobActionToken.current === ticket) setJobBusy(false); }
   }
@@ -388,7 +391,16 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
     const ticket = beginJob(); setJobBusy(true);
     if (operation === "cancel") setCancelBusy(true);
     try {
-      const value = operation === "start" ? await api.startJob(runId, job.job_id)
+      let lostStart = "";
+      const value = operation === "start" ? await api.startJob(runId, job.job_id).catch(async (e: unknown) => {
+        // Start runs the worker synchronously; a long real attempt can outlive the proxy connection.
+        // The durable job, not the lost transport response, decides whether the start took effect.
+        if (e instanceof ApiError && chemicalApprovalRequired(e.status, e.approval, stage)) throw e;
+        const durable = await api.job(runId, job.job_id).catch(() => null) as ChemicalJob | null;
+        if (!durable || !chemicalStartProgressed(job, durable)) throw e;
+        lostStart = errorText(e);
+        return durable;
+      })
         : operation === "retry" ? await api.retryJob(runId, job.job_id)
           : (await api.cancelJob(runId, job.job_id)).job;
       if (!chemicalJobActionCurrent(ticket, jobActionToken.current, runId, job.job_id,
@@ -404,7 +416,8 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
             setResultHandle(previous => previous || handle); }
         }
       }
-      setStatus(`${stage === "prepare" ? "화학 구조 준비" : "상호작용 계산"} · ${value.status}`);
+      setStatus(`${stage === "prepare" ? "화학 구조 준비" : "상호작용 계산"} · ${value.status}` +
+        (lostStart ? ` (시작 응답을 받지 못해 저장된 작업 상태를 다시 읽었습니다: ${lostStart})` : ""));
     } catch (e) {
       if (jobActionToken.current !== ticket) return;
       if (e instanceof ApiError && operation === "start" &&
