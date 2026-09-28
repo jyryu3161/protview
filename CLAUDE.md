@@ -1,6 +1,6 @@
 # ProtView
 
-로컬 PDB/mmCIF 구조를 불러와 전처리하고, Mol*로 렌더링하고, 실제 좌표로 기하 접촉·SASA·단백질 전위·원자 거리·강체 정렬을 계산해, 근거가 필드 단위로 연결된 보고서를 만드는 단일 사용자 작업 공간이다. 연구실·팀 구성원이 각자 자기 컴퓨터나 혼자 쓰는 서버에 설치해 쓴다. FastAPI 백엔드(Python 3.11)와 Next.js 프런트엔드로 이루어져 있고, 기본 작업은 네트워크나 API 키 없이 끝난다. M0–M10은 끝났고, M11(ProLIF 화학 상호작용)을 구현하는 중이다.
+로컬 PDB/mmCIF 구조를 불러와 전처리하고, Mol*로 렌더링하고, 실제 좌표로 기하 접촉·SASA·단백질 전위·원자 거리·강체 정렬을 계산해, 근거가 필드 단위로 연결된 보고서를 만드는 단일 사용자 작업 공간이다. 연구실·팀 구성원이 각자 자기 컴퓨터나 혼자 쓰는 서버에 설치해 쓴다. FastAPI 백엔드(Python 3.11)와 Next.js 프런트엔드로 이루어져 있고, 기본 작업은 네트워크나 API 키 없이 끝난다. M0–M11은 끝났고(M11 완료 기록: `docs/tracking/m11-acceptance.md`), 다음은 M12(로컬 포켓 후보)다.
 
 ## 프로젝트 구조
 
@@ -16,8 +16,8 @@ protview/
 │   ├── operations.md              → 설치, 실행, 환경 설정, 검증·오프스크린 QA 명령, run 보관
 │   ├── contracts.md               → loopback HTTP API 계약(입력·출력·오류), 과거 단계 실행기 CLI
 │   ├── tracking/
-│   │   ├── status.md              → 완료·검증 상태와 남은 작업(M11→M12→M13)
-│   │   ├── decisions/index.md     → 결정 기록 목록(0001–0012)
+│   │   ├── status.md              → 완료·검증 상태와 남은 작업(M12→M13)
+│   │   ├── decisions/index.md     → 결정 기록 목록(0001–0014)
 │   │   └── findings.md            → 지금 해결하지 못한 문제와 그 이유
 │   └── (대문자 문서들)             → M0–M13 단계별 원본 설계·계약·검토 기록. 수정·이동 금지
 ├── backend/AGENTS.md              → mw 패키지: API, 런타임, 객체·이벤트, 도구, 작업 큐, 외부 게이트
@@ -36,7 +36,7 @@ protview/
 ## 작업 전 확인
 
 - 항상: `docs/standards.md`, `docs/engineering-notes.md`, 작업할 모듈의 `AGENTS.md`, `docs/tracking/status.md`.
-- **M11 화학 작업**: `docs/business-rules.md`의 "M11 화학 입력 규칙"과 원본 상세 계약 `docs/M11_CHEMICAL_INTERACTIONS_CONTRACT.md`, `docs/M11_BACKEND_API.md`, `docs/M11_OFFSCREEN_QA_PLAN.md`. `docs/tracking/findings.md`의 `/tmp` QA 입력 문제.
+- **M11 화학 작업**: `docs/business-rules.md`의 "M11 화학 입력 규칙"과 원본 상세 계약 `docs/M11_CHEMICAL_INTERACTIONS_CONTRACT.md`, `docs/M11_BACKEND_API.md`, `docs/M11_OFFSCREEN_QA_PLAN.md`(입력 경로 안내는 오래됨). 현재 QA 실행 방법은 `docs/operations.md`, 완료 기록은 `docs/tracking/m11-acceptance.md`.
 - **M12·M13 착수**: `docs/M12_POCKET_DETECTION_CONTRACT.md`, `docs/M13_WORKFLOWS_CONTRACT.md`. 이 계약들은 작성 당시 기준이므로, 착수 시점의 실제 스키마·도구 버전과 맞는지 다시 확인한다.
 - **뷰어·선택·저장된 보기를 바꿀 때**: `docs/engineering-notes.md`의 Mol* label 함정과 바인딩 재발행 함정, `frontend/AGENTS.md`의 브리지 불변 조건.
 - **작업 큐·프로세스를 바꿀 때**: `docs/engineering-notes.md`의 psutil 신원 함정과 시작 핸드셰이크, `backend/AGENTS.md`의 예약·잠금 규칙.

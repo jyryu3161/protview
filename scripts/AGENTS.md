@@ -4,6 +4,12 @@
 - `execute.py`: `phases/<group>/index.json` 단계 실행기. 수락 명령(argv 배열)을 셸 없이 실행하고, SHA-256으로 묶인 검토 증거를 기록하며, `--verify`로 다시 확인한다.
 - `test_execute.py`, `test_codex_hooks.py`: 실행기와 `.codex/hooks/`(PreToolUse 위험 명령 차단, Stop 훅의 ruff·pytest) 테스트.
 - `setup_prolif_worker.py`: M11 ProLIF 작업 프로세스 환경을 해시 잠금 wheelhouse에서 설치하는 명시적 설정 명령. 런타임에는 호출되지 않는다.
+- M11 QA 도구(런타임에서 호출되지 않음):
+  - `m11_qa_inputs.py`: 공개 fixture에서 합성 파생 QA 입력 3개를 결정적으로 만들고 SHA-256을 대조한다. 어긋나면 아무것도 쓰지 않고 실패한다.
+  - `m11_attach_browser_setup.py`: loopback API로 run의 실제 원자 카탈로그를 읽어 연결 모드용 결합 sidecar, 매핑, 요청 JSON을 만든다. 최근접 좌표 매칭을 쓰지 않는다.
+  - `m11_invalid_inputs.py`: H06용 잘못된 입력(표시된 합성 파생)과 기대하는 문제 원자를 만든다.
+  - `m11_replay_probe.py`: GET 전용 replay 확인 도우미. `docs/qa/m10-comparison-20260927/commands/replay_probe.py`에서 복사했고 원본은 바꾸지 않는다.
+  - `m11_offscreen_acceptance.py`: M11 수락 QA 전체 실행기(`docs/operations.md` 참고). `mw`를 import하지 않고 하위 프로세스로만 확인한다.
 
 ## 담당하지 않는 것
 - 제품 런타임: `backend/mw`를 import하지 않고, `backend/mw`도 이 디렉터리를 import하지 않는다.

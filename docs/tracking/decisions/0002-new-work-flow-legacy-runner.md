@@ -13,6 +13,6 @@ M11부터 새 작업은 `ready` → `go` 흐름(Opus 5.5 구현·검토 서브�
 - 둘 다 쓰기: 수락 확인을 두 체계에서 이중으로 관리하게 된다.
 
 ## 결과
-- 진행 중인 M11의 `phases/protview-chemical-interactions/` 기록은 pending 상태로 남는다. M11 완료 판정은 새 흐름의 검증과 독립 검토로 하고, 이 실행기로 `completed`를 기록할 수는 없다.
-- `.claude/commands/harness.md`, `review.md`는 옛 역할을 전제로 하므로 새 작업에 쓰지 않는다.
+- M11의 `phases/protview-chemical-interactions/` 기록은 pending 상태로 남는다. M11 완료 판정은 새 흐름의 검증과 독립 검토로 했고(결정 0014, `docs/tracking/m11-acceptance.md`), 이 실행기로 `completed`를 기록하지 않는다.
+- `.claude/commands/harness.md`, `review.md`는 옛 역할을 전제로 했으므로 M11 마무리에서 삭제했다(2026-09-28). 수정 금지 문서(`docs/HARNESS.md` 등)에 남은 `/harness` 언급은 과거 기록으로 그대로 둔다.
 - 이 실행기로 만든 과거 단계 기록은 공유 파일이 바뀌면 오래된 상태가 된다. 해시를 고쳐 통과시키지 않는다.

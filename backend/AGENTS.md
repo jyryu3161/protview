@@ -18,6 +18,8 @@
 - run을 바꾸는 호출은 `execution.lock`을 잡은 상태에서 이벤트를 다시 읽고 판단한다. 취소·종료 전이는 `transitions.lock`만 쓰고, 긴 실행 잠금을 기다리지 않는다.
 - 비싼 계산 예약은 실제 프로세스를 띄우기 직전에 한 번만 한다. `Run.call`과 큐가 같은 시도를 이중 과금하면 안 된다. 예약 뒤의 실패·취소·시간 초과는 환불하지 않는다.
 - 작업 프로세스는 guardian의 HELLO/GO 핸드셰이크를 마친 뒤에만 과학 작업을 시작한다. 프로세스 신원은 `jobs/process_identity.py`의 `psutil_raw_start_v1` 레코드로만 판단한다. 공개 `create_time`, PID, PGID 정수만으로 신호를 보내면 안 된다.
+- 모든 HTTP 요청은 가장 바깥 미들웨어에서 Host 허용 목록(`127.0.0.1`·`localhost`·`[::1]`, 포트 선택)을 통과해야 한다. 테스트 클라이언트는 `base_url="http://127.0.0.1"`로 만든다.
+- 작업 상태 읽기(`JobQueue.get`/`list`)는 `transitions.lock`을 잡거나 SQLite 색인을 다시 쓰지 않는다. 색인은 쓰는 쪽과 `claim_next`가 다시 만든다.
 - 외부 HTTP는 `egress/gate.py`의 `EgressGate`만 보낸다. `follow_redirects=False`, `trust_env=False`, 목적지 1개 고정, 요청당 HTTP 1회를 지킨다. local_only/dry_run에서는 키를 읽지 않는다.
 - 새 run은 `NewRun.egress`가 `Literal["local_only"]`이므로 항상 로컬 전용이다. 온라인 전환은 `/viewer/online` 이벤트로만 한다.
 - 잔기 식별자 7필드와 AtomRef의 null label은 그대로 보존한다. 표시 문자열을 파싱해서 식별자를 만들지 않는다.

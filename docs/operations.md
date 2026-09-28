@@ -87,6 +87,19 @@ npm --prefix frontend run test:offscreen:chemical
 - `--interactive`를 붙이면 stdin으로 JSON 명령을 한 줄씩 받아 실제 마우스·키보드 입력을 보낸다.
 - 이 외에 `:keyboard`, `:openmm`, `:retry`, `:faults`, `:post-races`, `:dry-run`, `:persistence` 흐름 스크립트가 있다. M10 비교 흐름은 npm 스크립트가 없으므로 `node frontend/tests/offscreen/comparison-flow.cjs --url http://127.0.0.1:3000 --mode <모드> --run <run_id> --artifacts <디렉터리>`로 직접 실행한다(`--other-run`은 두 run 전환 모드에서 쓴다).
 
+### M11 화학 상호작용 수락 QA
+
+프런트엔드를 먼저 빌드하고(`typecheck` 다음 `build`), 8000·3000 포트가 비어 있는 상태에서 실행한다. 실행기가 loopback 서비스를 직접 띄우고 끝나면 정리한다.
+
+```bash
+.venv/bin/python scripts/m11_offscreen_acceptance.py --root runs/m11-acceptance-<날짜> --artifacts frontend/tests/offscreen/artifacts/m11-acceptance/<이름>
+```
+
+- runs 루트는 새 폴더여야 하고 `/tmp` 아래면 거부한다. 전역 작업 검사의 한도(run 1,000개 등)에 걸리지 않도록 QA마다 새 루트를 쓴다.
+- 단계: M11 모드 전체(H01–H17) → M8 normal·OpenMM 준비·M9 scenes·M10 measure/alignment 회귀 → events-only 복구(원본 입력 없이, 작업 프로세스 없이) → 작업 프로세스 없음·버전 불일치 표시 → `case-ledger.json` 집계. `--only 단계,...`로 한 단계만 다시 돌리면 새 디렉터리에 기록하고 이전 증거를 덮어쓰지 않는다.
+- 입력: 공개 fixture는 `backend/tests/fixtures/chemical/`의 파일을 그대로 쓴다. 합성 파생 입력(연결용 복합체 PDB, 빈 결과 SDF, 수용체 결합 목록)은 `scripts/m11_qa_inputs.py --out <디렉터리>`가 만들고 기록된 SHA-256과 대조한다. run에 묶인 연결 입력은 `scripts/m11_attach_browser_setup.py`가 그 run의 실제 카탈로그로 만든다. 잘못된 입력 사례는 `scripts/m11_invalid_inputs.py`가 만든다.
+- 커밋하는 증거는 `docs/qa/m11-chemical-<날짜>/`에 두고, 스크린숏·다운로드 원본은 git에서 제외된 artifacts 폴더에 두며 해시만 기록한다. 절대 경로는 `<repo>` 같은 표시로 바꾼다.
+
 ## 과거 단계 재검증
 
 ```bash

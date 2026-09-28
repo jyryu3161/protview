@@ -7,6 +7,7 @@
 - `src/lib/`: API 클라이언트(`api.ts`)와 순수 로직(이벤트 정규화, 보고서 선택, 보기·비교·화학 상태).
 - `src/design/`: `npm run tokens`(`design/build_tokens.py`)가 만드는 생성물이다. `tokens.css`/`tokens.ts`는 `design/tokens.json`에서, `components.css`는 `design/components.css`에서 복사된다(Google Fonts `@import`는 제거).
 - 테스트: `tests/*.test.cjs`(node --test), `tests/offscreen/`(Electron 오프스크린 QA 하네스와 흐름 스크립트).
+- `middleware.ts`: 모든 요청의 Host를 `src/lib/host-allowlist.ts`로 검사해 `127.0.0.1`·`localhost`·`[::1]`이 아니면 400으로 거부한다. 프록시가 Host를 바꿔 보내므로 백엔드 검사만으로는 :3000 경로를 막지 못한다.
 
 ## 담당하지 않는 것
 - 과학 계산, 단위 변환, 요약 수치 재계산: 백엔드 handle을 표시만 한다.
