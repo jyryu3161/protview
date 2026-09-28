@@ -16,7 +16,8 @@ protview/
 │   ├── operations.md              → 설치, 실행, 환경 설정, 검증·오프스크린 QA 명령, run 보관
 │   ├── contracts.md               → loopback HTTP API 계약(입력·출력·오류), 과거 단계 실행기 CLI
 │   ├── tracking/
-│   │   ├── status.md              → 완료·검증 상태와 남은 작업(M12→M13)
+│   │   ├── status.md              → 완료·검증 상태와 남은 작업
+│   ├── roadmap.md             → M13–M28 단계 로드맵(탭·시나리오·하지 않는 것)
 │   │   ├── decisions/index.md     → 결정 기록 목록(0001–0014)
 │   │   └── findings.md            → 지금 해결하지 못한 문제와 그 이유
 │   └── (대문자 문서들)             → M0–M13 단계별 원본 설계·계약·검토 기록. 수정·이동 금지
