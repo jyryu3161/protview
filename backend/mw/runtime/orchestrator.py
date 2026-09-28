@@ -21,6 +21,7 @@ from ..core.contracts import check_args
 from ..core.errors import FailureClass, ToolFailure
 from ..core.events import DecisionSource, EventLog, idempotency_key
 from ..core.handles import Handle, ObjectStore
+from ..tools.energetic import JOB_ONLY_TOOLS
 from ..tools.registry import ToolContext, ToolRegistry
 from .guards import TRANSIENT_DELAYS_S, Budget, BudgetLimits, LoopGuard, LoopStop
 
@@ -496,6 +497,9 @@ class Run:
         spec = self.registry.specs.get(tool)
         if spec is None or tool not in self.registry.impls:
             raise ToolFailure(FailureClass.input_invalid, f"unknown or unimplemented tool '{tool}'")
+        if tool in JOB_ONLY_TOOLS:
+            raise ToolFailure(FailureClass.precondition, "submit through the durable job lane",
+                              detail={"reason_code": "job_only_tool"})
         if not isinstance(args, dict):
             raise ToolFailure(FailureClass.input_invalid, "tool args must be an object")
         normalized = check_args(spec, args, self.store.kind_of)

@@ -380,7 +380,7 @@ def test_http_verified_source_download_and_confinement(tmp_path, monkeypatch):
 
     monkeypatch.setattr(appmod, "RUNS_DIR", tmp_path / "http-runs")
     appmod.RUNS.clear()
-    client = TestClient(appmod.app)
+    client = TestClient(appmod.app, base_url="http://127.0.0.1")
     rid = client.post("/runs", json={}).json()["run_id"]
     raw = FIX.read_bytes()
     upload = client.post(f"/runs/{rid}/uploads", params={"filename": "fixture.pdb"}, content=raw)

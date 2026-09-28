@@ -1,0 +1,490 @@
+{
+  "schema": "m11_host_check@1",
+  "recordedAt": "2026-09-28T05:33:01.028504+00:00",
+  "gitHead": "4ec584f2bd5e82f7cb8550eb8148b26e31dfaf5d",
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "services": {
+    "backend": "uvicorn mw.api.app:app --host 127.0.0.1 --port 8000 (MW_RUNS_DIR=runs/m11-hostcheck-20260928)",
+    "frontend": "npm --prefix frontend run start -- -p 3000 (next start -H 127.0.0.1)"
+  },
+  "method": "Raw HTTP/1.1 requests over a 127.0.0.1 TCP socket (script host-and-smoke/host_check.py; exact request lines are 'GET <path> HTTP/1.1' + one 'Host:' line per listed value + 'Connection: close'). 'Reached backend' is judged from backend access-log line growth: for :3000 /api/* a +1 line means the proxy reached the backend; for :8000 every request logs one line (access line or uvicorn 'Invalid HTTP request' warning).",
+  "summary": {
+    "cases": 27,
+    "pass": 25,
+    "knownLimitation": 2,
+    "fail": 0
+  },
+  "knownLimitation": {
+    "case": "two Host headers on :3000, allowed value first and foreign value second",
+    "observed": "HTTP 200 on /api/capabilities (proxied, backend answered 200) and on /",
+    "status": "observed pass-through — accepted known limitation per user decision 2026-09-28; browsers send a single Host so DNS rebinding remains blocked",
+    "cause": "Node's HTTP server keeps only the first duplicate Host header in req.headers.host, and frontend/middleware.ts checks request.headers.get('host'). Reversed order (foreign first) is rejected by the middleware; :8000 rejects every duplicate-Host request at the uvicorn protocol layer.",
+    "decision": "User decision 2026-09-28 (relayed by the orchestrator): record as a known limitation; no code change, no re-freeze."
+  },
+  "curlNote": "curl 7.87.0 with -H 'Host: a' -H 'Host: b' sends only the first Host header (verified with -v), so host-and-smoke/host-check-curl.txt is not a duplicate-header test; the raw-socket results above are authoritative.",
+  "missingHostLayerDiagnostic": "host-and-smoke/host-diag-headers.txt: a later frontend-only restart of the same build showed full response headers — missing Host → 400 with no content-type/Vary (Node), foreign Host → 400 text/plain from the middleware.",
+  "results": [
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "spoofed",
+      "hostHeaders": [
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware (frontend/middleware.ts isAllowedHost): 400 text/plain 'Host header not allowed'",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "spoofed-with-port",
+      "hostHeaders": [
+        "evil.example:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware (frontend/middleware.ts isAllowedHost): 400 text/plain 'Host header not allowed'",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "allowed-127",
+      "hostHeaders": [
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Next middleware allowed; proxied to backend (200)",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "allowed-localhost-upper",
+      "hostHeaders": [
+        "LOCALHOST:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Next middleware allowed; proxied to backend (200)",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "allowed-ipv6",
+      "hostHeaders": [
+        "[::1]:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Next middleware allowed; proxied to backend (200)",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "missing",
+      "hostHeaders": [],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "0\r\n\r\n",
+      "bodyBytes": 5,
+      "bodySha256": "933b971c6388d594a23fa1559825db5bec8ade2db1240aa8fc9d0c684949e8c9",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Node HTTP server (HTTP/1.1 request without Host rejected before Next; 400, Connection: close, empty chunked body, no content-type)",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "two-hosts-allowed-then-foreign",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Not rejected. Node keeps only the first Host value in req.headers.host (both remain in rawHeaders); the middleware sees '127.0.0.1:3000' and allows; the /api proxy forwarded it and the backend answered 200",
+      "expectation": "observed pass-through — accepted known limitation per user decision 2026-09-28; browsers send a single Host so DNS rebinding remains blocked",
+      "verdict": "known_limitation"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "two-hosts-foreign-then-allowed",
+      "hostHeaders": [
+        "evil.example",
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware (frontend/middleware.ts isAllowedHost): 400 text/plain 'Host header not allowed'",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "two-hosts-both-allowed",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "localhost:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Not rejected: first value allowed (both values are allow-listed)",
+      "expectation": "allowed (no foreign value)",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "spoofed",
+      "hostHeaders": [
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware (frontend/middleware.ts isAllowedHost): 400 text/plain 'Host header not allowed'",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "spoofed-with-port",
+      "hostHeaders": [
+        "evil.example:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware (frontend/middleware.ts isAllowedHost): 400 text/plain 'Host header not allowed'",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "allowed-127",
+      "hostHeaders": [
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware allowed; page served by Next",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "allowed-localhost-upper",
+      "hostHeaders": [
+        "LOCALHOST:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware allowed; page served by Next",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "allowed-ipv6",
+      "hostHeaders": [
+        "[::1]:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware allowed; page served by Next",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "missing",
+      "hostHeaders": [],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "0\r\n\r\n",
+      "bodyBytes": 5,
+      "bodySha256": "933b971c6388d594a23fa1559825db5bec8ade2db1240aa8fc9d0c684949e8c9",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Node HTTP server (HTTP/1.1 request without Host rejected before Next; 400, Connection: close, empty chunked body, no content-type)",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "two-hosts-allowed-then-foreign",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Not rejected. Node keeps only the first Host value in req.headers.host (both remain in rawHeaders); the middleware sees '127.0.0.1:3000' and allows; Next served the page",
+      "expectation": "observed pass-through — accepted known limitation per user decision 2026-09-28; browsers send a single Host so DNS rebinding remains blocked",
+      "verdict": "known_limitation"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "two-hosts-foreign-then-allowed",
+      "hostHeaders": [
+        "evil.example",
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Next middleware (frontend/middleware.ts isAllowedHost): 400 text/plain 'Host header not allowed'",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "two-hosts-both-allowed",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "localhost:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendAccessLogLinesAdded": 0,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Not rejected: first value allowed (both values are allow-listed)",
+      "expectation": "allowed (no foreign value)",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "spoofed",
+      "hostHeaders": [
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "{\"detail\":\"Host header not allowed\"}",
+      "bodyBytes": 36,
+      "bodySha256": "f45625813e77f917134ab0e51ddf34ca1004719f4905be29a1a2d6e01c5f3e80",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Backend app HostAllowlistMiddleware: 400 JSON {\"detail\":\"Host header not allowed\"}",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "spoofed-with-port",
+      "hostHeaders": [
+        "evil.example:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "{\"detail\":\"Host header not allowed\"}",
+      "bodyBytes": 36,
+      "bodySha256": "f45625813e77f917134ab0e51ddf34ca1004719f4905be29a1a2d6e01c5f3e80",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": false,
+      "decidingLayer": "Backend app HostAllowlistMiddleware: 400 JSON {\"detail\":\"Host header not allowed\"}",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "allowed-127",
+      "hostHeaders": [
+        "127.0.0.1:8000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Backend app HostAllowlistMiddleware allowed; route answered 200",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "allowed-localhost-upper",
+      "hostHeaders": [
+        "LOCALHOST:8000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Backend app HostAllowlistMiddleware allowed; route answered 200",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "allowed-ipv6",
+      "hostHeaders": [
+        "[::1]:8000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": true,
+      "decidingLayer": "Backend app HostAllowlistMiddleware allowed; route answered 200",
+      "expectation": "expected allow",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "missing",
+      "hostHeaders": [],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": false,
+      "decidingLayer": "uvicorn HTTP protocol layer (h11) before the app: 400 'Invalid HTTP request received.' (backend log WARNING line); app middleware not reached",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "two-hosts-allowed-then-foreign",
+      "hostHeaders": [
+        "127.0.0.1:8000",
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": false,
+      "decidingLayer": "uvicorn HTTP protocol layer (h11) before the app: 400 'Invalid HTTP request received.' (backend log WARNING line); app middleware not reached",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "two-hosts-foreign-then-allowed",
+      "hostHeaders": [
+        "evil.example",
+        "127.0.0.1:8000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": false,
+      "decidingLayer": "uvicorn HTTP protocol layer (h11) before the app: 400 'Invalid HTTP request received.' (backend log WARNING line); app middleware not reached",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "two-hosts-both-allowed",
+      "hostHeaders": [
+        "127.0.0.1:8000",
+        "localhost:8000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendAccessLogLinesAdded": 1,
+      "reachedBackendRoute": false,
+      "decidingLayer": "uvicorn HTTP protocol layer (h11) before the app: 400 'Invalid HTTP request received.' (backend log WARNING line); app middleware not reached",
+      "expectation": "expected rejection",
+      "verdict": "pass"
+    }
+  ]
+}

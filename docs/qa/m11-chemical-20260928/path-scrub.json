@@ -1,0 +1,1502 @@
+{
+ "schema": "m11_qa_path_scrub@1",
+ "baseCommit": "08c51c7046d0e18d8803c40d6a6ce5560d93c75c",
+ "decision": "User decision 2026-09-28 (relayed by the orchestrator): replace absolute local path prefixes with placeholders in this folder only; nothing else changed (no values, hashes or handles).",
+ "rulesInOrder": [
+  {
+   "kind": "regex",
+   "pattern": "\u002fprivate/tmp/claude-501/[^/\\s\\\"'`]+/[^/\\s\\\"'`]+/scratchpad",
+   "replacement": "<tmp>",
+   "label": "claude scratchpad directory -> <tmp>"
+  },
+  {
+   "kind": "literal",
+   "pattern": "\u002fUsers/jaeyongryu/Projects/protview/.dryforge/worktrees/T2",
+   "replacement": "<repo>",
+   "label": "T2 worktree root -> <repo>"
+  },
+  {
+   "kind": "literal",
+   "pattern": "\u002fUsers/jaeyongryu/Projects/protview",
+   "replacement": "<main-checkout>",
+   "label": "main checkout -> <main-checkout>"
+  },
+  {
+   "kind": "regex",
+   "pattern": "\u002fprivate/var/folders/[^/\\s\\\"'`]+/[^/\\s\\\"'`]+/[^/\\s\\\"'`]+",
+   "replacement": "<tmp>",
+   "label": "\u002fprivate/var/folders/<a>/<b>/<c> -> <tmp>"
+  },
+  {
+   "kind": "literal",
+   "pattern": "\u002fprivate/tmp",
+   "replacement": "<tmp>",
+   "label": "\u002fprivate/tmp -> <tmp>"
+  },
+  {
+   "kind": "literal",
+   "pattern": "\u002fUsers/jaeyongryu",
+   "replacement": "<home>",
+   "label": "home -> <home>"
+  }
+ ],
+ "note": "originalSha256 is the file as committed in 08c51c7. SHA-256 values recorded inside evidence files (e.g. omitted-files.json, *.compact.json originalSha256, ledger fixture hashes) refer to the unscrubbed local originals and were intentionally left unchanged.",
+ "filesChanged": 132,
+ "totalReplacements": 926,
+ "files": [
+  {
+   "file": "README.md",
+   "originalSha256": "6c675f4b7b647a0ac61fe531dc4911232327be112638be8dbe25e7b3d2f54618",
+   "newSha256": "752d461d863b71b41f4db119f4d4fbdfc7c34c560cea0893554b602df0b3c9d3",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ],
+   "note": "README.md was additionally edited after the scrub to add the '\uacbd\ub85c \uce58\ud658' section describing it; newSha256 is the final committed file."
+  },
+  {
+   "file": "case-ledger.json",
+   "originalSha256": "054c42b8e9c16463b0a64220ecb09e1cca10e7630479ef9771df24bfa4d50d7b",
+   "newSha256": "78a91535d05004289dd6f55f45e6ae0750396819431cad4ee0a8c713bc253861",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 35
+    }
+   ]
+  },
+  {
+   "file": "gate-logs/pytest-backend.log",
+   "originalSha256": "f20f884764c01a11e5d9d8ee85c8b0840dd55c9b752f0396c19cd99e490e38f4",
+   "newSha256": "49992794f8baf26838d42d4b01da5be9b7706a6615bd248a04974e2e94ddbd24",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "gate-logs/tokens.log",
+   "originalSha256": "823b47e7d9d4a26b1afd55c2f7fd4d56cdece33a04cf7106fef8e51b708355a7",
+   "newSha256": "38176e587826d448dd2a7c7988974885cd352a1001dd8f42266d11c2a9d390c5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "gate-results.json",
+   "originalSha256": "ea3fe72fa347bb5c8b434aa7912ff45141e9f9a8948857c959a5c2a3bac8acc4",
+   "newSha256": "be638a175aaf02bdf9cd82f122d6f2666abf8d4f863c79768df1dad1634bb593",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "host-and-smoke/offscreen-smoke/baseline.json",
+   "originalSha256": "2391df2c1c2c4897b221ebec083c6835dad6b7aaa6d97ef1a20486005a60d367",
+   "newSha256": "0f5df438edb56b169ccf14eae25f7973da8e03f73c9cd08fc1a3b494c8c02271",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "host-and-smoke/offscreen-smoke.log",
+   "originalSha256": "5a62272e17627b5600f02fa592e8087ada7b824584129b8f8b3f7ebc833d3f67",
+   "newSha256": "ce3a6e61487082850953e20a481f0573193dd70c9564f44f2273ed02b5ac17dd",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 3
+    }
+   ]
+  },
+  {
+   "file": "omitted-files.json",
+   "originalSha256": "0882ce92d88b12929cf0ee1868f76d791d50c123ab7c88558781e17813ac15be",
+   "newSha256": "1ebe577235512a91e78fa8e51cdc20e067e39457c19afafc2a5aa038174fd446",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/acceptance-runner-stdout.log",
+   "originalSha256": "3861d02a1bff002824deaadb430d80f9d366767d4ac317ec929ca36022549edd",
+   "newSha256": "d77e55ecab1702f9c99c8f80d0f3e98ef752a5fac43cd0a98361ba354a74ff31",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 52
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-map/baseline.json",
+   "originalSha256": "45bc3db861fbca298a36dd5b24aab54ef45cd6bab52ac36b864d00c2cbc6bfff",
+   "newSha256": "ab6e3e6563f81596ca77edc09e9472e3ba73bef2937dcd28a03a5e1a07eb8dfc",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-map/chemical-evidence.compact.json",
+   "originalSha256": "5081da697aea9d4f791a680e7fbef43c33a0ee8353b0e3a869d185be87c08bce",
+   "newSha256": "060d96a59d40521fa04a41c8f02d74c34e3d4900772f5ff3600309df95bebfe5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 8
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-map/ledger-row.json",
+   "originalSha256": "48cd81a6a79d43256263898af936c1f86a39dc40a24b0c9af4a9761bbdbd5404",
+   "newSha256": "c3ca70474dd547b9d37b7378d296fbe31c614235615e1730ef1f8551019157a3",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-map/report-download-proof.compact.json",
+   "originalSha256": "8e7a26986cb3b7083345cb30043f5ed7ab43afef0276037da989e74a76eff9b5",
+   "newSha256": "077d8a8532a7a8e6c2c3198a24779571323af968e70a30254dcd2d4e7a67e9ab",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-map.log",
+   "originalSha256": "19ceb09fce048f15c1973055262bd0c7edcaab3c8be1a7b35dac6abbf97115d1",
+   "newSha256": "1fd6f125456eabcfac8a6c75c0bf29655b8cf13ed4cd5decf20714242e4491ca",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 6
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-replace/baseline.json",
+   "originalSha256": "294e5f1f08be3fa036d0e5a92496c3b3a8711ff06be2db7bce718e452a5b7fb5",
+   "newSha256": "ae7e755f1841e9357a2a7b1a2aff1062b31bb1f4a0439e34cc2e7ac399e2fb83",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-replace/chemical-evidence.compact.json",
+   "originalSha256": "69c4dc841980d21aa8066b59ddc1fe2fb58ec573019e0d9e53e9da4753e83233",
+   "newSha256": "d615f5dd8b60eea7e4f7c01acbc0b8b15d218a1ba4c799ccb86f471ca5153da7",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 8
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-replace/ledger-row.json",
+   "originalSha256": "46041ba8546f437f17c9b24c2956b0cc833e72fc0efbb9d453d81e92e790179e",
+   "newSha256": "4aefe8050bf9f5b4bea6382d9f91d53a24b8cad23593b20f380b0c0fd7d0fbb9",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-replace/report-download-proof.compact.json",
+   "originalSha256": "231d058dd5d54b05b6357f8772edb24ff214d7eed73adaaffacf0fa1c80104b9",
+   "newSha256": "b465372ec68959e02894e257d3debf90f3185e7c71613db1d7eeef4ab6a40c50",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-replace.log",
+   "originalSha256": "6e7b44936cd598904030239a053f1716cb84b0318f2aa3ecb101cfdc8c90bb9d",
+   "newSha256": "a69fd59a397be9d68eedebce7869f5f853a7b7b58a8fd81a6b38167aa2b1f9b7",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 6
+    }
+   ]
+  },
+  {
+   "file": "steps/attach-setup/ledger-row.json",
+   "originalSha256": "f50cc2c3016501dbbf25f8804066733f4c6e5ab5bcf72a46cc482d464986b404",
+   "newSha256": "a479832d032d130dd71341929a1fda65c4377343e23813e389454cc100090f0f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 3
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-ready/baseline.json",
+   "originalSha256": "7a0183f2778cf0851d7839a4b26bfe5ce0508c7b5b53845171bb852ff9d77dfa",
+   "newSha256": "5817d3c5985b05c6e290525b67d518c1a90433ea1fb764b80ac0afe458289b88",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-ready/chemical-evidence.json",
+   "originalSha256": "ad215f25ee2cada256f67ccca59a1df4d97aef0d58a604dcd71a357554079b5e",
+   "newSha256": "80be4d0ca66b630a3d0b2c70843b177b5b1abf33ee6d2d011de94ce10dc3e24c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-ready/ledger-row.json",
+   "originalSha256": "61321cf2872a63b6703de54cd6d86aa0b0846a784964c435430cc6a46a6d20aa",
+   "newSha256": "183ccba18c61be8a46494d388c6f650d957dbd0857aedacb679594d65ea9c3ee",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-ready.log",
+   "originalSha256": "2dc05bde9ac2c19782c41aedc4564317a0fad49808b5819d5281ba32f5f58c5c",
+   "newSha256": "e7aec3f63c4139e9dc8a55f61be22d380f8a85ea815d5f91afb8bcc32a0d8bac",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-missing/baseline.json",
+   "originalSha256": "a720a8131bf896c06d8c858b8febe396f39cc6970ff78990dcf2fe660584c184",
+   "newSha256": "6f498780810631d2984e5f51252c9f9c100d41cc69de511dddc0194b2bc77c46",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-missing/chemical-evidence.json",
+   "originalSha256": "30c35682253cf63d9573bb41a7c249c3be1aafaa0cdb63bdef8f257665065d49",
+   "newSha256": "e1fe892a1f4254e9acc48e568facc73fe85d6e532ef51956b14575d1629a8801",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-missing/ledger-row.json",
+   "originalSha256": "24d2a106a21333c555db1086910ce88ba5dd05f784102b01dd37fc76157e5c8f",
+   "newSha256": "2ae595f463131aac7fa22159ceb496da92cb4dd3e84022efcc3ca0437263a51f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-missing.log",
+   "originalSha256": "f1994337878f7e18dc399cf51393d54a1831c8385f600a741da619c0c24e9f7e",
+   "newSha256": "c494aa0a69b37602f5cbbab734d9cf85223ce885ae656adc5126f986f0d67b44",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-version-invalid/baseline.json",
+   "originalSha256": "b1ed746dc5231f660ac50530d10f0814b93ea6c298b82735fe798f27eb956332",
+   "newSha256": "02d8eb8edcc65f83efeebcfa84b33b6db4c75598b106d250698ba6d05cdeed1a",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-version-invalid/chemical-evidence.json",
+   "originalSha256": "0568e03fd12c9be2fdf3c590500b6c9aefd0f0951c99b0cc13278891fcbd5080",
+   "newSha256": "77ae96b52090f7f1dd6b854801358e2195e0ebc70dcd7cb9a8d0c5254b3b73bd",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 5
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-version-invalid/ledger-row.json",
+   "originalSha256": "c899fd9dffb9d1ea472d0782d7c23756b7626d33ed0a611bef44e5539eb4b32d",
+   "newSha256": "7436e4e8f80249660dcc64a6d9a1ec78fccafa30fd048a5b9225b851f5e73907",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/capability-worker-version-invalid.log",
+   "originalSha256": "87f8877049c2128521b7f5ce9eb5cb894645c4ef1a45b4dd90a5b1a9291155d9",
+   "newSha256": "dc5a796c73b6ac00920ee042b6ee7c29e8e08f1a3315513ff1d645422b38f952",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 5
+    }
+   ]
+  },
+  {
+   "file": "steps/case-ledger.json",
+   "originalSha256": "054c42b8e9c16463b0a64220ecb09e1cca10e7630479ef9771df24bfa4d50d7b",
+   "newSha256": "78a91535d05004289dd6f55f45e6ae0750396819431cad4ee0a8c713bc253861",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 35
+    }
+   ]
+  },
+  {
+   "file": "steps/create/baseline.json",
+   "originalSha256": "3d5e0c836f2623b728860f117dd0df770135edabd8ac04f76af998c145916aa5",
+   "newSha256": "bfed4b5af66a5de84381e1f101a6d2a0763d4b6898e718d313ff4f9f7691b217",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/create/chemical-evidence.compact.json",
+   "originalSha256": "02255695bf7767c3aff655084919cece72de09c7c9afcba8f06bd08160aedbdb",
+   "newSha256": "977c72291aba6db6a066d7181a6115d18aa24bcdea116000de6d2af1ce24d12f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 14
+    }
+   ]
+  },
+  {
+   "file": "steps/create/ledger-row.json",
+   "originalSha256": "69409f01ddfb70fcf7159f025a56d11c870b07e8f8e2020864f702d70443ac26",
+   "newSha256": "c36446991051752e0d46cb533a30bd62da0c3a782e70a223065b14e25ce150c5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/create/report-download-proof.compact.json",
+   "originalSha256": "1f8812c9ef3045c40b5e7b6de373457ccca4c9534fe46555f61cba874ca0176b",
+   "newSha256": "6aac8b3a8126abcb61aae25ce58fc79c952712059acef881627bbc846ce16f29",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/create.log",
+   "originalSha256": "5ba8b3401ea1f6efffd667fe850df259b68f359ef5daf08107557e7d2e7a63bd",
+   "newSha256": "84cb6f9bee0c9b271b31fec7d4ec9d7b123e84045a46c86f0b853118a2c7b101",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/detect-controls/baseline.json",
+   "originalSha256": "85fc806c0f453bbd58d96876b9a18c2c396871eb904de86f31c07fa228c0b408",
+   "newSha256": "06a771b1cf07b05a64211f8a5ffa7d1293b3f987119e60fc4481d9da53fe2bcc",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/detect-controls/ledger-row.json",
+   "originalSha256": "c3940bc47f6e852fb5a4582ae066cf9c2f0f8bbb49e0fe8181a1ba80efb0bbfa",
+   "newSha256": "ac57ab821da33752baacfef5c873188e2dac93982c5f54d678d81eaf729706de",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/detect-controls.log",
+   "originalSha256": "6057f4fd64e859930a6045be38e50ee33e205554b722519da171b191118e2353",
+   "newSha256": "e70e120f5e955588c42db1ca07c4fd5c26abbae7016e01cb9b1888b2383dcb62",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/empty/baseline.json",
+   "originalSha256": "21c47b642802520b3189a4b8a90ef81663f68eff3dc01d47a03594e85bf9aa79",
+   "newSha256": "baf040aadac3f75cf39d8b8826a906666b31105b6e8313ed252b42da26d99580",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/empty/chemical-evidence.compact.json",
+   "originalSha256": "3817bfd077a819e979056701ef4a679201f854bbb2505e4a15aca08160e55e7c",
+   "newSha256": "5431c2b8083ad46e5c8f29e203dbef4e366775bfd980963a9721aa8b7e3f9767",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 6
+    }
+   ]
+  },
+  {
+   "file": "steps/empty/ledger-row.json",
+   "originalSha256": "ed92dbf03394cef7dd2cf6f93a0a19bae3082e8622d420bda3655e56750e2d50",
+   "newSha256": "f86cdfa7892d78b56174b9ee829039988a30fc96ac72a717e2f56dc39b7ff24b",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/empty/report-download-proof.json",
+   "originalSha256": "5423cdf486eb1c7fa6ea694bc7609e79ac463f795d46476093e7b6cd27a2874d",
+   "newSha256": "5597b20394f3025ccc3f8522bae17fe2b6f609066086905bf34f4e12aaac46aa",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/empty.log",
+   "originalSha256": "17a9b81ea005d7fc5553b9ccca23467bdfd9403316561a2a92e1a2e5afccfc97",
+   "newSha256": "c9bdd60000e245f17be3d61143fe53583825dbe1c087062d9e824aee25a7334b",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/faults/baseline.json",
+   "originalSha256": "8ed966775efbc6c3a47cc09566bc5d4c1ca05da54c9e9bc81ae7c44cd75e3ab8",
+   "newSha256": "b1373970a46acd5574c4fec20cf068ab5e8972316df4f1aee2a3339ee8bbb582",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/faults/chemical-evidence.compact.json",
+   "originalSha256": "818c636c950d0a81b10b88ce4740d0bb4f3ca4443c8e1c8d6d47744c6a38a805",
+   "newSha256": "16a1193df683e59124cd51c88393bf5a2aba34e1d83226b34981cd5bfadecc53",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/faults/ledger-row.json",
+   "originalSha256": "4f56a8dd60542b128fbff10670138c8060b00ff3be7fa3eefce3a3ae92b1008e",
+   "newSha256": "6821e09e694050e6a9d0d35f75373219d2c0650c60acfd7e00ac2478bd20d1bc",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/faults.log",
+   "originalSha256": "9de2df6db9f50fa93e179bff6f3993998e55f5748a4be942e17d99723a2c994b",
+   "newSha256": "03b46ce33ef3e1ecad0b4f38da5823878405bf8049527f2d2c6ff25b6c4b0d76",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-attach/baseline.json",
+   "originalSha256": "a2870d35437e740cbd2ee15d166b94b945c0388fd549d1d86bc0e31d1d45a6d9",
+   "newSha256": "3b9c9f28481994856247c5a5233a9d2c81ce9f7f88d2d26e28463cd373117081",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-attach/chemical-evidence.json",
+   "originalSha256": "7be8bf85e0f41741a746291265376c8fc79647177282902f34c91b683e871970",
+   "newSha256": "32990f47da82732f6f6c352147b38b08020f194e7ce7ad2833b549b229f9f2c5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-attach/ledger-row.json",
+   "originalSha256": "5318ad560aa9ab314e5a13b5a16b3ed1dfa181b471e4d724a878c4617876ea1d",
+   "newSha256": "f0a62f059dceed974048712b3486f42df9c189ad6e8f3ee8e5d9c1452faf889c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-attach.log",
+   "originalSha256": "2760d7f780a5f8b5a346f834426678541401eeb786b06c2b5ae78d0945b432cd",
+   "newSha256": "5f69483c01e1e8dd4011afc88ef64d90ddadf26e8e9fb32b560b9144fb70d4b0",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 5
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-inputs/baseline.json",
+   "originalSha256": "09cd85e6c23f489528ea1c62ca2ced1665fdda91b12403e69f11a3c3c77b3c8f",
+   "newSha256": "da485ad7b5abd8a9c0f2a97a96bc3211dddf0829b496ebe1b950262ca6b6c9ff",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-inputs/chemical-evidence.json",
+   "originalSha256": "1b7a26bc2dcd302af7de4b926aa53b3086ee43ddca06867dcf6659c16009428a",
+   "newSha256": "ec6a552e23307abd242fc01e3db94f6cba28d711c5afb6bedef4999977aba145",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 37
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-inputs/ledger-row.json",
+   "originalSha256": "2d1ed96678666b87ebff3e9340b8d796673d4e3fc794637c997888cc3372d6f7",
+   "newSha256": "705ebc3f4bda058ec2b2d88d150a1648c5613bd4560d462ec969c74cc79a0486",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/invalid-inputs.log",
+   "originalSha256": "980f65e97cf5e96e9f0d90e6f0d141d54a757825a16ac47b70e99820afe41439",
+   "newSha256": "d74e561b1804da81716aa01e50796e8f2964b92e47261ad0f8536056da6f8627",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 3
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls/baseline.json",
+   "originalSha256": "2a016d16716f4c8efe44069dc8af927ab11df3f6ca090ed0607ffdf00ed238fd",
+   "newSha256": "dba0328996b7bbfa169b3af097122713a85faf057c58a31cdaa364820ea61db5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls/chemical-evidence.json",
+   "originalSha256": "9c4b1a43be54c3a4f0946dbd9d736d6e9344ed14063dc0103e82a92ed43c8359",
+   "newSha256": "d264f7afa9fc01797c9ef6122171348db3de40d64667353b2f2cfa5233b83b82",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls/ledger-row.json",
+   "originalSha256": "382a2355d472505c1941cc9b1ac0258ac3c977f64b4f4621f3679554a459b9ed",
+   "newSha256": "4c3562f01c088accef2009543dca856c619146dec047bff5486dab05685d714f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls-failure/baseline.json",
+   "originalSha256": "7092d9ff5fd8186b7e018fcb56fb8271d3c5e6c7520103fce6f6e33ccd2498a4",
+   "newSha256": "37d9ae89da9cc51c4fc54d10112f142a88fca1750f2d8de11a9bde7823e9e24f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls-failure/chemical-evidence.json",
+   "originalSha256": "cedb8dfb83a4057b510c55fa06d26be155351f63ef077fe160449d58da29aca5",
+   "newSha256": "682702b42a894677d28462626b1c803d9719cc6b6f106986f475451f680d5bc2",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls-failure/ledger-row.json",
+   "originalSha256": "63f048e38bf5216d157e368360de5f16ece0aa46f05a5357f40f682a8c16f608",
+   "newSha256": "1b640441a6a725447a87f551015a14eaedfb4c5c62308583636fba64d2fb8fef",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls-failure.log",
+   "originalSha256": "072d00d2a9a58e2d5c27ee6ec4135975b9e230156847a8e0b088b10df0789b14",
+   "newSha256": "64e3df9e06214d3f3f4b1c980596b332393e4a4395e52910a8b9c9d525c1640a",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/job-controls.log",
+   "originalSha256": "6684b477b488f78574a46e88afef43efc7ea794a824543e3333e6de008fea81b",
+   "newSha256": "15c8f78616fb69f33a166c2e01b120cbfb1ccd336736e949de4713e2491ef178",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/layout-worker-mismatch.json",
+   "originalSha256": "1e344a144cc086c43c920fd4e6b25f17f0183b899f76fe9464c61cd3fd4596c9",
+   "newSha256": "168a2ef117afdf1ecaf0c77661ca03f39cccb5e340cce11a67ebb6c483e329ca",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/prepare-only/baseline.json",
+   "originalSha256": "3cc840ed3578d923a938fb4f0b202139d186d559cbab68db9d730007fd8f6915",
+   "newSha256": "b6ff9c0801d6a9f51cac53aaa0b262184ed7556be4c289d84c635468399f4584",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/prepare-only/chemical-evidence.compact.json",
+   "originalSha256": "225b3c9f22950b52a24615e1949e1de39106c1955d9e7de1f5b7b9d3064d2979",
+   "newSha256": "788a16937763f4968e643e83581f8fb0866b54a8eb0bb89d6082f054b536cc45",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/prepare-only/ledger-row.json",
+   "originalSha256": "4d903ab6aaee85ec5436297714ec350228df387d11dca7398920b0080c7a4a4a",
+   "newSha256": "209739ee60a5b9743e9e18edb81a5b82204d6e82f9c51ac7b0a0dc9995d3b6c0",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/prepare-only.log",
+   "originalSha256": "6b0bcf1afc467b1a1714d7816b481baeb928cd4d3ea78ee745c01c89f9f8337d",
+   "newSha256": "457e8c1872cd0051cdca8f2d716fe0659b0f8a2a6038220940f77fd0d7ef1f4c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-alignment/baseline.json",
+   "originalSha256": "06d437238eea995320c568efd0ad57ea83e2f04e4badb03ab824f01f3f468a4b",
+   "newSha256": "7d2c9bc343697291bc0ed013a69597129f52d2f804e37ccab38aa4b317a4bf97",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-alignment/comparison-alignment.compact.jsonl",
+   "originalSha256": "ea47b090e790edb04a4778313582db6a2065f75531af7080f76b919bc9f01ee6",
+   "newSha256": "460e987f29f35b56e2002d9c236e6d110a4117d2719c546640858be8e49cfd42",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 81
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-alignment/ledger-row.json",
+   "originalSha256": "8eb0d4006f02b7e674aaa65f23e4fcb9d5600133c9fcf14eb4524d8597f6ce30",
+   "newSha256": "fd169af4a707bd1bc843cf1f9aebee983333c24b5cc6335ec0f733463d22c8dc",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-alignment.log",
+   "originalSha256": "25601a6b7cf568153f5348d1371f40f9ccd6136a60885ac56b76ed7055b255c1",
+   "newSha256": "911360ba4f563d41d0f8620fdf1a2c100c6af3ec4aeb72844e69766200bbec84",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-measure/baseline.json",
+   "originalSha256": "3fdcce126b40d3c490d76ab0de344ef6af7798b752fc3028768032e03ef52301",
+   "newSha256": "8a3ac397cf5453d537a18a7278c61879dd0b6b0fa4d75912347dfd821839f0ef",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-measure/comparison-measure.jsonl",
+   "originalSha256": "219c705f3dfc28261e97bdf1d72ca74f86a680618b5d854eae58d06a0c0f2d92",
+   "newSha256": "9b5351b8e8da506d5cec98530906072965784d56b6cdeda7daa21b78eb2ae064",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 60
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-measure/ledger-row.json",
+   "originalSha256": "2e5dc32fc9fa15f3b7e6645c24b13e9b8c7b3436627bb5b7e5cdc7d8e7588cef",
+   "newSha256": "797c33952f2d92a1cee395b2871a4848a8cd0a39b58d441e9a7548ccdd7284ab",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m10-measure.log",
+   "originalSha256": "c9588336648bb02e205593692abb62da4ee52e411b0257766c8a2863164cf91a",
+   "newSha256": "dd22fc8640a826ae0f6fce48c262a4165ff5400e3f53502d17fe6e9fc8706f19",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m8-normal/baseline.json",
+   "originalSha256": "38d3437070f494af46f38e43471a0dea4b84ebea496e21021c6647f0faa885dc",
+   "newSha256": "01bf3bb13a690797a9293aa5f66dcc7f6da86dad59d6ee8140e842e67ff5a614",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m8-normal/ledger-row.json",
+   "originalSha256": "c567ef1e9d892697ac0753944b456831f97ace2aaeaf563160d50ab6de47ca8d",
+   "newSha256": "bffe3bcfe93a708298b6dbaee79d8f4cb7c2373323b7fdf6a8521a126e161140",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m8-normal/normal-flow.compact.jsonl",
+   "originalSha256": "4b30ca88b32f318f7a26a015bb40fbab30a3ce00499c6f6e73e2cde27e2cd422",
+   "newSha256": "fac44c3fc4f87370559449ac8b058013370022910d500ba1c03ac67314294c7f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 114
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m8-normal.log",
+   "originalSha256": "f8148da4bbfb22955ecd32199192edca339c0ea4bbf7aaffbf2d35cec2539944",
+   "newSha256": "207bee0dfae15c2e094f8cd907a6182f15a9bf74bb71a9118e6411e5a82d1ab4",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-openmm/baseline.json",
+   "originalSha256": "9572caacb17851ab5f18f329eb6309c038e9a37e6a115470919ab6ab5b41ac7a",
+   "newSha256": "3ebb268594cf34d0c3d996027770ede6701b742b3e87bb985b38ad21f8b79a79",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-openmm/ledger-row.json",
+   "originalSha256": "4fe9346fe7010b3517d8464159c11173a343b8e83f3bebec4872f50fa2c50262",
+   "newSha256": "50d74216fa89a28def7349905d70550ae4389975b59929442b79a88ed74abc93",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-openmm/openmm-full.compact.jsonl",
+   "originalSha256": "a19a8205ef077f272d2f3ef16210bb65b205e7c99d8dcd123a2213a83f736d22",
+   "newSha256": "56a82deac0ea55cc213f45b3ae7c59a44d10bcee94302954849621757b03f1cc",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 42
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-openmm.log",
+   "originalSha256": "3419ccb58ac1b3ebc8f918b7e9335c5f03b5355a8f58f349ae3e35d13f0d1402",
+   "newSha256": "c9bcf4cbbdb7155106c2066143903345a01078f542a490aa67d87b97370b282c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-scenes-core/baseline.json",
+   "originalSha256": "355942cd321515c52fb79bc81a97aab593ca42d3313a269a5c14123fe5c33cf5",
+   "newSha256": "0acdebcb7dc905dc3aac11b30fa95b2dc2082ebc4241639de71b455a7cc4bd46",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-scenes-core/ledger-row.json",
+   "originalSha256": "f69f44f919750e77a29385d1223482a1e2a6caee7f713fe12b4943ea0459dcf8",
+   "newSha256": "e798adca98aae8a284833bf384ac5f0801221a51894899ac7422f606ddedba8a",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-scenes-core/scenes-core.compact.jsonl",
+   "originalSha256": "9f0644eeb0f2542117ffb5f9ed4b7839affcd537bd6da1645f63c333b3a152ce",
+   "newSha256": "ea3f49a368b0fb38baa5428c36232d2060a519f8fa16625e8fc1c27032caa04d",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 94
+    }
+   ]
+  },
+  {
+   "file": "steps/regression-m9-scenes-core.log",
+   "originalSha256": "21b540f271ed4793a4b4292fd23195b6bcd063d70afdf109309757b74ec8ac27",
+   "newSha256": "a790451cd1ee31ca28e112dcad92c0f79cc2188afd9e0c2983d04ff6dbf51f6c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 3
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen/baseline.json",
+   "originalSha256": "66bf397505b1fc8cbd892a5248f6b5adc88ae7106edf991227b530e706be5ae2",
+   "newSha256": "af776b44a264d297e6573c9cbf6967254c7ae114b9b4f405718e071584f5769a",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen/chemical-evidence.compact.json",
+   "originalSha256": "dfbe40978e348c6dc02b0d42f2aa22308c17630c95305bb77f4fa6386d931c64",
+   "newSha256": "e66195765dd5c35af8207d621a0cffbf2e8aa8021b3eba9c3f69633ad368a845",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen/ledger-row.json",
+   "originalSha256": "b51d20b25a6428fa11a4aab2ff578614e53c9e241bac2052b152b2e0217e37ff",
+   "newSha256": "d74c127278538e965e1dd007c02cd1e4590d2e3ba08475e0aff8174ea742716b",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen/report-download-proof.compact.json",
+   "originalSha256": "185c6f7f30148fb209347ebc02059115992afa70ef7dda754134fec6c0e52862",
+   "newSha256": "3d7825e4e870585395cabfc3fd409bcf5ea46e9bb8e50d68a6d257ac1bd11ca6",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen-complete/baseline.json",
+   "originalSha256": "223473c26bdbe3b68b10a60d4f9fa8d34bb696a0b99dd876cc81bf0b57f152e7",
+   "newSha256": "0bb518fa4278f24cf6b30177669c50f2f80e2c46b6063ef6182b47d70701b06e",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen-complete/chemical-evidence.compact.json",
+   "originalSha256": "41da654bb4b063e53e47877899ddd0b333a8d31329ac8a59a70b661c3943a9a4",
+   "newSha256": "c4ebafe883b954dbf12f10144fe50d4b134de7498be15a3591f25d93e1b94d15",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 12
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen-complete/ledger-row.json",
+   "originalSha256": "37fdd3352d5933730e047a3016dfcda741220613840e0717965bf2f42971a1c4",
+   "newSha256": "294a40dd2abbe3e9549294539a2b5adf8d9ead21b3247da4d9e280beb453008c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen-complete/report-download-proof.compact.json",
+   "originalSha256": "468f9bb02ce09b80f66007e90aba87e74e5a74033fa952165f7845062066b57d",
+   "newSha256": "bf5f8ad06183619b2310103949e495673420cc81fe142954c3438d3ab48678bf",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen-complete.log",
+   "originalSha256": "c13e4e0d73c86794d466f373c11695add9ceee835dbb86e3f359676bd02b9be8",
+   "newSha256": "859131b865bb51a70d5b77dc3ecfdd35a62749c3b1c3e6e2c8bc9e3c5893885f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/reopen.log",
+   "originalSha256": "8f34cb1941be799714ec7a7e55113afaa3534b7a0c8e016c8b898f4c1387cf72",
+   "newSha256": "f81703dea042214af310b08a057dfd3436098e2da7ce8fa483b17ccecb9981c1",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay/events-only-root-inventory.json",
+   "originalSha256": "cb00561033fcfa1e08078212a93d5c5306fcd7df74e902c6d69306324ad3e185",
+   "newSha256": "b577869038cf4d42a481e07152f8dc8c97494fdab0bbc87f96ee22908002e66c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay/replay-before.log",
+   "originalSha256": "f64fb76b0c48299c99fe031a545e7531453176e83509b460e7e0c2c0582d2ec0",
+   "newSha256": "09ae72c4666ee8b50ef290e98b4ce8f7efa60c9594a62c875c0ddbfcee2bf580",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 5
+    }
+   ]
+  },
+  {
+   "file": "steps/replay/replay-postbrowser-verification.log",
+   "originalSha256": "6255116ed4f7245f5c2af293ed9fcc07081fa30601d09a1a1a9c32764bbdfb0d",
+   "newSha256": "01234b3b4bf644485f26f8b06abd9247b61789b1307c417b8fe3fcb01c57dc71",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 6
+    }
+   ]
+  },
+  {
+   "file": "steps/replay/replay-prebrowser-verification.log",
+   "originalSha256": "52ade91924c27587e5e38a85a767642fb4db6e3e6d4e1b60fd7fb61c1987458e",
+   "newSha256": "716db278b65eae9110ee1e0df56c461adf5149de124b1ced95a26a2bc547d4cc",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 6
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-attach/baseline.json",
+   "originalSha256": "6fdafcf60f9abbd6405075b9f894efa8ac28ee83dba6964db3c5d59374cd761e",
+   "newSha256": "670d30a84fc574cbad797d71d943d36533f1b9ed8c80e4c82cd2516b85d58163",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-attach/chemical-evidence.compact.json",
+   "originalSha256": "969981600df207253b262c93ed4a442a78c7f82f14f55ebc401fa3ef9b1236e8",
+   "newSha256": "006aa66499538703f446b3971db00f5234719964da84a3129f9df47a4e63ed34",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-attach/ledger-row.json",
+   "originalSha256": "daee774281f7dc1a92ec74167a23a3d804bc0e690fa524fa97afa6979ce023e5",
+   "newSha256": "25ab8124c9b7781ead0eb3352a0ce16f22c3a682df2c7cc393e47435d80dd73f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-attach/report-download-proof.compact.json",
+   "originalSha256": "365a569c86a96770df00ca5a884df955387b6fd1f99f713b254fb00913fba392",
+   "newSha256": "ccca14d9474d113032e2b2a83dee298e6ccb3278723daa2c100f38a7108a62f8",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-attach.log",
+   "originalSha256": "dc36560eaa93cf04d0b45c54dbadb3c094da32e2a03f9da0099bc11fec3e2f5d",
+   "newSha256": "374c23ea108db9ad5a97c4952e2fad748b955698880b34a354449d172247f9d7",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-create/baseline.json",
+   "originalSha256": "d8f23c6be46f704f9e504cfa8239f713022f2af4b59f3aee8d5181b79e73c5c0",
+   "newSha256": "d1d5a6e5aa1dfb4b25a0085539b7ea2d0cf9878284849d7ce1fa0dc2460fbaa6",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-create/chemical-evidence.compact.json",
+   "originalSha256": "4c5405f10891e098b5ee3e842753db941e56e3cfa4d471a7f602b56812817f3f",
+   "newSha256": "cbd5ccbf07e5e07dc1468e7c756150ddfeebccd068e727345d6e0022778b3ad2",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-create/ledger-row.json",
+   "originalSha256": "7874e458177f223e9aae7601bcc35f2135c2a1dbef1533aea4e6f6c7c3b62557",
+   "newSha256": "d75a8f874e97afc9cf1b1a022144d682ed50a3c0df412e43976f69f7a7b3b117",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-create/report-download-proof.compact.json",
+   "originalSha256": "d6d473774885dac5500d548a18f7adc2bc9c035fdbef6401bebb3e96ac5e095d",
+   "newSha256": "c3557771823d60eb3c5d639ed8a598b5e8393e5dfbb0622602c1ec6a09f36c4c",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-create.log",
+   "originalSha256": "ca4d0b608767d8c9591e76063c38cad856a2119a0c982b15c46f180e79a96420",
+   "newSha256": "a4047209fc6ffcf5152f235afccb08f97e2cfc2641c1271448cb6c959fc1e3a5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-empty/baseline.json",
+   "originalSha256": "58c996aa909b2e4d133a0cd97b5631f8474128c975569805974e931145ac9d12",
+   "newSha256": "81db1f945bc72989ed00b3b2fa0465f5162948468540cde4176638e9da30ceff",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-empty/chemical-evidence.compact.json",
+   "originalSha256": "d829dbed33699d164f9fd4f0841e89f69c3b329a9b5b6accb62fcd670d3aecaf",
+   "newSha256": "4be37f6f56f2124dd6cbe62e0f3319c3fc0bac44ab676bd329c099e0453dc536",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-empty/ledger-row.json",
+   "originalSha256": "21fa7cd35ea806306eb42128a6e5f41dc9e80db5e0c85800ba3e6c145fa0f3ba",
+   "newSha256": "a7e2267e8cfbe0d504e297a9fdf2ea090dd8813a81b755f696955f2a56527f3f",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-empty/report-download-proof.json",
+   "originalSha256": "7765ddde5876d523b31a5a449ee8e6db6b601da39f13eaa98039161c13b2b282",
+   "newSha256": "adc5ab9d0094d03bb8743b88107342d777cf0a94e29902dac0592e65952dc9da",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-empty.log",
+   "originalSha256": "9789e10d3163d0e53a8b13d7f1aeb814aa507fff086fd4b67c44d663f5e36b48",
+   "newSha256": "3102810da2aba798529784b5ec2f3745876dd6e4650f26b9eca9272917e1de5e",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-probe-postbrowser/ledger-row.json",
+   "originalSha256": "c9e395bdc23a457d876edaa84e731ca3ee69bc2f0c5b56d71a36a325c3c96157",
+   "newSha256": "30824dabb26dacbf8df2808587b6a85ade771cba7f12a7efd3312115905aedae",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/replay-probe-prebrowser/ledger-row.json",
+   "originalSha256": "06db1bb896f9a20256b8bfea18f176c61d82079d54dc24bd0916f61687d36855",
+   "newSha256": "7a01203072b880bb75ab97f88960cee928e7d1a0091656b4618d9c5eea6afba0",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/restrictions/baseline.json",
+   "originalSha256": "cbc3d93e3d58400dd928e1c1e3c8ad45af8e021ba13991a2275d22a0f9f2e455",
+   "newSha256": "2888400807b911589db3793501fa924597cfdcacf57062504cd188062817985a",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/restrictions/chemical-evidence.compact.json",
+   "originalSha256": "af24a90e21fb6bb29e759f86dcc4602d4d05aec9b0cf1872b0458fb3c659c7f3",
+   "newSha256": "07ef0f6e4198c1d570f3591fa171b50a0bc106eee7cb4507ff3b488364a6fae5",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/restrictions/ledger-row.json",
+   "originalSha256": "1e280f0bfb9a82fd9c7db39899129983af4340ae2e4933d71976032ed6deb84a",
+   "newSha256": "9c135f2ba82d189c765a7c4c3409c46fbc1180a79ee9ed2e55efb2e70eb00018",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/restrictions.log",
+   "originalSha256": "24249f4f2a74e7505c0f14f7d6b085c3fe59bcfcabd4ccc38833e22b842c27c7",
+   "newSha256": "aebcd291405e228cc4f2b8a188529736c2d9360d2e3f5e51f73bfa893dcc6080",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/runner-state.json",
+   "originalSha256": "85c9865051f364ad1252a14a26c78228d52507b67b9c70a31346f3808c587547",
+   "newSha256": "e2532cab048a2f5818390f36807f86680b37ea96a39594d272bca766be1fd693",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 11
+    }
+   ]
+  },
+  {
+   "file": "steps/runner-summary.jsonl",
+   "originalSha256": "571ccb49a77c161496b389831b32a6010d7bece6e51d92224a9430078bfbad98",
+   "newSha256": "b111ef97e285a032f74443fad576fb0494f13d6375645324f90e68551753940e",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 51
+    }
+   ]
+  },
+  {
+   "file": "steps/running-cancel/baseline.json",
+   "originalSha256": "5f09d10395630313efd26e81e10ddbf96126eeb180746432d4681d6fcb69b91d",
+   "newSha256": "4a39720328979195eee0ceb7418b6f294ca957f1ee39c51ceea5a55e517051f9",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/running-cancel/chemical-evidence.json",
+   "originalSha256": "6ca2d312e39686ab76eda64654dd2e755201777f7f040eb70d97bdb82c5a7bb2",
+   "newSha256": "5e8765ceae757551eb41aa795dac853c9be27a2ecf6c92415188e54a7ec5bd57",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 2
+    }
+   ]
+  },
+  {
+   "file": "steps/running-cancel/ledger-row.json",
+   "originalSha256": "e6cc646f3291a1246857e839dd5b0363b709e931f611649589d1db08fdb628fb",
+   "newSha256": "23e78916bc9774cf458d16d942526029a124fd5c54097fbbd477312289b6c48d",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 1
+    }
+   ]
+  },
+  {
+   "file": "steps/running-cancel.log",
+   "originalSha256": "446a4a33f94134c8adbbc11f50b482fdbb1a770a197d67b226899ed38de78f57",
+   "newSha256": "746c8ca0657a69442b00ec33c318dd8a1f133ad4994a5137359f4986913743d3",
+   "rulesApplied": [
+    {
+     "rule": "T2 worktree root -> <repo>",
+     "occurrences": 4
+    }
+   ]
+  }
+ ],
+ "encodingNote": "Leading '/' of the literal prefixes in rulesInOrder is written as the JSON escape \\u002f so this file does not itself match the absolute-path check; the parsed values are the exact patterns applied."
+}

@@ -56,7 +56,7 @@ def fixture_reply(*, disposition="apply", representation="surface", selection="k
 def setup_api(monkeypatch, tmp_path, *, dry_run=False):
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     response = client.post("/runs", json={"dry_run": dry_run})
     assert response.status_code == 201
     rid = response.json()["run_id"]

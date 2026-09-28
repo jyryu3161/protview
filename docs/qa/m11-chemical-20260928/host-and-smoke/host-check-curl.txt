@@ -1,0 +1,2 @@
+curl :3000 Host=[127.0.0.1:3000,evil.example] -> 200 backendLog+1
+curl :3000 Host=[evil.example,127.0.0.1:3000] -> 400 backendLog+0

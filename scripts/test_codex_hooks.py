@@ -5,8 +5,10 @@ Codex는 hook에 stdin JSON을 넘기고, exit 2(stderr 사유) 또는 stdout JS
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -118,3 +120,98 @@ class TestStop:
         noisy = [sys.executable, "-c", "print('x' * 50000); raise SystemExit(1)"]
         result = stop.decide({}, tmp_path, [(noisy, {0})])
         assert len(result["reason"]) < 5000
+
+    def test_measured_check_budgets_fit_outer_hook_deadline(self):
+        stop = _load("stop")
+        assert stop.check_timeout(stop.CHECKS[0][0]) == 45
+        assert len(stop.CHECKS) == 4
+        assert all(stop.check_timeout(command) == 480 for command, _ in stop.CHECKS[1:])
+        assert 45 + max(stop.check_timeout(command) for command, _ in stop.CHECKS[1:]) + 4 < 600
+
+    def test_parallel_pytest_groups_have_exact_disjoint_file_union(self):
+        stop = _load("stop")
+        groups = [command for command, _ in stop.CHECKS[1:]]
+        assert all(command[1:4] == ["-m", "pytest", "-q"] for command in groups)
+        assert groups[0][4:] == ["backend/tests/test_chemical_interactions.py"]
+        assert groups[1][4:] == ["backend/tests/test_m11_job_api.py"]
+        assert groups[2][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
+                                 "--ignore=backend/tests/test_chemical_interactions.py",
+                                 "--ignore=backend/tests/test_m11_job_api.py"]
+
+    def test_default_groups_really_run_concurrently_and_all_must_pass(self, tmp_path, monkeypatch):
+        stop = _load("stop")
+        gate = ("from pathlib import Path; import sys,time; "
+                "p=Path(sys.argv[1]); p.write_text('started'); "
+                "end=time.monotonic()+3; "
+                "exec('while time.monotonic()<end and len(list(p.parent.glob(\"group-*\")))<3: "
+                "time.sleep(0.01)\\n'); "
+                "raise SystemExit(0 if len(list(p.parent.glob('group-*')))==3 else 9)")
+        checks = [(PASS, {0})] + [([sys.executable, "-c", gate, str(tmp_path / f"group-{i}")], {0})
+                                 for i in range(3)]
+        monkeypatch.setattr(stop, "CHECKS", checks)
+        assert stop.run_checks(tmp_path, stop.CHECKS) == []
+        checks[2] = (FAIL, {0})
+        assert any("E501 boom" in failure for failure in stop.run_checks(tmp_path, stop.CHECKS))
+
+    def test_timeout_blocks_and_retains_partial_output(self, tmp_path, monkeypatch):
+        stop = _load("stop")
+        monkeypatch.setattr(stop, "CHECK_TIMEOUT", 0.1)
+        hanging = [sys.executable, "-u", "-c",
+                   ("import time; print('x' * 10000); "
+                    "print('partial-native-test-output', flush=True); time.sleep(30)")]
+        result = stop.decide({}, tmp_path, [(hanging, {0})])
+        assert result["decision"] == "block"
+        assert "시간 초과" in result["reason"]
+        assert "partial-native-test-output" in result["reason"]
+        assert len(result["reason"]) < 5000
+
+    def test_timeout_kills_descendant_group_with_bounded_cleanup(self, tmp_path, monkeypatch):
+        stop = _load("stop")
+        monkeypatch.setattr(stop, "CHECK_TIMEOUT", 0.2)
+        pidfile = tmp_path / "child.pid"
+        script = ("import subprocess,sys,time; "
+                  "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)']); "
+                  "open(sys.argv[1],'w').write(str(p.pid)); "
+                  "print('group-partial',flush=True); time.sleep(30)")
+        started = time.monotonic()
+        result = stop.decide({}, tmp_path, [([sys.executable, "-u", "-c", script, str(pidfile)], {0})])
+        assert time.monotonic() - started < 5
+        assert "group-partial" in result["reason"]
+        pid = int(pidfile.read_text())
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.02)
+        else:
+            import psutil
+            assert psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+
+    def test_timeout_escalates_even_when_leader_exits_and_child_closes_pipes(self, tmp_path, monkeypatch):
+        stop = _load("stop")
+        monkeypatch.setattr(stop, "CHECK_TIMEOUT", 0.2)
+        pidfile = tmp_path / "ignoring-child.pid"
+        child = ("import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                 "time.sleep(30)")
+        parent = ("import subprocess,sys,time; "
+                  f"p=subprocess.Popen([sys.executable,'-c',{child!r}],"
+                  "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); "
+                  "open(sys.argv[1],'w').write(str(p.pid)); "
+                  "print('leader-partial',flush=True); time.sleep(30)")
+        started = time.monotonic()
+        result = stop.decide({}, tmp_path, [([sys.executable, "-u", "-c", parent, str(pidfile)], {0})])
+        assert time.monotonic() - started < 5
+        assert "leader-partial" in result["reason"]
+        pid = int(pidfile.read_text())
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.02)
+        else:
+            import psutil
+            assert psutil.Process(pid).status() == psutil.STATUS_ZOMBIE

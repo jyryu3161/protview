@@ -1,14 +1,17 @@
 """Event-authoritative local queue and fixed POSIX guardian supervision.
 
-Only the fixed OpenMM worker and internal lifecycle fixtures can dispatch. The
-fixtures are injected by Python tests, never selected by an API field.
+Only fixed OpenMM/ProLIF workers and internal lifecycle fixtures can dispatch.
+Fixtures are injected by Python tests, never selected by an API field.
 """
 from __future__ import annotations
 
+import fcntl
 import hashlib
+import itertools
 import json
 import math
 import os
+import re
 import select
 import signal
 import socket
@@ -16,9 +19,11 @@ import sqlite3
 import stat
 import subprocess
 import sys
+import threading
 import time
 import uuid
 from collections.abc import Callable
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 from xml.etree.ElementTree import ParseError
@@ -28,7 +33,7 @@ import psutil
 from ..core.contracts import check_args
 from ..core.errors import FailureClass, ToolFailure
 from ..core.events import idempotency_key
-from ..core.handles import canonical_json
+from ..core.handles import RUN_ID_RE, canonical_json
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
 from ..tools.energetic import JOB_PROTOCOLS, require_protocol
 from ..tools.openmm_method import PROTOCOL as OPENMM_PROTOCOL
@@ -36,10 +41,265 @@ from ..tools.openmm_method import preflight
 from .process_identity import IdentityUnavailable, capture, matches, supported, valid
 
 GUARDIAN = Path(__file__).with_name("guardian.py").resolve()
+CHEMICAL_PROTOCOLS = frozenset({"prolif_prepare_v1", "prolif_detect_v1"})
+CHEMICAL_DERIVED_KINDS = frozenset({"chemical_preparation_manifest", "chemical_structure",
+                                    "chemical_graph", "chemical_interaction_set"})
+CHEMICAL_INPUT_REASONS = frozenset({"ligand_disconnected", "stereo_unsupported", "stereo_conflict",
+                                    "ligand_chemistry_invalid", "receptor_graph_invalid",
+                                    "ligand_graph_invalid", "histidine_ring_graph",
+                                    "histidine_charge_state", "histidine_alias_state"})
+_CHEMICAL_OUTPUTS = {
+    "prolif_prepare_v1": ("chemical_preparation_manifest", "chemical_structure", "chemical_graph"),
+    "prolif_detect_v1": ("chemical_interaction_set",),
+}
 FIXTURE_MODES = frozenset({"normal", "nonzero", "malformed", "oversize", "wrong_id", "invalid",
                            "sleep", "grandchild", "leader_exit"})
 TERMINAL = frozenset({"done", "failed", "cancelled", "interrupted"})
 MAX_CONTROL = 8192
+# Root-wide unclosed-job scan bounds (see _unclosed_jobs); exceeding any fails closed.
+MAX_GLOBAL_RUN_ENTRIES = 1000
+MAX_GLOBAL_LIFECYCLE_EVENTS = 250_000
+MAX_GLOBAL_EVENT_LINE = 256 * 1024 * 1024
+MAX_GLOBAL_SCAN_S = 20.0
+_GLOBAL_LOCK_GUARD = threading.Lock()
+_GLOBAL_LOCAL_LOCKS: dict[str, threading.Lock] = {}
+
+
+def require_completed_chemical_handle(run: Run, handle: str) -> dict[str, Any]:
+    """Admit a derived object only through a completed fixed-protocol publication.
+
+    An identical-byte retry can reuse an object first created by an interrupted
+    attempt. Its successful candidate/terminal, rather than the original
+    produced_by field, is the authority for public availability.
+    """
+    meta = run.store.meta(handle)
+    if meta["kind"] not in CHEMICAL_DERIVED_KINDS:
+        return meta
+    if meta["schema"] != f"{meta['kind']}@1":
+        raise ToolFailure(FailureClass.input_invalid, "unsupported chemical object schema")
+    events = list(run.events.read())
+    created = [event for event in events if event["type"] == "object_created" and
+               event.get("handle") == handle and event.get("kind") == meta["kind"] and
+               event.get("schema") == meta["schema"]]
+    if len(created) != 1:
+        raise ToolFailure(FailureClass.input_invalid, "chemical object has no unique creation evidence")
+    submissions = {event["job"]["job_id"]: event["job"] for event in events
+                   if event["type"] == "job_submitted"}
+    for candidate in events:
+        if candidate["type"] != "job_result_candidate":
+            continue
+        job = submissions.get(candidate.get("job_id"))
+        if job is None or job.get("protocol_id") not in _CHEMICAL_OUTPUTS:
+            continue
+        protocol = job["protocol_id"]
+        expected = _CHEMICAL_OUTPUTS[protocol]
+        outputs = candidate.get("output_handles")
+        if (meta["kind"] not in expected or type(outputs) is not list or len(outputs) != len(expected) or
+                handle not in outputs or outputs[expected.index(meta["kind"])] != handle):
+            continue
+        tool = {"prolif_prepare_v1": "prepare_chemical_structure",
+                "prolif_detect_v1": "compute_chemical_interactions"}[protocol]
+        if job.get("tool_id") != tool:
+            continue
+        try:
+            if any((item_meta["kind"], item_meta["schema"]) != (kind, f"{kind}@1")
+                   for item_meta, kind in ((run.store.meta(item), kind)
+                                           for item, kind in zip(outputs, expected, strict=True))):
+                continue
+        except (KeyError, ValueError, TypeError):
+            continue
+        attempt = candidate.get("attempt_id")
+        reserved = [event for event in events if event["type"] == "budget_reserved" and
+                    event.get("attempt_id") == attempt and event.get("root_call_id") == job["job_id"] and
+                    event.get("tool") == tool]
+        dispatched = [event for event in events if event["type"] == "job_dispatch_intent" and
+                      event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt]
+        cleaned = [event for event in events if event["type"] == "job_cleanup_verified" and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event.get("group_empty") is True]
+        if (len(reserved) != 1 or len(dispatched) != 1 or len(cleaned) != 1 or
+                not (reserved[0]["seq"] < dispatched[0]["seq"] < cleaned[0]["seq"] < candidate["seq"])):
+            continue
+        if created[0]["seq"] >= candidate["seq"]:
+            continue
+        try:
+            if protocol == "prolif_prepare_v1":
+                payload = run.store.load_bounded_json(outputs[0], 8 * 1024 * 1024)
+                params = job.get("parameters")
+                if type(params) is not dict:
+                    continue
+                expected_inputs = ([params[key] for key in ("complex_handle", "receptor_input_handle",
+                                                          "ligand_sdf_handle") if key in params] +
+                                   ([params["connectivity"]["sidecar_handle"]] if
+                                    params.get("connectivity", {}).get("sidecar_handle") else []))
+                expected_source = params.get("complex_handle", params.get("receptor_input_handle"))
+                if (payload.get("request") != params or
+                        payload.get("source_handle") != expected_source or
+                        job.get("input_handles") != expected_inputs):
+                    continue
+            else:
+                payload = run.store.load_bounded_json(handle, 8 * 1024 * 1024)
+                if (payload.get("graph_handle") != job.get("parameters", {}).get("graph_handle") or
+                        job.get("input_handles") != [payload.get("graph_handle")]):
+                    continue
+        except (KeyError, TypeError, ValueError):
+            continue
+        if any(event["type"] == "job_terminal" and event.get("job_id") == job["job_id"] and
+               event.get("attempt_id") == attempt and event.get("status") == "done" and
+               event.get("output_handles") == outputs and event["seq"] > candidate["seq"]
+               for event in events):
+            return {**meta, "first_creator_attempt_id": created[0].get("produced_by"),
+                    "successful_publisher_attempt_id": attempt, "successful_publisher_job_id": job["job_id"]}
+    raise ToolFailure(FailureClass.input_invalid, "chemical object has no completed producer")
+
+
+_LIFECYCLE_MARKER = b'"type": "job_'
+# EventLog writes sort_keys JSON with default separators, so for most records the final top-level
+# pair before the closing brace is the record type. A record whose tail names a non-lifecycle type
+# (object payloads) or job_submitted is skipped unparsed: a submission always precedes its job's
+# other records and only ever sets "queued", which is not an unclosed state. A record without that
+# tail (a key sorting after "type") falls back to the conservative marker test and is parsed.
+_TYPE_TAIL = re.compile(rb', "type": "([A-Za-z0-9_]{1,64})"\}\n\Z')
+_UNFOLDED_TYPES = frozenset({b"job_submitted"})
+
+
+def _unclosed_jobs(root: Path, current_run_id: str, cancelled: Callable[[], bool],
+                   lock_deadline: float, scan_deadline: float | None = None) -> list[str]:
+    """Durable cross-run guard against an orphan whose parent's flock was lost.
+
+    The ledger is streamed line by line. Lines without a top-level job lifecycle type (object
+    payloads) and job_submitted records are skipped without JSON parsing, so the bounds are the
+    number of runs, parsed lifecycle records, the longest single record and wall time, never the
+    unrelated payload bytes. Exceeding any bound fails closed.
+    """
+    pending = []
+    lifecycle_events = 0
+    if scan_deadline is None:
+        scan_deadline = time.monotonic() + MAX_GLOBAL_SCAN_S
+    directories = list(itertools.islice(root.iterdir(), MAX_GLOBAL_RUN_ENTRIES + 1))
+    if len(directories) > MAX_GLOBAL_RUN_ENTRIES:
+        raise ToolFailure(FailureClass.precondition, "too many run entries for global job ledger",
+                          detail={"reason_code": "global_job_ledger_unavailable"})
+    for directory in directories:
+        if directory.name == current_run_id or not RUN_ID_RE.fullmatch(directory.name):
+            continue
+        if directory.is_symlink():
+            raise ToolFailure(FailureClass.precondition, "unsafe global job ledger directory",
+                              detail={"reason_code": "global_job_ledger_unavailable"})
+        if not directory.is_dir():
+            continue
+        events_path = directory / "events.jsonl"
+        if events_path.is_symlink():
+            raise ToolFailure(FailureClass.precondition, "unsafe global job ledger file",
+                              detail={"reason_code": "global_job_ledger_unavailable"})
+        if not events_path.exists():
+            continue
+        status: dict[str, str] = {}
+        cleanup_pending: set[str] = set()
+        try:
+            lock_path = directory / "events.lock"
+            lock_fd = os.open(lock_path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            try:
+                if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                    raise ValueError("unsafe global event lock")
+                while True:
+                    if cancelled():
+                        raise RunCancelled("run cancelled while checking global job ledger")
+                    try:
+                        fcntl.flock(lock_fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                        break
+                    except BlockingIOError:
+                        if time.monotonic() >= lock_deadline:
+                            raise ToolFailure(FailureClass.precondition,
+                                              "global job ledger is locked",
+                                              detail={"reason_code": "global_job_ledger_unavailable"})
+                        time.sleep(min(0.02, max(0, lock_deadline - time.monotonic())))
+                events_fd = os.open(events_path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+                with os.fdopen(events_fd, "rb") as stream:
+                    if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                        raise ValueError("unsafe global job event ledger")
+                    for ordinal in itertools.count(1):
+                        line = stream.readline(MAX_GLOBAL_EVENT_LINE + 1)
+                        if not line:
+                            break
+                        if len(line) > MAX_GLOBAL_EVENT_LINE or not line.endswith(b"\n"):
+                            raise ValueError("incomplete or oversized global job event record")
+                        if time.monotonic() >= scan_deadline:
+                            raise ValueError("global job ledger scan exceeded its time bound")
+                        tail = _TYPE_TAIL.search(line[-128:])
+                        if tail is not None:
+                            if not tail.group(1).startswith(b"job_") or tail.group(1) in _UNFOLDED_TYPES:
+                                continue
+                        elif _LIFECYCLE_MARKER not in line:
+                            continue
+                        lifecycle_events += 1
+                        if lifecycle_events > MAX_GLOBAL_LIFECYCLE_EVENTS:
+                            raise ValueError("global job ledger exceeds bounded lifecycle scan")
+                        event = json.loads(line)
+                        if type(event) is not dict or type(event.get("seq")) is not int or event["seq"] != ordinal:
+                            raise ValueError("invalid global job event sequence")
+                        kind = event["type"]
+                        if kind == "job_submitted":
+                            status[event["job"]["job_id"]] = "queued"
+                        elif kind == "job_claimed":
+                            status[event["job_id"]] = "claimed"
+                        elif kind == "job_dispatch_intent":
+                            status[event["job_id"]] = "running"
+                        elif kind == "job_cleanup_pending":
+                            cleanup_pending.add(event["job_id"])
+                        elif kind == "job_cleanup_verified":
+                            cleanup_pending.discard(event["job_id"])
+                        elif kind == "job_terminal":
+                            status[event["job_id"]] = event["status"]
+                        elif kind == "job_retry_queued":
+                            status[event["job_id"]] = "queued"
+            finally:
+                os.close(lock_fd)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise ToolFailure(FailureClass.precondition, "global job ledger cannot be checked",
+                              detail={"reason_code": "global_job_ledger_unavailable"}) from exc
+        pending.extend(f"{directory.name}/{job_id}" for job_id, state in status.items()
+                       if state == "running" or job_id in cleanup_pending)
+    return pending
+
+
+@contextmanager
+def _global_worker_slot(run_dir: Path, *, cancelled: Callable[[], bool] | None = None):
+    root = run_dir.parent.resolve(strict=True)
+    with _GLOBAL_LOCK_GUARD:
+        local = _GLOBAL_LOCAL_LOCKS.setdefault(str(root), threading.Lock())
+    if not local.acquire(blocking=False):
+        raise ToolFailure(FailureClass.transient, "global scientific worker is busy",
+                          detail={"reason_code": "global_concurrency_busy", "busy": True})
+    root_fd = descriptor = -1
+    try:
+        root_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        descriptor = os.open("jobs.global.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600,
+                             dir_fd=root_fd)
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError("unsafe global job lock")
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise ToolFailure(FailureClass.transient, "global scientific worker is busy",
+                              detail={"reason_code": "global_concurrency_busy", "busy": True}) from exc
+        unclosed = _unclosed_jobs(root, run_dir.name,
+                                 cancelled or (lambda: (run_dir / "cancel.request").exists()),
+                                 time.monotonic() + 1.0)
+        if unclosed:
+            raise ToolFailure(FailureClass.precondition, "prior scientific worker needs reconciliation",
+                              detail={"reason_code": "global_job_cleanup_pending", "jobs": unclosed[:5]})
+    except (OSError, ValueError) as exc:
+        raise ToolFailure(FailureClass.precondition, "global job lock unavailable",
+                          detail={"reason_code": "global_job_ledger_unavailable"}) from exc
+    else:
+        yield descriptor
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if root_fd >= 0:
+            os.close(root_fd)
+        local.release()
 
 
 def _safe_id(value: str) -> bool:
@@ -133,9 +393,37 @@ def _worker_environment(attempt_dir: Path) -> dict[str, str]:
             "PYTHONUNBUFFERED": "1", "TMPDIR": str(attempt_dir)}
 
 
-def _guardian_argv(control_fd: int) -> list[str]:
+GO_WAIT_GRACE_S = 5.0
+MAX_GO_WAIT_S = 3600.0
+
+
+def _guardian_argv(control_fd: int, global_fd: int | None = None, *, go_wait_s: float = 3.0) -> list[str]:
+    """The GO wait bound is the attempt's remaining time plus grace, never unbounded."""
+    if not (0 < go_wait_s <= MAX_GO_WAIT_S):  # also rejects nan/inf
+        raise ValueError("invalid guardian GO wait bound")
     # abspath retains the venv's executable symlink; resolve() escapes its prefix.
-    return [os.path.abspath(sys.executable), "-I", str(GUARDIAN), str(control_fd)]
+    return [os.path.abspath(sys.executable), "-I", str(GUARDIAN), str(control_fd),
+            *([str(global_fd)] if global_fd is not None else []), f"--go-wait-s={go_wait_s:g}"]
+
+
+def chemical_capability() -> dict[str, Any]:
+    """Validate the fixed, locally provisioned worker without importing its native stack."""
+    base = {"protocol": "prolif_prepared_explicit_h@1", "ligand_sdf_variant": "V2000",
+            "available": False,
+            "supported_limits": {"receptor_atoms": 10_000, "ligand_atoms": 256,
+                                 "bonds": 20_000, "input_bytes_per_file": 10 * 1024 * 1024,
+                                 "output_bytes": 30 * 1024 * 1024, "assignments": 20_000,
+                                 "timeout_s": 120, "rss_bytes": 2 * 1024 * 1024 * 1024}}
+    try:
+        from ..chemical_bundle import dependency
+        value = dependency()
+        return {**base, "available": True, "reason_code": None, "reason": None,
+                "versions": value["versions"], "worker_sha256": value["worker_sha256"],
+                "dependency_manifest_sha256": value["lock_sha256"]}
+    except ToolFailure as exc:
+        missing = exc.detail.get("reason_code") == "chemical_worker_missing"
+        return {**base, "reason_code": "worker_missing" if missing else "worker_version_invalid",
+                "reason": exc.message}
 
 
 def _send(sock: socket.socket, value: dict[str, Any]) -> None:
@@ -158,8 +446,8 @@ class JobQueue:
         self.path = run.run_dir / "jobs.sqlite"
         if self.path.is_symlink():
             raise ValueError("unsafe job index")
-        with self.run._transition():
-            self._rebuild()
+        # Construction is lock-free and writes nothing: the derived SQLite index is rebuilt lazily
+        # by the writers that fold state under the transition lock (claim_next reads it).
 
     def _state(self) -> dict[str, dict[str, Any]]:
         jobs: dict[str, dict[str, Any]] = {}
@@ -291,16 +579,19 @@ class JobQueue:
                 for job_id, item in state.items()])
         return state
 
+    # Reads fold one consistent events snapshot (the event log's own shared lock guarantees whole
+    # lines) and every durable prefix is a valid state, exactly as events-only replay requires. They
+    # therefore neither take the transition lock nor rewrite the derived SQLite index, which with
+    # multi-MB M11 job records held the lock for about a second on every status poll. Neither does
+    # the constructor, so an HTTP GET (a fresh JobQueue per request) is lock-free end to end.
     def get(self, job_id: str) -> dict[str, Any]:
-        with self.run._transition():
-            state = self._rebuild()
+        state = self._state()
         if job_id not in state:
             raise KeyError(job_id)
         return state[job_id]
 
     def list(self) -> list[dict[str, Any]]:
-        with self.run._transition():
-            state = self._rebuild()
+        state = self._state()
         return sorted(state.values(), key=lambda item: item["created"], reverse=True)
 
     def submit(self, protocol: str, args: dict[str, Any], *, timeout_s: float = 60) -> dict[str, Any]:
@@ -309,24 +600,56 @@ class JobQueue:
         if not isinstance(args, dict) or any(key in args for key in
                                               ("argv", "executable", "module", "env", "path", "cwd", "fixture")):
             raise ToolFailure(FailureClass.input_invalid, "unsafe job arguments")
-        bound = 120 if protocol == OPENMM_PROTOCOL else 900
+        bound = 120 if protocol == OPENMM_PROTOCOL or protocol in CHEMICAL_PROTOCOLS else 900
         if not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or not 0 < timeout_s <= bound:
             raise ToolFailure(FailureClass.input_invalid, "invalid job timeout")
         spec = self.run.registry.specs[JOB_PROTOCOLS[protocol][0]]
-        normalized = check_args(spec, args, self.run.store.kind_of)
-        for name in spec.accepts:
-            value = normalized[name]
-            for handle in value if isinstance(value, list) else [value]:
-                self.run.store.load(handle)
+        if protocol in CHEMICAL_PROTOCOLS:
+            from ..chemical_bundle import detect_selected, prepare_selected
+
+            try:
+                if protocol == "prolif_detect_v1":
+                    require_completed_chemical_handle(self.run, args["graph_handle"])
+                selected = (prepare_selected(self.run.store, args) if protocol == "prolif_prepare_v1"
+                            else detect_selected(self.run.store, args))
+            except (KeyError, ValueError, TypeError) as exc:
+                raise ToolFailure(FailureClass.input_invalid, "invalid chemical job request",
+                                  detail={"reason_code": "chemical_input_invalid"}) from exc
+            if len(canonical_json(selected)) > 32 * 1024 * 1024:
+                raise ToolFailure(FailureClass.resource_exceeded, "staged chemical input exceeds limit")
+            normalized = args
+        else:
+            normalized = check_args(spec, args, self.run.store.kind_of)
+            for name in spec.accepts:
+                value = normalized[name]
+                for handle in value if isinstance(value, list) else [value]:
+                    self.run.store.load(handle)
         if self.run.dry_run:
             return {"plan_only": True, "protocol_id": protocol, "reason_code": "dry_run",
                     "available": False, "output_handles": [], "normalized_parameters": normalized}
-        if protocol != OPENMM_PROTOCOL:
+        if protocol not in CHEMICAL_PROTOCOLS and protocol != OPENMM_PROTOCOL:
             require_protocol(protocol)
             raise AssertionError("unreachable")
-        selected = preflight(self.run.store, normalized["structure"], seed=self.run.seed)
-        key = idempotency_key(protocol, "openmm_protein_minimize_v1",
-                              {"selected": selected, "parameters": normalized})
+        if protocol == OPENMM_PROTOCOL:
+            selected = preflight(self.run.store, normalized["structure"], seed=self.run.seed)
+            implementation = "openmm_protein_minimize_v1"
+            input_handles = [normalized["structure"]]
+        else:
+            capability = chemical_capability()
+            if not capability["available"]:
+                raise ToolFailure(FailureClass.precondition, capability["reason"],
+                                  detail={"reason_code": capability["reason_code"]})
+            implementation = "prolif_prepared_explicit_h@1"
+            input_handles = ([args["graph_handle"]] if protocol == "prolif_detect_v1" else
+                             [args[key] for key in ("complex_handle", "receptor_input_handle",
+                                                   "ligand_sdf_handle") if key in args] +
+                             ([args["connectivity"]["sidecar_handle"]] if
+                              args.get("connectivity", {}).get("sidecar_handle") else []))
+        key = idempotency_key(protocol, implementation,
+                              {"selected": selected, "parameters": normalized,
+                               **({"worker_sha256": capability["worker_sha256"],
+                                   "dependency_manifest_sha256": capability["dependency_manifest_sha256"]}
+                                  if protocol in CHEMICAL_PROTOCOLS else {})})
         with self.run._transition():
             for job in self._rebuild().values():
                 if job["call_key"] == key:
@@ -334,10 +657,13 @@ class JobQueue:
             job_id = "job_" + uuid.uuid4().hex
             job = {"job_id": job_id, "run_id": self.run.run_id, "root_call_id": job_id,
                    "protocol_id": protocol, "tool_id": JOB_PROTOCOLS[protocol][0], "call_key": key,
-                   "implementation_version": "openmm_protein_minimize_v1",
-                   "input_handles": [normalized["structure"]], "parameters": normalized,
+                   "implementation_version": implementation,
+                   "input_handles": input_handles, "parameters": normalized,
                    "selected": selected, "seed": self.run.seed,
                    "created": time.time(), "timeout_s": timeout_s, "fixture_only": False}
+            if protocol in CHEMICAL_PROTOCOLS:
+                job["worker_sha256"] = capability["worker_sha256"]
+                job["dependency_manifest_sha256"] = capability["dependency_manifest_sha256"]
             self.run.events.append("job_submitted", job=job)
             return self._rebuild()[job_id]
 
@@ -390,7 +716,9 @@ class JobQueue:
                 owner = "owner_" + uuid.uuid4().hex
                 self.run.events.append("job_claimed", job_id=job_id, owner_token=owner)
                 job = self._rebuild()[job_id]
-            elif job["status"] == "claimed" and job.get("blocked_reason") == "approval_or_cancel":
+            elif job["status"] == "claimed" and job.get("blocked_reason") in {
+                    "approval_or_cancel", "global_concurrency_busy", "global_job_cleanup_pending",
+                    "global_job_ledger_unavailable"}:
                 owner = job["owner_token"]
             else:
                 raise ToolFailure(FailureClass.precondition, "job cannot start from its current state")
@@ -464,7 +792,14 @@ class JobQueue:
                            for e in events):
                     raise ValueError("done attempt lacks matching result candidate")
                 for handle in handles or []:
-                    self.run.store.load(handle)
+                    kind = self.run.store.meta(handle)["kind"]
+                    if kind in CHEMICAL_DERIVED_KINDS:
+                        limit = (8 * 1024 * 1024 if kind in
+                                 {"chemical_preparation_manifest", "chemical_interaction_set"}
+                                 else 32 * 1024 * 1024)
+                        self.run.store.load_bounded_json(handle, limit)
+                    else:
+                        self.run.store.load(handle)
             self.run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
                                    status=status, failure=failure, output_handles=handles or [])
             return self._rebuild()[job_id]
@@ -551,11 +886,14 @@ class JobQueue:
         identity = None
         result = None
         try:
-            guardian = self._popen(_guardian_argv(child.fileno()),
+            global_fd = dispatch.get("global_fd")
+            inherited = (child.fileno(),) if global_fd is None else (child.fileno(), global_fd)
+            go_wait_s = min(MAX_GO_WAIT_S, max(0.0, deadline - time.monotonic()) + GO_WAIT_GRACE_S)
+            guardian = self._popen(_guardian_argv(child.fileno(), global_fd, go_wait_s=go_wait_s),
                                    cwd=attempt_dir, env=_worker_environment(attempt_dir),
                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL, shell=False, close_fds=True,
-                                   pass_fds=(child.fileno(),), start_new_session=True)
+                                   pass_fds=inherited, start_new_session=True)
             dispatch["spawned"] = True
             child.close()
             self._barrier("before_hello")
@@ -577,7 +915,8 @@ class JobQueue:
                                    identity=identity)
             dispatch["identity"] = identity
             with self.run._transition():
-                current = self._rebuild()[job["job_id"]]
+                # Only an up-to-date fold is needed here; the derived SQLite index is not.
+                current = self._state()[job["job_id"]]
                 if current["cancel_requested"] or self.run._cancel_path.exists():
                     _send(parent, {"kind": "STOP", "nonce": nonce})
                     guardian.wait(timeout=2)
@@ -674,6 +1013,37 @@ class JobQueue:
         return None
 
     def execute_claim(self, job_id: str, owner_token: str) -> dict[str, Any]:
+        def cancelled() -> bool:
+            if self.run._cancel_path.exists():
+                return True
+            latest = next((event for event in reversed(list(self.run.events.read()))
+                           if event.get("job_id") == job_id and event["type"] in
+                           {"job_cancel_requested", "job_terminal", "job_retry_queued"}), None)
+            return latest is not None and latest["type"] != "job_retry_queued"
+
+        try:
+            with _global_worker_slot(self.run.run_dir, cancelled=cancelled) as global_fd:
+                return self._execute_claim_with_slot(job_id, owner_token, global_fd)
+        except ToolFailure as exc:
+            reason = exc.detail.get("reason_code")
+            if reason in {"global_concurrency_busy", "global_job_cleanup_pending",
+                          "global_job_ledger_unavailable"}:
+                # Same owner -> transition order as every other job_blocked writer. The global slot
+                # was refused before this claim took the run owner, so nothing here holds it. The
+                # owner lock is non-blocking: if another owner is live it progresses this run and
+                # the informational block note is skipped; the original refusal still propagates.
+                try:
+                    with self.run._owner(), self.run._transition():
+                        job = self._rebuild().get(job_id)
+                        if (job is not None and job["status"] == "claimed" and
+                                job["owner_token"] == owner_token and job["blocked_reason"] != reason):
+                            self.run.events.append("job_blocked", job_id=job_id, reason=reason)
+                except ToolFailure as busy:
+                    if busy.detail.get("busy") is not True:
+                        raise
+            raise
+
+    def _execute_claim_with_slot(self, job_id: str, owner_token: str, global_fd: int) -> dict[str, Any]:
         with self.run._owner():
             self.run.store.rebuild_from_events()
             self.run._refresh()
@@ -683,8 +1053,16 @@ class JobQueue:
             if job["fixture_only"]:
                 if self._fixture_mode is None:
                     raise ToolFailure(FailureClass.precondition, "internal fixture adapter unavailable")
-            elif job["protocol_id"] != OPENMM_PROTOCOL or self._fixture_mode is not None:
+            elif (job["protocol_id"] not in {OPENMM_PROTOCOL, *CHEMICAL_PROTOCOLS} or
+                  self._fixture_mode is not None):
                 raise ToolFailure(FailureClass.precondition, "production adapter unavailable")
+            if job["protocol_id"] in CHEMICAL_PROTOCOLS:
+                capability = chemical_capability()
+                if (not capability["available"] or
+                        capability["worker_sha256"] != job.get("worker_sha256") or
+                        capability["dependency_manifest_sha256"] != job.get("dependency_manifest_sha256")):
+                    raise ToolFailure(FailureClass.precondition, "pinned chemical worker changed or unavailable",
+                                      detail={"reason_code": "worker_version_invalid"})
             if job["cancel_requested"] or self.run._cancel_path.exists():
                 return self._terminal(job_id, None, "cancelled")
             if self.run.dry_run:
@@ -720,7 +1098,7 @@ class JobQueue:
                 raise
             started = self.run.monotonic()
             try:
-                return self._execute_reserved(job_id, attempt_id, nonce, started)
+                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd)
             finally:
                 elapsed = max(0.0, self.run.monotonic() - started)
                 self.run.events.append("wall_charged", seconds=elapsed, reason="job_attempt", call_id=attempt_id)
@@ -731,7 +1109,7 @@ class JobQueue:
                                            limit=self.run.budget.limits.wall_clock_s)
 
     def _execute_reserved(self, job_id: str, attempt_id: str, nonce: str,
-                          started: float) -> dict[str, Any]:
+                          started: float, global_fd: int) -> dict[str, Any]:
         remaining = self.run._time_left()
         cancelled_after_reservation = False
         with self.run._transition():
@@ -748,7 +1126,7 @@ class JobQueue:
         attempt_dir = None
         result = None
         identity = None
-        dispatch: dict[str, Any] = {}
+        dispatch: dict[str, Any] = {"global_fd": global_fd}
         error: dict[str, Any] | None = None
         try:
             attempt_dir = self._attempt_dir(job_id, attempt_id)
@@ -756,12 +1134,13 @@ class JobQueue:
                 data = {"nonce": nonce, "job_id": job_id, "attempt_id": attempt_id,
                         "adapter": "internal_lifecycle_fixture", "fixture_mode": self._fixture_mode}
             else:
-                raw = json.dumps(job["selected"], sort_keys=True, separators=(",", ":"),
-                                 allow_nan=False).encode()
-                if len(raw) > 4_000_000:
-                    raise ToolFailure(FailureClass.resource_exceeded, "staged protein exceeds input limit")
+                raw = canonical_json(job["selected"])
+                limit = 32 * 1024 * 1024 if job["protocol_id"] in CHEMICAL_PROTOCOLS else 4_000_000
+                if len(raw) > limit:
+                    raise ToolFailure(FailureClass.resource_exceeded, "staged scientific input exceeds limit")
                 data = {"nonce": nonce, "job_id": job_id, "attempt_id": attempt_id,
-                        "adapter": "openmm_protein_minimize_v1",
+                        "adapter": (job["protocol_id"] if job["protocol_id"] in CHEMICAL_PROTOCOLS else
+                                    "openmm_protein_minimize_v1"),
                         "input_sha256": hashlib.sha256(raw).hexdigest()}
                 input_fd = os.open(attempt_dir / "structure.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
                 with os.fdopen(input_fd, "wb") as stream:
@@ -817,19 +1196,26 @@ class JobQueue:
                                group_empty=True,
                                source="parent_group_check" if identity else "no_go_or_no_launch",
                                guardian_clean=result.get("clean") if result else None)
-        preparation_handles = None if job["fixture_only"] or attempt_dir is None else self._record_preparation(
+        preparation_handles = None if job["fixture_only"] or attempt_dir is None or job["protocol_id"] in CHEMICAL_PROTOCOLS else self._record_preparation(
             job, attempt_id)
         if error is None:
             if result is None:
                 error = {"error": "fatal", "message": "missing guardian result"}
             elif result.get("reason") == "timeout":
                 error = {"error": "resource_exceeded", "message": "job timeout"}
+            elif result.get("reason") == "resource_exceeded":
+                error = {"error": "resource_exceeded", "message": "worker memory or output limit exceeded"}
+            elif result.get("reason") == "resource_monitor_unavailable":
+                error = {"error": "fatal", "message": "worker resource monitoring unavailable"}
             elif result.get("reason") == "cancelled":
                 return self._terminal(job_id, attempt_id, "cancelled")
             elif not result.get("clean", False):
                 error = {"error": "fatal", "message": "parent cleanup required after guardian result"}
             elif result.get("returncode") != 0 or result.get("unexpected_members"):
-                error = {"error": "fatal", "message": "worker exit or abandoned helper"}
+                error = (self._chemical_worker_error(job, attempt_dir)
+                         if job["protocol_id"] in CHEMICAL_PROTOCOLS and attempt_dir is not None and
+                         not result.get("unexpected_members") else
+                         {"error": "fatal", "message": "worker exit or abandoned helper"})
             else:
                 payload = result.get("payload")
                 if job["fixture_only"]:
@@ -849,11 +1235,15 @@ class JobQueue:
             handles = [out.handle]
         else:
             try:
-                if preparation_handles is None:
-                    raise ValueError("complete preparation checkpoint missing")
-                handles = self._publish_openmm(job, attempt_id, attempt_dir, result["payload"])
-            except (OSError, ValueError, KeyError, TypeError, UnicodeError, ParseError, RuntimeError,
-                    OverflowError, StopIteration, ToolFailure) as exc:
+                if job["protocol_id"] in CHEMICAL_PROTOCOLS:
+                    handles = self._publish_chemical(job, attempt_id, attempt_dir, result["payload"])
+                else:
+                    if preparation_handles is None:
+                        raise ValueError("complete preparation checkpoint missing")
+                    handles = self._publish_openmm(job, attempt_id, attempt_dir, result["payload"])
+            except Exception as exc:  # noqa: BLE001 - any parser/validator error in untrusted worker output
+                # (IndexError, AttributeError, RecursionError, ...) must end this attempt as a typed
+                # failure; escaping here would leave a dispatched job "running" and close the global gate.
                 return self._terminal(job_id, attempt_id, "failed",
                                       {"error": "fatal", "message": "invalid scientific output",
                                        "diagnostic": type(exc).__name__})
@@ -861,6 +1251,65 @@ class JobQueue:
                                output_handles=handles)
         self._barrier("before_terminal")
         return self._terminal(job_id, attempt_id, "done", handles=handles)
+
+    def _chemical_worker_error(self, job: dict[str, Any], attempt_dir: Path) -> dict[str, Any]:
+        """Accept only a small pinned-worker diagnostic bound to staged identities."""
+        fatal = {"error": "fatal", "message": "worker exit or invalid chemical error envelope"}
+        try:
+            descriptor = os.open(attempt_dir / "error.json", os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            with os.fdopen(descriptor, "rb") as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= 4096:
+                    return fatal
+                raw = stream.read(4097)
+            if len(raw) != info.st_size:
+                return fatal
+            data = json.loads(raw, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+            if (type(data) is not dict or canonical_json(data) != raw or
+                    set(data) != {"schema", "error_class", "reason_code", "message",
+                                  "source_residues", "source_atoms", "sdf_atom_indices"} or
+                    data["schema"] != "chemical_worker_error@1" or
+                    data["error_class"] not in {"input_invalid", "fatal"} or
+                    type(data["message"]) is not str or not 0 < len(data["message"]) <= 240 or
+                    any(type(data[key]) is not list or len(data[key]) > 8 for key in
+                        ("source_residues", "source_atoms", "sdf_atom_indices"))):
+                return fatal
+            if data["error_class"] == "fatal":
+                return fatal
+            if data["reason_code"] not in CHEMICAL_INPUT_REASONS:
+                return fatal
+            selected = job["selected"]
+            atoms: set[bytes] = set()
+            residues: set[bytes] = set()
+
+            def collect(value: Any) -> None:
+                if type(value) is dict:
+                    if set(value) == {"structure_handle", "residue", "atom_name", "altloc",
+                                       "element", "site_index"}:
+                        atoms.add(canonical_json(value))
+                        residues.add(canonical_json(value["residue"]))
+                    for child in value.values():
+                        collect(child)
+                elif type(value) is list:
+                    for child in value:
+                        collect(child)
+
+            collect(selected)
+            for key, admitted in (("source_residues", residues), ("source_atoms", atoms)):
+                values = [canonical_json(item) for item in data[key]]
+                if len(set(values)) != len(values) or any(value not in admitted for value in values):
+                    return fatal
+            max_sdf = (len(selected["ligand_atom_names"]) if job["protocol_id"] == "prolif_prepare_v1"
+                       else len(selected["graph"]["ligand_atoms"]))
+            indices = data["sdf_atom_indices"]
+            if (any(type(item) is not int or not 0 <= item < min(max_sdf, 256) for item in indices) or
+                    len(set(indices)) != len(indices)):
+                return fatal
+            return {"error": "input_invalid", "reason_code": data["reason_code"],
+                    "message": data["message"], "source_residues": data["source_residues"],
+                    "source_atoms": data["source_atoms"], "sdf_atom_indices": indices}
+        except (OSError, ValueError, TypeError, KeyError, UnicodeError, RecursionError):
+            return fatal
 
     def _read_preparation_checkpoint(self, job_id: str, attempt_id: str) -> bytes | None:
         if not _safe_id(job_id) or not _safe_id(attempt_id):
@@ -1001,6 +1450,47 @@ class JobQueue:
                                           "minimized_structure": final_structure.handle})
         return [out.handle]
 
+    def _publish_chemical(self, job: dict[str, Any], attempt_id: str,
+                          attempt_dir: Path, descriptor: dict[str, Any]) -> list[str]:
+        from ..chemical_bundle import publish_detect, publish_prepare
+
+        if (set(descriptor) != {"output_sha256", "output_bytes"} or
+                type(descriptor["output_bytes"]) is not int or
+                not 0 < descriptor["output_bytes"] <= 30 * 1024 * 1024 or
+                type(descriptor["output_sha256"]) is not str or
+                not re.fullmatch(r"[0-9a-f]{64}", descriptor["output_sha256"])):
+            raise ValueError("invalid chemical output descriptor")
+        fd = os.open(attempt_dir / "result.json", os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_size != descriptor["output_bytes"]:
+                raise ValueError("chemical output size mismatch")
+            raw = stream.read(descriptor["output_bytes"] + 1)
+        if (len(raw) != descriptor["output_bytes"] or
+                hashlib.sha256(raw).hexdigest() != descriptor["output_sha256"]):
+            raise ValueError("chemical output hash mismatch")
+        data = json.loads(raw, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+        if canonical_json(data) != raw or type(data) is not dict:
+            raise ValueError("chemical output is not canonical JSON")
+        dependency = data.get("dependency")
+        if (type(dependency) is not dict or
+                dependency.get("worker_sha256") != job["worker_sha256"] or
+                dependency.get("lock_sha256") != job["dependency_manifest_sha256"]):
+            raise ValueError("chemical output worker identity mismatch")
+        if job["protocol_id"] == "prolif_prepare_v1":
+            handles = publish_prepare(self.run, job, attempt_id, data)
+            expected = ("chemical_preparation_manifest", "chemical_structure", "chemical_graph")
+        elif job["protocol_id"] == "prolif_detect_v1":
+            handles = publish_detect(self.run, job, attempt_id, data)
+            expected = ("chemical_interaction_set",)
+        else:
+            raise ValueError("unknown chemical publish protocol")
+        if (type(handles) is not list or len(handles) != len(expected) or
+                any(self.run.store.meta(handle)["kind"] != kind
+                    for handle, kind in zip(handles, expected, strict=True))):
+            raise ValueError("chemical publisher returned wrong output kinds")
+        return handles
+
     def retry(self, job_id: str) -> dict[str, Any]:
         with self.run._owner(), self.run._transition():
             self.run._refresh()
@@ -1095,7 +1585,7 @@ class JobQueue:
                     self.run.events.append("job_cleanup_verified", job_id=job["job_id"],
                                            attempt_id=job["attempt_id"], group_empty=True,
                                            source="orphan_reconciliation")
-                    if not job["fixture_only"]:
+                    if not job["fixture_only"] and job["protocol_id"] == OPENMM_PROTOCOL:
                         self._record_preparation(job, job["attempt_id"])
                     self._terminal(job["job_id"], job["attempt_id"], "interrupted",
                                    {"error": "interrupted", "message": "owner lost; group verified stopped"})

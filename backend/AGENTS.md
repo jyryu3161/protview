@@ -1,0 +1,42 @@
+# backend/ — FastAPI 서버와 과학 런타임 (`mw` 패키지)
+
+## 담당 범위
+- HTTP API(`mw/api/app.py`), 실행 경로 `Run.call`(`mw/runtime/`), 불변 객체·이벤트(`mw/core/`), 과학 도구(`mw/tools/`), 영속 작업 큐와 작업 프로세스 감독(`mw/jobs/`), 외부 요청 게이트(`mw/egress/`, `mw/llm/`), 보고서(`mw/*reports.py`), 뷰어 의도·저장된 보기(`mw/viewer_intents.py`, `mw/saved_scenes.py`), M11 화학 입력·번들·결과(`mw/chemical_*.py`), 고정 파이프라인(`mw/workflows.py`).
+- 테스트: `backend/tests/`. fixture는 `backend/tests/fixtures/`에 있다. `chemical/`에는 출처(`PROVENANCE.json`, `SYNTHETIC-PROVENANCE.md`)와 라이선스가 함께 있다. 새 fixture는 공개·합성·파생 여부와 출처를 같은 방식으로 기록한다.
+
+## 담당하지 않는 것
+- 화면, Mol* 렌더링, 브라우저 적용 확인: `frontend/`가 담당한다. 백엔드는 브라우저가 보낸 좌표로 측정하지 않고, 브라우저가 보낸 ack를 과학 사실로 취급하지 않는다.
+- 단계 기록과 과거 검증: `scripts/`, `phases/`가 담당한다. `mw`는 이것들을 import하지 않는다.
+- ProLIF/RDKit/MDAnalysis 코드: `.deps/prolif/venv-locked` 인터프리터에서 도는 `mw/jobs/chemical_worker.py`에만 둔다. 서버 프로세스 모듈에서 이 패키지들을 import하면 안 된다.
+- 건드리지 말 것: `molecular_workspace.egg-info/`(생성물), `backend/tests/offscreen_agent_fixture/`(M8 QA 전용 fixture 서버).
+
+## 불변 조건
+- `core/`는 다른 `mw` 하위 패키지를 import하지 않는다.
+- 객체 저장 순서는 객체 파일 기록 → 전체 payload를 담은 `object_created` 이벤트 추가·fsync → SQLite 색인 갱신이다. 색인은 지워도 되고, `events.jsonl`에서 다시 만들 수 있어야 한다.
+- handle은 `sha256(kind, schema, canonical raw)`다. 시각, 호출 ID, 요청 UUID는 내용 해시에 넣지 않는다.
+- 과학 계산은 `Run.call` 또는 `JobQueue`로만 실행한다. 라우트 함수가 `tools/`의 계산 함수를 직접 부르면 안 된다. 읽기 라우트는 도구·작업·외부 요청을 실행하지 않는다.
+- run을 바꾸는 호출은 `execution.lock`을 잡은 상태에서 이벤트를 다시 읽고 판단한다. 취소·종료 전이는 `transitions.lock`만 쓰고, 긴 실행 잠금을 기다리지 않는다.
+- 비싼 계산 예약은 실제 프로세스를 띄우기 직전에 한 번만 한다. `Run.call`과 큐가 같은 시도를 이중 과금하면 안 된다. 예약 뒤의 실패·취소·시간 초과는 환불하지 않는다.
+- 작업 프로세스는 guardian의 HELLO/GO 핸드셰이크를 마친 뒤에만 과학 작업을 시작한다. 프로세스 신원은 `jobs/process_identity.py`의 `psutil_raw_start_v1` 레코드로만 판단한다. 공개 `create_time`, PID, PGID 정수만으로 신호를 보내면 안 된다.
+- 모든 HTTP 요청은 가장 바깥 미들웨어에서 Host 허용 목록(`127.0.0.1`·`localhost`·`[::1]`, 포트 선택)을 통과해야 한다. 테스트 클라이언트는 `base_url="http://127.0.0.1"`로 만든다.
+- 작업 상태 읽기(`JobQueue.get`/`list`)는 `transitions.lock`을 잡거나 SQLite 색인을 다시 쓰지 않는다. 색인은 쓰는 쪽과 `claim_next`가 다시 만든다.
+- 외부 HTTP는 `egress/gate.py`의 `EgressGate`만 보낸다. `follow_redirects=False`, `trust_env=False`, 목적지 1개 고정, 요청당 HTTP 1회를 지킨다. local_only/dry_run에서는 키를 읽지 않는다.
+- 새 run은 `NewRun.egress`가 `Literal["local_only"]`이므로 항상 로컬 전용이다. 온라인 전환은 `/viewer/online` 이벤트로만 한다.
+- 잔기 식별자 7필드와 AtomRef의 null label은 그대로 보존한다. 표시 문자열을 파싱해서 식별자를 만들지 않는다.
+- 도구 실패는 `ToolFailure(FailureClass.…)`로 던진다. 그 밖의 예외는 fatal로 분류한다. HTTP 매핑은 input_invalid 422, precondition 412, resource_exceeded 429, transient·fatal 503이다.
+
+## 구현 패턴
+- 새 도구: `config/tools.yaml` 명세 + `tools/<name>.py`의 `register(reg)` 함수 안에서 `reg.register("<tool>")`로 구현 연결 + 새 모듈이면 `workspace.py`의 `build_registry()`에서 `<module>.register(reg)` 호출 + `api/app.py`의 `SUPPORTED_TOOLS`. 결과는 `ObjectStore.put(kind, schema, content)`로 저장하고, 결과 dict에 method·version·unit·limitations를 넣는다.
+- 새 비싼 프로토콜: `jobs/queue.py`의 코드 소유 dispatch 표에 고정 모듈 진입점을 등록한다. 입력은 개인 입력 파일의 제한된 JSON으로, 출력은 스키마·작업 ID·시도 ID·유한값을 검증한 뒤 저장한다. 테스트용 작업 프로세스는 내부 생성자로만 주입하고, 요청 필드로는 선택할 수 없게 한다.
+- 새 보고서: 고정된 템플릿 statement ID + `(source_handle, field_path, row_selector, unit, exact_value, rendered_value)` 증거 구조를 쓴다. 파생값은 count, count_distinct, minimum, 종류별 개수만 허용한다.
+- 멱등 요청: 클라이언트 UUID + 정규화한 본문 해시로 판단하고, 입장 처리는 `run._transition()` 안에서 짧게 한다.
+- 오류 메시지는 안전한 enum과 고정 문장으로 만든다. provider 응답 본문, 예외 문자열, 헤더를 외부로 향하는 필드나 이벤트에 넣지 않는다.
+
+## 테스트 지침
+- 파일별 초점: `test_core`(해시·이벤트·복구), `test_structural`(파싱·전처리·접촉), `test_api`, `test_runtime`(재시도·가드·예산·dry-run·잠금), `test_llm_egress`(투영·전송 거부·감사·사용량), `test_jobs`(큐·실제 프로세스 수명·신원·취소), `test_reports`, `test_sasa`, `test_openmm`, `test_agent_viewer`, `test_saved_scenes`, `test_comparison`, `test_chemical_interactions`, `test_m11_job_api`.
+- 반드시 다룰 경계: null label, 삽입 코드, 여러 글자 체인, 첫 모델이 아닌 모델, altloc(A가 이기지 않는 경우 포함), 같은 이름의 리간드 인스턴스, 중복 원자 이름·serial, scientific_null, NaN·Infinity 입력, 다른 run의 handle, 손상된 payload.
+- events-only 복구: 임시 run에서 업로드·객체·SQLite를 지우고 복구한 바이트를 비교한다. 엔진이나 모델 없이 다시 열려야 한다.
+- 외부 요청 테스트는 주입한 transport로 실제 transport 호출 수를 센다. sentinel 키가 모든 산출물에 나오지 않는지 검사한다. 실제 `.env`를 읽지 않는다.
+- 프로세스 테스트는 실제 하위 프로세스(SIGTERM을 무시하는 손자 프로세스 포함)를 쓰고, finally에서 반드시 정리한다.
+- FreeSASA·OpenMM·ProLIF 네이티브 테스트는 엔진이 없을 때 성공으로 skip하면 안 된다. 수치 oracle은 해석해나 독립 계산을 쓴다. 같은 함수와 비교하는 것은 oracle이 아니다.
+- 실행: `.venv/bin/python -m pytest backend/tests -q`, `.venv/bin/python -m ruff check backend/mw backend/tests`(한 줄 120자).

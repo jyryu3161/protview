@@ -12,6 +12,8 @@ import { alignmentMat4, atomPickFailure, catalogSelectionReadback, nativeDeadlin
   rowsForAuthoritativeResidue, sameAtomRef, sameResidueRef, transformPoint, validateReadyCatalog,
   type AtomCatalog, type AtomRefV1, type RigidAlignment } from "@/lib/comparison";
 import type { AtomDistance } from "@/lib/comparison";
+import { canonicalChemicalElement, chemicalFocusSettleTimeoutMs, settleChemicalFocus,
+  waitForChemicalCameraSettle, type ChemicalCameraProbe } from "@/lib/chemical";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -41,6 +43,11 @@ export interface MolstarViewerProps {
   focusPair?: { reference: AtomRefV1; moving: AtomRefV1; token: number } | null;
   selectedAtoms?: AtomRefV1[];
   distanceResult?: AtomDistance | null;
+  chemicalFocus?: { sourceHandle: string; rowId: string; atoms: AtomRefV1[]; token: number } | null;
+  chemicalAnnotation?: { sourceHandle: string; rowId: string; visible: boolean;
+    distance: { first: AtomRefV1; second: AtomRefV1; value_A: number; label: string };
+    angle?: { donor: AtomRefV1; hydrogen: AtomRefV1; acceptor: AtomRefV1;
+      value_deg: number } } | null;
 }
 
 type Plugin = import("molstar/lib/mol-plugin/context").PluginContext;
@@ -68,6 +75,11 @@ export interface ViewerQaSnapshot {
     accepted: boolean; reason: string } | null;
   qaAtoms: { layer: "reference" | "moving"; ref: AtomRefV1; worldCoordinate_A: number[];
     canvasPixel: [number, number]; depth: number }[];
+  chemicalFocus: { rowId: string; sourceHandle: string; atoms: { ref: AtomRefV1;
+    nativeWorldCoordinate_A: number[]; nativeSourceIndex: number }[];
+    selectedNativeSourceIndices: number[]; settledCamera: NativeCameraState } | null;
+  chemicalAnnotation: { rowId: string; sourceHandle: string; distanceNative_A: number;
+    angleNative_deg: number | null; nativeShapeRefs: string[] } | null;
   layers: { layer: "reference" | "moving"; sourceHandle: string; visible: boolean;
     transform: number[]; nativeAtomCount: number }[];
 }
@@ -92,7 +104,11 @@ type Instance = { plugin: Plugin; structure: StructureSelector; source: ViewerSo
   alignmentMatrix: number[]; lastAtomPick: ViewerQaSnapshot["lastAtomPick"]; overlayError?: string;
   atomPickRevision: number;
   nativeClickRevision: number; lastNativeClick: ViewerQaSnapshot["lastNativeClick"]; m10QueuePending: number;
-  distanceAnnotationRef?: string; validatedCatalogs: Map<string, { hash: string; catalog: AtomCatalog }> };
+  distanceAnnotationRef?: string;
+  chemicalAnnotationRefs: string[];
+  chemicalFocusReadback: ViewerQaSnapshot["chemicalFocus"];
+  chemicalAnnotationReadback: Omit<NonNullable<ViewerQaSnapshot["chemicalAnnotation"]>, "nativeShapeRefs"> | null;
+  validatedCatalogs: Map<string, { hash: string; catalog: AtomCatalog }> };
 
 function nativeMainRepresentationReady(current: Instance): boolean {
   return !!current.repr?.ref && !!current.plugin.state.data.cells.get(current.repr.ref)?.obj?.data?.repr;
@@ -164,6 +180,57 @@ async function atomLoci(current: Instance, ref: AtomRefV1, catalog: AtomCatalog)
   return StructureElement.Loci(structure, hits as Parameters<typeof StructureElement.Loci>[1]);
 }
 
+async function nativeAtomPoint(loci: Awaited<ReturnType<typeof atomLoci>>): Promise<number[]> {
+  const { StructureElement } = await import("molstar/lib/mol-model/structure");
+  if (StructureElement.Loci.size(loci) !== 1) throw new Error("화학 상호작용 원자 site가 모호합니다.");
+  const location = StructureElement.Loci.getFirstLocation(loci);
+  if (!location) throw new Error("화학 상호작용 원자 site가 없습니다.");
+  const point = location.unit.conformation.position(location.element,
+    new Float64Array(3) as unknown as Parameters<typeof location.unit.conformation.position>[1]);
+  const result = Array.from(point);
+  if (result.length !== 3 || result.some(value => !Number.isFinite(value)))
+    throw new Error("화학 상호작용 원자 좌표가 유한하지 않습니다.");
+  return result;
+}
+
+/** The same combined bounding sphere Mol*'s focusLoci uses, kept so the applied target can be read back. */
+async function chemicalFocusSphere(loci: Awaited<ReturnType<typeof atomLoci>>[]) {
+  const [{ Loci }, { BoundaryHelper }] = await Promise.all([
+    import("molstar/lib/mol-model/loci"), import("molstar/lib/mol-math/geometry/boundary-helper")]);
+  const spheres = loci.map(locus => Loci.getBoundingSphere(locus));
+  if (!spheres.length || spheres.some(sphere => !sphere)) throw new Error("화학 초점 원자 범위를 계산하지 못했습니다.");
+  if (spheres.length === 1) return spheres[0]!;
+  const helper = new BoundaryHelper("98");
+  for (const sphere of spheres) helper.includeSphere(sphere!);
+  helper.finishedIncludeStep();
+  for (const sphere of spheres) helper.radiusSphere(sphere!);
+  return helper.getSphere();
+}
+
+async function chemicalSelectedNativeIndices(current: Instance): Promise<number[]> {
+  const { StructureElement, StructureProperties, Unit } = await import("molstar/lib/mol-model/structure");
+  const indices: number[] = [];
+  for (const entry of current.plugin.managers.structure.selection.entries.values()) {
+    StructureElement.Loci.forEachLocation(entry.selection, loc => {
+      if (!Unit.isAtomic(loc.unit) || loc.unit.model !== current.structure.obj?.data?.models[0])
+        throw new Error("화학 선택에 다른 구조 또는 모델이 섞였습니다.");
+      indices.push(StructureProperties.atom.sourceIndex(loc));
+    });
+  }
+  if (indices.length !== new Set(indices).size) throw new Error("화학 선택 site가 중복되었습니다.");
+  return indices.sort((a, b) => a - b);
+}
+
+function nativeAngleDeg(donor: number[], hydrogen: number[], acceptor: number[]): number {
+  const a = donor.map((value, index) => value - hydrogen[index]);
+  const b = acceptor.map((value, index) => value - hydrogen[index]);
+  const denominator = Math.hypot(...a) * Math.hypot(...b);
+  if (!(denominator > 0)) throw new Error("D–H···A 각도를 만들 수 없는 좌표입니다.");
+  const cosine = Math.max(-1, Math.min(1, a.reduce((sum, value, index) =>
+    sum + value * b[index], 0) / denominator));
+  return Math.acos(cosine) * 180 / Math.PI;
+}
+
 async function authoritativeResidueLoci(current: Instance, target: ResidueRef, candidate: AtomCatalog | null | undefined) {
   const catalog = requireCatalog(current, candidate);
   if (catalog.structure_handle !== current.source.handle || target.model_number !== catalog.model_number)
@@ -225,7 +292,7 @@ async function validateNativeCatalog(structure: import("molstar/lib/mol-model/st
           ref.residue.resname !== StructureProperties.atom.auth_comp_id(loc) ||
           ref.atom_name !== StructureProperties.atom.auth_atom_id(loc) ||
           ref.altloc !== (alt === "." || alt === "?" ? "" : alt || "") ||
-          ref.element !== StructureProperties.atom.type_symbol(loc).toUpperCase() ||
+          canonicalChemicalElement(ref.element) !== canonicalChemicalElement(StructureProperties.atom.type_symbol(loc)) ||
           [source.x[element], source.y[element], source.z[element]].some((value, i) =>
             !Number.isFinite(value) || Math.abs(value - row.coordinate_A[i]) > 1e-4))
         throw new Error("Mol* 원자 식별자 또는 원본 좌표가 AtomRef와 다릅니다.");
@@ -285,7 +352,7 @@ function qaAtomScreens(current: Instance, reference: AtomCatalog | null, moving:
 /** Canvas-only Mol*: no download action, remote extension, or automatic property service. */
 export function MolstarViewer({ source, representation, highlight, residues, onSelect, onLoadState, onFocusResult,
   onBridge, onManualInteraction, emptyMessage, emptyIsError, atomCatalog, measureMode = false, onAtomPick,
-  comparison, focusPair, selectedAtoms, distanceResult }: MolstarViewerProps) {
+  comparison, focusPair, selectedAtoms, distanceResult, chemicalFocus, chemicalAnnotation }: MolstarViewerProps) {
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<Instance | null>(null);
   const requestedRepresentation = useRef(representation);
@@ -308,9 +375,22 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
   const focusIntent = useRef({ token: 0, revision: 0 });
   if ((focusPair?.token ?? 0) !== focusIntent.current.token)
     focusIntent.current = { token: focusPair?.token ?? 0, revision: focusIntent.current.revision + 1 };
+  const chemicalFocusIntent = useRef({ token: 0, revision: 0 });
+  if ((chemicalFocus?.token ?? 0) !== chemicalFocusIntent.current.token)
+    chemicalFocusIntent.current = { token: chemicalFocus?.token ?? 0,
+      revision: chemicalFocusIntent.current.revision + 1 };
+  const chemicalAnnotationIntent = useRef({ key: "", revision: 0 });
+  const chemicalAnnotationKey = JSON.stringify([chemicalAnnotation?.sourceHandle,
+    chemicalAnnotation?.rowId, chemicalAnnotation?.visible,
+    chemicalAnnotation?.distance, chemicalAnnotation?.angle]);
+  if (chemicalAnnotationIntent.current.key !== chemicalAnnotationKey)
+    chemicalAnnotationIntent.current = { key: chemicalAnnotationKey,
+      revision: chemicalAnnotationIntent.current.revision + 1 };
   const measureRef = useRef(measureMode);
   const atomPickCallback = useRef(onAtomPick);
   const [state, setState] = useState<"empty" | "loading" | "ready" | "error">("empty");
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const [error, setError] = useState("");
   const [pickError, setPickError] = useState("");
   const [catalogRevision, setCatalogRevision] = useState(0);
@@ -443,6 +523,7 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         alignmentMatrix: alignmentMat4(comparisonRef.current?.alignment as RigidAlignment,
         !!comparisonRef.current?.aligned), lastAtomPick: null, atomPickRevision: 0,
         nativeClickRevision: 0, lastNativeClick: null, m10QueuePending: 0,
+        chemicalAnnotationRefs: [], chemicalFocusReadback: null, chemicalAnnotationReadback: null,
         validatedCatalogs: new Map() };
       instance.current = current;
       if (initialCatalog) {
@@ -568,7 +649,7 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
             ref.residue.resname !== StructureProperties.atom.auth_comp_id(loc) ||
             ref.atom_name !== StructureProperties.atom.auth_atom_id(loc) ||
             ref.altloc !== (alt === "." || alt === "?" ? "" : alt || "") ||
-            ref.element !== StructureProperties.atom.type_symbol(loc).toUpperCase()) {
+            canonicalChemicalElement(ref.element) !== canonicalChemicalElement(StructureProperties.atom.type_symbol(loc))) {
           observed.reason = "atom_identity_mismatch";
           setPickError("Mol* 원자 정보가 원본 AtomRef와 일치하지 않습니다. 구조를 다시 불러오세요."); return;
         }
@@ -679,6 +760,11 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
             cameraTransitioning: !!plugin!.canvas3d?.camera.transition.inTransition,
             m10QueuePending: current.m10QueuePending,
             nativeClickRevision: current.nativeClickRevision, lastNativeClick: current.lastNativeClick,
+            chemicalFocus: current.chemicalFocusReadback,
+            chemicalAnnotation: current.chemicalAnnotationReadback &&
+              current.chemicalAnnotationRefs.every(ref => !!current.plugin.state.data.cells.get(ref)?.obj)
+              ? { ...current.chemicalAnnotationReadback,
+                nativeShapeRefs: [...current.chemicalAnnotationRefs] } : null,
             catalogReady: !!validatedCatalog(current, atomRows.current) &&
               (!comparisonRef.current || !!validatedCatalog(current, comparisonRef.current.catalog)),
             atomPickRevision: current.atomPickRevision, qaAtoms: qaAtomScreens(current, atomRows.current ?? null,
@@ -1112,6 +1198,139 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
 
   useEffect(() => {
     const current = instance.current;
+    if (!current || !chemicalFocus || state !== "ready") return;
+    const token = current.operationToken, revision = current.manualRevision;
+    const intentRevision = chemicalFocusIntent.current.revision;
+    const active = () => nativeIntentCurrent({ token, revision, intent: intentRevision },
+      { token: current.operationToken, revision: current.manualRevision,
+        intent: chemicalFocusIntent.current.revision }) &&
+      instance.current === current && !current.contextLost &&
+      current.source.handle === chemicalFocus.sourceHandle && !comparisonRef.current &&
+      !measureRef.current;
+    queueM10(current, async () => {
+      if (!active()) return;
+      current.chemicalFocusReadback = null;
+      const catalog = requireCatalog(current, atomRows.current);
+      if (!chemicalFocus.atoms.length || chemicalFocus.atoms.length > 3 ||
+          chemicalFocus.atoms.some(ref => ref.structure_handle !== current.source.handle))
+        throw new Error("화학 행의 원자가 현재 구조에 속하지 않습니다.");
+      const loci: Awaited<ReturnType<typeof atomLoci>>[] = [];
+      const observed: { ref: AtomRefV1; nativeWorldCoordinate_A: number[]; nativeSourceIndex: number }[] = [];
+      for (const ref of chemicalFocus.atoms) {
+        const locus = await atomLoci(current, ref, catalog);
+        if (!active()) return;
+        loci.push(locus);
+        const mapped = catalog.rows.filter(row => sameAtomRef(row.ref, ref));
+        if (mapped.length !== 1) throw new Error("화학 초점 원자 목록이 모호합니다.");
+        observed.push({ ref, nativeWorldCoordinate_A: await nativeAtomPoint(locus),
+          nativeSourceIndex: mapped[0].viewer_source_index });
+      }
+      if (!active()) return;
+      // Orbit, zoom and representation changes may still be moving the camera or hold a
+      // deferred Mol* reset. Wait (bounded) instead of failing, then apply and wait again
+      // until the native camera reports this exact focus target, unchanged, for two frames.
+      const deadline = performance.now() + chemicalFocusSettleTimeoutMs;
+      const now = () => performance.now();
+      const probe = (target: ArrayLike<number> | null) => (): ChemicalCameraProbe | null => {
+        const camera = current.plugin.canvas3d?.camera, snapshot = nativeCamera(current.plugin);
+        if (!camera || !snapshot) return null;
+        return { inTransition: camera.transition.inTransition, camera: JSON.stringify(snapshot),
+          applied: !target || Math.hypot(...[0, 1, 2].map(i => snapshot.target[i] - target[i])) <= 1e-3 };
+      };
+      if (await waitForChemicalCameraSettle(probe(null), settledFrame, active, now, deadline) === null) return;
+      if (!active()) return;
+      const sphere = await chemicalFocusSphere(loci);
+      if (!active()) return;
+      current.suppressSelectionCallback = true;
+      try {
+        current.plugin.managers.interactivity.lociSelects.deselectAll();
+        for (const locus of loci) current.plugin.managers.interactivity.lociSelects.select({ loci: locus }, false);
+      } finally { current.suppressSelectionCallback = false; }
+      if (!active()) return;
+      current.plugin.managers.camera.focusSphere(sphere, { durationMs: 0, minRadius: 2 });
+      const settled = await settleChemicalFocus(probe(Array.from(sphere.center)), settledFrame, active, now,
+        deadline, () => chemicalSelectedNativeIndices(current));
+      if (!settled || !active()) return;
+      const selectedNativeSourceIndices = settled.value;
+      const expected = observed.map(atom => atom.nativeSourceIndex).sort((a, b) => a - b);
+      if (JSON.stringify(selectedNativeSourceIndices) !== JSON.stringify(expected))
+        throw new Error("화학 행의 실제 Mol* 선택 site가 요청한 정확한 원자와 다릅니다.");
+      const settledCamera = nativeCamera(current.plugin);
+      if (!settledCamera || !Number.isFinite(settledCamera.radius) || settledCamera.radius <= 0 ||
+          [...settledCamera.position, ...settledCamera.target, ...settledCamera.up].some(value => !Number.isFinite(value)))
+        throw new Error("화학 원자 초점 카메라를 읽지 못했습니다.");
+      current.chemicalFocusReadback = { rowId: chemicalFocus.rowId,
+        sourceHandle: current.source.handle, atoms: observed, selectedNativeSourceIndices, settledCamera };
+      setPickError("");
+    }, active, error => { if (active()) setPickError(error instanceof Error ? error.message : String(error)); });
+  }, [state, chemicalFocus?.token]);
+
+  useEffect(() => {
+    const current = instance.current;
+    if (!current || state !== "ready") return;
+    const token = current.operationToken, intentRevision = chemicalAnnotationIntent.current.revision;
+    const active = () => instance.current === current && !current.contextLost &&
+      current.operationToken === token && chemicalAnnotationIntent.current.revision === intentRevision;
+    queueM10(current, async () => {
+      if (!active()) return;
+      for (const ref of current.chemicalAnnotationRefs) {
+        await current.plugin.state.data.build().delete(ref).commit();
+        if (!active()) return;
+      }
+      current.chemicalAnnotationRefs = [];
+      current.chemicalAnnotationReadback = null;
+      if (!chemicalAnnotation?.visible) return;
+      if (chemicalAnnotation.sourceHandle !== current.source.handle || comparisonRef.current || measureRef.current)
+        throw new Error("화학 주석의 구조가 표시된 원본과 다릅니다.");
+      const catalog = requireCatalog(current, atomRows.current);
+      const refs = [chemicalAnnotation.distance.first, chemicalAnnotation.distance.second,
+        ...(chemicalAnnotation.angle ? [chemicalAnnotation.angle.donor,
+          chemicalAnnotation.angle.hydrogen, chemicalAnnotation.angle.acceptor] : [])];
+      if (refs.some(ref => ref.structure_handle !== current.source.handle))
+        throw new Error("화학 주석 원자가 현재 구조에 속하지 않습니다.");
+      const loci: Awaited<ReturnType<typeof atomLoci>>[] = [];
+      const points: number[][] = [];
+      for (const ref of refs) {
+        const locus = await atomLoci(current, ref, catalog);
+        if (!active()) return;
+        loci.push(locus); points.push(await nativeAtomPoint(locus));
+      }
+      const distance = Math.hypot(...points[0].map((value, index) => value - points[1][index]));
+      if (!Number.isFinite(chemicalAnnotation.distance.value_A) ||
+          Math.abs(distance - chemicalAnnotation.distance.value_A) > 3e-4)
+        throw new Error("화학 결과 거리와 실제 표시 원자 좌표가 다릅니다.");
+      const angle = chemicalAnnotation.angle ? nativeAngleDeg(points[2], points[3], points[4]) : null;
+      if (angle !== null && (!Number.isFinite(chemicalAnnotation.angle!.value_deg) ||
+          Math.abs(angle - chemicalAnnotation.angle!.value_deg) > 0.1))
+        throw new Error("화학 결과 각도와 실제 표시 원자 좌표가 다릅니다.");
+      if (!active()) return;
+      const created: string[] = [];
+      try {
+        const distanceShape = await current.plugin.managers.structure.measurement.addDistance(loci[0], loci[1],
+          { customText: `${chemicalAnnotation.distance.label} ${chemicalAnnotation.distance.value_A.toFixed(3)} Å` });
+        if (!distanceShape) throw new Error("화학 거리 연결선을 만들지 못했습니다.");
+        created.push(distanceShape.representation.ref);
+        if (!active()) throw new Error("화학 주석 장면이 변경되었습니다.");
+        if (chemicalAnnotation.angle) {
+          const angleShape = await current.plugin.managers.structure.measurement.addAngle(loci[2], loci[3], loci[4],
+            { customText: `D–H···A ${chemicalAnnotation.angle.value_deg.toFixed(1)}°` });
+          if (!angleShape) throw new Error("화학 D–H···A 각도 표시를 만들지 못했습니다.");
+          created.push(angleShape.representation.ref);
+        }
+        if (!active()) throw new Error("화학 주석 장면이 변경되었습니다.");
+        current.chemicalAnnotationRefs = created;
+        current.chemicalAnnotationReadback = { rowId: chemicalAnnotation.rowId,
+          sourceHandle: current.source.handle, distanceNative_A: distance,
+          angleNative_deg: angle };
+      } catch (error) {
+        for (const ref of created) await current.plugin.state.data.build().delete(ref).commit();
+        throw error;
+      }
+    }, active, error => { if (active()) setPickError(error instanceof Error ? error.message : String(error)); });
+  }, [state, chemicalAnnotationKey]);
+
+  useEffect(() => {
+    const current = instance.current;
     if (!current || comparisonRef.current) return;
     const intentRevision = representationIntent.current.revision;
     let live = true;
@@ -1147,6 +1366,10 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
       if (!nativeMainRepresentationReady(current)) throw new Error("분자 표현을 표시하지 못했습니다.");
       current.representation = representation;
       completed = true;
+      // The parent reads bridge readiness only while rendering. A rebuild that
+      // finishes after the scene-state round trip must re-announce readiness,
+      // or scene controls stay on "session preparing" until an unrelated render.
+      if (source && stateRef.current === "ready") loadCallback.current?.(source, "ready");
     }).catch(e => {
       if (instance.current === current && requestedSource.current === source) {
         const message = e instanceof Error ? e.message : String(e);

@@ -99,6 +99,14 @@ export function catalogForAttempt<T>(state: { key: string; catalog: T } | null,
   return requestedKey && state?.key === requestedKey ? state.catalog : null;
 }
 
+/** Keep the already-held catalog object when the same read attempt returns the same source catalog:
+ *  Mol* validation is bound to that object, so an equal copy would be unvalidated. */
+export function retainCatalogState<T extends { structure_handle: string; viewer_source_sha256: string }>(
+  previous: { key: string; catalog: T } | null, key: string, catalog: T): { key: string; catalog: T } {
+  return previous?.key === key && previous.catalog.structure_handle === catalog.structure_handle &&
+    previous.catalog.viewer_source_sha256 === catalog.viewer_source_sha256 ? previous : { key, catalog };
+}
+
 export function catalogResponseCurrent(capturedKey: string, requestedKey: string | null,
                                        responseHandle: string, expectedHandle: string): boolean {
   return capturedKey === requestedKey && responseHandle === expectedHandle;

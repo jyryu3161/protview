@@ -183,7 +183,7 @@ def test_production_boundary_dry_run_and_api(tmp_path, monkeypatch):
     assert dry.budget.expensive_calls == 0
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    client = TestClient(api_module.app)
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     cap = client.get("/capabilities").json()
     assert len(cap["energy_protocols"]["protocols"]) == 4
     assert "jobs" in cap["supported"] and "jobs" not in cap["unavailable"]
@@ -887,7 +887,7 @@ def test_missing_terminal_output_and_private_api_events(tmp_path, monkeypatch):
                       launch_nonce="private_nonce", ordinal=1, remaining_wall_s=1, timeout_s=1)
     monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
     api_module.RUNS.clear()
-    response = TestClient(api_module.app).get("/runs/run_jobs/events").json()
+    response = TestClient(api_module.app, base_url="http://127.0.0.1").get("/runs/run_jobs/events").json()
     assert "private_nonce" not in json.dumps(response)
     missing = "obj://run_jobs/job_lifecycle/" + "0" * 64
     run.events.append("job_cleanup_verified", job_id=job["job_id"], attempt_id="attempt_one",
@@ -1411,3 +1411,205 @@ queue.execute_claim(job['job_id'],'owner')
             cleanup_test_owned(known)
         if receipt and _same_identity(receipt):
             JobQueue(run_at(tmp_path))._cleanup_owned(receipt)
+
+
+# The guardian used to wait only 3 s for GO. A legitimately slow parent (durable event appends and
+# a job-table rebuild between HELLO and GO on a run with multi-MB M11 job records) made it exit
+# without a result, leaving an authorized attempt stuck as guardian_result_missing.
+SLOW_PARENT_S = 4.0
+
+
+@needs_process_table
+def test_slow_parent_between_hello_and_go_still_runs_authorized_attempt(tmp_path):
+    run, queue = queue_at(tmp_path, "normal")
+    queue._barrier = lambda stage: time.sleep(SLOW_PARENT_S) if stage == "after_hello" else None
+    run.approve("expensive_first_call")
+    job = queue.submit_fixture(timeout_s=20)
+    queue.claim_next("owner")
+    try:
+        result = queue.execute_claim(job["job_id"], "owner")
+        assert result["status"] == "done", result
+        assert len(result["output_handles"]) == 1
+        types = [e["type"] for e in run.events.read() if e.get("job_id") == job["job_id"]]
+        assert "job_worker_started" in types and "job_cleanup_pending" not in types
+        assert _members(result["identity"]["pgid"]) == []
+    finally:
+        cleanup_fixture(queue, job["job_id"])
+
+
+@needs_process_table
+def test_cancel_during_slow_hello_to_go_window_stops_before_any_science(tmp_path):
+    run, queue = queue_at(tmp_path, "normal")
+
+    def barrier(stage: str) -> None:
+        if stage == "after_hello":
+            JobQueue(run).request_cancel(job["job_id"])
+            time.sleep(SLOW_PARENT_S)
+
+    queue._barrier = barrier
+    run.approve("expensive_first_call")
+    job = queue.submit_fixture(timeout_s=20)
+    queue.claim_next("owner")
+    try:
+        result = queue.execute_claim(job["job_id"], "owner")
+        assert result["status"] == "cancelled", result
+        assert result["output_handles"] == []
+        events = [e for e in run.events.read() if e.get("job_id") == job["job_id"]]
+        assert not any(e["type"] in {"job_execution_authorized", "job_worker_started"} for e in events)
+        attempt = result["dispatch_intent"]["attempt_id"]
+        assert not (run.run_dir / "jobs" / job["job_id"] / attempt / "fixture_runtime.json").exists()
+        assert _members(result["identity"]["pgid"]) == []
+    finally:
+        cleanup_fixture(queue, job["job_id"])
+
+
+def _guardian_probe(tmp_path: Path, go_wait_s: float):
+    nonce = "b" * 32
+    (tmp_path / "input.json").write_text(json.dumps({
+        "nonce": nonce, "job_id": "job_probe", "attempt_id": "attempt_probe",
+        "adapter": "internal_lifecycle_fixture", "fixture_mode": "normal"}))
+    parent, child = socket.socketpair()
+    proc = subprocess.Popen(_guardian_argv(child.fileno(), go_wait_s=go_wait_s), cwd=tmp_path,
+                            env=_worker_environment(tmp_path), stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False,
+                            close_fds=True, pass_fds=(child.fileno(),), start_new_session=True)
+    child.close()
+    hello = _message(parent, 3)
+    assert hello and hello["kind"] == "HELLO" and hello["nonce"] == nonce
+    return proc, parent, nonce
+
+
+def test_guardian_waits_past_old_window_then_honours_late_go(tmp_path):
+    proc, parent, nonce = _guardian_probe(tmp_path, go_wait_s=20)
+    try:
+        time.sleep(SLOW_PARENT_S)
+        assert proc.poll() is None, "guardian abandoned an attempt whose parent was merely slow"
+        _send(parent, {"kind": "GO", "nonce": nonce})
+        started = _message(parent, 10)
+        assert started and started["kind"] == "STARTED"
+        result = _message(parent, 10)
+        assert result and result["kind"] == "RESULT" and result["reason"] == "completed"
+        assert proc.wait(timeout=5) == 0
+    finally:
+        parent.close()
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=2)
+
+
+@pytest.mark.parametrize("ending", ["close", "stop", "bound"])
+def test_guardian_without_go_exits_without_science(tmp_path, ending):
+    proc, parent, nonce = _guardian_probe(tmp_path, go_wait_s=1.0)
+    try:
+        if ending == "close":
+            parent.close()
+        elif ending == "stop":
+            _send(parent, {"kind": "STOP", "nonce": nonce})
+        began = time.monotonic()
+        assert proc.wait(timeout=5) == 0
+        if ending == "bound":
+            assert time.monotonic() - began < 4, "GO wait must stay bounded"
+        assert not (tmp_path / "fixture_runtime.json").exists()
+        assert not (tmp_path / "result.json").exists()
+    finally:
+        parent.close()
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=2)
+
+
+def test_guardian_go_wait_bound_is_tied_to_job_deadline_and_capped():
+    assert _guardian_argv(5, go_wait_s=12.5)[-1] == "--go-wait-s=12.5"
+    with pytest.raises(ValueError):
+        _guardian_argv(5, go_wait_s=float("inf"))
+    with pytest.raises(ValueError):
+        _guardian_argv(5, go_wait_s=0)
+
+
+def test_job_reads_do_not_wait_for_the_transition_lock(tmp_path):
+    run, queue = queue_at(tmp_path, "normal")
+    job = queue.submit_fixture(timeout_s=3)
+    got: list[dict] = []
+    with run._transition():
+        reader = threading.Thread(target=lambda: got.extend([queue.get(job["job_id"]), *queue.list()]))
+        reader.start()
+        reader.join(timeout=5)
+        assert not reader.is_alive(), "status reads blocked behind a held transition"
+    assert got[0]["job_id"] == job["job_id"] and got[0]["status"] == "queued"
+    assert got[1]["job_id"] == job["job_id"]
+
+
+def test_guardian_resource_sampling_error_fails_closed_and_still_reports_result(tmp_path):
+    """Real guardian process tree; the RSS sampler is made to raise psutil.AccessDenied.
+
+    Labeled lifecycle fault injection: the "worker" is a sleeping stand-in for the fixed chemical
+    adapter so the sampling loop runs; it produces no scientific output.
+    """
+    backend = Path(__file__).resolve().parents[1]
+    attempt = tmp_path / "attempt"
+    attempt.mkdir()
+    worker = tmp_path / "sleeping_worker.py"
+    worker.write_text("import time\ntime.sleep(30)\n")
+    nonce = "a" * 32
+    (attempt / "input.json").write_text(json.dumps({
+        "nonce": nonce, "job_id": "job_monitor", "attempt_id": "attempt_monitor",
+        "adapter": "prolif_detect_v1", "input_sha256": "0" * 64}))
+    driver = r'''
+import sys
+from pathlib import Path
+import psutil
+from mw.jobs import guardian
+
+def denied(self):
+    raise psutil.AccessDenied(self.pid)
+
+psutil.Process.memory_info = denied
+guardian.CHEMICAL = Path(sys.argv[2])
+guardian.CHEMICAL_PYTHON = Path(sys.executable)
+raise SystemExit(guardian.main(int(sys.argv[1]), None, 10.0))
+'''
+    parent, child = socket.socketpair()
+    process = subprocess.Popen([sys.executable, "-c", driver, str(child.fileno()), str(worker)],
+                               cwd=attempt, env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(backend)},
+                               pass_fds=(child.fileno(),), start_new_session=True,
+                               stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    child.close()
+    worker_pid = None
+    try:
+        hello = _message(parent, 10)
+        assert hello and hello["kind"] == "HELLO" and hello["pid"] == process.pid
+        _send(parent, {"kind": "GO", "nonce": nonce})
+        started = _message(parent, 10)
+        assert started and started["kind"] == "STARTED"
+        worker_pid = started["pid"]
+        result = _message(parent, 10)
+        assert result, "the guardian must still send RESULT after a sampling failure"
+        assert result["kind"] == "RESULT" and result["reason"] == "resource_monitor_unavailable"
+        assert result["clean"] is True and result["direct_child_reaped"] is True
+        assert result["payload"] is None
+        assert process.wait(timeout=10) == 0
+        assert not matches(worker_pid, started["start_identity"])
+    finally:
+        parent.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+        if worker_pid is not None and matches(worker_pid, started["start_identity"]):
+            os.kill(worker_pid, signal.SIGKILL)
+
+
+def test_resource_monitor_failure_is_a_typed_failed_terminal(tmp_path, monkeypatch):
+    run, queue = queue_at(tmp_path)
+    run.approve("expensive_first_call")
+    job = queue.submit_fixture()
+    queue.claim_next("owner")
+    original = JobQueue._supervise
+
+    def monitor_unavailable(self, *args):
+        result, identity = original(self, *args)
+        return {**result, "reason": "resource_monitor_unavailable"}, identity
+
+    monkeypatch.setattr(JobQueue, "_supervise", monitor_unavailable)
+    finished = queue.execute_claim(job["job_id"], "owner")
+    assert finished["status"] == "failed" and finished["output_handles"] == []
+    assert finished["failure"] == {"error": "fatal", "message": "worker resource monitoring unavailable"}

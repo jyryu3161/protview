@@ -61,3 +61,57 @@ For O14 POST response races, run `npm --prefix frontend run test:offscreen:post-
 For B03, run `npm --prefix frontend run test:offscreen:dry-run -- --url http://127.0.0.1:3000 --fixture ../backend/tests/fixtures/public_1ubq.cif --artifacts /tmp/protview-qa/dry-run`. The loopback API creates only the initial `dry_run: true` record. The Electron UI performs upload, load, prepare, preflight, policy checks, submit, and reopen. It verifies a plan-only response, no durable job or physical attempt, zero expensive/token/USD charges, and the persisted dry-run badge.
 
 For O09/B01, run `npm --prefix frontend run test:offscreen:persistence -- --url http://127.0.0.1:3000 --fixture ../backend/tests/fixtures/public_1ubq.cif --full-run <completed-run> --queued-cancel-run <queued-cancel-run> --running-cancel-run <running-cancel-run> --artifacts /tmp/protview-qa/openmm-persistence`. A labeled loopback setup creates two distinct queued jobs in one new run. The Electron UI selects both job IDs, opens completed and cancelled runs, compares its topbar/detail expensive count with the backend's reservation ledger, then reopens the two-job run and selects an older job again.
+
+## M11 chemical interactions (H01–H17)
+
+Every M11 input comes from this repository. Public fixtures: `backend/tests/fixtures/chemical/prolif-vina-rec.pdb` and `prolif-vina-output.sdf` (prepared docking example, not experimental validation). Synthetic derivatives are generated, never committed, and each generator exits non-zero unless the pinned SHA-256 matches:
+
+- `.venv/bin/python scripts/m11_qa_inputs.py --out <dir>`: attach complex PDB, the (+1000,+1000,+1000) Å empty-result SDF, receptor CONECT edges (`backend/tests/fixtures/chemical/SYNTHETIC-PROVENANCE.md`).
+- `.venv/bin/python scripts/m11_invalid_inputs.py --out <dir> [--attach-sidecar <run sidecar>]`: labeled H06 invalid derivatives (disconnected atom, altloc, zinc ion, wrong-source/wrong-schema bond sidecars, 2D record) plus `m11-invalid-cases.json`, whose expected offending identities come from the edit the script made. `--attach-sidecar` adds the run-bound covalent-ligand sidecar. `backend/tests/test_m11_invalid_inputs.py` checks the pinned bytes and the product diagnostics.
+- `.venv/bin/python scripts/m11_attach_browser_setup.py ...`: run-bound attach sidecar, `map_existing`/`replace_from_sdf` mappings and ligand instance, from the QA run's own source catalog (GET only).
+
+### One-command acceptance sequence
+
+With the frontend already built (`npm --prefix frontend run typecheck` then `npm --prefix frontend run build`, never concurrently) and ports 8000/3000 free:
+
+```bash
+.venv/bin/python scripts/m11_offscreen_acceptance.py \
+  --root runs/m11-acceptance-<YYYYMMDD> \
+  --artifacts frontend/tests/offscreen/artifacts/m11-acceptance/<label>
+```
+
+The runner starts and stops its own loopback services (uvicorn `127.0.0.1:8000` with `PYTHONPATH=<repo>/backend` and `MW_RUNS_DIR=<root>/runs`; `next start` on `127.0.0.1:3000`). The root must be fresh (the global job-ledger scan caps at 1,000 runs / 256 MiB, so never reuse a large root) and outside `/tmp`; the artifacts directory must be git-ignored. Phases (`--phases`, default all, in this order):
+
+1. `main` — `capability-ready`, `create`, `empty`, `prepare-only` → `detect-controls`, `job-controls`, `job-controls-failure` (labeled pentavalent-carbon SDF), `running-cancel`, `attach-setup` (labeled loopback API upload/load/import, covers no case), `attach-map` (`map_existing`), `attach-replace` (`replace_from_sdf`, reload with the new preparation queued), `reopen-complete` (second report on the replace result), `restrictions` (saves an ordinary M9 scene through the real control first, annotation on and off, then restores it), `faults` (map vs replace result, two reports), `invalid-inputs`, `invalid-attach` (covalent ligand), `reopen`.
+2. `regressions` (H17) — `normal-flow.cjs` with `public_1hsg.cif`; `openmm-flow.cjs --mode full` with `public_1ubq.cif`, then `scenes-flow.cjs --mode core` on that OpenMM run (the original M9 QA order: V05 needs a completed minimization); `comparison-flow.cjs --mode measure` and `--mode alignment`.
+3. `replay` (H16) — snapshot with `scripts/m11_replay_probe.py` on the original root, stop the backend, copy only `events.jsonl` of the create/empty/attach runs into `<root>/replay-runs`, rename `<root>/inputs` so the original input paths are absent, start the backend from `<root>/layout-worker-missing` (byte-identical `backend/mw` + `config` copy without `.deps`: worker missing), verify before the browser, run Electron `--mode replay` on each run (reports must download with the original bytes), verify again, then `capability` expecting `worker_missing`.
+4. `capability-mismatch` — `<root>/layout-worker-mismatch` whose pinned worker path points at the server interpreter; `capability` expecting `worker_version_invalid`.
+5. `ledger` — `node frontend/tests/offscreen/m11-case-ledger.cjs --root <artifacts> --out <artifacts>/case-ledger.json`.
+
+`--only step,step` reruns single steps using `runner-state.json` (run IDs and handles from earlier steps). Every step keeps its artifacts directory, `<step>.log`, `chemical-evidence.json` and `ledger-row.json` (a rerun gets a time-suffixed directory; failures are never deleted). `runner-summary.jsonl` lists outcomes and the final leftover-process/port check.
+
+### Modes and evidence
+
+`node frontend/tests/offscreen/chemical-flow.cjs --mode MODE --artifacts DIR [...]` (see its usage text for arguments). Each run writes `ledger-row.json`: H case ids, mode, evidence type, build id (`frontend/.next/BUILD_ID`), harness SHA-256s, fixture names/SHA-256/provenance labels, labeled renderer-route fixtures, run id, handles, pass/fail, offscreen proof (`isOffscreen`, invisible, painting, GPU, paint count, WebGL renderer) and the non-loopback request count. A row passes only when the harness assertions pass, the offscreen proof is complete and no non-loopback request was attempted.
+
+| Case | Real Electron offscreen modes | Other declared evidence |
+| --- | --- | --- |
+| H01 | `capability-ready`, `capability-worker_missing`, `capability-worker_version_invalid` (labeled runtime layouts) | `test_m11_job_api.py::test_job_capability_uses_scientific_dependency_validation` |
+| H02 | `create` | import-identity tests in `test_chemical_interactions.py`, `test_m11_job_api.py` |
+| H03 | `create` (PDB CONECT, terminal add/edit/remove), `attach-map_existing` (sidecar) | cap-declaration tests |
+| H04 | `create` | `test_actual_native_create_detect_and_tamper_rejection` |
+| H05 | `attach-map_existing`, `attach-replace_from_sdf`, `invalid-attach` | `test_attach_explicit_bijection_and_sidecar`, `test_attach_covalent_ligand_bond_reports_exact_endpoint_atoms` |
+| H06 | `invalid-inputs`, `invalid-attach`, `job-controls-failure` (typed native diagnostic) | `test_m11_invalid_inputs.py`, preflight/V2000/native graph diagnostic tests |
+| H07 | `create`, `detect-controls`, `job-controls`, `job-controls-failure`, `running-cancel`, `attach-replace_from_sdf` | queue cancel/timeout/retry/busy tests in `test_m11_job_api.py` |
+| H08 | `create`, `attach-map_existing` (independent D···A / D–H···A geometry) | analytic explicit-graph numeric tests |
+| H09 | `empty` (scientific_null, distinct from error), `job-controls-failure` (error stays error) | translated/bent/distant native tests |
+| H10 | `create`, `reopen-complete` | — |
+| H11 | `create`, `reopen-complete` (immediate and idle-gated refocus), `restrictions` (return to ordinary) | camera-settle logic in `tests/chemical.test.cjs` |
+| H12 | `create`, `restrictions` (annotation on/off, forced clicks create no artifact) | — |
+| H13 | `restrictions` | — |
+| H14 | `create`, `attach-map_existing`, `reopen-complete`, `reopen`, `replay` | report/events-only tests in `test_m11_job_api.py` |
+| H15 | `create`, `job-controls`, `running-cancel`, `faults` | — |
+| H16 | `replay` + direct API rows `replay-probe-prebrowser`/`-postbrowser` | events-only recovery tests in `test_m11_job_api.py` |
+| H17 | `regression-m8-normal`, `regression-m9-openmm`, `regression-m9-scenes-core`, `regression-m10-measure`, `regression-m10-alignment` | full backend gate |
+
+`m11-case-ledger.cjs` (`CASE_PLAN`) is the authoritative map; a case is `pass` only when every declared mode has a passing row, `fail` when a declared mode has only failing rows, and `missing` otherwise. Backend tests are listed per case; their pass/fail comes from the recorded full backend gate, not from the ledger. Route fixtures (non-approval 409 on Start, held GETs/POSTs, malformed catalog SHA, bounded source-read deadline, WebGL context loss) are renderer-only, labeled in the row and never create a scientific object.

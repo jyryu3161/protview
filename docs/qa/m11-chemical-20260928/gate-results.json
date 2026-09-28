@@ -1,0 +1,136 @@
+{
+  "schema": "m11_gate_results@1",
+  "gitHead": "4ec584f2bd5e82f7cb8550eb8148b26e31dfaf5d",
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "cwd": "worktree root (<repo>); PYTHONPATH=<worktree>/backend exported for every python command",
+  "treeCleanAfterGate": true,
+  "gates": [
+    {
+      "name": "typecheck",
+      "command": "npm --prefix frontend run typecheck",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "tsc --noEmit completed with no diagnostics",
+      "startedAt": "2026-09-28T05:00:40Z",
+      "finishedAt": "2026-09-28T05:00:42Z",
+      "log": "gate-logs/typecheck.log"
+    },
+    {
+      "name": "build",
+      "command": "npm --prefix frontend run build",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "✓ Compiled successfully; BUILD_ID aqV29Ar7twWJLHni63lRZ (run after typecheck, never concurrently)",
+      "startedAt": "2026-09-28T05:00:46Z",
+      "finishedAt": "2026-09-28T05:00:54Z",
+      "log": "gate-logs/build.log"
+    },
+    {
+      "name": "pytest-backend",
+      "command": "PYTHONPATH=$PWD/backend .venv/bin/python -m pytest backend/tests -q -rs",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "377 passed, 1 warning in 718.14s (0:11:58); 0 skipped; .deps/prolif/venv-locked present",
+      "startedAt": "2026-09-28T05:00:58Z",
+      "finishedAt": "2026-09-28T05:12:56Z",
+      "log": "gate-logs/pytest-backend.log"
+    },
+    {
+      "name": "ruff",
+      "command": "PYTHONPATH=$PWD/backend .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "All checks passed!",
+      "startedAt": "2026-09-28T05:01:03Z",
+      "finishedAt": "2026-09-28T05:01:03Z",
+      "log": "gate-logs/ruff.log"
+    },
+    {
+      "name": "pytest-scripts",
+      "command": "PYTHONPATH=$PWD/backend .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py -q",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "57 passed in 4.19s",
+      "startedAt": "2026-09-28T05:01:03Z",
+      "finishedAt": "2026-09-28T05:01:07Z",
+      "log": "gate-logs/pytest-scripts.log"
+    },
+    {
+      "name": "test-events",
+      "command": "npm --prefix frontend run test:events",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "tests 86, pass 86, fail 0, skipped 0",
+      "startedAt": "2026-09-28T05:01:07Z",
+      "finishedAt": "2026-09-28T05:01:08Z",
+      "log": "gate-logs/test-events.log"
+    },
+    {
+      "name": "node-check-chemical-flow",
+      "command": "node --check frontend/tests/offscreen/chemical-flow.cjs",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "no output (syntax OK)",
+      "startedAt": "2026-09-28T05:01:08Z",
+      "finishedAt": "2026-09-28T05:01:08Z",
+      "log": "gate-logs/node-check-chemical-flow.log"
+    },
+    {
+      "name": "tokens",
+      "command": "npm --prefix frontend run tokens",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "wrote frontend/src/design/tokens.css; copied components.css",
+      "startedAt": "2026-09-28T05:01:08Z",
+      "finishedAt": "2026-09-28T05:01:08Z",
+      "log": "gate-logs/tokens.log"
+    },
+    {
+      "name": "tokens-diff",
+      "command": "git diff --exit-code frontend/src/design/components.css",
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "result": "pass",
+      "summary": "no diff; git status --porcelain empty afterwards",
+      "startedAt": "2026-09-28T05:01:08Z",
+      "finishedAt": "2026-09-28T05:01:08Z",
+      "log": "gate-logs/tokens-diff.log"
+    },
+    {
+      "name": "git-grep-tmp-qa",
+      "command": "git grep -n '/tmp/protview-m11-qa' -- scripts frontend backend docs/operations.md",
+      "exitCode": 1,
+      "expectedExitCode": 1,
+      "result": "pass",
+      "summary": "0 lines (git grep exit 1 = no match; expected)",
+      "startedAt": "2026-09-28T05:01:08Z",
+      "finishedAt": "2026-09-28T05:01:08Z",
+      "log": "gate-logs/git-grep-tmp-qa.log"
+    }
+  ],
+  "offscreen": [
+    {
+      "name": "m11-acceptance",
+      "command": "PYTHONPATH=$PWD/backend .venv/bin/python scripts/m11_offscreen_acceptance.py --root runs/m11-acceptance-20260928 --artifacts frontend/tests/offscreen/artifacts/m11-acceptance/20260928",
+      "exitCode": 0,
+      "summary": "{\"failedSteps\": []}; case-ledger summary pass 17, fail 0, missing 0; 29 rows; nonLoopbackRequestsTotal 0; leftover-processes pass",
+      "log": "steps/acceptance-runner-stdout.log",
+      "reruns": []
+    },
+    {
+      "name": "test-offscreen-smoke",
+      "command": "npm --prefix frontend run test:offscreen -- --url http://127.0.0.1:3000 --artifacts frontend/tests/offscreen/artifacts/m11-acceptance/20260928-hostcheck/offscreen-smoke",
+      "exitCode": 0,
+      "summary": "ready true; offscreen true; paintCount 7; hardwareAccelerationEnabled true; blockedRequests []; loopbackRequestCount 59",
+      "log": "host-and-smoke/offscreen-smoke.log"
+    }
+  ]
+}

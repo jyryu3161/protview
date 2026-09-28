@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,54 +22,98 @@ def project_python(root: Path) -> str:
 # Only check product and harness code; references/ is source material.
 CHECKS = [
     ([project_python(ROOT), "-m", "ruff", "check", "backend/mw", "backend/tests", "scripts", ".codex/hooks", "design/build_tokens.py"], {0}),
-    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py"], {0}),
+    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_chemical_interactions.py"], {0}),
+    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_m11_job_api.py"], {0}),
+    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py",
+      "scripts/test_codex_hooks.py", "--ignore=backend/tests/test_chemical_interactions.py",
+      "--ignore=backend/tests/test_m11_job_api.py"], {0}),
 ]
 
 MAX_OUTPUT_CHARS = 1500
-CHECK_TIMEOUT = 240
+# Ruff runs first; the three disjoint pytest groups then run concurrently.
+# Their exact collection union is the former sequential suite. Even one group
+# reaching its bound leaves process-group cleanup below the trusted 600 s hook.
+RUFF_TIMEOUT = 45
+CHECK_TIMEOUT = 480
+
+
+def check_timeout(cmd) -> int:
+    return RUFF_TIMEOUT if len(cmd) >= 4 and cmd[1:4] == ["-m", "ruff", "check"] else CHECK_TIMEOUT
+
+
+def _text(value) -> str:
+    return value.decode(errors="replace") if isinstance(value, bytes) else value or ""
 
 
 def run_check(cmd, root: Path):
+    timeout = check_timeout(cmd)
     process = subprocess.Popen(cmd, cwd=root, stdin=subprocess.DEVNULL,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, start_new_session=True)
     try:
-        stdout, stderr = process.communicate(timeout=CHECK_TIMEOUT)
-    except subprocess.TimeoutExpired:
-        deadline = time.monotonic() + 1
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as expired:
         try:
             os.killpg(process.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
-        try:
-            process.communicate(timeout=1)
-        except subprocess.TimeoutExpired:
-            pass
-        time.sleep(max(0, deadline - time.monotonic()))
+        # Do not reap the leader before escalation: its reserved PID anchors
+        # the process-group identity even if it exits on TERM while a child
+        # ignores TERM and has closed its inherited output pipes.
+        time.sleep(0.2)
         try:
             os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
+        except (ProcessLookupError, PermissionError):
             pass
-        process.communicate()
-        raise
+        try:
+            stdout, stderr = process.communicate(timeout=2)
+        except subprocess.TimeoutExpired as final:
+            # A detached descendant may retain a pipe after the owned group
+            # is killed. Never let that defeat the outer trusted deadline.
+            stdout = _text(final.stdout) or _text(expired.stdout)
+            stderr = _text(final.stderr) or _text(expired.stderr)
+            if process.stdout is not None:
+                process.stdout.close()
+            if process.stderr is not None:
+                process.stderr.close()
+            try:
+                process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                pass
+        raise subprocess.TimeoutExpired(cmd, timeout,
+                                        output=_text(stdout) or _text(expired.stdout),
+                                        stderr=_text(stderr) or _text(expired.stderr)) from expired
     return subprocess.CompletedProcess(cmd, process.returncode, stdout, stderr)
 
 
 def run_checks(root: Path, checks) -> list[str]:
-    failures = []
-    for cmd, ok_codes in checks:
+    def one(item):
+        cmd, ok_codes = item
         label = "$ " + " ".join(cmd)
         try:
             r = run_check(cmd, root)
         except FileNotFoundError:
-            failures.append(f"{label}\n명령을 찾을 수 없음")
-            continue
-        except subprocess.TimeoutExpired:
-            failures.append(f"{label}\n{CHECK_TIMEOUT}초 시간 초과; 프로세스 그룹 종료")
-            continue
+            return f"{label}\n명령을 찾을 수 없음"
+        except subprocess.TimeoutExpired as expired:
+            output = (_text(expired.stdout) + _text(expired.stderr)).strip()[-MAX_OUTPUT_CHARS:]
+            return f"{label}\n{expired.timeout}초 시간 초과; 프로세스 그룹 종료\n{output}"
         if r.returncode not in ok_codes:
             output = (r.stdout + r.stderr).strip()[-MAX_OUTPUT_CHARS:]
-            failures.append(f"{label} (exit {r.returncode})\n{output}")
+            return f"{label} (exit {r.returncode})\n{output}"
+        return None
+
+    if checks is CHECKS:
+        first = one(CHECKS[0])
+        if first is not None:
+            return [first]
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            results = list(executor.map(one, CHECKS[1:]))
+        return [result for result in results if result is not None]
+    failures = []
+    for item in checks:
+        result = one(item)
+        if result is not None:
+            failures.append(result)
     return failures
 
 

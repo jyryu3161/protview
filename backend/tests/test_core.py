@@ -7,7 +7,7 @@ import pytest
 from mw.core.errors import FailureClass, ToolFailure
 from mw.core.handles import ObjectStore
 from mw.runtime.orchestrator import replay
-from mw.workspace import build_registry
+from mw.workspace import build_registry, new_run
 
 
 def _read_during_rebuild(run_dir, handle, result):
@@ -107,6 +107,54 @@ def test_object_directory_and_payload_symlinks_cannot_escape(tmp_path):
         s.put("thing", "thing@1", {"a": 2})
     assert sentinel.read_bytes() == b"unchanged"
     assert {p.name for p in outside.iterdir()} == {"sentinel"}
+
+
+def test_bounded_json_read_checks_actual_file_before_decoding(tmp_path):
+    store = ObjectStore(tmp_path, "r1")
+    saved = store.put("thing", "thing@1", {"fixture": "bounded"})
+    raw_path = tmp_path / "objects" / f"{saved.sha}.json"
+    original = raw_path.read_bytes()
+    assert store.load_bounded_json(saved.handle, len(original)) == {"fixture": "bounded"}
+    with pytest.raises(ValueError, match="oversized"):
+        store.load_bounded_json(saved.handle, len(original) - 1)
+    # The SQLite row still advertises the original small size. A replaced
+    # on-disk object must be rejected before a potentially large read/parse.
+    raw_path.write_bytes(b" " * 100_000)
+    assert store.meta(saved.handle)["size"] == len(original)
+    with pytest.raises(ValueError, match="oversized"):
+        store.load_bounded_json(saved.handle, 1024)
+    raw_path.write_bytes(original[:-1] + b" ")
+    with pytest.raises(ValueError, match="hash"):
+        store.load_bounded_json(saved.handle, 1024)
+    raw_path.unlink()
+    raw_path.symlink_to(tmp_path / "outside")
+    with pytest.raises(ValueError, match="unsafe object path"):
+        store.load_bounded_json(saved.handle, 1024)
+
+
+def test_bounded_raw_read_rejects_replaced_oversized_import(tmp_path):
+    store = ObjectStore(tmp_path, "r1")
+    saved = store.put("chemical_raw_input", "chemical_raw_input@1", b"fixture", fmt="raw")
+    assert store.load_bounded_bytes(saved.handle, 7) == b"fixture"
+    raw_path = tmp_path / "objects" / f"{saved.sha}.raw"
+    raw_path.write_bytes(b"x" * 10_000)
+    with pytest.raises(ValueError, match="oversized"):
+        store.load_bounded_bytes(saved.handle, 1024)
+
+
+def test_fresh_run_reopen_and_identical_put_reject_replaced_large_blob_before_read(tmp_path):
+    run = new_run(tmp_path, run_id="run_replaced", dry_run=False)
+    saved = run.store.put("chemical_structure", "chemical_structure@1", {"fixture": "small"})
+    physical = run.run_dir / "objects" / f"{saved.sha}.json"
+    original = physical.read_bytes()
+    physical.write_bytes(b" " * 2_000_000)
+    with pytest.raises(ValueError, match="payload size"):
+        run.store.put("chemical_structure", "chemical_structure@1", {"fixture": "small"})
+    with pytest.raises(ValueError, match="payload size"):
+        new_run(tmp_path, run_id="run_replaced", dry_run=False)
+    physical.write_bytes(original)
+    reopened = new_run(tmp_path, run_id="run_replaced", dry_run=False)
+    assert reopened.store.load_bounded_json(saved.handle, 1024) == {"fixture": "small"}
 
 
 def test_materialize_projection_and_parquet(tmp_path):
