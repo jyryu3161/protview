@@ -7,7 +7,6 @@ import type { AtomCatalog, AtomRefV1, MeasurementResult } from "./comparison";
 import type { ChemicalCapability, ChemicalImport, ChemicalInspect, ChemicalJob,
   ChemicalPreparationManifest, ChemicalPrepareArgs, ChemicalPreview, ChemicalResult, ChemicalResultPage,
   ChemicalView } from "./chemical";
-import { collectChemicalAtomCatalog } from "./chemical";
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -144,10 +143,6 @@ export const api = {
       runPath(id, `/chemical/preparation-manifests?source_handle=${encodeURIComponent(sourceHandle)}`), { signal }),
   chemicalAtoms: (id: string, handle: string, offset = 0, limit = 1000, signal?: AbortSignal) =>
     request<AtomCatalog>(runPath(id, `/chemical/structures/atoms?${handleParam(handle)}&offset=${offset}&limit=${limit}`), { signal }),
-  async allChemicalAtoms(id: string, handle: string, signal?: AbortSignal): Promise<AtomCatalog> {
-    return collectChemicalAtomCatalog(handle,
-      (offset, limit) => api.chemicalAtoms(id, handle, offset, limit, signal));
-  },
   chemicalGraph: (id: string, handle: string, signal?: AbortSignal) =>
     request<{ meta: ObjectMeta; graph: Record<string, unknown> }>(runPath(id, `/chemical/graphs?${handleParam(handle)}`), { signal }),
   chemicalResult: (id: string, handle: string, signal?: AbortSignal) =>
