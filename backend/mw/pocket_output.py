@@ -95,7 +95,7 @@ PQR_RE = re.compile(r"ATOM  (?:[ 0-9]{4}[0-9]|[0-9a-f]{5}) (?P<name>   [CON]) (?
                     r"(?P<radius>.{6})")
 PQR_KINDS = frozenset({("C", "STP"), ("O", "STP"), ("O", "ACC"), ("N", "DON")})  # write_pqr_vert branches
 ATM_RE = re.compile(r"ATOM  (?:[ 0-9]{4}[0-9]|[0-9a-f]{5}) (?P<name>[ A-Za-z0-9'*]{4}) (?P<res>[A-Z0-9]{3}) "
-                    r"(?P<chain>[A-Za-z0-9])(?P<resseq>[ -][ 0-9-]{2}[0-9])    (?P<x>.{8})(?P<y>.{8})(?P<z>.{8})"
+                    r"(?P<chain>[A-Za-z0-9])(?P<resseq>[ 0-9-]{3}[0-9])    (?P<x>.{8})(?P<y>.{8})(?P<z>.{8})"
                     r"(?P<occ>[ 0-9.-]{6})(?P<b>[ 0-9.-]{6}) {10}(?P<element>[ A-Z][A-Z])(?P<charge>[ 0-9-]{2})")
 COORD_RE = re.compile(r"-?[0-9]+\.[0-9]{3}")
 RADIUS_RE = re.compile(r"[0-9]+\.[0-9]{2}")

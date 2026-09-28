@@ -9,7 +9,7 @@ import stat
 import uuid
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,6 +34,12 @@ from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
+from ..pocket_bundle import PocketEvidenceError
+from ..pocket_bundle import capability as pocket_capability
+from ..pocket_bundle import geometry as pocket_geometry
+from ..pocket_bundle import list_sets as list_pocket_sets
+from ..pocket_bundle import preflight as pocket_preflight
+from ..pocket_bundle import result_summary as pocket_result_summary
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
@@ -322,6 +328,8 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
                                        job["output_handles"], strict=True))
     elif job.get("protocol_id") == "prolif_detect_v1" and job.get("status") == "done":
         result["artifacts"] = {"chemical_interaction_set": job["output_handles"][0]}
+    elif job.get("protocol_id") == "fpocket_detect_v1" and job.get("status") == "done":
+        result["artifacts"] = {"pocket_set": job["output_handles"][0]}
     else:
         result["artifacts"] = {}
     return result
@@ -576,7 +584,7 @@ def capabilities() -> dict[str, Any]:
     except (AttributeError, ImportError, OSError, PackageNotFoundError, RuntimeError, ToolFailure, ValueError) as exc:
         sasa = {"available": False, "reason_code": "engine_missing_or_invalid", "explanation": str(exc)}
     return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability(),
-            "chemical_interactions": chemical_capability()}, "supported": {
+            "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
         "viewer_intents": "typed local viewer commands; optional explicit online Jev interpretation is credential and budget dependent",
@@ -587,7 +595,6 @@ def capabilities() -> dict[str, Any]:
             "remote_structure_lookup": "no M1 fetch adapter; local upload only",
             "hbond_or_affinity": "geometric proximity is not chemical or energetic validation",
         "plip": "no validated PLIP adapter is implemented",
-            "pocket_detection": "no implemented adapter",
             **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items() if not item["available"]},
             "general_model_decisions": "no autonomous scientific tool, job, report, or general decision route"}}
 
@@ -1071,7 +1078,8 @@ def approve_job(rid: str) -> dict[str, Any]:
                  if event["type"] in {"approval_requested", "approval_resolved"} and
                  event.get("gate") == "expensive_first_call"]
     pending = decisions[-1] if decisions else None
-    approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions"}
+    approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
+                      "detect_pockets"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1196,6 +1204,44 @@ def openmm_minimization(rid: str, handle: str) -> dict[str, Any]:
         return {"meta": _object(run, handle), "result": validated_openmm(run, handle)}
     except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "method_evidence_invalid", "message": str(exc)}) from exc
+
+
+def _pocket_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid",
+                                      "message": str(exc) or "invalid pocket evidence"})
+
+
+@app.get("/runs/{rid}/pockets/preflight")
+def pockets_preflight(rid: str, structure: str,
+                      chains: Annotated[list[str] | None, Query()] = None) -> dict[str, Any]:
+    """Read-only projection/capability/budget/retention summary; runs no tool, job or engine."""
+    return pocket_preflight(_run(rid), structure, chains)
+
+
+@app.get("/runs/{rid}/pockets")
+def pockets(rid: str, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    return list_pocket_sets(_run(rid), offset, limit)
+
+
+@app.get("/runs/{rid}/pockets/result")
+def pocket_result(rid: str, handle: str) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        return pocket_result_summary(run, handle)
+    except (PocketEvidenceError, KeyError, ValueError, TypeError) as exc:
+        raise _pocket_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/pockets/geometry")
+def pocket_geometry_read(rid: str, handle: str, rank: int = Query(..., ge=1, le=10_000)) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        value = pocket_geometry(run, handle, rank)
+    except (PocketEvidenceError, KeyError, ValueError, TypeError) as exc:
+        raise _pocket_evidence_error(exc) from exc
+    if value is None:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown pocket rank"})
+    return value
 
 
 @app.get("/runs/{rid}/structures/residues")

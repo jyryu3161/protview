@@ -31,6 +31,18 @@ OPENMM = Path(__file__).with_name("openmm_worker.py")
 CHEMICAL = Path(__file__).with_name("chemical_worker.py")
 CHEMICAL_PYTHON = Path(__file__).resolve().parents[3] / ".deps/prolif/venv-locked/bin/python"
 CHEMICAL_ADAPTERS = {"prolif_prepare_v1", "prolif_detect_v1"}
+POCKET = Path(__file__).with_name("pocket_worker.py")
+POCKET_ADAPTER = "fpocket_detect_v1"
+# Adapters whose running worker tree is sampled for memory and output limits.
+MONITORED_ADAPTERS = CHEMICAL_ADAPTERS | {POCKET_ADAPTER}
+RSS_LIMIT = 2 * 1024 * 1024 * 1024
+STREAM_LIMIT = 1024 * 1024
+# fpocket job root, private TMPDIR and engine streams written by pocket_worker.py in the attempt directory.
+POCKET_OUTPUT_DIRS = ("fpocket", "fpocket_tmp")
+POCKET_INPUT_FILE = ("fpocket", "protein.pdb")
+POCKET_STREAMS = ("engine.stdout", "engine.stderr")
+POCKET_OUTPUT_BYTES = 30 * 1024 * 1024
+POCKET_OUTPUT_FILES = 1000
 FIXTURE_MODES = {"normal", "nonzero", "malformed", "oversize", "wrong_id", "invalid",
                  "sleep", "grandchild", "leader_exit"}
 DEFAULT_GO_WAIT_S = 3.0
@@ -151,6 +163,33 @@ def cleanup(pgid: int, own: int, child: subprocess.Popen | None,
         return False, list(known.values())
 
 
+def pocket_output_exceeded() -> bool:
+    """Bytes/files the engine wrote under its job root and TMPDIR (the staged input is not output)."""
+    total = files = 0
+    stack = [(name, Path(name)) for name in POCKET_OUTPUT_DIRS]
+    while stack:
+        top, path = stack.pop()
+        try:
+            entries = list(os.scandir(path))
+        except FileNotFoundError:
+            continue
+        for entry in entries:
+            try:
+                info = entry.stat(follow_symlinks=False)
+            except FileNotFoundError:
+                continue  # a temporary file removed between listing and sampling
+            if stat.S_ISDIR(info.st_mode):
+                stack.append((top, Path(entry.path)))
+                continue
+            if (top, entry.name) == POCKET_INPUT_FILE and Path(entry.path).parent == Path(top):
+                continue
+            files += 1
+            total += info.st_size
+            if files > POCKET_OUTPUT_FILES or total > POCKET_OUTPUT_BYTES:
+                return True
+    return any(os.lstat(name).st_size > STREAM_LIMIT for name in POCKET_STREAMS if os.path.lexists(name))
+
+
 def receipt(identity: dict) -> None:
     path = Path("bootstrap.receipt")
     with Path("bootstrap.tmp").open("x", encoding="utf-8") as stream:
@@ -176,7 +215,8 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
                 {"nonce", "job_id", "attempt_id", "adapter", "input_sha256"})
     if (set(input_data) != expected or
             not isinstance(input_data["nonce"], str) or not re.fullmatch(r"[0-9a-f]{32}", input_data["nonce"]) or
-            adapter not in {"internal_lifecycle_fixture", "openmm_protein_minimize_v1", *CHEMICAL_ADAPTERS} or
+            adapter not in {"internal_lifecycle_fixture", "openmm_protein_minimize_v1", *CHEMICAL_ADAPTERS,
+                            POCKET_ADAPTER} or
             (adapter == "internal_lifecycle_fixture" and input_data["fixture_mode"] not in FIXTURE_MODES) or
             (adapter != "internal_lifecycle_fixture" and
              not re.fullmatch(r"[0-9a-f]{64}", input_data["input_sha256"])) or
@@ -210,12 +250,12 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
     if command is None or command.get("kind") != "GO" or command.get("nonce") != nonce:
         return 0
     worker = (FIXTURE if adapter == "internal_lifecycle_fixture" else
-              CHEMICAL if adapter in CHEMICAL_ADAPTERS else OPENMM)
+              CHEMICAL if adapter in CHEMICAL_ADAPTERS else POCKET if adapter == POCKET_ADAPTER else OPENMM)
     interpreter = str(CHEMICAL_PYTHON) if adapter in CHEMICAL_ADAPTERS else sys.executable
     if adapter in CHEMICAL_ADAPTERS and not CHEMICAL_PYTHON.is_file():
         return 2
     stdout_file = stderr_file = None
-    if adapter in CHEMICAL_ADAPTERS:
+    if adapter in MONITORED_ADAPTERS:
         stdout_file = os.fdopen(os.open("stdout.log", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600), "wb")
         stderr_file = os.fdopen(os.open("stderr.log", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600), "wb")
     try:
@@ -238,14 +278,15 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
                     "job_id": input_data["job_id"], "attempt_id": input_data["attempt_id"], "pid": child.pid,
                     "start_identity": capture(child.pid)})
         while child.poll() is None:
-            if adapter in CHEMICAL_ADAPTERS:
+            if adapter in MONITORED_ADAPTERS:
                 try:
                     process = psutil.Process(child.pid)
                     rss = process.memory_info().rss + sum(member.memory_info().rss
                         for member in process.children(recursive=True) if member.is_running())
-                    if (rss > 2 * 1024 * 1024 * 1024 or
-                            Path("stdout.log").stat().st_size > 1024 * 1024 or
-                            Path("stderr.log").stat().st_size > 1024 * 1024):
+                    if (rss > RSS_LIMIT or
+                            Path("stdout.log").stat().st_size > STREAM_LIMIT or
+                            Path("stderr.log").stat().st_size > STREAM_LIMIT or
+                            (adapter == POCKET_ADAPTER and pocket_output_exceeded())):
                         reason = "resource_exceeded"
                         break
                 except (psutil.NoSuchProcess, ProcessLookupError):
@@ -270,7 +311,7 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
             unexpected = members(pgid, own)
         except (OSError, psutil.Error, IdentityUnavailable):
             unexpected = [{"enumeration_failed": True}]
-        clean, known = cleanup(pgid, own, child, 2.0 if adapter in CHEMICAL_ADAPTERS else 0.7)
+        clean, known = cleanup(pgid, own, child, 2.0 if adapter in MONITORED_ADAPTERS else 0.7)
     payload = None
     if adapter == "internal_lifecycle_fixture":
         try:
@@ -281,7 +322,8 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
     elif reason == "completed" and returncode == 0:
         try:
             path = Path("result.json")
-            output_limit = 30 * 1024 * 1024 if adapter in CHEMICAL_ADAPTERS else 64_000_000
+            output_limit = (30 * 1024 * 1024 if adapter in CHEMICAL_ADAPTERS else
+                            64 * 1024 if adapter == POCKET_ADAPTER else 64_000_000)
             if path.is_symlink() or not path.is_file() or path.stat().st_size > output_limit:
                 raise ValueError("invalid scientific output")
             raw = path.read_bytes()
