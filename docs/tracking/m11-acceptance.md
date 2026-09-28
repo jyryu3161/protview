@@ -22,7 +22,7 @@
 | # | 지적 | 처리 |
 |---|---|---|
 | 1 | 잘못된 작업 출력의 예외(IndexError·AttributeError)가 작업을 running에 남김 | 수정: 인덱스·형식 검사를 앞으로, 예상 밖 예외는 typed failed. 실제 작업 프로세스 테스트 |
-| 2 | 전역 작업 검사가 화학 작업 약 47개 뒤 256 MiB 한도로 모든 작업을 막음 | 수정: 줄 단위 스트리밍, 수명 주기 외 줄은 파싱 없이 건너뜀, 한도를 사건 수·시간 기준으로. 1.3 GB 루트 0.9초 |
+| 2 | 전역 작업 검사가 화학 작업 약 47개 뒤 256 MiB 한도로 모든 작업을 막음 | 수정: 줄 단위 스트리밍, 수명 주기 외 줄은 파싱 없이 건너뜀, 한도를 사건 수·시간 기준으로. 1.3 GB 루트 약 0.9초(로컬 1회 측정, 로그 미커밋) |
 | 3 | HTTP 경로의 `JobQueue` 생성이 여전히 잠금·색인 재작성 | 수정: 생성자에서 제거, 색인은 쓰는 쪽과 `claim_next`만 |
 | 4 | 테스트가 공개 예제 결과 개수(36, 32/1/1/2)를 기대값으로 확인 | 사용자 결정: "고정 엔진 회귀 기준값"으로 표시하고 잠금 파일 해시(`be320702…999a`)에 묶음. 행별 거리·각도·원소·결합을 다시 계산하는 독립 검사(`backend/tests/chemical_row_oracle.py`) 추가. 제품 코드에는 개수 없음 |
 | 5 | guardian 메모리 검사의 `psutil.AccessDenied` 미처리 | 수정: `resource_monitor_unavailable`로 정리 후 RESULT |
@@ -68,6 +68,10 @@ M11이 공유 소스(README, `app.py`, `queue.py`, `guardian.py`, `handles.py`, 
 - `docs/M11_OFFSCREEN_QA_PLAN.md`: `/tmp/protview-m11-qa-20260927/` 입력 경로와 GPT-6 Sol/Astra 역할. 현재 실행 방법은 `docs/operations.md`.
 - `docs/HARNESS.md`: `/harness` 명령과 전역 검사 256 MiB 한도. 현재 한도는 `docs/engineering-notes.md`.
 - `docs/M11_CHEMICAL_INTERACTIONS_CONTRACT.md`, `phases/protview-chemical-interactions/step0.md`: Astra 검토·부모 기록 절차. 실제 검토는 Opus 5.5가 했다.
+
+## 최종 검토 참고 사항
+- 코드 검토 승인은 `0926e42` 파일 해시 앞 16자에 묶여 있다. 고정 소스 `4ec584f`의 전체 해시는 증거 폴더의 `source-hashes.json`에 있다.
+- `execute_claim`에서 차단 기록을 남기려고 소유 잠금 파일을 여는 중 `OSError`가 나면 원래 거부 사유 대신 그 오류가 보일 수 있다. 정상 사용에서는 일어나지 않아 고치지 않았다.
 
 ## 남은 문제
 `docs/tracking/findings.md`에 기록: 중복 Host 한계, 이벤트 로그 전체 재파싱 비용, GO 전에 guardian이 끝난 작업의 running 잔류, 긴 시작 응답 복구의 오프스크린 미검증, 하네스 증거 형식 개선, ProLIF Linux 잠금 파일.

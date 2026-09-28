@@ -1,6 +1,6 @@
 # 0014. M11 완료는 새 흐름 문서에 기록하고 옛 단계 기록은 pending으로 둔다
 
-- 상태: 채택 (사용자 결정 2026-09-27)
+- 상태: 채택 (사용자 결정 2026-09-28)
 
 ## 배경
 `phases/protview-chemical-interactions/index.json`은 옛 실행기 형식이다. 여기에 `completed`를 적으면 GPT-6 Astra 검토를 받은 것처럼 보이지만, M11은 Opus 5.5 서브에이전트가 검토했다(결정 0002).
