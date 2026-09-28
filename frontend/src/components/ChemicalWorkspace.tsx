@@ -630,7 +630,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
             <p>{blocker.code}: {blocker.message}</p>
             {blocker.atoms.length > 0 && <details><summary>문제가 있는 정확한 원자 {blocker.atoms.length}개</summary>
               {blocker.atoms.map((ref, index) => <p className="mw-mono" key={`${ref.site_index}:${index}`}>
-                {atomLabel(ref)} · model {ref.residue.model_number} · auth {ref.residue.chain_auth}/{ref.residue.seq_auth}{ref.residue.icode}
+                {atomLabel(ref)} · model {ref.residue.model_number} · auth {ref.residue.chain_auth}/{ref.residue.seq_auth}{ref.residue.icode}{" "}
                 · label {ref.residue.chain_label ?? "?"}/{ref.residue.seq_label ?? "?"} · site {ref.site_index}</p>)}</details>}
           </div>)}
           {preview.limitations.map((item, i) => <p key={i} className="mw-muted">{item}</p>)}

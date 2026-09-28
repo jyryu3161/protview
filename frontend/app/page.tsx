@@ -16,10 +16,11 @@ import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerBinding, ViewerBridge } from "@/components/MolstarViewer";
 import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgentPanel";
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
+import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
-import { atomLabel, catalogAttemptKey, catalogForAttempt, catalogResponseCurrent,
+import { atomLabel, catalogAttemptKey, catalogForAttempt, catalogResponseCurrent, retainCatalogState,
   comparisonViewChangeRevokes, comparisonViewIntentKey,
   sameComparisonAction, sameResidueRef, singleSourceSceneCompatible,
   type AtomCatalog, type AtomDistance, type AtomRefV1, type RigidAlignment } from "@/lib/comparison";
@@ -408,7 +409,7 @@ export default function WorkspacePage() {
     setAtomCatalogError("");
     api.allAtoms(runId, displaySource.handle, signal).then(catalog => {
       if (active && catalogResponseCurrent(key, atomCatalogRequestRef.current,
-        catalog.structure_handle, displaySource.handle)) setAtomCatalogState({ key, catalog });
+        catalog.structure_handle, displaySource.handle)) setAtomCatalogState(previous => retainCatalogState(previous, key, catalog));
     }).catch(e => { if (active && atomCatalogRequestRef.current === key)
       setAtomCatalogError(`원자 목록 읽기 실패: ${e instanceof Error ? e.message : String(e)}`); });
     return () => { active = false; controller.abort(); };
@@ -1369,7 +1370,8 @@ export default function WorkspacePage() {
     ]} />}
     canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{comparisonContext ? `두 구조 비교 · 기준 ${comparisonContext.result.reference_model_number} / 이동 ${comparisonContext.result.moving_model_number}` : sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
       {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}</>}
-    strip={<>{runId && <Button size="sm" onClick={() => {
+    strip={<>{runId && <Button size="sm" disabled={!!chemicalEntryBlockedReason(busy)}
+      title={chemicalEntryBlockedReason(busy) ?? undefined} onClick={() => {
       cancelPendingRestore(); revokeComparisonAction(); viewerBridgeRef.current?.invalidate();
       setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
       setMeasurementSelection(null); setComparisonContext(null); setFocusPair(null);

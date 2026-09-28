@@ -88,6 +88,11 @@ export function canonicalChemicalElement(symbol: string): string {
   return symbol.trim().toUpperCase();
 }
 
+/** Every busy page action ends in a run reopen that closes the chemical workspace, so entry waits for it. */
+export function chemicalEntryBlockedReason(busy: string): string | null {
+  return busy ? `${busy} 끝난 뒤 열 수 있습니다.` : null;
+}
+
 export function canHydrateChemicalJobs(requestRun: string, currentRun: string,
   selectionAtStart: number, currentSelection: number,
   jobs: { run_id: string; protocol_id: string }[]): boolean {

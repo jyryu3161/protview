@@ -20,7 +20,7 @@ const { exactChemicalRow, validateChemicalCatalog, chemicalAnnotationForRow,
   chemicalApprovalRequired, previewMatchesRequest, canonicalChemicalElement,
   canHydrateChemicalJobs, chemicalJobActionCurrent, chemicalCanCancel, declaredTerminalNames,
   completedChemicalResultHandles, linkedChemicalJobs, waitForChemicalCameraSettle, settleChemicalFocus,
-  chemicalFocusSettleTimeoutMs, chemicalFocusTimeoutMessage } =
+  chemicalFocusSettleTimeoutMs, chemicalFocusTimeoutMessage, chemicalEntryBlockedReason } =
   load("chemical", { "./comparison": comparison });
 const { chemicalFailureDetails } = load("chemical", { "./comparison": comparison });
 const { collectChemicalAtomCatalog } = load("chemical", { "./comparison": comparison });
@@ -402,4 +402,15 @@ test("an idempotent submission that returns an existing job is not announced as 
   assert.match(reused, /done/);
   assert.match(chemicalSubmitStatus("prepare", { job_id: "job_p", status: "queued" }), /준비 작업이 저장되었습니다/);
   assert.match(chemicalSubmitStatus("prepare", { job_id: "job_p", status: "failed" }), /기존 작업.*failed/);
+});
+
+test("the chemical workspace cannot open while a pending run action will reopen the page", () => {
+  // Every busy page action (boot, 새 run, run switch, upload, commands) ends in a run reopen that
+  // closes the chemical workspace; opening it in between would be silently undone by the older action.
+  for (const busy of ["서버 연결 중…", "run 생성 중…", "run 불러오는 중…", "compute_interactions 실행 중…"]) {
+    const reason = chemicalEntryBlockedReason(busy);
+    assert.ok(reason, busy);
+    assert.ok(reason.includes(busy), `reason does not name the pending action: ${reason}`);
+  }
+  assert.equal(chemicalEntryBlockedReason(""), null);
 });
