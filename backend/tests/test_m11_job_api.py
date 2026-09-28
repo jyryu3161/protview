@@ -11,6 +11,7 @@ from pathlib import Path
 
 import psutil
 import pytest
+from chemical_row_oracle import PINNED_GOLDEN_LOCK_SHA256, assert_rows_independently_valid
 from fastapi.testclient import TestClient
 
 from mw import chemical_bundle
@@ -422,6 +423,12 @@ def test_public_fixture_jobs_report_and_events_only_recovery(tmp_path, monkeypat
     handle = detected["artifacts"]["chemical_interaction_set"]
     result = client.get(f"/runs/{rid}/chemical/results", params={"handle": handle})
     assert result.status_code == 200, result.text
+    stored_graph = client.get(f"/runs/{rid}/chemical/graphs", params={"handle": graph})
+    assert stored_graph.status_code == 200, stored_graph.text
+    # Independent per-row oracle over the served result and graph (engine coordinates, criteria).
+    assert_rows_independently_valid(result.json()["result"], stored_graph.json()["graph"])
+    # Pinned-engine regression golden for this public fixture, tied to the locked wheel set.
+    assert result.json()["result"]["dependency_manifest"]["lock_sha256"] == PINNED_GOLDEN_LOCK_SHA256
     assert result.json()["result"]["total"] == 36
     page = client.get(f"/runs/{rid}/chemical/results/rows", params={"handle": handle,
                         "category": "HBDonor", "offset": 0, "limit": 100})
@@ -432,7 +439,7 @@ def test_public_fixture_jobs_report_and_events_only_recovery(tmp_path, monkeypat
     downloads = {fmt: client.get(f"/runs/{rid}/reports/download",
                                  params={"handle": report_handle, "format": fmt}).content
                  for fmt in ("markdown", "json")}
-    assert b"36 assignments" in downloads["markdown"]
+    assert b"36 assignments" in downloads["markdown"]  # pinned-engine golden, lock-hash checked above
     report_json = json.loads(downloads["json"])
     assert report_json["result_handle"] == handle
     coordinate_provenance = report_json["coordinate_provenance"]
@@ -1009,11 +1016,82 @@ def test_global_ledger_rejects_symlink_and_aggregate_overflow(tmp_path, monkeypa
     second = tmp_path / "run_second"
     second.mkdir()
     (second / "events.lock").touch()
-    (second / "events.jsonl").write_text(row)
-    monkeypatch.setattr(queue_module, "MAX_GLOBAL_EVENT_SCAN", len(row.encode()) + 1)
-    with pytest.raises(ToolFailure) as overflow, _global_worker_slot(contender):
+    lifecycle = [{"seq": 1, "type": "run_started"},
+                 {"seq": 2, "type": "job_claimed", "job_id": "job_a", "owner_token": "o"},
+                 {"seq": 3, "type": "job_terminal", "job_id": "job_a", "status": "cancelled"}]
+    (second / "events.jsonl").write_text("".join(json.dumps(item, sort_keys=True) + "\n" for item in lifecycle))
+    with _global_worker_slot(contender):
         pass
-    assert overflow.value.detail["reason_code"] == "global_job_ledger_unavailable"
+    # Each bound that replaced the old aggregate byte bound fails closed on its own.
+    for name, value in (("MAX_GLOBAL_LIFECYCLE_EVENTS", 1), ("MAX_GLOBAL_EVENT_LINE", 10),
+                        ("MAX_GLOBAL_SCAN_S", 0.0), ("MAX_GLOBAL_RUN_ENTRIES", 1)):
+        with monkeypatch.context() as patch:
+            patch.setattr(queue_module, name, value)
+            with pytest.raises(ToolFailure) as overflow, _global_worker_slot(contender):
+                pass
+        assert overflow.value.detail["reason_code"] == "global_job_ledger_unavailable", name
+    # A torn final record (no newline) is never skipped as unrelated payload.
+    (second / "events.jsonl").write_text(json.dumps(lifecycle[0], sort_keys=True) + "\n" + '{"seq": 2, "da')
+    with pytest.raises(ToolFailure) as torn, _global_worker_slot(contender):
+        pass
+    assert torn.value.detail["reason_code"] == "global_job_ledger_unavailable"
+
+
+def _ledger(directory: Path, records: list[dict]) -> None:
+    """Write a ledger through the product EventLog so the skip format is the persisted one."""
+    from mw.core.events import EventLog
+
+    log = EventLog(directory / "events.jsonl")
+    for record in records:
+        log.append(record.pop("type"), **record)
+
+
+def test_global_ledger_scan_ignores_payload_bytes_but_not_unclosed_guardians(tmp_path, monkeypatch):
+    # Labeled synthetic ledgers: M11 job_submitted events embed the ~5 MB selected worker input and
+    # object_created events embed whole payloads. Their bytes must not exhaust the gate, but an
+    # unclosed dispatch among them must still block. No scientific value is produced here.
+    contender = tmp_path / "run_contender"
+    contender.mkdir()
+    blob = "x" * (12 * 1024 * 1024)
+    for index in range(24):  # ~576 MiB of unrelated payload, more than twice the old 256 MiB bound
+        job_id = f"job_{index:04d}"
+        _ledger(tmp_path / f"run_heavy{index:04d}", [
+            {"type": "run_started", "run_id": f"run_heavy{index:04d}"},
+            {"type": "job_submitted", "job": {"job_id": job_id, "selected": {"payload": blob},
+                                              "note": '"type": "job_dispatch_intent"'}},
+            {"type": "object_created", "handle": "obj://x", "payload": {"type": "job_dispatch_intent",
+                                                                         "job_id": job_id, "blob": blob}},
+            {"type": "job_claimed", "job_id": job_id, "owner_token": "owner"},
+            {"type": "job_dispatch_intent", "job_id": job_id, "attempt_id": "attempt_a"},
+            {"type": "job_cleanup_verified", "job_id": job_id, "attempt_id": "attempt_a", "group_empty": True},
+            {"type": "job_terminal", "job_id": job_id, "attempt_id": "attempt_a", "status": "done"}])
+    parsed = []
+    real_loads = queue_module.json.loads
+
+    def counting_loads(raw, *args, **kwargs):
+        parsed.append(len(raw))
+        return real_loads(raw, *args, **kwargs)
+
+    monkeypatch.setattr(queue_module.json, "loads", counting_loads)
+    started = time.monotonic()
+    with _global_worker_slot(contender):
+        pass
+    elapsed = time.monotonic() - started
+    assert parsed and max(parsed) < 4096, "payload-bearing records must be skipped without parsing"
+    assert elapsed < queue_module.MAX_GLOBAL_SCAN_S
+    monkeypatch.setattr(queue_module.json, "loads", real_loads)
+
+    _ledger(tmp_path / "run_unclosed", [
+        {"type": "run_started", "run_id": "run_unclosed"},
+        {"type": "job_submitted", "job": {"job_id": "job_live", "selected": {"payload": blob}}},
+        {"type": "job_claimed", "job_id": "job_live", "owner_token": "owner"},
+        {"type": "job_dispatch_intent", "job_id": "job_live", "attempt_id": "attempt_live"},
+        {"type": "object_created", "handle": "obj://y", "payload": {"type": "job_terminal",
+                                                                     "job_id": "job_live", "blob": blob}}])
+    with pytest.raises(ToolFailure) as unclosed, _global_worker_slot(contender):
+        pass
+    assert unclosed.value.detail["reason_code"] == "global_job_cleanup_pending"
+    assert unclosed.value.detail["jobs"] == ["run_unclosed/job_live"]
 
 
 def test_global_gate_remains_closed_after_real_owner_death_until_recovery(tmp_path):
@@ -1090,3 +1168,196 @@ q.claim_next('owner');q.execute_claim(job['job_id'],'owner')
     path.write_text("".join(json.dumps(row) + "\n" for row in records))
     with _global_worker_slot(tmp_path / "run_contender"):
         pass
+
+
+def _objects_of(root: Path, rid: str, kinds: set[str]) -> list[dict]:
+    events = [json.loads(line) for line in (root / rid / "events.jsonl").read_text().splitlines()]
+    return [e for e in events if e["type"] == "object_created" and e.get("kind") in kinds]
+
+
+def test_unexpected_worker_output_parser_errors_end_typed_failed_and_release_global_gate(tmp_path, monkeypatch):
+    # Labeled fault injection: the genuine pinned worker runs and exits cleanly; only its bounded
+    # output handed to the publisher is corrupted afterwards. No scientific value is asserted.
+    root = tmp_path / "runs"
+    monkeypatch.setattr(api_module, "RUNS_DIR", root)
+    api_module.RUNS.clear()
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
+    rid = client.post("/runs", json={"goal": "labeled malformed worker output fixture",
+                                      "dry_run": False}).json()["run_id"]
+    request = _prepare_request(client, rid)
+    other = root / "run_gate_probe"
+    other.mkdir()
+    real_prepare, real_detect = chemical_bundle.publish_prepare, chemical_bundle.publish_detect
+
+    def gate_open() -> bool:
+        return queue_module._unclosed_jobs(root, other.name, lambda: False, time.monotonic() + 1) == []
+
+    def non_string_element(run, job, attempt_id, output):
+        output["ligand_atoms"][0]["element"] = 6
+        return real_prepare(run, job, attempt_id, output)
+
+    job_id = _submitted_approved(client, rid, request)
+    with monkeypatch.context() as patch:
+        patch.setattr(chemical_bundle, "publish_prepare", non_string_element)
+        failed = client.post(f"/runs/{rid}/jobs/{job_id}/start")
+    assert failed.status_code == 200 and failed.json()["status"] == "failed", failed.text
+    assert failed.json()["failure"]["message"] == "invalid scientific output"
+    assert failed.json()["output_handles"] == [] and gate_open()
+    assert not _objects_of(root, rid, set(queue_module.CHEMICAL_DERIVED_KINDS))
+    assert client.post(f"/runs/{rid}/jobs/{job_id}/retry").status_code == 200
+    prepared = client.post(f"/runs/{rid}/jobs/{job_id}/start")
+    assert prepared.status_code == 200 and prepared.json()["status"] == "done", prepared.text
+
+    detect = {"schema": "chemical_detect_request@1", "graph_handle": prepared.json()["artifacts"]["chemical_graph"],
+              "categories": ["HBDonor", "HBAcceptor", "Hydrophobic", "Cationic", "Anionic"]}
+    submitted = client.post(f"/runs/{rid}/jobs", json={"protocol_id": "prolif_detect_v1", "args": detect,
+                                                     "timeout_s": 120})
+    assert submitted.status_code == 200, submitted.text
+    detect_id = submitted.json()["job_id"]
+
+    def empty_parent_indices(run, job, attempt_id, output):
+        for row in output["native_rows"]:
+            row["parent_indices"]["ligand"] = []
+            row["within_residue_indices"]["ligand"] = []
+        return real_detect(run, job, attempt_id, output)
+
+    def unexpected_parser_error(run, job, attempt_id, output):
+        raise AttributeError("fault injection: an unanticipated parser exception type")
+
+    for attempt, fault in enumerate((empty_parent_indices, unexpected_parser_error), 1):
+        if attempt > 1:
+            assert client.post(f"/runs/{rid}/jobs/{detect_id}/retry").status_code == 200
+        with monkeypatch.context() as patch:
+            patch.setattr(chemical_bundle, "publish_detect", fault)
+            response = client.post(f"/runs/{rid}/jobs/{detect_id}/start")
+        assert response.status_code == 200, response.text
+        job = response.json()
+        assert job["status"] == "failed" and job["attempt_ordinal"] == attempt
+        assert job["failure"]["message"] == "invalid scientific output"
+        assert job["cleanup_status"] == "verified" and job["output_handles"] == []
+        assert client.get(f"/runs/{rid}/jobs/{detect_id}").json()["status"] == "failed"
+        assert not _objects_of(root, rid, {"chemical_interaction_set"})
+        assert gate_open()
+    assert client.post(f"/runs/{rid}/jobs/{detect_id}/retry").status_code == 200
+    recovered = client.post(f"/runs/{rid}/jobs/{detect_id}/start")
+    assert recovered.status_code == 200 and recovered.json()["status"] == "done", recovered.text
+    assert gate_open()
+
+
+def _hold_lock(path: Path) -> subprocess.Popen:
+    process = subprocess.Popen(
+        [sys.executable, "-u", "-c",
+         ("import fcntl,os,sys,time; f=os.open(sys.argv[1],os.O_CREAT|os.O_RDWR,0o600); "
+          "fcntl.flock(f,fcntl.LOCK_EX); print('locked',flush=True); time.sleep(20)"), str(path)],
+        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    assert process.stdout.readline().strip() == "locked"
+    return process
+
+
+def test_http_job_reads_do_not_wait_for_or_take_the_transition_lock(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path)
+    api_module.RUNS.clear()
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
+    rid = client.post("/runs", json={"goal": "lock-free job read fixture", "dry_run": False}).json()["run_id"]
+    run = api_module._run(rid)
+    job_id = JobQueue(run, fixture_mode="normal").submit_fixture()["job_id"]
+    index = run.run_dir / "jobs.sqlite"
+    index_before = index.read_bytes()
+    holder = _hold_lock(run.run_dir / "transitions.lock")
+    responses: dict[str, object] = {}
+    try:
+        def read() -> None:
+            responses["list"] = client.get(f"/runs/{rid}/jobs")
+            responses["detail"] = client.get(f"/runs/{rid}/jobs/{job_id}")
+
+        reader = threading.Thread(target=read)
+        started = time.monotonic()
+        reader.start()
+        reader.join(5)
+        elapsed = time.monotonic() - started
+        assert not reader.is_alive(), "HTTP job reads blocked on another transition-lock holder"
+        assert elapsed < 2
+        assert responses["list"].status_code == 200 and responses["list"].json()[0]["job_id"] == job_id
+        assert responses["detail"].status_code == 200 and responses["detail"].json()["status"] == "queued"
+        assert index.read_bytes() == index_before  # reads never rewrite the derived index
+    finally:
+        holder.terminate()
+        holder.communicate(timeout=3)
+        reader.join(5)
+
+
+def test_global_refusal_block_note_uses_owner_lock_order(tmp_path):
+    (tmp_path / "run_slot_holder").mkdir()
+    run = new_run(tmp_path, run_id="run_owner_order", dry_run=False)
+    queue = JobQueue(run, fixture_mode="normal")
+    job_id = queue.submit_fixture()["job_id"]
+    queue.claim_next("owner")
+
+    def blocked_notes() -> int:
+        return sum(e["type"] == "job_blocked" for e in run.events.read())
+
+    with _global_worker_slot(tmp_path / "run_slot_holder"):
+        owner = _hold_lock(run.run_dir / "execution.lock")
+        try:
+            with pytest.raises(ToolFailure) as busy:
+                queue.execute_claim(job_id, "owner")
+            # The original refusal propagates; a live foreign owner is not bypassed for the note.
+            assert busy.value.detail["reason_code"] == "global_concurrency_busy"
+            assert blocked_notes() == 0
+        finally:
+            owner.terminate()
+            owner.communicate(timeout=3)
+        with pytest.raises(ToolFailure) as busy:
+            queue.execute_claim(job_id, "owner")
+        assert busy.value.detail["reason_code"] == "global_concurrency_busy"
+        assert blocked_notes() == 1
+        assert queue.get(job_id)["blocked_reason"] == "global_concurrency_busy"
+    run.approve("expensive_first_call")
+    assert queue.execute_claim(job_id, "owner")["status"] == "done"
+
+
+def test_chemical_dependency_handshake_is_cached_per_interpreter_lock_and_worker(tmp_path, monkeypatch):
+    spawned = []
+    real_run = chemical_bundle.subprocess.run
+
+    def counting_run(argv, *args, **kwargs):
+        spawned.append(argv[0])
+        return real_run(argv, *args, **kwargs)
+
+    monkeypatch.setattr(chemical_bundle.subprocess, "run", counting_run)
+    monkeypatch.setattr(chemical_bundle, "_DEPENDENCY_CACHE", {})
+    first = chemical_bundle.dependency()
+    for _ in range(3):
+        assert chemical_bundle.dependency() == first
+        assert chemical_capability()["available"] is True
+    public = TestClient(api_module.app, base_url="http://127.0.0.1").get("/capabilities")
+    assert public.json()["methods"]["chemical_interactions"]["available"] is True
+    assert len(spawned) == 1, "a verified handshake is reused while its keys are unchanged"
+    first["versions"]["prolif"] = "mutated by caller"
+    assert chemical_bundle.dependency()["versions"]["prolif"] == "2.2.2"
+
+    # The key is the lock-file content hash, not its path: an identical copy stays cached.
+    lock_bytes = chemical_bundle.LOCK.read_bytes()
+    lock_copy = tmp_path / chemical_bundle.LOCK.name
+    lock_copy.write_bytes(lock_bytes)
+    monkeypatch.setattr(chemical_bundle, "LOCK", lock_copy)
+    chemical_bundle.dependency()
+    assert len(spawned) == 1
+    # A changed lock file forces a fresh handshake; the mismatch fails and is never cached.
+    lock_copy.write_bytes(lock_bytes + b"\n")
+    for expected_spawns in (2, 3):
+        with pytest.raises(ToolFailure):
+            chemical_bundle.dependency()
+        assert len(spawned) == expected_spawns
+    lock_copy.write_bytes(lock_bytes)
+    chemical_bundle.dependency()
+    assert len(spawned) == 3  # original key is still the cached verified handshake
+    # A different worker interpreter path is a different key.
+    alias = tmp_path / "python-alias"
+    alias.symlink_to(chemical_bundle.WORKER_PYTHON)
+    monkeypatch.setattr(chemical_bundle, "WORKER_PYTHON", alias)
+    try:
+        chemical_bundle.dependency()
+    except ToolFailure:
+        pass
+    assert len(spawned) == 4 and spawned[-1] == str(alias)

@@ -249,7 +249,14 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
                         reason = "resource_exceeded"
                         break
                 except (psutil.NoSuchProcess, ProcessLookupError):
-                    pass
+                    pass  # the worker exited between poll and sampling; poll() observes it next
+                except (psutil.Error, OSError):
+                    # AccessDenied or any other sampling failure leaves the memory/output limits
+                    # unenforced for a live worker. Fail closed: stop it, clean up, and still report
+                    # RESULT. A worker that already exited has nothing left to limit.
+                    if child.poll() is None:
+                        reason = "resource_monitor_unavailable"
+                        break
             command = receive(sock, 0.025)
             if command is None or command.get("kind") == "STOP":
                 reason = "parent_eof" if command is None else "stopped"
