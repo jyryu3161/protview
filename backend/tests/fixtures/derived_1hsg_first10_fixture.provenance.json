@@ -1,0 +1,12 @@
+{
+  "file": "derived_1hsg_first10_fixture.cif",
+  "sha256": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+  "bytes": 8121,
+  "label": "derived fixture; not experimental evidence (a truncated fragment of a public entry, not an observed structure)",
+  "source": "backend/tests/fixtures/public_1hsg.cif (public PDB entry 1HSG)",
+  "source_sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+  "extraction_rule": "Header 'data_1HSG_DERIVED_FIRST10', '#', 'loop_', then the source _atom_site header lines verbatim, then the source _atom_site rows verbatim (file order) with group_PDB ATOM and auth_comp_id among the 20 standard residues that belong to the first 10 distinct residues (key: model, auth_asym_id, auth_seq_id, pdbx_PDB_ins_code, label_asym_id, label_seq_id, auth_comp_id) in file order, then '#'. File order equals the M12 projection order of the prepared source.",
+  "expected_projection": {"residues": 10, "heavy_atoms": 88, "note": "contract size of the derived fixture, checked by the test; not a scientific result"},
+  "generator": "backend/tests/test_pockets.py::derived_first10_bytes (the test regenerates and compares bytes)",
+  "purpose": "M12 small real-engine input (empty-result path probe); any engine outcome on it is not a binding-site observation"
+}
