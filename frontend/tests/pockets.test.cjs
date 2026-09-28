@@ -130,6 +130,22 @@ test("stale responses are ignored after run, action, source, set or rank changes
     assert.equal(p.pocketActionCurrent(captured, { ...captured, [field]: value }), false, field);
 });
 
+test("a panel that unmounted (run switch) never applies a late response, even with an unchanged stamp", () => {
+  const captured = { runId: "run-a", action: 3, source: "src-a", setHandle: "set-a", rank: 1 };
+  assert.equal(p.pocketActionCurrent(captured, { ...captured }, true), true);
+  assert.equal(p.pocketActionCurrent(captured, { ...captured }, false), false);
+});
+
+test("the host rejects overlay and show-source requests from another run or an unknown source", () => {
+  const current = { runId: "run-b", sourceHandles: ["obj://run-b/prepared_structure/1"] };
+  assert.equal(p.pocketRequestAccepted(null, current), true, "clearing is always allowed");
+  assert.equal(p.pocketRequestAccepted({ runId: "run-b", sourceHandle: "obj://run-b/prepared_structure/1" }, current), true);
+  assert.equal(p.pocketRequestAccepted({ runId: "run-a", sourceHandle: "obj://run-b/prepared_structure/1" }, current), false);
+  assert.equal(p.pocketRequestAccepted({ runId: "run-b", sourceHandle: "obj://run-a/prepared_structure/1" }, current), false);
+  assert.equal(p.pocketRequestAccepted({ runId: "run-a", sourceHandle: "obj://run-a/prepared_structure/1" },
+    { runId: null, sourceHandles: [] }), false, "no current run accepts nothing");
+});
+
 test("an overlay binds only to its displayed source and clears with a reason when the display changes", () => {
   const request = { key: "k", sourceHandle: "src-a" };
   same(p.overlayContextDecision(null, null, "ctx-1", "src-a", true), { action: "none", reason: null });

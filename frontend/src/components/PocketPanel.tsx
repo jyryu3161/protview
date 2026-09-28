@@ -35,8 +35,8 @@ export interface PocketPanelProps {
   overlayError: string | null;
   overlayNotice: string | null;
   onOverlay: (request: PocketOverlayRequest | null) => void;
-  /** Main panel only: display the stored pocket source in the ordinary viewer. */
-  onShowSource?: (handle: string, kind: PocketSourceKind) => void;
+  /** Main panel only: display the stored pocket source in the ordinary viewer. The host rejects another run's request. */
+  onShowSource?: (runId: string, handle: string, kind: PocketSourceKind) => void;
   onReturnToSource: () => void;
 }
 
@@ -77,7 +77,16 @@ export function PocketPanel(p: PocketPanelProps) {
   live.current = { runId, action: action.current, source: sourceHandle || null, setHandle: setHandle || null, rank: selectedRank };
   const stamp = (overrides: Partial<PocketActionStamp> = {}): PocketActionStamp =>
     ({ ...live.current, action: ++action.current, ...overrides });
-  const current = (captured: PocketActionStamp) => pocketActionCurrent(captured, { ...live.current, action: action.current });
+  // Late responses must not reach a panel that unmounted (the panel is keyed by run) or the host of a newer run.
+  const mounted = useRef(true);
+  const latest = useRef(p);
+  latest.current = p;
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; action.current += 1; };
+  }, []);
+  const current = (captured: PocketActionStamp) =>
+    pocketActionCurrent(captured, { ...live.current, action: action.current }, mounted.current);
 
   const capability = p.capability ?? null;
   const sourceKind = p.sourceOptions.find(option => option.handle === sourceHandle)?.kind ?? null;
@@ -247,13 +256,15 @@ export function PocketPanel(p: PocketPanelProps) {
       if (!current(captured)) return;
       const problem = geometryError(geometry, { handle: summary.handle, rank, sourceHandle: summary.source_handle });
       if (problem) throw new Error(problem);
-      if (summary.source_handle !== p.displayedSourceHandle) {
-        if (!p.onShowSource) throw new Error("이 포켓 결과의 소스가 현재 표시된 구조와 다릅니다. 해당 구조를 표시한 뒤 다시 선택하세요.");
-        p.onShowSource(summary.source_handle, summary.source_kind);
+      const host = latest.current;
+      if (host.run.run_id !== runId) return;
+      if (summary.source_handle !== host.displayedSourceHandle) {
+        if (!host.onShowSource) throw new Error("이 포켓 결과의 소스가 현재 표시된 구조와 다릅니다. 해당 구조를 표시한 뒤 다시 선택하세요.");
+        host.onShowSource(runId, summary.source_handle, summary.source_kind);
       }
       const token = focusToken + 1;
       setFocusToken(token);
-      p.onOverlay(overlayRequest(runId, geometry, { showSpheres, showLining, opacity, focusToken: token }));
+      host.onOverlay(overlayRequest(runId, geometry, { showSpheres, showLining, opacity, focusToken: token }));
     } catch (e) { if (current(captured)) setSelectionError(`포켓 기하 읽기 실패: ${errorText(e)}`); }
     finally { setGeometryBusy(false); }
   }

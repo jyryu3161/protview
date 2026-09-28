@@ -151,9 +151,18 @@ export function cancelRerunNotice(job: { status: string; protocol_id: string } |
 
 export interface PocketActionStamp { runId: string | null; action: number; source: string | null;
   setHandle: string | null; rank: number | null }
-export function pocketActionCurrent(captured: PocketActionStamp, live: PocketActionStamp): boolean {
-  return captured.runId === live.runId && captured.action === live.action && captured.source === live.source &&
+/** `mounted` is false once the panel that issued the action unmounted (e.g. run switch); its frozen stamp is never current. */
+export function pocketActionCurrent(captured: PocketActionStamp, live: PocketActionStamp, mounted = true): boolean {
+  return mounted && captured.runId === live.runId && captured.action === live.action && captured.source === live.source &&
     captured.setHandle === live.setHandle && captured.rank === live.rank;
+}
+
+/** Host-side guard: a late overlay/show-source request from another run or for a source the current run does not
+ * offer is rejected. A null request (clear) is always accepted. */
+export function pocketRequestAccepted(request: { runId: string; sourceHandle: string } | null,
+                                      current: { runId: string | null; sourceHandles: readonly string[] }): boolean {
+  if (!request) return true;
+  return current.runId !== null && request.runId === current.runId && current.sourceHandles.includes(request.sourceHandle);
 }
 
 export function overlayContextDecision(request: { sourceHandle: string } | null, boundContext: string | null,

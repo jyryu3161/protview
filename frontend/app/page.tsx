@@ -17,7 +17,7 @@ import type { ViewerBinding, ViewerBridge } from "@/components/MolstarViewer";
 import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgentPanel";
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { PocketPanel } from "@/components/PocketPanel";
-import { featureGates, overlayContextDecision, type PocketOverlayReadback, type PocketOverlayRequest,
+import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
@@ -119,6 +119,8 @@ export default function WorkspacePage() {
   const [pocketView, setPocketView] = useState<{ handle: string; kind: Exclude<PocketSourceKind, "chemical_structure"> } | null>(null);
   const pocketKeyRef = useRef<string | null>(null);
   pocketKeyRef.current = pocketState?.request.key ?? null;
+  // Host-side stale guard: the run and pocket sources the screen currently shows (read by late callbacks).
+  const pocketHostRef = useRef<{ runId: string | null; sourceHandles: string[] }>({ runId: null, sourceHandles: [] });
   const [atomCatalogState, setAtomCatalogState] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
   const [atomCatalogError, setAtomCatalogError] = useState("");
   const [atomReadRetry, setAtomReadRetry] = useState(0);
@@ -258,6 +260,7 @@ export default function WorkspacePage() {
     const latest = latestHandles(log);
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
+    pocketHostRef.current = { runId: summary.run_id, sourceHandles: [] };
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
     setChemicalActive(false); setChemicalSceneToRestore(null);
     setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); setPocketNotice(null); setPocketView(null);
@@ -481,6 +484,7 @@ export default function WorkspacePage() {
   const sceneBlocked = m10SceneBlocked || !!pocketGates.m9;
   const pocketSourceOptions = sourceOptions.filter((item): item is { handle: string; kind: "prepared_structure" | "openmm_minimized_structure" } =>
     item.kind === "prepared_structure" || item.kind === "openmm_minimized_structure");
+  pocketHostRef.current = { runId: run?.run_id ?? null, sourceHandles: pocketSourceOptions.map(item => item.handle) };
   const pocketViewerReady = viewerReady && bridgeStateReady(viewerBridgeRef.current);
   useEffect(() => {
     const decision = overlayContextDecision(pocketState?.request ?? null, pocketState?.boundContext ?? null,
@@ -494,6 +498,7 @@ export default function WorkspacePage() {
   const pocketOverlayForViewer = pocketState && pocketState.boundContext === viewerContextKey &&
     displaySource?.handle === pocketState.request.sourceHandle ? pocketState.request : null;
   const requestPocketOverlay = (request: PocketOverlayRequest | null) => {
+    if (!pocketRequestAccepted(request, pocketHostRef.current)) return;
     setPocketOverlayError(null); setPocketNotice(null);
     if (!request) { setPocketState(null); setPocketReadback(null); return; }
     setPocketState(previous => ({ request, boundContext: previous && previous.request.key === request.key &&
@@ -1749,8 +1754,9 @@ export default function WorkspacePage() {
         blockedReason={pocketGates.pocket} overlay={pocketState?.request ?? null}
         overlayApplied={pocketReadback} overlayError={pocketOverlayError} overlayNotice={pocketNotice}
         onOverlay={requestPocketOverlay}
-        onShowSource={(handle, kind) => {
-          if (kind === "chemical_structure") return;
+        onShowSource={(requestRunId, handle, kind) => {
+          if (kind === "chemical_structure" || !pocketRequestAccepted({ runId: requestRunId, sourceHandle: handle },
+            pocketHostRef.current)) return;
           exitSceneOverride(); setOpenmmViewHandle(null); setDistanceSourceHandle("");
           setPocketView({ handle, kind });
         }}
