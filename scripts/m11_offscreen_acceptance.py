@@ -49,8 +49,8 @@ PHASES = ["main", "regressions", "replay", "capability-mismatch", "ledger"]
 MAIN_STEPS = ["capability-ready", "create", "empty", "prepare-only", "detect-controls", "job-controls",
               "job-controls-failure", "running-cancel", "attach-setup", "attach-map", "attach-replace",
               "reopen-complete", "restrictions", "faults", "invalid-inputs", "invalid-attach", "reopen"]
-REGRESSION_STEPS = ["regression-m8-normal", "regression-m9-scenes-core", "regression-m10-measure",
-                    "regression-m10-alignment"]
+REGRESSION_STEPS = ["regression-m8-normal", "regression-m9-openmm", "regression-m9-scenes-core",
+                    "regression-m10-measure", "regression-m10-alignment"]
 STEP_TIMEOUT_S = 1500
 
 
@@ -363,9 +363,17 @@ class Runner:
                                      "normal-flow.jsonl")
             if normal:
                 self.state["normalRun"] = normal["run"]
-        if self.wanted("regression-m9-scenes-core") and self.state.get("normalRun"):
+        # Original M9 QA order: scenes-core needs a run holding a completed OpenMM minimization
+        # (V05 saves the minimized-coordinate view), so it runs on the openmm-flow run.
+        if self.wanted("regression-m9-openmm"):
+            openmm = self.regression("regression-m9-openmm", "openmm-flow.cjs",
+                                     ["--fixture", str(REPO / "backend/tests/fixtures/public_1ubq.cif"),
+                                      "--mode", "full"], "openmm-full.jsonl")
+            if openmm:
+                self.state["scenesRun"] = openmm["run"]
+        if self.wanted("regression-m9-scenes-core") and self.state.get("scenesRun"):
             self.regression("regression-m9-scenes-core", "scenes-flow.cjs",
-                            ["--run", self.state["normalRun"], "--mode", "core"], "scenes-core.jsonl")
+                            ["--run", self.state["scenesRun"], "--mode", "core"], "scenes-core.jsonl")
         if self.wanted("regression-m10-measure"):
             self.regression("regression-m10-measure", "comparison-flow.cjs", ["--mode", "measure"],
                             "comparison-measure.jsonl")
@@ -509,7 +517,7 @@ class Runner:
                             check=False).stdout.splitlines()
         markers = [str(REPO / "backend/mw/jobs"), str(self.root)]
         left = [line.strip() for line in ps if any(marker in line for marker in markers) and
-                ("guardian.py" in line or "chemical_worker.py" in line)]
+                ("guardian.py" in line or "chemical_worker.py" in line or "openmm_worker.py" in line)]
         for port in (8000, 3000):
             listening = subprocess.run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
                                        capture_output=True, text=True, check=False).stdout.split()
