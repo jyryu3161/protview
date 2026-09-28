@@ -16,3 +16,4 @@
 | [0012](0012-live-model-calls-need-cap.md) | 실제 모델 호출은 매번 사용자가 횟수를 정한다 | 채택 |
 | [0013](0013-host-allowlist.md) | Host 허용 목록을 백엔드·프런트엔드 두 곳에, 중복 Host는 알려진 한계 | 채택 |
 | [0014](0014-m11-acceptance-record.md) | M11 완료는 새 흐름 문서에 기록, 옛 단계 기록은 pending | 채택 |
+| [0015](0015-scientific-data-egress-allowed.md) | 구조·좌표·서열·리간드의 외부 모델(JEV 등) 전송 허용, 단일 게이트·키 보호 유지 | 채택 (0005 일부 대체) |
