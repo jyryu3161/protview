@@ -40,6 +40,7 @@ from ..pocket_bundle import geometry as pocket_geometry
 from ..pocket_bundle import list_sets as list_pocket_sets
 from ..pocket_bundle import preflight as pocket_preflight
 from ..pocket_bundle import result_summary as pocket_result_summary
+from ..pocket_reports import build_pocket_report, saved_pocket_report
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
@@ -967,6 +968,9 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == "chemical_interaction_set":
             _completed_chemical(run, body.result_handle)
             return build_chemical_report(run, body.result_handle)
+        if kind == "pocket_set":
+            # Completion (single fpocket_detect_v1 publication) is validated inside the build.
+            return build_pocket_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -990,8 +994,9 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                  **({"interaction_handle": e["interaction_handle"]} if e["type"] == "report_created" else
                     {"result_handle": e["result_handle"],
                      "analysis_type": (run.store.load_bounded_json(e["report_handle"], 8 * 1024 * 1024)
-                                       if run.store.meta(e["report_handle"])["summary"].get("analysis_type") ==
-                                       "chemical_interactions" else run.store.load(e["report_handle"]))["analysis_type"]}),
+                                       if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
+                                       {"chemical_interactions", "pocket_detection"}
+                                       else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
     except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
@@ -1004,7 +1009,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
         return saved_report(run, handle)
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
         report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
-                  if meta["summary"].get("analysis_type") == "chemical_interactions" else run.store.load(handle))
+                  if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection"}
+                  else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
         if report.get("analysis_type") == "openmm_protein_minimize":
@@ -1014,6 +1020,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
         if report.get("analysis_type") == "chemical_interactions":
             _completed_chemical(run, report["result_handle"])
             return saved_chemical_report(run, handle)
+        if report.get("analysis_type") == "pocket_detection":
+            return saved_pocket_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
