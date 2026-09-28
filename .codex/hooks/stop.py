@@ -25,7 +25,8 @@ CHECKS = [
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_chemical_interactions.py"], {0}),
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_m11_job_api.py"], {0}),
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py",
-      "scripts/test_codex_hooks.py", "--ignore=backend/tests/test_chemical_interactions.py",
+      "scripts/test_codex_hooks.py", "scripts/test_setup_fpocket.py",
+      "--ignore=backend/tests/test_chemical_interactions.py",
       "--ignore=backend/tests/test_m11_job_api.py"], {0}),
 ]
 
