@@ -1,0 +1,49 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "harness": {
+    "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+  },
+  "startedAt": "2026-09-28T05:16:16.356249+00:00",
+  "finishedAt": "2026-09-28T05:16:17.537893+00:00",
+  "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-setup",
+  "cases": [],
+  "mode": "attach-setup",
+  "evidenceType": "labeled_api_setup",
+  "status": "pass",
+  "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+  "handles": {
+    "complex": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+    "sdfImport": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "fixtures": [
+    {
+      "name": "m11-attach-complex.pdb",
+      "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    }
+  ],
+  "provenanceLabels": [
+    "synthetic derivative attach complex; not experimental evidence",
+    "public ProLIF tutorial docking-pose SDF"
+  ],
+  "setupOutput": {
+    "out": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/runs/m11-acceptance-20260928/inputs/attach-setup",
+    "ligand_sdf": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+    "files": {
+      "m11-attach-bonds-run.json": "f919b735a14b7114d521483ff6fb50bce50e8d7d1d49dd896605e76b7413229f",
+      "m11-attach-request-run.json": "58e5ca56cc71b880195d61162bce672c00127e0cd226b300ef108c937d988880",
+      "m11-attach-mapping-run.json": "fdf5ae0549a2e93796223714e4d2f51bd1e70e8e7fedf19168649bd43f6816e8",
+      "m11-attach-mapping-replace-run.json": "4e8d0f95897913ed4b52e37eecd9ccc71b7d5f76ed486d511df15d891b938afa",
+      "m11-attach-ligand-instance-run.json": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95"
+    },
+    "mapping_count": 79,
+    "replacement_heavy_mapping_count": 43,
+    "sidecar_handle_set": false
+  },
+  "nonLoopbackRequests": 0,
+  "note": "Setup only (upload/load/import through loopback API); covers no H case."
+}

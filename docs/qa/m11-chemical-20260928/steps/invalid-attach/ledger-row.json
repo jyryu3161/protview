@@ -1,0 +1,67 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H05",
+    "H06"
+  ],
+  "mode": "invalid-attach",
+  "harnessMode": "invalid-attach",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+  },
+  "fixtures": [
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    },
+    {
+      "name": "m11-attach-ligand-instance-run.json",
+      "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+      "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+    },
+    {
+      "name": "m11-invalid-cases.json",
+      "bytes": 8895,
+      "sha256": "bdbd6fd3977a2ade47472693aead82fc69cfc01f86ed540274088e1201977ee8",
+      "provenance": "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)"
+    },
+    {
+      "name": "m11-invalid-covalent-ligand-bonds-run.json",
+      "sha256": "08c5cba479cbde026c1619dd934ad399944f6cc2e368253893ac61aa2f28cf7d",
+      "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+    }
+  ],
+  "provenanceLabels": [
+    "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+    "run-bound exact selected ligand instance from the QA run's source catalog",
+    "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)",
+    "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+  ],
+  "fixtureLabels": [],
+  "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+  "handles": {},
+  "expectCapability": null,
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 37,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/invalid-attach",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-09-28T05:23:31.573Z",
+  "finishedAt": "2026-09-28T05:23:45.038Z"
+}

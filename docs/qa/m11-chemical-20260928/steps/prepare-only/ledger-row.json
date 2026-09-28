@@ -1,0 +1,60 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H04",
+    "H07"
+  ],
+  "mode": "prepare-only",
+  "harnessMode": "prepare-only",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+  },
+  "fixtures": [
+    {
+      "name": "prolif-vina-rec.pdb",
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    }
+  ],
+  "provenanceLabels": [
+    "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+    "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+  ],
+  "fixtureLabels": [
+    "renderer-route fixture: labeled non-approval 409 on Start"
+  ],
+  "runId": "run_cf06945cf825421e805f27443c2aa47a",
+  "handles": {
+    "source": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+    "graph": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_graph/dc628d636a11ddc3f17f7344ffd2a45e76da439c25646ab46f0fc0f7dc2dba43",
+    "prepareJob": "job_c89e676f49c54030bb946a422f48fc3f"
+  },
+  "expectCapability": null,
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 70,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/prepare-only",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-09-28T05:15:16.702Z",
+  "finishedAt": "2026-09-28T05:15:38.060Z"
+}

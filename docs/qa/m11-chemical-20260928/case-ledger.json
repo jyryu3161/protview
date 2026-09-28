@@ -1,0 +1,2381 @@
+{
+  "schema": "m11_case_ledger@1",
+  "generatedAt": "2026-09-28T05:32:30.509Z",
+  "root": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928",
+  "buildIds": [
+    "aqV29Ar7twWJLHni63lRZ"
+  ],
+  "summary": {
+    "pass": 17,
+    "fail": 0,
+    "missing": 0
+  },
+  "nonLoopbackRequestsTotal": 0,
+  "rowsWithUnknownRequestCount": [],
+  "cases": {
+    "H01": {
+      "title": "Capability ready and missing/wrong-version worker",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "capability-ready",
+          "rows": [
+            {
+              "rowFile": "capability-ready/ledger-row.json",
+              "status": "pass",
+              "runId": "run_b4f60055c7b24a66b3ca70b89f7640eb",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "capability-worker_missing",
+          "rows": [
+            {
+              "rowFile": "capability-worker-missing/ledger-row.json",
+              "status": "pass",
+              "runId": "run_0cf7c00efcf248349d523d14b318444a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "capability-worker_version_invalid",
+          "rows": [
+            {
+              "rowFile": "capability-worker-version-invalid/ledger-row.json",
+              "status": "pass",
+              "runId": "run_2f15def64669483a9a736244303e7682",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_m11_job_api.py::test_job_capability_uses_scientific_dependency_validation"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": "Unavailable states use a labeled runtime layout (byte-identical backend copy without, or with a non-pinned, worker interpreter); never a fake success."
+    },
+    "H02": {
+      "title": "Local run, receptor/SDF upload, model/record choice, ligand identity",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_chemical_interactions.py::test_raw_import_reuses_exact_bytes_across_filenames_and_old_metadata",
+        "backend/tests/test_m11_job_api.py::test_identical_sdf_import_under_alternate_filename_keeps_immutable_handle"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H03": {
+      "title": "Connectivity (PDB CONECT and sidecar), acknowledgement, annotation, terminal declaration",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "attach-map_existing",
+          "rows": [
+            {
+              "rowFile": "attach-map/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_chemical_interactions.py::test_import_preview_and_exact_cap_declaration",
+        "backend/tests/test_chemical_interactions.py::test_custom_terminal_cap_uses_exact_graph_and_h_vertices_not_name_template"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H04": {
+      "title": "Create-new durable preparation with linked manifest/structure/graph",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_chemical_interactions.py::test_actual_native_create_detect_and_tamper_rejection"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H05": {
+      "title": "Attach-existing exact instance, bijection preview and H policy",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "attach-map_existing",
+          "rows": [
+            {
+              "rowFile": "attach-map/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "attach-replace_from_sdf",
+          "rows": [
+            {
+              "rowFile": "attach-replace/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "invalid-attach",
+          "rows": [
+            {
+              "rowFile": "invalid-attach/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_chemical_interactions.py::test_attach_explicit_bijection_and_sidecar",
+        "backend/tests/test_chemical_interactions.py::test_attach_covalent_ligand_bond_reports_exact_endpoint_atoms"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H06": {
+      "title": "Invalid-input prerequisite errors with exact offending identities",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "invalid-inputs",
+          "rows": [
+            {
+              "rowFile": "invalid-inputs/ledger-row.json",
+              "status": "pass",
+              "runId": "run_b76a78fef52f4c228fea331bfb443b44",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "invalid-attach",
+          "rows": [
+            {
+              "rowFile": "invalid-attach/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "job-controls-failure",
+          "rows": [
+            {
+              "rowFile": "job-controls-failure/ledger-row.json",
+              "status": "pass",
+              "runId": "run_5c4a362f156e48b2ad521e75acbd85e6",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_m11_invalid_inputs.py::test_invalid_create_inputs_reject_with_exact_identities",
+        "backend/tests/test_m11_invalid_inputs.py::test_invalid_covalent_ligand_sidecar_reports_both_endpoints",
+        "backend/tests/test_chemical_interactions.py::test_preflight_rejects_incomplete_backbone_and_histidine_alias",
+        "backend/tests/test_chemical_interactions.py::test_v2000_only_and_isotope_radical_input_rejection",
+        "backend/tests/test_chemical_interactions.py::test_native_rejects_disconnected_or_atrop_ligand",
+        "backend/tests/test_chemical_interactions.py::test_native_receptor_h_valence_and_zero_bond_diagnostics",
+        "backend/tests/test_chemical_interactions.py::test_native_ligand_zero_bond_diagnostic_uses_exact_sdf_indices",
+        "backend/tests/test_m11_job_api.py::test_native_receptor_graph_failure_is_typed_with_exact_uploaded_atom_refs"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H07": {
+      "title": "Two expensive stages: approval, cancel (queued/running), failed retry, reload ownership",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "detect-controls",
+          "rows": [
+            {
+              "rowFile": "detect-controls/ledger-row.json",
+              "status": "pass",
+              "runId": "run_cf06945cf825421e805f27443c2aa47a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "job-controls",
+          "rows": [
+            {
+              "rowFile": "job-controls/ledger-row.json",
+              "status": "pass",
+              "runId": "run_0d7c24c8d14443e388b5b8d21624754a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "job-controls-failure",
+          "rows": [
+            {
+              "rowFile": "job-controls-failure/ledger-row.json",
+              "status": "pass",
+              "runId": "run_5c4a362f156e48b2ad521e75acbd85e6",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "running-cancel",
+          "rows": [
+            {
+              "rowFile": "running-cancel/ledger-row.json",
+              "status": "pass",
+              "runId": "run_a1102e7ee66847dca211697da311d523",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "attach-replace_from_sdf",
+          "rows": [
+            {
+              "rowFile": "attach-replace/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_m11_job_api.py::test_chemical_import_body_bound_and_queued_cancel",
+        "backend/tests/test_m11_job_api.py::test_running_native_worker_cancel_and_timeout",
+        "backend/tests/test_m11_job_api.py::test_native_worker_failure_charges_each_retry_without_publishing",
+        "backend/tests/test_m11_job_api.py::test_cross_run_busy_is_nonapproval_uncharged_and_resumable"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H08": {
+      "title": "Actual pinned ProLIF on public example and analytic explicit graph",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "attach-map_existing",
+          "rows": [
+            {
+              "rowFile": "attach-map/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_chemical_interactions.py::test_native_public_geometry_on_both_sides_of_fixed_distance_cutoffs",
+        "backend/tests/test_chemical_interactions.py::test_synthetic_acetate_anion_uses_native_reverse_ionic_roles",
+        "backend/tests/test_chemical_interactions.py::test_native_graph_derived_doubly_protonated_histidine"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": "Analytic explicit-graph runs are backend numeric tests; the public example is observed in Electron with independent geometry checks."
+    },
+    "H09": {
+      "title": "Valid empty result is scientific_null; invalid chemistry stays error",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "empty",
+          "rows": [
+            {
+              "rowFile": "empty/ledger-row.json",
+              "status": "pass",
+              "runId": "run_2a2af59739b4435db55675e84ba68829",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "job-controls-failure",
+          "rows": [
+            {
+              "rowFile": "job-controls-failure/ledger-row.json",
+              "status": "pass",
+              "runId": "run_5c4a362f156e48b2ad521e75acbd85e6",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_chemical_interactions.py::test_native_valid_empty_after_ligand_translation",
+        "backend/tests/test_chemical_interactions.py::test_native_bent_donor_hydrogen_rejects_short_donor_acceptor_pair",
+        "backend/tests/test_chemical_interactions.py::test_preview_passes_but_native_rejects_synthetic_pentavalent_carbon"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": "Bent/distant analytic negatives are backend numeric tests; the translated synthetic derivative is observed in Electron."
+    },
+    "H10": {
+      "title": "Assignment table, pagination, categories, stale page, row focus/annotation",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "reopen-complete",
+          "rows": [
+            {
+              "rowFile": "reopen-complete/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H11": {
+      "title": "Immediate and idle-gated exact refocus after orbit/representation change; return to ordinary",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "reopen-complete",
+          "rows": [
+            {
+              "rowFile": "reopen-complete/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "restrictions",
+          "rows": [
+            {
+              "rowFile": "restrictions/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": "Camera-settle wait logic is also unit tested by npm --prefix frontend run test:events (tests/chemical.test.cjs)."
+    },
+    "H12": {
+      "title": "M8/M9/M10 controls disabled with source-kind reason, annotation on and off",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "restrictions",
+          "rows": [
+            {
+              "rowFile": "restrictions/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H13": {
+      "title": "Restoring an older M9 scene exits chemical display and re-enables controls",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "restrictions",
+          "rows": [
+            {
+              "rowFile": "restrictions/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H14": {
+      "title": "Report, browser downloads, reopen without recomputation",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "attach-map_existing",
+          "rows": [
+            {
+              "rowFile": "attach-map/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "reopen-complete",
+          "rows": [
+            {
+              "rowFile": "reopen-complete/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "reopen",
+          "rows": [
+            {
+              "rowFile": "reopen/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "replay",
+          "rows": [
+            {
+              "rowFile": "replay-attach/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            },
+            {
+              "rowFile": "replay-create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            },
+            {
+              "rowFile": "replay-empty/ledger-row.json",
+              "status": "pass",
+              "runId": "run_2a2af59739b4435db55675e84ba68829",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_m11_job_api.py::test_public_fixture_jobs_report_and_events_only_recovery",
+        "backend/tests/test_m11_job_api.py::test_chemical_report_discloses_attached_source_coordinates"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H15": {
+      "title": "Races, held responses, busy controls, source deadline, WebGL loss",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "create",
+          "rows": [
+            {
+              "rowFile": "create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "job-controls",
+          "rows": [
+            {
+              "rowFile": "job-controls/ledger-row.json",
+              "status": "pass",
+              "runId": "run_0d7c24c8d14443e388b5b8d21624754a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "running-cancel",
+          "rows": [
+            {
+              "rowFile": "running-cancel/ledger-row.json",
+              "status": "pass",
+              "runId": "run_a1102e7ee66847dca211697da311d523",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "faults",
+          "rows": [
+            {
+              "rowFile": "faults/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H16": {
+      "title": "Events-only restart with original inputs and worker unavailable; reopen",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "replay",
+          "rows": [
+            {
+              "rowFile": "replay-attach/ledger-row.json",
+              "status": "pass",
+              "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            },
+            {
+              "rowFile": "replay-create/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            },
+            {
+              "rowFile": "replay-empty/ledger-row.json",
+              "status": "pass",
+              "runId": "run_2a2af59739b4435db55675e84ba68829",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "direct_api",
+          "mode": "replay-probe-prebrowser",
+          "rows": [
+            {
+              "rowFile": "replay-probe-prebrowser/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a,run_2a2af59739b4435db55675e84ba68829,run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "direct_api",
+          "mode": "replay-probe-postbrowser",
+          "rows": [
+            {
+              "rowFile": "replay-probe-postbrowser/ledger-row.json",
+              "status": "pass",
+              "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a,run_2a2af59739b4435db55675e84ba68829,run_9022d05cff054fce81789c8cfff04a3a",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "backend/tests/test_m11_job_api.py::test_public_fixture_jobs_report_and_events_only_recovery",
+        "backend/tests/test_m11_job_api.py::test_native_candidates_cancel_before_terminal_remain_inaccessible_after_events_only_replay"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    },
+    "H17": {
+      "title": "M8 normal, M9 scenes/export, M10 measure/alignment regressions",
+      "status": "pass",
+      "coverage": [
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "regression-m8-normal",
+          "rows": [
+            {
+              "rowFile": "regression-m8-normal/ledger-row.json",
+              "status": "pass",
+              "runId": "run_c4778c227e8841378ed3a037d054738f",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "regression-m9-openmm",
+          "rows": [
+            {
+              "rowFile": "regression-m9-openmm/ledger-row.json",
+              "status": "pass",
+              "runId": "run_8f21abdff3154b18b919d6700d977621",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "regression-m9-scenes-core",
+          "rows": [
+            {
+              "rowFile": "regression-m9-scenes-core/ledger-row.json",
+              "status": "pass",
+              "runId": "run_8f21abdff3154b18b919d6700d977621",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "regression-m10-measure",
+          "rows": [
+            {
+              "rowFile": "regression-m10-measure/ledger-row.json",
+              "status": "pass",
+              "runId": "run_77a55c445dfe479782048c1adf2f84a3",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        },
+        {
+          "evidenceType": "real_electron_offscreen",
+          "mode": "regression-m10-alignment",
+          "rows": [
+            {
+              "rowFile": "regression-m10-alignment/ledger-row.json",
+              "status": "pass",
+              "runId": "run_460de59e4e554f28805f8b3d81e42d55",
+              "buildId": "aqV29Ar7twWJLHni63lRZ",
+              "nonLoopbackRequests": 0
+            }
+          ],
+          "status": "pass"
+        }
+      ],
+      "backendTests": [
+        "full backend gate: .venv/bin/python -m pytest backend/tests -q"
+      ],
+      "backendEvidence": "backend numeric/lifecycle test; pass/fail comes from the recorded full backend gate",
+      "note": null
+    }
+  },
+  "rows": [
+    {
+      "rowFile": "attach-map/ledger-row.json",
+      "rowSha256": "48cd81a6a79d43256263898af936c1f86a39dc40a24b0c9af4a9761bbdbd5404",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H03",
+        "H05",
+        "H08",
+        "H14"
+      ],
+      "mode": "attach-map_existing",
+      "harnessMode": "attach",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "m11-attach-bonds-run.json",
+          "sha256": "f919b735a14b7114d521483ff6fb50bce50e8d7d1d49dd896605e76b7413229f",
+          "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog"
+        },
+        {
+          "name": "m11-attach-mapping-run.json",
+          "sha256": "fdf5ae0549a2e93796223714e4d2f51bd1e70e8e7fedf19168649bd43f6816e8",
+          "provenance": "run-bound labeled map_existing SDF→AtomRef mapping from the QA run's source catalog"
+        },
+        {
+          "name": "m11-attach-ligand-instance-run.json",
+          "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+          "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+        "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog",
+        "run-bound labeled map_existing SDF→AtomRef mapping from the QA run's source catalog",
+        "run-bound exact selected ligand instance from the QA run's source catalog"
+      ],
+      "fixtureLabels": [],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {
+        "result": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/addcb4e34fa561a22e55a88548a27d13236b7d1e4edbf067df53e473c42cbcc8",
+        "report": "obj://run_9022d05cff054fce81789c8cfff04a3a/method_report_manifest/21014796c9d0dce5f88e1063cf3a8dbc0af20765474238b00d9364a00058a04f",
+        "source": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+        "graph": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/28f069e8425c7af6820711ad1bd60db3c90b9c1e3a751f6130bf188260a8e539",
+        "prepareJob": "job_aa9b6d05df8844fb9eaf8f310a0cca62",
+        "detectJob": "job_9f1d3428f8204a4895570cd1ae23a754"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 147,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-map",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:16:17.728Z",
+      "finishedAt": "2026-09-28T05:17:30.280Z"
+    },
+    {
+      "rowFile": "attach-replace/ledger-row.json",
+      "rowSha256": "46041ba8546f437f17c9b24c2956b0cc833e72fc0efbb9d453d81e92e790179e",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H05",
+        "H07"
+      ],
+      "mode": "attach-replace_from_sdf",
+      "harnessMode": "attach",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "m11-attach-bonds-run.json",
+          "sha256": "f919b735a14b7114d521483ff6fb50bce50e8d7d1d49dd896605e76b7413229f",
+          "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog"
+        },
+        {
+          "name": "m11-attach-mapping-replace-run.json",
+          "sha256": "4e8d0f95897913ed4b52e37eecd9ccc71b7d5f76ed486d511df15d891b938afa",
+          "provenance": "run-bound labeled replace_from_sdf heavy-atom mapping from the QA run's source catalog"
+        },
+        {
+          "name": "m11-attach-ligand-instance-run.json",
+          "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+          "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+        "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog",
+        "run-bound labeled replace_from_sdf heavy-atom mapping from the QA run's source catalog",
+        "run-bound exact selected ligand instance from the QA run's source catalog"
+      ],
+      "fixtureLabels": [],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {
+        "result": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+        "report": "obj://run_9022d05cff054fce81789c8cfff04a3a/method_report_manifest/56bfb7c19e3572796f827effe9afeb2050b3423c9672115341b7ca3902d1e863",
+        "source": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "graph": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+        "prepareJob": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+        "detectJob": "job_e98db6aed84c4578868144372298a9a6"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 146,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:17:30.576Z",
+      "finishedAt": "2026-09-28T05:19:14.962Z"
+    },
+    {
+      "rowFile": "attach-setup/ledger-row.json",
+      "rowSha256": "f50cc2c3016501dbbf25f8804066733f4c6e5ab5bcf72a46cc482d464986b404",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:16:16.356249+00:00",
+      "finishedAt": "2026-09-28T05:16:17.537893+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-setup",
+      "cases": [],
+      "mode": "attach-setup",
+      "evidenceType": "labeled_api_setup",
+      "status": "pass",
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {
+        "complex": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+        "sdfImport": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+      },
+      "fixtures": [
+        {
+          "name": "m11-attach-complex.pdb",
+          "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+        }
+      ],
+      "provenanceLabels": [
+        "synthetic derivative attach complex; not experimental evidence",
+        "public ProLIF tutorial docking-pose SDF"
+      ],
+      "setupOutput": {
+        "out": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/runs/m11-acceptance-20260928/inputs/attach-setup",
+        "ligand_sdf": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+        "files": {
+          "m11-attach-bonds-run.json": "f919b735a14b7114d521483ff6fb50bce50e8d7d1d49dd896605e76b7413229f",
+          "m11-attach-request-run.json": "58e5ca56cc71b880195d61162bce672c00127e0cd226b300ef108c937d988880",
+          "m11-attach-mapping-run.json": "fdf5ae0549a2e93796223714e4d2f51bd1e70e8e7fedf19168649bd43f6816e8",
+          "m11-attach-mapping-replace-run.json": "4e8d0f95897913ed4b52e37eecd9ccc71b7d5f76ed486d511df15d891b938afa",
+          "m11-attach-ligand-instance-run.json": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95"
+        },
+        "mapping_count": 79,
+        "replacement_heavy_mapping_count": 43,
+        "sidecar_handle_set": false
+      },
+      "nonLoopbackRequests": 0,
+      "note": "Setup only (upload/load/import through loopback API); covers no H case."
+    },
+    {
+      "rowFile": "capability-ready/ledger-row.json",
+      "rowSha256": "61321cf2872a63b6703de54cd6d86aa0b0846a784964c435430cc6a46a6d20aa",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H01"
+      ],
+      "mode": "capability-ready",
+      "harnessMode": "capability",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [],
+      "runId": "run_b4f60055c7b24a66b3ca70b89f7640eb",
+      "handles": {},
+      "expectCapability": "ready",
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 36,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/capability-ready",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:13:08.922Z",
+      "finishedAt": "2026-09-28T05:13:10.911Z"
+    },
+    {
+      "rowFile": "capability-worker-missing/ledger-row.json",
+      "rowSha256": "24d2a106a21333c555db1086910ce88ba5dd05f784102b01dd37fc76157e5c8f",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H01"
+      ],
+      "mode": "capability-worker_missing",
+      "harnessMode": "capability",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+      ],
+      "runId": "run_0cf7c00efcf248349d523d14b318444a",
+      "handles": {},
+      "expectCapability": "worker_missing",
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 60,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/capability-worker-missing",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:32:15.149Z",
+      "finishedAt": "2026-09-28T05:32:27.010Z"
+    },
+    {
+      "rowFile": "capability-worker-version-invalid/ledger-row.json",
+      "rowSha256": "c899fd9dffb9d1ea472d0782d7c23756b7626d33ed0a611bef44e5539eb4b32d",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H01"
+      ],
+      "mode": "capability-worker_version_invalid",
+      "harnessMode": "capability",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path points at a non-pinned interpreter /Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/.venv/bin/python"
+      ],
+      "runId": "run_2f15def64669483a9a736244303e7682",
+      "handles": {},
+      "expectCapability": "worker_version_invalid",
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 38,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/capability-worker-version-invalid",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:32:28.182Z",
+      "finishedAt": "2026-09-28T05:32:29.968Z"
+    },
+    {
+      "rowFile": "create/ledger-row.json",
+      "rowSha256": "69409f01ddfb70fcf7159f025a56d11c870b07e8f8e2020864f702d70443ac26",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H02",
+        "H03",
+        "H04",
+        "H07",
+        "H08",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H15"
+      ],
+      "mode": "create",
+      "harnessMode": "create",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled non-approval 409 on Start"
+      ],
+      "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+      "handles": {
+        "result": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_interaction_set/b431e6691345294c521f92e91c0ae29146bd1e5a4cdefd00c7b28bc0dfcc0d46",
+        "report": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/method_report_manifest/538aaadb8985b432020eb8375e972be1c29dbdcc04f5abf432dbcbab8c9fe5f5",
+        "source": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_structure/58e8be764e43796bd8c297110f8ac6d84a137b36b8e7189fe2f2480f6637b8bc",
+        "graph": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_graph/080c6f345655525b2c6a6b36440fae44b4901d21d1ec82bdf9f97bce8ab1a067",
+        "prepareJob": "job_c63d1f6cea2742aca7151221dd0a4616",
+        "detectJob": "job_79820d3aeb2b487f85202db1e60f1137"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 252,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/create",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:13:11.180Z",
+      "finishedAt": "2026-09-28T05:14:31.060Z"
+    },
+    {
+      "rowFile": "detect-controls/ledger-row.json",
+      "rowSha256": "c3940bc47f6e852fb5a4582ae066cf9c2f0f8bbb49e0fe8181a1ba80efb0bbfa",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H07"
+      ],
+      "mode": "detect-controls",
+      "harnessMode": "detect-controls",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "runId": "run_cf06945cf825421e805f27443c2aa47a",
+      "handles": {
+        "detectJob": "job_ca4771296e754d79a4bab8ee213828fc"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 36,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/detect-controls",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:15:38.318Z",
+      "finishedAt": "2026-09-28T05:15:44.046Z"
+    },
+    {
+      "rowFile": "empty/ledger-row.json",
+      "rowSha256": "ed92dbf03394cef7dd2cf6f93a0a19bae3082e8622d420bda3655e56750e2d50",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H09"
+      ],
+      "mode": "empty",
+      "harnessMode": "empty",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "m11-synthetic-empty-1000A.sdf",
+          "sha256": "a856c3c5495ad5d757575d780ebe0fc95f1111d1805f51545f5f3f026591a778",
+          "provenance": "synthetic derivative: public SDF record 0 translated +1000 Å (empty-result control; not experimental evidence)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "synthetic derivative: public SDF record 0 translated +1000 Å (empty-result control; not experimental evidence)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled non-approval 409 on Start"
+      ],
+      "runId": "run_2a2af59739b4435db55675e84ba68829",
+      "handles": {
+        "result": "obj://run_2a2af59739b4435db55675e84ba68829/chemical_interaction_set/7a1e2b8d6bb21f4c171cd19be623010880270a59ec7c74695dff7e157d04392c",
+        "report": "obj://run_2a2af59739b4435db55675e84ba68829/method_report_manifest/61cc8b45c291f60710e9a8e48dc8283ec1cb6ac83493f3b7e551e401a0939aee",
+        "source": "obj://run_2a2af59739b4435db55675e84ba68829/chemical_structure/6a79a840beae46e3b1cc389ebab9f7cc208581f24736d1305994427e86f0b33b",
+        "graph": "obj://run_2a2af59739b4435db55675e84ba68829/chemical_graph/b88da37ca4c500726f01ef6089fb860d8483f9fca81cb017eff31cb6cb6141ec",
+        "prepareJob": "job_72454c788dd6427b91ca6c794952bdd3",
+        "detectJob": "job_604c035b8df5480b831d92b63d3181b1"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 105,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/empty",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:14:31.439Z",
+      "finishedAt": "2026-09-28T05:15:16.401Z"
+    },
+    {
+      "rowFile": "faults/ledger-row.json",
+      "rowSha256": "4f56a8dd60542b128fbff10670138c8060b00ff3be7fa3eefce3a3ae92b1008e",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H15"
+      ],
+      "mode": "faults",
+      "harnessMode": "faults",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "renderer-route fixtures: malformed catalog SHA, held GETs, bounded source-read deadline, WEBGL_lose_context"
+      ],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {},
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 131,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/faults",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:21:27.077Z",
+      "finishedAt": "2026-09-28T05:23:13.696Z"
+    },
+    {
+      "rowFile": "invalid-attach/ledger-row.json",
+      "rowSha256": "5318ad560aa9ab314e5a13b5a16b3ed1dfa181b471e4d724a878c4617876ea1d",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H05",
+        "H06"
+      ],
+      "mode": "invalid-attach",
+      "harnessMode": "invalid-attach",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "m11-attach-ligand-instance-run.json",
+          "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+          "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+        },
+        {
+          "name": "m11-invalid-cases.json",
+          "bytes": 8895,
+          "sha256": "bdbd6fd3977a2ade47472693aead82fc69cfc01f86ed540274088e1201977ee8",
+          "provenance": "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)"
+        },
+        {
+          "name": "m11-invalid-covalent-ligand-bonds-run.json",
+          "sha256": "08c5cba479cbde026c1619dd934ad399944f6cc2e368253893ac61aa2f28cf7d",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+        "run-bound exact selected ligand instance from the QA run's source catalog",
+        "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)",
+        "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+      ],
+      "fixtureLabels": [],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {},
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 37,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/invalid-attach",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:23:31.573Z",
+      "finishedAt": "2026-09-28T05:23:45.038Z"
+    },
+    {
+      "rowFile": "invalid-inputs/ledger-row.json",
+      "rowSha256": "2d1ed96678666b87ebff3e9340b8d796673d4e3fc794637c997888cc3372d6f7",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H06"
+      ],
+      "mode": "invalid-inputs",
+      "harnessMode": "invalid-inputs",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "m11-invalid-cases.json",
+          "bytes": 7536,
+          "sha256": "5a21db9fb18e502a091371dbbd0eb8af433d04a51116c39b9d01e199d8009708",
+          "provenance": "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)"
+        },
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "m11-invalid-wrong-schema-bonds.json",
+          "sha256": "28ef868bd6fb59e1fbe6a0d5123aa65ca810df6c39f50f992ff1cf0c04241035",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        },
+        {
+          "name": "m11-invalid-wrong-source-bonds.json",
+          "sha256": "e2e466f6dd849a110e2bd788af45c965ad11c7cb6c165fc15b57815d6c4a92da",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        },
+        {
+          "name": "m11-invalid-disconnected-atom.pdb",
+          "sha256": "211e16361f2c01d07a302b0bec925b78173e37a1d7e5c5f5b8dc12ae3c737a02",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        },
+        {
+          "name": "m11-invalid-altloc.pdb",
+          "sha256": "9eeb88502458c182858bfc46c1678e989ec8a3fa906ed9c8e488781d77905872",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        },
+        {
+          "name": "m11-invalid-metal.pdb",
+          "sha256": "bcf0df223943e28a3a3be02f2ec561c906346ef5bdb79d4f6422b73e103f9739",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        },
+        {
+          "name": "m11-invalid-2d-record.sdf",
+          "sha256": "4d366fe193cac0c476c757ce4901549b37318e144a5283ba77541d1cee614032",
+          "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)",
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+        "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+      ],
+      "fixtureLabels": [],
+      "runId": "run_b76a78fef52f4c228fea331bfb443b44",
+      "handles": {},
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 210,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/invalid-inputs",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:23:14.561Z",
+      "finishedAt": "2026-09-28T05:23:31.232Z"
+    },
+    {
+      "rowFile": "job-controls-failure/ledger-row.json",
+      "rowSha256": "63f048e38bf5216d157e368360de5f16ece0aa46f05a5357f40f682a8c16f608",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H06",
+        "H07",
+        "H09"
+      ],
+      "mode": "job-controls-failure",
+      "harnessMode": "job-controls",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "synthetic-pentavalent-carbon.sdf",
+          "sha256": "8e049f31b45954570e16612288810015d16daebcfdf8b67dceae42c80b557a56",
+          "provenance": "labeled synthetic failure-control SDF (impossible valence; no scientific output)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "labeled synthetic failure-control SDF (impossible valence; no scientific output)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixtures: held jobs GET, held upload, held job submission"
+      ],
+      "runId": "run_5c4a362f156e48b2ad521e75acbd85e6",
+      "handles": {
+        "prepareJob": "job_8639a50caa7a4eacbe7fe5752c799d63"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 53,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/job-controls-failure",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:15:48.731Z",
+      "finishedAt": "2026-09-28T05:16:08.413Z"
+    },
+    {
+      "rowFile": "job-controls/ledger-row.json",
+      "rowSha256": "382a2355d472505c1941cc9b1ac0258ac3c977f64b4f4621f3679554a459b9ed",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H07",
+        "H15"
+      ],
+      "mode": "job-controls",
+      "harnessMode": "job-controls",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixtures: held jobs GET, held upload, held job submission"
+      ],
+      "runId": "run_0d7c24c8d14443e388b5b8d21624754a",
+      "handles": {
+        "prepareJob": "job_9bf705b87cb04a0bb90e01f4bb07b6e8"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 44,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/job-controls",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:15:44.320Z",
+      "finishedAt": "2026-09-28T05:15:48.467Z"
+    },
+    {
+      "rowFile": "prepare-only/ledger-row.json",
+      "rowSha256": "4d903ab6aaee85ec5436297714ec350228df387d11dca7398920b0080c7a4a4a",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H04",
+        "H07"
+      ],
+      "mode": "prepare-only",
+      "harnessMode": "prepare-only",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled non-approval 409 on Start"
+      ],
+      "runId": "run_cf06945cf825421e805f27443c2aa47a",
+      "handles": {
+        "source": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+        "graph": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_graph/dc628d636a11ddc3f17f7344ffd2a45e76da439c25646ab46f0fc0f7dc2dba43",
+        "prepareJob": "job_c89e676f49c54030bb946a422f48fc3f"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 70,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/prepare-only",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:15:16.702Z",
+      "finishedAt": "2026-09-28T05:15:38.060Z"
+    },
+    {
+      "rowFile": "regression-m10-alignment/ledger-row.json",
+      "rowSha256": "8eb0d4006f02b7e674aaa65f23e4fcb9d5600133c9fcf14eb4524d8597f6ce30",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "flowSha256": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:25:47.237861+00:00",
+      "finishedAt": "2026-09-28T05:26:20.200344+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/regression-m10-alignment",
+      "cases": [
+        "H17"
+      ],
+      "mode": "regression-m10-alignment",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "exitCode": 0,
+      "runId": "run_460de59e4e554f28805f8b3d81e42d55",
+      "evidenceFile": "comparison-alignment.jsonl",
+      "statusCounts": {
+        "pass": 32
+      },
+      "nonLoopbackRequests": 0,
+      "note": "The flow asserts zero blocked non-loopback requests at each captured step."
+    },
+    {
+      "rowFile": "regression-m10-measure/ledger-row.json",
+      "rowSha256": "2e5dc32fc9fa15f3b7e6645c24b13e9b8c7b3436627bb5b7e5cdc7d8e7588cef",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "flowSha256": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:25:39.329890+00:00",
+      "finishedAt": "2026-09-28T05:25:47.237373+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/regression-m10-measure",
+      "cases": [
+        "H17"
+      ],
+      "mode": "regression-m10-measure",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "exitCode": 0,
+      "runId": "run_77a55c445dfe479782048c1adf2f84a3",
+      "evidenceFile": "comparison-measure.jsonl",
+      "statusCounts": {
+        "pass": 17
+      },
+      "nonLoopbackRequests": 0,
+      "note": "The flow asserts zero blocked non-loopback requests at each captured step."
+    },
+    {
+      "rowFile": "regression-m8-normal/ledger-row.json",
+      "rowSha256": "c567ef1e9d892697ac0753944b456831f97ace2aaeaf563160d50ab6de47ca8d",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "flowSha256": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:24:08.384891+00:00",
+      "finishedAt": "2026-09-28T05:24:26.041761+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/regression-m8-normal",
+      "cases": [
+        "H17"
+      ],
+      "mode": "regression-m8-normal",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "exitCode": 0,
+      "runId": "run_c4778c227e8841378ed3a037d054738f",
+      "evidenceFile": "normal-flow.jsonl",
+      "statusCounts": {
+        "pass": 37
+      },
+      "nonLoopbackRequests": 0,
+      "note": "The flow asserts zero blocked non-loopback requests at each captured step."
+    },
+    {
+      "rowFile": "regression-m9-openmm/ledger-row.json",
+      "rowSha256": "4fe9346fe7010b3517d8464159c11173a343b8e83f3bebec4872f50fa2c50262",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "flowSha256": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:24:26.043958+00:00",
+      "finishedAt": "2026-09-28T05:24:50.537288+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/regression-m9-openmm",
+      "cases": [
+        "H17"
+      ],
+      "mode": "regression-m9-openmm",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "exitCode": 0,
+      "runId": "run_8f21abdff3154b18b919d6700d977621",
+      "evidenceFile": "openmm-full.jsonl",
+      "statusCounts": {
+        "pass": 17
+      },
+      "nonLoopbackRequests": 0,
+      "note": "The flow asserts zero blocked non-loopback requests at each captured step."
+    },
+    {
+      "rowFile": "regression-m9-scenes-core/ledger-row.json",
+      "rowSha256": "f69f44f919750e77a29385d1223482a1e2a6caee7f713fe12b4943ea0459dcf8",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "flowSha256": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:24:50.538618+00:00",
+      "finishedAt": "2026-09-28T05:25:39.319781+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/regression-m9-scenes-core",
+      "cases": [
+        "H17"
+      ],
+      "mode": "regression-m9-scenes-core",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "exitCode": 0,
+      "runId": "run_8f21abdff3154b18b919d6700d977621",
+      "evidenceFile": "scenes-core.jsonl",
+      "statusCounts": {
+        "pass": 32
+      },
+      "nonLoopbackRequests": 0,
+      "note": "The flow asserts zero blocked non-loopback requests at each captured step."
+    },
+    {
+      "rowFile": "reopen-complete/ledger-row.json",
+      "rowSha256": "37fdd3352d5933730e047a3016dfcda741220613840e0717965bf2f42971a1c4",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H10",
+        "H11",
+        "H14"
+      ],
+      "mode": "reopen-complete",
+      "harnessMode": "reopen-complete",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {
+        "result": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+        "report": "obj://run_9022d05cff054fce81789c8cfff04a3a/method_report_manifest/78e5e1edfad2d47f5f7f3bf361cf1f1eeddab3aa796b41919611f84e719565bd",
+        "source": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 189,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/reopen-complete",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:19:15.227Z",
+      "finishedAt": "2026-09-28T05:20:42.560Z"
+    },
+    {
+      "rowFile": "reopen/ledger-row.json",
+      "rowSha256": "b51d20b25a6428fa11a4aab2ff578614e53c9e241bac2052b152b2e0217e37ff",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H14"
+      ],
+      "mode": "reopen",
+      "harnessMode": "reopen",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+      "handles": {
+        "result": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_interaction_set/b431e6691345294c521f92e91c0ae29146bd1e5a4cdefd00c7b28bc0dfcc0d46",
+        "source": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_structure/58e8be764e43796bd8c297110f8ac6d84a137b36b8e7189fe2f2480f6637b8bc"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 52,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/reopen",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:23:45.303Z",
+      "finishedAt": "2026-09-28T05:24:08.069Z"
+    },
+    {
+      "rowFile": "replay-attach/ledger-row.json",
+      "rowSha256": "daee774281f7dc1a92ec74167a23a3d804bc0e690fa524fa97afa6979ce023e5",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H14",
+        "H16"
+      ],
+      "mode": "replay",
+      "harnessMode": "replay",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+      ],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {
+        "result": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/addcb4e34fa561a22e55a88548a27d13236b7d1e4edbf067df53e473c42cbcc8",
+        "source": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a"
+      },
+      "expectCapability": "worker_missing",
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 53,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay-attach",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:30:01.270Z",
+      "finishedAt": "2026-09-28T05:30:42.546Z"
+    },
+    {
+      "rowFile": "replay-create/ledger-row.json",
+      "rowSha256": "7874e458177f223e9aae7601bcc35f2135c2a1dbef1533aea4e6f6c7c3b62557",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H14",
+        "H16"
+      ],
+      "mode": "replay",
+      "harnessMode": "replay",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+      ],
+      "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a",
+      "handles": {
+        "result": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_interaction_set/b431e6691345294c521f92e91c0ae29146bd1e5a4cdefd00c7b28bc0dfcc0d46",
+        "source": "obj://run_6772ccb8a2ff4da1b30fb4ce2eea703a/chemical_structure/58e8be764e43796bd8c297110f8ac6d84a137b36b8e7189fe2f2480f6637b8bc"
+      },
+      "expectCapability": "worker_missing",
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 54,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay-create",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:29:25.484Z",
+      "finishedAt": "2026-09-28T05:29:48.048Z"
+    },
+    {
+      "rowFile": "replay-empty/ledger-row.json",
+      "rowSha256": "21fa7cd35ea806306eb42128a6e5f41dc9e80db5e0c85800ba3e6c145fa0f3ba",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H14",
+        "H16"
+      ],
+      "mode": "replay",
+      "harnessMode": "replay",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+      ],
+      "runId": "run_2a2af59739b4435db55675e84ba68829",
+      "handles": {
+        "result": "obj://run_2a2af59739b4435db55675e84ba68829/chemical_interaction_set/7a1e2b8d6bb21f4c171cd19be623010880270a59ec7c74695dff7e157d04392c",
+        "source": "obj://run_2a2af59739b4435db55675e84ba68829/chemical_structure/6a79a840beae46e3b1cc389ebab9f7cc208581f24736d1305994427e86f0b33b"
+      },
+      "expectCapability": "worker_missing",
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 38,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay-empty",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:29:48.580Z",
+      "finishedAt": "2026-09-28T05:30:00.777Z"
+    },
+    {
+      "rowFile": "replay-probe-postbrowser/ledger-row.json",
+      "rowSha256": "c9e395bdc23a457d876edaa84e731ca3ee69bc2f0c5b56d71a36a325c3c96157",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "replayProbeSha256": "77723e6b1a5f95a6688475cc3ccc3abef01ca827e1873f282abb49f221fc0813",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:32:14.965597+00:00",
+      "finishedAt": "2026-09-28T05:32:14.965625+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay-probe-postbrowser",
+      "cases": [
+        "H16"
+      ],
+      "mode": "replay-probe-postbrowser",
+      "evidenceType": "direct_api",
+      "status": "pass",
+      "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a,run_2a2af59739b4435db55675e84ba68829,run_9022d05cff054fce81789c8cfff04a3a",
+      "evidenceFile": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay/replay-postbrowser-verification.json",
+      "exitCode": 0,
+      "nonLoopbackRequests": 0,
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+      ],
+      "note": "GET-only loopback comparison of all object files, API responses and report bytes against the original-root baseline; events may only gain allowed viewer observations."
+    },
+    {
+      "rowFile": "replay-probe-prebrowser/ledger-row.json",
+      "rowSha256": "06db1bb896f9a20256b8bfea18f176c61d82079d54dc24bd0916f61687d36855",
+      "schema": "m11_case_ledger_row@1",
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "replayProbeSha256": "77723e6b1a5f95a6688475cc3ccc3abef01ca827e1873f282abb49f221fc0813",
+        "runnerSha256": "8cefc14367573c97edac787dc46cb0a6ed2a5fc04aa7c2de88b7c819dfdaf893"
+      },
+      "startedAt": "2026-09-28T05:29:25.301467+00:00",
+      "finishedAt": "2026-09-28T05:29:25.301493+00:00",
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay-probe-prebrowser",
+      "cases": [
+        "H16"
+      ],
+      "mode": "replay-probe-prebrowser",
+      "evidenceType": "direct_api",
+      "status": "pass",
+      "runId": "run_6772ccb8a2ff4da1b30fb4ce2eea703a,run_2a2af59739b4435db55675e84ba68829,run_9022d05cff054fce81789c8cfff04a3a",
+      "evidenceFile": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/replay/replay-prebrowser-verification.json",
+      "exitCode": 0,
+      "nonLoopbackRequests": 0,
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+      ],
+      "note": "GET-only loopback comparison of all object files, API responses and report bytes against the original-root baseline; events may only gain allowed viewer observations."
+    },
+    {
+      "rowFile": "restrictions/ledger-row.json",
+      "rowSha256": "1e280f0bfb9a82fd9c7db39899129983af4340ae2e4933d71976032ed6deb84a",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H11",
+        "H12",
+        "H13"
+      ],
+      "mode": "restrictions",
+      "harnessMode": "restrictions",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+      "handles": {
+        "result": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/addcb4e34fa561a22e55a88548a27d13236b7d1e4edbf067df53e473c42cbcc8",
+        "source": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+        "scene": "obj://run_9022d05cff054fce81789c8cfff04a3a/viewer_scene/b252ae8ec72871753c69dbf4e2c0c5fbdcbb48ee2e970ec7bb8c60084a2ff678"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 113,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/restrictions",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:20:42.857Z",
+      "finishedAt": "2026-09-28T05:21:26.818Z"
+    },
+    {
+      "rowFile": "running-cancel/ledger-row.json",
+      "rowSha256": "e6cc646f3291a1246857e839dd5b0363b709e931f611649589d1db08fdb628fb",
+      "schema": "m11_case_ledger_row@1",
+      "cases": [
+        "H07",
+        "H15"
+      ],
+      "mode": "running-cancel",
+      "harnessMode": "running-cancel",
+      "evidenceType": "real_electron_offscreen",
+      "status": "pass",
+      "harnessStatus": "observed_unreviewed",
+      "error": null,
+      "buildId": "aqV29Ar7twWJLHni63lRZ",
+      "harness": {
+        "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+        "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb"
+      },
+      "fixtures": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [],
+      "runId": "run_a1102e7ee66847dca211697da311d523",
+      "handles": {
+        "prepareJob": "job_d14a5783213b439ea88a1e30fdc69ee1"
+      },
+      "expectCapability": null,
+      "nonLoopbackRequests": 0,
+      "offscreen": {
+        "offscreen": true,
+        "visible": false,
+        "painting": true,
+        "hardwareAccelerationEnabled": true,
+        "paintCount": 49,
+        "webgl": {
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+        }
+      },
+      "artifacts": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/running-cancel",
+      "evidenceFile": "chemical-evidence.json",
+      "startedAt": "2026-09-28T05:16:08.648Z",
+      "finishedAt": "2026-09-28T05:16:16.301Z"
+    }
+  ]
+}

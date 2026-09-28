@@ -1,0 +1,2600 @@
+{
+ "_compactOf": "steps/faults/chemical-evidence.json",
+ "originalBytes": 61987143,
+ "originalSha256": "a56c7569e84a3873ab2c38052c198bc25b40a3543d2d20af285820c0bd245046",
+ "rule": "nested values over 8192 serialized bytes replaced by byte count + sha256",
+ "content": {
+  "mode": "faults",
+  "ledgerMode": "faults",
+  "status": "observed_unreviewed",
+  "harnessSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+  "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb",
+  "fixtureFiles": {},
+  "variantsManifest": null,
+  "expectCapability": null,
+  "fixtureLabel": null,
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "startedAt": "2026-09-28T05:21:27.077Z",
+  "run": "run_9022d05cff054fce81789c8cfff04a3a",
+  "scienceEventsBefore": {
+   "_omitted": "list",
+   "length": 34,
+   "bytes": 15552335,
+   "sha256": "e59651873e2b86fa9a63306f02fe3d1fb60c0c3f50c11c80fb7922d4c60b2c22",
+   "head": [
+    {
+     "args": {
+      "model_index": 0,
+      "source": "upload://run_9022d05cff054fce81789c8cfff04a3a/9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03.pdb"
+     },
+     "attempt_kind": "initial",
+     "branch_id": null,
+     "call_id": "call_c07e50bcaca74363ba7283e88a587bae",
+     "decided_by": "human",
+     "execution_mode": "human",
+     "key": "0a17e73113b3cc8ec4974e4752b9381825a7e7cdf3034e5b584b4c3452074563",
+     "parent_call_id": null,
+     "remaining_wall_s": 1800,
+     "root_call_id": "proposal_62fa10a358f745dd859364475e20df12",
+     "seq": 4,
+     "tool": "load_structure",
+     "ts": 1790572576.376487,
+     "type": "tool_called",
+     "version": "0.1.1"
+    },
+    {
+     "fmt": "pdb",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure_source/3ba50c6de99d089a4eef57d65e1ba82211c3b6f1905b8a64e7be59f74fa1026f",
+     "kind": "structure_source",
+     "null_result": false,
+     "produced_by": "call_c07e50bcaca74363ba7283e88a587bae",
+     "schema": "structure_source@1",
+     "seq": 5,
+     "summary": {},
+     "ts": 1790572576.386122,
+     "type": "object_created"
+    },
+    {
+     "fmt": "json",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+     "kind": "structure",
+     "null_result": false,
+     "produced_by": "call_c07e50bcaca74363ba7283e88a587bae",
+     "schema": "structure_selection@2",
+     "seq": 6,
+     "summary": {
+      "chains_auth": [
+       "A",
+       "B",
+       "L"
+      ],
+      "format": "pdb",
+      "model_number": 1,
+      "n_models": 1,
+      "n_residues": 303,
+      "resolution_A": null,
+      "selected_model_index": 0,
+      "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure_source/3ba50c6de99d089a4eef57d65e1ba82211c3b6f1905b8a64e7be59f74fa1026f"
+     },
+     "ts": 1790572576.389528,
+     "type": "object_created"
+    }
+   ]
+  },
+  "baseline": {
+   "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+   "mode": "create_new",
+   "generation": 1,
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+   "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/28f069e8425c7af6820711ad1bd60db3c90b9c1e3a751f6130bf188260a8e539",
+   "catalogReady": true,
+   "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/addcb4e34fa561a22e55a88548a27d13236b7d1e4edbf067df53e473c42cbcc8",
+   "resultTotal": 36,
+   "selectedRowId": null,
+   "prepareJobId": "job_aa9b6d05df8844fb9eaf8f310a0cca62",
+   "detectJobId": "job_9f1d3428f8204a4895570cd1ae23a754",
+   "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+    "sessionId": null,
+    "generation": null,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "selectionError": null,
+    "camera": {
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "distance": 144.58575353288873
+    },
+    "nativeCamera": {
+     "mode": "perspective",
+     "fov": 0.7853981633974483,
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "up": [
+      0,
+      1,
+      0
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "radiusMax": 50.775513201281534,
+     "fog": 15,
+     "clipFar": true,
+     "minNear": 1,
+     "minFar": 0
+    },
+    "theme": "dark",
+    "backgroundColor": 724496,
+    "lastAck": null,
+    "measureMode": false,
+    "lastAtomPick": null,
+    "nativeBusy": false,
+    "nativeUpdating": false,
+    "nativeAnimating": false,
+    "cameraTransitioning": false,
+    "m10QueuePending": 0,
+    "nativeClickRevision": 1,
+    "lastNativeClick": {
+     "kind": "empty-loci",
+     "size": null,
+     "pluginBusy": false,
+     "measureMode": false,
+     "accepted": false,
+     "reason": "inactive"
+    },
+    "chemicalFocus": null,
+    "chemicalAnnotation": null,
+    "catalogReady": true,
+    "atomPickRevision": 0,
+    "qaAtoms": {
+     "_omitted": "list",
+     "length": 128,
+     "bytes": 70931,
+     "sha256": "23d08b72ddcd0890455ddb99ee4f32c04ab20d68cbf45ab2e83759a644af0bec",
+     "head": [
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "CAY",
+        "altloc": "",
+        "element": "C",
+        "site_index": 0
+       },
+       "worldCoordinate_A": [
+        5.440000057220459,
+        4.559999942779541,
+        22.8799991607666
+       ],
+       "canvasPixel": [
+        396.6525828103208,
+        422.1052363069606
+       ],
+       "depth": 0.3079884604801931
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY1",
+        "altloc": "",
+        "element": "H",
+        "site_index": 1
+       },
+       "worldCoordinate_A": [
+        4.650000095367432,
+        3.9200000762939453,
+        23.31999969482422
+       ],
+       "canvasPixel": [
+        389.6421830951654,
+        427.87711761294884
+       ],
+       "depth": 0.3015980211324321
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY2",
+        "altloc": "",
+        "element": "H",
+        "site_index": 2
+       },
+       "worldCoordinate_A": [
+        6.389999866485596,
+        3.9800000190734863,
+        22.90999984741211
+       ],
+       "canvasPixel": [
+        405.14024537990593,
+        427.28672876420944
+       ],
+       "depth": 0.30755433914674096
+      }
+     ]
+    },
+    "layers": [
+     {
+      "layer": "reference",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+      "visible": true,
+      "transform": [
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1
+      ],
+      "nativeAtomCount": 5067
+     }
+    ]
+   }
+  },
+  "badCatalog": {
+   "hits": 7,
+   "native": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": null,
+    "sourceHandle": null,
+    "graphHandle": null,
+    "catalogReady": false,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/addcb4e34fa561a22e55a88548a27d13236b7d1e4edbf067df53e473c42cbcc8",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_aa9b6d05df8844fb9eaf8f310a0cca62",
+    "detectJobId": "job_9f1d3428f8204a4895570cd1ae23a754",
+    "native": null
+   },
+   "alert": "화학 구조 읽기 실패: 화학 구조 바이트·원자 목록·그래프 출처가 일치하지 않습니다.",
+   "fixture": "renderer route changed only viewer_source_sha256; no science object was created"
+  },
+  "validRetry": {
+   "native": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 2,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/28f069e8425c7af6820711ad1bd60db3c90b9c1e3a751f6130bf188260a8e539",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/addcb4e34fa561a22e55a88548a27d13236b7d1e4edbf067df53e473c42cbcc8",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_aa9b6d05df8844fb9eaf8f310a0cca62",
+    "detectJobId": "job_9f1d3428f8204a4895570cd1ae23a754",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "23d08b72ddcd0890455ddb99ee4f32c04ab20d68cbf45ab2e83759a644af0bec",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "validCatalogGets": [
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 0
+    },
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 0
+    },
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 1000
+    },
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 2000
+    },
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 3000
+    },
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 4000
+    },
+    {
+     "status": 200,
+     "sha": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+     "offset": 5000
+    }
+   ],
+   "servedTextSha256": "24d9ca11012f75428da51a609cec1d7a619f761b29eaded22605367f974ea081"
+  },
+  "heldResult": {
+   "aHits": 1,
+   "latest": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 3,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "settled": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 3,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "fixture": "held old selected-result GET"
+  },
+  "heldSource": {
+   "oldSourceHits": 1,
+   "oldSource": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/48ca780ec6aefec84f3df90e1bb612001a0a4696555ee4be5090026bdd12392a",
+   "latestSource": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 4,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 71017,
+      "sha256": "ba5861bc815929de457e463d20ecce0511ebd67fe2ed683617bcd29369600b16",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         449.33275276040064,
+         354.0446056636949
+        ],
+        "depth": -1482.902354238248
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         439.4639607784989,
+         362.02823096694556
+        ],
+        "depth": -1520.105020996474
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         461.6472751370834,
+         361.52329209783323
+        ],
+        "depth": -1485.4254638768675
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "afterOld": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 4,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 71017,
+      "sha256": "ba5861bc815929de457e463d20ecce0511ebd67fe2ed683617bcd29369600b16",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         449.33275276040064,
+         354.0446056636949
+        ],
+        "depth": -1482.902354238248
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         439.4639607784989,
+         362.02823096694556
+        ],
+        "depth": -1520.105020996474
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         461.6472751370834,
+         361.52329209783323
+        ],
+        "depth": -1485.4254638768675
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "fixture": "held old chemical structure-view GET; actual latest result selected through UI"
+  },
+  "heldReport": {
+   "oldReportHits": 1,
+   "latestHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/method_report_manifest/78e5e1edfad2d47f5f7f3bf361cf1f1eeddab3aa796b41919611f84e719565bd",
+   "markdownSha256": "5f9a9af70decfb1733acfd8165739b369f5e47b7942bcfb12d9b0772beba5a27",
+   "fixture": "held older selected-report GET"
+  },
+  "sourceDeadline": {
+   "heldViewHits": 1,
+   "source": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "alert": "화학 구조 읽기 실패: signal timed out",
+   "timedOut": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": null,
+    "sourceHandle": null,
+    "graphHandle": null,
+    "catalogReady": false,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": null
+   },
+   "fixture": "renderer-held immutable chemical structure GET beyond bounded 30-second read deadline",
+   "recovered": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 5,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   }
+  },
+  "contextLossFixture": {
+   "extensionAvailable": true,
+   "before": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 5,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   }
+  },
+  "contextRecovery": {
+   "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+   "mode": "create_new",
+   "generation": 6,
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+   "catalogReady": true,
+   "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+   "resultTotal": 36,
+   "selectedRowId": null,
+   "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+   "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "sessionId": null,
+    "generation": null,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "selectionError": null,
+    "camera": {
+     "position": [
+      0,
+      0,
+      100
+     ],
+     "target": [
+      0,
+      0,
+      0
+     ],
+     "radius": 0,
+     "distance": 100
+    },
+    "nativeCamera": {
+     "mode": "perspective",
+     "fov": 0.7853981633974483,
+     "position": [
+      0,
+      0,
+      100
+     ],
+     "up": [
+      0,
+      1,
+      0
+     ],
+     "target": [
+      0,
+      0,
+      0
+     ],
+     "radius": 0,
+     "radiusMax": 10,
+     "fog": 15,
+     "clipFar": true,
+     "minNear": 1,
+     "minFar": 0
+    },
+    "theme": "dark",
+    "backgroundColor": 724496,
+    "lastAck": null,
+    "measureMode": false,
+    "lastAtomPick": null,
+    "nativeBusy": false,
+    "nativeUpdating": false,
+    "nativeAnimating": false,
+    "cameraTransitioning": false,
+    "m10QueuePending": 0,
+    "nativeClickRevision": 1,
+    "lastNativeClick": {
+     "kind": "empty-loci",
+     "size": null,
+     "pluginBusy": false,
+     "measureMode": false,
+     "accepted": false,
+     "reason": "inactive"
+    },
+    "chemicalFocus": null,
+    "chemicalAnnotation": null,
+    "catalogReady": true,
+    "atomPickRevision": 0,
+    "qaAtoms": {
+     "_omitted": "list",
+     "length": 128,
+     "bytes": 71017,
+     "sha256": "ba5861bc815929de457e463d20ecce0511ebd67fe2ed683617bcd29369600b16",
+     "head": [
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "CAY",
+        "altloc": "",
+        "element": "C",
+        "site_index": 0
+       },
+       "worldCoordinate_A": [
+        5.440000057220459,
+        4.559999942779541,
+        22.8799991607666
+       ],
+       "canvasPixel": [
+        449.33275276040064,
+        354.0446056636949
+       ],
+       "depth": -1482.902354238248
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY1",
+        "altloc": "",
+        "element": "H",
+        "site_index": 1
+       },
+       "worldCoordinate_A": [
+        4.650000095367432,
+        3.9200000762939453,
+        23.31999969482422
+       ],
+       "canvasPixel": [
+        439.4639607784989,
+        362.02823096694556
+       ],
+       "depth": -1520.105020996474
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY2",
+        "altloc": "",
+        "element": "H",
+        "site_index": 2
+       },
+       "worldCoordinate_A": [
+        6.389999866485596,
+        3.9800000190734863,
+        22.90999984741211
+       ],
+       "canvasPixel": [
+        461.6472751370834,
+        361.52329209783323
+       ],
+       "depth": -1485.4254638768675
+      }
+     ]
+    },
+    "layers": [
+     {
+      "layer": "reference",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "visible": true,
+      "transform": [
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1
+      ],
+      "nativeAtomCount": 5067
+     }
+    ]
+   }
+  },
+  "finalFrame": {
+   "screenshot": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/faults/fault-recovered.page.png",
+   "paint": {
+    "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/faults/fault-recovered.paint.png",
+    "paintCount": 124,
+    "size": {
+     "width": 1440,
+     "height": 960
+    }
+   },
+   "status": {
+    "paintCount": 124,
+    "lastPaintAt": "2026-09-28T05:23:12.534Z",
+    "lastSize": {
+     "width": 1440,
+     "height": 960
+    },
+    "blockedRequests": [],
+    "loopbackRequestCount": 264,
+    "loadError": null,
+    "downloads": [],
+    "lastDirtyRect": {
+     "x": 0,
+     "y": 0,
+     "width": 1440,
+     "height": 960
+    },
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "versions": {
+     "electron": "44.4.5",
+     "chrome": "152.0.7977.130",
+     "node": "24.21.0"
+    },
+    "url": "http://127.0.0.1:3000/?run=run_9022d05cff054fce81789c8cfff04a3a",
+    "title": "Molecular Workspace",
+    "canvasCount": 1,
+    "rendererUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7977.130 Electron/44.4.5 Safari/537.36",
+    "viewer": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    },
+    "viewerObservationError": null
+   }
+  },
+  "scienceEventsAfter": {
+   "_omitted": "list",
+   "length": 34,
+   "bytes": 15552335,
+   "sha256": "e59651873e2b86fa9a63306f02fe3d1fb60c0c3f50c11c80fb7922d4c60b2c22",
+   "head": [
+    {
+     "args": {
+      "model_index": 0,
+      "source": "upload://run_9022d05cff054fce81789c8cfff04a3a/9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03.pdb"
+     },
+     "attempt_kind": "initial",
+     "branch_id": null,
+     "call_id": "call_c07e50bcaca74363ba7283e88a587bae",
+     "decided_by": "human",
+     "execution_mode": "human",
+     "key": "0a17e73113b3cc8ec4974e4752b9381825a7e7cdf3034e5b584b4c3452074563",
+     "parent_call_id": null,
+     "remaining_wall_s": 1800,
+     "root_call_id": "proposal_62fa10a358f745dd859364475e20df12",
+     "seq": 4,
+     "tool": "load_structure",
+     "ts": 1790572576.376487,
+     "type": "tool_called",
+     "version": "0.1.1"
+    },
+    {
+     "fmt": "pdb",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure_source/3ba50c6de99d089a4eef57d65e1ba82211c3b6f1905b8a64e7be59f74fa1026f",
+     "kind": "structure_source",
+     "null_result": false,
+     "produced_by": "call_c07e50bcaca74363ba7283e88a587bae",
+     "schema": "structure_source@1",
+     "seq": 5,
+     "summary": {},
+     "ts": 1790572576.386122,
+     "type": "object_created"
+    },
+    {
+     "fmt": "json",
+     "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+     "kind": "structure",
+     "null_result": false,
+     "produced_by": "call_c07e50bcaca74363ba7283e88a587bae",
+     "schema": "structure_selection@2",
+     "seq": 6,
+     "summary": {
+      "chains_auth": [
+       "A",
+       "B",
+       "L"
+      ],
+      "format": "pdb",
+      "model_number": 1,
+      "n_models": 1,
+      "n_residues": 303,
+      "resolution_A": null,
+      "selected_model_index": 0,
+      "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure_source/3ba50c6de99d089a4eef57d65e1ba82211c3b6f1905b8a64e7be59f74fa1026f"
+     },
+     "ts": 1790572576.389528,
+     "type": "object_created"
+    }
+   ]
+  },
+  "finalImage": {
+   "width": 1440,
+   "height": 960,
+   "low": 1,
+   "high": 250,
+   "sha256": "d7d22673cd0ad6fff38f42e67c465c5e5609f0491c54c3636a40771a6b2b5363"
+  },
+  "finalNative": {
+   "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+   "mode": "create_new",
+   "generation": 6,
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+   "catalogReady": true,
+   "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+   "resultTotal": 36,
+   "selectedRowId": null,
+   "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+   "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "sessionId": null,
+    "generation": null,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "selectionError": null,
+    "camera": {
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "distance": 144.58575353288873
+    },
+    "nativeCamera": {
+     "mode": "perspective",
+     "fov": 0.7853981633974483,
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "up": [
+      0,
+      1,
+      0
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "radiusMax": 50.775513201281534,
+     "fog": 15,
+     "clipFar": true,
+     "minNear": 1,
+     "minFar": 0
+    },
+    "theme": "dark",
+    "backgroundColor": 724496,
+    "lastAck": null,
+    "measureMode": false,
+    "lastAtomPick": null,
+    "nativeBusy": false,
+    "nativeUpdating": false,
+    "nativeAnimating": false,
+    "cameraTransitioning": false,
+    "m10QueuePending": 0,
+    "nativeClickRevision": 1,
+    "lastNativeClick": {
+     "kind": "empty-loci",
+     "size": null,
+     "pluginBusy": false,
+     "measureMode": false,
+     "accepted": false,
+     "reason": "inactive"
+    },
+    "chemicalFocus": null,
+    "chemicalAnnotation": null,
+    "catalogReady": true,
+    "atomPickRevision": 0,
+    "qaAtoms": {
+     "_omitted": "list",
+     "length": 128,
+     "bytes": 70931,
+     "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+     "head": [
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "CAY",
+        "altloc": "",
+        "element": "C",
+        "site_index": 0
+       },
+       "worldCoordinate_A": [
+        5.440000057220459,
+        4.559999942779541,
+        22.8799991607666
+       ],
+       "canvasPixel": [
+        396.6525828103208,
+        422.1052363069606
+       ],
+       "depth": 0.3079884604801931
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY1",
+        "altloc": "",
+        "element": "H",
+        "site_index": 1
+       },
+       "worldCoordinate_A": [
+        4.650000095367432,
+        3.9200000762939453,
+        23.31999969482422
+       ],
+       "canvasPixel": [
+        389.6421830951654,
+        427.87711761294884
+       ],
+       "depth": 0.3015980211324321
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY2",
+        "altloc": "",
+        "element": "H",
+        "site_index": 2
+       },
+       "worldCoordinate_A": [
+        6.389999866485596,
+        3.9800000190734863,
+        22.90999984741211
+       ],
+       "canvasPixel": [
+        405.14024537990593,
+        427.28672876420944
+       ],
+       "depth": 0.30755433914674096
+      }
+     ]
+    },
+    "layers": [
+     {
+      "layer": "reference",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "visible": true,
+      "transform": [
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1
+      ],
+      "nativeAtomCount": 5067
+     }
+    ]
+   }
+  },
+  "offscreen": {
+   "offscreen": true,
+   "visible": false,
+   "painting": true,
+   "hardwareAccelerationEnabled": true,
+   "paintCount": 131,
+   "webgl": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+   },
+   "nonLoopbackRequests": 0,
+   "blockedRequests": [],
+   "loopbackRequestCount": 264,
+   "versions": {
+    "electron": "44.4.5",
+    "chrome": "152.0.7977.130",
+    "node": "24.21.0"
+   }
+  },
+  "network": {
+   "_omitted": "list",
+   "length": 144,
+   "bytes": 35572,
+   "sha256": "3c42f3d01bf66a734261a215defe99c16d1693c188524d2890bd6622cc6cc9d6",
+   "head": [
+    {
+     "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/budget",
+     "status": 200,
+     "method": "GET"
+    },
+    {
+     "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/events?after=0&limit=500",
+     "status": 200,
+     "method": "GET"
+    },
+    {
+     "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a",
+     "status": 200,
+     "method": "GET"
+    }
+   ]
+  },
+  "finishedAt": "2026-09-28T05:23:13.696Z"
+ }
+}

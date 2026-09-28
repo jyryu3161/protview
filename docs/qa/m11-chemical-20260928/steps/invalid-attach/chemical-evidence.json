@@ -1,0 +1,462 @@
+{
+  "mode": "invalid-attach",
+  "ledgerMode": "invalid-attach",
+  "status": "observed_unreviewed",
+  "harnessSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+  "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb",
+  "fixtureFiles": {
+    "sdf": {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    },
+    "ligand": {
+      "name": "m11-attach-ligand-instance-run.json",
+      "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+      "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+    }
+  },
+  "variantsManifest": {
+    "name": "m11-invalid-cases.json",
+    "bytes": 8895,
+    "sha256": "bdbd6fd3977a2ade47472693aead82fc69cfc01f86ed540274088e1201977ee8",
+    "provenance": "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)"
+  },
+  "expectCapability": null,
+  "fixtureLabel": null,
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "startedAt": "2026-09-28T05:23:31.573Z",
+  "run": "run_9022d05cff054fce81789c8cfff04a3a",
+  "files": {
+    "sdf": {
+      "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+      "bytes": 60682,
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    },
+    "sidecar": {
+      "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/runs/m11-acceptance-20260928/inputs/invalid-attach/m11-invalid-covalent-ligand-bonds-run.json",
+      "bytes": 3389183,
+      "sha256": "08c5cba479cbde026c1619dd934ad399944f6cc2e368253893ac61aa2f28cf7d",
+      "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_raw_input/9379a0d289abc285399f6aed0257cb4dcae3af561b4f475ff3c0abda5b8d54ea",
+      "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+    }
+  },
+  "cases": [
+    {
+      "case": "covalent_ligand",
+      "category": "covalent ligand",
+      "expected": {
+        "kind": "blockers",
+        "codes": [
+          "cross_excluded_bond"
+        ],
+        "atoms": {
+          "cross_excluded_bond": [
+            {
+              "residue": {
+                "model_number": 1,
+                "chain_auth": "A",
+                "seq_auth": 38,
+                "icode": "",
+                "chain_label": null,
+                "seq_label": null,
+                "resname": "TYR"
+              },
+              "atom_name": "CAY",
+              "altloc": "",
+              "element": "C"
+            },
+            {
+              "residue": {
+                "model_number": 1,
+                "chain_auth": "L",
+                "chain_label": null,
+                "seq_auth": 1,
+                "seq_label": null,
+                "icode": "",
+                "resname": "LIG"
+              },
+              "atom_name": "X1",
+              "altloc": "",
+              "element": "C"
+            }
+          ]
+        }
+      },
+      "blockers": [
+        {
+          "code": "cross_excluded_bond",
+          "message": "Water or selected ligand is covalently bonded to receptor",
+          "atoms": [
+            {
+              "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+              "residue": {
+                "model_number": 1,
+                "chain_auth": "A",
+                "seq_auth": 38,
+                "icode": "",
+                "chain_label": null,
+                "seq_label": null,
+                "resname": "TYR"
+              },
+              "atom_name": "CAY",
+              "altloc": "",
+              "element": "C",
+              "site_index": 0
+            },
+            {
+              "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+              "residue": {
+                "model_number": 1,
+                "chain_auth": "L",
+                "seq_auth": 1,
+                "icode": "",
+                "chain_label": null,
+                "seq_label": null,
+                "resname": "LIG"
+              },
+              "atom_name": "X1",
+              "altloc": "",
+              "element": "C",
+              "site_index": 4988
+            }
+          ],
+          "visibleLines": [
+            "TYR A/38 · CAY · model 1 · site 0 · model 1 · auth A/38 · label ?/? · site 0",
+            "LIG L/1 · X1 · model 1 · site 4988 · model 1 · auth L/1 · label ?/? · site 4988"
+          ]
+        },
+        {
+          "code": "ligand_mapping_incomplete",
+          "message": "Map every required selected SDF atom",
+          "atoms": [],
+          "visibleLines": []
+        }
+      ],
+      "frame": {
+        "screenshot": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/invalid-attach/invalid-covalent-ligand.page.png",
+        "paint": {
+          "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/invalid-attach/invalid-covalent-ligand.paint.png",
+          "paintCount": 34,
+          "size": {
+            "width": 1440,
+            "height": 960
+          }
+        },
+        "status": {
+          "paintCount": 34,
+          "lastPaintAt": "2026-09-28T05:23:44.814Z",
+          "lastSize": {
+            "width": 1440,
+            "height": 960
+          },
+          "blockedRequests": [],
+          "loopbackRequestCount": 115,
+          "loadError": null,
+          "downloads": [],
+          "lastDirtyRect": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 960
+          },
+          "offscreen": true,
+          "visible": false,
+          "painting": true,
+          "hardwareAccelerationEnabled": true,
+          "versions": {
+            "electron": "44.4.5",
+            "chrome": "152.0.7977.130",
+            "node": "24.21.0"
+          },
+          "url": "http://127.0.0.1:3000/?run=run_9022d05cff054fce81789c8cfff04a3a",
+          "title": "Molecular Workspace",
+          "canvasCount": 0,
+          "rendererUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7977.130 Electron/44.4.5 Safari/537.36",
+          "viewer": null,
+          "viewerObservationError": null
+        }
+      }
+    }
+  ],
+  "finalImage": {
+    "width": 1440,
+    "height": 960,
+    "low": 11,
+    "high": 235,
+    "sha256": "ea38daa140aa8c30ad21e8ac05bc7d83474b7983001d7278719e15e8d8e32882"
+  },
+  "finalNative": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "attach_existing",
+    "generation": null,
+    "sourceHandle": null,
+    "graphHandle": null,
+    "catalogReady": false,
+    "resultHandle": "",
+    "resultTotal": null,
+    "selectedRowId": null,
+    "prepareJobId": null,
+    "detectJobId": null,
+    "native": null
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 37,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 115,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/events?after=0&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/objects/meta?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/figures?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/intents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/objects/meta?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/objects/meta?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/intents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/bytes?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/residues?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/residues?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=0&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=0&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=1000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=1000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=1500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=1500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=2000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=2000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=2500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=2500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=3000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=3000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=3500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=3500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=4000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=4000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=4500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=4500&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=5000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/structures/atoms?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fstructure%2F9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442&offset=5000&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/online",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/viewer/online",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/chemical/imports?kind=ligand_sdf&filename=prolif-vina-output.sdf",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/chemical/imports/inspect?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fchemical_raw_input%2F4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/chemical/imports?kind=receptor_bonds&filename=m11-invalid-covalent-ligand-bonds-run.json",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/chemical/imports/inspect?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fchemical_raw_input%2F9379a0d289abc285399f6aed0257cb4dcae3af561b4f475ff3c0abda5b8d54ea",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/chemical/preview",
+      "status": 200,
+      "method": "POST"
+    }
+  ],
+  "finishedAt": "2026-09-28T05:23:45.038Z"
+}

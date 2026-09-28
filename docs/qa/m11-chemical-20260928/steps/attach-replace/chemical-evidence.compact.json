@@ -1,0 +1,4894 @@
+{
+ "_compactOf": "steps/attach-replace/chemical-evidence.json",
+ "originalBytes": 1321502,
+ "originalSha256": "290caba42b569f17538e63148bc5ea1781452f90ca397ae1fe315a7471f79f1d",
+ "rule": "nested values over 8192 serialized bytes replaced by byte count + sha256",
+ "content": {
+  "mode": "attach",
+  "ledgerMode": "attach-replace_from_sdf",
+  "status": "observed_unreviewed",
+  "harnessSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+  "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb",
+  "fixtureFiles": {
+   "sdf": {
+    "name": "prolif-vina-output.sdf",
+    "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+    "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+   },
+   "sidecar": {
+    "name": "m11-attach-bonds-run.json",
+    "sha256": "f919b735a14b7114d521483ff6fb50bce50e8d7d1d49dd896605e76b7413229f",
+    "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog"
+   },
+   "mapping": {
+    "name": "m11-attach-mapping-replace-run.json",
+    "sha256": "4e8d0f95897913ed4b52e37eecd9ccc71b7d5f76ed486d511df15d891b938afa",
+    "provenance": "run-bound labeled replace_from_sdf heavy-atom mapping from the QA run's source catalog"
+   },
+   "ligand": {
+    "name": "m11-attach-ligand-instance-run.json",
+    "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+    "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+   }
+  },
+  "variantsManifest": null,
+  "expectCapability": null,
+  "fixtureLabel": null,
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "startedAt": "2026-09-28T05:17:30.576Z",
+  "run": "run_9022d05cff054fce81789c8cfff04a3a",
+  "complex": {
+   "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+   "schema": "structure_selection@2"
+  },
+  "files": {
+   "sdf": {
+    "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+    "bytes": 60682,
+    "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+    "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+    "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+   },
+   "sidecar": {
+    "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/runs/m11-acceptance-20260928/inputs/attach-setup/m11-attach-bonds-run.json",
+    "bytes": 3388517,
+    "sha256": "f919b735a14b7114d521483ff6fb50bce50e8d7d1d49dd896605e76b7413229f",
+    "handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_raw_input/d9898c351a05cd0242d64699ad5691e0a0ccc8501d2c67078effbbc4b24893dc",
+    "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog"
+   }
+  },
+  "unmappedBlockers": [
+   {
+    "code": "supplied_graph_complete",
+    "atoms": 0
+   },
+   {
+    "code": "infer_receptor_orders_charges",
+    "atoms": 0
+   },
+   {
+    "code": "supplied_hydrogens_complete",
+    "atoms": 0
+   },
+   {
+    "code": "use_supplied_protonation_tautomer",
+    "atoms": 0
+   },
+   {
+    "code": "terminal_extension_undeclared",
+    "atoms": 3
+   },
+   {
+    "code": "terminal_extension_undeclared",
+    "atoms": 3
+   },
+   {
+    "code": "ligand_mapping_incomplete",
+    "atoms": 0
+   },
+   {
+    "code": "ligand_source_inventory_mismatch",
+    "atoms": 20
+   }
+  ],
+  "inventory": {
+   "sdfAtoms": 79,
+   "heavyAtoms": 43,
+   "selectedLigandAtoms": 79,
+   "policy": "replace_from_sdf"
+  },
+  "manualMapping": {
+   "_omitted": "list",
+   "length": 43,
+   "bytes": 16708,
+   "sha256": "2ba282be82a69ce18e1ba79f26d26f28dfce0540107542dd0f2dc974e1301da1",
+   "head": [
+    {
+     "sdf_atom_index": 0,
+     "source_atom": {
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "L",
+       "seq_auth": 1,
+       "icode": "",
+       "chain_label": null,
+       "seq_label": null,
+       "resname": "LIG"
+      },
+      "atom_name": "X1",
+      "altloc": "",
+      "element": "C",
+      "site_index": 4988
+     }
+    },
+    {
+     "sdf_atom_index": 1,
+     "source_atom": {
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "L",
+       "seq_auth": 1,
+       "icode": "",
+       "chain_label": null,
+       "seq_label": null,
+       "resname": "LIG"
+      },
+      "atom_name": "X2",
+      "altloc": "",
+      "element": "C",
+      "site_index": 4989
+     }
+    },
+    {
+     "sdf_atom_index": 2,
+     "source_atom": {
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "L",
+       "seq_auth": 1,
+       "icode": "",
+       "chain_label": null,
+       "seq_label": null,
+       "resname": "LIG"
+      },
+      "atom_name": "X3",
+      "altloc": "",
+      "element": "C",
+      "site_index": 4990
+     }
+    }
+   ]
+  },
+  "terminalExtensionCount": 2,
+  "mappingPreview": {
+   "mapped": 43,
+   "shownDiscrepancies": [
+    {
+     "sdf_atom_index": 0,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 1,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 2,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 3,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 4,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 5,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 6,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 7,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 8,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 9,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 10,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 11,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 12,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 13,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 14,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 15,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 16,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 17,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 18,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 19,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 20,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 21,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 22,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 23,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 24,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 25,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 26,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 27,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 28,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 29,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 30,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 31,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 32,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 33,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 34,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 35,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 36,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 37,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 38,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 39,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 40,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 41,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    },
+    {
+     "sdf_atom_index": 42,
+     "discrepancy_A": 0,
+     "shown": "검증된 좌표 차이 0.0000 Å"
+    }
+   ],
+   "maxDiscrepancy_A": 0
+  },
+  "queuedReopen": {
+   "jobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "priorDonePreparations": [
+    "job_aa9b6d05df8844fb9eaf8f310a0cca62"
+   ],
+   "priorDoneDetections": [
+    "job_9f1d3428f8204a4895570cd1ae23a754"
+   ],
+   "selected": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": null,
+    "sourceHandle": null,
+    "graphHandle": null,
+    "catalogReady": false,
+    "resultHandle": "",
+    "resultTotal": null,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": null,
+    "native": null
+   },
+   "frame": {
+    "screenshot": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace/queued-prepare-reopened.page.png",
+    "paint": {
+     "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace/queued-prepare-reopened.paint.png",
+     "paintCount": 64,
+     "size": {
+      "width": 1440,
+      "height": 960
+     }
+    },
+    "status": {
+     "paintCount": 64,
+     "lastPaintAt": "2026-09-28T05:17:47.776Z",
+     "lastSize": {
+      "width": 1440,
+      "height": 960
+     },
+     "blockedRequests": [],
+     "loopbackRequestCount": 216,
+     "loadError": null,
+     "downloads": [],
+     "lastDirtyRect": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 960
+     },
+     "offscreen": true,
+     "visible": false,
+     "painting": true,
+     "hardwareAccelerationEnabled": true,
+     "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+     },
+     "url": "http://127.0.0.1:3000/?run=run_9022d05cff054fce81789c8cfff04a3a",
+     "title": "Molecular Workspace",
+     "canvasCount": 0,
+     "rendererUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7977.130 Electron/44.4.5 Safari/537.36",
+     "viewer": null,
+     "viewerObservationError": null
+    }
+   }
+  },
+  "prepare": {
+   "id": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "text": "화학 구조 준비 · done\njob_165a7dc351a64bb8bdd1fa39e146c4c0\n준비 작업 시작\n준비 작업 취소\n준비 작업 재시도\n\nsource obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815\ngraph obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+   "conflictProof": null,
+   "approvalSeen": false
+  },
+  "prepared": {
+   "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+   "mode": "create_new",
+   "generation": 1,
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+   "catalogReady": true,
+   "resultHandle": "",
+   "resultTotal": null,
+   "selectedRowId": null,
+   "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "detectJobId": null,
+   "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "sessionId": null,
+    "generation": null,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "selectionError": null,
+    "camera": {
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "distance": 144.58575353288873
+    },
+    "nativeCamera": {
+     "mode": "perspective",
+     "fov": 0.7853981633974483,
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "up": [
+      0,
+      1,
+      0
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "radiusMax": 50.775513201281534,
+     "fog": 15,
+     "clipFar": true,
+     "minNear": 1,
+     "minFar": 0
+    },
+    "theme": "dark",
+    "backgroundColor": 724496,
+    "lastAck": null,
+    "measureMode": false,
+    "lastAtomPick": null,
+    "nativeBusy": false,
+    "nativeUpdating": false,
+    "nativeAnimating": false,
+    "cameraTransitioning": false,
+    "m10QueuePending": 0,
+    "nativeClickRevision": 1,
+    "lastNativeClick": {
+     "kind": "empty-loci",
+     "size": null,
+     "pluginBusy": false,
+     "measureMode": false,
+     "accepted": false,
+     "reason": "inactive"
+    },
+    "chemicalFocus": null,
+    "chemicalAnnotation": null,
+    "catalogReady": true,
+    "atomPickRevision": 0,
+    "qaAtoms": {
+     "_omitted": "list",
+     "length": 128,
+     "bytes": 70931,
+     "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+     "head": [
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "CAY",
+        "altloc": "",
+        "element": "C",
+        "site_index": 0
+       },
+       "worldCoordinate_A": [
+        5.440000057220459,
+        4.559999942779541,
+        22.8799991607666
+       ],
+       "canvasPixel": [
+        396.6525828103208,
+        422.1052363069606
+       ],
+       "depth": 0.3079884604801931
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY1",
+        "altloc": "",
+        "element": "H",
+        "site_index": 1
+       },
+       "worldCoordinate_A": [
+        4.650000095367432,
+        3.9200000762939453,
+        23.31999969482422
+       ],
+       "canvasPixel": [
+        389.6421830951654,
+        427.87711761294884
+       ],
+       "depth": 0.3015980211324321
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY2",
+        "altloc": "",
+        "element": "H",
+        "site_index": 2
+       },
+       "worldCoordinate_A": [
+        6.389999866485596,
+        3.9800000190734863,
+        22.90999984741211
+       ],
+       "canvasPixel": [
+        405.14024537990593,
+        427.28672876420944
+       ],
+       "depth": 0.30755433914674096
+      }
+     ]
+    },
+    "layers": [
+     {
+      "layer": "reference",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "visible": true,
+      "transform": [
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1
+      ],
+      "nativeAtomCount": 5067
+     }
+    ]
+   }
+  },
+  "derivedSource": {
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "kind": "chemical_structure",
+   "manifestHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762",
+   "linkedComplex": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442",
+   "hydrogenPolicy": "replace_from_sdf",
+   "attachedSites": 43,
+   "excludedOriginalHydrogens": 36,
+   "originalLigandHydrogens": 36,
+   "derivedLigandAtoms": 79,
+   "derivedLigandHydrogens": 36
+  },
+  "detect": {
+   "id": "job_e98db6aed84c4578868144372298a9a6",
+   "text": "ProLIF 계산 · done\njob_e98db6aed84c4578868144372298a9a6\n상호작용 작업 시작\n상호작용 작업 취소\n상호작용 작업 재시도",
+   "conflictProof": null,
+   "approvalSeen": false
+  },
+  "detected": {
+   "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+   "mode": "create_new",
+   "generation": 2,
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+   "catalogReady": true,
+   "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+   "resultTotal": 36,
+   "selectedRowId": null,
+   "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+   "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "sessionId": null,
+    "generation": null,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "selectionError": null,
+    "camera": {
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "distance": 144.58575353288873
+    },
+    "nativeCamera": {
+     "mode": "perspective",
+     "fov": 0.7853981633974483,
+     "position": [
+      3.4625611044317743,
+      5.579966773763775,
+      134.57161255366933
+     ],
+     "up": [
+      0,
+      1,
+      0
+     ],
+     "target": [
+      3.4625611044317743,
+      5.579966773763775,
+      -10.014140979219396
+     ],
+     "radius": 50.775513201281534,
+     "radiusMax": 50.775513201281534,
+     "fog": 15,
+     "clipFar": true,
+     "minNear": 1,
+     "minFar": 0
+    },
+    "theme": "dark",
+    "backgroundColor": 724496,
+    "lastAck": null,
+    "measureMode": false,
+    "lastAtomPick": null,
+    "nativeBusy": false,
+    "nativeUpdating": false,
+    "nativeAnimating": false,
+    "cameraTransitioning": false,
+    "m10QueuePending": 0,
+    "nativeClickRevision": 1,
+    "lastNativeClick": {
+     "kind": "empty-loci",
+     "size": null,
+     "pluginBusy": false,
+     "measureMode": false,
+     "accepted": false,
+     "reason": "inactive"
+    },
+    "chemicalFocus": null,
+    "chemicalAnnotation": null,
+    "catalogReady": true,
+    "atomPickRevision": 0,
+    "qaAtoms": {
+     "_omitted": "list",
+     "length": 128,
+     "bytes": 71017,
+     "sha256": "ba5861bc815929de457e463d20ecce0511ebd67fe2ed683617bcd29369600b16",
+     "head": [
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "CAY",
+        "altloc": "",
+        "element": "C",
+        "site_index": 0
+       },
+       "worldCoordinate_A": [
+        5.440000057220459,
+        4.559999942779541,
+        22.8799991607666
+       ],
+       "canvasPixel": [
+        449.33275276040064,
+        354.0446056636949
+       ],
+       "depth": -1482.902354238248
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY1",
+        "altloc": "",
+        "element": "H",
+        "site_index": 1
+       },
+       "worldCoordinate_A": [
+        4.650000095367432,
+        3.9200000762939453,
+        23.31999969482422
+       ],
+       "canvasPixel": [
+        439.4639607784989,
+        362.02823096694556
+       ],
+       "depth": -1520.105020996474
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY2",
+        "altloc": "",
+        "element": "H",
+        "site_index": 2
+       },
+       "worldCoordinate_A": [
+        6.389999866485596,
+        3.9800000190734863,
+        22.90999984741211
+       ],
+       "canvasPixel": [
+        461.6472751370834,
+        361.52329209783323
+       ],
+       "depth": -1485.4254638768675
+      }
+     ]
+    },
+    "layers": [
+     {
+      "layer": "reference",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "visible": true,
+      "transform": [
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1
+      ],
+      "nativeAtomCount": 5067
+     }
+    ]
+   }
+  },
+  "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+  "row": {
+   "rowId": "r000001",
+   "before": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 2,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": null,
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": null,
+     "camera": {
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "distance": 144.58575353288873
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.4625611044317743,
+       5.579966773763775,
+       134.57161255366933
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.4625611044317743,
+       5.579966773763775,
+       -10.014140979219396
+      ],
+      "radius": 50.775513201281534,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": null,
+     "chemicalAnnotation": null,
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 70931,
+      "sha256": "673c77de4386d39c0f35efc8c9e7ec55d90801b807501645d4bf00067a985c1e",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         396.6525828103208,
+         422.1052363069606
+        ],
+        "depth": 0.3079884604801931
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         389.6421830951654,
+         427.87711761294884
+        ],
+        "depth": 0.3015980211324321
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         405.14024537990593,
+         427.28672876420944
+        ],
+        "depth": 0.30755433914674096
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "after": {
+    "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+    "mode": "create_new",
+    "generation": 2,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "catalogReady": true,
+    "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "resultTotal": 36,
+    "selectedRowId": "r000001",
+    "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+    "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+    "native": {
+     "ready": true,
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "sessionId": null,
+     "generation": null,
+     "representation": "ball-and-stick",
+     "molstarRepresentation": "Ball & Stick",
+     "selection": null,
+     "selectionError": "Mixed native residue selection",
+     "camera": {
+      "position": [
+       3.961999893188476,
+       0.028999984264373772,
+       30.872243269078172
+      ],
+      "target": [
+       3.961999893188476,
+       0.028999984264373772,
+       8.275499820709229
+      ],
+      "radius": 7.935506903227783,
+      "distance": 22.596743448368944
+     },
+     "nativeCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.961999893188476,
+       0.028999984264373772,
+       30.872243269078172
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.961999893188476,
+       0.028999984264373772,
+       8.275499820709229
+      ],
+      "radius": 7.935506903227783,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     },
+     "theme": "dark",
+     "backgroundColor": 724496,
+     "lastAck": null,
+     "measureMode": false,
+     "lastAtomPick": null,
+     "nativeBusy": false,
+     "nativeUpdating": false,
+     "nativeAnimating": false,
+     "cameraTransitioning": false,
+     "m10QueuePending": 0,
+     "nativeClickRevision": 1,
+     "lastNativeClick": {
+      "kind": "empty-loci",
+      "size": null,
+      "pluginBusy": false,
+      "measureMode": false,
+      "accepted": false,
+      "reason": "inactive"
+     },
+     "chemicalFocus": {
+      "rowId": "r000001",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "atoms": [
+       {
+        "ref": {
+         "altloc": "",
+         "atom_name": "X25",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 5012,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+        },
+        "nativeWorldCoordinate_A": [
+         2.303999900817871,
+         -1.4620000123977661,
+         8.51099967956543
+        ],
+        "nativeSourceIndex": 5012
+       },
+       {
+        "ref": {
+         "altloc": "",
+         "atom_name": "CE1",
+         "element": "C",
+         "residue": {
+          "chain_auth": "B",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "PHE",
+          "seq_auth": 330,
+          "seq_label": null
+         },
+         "site_index": 4004,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+        },
+        "nativeWorldCoordinate_A": [
+         5.619999885559082,
+         1.5199999809265137,
+         8.039999961853027
+        ],
+        "nativeSourceIndex": 4004
+       }
+      ],
+      "selectedNativeSourceIndices": [
+       4004,
+       5012
+      ],
+      "settledCamera": {
+       "mode": "perspective",
+       "fov": 0.7853981633974483,
+       "position": [
+        3.961999893188476,
+        0.028999984264373772,
+        30.872243269078172
+       ],
+       "up": [
+        0,
+        1,
+        0
+       ],
+       "target": [
+        3.961999893188476,
+        0.028999984264373772,
+        8.275499820709229
+       ],
+       "radius": 7.935506903227783,
+       "radiusMax": 50.775513201281534,
+       "fog": 15,
+       "clipFar": true,
+       "minNear": 1,
+       "minFar": 0
+      }
+     },
+     "chemicalAnnotation": {
+      "rowId": "r000001",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "distanceNative_A": 4.484419761025375,
+      "angleNative_deg": null,
+      "nativeShapeRefs": [
+       "FnhsMM11c34KpreJhDVdbA"
+      ]
+     },
+     "catalogReady": true,
+     "atomPickRevision": 0,
+     "qaAtoms": {
+      "_omitted": "list",
+      "length": 128,
+      "bytes": 71176,
+      "sha256": "a4c6f1c76966e92bfd74fc5ab7836278fa2125f528230c809e900fc1ad505e10",
+      "head": [
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "CAY",
+         "altloc": "",
+         "element": "C",
+         "site_index": 0
+        },
+        "worldCoordinate_A": [
+         5.440000057220459,
+         4.559999942779541,
+         22.8799991607666
+        ],
+        "canvasPixel": [
+         563.3875013128369,
+         -152.26364551952815
+        ],
+        "depth": -1.6052609093523484
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY1",
+         "altloc": "",
+         "element": "H",
+         "site_index": 1
+        },
+        "worldCoordinate_A": [
+         4.650000095367432,
+         3.9200000762939453,
+         23.31999969482422
+        ],
+        "canvasPixel": [
+         469.83188238156333,
+         -100.70168436949427
+        ],
+        "depth": -1.8108656960041278
+       },
+       {
+        "layer": "reference",
+        "ref": {
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "TYR",
+          "seq_auth": 38,
+          "seq_label": null
+         },
+         "atom_name": "HY2",
+         "altloc": "",
+         "element": "H",
+         "site_index": 2
+        },
+        "worldCoordinate_A": [
+         6.389999866485596,
+         3.9800000190734863,
+         22.90999984741211
+        ],
+        "canvasPixel": [
+         683.0457687399223,
+         -81.76312029925737
+        ],
+        "depth": -1.6185578506056677
+       }
+      ]
+     },
+     "layers": [
+      {
+       "layer": "reference",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "visible": true,
+       "transform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+       ],
+       "nativeAtomCount": 5067
+      }
+     ]
+    }
+   },
+   "exact": {
+    "DHA_angle_deg": null,
+    "backend_category": "Hydrophobic",
+    "category": "Hydrophobic",
+    "distance_A": 4.484419713096448,
+    "distance_roles": [
+     "ligand_site",
+     "receptor_site"
+    ],
+    "engine_role_coordinates_A": {
+     "ligand_site": [
+      2.304,
+      -1.462,
+      8.511
+     ],
+     "receptor_site": [
+      5.619999885559082,
+      1.5199999809265137,
+      8.039999961853027
+     ]
+    },
+    "ligand_atoms": [
+     {
+      "altloc": "",
+      "atom_name": "X25",
+      "element": "C",
+      "residue": {
+       "chain_auth": "L",
+       "chain_label": null,
+       "icode": "",
+       "model_number": 1,
+       "resname": "LIG",
+       "seq_auth": 1,
+       "seq_label": null
+      },
+      "site_index": 5012,
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+     }
+    ],
+    "native_metadata": {
+     "distance": 4.484419713096448
+    },
+    "native_parent_indices": {
+     "ligand": [
+      24
+     ],
+     "protein": [
+      4004
+     ]
+    },
+    "native_within_residue_indices": {
+     "ligand": [
+      24
+     ],
+     "protein": [
+      10
+     ]
+    },
+    "receptor_atoms": [
+     {
+      "altloc": "",
+      "atom_name": "CE1",
+      "element": "C",
+      "residue": {
+       "chain_auth": "B",
+       "chain_label": null,
+       "icode": "",
+       "model_number": 1,
+       "resname": "PHE",
+       "seq_auth": 330,
+       "seq_label": null
+      },
+      "site_index": 4004,
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+     }
+    ],
+    "role_coordinates_A": {
+     "ligand_site": [
+      2.304,
+      -1.462,
+      8.511
+     ],
+     "receptor_site": [
+      5.62,
+      1.52,
+      8.04
+     ]
+    },
+    "roles": {
+     "ligand_site": {
+      "altloc": "",
+      "atom_name": "X25",
+      "element": "C",
+      "residue": {
+       "chain_auth": "L",
+       "chain_label": null,
+       "icode": "",
+       "model_number": 1,
+       "resname": "LIG",
+       "seq_auth": 1,
+       "seq_label": null
+      },
+      "site_index": 5012,
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+     },
+     "receptor_site": {
+      "altloc": "",
+      "atom_name": "CE1",
+      "element": "C",
+      "residue": {
+       "chain_auth": "B",
+       "chain_label": null,
+       "icode": "",
+       "model_number": 1,
+       "resname": "PHE",
+       "seq_auth": 330,
+       "seq_label": null
+      },
+      "site_index": 4004,
+      "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+     }
+    },
+    "row_id": "r000001"
+   },
+   "independentDistance": 4.484419713096447,
+   "independentAngle": null,
+   "frame": {
+    "screenshot": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace/row-r000001.page.png",
+    "paint": {
+     "path": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace/row-r000001.paint.png",
+     "paintCount": 120,
+     "size": {
+      "width": 1440,
+      "height": 960
+     }
+    },
+    "status": {
+     "paintCount": 120,
+     "lastPaintAt": "2026-09-28T05:18:59.409Z",
+     "lastSize": {
+      "width": 1440,
+      "height": 960
+     },
+     "blockedRequests": [],
+     "loopbackRequestCount": 328,
+     "loadError": null,
+     "downloads": [],
+     "lastDirtyRect": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 960
+     },
+     "offscreen": true,
+     "visible": false,
+     "painting": true,
+     "hardwareAccelerationEnabled": true,
+     "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+     },
+     "url": "http://127.0.0.1:3000/?run=run_9022d05cff054fce81789c8cfff04a3a",
+     "title": "Molecular Workspace",
+     "canvasCount": 1,
+     "rendererUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7977.130 Electron/44.4.5 Safari/537.36",
+     "viewer": {
+      "ready": true,
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "sessionId": null,
+      "generation": null,
+      "representation": "ball-and-stick",
+      "molstarRepresentation": "Ball & Stick",
+      "selection": null,
+      "selectionError": "Mixed native residue selection",
+      "camera": {
+       "position": [
+        3.961999893188476,
+        0.028999984264373772,
+        30.872243269078172
+       ],
+       "target": [
+        3.961999893188476,
+        0.028999984264373772,
+        8.275499820709229
+       ],
+       "radius": 7.935506903227783,
+       "distance": 22.596743448368944
+      },
+      "nativeCamera": {
+       "mode": "perspective",
+       "fov": 0.7853981633974483,
+       "position": [
+        3.961999893188476,
+        0.028999984264373772,
+        30.872243269078172
+       ],
+       "up": [
+        0,
+        1,
+        0
+       ],
+       "target": [
+        3.961999893188476,
+        0.028999984264373772,
+        8.275499820709229
+       ],
+       "radius": 7.935506903227783,
+       "radiusMax": 50.775513201281534,
+       "fog": 15,
+       "clipFar": true,
+       "minNear": 1,
+       "minFar": 0
+      },
+      "theme": "dark",
+      "backgroundColor": 724496,
+      "lastAck": null,
+      "measureMode": false,
+      "lastAtomPick": null,
+      "nativeBusy": false,
+      "nativeUpdating": false,
+      "nativeAnimating": false,
+      "cameraTransitioning": false,
+      "m10QueuePending": 0,
+      "nativeClickRevision": 1,
+      "lastNativeClick": {
+       "kind": "empty-loci",
+       "size": null,
+       "pluginBusy": false,
+       "measureMode": false,
+       "accepted": false,
+       "reason": "inactive"
+      },
+      "chemicalFocus": {
+       "rowId": "r000001",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "atoms": [
+        {
+         "ref": {
+          "altloc": "",
+          "atom_name": "X25",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 5012,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         },
+         "nativeWorldCoordinate_A": [
+          2.303999900817871,
+          -1.4620000123977661,
+          8.51099967956543
+         ],
+         "nativeSourceIndex": 5012
+        },
+        {
+         "ref": {
+          "altloc": "",
+          "atom_name": "CE1",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "PHE",
+           "seq_auth": 330,
+           "seq_label": null
+          },
+          "site_index": 4004,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         },
+         "nativeWorldCoordinate_A": [
+          5.619999885559082,
+          1.5199999809265137,
+          8.039999961853027
+         ],
+         "nativeSourceIndex": 4004
+        }
+       ],
+       "selectedNativeSourceIndices": [
+        4004,
+        5012
+       ],
+       "settledCamera": {
+        "mode": "perspective",
+        "fov": 0.7853981633974483,
+        "position": [
+         3.961999893188476,
+         0.028999984264373772,
+         30.872243269078172
+        ],
+        "up": [
+         0,
+         1,
+         0
+        ],
+        "target": [
+         3.961999893188476,
+         0.028999984264373772,
+         8.275499820709229
+        ],
+        "radius": 7.935506903227783,
+        "radiusMax": 50.775513201281534,
+        "fog": 15,
+        "clipFar": true,
+        "minNear": 1,
+        "minFar": 0
+       }
+      },
+      "chemicalAnnotation": {
+       "rowId": "r000001",
+       "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+       "distanceNative_A": 4.484419761025375,
+       "angleNative_deg": null,
+       "nativeShapeRefs": [
+        "FnhsMM11c34KpreJhDVdbA"
+       ]
+      },
+      "catalogReady": true,
+      "atomPickRevision": 0,
+      "qaAtoms": {
+       "_omitted": "list",
+       "length": 128,
+       "bytes": 71176,
+       "sha256": "a4c6f1c76966e92bfd74fc5ab7836278fa2125f528230c809e900fc1ad505e10",
+       "head": [
+        {
+         "layer": "reference",
+         "ref": {
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "atom_name": "CAY",
+          "altloc": "",
+          "element": "C",
+          "site_index": 0
+         },
+         "worldCoordinate_A": [
+          5.440000057220459,
+          4.559999942779541,
+          22.8799991607666
+         ],
+         "canvasPixel": [
+          563.3875013128369,
+          -152.26364551952815
+         ],
+         "depth": -1.6052609093523484
+        },
+        {
+         "layer": "reference",
+         "ref": {
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "atom_name": "HY1",
+          "altloc": "",
+          "element": "H",
+          "site_index": 1
+         },
+         "worldCoordinate_A": [
+          4.650000095367432,
+          3.9200000762939453,
+          23.31999969482422
+         ],
+         "canvasPixel": [
+          469.83188238156333,
+          -100.70168436949427
+         ],
+         "depth": -1.8108656960041278
+        },
+        {
+         "layer": "reference",
+         "ref": {
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "atom_name": "HY2",
+          "altloc": "",
+          "element": "H",
+          "site_index": 2
+         },
+         "worldCoordinate_A": [
+          6.389999866485596,
+          3.9800000190734863,
+          22.90999984741211
+         ],
+         "canvasPixel": [
+          683.0457687399223,
+          -81.76312029925737
+         ],
+         "depth": -1.6185578506056677
+        }
+       ]
+      },
+      "layers": [
+       {
+        "layer": "reference",
+        "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "visible": true,
+        "transform": [
+         1,
+         0,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         1,
+         0,
+         0,
+         0,
+         0,
+         1
+        ],
+        "nativeAtomCount": 5067
+       }
+      ]
+     },
+     "viewerObservationError": null
+    }
+   }
+  },
+  "pagination": [
+   {
+    "offset": 0,
+    "ids": [
+     "r000001",
+     "r000002",
+     "r000003",
+     "r000004",
+     "r000005",
+     "r000006",
+     "r000007",
+     "r000008",
+     "r000009",
+     "r000010"
+    ],
+    "total": 36
+   },
+   {
+    "offset": 10,
+    "ids": [
+     "r000011",
+     "r000012",
+     "r000013",
+     "r000014",
+     "r000015",
+     "r000016",
+     "r000017",
+     "r000018",
+     "r000019",
+     "r000020"
+    ],
+    "total": 36
+   },
+   {
+    "stalePageHeld": true,
+    "category": "HBDonor",
+    "ids": [
+     "r000023"
+    ]
+   }
+  ],
+  "restrictions": [
+   "프롬프트 사용 불가",
+   "현재 보기 저장",
+   "현재 보기 PNG 내보내기",
+   "원자 거리 측정",
+   "두 구조 비교 추가"
+  ],
+  "reportHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/method_report_manifest/56bfb7c19e3572796f827effe9afeb2050b3423c9672115341b7ca3902d1e863",
+  "report": {
+   "markdown": {
+    "downloaded": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace/downloads/1790572750720-59691-1-protview-report-56bfb7c19e35.md",
+    "sha256": "5f9a9af70decfb1733acfd8165739b369f5e47b7942bcfb12d9b0772beba5a27",
+    "bytes": 8139,
+    "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/reports/download?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fmethod_report_manifest%2F56bfb7c19e3572796f827effe9afeb2050b3423c9672115341b7ca3902d1e863&format=markdown",
+    "filename": "protview-report-56bfb7c19e35.md",
+    "electronDownloadStatus": "completed"
+   },
+   "json": {
+    "downloaded": "/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2/frontend/tests/offscreen/artifacts/m11-acceptance/20260928/attach-replace/downloads/1790572751805-59691-2-protview-report-56bfb7c19e35.json",
+    "sha256": "0d595afc48b44f6b5bee4816d882b1be0382c079d32f16484d7402e81c35baaf",
+    "bytes": 135267,
+    "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/reports/download?handle=obj%3A%2F%2Frun_9022d05cff054fce81789c8cfff04a3a%2Fmethod_report_manifest%2F56bfb7c19e3572796f827effe9afeb2050b3423c9672115341b7ca3902d1e863&format=json",
+    "filename": "protview-report-56bfb7c19e35.json",
+    "electronDownloadStatus": "completed"
+   },
+   "attribution": {
+    "analysis_type": "chemical_interactions",
+    "chemical_structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "claims": {
+     "_omitted": "list",
+     "length": 39,
+     "bytes": 52099,
+     "sha256": "d3603eed9218e85f0716679c38a29b5d34ce851f376e1aa814c6a5bd09de6df7",
+     "head": [
+      {
+       "exact_value": 36,
+       "field_path": "total",
+       "quantity": "assignment_count",
+       "row_id": null,
+       "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "source_kind": "chemical_interaction_set",
+       "source_schema": "chemical_interaction_set@1",
+       "source_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "subject": null,
+       "unit": "count"
+      },
+      {
+       "exact_value": 4.484419713096448,
+       "field_path": "rows.0.distance_A",
+       "quantity": "assigned_distance",
+       "row_id": "r000001",
+       "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "source_kind": "chemical_interaction_set",
+       "source_schema": "chemical_interaction_set@1",
+       "source_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "subject": {
+        "category": "Hydrophobic",
+        "distance_roles": [
+         "ligand_site",
+         "receptor_site"
+        ],
+        "ligand_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "X25",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 5012,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ],
+        "receptor_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CE1",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "PHE",
+           "seq_auth": 330,
+           "seq_label": null
+          },
+          "site_index": 4004,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ]
+       },
+       "unit": "angstrom"
+      },
+      {
+       "exact_value": 3.512554836741935,
+       "field_path": "rows.1.distance_A",
+       "quantity": "assigned_distance",
+       "row_id": "r000002",
+       "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "source_kind": "chemical_interaction_set",
+       "source_schema": "chemical_interaction_set@1",
+       "source_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "subject": {
+        "category": "Hydrophobic",
+        "distance_roles": [
+         "ligand_site",
+         "receptor_site"
+        ],
+        "ligand_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "X25",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 5012,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ],
+        "receptor_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CZ",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "PHE",
+           "seq_auth": 330,
+           "seq_label": null
+          },
+          "site_index": 4006,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ]
+       },
+       "unit": "angstrom"
+      }
+     ]
+    },
+    "coordinate_provenance": {
+     "attached_source_sites": {
+      "_omitted": "list",
+      "length": 43,
+      "bytes": 19577,
+      "sha256": "24b29bbc9ea3a0abba4f8a62704808b323844ea11d3c91133570de07685c7f91",
+      "head": [
+       {
+        "discrepancy_A": 0,
+        "sdf_atom_index": 0,
+        "source_atom": {
+         "altloc": "",
+         "atom_name": "X1",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 4988,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+        },
+        "source_coordinate_A": [
+         1.424,
+         1.34,
+         12.727
+        ]
+       },
+       {
+        "discrepancy_A": 0,
+        "sdf_atom_index": 1,
+        "source_atom": {
+         "altloc": "",
+         "atom_name": "X2",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 4989,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+        },
+        "source_coordinate_A": [
+         2.487,
+         0.846,
+         13.776
+        ]
+       },
+       {
+        "discrepancy_A": 0,
+        "sdf_atom_index": 2,
+        "source_atom": {
+         "altloc": "",
+         "atom_name": "X3",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 4990,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+        },
+        "source_coordinate_A": [
+         4.073,
+         1.929,
+         15.256
+        ]
+       }
+      ]
+     },
+     "derived_coordinate_policy": "new chemical source keeps receptor original coordinates and selected SDF conformer coordinates; attach requires <=0.002 A discrepancy and never aligns",
+     "field_citations": {
+      "_omitted": "list",
+      "length": 44,
+      "bytes": 29270,
+      "sha256": "5b33c01e2fd9f209157ba35dea30b51462fe92e6643dc6481bce56f8671baf9e",
+      "head": [
+       {
+        "exact_value": "new chemical source keeps receptor original coordinates and selected SDF conformer coordinates; attach requires <=0.002 A discrepancy and never aligns",
+        "field_path": "derived_coordinate_policy",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "discrepancy_A": 0,
+         "sdf_atom_index": 0,
+         "source_atom": {
+          "altloc": "",
+          "atom_name": "X1",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 4988,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         "source_coordinate_A": [
+          1.424,
+          1.34,
+          12.727
+         ]
+        },
+        "field_path": "attached_source_sites.0",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "discrepancy_A": 0,
+         "sdf_atom_index": 1,
+         "source_atom": {
+          "altloc": "",
+          "atom_name": "X2",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 4989,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         "source_coordinate_A": [
+          2.487,
+          0.846,
+          13.776
+         ]
+        },
+        "field_path": "attached_source_sites.1",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       }
+      ]
+     },
+     "maximum_attachment_discrepancy_A": 0,
+     "source_manifest_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+    },
+    "criteria": {
+     "Anionic_distance_A": 4.5,
+     "Cationic_distance_A": 4.5,
+     "Hbond_DHA_angle_deg": [
+      130,
+      180
+     ],
+     "Hbond_distance_A": 3.5,
+     "Hydrophobic_distance_A": 4.5,
+     "categories": [
+      "HBDonor",
+      "HBAcceptor",
+      "Hydrophobic",
+      "Cationic",
+      "Anionic"
+     ],
+     "native_smarts": {
+      "Anionic": {
+       "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+       "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+      },
+      "Cationic": {
+       "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+       "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+      },
+      "HBAcceptor": {
+       "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+       "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+      },
+      "HBDonor": {
+       "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+       "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+      },
+      "Hydrophobic": {
+       "ligand": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]",
+       "protein": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]"
+      }
+     },
+     "native_smarts_sha256": "3dbf3c1663f9ed4f7e49250f32f9a8849bc6297278ffaf2f624004591f81caf5",
+     "vicinity_cutoff_A": 6
+    },
+    "dependency_manifest": {
+     "lock_sha256": "be320702daba7ea9922e278c49d6c69efc6f3ce7962a7be47623421b2387999a",
+     "native_method": {
+      "criteria": {
+       "Anionic_distance_A": 4.5,
+       "Cationic_distance_A": 4.5,
+       "Hbond_DHA_angle_deg": [
+        130,
+        180
+       ],
+       "Hbond_distance_A": 3.5,
+       "Hydrophobic_distance_A": 4.5,
+       "categories": [
+        "HBDonor",
+        "HBAcceptor",
+        "Hydrophobic",
+        "Cationic",
+        "Anionic"
+       ],
+       "vicinity_cutoff_A": 6
+      },
+      "native_smarts": {
+       "Anionic": {
+        "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+        "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+       },
+       "Cationic": {
+        "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+        "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+       },
+       "HBAcceptor": {
+        "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+        "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+       },
+       "HBDonor": {
+        "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+        "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+       },
+       "Hydrophobic": {
+        "ligand": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]",
+        "protein": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]"
+       }
+      },
+      "native_smarts_sha256": "3dbf3c1663f9ed4f7e49250f32f9a8849bc6297278ffaf2f624004591f81caf5",
+      "schema": "chemical_native_method@1",
+      "source_sha256": {
+       "base.py": "3c10fe88839767db22eb43e7b535e087af1d98e60e07a21a2b1708e0727aad91",
+       "interactions.py": "9b891c16eae1340269b6860131b9bef6f8d9676a54171e0b9c48b6c7aa1b6798"
+      }
+     },
+     "native_rdkit_version": "2026.03.6",
+     "platform": "darwin",
+     "python": "3.11.11",
+     "schema": "chemical_worker_handshake@1",
+     "versions": {
+      "MDAnalysis": "2.10.0",
+      "gemmi": "0.7.5",
+      "prolif": "2.2.2",
+      "rdkit": "2026.3.6"
+     },
+     "worker_sha256": "4fb1eb2a978dbf334e61d629bd7242b4fb568f91654212d22050a34bfe63e73b"
+    },
+    "generation_mode": "local_rules_no_egress",
+    "graph_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "limitations": [
+     "Native chemistry-dependent assignments; not experimental validation, affinity or energy.",
+     "Ligand import supports SDF V2000 only; V3000 input is rejected."
+    ],
+    "manifest_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762",
+    "markdown_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/report_markdown/779ac35f738d6c5d1bb9ec5585757e8596eeaf5f903c6674e5c18502f8055414",
+    "method": "prolif_prepared_explicit_h@1",
+    "null_result": false,
+    "preparation_graph_states": {
+     "field_citations": {
+      "_omitted": "list",
+      "length": 15,
+      "bytes": 19891,
+      "sha256": "aa66776a628d237a04bd4e97639b78af33fe66b11ac41deccbe936cf9e088933",
+      "head": [
+       {
+        "exact_value": "V2000 explicit tetrahedral atom parity must agree with selected 3D geometry; RDKit 3D coordinates supersede wedge/dash depiction; ambiguous stereo is unsupported",
+        "field_path": "stereochemistry_policy",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "annotation": "graph-derived supplied state; not a pH prediction",
+         "represented_state": "neutral_NE2_H",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "HSE",
+          "seq_auth": 81,
+          "seq_label": null
+         },
+         "ring_formal_charge": 0,
+         "ring_h_sites": [
+          "NE2"
+         ],
+         "ring_n_charges": {
+          "ND1": 0,
+          "NE2": 0
+         }
+        },
+        "field_path": "histidine_states.0",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "annotation": "graph-derived supplied state; not a pH prediction",
+         "represented_state": "neutral_ND1_H",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "HSD",
+          "seq_auth": 139,
+          "seq_label": null
+         },
+         "ring_formal_charge": 0,
+         "ring_h_sites": [
+          "ND1"
+         ],
+         "ring_n_charges": {
+          "ND1": 0,
+          "NE2": 0
+         }
+        },
+        "field_path": "histidine_states.1",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       }
+      ]
+     },
+     "histidine_states": [
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_NE2_H",
+       "residue": {
+        "chain_auth": "A",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSE",
+        "seq_auth": 81,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "NE2"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_ND1_H",
+       "residue": {
+        "chain_auth": "A",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSD",
+        "seq_auth": 139,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "ND1"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_ND1_H",
+       "residue": {
+        "chain_auth": "A",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSD",
+        "seq_auth": 205,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "ND1"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_NE2_H",
+       "residue": {
+        "chain_auth": "B",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSE",
+        "seq_auth": 347,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "NE2"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_ND1_H",
+       "residue": {
+        "chain_auth": "B",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSD",
+        "seq_auth": 381,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "ND1"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      }
+     ],
+     "source_manifest_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762",
+     "stereochemistry_audit": [
+      {
+       "declared_CIP": "R",
+       "declared_parity": 2,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 0,
+       "signed_tetrahedral_determinant_A3": 9.65584564
+      },
+      {
+       "declared_CIP": "S",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "S",
+       "outcome": "match",
+       "sdf_atom_index": 2,
+       "signed_tetrahedral_determinant_A3": -8.533287629199997
+      },
+      {
+       "declared_CIP": "S",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "S",
+       "outcome": "match",
+       "sdf_atom_index": 8,
+       "signed_tetrahedral_determinant_A3": -8.282302629400004
+      },
+      {
+       "declared_CIP": "S",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "S",
+       "outcome": "match",
+       "sdf_atom_index": 9,
+       "signed_tetrahedral_determinant_A3": -9.229087914000006
+      },
+      {
+       "declared_CIP": "R",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 18,
+       "signed_tetrahedral_determinant_A3": -8.529334396599996
+      },
+      {
+       "declared_CIP": "R",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 20,
+       "signed_tetrahedral_determinant_A3": -7.630588644300001
+      },
+      {
+       "declared_CIP": "R",
+       "declared_parity": 2,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 22,
+       "signed_tetrahedral_determinant_A3": 8.412236712299999
+      }
+     ],
+     "stereochemistry_policy": "V2000 explicit tetrahedral atom parity must agree with selected 3D geometry; RDKit 3D coordinates supersede wedge/dash depiction; ambiguous stereo is unsupported",
+     "terminal_extension_inventory": {
+      "_omitted": "list",
+      "length": 2,
+      "bytes": 13397,
+      "sha256": "c1f6d230c5e96bd46f915098a3750a4b0f69120b7e996d51cb9fee6ec8e56256",
+      "head": [
+       {
+        "atom_names": [
+         "CAY",
+         "CY",
+         "OY"
+        ],
+        "attachment_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 4,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "N",
+           "element": "N",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 6,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "declared": true,
+        "extension_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY1",
+           "element": "H",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 1,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY2",
+           "element": "H",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 2,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY3",
+           "element": "H",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 3,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 4,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 4,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "OY",
+           "element": "O",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 5,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "resolved_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CAY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 0,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY1",
+          "element": "H",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 1,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY2",
+          "element": "H",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 2,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY3",
+          "element": "H",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 3,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "CY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 4,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "OY",
+          "element": "O",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 5,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         }
+        ],
+        "terminal_anchor": "N"
+       },
+       {
+        "atom_names": [
+         "CAY",
+         "CY",
+         "OY"
+        ],
+        "attachment_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3449,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "N",
+           "element": "N",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3451,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "declared": true,
+        "extension_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY1",
+           "element": "H",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3446,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY2",
+           "element": "H",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3447,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY3",
+           "element": "H",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3448,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3449,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3449,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "OY",
+           "element": "O",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3450,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "residue": {
+         "chain_auth": "B",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "LEU",
+         "seq_auth": 298,
+         "seq_label": null
+        },
+        "resolved_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CAY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3445,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY1",
+          "element": "H",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3446,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY2",
+          "element": "H",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3447,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY3",
+          "element": "H",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3448,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "CY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3449,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "OY",
+          "element": "O",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3450,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         }
+        ],
+        "terminal_anchor": "N"
+       }
+      ]
+     }
+    },
+    "provenance": {
+     "attempt_id": "attempt_331af92e34d247248119e0c31d3a53e9",
+     "completed_event_seq": 69,
+     "created_event_seq": 67,
+     "first_creator_attempt_id": "attempt_331af92e34d247248119e0c31d3a53e9",
+     "job_id": "job_e98db6aed84c4578868144372298a9a6",
+     "protocol_id": "prolif_detect_v1",
+     "tool_id": "compute_chemical_interactions"
+    },
+    "render_version": "chemical_markdown@1",
+    "result_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "result_schema": "chemical_interaction_set@1",
+    "result_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "schema": "method_report_manifest@1",
+    "snapshot": {
+     "event_seq": 70,
+     "run_egress_mode": "local_only",
+     "time_utc": 1790572719.429064
+    },
+    "status": "complete",
+    "total": 36
+   },
+   "selectedManifest": {
+    "analysis_type": "chemical_interactions",
+    "chemical_structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "claims": {
+     "_omitted": "list",
+     "length": 39,
+     "bytes": 52099,
+     "sha256": "d3603eed9218e85f0716679c38a29b5d34ce851f376e1aa814c6a5bd09de6df7",
+     "head": [
+      {
+       "exact_value": 36,
+       "field_path": "total",
+       "quantity": "assignment_count",
+       "row_id": null,
+       "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "source_kind": "chemical_interaction_set",
+       "source_schema": "chemical_interaction_set@1",
+       "source_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "subject": null,
+       "unit": "count"
+      },
+      {
+       "exact_value": 4.484419713096448,
+       "field_path": "rows.0.distance_A",
+       "quantity": "assigned_distance",
+       "row_id": "r000001",
+       "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "source_kind": "chemical_interaction_set",
+       "source_schema": "chemical_interaction_set@1",
+       "source_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "subject": {
+        "category": "Hydrophobic",
+        "distance_roles": [
+         "ligand_site",
+         "receptor_site"
+        ],
+        "ligand_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "X25",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 5012,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ],
+        "receptor_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CE1",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "PHE",
+           "seq_auth": 330,
+           "seq_label": null
+          },
+          "site_index": 4004,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ]
+       },
+       "unit": "angstrom"
+      },
+      {
+       "exact_value": 3.512554836741935,
+       "field_path": "rows.1.distance_A",
+       "quantity": "assigned_distance",
+       "row_id": "r000002",
+       "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "source_kind": "chemical_interaction_set",
+       "source_schema": "chemical_interaction_set@1",
+       "source_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+       "subject": {
+        "category": "Hydrophobic",
+        "distance_roles": [
+         "ligand_site",
+         "receptor_site"
+        ],
+        "ligand_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "X25",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 5012,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ],
+        "receptor_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CZ",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "PHE",
+           "seq_auth": 330,
+           "seq_label": null
+          },
+          "site_index": 4006,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+         }
+        ]
+       },
+       "unit": "angstrom"
+      }
+     ]
+    },
+    "coordinate_provenance": {
+     "attached_source_sites": {
+      "_omitted": "list",
+      "length": 43,
+      "bytes": 19577,
+      "sha256": "24b29bbc9ea3a0abba4f8a62704808b323844ea11d3c91133570de07685c7f91",
+      "head": [
+       {
+        "discrepancy_A": 0,
+        "sdf_atom_index": 0,
+        "source_atom": {
+         "altloc": "",
+         "atom_name": "X1",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 4988,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+        },
+        "source_coordinate_A": [
+         1.424,
+         1.34,
+         12.727
+        ]
+       },
+       {
+        "discrepancy_A": 0,
+        "sdf_atom_index": 1,
+        "source_atom": {
+         "altloc": "",
+         "atom_name": "X2",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 4989,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+        },
+        "source_coordinate_A": [
+         2.487,
+         0.846,
+         13.776
+        ]
+       },
+       {
+        "discrepancy_A": 0,
+        "sdf_atom_index": 2,
+        "source_atom": {
+         "altloc": "",
+         "atom_name": "X3",
+         "element": "C",
+         "residue": {
+          "chain_auth": "L",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "LIG",
+          "seq_auth": 1,
+          "seq_label": null
+         },
+         "site_index": 4990,
+         "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+        },
+        "source_coordinate_A": [
+         4.073,
+         1.929,
+         15.256
+        ]
+       }
+      ]
+     },
+     "derived_coordinate_policy": "new chemical source keeps receptor original coordinates and selected SDF conformer coordinates; attach requires <=0.002 A discrepancy and never aligns",
+     "field_citations": {
+      "_omitted": "list",
+      "length": 44,
+      "bytes": 29270,
+      "sha256": "5b33c01e2fd9f209157ba35dea30b51462fe92e6643dc6481bce56f8671baf9e",
+      "head": [
+       {
+        "exact_value": "new chemical source keeps receptor original coordinates and selected SDF conformer coordinates; attach requires <=0.002 A discrepancy and never aligns",
+        "field_path": "derived_coordinate_policy",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "discrepancy_A": 0,
+         "sdf_atom_index": 0,
+         "source_atom": {
+          "altloc": "",
+          "atom_name": "X1",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 4988,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         "source_coordinate_A": [
+          1.424,
+          1.34,
+          12.727
+         ]
+        },
+        "field_path": "attached_source_sites.0",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "discrepancy_A": 0,
+         "sdf_atom_index": 1,
+         "source_atom": {
+          "altloc": "",
+          "atom_name": "X2",
+          "element": "C",
+          "residue": {
+           "chain_auth": "L",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LIG",
+           "seq_auth": 1,
+           "seq_label": null
+          },
+          "site_index": 4989,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         "source_coordinate_A": [
+          2.487,
+          0.846,
+          13.776
+         ]
+        },
+        "field_path": "attached_source_sites.1",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       }
+      ]
+     },
+     "maximum_attachment_discrepancy_A": 0,
+     "source_manifest_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+    },
+    "criteria": {
+     "Anionic_distance_A": 4.5,
+     "Cationic_distance_A": 4.5,
+     "Hbond_DHA_angle_deg": [
+      130,
+      180
+     ],
+     "Hbond_distance_A": 3.5,
+     "Hydrophobic_distance_A": 4.5,
+     "categories": [
+      "HBDonor",
+      "HBAcceptor",
+      "Hydrophobic",
+      "Cationic",
+      "Anionic"
+     ],
+     "native_smarts": {
+      "Anionic": {
+       "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+       "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+      },
+      "Cationic": {
+       "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+       "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+      },
+      "HBAcceptor": {
+       "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+       "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+      },
+      "HBDonor": {
+       "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+       "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+      },
+      "Hydrophobic": {
+       "ligand": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]",
+       "protein": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]"
+      }
+     },
+     "native_smarts_sha256": "3dbf3c1663f9ed4f7e49250f32f9a8849bc6297278ffaf2f624004591f81caf5",
+     "vicinity_cutoff_A": 6
+    },
+    "dependency_manifest": {
+     "lock_sha256": "be320702daba7ea9922e278c49d6c69efc6f3ce7962a7be47623421b2387999a",
+     "native_method": {
+      "criteria": {
+       "Anionic_distance_A": 4.5,
+       "Cationic_distance_A": 4.5,
+       "Hbond_DHA_angle_deg": [
+        130,
+        180
+       ],
+       "Hbond_distance_A": 3.5,
+       "Hydrophobic_distance_A": 4.5,
+       "categories": [
+        "HBDonor",
+        "HBAcceptor",
+        "Hydrophobic",
+        "Cationic",
+        "Anionic"
+       ],
+       "vicinity_cutoff_A": 6
+      },
+      "native_smarts": {
+       "Anionic": {
+        "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+        "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+       },
+       "Cationic": {
+        "ligand": "[+{1-}&!$(*~[-{1-}]),$([N&X3&!$([N&X3]-O)]-C=[N&X3&+])]",
+        "protein": "[-{1-}&!$(*~[+{1-}]),$(O=[C,S,P]-[O&-])]"
+       },
+       "HBAcceptor": {
+        "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+        "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+       },
+       "HBDonor": {
+        "ligand": "[$([N&!$([N&X3]-*=[O,N,P,S])&!$([N&D2&v3&^2&+0](-[#1])-[C&D4&v4&H1&^3]-[C&D2&^2&+0]=O)&!$([N&X3]-a)&!$([N&v4&+])&!$(N=C(-[C,N])-N)]),$([n&+0&!X3&!$([n&r5]:[n&+&r5])]),$([O&!$([O&X2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O&-]-N=O)]),$([o&+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+        "protein": "[$([O,S,#7;+0]),$([N&v4&+]),$([n&+]c[n&H1])]-[#1]"
+       },
+       "Hydrophobic": {
+        "ligand": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]",
+        "protein": "[c,s,Br,I,S&H0&v2,$([C;X2&H0&R0,X3&H1&R0,X4&H2&R0,X3&H0,X4&H1,X4&H0]);+0;!$([#6]~[#7,#8,#9])]"
+       }
+      },
+      "native_smarts_sha256": "3dbf3c1663f9ed4f7e49250f32f9a8849bc6297278ffaf2f624004591f81caf5",
+      "schema": "chemical_native_method@1",
+      "source_sha256": {
+       "base.py": "3c10fe88839767db22eb43e7b535e087af1d98e60e07a21a2b1708e0727aad91",
+       "interactions.py": "9b891c16eae1340269b6860131b9bef6f8d9676a54171e0b9c48b6c7aa1b6798"
+      }
+     },
+     "native_rdkit_version": "2026.03.6",
+     "platform": "darwin",
+     "python": "3.11.11",
+     "schema": "chemical_worker_handshake@1",
+     "versions": {
+      "MDAnalysis": "2.10.0",
+      "gemmi": "0.7.5",
+      "prolif": "2.2.2",
+      "rdkit": "2026.3.6"
+     },
+     "worker_sha256": "4fb1eb2a978dbf334e61d629bd7242b4fb568f91654212d22050a34bfe63e73b"
+    },
+    "generation_mode": "local_rules_no_egress",
+    "graph_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+    "limitations": [
+     "Native chemistry-dependent assignments; not experimental validation, affinity or energy.",
+     "Ligand import supports SDF V2000 only; V3000 input is rejected."
+    ],
+    "manifest_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762",
+    "markdown_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/report_markdown/779ac35f738d6c5d1bb9ec5585757e8596eeaf5f903c6674e5c18502f8055414",
+    "method": "prolif_prepared_explicit_h@1",
+    "null_result": false,
+    "preparation_graph_states": {
+     "field_citations": {
+      "_omitted": "list",
+      "length": 15,
+      "bytes": 19891,
+      "sha256": "aa66776a628d237a04bd4e97639b78af33fe66b11ac41deccbe936cf9e088933",
+      "head": [
+       {
+        "exact_value": "V2000 explicit tetrahedral atom parity must agree with selected 3D geometry; RDKit 3D coordinates supersede wedge/dash depiction; ambiguous stereo is unsupported",
+        "field_path": "stereochemistry_policy",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "annotation": "graph-derived supplied state; not a pH prediction",
+         "represented_state": "neutral_NE2_H",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "HSE",
+          "seq_auth": 81,
+          "seq_label": null
+         },
+         "ring_formal_charge": 0,
+         "ring_h_sites": [
+          "NE2"
+         ],
+         "ring_n_charges": {
+          "ND1": 0,
+          "NE2": 0
+         }
+        },
+        "field_path": "histidine_states.0",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       },
+       {
+        "exact_value": {
+         "annotation": "graph-derived supplied state; not a pH prediction",
+         "represented_state": "neutral_ND1_H",
+         "residue": {
+          "chain_auth": "A",
+          "chain_label": null,
+          "icode": "",
+          "model_number": 1,
+          "resname": "HSD",
+          "seq_auth": 139,
+          "seq_label": null
+         },
+         "ring_formal_charge": 0,
+         "ring_h_sites": [
+          "ND1"
+         ],
+         "ring_n_charges": {
+          "ND1": 0,
+          "NE2": 0
+         }
+        },
+        "field_path": "histidine_states.1",
+        "source_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762"
+       }
+      ]
+     },
+     "histidine_states": [
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_NE2_H",
+       "residue": {
+        "chain_auth": "A",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSE",
+        "seq_auth": 81,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "NE2"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_ND1_H",
+       "residue": {
+        "chain_auth": "A",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSD",
+        "seq_auth": 139,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "ND1"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_ND1_H",
+       "residue": {
+        "chain_auth": "A",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSD",
+        "seq_auth": 205,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "ND1"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_NE2_H",
+       "residue": {
+        "chain_auth": "B",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSE",
+        "seq_auth": 347,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "NE2"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      },
+      {
+       "annotation": "graph-derived supplied state; not a pH prediction",
+       "represented_state": "neutral_ND1_H",
+       "residue": {
+        "chain_auth": "B",
+        "chain_label": null,
+        "icode": "",
+        "model_number": 1,
+        "resname": "HSD",
+        "seq_auth": 381,
+        "seq_label": null
+       },
+       "ring_formal_charge": 0,
+       "ring_h_sites": [
+        "ND1"
+       ],
+       "ring_n_charges": {
+        "ND1": 0,
+        "NE2": 0
+       }
+      }
+     ],
+     "source_manifest_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_preparation_manifest/361972df54e28c4700b843315875dc62095484c8e5c9bf040a150798876e9762",
+     "stereochemistry_audit": [
+      {
+       "declared_CIP": "R",
+       "declared_parity": 2,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 0,
+       "signed_tetrahedral_determinant_A3": 9.65584564
+      },
+      {
+       "declared_CIP": "S",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "S",
+       "outcome": "match",
+       "sdf_atom_index": 2,
+       "signed_tetrahedral_determinant_A3": -8.533287629199997
+      },
+      {
+       "declared_CIP": "S",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "S",
+       "outcome": "match",
+       "sdf_atom_index": 8,
+       "signed_tetrahedral_determinant_A3": -8.282302629400004
+      },
+      {
+       "declared_CIP": "S",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "S",
+       "outcome": "match",
+       "sdf_atom_index": 9,
+       "signed_tetrahedral_determinant_A3": -9.229087914000006
+      },
+      {
+       "declared_CIP": "R",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 18,
+       "signed_tetrahedral_determinant_A3": -8.529334396599996
+      },
+      {
+       "declared_CIP": "R",
+       "declared_parity": 1,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 20,
+       "signed_tetrahedral_determinant_A3": -7.630588644300001
+      },
+      {
+       "declared_CIP": "R",
+       "declared_parity": 2,
+       "method": "rdkit_v2000_parity_vs_3d@1",
+       "observed_CIP": "R",
+       "outcome": "match",
+       "sdf_atom_index": 22,
+       "signed_tetrahedral_determinant_A3": 8.412236712299999
+      }
+     ],
+     "stereochemistry_policy": "V2000 explicit tetrahedral atom parity must agree with selected 3D geometry; RDKit 3D coordinates supersede wedge/dash depiction; ambiguous stereo is unsupported",
+     "terminal_extension_inventory": {
+      "_omitted": "list",
+      "length": 2,
+      "bytes": 13397,
+      "sha256": "c1f6d230c5e96bd46f915098a3750a4b0f69120b7e996d51cb9fee6ec8e56256",
+      "head": [
+       {
+        "atom_names": [
+         "CAY",
+         "CY",
+         "OY"
+        ],
+        "attachment_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 4,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "N",
+           "element": "N",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 6,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "declared": true,
+        "extension_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY1",
+           "element": "H",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 1,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY2",
+           "element": "H",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 2,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY3",
+           "element": "H",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 3,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 0,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 4,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 4,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "OY",
+           "element": "O",
+           "residue": {
+            "chain_auth": "A",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "TYR",
+            "seq_auth": 38,
+            "seq_label": null
+           },
+           "site_index": 5,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "resolved_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CAY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 0,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY1",
+          "element": "H",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 1,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY2",
+          "element": "H",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 2,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY3",
+          "element": "H",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 3,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "CY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 4,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "OY",
+          "element": "O",
+          "residue": {
+           "chain_auth": "A",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "TYR",
+           "seq_auth": 38,
+           "seq_label": null
+          },
+          "site_index": 5,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         }
+        ],
+        "terminal_anchor": "N"
+       },
+       {
+        "atom_names": [
+         "CAY",
+         "CY",
+         "OY"
+        ],
+        "attachment_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3449,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "N",
+           "element": "N",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3451,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "declared": true,
+        "extension_bonds": [
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY1",
+           "element": "H",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3446,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY2",
+           "element": "H",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3447,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "HY3",
+           "element": "H",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3448,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CAY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3445,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3449,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         },
+         {
+          "first": {
+           "altloc": "",
+           "atom_name": "CY",
+           "element": "C",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3449,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          },
+          "second": {
+           "altloc": "",
+           "atom_name": "OY",
+           "element": "O",
+           "residue": {
+            "chain_auth": "B",
+            "chain_label": null,
+            "icode": "",
+            "model_number": 1,
+            "resname": "LEU",
+            "seq_auth": 298,
+            "seq_label": null
+           },
+           "site_index": 3450,
+           "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+          }
+         }
+        ],
+        "residue": {
+         "chain_auth": "B",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "LEU",
+         "seq_auth": 298,
+         "seq_label": null
+        },
+        "resolved_atoms": [
+         {
+          "altloc": "",
+          "atom_name": "CAY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3445,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY1",
+          "element": "H",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3446,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY2",
+          "element": "H",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3447,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "HY3",
+          "element": "H",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3448,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "CY",
+          "element": "C",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3449,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         },
+         {
+          "altloc": "",
+          "atom_name": "OY",
+          "element": "O",
+          "residue": {
+           "chain_auth": "B",
+           "chain_label": null,
+           "icode": "",
+           "model_number": 1,
+           "resname": "LEU",
+           "seq_auth": 298,
+           "seq_label": null
+          },
+          "site_index": 3450,
+          "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/structure/9b17334df0d1afd6a71f83aaed6f394fc5b08b70b82568ad2827003e4bca5442"
+         }
+        ],
+        "terminal_anchor": "N"
+       }
+      ]
+     }
+    },
+    "provenance": {
+     "attempt_id": "attempt_331af92e34d247248119e0c31d3a53e9",
+     "completed_event_seq": 69,
+     "created_event_seq": 67,
+     "first_creator_attempt_id": "attempt_331af92e34d247248119e0c31d3a53e9",
+     "job_id": "job_e98db6aed84c4578868144372298a9a6",
+     "protocol_id": "prolif_detect_v1",
+     "tool_id": "compute_chemical_interactions"
+    },
+    "render_version": "chemical_markdown@1",
+    "result_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "result_schema": "chemical_interaction_set@1",
+    "result_sha256": "8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+    "schema": "method_report_manifest@1",
+    "snapshot": {
+     "event_seq": 70,
+     "run_egress_mode": "local_only",
+     "time_utc": 1790572719.429064
+    },
+    "status": "complete",
+    "total": 36
+   }
+  },
+  "finalImage": {
+   "width": 1440,
+   "height": 960,
+   "low": 0,
+   "high": 255,
+   "sha256": "15aa6ba71965ce095f244c2d76ffc621fd6d18ebe97f99950017cfdbfb535b7b"
+  },
+  "finalNative": {
+   "runId": "run_9022d05cff054fce81789c8cfff04a3a",
+   "mode": "create_new",
+   "generation": 2,
+   "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+   "graphHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_graph/e74febf723625b8e1733767da65682469a00c1ff61fe7c9c7976b4c26839b7da",
+   "catalogReady": true,
+   "resultHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_interaction_set/8d00c79c048f417fc92ec390ad71746b0e75b6f44e327505b552a77cdee8fcdf",
+   "resultTotal": 36,
+   "selectedRowId": null,
+   "prepareJobId": "job_165a7dc351a64bb8bdd1fa39e146c4c0",
+   "detectJobId": "job_e98db6aed84c4578868144372298a9a6",
+   "native": {
+    "ready": true,
+    "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+    "sessionId": null,
+    "generation": null,
+    "representation": "ball-and-stick",
+    "molstarRepresentation": "Ball & Stick",
+    "selection": null,
+    "selectionError": "Mixed native residue selection",
+    "camera": {
+     "position": [
+      3.961999893188476,
+      0.028999984264373772,
+      30.872243269078172
+     ],
+     "target": [
+      3.961999893188476,
+      0.028999984264373772,
+      8.275499820709229
+     ],
+     "radius": 7.935506903227783,
+     "distance": 22.596743448368944
+    },
+    "nativeCamera": {
+     "mode": "perspective",
+     "fov": 0.7853981633974483,
+     "position": [
+      3.961999893188476,
+      0.028999984264373772,
+      30.872243269078172
+     ],
+     "up": [
+      0,
+      1,
+      0
+     ],
+     "target": [
+      3.961999893188476,
+      0.028999984264373772,
+      8.275499820709229
+     ],
+     "radius": 7.935506903227783,
+     "radiusMax": 50.775513201281534,
+     "fog": 15,
+     "clipFar": true,
+     "minNear": 1,
+     "minFar": 0
+    },
+    "theme": "dark",
+    "backgroundColor": 724496,
+    "lastAck": null,
+    "measureMode": false,
+    "lastAtomPick": null,
+    "nativeBusy": false,
+    "nativeUpdating": false,
+    "nativeAnimating": false,
+    "cameraTransitioning": false,
+    "m10QueuePending": 0,
+    "nativeClickRevision": 1,
+    "lastNativeClick": {
+     "kind": "empty-loci",
+     "size": null,
+     "pluginBusy": false,
+     "measureMode": false,
+     "accepted": false,
+     "reason": "inactive"
+    },
+    "chemicalFocus": {
+     "rowId": "r000001",
+     "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+     "atoms": [
+      {
+       "ref": {
+        "altloc": "",
+        "atom_name": "X25",
+        "element": "C",
+        "residue": {
+         "chain_auth": "L",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "LIG",
+         "seq_auth": 1,
+         "seq_label": null
+        },
+        "site_index": 5012,
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+       },
+       "nativeWorldCoordinate_A": [
+        2.303999900817871,
+        -1.4620000123977661,
+        8.51099967956543
+       ],
+       "nativeSourceIndex": 5012
+      },
+      {
+       "ref": {
+        "altloc": "",
+        "atom_name": "CE1",
+        "element": "C",
+        "residue": {
+         "chain_auth": "B",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "PHE",
+         "seq_auth": 330,
+         "seq_label": null
+        },
+        "site_index": 4004,
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815"
+       },
+       "nativeWorldCoordinate_A": [
+        5.619999885559082,
+        1.5199999809265137,
+        8.039999961853027
+       ],
+       "nativeSourceIndex": 4004
+      }
+     ],
+     "selectedNativeSourceIndices": [
+      4004,
+      5012
+     ],
+     "settledCamera": {
+      "mode": "perspective",
+      "fov": 0.7853981633974483,
+      "position": [
+       3.961999893188476,
+       0.028999984264373772,
+       30.872243269078172
+      ],
+      "up": [
+       0,
+       1,
+       0
+      ],
+      "target": [
+       3.961999893188476,
+       0.028999984264373772,
+       8.275499820709229
+      ],
+      "radius": 7.935506903227783,
+      "radiusMax": 50.775513201281534,
+      "fog": 15,
+      "clipFar": true,
+      "minNear": 1,
+      "minFar": 0
+     }
+    },
+    "chemicalAnnotation": null,
+    "catalogReady": true,
+    "atomPickRevision": 0,
+    "qaAtoms": {
+     "_omitted": "list",
+     "length": 128,
+     "bytes": 71176,
+     "sha256": "a4c6f1c76966e92bfd74fc5ab7836278fa2125f528230c809e900fc1ad505e10",
+     "head": [
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "CAY",
+        "altloc": "",
+        "element": "C",
+        "site_index": 0
+       },
+       "worldCoordinate_A": [
+        5.440000057220459,
+        4.559999942779541,
+        22.8799991607666
+       ],
+       "canvasPixel": [
+        563.3875013128369,
+        -152.26364551952815
+       ],
+       "depth": -1.6052609093523484
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY1",
+        "altloc": "",
+        "element": "H",
+        "site_index": 1
+       },
+       "worldCoordinate_A": [
+        4.650000095367432,
+        3.9200000762939453,
+        23.31999969482422
+       ],
+       "canvasPixel": [
+        469.83188238156333,
+        -100.70168436949427
+       ],
+       "depth": -1.8108656960041278
+      },
+      {
+       "layer": "reference",
+       "ref": {
+        "structure_handle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+        "residue": {
+         "chain_auth": "A",
+         "chain_label": null,
+         "icode": "",
+         "model_number": 1,
+         "resname": "TYR",
+         "seq_auth": 38,
+         "seq_label": null
+        },
+        "atom_name": "HY2",
+        "altloc": "",
+        "element": "H",
+        "site_index": 2
+       },
+       "worldCoordinate_A": [
+        6.389999866485596,
+        3.9800000190734863,
+        22.90999984741211
+       ],
+       "canvasPixel": [
+        683.0457687399223,
+        -81.76312029925737
+       ],
+       "depth": -1.6185578506056677
+      }
+     ]
+    },
+    "layers": [
+     {
+      "layer": "reference",
+      "sourceHandle": "obj://run_9022d05cff054fce81789c8cfff04a3a/chemical_structure/0480e1ded64192332dd2ac0e43eae74b31c0138d2b4de29295c3edebdcb50815",
+      "visible": true,
+      "transform": [
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1
+      ],
+      "nativeAtomCount": 5067
+     }
+    ]
+   }
+  },
+  "offscreen": {
+   "offscreen": true,
+   "visible": false,
+   "painting": true,
+   "hardwareAccelerationEnabled": true,
+   "paintCount": 146,
+   "webgl": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+   },
+   "nonLoopbackRequests": 0,
+   "blockedRequests": [],
+   "loopbackRequestCount": 339,
+   "versions": {
+    "electron": "44.4.5",
+    "chrome": "152.0.7977.130",
+    "node": "24.21.0"
+   }
+  },
+  "network": {
+   "_omitted": "list",
+   "length": 188,
+   "bytes": 37816,
+   "sha256": "23af342906fd32023fd176e226df657295569fe42874b2a7e81bd3d637848f60",
+   "head": [
+    {
+     "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/budget",
+     "status": 200,
+     "method": "GET"
+    },
+    {
+     "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a/events?after=0&limit=500",
+     "status": 200,
+     "method": "GET"
+    },
+    {
+     "url": "http://127.0.0.1:3000/api/runs/run_9022d05cff054fce81789c8cfff04a3a",
+     "status": 200,
+     "method": "GET"
+    }
+   ]
+  },
+  "finishedAt": "2026-09-28T05:19:14.962Z"
+ }
+}
