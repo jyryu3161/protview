@@ -66,6 +66,8 @@ export interface ViewerAgentPanelProps {
   onSession?: (session: ViewerSession | null) => void;
   onSessionError?: (message: string) => void;
   registerSceneController?: (controller: SceneController | null) => void;
+  /** A visible reason that disables every viewer request (e.g. an active M12 pocket overlay). */
+  disabledReason?: string | null;
 }
 
 export interface SceneController {
@@ -338,6 +340,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   const submit = useCallback(async (value: string, local = false) => {
     const current = sessionRef.current;
     if (!p.runId || !current || !p.bridgeRef.current?.snapshot().catalogReady || busy || submittingRef.current ||
+        p.disabledReason ||
         !viewerPromptAllowed(value, online?.enabled ?? false, p.dryRun)) return;
     p.onManualSceneAction?.();
     submittingRef.current = true;
@@ -433,7 +436,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
       setError(e instanceof Error ? e.message : "모드 변경 실패"); }
   };
   const catalogReady = p.bridgeRef.current?.snapshot().catalogReady === true;
-  const canSend = !!session && p.viewerReady && catalogReady && !busy &&
+  const canSend = !!session && p.viewerReady && catalogReady && !busy && !p.disabledReason &&
     !!p.bridgeRef.current?.snapshot().ready;
   const promptAllowed = viewerPromptAllowed(prompt, online?.enabled ?? false, p.dryRun);
   return <section className="mw-agent-panel" aria-label="뷰어 요청">
@@ -462,7 +465,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
         <option value="">전체</option>{p.residues?.residues.map((item, index) => <option key={`${index}-${item.chain_auth}-${item.seq_auth}`} value={index + 1}>
           {item.resname} · model {item.model_number} · auth {item.chain_auth}/{item.seq_auth}{item.icode || ""} · label {item.chain_label ?? "—"}/{item.seq_label ?? "—"}
         </option>)}</select></label>
-      <label>대상 <select className="mw-select" aria-label="뷰어 대상 선택" value="" disabled={!session || !catalogReady || busy}
+      <label>대상 <select className="mw-select" aria-label="뷰어 대상 선택" value="" disabled={!session || !catalogReady || busy || !!p.disabledReason}
         onChange={event => { if (event.target.value) void submit(`/focus ${event.target.value}`, true); }}>
         <option value="">선택</option>{session?.targets.map(item => <option key={item.alias} value={item.alias}>
           {item.alias} · {item.residue.resname} {item.residue.chain_auth}/{item.residue.seq_auth}{item.residue.icode}
@@ -472,6 +475,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
       <button type="button" className="mw-btn mw-btn--sm" disabled={!canSend} onClick={() => void submit("/reset", true)}>시점 초기화</button>
       <button type="button" className="mw-btn mw-btn--sm" disabled={!canSend} onClick={() => void submit("/clear", true)}>선택 해제</button>
     </div>
+    {p.disabledReason && <p className="mw-agent-row mw-muted" role="status" data-viewer-request-disabled>뷰어 요청 사용 불가: {p.disabledReason}</p>}
     <div className="mw-agent-row mw-agent-status" role="status">{error || explanation(intent)}
       {p.viewerReady && !catalogReady && <span className="mw-muted">원자 목록을 검증하는 중입니다. 실패하면 구조의 원자 목록 다시 읽기를 사용하세요.</span>}
       {session && !session.scope_complete && session.targets.length === 0 && <span className="mw-muted">대상 목록이 큰 구조입니다. 표현·시점 명령은 가능하며 초점에는 체인 또는 정확한 대상 범위가 필요합니다.</span>}
