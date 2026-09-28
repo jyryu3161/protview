@@ -684,8 +684,11 @@ def preview(store: Any, req: dict[str, Any], *, strict: bool = False) -> dict[st
     missing = [r for r in receptor if graph[r["ref"]["site_index"]] == 0]
     if missing:
         blockers.append({"code": "disconnected_receptor_atom", "message": "Supplied receptor connectivity is incomplete", "atoms": [r["ref"] for r in missing[:5]]})
-    if any((a in included) != (b in included) for a, b in bonds):
-        blockers.append({"code": "cross_excluded_bond", "message": "Water or selected ligand is covalently bonded to receptor", "atoms": []})
+    crossing = [(a, b) for a, b in bonds if (a in included) != (b in included)]
+    if crossing:
+        # Report the exact bonded endpoints (first five bonds) instead of an anonymous rejection.
+        blockers.append({"code": "cross_excluded_bond", "message": "Water or selected ligand is covalently bonded to receptor",
+                         "atoms": [rows[site]["ref"] for pair in crossing[:5] for site in pair]})
     if len(bonds) + len(ligand["bonds"]) > MAX_BONDS:
         raise invalid("combined bond count exceeds supported limit")
     result = {"schema": "chemical_preparation_preview@1", "ready": not blockers, "blockers": blockers,
