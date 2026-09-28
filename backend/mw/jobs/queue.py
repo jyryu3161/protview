@@ -56,7 +56,11 @@ FIXTURE_MODES = frozenset({"normal", "nonzero", "malformed", "oversize", "wrong_
                            "sleep", "grandchild", "leader_exit"})
 TERMINAL = frozenset({"done", "failed", "cancelled", "interrupted"})
 MAX_CONTROL = 8192
-MAX_GLOBAL_EVENT_SCAN = 256 * 1024 * 1024
+# Root-wide unclosed-job scan bounds (see _unclosed_jobs); exceeding any fails closed.
+MAX_GLOBAL_RUN_ENTRIES = 1000
+MAX_GLOBAL_LIFECYCLE_EVENTS = 250_000
+MAX_GLOBAL_EVENT_LINE = 256 * 1024 * 1024
+MAX_GLOBAL_SCAN_S = 20.0
 _GLOBAL_LOCK_GUARD = threading.Lock()
 _GLOBAL_LOCAL_LOCKS: dict[str, threading.Lock] = {}
 
@@ -149,13 +153,31 @@ def require_completed_chemical_handle(run: Run, handle: str) -> dict[str, Any]:
     raise ToolFailure(FailureClass.input_invalid, "chemical object has no completed producer")
 
 
+_LIFECYCLE_MARKER = b'"type": "job_'
+# EventLog writes sort_keys JSON with default separators, so for most records the final top-level
+# pair before the closing brace is the record type. A record whose tail names a non-lifecycle type
+# (object payloads) or job_submitted is skipped unparsed: a submission always precedes its job's
+# other records and only ever sets "queued", which is not an unclosed state. A record without that
+# tail (a key sorting after "type") falls back to the conservative marker test and is parsed.
+_TYPE_TAIL = re.compile(rb', "type": "([A-Za-z0-9_]{1,64})"\}\n\Z')
+_UNFOLDED_TYPES = frozenset({b"job_submitted"})
+
+
 def _unclosed_jobs(root: Path, current_run_id: str, cancelled: Callable[[], bool],
-                   lock_deadline: float) -> list[str]:
-    """Durable cross-run guard against an orphan whose parent's flock was lost."""
+                   lock_deadline: float, scan_deadline: float | None = None) -> list[str]:
+    """Durable cross-run guard against an orphan whose parent's flock was lost.
+
+    The ledger is streamed line by line. Lines without a top-level job lifecycle type (object
+    payloads) and job_submitted records are skipped without JSON parsing, so the bounds are the
+    number of runs, parsed lifecycle records, the longest single record and wall time, never the
+    unrelated payload bytes. Exceeding any bound fails closed.
+    """
     pending = []
-    scanned_bytes = 0
-    directories = list(itertools.islice(root.iterdir(), 1001))
-    if len(directories) > 1000:
+    lifecycle_events = 0
+    if scan_deadline is None:
+        scan_deadline = time.monotonic() + MAX_GLOBAL_SCAN_S
+    directories = list(itertools.islice(root.iterdir(), MAX_GLOBAL_RUN_ENTRIES + 1))
+    if len(directories) > MAX_GLOBAL_RUN_ENTRIES:
         raise ToolFailure(FailureClass.precondition, "too many run entries for global job ledger",
                           detail={"reason_code": "global_job_ledger_unavailable"})
     for directory in directories:
@@ -194,35 +216,45 @@ def _unclosed_jobs(root: Path, current_run_id: str, cancelled: Callable[[], bool
                         time.sleep(min(0.02, max(0, lock_deadline - time.monotonic())))
                 events_fd = os.open(events_path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
                 with os.fdopen(events_fd, "rb") as stream:
-                    event_stat = os.fstat(stream.fileno())
-                    if (not stat.S_ISREG(event_stat.st_mode) or
-                            event_stat.st_size > MAX_GLOBAL_EVENT_SCAN - scanned_bytes):
-                        raise ValueError("global job event ledger exceeds bounded scan")
-                    raw = stream.read(MAX_GLOBAL_EVENT_SCAN - scanned_bytes + 1)
+                    if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                        raise ValueError("unsafe global job event ledger")
+                    for ordinal in itertools.count(1):
+                        line = stream.readline(MAX_GLOBAL_EVENT_LINE + 1)
+                        if not line:
+                            break
+                        if len(line) > MAX_GLOBAL_EVENT_LINE or not line.endswith(b"\n"):
+                            raise ValueError("incomplete or oversized global job event record")
+                        if time.monotonic() >= scan_deadline:
+                            raise ValueError("global job ledger scan exceeded its time bound")
+                        tail = _TYPE_TAIL.search(line[-128:])
+                        if tail is not None:
+                            if not tail.group(1).startswith(b"job_") or tail.group(1) in _UNFOLDED_TYPES:
+                                continue
+                        elif _LIFECYCLE_MARKER not in line:
+                            continue
+                        lifecycle_events += 1
+                        if lifecycle_events > MAX_GLOBAL_LIFECYCLE_EVENTS:
+                            raise ValueError("global job ledger exceeds bounded lifecycle scan")
+                        event = json.loads(line)
+                        if type(event) is not dict or type(event.get("seq")) is not int or event["seq"] != ordinal:
+                            raise ValueError("invalid global job event sequence")
+                        kind = event["type"]
+                        if kind == "job_submitted":
+                            status[event["job"]["job_id"]] = "queued"
+                        elif kind == "job_claimed":
+                            status[event["job_id"]] = "claimed"
+                        elif kind == "job_dispatch_intent":
+                            status[event["job_id"]] = "running"
+                        elif kind == "job_cleanup_pending":
+                            cleanup_pending.add(event["job_id"])
+                        elif kind == "job_cleanup_verified":
+                            cleanup_pending.discard(event["job_id"])
+                        elif kind == "job_terminal":
+                            status[event["job_id"]] = event["status"]
+                        elif kind == "job_retry_queued":
+                            status[event["job_id"]] = "queued"
             finally:
                 os.close(lock_fd)
-            scanned_bytes += len(raw)
-            if scanned_bytes > MAX_GLOBAL_EVENT_SCAN or raw and not raw.endswith(b"\n"):
-                raise ValueError("incomplete or oversized global job event ledger")
-            for ordinal, line in enumerate(raw.splitlines(), 1):
-                event = json.loads(line)
-                if type(event) is not dict or type(event.get("seq")) is not int or event["seq"] != ordinal:
-                    raise ValueError("invalid global job event sequence")
-                kind = event["type"]
-                if kind == "job_submitted":
-                    status[event["job"]["job_id"]] = "queued"
-                elif kind == "job_claimed":
-                    status[event["job_id"]] = "claimed"
-                elif kind == "job_dispatch_intent":
-                    status[event["job_id"]] = "running"
-                elif kind == "job_cleanup_pending":
-                    cleanup_pending.add(event["job_id"])
-                elif kind == "job_cleanup_verified":
-                    cleanup_pending.discard(event["job_id"])
-                elif kind == "job_terminal":
-                    status[event["job_id"]] = event["status"]
-                elif kind == "job_retry_queued":
-                    status[event["job_id"]] = "queued"
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise ToolFailure(FailureClass.precondition, "global job ledger cannot be checked",
                               detail={"reason_code": "global_job_ledger_unavailable"}) from exc
@@ -414,8 +446,8 @@ class JobQueue:
         self.path = run.run_dir / "jobs.sqlite"
         if self.path.is_symlink():
             raise ValueError("unsafe job index")
-        with self.run._transition():
-            self._rebuild()
+        # Construction is lock-free and writes nothing: the derived SQLite index is rebuilt lazily
+        # by the writers that fold state under the transition lock (claim_next reads it).
 
     def _state(self) -> dict[str, dict[str, Any]]:
         jobs: dict[str, dict[str, Any]] = {}
@@ -550,7 +582,8 @@ class JobQueue:
     # Reads fold one consistent events snapshot (the event log's own shared lock guarantees whole
     # lines) and every durable prefix is a valid state, exactly as events-only replay requires. They
     # therefore neither take the transition lock nor rewrite the derived SQLite index, which with
-    # multi-MB M11 job records held the lock for about a second on every status poll.
+    # multi-MB M11 job records held the lock for about a second on every status poll. Neither does
+    # the constructor, so an HTTP GET (a fresh JobQueue per request) is lock-free end to end.
     def get(self, job_id: str) -> dict[str, Any]:
         state = self._state()
         if job_id not in state:
@@ -995,11 +1028,19 @@ class JobQueue:
             reason = exc.detail.get("reason_code")
             if reason in {"global_concurrency_busy", "global_job_cleanup_pending",
                           "global_job_ledger_unavailable"}:
-                with self.run._transition():
-                    job = self._rebuild().get(job_id)
-                    if (job is not None and job["status"] == "claimed" and
-                            job["owner_token"] == owner_token and job["blocked_reason"] != reason):
-                        self.run.events.append("job_blocked", job_id=job_id, reason=reason)
+                # Same owner -> transition order as every other job_blocked writer. The global slot
+                # was refused before this claim took the run owner, so nothing here holds it. The
+                # owner lock is non-blocking: if another owner is live it progresses this run and
+                # the informational block note is skipped; the original refusal still propagates.
+                try:
+                    with self.run._owner(), self.run._transition():
+                        job = self._rebuild().get(job_id)
+                        if (job is not None and job["status"] == "claimed" and
+                                job["owner_token"] == owner_token and job["blocked_reason"] != reason):
+                            self.run.events.append("job_blocked", job_id=job_id, reason=reason)
+                except ToolFailure as busy:
+                    if busy.detail.get("busy") is not True:
+                        raise
             raise
 
     def _execute_claim_with_slot(self, job_id: str, owner_token: str, global_fd: int) -> dict[str, Any]:
@@ -1164,6 +1205,8 @@ class JobQueue:
                 error = {"error": "resource_exceeded", "message": "job timeout"}
             elif result.get("reason") == "resource_exceeded":
                 error = {"error": "resource_exceeded", "message": "worker memory or output limit exceeded"}
+            elif result.get("reason") == "resource_monitor_unavailable":
+                error = {"error": "fatal", "message": "worker resource monitoring unavailable"}
             elif result.get("reason") == "cancelled":
                 return self._terminal(job_id, attempt_id, "cancelled")
             elif not result.get("clean", False):
@@ -1198,8 +1241,9 @@ class JobQueue:
                     if preparation_handles is None:
                         raise ValueError("complete preparation checkpoint missing")
                     handles = self._publish_openmm(job, attempt_id, attempt_dir, result["payload"])
-            except (OSError, ValueError, KeyError, TypeError, UnicodeError, ParseError, RuntimeError,
-                    OverflowError, StopIteration, ToolFailure) as exc:
+            except Exception as exc:  # noqa: BLE001 - any parser/validator error in untrusted worker output
+                # (IndexError, AttributeError, RecursionError, ...) must end this attempt as a typed
+                # failure; escaping here would leave a dispatched job "running" and close the global gate.
                 return self._terminal(job_id, attempt_id, "failed",
                                       {"error": "fatal", "message": "invalid scientific output",
                                        "diagnostic": type(exc).__name__})

@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import json
 import math
 import subprocess
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -64,12 +66,42 @@ def _native_criteria(dependency_manifest: dict[str, Any]) -> dict[str, Any]:
     return {**expected, "native_smarts": smarts, "native_smarts_sha256": NATIVE_SMARTS_SHA256}
 
 
+_DEPENDENCY_CACHE: dict[tuple, dict[str, Any]] = {}
+_DEPENDENCY_LOCK = threading.Lock()
+
+
+def _dependency_key() -> tuple:
+    """Everything a successful handshake is bound to; any change forces a fresh handshake."""
+    interpreter = WORKER_PYTHON.resolve(strict=True)
+    info = interpreter.stat()
+    return (str(WORKER_PYTHON), str(interpreter), info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns,
+            _sha(LOCK.read_bytes()), _sha(WORKER.read_bytes()))
+
+
 def dependency() -> dict[str, Any]:
     # A Python venv normally exposes bin/python as a symlink to its pinned
     # base interpreter. The path is fixed by deployment, never request data.
     if not WORKER_PYTHON.is_file() or not LOCK.is_file():
         raise ToolFailure(FailureClass.precondition, "pinned chemical worker unavailable",
                           detail={"reason_code": "chemical_worker_missing"})
+    with _DEPENDENCY_LOCK:
+        try:
+            key = _dependency_key()
+        except OSError as exc:
+            raise ToolFailure(FailureClass.precondition, "pinned chemical worker handshake failed",
+                              detail={"reason_code": "chemical_worker_unavailable"}) from exc
+        # Only a verified handshake is reused, and only while the interpreter identity, lock-file
+        # and worker-file hashes it was checked against are unchanged. Failures always re-probe.
+        cached = _DEPENDENCY_CACHE.get(key)
+        if cached is not None:
+            return copy.deepcopy(cached)
+        data = _handshake()
+        _DEPENDENCY_CACHE.clear()
+        _DEPENDENCY_CACHE[key] = copy.deepcopy(data)
+        return data
+
+
+def _handshake() -> dict[str, Any]:
     try:
         proc = subprocess.run([str(WORKER_PYTHON), "-I", str(WORKER), "--handshake"],
                               cwd=ROOT, env={"PATH": "/usr/bin:/bin", "LANG": "C", "PYTHONUTF8": "1",
@@ -89,21 +121,6 @@ def dependency() -> dict[str, Any]:
     except (OSError, subprocess.SubprocessError, UnicodeError, ValueError, TypeError, KeyError) as exc:
         raise ToolFailure(FailureClass.precondition, "pinned chemical worker handshake failed",
                           detail={"reason_code": "chemical_worker_unavailable"}) from exc
-
-
-def capability() -> dict[str, Any]:
-    try:
-        dep = dependency()
-    except ToolFailure as exc:
-        return {"available": False, "reason": exc.message, "reason_code": exc.detail.get("reason_code"),
-                "protocol": "prolif_prepared_explicit_h@1", "ligand_sdf_variant": "V2000"}
-    return {"available": True, "reason": None, "protocol": "prolif_prepared_explicit_h@1",
-            "ligand_sdf_variant": "V2000",
-            "versions": dep["versions"], "worker_sha256": dep["worker_sha256"],
-            "dependency_manifest_sha256": dep["lock_sha256"],
-            "limits": {"receptor_atoms": 10_000, "ligand_atoms": 256, "bonds": 20_000,
-                       "raw_bytes": 10 * 1024 * 1024, "output_bytes": 30 * 1024 * 1024,
-                       "assignments": 20_000, "wall_s": 120, "rss_bytes": 2 * 1024**3}}
 
 
 def prepare_selected(store: Any, req: dict[str, Any]) -> dict[str, Any]:
@@ -517,7 +534,8 @@ def publish_prepare(run: Any, job: dict[str, Any], attempt_id: str,
     if worker_output.get("schema") != "chemical_prepare_worker_output@1":
         raise ValueError("preparation worker schema mismatch")
     receptor, ligand = worker_output["receptor_atoms"], worker_output["ligand_atoms"]
-    if (len(receptor) != len(selected["receptor_atoms"]) or
+    if (type(receptor) is not list or type(ligand) is not list or
+            len(receptor) != len(selected["receptor_atoms"]) or
             not 1 <= len(ligand) <= 256 or len(receptor) + len(ligand) > 10_256 or
             worker_output["receptor_atom_count"] != len(receptor) or
             worker_output["ligand_atom_count"] != len(ligand)):
@@ -531,6 +549,8 @@ def publish_prepare(run: Any, job: dict[str, Any], attempt_id: str,
     if (any(type(row) is not dict or set(row) != receptor_fields for row in receptor) or
             any(type(row) is not dict or set(row) != ligand_fields for row in ligand)):
         raise ValueError("preparation native atom fields changed")
+    if any(type(row["element"]) is not str or not row["element"] for row in receptor + ligand):
+        raise ValueError("preparation native atom element type invalid")
     for i, (actual, expected) in enumerate(zip(receptor, selected["receptor_atoms"], strict=True)):
         if (actual["source_ref"] != expected["source_ref"] or
                 actual["coordinate_A"] != expected["coordinate_A"] or
@@ -866,26 +886,33 @@ def publish_detect(run: Any, job: dict[str, Any], attempt_id: str,
     rows = []
     maps = _row_maps(graph)
     for occurrence in native:
-        category = occurrence["category"]
+        if type(occurrence) is not dict:
+            raise ValueError("invalid native interaction occurrence")
+        category = occurrence.get("category")
         if category not in CATEGORIES:
             raise ValueError("unsupported native interaction category")
-        ids = occurrence["parent_indices"]
-        locals_ = occurrence["within_residue_indices"]
+        ids = occurrence.get("parent_indices")
+        locals_ = occurrence.get("within_residue_indices")
+        if (type(ids) is not dict or type(locals_) is not dict or
+                set(ids) != {"ligand", "protein"} or set(locals_) != {"ligand", "protein"}):
+            raise ValueError("native index side keys invalid")
         for side, label in (("ligand", "ligand"), ("protein", "receptor")):
             atoms = graph[f"{label}_atoms"]
-            if (type(ids[side]) is not list or type(locals_[side]) is not list or
+            if (type(ids[side]) is not list or type(locals_[side]) is not list or not ids[side] or
                     len(ids[side]) != len(locals_[side]) or
                     any(type(i) is not int or not 0 <= i < len(atoms) for i in ids[side])):
                 raise ValueError("native parent index out of range")
+        # Role cardinality is fixed before any positional role is read. Charged and hydrophobic
+        # matches may carry additional audit atoms; their endpoint is the first matched index.
+        cardinality = {"HBDonor": (2, 1), "HBAcceptor": (1, 2)}.get(category)
+        if (cardinality is not None and
+                (len(ids["ligand"]), len(ids["protein"])) != cardinality):
+            raise ValueError(f"{category} native role cardinality")
         la = [graph["ligand_atoms"][i] for i in ids["ligand"]]
         ra = [graph["receptor_atoms"][i] for i in ids["protein"]]
         if category == "HBDonor":
-            if len(la) != 2 or len(ra) != 1:
-                raise ValueError("HBDonor native role cardinality")
             roles = {"donor": la[0], "hydrogen": la[1], "acceptor": ra[0]}
         elif category == "HBAcceptor":
-            if len(la) != 1 or len(ra) != 2:
-                raise ValueError("HBAcceptor native role cardinality")
             roles = {"donor": ra[0], "hydrogen": ra[1], "acceptor": la[0]}
         elif category == "Hydrophobic":
             roles = {"ligand_site": la[0], "receptor_site": ra[0]}

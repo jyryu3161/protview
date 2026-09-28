@@ -14,6 +14,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from chemical_row_oracle import PINNED_GOLDEN_LOCK_SHA256, assert_rows_independently_valid
 
 from mw.chemical_bundle import (
     WORKER,
@@ -321,6 +322,10 @@ def test_actual_native_create_detect_and_tamper_rejection(tmp_path: Path) -> Non
                                            "categories": ["HBDonor", "HBAcceptor", "Hydrophobic",
                                                           "Cationic", "Anionic"]})
     detected = _run_worker(tmp_path, "prolif_detect_v1", detect_input)
+    # Pinned-engine regression goldens (counts and exact parent indices below): observed native
+    # output for this public fixture under the locked ProLIF wheel set. They are not experimental
+    # truth and never product constants; the lock hash assertion forces a conscious update on relock.
+    assert detect_input["dependency"]["lock_sha256"] == PINNED_GOLDEN_LOCK_SHA256
     assert detected["native_total"] == 36
     assert collections.Counter(x["category"] for x in detected["native_rows"]) == {
         "Hydrophobic": 32, "HBDonor": 1, "HBAcceptor": 1, "Cationic": 2}
@@ -332,7 +337,15 @@ def test_actual_native_create_detect_and_tamper_rejection(tmp_path: Path) -> Non
     result_handle = publish_detect(SimpleNamespace(store=store), {"selected": detect_input},
                                    "attempt_detect", detected)[0]
     result = validated_result(store, result_handle)
-    assert result["total"] == 36 and not result["null_result"]
+    # Independent per-row checks from stored engine coordinates, stored criteria and graph chemistry.
+    assert_rows_independently_valid(result, validated_graph(store, graph))
+    for field, delta in (("distance_A", 0.01), ("DHA_angle_deg", 0.5)):
+        tampered = json.loads(json.dumps(result))
+        target = next(row for row in tampered["rows"] if row[field] is not None)
+        target[field] += delta
+        with pytest.raises(AssertionError):  # the oracle itself discriminates
+            assert_rows_independently_valid(tampered, validated_graph(store, graph))
+    assert result["total"] == 36 and not result["null_result"]  # pinned-engine golden (see above)
     donor = next(x for x in result["rows"] if x["category"] == "HBDonor")
     acceptor = next(x for x in result["rows"] if x["category"] == "HBAcceptor")
     assert donor["native_parent_indices"] == {"ligand": [20, 58], "protein": [1489]}

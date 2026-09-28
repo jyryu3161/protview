@@ -1537,3 +1537,79 @@ def test_job_reads_do_not_wait_for_the_transition_lock(tmp_path):
         assert not reader.is_alive(), "status reads blocked behind a held transition"
     assert got[0]["job_id"] == job["job_id"] and got[0]["status"] == "queued"
     assert got[1]["job_id"] == job["job_id"]
+
+
+def test_guardian_resource_sampling_error_fails_closed_and_still_reports_result(tmp_path):
+    """Real guardian process tree; the RSS sampler is made to raise psutil.AccessDenied.
+
+    Labeled lifecycle fault injection: the "worker" is a sleeping stand-in for the fixed chemical
+    adapter so the sampling loop runs; it produces no scientific output.
+    """
+    backend = Path(__file__).resolve().parents[1]
+    attempt = tmp_path / "attempt"
+    attempt.mkdir()
+    worker = tmp_path / "sleeping_worker.py"
+    worker.write_text("import time\ntime.sleep(30)\n")
+    nonce = "a" * 32
+    (attempt / "input.json").write_text(json.dumps({
+        "nonce": nonce, "job_id": "job_monitor", "attempt_id": "attempt_monitor",
+        "adapter": "prolif_detect_v1", "input_sha256": "0" * 64}))
+    driver = r'''
+import sys
+from pathlib import Path
+import psutil
+from mw.jobs import guardian
+
+def denied(self):
+    raise psutil.AccessDenied(self.pid)
+
+psutil.Process.memory_info = denied
+guardian.CHEMICAL = Path(sys.argv[2])
+guardian.CHEMICAL_PYTHON = Path(sys.executable)
+raise SystemExit(guardian.main(int(sys.argv[1]), None, 10.0))
+'''
+    parent, child = socket.socketpair()
+    process = subprocess.Popen([sys.executable, "-c", driver, str(child.fileno()), str(worker)],
+                               cwd=attempt, env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(backend)},
+                               pass_fds=(child.fileno(),), start_new_session=True,
+                               stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    child.close()
+    worker_pid = None
+    try:
+        hello = _message(parent, 10)
+        assert hello and hello["kind"] == "HELLO" and hello["pid"] == process.pid
+        _send(parent, {"kind": "GO", "nonce": nonce})
+        started = _message(parent, 10)
+        assert started and started["kind"] == "STARTED"
+        worker_pid = started["pid"]
+        result = _message(parent, 10)
+        assert result, "the guardian must still send RESULT after a sampling failure"
+        assert result["kind"] == "RESULT" and result["reason"] == "resource_monitor_unavailable"
+        assert result["clean"] is True and result["direct_child_reaped"] is True
+        assert result["payload"] is None
+        assert process.wait(timeout=10) == 0
+        assert not matches(worker_pid, started["start_identity"])
+    finally:
+        parent.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+        if worker_pid is not None and matches(worker_pid, started["start_identity"]):
+            os.kill(worker_pid, signal.SIGKILL)
+
+
+def test_resource_monitor_failure_is_a_typed_failed_terminal(tmp_path, monkeypatch):
+    run, queue = queue_at(tmp_path)
+    run.approve("expensive_first_call")
+    job = queue.submit_fixture()
+    queue.claim_next("owner")
+    original = JobQueue._supervise
+
+    def monitor_unavailable(self, *args):
+        result, identity = original(self, *args)
+        return {**result, "reason": "resource_monitor_unavailable"}, identity
+
+    monkeypatch.setattr(JobQueue, "_supervise", monitor_unavailable)
+    finished = queue.execute_claim(job["job_id"], "owner")
+    assert finished["status"] == "failed" and finished["output_handles"] == []
+    assert finished["failure"] == {"error": "fatal", "message": "worker resource monitoring unavailable"}
