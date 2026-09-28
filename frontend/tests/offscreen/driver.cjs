@@ -170,10 +170,11 @@ async function waitForPaint(electronApp, timeoutMs = 20000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const state = await electronApp.evaluate(({ app }) => app.__offscreenQa?.status());
-    if (state && state.paintCount > 0) return state;
+    // main.cjs records firstPaint only for the first non-empty frame (non-zero size, non-empty PNG bytes).
+    if (state && state.paintCount > 0 && state.firstPaint && state.firstPaint.bytes > 0) return state;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  throw new Error("Electron offscreen paint event did not arrive");
+  throw new Error("Electron offscreen non-empty first paint frame did not arrive");
 }
 
 async function launchOffscreen(cli = options([])) {
