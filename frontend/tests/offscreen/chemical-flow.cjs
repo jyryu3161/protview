@@ -8,6 +8,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const sharp = require("sharp");
 const { launchOffscreen, capture, downloadByClick } = require("./driver.cjs");
+const ledger = require("./m11-ledger.cjs");
 
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
 const atomIdentity = ref => JSON.stringify([ref.structure_handle, ref.residue.model_number,
@@ -21,14 +22,18 @@ function angleAtHydrogen(donor, hydrogen, acceptor) {
     (Math.hypot(...a) * Math.hypot(...b));
   return Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI;
 }
-const modes = new Set(["create", "prepare-only", "attach", "job-controls", "running-cancel", "detect-controls", "retry-failed",
-  "reopen", "reopen-complete", "restrictions", "faults", "replay"]);
+const modes = new Set(["create", "empty", "prepare-only", "attach", "job-controls", "running-cancel", "detect-controls",
+  "retry-failed", "reopen", "reopen-complete", "restrictions", "faults", "replay", "capability", "invalid-inputs",
+  "invalid-attach"]);
+const newRunModes = ["create", "empty", "prepare-only", "job-controls", "running-cancel", "capability", "invalid-inputs"];
+const capabilityStates = ["ready", "worker_missing", "worker_version_invalid"];
 function options(argv) {
   const value = { url: "http://127.0.0.1:3000", artifacts: null, mode: null,
     run: null, receptor: null, sdf: null, sidecar: null, connectivity: "pdb_conect",
     complex: null, ligand: null, mapping: null, result: null, otherResult: null,
     report: null, otherReport: null, scene: null, job: null, graph: null,
-    failureExpected: "false", failureLocalized: "false" };
+    failureExpected: "false", failureLocalized: "false", expectCapability: null, variants: null,
+    expectMarkdownSha: null, expectJsonSha: null, fixtureLabel: null };
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
     if (!key.startsWith("--")) throw new Error(`Unknown argument ${key}`);
@@ -37,7 +42,7 @@ function options(argv) {
     value[name] = argv[++i];
   }
   if (!value.artifacts || !modes.has(value.mode)) throw new Error(
-    "Usage: chemical-flow.cjs --mode create|attach|reopen|restrictions|faults|replay --artifacts tests/offscreen/artifacts/m11-... [--url http://127.0.0.1:3000] [--run run_...] [--receptor ../backend/tests/fixtures/chemical/prolif-vina-rec.pdb --sdf ../backend/tests/fixtures/chemical/prolif-vina-output.sdf] [--complex obj://... --mapping <setup-out>/m11-attach-mapping-run.json --sidecar <setup-out>/m11-attach-bonds-run.json --ligand <setup-out>/m11-attach-ligand-instance-run.json] [--result obj://... --report obj://... --scene obj://...]. Synthetic inputs: scripts/m11_qa_inputs.py; run-bound attach inputs: scripts/m11_attach_browser_setup.py.");
+    `Usage: chemical-flow.cjs --mode ${[...modes].join("|")} --artifacts tests/offscreen/artifacts/m11-... [--url http://127.0.0.1:3000] [--run run_...] [--receptor ../backend/tests/fixtures/chemical/prolif-vina-rec.pdb --sdf ../backend/tests/fixtures/chemical/prolif-vina-output.sdf] [--complex obj://... --mapping <setup-out>/m11-attach-mapping-run.json --sidecar <setup-out>/m11-attach-bonds-run.json --ligand <setup-out>/m11-attach-ligand-instance-run.json] [--result obj://... --report obj://... --scene obj://...] [--expect-capability ${capabilityStates.join("|")}] [--variants <dir from scripts/m11_invalid_inputs.py>]. Synthetic inputs: scripts/m11_qa_inputs.py and scripts/m11_invalid_inputs.py; run-bound attach inputs: scripts/m11_attach_browser_setup.py; full sequence: scripts/m11_offscreen_acceptance.py.`);
   const url = new URL(value.url);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) || !["http:", "https:"].includes(url.protocol))
     throw new Error("Only loopback service is permitted");
@@ -48,14 +53,25 @@ function options(argv) {
       if (!fs.statSync(value[key], { throwIfNoEntry: false })?.isFile())
         throw new Error(`--${key} input file not found: ${value[key]}`);
     }
-  if (["create", "prepare-only", "job-controls", "running-cancel"].includes(value.mode)) assert.ok(value.receptor && value.sdf);
+  if (value.variants) {
+    value.variants = path.resolve(value.variants);
+    assert.ok(fs.statSync(path.join(value.variants, "m11-invalid-cases.json"), { throwIfNoEntry: false })?.isFile(),
+      "--variants must be an output directory of scripts/m11_invalid_inputs.py");
+  }
+  if (["create", "empty", "prepare-only", "job-controls", "running-cancel", "capability"].includes(value.mode))
+    assert.ok(value.receptor && value.sdf);
   if (value.mode === "retry-failed") assert.ok(value.run && value.job);
   if (value.mode === "detect-controls") assert.ok(value.run && value.graph);
   if (value.mode === "attach") assert.ok(value.run && value.complex && value.sdf && value.mapping && value.ligand);
   if (["reopen", "reopen-complete", "restrictions", "replay", "faults"].includes(value.mode))
     assert.ok(value.run && value.result);
   if (value.mode === "replay") assert.ok(value.report);
-  if (value.mode === "restrictions") assert.ok(value.scene);
+  if (value.mode === "capability") assert.ok(capabilityStates.includes(value.expectCapability),
+    "--mode capability needs --expect-capability ready|worker_missing|worker_version_invalid");
+  if (value.expectCapability) assert.ok(capabilityStates.includes(value.expectCapability));
+  if (value.mode === "invalid-inputs") assert.ok(value.variants && !value.run);
+  if (value.mode === "invalid-attach") assert.ok(value.variants && value.run && value.complex && value.ligand &&
+    value.sdf, "--mode invalid-attach needs --variants (generated with --attach-sidecar) --run --complex --ligand --sdf");
   if (value.connectivity === "sidecar") assert.ok(value.sidecar);
   value.artifacts = path.resolve(value.artifacts);
   value.url = new URL(value.run ? `/?run=${value.run}` : "/", value.url).toString();
@@ -116,7 +132,14 @@ async function chooseFile(page, label, file) {
   await input.click();
   await (await chooser).setFiles(file);
   await holder.getByText(/obj:\/\/run_/).waitFor({ timeout: 30000 });
-  return { path: file, bytes: fs.statSync(file).size, sha256: sha(fs.readFileSync(file)) };
+  // The immutable import must hold the exact chosen bytes (H02 original bytes/hash).
+  const handle = (await holder.getByText(/obj:\/\/run_/).innerText()).trim();
+  const run = new URL(page.url()).searchParams.get("run");
+  const meta = await readApi(page, `/runs/${run}/objects/meta?handle=${encodeURIComponent(handle)}`);
+  const local = sha(fs.readFileSync(file));
+  assert.equal(meta.summary?.sha256, local, `Imported ${label} bytes differ from the chosen file`);
+  return { path: file, bytes: fs.statSync(file).size, sha256: local, handle,
+    provenance: ledger.provenanceLabel(path.basename(file)) };
 }
 function nestedSelect(page, name) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -128,6 +151,13 @@ async function selectByLabel(page, name, value) {
   await control.selectOption(value);
 }
 async function click(page, name) { await page.getByRole("button", { name, exact: true }).click(); }
+/** Click a real control and wait for its own POST to answer before reading durable state (click resolves on input). */
+async function clickAwaitingPost(page, name, pathSuffix) {
+  const response = page.waitForResponse(value => value.request().method() === "POST" &&
+    new URL(value.url()).pathname.endsWith(pathSuffix), { timeout: 60000 });
+  await click(page, name);
+  return (await response).status();
+}
 async function rail(page, name) { await page.getByRole("tab", { name: new RegExp(`^${name}(?: ·|$)`) }).click(); }
 async function submittedJob(page, stage, previous = null) {
   return waitChemical(page, state => {
@@ -136,8 +166,18 @@ async function submittedJob(page, stage, previous = null) {
   }, 30000);
 }
 async function openWorkspace(page, input, beforeChemicalOpen = null) {
-  await page.getByRole("button", { name: "화학 상호작용 작업 열기" }).waitFor({ timeout: 30000 });
-  if (["create", "prepare-only", "job-controls", "running-cancel"].includes(input.mode) && !input.run) {
+  if (newRunModes.includes(input.mode) && !input.run) {
+    // A fresh QA root has no run, so the chemical entry appears only after a local-only run exists.
+    await page.getByRole("button", { name: "새 run", exact: true }).waitFor({ timeout: 30000 });
+    // Wait for the page's own boot (it reopens the latest saved run); a new run clicked during boot can be
+    // reopened again by that boot read, which closes a chemical workspace opened in between.
+    const hasRuns = (await readApi(page, "/runs")).length > 0;
+    await page.waitForFunction(existing => {
+      const button = [...document.querySelectorAll("button")].find(item => item.textContent?.trim() === "새 run");
+      const selected = new URL(location.href).searchParams.get("run");
+      return !!button && !button.disabled && (existing ? /^run_/.test(selected ?? "")
+        : document.body.textContent?.includes("현재 사용 불가"));
+    }, hasRuns, { timeout: 30000 });
     const previousRun = new URL(page.url()).searchParams.get("run");
     await click(page, "새 run");
     await page.waitForURL(url => {
@@ -145,6 +185,7 @@ async function openWorkspace(page, input, beforeChemicalOpen = null) {
       return !!selected && /^run_[a-f0-9]+$/.test(selected) && selected !== previousRun;
     }, { timeout: 30000 });
   }
+  await page.getByRole("button", { name: "화학 상호작용 작업 열기" }).waitFor({ timeout: 30000 });
   if (beforeChemicalOpen) await beforeChemicalOpen(new URL(page.url()).searchParams.get("run"));
   await click(page, "화학 상호작용 작업 열기");
   await page.getByText("준비 입력과 실제 화학 상호작용", { exact: true }).waitFor({ timeout: 30000 });
@@ -161,6 +202,55 @@ async function testRestrictions(page, label) {
     `${label}: ${name} is enabled for chemical source`);
   await page.getByText(/Chemical sources are not supported by saved-scene\/export schema v1/).waitFor();
   return names;
+}
+const RESTRICTED_EVENT_TYPES = new Set(["viewer_intent_requested", "viewer_dispatch_started", "viewer_command_ack",
+  "viewer_scene_admitted", "viewer_scene_saved", "viewer_figure_admitted", "viewer_figure_saved"]);
+const RESTRICTED_OBJECT_KINDS = new Set(["viewer_scene", "viewer_figure", "atom_distance", "rigid_alignment"]);
+async function restrictedArtifacts(page, run) {
+  return (await runEvents(page, run)).filter(event => RESTRICTED_EVENT_TYPES.has(event.type) ||
+    (event.type === "object_created" && RESTRICTED_OBJECT_KINDS.has(event.kind)))
+    .map(event => ({ seq: event.seq, type: event.type, kind: event.kind ?? null, handle: event.handle ?? null }));
+}
+/** H12: actual pointer input on every disabled M8/M9/M10 control must create no intent, scene, figure or measurement. */
+async function attemptRestrictedControls(page, label) {
+  const run = new URL(page.url()).searchParams.get("run");
+  const names = await testRestrictions(page, label);
+  const reason = (await page.getByText(/Chemical sources are not supported by saved-scene\/export schema v1/)
+    .innerText()).trim();
+  const before = await restrictedArtifacts(page, run);
+  const attempts = [];
+  for (const name of names) {
+    const button = page.getByRole("button", { name, exact: true });
+    let outcome = "clicked";
+    try { await button.click({ force: true, timeout: 5000 }); } catch (error) { outcome = `input refused: ${error.message}`; }
+    attempts.push({ name, disabled: await button.isDisabled(), outcome });
+  }
+  await page.waitForTimeout(500);
+  const after = await restrictedArtifacts(page, run);
+  assert.deepEqual(after, before, `${label}: a disabled chemical-source control created an M8/M9/M10 artifact`);
+  await testRestrictions(page, label);
+  return { label, names, reason, attempts, restrictedArtifactsBefore: before.length,
+    restrictedArtifactsAfter: after.length };
+}
+async function capabilityState(page, expected, workspaceOpen = true) {
+  const capability = (await readApi(page, "/capabilities")).methods?.chemical_interactions;
+  assert.ok(capability, "No chemical_interactions capability in /capabilities");
+  if (expected === "ready") {
+    assert.equal(capability.available, true, `Expected ready chemical worker: ${JSON.stringify(capability)}`);
+    assert.equal(capability.reason_code, null);
+  } else {
+    assert.equal(capability.available, false, "A missing/wrong worker was advertised as available");
+    assert.equal(capability.reason_code, expected);
+    assert.ok(capability.reason && !/\d+\s*(rows?|interactions?|Å)/i.test(capability.reason));
+    assert.equal(capability.versions, undefined, "Unavailable capability advertised pinned versions");
+  }
+  let visible = null;
+  if (workspaceOpen) {
+    const text = expected === "ready" ? `지원: ${capability.protocol}` : `사용 불가: ${capability.reason}`;
+    await page.getByText(text, { exact: true }).waitFor({ timeout: 30000 });
+    visible = text;
+  }
+  return { expected, capability, visible };
 }
 async function waitJob(page, stage, id) {
   const label = stage === "prepare" ? "화학 구조 준비" : "ProLIF 계산";
@@ -584,6 +674,12 @@ async function runCreate(session, input, evidence) {
     state.native?.sourceHandle === state.sourceHandle, 60000);
   evidence.resultHandle = detected.resultHandle;
   evidence.detected = detected;
+  if (input.mode === "create") assert.ok(detected.resultTotal > 0,
+    "The public prepared example produced no native interaction rows");
+  if (input.mode === "empty") {
+    assert.equal(detected.resultTotal, 0, "Translated synthetic derivative was expected to give a valid empty result");
+    evidence.scientificNull = await scientificNullDistinct(page, app, artifacts, run, detected, evidence.detect.id);
+  }
   evidence.restrictionsOn = await testRestrictions(page, "annotation on");
   if (detected.resultTotal > 0) {
     evidence.row = await focusFirstRow(page, app, artifacts);
@@ -599,7 +695,7 @@ async function runCreate(session, input, evidence) {
     await waitChemical(page, state => state.native?.chemicalAnnotation?.rowId === state.selectedRowId);
   } else {
     assert.equal(detected.resultTotal, 0);
-    await page.getByText("정상적인 빈 결과 (scientific_null)").waitFor();
+    await page.getByText("정상적인 빈 결과 (scientific_null)").first().waitFor();
   }
   await click(page, "화학 보고서 저장");
   const reportSelect = nestedSelect(page, "저장된 보고서");
@@ -641,9 +737,261 @@ async function runCreate(session, input, evidence) {
     markdownSha256: sha(Buffer.from(reportBeforeRelease, "utf8")) };
   return evidence;
 }
+/** H09: a valid empty native result is scientific_null, shown as a result and never as an error. */
+async function scientificNullDistinct(page, app, artifacts, run, detected, detectJobId) {
+  const saved = await readApi(page, `/runs/${run}/chemical/results?handle=${encodeURIComponent(detected.resultHandle)}`);
+  assert.equal(saved.result.null_result, true, "Zero-row result is not recorded as scientific_null");
+  assert.equal(saved.result.total, 0);
+  const rows = await readApi(page, `/runs/${run}/chemical/results/rows?handle=${encodeURIComponent(detected.resultHandle)}&offset=0&limit=50`);
+  assert.equal(rows.total, 0); assert.deepEqual(rows.rows, []);
+  const job = await readApi(page, `/runs/${run}/jobs/${detectJobId}`);
+  assert.equal(job.status, "done", "A valid empty result must come from a completed detection, not a failure");
+  assert.equal(job.failure ?? null, null);
+  const inspector = page.locator("p").filter({ hasText: /^정상적인 빈 결과 \(scientific_null\)$/ });
+  assert.ok(await inspector.count() >= 1, "scientific_null result label is not visible");
+  assert.equal(await page.getByText(/^실제 계산 행 \d+개$/).count(), 0, "Empty result displayed as a row count");
+  assert.equal(await page.locator(".mw-chemical-row").count(), 0);
+  await page.getByText("0 / 0", { exact: true }).waitFor({ timeout: 15000 });
+  const alerts = await page.getByRole("alert").allInnerTexts();
+  assert.deepEqual(alerts.filter(text => /실패|failed|error/i.test(text)), [],
+    `Valid empty result displayed an error alert: ${JSON.stringify(alerts)}`);
+  const frame = await capture(app, page, artifacts, "scientific-null");
+  await imageNonblank(frame.screenshot);
+  return { nullResult: saved.result.null_result, total: saved.result.total, limitations: saved.result.limitations,
+    detectJob: { job_id: job.job_id, status: job.status }, visibleLabel: await inspector.first().innerText(),
+    alerts, frame };
+}
+async function uploadExpectingRejection(page, label, file, text) {
+  const holder = page.locator(".mw-chemical-file").filter({ hasText: label });
+  const chooser = page.waitForEvent("filechooser", { timeout: 15000 });
+  await holder.locator('input[type="file"]').click();
+  await (await chooser).setFiles(file);
+  const alert = page.getByRole("alert").filter({ hasText: "입력 업로드 실패" });
+  await alert.first().waitFor({ timeout: 30000 });
+  const shown = await alert.first().innerText();
+  assert.ok(shown.includes(text), `Upload rejection does not name the prerequisite: ${shown}`);
+  assert.equal(await holder.getByText(/obj:\/\/run_/).count(), 0, "Rejected file was bound as an import");
+  return { file: path.basename(file), sha256: sha(fs.readFileSync(file)), shown,
+    provenance: ledger.provenanceLabel(path.basename(file)) };
+}
+function blockerAtomLine(ref) {
+  const residue = ref.residue;
+  return `${residue.resname} ${residue.chain_auth}/${residue.seq_auth}${residue.icode || ""} · ${ref.atom_name}` +
+    `${ref.altloc ? ` alt ${ref.altloc}` : ""} · model ${residue.model_number} · site ${ref.site_index}` +
+    ` · model ${residue.model_number} · auth ${residue.chain_auth}/${residue.seq_auth}${residue.icode}` +
+    // JSX drops the source line break before "· label", so no space precedes it in the rendered text.
+    `· label ${residue.chain_label ?? "?"}/${residue.seq_label ?? "?"} · site ${ref.site_index}`;
+}
+const oracleIdentity = ref => JSON.stringify([ref.residue.model_number, ref.residue.chain_auth, ref.residue.chain_label,
+  ref.residue.seq_auth, ref.residue.seq_label, ref.residue.icode, ref.residue.resname, ref.atom_name, ref.altloc,
+  ref.element.toUpperCase()]);
+/** H06: preview blockers must show the exact offending AtomRefs named by the generator's independent oracle. */
+async function expectVisibleBlockers(page, previewBody, expected) {
+  assert.equal(previewBody.ready, false, "Invalid input preview reported ready");
+  const shown = [];
+  for (const code of expected.codes) {
+    const blockers = previewBody.blockers.filter(item => item.code === code);
+    assert.equal(blockers.length, 1, `Expected one ${code} blocker: ${JSON.stringify(previewBody.blockers.map(b => b.code))}`);
+    const blocker = blockers[0];
+    const node = page.getByRole("alert").filter({ hasText: `${code}: ${blocker.message}` });
+    assert.equal(await node.count(), 1, `${code} blocker is not visible exactly once`);
+    let lines = [];
+    if (blocker.atoms.length) {
+      await node.getByText(`문제가 있는 정확한 원자 ${blocker.atoms.length}개`, { exact: true }).click();
+      lines = (await node.locator("p.mw-mono").allInnerTexts()).map(line => line.trim());
+      assert.equal(lines.length, blocker.atoms.length);
+      for (const ref of blocker.atoms)
+        assert.equal(lines.filter(line => line === blockerAtomLine(ref)).length, 1,
+          `${code}: exact atom ${blockerAtomLine(ref)} is not shown once`);
+    }
+    if (expected.atoms[code]) assert.deepEqual(blocker.atoms.map(oracleIdentity).sort(),
+      expected.atoms[code].map(oracleIdentity).sort(), `${code}: product offending atoms differ from generator oracle`);
+    shown.push({ code, message: blocker.message, atoms: blocker.atoms, visibleLines: lines });
+  }
+  return shown;
+}
+async function computeControlsDisabled(page, label) {
+  for (const name of ["화학 구조 준비 작업 저장", "상호작용 계산 작업 저장"])
+    assert.equal(await page.getByRole("button", { name, exact: true }).isDisabled(), true,
+      `${label}: ${name} enabled before a valid accepted graph`);
+  assert.equal(await page.locator(".mw-chemical-job").count(), 0, `${label}: a chemical job was created`);
+}
+async function runInvalidInputs(session, input, evidence) {
+  const { page, app, artifacts } = session;
+  const manifest = JSON.parse(fs.readFileSync(path.join(input.variants, "m11-invalid-cases.json"), "utf8"));
+  const fixtureDir = path.resolve(__dirname, "../../../backend/tests/fixtures/chemical");
+  const file = name => fs.existsSync(path.join(fixtureDir, name)) ? path.join(fixtureDir, name) : path.join(input.variants, name);
+  const posts = [];
+  page.on("request", request => { if (request.method() === "POST") posts.push(new URL(request.url()).pathname); });
+  let run = null;
+  evidence.cases = [];
+  evidence.manifestLabel = manifest.label;
+  for (const item of manifest.cases.filter(entry => entry.mode !== "attach_existing")) {
+    if (run) { await page.reload({ waitUntil: "domcontentloaded" }); }
+    run = await openWorkspace(page, { ...input, run });
+    evidence.run = run;
+    const record = { case: item.case, category: item.category, expected: item.expected, files: {} };
+    record.files.receptor = await chooseFile(page, "준비된 수용체 PDB/mmCIF", file(item.receptor));
+    record.files.sdf = await chooseFile(page, "명시적 H가 있는 3D 리간드 V2000 SDF", file(item.sdf));
+    if (item.ligand_instance) {
+      await page.getByLabel("리간드 chain auth", { exact: true }).fill(item.ligand_instance.chain_auth);
+      await page.getByLabel("seq auth", { exact: true }).fill(String(item.ligand_instance.seq_auth));
+      await page.getByLabel("resname", { exact: true }).fill(item.ligand_instance.resname);
+      record.enteredLigandInstance = item.ligand_instance;
+    }
+    if (item.connectivity === "sidecar") {
+      await selectByLabel(page, "수용체 결합 제공", "sidecar");
+      if (item.expected.kind === "upload_error") {
+        record.upload = await uploadExpectingRejection(page, "완전한 receptor_bonds@1 JSON", file(item.sidecar),
+          item.expected.text);
+      } else if (item.sidecar) record.files.sidecar = await chooseFile(page, "완전한 receptor_bonds@1 JSON", file(item.sidecar));
+    }
+    if (item.acknowledge !== false)
+      for (const label of ["공급된 수용체 결합 그래프가 완전함", "공급된 수소가 완전함",
+        "공급된 protonation/tautomer 그대로 사용", "수용체 bond order/charge 추론 동의"])
+        await page.getByLabel(label, { exact: true }).check();
+    if (item.expected.kind !== "upload_error") {
+      const before = posts.filter(value => value.endsWith("/chemical/preview")).length;
+      const responsePromise = item.expected.kind === "client_error" ? null :
+        page.waitForResponse(response => response.request().method() === "POST" &&
+          response.url().includes(`/api/runs/${run}/chemical/preview`), { timeout: 30000 });
+      await click(page, "준비 조건 미리보기");
+      if (item.expected.kind === "client_error") {
+        const alert = page.getByRole("alert").filter({ hasText: `준비 미리보기 실패: ${item.expected.text}` });
+        await alert.first().waitFor({ timeout: 15000 });
+        await page.waitForTimeout(300);
+        assert.equal(posts.filter(value => value.endsWith("/chemical/preview")).length, before,
+          "Missing graph was sent to the server instead of being refused before preview");
+        record.shown = await alert.first().innerText();
+      } else {
+        const response = await responsePromise;
+        const body = await response.json();
+        record.previewStatus = response.status();
+        if (item.expected.kind === "preview_error") {
+          assert.equal(response.status(), 422, `${item.case}: expected typed input_invalid rejection`);
+          const alert = page.getByRole("alert").filter({ hasText: "준비 미리보기 실패:" });
+          await alert.first().waitFor({ timeout: 15000 });
+          record.shown = await alert.first().innerText();
+          assert.ok(record.shown.includes(item.expected.text), `${item.case}: visible error lacks the prerequisite`);
+          record.response = body;
+        } else {
+          assert.equal(response.status(), 200);
+          await page.getByText(/준비 조건 미충족/).first().waitFor({ timeout: 30000 });
+          record.blockers = await expectVisibleBlockers(page, body, item.expected);
+        }
+      }
+    }
+    if (item.ligand_instance) for (const [label, value] of [["리간드 chain auth", item.ligand_instance.chain_auth],
+      ["seq auth", String(item.ligand_instance.seq_auth)], ["resname", item.ligand_instance.resname]])
+      assert.equal(await page.getByLabel(label, { exact: true }).inputValue(), value, "Colliding identity was relabeled");
+    await computeControlsDisabled(page, item.case);
+    record.frame = await capture(app, page, artifacts, `invalid-${item.case}`);
+    await imageNonblank(record.frame.screenshot);
+    evidence.cases.push(record);
+  }
+  assert.deepEqual(posts.filter(value => /\/jobs(\/|$)/.test(value)), [], "An invalid input submitted a job");
+  evidence.jobPosts = 0;
+  return evidence;
+}
+async function runInvalidAttach(session, input, evidence) {
+  const { page, app, artifacts } = session;
+  const manifest = JSON.parse(fs.readFileSync(path.join(input.variants, "m11-invalid-cases.json"), "utf8"));
+  const item = manifest.cases.find(entry => entry.case === "covalent_ligand");
+  assert.ok(item, "--variants was not generated with --attach-sidecar for this attach run");
+  const posts = [];
+  page.on("request", request => { if (request.method() === "POST") posts.push(new URL(request.url()).pathname); });
+  const run = await openWorkspace(page, input); evidence.run = run;
+  const selectedLigand = JSON.parse(fs.readFileSync(input.ligand, "utf8"));
+  await selectByLabel(page, "입력 방식", "attach_existing");
+  await page.waitForFunction(handle => [...document.querySelectorAll("select")].some(select =>
+    [...select.options].some(option => option.value === handle)), input.complex, { timeout: 30000 });
+  await nestedSelect(page, "기존 준비된 복합체").selectOption(input.complex);
+  const key = JSON.stringify([selectedLigand.model_number, selectedLigand.chain_auth, selectedLigand.chain_label,
+    selectedLigand.seq_auth, selectedLigand.seq_label, selectedLigand.icode, selectedLigand.resname]);
+  await page.waitForFunction(value => [...document.querySelectorAll("select")].some(select =>
+    [...select.options].some(option => option.value === value)), key, { timeout: 120000 });
+  await selectByLabel(page, "정확한 리간드 인스턴스", key);
+  await selectByLabel(page, "리간드 H 처리", "map_existing");
+  evidence.files = { sdf: await chooseFile(page, "명시적 H가 있는 3D 리간드 V2000 SDF", input.sdf) };
+  await selectByLabel(page, "수용체 결합 제공", "sidecar");
+  evidence.files.sidecar = await chooseFile(page, "완전한 receptor_bonds@1 JSON", path.join(input.variants, item.sidecar));
+  for (const label of ["공급된 수용체 결합 그래프가 완전함", "공급된 수소가 완전함",
+    "공급된 protonation/tautomer 그대로 사용", "수용체 bond order/charge 추론 동의"])
+    await page.getByLabel(label, { exact: true }).check();
+  const responsePromise = page.waitForResponse(response => response.request().method() === "POST" &&
+    response.url().includes(`/api/runs/${run}/chemical/preview`), { timeout: 60000 });
+  await click(page, "준비 조건 미리보기");
+  const response = await responsePromise;
+  assert.equal(response.status(), 200);
+  const body = await response.json();
+  await page.getByText(/준비 조건 미충족/).first().waitFor({ timeout: 30000 });
+  const expected = { ...item.expected, codes: [...item.expected.codes, "ligand_mapping_incomplete"] };
+  evidence.cases = [{ case: item.case, category: item.category, expected: item.expected,
+    blockers: await expectVisibleBlockers(page, body, expected) }];
+  await computeControlsDisabled(page, item.case);
+  evidence.cases[0].frame = await capture(app, page, artifacts, "invalid-covalent-ligand");
+  assert.deepEqual(posts.filter(value => /\/jobs(\/|$)/.test(value)), [], "An invalid attach input submitted a job");
+  return evidence;
+}
+async function runCapability(session, input, evidence) {
+  const { page, app, artifacts } = session;
+  const run = await openWorkspace(page, input); evidence.run = run;
+  evidence.capabilityState = await capabilityState(page, input.expectCapability);
+  evidence.fixtureLabel = input.fixtureLabel;
+  evidence.files = { receptor: await chooseFile(page, "준비된 수용체 PDB/mmCIF", input.receptor),
+    sdf: await chooseFile(page, "명시적 H가 있는 3D 리간드 V2000 SDF", input.sdf) };
+  for (const label of ["공급된 수용체 결합 그래프가 완전함", "공급된 수소가 완전함",
+    "공급된 protonation/tautomer 그대로 사용", "수용체 bond order/charge 추론 동의"])
+    await page.getByLabel(label, { exact: true }).check();
+  await click(page, "준비 조건 미리보기");
+  await page.getByText(/준비 조건 미충족|계산 준비 가능/).first().waitFor({ timeout: 30000 });
+  const terminalChecks = page.locator("label").filter({ hasText: "말단 확장 승인:" }).locator('input[type="checkbox"]');
+  for (let i = 0, count = await terminalChecks.count(); i < count; i++) await terminalChecks.nth(i).check();
+  await click(page, "준비 조건 미리보기");
+  await page.getByText("계산 준비 가능", { exact: false }).first().waitFor({ timeout: 30000 });
+  const submit = page.getByRole("button", { name: "화학 구조 준비 작업 저장", exact: true });
+  const ready = input.expectCapability === "ready";
+  assert.equal(await submit.isEnabled(), ready,
+    ready ? "Ready worker did not enable the expensive preparation submission"
+      : "Unavailable worker left the expensive preparation submission enabled");
+  assert.equal(await page.getByRole("button", { name: "상호작용 계산 작업 저장", exact: true }).isDisabled(), true);
+  assert.equal(await page.locator(".mw-chemical-row").count(), 0);
+  assert.equal(await page.getByText(/^실제 계산 행 \d+개$/).count(), 0, "A result count was shown without a result");
+  const jobs = (await readApi(page, `/runs/${run}/jobs`)).filter(job => job.protocol_id.startsWith("prolif_"));
+  assert.deepEqual(jobs, [], "Capability inspection created a chemical job");
+  evidence.submitEnabled = ready;
+  evidence.frame = await capture(app, page, artifacts, `capability-${input.expectCapability}`);
+  await imageNonblank(evidence.frame.screenshot);
+  return evidence;
+}
+/** H13 setup: an ordinary M9 scene saved through the real control before chemical display (older scene). */
+async function saveOrdinaryScene(page, run) {
+  const name = "M11 QA ordinary scene saved before chemical display";
+  await page.waitForFunction(() => {
+    const native = window.__protviewQaSnapshot?.();
+    return native?.ready && native.sessionId && native.catalogReady && !native.nativeBusy;
+  }, null, { timeout: 60000 });
+  // M10 Measure needs ball-and-stick; saving that representation lets the restore check re-enabled controls.
+  await page.getByRole("button", { name: "ball-and-stick", exact: true }).click();
+  await page.waitForFunction(() => {
+    const native = window.__protviewQaSnapshot?.();
+    return native?.representation === "ball-and-stick" && !native.nativeBusy && !native.cameraTransitioning;
+  }, null, { timeout: 30000 });
+  await page.getByRole("textbox", { name: "보기 이름" }).fill(name);
+  const save = page.getByRole("button", { name: "현재 보기 저장", exact: true });
+  await page.waitForFunction(() => [...document.querySelectorAll("button")]
+    .some(button => button.textContent === "현재 보기 저장" && !button.disabled), null, { timeout: 30000 });
+  const responsePromise = page.waitForResponse(response => response.request().method() === "POST" &&
+    new URL(response.url()).pathname === `/api/runs/${run}/viewer/scenes`, { timeout: 30000 });
+  await save.click();
+  const response = await responsePromise;
+  assert.equal(response.status(), 201, `Ordinary scene save failed: ${await response.text()}`);
+  const handle = (await response.json()).handle;
+  await page.getByText(`보기 저장 완료 · ${name}`, { exact: true }).waitFor({ timeout: 30000 });
+  return handle;
+}
 async function runJobControls(session, input, evidence) {
   const { page } = session;
-  await page.getByRole("button", { name: "화학 상호작용 작업 열기" }).waitFor({ timeout: 30000 });
   let releaseJobs, finishJobs;
   const gate = new Promise(resolve => { releaseJobs = resolve; });
   const finished = new Promise(resolve => { finishJobs = resolve; });
@@ -780,7 +1128,7 @@ async function runJobControls(session, input, evidence) {
       for (const index of failed.failure.sdf_atom_indices)
         assert.equal(await visibleFailure.getByText(`SDF atom index (zero-based): ${index}`, { exact: true }).count(), 1);
     }
-    await click(page, "준비 작업 재시도");
+    evidence.retryHttpStatus = await clickAwaitingPost(page, "준비 작업 재시도", `/jobs/${jobId}/retry`);
     const retried = await readApi(page, `/runs/${run}/jobs/${jobId}`);
     assert.equal(retried.status, "queued");
     assert.deepEqual(retried.output_handles, []);
@@ -865,7 +1213,10 @@ async function runRunningCancel(session, input, evidence) {
   const cancel = page.getByRole("button", { name: "준비 작업 취소" });
   assert.equal(await cancel.isEnabled(), true,
     "Actual running Cancel is blocked while the synchronous Start HTTP request is pending");
+  const cancelResponse = page.waitForResponse(value => value.request().method() === "POST" &&
+    new URL(value.url()).pathname.endsWith(`/jobs/${id}/cancel`), { timeout: 60000 });
   await cancel.click();
+  evidence.cancelHttpStatus = (await cancelResponse).status();
   const afterRequest = await readApi(page, `/runs/${run}/jobs/${id}`);
   assert.equal(afterRequest.cancel_requested, true);
   await page.waitForFunction(jobId => [...document.querySelectorAll(".mw-chemical-job")]
@@ -905,7 +1256,8 @@ async function runRetryFailed(session, input, evidence) {
   const current = await waitChemical(page, state =>
     (stage === "prepare" ? state.prepareJobId : state.detectJobId) === input.job, 30000);
   assert.ok(current);
-  await click(page, stage === "prepare" ? "준비 작업 재시도" : "상호작용 작업 재시도");
+  evidence.retryHttpStatus = await clickAwaitingPost(page, stage === "prepare" ? "준비 작업 재시도" : "상호작용 작업 재시도",
+    `/jobs/${input.job}/retry`);
   const retried = await readApi(page, `/runs/${run}/jobs/${input.job}`);
   assert.equal(retried.job_id, input.job);
   assert.equal(retried.status, "queued");
@@ -982,6 +1334,12 @@ async function runAttach(session, input, evidence) {
   const inventoryResponse = await inventoryPromise;
   assert.equal(inventoryResponse.status(), 200);
   const inventory = await inventoryResponse.json();
+  // H05: before any explicit choice the missing bijection is a visible prerequisite, never a guessed map.
+  assert.equal(inventory.ready, false, "Attach preview was ready before any explicit mapping");
+  assert.deepEqual(inventory.ligand_mapping, [], "Attach preview mapped atoms the user did not choose");
+  assert.ok(inventory.blockers.some(item => item.code === "ligand_mapping_incomplete"));
+  await page.getByRole("alert").filter({ hasText: "ligand_mapping_incomplete:" }).first().waitFor({ timeout: 30000 });
+  evidence.unmappedBlockers = inventory.blockers.map(item => ({ code: item.code, atoms: item.atoms.length }));
   await page.getByRole("region", { name: "SDF 전체 원자 대응" }).waitFor({ timeout: 30000 });
   const editor = page.getByRole("region", { name: "SDF 전체 원자 대응" });
   const atomRows = editor.locator("label");
@@ -1158,8 +1516,16 @@ async function attachSourceLink(page, run, sourceHandle, complexHandle, policy, 
 }
 async function runReopen(session, input, evidence) {
   const { page, app, artifacts } = session;
-  const run = await openWorkspace(page, input); evidence.run = run;
-  if (input.mode === "replay") evidence.scienceEventsBefore = await scienceEvents(page, run);
+  let createdScene = null;
+  const run = await openWorkspace(page, input, input.mode === "restrictions" && !input.scene
+    ? async selectedRun => { createdScene = await saveOrdinaryScene(page, selectedRun); } : null);
+  evidence.run = run;
+  const sceneHandle = input.scene ?? createdScene;
+  if (input.mode === "restrictions") {
+    const bytes = await getBytes(page, `/runs/${run}/viewer/scenes/selected?handle=${encodeURIComponent(sceneHandle)}`);
+    evidence.scene = { handle: sceneHandle, createdThroughUi: !!createdScene, selectedBytesSha256Before: sha(bytes) };
+  }
+  if (["replay", "reopen"].includes(input.mode)) evidence.scienceEventsBefore = await scienceEvents(page, run);
   const selects = nestedSelect(page, "저장된 화학 결과");
   assert.ok(await selects.count() >= 1);
   await selects.last().selectOption(input.result);
@@ -1194,15 +1560,19 @@ async function runReopen(session, input, evidence) {
     evidence.report = await downloadReport(app, page, run, input.report, artifacts);
   }
   if (input.mode === "restrictions") {
-    if (state.resultTotal > 0) {
-      await click(page, "기하 주석 숨기기");
-      await waitChemical(page, observation => observation.native?.chemicalAnnotation === null);
-      evidence.restrictionsOff = await testRestrictions(page, "annotation hidden");
-    }
-    const savedScene = await readApi(page, `/runs/${run}/viewer/scenes/selected?handle=${encodeURIComponent(input.scene)}`);
-    assert.equal(savedScene.handle, input.scene);
+    assert.ok(state.resultTotal > 0, "Restrictions need a result row so the geometry annotation can be shown and hidden");
+    const shown = await waitChemical(page, observation => observation.selectedRowId &&
+      observation.native?.chemicalAnnotation?.rowId === observation.selectedRowId, 30000);
+    evidence.annotationShown = shown.native.chemicalAnnotation.rowId;
+    evidence.restrictionsAnnotationOn = await attemptRestrictedControls(page, "annotation on");
+    await click(page, "기하 주석 숨기기");
+    await waitChemical(page, observation => observation.native?.chemicalAnnotation === null);
+    evidence.restrictionsOff = await testRestrictions(page, "annotation hidden");
+    evidence.restrictionsAnnotationOff = await attemptRestrictedControls(page, "annotation off");
+    const savedScene = await readApi(page, `/runs/${run}/viewer/scenes/selected?handle=${encodeURIComponent(sceneHandle)}`);
+    assert.equal(savedScene.handle, sceneHandle);
     await rail(page, "models");
-    await selectByLabel(page, "저장된 일반 보기 복원", input.scene);
+    await selectByLabel(page, "저장된 일반 보기 복원", sceneHandle);
     await click(page, "저장된 보기 복원 후 화학 보기 끝내기");
     await page.waitForFunction(() => typeof window.__protviewQaChemical !== "function" ||
       !document.body.textContent?.includes("준비 입력과 실제 화학 상호작용"), null, { timeout: 30000 });
@@ -1229,18 +1599,28 @@ async function runReopen(session, input, evidence) {
     assert.equal(await page.getByRole("button", { name: "원자 거리 측정", exact: true }).isEnabled(), true,
       "Ordinary source did not restore the M10 Measure control");
     assert.equal(await page.getByRole("button", { name: "현재 보기 저장", exact: true }).count(), 1);
-    evidence.restoredControls = { measureEnabled: true, savePresent: true };
+    const afterBytes = await getBytes(page, `/runs/${run}/viewer/scenes/selected?handle=${encodeURIComponent(sceneHandle)}`);
+    assert.equal(sha(afterBytes), evidence.scene.selectedBytesSha256Before, "Restoring changed the immutable M9 scene");
+    evidence.scene.selectedBytesSha256After = sha(afterBytes);
+    evidence.restoredControls = { measureEnabled: true, savePresent: true, chemicalWorkspaceClosed: true };
   }
-  if (input.mode === "replay") {
+  if (["replay", "reopen"].includes(input.mode)) {
     evidence.scienceEventsAfter = await scienceEvents(page, run);
     assert.deepEqual(evidence.scienceEventsAfter, evidence.scienceEventsBefore,
-      "Events-only chemical reopen appended scientific/job/approval activity");
+      "Chemical reopen appended scientific/job/approval activity");
+  }
+  if (input.mode === "replay" && (input.expectMarkdownSha || input.expectJsonSha)) {
+    // Browser download bytes after events-only recovery equal the original root's recorded download bytes.
+    if (input.expectMarkdownSha) assert.equal(evidence.report.markdown.sha256, input.expectMarkdownSha);
+    if (input.expectJsonSha) assert.equal(evidence.report.json.sha256, input.expectJsonSha);
+    evidence.crossRootReportBytesEqual = true;
   }
   return evidence;
 }
 async function runFaults(session, input, evidence) {
   const { page, app, artifacts } = session;
   const run = await openWorkspace(page, input); evidence.run = run;
+  evidence.scienceEventsBefore = await scienceEvents(page, run);
   const resultSelect = nestedSelect(page, "저장된 화학 결과").first();
   await resultSelect.selectOption(input.result);
   const baseline = await waitChemical(page, state => state.resultHandle === input.result && state.catalogReady, 60000);
@@ -1442,6 +1822,9 @@ async function runFaults(session, input, evidence) {
       state.native?.ready && state.sourceHandle === beforeContext.sourceHandle, 60000);
   }
   evidence.finalFrame = await capture(app, page, artifacts, "fault-recovered");
+  evidence.scienceEventsAfter = await scienceEvents(page, run);
+  assert.deepEqual(evidence.scienceEventsAfter, evidence.scienceEventsBefore,
+    "A visible retry or held-response recovery started a new scientific calculation");
   return evidence;
 }
 async function main() {
@@ -1449,19 +1832,25 @@ async function main() {
   fs.mkdirSync(input.artifacts, { recursive: true });
   const scriptBytes = fs.readFileSync(__filename);
   fs.writeFileSync(path.join(input.artifacts, "harness-source.cjs"), scriptBytes);
-  const evidence = { mode: input.mode, status: "running", harnessSha256: sha(scriptBytes),
+  const evidence = { mode: input.mode, ledgerMode: ledger.ledgerMode(input), status: "running",
+    harnessSha256: sha(scriptBytes), ledgerHelperSha256: ledger.helperSha256(),
     fixtureFiles: Object.fromEntries(["receptor", "sdf", "sidecar", "mapping", "ligand"]
-      .filter(key => input[key]).map(key => [key, { name: path.basename(input[key]), sha256: sha(fs.readFileSync(input[key])) }])),
-    startedAt: new Date().toISOString() };
-  const session = await launchOffscreen(input);
-  const { page, app, artifacts } = session;
+      .filter(key => input[key]).map(key => [key, { name: path.basename(input[key]),
+        sha256: sha(fs.readFileSync(input[key])), provenance: ledger.provenanceLabel(path.basename(input[key])) }])),
+    variantsManifest: input.variants ? ledger.fileDigest(path.join(input.variants, "m11-invalid-cases.json")) : null,
+    expectCapability: input.expectCapability, fixtureLabel: input.fixtureLabel,
+    buildId: ledger.buildId(), startedAt: new Date().toISOString() };
+  let session = null;
   const network = [];
-  page.on("response", response => {
-    if (/\/api\/runs\//.test(response.url())) network.push({ url: response.url(), status: response.status(),
-      method: response.request().method() });
-  });
+  let failure = null;
   try {
-    if (["create", "prepare-only"].includes(input.mode)) await runCreate(session, input, evidence);
+    session = await launchOffscreen(input);
+    const { page, app, artifacts } = session;
+    page.on("response", response => {
+      if (/\/api\/runs\//.test(response.url())) network.push({ url: response.url(), status: response.status(),
+        method: response.request().method() });
+    });
+    if (["create", "empty", "prepare-only"].includes(input.mode)) await runCreate(session, input, evidence);
     else if (input.mode === "job-controls") await runJobControls(session, input, evidence);
     else if (input.mode === "running-cancel") await runRunningCancel(session, input, evidence);
     else if (input.mode === "detect-controls") await runDetectControls(session, input, evidence);
@@ -1469,7 +1858,12 @@ async function main() {
     else if (input.mode === "attach") await runAttach(session, input, evidence);
     else if (["reopen", "reopen-complete", "restrictions", "replay"].includes(input.mode)) await runReopen(session, input, evidence);
     else if (input.mode === "faults") await runFaults(session, input, evidence);
-    else throw new Error(`${input.mode} control case is inventoried but requires the frozen backend fixture/selector contract`);
+    else if (input.mode === "capability") await runCapability(session, input, evidence);
+    else if (input.mode === "invalid-inputs") await runInvalidInputs(session, input, evidence);
+    else if (input.mode === "invalid-attach") await runInvalidAttach(session, input, evidence);
+    else throw new Error(`${input.mode} control case is inventoried but has no runner`);
+    if (input.expectCapability && input.mode !== "capability")
+      evidence.capabilityState = await capabilityState(page, input.expectCapability, (await chemical(page)) !== null);
     const finalFrame = await capture(app, page, artifacts, "final");
     evidence.finalImage = await imageNonblank(finalFrame.screenshot);
     evidence.finalNative = await chemical(page);
@@ -1479,23 +1873,31 @@ async function main() {
       assert.deepEqual(forbidden, [], "Reopened completion silently submitted a new chemical job");
       evidence.completedExisting.scientificJobPosts = forbidden;
     }
-    if (input.mode === "replay") {
+    if (["replay", "reopen"].includes(input.mode)) {
       const forbidden = network.filter(item => item.method === "POST" &&
         /\/(chemical\/imports|chemical\/preview|jobs|method_reports|commands)(\/|\?|$)/.test(item.url));
-      assert.deepEqual(forbidden, [], "Replay issued scientific/import/report creation POSTs");
+      assert.deepEqual(forbidden, [], `${input.mode} issued scientific/import/report creation POSTs`);
     }
+    evidence.offscreen = await ledger.offscreenProof(app, page);
+    assert.equal(evidence.offscreen.nonLoopbackRequests, 0, "Renderer attempted a non-loopback request");
     evidence.status = "observed_unreviewed";
   } catch (error) {
+    failure = error;
     evidence.status = "failed"; evidence.error = String(error.stack ?? error);
-    try { evidence.failedFrame = await capture(app, page, artifacts, "failure"); } catch (captureError) {
-      evidence.captureError = String(captureError); }
-    throw error;
+    if (session) {
+      try { evidence.failedFrame = await capture(session.app, session.page, session.artifacts, "failure"); }
+      catch (captureError) { evidence.captureError = String(captureError); }
+      if (!evidence.offscreen) try { evidence.offscreen = await ledger.offscreenProof(session.app, session.page); }
+      catch (proofError) { evidence.offscreenError = String(proofError); }
+    }
   } finally {
     evidence.network = network;
     evidence.finishedAt = new Date().toISOString();
-    fs.writeFileSync(path.join(artifacts, "chemical-evidence.json"), JSON.stringify(evidence, null, 2));
-    await session.close();
+    fs.writeFileSync(path.join(input.artifacts, "chemical-evidence.json"), JSON.stringify(evidence, null, 2));
+    ledger.writeRow(input, evidence);
+    if (session) await session.close();
   }
+  if (failure) throw failure;
 }
 if (require.main === module) main().catch(error => { process.stderr.write(`${error.stack ?? error}\n`); process.exitCode = 1; });
 module.exports = { options, main };

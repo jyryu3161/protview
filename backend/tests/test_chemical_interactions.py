@@ -449,6 +449,47 @@ def test_attach_explicit_bijection_and_sidecar(tmp_path: Path) -> None:
     assert "ligand_source_inventory_mismatch" in {item["code"] for item in mismatch["blockers"]}
 
 
+def test_attach_covalent_ligand_bond_reports_exact_endpoint_atoms(tmp_path: Path) -> None:
+    """A supplied receptor-ligand bond rejects with both exact endpoint AtomRefs (H06)."""
+    store = _store(tmp_path, "covalent")
+    receptor = (FIXTURES / "prolif-vina-rec.pdb").read_text()
+    sdf = (FIXTURES / "prolif-vina-output.sdf").read_bytes()
+    lig_atoms = _sdf_records(sdf.decode())[0]["atoms"]
+    appended = [f'HETATM{4989 + i:5d} {f"X{i + 1}":<4s} LIG L   1    '
+                f'{a["coordinate_A"][0]:8.3f}{a["coordinate_A"][1]:8.3f}{a["coordinate_A"][2]:8.3f}'
+                f'{1.00:6.2f}{0.00:6.2f}          {a["element"].upper():>2s}  '
+                for i, a in enumerate(lig_atoms)]
+    combined = (receptor.split("CONECT")[0] + "\n".join(appended) + "\nEND\n").encode()
+    raw_source = store.put("structure_source", "structure_source@1", combined, fmt="pdb")
+    complex_source = store.put("structure", "structure_selection@2",
+                               {"source": raw_source.handle, "format": "pdb", "model_index": 0})
+    ligand = import_raw(store, "ligand_sdf", "lig.sdf", sdf)
+    original = import_raw(store, "receptor", "rec.pdb", receptor.encode())
+    original_bonds = _bonds(store, {"connectivity": {"kind": "pdb_conect", "sidecar_handle": None}},
+                            receptor_atoms(store, original["handle"], 1), receptor.encode(),
+                            original["handle"])
+    req = {"schema": "chemical_prepare_request@1", "mode": "attach_existing",
+           "complex_handle": complex_source.handle, "complex_model_number": 1,
+           "selected_ligand": {"model_number": 1, "chain_auth": "L", "chain_label": None,
+                               "seq_auth": 1, "seq_label": None, "icode": "", "resname": "LIG"},
+           "connectivity": {"kind": "sidecar", "sidecar_handle": None},
+           "ligand_sdf_handle": ligand["handle"], "sdf_record_index": 0,
+           "hydrogen_policy": "map_existing", "mapping": [], "terminal_extensions": [],
+           "acknowledgement": _ack()}
+    rows, _, _ = _source_rows(store, req)
+    covalent = [(0, 4988)]  # receptor CAY TYR A 38 bonded to ligand X1: a synthetic invalid graph
+    sidecar = {"schema": "receptor_bonds@1", "source_handle": complex_source.handle, "complete": True,
+               "bonds": [{"first": rows[a]["ref"], "second": rows[b]["ref"]}
+                         for a, b in [*original_bonds, *covalent]]}
+    req["connectivity"]["sidecar_handle"] = import_raw(
+        store, "receptor_bonds", "covalent.json", json.dumps(sidecar).encode())["handle"]
+    result = preview(store, req)
+    crossing = [item for item in result["blockers"] if item["code"] == "cross_excluded_bond"]
+    assert len(crossing) == 1
+    assert crossing[0]["atoms"] == [rows[0]["ref"], rows[4988]["ref"]]
+    assert result["ready"] is False
+
+
 def test_chemical_view_preserves_quoted_and_blank_authoritative_identifiers(tmp_path: Path) -> None:
     store = _store(tmp_path, "quoted")
     first = {"model_number": 2, "chain_auth": "", "chain_label": None, "seq_auth": 42,
