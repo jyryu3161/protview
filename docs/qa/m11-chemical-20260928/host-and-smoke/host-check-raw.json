@@ -1,0 +1,359 @@
+{
+  "recordedAt": "2026-09-28T05:33:01.028504+00:00",
+  "results": [
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "spoofed",
+      "hostHeaders": [
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "spoofed-with-port",
+      "hostHeaders": [
+        "evil.example:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "allowed-127",
+      "hostHeaders": [
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "allowed-localhost-upper",
+      "hostHeaders": [
+        "LOCALHOST:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "allowed-ipv6",
+      "hostHeaders": [
+        "[::1]:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "missing",
+      "hostHeaders": [],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "0\r\n\r\n",
+      "bodyBytes": 5,
+      "bodySha256": "933b971c6388d594a23fa1559825db5bec8ade2db1240aa8fc9d0c684949e8c9",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "two-hosts-allowed-then-foreign",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "two-hosts-foreign-then-allowed",
+      "hostHeaders": [
+        "evil.example",
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/api/capabilities",
+      "case": "two-hosts-both-allowed",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "localhost:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "spoofed",
+      "hostHeaders": [
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "spoofed-with-port",
+      "hostHeaders": [
+        "evil.example:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "allowed-127",
+      "hostHeaders": [
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "allowed-localhost-upper",
+      "hostHeaders": [
+        "LOCALHOST:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "allowed-ipv6",
+      "hostHeaders": [
+        "[::1]:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "missing",
+      "hostHeaders": [],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "0\r\n\r\n",
+      "bodyBytes": 5,
+      "bodySha256": "933b971c6388d594a23fa1559825db5bec8ade2db1240aa8fc9d0c684949e8c9",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "two-hosts-allowed-then-foreign",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "two-hosts-foreign-then-allowed",
+      "hostHeaders": [
+        "evil.example",
+        "127.0.0.1:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "17\r\nHost header not allowed\r\n0\r\n\r\n",
+      "bodyBytes": 34,
+      "bodySha256": "1f5eda5c86c0d458690f2d1762e7f1845d7715acdf7de97d748467b78c661135",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 3000,
+      "path": "/",
+      "case": "two-hosts-both-allowed",
+      "hostHeaders": [
+        "127.0.0.1:3000",
+        "localhost:3000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "<!DOCTYPE html><!--aqV29Ar7twWJLHni63lRZ--><html lang=\"ko\" data-theme=\"dark\"><head><meta charSet=\"utf-8\"/><meta name=\"vi",
+      "bodyBytes": 12334,
+      "bodySha256": "56996c6061dd2c3c608140f3bda819d92ff291ee7f1355720f5dcb24834fd9e8",
+      "backendLogLinesAdded": 0
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "spoofed",
+      "hostHeaders": [
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "{\"detail\":\"Host header not allowed\"}",
+      "bodyBytes": 36,
+      "bodySha256": "f45625813e77f917134ab0e51ddf34ca1004719f4905be29a1a2d6e01c5f3e80",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "spoofed-with-port",
+      "hostHeaders": [
+        "evil.example:3000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "{\"detail\":\"Host header not allowed\"}",
+      "bodyBytes": 36,
+      "bodySha256": "f45625813e77f917134ab0e51ddf34ca1004719f4905be29a1a2d6e01c5f3e80",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "allowed-127",
+      "hostHeaders": [
+        "127.0.0.1:8000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "allowed-localhost-upper",
+      "hostHeaders": [
+        "LOCALHOST:8000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "allowed-ipv6",
+      "hostHeaders": [
+        "[::1]:8000"
+      ],
+      "statusLine": "HTTP/1.1 200 OK",
+      "bodyPrefix": "{\"mode\":\"local_only\",\"energy_protocols\":{\"protocols\":{\"relax\":{\"protocol_id\":\"relax\",\"tool_id\":\"relax_structure\",\"engine",
+      "bodyBytes": 3878,
+      "bodySha256": "993e78cff4556299c74b8e13966ae23a6e131c3731eea712d776b3ee17672dd0",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "missing",
+      "hostHeaders": [],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "two-hosts-allowed-then-foreign",
+      "hostHeaders": [
+        "127.0.0.1:8000",
+        "evil.example"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "two-hosts-foreign-then-allowed",
+      "hostHeaders": [
+        "evil.example",
+        "127.0.0.1:8000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendLogLinesAdded": 1
+    },
+    {
+      "port": 8000,
+      "path": "/capabilities",
+      "case": "two-hosts-both-allowed",
+      "hostHeaders": [
+        "127.0.0.1:8000",
+        "localhost:8000"
+      ],
+      "statusLine": "HTTP/1.1 400 Bad Request",
+      "bodyPrefix": "Invalid HTTP request received.",
+      "bodyBytes": 30,
+      "bodySha256": "fbfbf7c9ceb94b7e4cc5e58b46dde0c6e9bd9827e0d858fa6e763fde4edf6320",
+      "backendLogLinesAdded": 1
+    }
+  ]
+}

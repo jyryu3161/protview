@@ -1,0 +1,35 @@
+== missing
+HTTP/1.1 400 Bad Request
+Connection: close
+Date: Mon, 28 Sep 2026 05:58:36 GMT
+Transfer-Encoding: chunked
+
+0
+
+
+== spoofed
+HTTP/1.1 400 Bad Request
+content-type: text/plain; charset=utf-8
+Vary: Accept-Encoding
+Date: Mon, 28 Sep 2026 05:58:36 GMT
+Connection: close
+Transfer-Encoding: chunked
+
+17
+Host header not allowed
+0
+
+
+== foreign-first
+HTTP/1.1 400 Bad Request
+content-type: text/plain; charset=utf-8
+Vary: Accept-Encoding
+Date: Mon, 28 Sep 2026 05:58:36 GMT
+Connection: close
+Transfer-Encoding: chunked
+
+17
+Host header not allowed
+0
+
+

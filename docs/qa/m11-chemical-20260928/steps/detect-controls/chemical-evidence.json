@@ -1,0 +1,4020 @@
+{
+  "mode": "detect-controls",
+  "ledgerMode": "detect-controls",
+  "status": "observed_unreviewed",
+  "harnessSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+  "ledgerHelperSha256": "9e4ffb3dcee377a8828f7ad23f75d4214b3c690cff5bcb350657310b14a995fb",
+  "fixtureFiles": {},
+  "variantsManifest": null,
+  "expectCapability": null,
+  "fixtureLabel": null,
+  "buildId": "aqV29Ar7twWJLHni63lRZ",
+  "startedAt": "2026-09-28T05:15:38.318Z",
+  "run": "run_cf06945cf825421e805f27443c2aa47a",
+  "detectControl": {
+    "graph": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_graph/dc628d636a11ddc3f17f7344ffd2a45e76da439c25646ab46f0fc0f7dc2dba43",
+    "id": "job_ca4771296e754d79a4bab8ee213828fc",
+    "durable": {
+      "job_id": "job_ca4771296e754d79a4bab8ee213828fc",
+      "run_id": "run_cf06945cf825421e805f27443c2aa47a",
+      "root_call_id": "job_ca4771296e754d79a4bab8ee213828fc",
+      "call_key": "ef9a5a1291ffc3ead8dd598cbb01b22798aa1f5bb69c9a6ee7ce575f0d1adeef",
+      "protocol_id": "prolif_detect_v1",
+      "tool_id": "compute_chemical_interactions",
+      "status": "cancelled",
+      "created": 1790572542.253665,
+      "finished": 1790572543.299794,
+      "timeout_s": 120,
+      "attempt_id": null,
+      "attempt_ordinal": 0,
+      "blocked_reason": null,
+      "cancel_requested": true,
+      "cleanup_status": "verified",
+      "failure": null,
+      "input_handles": [
+        "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_graph/dc628d636a11ddc3f17f7344ffd2a45e76da439c25646ab46f0fc0f7dc2dba43"
+      ],
+      "output_handles": [],
+      "preparation_handle": null,
+      "preparation_attempt_id": null,
+      "started": null,
+      "remaining_wall_s_at_dispatch": null,
+      "artifacts": {}
+    },
+    "note": "Actual queued detection cancelled before an expensive attempt; no assignment result"
+  },
+  "finalImage": {
+    "width": 1440,
+    "height": 960,
+    "low": 1,
+    "high": 250,
+    "sha256": "ac7c54c458e9b074eb415488c599b9a7054229c302b3d0eb2f91279a8e56eda5"
+  },
+  "finalNative": {
+    "runId": "run_cf06945cf825421e805f27443c2aa47a",
+    "mode": "create_new",
+    "generation": 1,
+    "sourceHandle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+    "graphHandle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_graph/dc628d636a11ddc3f17f7344ffd2a45e76da439c25646ab46f0fc0f7dc2dba43",
+    "catalogReady": true,
+    "resultHandle": "",
+    "resultTotal": null,
+    "selectedRowId": null,
+    "prepareJobId": "job_c89e676f49c54030bb946a422f48fc3f",
+    "detectJobId": "job_ca4771296e754d79a4bab8ee213828fc",
+    "native": {
+      "ready": true,
+      "sourceHandle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+      "sessionId": null,
+      "generation": null,
+      "representation": "ball-and-stick",
+      "molstarRepresentation": "Ball & Stick",
+      "selection": null,
+      "selectionError": null,
+      "camera": {
+        "position": [
+          3.4625611044317743,
+          5.579966773763775,
+          134.57161255366933
+        ],
+        "target": [
+          3.4625611044317743,
+          5.579966773763775,
+          -10.014140979219396
+        ],
+        "radius": 50.775513201281534,
+        "distance": 144.58575353288873
+      },
+      "nativeCamera": {
+        "mode": "perspective",
+        "fov": 0.7853981633974483,
+        "position": [
+          3.4625611044317743,
+          5.579966773763775,
+          134.57161255366933
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "target": [
+          3.4625611044317743,
+          5.579966773763775,
+          -10.014140979219396
+        ],
+        "radius": 50.775513201281534,
+        "radiusMax": 50.775513201281534,
+        "fog": 15,
+        "clipFar": true,
+        "minNear": 1,
+        "minFar": 0
+      },
+      "theme": "dark",
+      "backgroundColor": 724496,
+      "lastAck": null,
+      "measureMode": false,
+      "lastAtomPick": null,
+      "nativeBusy": false,
+      "nativeUpdating": false,
+      "nativeAnimating": false,
+      "cameraTransitioning": false,
+      "m10QueuePending": 0,
+      "nativeClickRevision": 1,
+      "lastNativeClick": {
+        "kind": "empty-loci",
+        "size": null,
+        "pluginBusy": false,
+        "measureMode": false,
+        "accepted": false,
+        "reason": "inactive"
+      },
+      "chemicalFocus": null,
+      "chemicalAnnotation": null,
+      "catalogReady": true,
+      "atomPickRevision": 0,
+      "qaAtoms": [
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CAY",
+            "altloc": "",
+            "element": "C",
+            "site_index": 0
+          },
+          "worldCoordinate_A": [
+            5.440000057220459,
+            4.559999942779541,
+            22.8799991607666
+          ],
+          "canvasPixel": [
+            396.6525828103208,
+            422.1052363069606
+          ],
+          "depth": 0.3079884604801931
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HY1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 1
+          },
+          "worldCoordinate_A": [
+            4.650000095367432,
+            3.9200000762939453,
+            23.31999969482422
+          ],
+          "canvasPixel": [
+            389.6421830951654,
+            427.87711761294884
+          ],
+          "depth": 0.3015980211324321
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HY2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 2
+          },
+          "worldCoordinate_A": [
+            6.389999866485596,
+            3.9800000190734863,
+            22.90999984741211
+          ],
+          "canvasPixel": [
+            405.14024537990593,
+            427.28672876420944
+          ],
+          "depth": 0.30755433914674096
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HY3",
+            "altloc": "",
+            "element": "H",
+            "site_index": 3
+          },
+          "worldCoordinate_A": [
+            5.070000171661377,
+            4.570000171661377,
+            21.829999923706055
+          ],
+          "canvasPixel": [
+            393.2159541351992,
+            421.9319957354998
+          ],
+          "depth": 0.32303679962730725
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CY",
+            "altloc": "",
+            "element": "C",
+            "site_index": 4
+          },
+          "worldCoordinate_A": [
+            5.400000095367432,
+            5.900000095367432,
+            23.520000457763672
+          ],
+          "canvasPixel": [
+            396.395179125838,
+            410.1266001244024
+          ],
+          "depth": 0.298676528045473
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "OY",
+            "altloc": "",
+            "element": "O",
+            "site_index": 5
+          },
+          "worldCoordinate_A": [
+            5.289999961853027,
+            5.96999979019165,
+            24.780000686645508
+          ],
+          "canvasPixel": [
+            395.5958473363736,
+            409.45792340986094
+          ],
+          "depth": 0.2800264355774137
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 6
+          },
+          "worldCoordinate_A": [
+            5.380000114440918,
+            6.960000038146973,
+            22.799999237060547
+          ],
+          "canvasPixel": [
+            396.10471239417706,
+            400.68927097109633
+          ],
+          "depth": 0.3091449504824974
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 7
+          },
+          "worldCoordinate_A": [
+            5.380000114440918,
+            7.019999980926514,
+            21.809999465942383
+          ],
+          "canvasPixel": [
+            395.9545401778386,
+            400.2668174889453
+          ],
+          "depth": 0.32332072147140034
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 8
+          },
+          "worldCoordinate_A": [
+            5.28000020980835,
+            8.300000190734863,
+            23.40999984741211
+          ],
+          "canvasPixel": [
+            395.3016200508377,
+            388.6025106107437
+          ],
+          "depth": 0.30028465296778134
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 9
+          },
+          "worldCoordinate_A": [
+            4.730000019073486,
+            8.25,
+            24.34000015258789
+          ],
+          "canvasPixel": [
+            390.46427550300695,
+            388.84893744847045
+          ],
+          "depth": 0.2865876204721245
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 10
+          },
+          "worldCoordinate_A": [
+            6.659999847412109,
+            8.859999656677246,
+            23.709999084472656
+          ],
+          "canvasPixel": [
+            407.7572117274481,
+            383.4999508453398
+          ],
+          "depth": 0.29589137674077104
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HB1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 11
+          },
+          "worldCoordinate_A": [
+            7.389999866485596,
+            8.920000076293945,
+            22.8700008392334
+          ],
+          "canvasPixel": [
+            414.0570783788574,
+            383.186216420199
+          ],
+          "depth": 0.3081330881832859
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HB2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 12
+          },
+          "worldCoordinate_A": [
+            7.119999885559082,
+            8.1899995803833,
+            24.459999084472656
+          ],
+          "canvasPixel": [
+            412.118425084337,
+            389.36592677374966
+          ],
+          "depth": 0.28480342477439347
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CG",
+            "altloc": "",
+            "element": "C",
+            "site_index": 13
+          },
+          "worldCoordinate_A": [
+            6.619999885559082,
+            10.3100004196167,
+            24.309999465942383
+          ],
+          "canvasPixel": [
+            407.5519867958057,
+            370.2274024733771
+          ],
+          "depth": 0.28703307675308254
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CD1",
+            "altloc": "",
+            "element": "C",
+            "site_index": 14
+          },
+          "worldCoordinate_A": [
+            6.789999961853027,
+            10.399999618530273,
+            25.729999542236328
+          ],
+          "canvasPixel": [
+            409.4818170133251,
+            368.844910915582
+          ],
+          "depth": 0.2656793613366315
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HD1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 15
+          },
+          "worldCoordinate_A": [
+            6.869999885559082,
+            9.479999542236328,
+            26.299999237060547
+          ],
+          "canvasPixel": [
+            410.37900662240213,
+            377.08470938720774
+          ],
+          "depth": 0.2569502619222527
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CE1",
+            "altloc": "",
+            "element": "C",
+            "site_index": 16
+          },
+          "worldCoordinate_A": [
+            6.739999771118164,
+            11.640000343322754,
+            26.34000015258789
+          ],
+          "canvasPixel": [
+            409.1929940662876,
+            357.17269819050864
+          ],
+          "depth": 0.2563342266364924
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HE1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 17
+          },
+          "worldCoordinate_A": [
+            6.849999904632568,
+            11.710000038146973,
+            27.420000076293945
+          ],
+          "canvasPixel": [
+            410.5208908963977,
+            355.95864187820666
+          ],
+          "depth": 0.23952780405426344
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CZ",
+            "altloc": "",
+            "element": "C",
+            "site_index": 18
+          },
+          "worldCoordinate_A": [
+            6.489999771118164,
+            12.779999732971191,
+            25.56999969482422
+          ],
+          "canvasPixel": [
+            406.69288271545634,
+            347.13915516082517
+          ],
+          "depth": 0.2681132240028183
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "OH",
+            "altloc": "",
+            "element": "O",
+            "site_index": 19
+          },
+          "worldCoordinate_A": [
+            6.28000020980835,
+            13.979999542236328,
+            26.290000915527344
+          ],
+          "canvasPixel": [
+            404.94332069256285,
+            335.65148037284996
+          ],
+          "depth": 0.2571041702692153
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HH",
+            "altloc": "",
+            "element": "H",
+            "site_index": 20
+          },
+          "worldCoordinate_A": [
+            5.960000038146973,
+            14.710000038146973,
+            25.770000457763672
+          ],
+          "canvasPixel": [
+            401.8868110711376,
+            329.33134905753457
+          ],
+          "depth": 0.2650697626456946
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CD2",
+            "altloc": "",
+            "element": "C",
+            "site_index": 21
+          },
+          "worldCoordinate_A": [
+            6.409999847412109,
+            11.449999809265137,
+            23.600000381469727
+          ],
+          "canvasPixel": [
+            405.4824785649226,
+            360.25826807824865
+          ],
+          "depth": 0.2975049878228737
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HD2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 22
+          },
+          "worldCoordinate_A": [
+            6.400000095367432,
+            11.479999542236328,
+            22.520000457763672
+          ],
+          "canvasPixel": [
+            405.13824853652835,
+            360.4996677882067
+          ],
+          "depth": 0.3131796472755062
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "CE2",
+            "altloc": "",
+            "element": "C",
+            "site_index": 23
+          },
+          "worldCoordinate_A": [
+            6.389999866485596,
+            12.699999809265137,
+            24.209999084472656
+          ],
+          "canvasPixel": [
+            405.44816312396773,
+            348.6735322316823
+          ],
+          "depth": 0.28851615364336947
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "HE2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 24
+          },
+          "worldCoordinate_A": [
+            6.170000076293945,
+            13.569999694824219,
+            23.6200008392334
+          ],
+          "canvasPixel": [
+            403.3304867668072,
+            341.1973140400994
+          ],
+          "depth": 0.29721183180150723
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 25
+          },
+          "worldCoordinate_A": [
+            4.539999961853027,
+            9.289999961853027,
+            22.559999465942383
+          ],
+          "canvasPixel": [
+            388.59081070971706,
+            379.97517841625404
+          ],
+          "depth": 0.3126045087551464
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 38,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 26
+          },
+          "worldCoordinate_A": [
+            4.900000095367432,
+            9.680000305175781,
+            21.450000762939453
+          ],
+          "canvasPixel": [
+            391.6697945803913,
+            376.8617131278085
+          ],
+          "depth": 0.32841401218671257
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 27
+          },
+          "worldCoordinate_A": [
+            3.450000047683716,
+            9.770000457763672,
+            23.149999618530273
+          ],
+          "canvasPixel": [
+            378.8875958169164,
+            375.5049609448367
+          ],
+          "depth": 0.3040730356650482
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 28
+          },
+          "worldCoordinate_A": [
+            3.1700000762939453,
+            9.470000267028809,
+            24.049999237060547
+          ],
+          "canvasPixel": [
+            376.3606620962851,
+            377.9060816102349
+          ],
+          "depth": 0.29088348311816914
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 29
+          },
+          "worldCoordinate_A": [
+            2.559999942779541,
+            10.720000267028809,
+            22.579999923706055
+          ],
+          "canvasPixel": [
+            370.9644264604744,
+            367.23787452238025
+          ],
+          "depth": 0.312316771709782
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 30
+          },
+          "worldCoordinate_A": [
+            2.3399999141693115,
+            10.619999885559082,
+            21.530000686645508
+          ],
+          "canvasPixel": [
+            369.09858145672575,
+            368.54498254106005
+          ],
+          "depth": 0.3272849703351681
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 31
+          },
+          "worldCoordinate_A": [
+            1.2100000381469727,
+            10.430000305175781,
+            23.329999923706055
+          ],
+          "canvasPixel": [
+            358.8100597194483,
+            369.528642520051
+          ],
+          "depth": 0.301452193192026
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HB",
+            "altloc": "",
+            "element": "H",
+            "site_index": 32
+          },
+          "worldCoordinate_A": [
+            1.2899999618530273,
+            10.739999771118164,
+            24.389999389648438
+          ],
+          "canvasPixel": [
+            359.33976891901057,
+            366.3051387483145
+          ],
+          "depth": 0.2858446826219623
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "CG2",
+            "altloc": "",
+            "element": "C",
+            "site_index": 33
+          },
+          "worldCoordinate_A": [
+            0.11999999731779099,
+            11.3100004196167,
+            22.700000762939453
+          ],
+          "canvasPixel": [
+            349.2089920539569,
+            361.93033443385974
+          ],
+          "depth": 0.3105882163875576
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HG21",
+            "altloc": "",
+            "element": "H",
+            "site_index": 34
+          },
+          "worldCoordinate_A": [
+            -0.7200000286102295,
+            11.220000267028809,
+            23.420000076293945
+          ],
+          "canvasPixel": [
+            341.4809125323875,
+            362.4068578502353
+          ],
+          "depth": 0.30013858878681543
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HG22",
+            "altloc": "",
+            "element": "H",
+            "site_index": 35
+          },
+          "worldCoordinate_A": [
+            -0.029999999329447746,
+            11.079999923706055,
+            21.6299991607666
+          ],
+          "canvasPixel": [
+            348.1670014441357,
+            364.4446536134332
+          ],
+          "depth": 0.3258714390074324
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HG23",
+            "altloc": "",
+            "element": "H",
+            "site_index": 36
+          },
+          "worldCoordinate_A": [
+            0.38999998569488525,
+            12.390000343322754,
+            22.799999237060547
+          ],
+          "canvasPixel": [
+            351.59090173132824,
+            352.2503933663884
+          ],
+          "depth": 0.3091449504824974
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "CG1",
+            "altloc": "",
+            "element": "C",
+            "site_index": 37
+          },
+          "worldCoordinate_A": [
+            0.7599999904632568,
+            8.960000038146973,
+            23.3799991607666
+          ],
+          "canvasPixel": [
+            354.76576981304714,
+            382.69078562359033
+          ],
+          "depth": 0.3007226878719652
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HG11",
+            "altloc": "",
+            "element": "H",
+            "site_index": 38
+          },
+          "worldCoordinate_A": [
+            1.2200000286102295,
+            8.529999732971191,
+            22.459999084472656
+          ],
+          "canvasPixel": [
+            359.0556717184185,
+            386.7637353942016
+          ],
+          "depth": 0.3140416266465973
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HG12",
+            "altloc": "",
+            "element": "H",
+            "site_index": 39
+          },
+          "worldCoordinate_A": [
+            -0.3400000035762787,
+            8.989999771118164,
+            23.309999465942383
+          ],
+          "canvasPixel": [
+            344.92337407263784,
+            382.4410121099463
+          ],
+          "depth": 0.3017438228587157
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "CD",
+            "altloc": "",
+            "element": "C",
+            "site_index": 40
+          },
+          "worldCoordinate_A": [
+            1.090000033378601,
+            8.15999984741211,
+            24.6299991607666
+          ],
+          "canvasPixel": [
+            357.4830341159105,
+            389.601452201662
+          ],
+          "depth": 0.2822691232908555
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HD1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 41
+          },
+          "worldCoordinate_A": [
+            0.7900000214576721,
+            8.680000305175781,
+            25.559999465942383
+          ],
+          "canvasPixel": [
+            354.55553081545145,
+            384.64567178186286
+          ],
+          "depth": 0.26826510681992066
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HD2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 42
+          },
+          "worldCoordinate_A": [
+            2.140000104904175,
+            7.829999923706055,
+            24.809999465942383
+          ],
+          "canvasPixel": [
+            366.9859075966407,
+            392.5607868493901
+          ],
+          "depth": 0.2795771853198518
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "HD3",
+            "altloc": "",
+            "element": "H",
+            "site_index": 43
+          },
+          "worldCoordinate_A": [
+            0.5099999904632568,
+            7.210000038146973,
+            24.600000381469727
+          ],
+          "canvasPixel": [
+            352.23026692081623,
+            398.2211169512158
+          ],
+          "depth": 0.28271690389608317
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 44
+          },
+          "worldCoordinate_A": [
+            3.059999942779541,
+            12.039999961853027,
+            22.770000457763672
+          ],
+          "canvasPixel": [
+            375.4098752160767,
+            355.3880705273759
+          ],
+          "depth": 0.3095781903270753
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 39,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 45
+          },
+          "worldCoordinate_A": [
+            3.140000104904175,
+            12.539999961853027,
+            23.8799991607666
+          ],
+          "canvasPixel": [
+            376.09448664754706,
+            350.3065268549966
+          ],
+          "depth": 0.2933912754886404
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 46
+          },
+          "worldCoordinate_A": [
+            3.2799999713897705,
+            12.670000076293945,
+            21.6200008392334
+          ],
+          "canvasPixel": [
+            377.3884580051442,
+            350.41336821499294
+          ],
+          "depth": 0.3260128831844763
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 47
+          },
+          "worldCoordinate_A": [
+            3.0799999237060547,
+            12.270000457763672,
+            20.729999542236328
+          ],
+          "canvasPixel": [
+            375.6493767668051,
+            354.4060196856782
+          ],
+          "depth": 0.3385040083612073
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 48
+          },
+          "worldCoordinate_A": [
+            3.809999942779541,
+            14.079999923706055,
+            21.610000610351562
+          ],
+          "canvasPixel": [
+            382.06671360754666,
+            337.9733638027133
+          ],
+          "depth": 0.3261543292985478
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 49
+          },
+          "worldCoordinate_A": [
+            4.28000020980835,
+            14.220000267028809,
+            22.56999969482422
+          ],
+          "canvasPixel": [
+            386.277075325182,
+            336.0839653632422
+          ],
+          "depth": 0.312460653077977
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 50
+          },
+          "worldCoordinate_A": [
+            5.050000190734863,
+            14.270000457763672,
+            20.6200008392334
+          ],
+          "canvasPixel": [
+            392.8900028306299,
+            336.96269342836285
+          ],
+          "depth": 0.34003428675189007
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HB1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 51
+          },
+          "worldCoordinate_A": [
+            5.880000114440918,
+            13.609999656677246,
+            20.959999084472656
+          ],
+          "canvasPixel": [
+            400.2157571452616,
+            342.52739373899965
+          ],
+          "depth": 0.33529472845180586
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HB2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 52
+          },
+          "worldCoordinate_A": [
+            5.599999904632568,
+            15.229999542236328,
+            20.59000015258789
+          ],
+          "canvasPixel": [
+            397.6975468218337,
+            328.584979788055
+          ],
+          "depth": 0.34045113724566967
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CG",
+            "altloc": "",
+            "element": "C",
+            "site_index": 53
+          },
+          "worldCoordinate_A": [
+            4.599999904632568,
+            13.850000381469727,
+            19.239999771118164
+          ],
+          "canvasPixel": [
+            388.8334386043444,
+            341.50352236719436
+          ],
+          "depth": 0.3589845382941279
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CD1",
+            "altloc": "",
+            "element": "C",
+            "site_index": 54
+          },
+          "worldCoordinate_A": [
+            3.799999952316284,
+            14.65999984741211,
+            18.489999771118164
+          ],
+          "canvasPixel": [
+            381.8983937413364,
+            335.0080580621321
+          ],
+          "depth": 0.369094601221322
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HD1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 55
+          },
+          "worldCoordinate_A": [
+            3.4600000381469727,
+            15.609999656677246,
+            18.889999389648438
+          ],
+          "canvasPixel": [
+            378.9779259399469,
+            326.5502468224378
+          ],
+          "depth": 0.3637188866482343
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CE1",
+            "altloc": "",
+            "element": "C",
+            "site_index": 56
+          },
+          "worldCoordinate_A": [
+            3.3299999237060547,
+            14.380000114440918,
+            17.270000457763672
+          ],
+          "canvasPixel": [
+            377.87322262001476,
+            338.19922908723
+          ],
+          "depth": 0.38526410030405334
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HE1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 57
+          },
+          "worldCoordinate_A": [
+            2.5899999141693115,
+            15.09000015258789,
+            16.93000030517578
+          ],
+          "canvasPixel": [
+            371.6046171506981,
+            332.3978158427038
+          ],
+          "depth": 0.38971060297297533
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CZ",
+            "altloc": "",
+            "element": "C",
+            "site_index": 58
+          },
+          "worldCoordinate_A": [
+            3.5299999713897705,
+            13,
+            16.780000686645508
+          ],
+          "canvasPixel": [
+            379.5708495162327,
+            350.19167345640955
+          ],
+          "depth": 0.39166412906397907
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "OH",
+            "altloc": "",
+            "element": "O",
+            "site_index": 59
+          },
+          "worldCoordinate_A": [
+            2.940000057220459,
+            12.520000457763672,
+            15.569999694824219
+          ],
+          "canvasPixel": [
+            374.62165557258714,
+            354.85204203689716
+          ],
+          "depth": 0.4072425311115282
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HH",
+            "altloc": "",
+            "element": "H",
+            "site_index": 60
+          },
+          "worldCoordinate_A": [
+            3.3399999141693115,
+            11.670000076293945,
+            15.34000015258789
+          ],
+          "canvasPixel": [
+            377.9750863199719,
+            362.0723088587593
+          ],
+          "depth": 0.4101679435318641
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CD2",
+            "altloc": "",
+            "element": "C",
+            "site_index": 61
+          },
+          "worldCoordinate_A": [
+            4.880000114440918,
+            12.529999732971191,
+            18.739999771118164
+          ],
+          "canvasPixel": [
+            391.2012131665373,
+            353.17461559125366
+          ],
+          "depth": 0.36573912731480074
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HD2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 62
+          },
+          "worldCoordinate_A": [
+            5.5,
+            11.800000190734863,
+            19.229999542236328
+          ],
+          "canvasPixel": [
+            396.6126339542172,
+            359.23094121035837
+          ],
+          "depth": 0.3591202070830617
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "CE2",
+            "altloc": "",
+            "element": "C",
+            "site_index": 63
+          },
+          "worldCoordinate_A": [
+            4.369999885559082,
+            12.130000114440918,
+            17.540000915527344
+          ],
+          "canvasPixel": [
+            386.7310750101209,
+            357.1959059622078
+          ],
+          "depth": 0.381714644868135
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "HE2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 64
+          },
+          "worldCoordinate_A": [
+            4.650000095367432,
+            11.1899995803833,
+            17.09000015258789
+          ],
+          "canvasPixel": [
+            389.0778326878445,
+            365.38747217330206
+          ],
+          "depth": 0.3876213400548161
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 65
+          },
+          "worldCoordinate_A": [
+            2.7200000286102295,
+            15.0600004196167,
+            21.350000381469727
+          ],
+          "canvasPixel": [
+            372.4607403382383,
+            329.5154172080948
+          ],
+          "depth": 0.3298230775243388
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "TYR",
+              "seq_auth": 40,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 66
+          },
+          "worldCoordinate_A": [
+            2.940000057220459,
+            16.260000228881836,
+            21.469999313354492
+          ],
+          "canvasPixel": [
+            374.3932571465042,
+            318.84799985184185
+          ],
+          "depth": 0.3281319216435669
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 67
+          },
+          "worldCoordinate_A": [
+            1.4900000095367432,
+            14.619999885559082,
+            20.979999542236328
+          ],
+          "canvasPixel": [
+            361.6855008416259,
+            333.64953216864353
+          ],
+          "depth": 0.33501503948445355
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 68
+          },
+          "worldCoordinate_A": [
+            1.1399999856948853,
+            13.6899995803833,
+            20.8799991607666
+          ],
+          "canvasPixel": [
+            358.6312462019964,
+            341.8753866586712
+          ],
+          "depth": 0.3364124736415807
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 69
+          },
+          "worldCoordinate_A": [
+            0.5699999928474426,
+            15.520000457763672,
+            20.229999542236328
+          ],
+          "canvasPixel": [
+            353.77658033916214,
+            326.32192082293915
+          ],
+          "depth": 0.34543617578510977
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 70
+          },
+          "worldCoordinate_A": [
+            1.0399999618530273,
+            15.970000267028809,
+            19.360000610351562
+          ],
+          "canvasPixel": [
+            358.03454794830725,
+            323.08204284716044
+          ],
+          "depth": 0.35735470172085093
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 71
+          },
+          "worldCoordinate_A": [
+            -0.6399999856948853,
+            14.6899995803833,
+            19.770000457763672
+          ],
+          "canvasPixel": [
+            343.3686065279541,
+            333.8779208048587
+          ],
+          "depth": 0.3517604262310688
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HB1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 72
+          },
+          "worldCoordinate_A": [
+            -1.399999976158142,
+            15.430000305175781,
+            19.43000030517578
+          ],
+          "canvasPixel": [
+            336.89259277697244,
+            327.7035140137871
+          ],
+          "depth": 0.3564024056744587
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HB2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 73
+          },
+          "worldCoordinate_A": [
+            -1.090000033378601,
+            14.170000076293945,
+            20.639999389648438
+          ],
+          "canvasPixel": [
+            339.1583535608279,
+            337.82449781998383
+          ],
+          "depth": 0.33975629097895843
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "CG",
+            "altloc": "",
+            "element": "C",
+            "site_index": 74
+          },
+          "worldCoordinate_A": [
+            -0.4000000059604645,
+            13.770000457763672,
+            18.479999542236328
+          ],
+          "canvasPixel": [
+            345.8258155450136,
+            342.65866937494906
+          ],
+          "depth": 0.3692285226442772
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HG1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 75
+          },
+          "worldCoordinate_A": [
+            -1.3600000143051147,
+            13.380000114440918,
+            18.09000015258789
+          ],
+          "canvasPixel": [
+            337.7193902442629,
+            346.23254501281133
+          ],
+          "depth": 0.3744333952241284
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HG2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 76
+          },
+          "worldCoordinate_A": [
+            0.11999999731779099,
+            14.350000381469727,
+            17.690000534057617
+          ],
+          "canvasPixel": [
+            350.4859504569883,
+            338.1863571763035
+          ],
+          "depth": 0.3797356477123607
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "CD",
+            "altloc": "",
+            "element": "C",
+            "site_index": 77
+          },
+          "worldCoordinate_A": [
+            0.38999998569488525,
+            12.5,
+            18.75
+          ],
+          "canvasPixel": [
+            352.5493310316041,
+            353.42770801164033
+          ],
+          "depth": 0.3656046039804143
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "OE1",
+            "altloc": "",
+            "element": "O",
+            "site_index": 78
+          },
+          "worldCoordinate_A": [
+            0.9399999976158142,
+            12.180000305175781,
+            19.799999237060547
+          ],
+          "canvasPixel": [
+            357.08543037967485,
+            355.66267963547045
+          ],
+          "depth": 0.3513495362955385
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "NE2",
+            "altloc": "",
+            "element": "N",
+            "site_index": 79
+          },
+          "worldCoordinate_A": [
+            0.5799999833106995,
+            11.710000038146973,
+            17.649999618530273
+          ],
+          "canvasPixel": [
+            354.41843868699385,
+            360.72503263327206
+          ],
+          "depth": 0.38026389020644147
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HE21",
+            "altloc": "",
+            "element": "H",
+            "site_index": 80
+          },
+          "worldCoordinate_A": [
+            1.2100000381469727,
+            10.930000305175781,
+            17.709999084472656
+          ],
+          "canvasPixel": [
+            359.78101568995334,
+            367.35319732840014
+          ],
+          "depth": 0.3794714160602595
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "HE22",
+            "altloc": "",
+            "element": "H",
+            "site_index": 81
+          },
+          "worldCoordinate_A": [
+            0.3199999928474426,
+            11.979999542236328,
+            16.729999542236328
+          ],
+          "canvasPixel": [
+            352.4104620606685,
+            358.8486539902252
+          ],
+          "depth": 0.39231421578512693
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 82
+          },
+          "worldCoordinate_A": [
+            0.019999999552965164,
+            16.68000030517578,
+            21.010000228881836
+          ],
+          "canvasPixel": [
+            348.7743363851268,
+            315.5417793866339
+          ],
+          "depth": 0.3345953213129703
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "GLN",
+              "seq_auth": 41,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 83
+          },
+          "worldCoordinate_A": [
+            -0.11999999731779099,
+            17.790000915527344,
+            20.479999542236328
+          ],
+          "canvasPixel": [
+            347.69125762653516,
+            306.29398649223424
+          ],
+          "depth": 0.34197768703044873
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 84
+          },
+          "worldCoordinate_A": [
+            -0.12999999523162842,
+            16.600000381469727,
+            22.34000015258789
+          ],
+          "canvasPixel": [
+            347.08354132987546,
+            315.0975740073887
+          ],
+          "depth": 0.31576276573987483
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 85
+          },
+          "worldCoordinate_A": [
+            -0.1899999976158142,
+            15.680000305175781,
+            22.719999313354492
+          ],
+          "canvasPixel": [
+            346.4402565360522,
+            322.96605078674986
+          ],
+          "depth": 0.3102997861660258
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 86
+          },
+          "worldCoordinate_A": [
+            -0.6000000238418579,
+            17.649999618530273,
+            23.219999313354492
+          ],
+          "canvasPixel": [
+            342.62281134573936,
+            304.92190640494414
+          ],
+          "depth": 0.30305483216369067
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 87
+          },
+          "worldCoordinate_A": [
+            -1.5,
+            18.09000015258789,
+            22.809999465942383
+          ],
+          "canvasPixel": [
+            334.72700086855997,
+            301.3929718426341
+          ],
+          "depth": 0.3090004763308605
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 88
+          },
+          "worldCoordinate_A": [
+            -0.7099999785423279,
+            17.1299991607666,
+            24.770000457763672
+          ],
+          "canvasPixel": [
+            341.11042589122303,
+            308.1181781683616
+          ],
+          "depth": 0.280176140629429
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "HB1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 89
+          },
+          "worldCoordinate_A": [
+            0.30000001192092896,
+            16.790000915527344,
+            25.079999923706055
+          ],
+          "canvasPixel": [
+            350.2005755576552,
+            310.9173771452706
+          ],
+          "depth": 0.2755226829258742
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "HB2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 90
+          },
+          "worldCoordinate_A": [
+            -1.0499999523162842,
+            17.940000534057617,
+            25.459999084472656
+          ],
+          "canvasPixel": [
+            337.76387473345875,
+            300.0530738468384
+          ],
+          "depth": 0.26978237484850154
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "CG",
+            "altloc": "",
+            "element": "C",
+            "site_index": 91
+          },
+          "worldCoordinate_A": [
+            -1.6299999952316284,
+            15.979999542236328,
+            24.8700008392334
+          ],
+          "canvasPixel": [
+            332.7140718243203,
+            318.47483666360864
+          ],
+          "depth": 0.278677890492805
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "OD1",
+            "altloc": "",
+            "element": "O",
+            "site_index": 92
+          },
+          "worldCoordinate_A": [
+            -2.5,
+            15.880000114440918,
+            23.950000762939453
+          ],
+          "canvasPixel": [
+            325.2574093417832,
+            320.1622972244996
+          ],
+          "depth": 0.2923595654068835
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "OD2",
+            "altloc": "",
+            "element": "O",
+            "site_index": 93
+          },
+          "worldCoordinate_A": [
+            -1.649999976158142,
+            15.1899995803833,
+            25.8799991607666
+          ],
+          "canvasPixel": [
+            332.1005001540336,
+            324.8434528156718
+          ],
+          "depth": 0.26339111095326617
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 94
+          },
+          "worldCoordinate_A": [
+            0.30000001192092896,
+            18.84000015258789,
+            23.239999771118164
+          ],
+          "canvasPixel": [
+            350.67654948854454,
+            294.2450137090641
+          ],
+          "depth": 0.30276367376926067
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ASP",
+              "seq_auth": 42,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 95
+          },
+          "worldCoordinate_A": [
+            -0.17000000178813934,
+            19.90999984741211,
+            23.56999969482422
+          ],
+          "canvasPixel": [
+            346.3705783187668,
+            284.2807085156895
+          ],
+          "depth": 0.29794452377487524
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 96
+          },
+          "worldCoordinate_A": [
+            1.6100000143051147,
+            18.729999542236328,
+            23
+          ],
+          "canvasPixel": [
+            362.4444137115015,
+            295.48349630394864
+          ],
+          "depth": 0.30625060201862947
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 97
+          },
+          "worldCoordinate_A": [
+            1.940000057220459,
+            17.809999465942383,
+            22.809999465942383
+          ],
+          "canvasPixel": [
+            365.4166218808767,
+            303.89097033490214
+          ],
+          "depth": 0.3090004763308605
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 98
+          },
+          "worldCoordinate_A": [
+            2.6500000953674316,
+            19.709999084472656,
+            23.149999618530273
+          ],
+          "canvasPixel": [
+            371.72869645752206,
+            286.5556433916339
+          ],
+          "depth": 0.3040730356650482
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 99
+          },
+          "worldCoordinate_A": [
+            2.2699999809265137,
+            20.3700008392334,
+            23.920000076293945
+          ],
+          "canvasPixel": [
+            368.25395542996296,
+            279.7285373241481
+          ],
+          "depth": 0.29280188671329177
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 100
+          },
+          "worldCoordinate_A": [
+            4.019999980926514,
+            19.100000381469727,
+            23.540000915527344
+          ],
+          "canvasPixel": [
+            384.00583288467624,
+            291.5893275672521
+          ],
+          "depth": 0.2983837942804296
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "HB1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 101
+          },
+          "worldCoordinate_A": [
+            4.539999961853027,
+            18.489999771118164,
+            22.780000686645508
+          ],
+          "canvasPixel": [
+            388.60968502442125,
+            297.85532157584396
+          ],
+          "depth": 0.3094337936995535
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "HB2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 102
+          },
+          "worldCoordinate_A": [
+            4.730000019073486,
+            19.940000534057617,
+            23.700000762939453
+          ],
+          "canvasPixel": [
+            390.3980986953808,
+            283.85998372150493
+          ],
+          "depth": 0.2960381780527027
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "OG",
+            "altloc": "",
+            "element": "O",
+            "site_index": 103
+          },
+          "worldCoordinate_A": [
+            3.9600000381469727,
+            18.459999084472656,
+            24.799999237060547
+          ],
+          "canvasPixel": [
+            383.5183041659731,
+            296.00894903280187
+          ],
+          "depth": 0.27972697221064075
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "HG1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 104
+          },
+          "worldCoordinate_A": [
+            3.890000104904175,
+            19.1200008392334,
+            25.489999771118164
+          ],
+          "canvasPixel": [
+            382.9070442703942,
+            289.23611215174685
+          ],
+          "depth": 0.269327477861368
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 105
+          },
+          "worldCoordinate_A": [
+            2.869999885559082,
+            20.540000915527344,
+            21.8799991607666
+          ],
+          "canvasPixel": [
+            373.75715081209825,
+            280.63696247226324
+          ],
+          "depth": 0.322326581206854
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 43,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 106
+          },
+          "worldCoordinate_A": [
+            3.5199999809265137,
+            21.600000381469727,
+            21.860000610351562
+          ],
+          "canvasPixel": [
+            379.50811616619916,
+            271.28347356560243
+          ],
+          "depth": 0.32261072793098267
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 107
+          },
+          "worldCoordinate_A": [
+            2.369999885559082,
+            20.030000686645508,
+            20.770000457763672
+          ],
+          "canvasPixel": [
+            369.4275500642969,
+            286.3963609444294
+          ],
+          "depth": 0.3379467907033581
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 108
+          },
+          "worldCoordinate_A": [
+            1.7699999809265137,
+            19.25,
+            20.93000030517578
+          ],
+          "canvasPixel": [
+            364.149786010003,
+            293.06169122001234
+          ],
+          "depth": 0.3357140506585854
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "CA",
+            "altloc": "",
+            "element": "C",
+            "site_index": 109
+          },
+          "worldCoordinate_A": [
+            2.1600000858306885,
+            20.719999313354492,
+            19.459999084472656
+          ],
+          "canvasPixel": [
+            367.71751739178194,
+            281.8605359929775
+          ],
+          "depth": 0.3559939390943935
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HA",
+            "altloc": "",
+            "element": "H",
+            "site_index": 110
+          },
+          "worldCoordinate_A": [
+            3.1500000953674316,
+            21.1200008392334,
+            19.299999237060547
+          ],
+          "canvasPixel": [
+            376.2964265941359,
+            278.58264912378115
+          ],
+          "depth": 0.35817005713606587
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "CB",
+            "altloc": "",
+            "element": "C",
+            "site_index": 111
+          },
+          "worldCoordinate_A": [
+            1.7699999809265137,
+            19.75,
+            18.350000381469727
+          ],
+          "canvasPixel": [
+            364.47944544463934,
+            291.43467650567436
+          ],
+          "depth": 0.37096735295317584
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HB",
+            "altloc": "",
+            "element": "H",
+            "site_index": 112
+          },
+          "worldCoordinate_A": [
+            0.7300000190734863,
+            19.3700008392334,
+            18.459999084472656
+          ],
+          "canvasPixel": [
+            355.53503254386806,
+            294.5826287291329
+          ],
+          "depth": 0.3694962962854883
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "CG2",
+            "altloc": "",
+            "element": "C",
+            "site_index": 113
+          },
+          "worldCoordinate_A": [
+            1.7400000095367432,
+            20.489999771118164,
+            16.90999984741211
+          ],
+          "canvasPixel": [
+            364.4029339045559,
+            286.6516586885426
+          ],
+          "depth": 0.3899713675319281
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HG21",
+            "altloc": "",
+            "element": "H",
+            "site_index": 114
+          },
+          "worldCoordinate_A": [
+            1.4600000381469727,
+            19.770000457763672,
+            16.1200008392334
+          ],
+          "canvasPixel": [
+            362.143378663265,
+            293.5549410733015
+          ],
+          "depth": 0.4002008854863347
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HG22",
+            "altloc": "",
+            "element": "H",
+            "site_index": 115
+          },
+          "worldCoordinate_A": [
+            2.7300000190734863,
+            20.979999542236328,
+            16.84000015258789
+          ],
+          "canvasPixel": [
+            372.79593285170375,
+            282.5769686771755
+          ],
+          "depth": 0.3908833209425443
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HG23",
+            "altloc": "",
+            "element": "H",
+            "site_index": 116
+          },
+          "worldCoordinate_A": [
+            0.8999999761581421,
+            21.219999313354492,
+            16.84000015258789
+          ],
+          "canvasPixel": [
+            357.2976442112705,
+            280.5444082185966
+          ],
+          "depth": 0.3908833209425443
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "CG1",
+            "altloc": "",
+            "element": "C",
+            "site_index": 117
+          },
+          "worldCoordinate_A": [
+            2.680000066757202,
+            18.459999084472656,
+            18.3700008392334
+          ],
+          "canvasPixel": [
+            372.28521971579886,
+            302.4826309308452
+          ],
+          "depth": 0.3707000859878973
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HG11",
+            "altloc": "",
+            "element": "H",
+            "site_index": 118
+          },
+          "worldCoordinate_A": [
+            2.180000066757202,
+            17.829999923706055,
+            17.610000610351562
+          ],
+          "canvasPixel": [
+            368.06646915415064,
+            308.57135187077495
+          ],
+          "depth": 0.3807917462201108
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HG12",
+            "altloc": "",
+            "element": "H",
+            "site_index": 119
+          },
+          "worldCoordinate_A": [
+            2.5999999046325684,
+            18.030000686645508,
+            19.399999618530273
+          ],
+          "canvasPixel": [
+            371.53258639724635,
+            305.21686227314694
+          ],
+          "depth": 0.35681068541810435
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "CD",
+            "altloc": "",
+            "element": "C",
+            "site_index": 120
+          },
+          "worldCoordinate_A": [
+            4.170000076293945,
+            18.6299991607666,
+            18.1299991607666
+          ],
+          "canvasPixel": [
+            385.0576824513223,
+            301.2547395263705
+          ],
+          "depth": 0.3739011790992959
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HD1",
+            "altloc": "",
+            "element": "H",
+            "site_index": 121
+          },
+          "worldCoordinate_A": [
+            4.400000095367432,
+            19.059999465942383,
+            17.1299991607666
+          ],
+          "canvasPixel": [
+            386.95878442366285,
+            298.5555665399661
+          ],
+          "depth": 0.38709814731451786
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HD2",
+            "altloc": "",
+            "element": "H",
+            "site_index": 122
+          },
+          "worldCoordinate_A": [
+            4.630000114440918,
+            17.6299991607666,
+            18.209999084472656
+          ],
+          "canvasPixel": [
+            389.00345916462254,
+            309.74663440035533
+          ],
+          "depth": 0.37283562373971746
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "HD3",
+            "altloc": "",
+            "element": "H",
+            "site_index": 123
+          },
+          "worldCoordinate_A": [
+            4.590000152587891,
+            19.280000686645508,
+            18.93000030517578
+          ],
+          "canvasPixel": [
+            388.7208596178851,
+            294.87733372798095
+          ],
+          "depth": 0.36317925693950054
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "C",
+            "altloc": "",
+            "element": "C",
+            "site_index": 124
+          },
+          "worldCoordinate_A": [
+            1.190000057220459,
+            21.90999984741211,
+            19.549999237060547
+          ],
+          "canvasPixel": [
+            359.3001989332066,
+            271.4423492782348
+          ],
+          "depth": 0.3547672089323455
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "ILE",
+              "seq_auth": 44,
+              "seq_label": null
+            },
+            "atom_name": "O",
+            "altloc": "",
+            "element": "O",
+            "site_index": 125
+          },
+          "worldCoordinate_A": [
+            -0.029999999329447746,
+            21.790000915527344,
+            19.770000457763672
+          ],
+          "canvasPixel": [
+            348.66655311659554,
+            272.21328360216
+          ],
+          "depth": 0.3517604262310688
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 45,
+              "seq_label": null
+            },
+            "atom_name": "N",
+            "altloc": "",
+            "element": "N",
+            "site_index": 126
+          },
+          "worldCoordinate_A": [
+            1.690000057220459,
+            23.139999389648438,
+            19.25
+          ],
+          "canvasPixel": [
+            363.6744442697914,
+            261.1760281811396
+          ],
+          "depth": 0.3588488459758848
+        },
+        {
+          "layer": "reference",
+          "ref": {
+            "structure_handle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+            "residue": {
+              "chain_auth": "A",
+              "chain_label": null,
+              "icode": "",
+              "model_number": 1,
+              "resname": "SER",
+              "seq_auth": 45,
+              "seq_label": null
+            },
+            "atom_name": "HN",
+            "altloc": "",
+            "element": "H",
+            "site_index": 127
+          },
+          "worldCoordinate_A": [
+            2.619999885559082,
+            23.280000686645508,
+            18.899999618530273
+          ],
+          "canvasPixel": [
+            371.7372614355572,
+            260.4286306898539
+          ],
+          "depth": 0.3635840142107545
+        }
+      ],
+      "layers": [
+        {
+          "layer": "reference",
+          "sourceHandle": "obj://run_cf06945cf825421e805f27443c2aa47a/chemical_structure/99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+          "visible": true,
+          "transform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "nativeAtomCount": 5067
+        }
+      ]
+    }
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 36,
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 106,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/events?after=0&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/viewer/intents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/viewer/figures?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/viewer/online",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/atoms?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1&offset=0&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/view?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/graphs?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_graph%2Fdc628d636a11ddc3f17f7344ffd2a45e76da439c25646ab46f0fc0f7dc2dba43",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/atoms?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1&offset=1000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/preparation-manifests?source_handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/atoms?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1&offset=2000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/atoms?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1&offset=3000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/atoms?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1&offset=4000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/chemical/structures/atoms?handle=obj%3A%2F%2Frun_cf06945cf825421e805f27443c2aa47a%2Fchemical_structure%2F99469ff4d95de66406efb69d91b3efc169206c3bf7ec5cddd5262836c2244ab1&offset=5000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/jobs",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_cf06945cf825421e805f27443c2aa47a/jobs/job_ca4771296e754d79a4bab8ee213828fc/cancel",
+      "status": 200,
+      "method": "POST"
+    }
+  ],
+  "finishedAt": "2026-09-28T05:15:44.046Z"
+}
