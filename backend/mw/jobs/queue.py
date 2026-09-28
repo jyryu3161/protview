@@ -361,10 +361,17 @@ def _worker_environment(attempt_dir: Path) -> dict[str, str]:
             "PYTHONUNBUFFERED": "1", "TMPDIR": str(attempt_dir)}
 
 
-def _guardian_argv(control_fd: int, global_fd: int | None = None) -> list[str]:
+GO_WAIT_GRACE_S = 5.0
+MAX_GO_WAIT_S = 3600.0
+
+
+def _guardian_argv(control_fd: int, global_fd: int | None = None, *, go_wait_s: float = 3.0) -> list[str]:
+    """The GO wait bound is the attempt's remaining time plus grace, never unbounded."""
+    if not (0 < go_wait_s <= MAX_GO_WAIT_S):  # also rejects nan/inf
+        raise ValueError("invalid guardian GO wait bound")
     # abspath retains the venv's executable symlink; resolve() escapes its prefix.
     return [os.path.abspath(sys.executable), "-I", str(GUARDIAN), str(control_fd),
-            *([str(global_fd)] if global_fd is not None else [])]
+            *([str(global_fd)] if global_fd is not None else []), f"--go-wait-s={go_wait_s:g}"]
 
 
 def chemical_capability() -> dict[str, Any]:
@@ -540,16 +547,18 @@ class JobQueue:
                 for job_id, item in state.items()])
         return state
 
+    # Reads fold one consistent events snapshot (the event log's own shared lock guarantees whole
+    # lines) and every durable prefix is a valid state, exactly as events-only replay requires. They
+    # therefore neither take the transition lock nor rewrite the derived SQLite index, which with
+    # multi-MB M11 job records held the lock for about a second on every status poll.
     def get(self, job_id: str) -> dict[str, Any]:
-        with self.run._transition():
-            state = self._rebuild()
+        state = self._state()
         if job_id not in state:
             raise KeyError(job_id)
         return state[job_id]
 
     def list(self) -> list[dict[str, Any]]:
-        with self.run._transition():
-            state = self._rebuild()
+        state = self._state()
         return sorted(state.values(), key=lambda item: item["created"], reverse=True)
 
     def submit(self, protocol: str, args: dict[str, Any], *, timeout_s: float = 60) -> dict[str, Any]:
@@ -846,7 +855,8 @@ class JobQueue:
         try:
             global_fd = dispatch.get("global_fd")
             inherited = (child.fileno(),) if global_fd is None else (child.fileno(), global_fd)
-            guardian = self._popen(_guardian_argv(child.fileno(), global_fd),
+            go_wait_s = min(MAX_GO_WAIT_S, max(0.0, deadline - time.monotonic()) + GO_WAIT_GRACE_S)
+            guardian = self._popen(_guardian_argv(child.fileno(), global_fd, go_wait_s=go_wait_s),
                                    cwd=attempt_dir, env=_worker_environment(attempt_dir),
                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL, shell=False, close_fds=True,
@@ -872,7 +882,8 @@ class JobQueue:
                                    identity=identity)
             dispatch["identity"] = identity
             with self.run._transition():
-                current = self._rebuild()[job["job_id"]]
+                # Only an up-to-date fold is needed here; the derived SQLite index is not.
+                current = self._state()[job["job_id"]]
                 if current["cancel_requested"] or self.run._cancel_path.exists():
                     _send(parent, {"kind": "STOP", "nonce": nonce})
                     guardian.wait(timeout=2)

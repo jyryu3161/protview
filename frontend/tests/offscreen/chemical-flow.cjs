@@ -137,7 +137,7 @@ async function submittedJob(page, stage, previous = null) {
 }
 async function openWorkspace(page, input, beforeChemicalOpen = null) {
   await page.getByRole("button", { name: "화학 상호작용 작업 열기" }).waitFor({ timeout: 30000 });
-  if (["create", "job-controls", "running-cancel"].includes(input.mode) && !input.run) {
+  if (["create", "prepare-only", "job-controls", "running-cancel"].includes(input.mode) && !input.run) {
     const previousRun = new URL(page.url()).searchParams.get("run");
     await click(page, "새 run");
     await page.waitForURL(url => {
@@ -763,6 +763,17 @@ async function runJobControls(session, input, evidence) {
     await visibleFailure.getByText("실패한 화학 입력 진단").click();
     await visibleFailure.getByText(`reason_code ${failed.failure.reason_code}`, { exact: true })
       .waitFor({ timeout: 15000 });
+    const shownDiagnostics = await visibleFailure.locator("li").allInnerTexts();
+    for (const ref of failed.failure.source_atoms ?? [])
+      assert.equal(shownDiagnostics.filter(line => line.startsWith("source atom:") &&
+        line.includes(`atom ${ref.atom_name}, altloc ${ref.altloc || "∅"}, element ${ref.element}, site ${ref.site_index}, structure ${ref.structure_handle}`) &&
+        line.includes(`auth ${ref.residue.chain_auth}/${ref.residue.seq_auth}`) &&
+        line.includes(`, ${ref.residue.resname}, atom`)).length, 1,
+      `Typed failure source atom ${atomIdentity(ref)} is not shown exactly once`);
+    for (const residue of failed.failure.source_residues ?? [])
+      assert.ok(shownDiagnostics.some(line => line.startsWith("source residue:") &&
+        line.includes(`auth ${residue.chain_auth}/${residue.seq_auth}`) && line.endsWith(`, ${residue.resname}`)),
+      `Typed failure source residue ${JSON.stringify(residue)} is not shown`);
     if (input.failureLocalized === "true") {
       assert.ok(failed.failure.sdf_atom_indices?.length,
         "This labeled native failure did not localize any supplied SDF atom index");
@@ -775,7 +786,9 @@ async function runJobControls(session, input, evidence) {
     assert.deepEqual(retried.output_handles, []);
     evidence.jobControl = { heldJobs, jobId, afterOldHydration, failed, retried, approved,
       visibleNativeFailure: { reason_code: failed.failure.reason_code,
-        sdf_atom_indices: failed.failure.sdf_atom_indices ?? [] },
+        sdf_atom_indices: failed.failure.sdf_atom_indices ?? [],
+        source_atoms: failed.failure.source_atoms ?? [], source_residues: failed.failure.source_residues ?? [],
+        shownDiagnostics },
       fixture: input.failureLocalized === "true"
         ? "labeled localized native-failure fixture; actual reason/indices read from durable worker failure"
         : "labeled synthetic pentavalent-carbon SDF; real native prepare fails, no scientific output" };
@@ -906,10 +919,19 @@ async function runDetectControls(session, input, evidence) {
   const graph = await waitChemical(page, state => state.graphHandle === input.graph &&
     state.sourceHandle && state.catalogReady, 60000);
   assert.equal(graph.graphHandle, input.graph);
+  // Submission is idempotent (existing job semantics): a graph whose detection was already submitted
+  // returns that same job, so no new queued job could ever be cancelled. Release3 used such a graph.
+  const priorDetections = (await readApi(page, `/runs/${run}/jobs`)).filter(job =>
+    job.protocol_id === "prolif_detect_v1" && job.input_handles.includes(input.graph));
+  assert.deepEqual(priorDetections.map(job => job.job_id), [],
+    "detect-controls needs a prepared graph with no prior detection (make one with --mode prepare-only)");
   const priorId = graph.detectJobId;
   await click(page, "상호작용 계산 작업 저장");
   const selected = await submittedJob(page, "detect", priorId);
   const id = selected.detectJobId;
+  const queued = await readApi(page, `/runs/${run}/jobs/${id}`);
+  assert.equal(queued.status, "queued");
+  assert.deepEqual(queued.input_handles, [input.graph]);
   await click(page, "상호작용 작업 취소");
   await page.locator(".mw-chemical-job").filter({ hasText: id }).getByText("ProLIF 계산 · cancelled")
     .waitFor({ timeout: 30000 });
@@ -941,6 +963,9 @@ async function runAttach(session, input, evidence) {
   const key = JSON.stringify([selectedLigand.model_number, selectedLigand.chain_auth,
     selectedLigand.chain_label, selectedLigand.seq_auth, selectedLigand.seq_label,
     selectedLigand.icode, selectedLigand.resname]);
+  // The exact instance list comes from the complex's full atom catalog, which is slow on a large run.
+  await page.waitForFunction(value => [...document.querySelectorAll('select')].some(select =>
+    [...select.options].some(option => option.value === value)), key, { timeout: 120000 });
   await selectByLabel(page, "정확한 리간드 인스턴스", key);
   const policy = fixture.hydrogen_policy ?? "map_existing";
   await selectByLabel(page, "리간드 H 처리", policy);
@@ -950,13 +975,27 @@ async function runAttach(session, input, evidence) {
     evidence.files.sidecar = await chooseFile(page, "완전한 receptor_bonds@1 JSON", input.sidecar);
   }
   if (fixture.sdf_record_index != null) await selectByLabel(page, "SDF 기록", String(fixture.sdf_record_index));
+  const previewResponse = () => page.waitForResponse(response => response.request().method() === "POST" &&
+    response.url().includes(`/api/runs/${run}/chemical/preview`));
+  const inventoryPromise = previewResponse();
   await click(page, "준비 조건 미리보기");
+  const inventoryResponse = await inventoryPromise;
+  assert.equal(inventoryResponse.status(), 200);
+  const inventory = await inventoryResponse.json();
   await page.getByRole("region", { name: "SDF 전체 원자 대응" }).waitFor({ timeout: 30000 });
   const editor = page.getByRole("region", { name: "SDF 전체 원자 대응" });
   const atomRows = editor.locator("label");
   const atomRowCount = await atomRows.count();
-  assert.ok(atomRowCount >= fixture.mapping.length,
+  assert.equal(atomRowCount, inventory.ligand_atoms.length,
     "Full selected SDF inventory is not visible before mapping");
+  const heavyIndices = inventory.ligand_atoms.filter(atom => !atom.hydrogen).map(atom => atom.sdf_atom_index);
+  const expectedIndices = policy === "replace_from_sdf" ? heavyIndices
+    : inventory.ligand_atoms.map(atom => atom.sdf_atom_index);
+  assert.deepEqual(fixture.mapping.map(item => item.sdf_atom_index).sort((a, b) => a - b),
+    expectedIndices.sort((a, b) => a - b),
+    `${policy} fixture must map exactly ${policy === "replace_from_sdf" ? "every SDF heavy atom" : "every SDF atom"}`);
+  evidence.inventory = { sdfAtoms: inventory.ligand_atoms.length, heavyAtoms: heavyIndices.length,
+    selectedLigandAtoms: inventory.selected_ligand_atoms, policy };
   const choices = [];
   for (const item of fixture.mapping) {
     const row = atomRows.filter({ hasText: new RegExp(`^SDF #${item.sdf_atom_index}\\b`) });
@@ -982,13 +1021,36 @@ async function runAttach(session, input, evidence) {
   evidence.terminalExtensionCount = await terminalChecks.count();
   for (let i = 0; i < evidence.terminalExtensionCount; i++) await terminalChecks.nth(i).check();
   await page.getByLabel("준비 설명 (검증되지 않은 로컬 주석)").fill(fixture.description ?? "Labeled prepared attach fixture; supplied chemistry unverified");
+  const readyPromise = previewResponse();
   await click(page, "준비 조건 미리보기");
+  const readyPreview = await (await readyPromise).json();
   await page.getByText("계산 준비 가능", { exact: false }).waitFor({ timeout: 30000 });
+  assert.equal(readyPreview.ready, true, `Attach preview not ready: ${JSON.stringify(readyPreview.blockers)}`);
+  assert.deepEqual(readyPreview.ligand_mapping.map(item => [item.sdf_atom_index, atomIdentity(item.source_atom)]).sort(),
+    choices.map(item => [item.sdf_atom_index, atomIdentity(item.source_atom)]).sort(),
+    "Validated preview mapping differs from the visible explicit choices");
+  const shownDiscrepancies = [];
+  for (const item of readyPreview.ligand_mapping) {
+    assert.ok(Number.isFinite(item.discrepancy_A) && item.discrepancy_A >= 0 && item.discrepancy_A <= 0.002,
+      `SDF #${item.sdf_atom_index} discrepancy outside the contract bound`);
+    const row = atomRows.filter({ hasText: new RegExp(`^SDF #${item.sdf_atom_index}\\b`) });
+    const shown = await row.locator("small").filter({ hasText: "검증된 좌표 차이" }).innerText();
+    assert.equal(shown.trim(), `검증된 좌표 차이 ${item.discrepancy_A.toFixed(4)} Å`,
+      `Visible coordinate discrepancy differs for SDF #${item.sdf_atom_index}`);
+    shownDiscrepancies.push({ sdf_atom_index: item.sdf_atom_index, discrepancy_A: item.discrepancy_A, shown });
+  }
+  evidence.mappingPreview = { mapped: readyPreview.ligand_mapping.length, shownDiscrepancies,
+    maxDiscrepancy_A: Math.max(...readyPreview.ligand_mapping.map(item => item.discrepancy_A)) };
+  const priorPrepareId = (await chemical(page)).prepareJobId;
   await click(page, "화학 구조 준비 작업 저장");
-  const queuedPrepare = await submittedJob(page, "prepare");
+  const queuedPrepare = await submittedJob(page, "prepare", priorPrepareId);
   const queuedId = queuedPrepare.prepareJobId;
   const jobsBeforeReopen = await readApi(page, `/runs/${run}/jobs`);
   assert.ok(Array.isArray(jobsBeforeReopen));
+  const queuedDurable = jobsBeforeReopen.find(job => job.job_id === queuedId);
+  assert.equal(queuedDurable?.protocol_id, "prolif_prepare_v1");
+  assert.equal(queuedDurable.status, "queued",
+    "Attach submission reused an existing preparation instead of saving a new queued job");
   if (policy === "replace_from_sdf") {
     assert.ok(jobsBeforeReopen.some(job => job.protocol_id === "prolif_prepare_v1" &&
       job.status === "done" && job.job_id !== queuedId),
@@ -1009,11 +1071,26 @@ async function runAttach(session, input, evidence) {
     priorDoneDetections: jobsBeforeReopen.filter(job => job.protocol_id === "prolif_detect_v1" &&
       job.status === "done").map(job => job.job_id), selected: queuedReopened, frame: queuedFrame };
   evidence.prepare = await startWithApproval(page, "prepare");
-  evidence.prepared = await waitChemical(page, state => state.sourceHandle && state.catalogReady, 60000);
+  const preparedJob = await readApi(page, `/runs/${run}/jobs/${queuedId}`);
+  assert.equal(preparedJob.status, "done");
+  const newSource = preparedJob.artifacts.chemical_structure;
+  const newGraph = preparedJob.artifacts.chemical_graph;
+  evidence.prepared = await waitChemical(page, state => state.sourceHandle === newSource &&
+    state.graphHandle === newGraph && state.catalogReady && state.native?.sourceHandle === newSource, 60000);
+  evidence.derivedSource = await attachSourceLink(page, run, newSource, input.complex, policy, choices,
+    selectedLigand, jobsBeforeReopen);
+  const priorDetectId = (await chemical(page)).detectJobId;
   await click(page, "상호작용 계산 작업 저장");
-  await submittedJob(page, "detect");
+  const queuedDetect = await submittedJob(page, "detect", priorDetectId);
+  const detectDurable = await readApi(page, `/runs/${run}/jobs/${queuedDetect.detectJobId}`);
+  assert.equal(detectDurable.status, "queued", "Attach detection reused an existing job");
+  assert.deepEqual(detectDurable.input_handles, [newGraph]);
   evidence.detect = await startWithApproval(page, "detect");
-  evidence.detected = await waitChemical(page, state => state.resultHandle && state.catalogReady, 60000);
+  const detectedJob = await readApi(page, `/runs/${run}/jobs/${queuedDetect.detectJobId}`);
+  assert.equal(detectedJob.status, "done");
+  const newResult = detectedJob.artifacts.chemical_interaction_set;
+  evidence.detected = await waitChemical(page, state => state.resultHandle === newResult &&
+    state.sourceHandle === newSource && state.catalogReady && state.native?.sourceHandle === newSource, 60000);
   evidence.resultHandle = evidence.detected.resultHandle;
   if (evidence.detected.resultTotal > 0) {
     evidence.row = await focusFirstRow(page, app, artifacts);
@@ -1027,6 +1104,57 @@ async function runAttach(session, input, evidence) {
   evidence.reportHandle = await reportSelect.inputValue();
   evidence.report = await downloadReport(app, page, run, evidence.reportHandle, artifacts);
   return evidence;
+}
+/** The attached chemical source is a new derived object whose saved manifest links the original complex. */
+async function attachSourceLink(page, run, sourceHandle, complexHandle, policy, choices, selectedLigand, priorJobs) {
+  const priorSources = priorJobs.filter(job => job.protocol_id === "prolif_prepare_v1" && job.status === "done")
+    .map(job => job.artifacts?.chemical_structure);
+  assert.equal(priorSources.includes(sourceHandle), false, "Attach did not create a new derived chemical source");
+  assert.notEqual(sourceHandle, complexHandle);
+  const meta = await readApi(page, `/runs/${run}/objects/meta?handle=${encodeURIComponent(sourceHandle)}`);
+  assert.equal(meta.kind, "chemical_structure");
+  const saved = await readApi(page,
+    `/runs/${run}/chemical/preparation-manifests?source_handle=${encodeURIComponent(sourceHandle)}`);
+  const manifest = saved.manifest;
+  assert.equal(manifest.mode, "attach_existing");
+  assert.equal(manifest.source_handle, complexHandle, "Derived source manifest is not linked to the original complex");
+  assert.equal(manifest.request.complex_handle, complexHandle);
+  assert.equal(manifest.request.hydrogen_policy, policy);
+  assert.deepEqual(manifest.request.selected_ligand, selectedLigand);
+  assert.deepEqual(manifest.request.mapping.map(item => [item.sdf_atom_index, atomIdentity(item.source_atom)]).sort(),
+    choices.map(item => [item.sdf_atom_index, atomIdentity(item.source_atom)]).sort());
+  assert.equal(manifest.attached_source_sites.length, choices.length);
+  for (const site of manifest.attached_source_sites) {
+    assert.equal(site.source_atom.structure_handle, complexHandle);
+    assert.ok(site.discrepancy_A >= 0 && site.discrepancy_A <= 0.002);
+  }
+  const original = [];
+  for (let offset = 0; ; offset += 500) {
+    const page500 = await readApi(page, `/runs/${run}/structures/atoms?handle=${encodeURIComponent(complexHandle)}&offset=${offset}&limit=500`);
+    original.push(...page500.rows);
+    if (original.length >= page500.total) break;
+  }
+  const residueKey = residue => JSON.stringify([residue.model_number, residue.chain_auth, residue.chain_label,
+    residue.seq_auth, residue.seq_label, residue.icode, residue.resname]);
+  const originalH = original.filter(row => residueKey(row.ref.residue) === residueKey(selectedLigand) &&
+    row.ref.element.toUpperCase() === "H").map(row => atomIdentity(row.ref)).sort();
+  const excluded = (manifest.excluded_original_ligand_hydrogens ?? []).map(atomIdentity).sort();
+  if (policy === "replace_from_sdf") assert.deepEqual(excluded, originalH,
+    "replace_from_sdf must enumerate every excluded original ligand H AtomRef");
+  else assert.deepEqual(excluded, [], "map_existing must not exclude original ligand H");
+  const derived = [];
+  for (let offset = 0; ; offset += 1000) {
+    const next = await readApi(page, `/runs/${run}/chemical/structures/atoms?handle=${encodeURIComponent(sourceHandle)}&offset=${offset}&limit=1000`);
+    derived.push(...next.rows);
+    if (derived.length >= next.total) break;
+  }
+  const derivedLigand = derived.filter(row => residueKey(row.ref.residue) === residueKey(selectedLigand));
+  assert.ok(derivedLigand.every(row => row.ref.structure_handle === sourceHandle));
+  return { sourceHandle, kind: meta.kind, manifestHandle: saved.meta.handle, linkedComplex: manifest.source_handle,
+    hydrogenPolicy: policy, attachedSites: manifest.attached_source_sites.length,
+    excludedOriginalHydrogens: excluded.length, originalLigandHydrogens: originalH.length,
+    derivedLigandAtoms: derivedLigand.length,
+    derivedLigandHydrogens: derivedLigand.filter(row => row.ref.element.toUpperCase() === "H").length };
 }
 async function runReopen(session, input, evidence) {
   const { page, app, artifacts } = session;

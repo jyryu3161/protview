@@ -33,6 +33,8 @@ CHEMICAL_PYTHON = Path(__file__).resolve().parents[3] / ".deps/prolif/venv-locke
 CHEMICAL_ADAPTERS = {"prolif_prepare_v1", "prolif_detect_v1"}
 FIXTURE_MODES = {"normal", "nonzero", "malformed", "oversize", "wrong_id", "invalid",
                  "sleep", "grandchild", "leader_exit"}
+DEFAULT_GO_WAIT_S = 3.0
+MAX_GO_WAIT_S = 3600.0
 
 
 def read_small_json(name: str, limit: int) -> dict:
@@ -163,7 +165,7 @@ def receipt(identity: dict) -> None:
         os.close(directory)
 
 
-def main(fd: int, global_fd: int | None = None) -> int:
+def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WAIT_S) -> int:
     sock = socket.socket(fileno=fd)
     if global_fd is not None and (global_fd == fd or
                                    not stat.S_ISREG(os.fstat(global_fd).st_mode)):
@@ -195,7 +197,16 @@ def main(fd: int, global_fd: int | None = None) -> int:
                 "runtime": {"prefix": sys.prefix, "executable": sys.executable,
                             "psutil_version": psutil.__version__,
                             "environment_keys": sorted(os.environ)}})
-    command = receive(sock, 3)
+    # The parent records identity and authorization durably before GO, which can be slow. Wait for
+    # GO, STOP or channel close up to the parent-supplied bound (its remaining job time plus grace).
+    # EOF or STOP before GO, or an expired bound, exits here without launching any science.
+    end = time.monotonic() + go_wait_s
+    command: dict | None = {}
+    while command == {}:
+        remaining = end - time.monotonic()
+        if remaining <= 0:
+            return 0
+        command = receive(sock, remaining)
     if command is None or command.get("kind") != "GO" or command.get("nonce") != nonce:
         return 0
     worker = (FIXTURE if adapter == "internal_lifecycle_fixture" else
@@ -282,8 +293,24 @@ def main(fd: int, global_fd: int | None = None) -> int:
     return 0 if clean else 4
 
 
+def parse_argv(argv: list[str]) -> tuple[int, int | None, float]:
+    """``<control_fd> [<global_fd>] [--go-wait-s=<seconds>]``; the bound must be finite and capped."""
+    go_wait_s = DEFAULT_GO_WAIT_S
+    positional = []
+    for arg in argv:
+        if arg.startswith("--go-wait-s="):
+            go_wait_s = float(arg.split("=", 1)[1])
+            if not (0 < go_wait_s <= MAX_GO_WAIT_S):  # also rejects nan/inf
+                raise ValueError("invalid GO wait bound")
+        else:
+            positional.append(int(arg))
+    if len(positional) not in (1, 2):
+        raise ValueError("invalid guardian arguments")
+    return positional[0], positional[1] if len(positional) == 2 else None, go_wait_s
+
+
 if __name__ == "__main__":
     try:
-        raise SystemExit(main(int(sys.argv[1]), int(sys.argv[2]) if len(sys.argv) == 3 else None))
+        raise SystemExit(main(*parse_argv(sys.argv[1:])))
     except (BrokenPipeError, OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
         raise SystemExit(5)

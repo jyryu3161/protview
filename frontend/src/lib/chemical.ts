@@ -280,6 +280,35 @@ export async function collectChemicalAtomCatalog(handle: string,
   }
 }
 
+/** Per-request read bound for chemical source loads (tunable). */
+export const chemicalReadTimeoutMs = 30000;
+
+/**
+ * Read one chemical source catalog with a fresh deadline for every page. A single signal shared by
+ * the whole load made a slow-but-healthy backend time out a valid source (release3 attach).
+ */
+export function readChemicalAtomCatalog<S>(handle: string,
+  fetchPage: (offset: number, limit: number, signal: S) => Promise<AtomCatalog>,
+  newSignal: () => S, limit = 1000): Promise<AtomCatalog> {
+  return collectChemicalAtomCatalog(handle, (offset, pageLimit) => fetchPage(offset, pageLimit, newSignal()), limit);
+}
+
+/** A Start whose HTTP response was lost still took effect when the same durable job moved past queued. */
+export function chemicalStartProgressed(before: Pick<ChemicalJob, "run_id" | "job_id" | "protocol_id" | "attempt_ordinal">,
+  durable: Pick<ChemicalJob, "run_id" | "job_id" | "protocol_id" | "status" | "attempt_ordinal">): boolean {
+  return durable.run_id === before.run_id && durable.job_id === before.job_id &&
+    durable.protocol_id === before.protocol_id &&
+    (!["queued", "claimed"].includes(durable.status) || durable.attempt_ordinal > before.attempt_ordinal);
+}
+
+/** Submission is idempotent: identical inputs return the existing durable job, whatever its status. */
+export function chemicalSubmitStatus(stage: "prepare" | "detect", job: Pick<ChemicalJob, "job_id" | "status">): string {
+  if (job.status === "queued") return stage === "prepare"
+    ? "준비 작업이 저장되었습니다. 시작을 누르면 실제 계산이 실행됩니다."
+    : "화학 상호작용 작업이 저장되었습니다. 별도로 시작하세요.";
+  return `같은 입력의 기존 작업을 다시 표시합니다 · ${job.job_id} · ${job.status} (새 작업을 만들지 않았습니다)`;
+}
+
 export function chemicalAnnotationForRow(row: ChemicalRow, sourceHandle: string) {
   if (!exactChemicalRow(row, sourceHandle)) throw new Error("저장된 화학 상호작용의 원자 식별자가 현재 구조와 다릅니다.");
   const [first, second] = row.distance_roles;
