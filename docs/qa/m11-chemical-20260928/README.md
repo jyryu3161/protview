@@ -18,7 +18,7 @@ M11 마무리 계획의 T9 증거다. 소스를 고정한 뒤 그 빌드 하나�
 
 - macOS 15.6 (arm64), Python 3.11.11(`.venv`), Node v24.3.0, Next 15.5.26, Mol* 5.11.0, Electron 44.4.5 (Chrome 152)
 - ProLIF 작업 프로세스 환경 `.deps/prolif/venv-locked`: ProLIF 2.2.2, RDKit 2026.03.6, MDAnalysis 2.10.0
-- 작업 위치: 워크트리 `/Users/jaeyongryu/Projects/protview/.dryforge/worktrees/T2`. 모든 python 명령에 `PYTHONPATH=<워크트리>/backend`를 지정했다(`import mw`가 워크트리 소스를 가리키는지 확인함).
+- 작업 위치: 워크트리 `<repo>`. 모든 python 명령에 `PYTHONPATH=<워크트리>/backend`를 지정했다(`import mw`가 워크트리 소스를 가리키는지 확인함).
 - 서비스는 `127.0.0.1:8000`(uvicorn)과 `127.0.0.1:3000`(`next start -H 127.0.0.1`)에만 바인딩했다. QA runs 루트는 `runs/m11-acceptance-20260928`(`/tmp` 아님, git 제외)이다.
 - 로컬 원본: `frontend/tests/offscreen/artifacts/m11-acceptance/20260928/`(수락 실행), `…/20260928-hostcheck/`(Host 검사·기본 확인). 모두 git 제외.
 
@@ -128,6 +128,10 @@ events-only 복구는 원래 입력 폴더를 치운 상태에서, 작업 프로
 - `omitted-files.json`: 옮기지 않은 원본 목록
 
 256 KiB 이하 텍스트 파일은 그대로 복사했다. 그보다 큰 JSON·JSONL(`chemical-evidence.json`, 회귀 jsonl 등 23개)은 `*.compact.json(l)`로 줄였다. 이 파일들은 8 KiB를 넘는 중첩 값을 바이트 수와 SHA-256으로 바꾸고, 원본 전체의 바이트 수와 SHA-256을 머리에 적는다. 스크린숏(png), 다운로드, 하네스 소스 사본, 큰 서비스 로그 523개는 경로·크기·SHA-256만, browser-profile 27개는 파일 수와 합계 해시만 `omitted-files.json`에 적었다.
+
+## 경로 치환
+
+사용자 결정(2026-09-28)에 따라 커밋 `08c51c7` 이후 이 폴더의 파일에서 절대 로컬 경로 앞부분만 자리표시자로 바꿨다. 긴 앞부분부터 바꿨다: 워크트리 루트 → `<repo>`, 메인 체크아웃 → `<main-checkout>`, 임시 디렉터리(스크래치패드와 macOS의 private tmp·var/folders 임시 경로) → `<tmp>`, 나머지 홈 디렉터리 → `<home>`. 그 밖의 증거 내용(값, 해시, handle, run ID)은 바꾸지 않았다. 파일별 원래 SHA-256(`08c51c7` 기준)·새 SHA-256·적용 규칙·치환 횟수는 `path-scrub.json`에 있다. 증거 파일 안에 적힌 SHA-256(`omitted-files.json`, `*.compact.*`의 `originalSha256`, 대장의 fixture 해시 등)은 치환하지 않은 로컬 원본을 가리킨다.
 
 ## 과거 관찰
 
