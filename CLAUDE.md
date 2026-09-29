@@ -18,6 +18,7 @@ protview/
 │   ├── tracking/
 │   │   ├── status.md              → 완료·검증 상태와 남은 작업
 │   │   ├── roadmap.md             → M13–M28 단계 로드맵(탭·시나리오·하지 않는 것)
+│   │   ├── roadmap-analysis-20260929.md → 로드맵 배경 분석(작성 시점 스냅숏)
 │   │   ├── m11-acceptance.md, m12-acceptance.md → 단계 완료 기록
 │   │   ├── decisions/index.md     → 결정 기록 목록(0001–0017)
 │   │   └── findings.md            → 지금 해결하지 못한 문제와 그 이유

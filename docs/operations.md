@@ -82,7 +82,7 @@ npm --prefix frontend run build
 ```
 
 - 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket)는 해당 엔진이 설치되어 있어야 의미가 있다. M11 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`가 필요하며, 없으면 skip이 아니라 실패한다.
-- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
+- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. M12 포켓 테스트가 들어간 세 번째 그룹(나머지 백엔드·실행기·fpocket 설치 테스트)은 2026-09-29 단독 실행에서 239초였다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
 
 ## 오프스크린 UI 검증
 

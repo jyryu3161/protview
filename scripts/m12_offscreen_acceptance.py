@@ -702,7 +702,8 @@ class Runner:
                 cwd = subprocess.run(["lsof", "-a", "-p", pid, "-d", "cwd", "-Fn"], capture_output=True,
                                      text=True, check=False).stdout
                 paths = [Path(item[1:]) for item in cwd.splitlines() if item.startswith("n")]
-                if str(root) in command or any(path == root or root in path.parents for path in paths):
+                # A worker whose working directory cannot be read is counted: fail closed, not open.
+                if not paths or str(root) in command or any(path == root or root in path.parents for path in paths):
                     left.append(line.strip())
             if not left:
                 break
