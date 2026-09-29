@@ -22,3 +22,4 @@
 | [0018](0018-m13-acceptance-record.md) | M13 완료는 새 흐름 문서에 기록, `phases/protview-workflows`는 그대로 | 채택 |
 | [0019](0019-analysis-plan-size-1mib.md) | 분석 계획 크기 한도 1 MiB(계약의 64 KiB 대체), 입력은 한 번만 저장 | 채택 |
 | [0020](0020-compact-committed-qa-evidence.md) | 커밋 QA 증거는 작은 텍스트만, 큰 증거는 해시와 함께 Git 제외 폴더로 | 채택 |
+| [0021](0021-m14-minimal-shared-components.md) | M14는 현재 run·예산·보고서 목록만 공용화, 소스·보기·작업 공용화는 필요한 탭 단계로 | 채택 |

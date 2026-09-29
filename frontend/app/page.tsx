@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BudgetMeter, Button, HandleChip, InspectorSection, InteractionTable, MolstarViewer,
-  Segmented, StepList, WorkspaceShell, type Step, type ViewerRepresentation,
+  Segmented, StepList, WorkspaceShell, WorkspaceTabs, type Step, type ViewerRepresentation,
 } from "@/components";
 import { api, displayedEgressMode, type Capabilities, type MethodReportArtifact, type ObjectMeta, type OpenmmJob, type OpenmmResult, type OpenmmReportArtifact, type ReportArtifact, type ResidueList, type RunSummary, type SasaResult, type SavedReportRef, type UploadResult } from "@/lib/api";
 import type { BudgetSnapshot, Handle, InteractionRow, ResidueRef, RunEvent } from "@/lib/contracts";
@@ -18,11 +18,13 @@ import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgent
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { PocketPanel } from "@/components/PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
+import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
+import { DEFAULT_WORKSPACE_TAB, type WorkspaceTabId } from "@/lib/workspace-tabs";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
 import { atomLabel, catalogAttemptKey, catalogForAttempt, catalogResponseCurrent, retainCatalogState,
@@ -113,6 +115,7 @@ export default function WorkspacePage() {
   const [viewerScopeRevision, setViewerScopeRevision] = useState(0);
   const [sceneName, setSceneName] = useState("");
   const [chemicalActive, setChemicalActive] = useState(false);
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTabId>(DEFAULT_WORKSPACE_TAB);
   const [chemicalSceneToRestore, setChemicalSceneToRestore] = useState<string | null>(null);
   const [pocketState, setPocketState] = useState<{ request: PocketOverlayRequest; boundContext: string | null } | null>(null);
   const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
@@ -275,6 +278,15 @@ export default function WorkspacePage() {
         { request: budgetRequestRef.current, epoch: epoch.current,
           runId: openmmRunRef.current, jobId: openmmJobRef.current })) setBudget(snapshot);
     } catch { /* A later poll or run reopen can retry the read. */ }
+  }, []);
+
+  // Global top line budget: one read on tab switch or chemical object change, no polling. Shares the
+  // request counter with the OpenMM budget read so only the latest-started read reaches the page state.
+  const refreshGlobalBudget = useCallback((id: string) => {
+    const request = ++budgetRequestRef.current, ticket = epoch.current;
+    api.budget(id).then(snapshot => {
+      if (request === budgetRequestRef.current && ticket === epoch.current && openmmRunRef.current === id) setBudget(snapshot);
+    }).catch(() => undefined);
   }, []);
 
   const reopen = useCallback(async (id: string) => {
@@ -1448,13 +1460,13 @@ export default function WorkspacePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chemicalActive, chemicalSceneToRestore]);
 
-  if (chemicalActive && run) return <ChemicalWorkspace key={run.run_id} run={run} runs={runs}
-    events={events} capabilities={capabilities} onTheme={toggleTheme} onObjectsChanged={refreshEventsFromAnalysis}
+  const structureScreen = chemicalActive && run ? <ChemicalWorkspace key={run.run_id} run={run} runs={runs}
+    events={events} capabilities={capabilities} onTheme={toggleTheme}
+    onObjectsChanged={id => { refreshEventsFromAnalysis(id); if (hostRequestAccepted({ runId: id }, analysisHostRef.current)) refreshGlobalBudget(id); }}
     onExit={() => { setChemicalActive(false); setInspectionRevision(value => value + 1); }}
     onSwitchRun={id => { setChemicalActive(false); void switchRun(id); }}
-    onRestoreScene={handle => { setChemicalSceneToRestore(handle); setChemicalActive(false); }} />;
-
-  return <WorkspaceShell
+    onRestoreScene={handle => { setChemicalSceneToRestore(handle); setChemicalActive(false); }} />
+  : <WorkspaceShell
     runId={runId} pipeline="load_structure → prepare_structure → compute_interactions"
     egress={displayedEgressMode(run)} onToggleTheme={toggleTheme} tabs={["run", "models"]}
     budgetShort={budget && <span className="mw-muted mw-mono mw-top-budget">expensive {budget.expensive_calls.used}/{budget.expensive_calls.limit}</span>}
@@ -1900,4 +1912,8 @@ export default function WorkspacePage() {
       {capabilities && <InspectorSection><span className="mw-eyebrow">현재 사용 불가</span>{Object.entries(capabilities.unavailable).map(([name, reason]) => <p className="mw-capability" key={name}><b>{name}</b><br />{reason}</p>)}</InspectorSection>}
     </>}
   />;
+
+  return <WorkspaceTabs active={workspaceTab} runId={runId ?? null} budget={budget} structure={structureScreen}
+    reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} />}
+    onSelect={tab => { setWorkspaceTab(tab); if (runId) refreshGlobalBudget(runId); }} />;
 }

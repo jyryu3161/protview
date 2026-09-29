@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-09-29, 브랜치 `dryforge/m13-workflows`(`phase/m13-analysis-workflows` = main `1e91848`에서 분기). M12까지 main에 병합됨. M13 완료(최종 고정 `e83071b` = 최종 검토 수정 `86bbff3`, 최종 수락 증거 `docs/qa/m13-workflows-20260929-final/`; 이전 고정 `d1eaf48`·`af1500b`, 증거 `f630e20`), main 병합 `50ca0b4`(2026-09-29).
+기준: 2026-09-30, 브랜치 `dryforge/m14-tabs`(`phase/m14-tab-skeleton` = main `36b5679`에서 분기). M13까지 main에 병합됨(M13 병합 `50ca0b4`). M14 완료(고정 `4501aa1`, 수락 증거 `docs/qa/m14-tabs-20260930/`), main 병합 전.
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 
@@ -15,28 +15,29 @@
 | M10 | 원자 거리(Å), 명시적 CA 쌍 Kabsch 정렬·오버레이, 공유 선택 어댑터 수정 | `4ab0186` | 검토 통과 | 오래됨(README) |
 | M11 | ProLIF 화학 상호작용(준비된 수용체 + V2000 SDF, 새로 만들기·기존 복합체 연결), 작업 수명 주기 보강, Host 허용 목록 | 고정 소스 `4ec584f`, main 병합 `adb6291` | 전체 게이트, 수락 QA H01–H17, M8–M10 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | M13 수락 QA에서 M11 수락 실행기 전체 재실행(17/17) |
 | M12 | fpocket 4.2.3 로컬 포켓 후보(단백질만 투영, 알파 구·주변 잔기·fpocket 기술자 5개), Mol* 알파 구 오버레이(메인·화학 작업 화면), 포켓 보고서, 작업 수명 주기, 잔기 이름 대응 10개 | 고정 소스 `9e4edcb`, main 병합 `eb73d12` | 전체 게이트, 수락 QA 31단계, M8–M11 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | M13 수락 QA에서 M12 수락 실행기 전체 재실행(31/31) |
-| M13 | 결정적 로컬 분석 흐름: 목표 템플릿 6개, 불변 계획 `analysis_plan@1`(`local_rules`), 계획 승인과 계산 승인 분리, 한 번에 한 단계, 재시도 1회, 범위 한정 중지, 충돌 복구, `workflow_summary@1`, 메인·화학 작업 화면 흐름 패널, `Run.call`·작업·보고서 내부 실행 연결 | 최종 고정 `e83071b`(최종 검토 수정 `86bbff3`), main 병합 `50ca0b4` | 전체 게이트, 수락 QA 17단계·28사례, M8–M12 회귀(M11·M12 실행기 전체), 코드·증거 독립 검토(Opus 5.5) 통과 | 현재 기준(`docs/tracking/m13-acceptance.md`) |
+| M13 | 결정적 로컬 분석 흐름: 목표 템플릿 6개, 불변 계획 `analysis_plan@1`(`local_rules`), 계획 승인과 계산 승인 분리, 한 번에 한 단계, 재시도 1회, 범위 한정 중지, 충돌 복구, `workflow_summary@1`, 메인·화학 작업 화면 흐름 패널, `Run.call`·작업·보고서 내부 실행 연결 | 최종 고정 `e83071b`(최종 검토 수정 `86bbff3`), main 병합 `50ca0b4` | 전체 게이트, 수락 QA 17단계·28사례, M8–M12 회귀(M11·M12 실행기 전체), 코드·증거 독립 검토(Opus 5.5) 통과 | M14 회귀(M13 수락 실행기 전체, 고정 `4501aa1`) |
+| M14 | 최상위 탭 4개(구조 분석 / 단백질 공학 / 리간드 설계·탐색 / 지식·보고서)와 전역 run·예산 줄, 기존 화면(화학 작업 화면 포함)을 숨긴 채 유지하는 구조 분석 탭으로 이관, 기능 없는 탭의 사용할 수 없음·여는 단계 안내, run 전체 보고서·그림·완료 흐름 요약 목록(내용 보기·다운로드). 백엔드 변경 없음 | 고정 `4501aa1` (작업 브랜치, main 미병합) | 게이트, M14 수락 QA 15사례, M8–M13 회귀(M13 실행기 전체), 코드·증거 독립 검토(Opus 5.5) 통과 | 현재 기준(`docs/tracking/m14-acceptance.md`) |
 
 "오래됨"은 기능이 망가졌다는 뜻이 아니다. 검토 당시 파일 해시와 현재 파일이 달라, `scripts/execute.py --verify`가 그 검토를 현재 증거로 인정하지 않는다는 뜻이다. 현재 기능이 동작하는지는 아래 검사로 확인한다.
 
-## 현재 검사 결과 (최종 고정 `e83071b`, 2026-09-29)
+## 현재 검사 결과 (M14 고정 `4501aa1`, 2026-09-30)
 
 | 검사 | 결과 |
 |---|---|
-| `pytest backend/tests -q -rs` | 597개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치, `88796bc` 기준) |
-| `ruff check …`, 실행기·훅·fpocket 설치·M13 실행기 단위 테스트(한 명령) | 통과, 90개 통과 |
-| `node --check` `pocket-flow.cjs`·`workflows-flow.cjs` | 통과 |
-| `test:events`, `typecheck`, `build` | 148개 통과, 통과, 통과(게이트 BUILD_ID `byXhIMdNy_vdg0qZB-eX7`; 수락 QA는 실행기가 같은 소스로 도장 찍은 `NUugf8EWW7h480ZPwlhqc`) |
-| M13 수락 QA(`scripts/m13_offscreen_acceptance.py`) | 17단계·28사례 통과(`acceptance: true`, 재실행 없음), 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음 |
-| M8 normal·M9 OpenMM·scenes core·M10 measure/alignment, M11 수락 실행기 전체, M12 수락 실행기 전체 | 통과(M11 17/17·29행, M12 31/31) |
+| `git diff 36b5679..4501aa1 -- backend/` | 0줄(백엔드 변경 없음). 전체 백엔드 pytest는 M13 기준(597개 통과, skip 0, `88796bc`) 그대로 |
+| `ruff check scripts .codex/hooks`, M14·M13 실행기·훅 단위 테스트 | 통과, 37개 통과 |
+| `node --check` `tabs-flow.cjs`·`workflows-flow.cjs` | 통과 |
+| `test:events`, `typecheck`, `build` | 168개 통과, 통과, 통과(게이트 BUILD_ID `p77m8rQ1Ft43uHAK9vXUz`; 수락 QA는 실행기가 같은 소스로 도장 찍은 `jaO5G-sFo9B5sB5owJLyf`) |
+| M14 수락 QA(`scripts/m14_offscreen_acceptance.py`) | 15사례 통과(`acceptance: true`, 재실행 없음), 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음 |
+| M8–M13 회귀(`scripts/m13_offscreen_acceptance.py` 전체) | 17단계·28사례 통과(`acceptance: true`), M11 17/17, M12 통과 |
 
-증거: `docs/qa/m13-workflows-20260929-final/`(M13 최종; 이력: 2차 `docs/qa/m13-workflows-20260929/`, 1차 실패 실행 `-run1/`), `docs/qa/m12-pockets-20260929/`(M12), `docs/qa/m11-chemical-20260928/`(M11). 옛 단계 기록은 M11 index pending(결정 0014), M12·M13 index 없음(결정 0016·0018). 다시 돌리지 않은 과거 범위는 `docs/tracking/m13-acceptance.md`의 "대체한 과거 검증 범위".
+증거: `docs/qa/m14-tabs-20260930/`(M14, `m13-regression/` 포함), `docs/qa/m13-workflows-20260929-final/`(M13 최종), `docs/qa/m12-pockets-20260929/`(M12), `docs/qa/m11-chemical-20260928/`(M11). 옛 단계 기록은 M11 index pending(결정 0014), M12·M13 index 없음(결정 0016·0018). 다시 돌리지 않은 과거 범위는 `docs/tracking/m14-acceptance.md`·`m13-acceptance.md`의 "대체한 과거 검증 범위".
 
 ## 남은 전체 범위 (우선순위 순)
 
-1. **M14 탭 4개 골격**: 구조 분석 / 단백질 공학 / 리간드 설계·탐색 / 지식·보고서 탭, 기존 화면 이관(M13 흐름 패널 포함), 공용 구성 요소. 세부는 착수 때 사용자와 정한다.
-2. **M15–M28**: `docs/tracking/roadmap.md`. M13 흐름의 계획·승인·한 단계 진행·중지·복구가 M17–M25 설계 루프의 실행 기반이다.
-3. **정리 작업**: ProLIF·fpocket 작업 환경의 Linux용 잠금. `docs/tracking/findings.md`의 후속 항목(중복 Host 한계, 이벤트 로그 재파싱, GO 전 guardian 종료 정리, M12 QA 미검증 영역, 보고서 Markdown 이스케이프, M13 상단 예산 카운터 지연, M10 측정 원자 선택 flake, 공유 작업 실패 뒤 흐름 재실행).
+1. **M15–M28**: `docs/tracking/roadmap.md`. M13 흐름의 계획·승인·한 단계 진행·중지·복구가 M17–M25 설계 루프의 실행 기반이다.
+2. **공용화 이어서**: 소스·저장 보기·작업·계획 패널 공용화는 그것을 처음 필요로 하는 탭 단계에서 한다(결정 0021). 다른 탭 알림·run 전체 작업 목록도 M17 이후 다시 정한다.
+3. **정리 작업**: ProLIF·fpocket 작업 환경의 Linux용 잠금. `docs/tracking/findings.md`의 후속 항목(중복 Host 한계, 이벤트 로그 재파싱, GO 전 guardian 종료 정리, M12 QA 미검증 영역, 보고서 Markdown 이스케이프, M13 상단 예산 카운터 지연, M10 측정 원자 선택 flake, 공유 작업 실패 뒤 흐름 재실행, M14 전역 예산 읽기 실패 때의 예산 표시 정지).
 
 ## 전체 로드맵
 
@@ -48,4 +49,4 @@ M13 이후 단계는 `docs/tracking/roadmap.md`에 정했다(2026-09-29 사용�
 
 ## 차단 요소
 
-없음. M13은 main에 병합됨(`50ca0b4`). 다음은 M14.
+없음. M14 작업 브랜치(`dryforge/m14-tabs`)의 main 병합 여부와 방법은 사용자가 정한다. 다음은 M15.

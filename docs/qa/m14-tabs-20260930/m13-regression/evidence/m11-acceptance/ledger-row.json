@@ -1,0 +1,29 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "step": "m11-acceptance",
+  "buildId": "jaO5G-sFo9B5sB5owJLyf",
+  "harness": {
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "finishedAt": "2026-09-29T15:41:48.957444+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m14-acceptance/20260930-m13-regression/m11-acceptance",
+  "mode": "m11-acceptance",
+  "regression": "m11_offscreen_acceptance.py",
+  "evidenceKind": "acceptance_runner",
+  "status": "pass",
+  "exitCode": 0,
+  "cases": {},
+  "subVerdict": "pass",
+  "subLedger": "<repo>/frontend/tests/offscreen/artifacts/m14-acceptance/20260930-m13-regression/m11-acceptance/evidence/case-ledger.json",
+  "argv": [
+    "<repo>/.venv/bin/python",
+    "<repo>/scripts/m11_offscreen_acceptance.py",
+    "--root",
+    "<repo>/runs/m14-m13-regression-20260930/m11-acceptance",
+    "--artifacts",
+    "<repo>/frontend/tests/offscreen/artifacts/m14-acceptance/20260930-m13-regression/m11-acceptance/evidence"
+  ],
+  "externalRequestCount": 0,
+  "providerCallsZero": null,
+  "note": "Its own ledger requires a measured non-loopback count of 0 on every row."
+}

@@ -319,3 +319,45 @@
 .mw-analysis-steps li { display: flex; flex-direction: column; gap: var(--space-1); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); min-width: 0; }
 .mw-analysis-json { max-height: 220px; margin: 0; overflow: auto; padding: var(--space-2); font: 11px/14px var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-200); border-radius: var(--radius-xs); }
 .mw-analysis-summary { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; overflow-x: auto; }
+
+/* M14 top-level workspace tabs and global top line. The structure panel stays mounted while hidden:
+   it keeps its layout box (visibility, not display:none) so the Mol* canvas never resizes to zero. */
+.mw-app { display: grid; grid-template-rows: auto minmax(0,1fr); height: 100vh; overflow: hidden; background: var(--surface-000); }
+.mw-app-bar { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: 0 var(--space-3); background: var(--surface-200); border-bottom: 1px solid var(--line-strong); }
+.mw-app-tabs { display: flex; gap: var(--space-1); min-width: 0; }
+.mw-app-tabs button { border: 0; background: transparent; color: var(--ink-muted); font: 600 13px/18px var(--font-sans); padding: var(--space-2) var(--space-3) calc(var(--space-2) - 2px); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+.mw-app-tabs button:hover { color: var(--ink); }
+.mw-app-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brand); }
+.mw-app-run { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mw-app-budget { font-size: 12px; white-space: nowrap; }
+.mw-app-body { position: relative; min-height: 0; }
+.mw-app-panel { position: absolute; inset: 0; overflow: auto; background: var(--surface-100); }
+.mw-app-panel--structure { overflow: hidden; }
+.mw-app-panel--structure[data-shown="false"] { visibility: hidden; pointer-events: none; }
+.mw-unavailable { display: flex; flex-direction: column; gap: var(--space-2); max-width: 720px; margin: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-left: 3px solid var(--fail-transient); border-radius: var(--radius-xs); background: var(--surface-200); color: var(--ink); }
+.mw-unavailable p { margin: 0; }
+.mw-unavailable__title { margin: 0; font: 600 14px/20px var(--font-sans); }
+.mw-unavailable__status { font-weight: 600; }
+.mw-unavailable__opens { margin: 0; padding-left: var(--space-4); color: var(--ink-muted); }
+.mw-unavailable__note { color: var(--ink-muted); }
+.mw-app-reports { margin: var(--space-3); }
+
+/* M14 지식·보고서 탭: 보고서·그림·흐름 요약 목록 */
+.mw-library { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); }
+.mw-library-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mw-library-run { font-size: 12px; color: var(--ink-muted); min-width: 0; overflow-wrap: anywhere; }
+.mw-library-run code { font-family: var(--font-mono); color: var(--ink); }
+.mw-library-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-3); }
+.mw-library-list, .mw-library-content { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-000); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-library-title { margin: 0; font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.mw-library-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); max-height: 320px; overflow: auto; }
+.mw-library-row { width: 100%; text-align: left; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-100); color: var(--ink); font: 400 12px/16px var(--font-sans); cursor: pointer; }
+.mw-library-row:hover { background: var(--surface-200); }
+.mw-library-row[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
+.mw-library-row code { font-family: var(--font-mono); overflow-wrap: anywhere; word-break: break-all; }
+.mw-library-kind { font-weight: 600; }
+.mw-library-field { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
+.mw-library-note { margin: 0; font-size: 12px; color: var(--ink-muted); }
+.mw-library-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
+.mw-library-links { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-1); }
+.mw-library-figure { max-width: 100%; height: auto; border: 1px solid var(--line); background: var(--surface-200); }

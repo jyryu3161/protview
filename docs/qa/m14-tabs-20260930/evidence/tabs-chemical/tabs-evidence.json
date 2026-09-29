@@ -1,0 +1,46 @@
+{
+  "schema": "m14_tabs_evidence@1",
+  "mode": "chemical",
+  "runs": {
+    "C": "run_e0b0cab0a1eb44ffb409f2be7100b6f8"
+  },
+  "inputs": [
+    {
+      "name": "prolif-vina-rec.pdb",
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+      "bytes": 504575,
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+      "handle": "obj://run_e0b0cab0a1eb44ffb409f2be7100b6f8/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+      "bytes": 60682,
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+      "handle": "obj://run_e0b0cab0a1eb44ffb409f2be7100b6f8/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+    }
+  ],
+  "handles": {
+    "chemical": {
+      "execution": "exec_67aa2501a940412b8e5e49a24c2c5b40",
+      "result": "obj://run_e0b0cab0a1eb44ffb409f2be7100b6f8/chemical_interaction_set/94fe7dd45ca8e8b4c611d35188dc2a4a33f6ae19a630734d0e974eb68e1f9472"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_e0b0cab0a1eb44ffb409f2be7100b6f8",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-09-29T15:07:45.491Z",
+  "finishedAt": "2026-09-29T15:08:43.059Z",
+  "error": null,
+  "requestCount": 179
+}

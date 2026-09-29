@@ -29,7 +29,9 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 
 | 구성 요소 | 역할 | 의존 대상 |
 |---|---|---|
-| `frontend/app/page.tsx` | 메인 작업 화면: 업로드, 모델·전처리 선택, 접촉표, 기록, 보고서, 작업 패널 | `src/lib/api.ts`, `src/components/*` |
+| `frontend/app/page.tsx` | 최상위 탭을 두고, 구조 분석 탭 안에 메인 작업 화면(업로드, 모델·전처리 선택, 접촉표, 기록, 보고서, 작업 패널)과 화학 작업 화면을 담는다 | `src/lib/api.ts`, `src/components/*` |
+| `frontend/src/components/WorkspaceTabs.tsx` | M14 최상위 탭 4개와 전역 run·예산 줄. 구조 분석 탭은 숨긴 채 유지, 기능 없는 탭은 사용할 수 없음·여는 단계 안내 | `src/lib/workspace-tabs.ts` |
+| `frontend/src/components/ReportLibraryPanel.tsx` | M14 지식·보고서 탭의 run 전체 보고서·그림·완료된 흐름 요약 목록, 내용 보기, 기존 다운로드 | `src/lib/report-library.ts`, `api.ts`(기존 읽기 API만) |
 | `frontend/src/components/MolstarViewer.tsx` | Mol* 인스턴스를 소유하고 명령을 직렬화하는 브리지. 적용 확인(ack)을 만드는 유일한 곳 | Mol* 패키지, 백엔드 구조 바이트 |
 | `frontend/src/components/ViewerAgentPanel.tsx` | 뷰어 세션 생성, 로컬 명령·자연어 요청, 온라인 동의 UI | `api.ts`, MolstarViewer 브리지 |
 | `frontend/src/components/ChemicalWorkspace.tsx` | M11 화학 입력·미리보기·작업·결과 화면 | `src/lib/chemical.ts` |

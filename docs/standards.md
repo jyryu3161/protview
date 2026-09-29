@@ -37,9 +37,10 @@
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
+node --check frontend/tests/offscreen/tabs-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build

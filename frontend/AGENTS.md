@@ -1,6 +1,8 @@
 # frontend/ — Next.js 작업 화면과 Mol* 뷰어
 
 ## 담당 범위
+- 최상위 탭 `src/components/WorkspaceTabs.tsx`(정의는 `src/lib/workspace-tabs.ts`): `구조 분석` / `단백질 공학` / `리간드 설계·탐색` / `지식·보고서`와 전역 줄(현재 run `.mw-app-run`, 예산 `.mw-app-budget`). `app/page.tsx`가 이 탭 안에 기존 화면을 넣는다.
+- `src/components/ReportLibraryPanel.tsx`: 지식·보고서 탭의 run 전체 보고서·그림·완료된 흐름 요약 목록. 순수 판단은 `src/lib/report-library.ts`.
 - 메인 화면 `app/page.tsx`: run·업로드·모델·전처리·리간드·cutoff 선택, 접촉표, 기록, Inspector 보고서, SASA·OpenMM 작업 패널, 저장된 보기·그림, M10 측정·비교, M11 화학 작업 공간, M12 포켓 패널, M13 분석 흐름 패널.
 - `src/components/MolstarViewer.tsx`: Mol* 5.11.0 인스턴스, 직렬화된 native 명령 큐, `captureScene`/`restoreScene`/`captureFigure`, sourceIndex ↔ AtomRef 대응, 적용 확인(ack).
 - `src/components/PocketPanel.tsx`: M12 포켓 패널. 메인 화면(전처리·최소화 구조)과 `ChemicalWorkspace`(화학 구조)에 같은 컴포넌트를 둔다. 순수 판단은 `src/lib/pockets.ts`.
@@ -20,6 +22,10 @@
 - 스타일 원본은 `design/components.css`다. `src/design/components.css`를 직접 고치면 다음 `npm run tokens` 실행 때 사라진다. 원본을 고친 뒤 `npm --prefix frontend run tokens`로 복사한다.
 
 ## 불변 조건
+- 구조 분석 탭(메인 화면과 화학 작업 화면)은 다른 탭이 보일 때도 언마운트하지 않는다. `visibility:hidden`·`pointer-events:none`·`inert`로 숨기고 `display:none`이나 조건부 렌더링·key 변경을 쓰지 않는다(Mol* 캔버스 크기와 뷰어·선택·진행 중 폴링을 유지하기 위해). 탭 전환은 뷰어 브리지의 사용자 동작 콜백이나 복원 취소를 부르지 않는다. 다른 탭 패널은 선택된 동안에만 렌더링한다(기존 검사의 텍스트 locator와 겹치지 않게).
+- 최상위 탭 이름은 레일 탭 이름(`run`, `models`)으로 시작하지 않는다. 전역 예산 요소에 `.mw-top-budget`을 쓰지 않는다(기존 검사가 이 클래스로 값을 읽는다). 전역 예산은 새 주기적 폴링 없이 탭 전환과 화학 화면 `onObjectsChanged` 때 `/budget`을 한 번 읽는다.
+- run 선택·전환은 구조 분석 탭(메인 레일, 화학 화면)에만 있다. 기능 없는 탭은 사용할 수 없음·이유·여는 단계만 보여 주고 숫자·컨트롤·요청이 없다.
+- 보고서 목록은 저장된 바이트만 보여 준다(Markdown은 `<pre>` 원문, 렌더링하지 않음). 흐름은 `complete`이고 `summary_handle`이 있으며 `error`가 없는 실행만 넣는다. 목록 세 개는 오류가 서로 독립이고, run·요청 순번이 맞지 않는 응답은 버린다. 다운로드는 사용자가 누른 링크로만 일어난다. 구조 분석으로 건너가 여는 버튼과 보고서 생성 버튼은 두지 않는다.
 - 화면의 과학 수치는 모두 백엔드 객체에서 온다. 미리보기 5행을 전체 결과처럼 표시하지 않는다.
 - Mol* 조작은 모두 MolstarViewer 브리지의 직렬 큐를 거친다. 매 await 전후에 session, client, generation, source handle, catalog hash, action revision을 확인한다. 하나라도 바뀌었으면 그 작업은 적용하지 않는다.
 - "적용됨"은 native 작업을 커밋하고 다시 읽어 확인한 뒤에만 보고한다. React state만 바꾸고 성공으로 표시하지 않는다. 부분 적용은 적용된 명령과 거부된 명령을 나눠 보여 주고, 롤백했다고 주장하지 않는다.
@@ -45,6 +51,6 @@
 ## 테스트 지침
 - 순수 로직: `npm --prefix frontend run test:events`.
 - 타입과 빌드: `npm --prefix frontend run typecheck` 다음에 `npm --prefix frontend run build`(동시 실행 금지).
-- 바뀐 컨트롤은 실제 Electron 오프스크린에서 하나씩 실제 입력으로 검증한다(`isOffscreen()===true`, GPU·WebGL, paint, 외부 요청 0건). 공유 뷰어·페이지 코드를 바꿨다면 M8 normal-flow, M9 scenes-flow, M10 comparison-flow 회귀도 돌린다. 포켓 흐름은 `test:offscreen:pockets`, 전체 수락은 `scripts/m12_offscreen_acceptance.py`. 분석 흐름은 `test:offscreen:workflows`(`tests/offscreen/workflows-flow.cjs`, 순수 로직은 `tests/analysis.test.cjs`), 전체 수락과 M8–M12 회귀는 `scripts/m13_offscreen_acceptance.py`.
+- 바뀐 컨트롤은 실제 Electron 오프스크린에서 하나씩 실제 입력으로 검증한다(`isOffscreen()===true`, GPU·WebGL, paint, 외부 요청 0건). 공유 뷰어·페이지 코드를 바꿨다면 M8 normal-flow, M9 scenes-flow, M10 comparison-flow 회귀도 돌린다. 포켓 흐름은 `test:offscreen:pockets`, 전체 수락은 `scripts/m12_offscreen_acceptance.py`. 탭은 `test:offscreen:tabs`(`tests/offscreen/tabs-flow.cjs`, 순수 로직은 `tests/workspace-tabs.test.cjs`·`tests/report-library.test.cjs`), 전체 수락은 `scripts/m14_offscreen_acceptance.py`이고 M8–M13 회귀는 `scripts/m13_offscreen_acceptance.py` 전체다. 분석 흐름은 `test:offscreen:workflows`(`tests/offscreen/workflows-flow.cjs`, 순수 로직은 `tests/analysis.test.cjs`), 전체 수락과 M8–M12 회귀는 `scripts/m13_offscreen_acceptance.py`.
 - 반드시 다룰 경우: 빠른 소스 전환(A→B 뒤 B가 최종), 늦은 응답, WebGL 컨텍스트 손실, 읽기 오류 후 재시도, 비활성 상태의 이유 표시, null label·삽입 코드·비첫 모델 잔기 선택.
 - 실패한 실행 결과는 지우지 않고 회귀 증거로 남긴다.

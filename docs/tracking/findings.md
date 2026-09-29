@@ -99,3 +99,9 @@
 ## (해결됨, M13 최종 검토) Stop 훅이 M13 수락 실행기 단위 테스트를 돌리지 않는다
 - **현상**: `.codex/hooks/stop.py`의 pytest 세 그룹에는 `scripts/test_m13_offscreen_acceptance.py`가 없었다. 게이트 명령에만 있었다.
 - **해결**: M13 최종 검토 수정에서 세 번째 그룹에 파일을 추가하고 `scripts/test_codex_hooks.py`의 그룹 기대값을 갱신했다(`docs/operations.md`의 Stop 훅 설명).
+
+## 전역 예산 읽기가 실패하면 예산 표시가 다음 읽기까지 멈춘다
+- **현상**: M14의 `refreshGlobalBudget`(탭 전환·화학 화면 객체 변경 때 `/budget` 한 번 읽기)은 OpenMM 예산 읽기와 같은 요청 순번(`budgetRequestRef`)을 쓴다. 전역 읽기가 앞선 OpenMM 예산 읽기를 밀어낸 뒤 실패하면(오류는 삼킴) 두 값 모두 반영되지 않아, 다음 예산 읽기까지 상단 값이 이전 값으로 남는다.
+- **영향**: 표시만의 문제이고 loopback 요청 실패라는 드문 경우다. 예산 기록·과금은 맞다.
+- **지금 해결하지 못하는 이유**: M14 코드 검토 권고로 발견했고, 고치려면 OpenMM 예산 읽기 경로를 바꿔 M9 OpenMM 회귀를 다시 확인해야 한다.
+- **방향**: 전역 읽기용 순번을 따로 두거나 실패 때 다시 읽기를 예약하고, 오프스크린에서 `/budget` 실패 fixture로 확인한다. 증거: `docs/tracking/m14-acceptance.md`의 코드 검토 권고.
