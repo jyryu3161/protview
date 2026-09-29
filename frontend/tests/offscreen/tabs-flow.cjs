@@ -231,6 +231,14 @@ async function budgetMatches(page, run, minimumUsed) {
       ? { shown: line.budget, backend: budget.expensive_calls, run: line.run } : null;
   }, "global budget equals backend /budget", 15000);
 }
+/** Spec §4: a tab click itself triggers one GET /runs/{id}/budget (not only other refresh paths). */
+async function budgetReadAfter(page, log, run, since) {
+  const target = `/api/runs/${run}/budget`;
+  return waitFor(page, async () => {
+    const row = log.find(item => item.method === "GET" && item.path === target && item.at >= since);
+    return row ? { path: row.path, afterClickMs: row.at - since } : null;
+  }, "budget read after the tab click", 10000);
+}
 const apiPaths = (log, from, to = Infinity) => log.filter(row => row.api && row.at >= from && row.at < to);
 
 /** Spec §6: notice + reason + opening stage, no numbers besides stage ids, no controls. */
@@ -1037,12 +1045,14 @@ async function modeMain(session, input, rec_, evidence, log) {
   await rec_.part("budget-main", ["T-budget-main", "T-global-run"], () => rec_.step("G01-budget-main", ["T-budget-main", "T-global-run"],
     "After the expensive OpenMM job click 지식·보고서: global run and budget equal the backend", async () => {
       await selectTab(page, "단백질 공학");
+      const clickedAt = Date.now();
       await selectTab(page, "지식·보고서");
+      const refreshRead = await budgetReadAfter(page, log, runB, clickedAt);
       const atKnowledge = await budgetMatches(page, runB, 1);
       await selectTab(page, "구조 분석");
       const atStructure = await budgetMatches(page, runB, 1);
       const topbar = await page.locator("#mw-app-panel-structure .mw-top-budget").textContent().catch(() => null);
-      return { atKnowledge, atStructure, topbar, line: await globalLine(page) };
+      return { refreshRead, atKnowledge, atStructure, topbar, line: await globalLine(page) };
     }, async value => {
       assert.equal(value.line.run, runB);
       assert.equal(value.line.structureRun, runB);
@@ -1195,14 +1205,16 @@ async function modeChemical(session, input, rec_, evidence, log) {
     "Click 단백질 공학 then 지식·보고서 (global budget = backend after the expensive jobs), then 구조 분석", async () => {
       await selectTab(page, "단백질 공학");
       const barAway = await tabBar(page);
+      const clickedAt = Date.now();
       await selectTab(page, "지식·보고서");
+      const refreshRead = await budgetReadAfter(page, log, run, clickedAt);
       const budget = await budgetMatches(page, run, 1);
       const line = await globalLine(page);
       await selectTab(page, "구조 분석");
       await page.getByText("준비 입력과 실제 화학 상호작용", { exact: true }).waitFor({ timeout: 15000 });
       await page.waitForTimeout(1000);
       const budgetBack = await budgetMatches(page, run, 1);
-      return { barAway, budget, budgetBack, line, state: await chemState(), paint: await canvasPaint(session, "H08-paint"),
+      return { refreshRead, barAway, budget, budgetBack, line, state: await chemState(), paint: await canvasPaint(session, "H08-paint"),
         bar: await tabBar(page) };
     }, async value => {
       assert.equal(value.line.run, run);

@@ -351,7 +351,8 @@ class Runner:
         passed = judged["passed"]
         verdict = "partial_not_acceptance" if self.partial else "pass" if passed else "fail"
         ledger = {"schema": "m14_case_ledger@1", "generatedAt": now(), "build": self.state.get("build"),
-                  "verdict": verdict, "acceptance": acceptance_ok(self.partial, self.phases, passed),
+                  "verdict": verdict, "acceptance": acceptance_ok(self.partial, self.phases, passed)
+                  and bool((self.state.get("build") or {}).get("buildCurrentWithSource")),
                   "acceptancePhases": list(ACCEPTANCE_PHASES), "phases": self.phases,
                   "scope": {"partial": self.partial, "only": sorted(self.only), "requiredSteps": required},
                   "verdictParts": judged["verdictParts"], "cases": judged["cases"], "steps": judged["steps"],
