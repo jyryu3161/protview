@@ -82,10 +82,10 @@ npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
-- `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정만 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 pytest 그룹에는 아직 들어 있지 않다.
+- `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정, `acceptance` 판정, 빌드 출처 확인을 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 세 번째 pytest 그룹에 들어 있다.
 - git worktree에서 백엔드 테스트나 서비스를 돌릴 때는 `PYTHONPATH=<worktree>/backend`를 준다. `.venv`의 editable 설치가 주 체크아웃의 `backend/`를 가리키므로, 주지 않으면 worktree의 `mw`가 아니라 주 체크아웃의 `mw`를 import한다.
 - 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket)는 해당 엔진이 설치되어 있어야 의미가 있다. M11 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`가 필요하며, 없으면 skip이 아니라 실패한다.
-- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. M12 포켓 테스트가 들어간 세 번째 그룹(나머지 백엔드·실행기·fpocket 설치 테스트)은 2026-09-29 단독 실행에서 239초였다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
+- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. 세 번째 그룹(나머지 백엔드·실행기·fpocket 설치·M13 수락 실행기 단위 테스트)은 M13 테스트가 들어간 뒤 2026-09-29 단독 실행에서 382초(634개)였다. 그룹 제한 480초에 여유가 크지 않으므로, 테스트가 더 늘면 그룹을 나눈다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
 
 ## 오프스크린 UI 검증
 
@@ -140,7 +140,7 @@ npm --prefix frontend run test:offscreen:chemical
 ```
 
 - 단계: `workflows`(main, m10, race, minimize, chemical-create, attach-setup, chemical-attach, chemical-error, dry-run: 템플릿 6개와 상태 사례) → `unavailable`(엔진 없음) → `regressions`(이 실행기의 서비스로 M8 normal-flow, M9 openmm-flow full → scenes-flow core, M10 comparison-flow measure·alignment) → `m11`·`m12`(`scripts/m11_offscreen_acceptance.py`·`scripts/m12_offscreen_acceptance.py` 전체를 `<root>/m11-acceptance`·`<root>/m12-acceptance`에서, 각자 서비스를 띄우고 끔) → `ledger`(사례 28개, 남은 프로세스, 외부 요청 합계). 필수 단계·사례가 빠지거나 실패하면 판정은 실패다.
-- `--only 단계,...`는 대장을 `partial_not_acceptance`로 남기고 증거를 내보내지 않는다. `--build auto`(기본)는 `frontend/.next/BUILD_ID`가 없을 때만 typecheck → build를 한다. `--code-root`로 서비스·하네스를 띄울 코드 루트를 바꿀 수 있다.
+- `--only 단계,...`는 대장을 `partial_not_acceptance`로 남기고 증거를 내보내지 않는다. `--build auto`(기본)는 `frontend/.next/BUILD_ID`가 이 실행기가 현재 프런트엔드 소스(`app/`, `src/`, 설정·package 파일)로 빌드하며 남긴 해시(`.next/protview-source-sha256`)와 맞을 때만 빌드를 건너뛰고, 아니면 typecheck → build를 한다(실행기 밖에서 만든 빌드도 다시 빌드한다). 대장의 `acceptance`는 `workflows,unavailable,regressions,m11,m12`를 한 번에 모두 돌려 통과했을 때만 true다(기본 phase만 돌리면 verdict가 pass여도 false). `--code-root`로 서비스·하네스를 띄울 코드 루트를 바꿀 수 있다.
 - 흐름 스크립트만 따로 돌리려면 서비스를 띄운 상태에서 `npm --prefix frontend run test:offscreen:workflows -- --mode <모드> --artifacts <디렉터리>`를 쓴다. `race`는 `--run`·`--other-run`, `chemical-attach`는 `scripts/m11_attach_browser_setup.py` 산출물(`--run --complex --mapping --ligand --sidecar`)이 필요하고, 입력 준비 전체 순서는 실행기에 있다.
 - 커밋하는 증거(`docs/qa/m13-workflows-<날짜>/`)는 README, `gate-results.md`, `freeze-manifest.txt`, 사례 대장, 텍스트 증거, `SHA256SUMS`, `binary-artifacts.json`이다. 스크린숏·paint·다운로드 원본은 Git 제외 artifacts 폴더에 두고 해시만 기록한다.
 - 큰 텍스트 증거(결정 0020): 내보낸 뒤 256 KiB를 넘는 텍스트 파일은 대장(`case-ledger*.json`, `ledger-row.json`)을 빼고 그 실행의 artifacts 폴더 `export-full/`로 같은 상대 경로로 옮긴다(삭제하지 않음). 옮긴 파일의 SHA-256을 `ARCHIVED-EVIDENCE.sha256`에 쓰고, `SHA256SUMS`의 원래 줄은 남기며, README 끝 절에 목록·크기·해시와 확인 명령(`cd <artifacts>/export-full && shasum -a 256 -c <repo>/docs/qa/<폴더>/ARCHIVED-EVIDENCE.sha256`)을 적는다. 이 이동은 실행기가 하지 않으므로 내보낸 뒤 직접 한다. M11 하위 실행기의 `chemical-evidence.json`은 하나가 약 62 MB까지 커진다.

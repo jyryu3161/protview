@@ -1965,3 +1965,75 @@ def test_execution_list_reads_once_and_isolates_a_corrupt_execution(client):
     assert rows[other]["error"]["code"] == "execution_record_invalid" and rows[other]["status"] is None
     assert rows[eid]["status"] == "ready" and rows[third]["status"] == "awaiting_approval"
     assert client.get(f"/runs/{rid}/analysis/executions/{other}").status_code == 409  # detail fails closed
+
+
+# ------------------------------------------------------------------------------ final review follow-up
+def test_manual_retry_of_an_owned_job_is_allowed_once_its_execution_has_ended(client, ubq_run, monkeypatch):
+    rid, run, _body, eid = _cavities(client, ubq_run)
+    api_module._run(rid).approve("expensive_first_call")
+    original = JobQueue._publish_pocket
+    monkeypatch.setattr(JobQueue, "_publish_pocket",  # FAULT FIXTURE: the real worker ran; publication fails
+                        lambda self, *a, **k: {"status": "failed",
+                                               "failure": {"error": "fatal", "message": "fixture failure"}})
+    failed = _done(_act(client, rid, eid, "advance"))
+    job_id = failed["steps"][0]["job_id"]
+    assert failed["retryable_step"] == "s01"
+    # The execution still drives the job (its explicit retry is left): manual retry stays refused.
+    refused = client.post(f"/runs/{rid}/jobs/{job_id}/retry")
+    assert refused.status_code == 412 and refused.json()["detail"]["reason_code"] == "job_owned_by_analysis_execution"
+    ended = _done(_act(client, rid, eid, "retry", step_id="s01"))
+    assert ended["status"] == "failed" and ended["retryable_step"] is None
+    assert JobQueue(run).get(job_id)["status"] == "failed"
+    # The owning execution ended: the existing manual retry rules apply again (up to 4 attempts).
+    monkeypatch.setattr(JobQueue, "_publish_pocket", original)
+    requeued = client.post(f"/runs/{rid}/jobs/{job_id}/retry")
+    assert requeued.status_code == 200, requeued.text
+    assert requeued.json()["status"] == "queued"
+    started = client.post(f"/runs/{rid}/jobs/{job_id}/start")
+    assert started.status_code == 200, started.text
+    assert JobQueue(run).get(job_id)["status"] == "done"
+    after = _get(client, rid, eid)  # the ended execution is not rewritten by the manual rerun
+    assert after["status"] == "failed" and after["steps"][0]["status"] == "failed"
+
+
+def _gated_owned_job(client: TestClient, ubq_run) -> tuple[str, Run, str, str]:
+    rid, run, _body, eid = _cavities(client, ubq_run)
+    gated = _done(_act(client, rid, eid, "advance"))
+    assert gated["status"] == "awaiting_scientific_approval" and gated["steps"][0]["job_status"] == "claimed"
+    api_module._run(rid).approve("expensive_first_call")
+    assert _get(client, rid, eid)["status"] == "ready"
+    return rid, run, eid, gated["steps"][0]["job_id"]
+
+
+def test_limits_exhausted_with_an_open_owned_job_dispatch_cancels_that_job(client, ubq_run, monkeypatch):
+    rid, run, eid, job_id = _gated_owned_job(client, ubq_run)
+    # FAULT FIXTURE: the execution's wall limit is reached while its owned job waits to start.
+    monkeypatch.setattr(ax, "_limits_exhausted", lambda *a, **k: "max_active_wall")
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["status"] == "failed" and record["retryable_step"] is None
+    assert record["steps"][0]["failure"]["reason_code"] == "max_active_wall"
+    assert JobQueue(run).get(job_id)["status"] == "cancelled"
+    assert not _types(run, "budget_reserved") and not _types(run, "job_dispatch_intent")
+
+
+def test_compatibility_block_with_an_open_owned_job_dispatch_cancels_that_job(client, ubq_run, monkeypatch):
+    rid, run, eid, job_id = _gated_owned_job(client, ubq_run)
+    # FAULT FIXTURE: a method version changed while the owned job waits to start.
+    monkeypatch.setattr(analysis_plans, "check_compatibility",
+                        lambda run, plan: {"compatible": False, "mismatched_steps": ["s01"], "current": {}})
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["status"] == "blocked" and record["blocked_reason"]["reason_code"] == "compatibility_changed"
+    assert JobQueue(run).get(job_id)["status"] == "cancelled"
+    assert not _types(run, "budget_reserved") and not _types(run, "job_dispatch_intent")
+
+
+def test_revoke_after_a_budget_released_call_returns_to_awaiting_approval(client):
+    from mw.runtime.guards import BudgetLimits
+    rid, run, _body, eid = _approved_measure(client)
+    live = api_module._run(rid)
+    live.update_limits(BudgetLimits(wall_clock_s=max(live.budget.wall_clock_s, 1e-6)))
+    released = _done(_act(client, rid, eid, "advance"))
+    assert released["notice"]["code"] == "run_budget_exhausted" and released["steps"][0]["status"] == "pending"
+    assert _linked(run, eid, "execution_call_admitted") and not _linked(run, eid, "tool_called")
+    revoked = _done(_act(client, rid, eid, "revoke"))
+    assert revoked["status"] == "awaiting_approval"  # the admitted call never started: nothing to cancel

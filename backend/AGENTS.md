@@ -26,7 +26,7 @@
 - 잔기 식별자 7필드와 AtomRef의 null label은 그대로 보존한다. 표시 문자열을 파싱해서 식별자를 만들지 않는다.
 - 포켓 결과를 게시하기 전에 현재 시도·취소·종료 상태를 확인하고, 읽을 때마다 보관한 원본 출력을 다시 파싱해 저장 값과 대조한다. 원본 출력 보관량은 게시된 결과 기준 run당 64 MiB다.
 - M13 분석 흐름: 계획 생성은 저장된 메타데이터·capability·읽기 전용 사전 검사만 쓰고 과학 구현·작업·보고서를 부르지 않는다. 실행은 `Run.call`·`JobQueue`·기존 보고서 함수에 `ExecutionLink`를 넘겨서만 하며, 링크는 서버 코드만 만든다(`checked_link`가 다른 타입을 거부). 같은 run의 워크플로 잠금(`analysis.lock`)은 입장·dispatch 기록·결과 기록 같은 짧은 전이에만 잡고 자식 실행 동안에는 놓는다. 실행별 driver 잠금이 advance·retry 전체 동안 한 실행에 driver 연산 하나만 들이고(동시 요청은 409 `busy`), 잠금 순서는 driver → 워크플로 → `Run._transition()`이다. 링크 콜백은 `Run._transition()` 안에서 돌며 잠금을 잡지 않는다. 단계 결과는 반환값이 아니라 연결된 자식 이벤트에서 조정해 얻는다(정상 경로와 충돌 복구가 같은 코드). 중지·철회는 `busy`로 거절하지 않고 `Run.cancel()`을 쓰지 않는다. 읽기(상세·목록·요약)는 이벤트를 쓰지 않는다.
-- 연결 필드가 없는 `Run.call`·작업·보고서의 이벤트는 바이트 그대로다(`link_fields(None)`은 빈 dict). 연결된 호출은 제안 전에 활동 시간 예산·열린 작업을 먼저 확인한다(풀린 호출이 가드를 올리지 않게). 흐름이 소유한 작업은 연결 없는 `start`·`retry`를 거절한다(412 `job_owned_by_analysis_execution`). 수동 `cancel`은 허용한다.
+- 연결 필드가 없는 `Run.call`·작업·보고서의 이벤트는 바이트 그대로다(`link_fields(None)`은 빈 dict). 연결된 호출은 제안 전에 활동 시간 예산·열린 작업을 먼저 확인한다(풀린 호출이 가드를 올리지 않게). 흐름이 소유한 작업은 소유 실행이 끝나기 전에는 연결 없는 `start`·`retry`를 거절한다(412 `job_owned_by_analysis_execution`. API가 `owner_active` 콜백으로 `analysis_executions.execution_active`를 넘기고, 콜백이 없으면 거절). 소유 실행이 끝나면 기존 규칙대로 허용한다. 수동 `cancel`은 허용한다.
 - 도구 실패는 `ToolFailure(FailureClass.…)`로 던진다. 그 밖의 예외는 fatal로 분류한다. HTTP 매핑은 input_invalid 422, precondition 412, resource_exceeded 429, transient·fatal 503이다.
 
 ## 구현 패턴

@@ -21,7 +21,9 @@ Phases (``--phases``, comma list, in this order):
   m11          scripts/m11_offscreen_acceptance.py, all phases (it starts and stops its own services).
   m12          scripts/m12_offscreen_acceptance.py, all phases (it starts and stops its own services).
   ledger       case-ledger.json + README.md + SHA256SUMS into --out (text evidence, <repo>/<home> redacted).
-Default: workflows,unavailable,ledger. Full T8 set: workflows,unavailable,regressions,m11,m12,ledger.
+Default: workflows,unavailable,ledger. Full T8 set: workflows,unavailable,regressions,m11,m12,ledger. The ledger's
+``acceptance`` is true only when the full T8 set ran in one invocation and passed.
+``--build auto`` reuses frontend/.next only when this runner stamped it from the current frontend source.
 
 A case passes only when every step that covers it has a passing latest row. Every row must carry a measured
 non-loopback request count of 0 and zero provider calls (no egress events, zero external tokens/USD). Product issues
@@ -107,6 +109,13 @@ ENV_ALLOW = frozenset({"PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "TMPD
 ATTEMPT_SUFFIX = re.compile(r"-(\d{8}T\d+)$")
 STEP_TIMEOUT_S = 2400
 WORKERS = ("guardian.py", "chemical_worker.py", "openmm_worker.py", "pocket_worker.py", "fpocket")
+# acceptance: true only when every one of these phases ran in this invocation and passed.
+ACCEPTANCE_PHASES = ("workflows", "unavailable", "regressions", "m11", "m12")
+# Frontend build inputs (relative to frontend/); tests/ and node_modules/ are not part of the build source.
+BUILD_INPUT_DIRS = ("app", "src")
+BUILD_INPUT_FILES = ("middleware.ts", "next-env.d.ts", "next.config.mjs", "package.json", "package-lock.json",
+                     "tsconfig.json")
+BUILD_STAMP = ".next/protview-source-sha256"
 
 
 def now() -> str:
@@ -124,6 +133,33 @@ def sha_file(path: Path) -> str:
 def tree_digest(root: Path) -> dict[str, str]:
     return {str(path.relative_to(root)): sha_file(path) for path in sorted(root.rglob("*"))
             if path.is_file() and "__pycache__" not in path.parts}
+
+
+def frontend_source_digest(frontend: Path) -> str:
+    """sha256 over the frontend build inputs (relative paths and file hashes)."""
+    rows = []
+    for name in BUILD_INPUT_DIRS:
+        rows += [(str(path.relative_to(frontend)), sha_file(path)) for path in sorted((frontend / name).rglob("*"))
+                 if path.is_file()]
+    rows += [(name, sha_file(frontend / name)) for name in BUILD_INPUT_FILES if (frontend / name).is_file()]
+    return sha_bytes(json.dumps(sorted(rows)).encode())
+
+
+def stamp_build(frontend: Path) -> str:
+    digest = frontend_source_digest(frontend)
+    (frontend / BUILD_STAMP).write_text(digest + "\n")
+    return digest
+
+
+def build_is_current(frontend: Path) -> bool:
+    """True only if .next/BUILD_ID exists and this runner stamped it from the current build inputs."""
+    stamp = frontend / BUILD_STAMP
+    return ((frontend / ".next/BUILD_ID").is_file() and stamp.is_file() and
+            stamp.read_text().strip() == frontend_source_digest(frontend))
+
+
+def acceptance_ok(partial: bool, phases: list[str], passed: bool) -> bool:
+    return not partial and passed and set(ACCEPTANCE_PHASES) <= set(phases)
 
 
 def child_env(extra: dict[str, str] | None = None) -> dict[str, str]:
@@ -237,10 +273,12 @@ class Runner:
     # ----- build -------------------------------------------------------------------------------
     def build(self) -> None:
         build_id = self.frontend / ".next/BUILD_ID"
-        if self.build_mode == "never" or (self.build_mode == "auto" and build_id.is_file()):
+        if self.build_mode == "never" or (self.build_mode == "auto" and build_is_current(self.frontend)):
             if not build_id.is_file():
                 raise SystemExit("frontend is not built and --build never was given")
-            self.state["buildCommands"] = {"skipped": True, "reason": f"--build {self.build_mode}, BUILD_ID present"}
+            reason = ("BUILD_ID stamped from the current source" if self.build_mode == "auto"
+                      else "BUILD_ID present; source not checked")
+            self.state["buildCommands"] = {"skipped": True, "reason": f"--build {self.build_mode}, {reason}"}
             return
         results = {}
         for script in ("typecheck", "build"):  # sequential: typecheck and build never run concurrently
@@ -253,6 +291,7 @@ class Runner:
             self.record(f"frontend-{script}", "pass" if rc == 0 else "fail", exitCode=rc, log=str(log))
             if rc != 0:
                 raise SystemExit(f"npm run {script} failed ({rc}); see {log}")
+        results["sourceSha256"] = stamp_build(self.frontend)
         self.state["buildCommands"] = results
 
     # ----- services ----------------------------------------------------------------------------
@@ -615,7 +654,8 @@ class Runner:
         passed = all(verdict_parts.values())
         verdict = "partial_not_acceptance" if self.partial else "pass" if passed else "fail"
         ledger = {"schema": "m13_case_ledger@1", "generatedAt": now(), "build": self.state.get("build"),
-                  "verdict": verdict, "acceptance": not self.partial and passed, "phases": self.phases,
+                  "verdict": verdict, "acceptance": acceptance_ok(self.partial, self.phases, passed),
+                  "acceptancePhases": list(ACCEPTANCE_PHASES), "phases": self.phases,
                   "scope": {"partial": self.partial, "only": sorted(self.only), "requiredSteps": required},
                   "verdictParts": verdict_parts, "cases": cases, "steps": steps, "leftoverProcesses": leftovers,
                   "externalRequestsTotal": sum(r["externalRequestCount"] or 0 for r in rows), "rows": rows}
@@ -721,6 +761,7 @@ class Runner:
                                    check=False).stdout
         build_id = self.frontend / ".next/BUILD_ID"
         self.state["build"] = {"buildId": build_id.read_text().strip() if build_id.exists() else None, "gitHead": head,
+                               "buildCurrentWithSource": build_is_current(self.frontend),
                                "gitStatusPorcelainSha256": sha_bytes(porcelain.encode()), "dirtyFiles": porcelain.splitlines(),
                                "recordedAt": now(), "codeRoot": str(self.code),
                                "harnessSha256": {name: sha_file(self.offscreen / name) for name in (
@@ -769,7 +810,8 @@ def main() -> int:
                         "partial_not_acceptance and nothing is exported")
     parser.add_argument("--code-root", default=str(REPO), help="code root the services and harness are started from")
     parser.add_argument("--build", choices=["auto", "always", "never"], default="auto",
-                        help="auto: typecheck then build only when frontend/.next/BUILD_ID is missing")
+                        help="auto: typecheck then build unless frontend/.next/BUILD_ID was stamped by this runner "
+                        "from the current frontend source (app/, src/, config and package files)")
     return Runner(parser.parse_args()).run()
 
 
