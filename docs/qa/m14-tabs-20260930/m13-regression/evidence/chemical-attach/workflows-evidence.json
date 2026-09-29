@@ -1,0 +1,60 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "chemical-attach",
+  "run": "run_3d94fe09a80a49d7af792bf57d28e566",
+  "inputs": [
+    {
+      "name": "prolif-vina-output.sdf",
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+      "bytes": 60682,
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+      "handle": "obj://run_3d94fe09a80a49d7af792bf57d28e566/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+    },
+    {
+      "name": "m11-attach-bonds-run.json",
+      "path": "<repo>/runs/m14-m13-regression-20260930/inputs/attach-setup/m11-attach-bonds-run.json",
+      "bytes": 3388517,
+      "sha256": "9455df318e1524f3e3364b0de65b873a9c6ac32ed59b1c213805756eb50c36c2",
+      "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog",
+      "handle": "obj://run_3d94fe09a80a49d7af792bf57d28e566/chemical_raw_input/b2505ece3547f8011ee60b883519b96bd09a497c9578449f7fe3ec472bc82cb6"
+    },
+    {
+      "name": "m11-attach-mapping-run.json",
+      "path": "<repo>/runs/m14-m13-regression-20260930/inputs/attach-setup/m11-attach-mapping-run.json",
+      "bytes": 43727,
+      "sha256": "cf77df42a615ff5962bebc28a16ce975920a320e932452f0ee651225c9707656",
+      "provenance": "run-bound labeled map_existing SDF→AtomRef mapping from the QA run's source catalog"
+    },
+    {
+      "name": "m11-attach-ligand-instance-run.json",
+      "path": "<repo>/runs/m14-m13-regression-20260930/inputs/attach-setup/m11-attach-ligand-instance-run.json",
+      "bytes": 141,
+      "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+      "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+    }
+  ],
+  "handles": {
+    "chemicalAttach": {
+      "plan": "obj://run_3d94fe09a80a49d7af792bf57d28e566/analysis_plan/f112746b81056cac49947580528dcd68b88feaad5e0791b70df8cd214526f3bb",
+      "execution": "exec_16a45c2e4d77411c994ee097e8cf85ca",
+      "result": "obj://run_3d94fe09a80a49d7af792bf57d28e566/chemical_interaction_set/7fc7175286a310c3675329406ad0b9c77aba4951a7eff441eb0aa0d130d9f80c"
+    }
+  },
+  "fixtureLabels": [
+    "labeled loopback API setup (runner): synthetic attach complex upload/load and SDF import only"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_3d94fe09a80a49d7af792bf57d28e566",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-09-29T15:16:44.905Z",
+  "finishedAt": "2026-09-29T15:18:03.002Z",
+  "error": null
+}
