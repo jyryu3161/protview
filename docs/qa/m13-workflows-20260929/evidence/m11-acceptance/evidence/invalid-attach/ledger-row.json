@@ -1,0 +1,79 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H05",
+    "H06"
+  ],
+  "mode": "invalid-attach",
+  "harnessMode": "invalid-attach",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "WCnxUsptjGLeenXzwlYhV",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced"
+  },
+  "fixtures": [
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    },
+    {
+      "name": "m11-attach-ligand-instance-run.json",
+      "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+      "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+    },
+    {
+      "name": "m11-invalid-cases.json",
+      "bytes": 8849,
+      "sha256": "e6c18067b67db33c4e57bf95919b39de1d6bbe158dd146c1708c2b10801bf53f",
+      "provenance": "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)"
+    },
+    {
+      "name": "m11-invalid-covalent-ligand-bonds-run.json",
+      "sha256": "0e6faeefa980c7ce4eefa681e7365c00a811646fd0f49d2822bb18a5b1f32990",
+      "provenance": "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+    }
+  ],
+  "provenanceLabels": [
+    "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+    "run-bound exact selected ligand instance from the QA run's source catalog",
+    "manifest of labeled synthetic invalid-input derivatives (scripts/m11_invalid_inputs.py)",
+    "labeled synthetic invalid-input derivative of the public fixture (scripts/m11_invalid_inputs.py); not experimental evidence"
+  ],
+  "fixtureLabels": [],
+  "runId": "run_b2493b0c50e6404dbfb59f2b77c2a6c6",
+  "handles": {},
+  "expectCapability": null,
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 38,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m11-acceptance/evidence/invalid-attach/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m11-acceptance/evidence/invalid-attach",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-09-29T08:41:28.449Z",
+  "finishedAt": "2026-09-29T08:41:46.498Z"
+}

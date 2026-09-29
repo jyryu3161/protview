@@ -1,0 +1,29 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "step": "m11-acceptance",
+  "buildId": "WCnxUsptjGLeenXzwlYhV",
+  "harness": {
+    "runnerSha256": "195c0cc2509700b5a090840b0fb1abda6b1bf7360af5d731050b02f8f05855f0"
+  },
+  "finishedAt": "2026-09-29T08:08:52.009422+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929/m11-acceptance",
+  "mode": "m11-acceptance",
+  "regression": "m11_offscreen_acceptance.py",
+  "evidenceKind": "acceptance_runner",
+  "status": "fail",
+  "exitCode": 0,
+  "cases": {},
+  "subVerdict": null,
+  "subLedger": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929/m11-acceptance/evidence/case-ledger.json",
+  "argv": [
+    "<repo>/.venv/bin/python",
+    "<repo>/scripts/m11_offscreen_acceptance.py",
+    "--root",
+    "<repo>/runs/m13-acceptance-20260929/m11-acceptance",
+    "--artifacts",
+    "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929/m11-acceptance/evidence"
+  ],
+  "externalRequestCount": null,
+  "providerCallsZero": null,
+  "note": "Its own ledger requires a measured non-loopback count of 0 on every row."
+}

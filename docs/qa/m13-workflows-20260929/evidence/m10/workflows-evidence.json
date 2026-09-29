@@ -1,0 +1,54 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "m10",
+  "run": "run_f03ab8c640964a1b8e86ebf65a014790",
+  "inputs": [
+    {
+      "name": "m10-distance.pdb",
+      "path": "<repo>/frontend/tests/offscreen/fixtures/m10-distance.pdb",
+      "bytes": 516,
+      "sha256": "0402c32ac2f19a8e5a8b262359762901a531fa5a6e7277774fa503855dc29345",
+      "provenance": "labeled synthetic M10 coordinate fixture (frontend/tests/offscreen/fixtures)"
+    },
+    {
+      "name": "m10-reference.pdb",
+      "path": "<repo>/frontend/tests/offscreen/fixtures/m10-reference.pdb",
+      "bytes": 1516,
+      "sha256": "0cdabb3b42644f11391f428e09b63185dafa47a2cdbd6ebe1e18e70b93572312",
+      "provenance": "labeled synthetic M10 coordinate fixture (frontend/tests/offscreen/fixtures)"
+    },
+    {
+      "name": "m10-moving.pdb",
+      "path": "<repo>/frontend/tests/offscreen/fixtures/m10-moving.pdb",
+      "bytes": 1513,
+      "sha256": "350688839e0da24e75b3ff28beea394c2d8490127ceb477700f2999166c210db",
+      "provenance": "labeled synthetic M10 coordinate fixture (frontend/tests/offscreen/fixtures)"
+    }
+  ],
+  "handles": {
+    "measure": {
+      "plan": "obj://run_f03ab8c640964a1b8e86ebf65a014790/analysis_plan/8cc2e5f8f4b68e94140870bd502abd9274b8dc46636892c133d75df74313b8b9",
+      "execution": "exec_2028a25f64964957bbd020d43c1fe73d",
+      "result": "obj://run_f03ab8c640964a1b8e86ebf65a014790/atom_distance/b3c529382a86aadef257ed0e947140d95cfe7aca4244fec43f973a3cca9eb017"
+    },
+    "compare": {
+      "plan": "obj://run_f03ab8c640964a1b8e86ebf65a014790/analysis_plan/6350c4c49ffebbf5604202f56bd74265490c14eea08ca4b5ea40ba70b47dc3ac",
+      "execution": "exec_aa1654989f234bebadb8d997c83ccb22",
+      "result": "obj://run_f03ab8c640964a1b8e86ebf65a014790/rigid_alignment/b7159e65c5c02ea4a38e24fc7cb227beb4b621e77756dc5c5aed8c43261306a4"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_f03ab8c640964a1b8e86ebf65a014790",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-09-29T08:21:40.278Z",
+  "finishedAt": "2026-09-29T08:21:55.080Z",
+  "error": null
+}
