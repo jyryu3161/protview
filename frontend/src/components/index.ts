@@ -9,3 +9,4 @@ export * from "./viewer";
 export * from "./energy";
 export * from "./shell";
 export * from "./MolstarViewer";
+export * from "./WorkspaceTabs";
