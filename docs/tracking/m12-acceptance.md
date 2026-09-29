@@ -1,7 +1,7 @@
 # M12 로컬 포켓 후보 완료 기록
 
 - 판정: **완료** (2026-09-29)
-- 브랜치: `dryforge/m12-pockets` (`phase/m12-pocket-candidates` = main `adb6291`에서 분기). main 병합은 사용자 결정 대기.
+- 브랜치: `dryforge/m12-pockets` (`phase/m12-pocket-candidates` = main `adb6291`에서 분기). main 병합 `eb73d12`(사용자 결정 2026-09-29).
 - 고정 소스: `9e4edcb`. 고정 뒤 변경은 수락 실행기의 남은 프로세스 확인 범위(`1eb88a1`, `scripts/m12_offscreen_acceptance.py`)뿐이며 그 뒤 수락 QA 전체를 다시 돌렸다.
 - 증거: `docs/qa/m12-pockets-20260929/` (README, gates/, acceptance-r2/, attempt-1-leftover-check-fail/)
 - 옛 단계 폴더 `phases/protview-pockets/`는 index를 만들지 않고 그대로 둔다(결정 0016).
