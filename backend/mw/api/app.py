@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
+from .. import analysis_plans
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
 from ..chemical_bundle import validated_result as validated_chemical_result
@@ -96,6 +97,7 @@ CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
 CHEMICAL_REQUEST_LIMIT = 512 * 1024
 CHEMICAL_SOURCE_READ_LIMIT = 32 * 1024 * 1024
 CHEMICAL_MANIFEST_READ_LIMIT = 8 * 1024 * 1024
+ANALYSIS_REQUEST_LIMIT = 64 * 1024
 
 # Host header allowlist (DNS-rebinding guard). Only loopback names, optional port, case-insensitive.
 HOST_REJECT_STATUS = 400
@@ -584,8 +586,10 @@ def capabilities() -> dict[str, Any]:
         sasa = engine_capability()
     except (AttributeError, ImportError, OSError, PackageNotFoundError, RuntimeError, ToolFailure, ValueError) as exc:
         sasa = {"available": False, "reason_code": "engine_missing_or_invalid", "explanation": str(exc)}
-    return {"mode": "local_only", "energy_protocols": matrix, "methods": {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability(),
-            "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}, "supported": {
+    methods = {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability(),
+               "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}
+    methods["analysis_workflows"] = analysis_plans.capability(methods)
+    return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
         "viewer_intents": "typed local viewer commands; optional explicit online Jev interpretation is credential and budget dependent",
@@ -598,6 +602,61 @@ def capabilities() -> dict[str, Any]:
         "plip": "no validated PLIP adapter is implemented",
             **{f"energy_{name}": item["explanation"] for name, item in matrix["protocols"].items() if not item["available"]},
             "general_model_decisions": "no autonomous scientific tool, job, report, or general decision route"}}
+
+
+class AnalysisPlanRequest(BaseModel):
+    request_id: str
+    goal: str
+    inputs: dict[str, Any]
+    model_config = {"extra": "forbid", "strict": True}
+
+
+def _analysis_conflict(error: analysis_plans.AnalysisConflict) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"ok": False, "error": error.code, "message": error.message,
+                                                  "fix": None, "detail": {}})
+
+
+@app.get("/runs/{rid}/analysis/templates")
+def analysis_templates(rid: str) -> dict[str, Any]:
+    """Checked-in local-rule templates; reads capabilities only, runs no tool, job or report."""
+    _run(rid)
+    return analysis_plans.templates()
+
+
+@app.post("/runs/{rid}/analysis/plans", status_code=201)
+async def analysis_plan_create(rid: str, request: Request) -> Any:
+    try:
+        raw = await _bounded_chemical_body(request, ANALYSIS_REQUEST_LIMIT)
+    except HTTPException as exc:
+        raise HTTPException(413, detail={"error": "resource_exceeded",
+                                         "message": "analysis request exceeds 64 KiB"}) from exc
+    try:
+        body = AnalysisPlanRequest.model_validate(_chemical_json(raw))
+    except (HTTPException, PydanticValidationError):
+        return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid analysis plan request"))
+    run = _run(rid)
+    try:
+        return await run_in_threadpool(lambda: analysis_plans.create_plan(run, body.request_id, body.goal,
+                                                                          body.inputs))
+    except analysis_plans.AnalysisConflict as exc:
+        return _analysis_conflict(exc)
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "analysis plan record invalid"}) from exc
+
+
+@app.get("/runs/{rid}/analysis/plans")
+def analysis_plan_list(rid: str) -> dict[str, Any]:
+    return analysis_plans.list_plans(_run(rid))
+
+
+@app.get("/runs/{rid}/analysis/plans/detail")
+def analysis_plan_detail(rid: str, handle: str) -> Any:
+    try:
+        return analysis_plans.plan_detail(_run(rid), handle)
+    except ToolFailure as exc:
+        return _tool_error(exc)
 
 
 @app.get("/tools")
