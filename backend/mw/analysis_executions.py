@@ -762,12 +762,34 @@ def approve(run: Any, execution_id: Any, request_id: Any, expected_revision: Any
     return _short(run, execution_id, "approve", request_id, expected_revision, {"plan_hash": plan_hash}, check)
 
 
+_CHILD_STARTS = {"tool_called", "cache_hit", "job_submitted", "job_observed", "report_created",
+                 "method_report_created"}
+
+
 def _child_admitted(state: dict[str, Any], events: list[dict[str, Any]]) -> bool:
-    """A released dispatch whose child never started does not count; an open dispatch may be in flight."""
+    """A released dispatch whose child never started does not count; an open dispatch may be in flight.
+
+    Only real child starts count (a call, cache hit, job submission/observation or linked report), not an
+    ``execution_call_admitted`` whose call was then released by the run budget, a busy run or an unclosed job.
+    """
     if any(state["steps"][sid]["dispatch"] is not None for sid in state["order"]):
         return True
-    return any(type(event.get("execution_link")) is dict and
+    return any(event["type"] in _CHILD_STARTS and type(event.get("execution_link")) is dict and
                event["execution_link"].get("execution_id") == state["execution_id"] for event in events)
+
+
+def _terminal(status: str, retryable: str | None) -> bool:
+    return status in {"complete", "cancelled", "blocked"} or (status == "failed" and retryable is None)
+
+
+def execution_active(run: Any, execution_id: str) -> bool:
+    """Read-only: False once the execution ended (it never drives its owned jobs again). Fails closed."""
+    try:
+        events = list(run.events.read())
+        plan = _plan_for(run, events, execution_id)
+        return not _terminal(*_derive(_fold(events, execution_id, plan), plan, events, None, False))
+    except (AnalysisError, KeyError, ValueError, TypeError):
+        return True
 
 
 def revoke(run: Any, execution_id: Any, request_id: Any, expected_revision: Any) -> dict[str, Any]:
@@ -787,9 +809,7 @@ def revoke(run: Any, execution_id: Any, request_id: Any, expected_revision: Any)
 def cancel(run: Any, execution_id: Any, request_id: Any, expected_revision: Any) -> dict[str, Any]:
     """Scoped Stop: this execution only; never ``Run.cancel``; never waits for a running driver."""
     def check(state: dict[str, Any], plan: dict[str, Any], events: list[dict[str, Any]], live: bool) -> str:
-        status, retryable = _derive(state, plan, events, None, live)
-        terminal = status in {"complete", "cancelled", "blocked"} or (status == "failed" and retryable is None)
-        return "already_terminal" if terminal else "stop"
+        return "already_terminal" if _terminal(*_derive(state, plan, events, None, live)) else "stop"
     return _short(run, execution_id, "cancel", request_id, expected_revision, {}, check)
 
 
@@ -1456,6 +1476,16 @@ def _drive(run: Any, execution_id: Any, action: str, request_id: Any, expected: 
     return _response(run, execution_id, request_id, replayed=False)
 
 
+def _cancel_open_owned_job(run: Any, execution_id: str, state: dict[str, Any], events: list[dict[str, Any]],
+                           step_id: str) -> None:
+    """Before a terminal record closes an open dispatch, cancel its waiting owned job (as ``_reconcile`` does)."""
+    if state["steps"][step_id]["dispatch"] is None:
+        return
+    job_id, ownership = _job_binding(events, execution_id, step_id)
+    if job_id is not None and ownership == "owned":
+        _cancel_owned_job(run, execution_id, step_id, job_id)
+
+
 def _next_work(run: Any, execution_id: str, plan: dict[str, Any], action: str,
                request_id: str) -> tuple[tuple[str, dict[str, Any], str] | None, str]:
     """After reconciliation: at most one step dispatch or one job transition. Workflow lock held."""
@@ -1474,6 +1504,7 @@ def _next_work(run: Any, execution_id: str, plan: dict[str, Any], action: str,
     step = state["steps"][current]
     exhausted = _limits_exhausted(state, plan, events, _plan_step(plan, current)["lane"])
     if exhausted is not None:
+        _cancel_open_owned_job(run, execution_id, state, events, current)
         _append(run, STEP_FAILED, execution_id=execution_id, step_id=current, operation_id=None,
                 request_id=request_id, status="failed", error="resource_exceeded", reason_code=exhausted,
                 message=MESSAGES[exhausted], retryable=False)
@@ -1482,6 +1513,7 @@ def _next_work(run: Any, execution_id: str, plan: dict[str, Any], action: str,
     if (not compatibility["compatible"] or state["approval"]["plan_sha256"] != plans.canonical_plan_hash(plan) or
             state["approval"]["compatibility_sha256"] !=
             hashlib.sha256(canonical_json(plan["compatibility"])).hexdigest()):
+        _cancel_open_owned_job(run, execution_id, state, events, current)
         _blocked(run, execution_id, request_id, "compatibility_changed", current,
                  {"mismatched_steps": compatibility["mismatched_steps"]})
         return None, "blocked"

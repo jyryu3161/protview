@@ -24,7 +24,7 @@
 | 검사 | 결과 |
 |---|---|
 | `pytest backend/tests -q -rs` | 589개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치) |
-| `ruff check …`, 실행기·훅·fpocket 설치 테스트, M13 실행기 단위 테스트 | 통과, 85개 통과, 3개 통과 |
+| `ruff check …`, 실행기·훅·fpocket 설치·M13 실행기 단위 테스트(한 명령) | 통과, 90개 통과 |
 | `node --check` `pocket-flow.cjs`·`workflows-flow.cjs` | 통과 |
 | `test:events`, `typecheck`, `build` | 148개 통과, 통과, 통과(BUILD_ID `WCnxUsptjGLeenXzwlYhV`) |
 | M13 수락 QA(`scripts/m13_offscreen_acceptance.py`) | 17단계·28사례 통과, 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음 |
@@ -36,7 +36,7 @@
 
 1. **M14 탭 4개 골격**: 구조 분석 / 단백질 공학 / 리간드 설계·탐색 / 지식·보고서 탭, 기존 화면 이관(M13 흐름 패널 포함), 공용 구성 요소. 세부는 착수 때 사용자와 정한다.
 2. **M15–M28**: `docs/tracking/roadmap.md`. M13 흐름의 계획·승인·한 단계 진행·중지·복구가 M17–M25 설계 루프의 실행 기반이다.
-3. **정리 작업**: ProLIF·fpocket 작업 환경의 Linux용 잠금. `docs/tracking/findings.md`의 후속 항목(중복 Host 한계, 이벤트 로그 재파싱, GO 전 guardian 종료 정리, M12 QA 미검증 영역, 보고서 Markdown 이스케이프, M13 상단 예산 카운터 지연, M10 측정 원자 선택 flake, 공유 작업 실패 뒤 흐름 재실행, Stop 훅의 M13 실행기 테스트).
+3. **정리 작업**: ProLIF·fpocket 작업 환경의 Linux용 잠금. `docs/tracking/findings.md`의 후속 항목(중복 Host 한계, 이벤트 로그 재파싱, GO 전 guardian 종료 정리, M12 QA 미검증 영역, 보고서 Markdown 이스케이프, M13 상단 예산 카운터 지연, M10 측정 원자 선택 flake, 공유 작업 실패 뒤 흐름 재실행).
 
 ## 전체 로드맵
 

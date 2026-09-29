@@ -714,9 +714,14 @@ class JobQueue:
         return {**job, "execution_ownership": "observed_shared"}
 
     @staticmethod
-    def _refuse_unlinked_owned(job: dict[str, Any]) -> None:
-        """Manual start/retry never drives a workflow-owned job; its execution does (cancel stays manual)."""
-        if job.get("execution_link") is not None:
+    def _refuse_unlinked_owned(job: dict[str, Any], owner_active: Callable[[str], bool] | None) -> None:
+        """Manual start/retry never drives a workflow-owned job while its execution may (cancel stays manual).
+
+        ``owner_active(execution_id)`` is the caller's read-only check; without it the refusal fails closed.
+        Once the owning execution ended, the existing manual start/retry rules apply unchanged.
+        """
+        owner = job.get("execution_link")
+        if owner is not None and (owner_active is None or owner_active(owner["execution_id"])):
             raise ToolFailure(FailureClass.precondition, "job is owned by an analysis execution",
                               detail={"reason_code": "job_owned_by_analysis_execution", "job_id": job["job_id"]})
 
@@ -769,7 +774,8 @@ class JobQueue:
                 db.close()
             return self._rebuild()[row[0]]
 
-    def start(self, job_id: str, *, execution_link: ExecutionLink | None = None) -> dict[str, Any]:
+    def start(self, job_id: str, *, execution_link: ExecutionLink | None = None,
+              owner_active: Callable[[str], bool] | None = None) -> dict[str, Any]:
         """Claim one named job, then use the same owner/guardian path as tests."""
         link = checked_link(execution_link)
         with self.run._owner(), self.run._transition():
@@ -781,7 +787,7 @@ class JobQueue:
                 if link.is_stopped():
                     raise ExecutionStopped("before_start")
             else:
-                self._refuse_unlinked_owned(job)
+                self._refuse_unlinked_owned(job, owner_active)
             if job["status"] == "queued":
                 owner = "owner_" + uuid.uuid4().hex
                 self.run.events.append("job_claimed", job_id=job_id, owner_token=owner,
@@ -1629,7 +1635,8 @@ class JobQueue:
         except PocketJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
 
-    def retry(self, job_id: str, *, execution_link: ExecutionLink | None = None) -> dict[str, Any]:
+    def retry(self, job_id: str, *, execution_link: ExecutionLink | None = None,
+              owner_active: Callable[[str], bool] | None = None) -> dict[str, Any]:
         link = checked_link(execution_link)
         with self.run._owner(), self.run._transition():
             self.run._refresh()
@@ -1638,7 +1645,7 @@ class JobQueue:
             if link is not None:
                 self._require_owner(job, link)
             else:
-                self._refuse_unlinked_owned(job)
+                self._refuse_unlinked_owned(job, owner_active)
             if job["status"] not in {"failed", "interrupted"} or job["attempt_ordinal"] >= 4:
                 raise ToolFailure(FailureClass.precondition, "job recovery allowance exhausted or not eligible")
             if self.run._cancel_path.exists() or job["cancel_requested"]:

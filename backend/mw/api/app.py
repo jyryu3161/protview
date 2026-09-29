@@ -1338,7 +1338,9 @@ async def submit_job(rid: str, request: Request) -> Any:
 @app.post("/runs/{rid}/jobs/{job_id}/start")
 def start_job(rid: str, job_id: str) -> Any:
     try:
-        return _public_job(JobQueue(_run(rid)).start(job_id))
+        run = _run(rid)
+        return _public_job(JobQueue(run).start(
+            job_id, owner_active=lambda eid: analysis_executions.execution_active(run, eid)))
     except KeyError as exc:
         raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
     except ApprovalRequired as exc:
@@ -1356,7 +1358,9 @@ def start_job(rid: str, job_id: str) -> Any:
 @app.post("/runs/{rid}/jobs/{job_id}/retry")
 def retry_job(rid: str, job_id: str) -> Any:
     try:
-        return _public_job(JobQueue(_run(rid)).retry(job_id))
+        run = _run(rid)
+        return _public_job(JobQueue(run).retry(
+            job_id, owner_active=lambda eid: analysis_executions.execution_active(run, eid)))
     except KeyError as exc:
         raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
     except ToolFailure as error:

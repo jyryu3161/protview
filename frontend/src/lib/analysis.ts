@@ -196,7 +196,9 @@ export function executionControls(record: RecordView, opts: { busy: boolean; bus
   const gate = (reason: string | null): ControlState => ({ visible: true, enabled: reason === null, reason });
   const approve = gate(dry ? DRY_RUN_NOTICE : ended ?? localBusy ??
     (record.status === "awaiting_approval" ? null : record.plan_approval.approved ? "이미 승인한 계획입니다." : "승인할 수 없는 상태입니다."));
-  const revoke = gate(dry ? DRY_RUN_NOTICE : ended ?? localBusy ?? (record.plan_approval.approved ? null : "승인한 계획이 없습니다."));
+  // Revoke, like Stop, is never refused as busy (server rule); only a revoke already in flight disables it.
+  const revoke = gate(dry ? DRY_RUN_NOTICE : ended ?? (opts.busy && opts.busyAction === "revoke" ? "승인 철회 요청을 처리하는 중입니다." : null) ??
+    (record.plan_approval.approved ? null : "승인한 계획이 없습니다."));
   const advance = gate(dry ? DRY_RUN_NOTICE : ended ?? localBusy ?? driverBusy ?? advanceReason(record));
   const retryVisible = record.status === "failed" && !!record.retryable_step;
   const retry = { ...gate(dry ? DRY_RUN_NOTICE : localBusy ?? driverBusy ?? (retryVisible ? null : "재시도할 수 있는 단계가 없습니다.")),

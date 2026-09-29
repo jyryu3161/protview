@@ -33,3 +33,38 @@ def test_m12_ledger_verdict_and_external_count():
 def test_missing_or_unknown_ledger():
     assert m13.sub_ledger_verdict(None) == (None, None)
     assert m13.sub_ledger_verdict({"schema": "other"}) == (None, None)
+
+
+def test_acceptance_needs_every_phase_to_have_run_and_passed():
+    full = ["workflows", "unavailable", "regressions", "m11", "m12", "ledger"]
+    assert m13.acceptance_ok(False, full, True) is True
+    assert m13.acceptance_ok(False, full, False) is False
+    assert m13.acceptance_ok(True, full, True) is False
+    assert m13.acceptance_ok(False, ["workflows", "unavailable", "ledger"], True) is False  # the default phases
+    assert m13.acceptance_ok(False, [p for p in full if p != "m12"], True) is False
+
+
+def _frontend(tmp_path):
+    front = tmp_path / "frontend"
+    for name, text in {"src/lib/a.ts": "a", "app/page.tsx": "p", "package.json": "{}", "next.config.mjs": "",
+                       "tests/x.test.cjs": "t"}.items():
+        (front / name).parent.mkdir(parents=True, exist_ok=True)
+        (front / name).write_text(text)
+    return front
+
+
+def test_existing_build_is_reused_only_when_built_from_the_current_source(tmp_path):
+    front = _frontend(tmp_path)
+    assert m13.build_is_current(front) is False  # no build at all
+    (front / ".next").mkdir()
+    (front / ".next/BUILD_ID").write_text("abc")
+    assert m13.build_is_current(front) is False  # built outside the runner: source unknown
+    m13.stamp_build(front)
+    assert m13.build_is_current(front) is True
+    (front / "tests/x.test.cjs").write_text("changed")  # not a build input
+    assert m13.build_is_current(front) is True
+    (front / "src/lib/a.ts").write_text("changed")
+    assert m13.build_is_current(front) is False
+    m13.stamp_build(front)
+    (front / "src/lib/new.ts").write_text("n")
+    assert m13.build_is_current(front) is False

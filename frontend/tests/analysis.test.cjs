@@ -164,17 +164,22 @@ test("controls: awaiting_approval enables 계획 승인 only (plus 중지)", () 
   assert.equal(c.retry.visible, false);
 });
 
-test("controls: ready enables 다음 단계 실행 and 승인 철회; a pending request disables all but 중지", () => {
+test("controls: ready enables 다음 단계 실행 and 승인 철회; a pending request disables all but 중지 and 승인 철회", () => {
   const c = a.executionControls(record(), { busy: false });
   assert.equal(c.advance.enabled, true);
   assert.equal(c.revoke.enabled, true);
   assert.equal(c.approve.enabled, false);
   const busy = a.executionControls(record(), { busy: true, busyAction: "advance" });
-  for (const key of ["approve", "revoke", "advance", "retry", "scientific_approval"])
+  for (const key of ["approve", "advance", "retry", "scientific_approval"])
     assert.equal(busy[key].enabled, false, key);
   assert.ok(busy.advance.reason);
   assert.equal(busy.cancel.enabled, true, "a long Advance must stay stoppable");
+  assert.equal(busy.revoke.enabled, true, "a long Advance must stay revocable");
   assert.equal(a.executionControls(record(), { busy: true, busyAction: "cancel" }).cancel.enabled, false);
+  const revoking = a.executionControls(record(), { busy: true, busyAction: "revoke" });
+  assert.equal(revoking.revoke.enabled, false);
+  assert.ok(revoking.revoke.reason);
+  assert.equal(revoking.cancel.enabled, true);
 });
 
 test("controls: retry only for failed with retryable_step; advance then refused with reason", () => {
