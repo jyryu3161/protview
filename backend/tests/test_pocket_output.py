@@ -191,7 +191,8 @@ def test_synthetic_supported_empty_is_scientific_null(tmp_path: Path) -> None:
     result, native = _run(root, fixture="synthetic-empty")
     assert result["classification"] == "scientific_null" and result["null_result"] is True
     assert result["total_count"] == 0 and result["pockets"] == [] and result["total_sphere_count"] == 0
-    assert result["empty_diagnostics"] == ["! No Pockets Found while refining", "! No pocket to reindex."]
+    assert result["empty_diagnostics"] == ["! No Pockets Found while refining", "! No pocket to reindex.",
+                                           "! No pocket to reindex."]
     evidence = native_output_evidence(native, *_streams("synthetic-empty"))
     assert {e["path"] for e in evidence["files"] if e["retained"]} == READ_FILES
 
@@ -413,6 +414,15 @@ EMPTY_VARIANTS = {
     "only_refining_diagnostic": (lambda root: None, {"stderr": b"! No Pockets Found while refining\n"}),
     "only_reindex_diagnostic": (lambda root: None, {"stderr": b"! No pocket to reindex.\n"}),
     "extra_stderr_line": (lambda root: None, {"stderr": EMPTY_STDERR + b"! Empty Pocket...something might be wrong\n"}),
+    # src/refine.c: dropSmallNpolarPockets prints the refining line once, then two reIndexPockets calls
+    # print one reindex line each. Any other count or order is an unreviewed form.
+    "reordered_diagnostics": (lambda root: None, {"stderr": b"! No pocket to reindex.\n! No Pockets Found while "
+                                                            b"refining\n! No pocket to reindex.\n"}),
+    "duplicated_refining_line": (lambda root: None, {"stderr": b"! No Pockets Found while refining\n" + EMPTY_STDERR}),
+    "one_reindex_line": (lambda root: None, {"stderr": b"! No Pockets Found while refining\n! No pocket to reindex.\n"}),
+    "three_reindex_lines": (lambda root: None, {"stderr": EMPTY_STDERR + b"! No pocket to reindex.\n"}),
+    "empty_before_refining_path": (lambda root: None, {"stderr": b"! No pocket to reindex.\n" * 3}),
+    "stderr_missing_final_newline": (lambda root: None, {"stderr": EMPTY_STDERR[:-1]}),
     "stdout_not_banner": (lambda root: None, {"stdout": b"***** POCKET HUNTING BEGINS ***** \n"}),
     "pqr_with_atom_record": (_write("protein_pockets.pqr", b"HEADER\nATOM      1    C STP     1      12.500  10.500  "
                                                           b"12.000    0.00     3.62\nTER\nEND\n"), {}),

@@ -417,7 +417,7 @@ def test_derived_first10_fixture_runs_through_the_real_engine(tmp_path, monkeypa
         assert files["protein_info.txt"] == b""
         assert not _pqr(files["protein_pockets.pqr"].decode("ascii"))
         stderr = base64.b64decode(native["stderr"]["content_b64"]).decode("ascii")
-        assert set(stderr.splitlines()) == {"! No Pockets Found while refining", "! No pocket to reindex."}
+        assert stderr.encode("ascii") == pocket_output.EMPTY_STDERR
         result = client.get(f"/runs/{rid}/pockets/result", params={"handle": handle}).json()
         assert result["null_result"] is True and result["pockets"] == []
     else:  # pragma: no cover - preserved, not forced: a real pocket here is reported, never overwritten
@@ -642,6 +642,30 @@ def test_cancel_or_stale_completion_never_publishes(tmp_path, monkeypatch):
     assert client.get(f"/runs/{rid}/pockets/result", params={"handle": written[0]}).status_code == 422
     assert client.get(f"/runs/{rid}/pockets").json()["total"] == 0
     assert client.get(f"/runs/{rid}/budget").json()["expensive_calls"]["used"] == 2
+    # Unpublished (orphan) native output never counts against the run's retention.
+    retention = client.get(f"/runs/{rid}/pockets/preflight", params={"structure": prepared}).json()["retention"]
+    assert retention["used_bytes"] == 0 and retention["remaining_bytes"] == retention["limit_bytes"]
+    # Stale completion: the attempt was already closed (labeled fault: a reconciling owner's interrupted
+    # terminal is appended right after the genuine run's verified cleanup) before publication, so
+    # nothing may be stored.
+    third = _submit(client, rid, prepared, ["A", "B"])
+    before = [e for e in _events(root, rid) if e["type"] == "object_created"]
+    append = run.events.append
+
+    def closed_before_publication(event_type, /, **fields):
+        event = append(event_type, **fields)
+        if event_type == "job_cleanup_verified" and fields.get("job_id") == third["job_id"]:
+            append("job_terminal", job_id=third["job_id"], attempt_id=fields["attempt_id"], status="interrupted",
+                   failure={"error": "interrupted", "message": "owner lost; group verified stopped"},
+                   output_handles=[])
+        return event
+
+    with monkeypatch.context() as patch:
+        patch.setattr(run.events, "append", closed_before_publication)
+        stale = _approve_start(client, rid, third["job_id"]).json()
+    assert stale["status"] == "interrupted" and stale["output_handles"] == []
+    assert [e for e in _events(root, rid) if e["type"] == "object_created"] == before
+    assert not any(e["type"] == "job_result_candidate" and e["job_id"] == third["job_id"] for e in _events(root, rid))
 
 
 def test_stream_and_retention_limits_fail_charged_without_partial_objects(tmp_path, monkeypatch):
@@ -678,6 +702,84 @@ def test_stream_and_retention_limits_fail_charged_without_partial_objects(tmp_pa
     assert client.get(f"/runs/{rid}/pockets").json()["rows"][0]["handle"] == done["artifacts"]["pocket_set"]
 
 
+def test_retention_check_sizes_the_final_stored_native_object(tmp_path, monkeypatch):
+    """The derived first10 fixture gives a deterministic empty native output (sizes equal across runs)."""
+    root = tmp_path / "runs"
+    client = _client(root, monkeypatch)
+    first = _new_run(client, "M12 retention reference")
+    _, prepared = _prepared(client, first, DERIVED_FIRST10.read_bytes(), "derived_1hsg_first10_fixture.cif")
+    reference = client.get(f"/runs/{first}/pockets/result", params={
+        "handle": _detect(client, first, prepared)["artifacts"]["pocket_set"]}).json()
+    size = api_module._run(first).store.meta(reference["native_output_handle"])["size"]
+    retention = client.get(f"/runs/{first}/pockets/preflight", params={"structure": prepared}).json()["retention"]
+    assert retention["used_bytes"] == size
+    second = _new_run(client, "M12 retention exact limit")
+    _, prepared = _prepared(client, second, DERIVED_FIRST10.read_bytes(), "derived_1hsg_first10_fixture.cif")
+    job = _submit(client, second, prepared)
+    monkeypatch.setattr(pocket_bundle, "MAX_RETAINED_NATIVE_BYTES", size - 1)
+    before = [e for e in _events(root, second) if e["type"] == "object_created"]
+    over = _approve_start(client, second, job["job_id"]).json()
+    assert over["status"] == "failed" and over["failure"]["reason_code"] == "native_output_retention_limit"
+    assert [e for e in _events(root, second) if e["type"] == "object_created"] == before
+    monkeypatch.setattr(pocket_bundle, "MAX_RETAINED_NATIVE_BYTES", size)
+    assert client.post(f"/runs/{second}/jobs/{job['job_id']}/retry").json()["status"] == "queued"
+    done = _approve_start(client, second, job["job_id"]).json()
+    assert done["status"] == "done", done
+    stored = api_module._run(second).store.load(done["artifacts"]["pocket_set"])
+    assert api_module._run(second).store.meta(stored["native_output_handle"])["size"] == size
+    remaining = client.get(f"/runs/{second}/pockets/preflight", params={"structure": prepared}).json()["retention"]
+    assert remaining == {"limit_bytes": size, "used_bytes": size, "remaining_bytes": 0}
+
+
+def test_validated_read_rechecks_stored_values_against_native_bytes(tmp_path, monkeypatch):
+    root = tmp_path / "runs"
+    client = _client(root, monkeypatch)
+    rid = _new_run(client, "M12 native cross-check")
+    _, prepared = _prepared(client, rid, HSG.read_bytes(), "public_1hsg.cif")
+    handle = _detect(client, rid, prepared, ["A"])["artifacts"]["pocket_set"]
+    run = api_module._run(rid)
+    content = run.store.load(handle)
+    assert content["total_count"] >= 2, "the cross-check needs two real pockets"
+    manifest = run.store.load(content["detector_input_handle"])
+    native = run.store.load(content["native_output_handle"])
+    source = pocket_bundle.producer(run, handle)
+    pocket_bundle._validate(run, content, manifest, native, source)
+
+    def moved_sphere(doc):
+        pocket = doc["pockets"][0]
+        pocket["spheres"][0]["x_A"] = round(pocket["spheres"][0]["x_A"] + 0.001, 3)
+        pocket["display_center"] = pocket_output.display_center(pocket["spheres"])
+
+    def score(doc):
+        entry = doc["pockets"][0]["descriptors"]["score"]
+        entry["value"] = round(entry["value"] + 0.001, 3)
+
+    def volume_text(doc):
+        entry = doc["pockets"][0]["descriptors"]["volume_A3"]
+        entry["native_text"] = f"{entry['value'] + 1:.3f}"
+
+    def native_field(doc):
+        fields = doc["pockets"][0]["native_fields"]
+        name = min(fields)
+        fields[name] = "0.000" if fields[name] != "0.000" else "1.000"
+
+    def swapped_descriptors(doc):
+        first, second = doc["pockets"][0], doc["pockets"][1]
+        first["descriptors"], second["descriptors"] = second["descriptors"], first["descriptors"]
+        first["spheres"], second["spheres"] = second["spheres"], first["spheres"]
+        first["display_center"], second["display_center"] = second["display_center"], first["display_center"]
+
+    def dropped_lining_record_count(doc):
+        doc["pockets"][0]["lining_atoms"]["native_record_count"] += 1
+
+    for mutate in (moved_sphere, score, volume_text, native_field, swapped_descriptors, dropped_lining_record_count):
+        forged = json.loads(json.dumps(content))
+        mutate(forged)
+        assert forged != content
+        with pytest.raises(pocket_bundle.PocketEvidenceError):
+            pocket_bundle._validate(run, forged, manifest, native, source)
+
+
 # ----------------------------------------------------------------- running engine: cancel, timeout, caps, restart
 def _engine_child(worker_pid: int, timeout: float = 20) -> psutil.Process:
     end = time.monotonic() + timeout
@@ -707,6 +809,7 @@ def test_running_engine_is_stopped_with_its_process_group(tmp_path, monkeypatch,
     _, prepared = _prepared(client, rid, _derived_replicated(), "derived_1hsg_replicated_fixture.cif")
     job = _submit(client, rid, prepared)
     seen: list[psutil.Process] = []
+    executed: list[tuple[Path, Path]] = []
     original = JobQueue._record_control
 
     def act_on_running_engine(self, message, job_id, attempt_id, nonce):
@@ -715,6 +818,7 @@ def test_running_engine_is_stopped_with_its_process_group(tmp_path, monkeypatch,
             engine = _engine_child(message["pid"])
             seen.append(engine)
             attempt_dir = self.run.run_dir / "jobs" / job_id / attempt_id
+            executed.append((Path(engine.exe()).resolve(), attempt_dir.resolve()))
             if fault == "cancel":
                 self.request_cancel(job_id)
             elif fault == "output_files":  # labeled fault: output tree grows past 1000 files
@@ -733,6 +837,9 @@ def test_running_engine_is_stopped_with_its_process_group(tmp_path, monkeypatch,
     assert response.status_code == 200, response.text
     result = response.json()
     assert seen and _gone(seen[0])
+    # The engine image is the worker's private copy of the bytes it hashed (no hash-then-exec window).
+    image, attempt_dir = executed[0]
+    assert image == attempt_dir / pocket_worker.ENGINE_COPY and image.name == "fpocket"
     if fault == "cancel":
         assert result["status"] == "cancelled"
     else:

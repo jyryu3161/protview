@@ -1,8 +1,9 @@
 """Only fixed fpocket 4.2.3 worker, launched by the authenticated local guardian (standard library only).
 
 Job mode (no arguments, cwd = the private attempt directory): read the server-staged transport input,
-write ``fpocket/protein.pdb`` into a fresh private job root, run the fixed argv with an allowlisted
-environment and private TMPDIR, keep bounded stdout/stderr, classify the output with the pinned
+write ``fpocket/protein.pdb`` into a fresh private job root, copy the hash-verified engine bytes into a
+private ``engine/`` directory and run that copy with the fixed argv, an allowlisted environment and
+private TMPDIR, keep bounded stdout/stderr, classify the output with the pinned
 ``mw.pocket_output`` reader and write a small ``result.json`` descriptor. The server re-reads the
 native files itself after verified group cleanup; nothing here is trusted as the published result.
 Generated PyMOL/VMD scripts are never executed; nothing is downloaded or installed.
@@ -40,6 +41,11 @@ LOCK_HASHES = REPO / "config/pockets/fpocket-conda-lock-hashes-osx-arm64.json"
 OUTPUT_MODULE = Path(__file__).resolve().parents[1] / "pocket_output.py"
 JOB_ROOT = "fpocket"
 JOB_TMP = "fpocket_tmp"
+ENGINE_DIR = "engine"
+# The worker executes a private copy of exactly the bytes it hashed, so the installed file cannot be
+# swapped between the hash check and exec. The pinned binary links only /usr/lib system libraries.
+ENGINE_COPY = ENGINE_DIR + "/fpocket"
+MAX_EXECUTABLE_BYTES = 64 * 1024 * 1024
 ENGINE_STDOUT = "engine.stdout"
 ENGINE_STDERR = "engine.stderr"
 MAX_STAGED_BYTES = 48 * 1024 * 1024
@@ -90,6 +96,25 @@ def _file_sha(path: Path) -> str:
     finally:
         os.close(fd)
     return digest.hexdigest()
+
+
+def _read_executable(path: Path) -> bytes:
+    """The installed engine bytes, read once through one descriptor (bounded, regular file only)."""
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_EXECUTABLE_BYTES:
+            raise ValueError("executable is not a bounded regular file")
+        chunks, remaining = [], MAX_EXECUTABLE_BYTES + 1
+        while remaining > 0 and (chunk := os.read(fd, min(remaining, 1 << 20))):
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        raw = b"".join(chunks)
+        if len(raw) != info.st_size:
+            raise ValueError("executable changed while reading")
+        return raw
+    finally:
+        os.close(fd)
 
 
 # ----------------------------------------------------------------- handshake
@@ -224,12 +249,21 @@ def run_job() -> int:
             return refuse("staged_input_invalid")
     except (OSError, ValueError, TypeError, KeyError, UnicodeError):
         return refuse("staged_input_invalid")
-    executable = Path(staged["executable"])
     try:
-        if _file_sha(executable) != EXECUTABLE_SHA256:
-            return refuse("engine_hash_mismatch")
+        image = _read_executable(Path(staged["executable"]))
     except (OSError, ValueError):
         return refuse("engine_missing")
+    if _sha(image) != EXECUTABLE_SHA256:
+        return refuse("engine_hash_mismatch")
+    try:
+        _private_dir(ENGINE_DIR)
+        _exclusive(ENGINE_COPY, image)
+        os.chmod(ENGINE_COPY, 0o500)
+        executable = Path.cwd() / ENGINE_COPY
+        if _sha(_read_regular(executable, len(image))) != EXECUTABLE_SHA256:
+            return refuse("engine_hash_mismatch")
+    except (OSError, ValueError):
+        return refuse("engine_launch_failed")
     try:
         output = _load_output_module()
         root = _private_dir(JOB_ROOT)
