@@ -189,7 +189,7 @@ def test_public_1hsg_pocket_report_bytes_evidence_replay_and_rejections(tmp_path
         assert cells[6] == str(len(pocket["lining_residues"]))
     for text in ("결합 부위·친화도·druggability 증거 아님", "fpocket 고유 점수이며 약물성 증거가 아님",
                  "relative within one run", "Monte Carlo estimate", "Seed control: unsupported",
-                 "Histidine name mapping", "Transported heavy atoms", "arithmetic mean", "hb88c64c\\_2"):
+                 "Residue name mapping", "Transported heavy atoms", "arithmetic mean", "hb88c64c\\_2"):
         assert text in markdown, text
     assert "http" not in markdown and "![" not in markdown and "<" not in markdown
 
@@ -381,7 +381,116 @@ def test_histidine_alias_mapping_is_reported_with_original_names(tmp_path, monke
     assert manifest["resname_mapping"] == detector["resname_mapping"] == preflight["resname_mapping"]
     mapping = manifest["resname_mapping"][0]
     assert mapping["residue"]["resname"] == "HIE" and mapping["transport_resname"] == "HIS"
-    assert ("- Histidine name mapping: HIE auth A/69 label A/69 model 1 sent as HIS (original HIE)"
+    assert ("- Residue name mapping: HIE auth A/69 label A/69 model 1 sent as HIS (original HIE)"
             in markdown)
     _verify_claims_independently(run, manifest)
     assert client.get(f"/runs/{rid}/reports/selected", params={"handle": created["handle"]}).json() == created
+
+
+AMBER_RENAMES = {("CYS", 67): "CYX", ("ASP", 25): "ASH", ("GLU", 21): "GLH", ("LYS", 45): "LYN"}
+
+
+def _derived_amber() -> bytes:
+    """DERIVED fixture: public_1hsg.cif with chain A CYS 67, ASP 25, GLU 21, LYS 45 atom records renamed to the
+    Amber names CYX, ASH, GLH, LYN (a renaming only; not an experiment, no protonation change)."""
+    lines = []
+    for line in HSG.read_text().splitlines(keepends=True):
+        for (standard, seq), amber in AMBER_RENAMES.items():
+            if line.startswith("ATOM") and f" {standard} A 1 {seq} " in line:
+                line = line.replace(f" {standard} ", f" {amber} ")
+        lines.append(line)
+    return "".join(lines).encode()
+
+
+def test_amber_residue_names_map_through_the_product_path_with_original_identities(tmp_path, monkeypatch):
+    client = _client(tmp_path / "runs", monkeypatch)
+    rid = _new_run(client, "M12 pocket report Amber residue names")
+    raw = _derived_amber()
+    assert raw != HSG.read_bytes()
+    _, prepared = _prepared(client, rid, raw, "derived_1hsg_amber_names_fixture.cif")
+    preflight = client.get(f"/runs/{rid}/pockets/preflight", params={"structure": prepared}).json()
+    assert preflight["ready"] is True, preflight["reject"]
+    expected = sorted((amber, standard, seq) for (standard, seq), amber in AMBER_RENAMES.items())
+    assert sorted((item["original_resname"], item["transport_resname"], item["residue"]["seq_auth"])
+                  for item in preflight["resname_mapping"]) == expected
+    handle = _detect(client, rid, prepared)["artifacts"]["pocket_set"]
+    run = api_module._run(rid)
+    stored = run.store.load(handle)
+    detector = run.store.load(stored["detector_input_handle"])
+    assert detector["resname_mapping"] == preflight["resname_mapping"]
+    renamed = {seq: amber for (_, seq), amber in AMBER_RENAMES.items()}
+    standard_of = {amber: standard for (standard, _), amber in AMBER_RENAMES.items()}
+    transport = {line[17:20] for line in run.store.load(detector["transport_pdb_handle"]).decode().splitlines()
+                 if line.startswith("ATOM")}
+    assert not transport & set(renamed.values())
+    for atom in detector["atoms"]:
+        residue = atom["ref"]["residue"]
+        if residue["chain_auth"] == "A" and residue["seq_auth"] in renamed:
+            assert residue["resname"] == renamed[residue["seq_auth"]]
+            assert atom["transport_resname"] == standard_of[residue["resname"]]
+    for pocket in stored["pockets"]:
+        for residue in pocket["lining_residues"]:
+            if residue["chain_auth"] == "A" and residue["seq_auth"] in renamed:
+                assert residue["resname"] == renamed[residue["seq_auth"]]
+    created = _report(client, rid, handle)
+    manifest, markdown = created["manifest"], created["markdown"]
+    assert manifest["resname_mapping"] == detector["resname_mapping"]
+    for amber, standard, seq in expected:
+        assert (f"- Residue name mapping: {amber} auth A/{seq} label A/{seq} model 1 sent as {standard} "
+                f"(original {amber})") in markdown
+    assert "Histidine" not in markdown
+    _verify_claims_independently(run, manifest)
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": created["handle"]}).json() == created
+    # LABELED TEST FABRICATION: a report stored by the previous renderer (pocket_markdown@1, histidine
+    # wording) keeps re-opening byte for byte; the same manifest with new wording does not.
+    legacy_manifest = {**manifest, "render_version": "pocket_markdown@1"}
+    legacy_markdown = markdown.replace("- Residue name mapping:", "- Histidine name mapping:")
+    legacy = _forge(run, legacy_manifest, legacy_markdown, lambda _m: None)
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": legacy}).status_code == 200
+    mixed = _forge(run, legacy_manifest, markdown, lambda _m: None)
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": mixed}).status_code == 422
+    unknown = _forge(run, {**manifest, "render_version": "pocket_markdown@9"}, markdown, lambda _m: None)
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": unknown}).status_code == 422
+
+
+def test_pocket_report_snapshots_capability_and_budget_and_legacy_reports_stay_valid(tmp_path, monkeypatch):
+    client = _client(tmp_path / "runs", monkeypatch)
+    rid = _new_run(client, "M12 pocket report snapshot")
+    _, prepared = _prepared(client, rid, DERIVED_FIRST10.read_bytes(), "derived_1hsg_first10_fixture.cif")
+    handle = _detect(client, rid, prepared)["artifacts"]["pocket_set"]
+    run = api_module._run(rid)
+    budget = client.get(f"/runs/{rid}/budget").json()
+    created = _report(client, rid, handle)
+    manifest, markdown = created["manifest"], created["markdown"]
+    snapshot = manifest["snapshot"]
+    assert set(snapshot) == {"event_seq", "time_utc", "run_egress_mode", "capability", "budget"}
+    capability = pocket_bundle.capability()
+    assert snapshot["capability"] == {key: capability[key] for key in (
+        "status", "available", "reason_code", "reason", "protocol_id", "engine", "release", "build",
+        "package_sha256", "executable_sha256", "parser_version")}
+    assert snapshot["capability"]["status"] == "ready" and snapshot["capability"]["build"] == "hb88c64c_2"
+    assert set(snapshot["budget"]) == set(budget)
+    assert snapshot["budget"]["expensive_calls"] == budget["expensive_calls"] == {"used": 1, "limit": 8}
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": created["handle"]}).status_code == 200
+
+    def drop(*keys):
+        return lambda forged: [forged["snapshot"].pop(key) for key in keys]
+
+    # LABELED TEST FABRICATION: a manifest exactly as the pre-snapshot build stored it still re-opens.
+    legacy = _forge(run, manifest, markdown, drop("capability", "budget"))
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": legacy}).status_code == 200
+    tampering = {
+        "capability_only": drop("budget"),
+        "budget_only": drop("capability"),
+        "other_build": lambda forged: forged["snapshot"]["capability"].update(build="h0000000_0"),
+        "unknown_status": lambda forged: forged["snapshot"]["capability"].update(status="maybe"),
+        "ready_with_reason": lambda forged: forged["snapshot"]["capability"].update(reason="x"),
+        "extra_capability_key": lambda forged: forged["snapshot"]["capability"].update(extra=1),
+        "negative_budget": lambda forged: forged["snapshot"]["budget"]["usd"].update(used=-1.0),
+        "budget_axis_missing": lambda forged: forged["snapshot"]["budget"].pop("usd"),
+        "budget_bool": lambda forged: forged["snapshot"]["budget"]["expensive_calls"].update(used=True),
+    }
+    for name, mutate in tampering.items():
+        forged = _forge(run, manifest, markdown, mutate)
+        response = client.get(f"/runs/{rid}/reports/selected", params={"handle": forged})
+        assert response.status_code == 422, name

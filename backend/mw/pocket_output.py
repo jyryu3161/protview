@@ -9,7 +9,14 @@ fpocket. Formats are pinned to the writers of the pinned 4.2.3 source tag:
   (``src/voronoi.c:1536``, ``src/writepdb.c``), ``%8.3f`` x/y/z Å, ``%6.2f`` charge (always 0)
   and ``%6.2f`` alpha-sphere radius Å (the radius column is not a B-factor).
 - ``pocketN_atm.pdb``: ``write_pdb_atom_line`` (``src/writepdb.c``), fixed PDB columns.
-- The no-pocket diagnostics are written by ``src/refine.c`` with ``fprintf(stderr, ...)``.
+- The no-pocket diagnostics are written by ``src/refine.c`` with ``fprintf(stderr, ...)``. In
+  ``search_pocket`` (``src/fpocket.c``) the refine sequence is ``reIndexPockets`` →
+  ``dropSmallNpolarPockets`` → ``reIndexPockets`` → ``sort_pockets`` → ``reIndexPockets``. When every
+  pocket is dropped, ``dropSmallNpolarPockets`` prints ``No Pockets Found while refining`` exactly once
+  (the count only reaches 0 on the last node) and the two later ``reIndexPockets`` calls print
+  ``No pocket to reindex.`` once each: exactly the three-line stderr observed on the pinned build.
+  The other empty path (no pocket before refining: three reindex lines, no refining line) was never
+  observed on the pinned build and is rejected until a reviewed parser version admits it.
 
 Lining atoms map to the transport table (``mw.pocket_input`` rows) only by
 (synthetic chain, synthetic residue number, atom name, element) and are then checked against
@@ -53,7 +60,8 @@ COORDINATE_TOLERANCE_A = 0.0005
 ROUNDOFF_A = 1e-9
 
 EMPTY_STDOUT = b"***** POCKET HUNTING BEGINS ***** \n***** POCKET HUNTING ENDS ***** \n"
-EMPTY_DIAGNOSTICS = ("! No Pockets Found while refining", "! No pocket to reindex.")
+EMPTY_DIAGNOSTICS = ("! No Pockets Found while refining", "! No pocket to reindex.", "! No pocket to reindex.")
+EMPTY_STDERR = "".join(line + "\n" for line in EMPTY_DIAGNOSTICS).encode("ascii")
 DETECTOR_SPECIFIC_NOTE = "fpocket 고유 점수이며 약물성 증거가 아님"
 DISPLAY_CENTER_METHOD = "arithmetic_mean_of_stored_sphere_centers"
 
@@ -485,11 +493,7 @@ def _empty(native: dict[str, Any], stdout: bytes, stderr: bytes) -> dict[str, An
         raise _fatal("unsupported_empty_format", "empty pocket summary with sphere records")
     if stdout != EMPTY_STDOUT:
         raise _fatal("unsupported_empty_format", "empty result without the supported stdout banner")
-    try:
-        diagnostics = stderr.decode("ascii").split("\n")
-    except UnicodeDecodeError as exc:
-        raise _fatal("unsupported_empty_format", "empty result diagnostics are not ASCII") from exc
-    if diagnostics[-1] != "" or not set(diagnostics[:-1]) == set(EMPTY_DIAGNOSTICS):
+    if stderr != EMPTY_STDERR:
         raise _fatal("unsupported_empty_format", "empty result without exactly the supported diagnostics")
     result = _base(native, "scientific_null")
     result.update(total_count=0, total_sphere_count=0, pockets=[], empty_diagnostics=list(EMPTY_DIAGNOSTICS))
@@ -566,6 +570,33 @@ def classify(job_root: str | Path, atoms: list[dict[str, Any]], *, exit_code: in
     if native["files"][INFO_FILE]["size"] == 0:
         return _empty(native, stdout, stderr), native
     return _pockets(native, atoms), native
+
+
+def classify_evidence(evidence: dict[str, Any], atoms: list[dict[str, Any]]) -> dict[str, Any]:
+    """Re-parse stored ``pocket_native_output@1`` bytes with the same pinned rules as :func:`classify`.
+
+    Used on validated reads so a stored ``pocket_set`` is checked against its retained native bytes,
+    not only against its own structure. Raises :class:`PocketOutputFailure` on any deviation.
+    """
+    files: dict[str, dict[str, Any]] = {}
+    for item in evidence["files"]:
+        data = base64.b64decode(item["content_b64"], validate=True) if item["retained"] else None
+        if item["path"] in files or (data is not None and (len(data) != item["size"] or
+                                                          hashlib.sha256(data).hexdigest() != item["sha256"])):
+            raise _fatal("native_evidence_invalid", "stored native evidence is inconsistent", path=item["path"])
+        files[item["path"]] = {"size": item["size"], "sha256": item["sha256"], "data": data}
+    missing = sorted(TOP_LEVEL_FILES - set(files))
+    if missing:
+        raise _fatal("missing_output_file", "fpocket output file is missing", paths=missing)
+    parsed = {INFO_FILE, ALL_SPHERES_FILE} | {rel for rel in files if rel.startswith(POCKETS_DIR + "/")}
+    if {rel for rel, entry in files.items() if entry["data"] is not None} != parsed:
+        raise _fatal("native_evidence_invalid", "stored native evidence retains the wrong files")
+    streams = [base64.b64decode(evidence[name]["content_b64"], validate=True) for name in ("stdout", "stderr")]
+    _check_streams(*streams)
+    native = {"files": files, "has_pockets_dir": True}
+    if files[INFO_FILE]["size"] == 0:
+        return _empty(native, *streams)
+    return _pockets(native, atoms)
 
 
 def native_output_evidence(native: dict[str, Any], stdout: bytes, stderr: bytes) -> dict[str, Any]:

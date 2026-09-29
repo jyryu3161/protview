@@ -26,7 +26,7 @@ from typing import Any
 from . import pocket_output
 from .core.errors import FailureClass, ToolFailure
 from .core.events import idempotency_key
-from .core.handles import canonical_json
+from .core.handles import HANDLE_PREFIX, canonical_json, object_sha
 from .jobs import pocket_worker
 from .pocket_input import preflight as input_preflight
 from .pocket_input import project
@@ -79,6 +79,8 @@ RESULT_KEYS = frozenset({"schema", "job_id", "attempt_id", "worker_sha256", "arg
 ENGINE_ENVIRONMENT_KEYS = ["LANG", "LC_ALL", "PATH", "TMPDIR"]
 
 _HANDSHAKE_CACHE: dict[tuple, dict[str, Any]] = {}
+_NATIVE_OF_SET: dict[str, str] = {}
+MAX_POCKET_SETS_LISTED = 1 << 30
 _HANDSHAKE_LOCK = threading.Lock()
 
 
@@ -174,6 +176,30 @@ def capability() -> dict[str, Any]:
             "determinism": dict(DETERMINISM), "limitations": list(pocket_output.LIMITATIONS)}
 
 
+CAPABILITY_SNAPSHOT_KEYS = ("status", "available", "reason_code", "reason", "protocol_id", "engine", "release",
+                            "build", "package_sha256", "executable_sha256", "parser_version")
+
+
+def capability_snapshot() -> dict[str, Any]:
+    """The capability status and pinned build a report records (the handshake never runs fpocket)."""
+    value = capability()
+    return {key: value[key] for key in CAPABILITY_SNAPSHOT_KEYS}
+
+
+def capability_snapshot_valid(value: Any) -> bool:
+    if type(value) is not dict or set(value) != set(CAPABILITY_SNAPSHOT_KEYS):
+        return False
+    status = value["status"]
+    ready = status == "ready"
+    return ((ready or status in REASONS) and value["available"] is ready and value["reason"] == REASONS.get(status)
+            and (value["reason_code"] is None if ready else type(value["reason_code"]) is str) and
+            value["protocol_id"] == PROTOCOL and value["engine"] == pocket_worker.ENGINE and
+            value["release"] == pocket_worker.RELEASE and value["build"] == pocket_worker.BUILD and
+            value["package_sha256"] == pocket_worker.PACKAGE_SHA256 and
+            value["executable_sha256"] == pocket_worker.EXECUTABLE_SHA256 and
+            value["parser_version"] == pocket_output.PARSER_VERSION)
+
+
 def worker_sha256() -> str:
     return _sha(WORKER.read_bytes())
 
@@ -220,16 +246,26 @@ def _check_source(run: Any, handle: Any) -> None:
                           detail={"reason_code": "source_producer_invalid"}) from exc
 
 
-def retention(run: Any) -> dict[str, int]:
-    used = 0
-    seen: set[str] = set()
-    for event in run.events.read():
-        if event["type"] == "object_created" and event.get("kind") == "pocket_native_output" and \
-                event["handle"] not in seen:
-            seen.add(event["handle"])
-            used += run.store.meta(event["handle"])["size"]
+def _retained_handles(run: Any) -> set[str]:
+    """Native outputs referenced by published pocket_sets; orphans of stale/cancelled attempts do not count."""
+    handles = set()
+    for row in list_sets(run, 0, MAX_POCKET_SETS_LISTED)["rows"]:
+        native = _NATIVE_OF_SET.get(row["handle"])
+        if native is None:
+            native = run.store.load_bounded_json(row["handle"], MAX_SET_BYTES)["native_output_handle"]
+            _NATIVE_OF_SET[row["handle"]] = native  # handles are content addressed and immutable
+        handles.add(native)
+    return handles
+
+
+def _retention(handles: set[str], run: Any) -> dict[str, int]:
+    used = sum(run.store.meta(handle)["size"] for handle in handles)
     return {"limit_bytes": MAX_RETAINED_NATIVE_BYTES, "used_bytes": used,
             "remaining_bytes": max(0, MAX_RETAINED_NATIVE_BYTES - used)}
+
+
+def retention(run: Any) -> dict[str, int]:
+    return _retention(_retained_handles(run), run)
 
 
 def preflight(run: Any, handle: Any, chains: list[str] | None) -> dict[str, Any]:
@@ -304,6 +340,11 @@ def stage(run: Any, job: dict[str, Any], attempt_id: str) -> bytes:
 
 
 # ----------------------------------------------------------------- publication
+def _object_handle(run: Any, kind: str, schema: str, raw: bytes) -> str:
+    """The content-addressed handle ``ObjectStore.put`` gives these bytes (computed without storing)."""
+    return f"{HANDLE_PREFIX}{run.store.run_id}/{kind}/{object_sha(kind, schema, raw)}"
+
+
 def _read_bounded(path: Path, limit: int) -> tuple[bytes, int]:
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
@@ -388,10 +429,18 @@ def publish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path,
             cap["package_sha256"] != job["method"]["package_sha256"]):
         raise PocketJobFailure("fatal", "engine_changed", "pinned fpocket build changed during the attempt")
     manifest = projected["manifest"]
+    # Final object contents (and their content-addressed handles) are built before anything is stored,
+    # so the retention check sizes exactly the bytes that would be stored.
+    pdb_handle = _object_handle(run, "pocket_transport_pdb", "pocket_transport_pdb@1", projected["pdb_bytes"])
+    detector_content = {**manifest, "transport_pdb_handle": pdb_handle}
+    detector_handle = _object_handle(run, "pocket_detector_input", "pocket_detector_input@1",
+                                     canonical_json(detector_content))
     evidence = pocket_output.native_output_evidence(native, streams["stdout"], streams["stderr"])
     native_content = {"schema": "pocket_native_output@1", "argv": list(ARGV), "exit_code": exit_code,
-                      "transport_pdb_sha256": projected["pdb_sha256"], **evidence}
-    native_bytes = len(canonical_json(native_content))
+                      "transport_pdb_sha256": projected["pdb_sha256"], **evidence,
+                      "detector_input_handle": detector_handle}
+    native_raw = canonical_json(native_content)
+    native_handle = _object_handle(run, "pocket_native_output", "pocket_native_output@1", native_raw)
     method = {"engine": pocket_worker.ENGINE, "release": pocket_worker.RELEASE, "build": pocket_worker.BUILD,
               "package_sha256": pocket_worker.PACKAGE_SHA256, "executable_sha256": pocket_worker.EXECUTABLE_SHA256,
               "observed_banner": cap["observed_banner"], "recipe_provenance": cap["recipe_provenance"],
@@ -400,20 +449,24 @@ def publish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path,
               "fresh_execution_deterministic": False,
               "transport_precision_A": manifest["quantization"]["transport_precision_A"]}
     pockets = [{key: pocket[key] for key in POCKET_KEYS} for pocket in result["pockets"]]
-    # Retention is decided before anything is stored: exceeding it stores nothing (charged failure).
-    if retention(run)["used_bytes"] + native_bytes > MAX_RETAINED_NATIVE_BYTES:
+    # Retention is decided before anything is stored: exceeding it stores nothing (charged failure). It is
+    # the same published-only total the preflight reports, plus this object unless already counted.
+    retained = _retained_handles(run)
+    if (_retention(retained, run)["used_bytes"] + (0 if native_handle in retained else len(native_raw)) >
+            MAX_RETAINED_NATIVE_BYTES):
         raise PocketJobFailure("resource_exceeded", "native_output_retention_limit",
                                "run native fpocket output retention limit exceeded")
     pdb = run.store.put("pocket_transport_pdb", "pocket_transport_pdb@1", projected["pdb_bytes"], fmt="pdb",
                         produced_by=attempt_id, summary={"sha256": projected["pdb_sha256"]})
-    detector_input = run.store.put("pocket_detector_input", "pocket_detector_input@1",
-                                   {**manifest, "transport_pdb_handle": pdb.handle}, produced_by=attempt_id,
+    detector_input = run.store.put("pocket_detector_input", "pocket_detector_input@1", detector_content,
+                                   produced_by=attempt_id,
                                    summary={"source_handle": manifest["source_handle"],
                                             "selected_chains": manifest["selected_chains"],
                                             "heavy_atoms": manifest["counts"]["heavy_atoms"]})
-    native_output = run.store.put("pocket_native_output", "pocket_native_output@1",
-                                  {**native_content, "detector_input_handle": detector_input.handle},
+    native_output = run.store.put("pocket_native_output", "pocket_native_output@1", native_content,
                                   produced_by=attempt_id, summary={"retained_bytes": evidence["retained_bytes"]})
+    if (pdb.handle, detector_input.handle, native_output.handle) != (pdb_handle, detector_handle, native_handle):
+        raise ValueError("stored pocket evidence handles differ from the sized contents")
     content = {"schema": "pocket_set@1", "source_handle": manifest["source_handle"],
                "source_kind": manifest["source_kind"], "model_number": manifest["model_number"],
                "preparation_handle": manifest["preparation_handle"], "detector_input_handle": detector_input.handle,
@@ -567,6 +620,15 @@ def _validate(run: Any, content: dict, manifest: dict, native: dict, source: dic
             if ref["residue"] not in residues:
                 residues.append(ref["residue"])
         require(pocket["lining_residues"] == residues, "lining residues differ from lining atoms")
+    # Every stored value must be exactly what the pinned reader extracts from the retained native bytes.
+    try:
+        reparsed = pocket_output.classify_evidence(native, atoms)
+    except pocket_output.PocketOutputFailure as exc:
+        raise PocketEvidenceError(f"native output evidence does not re-parse: {exc.reason_code}") from exc
+    require(reparsed["total_count"] == content["total_count"] and reparsed["null_result"] is content["null_result"]
+            and reparsed["raw_file_hashes"] == content["raw_file_hashes"] and
+            canonical_json([{key: pocket[key] for key in POCKET_KEYS} for pocket in reparsed["pockets"]]) ==
+            canonical_json(pockets), "pocket_set differs from its native output evidence")
 
 
 def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:

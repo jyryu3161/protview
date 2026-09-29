@@ -22,9 +22,9 @@ import pytest
 from mw.core.errors import FailureClass, ToolFailure
 from mw.pocket_input import (
     CHAIN_ALPHABET,
-    HISTIDINE_ALIASES,
     MAX_INPUT_BYTES,
     STANDARD_RESIDUES,
+    TRANSPORT_RESNAMES,
     preflight,
     project,
 )
@@ -142,8 +142,8 @@ def _assert_bijection(store, handle: str, result: dict) -> None:
         assert all(abs(a - b) <= 0.0005 + 1e-9 for a, b in zip(record["xyz"], atom["original_coordinate_A"]))
         assert atom["element"] not in {"H", "D"}
         resname = atom["ref"]["residue"]["resname"]
-        assert record["resname"] == ("HIS" if resname in HISTIDINE_ALIASES else resname)
-        assert resname in STANDARD_RESIDUES | HISTIDINE_ALIASES
+        assert record["resname"] == TRANSPORT_RESNAMES.get(resname, resname)
+        assert resname in STANDARD_RESIDUES | set(TRANSPORT_RESNAMES)
         keys.add((record["chain"], record["resseq"], record["name"]))
     assert len(keys) == len(records)  # synthetic chain + resseq + name is unique
     residue_ids = {}
@@ -334,7 +334,7 @@ def test_chemical_structure_source_maps_charmm_histidines(tmp_path: Path) -> Non
         assert row["ref"] == atom["ref"] and row["coordinate_A"] == atom["original_coordinate_A"]
     # Independent inventory from the catalog rows.
     residues = {json.dumps(r["ref"]["residue"], sort_keys=True): r["ref"]["residue"] for r in rows}
-    aliases = [r for r in residues.values() if r["resname"] in HISTIDINE_ALIASES]
+    aliases = [r for r in residues.values() if r["resname"] in TRANSPORT_RESNAMES]
     assert aliases and {r["resname"] for r in aliases} <= {"HSD", "HSE"}
     assert sorted(json.dumps(m["residue"], sort_keys=True) for m in manifest["resname_mapping"]) == sorted(
         json.dumps(r, sort_keys=True) for r in aliases)
@@ -353,17 +353,26 @@ def test_chemical_structure_source_maps_charmm_histidines(tmp_path: Path) -> Non
 
 
 # --------------------------------------------------- synthetic boundaries
-def test_histidine_aliases_map_to_his_and_modified_residues_reject(tmp_path: Path) -> None:
-    names = ["HID", "HIE", "HIP", "HSD", "HSE", "HSP", "HIS"]
+def test_residue_name_aliases_map_exactly_and_modified_residues_reject(tmp_path: Path) -> None:
+    # SYNTHETIC alanine-like geometry; only the residue names vary (atom names and elements untouched).
+    mapped = {"HID": "HIS", "HIE": "HIS", "HIP": "HIS", "HSD": "HIS", "HSE": "HIS", "HSP": "HIS",
+              "CYX": "CYS", "ASH": "ASP", "GLH": "GLU", "LYN": "LYS"}
+    assert TRANSPORT_RESNAMES == mapped
+    names = [*mapped, "HIS", "CYS"]
     residues = [_ala("A", i + 1, (4.0 * i, 0.3 * i, 0.1 * i * i), name=n) for i, n in enumerate(names)]
     run, _, prepared = _load(tmp_path, _pdb(residues), "pdb")
-    manifest = project(run.store, prepared)["manifest"]
+    result = project(run.store, prepared)
+    manifest = result["manifest"]
+    _assert_bijection(run.store, prepared, result)
     assert [(m["original_resname"], m["transport_resname"], m["residue"]["resname"])
-            for m in manifest["resname_mapping"]] == [(n, "HIS", n) for n in names[:6]]
-    assert {a["transport_resname"] for a in manifest["atoms"]} == {"HIS"}
+            for m in manifest["resname_mapping"]] == [(n, mapped[n], n) for n in mapped]
+    assert [a["transport_resname"] for a in manifest["atoms"][::5]] == [mapped.get(n, n) for n in names]
     assert [a["ref"]["residue"]["resname"] for a in manifest["atoms"][::5]] == names
+    assert [(r["resname"], a["atom_name"], a["element"]) for r, a in zip(
+        (a["ref"]["residue"] for a in manifest["atoms"]), manifest["atoms"], strict=True)][:5] == [
+        ("HID", name, element) for name, element, _ in ALA]
     assert preflight(run.store, prepared)["resname_mapping"] == manifest["resname_mapping"]
-    for modified, record in (("MSE", "HETATM"), ("TPO", "HETATM"), ("CYX", "ATOM")):
+    for modified, record in (("MSE", "HETATM"), ("TPO", "HETATM"), ("CYM", "ATOM"), ("HYP", "HETATM")):
         bad = residues[:3] + [{**_ala("A", 50, (30.0, 5.0, 2.0), name=modified), "record": record}]
         other, _, handle = _load(tmp_path, _pdb(bad), "pdb", run_id=f"run_{modified.lower()}")
         failure = _reject(other.store, handle, code="modified_residue_unsupported")

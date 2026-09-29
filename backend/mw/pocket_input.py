@@ -26,7 +26,10 @@ SCHEMA = "pocket_detector_input@1"
 STANDARD_RESIDUES = frozenset({
     "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
     "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL"})
-HISTIDINE_ALIASES = frozenset({"HID", "HIE", "HIP", "HSD", "HSE", "HSP"})
+# Exactly these ten residue names are written under a standard transport name (six histidine protonation
+# names and four Amber names); the original name stays in every identity and in ``resname_mapping``.
+TRANSPORT_RESNAMES = {"HID": "HIS", "HIE": "HIS", "HIP": "HIS", "HSD": "HIS", "HSE": "HIS", "HSP": "HIS",
+                      "CYX": "CYS", "ASH": "ASP", "GLH": "GLU", "LYN": "LYS"}
 WATER_NAMES = frozenset({"HOH", "WAT", "DOD", "H2O", "TIP", "TIP3", "SOL"})
 HYDROGEN_ELEMENTS = frozenset({"H", "D"})
 CHAIN_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -52,11 +55,12 @@ SYNTHETIC_ID_RULE = {
     "chain": "one character per selected chain_auth, assigned in sorted chain_auth order from alphabet",
     "chain_alphabet": CHAIN_ALPHABET,
     "serial": "transport_index + 1",
-    "retained": "original atom name, element and residue name (six histidine aliases written as HIS)",
+    "retained": ("original atom name, element and residue name (six histidine names written as HIS; CYX, ASH, "
+                 "GLH, LYN written as CYS, ASP, GLU, LYS)"),
     "note": "synthetic IDs are transport identifiers only; source identities come from this manifest",
 }
 CATEGORY_RULE = {
-    "protein": "20 standard residues plus six histidine aliases; heavy atoms only",
+    "protein": "20 standard residues plus six histidine and four Amber residue names; heavy atoms only",
     "hydrogen": "H/D atoms of protein residues",
     "water": "water residue names",
     "ion": "single-atom non-water, non-amino-acid residue",
@@ -131,7 +135,7 @@ def _load_source(store: Any, handle: str) -> dict[str, Any]:
 
 
 def _residue_category(resname: str, atoms: list[dict[str, Any]]) -> str:
-    if resname in STANDARD_RESIDUES or resname in HISTIDINE_ALIASES:
+    if resname in STANDARD_RESIDUES or resname in TRANSPORT_RESNAMES:
         return "protein"
     info = gemmi.find_tabulated_residue(resname)
     if resname in WATER_NAMES or (info is not None and info.is_water()):
@@ -237,9 +241,9 @@ def _analyze(view: dict[str, Any], chains: Any, grouped: dict[str, Any] | None =
         raise _invalid("no_protein_atoms", "source has no standard protein heavy atoms")
     for residue in included:
         resname = residue["residue"]["resname"]
-        if resname in HISTIDINE_ALIASES:
+        if resname in TRANSPORT_RESNAMES:
             mapping.append({"residue": residue["residue"], "original_resname": resname,
-                            "transport_resname": "HIS"})
+                            "transport_resname": TRANSPORT_RESNAMES[resname]})
     return {"available_chains": grouped["available_chains"], "selected_chains": selected,
             "excluded_counts": excluded, "excluded_sites": excluded_sites, "included": included,
             "resname_mapping": mapping, "heavy_atom_count": sum(len(r["sites"]) for r in included),
@@ -294,7 +298,7 @@ def _transport(view: dict[str, Any], analysis: dict[str, Any], source_handle: st
     for number, residue in enumerate(analysis["included"], start=1):
         identity = residue["residue"]
         resname = identity["resname"]
-        transport_resname = "HIS" if resname in HISTIDINE_ALIASES else resname
+        transport_resname = TRANSPORT_RESNAMES.get(resname, resname)
         synthetic_chain = chain_map[identity["chain_auth"]]
         residues.append({"synthetic_chain": synthetic_chain, "synthetic_resseq": number,
                          "transport_resname": transport_resname, "residue": identity})

@@ -10,18 +10,22 @@ saved reads re-validate the stored pocket_set and compare every claim and the Ma
 """
 from __future__ import annotations
 
+import math
 import uuid
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from .core.handles import canonical_json
-from .pocket_bundle import PocketEvidenceError, validated_pocket_set
+from .pocket_bundle import PocketEvidenceError, capability_snapshot, capability_snapshot_valid, validated_pocket_set
 from .pocket_input import EXCLUDED_CATEGORIES, RESIDUE_FIELDS
 from .pocket_output import DESCRIPTOR_KEYS, DETECTOR_SPECIFIC_NOTE, DISPLAY_CENTER_METHOD
 from .reports import EvidenceError, _md, _ref
 
 ANALYSIS_TYPE = "pocket_detection"
-RENDER_VERSION = "pocket_markdown@1"
+RENDER_VERSION = "pocket_markdown@2"
+# Stored reports keep re-opening with the renderer that wrote them: @1 labelled the residue-name mapping
+# "Histidine name mapping" (before the four Amber names were admitted); @2 says "Residue name mapping".
+MAPPING_LABELS = {"pocket_markdown@1": "Histidine name mapping", RENDER_VERSION: "Residue name mapping"}
 REPORT_BYTES = 8 * 1024 * 1024  # same bound the report list/selected routes use
 EVIDENCE_STATEMENT = ("fpocket pocket candidates, ranks and scores are not binding-site, affinity or druggability "
                       "evidence (결합 부위·친화도·druggability 증거 아님).")
@@ -40,12 +44,24 @@ DESCRIPTOR_LABELS = {"score": "Score", "druggability_score": "Druggability Score
                      "alpha_sphere_count": "Alpha spheres", "total_sasa_A2": "Total SASA",
                      "volume_A3": "Volume"}
 UNIT_TEXT = {"dimensionless": "", "count": "", "A2": " Å²", "A3": " Å³", "angstrom": " Å"}
+LEGACY_SNAPSHOT_KEYS = {"event_seq", "time_utc", "run_egress_mode"}
+SNAPSHOT_KEYS = LEGACY_SNAPSHOT_KEYS | {"capability", "budget"}
+BUDGET_AXES = {"wall_clock_s", "expensive_calls", "external_tokens", "usd"}
 MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
     "result_sha256", "source_handle", "source_kind", "model_number", "preparation_handle", "detector_input_handle",
     "native_output_handle", "transport_pdb_sha256", "selection", "resname_mapping", "quantization", "method",
     "units", "total_count", "null_result", "completeness", "pockets", "raw_file_hashes", "claims", "provenance",
     "evidence_statement", "druggability_warning", "limitations", "snapshot", "markdown_handle"})
+
+
+def _budget_snapshot_valid(value: Any) -> bool:
+    def amount(number: Any) -> bool:
+        return type(number) in (int, float) and math.isfinite(number) and number >= 0
+
+    return (type(value) is dict and set(value) == BUDGET_AXES and
+            all(type(axis) is dict and set(axis) == {"used", "limit"} and amount(axis["used"]) and
+                amount(axis["limit"]) for axis in value.values()))
 
 
 def _render(value: Any, rounding: str) -> str:
@@ -213,12 +229,13 @@ def render_pocket_report(manifest: dict[str, Any]) -> str:
                   f"{claims['counts.residues']}; chains: {claims['counts.chains']}")])
     for category, rule in selection["category_rule"].items():
         lines.append(f"- Category rule {_md(category)}: {_md(rule)}")
+    label = MAPPING_LABELS[manifest["render_version"]]
     if manifest["resname_mapping"]:
         for item in manifest["resname_mapping"]:
-            lines.append(f"- Histidine name mapping: {_md(_ref(item['residue']))} sent as "
+            lines.append(f"- {label}: {_md(_ref(item['residue']))} sent as "
                          f"{_md(item['transport_resname'])} (original {_md(item['original_resname'])})")
     else:
-        lines.append("- Histidine name mapping: none needed")
+        lines.append(f"- {label}: none needed")
     lines.extend([(f"- Quantization: {_md(quantization['coordinate_field'])} coordinates, "
                   f"{_md(quantization['decimals'])} decimals; transport precision "
                   f"{claims['quantization.transport_precision_A']} Å; maximum axis discrepancy "
@@ -272,8 +289,10 @@ def build_pocket_report(run: Any, result_handle: str) -> dict[str, Any]:
         manifest = _expected(run, result_handle)
         events = list(run.events.read())
         seq = events[-1]["seq"]
+        # Capability, budget and egress state as of this event sequence (business rules: reports).
         manifest["snapshot"] = {"event_seq": seq, "time_utc": events[-1]["ts"],
-                                "run_egress_mode": run.egress_config["mode"]}
+                                "run_egress_mode": run.egress_config["mode"], "capability": capability_snapshot(),
+                                "budget": run.budget_snapshot()}
         markdown = render_pocket_report(manifest)
         # A stored report must stay re-openable under the saved-read bound; refuse before storing anything.
         if len(canonical_json({**manifest, "markdown_handle": "x" * 128})) > REPORT_BYTES or \
@@ -299,9 +318,10 @@ def saved_pocket_report(run: Any, report_handle: str) -> dict[str, Any]:
         raise EvidenceError("pocket_report_type")
     report = run.store.load_bounded_json(report_handle, REPORT_BYTES)
     if (type(report) is not dict or set(report) != MANIFEST_KEYS or
-            report["analysis_type"] != ANALYSIS_TYPE or type(report["result_handle"]) is not str):
+            report["analysis_type"] != ANALYSIS_TYPE or type(report["result_handle"]) is not str or
+            report["render_version"] not in MAPPING_LABELS):
         raise EvidenceError("pocket_report_schema_invalid")
-    expected = _expected(run, report["result_handle"])
+    expected = {**_expected(run, report["result_handle"]), "render_version": report["render_version"]}
     if type(report["claims"]) is not list:
         raise EvidenceError("pocket_report_claims_invalid")
     for claim in report["claims"]:
@@ -311,10 +331,13 @@ def saved_pocket_report(run: Any, report_handle: str) -> dict[str, Any]:
             raise EvidenceError(f"pocket_report_field_mismatch: {key}")
     events = list(run.events.read())
     snapshot = report["snapshot"]
-    if (type(snapshot) is not dict or set(snapshot) != {"event_seq", "time_utc", "run_egress_mode"} or
+    # Reports stored before the capability/budget snapshot keep exactly the three legacy keys.
+    if (type(snapshot) is not dict or set(snapshot) not in (LEGACY_SNAPSHOT_KEYS, SNAPSHOT_KEYS) or
             type(snapshot["event_seq"]) is not int or
             snapshot["event_seq"] < expected["provenance"]["completed_event_seq"] or
-            snapshot["run_egress_mode"] not in {"local_only", "online", "dry_run"}):
+            snapshot["run_egress_mode"] not in {"local_only", "online", "dry_run"} or
+            (set(snapshot) == SNAPSHOT_KEYS and not (capability_snapshot_valid(snapshot["capability"]) and
+                                                     _budget_snapshot_valid(snapshot["budget"])))):
         raise EvidenceError("pocket_report_snapshot_invalid")
     at = next((event for event in events if event["seq"] == snapshot["event_seq"]), None)
     if at is None or at["ts"] != snapshot["time_utc"]:

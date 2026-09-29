@@ -1536,9 +1536,13 @@ class JobQueue:
         """Stale or cancelled completions store nothing; typed native failures stay typed (charged)."""
         from ..pocket_bundle import PocketJobFailure, publish
 
-        current = self.get(job["job_id"])
-        if current["cancel_requested"] or self.run._cancel_path.exists():
-            return {"status": "cancelled"}
+        with self.run._transition():  # same guard as cancellation and the terminal CAS
+            current = self.get(job["job_id"])
+            if current["cancel_requested"] or self.run._cancel_path.exists():
+                return {"status": "cancelled"}
+            if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
+                # Stale completion: _terminal keeps the existing terminal (or rejects the stale attempt).
+                return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
         try:
             return publish(self.run, job, attempt_id, attempt_dir, descriptor)
         except PocketJobFailure as failure:
