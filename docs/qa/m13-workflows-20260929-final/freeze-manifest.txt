@@ -1,0 +1,91 @@
+M13 T8 final source freeze (after final review fixes)
+date: 2026-09-29T10:02:04Z
+branch: dryforge/m13-workflows
+HEAD: e83071b7e74b42e34a64595f41f66fcabbfa68b5
+previous acceptance freeze: af1500b60f93a4fa24865f0e059ad2abe70b8126
+diff between freezes, excluding committed QA evidence under docs/qa/ (git diff --stat af1500b HEAD -- . ':!docs/qa'):
+   .codex/hooks/stop.py                               |  2 +-
+   AGENTS.md                                          |  9 +-
+   CLAUDE.md                                          |  9 +-
+   backend/AGENTS.md                                  |  7 +-
+   backend/mw/analysis_executions.py                  | 42 ++++++++--
+   backend/mw/api/app.py                              |  8 +-
+   backend/mw/jobs/queue.py                           | 21 +++--
+   backend/tests/test_analysis_workflows.py           | 72 ++++++++++++++++
+   docs/business-rules.md                             | 64 +++++++++++++++
+   docs/contracts.md                                  | 38 ++++++++-
+   docs/engineering-notes.md                          | 28 +++++++
+   docs/operations.md                                 | 23 +++++-
+   docs/security.md                                   |  6 +-
+   docs/standards.md                                  |  4 +-
+   docs/system-architecture.md                        |  7 ++
+   .../decisions/0018-m13-acceptance-record.md        | 14 ++++
+   .../decisions/0019-analysis-plan-size-1mib.md      | 17 ++++
+   .../0020-compact-committed-qa-evidence.md          | 18 ++++
+   docs/tracking/decisions/index.md                   |  3 +
+   docs/tracking/findings.md                          | 38 +++++++--
+   docs/tracking/m13-acceptance.md                    | 95 ++++++++++++++++++++++
+   docs/tracking/status.md                            | 30 +++----
+   frontend/AGENTS.md                                 |  9 +-
+   frontend/src/lib/analysis.ts                       |  4 +-
+   frontend/tests/analysis.test.cjs                   |  9 +-
+   scripts/AGENTS.md                                  |  6 +-
+   scripts/m13_offscreen_acceptance.py                | 52 ++++++++++--
+   scripts/test_codex_hooks.py                        |  3 +-
+   scripts/test_m13_offscreen_acceptance.py           | 35 ++++++++
+   29 files changed, 608 insertions(+), 65 deletions(-)
+base: main 1e9184838ec638e60a599a4b7d5df4cba8a02734
+files changed vs main, excluding docs/qa/ (git diff --name-only main...HEAD -- . ':!docs/qa'), sha256 of working-tree content:
+7a0c7df085613f22ecf6ee198fbb06276b802076f89312236b3d307d594b519b  .codex/hooks/stop.py
+567bf908d0ac132f4949581377e8115efe7e29ddbc9317511b1e7420d364817b  AGENTS.md
+567bf908d0ac132f4949581377e8115efe7e29ddbc9317511b1e7420d364817b  CLAUDE.md
+eddfa5d5b921b130552e318360d12b9feb376eccd179cd84459d1603690e9445  backend/AGENTS.md
+b4453a0b6ecea3e89825ac5bcbe1eeab3531467ffbb8ab7af22957f2208e529f  backend/mw/analysis_executions.py
+38d9830fd2e034eafd742aa2d2475e54a689319b564e56b8e84f754fc0456ebb  backend/mw/analysis_plans.py
+c60dc1ba78783db3a74e65c11df552409927864d5365c5bd80ff8286dc908de8  backend/mw/api/app.py
+c27d8ee6cc4a805524a5342afae27045a5c1329f3f00c6e7801ed49376962bce  backend/mw/chemical_reports.py
+36f5cc4f713f47f9f6ed9dbab7856b89373588d3433508a0d6c0738f61da654b  backend/mw/comparison_reports.py
+da539a30fe66e4ec02e8e9f149089f1299d8e1a37804e66f18b3a3d20866127f  backend/mw/core/events.py
+34b7612e4b16460e869c94e68db0b2a7394fa3df43d098e5692b15c51df1b08f  backend/mw/jobs/queue.py
+e5c3ba542a6ed10fb59291cf0a22bdc8ba171f8f717c2c7392daff47eb47b778  backend/mw/method_reports.py
+ee6e780e3bac98d0d6e1e35fa16d306956fd80ec94f4277c660ed29eec4cec07  backend/mw/openmm_reports.py
+5245c62b664894ced0be6c0eb9fe92a8c8c3c551c4e6784e79ab49bb4a4ef688  backend/mw/pocket_reports.py
+977eaa41ffc6b3b5599c8a82475d168a8809f2c798c41004d5f9a1461caaf26e  backend/mw/reports.py
+c48941e58fb339487046e1e38b4cb4a93c745884f298a8d42b683835ba081e5f  backend/mw/runtime/orchestrator.py
+02bca101fe76398783056868e5abe78b7ddd06b9c00a451a4b1d9a376bd4b550  backend/tests/test_analysis_workflows.py
+c420679aa763d56bc778eac47949b6d3b36e5074ea7b1681653d607f987bd662  backend/tests/test_execution_links.py
+4e0635725a68b03b9fd870371cdc6ce701808ed55d6246e283e0556b38b68936  design/components.css
+3e9a65d5f6377e38950eea1368ac329ff1f268d88c1f79ffe04ca28edc56228d  docs/business-rules.md
+ad2e5fa025a5b0abe7e684b7e2637222c4728e26a09364f70c1141a361a1ee21  docs/contracts.md
+d6c96463f81d3ba249c2b2e7e8f187c0b3e0875760cc3caf07159ae829b3413b  docs/engineering-notes.md
+3a70725238bb96baeace7c5f120083fdbc7fdef7562b81ed1018a48a6c9c9a4a  docs/operations.md
+703658f356a7e976559b990e04119ae04564826bf9a6d1094b175b61c2904024  docs/security.md
+3069c1a8a24d66b423a1bfdaa280c0786ed066a15762dab317eaa8ee0d852934  docs/standards.md
+86d8fcbaabfdfdca8f4c32f1dde1881218797bbbb52c74f1de8e99ecc9bd1e21  docs/system-architecture.md
+d2f52a78055900e8b869542ff9ca35ef018636117ead51c43fe4669c1fe34de1  docs/tracking/decisions/0018-m13-acceptance-record.md
+8022d94a8b098886d2e36df746ae46ba42171a4bc4870626d363776c291deabd  docs/tracking/decisions/0019-analysis-plan-size-1mib.md
+2935d554347a9e81d79f0911206cb5aa57fb9173c2364809eee93f28441328b9  docs/tracking/decisions/0020-compact-committed-qa-evidence.md
+d009a8a1e70c5cfcb4980e26aff712afd88efa0dc3983ef197184a2aeab7bb84  docs/tracking/decisions/index.md
+1ca611f6ba8901e0d8db5c5539d51da441400a7126a3ef2e9ab5e37ab183b83d  docs/tracking/findings.md
+7eeda435aa64ebf16e3602db6e6205cf6e0124a10664a4612f1f36732bfc9bae  docs/tracking/m13-acceptance.md
+0ff517c0c79cb8f05c4841df0ede376d8b14fb2ecde242c1a2f9aa36eb10c259  docs/tracking/status.md
+54caf04630de9395bc2e17ad42635af8a08e1846b40e1490f14ec5f0164c1af4  frontend/AGENTS.md
+3ab696dde2b6a1e57b3fcaddba9a3ec155d3e22a61fb91f004740fed67548172  frontend/app/page.tsx
+0c699e5a3eed865a31fb8cbfb622562b1cd8b72baa9c70e5e43f206a6568f50f  frontend/package.json
+ca473cf92de54498a3338504b04d0911243b4c3e457e5392a19242bbac60f5a9  frontend/src/components/AnalysisWorkflowPanel.tsx
+1285a8ccbbf4bbba6695d9d4b1a157a623cf50fdf9958677104b9d7d9c04d38c  frontend/src/components/ChemicalWorkspace.tsx
+d59070eb93780f5732c027bd0f78a4b311910510869cc147b62967a785838bbc  frontend/src/components/PocketPanel.tsx
+939e99fd3a06b422a44d8c93035431d3443541299123a7da0e60eb51561edd29  frontend/src/design/components.css
+ace020d44031ee4efb1274c83bd79b9a14cf821bde3a2e5bc05453a1f76ffa45  frontend/src/lib/analysis.ts
+16d66c94efd11ff94f9b878d3f73eeda6ca4e58233428282e918930008ae216e  frontend/src/lib/api.ts
+81d361690447f5b2bfdbc513d1ed7bfb0a87bdb9748e74a1ff63a984aea4113c  frontend/src/lib/contracts.ts
+5f2e984404012eaf9aedcc3290a37ad2cf38c95794e2bbabff0710f63631d002  frontend/src/lib/pockets.ts
+656ee0312bb226623f905a96653bf83df93c84dfb18357f55a605befa5a092b5  frontend/tests/analysis.test.cjs
+8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70  frontend/tests/offscreen/workflows-flow.cjs
+1a6293cb9d3e008b4538ac265c334d1f359774eb1d2094944cc7d43fbda62964  frontend/tests/pockets.test.cjs
+4979a96c53c9cea02e2b98778a1e87f4e29930d3df60e137e1a65e0ab5d10f95  scripts/AGENTS.md
+476c41bf3b088fd5d1067717b145986a0b27c55bdbbb0f8cedf5e1a9dee54227  scripts/m11_offscreen_acceptance.py
+b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5  scripts/m13_offscreen_acceptance.py
+31f98a324b5161595bcd69ebfa37d3af3a5491896538a8ada7fc5933739d343a  scripts/test_codex_hooks.py
+54b9ee0e768c5b399dedaa1586842253098f498bc4a1181ad507c187ea055db1  scripts/test_m13_offscreen_acceptance.py
+committed QA evidence folders under docs/qa/ changed vs main: m13-workflows-20260929 m13-workflows-20260929-run1 

@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-09-29, 브랜치 `dryforge/m13-workflows`(`phase/m13-analysis-workflows` = main `1e91848`에서 분기). M12까지 main에 병합됨. M13 완료(제품 고정 `d1eaf48`, 최종 고정 `af1500b`, 증거 `f630e20`), main 병합 전.
+기준: 2026-09-29, 브랜치 `dryforge/m13-workflows`(`phase/m13-analysis-workflows` = main `1e91848`에서 분기). M12까지 main에 병합됨. M13 완료(최종 고정 `e83071b` = 최종 검토 수정 `86bbff3`, 최종 수락 증거 `docs/qa/m13-workflows-20260929-final/`; 이전 고정 `d1eaf48`·`af1500b`, 증거 `f630e20`), main 병합 전.
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 
@@ -15,22 +15,22 @@
 | M10 | 원자 거리(Å), 명시적 CA 쌍 Kabsch 정렬·오버레이, 공유 선택 어댑터 수정 | `4ab0186` | 검토 통과 | 오래됨(README) |
 | M11 | ProLIF 화학 상호작용(준비된 수용체 + V2000 SDF, 새로 만들기·기존 복합체 연결), 작업 수명 주기 보강, Host 허용 목록 | 고정 소스 `4ec584f`, main 병합 `adb6291` | 전체 게이트, 수락 QA H01–H17, M8–M10 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | M13 수락 QA에서 M11 수락 실행기 전체 재실행(17/17) |
 | M12 | fpocket 4.2.3 로컬 포켓 후보(단백질만 투영, 알파 구·주변 잔기·fpocket 기술자 5개), Mol* 알파 구 오버레이(메인·화학 작업 화면), 포켓 보고서, 작업 수명 주기, 잔기 이름 대응 10개 | 고정 소스 `9e4edcb`, main 병합 `eb73d12` | 전체 게이트, 수락 QA 31단계, M8–M11 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | M13 수락 QA에서 M12 수락 실행기 전체 재실행(31/31) |
-| M13 | 결정적 로컬 분석 흐름: 목표 템플릿 6개, 불변 계획 `analysis_plan@1`(`local_rules`), 계획 승인과 계산 승인 분리, 한 번에 한 단계, 재시도 1회, 범위 한정 중지, 충돌 복구, `workflow_summary@1`, 메인·화학 작업 화면 흐름 패널, `Run.call`·작업·보고서 내부 실행 연결 | 제품 고정 `d1eaf48`, 최종 고정 `af1500b` | 전체 게이트, 수락 QA 17단계·28사례, M8–M12 회귀(M11·M12 실행기 전체), 코드·증거 독립 검토(Opus 5.5) 통과 | 현재 기준(`docs/tracking/m13-acceptance.md`) |
+| M13 | 결정적 로컬 분석 흐름: 목표 템플릿 6개, 불변 계획 `analysis_plan@1`(`local_rules`), 계획 승인과 계산 승인 분리, 한 번에 한 단계, 재시도 1회, 범위 한정 중지, 충돌 복구, `workflow_summary@1`, 메인·화학 작업 화면 흐름 패널, `Run.call`·작업·보고서 내부 실행 연결 | 최종 고정 `e83071b`(최종 검토 수정 `86bbff3`) | 전체 게이트, 수락 QA 17단계·28사례, M8–M12 회귀(M11·M12 실행기 전체), 코드·증거 독립 검토(Opus 5.5) 통과 | 현재 기준(`docs/tracking/m13-acceptance.md`) |
 
 "오래됨"은 기능이 망가졌다는 뜻이 아니다. 검토 당시 파일 해시와 현재 파일이 달라, `scripts/execute.py --verify`가 그 검토를 현재 증거로 인정하지 않는다는 뜻이다. 현재 기능이 동작하는지는 아래 검사로 확인한다.
 
-## 현재 검사 결과 (제품 고정 `d1eaf48`, 실행기 수정 `af1500b`, 2026-09-29)
+## 현재 검사 결과 (최종 고정 `e83071b`, 2026-09-29)
 
 | 검사 | 결과 |
 |---|---|
-| `pytest backend/tests -q -rs` | 589개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치) |
+| `pytest backend/tests -q -rs` | 593개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치) |
 | `ruff check …`, 실행기·훅·fpocket 설치·M13 실행기 단위 테스트(한 명령) | 통과, 90개 통과 |
 | `node --check` `pocket-flow.cjs`·`workflows-flow.cjs` | 통과 |
-| `test:events`, `typecheck`, `build` | 148개 통과, 통과, 통과(BUILD_ID `WCnxUsptjGLeenXzwlYhV`) |
-| M13 수락 QA(`scripts/m13_offscreen_acceptance.py`) | 17단계·28사례 통과, 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음 |
-| M8 normal·M9 OpenMM·scenes core·M10 measure/alignment, M11 수락 실행기 전체, M12 수락 실행기 전체 | 통과 |
+| `test:events`, `typecheck`, `build` | 148개 통과, 통과, 통과(게이트 BUILD_ID `byXhIMdNy_vdg0qZB-eX7`; 수락 QA는 실행기가 같은 소스로 도장 찍은 `NUugf8EWW7h480ZPwlhqc`) |
+| M13 수락 QA(`scripts/m13_offscreen_acceptance.py`) | 17단계·28사례 통과(`acceptance: true`, 재실행 없음), 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음 |
+| M8 normal·M9 OpenMM·scenes core·M10 measure/alignment, M11 수락 실행기 전체, M12 수락 실행기 전체 | 통과(M11 17/17·29행, M12 31/31) |
 
-증거: `docs/qa/m13-workflows-20260929/`(M13, 1차 실패 실행은 `-run1/`), `docs/qa/m12-pockets-20260929/`(M12), `docs/qa/m11-chemical-20260928/`(M11). 옛 단계 기록은 M11 index pending(결정 0014), M12·M13 index 없음(결정 0016·0018). 다시 돌리지 않은 과거 범위는 `docs/tracking/m13-acceptance.md`의 "대체한 과거 검증 범위".
+증거: `docs/qa/m13-workflows-20260929-final/`(M13 최종; 이력: 2차 `docs/qa/m13-workflows-20260929/`, 1차 실패 실행 `-run1/`), `docs/qa/m12-pockets-20260929/`(M12), `docs/qa/m11-chemical-20260928/`(M11). 옛 단계 기록은 M11 index pending(결정 0014), M12·M13 index 없음(결정 0016·0018). 다시 돌리지 않은 과거 범위는 `docs/tracking/m13-acceptance.md`의 "대체한 과거 검증 범위".
 
 ## 남은 전체 범위 (우선순위 순)
 

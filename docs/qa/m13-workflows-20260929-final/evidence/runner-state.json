@@ -1,0 +1,60 @@
+{
+  "buildCommands": {
+    "typecheck": 0,
+    "build": 0,
+    "sourceSha256": "ce67ecb2088d5e85bbe1b6ec7db63382781a067ddc64dd7881536acda1bb70ee"
+  },
+  "build": {
+    "buildId": "NUugf8EWW7h480ZPwlhqc",
+    "gitHead": "e83071b7e74b42e34a64595f41f66fcabbfa68b5",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-09-29T10:19:08.381298+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "workflows-flow.cjs": "8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da"
+    },
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m13-acceptance-20260929c/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-09-29T10:19:10.683917+00:00"
+    },
+    {
+      "name": "backend-unavailable",
+      "runs": "<repo>/runs/m13-acceptance-20260929c/unavailable-runs",
+      "code": "<repo>/runs/m13-acceptance-20260929c/layout-engines-missing",
+      "mw": "<repo>/runs/m13-acceptance-20260929c/layout-engines-missing/backend/mw/__init__.py",
+      "startedAt": "2026-09-29T10:27:15.100795+00:00"
+    }
+  ],
+  "mainRun": "run_d4be68d5d3c340dba82f8f3a413ad4c0",
+  "m10Run": "run_88b8cbd3a9be432bb451bf481946fc6b",
+  "attach": {
+    "run": "run_a1d7aead3f364f1ebea70cde3888a4d3",
+    "complex": "obj://run_a1d7aead3f364f1ebea70cde3888a4d3/structure/f80551410475b6bc5ad54b1bbcc12a4dbde89d761a62bf5450577c652dcaabd6",
+    "dir": "<repo>/runs/m13-acceptance-20260929c/inputs/attach-setup",
+    "sdfImport": "obj://run_a1d7aead3f364f1ebea70cde3888a4d3/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "scenesRun": "run_0410c634d72b4d40865859f2ddbe3b01",
+  "layouts": {
+    "layout-engines-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps absent (fpocket and the ProLIF worker environment not installed)",
+      "files": 62,
+      "treeSha256": "c70c1a6e3caf48f792985b6b3638f1e890ebfa4834cfb3a2d6bd6c40149357bb"
+    }
+  }
+}

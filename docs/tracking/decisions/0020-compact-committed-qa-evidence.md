@@ -15,4 +15,4 @@ M13 수락 실행기는 M11·M12 수락 실행기 전체를 하위 단계로 돌
 
 ## 결과
 - 옮긴 파일의 내용은 그 컴퓨터의 artifacts 폴더에만 있다. 커밋한 해시로 동일성은 확인할 수 있지만, 폴더를 잃으면 내용은 복구할 수 없다.
-- M13에서는 `docs/qa/m13-workflows-20260929/`와 `-run1/` 두 폴더에 적용했다(`frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/export-full/`, `.../20260929/export-full/`).
+- M13에서는 `docs/qa/m13-workflows-20260929/`와 `-run1/` 두 폴더에 적용했다(`frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/export-full/`, `.../20260929/export-full/`). 최종 수락 실행 `docs/qa/m13-workflows-20260929-final/`에도 같은 규칙을 적용했다(`.../20260929c/export-full/`, 50개, 331,007,991 bytes).

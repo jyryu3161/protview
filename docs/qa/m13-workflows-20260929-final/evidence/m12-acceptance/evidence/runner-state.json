@@ -1,0 +1,100 @@
+{
+  "build": {
+    "buildId": "NUugf8EWW7h480ZPwlhqc",
+    "gitHead": "e83071b7e74b42e34a64595f41f66fcabbfa68b5",
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-09-29T10:50:16.522733+00:00",
+    "harnessSha256": {
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+    },
+    "inputSha256": {
+      "public_1hsg.cif": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "derived_1hsg_first10_fixture.cif": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+      "prolif-vina-rec.pdb": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "prolif-vina-output.sdf": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    },
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d",
+    "qaInputsSha256": "f65692c4983bf9eaca6fb4d9b4bbed1792ba0d03ce3447403c8597d89ff5994f"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-09-29T10:50:18.824840+00:00"
+    },
+    {
+      "name": "backend-replay-engine-missing",
+      "runs": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/replay-runs",
+      "code": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-09-29T10:58:25.076197+00:00"
+    },
+    {
+      "name": "backend-unavailable-missing",
+      "runs": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/unavailable-missing-runs",
+      "code": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-09-29T10:58:34.512874+00:00"
+    },
+    {
+      "name": "backend-unavailable-hash",
+      "runs": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/unavailable-hash-runs",
+      "code": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/layout-engine-tampered",
+      "mw": "<repo>/runs/m13-acceptance-20260929c/m12-acceptance/layout-engine-tampered/backend/mw/__init__.py",
+      "startedAt": "2026-09-29T10:58:38.670879+00:00"
+    }
+  ],
+  "positive": {
+    "run": "run_9af2916c1dd34c0aa7a310ea16314a11",
+    "set": "obj://run_9af2916c1dd34c0aa7a310ea16314a11/pocket_set/267bda16d218763576bdbd0dfa8ffc8afb73517905f6d5aa3a85ff07c3ced7bc",
+    "prepared": "obj://run_9af2916c1dd34c0aa7a310ea16314a11/prepared_structure/cc957687808450e3311a796c4cca1e8ef3ffd35e1cd62427d59e3d5509973423",
+    "original": "obj://run_9af2916c1dd34c0aa7a310ea16314a11/structure/a10a829bffdcd07019fb8978ca8470406a28e4d007bd50b9eb7e8850f66cd1ae",
+    "report": "obj://run_9af2916c1dd34c0aa7a310ea16314a11/method_report_manifest/ac9eeca5a25d450233e909c1e9a4fa997b609dfd850aa59be2b3dce861aea237",
+    "md": "05cfed6b804cc7dfa416a3c4ccc80808202e1e258324ca4e8b28f155826391c5",
+    "json": "fac38ad9745adf3d7fbf4ca2bb435d4633d27a68249a1c75e6ffa588a588c4a4"
+  },
+  "empty": {
+    "run": "run_458d984d912d416195285b0d6f766304",
+    "set": "obj://run_458d984d912d416195285b0d6f766304/pocket_set/6c08dea1fd0b802a3ada15b31c7933a4ac14d29de4ec89cd98984bea75ec9651",
+    "report": "obj://run_458d984d912d416195285b0d6f766304/method_report_manifest/7e3175283349b51306a7de5ac8cde32eb8f4601dbb533dcb9e50f3b39b79a2cf",
+    "md": "bca73085a4cc8f258565fab007c8733b59f7e0ca953e6d55dc045ff489714fba",
+    "json": "2368054a774a21dc68ccda73e7222e6a380d108f136e84ebd70e168b2bc3fd18"
+  },
+  "chemical": {
+    "run": "run_d6f3c028a4a743cb8807aa47688c53c4",
+    "result": "obj://run_d6f3c028a4a743cb8807aa47688c53c4/chemical_interaction_set/500eedf107139ba63c8bc38b6203e48e8506707a1c81344e344e8f2236f58486"
+  },
+  "scenesRun": "run_858119af151a4ee28405b09e0cd2eb47",
+  "m11Prepared": {
+    "run": "run_f53170469bad494da25f3558f08d55d0",
+    "graph": "obj://run_f53170469bad494da25f3558f08d55d0/chemical_graph/fc5986df0d42c6ab06d908e255f8e268cd65cdb62a42261006e679eaea855e0b"
+  },
+  "layouts": {
+    "layout-engine-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent",
+      "files": 62,
+      "treeSha256": "c70c1a6e3caf48f792985b6b3638f1e890ebfa4834cfb3a2d6bd6c40149357bb",
+      "engine": null
+    },
+    "layout-engine-tampered": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; real install record with a labeled placeholder bin/fpocket (SHA-256 42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822, not the reviewed build)",
+      "files": 62,
+      "treeSha256": "c70c1a6e3caf48f792985b6b3638f1e890ebfa4834cfb3a2d6bd6c40149357bb",
+      "engine": {
+        "path": ".deps/fpocket/env/bin/fpocket",
+        "sha256": "42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822"
+      }
+    }
+  }
+}

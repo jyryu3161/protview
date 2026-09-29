@@ -1,0 +1,264 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "mode": "minimize",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "W-minimize": "pass",
+    "S-retry": "pass",
+    "S-error": "pass",
+    "S-shared": "pass",
+    "S-stop-running": "pass",
+    "S-scientific-already": "pass"
+  },
+  "runId": "run_0f7562eda261481da16cc8569e49d01f",
+  "handles": {
+    "minPlan": "obj://run_0f7562eda261481da16cc8569e49d01f/analysis_plan/b7435f75885311dbd8bf4895351f5f0bd56dae615eb93b03ac4c1a54721772a0",
+    "minimize": {
+      "plan": "obj://run_0f7562eda261481da16cc8569e49d01f/analysis_plan/b7435f75885311dbd8bf4895351f5f0bd56dae615eb93b03ac4c1a54721772a0",
+      "execution": "exec_8c4f9a961f0742efb2f5cdc16ecc55c0",
+      "summary": "obj://run_0f7562eda261481da16cc8569e49d01f/workflow_summary/a4216fd1fe0a149dc4e624bbc7f1276771aeed06ef09605332c4faf17aa09f18",
+      "record": {
+        "schema": "analysis_execution@1",
+        "execution_id": "exec_8c4f9a961f0742efb2f5cdc16ecc55c0",
+        "run_id": "run_0f7562eda261481da16cc8569e49d01f",
+        "plan_handle": "obj://run_0f7562eda261481da16cc8569e49d01f/analysis_plan/b7435f75885311dbd8bf4895351f5f0bd56dae615eb93b03ac4c1a54721772a0",
+        "plan_sha256": "f2ddb23bb009d7a76ead03dbb07915f3b597275c3e9798e94ac97f33c7986856",
+        "goal": "minimize_protein",
+        "template_version": "minimize_protein@1",
+        "source": "local_rules",
+        "planner": "local_rules@1",
+        "dry_run": false,
+        "status": "complete",
+        "retryable_step": null,
+        "revision": 25,
+        "created_seq": 21,
+        "current_step": null,
+        "plan_approval": {
+          "approved": true,
+          "event_seq": 23,
+          "plan_sha256": "f2ddb23bb009d7a76ead03dbb07915f3b597275c3e9798e94ac97f33c7986856",
+          "revocations": []
+        },
+        "scientific_approval": {
+          "required": true,
+          "run_approved": true,
+          "state": "already_approved_in_run",
+          "pending_tool": null,
+          "recorded_seqs": [
+            36
+          ]
+        },
+        "blocked_reason": null,
+        "stop": null,
+        "notice": null,
+        "driver": {
+          "in_progress": false,
+          "request_ids": []
+        },
+        "recovery_pending": false,
+        "steps": [
+          {
+            "step_id": "s01",
+            "operation": "openmm_protein_minimize",
+            "lane": "durable_job",
+            "status": "completed",
+            "null_result": false,
+            "operation_id": "op_f70bab1ac86947708884cb582a51a441",
+            "dispatch_seqs": [
+              26,
+              51
+            ],
+            "completed_seq": 71,
+            "attempts": 2,
+            "retries_used": 1,
+            "outputs": {
+              "openmm_minimization": "obj://run_0f7562eda261481da16cc8569e49d01f/openmm_minimization/61518c2cc1c985b60ca56496d0f5cb062a2fc02e3b43bd0d64ef247e9dc4ddf0"
+            },
+            "report_handle": null,
+            "child_call_ids": [],
+            "job_id": "job_58cc162d401347f1b0781b63b14f499e",
+            "job_ownership": "owned",
+            "job_status": "done",
+            "job_cleanup_status": "verified",
+            "job_blocked_reason": null,
+            "job_cancel_requested": false,
+            "shared_job_notice": null,
+            "deferred_reason": null,
+            "failure": {
+              "status": "failed",
+              "error": "fatal",
+              "reason_code": "job_failed",
+              "message": null,
+              "retryable": true
+            }
+          },
+          {
+            "step_id": "s02",
+            "operation": "method_report",
+            "lane": "report",
+            "status": "completed",
+            "null_result": false,
+            "operation_id": "op_914be05e13b94be791273f58c827bf4f",
+            "dispatch_seqs": [
+              74
+            ],
+            "completed_seq": 78,
+            "attempts": 0,
+            "retries_used": 0,
+            "outputs": {
+              "report": "obj://run_0f7562eda261481da16cc8569e49d01f/method_report_manifest/a7aceb2795d57a31232c1bda96c392413ee409824544fff70db082b681603847"
+            },
+            "report_handle": "obj://run_0f7562eda261481da16cc8569e49d01f/method_report_manifest/a7aceb2795d57a31232c1bda96c392413ee409824544fff70db082b681603847",
+            "child_call_ids": [],
+            "job_id": null,
+            "job_ownership": null,
+            "job_status": null,
+            "job_cleanup_status": null,
+            "job_blocked_reason": null,
+            "job_cancel_requested": null,
+            "shared_job_notice": null,
+            "deferred_reason": null,
+            "failure": null
+          }
+        ],
+        "physical_attempts": 2,
+        "active_wall_s": 12.484798917081207,
+        "limits": {
+          "max_active_wall_s": 1800,
+          "max_physical_attempts": 24,
+          "max_retries_per_step": 1,
+          "max_steps": 8
+        },
+        "summary_handle": "obj://run_0f7562eda261481da16cc8569e49d01f/workflow_summary/a4216fd1fe0a149dc4e624bbc7f1276771aeed06ef09605332c4faf17aa09f18",
+        "event_seqs": [
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          31,
+          32,
+          33,
+          36,
+          37,
+          38,
+          39,
+          48,
+          49,
+          50,
+          51,
+          54,
+          71,
+          72,
+          73,
+          74,
+          78,
+          80,
+          81
+        ],
+        "jobs_readable": true
+      }
+    },
+    "sharedExecution": "exec_38fdbadc5dce4820be8f06b353142b89"
+  },
+  "inputs": [
+    {
+      "name": "public_1ubq.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "provenance": "public PDB entry 1UBQ (repository fixture; OpenMM input, 1HSG is refused by OpenMM)"
+    }
+  ],
+  "fixtureLabels": [
+    "labeled OS fault fixture: SIGKILL of this QA run's own openmm_worker.py (scoped by cwd to the QA runs root); no result is produced by the fixture"
+  ],
+  "buildId": "NUugf8EWW7h480ZPwlhqc",
+  "harness": {
+    "workflows-flow.cjs": "8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+    "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 316,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929c/minimize/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 418,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 8,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929c/minimize/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 88052,
+        "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+        "onDiskBytes": 88052,
+        "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 64,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_0f7562eda261481da16cc8569e49d01f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "workflows-minimize.jsonl",
+  "startedAt": "2026-09-29T10:20:25.482Z",
+  "finishedAt": "2026-09-29T10:21:05.336Z"
+}

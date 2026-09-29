@@ -2,8 +2,8 @@
 
 - 판정: **완료** (2026-09-29)
 - 브랜치: `dryforge/m13-workflows` (`phase/m13-analysis-workflows` = main `1e91848`에서 분기). main 병합 여부와 방법은 사용자가 정한다.
-- 고정 소스: 제품 `d1eaf48`. 고정 뒤 변경은 M13 수락 실행기의 하위 실행기 대장 판정(`af1500b`, `scripts/m13_offscreen_acceptance.py`·`scripts/test_m13_offscreen_acceptance.py`)뿐이며 그 뒤 수락 QA 전체를 다시 돌렸다. 증거 커밋 `f630e20`.
-- 증거: `docs/qa/m13-workflows-20260929/`(최종, 2차 실행), `docs/qa/m13-workflows-20260929-run1/`(1차 실행, fail 보존, `RUN1-NOTE.md`).
+- 최종 고정 소스: `e83071b`(최종 검토 수정 `86bbff3`). 공유 작업 경로가 바뀌어 전체 게이트와 수락 QA 전체를 이 고정에서 다시 돌렸다(3차 실행). 이전 고정: 제품 `d1eaf48`, 실행기 대장 판정 수정 `af1500b`(증거 커밋 `f630e20`).
+- 수락 증거: `docs/qa/m13-workflows-20260929-final/`(최종, 3차 실행). 이력: `docs/qa/m13-workflows-20260929/`(2차 실행, `af1500b`, pass), `docs/qa/m13-workflows-20260929-run1/`(1차 실행, fail 보존, `RUN1-NOTE.md`).
 - 옛 단계 폴더 `phases/protview-workflows/`는 index를 만들지 않고 `step0.md`도 그대로 둔다(결정 0018).
 
 ## 결과물
@@ -40,8 +40,11 @@
 | 오프스크린 흐름·M13 수락 실행기 | `b3698b3` (병합 `b2927dd`) |
 | 검토 수정 | 패널 `c96a3dc`(병합 `7404a7b`), 백엔드 `9b2c7b7`(병합 `65bbf4e`), 남은 항목 `03904ef` |
 | 제품 고정 | `d1eaf48` |
-| 수락 실행기 대장 판정 수정(최종 고정) | `af1500b` |
-| 게이트·수락 QA 증거 | `f630e20` |
+| 수락 실행기 대장 판정 수정 | `af1500b` |
+| 게이트·수락 QA 증거(1·2차 실행) | `f630e20` |
+| 완료 기록·하네스 문서 | `c08e475` |
+| 최종 검토 수정(최종 고정) | `86bbff3` (병합 `e83071b`) |
+| 최종 게이트·수락 QA 증거(3차 실행) | 이 기록과 같은 커밋 |
 
 ## 검토 (Opus 5.5, 구현하지 않은 서브에이전트)
 - 구현 중 driver 명세 검토: **needs-fix**. 모든 변경 요청이 판단 전에 복구 조정을 하도록 고치고, probe·철회·작업 재시도 규칙을 고쳤다(`8dddfa6`).
@@ -58,7 +61,30 @@
 
 - 독립 증거 검토(코드 검토자와 다른 인스턴스): **approve**, 막는 지적 없음, 권고 8개. 권고는 코드를 바꾸지 않고 기록으로 처리했다: 아래 수락 QA의 1차 실행 해석, 대체한 과거 검증 범위, `docs/tracking/findings.md`의 새 항목(상단 예산 카운터 지연, M10 측정 원자 선택 flake, 화학 화면 공동 찾기 다시 열기 미관찰, 스크롤된 결과 프레임), M8–M10 회귀 행의 렌더러 문자열 부재.
 
-## 전체 게이트 (제품 고정 `d1eaf48`)
+- 최종 검토(Opus 5.5, 앞의 검토자들과 다른 인스턴스): 막는 지적 1개와 추가 지적. 모두 `86bbff3`에서 고쳤고 계약·명세 변경은 없었다.
+
+| 구분 | 지적 | 처리 |
+|---|---|---|
+| 막음 | 흐름이 끝난 뒤에도 흐름 소유 작업의 `/jobs` 수동 시작·재시도가 영구히 412로 막혀, 종료된 실행의 작업을 사람이 다시 돌릴 수 없음 | 수정: 소유 실행이 종료 상태가 아닐 때만 거절(API의 `owner_active` 확인). 실행이 끝나면 기존 수동 재시도 규칙을 따름 |
+| 지적 | 한도 소진 실패·`compatibility_changed` 차단 때 열린 소유 작업 dispatch가 queued/claimed로 남음 | 수정: 그 작업을 취소 |
+| 지적 | 승인 철회가 실제 자식 시작이 아닌 호출까지 세어, 예산으로 풀린 호출 뒤 `awaiting_approval`로 돌아가지 못함 | 수정: 실제 자식 시작만 셈 |
+| 지적 | 다음 단계 실행 요청 중 화면의 busy 상태가 승인 철회 버튼을 막음 | 수정: 승인 철회를 중지처럼 busy 예외로(`frontend/src/lib/analysis.ts`) |
+| 지적 | Stop 훅 pytest 그룹에 M13 실행기 단위 테스트가 없음 | 수정: 세 번째 그룹에 추가(`.codex/hooks/stop.py`) |
+| 지적 | 수락 실행기가 일부 phase만 돌려도 `acceptance`가 true가 될 수 있고, `--build auto`가 옛 빌드를 재사용할 수 있음 | 수정: 모든 phase가 돌고 통과할 때만 `acceptance: true`, 현재 프런트엔드 소스로 도장 찍은 빌드만 재사용 |
+
+## 최종 전체 게이트 (최종 고정 `e83071b`)
+
+| 명령 | 결과 |
+|---|---|
+| `pytest backend/tests -q -rs` | 593 passed, skip 0 (fpocket·ProLIF 작업 환경 설치), 970.8 s |
+| `ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py` | 통과 |
+| `pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py -q` | 90 passed |
+| `node --check` `pocket-flow.cjs`, `workflows-flow.cjs` | 통과 |
+| `test:events`, `typecheck`, `build` | 148 passed, 통과, 통과(게이트 빌드 `byXhIMdNy_vdg0qZB-eX7`) |
+
+수락 실행기는 `--build auto`로 같은 소스에서 typecheck → build를 한 번 더 해 소스 도장을 찍은 빌드 `NUugf8EWW7h480ZPwlhqc`로 QA를 돌렸다(`docs/qa/m13-workflows-20260929-final/gate-results.md`).
+
+## 이전 전체 게이트 (제품 고정 `d1eaf48`, 이력)
 
 | 명령 | 결과 |
 |---|---|
@@ -84,12 +110,19 @@
 - 회귀: M8 normal, M9 openmm full → scenes core, M10 measure·alignment 통과. M11 수락 실행기 전체(모든 모드) exit 0, 사례 17/17, 29행, 비-loopback 0. M12 수락 실행기 31/31, 외부 요청 0.
 - 비-loopback 요청 0건, 제품의 제공자 호출 0회, 남은 프로세스·포트 없음.
 
+### 3차 실행 — 최종 수락 증거 (`e83071b`, 빌드 `NUugf8EWW7h480ZPwlhqc`, 증거 `docs/qa/m13-workflows-20260929-final/`)
+- 최종 검토 수정이 공유 작업 경로(`jobs/queue.py`, `api/app.py`의 작업 시작·재시도)를 바꿔 수락 QA 전체를 새 루트 `runs/m13-acceptance-20260929c`에서 다시 돌렸다.
+- 판정 **pass**, `acceptance: true`. 단계 17/17, 사례 28/28(W-* 9개, S-* 19개), 모든 단계 1회 시도, 재실행 없음. 수락 시작 때 작업 트리 변경 없음.
+- 회귀: M8 normal, M9 openmm full → scenes core, M10 measure·alignment 통과. M11 수락 실행기 전체 exit 0, 사례 17/17, 29행, 비-loopback 0. M12 수락 실행기 31/31, 외부 요청 0. 1차 실행의 M10 측정 원자 선택 flake는 세 M10 measure 실행 모두에서 재발하지 않았다.
+- 비-loopback 요청 0건, 제품의 제공자 호출 0회, 남은 프로세스·포트 없음.
+
 ## 대체한 과거 검증 범위
 - M13이 바꾼 공유 소스: `backend/mw/runtime/orchestrator.py`, `jobs/queue.py`, `core/events.py`, `api/app.py`, 보고서 모듈(`reports.py`, `chemical_reports.py`, `comparison_reports.py`, `method_reports.py`, `openmm_reports.py`, `pocket_reports.py`), `frontend/app/page.tsx`, `ChemicalWorkspace.tsx`, `PocketPanel.tsx`, `src/lib/api.ts`, `contracts.ts`, `pockets.ts`, `design/components.css`.
-- 고정 빌드 `WCnxUsptjGLeenXzwlYhV`(제품 `d1eaf48` + 실행기 수정 `af1500b`)에서 이 실행이 대체한 범위: 전체 백엔드 테스트(589, skip 0), M8 normal-flow, M9 openmm-flow full → scenes-flow core, M10 comparison measure·alignment(M13·M11·M12 실행기에서 세 번), M11 수락 실행기 전체(17/17, 29행: faults, restrictions, 잘못된 입력, replay, 연결 map/replace, 실행 중 취소, 작업 프로세스 없음·버전 불일치 포함), M12 수락 실행기 전체(31/31).
+- 최종 고정 `e83071b`(빌드 `NUugf8EWW7h480ZPwlhqc`)의 3차 실행이 대체한 범위(2차 실행 `af1500b`·`WCnxUsptjGLeenXzwlYhV`와 같은 범위): 전체 백엔드 테스트(593, skip 0), M8 normal-flow, M9 openmm-flow full → scenes-flow core, M10 comparison measure·alignment(M13·M11·M12 실행기에서 세 번), M11 수락 실행기 전체(17/17, 29행: faults, restrictions, 잘못된 입력, replay, 연결 map/replace, 실행 중 취소, 작업 프로세스 없음·버전 불일치 포함), M12 수락 실행기 전체(31/31).
 - 다시 돌리지 않은 범위(과거 증거가 공유 소스 변경 이전): scenes-flow의 core 외 모드(faults, replay, identity, projection, readiness, post-races, encoding, restore/detail manual, focus, scope-large, overlap-restore), openmm-flow queued/running-cancel, `openmm-faults`·`openmm-persistence`·`openmm-post-races`·`openmm-retry`·`history-keyboard`·`dry-run.cjs`, 과거 단계 `execute.py --verify`(오래된 상태 그대로), 모든 온라인·제공자 경로(설계상 호출 0회). M8–M10 회귀 행에는 WebGL 렌더러 문자열이 없다.
 
 ## 증거 위치
-- 커밋: `docs/qa/m13-workflows-20260929/`(README, `gate-results.md`, `freeze-manifest.txt`, 사례 대장, 텍스트 증거, `SHA256SUMS`, `binary-artifacts.json`, `ARCHIVED-EVIDENCE.sha256`; 7.4 MB, 427개 파일), `docs/qa/m13-workflows-20260929-run1/`(7.3 MB, `RUN1-NOTE.md`).
-- Git 제외: 스크린숏·paint 프레임·다운로드 원본은 `frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/`(2차), `.../20260929/`(1차). 실행마다 256 KiB를 넘는 텍스트 증거 50개(2차 331,398,166 bytes, 1차 330,975,167 bytes; M11 하위 실행기의 `chemical-evidence.json`은 최대 약 62 MB)를 각 폴더의 `export-full/`로 옮겼다. 대장(`case-ledger*.json`, `ledger-row.json`)은 크기와 관계없이 커밋했다. 옮긴 파일의 해시는 `ARCHIVED-EVIDENCE.sha256`과 `SHA256SUMS`에, 확인 명령은 각 README 끝 절에 있다(결정 0020).
-- QA runs 루트: `runs/m13-acceptance-20260929b`(2차). Git 제외.
+- 커밋(최종): `docs/qa/m13-workflows-20260929-final/`(README, `gate-results.md`, `freeze-manifest.txt`, 사례 대장, 텍스트 증거, `SHA256SUMS`, `binary-artifacts.json`, `ARCHIVED-EVIDENCE.sha256`; 7.4 MB, 427개 파일). 옮긴 텍스트 증거 50개(331,007,991 bytes)는 `frontend/tests/offscreen/artifacts/m13-acceptance/20260929c/export-full/`.
+- 커밋(이력): `docs/qa/m13-workflows-20260929/`(2차, README, `gate-results.md`, `freeze-manifest.txt`, 사례 대장, 텍스트 증거, `SHA256SUMS`, `binary-artifacts.json`, `ARCHIVED-EVIDENCE.sha256`; 7.4 MB, 427개 파일), `docs/qa/m13-workflows-20260929-run1/`(7.3 MB, `RUN1-NOTE.md`).
+- Git 제외: 스크린숏·paint 프레임·다운로드 원본은 `frontend/tests/offscreen/artifacts/m13-acceptance/20260929c/`(3차, 최종), `.../20260929b/`(2차), `.../20260929/`(1차). 실행마다 256 KiB를 넘는 텍스트 증거 50개(2차 331,398,166 bytes, 1차 330,975,167 bytes; M11 하위 실행기의 `chemical-evidence.json`은 최대 약 62 MB)를 각 폴더의 `export-full/`로 옮겼다. 대장(`case-ledger*.json`, `ledger-row.json`)은 크기와 관계없이 커밋했다. 옮긴 파일의 해시는 `ARCHIVED-EVIDENCE.sha256`과 `SHA256SUMS`에, 확인 명령은 각 README 끝 절에 있다(결정 0020).
+- QA runs 루트: `runs/m13-acceptance-20260929c`(3차, 최종), `runs/m13-acceptance-20260929b`(2차). Git 제외.
