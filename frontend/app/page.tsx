@@ -130,6 +130,7 @@ export default function WorkspacePage() {
   const pocketHostRef = useRef<{ runId: string | null; sourceHandles: string[] }>({ runId: null, sourceHandles: [] });
   // Host-side stale guard for the M13 analysis panel: a late panel callback of another run is ignored.
   const analysisHostRef = useRef<{ runId: string | null }>({ runId: null });
+  const analysisReportsReadRef = useRef(0);
   // M13 flow panel ↔ pocket panel: explicit chain selection (read-only import) and stored-set open requests that go
   // through the pocket panel's own "기록에서 다시 열기" guards.
   const [pocketChainSelection, setPocketChainSelection] = useState<{ runId: string; source: string; chains: string[] | null } | null>(null);
@@ -1362,13 +1363,18 @@ export default function WorkspacePage() {
     setChemicalActive(true);
   }
   /** A workflow step may have created objects (prepared/chemical/minimized structures, reports): re-read this run's
-   * event log so they become ordinary source and history options without a reload. A newer run or reopen wins. */
+   * event log and saved report list so they become ordinary source, history and saved-report options without a
+   * reload. A newer run or reopen wins; for reports, only the latest such read may apply (no late overwrite). */
   function refreshEventsFromAnalysis(requestRunId: string) {
     if (!hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current)) return;
     const ticket = epoch.current;
+    const current = () => ticket === epoch.current && hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current);
     api.allEvents(requestRunId).then(log => {
-      if (ticket === epoch.current && hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current))
-        setEvents(previous => newerEventLog(previous, log));
+      if (current()) setEvents(previous => newerEventLog(previous, log));
+    }).catch(() => undefined);
+    const read = ++analysisReportsReadRef.current;
+    api.reports(requestRunId).then(reports => {
+      if (current() && read === analysisReportsReadRef.current) setSavedReports(reports);
     }).catch(() => undefined);
   }
   function enterChemicalFromAnalysis(requestRunId: string) {

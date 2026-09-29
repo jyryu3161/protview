@@ -445,3 +445,29 @@ test("record notices apply only to the current, not-yet-completed step", () => {
   assert.equal(a.noticeApplies(r, null), true, "an execution-level notice without a step is kept");
   assert.equal(a.noticeApplies(r, "s99"), false, "unknown step");
 });
+
+test("an unreadable execution history row is shown as an error row without a reopen action", () => {
+  const ok = { execution_id: "exec_1", plan_handle: "obj://run-synthetic/analysis_plan/eeee", goal: "measure_atoms",
+    status: "complete", revision: 7, created_seq: 3, dry_run: false, current_step: null, summary_handle: null, error: null };
+  same(a.historyRowView(ok), { kind: "ok", reopen: true, error: null });
+  const bad = { execution_id: "exec_2", plan_handle: null, goal: null, status: null, revision: null, created_seq: 9,
+    dry_run: null, current_step: null, summary_handle: null,
+    error: { code: "execution_record_invalid", message: "기록을 읽을 수 없습니다." } };
+  same(a.historyRowView(bad), { kind: "error", reopen: false, error: "기록을 읽을 수 없습니다. (execution_record_invalid)" });
+  // A row without an error but missing its status is also not reopened (defensive against partial rows).
+  same(a.historyRowView({ ...ok, status: null }), { kind: "error", reopen: false, error: "실행 기록을 읽을 수 없습니다." });
+  assert.equal(a.historyCapNote(100, 130), "최근 100개만 표시합니다 (전체 130개).");
+  assert.equal(a.historyCapNote(3, 3), null);
+});
+
+test("workflow object refresh re-reads events and saved reports behind the same run/epoch guards", () => {
+  const page = fs.readFileSync(path.join(__dirname, "../app/page.tsx"), "utf8");
+  const start = page.indexOf("function refreshEventsFromAnalysis(");
+  assert.ok(start >= 0);
+  const body = page.slice(start, page.indexOf("\n  function ", start + 1));
+  assert.match(body, /api\.allEvents\(requestRunId\)/);
+  assert.match(body, /api\.reports\(requestRunId\)/, "saved report list is re-read through the existing page path");
+  assert.match(body, /ticket === epoch\.current && hostRequestAccepted\(\{ runId: requestRunId \}, analysisHostRef\.current\)/);
+  assert.match(body, /if \(current\(\) && read === analysisReportsReadRef\.current\) setSavedReports\(reports\)/,
+    "only the latest read for the current run/epoch may set the list");
+});

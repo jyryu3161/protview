@@ -133,9 +133,12 @@ export interface AnalysisExecution { schema: string; execution_id: string; run_i
   driver: { in_progress: boolean; request_ids: string[] }; recovery_pending: boolean;
   steps: AnalysisStepRecord[]; physical_attempts: number; active_wall_s: number; limits: Record<string, number>;
   summary_handle: string | null; event_seqs: number[]; jobs_readable: boolean }
-export interface AnalysisExecutionList { schema: "analysis_execution_list@1"; total: number;
-  rows: { execution_id: string; plan_handle: string; goal: AnalysisGoal; status: AnalysisExecutionStatus;
-    revision: number; created_seq: number; dry_run: boolean; current_step: string | null; summary_handle: string | null }[] }
+// total counts every created execution; rows are capped at 100. A row whose record cannot be read carries
+// error {code:"execution_record_invalid"} and null goal/status/revision/dry_run/current_step/summary_handle.
+export interface AnalysisExecutionListRow { execution_id: string; plan_handle: string | null; goal: AnalysisGoal | null;
+  status: AnalysisExecutionStatus | null; revision: number | null; created_seq: number | null; dry_run: boolean | null;
+  current_step: string | null; summary_handle: string | null; error: { code: string; message: string } | null }
+export interface AnalysisExecutionList { schema: "analysis_execution_list@1"; total: number; rows: AnalysisExecutionListRow[] }
 export interface AnalysisEnvelope { execution: AnalysisExecution; replayed: boolean;
   request: { request_id: string; action: string; state: "completed" | "pending"; outcome: string } }
 export interface AnalysisSummary { handle: string; summary: { schema: string; plan_handle: string; plan_hash: string;

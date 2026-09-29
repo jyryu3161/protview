@@ -1,5 +1,5 @@
 /** M13 analysis workflow panel: pure decisions only (no fetch, no React). See docs/contracts.md (M13). */
-import type { AnalysisAction, AnalysisExecution, AnalysisGoal, AnalysisStepRecord, ResidueRef } from "./contracts";
+import type { AnalysisAction, AnalysisExecution, AnalysisExecutionListRow, AnalysisGoal, AnalysisStepRecord, ResidueRef } from "./contracts";
 import type { AtomRefV1 } from "./comparison";
 
 export type AnalysisPanelKind = "main" | "chemical";
@@ -350,4 +350,18 @@ export function outcomeText(outcome: string): string {
   if (OUTCOME_TEXT[outcome]) return OUTCOME_TEXT[outcome];
   if (outcome.startsWith("no_op_")) return `지금 진행할 단계가 없어 아무것도 실행하지 않았습니다 (상태 ${outcome.slice(6)}).`;
   return outcome;
+}
+
+// ---------------------------------------------------------------------------------------------- history list
+/** An execution history row: an unreadable record is an error row with its reason and no reopen action. */
+export function historyRowView(row: Pick<AnalysisExecutionListRow, "status" | "error">):
+  { kind: "ok" | "error"; reopen: boolean; error: string | null } {
+  if (row.error) return { kind: "error", reopen: false, error: `${row.error.message} (${row.error.code})` };
+  if (row.status === null) return { kind: "error", reopen: false, error: "실행 기록을 읽을 수 없습니다." };
+  return { kind: "ok", reopen: true, error: null };
+}
+
+/** Rows are capped by the backend; say so when fewer rows than executions are listed. */
+export function historyCapNote(shown: number, total: number): string | null {
+  return shown < total ? `최근 ${shown}개만 표시합니다 (전체 ${total}개).` : null;
 }

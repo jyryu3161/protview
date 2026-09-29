@@ -999,8 +999,17 @@ def test_physical_attempt_and_active_wall_limits(client, monkeypatch):
     rid, run, _body, eid = _approved_measure(client)
     first = _done(_act(client, rid, eid, "advance"))
     assert first["steps"][0]["status"] == "completed" and first["active_wall_s"] > 0
+    # The wall limit refuses physical starts only: the report step still runs after the limit is reached.
     second = _done(_act(client, rid, eid, "advance"))
-    assert second["status"] == "failed" and second["steps"][1]["failure"]["reason_code"] == "max_active_wall"
+    assert second["status"] == "complete" and second["steps"][1]["status"] == "completed"
+    assert not any(e["type"] == "analysis_attempt_refused" for e in run.events.read())
+    # A physical restart after a charged attempt is refused by the wall limit before it begins.
+    rid, run, _body, eid = _approved_measure(client)
+    api_module._run(rid).sleep = lambda seconds: None
+    _fixture_tool(monkeypatch, "measure_distance", _transient(1))
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["status"] == "failed" and record["steps"][0]["failure"]["reason_code"] == "max_active_wall"
+    assert len(_linked(run, eid, "tool_called")) == 1 and record["physical_attempts"] == 1
 
 
 def _real(name: str):

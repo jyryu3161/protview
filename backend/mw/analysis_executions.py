@@ -912,8 +912,10 @@ class _Incompatible(Exception):
 
 def _limits_exhausted(state: dict[str, Any], plan: dict[str, Any], events: list[dict[str, Any]],
                       lane: str) -> str | None:
-    # Report steps make no physical attempt, so the attempt limit never refuses them.
-    if lane != "report" and len(state["attempts"]) >= plan["limits"]["max_physical_attempts"]:
+    # Report steps make no physical start, so neither the attempt nor the active-wall limit refuses them.
+    if lane == "report":
+        return None
+    if len(state["attempts"]) >= plan["limits"]["max_physical_attempts"]:
         return "max_physical_attempts"
     if _active_wall(events, state["execution_id"]) >= plan["limits"]["max_active_wall_s"]:
         return "max_active_wall"

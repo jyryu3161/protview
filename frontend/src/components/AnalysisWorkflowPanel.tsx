@@ -7,7 +7,7 @@ import type { AnalysisAction, AnalysisExecution, AnalysisExecutionList, Analysis
   ResidueRef } from "@/lib/contracts";
 import { acceptPolled, adoptExecution, allowedSourceKinds, ANALYSIS_GOALS, analysisUiState, approvalDisplay, BUSY_TEXT, CHEMICAL_CATEGORIES,
   classifyFailure, CONTACT_TYPES, DRY_RUN_NOTICE, draftInputs, EDIT_NEW_PLAN_NOTE, executionControls, executionProgressed,
-  GOAL_LABELS, goalPlacement, importDraft, isTerminal, keepRequestAfter, LOCAL_RULES_NOTE, MAKE_IN_SCREEN, noticeApplies,
+  GOAL_LABELS, goalPlacement, historyCapNote, historyRowView, importDraft, isTerminal, keepRequestAfter, LOCAL_RULES_NOTE, MAKE_IN_SCREEN, noticeApplies,
   objectsMayHaveChanged, outcomeText, PLAN_ESTIMATE_NOTE, planView, pollNeeded, requestIdFor, requestKey, responseCurrent, resultOpenDecision, stepIsExpensive, stopResend,
   type AnalysisDraft, type AnalysisPanelKind, type FailureKind, type PanelStamp, type PendingRequest, type PlanFocus, type ResultView,
   type ScreenSelections } from "@/lib/analysis";
@@ -527,12 +527,23 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
       {listsError && <p role="alert" className="mw-table-error">{listsError}</p>}
       <Button size="sm" onClick={refreshLists}>목록 다시 읽기</Button>
       <p className="mw-eyebrow">실행</p>
-      {executions?.rows.map(row => <div key={row.execution_id} className="mw-pocket-history" data-analysis-history-execution={row.execution_id}
-        data-analysis-history-status={row.status}>
-        <span className="mw-mono">{row.execution_id} · {row.goal} · {STATUS_TEXT[row.status] ?? row.status} · rev {row.revision}{row.dry_run ? " · dry-run" : ""}</span>
-        <Button size="sm" aria-label={`실행 다시 열기 ${row.execution_id}`} disabled={busy !== null && busy !== "cancel"}
-          onClick={() => void openExecution(row.execution_id)}>다시 열기</Button>
-      </div>)}
+      {executions && historyCapNote(executions.rows.length, executions.total) &&
+        <p className="mw-eyebrow">{historyCapNote(executions.rows.length, executions.total)}</p>}
+      {executions?.rows.map(row => {
+        const view = historyRowView(row);
+        if (view.kind === "error") return <div key={row.execution_id} className="mw-pocket-history"
+          data-analysis-history-execution={row.execution_id} data-analysis-history-status="error">
+          <span className="mw-mono">{row.execution_id}</span>
+          <span role="note" className="mw-table-error">{view.error}</span>
+        </div>;
+        const status = row.status ?? "";
+        return <div key={row.execution_id} className="mw-pocket-history" data-analysis-history-execution={row.execution_id}
+          data-analysis-history-status={status}>
+          <span className="mw-mono">{row.execution_id} · {row.goal} · {STATUS_TEXT[status] ?? status} · rev {row.revision}{row.dry_run ? " · dry-run" : ""}</span>
+          <Button size="sm" aria-label={`실행 다시 열기 ${row.execution_id}`} disabled={busy !== null && busy !== "cancel"}
+            onClick={() => void openExecution(row.execution_id)}>다시 열기</Button>
+        </div>;
+      })}
       <p className="mw-eyebrow">계획</p>
       {plans?.rows.map(row => <div key={row.handle} className="mw-pocket-history" data-analysis-history-plan={row.handle}>
         <span className="mw-mono">#{row.ordinal} · {row.goal} · {shortHandle(row.handle)} · {row.executable ? "실행 가능" : "선행 조건 미충족"}</span>
