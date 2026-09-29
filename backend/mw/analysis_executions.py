@@ -137,15 +137,32 @@ def _thread_lock(key: str) -> threading.Lock:
         return _LOCKS.setdefault(key, threading.Lock())
 
 
+_HELD = threading.local()
+
+
 @contextmanager
 def _workflow_lock(run: Any):
-    """Short same-run workflow owner, distinct from the nonreentrant run owner; held for transitions only."""
+    """Short same-run workflow owner, distinct from the nonreentrant run owner; held for transitions only.
+
+    Reentrant within one thread so read helpers can run under it (driver-lock probes happen only here).
+    """
     path = run.run_dir / "analysis.lock"
-    with _thread_lock(str(path.resolve())):
+    key = str(path.resolve())
+    held = getattr(_HELD, "keys", None)
+    if held is None:
+        held = _HELD.keys = set()
+    if key in held:
+        yield
+        return
+    with _thread_lock(key):
         descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX)
-            yield
+            held.add(key)
+            try:
+                yield
+            finally:
+                held.discard(key)
         finally:
             os.close(descriptor)
 
@@ -185,14 +202,19 @@ class _DriverLock:
 
 
 def _driver_live(run: Any, execution_id: str) -> bool:
-    """True while another request holds this execution's driver lock (probe only; reads never wait)."""
+    """True while another request holds this execution's driver lock.
+
+    The probe runs under the workflow lock, which every driver acquisition also holds, so a probe can never
+    make a concurrent Advance/Retry fail its non-blocking acquisition (no spurious ``busy``).
+    """
     probe = _DriverLock(run, execution_id)
     if not probe.path.exists():
         return probe.lock.locked()
-    if not probe.try_acquire():
-        return True
-    probe.release()
-    return False
+    with _workflow_lock(run):
+        if not probe.try_acquire():
+            return True
+        probe.release()
+        return False
 
 
 # ---------------------------------------------------------------------------------------------- events and fold
@@ -324,6 +346,10 @@ def _job_binding(events: list[dict[str, Any]], execution_id: str, step_id: str) 
 
 def _jobs(run: Any) -> dict[str, dict[str, Any]]:
     return {job["job_id"]: job for job in _job_queue(run).list()}
+
+
+def _jobs_if_needed(run: Any, plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return _jobs(run) if any(step["lane"] == "durable_job" for step in plan["steps"]) else {}
 
 
 def _active_wall(events: list[dict[str, Any]], execution_id: str) -> float:
@@ -613,9 +639,13 @@ def _short(run: Any, execution_id: Any, action: str, request_id: Any, expected: 
         state = _fold(events, execution_id, plan)
         _check_revision(state, expected)
         live = _driver_live(run, execution_id)
+        # Recovery first (request-independent, no physical work), then judge the request on reconciled state.
+        _close_stale(run, execution_id, state, None, live)
+        _reconcile(run, execution_id, plan, driver_live=live)
+        events = list(run.events.read())
+        state = _fold(events, execution_id, plan)
         outcome = handler(state, plan, events, live)  # raises AnalysisError before admission when refused
         _admit(run, execution_id, request_id, sha, action, expected)
-        _close_stale(run, execution_id, state, request_id, live)
         outcome = _perform(run, execution_id, plan, action, outcome, request_id, live)
         _finish(run, execution_id, request_id, action, outcome)
     return _response(run, execution_id, request_id, replayed=False)
@@ -681,6 +711,14 @@ def approve(run: Any, execution_id: Any, request_id: Any, expected_revision: Any
     return _short(run, execution_id, "approve", request_id, expected_revision, {"plan_hash": plan_hash}, check)
 
 
+def _child_admitted(state: dict[str, Any], events: list[dict[str, Any]]) -> bool:
+    """A released dispatch whose child never started does not count; an open dispatch may be in flight."""
+    if any(state["steps"][sid]["dispatch"] is not None for sid in state["order"]):
+        return True
+    return any(type(event.get("execution_link")) is dict and
+               event["execution_link"].get("execution_id") == state["execution_id"] for event in events)
+
+
 def revoke(run: Any, execution_id: Any, request_id: Any, expected_revision: Any) -> dict[str, Any]:
     def check(state: dict[str, Any], plan: dict[str, Any], events: list[dict[str, Any]], live: bool) -> str:
         _refuse_plan_only(state)
@@ -691,7 +729,7 @@ def revoke(run: Any, execution_id: Any, request_id: Any, expected_revision: Any)
             raise AnalysisError(412, "execution_terminal", "execution already ended")
         if state["approval"] is None:
             raise AnalysisError(412, "not_approved", "execution has no plan approval to revoke")
-        return "cancelled" if state["ever_dispatched"] else "awaiting_approval"
+        return "cancelled" if _child_admitted(state, events) else "awaiting_approval"
     return _short(run, execution_id, "revoke", request_id, expected_revision, {}, check)
 
 
@@ -1014,6 +1052,15 @@ def _run_call_outcome(run: Any, events: list[dict[str, Any]], state: dict[str, A
                         "retryable": False}
             return _outcome_from_class(None, interrupted=True)
         return _outcome_from_class(last.get("error"))
+    guard = next((event for event in events if event["type"] == "checkpoint" and
+                  event.get("branch_id") == dispatch["branch_id"] and event["seq"] > dispatch["seq"] and
+                  event.get("reason") in {"repeated_call_hash", "oscillation", "no_progress"}), None)
+    if guard is not None or (hint is None and any(event["type"] == "checkpoint" and
+                                                  event.get("branch_id") == dispatch["branch_id"]
+                                                  for event in events)):
+        reason = guard["reason"] if guard else "stopped_branch"
+        return {"kind": "failed", "status": "failed", "error": "fatal", "reason_code": f"loop_guard_{reason}",
+                "retryable": False}
     return _hint_outcome(hint, started=False) or {"kind": "released", "reason_code": "not_started"}
 
 
@@ -1070,10 +1117,12 @@ def _job_outcome(run: Any, events: list[dict[str, Any]], state: dict[str, Any], 
             return {"kind": "failed", "status": "failed", "error": "resource_exceeded",
                     "reason_code": _refusal_code(events, state, dispatch), "retryable": False, **base}
         outcome = _outcome_from_class(failure.get("error"), interrupted=status == "interrupted")
-        if outcome["kind"] == "failed" and failure.get("error") == "fatal":
-            outcome.update(retryable=True, reason_code="job_failed")  # JobQueue.retry permits a fatal job failure
-        if outcome["kind"] == "failed" and job["attempt_ordinal"] >= 4:
-            outcome["retryable"] = False
+        if outcome["kind"] == "failed":
+            # Spec §6: an owned job failure or timeout is retryable once when JobQueue.retry permits it
+            # (status failed/interrupted, recovery allowance left); the workflow's own limits are handled above.
+            outcome.update(retryable=job["attempt_ordinal"] < 4,
+                           reason_code="job_timeout" if failure.get("message") == "job timeout" else
+                           "job_interrupted" if status == "interrupted" else "job_failed")
         return {**outcome, **base}
     if status == "cancelled":
         if state["stop"] is not None:
@@ -1148,7 +1197,9 @@ def _summary_content(state: dict[str, Any], plan: dict[str, Any], events: list[d
             "execution_id": execution_id, "goal": plan["goal"], "source": plans.SOURCE,
             "approval_event_seq": state["approval"]["seq"], "first_event_seq": state["created_seq"],
             "last_event_seq": last, "steps": rows, "physical_attempts": len(state["attempts"]),
-            "note": "Links only. Numeric scientific values are read from each linked report's validated fields."}
+            "note": ("Links only. Numeric scientific values are read from each linked report's validated fields. "
+                     "first_event_seq is the execution creation event; last_event_seq is the seq of the last "
+                     "step-completion event (the completion event is recorded after this summary).")}
 
 
 def _reconcile(run: Any, execution_id: str, plan: dict[str, Any], *, hint: BaseException | None = None,
@@ -1295,7 +1346,12 @@ def _drive(run: Any, execution_id: Any, action: str, request_id: Any, expected: 
             state = _fold(events, execution_id, plan)
             _check_revision(state, expected)
             _refuse_plan_only(state)
-            status, retryable = _derive(state, plan, events, None, False)
+            # Recovery first: this request holds the driver lock, so every pending driver request is stale.
+            _close_stale(run, execution_id, state, None, False)
+            _reconcile(run, execution_id, plan)
+            events = list(run.events.read())
+            state = _fold(events, execution_id, plan)
+            status, retryable = _derive(state, plan, events, _jobs_if_needed(run, plan), False)
             if state["approval"] is None and status == "awaiting_approval":
                 raise AnalysisError(412, "plan_not_approved", "plan approval is required before execution")
             if action == "advance" and status == "failed" and retryable is not None:
@@ -1306,8 +1362,6 @@ def _drive(run: Any, execution_id: Any, action: str, request_id: Any, expected: 
                                     {"retryable_step": retryable})
             _admit(run, execution_id, request_id, sha, action, expected,
                    **({"step_id": step_id} if step_id else {}))
-            _close_stale(run, execution_id, state, request_id, False)
-            _reconcile(run, execution_id, plan, request_id=request_id)
             work, outcome = _next_work(run, execution_id, plan, action, request_id)
             if work is None:
                 _finish(run, execution_id, request_id, action, outcome)

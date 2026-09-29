@@ -1145,7 +1145,10 @@ def test_crash_window_2_after_admission_is_interrupted_not_rerun(client, monkeyp
     with pytest.raises(Crash):
         ax.advance(run, eid, str(uuid.uuid4()), _get(client, rid, eid)["revision"])
     assert _get(client, rid, eid)["recovery_pending"] is True
-    record = _done(_act(client, rid, eid, "advance"))
+    refused = _act(client, rid, eid, "advance")
+    # Recovery ran first (recording the interruption), so this Advance is refused: retry or stop is required.
+    assert refused.status_code == 412 and refused.json()["error"] == "retry_or_stop_required"
+    record = _get(client, rid, eid)
     # Existing orphan reconciliation charged and closed the attempt; nothing ran again silently.
     assert record["status"] == "failed" and record["retryable_step"] == "s01"
     assert record["steps"][0]["status"] == "interrupted"
@@ -1623,3 +1626,176 @@ def test_revoke_after_dispatch_cancels_the_owned_waiting_job(client, ubq_run):
     assert not _types(run, "approval_resolved") and not _types(run, "budget_reserved")
     assert _act(client, rid, eid, "scientific-approval").status_code == 412
     _assert_run_not_cancelled(run)
+
+
+# ------------------------------------------------------------------------------ review follow-up (recovery first)
+def test_stop_after_crash_window_4_finishes_the_complete_execution_first(client, faults):
+    stages, crash = faults
+    rid, run, _body, eid = _approved_measure(client)
+    _done(_act(client, rid, eid, "advance"))
+    stages["before_summary"] = 1
+    with pytest.raises(crash):
+        ax.advance(run, eid, str(uuid.uuid4()), _get(client, rid, eid)["revision"])
+    stopped = _done(_act(client, rid, eid, "cancel"))
+    # Recovery runs first: every step was already complete, so the execution completes with its summary.
+    assert stopped["status"] == "complete" and stopped["summary_handle"] and stopped["stop"] is None
+    summary = client.get(f"/runs/{rid}/analysis/executions/{eid}/summary").json()["summary"]
+    last_completion = max(e["seq"] for e in run.events.read() if e["type"] == "analysis_step_completed")
+    assert summary["last_event_seq"] == last_completion  # seq of the last step-completion event
+    assert "last_event_seq" in summary["note"]
+
+
+def test_stop_after_crash_window_3_on_the_last_step_completes(client, faults):
+    stages, crash = faults
+    rid, run, _body, eid = _approved_measure(client)
+    _done(_act(client, rid, eid, "advance"))
+    stages["after_child"] = 1
+    with pytest.raises(crash):
+        ax.advance(run, eid, str(uuid.uuid4()), _get(client, rid, eid)["revision"])
+    stopped = _done(_act(client, rid, eid, "cancel"))
+    assert stopped["status"] == "complete" and stopped["summary_handle"]
+    assert len(_types(run, "method_report_created")) == 1
+
+
+def test_retry_after_crash_window_2_is_accepted_after_recovery(client, monkeypatch):
+    rid, run, _body, eid = _approved_measure(client)
+
+    class Crash(BaseException):  # FAULT FIXTURE: the process dies inside the physical attempt
+        pass
+
+    def die(n, real, ctx, kwargs):
+        if n == 1:
+            raise Crash()
+        return real(ctx, **kwargs)
+
+    _fixture_tool(monkeypatch, "measure_distance", die)
+    with pytest.raises(Crash):
+        ax.advance(run, eid, str(uuid.uuid4()), _get(client, rid, eid)["revision"])
+    retried = _done(_act(client, rid, eid, "retry", step_id="s01"))
+    assert retried["steps"][0]["status"] == "completed" and retried["steps"][0]["retries_used"] == 1
+    assert len(_linked(run, eid, "tool_called")) == 2 and len(_linked(run, eid, "tool_interrupted")) == 1
+
+
+def test_existing_loop_guard_stops_repeated_linked_calls(client, monkeypatch, tmp_path):
+    from mw.workspace import load_config, new_run
+    rid = f"run_{uuid.uuid4().hex}"
+    config = load_config()
+    config["runtime"]["loop_guards"] = {**config["runtime"]["loop_guards"], "repeated_call_hash": 1}
+    # The run is created with a stricter repeat guard; the API reopens it with its recorded configuration.
+    new_run(tmp_path, run_id=rid, registry=api_module.REGISTRY, dry_run=False, config=config)
+    run = api_module._run(rid)
+    assert run.guard.repeated_call_hash == 1
+    reference = _load(run, M10 / "m10-reference.pdb")
+    catalog = atom_rows(run.store, reference)
+    body = _plan(client, rid, "measure_atoms", {"source": reference, "first": _atom(catalog, 10, "N"),
+                                                "second": _atom(catalog, 11, "O")})
+    eid = _execution(client, rid, body["handle"])["execution_id"]
+    _approve(client, rid, eid, body["plan_sha256"])
+    run.sleep = lambda seconds: None
+    _fixture_tool(monkeypatch, "measure_distance", _transient(100))
+    assert _done(_act(client, rid, eid, "advance"))["retryable_step"] == "s01"
+    stopped = _done(_act(client, rid, eid, "retry", step_id="s01"))
+    assert stopped["status"] == "failed" and stopped["retryable_step"] is None
+    assert stopped["steps"][0]["failure"]["reason_code"] == "loop_guard_repeated_call_hash"
+    branch = f"analysis_{eid}"
+    assert [e for e in run.events.read() if e["type"] == "checkpoint" and e.get("branch_id") == branch]
+    proposals = [e for e in run.events.read() if e["type"] == "branch_proposed" and e.get("branch_id") == branch]
+    assert _done(_act(client, rid, eid, "advance"))["status"] == "failed"
+    assert _done(_act(client, rid, eid, "cancel"))["status"] == "failed"  # terminal: Stop is a no-op
+    assert [e for e in run.events.read() if e["type"] == "branch_proposed" and
+            e.get("branch_id") == branch] == proposals  # recovery manufactured no proposals
+
+
+def test_job_crash_window_2_while_running_is_interrupted_without_a_second_job(client, ubq_run, monkeypatch):
+    rid, run, _body, eid = _cavities(client, ubq_run)
+    api_module._run(rid).approve("expensive_first_call")
+
+    class Crash(BaseException):  # FAULT FIXTURE: the server process dies while the owned job runs
+        pass
+
+    def barrier(stage):
+        if stage == "after_go":
+            raise Crash(stage)
+
+    monkeypatch.setattr(ax, "_job_queue", lambda run_: JobQueue(run_, barrier=barrier))
+    with pytest.raises(Crash):
+        ax.advance(run, eid, str(uuid.uuid4()), _get(client, rid, eid)["revision"])
+    monkeypatch.setattr(ax, "_job_queue", JobQueue)
+    assert JobQueue(run).get(_types(run, "job_submitted")[0]["job"]["job_id"])["status"] == "running"
+    api_module.RUNS.clear()  # restart: the existing supervisor reconciles the orphaned job on reopen
+    response = _act(client, rid, eid, "advance")
+    run = api_module._run(rid)
+    record = _get(client, rid, eid)
+    step = record["steps"][0]
+    if step["job_status"] == "interrupted":  # supervisor verified the group empty and closed the attempt
+        # Recovery ran first and recorded the interruption, so the Advance itself is refused.
+        assert response.status_code == 412 and response.json()["error"] == "retry_or_stop_required"
+        assert step["status"] == "interrupted" and record["status"] == "failed" and record["retryable_step"] == "s01"
+    else:  # cleanup pending per existing supervisor semantics: still observed, nothing restarted
+        assert response.status_code == 200 and step["job_cleanup_status"] == "pending"
+    assert len(_types(run, "job_submitted")) == 1 and len(_types(run, "job_dispatch_intent")) == 1
+    assert len(_types(run, "budget_reserved")) == 1
+    assert any(e["type"] == "wall_charged" and e.get("reason") in {"job_attempt", "job_orphan_recovery"}
+               for e in run.events.read())
+
+
+def test_owned_job_timeout_is_retryable_once(client, ubq_run, monkeypatch):
+    rid, _run, _body, eid = _cavities(client, ubq_run)
+    api_module._run(rid).approve("expensive_first_call")
+    original = JobQueue._publish_pocket
+
+    def timed_out(self, *args, **kwargs):  # FAULT FIXTURE: the job ends as the queue's timeout failure
+        return {"status": "failed", "failure": {"error": "resource_exceeded", "message": "job timeout"}}
+
+    monkeypatch.setattr(JobQueue, "_publish_pocket", timed_out)
+    failed = _done(_act(client, rid, eid, "advance"))
+    assert failed["status"] == "failed" and failed["retryable_step"] == "s01"
+    monkeypatch.setattr(JobQueue, "_publish_pocket", original)
+    assert _done(_act(client, rid, eid, "retry", step_id="s01"))["steps"][0]["status"] == "completed"
+
+
+def test_revoke_after_a_released_dispatch_returns_to_awaiting_approval(client):
+    import threading
+    rid, run, _body, eid = _approved_measure(client)
+    held, release = threading.Event(), threading.Event()
+
+    def hold_owner():
+        with run._owner():
+            held.set()
+            release.wait(10)
+
+    holder = threading.Thread(target=hold_owner)
+    holder.start()
+    try:
+        assert held.wait(10)
+        busy = _done(_act(client, rid, eid, "advance"))
+        assert busy["notice"]["code"] == "run_busy" and busy["steps"][0]["status"] == "pending"
+    finally:
+        release.set()
+        holder.join(10)
+    revoked = _done(_act(client, rid, eid, "revoke"))
+    assert revoked["status"] == "awaiting_approval"  # no child was admitted: nothing to cancel
+
+
+def test_read_probe_never_makes_a_concurrent_advance_busy(client):
+    import threading
+    _rid, run, _body, eid = _approved_measure(client)
+    stop = threading.Event()
+
+    def hammer():
+        while not stop.is_set():
+            ax.execution_detail(run, eid)
+            ax._driver_live(run, eid)
+
+    readers = [threading.Thread(target=hammer) for _ in range(3)]
+    for reader in readers:
+        reader.start()
+    try:
+        for _ in range(40):
+            revision = ax.execution_detail(run, eid)["revision"]
+            result = ax.advance(run, eid, str(uuid.uuid4()), revision)
+            assert result["execution"]["status"] in {"ready", "complete"}
+    finally:
+        stop.set()
+        for reader in readers:
+            reader.join(10)
