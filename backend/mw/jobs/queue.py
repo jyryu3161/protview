@@ -34,7 +34,15 @@ from ..core.contracts import check_args
 from ..core.errors import FailureClass, ToolFailure
 from ..core.events import idempotency_key
 from ..core.handles import RUN_ID_RE, canonical_json
-from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
+from ..runtime.orchestrator import (
+    ApprovalRequired,
+    ExecutionLink,
+    ExecutionStopped,
+    Run,
+    RunCancelled,
+    checked_link,
+    link_fields,
+)
 from ..tools.energetic import JOB_PROTOCOLS, require_protocol
 from ..tools.openmm_method import PROTOCOL as OPENMM_PROTOCOL
 from ..tools.openmm_method import preflight
@@ -475,6 +483,8 @@ class JobQueue:
                                 (item["root_call_id"], item["tool_id"]), set())),
                             output_handles=[], failure=None, cleanup_status=None,
                             preparation_handle=None, preparation_attempt_id=None)
+                if "execution_link" in event:
+                    item["execution_link"] = event["execution_link"]
                 jobs[item["job_id"]] = item
             elif kind == "job_claimed":
                 item = jobs[event["job_id"]]
@@ -596,7 +606,9 @@ class JobQueue:
         state = self._state()
         return sorted(state.values(), key=lambda item: item["created"], reverse=True)
 
-    def submit(self, protocol: str, args: dict[str, Any], *, timeout_s: float = 60) -> dict[str, Any]:
+    def submit(self, protocol: str, args: dict[str, Any], *, timeout_s: float = 60,
+               execution_link: ExecutionLink | None = None) -> dict[str, Any]:
+        link = checked_link(execution_link)
         if not isinstance(protocol, str) or protocol not in JOB_PROTOCOLS:
             raise ToolFailure(FailureClass.input_invalid, "unknown energy protocol")
         if not isinstance(args, dict) or any(key in args for key in
@@ -664,9 +676,16 @@ class JobQueue:
                                     "dependency_manifest_sha256": capability["dependency_manifest_sha256"]}
                                    if protocol in CHEMICAL_PROTOCOLS else {})}))
         with self.run._transition():
-            for job in self._rebuild().values():
-                if job["call_key"] == key:
-                    return job
+            existing = next((job for job in self._rebuild().values() if job["call_key"] == key), None)
+            if link is not None:
+                if link.admit is not None:
+                    link.admit({"lane": "job", "protocol": protocol, "key": key, "parameters": normalized,
+                                "timeout_s": timeout_s,
+                                "existing_job_id": existing["job_id"] if existing else None})
+                if existing is not None:
+                    return self._linked_existing(existing, link)
+            if existing is not None:
+                return existing
             job_id = "job_" + uuid.uuid4().hex
             job = {"job_id": job_id, "run_id": self.run.run_id, "root_call_id": job_id,
                    "protocol_id": protocol, "tool_id": JOB_PROTOCOLS[protocol][0], "call_key": key,
@@ -680,11 +699,44 @@ class JobQueue:
             elif protocol == POCKET_PROTOCOL:
                 job["method"] = pocket_pins
                 job["worker_sha256"] = worker_sha256()
-            self.run.events.append("job_submitted", job=job)
-            return self._rebuild()[job_id]
+            self.run.events.append("job_submitted", job=job, **link_fields(link))
+            created = self._rebuild()[job_id]
+            return created if link is None else {**created, "execution_ownership": "owned"}
 
-    def submit_fixture(self, *, timeout_s: float = 3) -> dict[str, Any]:
+    def _linked_existing(self, job: dict[str, Any], link: ExecutionLink) -> dict[str, Any]:
+        """Caller holds the transition: ownership comes from the durable submission link only."""
+        if job.get("execution_link") == link.record():
+            return {**job, "execution_ownership": "owned"}
+        if not any(event["type"] == "job_observed" and event.get("job_id") == job["job_id"] and
+                   event.get("execution_link") == link.record() for event in self.run.events.read()):
+            self.run.events.append("job_observed", job_id=job["job_id"], ownership="observed_shared",
+                                   **link_fields(link))
+        return {**job, "execution_ownership": "observed_shared"}
+
+    @staticmethod
+    def _refuse_unlinked_owned(job: dict[str, Any], owner_active: Callable[[str], bool] | None) -> None:
+        """Manual start/retry never drives a workflow-owned job while its execution may (cancel stays manual).
+
+        ``owner_active(execution_id)`` is the caller's read-only check; without it the refusal fails closed.
+        Once the owning execution ended, the existing manual start/retry rules apply unchanged.
+        """
+        owner = job.get("execution_link")
+        if owner is not None and (owner_active is None or owner_active(owner["execution_id"])):
+            raise ToolFailure(FailureClass.precondition, "job is owned by an analysis execution",
+                              detail={"reason_code": "job_owned_by_analysis_execution", "job_id": job["job_id"]})
+
+    @staticmethod
+    def _require_owner(job: dict[str, Any], link: ExecutionLink) -> None:
+        owner = job.get("execution_link")
+        if (owner is None or owner.get("execution_id") != link.execution_id or
+                owner.get("step_id") != link.step_id):
+            raise ToolFailure(FailureClass.precondition, "job is not owned by this execution",
+                              detail={"reason_code": "job_not_owned", "job_id": job["job_id"]})
+
+    def submit_fixture(self, *, timeout_s: float = 3,
+                       execution_link: ExecutionLink | None = None) -> dict[str, Any]:
         """Internal test entry point; no public request can select a fixture."""
+        link = checked_link(execution_link)
         if self._fixture_mode is None:
             raise ValueError("fixture adapter not configured")
         if not math.isfinite(timeout_s) or not 0 < timeout_s <= 30:
@@ -698,9 +750,9 @@ class JobQueue:
                "input_handles": [], "parameters": {}, "seed": self.run.seed,
                "created": time.time(), "timeout_s": timeout_s, "fixture_only": True}
         with self.run._transition():
-            self.run.events.append("job_submitted", job=job)
+            self.run.events.append("job_submitted", job=job, **link_fields(link))
             self._rebuild()
-        return self.get(job_id)
+        return self.get(job_id) if link is None else {**self.get(job_id), "execution_ownership": "owned"}
 
     def claim_next(self, owner_token: str) -> dict[str, Any] | None:
         if not isinstance(owner_token, str) or not owner_token or len(owner_token) > 100:
@@ -722,15 +774,24 @@ class JobQueue:
                 db.close()
             return self._rebuild()[row[0]]
 
-    def start(self, job_id: str) -> dict[str, Any]:
+    def start(self, job_id: str, *, execution_link: ExecutionLink | None = None,
+              owner_active: Callable[[str], bool] | None = None) -> dict[str, Any]:
         """Claim one named job, then use the same owner/guardian path as tests."""
+        link = checked_link(execution_link)
         with self.run._owner(), self.run._transition():
             job = self._rebuild().get(job_id)
             if job is None:
                 raise KeyError(job_id)
+            if link is not None:
+                self._require_owner(job, link)
+                if link.is_stopped():
+                    raise ExecutionStopped("before_start")
+            else:
+                self._refuse_unlinked_owned(job, owner_active)
             if job["status"] == "queued":
                 owner = "owner_" + uuid.uuid4().hex
-                self.run.events.append("job_claimed", job_id=job_id, owner_token=owner)
+                self.run.events.append("job_claimed", job_id=job_id, owner_token=owner,
+                                       **link_fields(job.get("execution_link")))
                 job = self._rebuild()[job_id]
             elif job["status"] == "claimed" and job.get("blocked_reason") in {
                     "approval_or_cancel", "global_concurrency_busy", "global_job_cleanup_pending",
@@ -738,21 +799,26 @@ class JobQueue:
                 owner = job["owner_token"]
             else:
                 raise ToolFailure(FailureClass.precondition, "job cannot start from its current state")
-        return self.execute_claim(job_id, owner)
+        return self.execute_claim(job_id, owner, execution_link=link)
 
-    def request_cancel(self, job_id: str) -> dict[str, Any]:
+    def request_cancel(self, job_id: str, *, execution_link: ExecutionLink | None = None) -> dict[str, Any]:
+        """``execution_link`` makes this a scoped workflow Stop: only the owning execution may cancel."""
+        link = checked_link(execution_link)
         with self.run._transition():
             state = self._rebuild()
             if job_id not in state:
                 raise KeyError(job_id)
             job = state[job_id]
+            if link is not None:
+                self._require_owner(job, link)
             if job["status"] in TERMINAL:
                 return {"status": "already_terminal", "job": job}
             if not job["cancel_requested"]:
-                self.run.events.append("job_cancel_requested", job_id=job_id)
+                self.run.events.append("job_cancel_requested", job_id=job_id, **link_fields(link))
             if job["status"] in {"queued", "claimed"}:
                 self.run.events.append("job_terminal", job_id=job_id, attempt_id=job["attempt_id"],
-                                       status="cancelled", output_handles=[], failure=None)
+                                       status="cancelled", output_handles=[], failure=None,
+                                       **link_fields(job.get("execution_link")))
             return {"status": "accepted", "job": self._rebuild()[job_id]}
 
     def _attempt_dir(self, job_id: str, attempt_id: str) -> Path:
@@ -817,7 +883,8 @@ class JobQueue:
                     else:
                         self.run.store.load(handle)
             self.run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
-                                   status=status, failure=failure, output_handles=handles or [])
+                                   status=status, failure=failure, output_handles=handles or [],
+                                   **link_fields(job.get("execution_link")))
             return self._rebuild()[job_id]
 
     def _cleanup_owned(self, identity: dict[str, Any]) -> bool:
@@ -1028,7 +1095,10 @@ class JobQueue:
                 return {**message, "reason": reason}
         return None
 
-    def execute_claim(self, job_id: str, owner_token: str) -> dict[str, Any]:
+    def execute_claim(self, job_id: str, owner_token: str, *,
+                      execution_link: ExecutionLink | None = None) -> dict[str, Any]:
+        link = checked_link(execution_link)
+
         def cancelled() -> bool:
             if self.run._cancel_path.exists():
                 return True
@@ -1039,7 +1109,7 @@ class JobQueue:
 
         try:
             with _global_worker_slot(self.run.run_dir, cancelled=cancelled) as global_fd:
-                return self._execute_claim_with_slot(job_id, owner_token, global_fd)
+                return self._execute_claim_with_slot(job_id, owner_token, global_fd, link)
         except ToolFailure as exc:
             reason = exc.detail.get("reason_code")
             if reason in {"global_concurrency_busy", "global_job_cleanup_pending",
@@ -1059,7 +1129,8 @@ class JobQueue:
                         raise
             raise
 
-    def _execute_claim_with_slot(self, job_id: str, owner_token: str, global_fd: int) -> dict[str, Any]:
+    def _execute_claim_with_slot(self, job_id: str, owner_token: str, global_fd: int,
+                                 link: ExecutionLink | None = None) -> dict[str, Any]:
         with self.run._owner():
             self.run.store.rebuild_from_events()
             self.run._refresh()
@@ -1107,9 +1178,23 @@ class JobQueue:
             nonce = uuid.uuid4().hex
             # Reservation is the only expensive debit, shared with synchronous Run.call.
             self._barrier("before_reservation")
+            gate = None
+            if link is not None:
+                self._require_owner(job, link)
+
+                def gate() -> None:
+                    # Held under the reservation transition: scoped stop, then durable attempt count.
+                    if link.is_stopped():
+                        raise ExecutionStopped("before_attempt")
+                    if link.before_attempt is not None:
+                        link.before_attempt({"lane": "job", "job_id": job_id, "attempt_id": attempt_id,
+                                             "root_call_id": job["root_call_id"], "tool": job["tool_id"],
+                                             "protocol": job["protocol_id"],
+                                             "attempt_ordinal": job["attempt_ordinal"],
+                                             "execution_link": link.record()})
             try:
                 self.run.reserve_attempt(attempt_id, job["root_call_id"], job["tool_id"], {},
-                                         job_id=job_id)
+                                         job_id=job_id, before_reserve=gate)
             except ToolFailure as exc:
                 if (exc.cls == FailureClass.precondition and
                         exc.detail.get("reason_code") == "job_cleanup_pending"):
@@ -1120,14 +1205,14 @@ class JobQueue:
                                                    reason="job_cleanup_pending")
                             self._rebuild()
                 raise
-            except (ApprovalRequired, RunCancelled):
+            except (ApprovalRequired, RunCancelled, ExecutionStopped):
                 with self.run._transition():
                     self.run.events.append("job_blocked", job_id=job_id, reason="approval_or_cancel")
                     self._rebuild()
                 raise
             started = self.run.monotonic()
             try:
-                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd)
+                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd, link)
             finally:
                 elapsed = max(0.0, self.run.monotonic() - started)
                 self.run.events.append("wall_charged", seconds=elapsed, reason="job_attempt", call_id=attempt_id)
@@ -1138,7 +1223,8 @@ class JobQueue:
                                            limit=self.run.budget.limits.wall_clock_s)
 
     def _execute_reserved(self, job_id: str, attempt_id: str, nonce: str,
-                          started: float, global_fd: int) -> dict[str, Any]:
+                          started: float, global_fd: int,
+                          link: ExecutionLink | None = None) -> dict[str, Any]:
         remaining = self.run._time_left()
         cancelled_after_reservation = False
         with self.run._transition():
@@ -1148,7 +1234,8 @@ class JobQueue:
             else:
                 self.run.events.append("job_dispatch_intent", job_id=job_id, attempt_id=attempt_id,
                                        launch_nonce=nonce, ordinal=job["attempt_ordinal"],
-                                       remaining_wall_s=remaining, timeout_s=job["timeout_s"])
+                                       remaining_wall_s=remaining, timeout_s=job["timeout_s"],
+                                       **link_fields(link if link is not None else job.get("execution_link")))
                 self._rebuild()
         if cancelled_after_reservation:
             return self._terminal(job_id, None, "cancelled")
@@ -1548,16 +1635,23 @@ class JobQueue:
         except PocketJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
 
-    def retry(self, job_id: str) -> dict[str, Any]:
+    def retry(self, job_id: str, *, execution_link: ExecutionLink | None = None,
+              owner_active: Callable[[str], bool] | None = None) -> dict[str, Any]:
+        link = checked_link(execution_link)
         with self.run._owner(), self.run._transition():
             self.run._refresh()
             self._settle_terminal_wall()
             job = self._rebuild()[job_id]
+            if link is not None:
+                self._require_owner(job, link)
+            else:
+                self._refuse_unlinked_owned(job, owner_active)
             if job["status"] not in {"failed", "interrupted"} or job["attempt_ordinal"] >= 4:
                 raise ToolFailure(FailureClass.precondition, "job recovery allowance exhausted or not eligible")
             if self.run._cancel_path.exists() or job["cancel_requested"]:
                 raise RunCancelled("run cancelled")
-            self.run.events.append("job_retry_queued", job_id=job_id, retry_index=job["attempt_ordinal"])
+            self.run.events.append("job_retry_queued", job_id=job_id, retry_index=job["attempt_ordinal"],
+                                   **link_fields(link))
             return self._rebuild()[job_id]
 
     def _settle_terminal_wall(self) -> None:

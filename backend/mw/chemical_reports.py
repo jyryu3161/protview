@@ -8,7 +8,8 @@ from typing import Any
 from .chemical_bundle import validated_result
 from .core.handles import canonical_json
 from .jobs.queue import require_completed_chemical_handle
-from .reports import EvidenceError
+from .reports import EvidenceError, resume_linked_report
+from .runtime.orchestrator import link_fields
 
 SDF_SCOPE_LIMITATION = "Ligand import supports SDF V2000 only; V3000 input is rejected."
 
@@ -194,10 +195,15 @@ def _markdown(result: dict[str, Any], claims: list[dict[str, Any]],
     return "\n".join(lines)
 
 
-def build_chemical_report(run: Any, result_handle: str) -> dict[str, Any]:
+def build_chemical_report(run: Any, result_handle: str, *, execution_link: Any = None) -> dict[str, Any]:
     with run._owner():
         run.store.rebuild_from_events()
         run._refresh()
+        existing = resume_linked_report(run, execution_link, event_type="method_report_created",
+                                        source_field="result_handle", source_handle=result_handle,
+                                        saved=saved_chemical_report, builder="chemical")
+        if existing is not None:
+            return existing
         publication = require_completed_chemical_handle(run, result_handle)
         result = validated_result(run.store, result_handle)
         coordinate_provenance = _coordinate_provenance(run.store, result)
@@ -233,7 +239,7 @@ def build_chemical_report(run: Any, result_handle: str) -> dict[str, Any]:
                                         "analysis_type": "chemical_interactions", "status": "complete"})
         run.events.append("method_report_created", report_handle=report.handle,
                           markdown_handle=md.handle, result_handle=result_handle,
-                          snapshot_event_seq=seq)
+                          snapshot_event_seq=seq, **link_fields(execution_link))
         return {"handle": report.handle, "markdown_handle": md.handle,
                 "manifest": manifest, "markdown": markdown}
 

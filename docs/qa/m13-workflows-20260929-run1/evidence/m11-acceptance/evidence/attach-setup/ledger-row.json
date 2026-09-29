@@ -1,0 +1,49 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "buildId": "WCnxUsptjGLeenXzwlYhV",
+  "harness": {
+    "runnerSha256": "476c41bf3b088fd5d1067717b145986a0b27c55bdbbb0f8cedf5e1a9dee54227"
+  },
+  "startedAt": "2026-09-29T07:49:40.173488+00:00",
+  "finishedAt": "2026-09-29T07:49:41.477827+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929/m11-acceptance/evidence/attach-setup",
+  "cases": [],
+  "mode": "attach-setup",
+  "evidenceType": "labeled_api_setup",
+  "status": "pass",
+  "runId": "run_153626159f1b4858b45abf376353d070",
+  "handles": {
+    "complex": "obj://run_153626159f1b4858b45abf376353d070/structure/8291a7923320e2cf0d709fb63b22643966caba347b31443a2b216eb5f1a4753d",
+    "sdfImport": "obj://run_153626159f1b4858b45abf376353d070/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "fixtures": [
+    {
+      "name": "m11-attach-complex.pdb",
+      "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    }
+  ],
+  "provenanceLabels": [
+    "synthetic derivative attach complex; not experimental evidence",
+    "public ProLIF tutorial docking-pose SDF"
+  ],
+  "setupOutput": {
+    "out": "<repo>/runs/m13-acceptance-20260929/m11-acceptance/inputs/attach-setup",
+    "ligand_sdf": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+    "files": {
+      "m11-attach-bonds-run.json": "b589ac7735a16402209b5b4701c7a840cc9783bd6f6d7f519e335e972c6f184b",
+      "m11-attach-request-run.json": "3826e690fda47bf2401bb6746a2c47b5136ae5caf7172cc7b3e3b64ff7fbe63d",
+      "m11-attach-mapping-run.json": "fbcc6bf193ed3efbfc6b486326e55ce0c95910645f5e1c3b068929cf7122da61",
+      "m11-attach-mapping-replace-run.json": "e6baba92928454869adcd5d44ed756a9b867aa736f59ac309344f27767e95477",
+      "m11-attach-ligand-instance-run.json": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95"
+    },
+    "mapping_count": 79,
+    "replacement_heavy_mapping_count": 43,
+    "sidecar_handle_set": false
+  },
+  "nonLoopbackRequests": 0,
+  "note": "Setup only (upload/load/import through loopback API); covers no H case."
+}

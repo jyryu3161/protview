@@ -17,6 +17,8 @@ import type { ViewerBinding, ViewerBridge } from "@/components/MolstarViewer";
 import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgentPanel";
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { PocketPanel } from "@/components/PocketPanel";
+import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
+import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
@@ -126,6 +128,26 @@ export default function WorkspacePage() {
   pocketKeyRef.current = pocketState?.request.key ?? null;
   // Host-side stale guard: the run and pocket sources the screen currently shows (read by late callbacks).
   const pocketHostRef = useRef<{ runId: string | null; sourceHandles: string[] }>({ runId: null, sourceHandles: [] });
+  // Host-side stale guard for the M13 analysis panel: a late panel callback of another run is ignored.
+  const analysisHostRef = useRef<{ runId: string | null }>({ runId: null });
+  const analysisReportsReadRef = useRef(0);
+  // M13 flow panel ↔ pocket panel: explicit chain selection (read-only import) and stored-set open requests that go
+  // through the pocket panel's own "기록에서 다시 열기" guards.
+  const [pocketChainSelection, setPocketChainSelection] = useState<{ runId: string; source: string; chains: string[] | null } | null>(null);
+  const [pocketOpenRequest, setPocketOpenRequest] = useState<{ token: number; runId: string; setHandle: string } | null>(null);
+  const pocketOpenToken = useRef(0);
+  const pocketOpenResolvers = useRef(new Map<number, (refusal: string | null) => void>());
+  const requestPocketOpen = useCallback((requestRunId: string, setHandle: string) => new Promise<string | null>(resolve => {
+    for (const previous of pocketOpenResolvers.current.values()) previous("새 포켓 결과 열기 요청으로 대체되었습니다.");
+    pocketOpenResolvers.current.clear();
+    const token = ++pocketOpenToken.current;
+    pocketOpenResolvers.current.set(token, resolve);
+    setPocketOpenRequest({ token, runId: requestRunId, setHandle });
+  }), []);
+  const pocketOpenAnswered = useCallback((token: number, refusal: string | null) => {
+    const resolve = pocketOpenResolvers.current.get(token);
+    if (resolve) { pocketOpenResolvers.current.delete(token); resolve(refusal); }
+  }, []);
   const [atomCatalogState, setAtomCatalogState] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
   const [atomCatalogError, setAtomCatalogError] = useState("");
   const [atomReadRetry, setAtomReadRetry] = useState(0);
@@ -243,6 +265,7 @@ export default function WorkspacePage() {
   if (!viewerClientId.current && typeof window !== "undefined") viewerClientId.current = crypto.randomUUID();
   const runId = run?.run_id;
   openmmRunRef.current = runId ?? null;
+  analysisHostRef.current = { runId: runId ?? null };
 
   const refreshOpenmmBudget = useCallback(async (id: string, jobId: string, ticket: number) => {
     const request = ++budgetRequestRef.current;
@@ -1332,6 +1355,85 @@ export default function WorkspacePage() {
     finally { if (sceneActionEpoch.current === action && ticket === epoch.current) setSceneBusy(""); }
   }
 
+  function enterChemical() {
+    cancelPendingRestore(); revokeComparisonAction(); viewerBridgeRef.current?.invalidate();
+    setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
+    setMeasurementSelection(null); setComparisonContext(null); setFocusPair(null);
+    setPocketState(null); setPocketReadback(null); setPocketView(null);
+    setChemicalActive(true);
+  }
+  /** A workflow step may have created objects (prepared/chemical/minimized structures, reports): re-read this run's
+   * event log and saved report list so they become ordinary source, history and saved-report options without a
+   * reload. A newer run or reopen wins; for reports, only the latest such read may apply (no late overwrite). */
+  function refreshEventsFromAnalysis(requestRunId: string) {
+    if (!hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current)) return;
+    const ticket = epoch.current;
+    const current = () => ticket === epoch.current && hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current);
+    api.allEvents(requestRunId).then(log => {
+      if (current()) setEvents(previous => newerEventLog(previous, log));
+    }).catch(() => undefined);
+    const read = ++analysisReportsReadRef.current;
+    api.reports(requestRunId).then(reports => {
+      if (current() && read === analysisReportsReadRef.current) setSavedReports(reports);
+    }).catch(() => undefined);
+  }
+  function enterChemicalFromAnalysis(requestRunId: string) {
+    if (!hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current)) return;
+    const blocked = chemicalEntryBlockedReason(busy);
+    if (blocked) { setError(blocked); return; }
+    enterChemical();
+  }
+  /** Opens a workflow step result through the existing page paths and guards (no new Mol* operation). */
+  async function openAnalysisResult(request: AnalysisOpenRequest): Promise<string | null> {
+    if (!hostRequestAccepted(request, analysisHostRef.current)) return "다른 run의 요청입니다.";
+    if (request.view === "pocket") return request.handle ? requestPocketOpen(request.runId, request.handle) : "포켓 결과 handle이 없습니다.";
+    const id = request.runId, ticket = epoch.current;
+    const accepted = () => ticket === epoch.current && hostRequestAccepted(request, analysisHostRef.current);
+    try {
+      if (request.view === "measurement" && request.handle) { await reopenMeasurement(request.handle); return null; }
+      if (request.view === "openmm" && request.jobId) {
+        const jobId = request.jobId;
+        const job = await api.job(id, jobId);
+        if (!accepted()) return null;
+        if (job.run_id !== id || job.job_id !== jobId || job.protocol_id !== "openmm_protein_minimize")
+          throw new Error("분석 흐름의 OpenMM 작업이 요청과 다릅니다.");
+        setOpenmmJobs(old => [job, ...old.filter(item => item.job_id !== jobId)]);
+        openmmJobRef.current = jobId; openmmOutputRef.current = undefined;
+        setOpenmmJobId(jobId); setOpenmmViewHandle(null); setPocketView(null);
+        return null;
+      }
+      if (["contacts", "sasa", "structure"].includes(request.view) && request.handle) {
+        const [log, reports] = await Promise.all([api.allEvents(id), api.reports(id)]);
+        if (!accepted()) return null;
+        const result = [...resultEvents(log)].reverse().find(event => event.output?.handle === request.handle);
+        const step = result ? timeline(log).find(item => item.callId === resultId(result)) : undefined;
+        if (!step) throw new Error("분석 흐름 결과의 도구 호출 기록을 찾지 못했습니다.");
+        setEvents(log); setHandles(latestHandles(log)); setSavedReports(reports);
+        exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("step"); setPocketView(null);
+        setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0);
+      }
+      return null;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (accepted()) setError(`분석 흐름 결과 열기 실패: ${message}`);
+      return message;
+    }
+  }
+  const focusedLigand = selectedFocus && displayResidues?.ligands.some(candidate => identity(candidate) === identity(selectedFocus))
+    ? selectedFocus : null;
+  const listedLigand = ligandIndex !== "" ? latestResidues?.ligands[Number(ligandIndex)] ?? null : null;
+  const analysisScreen: ScreenSelections = {
+    displayedSource: displaySource && displayData ? { handle: displaySource.handle, kind: displayData.kind } : null,
+    ligand: focusedLigand ?? listedLigand,
+    ligandSourceHandle: focusedLigand ? displaySource?.handle ?? null : listedLigand ? handles.prepared?.handle ?? null : null,
+    preparation: { altloc, waters, hydrogens }, cutoff_A: cutoff, types: [...contactTypes],
+    pocketChains: importedPocketChains(pocketChainSelection, runId ?? null, displaySource?.handle ?? null),
+    atoms: measurementSelection?.result.schema === "atom_distance@1" ? { source: measurementSelection.result.structure_handle,
+      first: measurementSelection.result.first, second: measurementSelection.result.second } : null,
+    comparison: comparisonReference && comparisonMoving ? { reference: comparisonReference, moving: comparisonMoving,
+      pairs: correspondence.map(pair => ({ reference: pair.reference, moving: pair.moving })) } : null,
+    chemicalRequest: null, openmmAcknowledged: { protein_only: proteinOnlyAccepted, rebuild_pH7: hydrogenAccepted } };
+
   const latestUpload = [...events].reverse().find(e => e.type === "upload_received");
   const uploadedCount = events.filter(e => e.type === "upload_received").length;
   const noLigands = handles.prepared && latestResidues?.ligands.length === 0;
@@ -1347,7 +1449,7 @@ export default function WorkspacePage() {
   }, [chemicalActive, chemicalSceneToRestore]);
 
   if (chemicalActive && run) return <ChemicalWorkspace key={run.run_id} run={run} runs={runs}
-    events={events} capabilities={capabilities} onTheme={toggleTheme}
+    events={events} capabilities={capabilities} onTheme={toggleTheme} onObjectsChanged={refreshEventsFromAnalysis}
     onExit={() => { setChemicalActive(false); setInspectionRevision(value => value + 1); }}
     onSwitchRun={id => { setChemicalActive(false); void switchRun(id); }}
     onRestoreScene={handle => { setChemicalSceneToRestore(handle); setChemicalActive(false); }} />;
@@ -1437,13 +1539,7 @@ export default function WorkspacePage() {
       {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}
       {pocketReadback && pocketOverlayForViewer && <span className="mw-muted">fpocket 후보 공동 · rank {pocketReadback.rank} · 알파 구 {pocketReadback.sphereCount}개</span>}</>}
     strip={<>{runId && <Button size="sm" disabled={!!chemicalEntryBlockedReason(busy)}
-      title={chemicalEntryBlockedReason(busy) ?? undefined} onClick={() => {
-      cancelPendingRestore(); revokeComparisonAction(); viewerBridgeRef.current?.invalidate();
-      setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
-      setMeasurementSelection(null); setComparisonContext(null); setFocusPair(null);
-      setPocketState(null); setPocketReadback(null); setPocketView(null);
-      setChemicalActive(true);
-    }}>화학 상호작용 작업 열기</Button>}
+      title={chemicalEntryBlockedReason(busy) ?? undefined} onClick={enterChemical}>화학 상호작용 작업 열기</Button>}
     {comparisonContext ? <p className="mw-muted">두 구조 비교 중에는 한 구조용 프롬프트 명령을 사용할 수 없습니다.</p> : <ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
       runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
       disabledReason={pocketGates.m8}
@@ -1764,12 +1860,18 @@ export default function WorkspacePage() {
         {activeOpenmmReportError && <p role="alert" className="mw-table-error">{activeOpenmmReportError}</p>}
         {openmmError && <p role="alert" className="mw-table-error">{openmmError}</p>}
       </InspectorSection>}
+      {run && <InspectorSection><AnalysisWorkflowPanel key={run.run_id} panel="main" run={run}
+        capability={capabilities ? capabilities.methods?.analysis_workflows ?? null : undefined}
+        sourceOptions={sourceOptions} screen={analysisScreen}
+        onOpenResult={openAnalysisResult} onEnterChemical={enterChemicalFromAnalysis}
+        onObjectsChanged={refreshEventsFromAnalysis} /></InspectorSection>}
       {run && <InspectorSection><PocketPanel key={run.run_id} panel="main" run={run}
         capability={capabilities ? capabilities.methods?.pocket_detection ?? null : undefined} sourceOptions={pocketSourceOptions}
         displayedSourceHandle={displaySource?.handle ?? null} viewerReady={pocketViewerReady}
         blockedReason={pocketGates.pocket} overlay={pocketState?.request ?? null}
         overlayApplied={pocketReadback} overlayError={pocketOverlayError} overlayNotice={pocketNotice}
         onOverlay={requestPocketOverlay}
+        openRequest={pocketOpenRequest} onOpenRequestResult={pocketOpenAnswered} onChainSelection={setPocketChainSelection}
         onShowSource={(requestRunId, handle, kind) => {
           if (kind === "chemical_structure" || !pocketRequestAccepted({ runId: requestRunId, sourceHandle: handle },
             pocketHostRef.current)) return;

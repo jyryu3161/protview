@@ -18,8 +18,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 200 / 201 | 성공(scientific_null 포함) |
 | 400 | run ID 형식 오류, 경로 오류, 잘못된 Content-Length |
 | 404 | 이 run에 없는 handle/job |
-| 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트) |
-| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음) |
+| 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy` |
+| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등) |
 | 413 | 본문 크기 초과(`resource_exceeded`) |
 | 415 | M11 가져오기에 `application/octet-stream`이 아닌 본문 |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -121,6 +121,38 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - 읽기 검증 실패는 422 `method_evidence_invalid`. 읽기는 fpocket을 실행하지 않는다.
 - 보고서: `POST /runs/{id}/method_reports` `{result_handle: <pocket_set>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "pocket_detection"`, `result_schema: "pocket_set@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
 - `/capabilities`의 `methods.pocket_detection.status`: `ready` | `not_installed` | `unreviewed_build` | `handshake_failed` | `unsupported_platform`, 사유 문장과 엔진·build 정보.
+
+## M13 분석 흐름
+
+모든 경로는 `/runs/{id}/analysis/...`이고 same-run handle만 받는다. 요청 모델은 알 수 없는 필드를 거부한다(strict). `request_id`는 UUID, `expected_revision`은 정수이며, 형식이 틀리면 422 `input_invalid`다. 본문은 계획 생성 1 MiB, 그 밖 64 KiB 이하(넘으면 413 `resource_exceeded`). 오류는 도구 실패 형태 `{"ok": false, "error": <코드>, "message", "fix": null, "detail": {...}}`이고, 기록 손상은 HTTP 경계 형태 409 `run_corrupt`다.
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /analysis/templates` | — | `analysis_templates@1`: 템플릿 6개(필수 입력·단계 설명·사용 가능 여부와 이유), `natural_language_planning`, `limits` | 404 |
+| `POST /analysis/plans` | `{request_id, goal, inputs}` | 201, `{handle, plan, plan_sha256, executable, ordinal, replayed}`. 같은 내용이면 같은 handle | 422, 429(`plan_too_large` 1 MiB, `plan_limit` 100개), 409 `request_id_conflict` |
+| `GET /analysis/plans` | — | `analysis_plan_list@1`: `{total, rows:[{handle, goal, ordinal, created_seq, executable}]}`(최대 100) | — |
+| `GET /analysis/plans/detail?handle=` | — | `{handle, plan, plan_sha256, executable, ordinal}` | 422 |
+| `POST /analysis/executions` | `{request_id, plan_handle}` | 201 envelope. 일반 run은 `awaiting_approval`, dry-run run은 `plan_only` | 422(모르는·다른 run·계획이 아닌 handle), 412 `plan_blocked`(`detail.codes`), 429 `execution_limit`(run당 100), 409 |
+| `GET /analysis/executions` | — | `analysis_execution_list@1`: `{total, rows:[{execution_id, plan_handle, goal, status, revision, created_seq, dry_run, current_step, summary_handle, error}]}`. `total`은 만든 개수, 행은 최대 100. 손상된 실행은 `error: {code: "execution_record_invalid", message}` 행 | — |
+| `GET /analysis/executions/{eid}` | — | 실행 기록 `analysis_execution@1` | 404, 409 `run_corrupt` |
+| `POST …/{eid}/approve` | `{request_id, expected_revision, plan_hash}` | 200 envelope. 호환성이 바뀌었으면 200과 `status: blocked`, `blocked_reason.reason_code: compatibility_changed` | 412 `dry_run_plan_only`·`not_awaiting_approval`·`plan_hash_mismatch` |
+| `POST …/{eid}/revoke` | `{request_id, expected_revision}` | 자식 시작 전이면 `awaiting_approval`, 뒤면 `cancelled`(소유 작업 범위 한정 취소) | 412 `dry_run_plan_only`·`execution_terminal`·`not_approved` |
+| `POST …/{eid}/advance` | `{request_id, expected_revision}` | 조정 뒤 최대 한 단계 또는 작업 전이 하나 | 409 `busy`, 412 `dry_run_plan_only`·`plan_not_approved`·`retry_or_stop_required`(`detail.retryable_step`) |
+| `POST …/{eid}/retry` | `{request_id, expected_revision, step_id}` | `step_id`가 `retryable_step`일 때만 그 단계의 새 시도 | 409 `busy`, 412 `retry_not_allowed`·`dry_run_plan_only` |
+| `POST …/{eid}/cancel` | `{request_id, expected_revision}` | 이 실행만 중지(`plan_only` 포함). 이미 종료면 outcome `already_terminal`. `busy`로 거절하지 않음 | — |
+| `POST …/{eid}/scientific-approval` | `{request_id, expected_revision}` | 이 실행의 대기 중 작업 게이트에만 `/jobs/approve`와 같은 규칙으로 승인 기록 | 412 `no_pending_scientific_approval`·`dry_run_plan_only` |
+| `GET …/{eid}/summary[?download=json]` | — | `{handle, summary}`(`workflow_summary@1`). `download=json`이면 저장 바이트 그대로 첨부(`protview-workflow-summary-<id>.json`) | 404(완료 실행만) |
+
+- 실행 `POST`는 모두 409 `stale_revision`(`detail`에 현재 revision)이나 409 `request_id_conflict`를 돌려줄 수 있다. 모든 변경 요청이 판단 전에 복구 조정을 하므로 412·409로 거절된 요청도 revision을 올릴 수 있다. 클라이언트는 거절 뒤 항상 기록을 다시 읽는다. 단계가 도는 동안에도 시도 이벤트로 revision이 오르므로, 중지는 `stale_revision`이면 다시 읽고 한 번 더 보낸다.
+- 충돌 직후 첫 advance·retry는 중단 기록을 먼저 남기고 412를 돌려줄 수 있다. 읽기(GET)는 짧은 잠금을 잠깐 기다릴 수 있지만 과학 실행 중에는 잡지 않으며, 이벤트를 쓰지 않는다.
+- **envelope**: `{execution: <실행 기록>, replayed: bool, request: {request_id, action, state: "completed"|"pending", outcome}}`. outcome은 advance·retry에서 `advanced`, `run_busy`, `no_op_<status>`, `retry_or_stop_required`, `retry_not_allowed`, `resource_exceeded`, `blocked`, 그 밖에서 `created`, `approved`, `revoked`, `cancelled`, `already_terminal`, `interrupted`.
+- **실행 기록 `analysis_execution@1`**: `execution_id`(`exec_` + 32 hex), `run_id`, `plan_handle`, `plan_sha256`, `goal`, `template_version`, `source`, `planner`, `dry_run`, `status`, `retryable_step`, `revision`, `created_seq`, `current_step`, `plan_approval{approved, event_seq, plan_sha256, revocations}`, `scientific_approval{required, run_approved, state: not_required|already_approved_in_run|pending|not_yet_requested, pending_tool, recorded_seqs}`, `blocked_reason{reason_code, message, step_id, detail}|null`(`compatibility_changed`, `identity_changed`, `recovery_error`, `step_input_invalid`, `step_precondition`, `report_evidence_invalid`, `analysis_dispatch_mismatch`, `binding_unavailable`, `binding_type_mismatch`), `stop{seq, reason: stop|revoke}|null`, `notice{code, step_id, message}|null`(`run_budget_exhausted`, `run_busy`, `not_started`, `scientific_approval_required`, `global_concurrency_busy` 등), `driver{in_progress, request_ids}`, `recovery_pending`, `steps`, `physical_attempts`, `active_wall_s`, `limits`, `summary_handle`, `event_seqs`, `jobs_readable`.
+- **단계**: `step_id`, `operation`, `lane`, `status`, `null_result`(completed만), `operation_id`, `dispatch_seqs`, `completed_seq`, `attempts`, `retries_used`, `outputs{이름: handle}`, `report_handle`, `child_call_ids`, `job_id`, `job_ownership`(`owned`|`observed_shared`), `job_status`, `job_cleanup_status`, `job_blocked_reason`, `job_cancel_requested`, `shared_job_notice`, `deferred_reason`, `failure{status, error, reason_code, message, retryable}|null`. 실패 reason_code에는 `transient_exhausted`, `interrupted`, `job_failed`, `job_timeout`, `job_interrupted`, `job_cancelled`, `shared_job_failed`, `run_cancelled`, `loop_guard_<이유>`, `max_physical_attempts`, `max_active_wall`이 있다. 캐시로 끝난 단계는 `attempts`가 0일 수 있다.
+- **요약 `workflow_summary@1`**: `schema`, `plan_handle`, `plan_hash`, `execution_id`, `goal`, `source`, `approval_event_seq`, `first_event_seq`, `last_event_seq`(마지막 단계 완료 이벤트), `steps:[{step_id, operation, status, null_result, output_handles, report_handle, child_call_ids, job_ids, job_ownership, attempts}]`, `physical_attempts`, `note`. 과학 수치는 없다.
+- **계획 입력 참조**: 단계 `params`의 값이 `{"input_ref": <이름>}`이거나 `params` 전체가 `{"input_ref": <이름>}`이면 `plan.inputs`의 그 항목이다. 표시할 때는 `plan.inputs`를 읽는다.
+- **이벤트**: `analysis_plan_created`, `analysis_execution_created`, `analysis_request_admitted`, `analysis_request_completed`, `analysis_plan_approved`, `analysis_approval_revoked`, `analysis_stop_requested`, `analysis_execution_blocked`, `analysis_step_dispatched`, `analysis_dispatch_released`, `analysis_step_deferred`, `analysis_step_completed`, `analysis_step_failed`, `analysis_attempt_recorded`, `analysis_attempt_refused`, `analysis_scientific_approval_recorded`, `analysis_execution_completed`. 연결된 자식 이벤트(`Run.call`의 호출·캐시·실패, `execution_call_admitted`, `execution_call_stopped`, 작업 제출·시도·취소·재시도, `job_observed`, 보고서 게시)에는 내부 필드 `execution_link: {execution_id, step_id, operation_id}`가 붙는다. 이 필드는 서버 코드만 만들며 어떤 HTTP 요청으로도 넣을 수 없다. 연결이 없는 기존 이벤트에는 이 필드가 없다. 기존 `inspect_complex`의 `workflow_*` 이벤트와는 별개다.
+- **작업 API와의 관계**: 흐름이 소유한 작업(`execution_link`가 있는 제출)에 소유 실행이 아직 끝나지 않았을 때 `POST /jobs/{job_id}/start`·`/retry`를 부르면 412 `precondition`, `detail: {reason_code: "job_owned_by_analysis_execution", job_id}`다. 소유 실행이 종료 상태(`complete`, `cancelled`, `blocked`, `retryable_step=null`인 `failed`)가 되면 기존 수동 시작·재시도 규칙(시도 4회까지)이 그대로 적용된다. `/jobs/{job_id}/cancel`은 언제나 허용된다.
+- `/capabilities`의 `methods.analysis_workflows`: `available: true`, `planner: "local_rules@1"`, `source`, `plan_schema`, 템플릿별 `{available, method, reason_code, reason}`(해당 방법 capability를 그대로 반영), `natural_language_planning: {available: false, reason}`, `limits{max_steps: 8, max_physical_attempts: 24, max_active_wall_s: 1800, max_retries_per_step: 1}`, `max_plans_per_run: 100`, `max_plan_bytes: 1048576`, `max_executions_per_run: 100`, `execution` 설명.
 
 ## 과거 단계 실행기 (CLI)
 

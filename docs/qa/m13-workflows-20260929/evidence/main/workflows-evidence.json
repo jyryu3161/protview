@@ -1,0 +1,48 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "main",
+  "run": "run_330f86ef23fd40aa99a98a6ce5305a60",
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "handles": {
+    "raw": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/structure/1aba8aee7da42ce41b7867c00cace28da00c2459dade08cea1db935518d11c18",
+    "stoppedBeforeApproval": "exec_30231d79d4de4734a4f7a5a0e5ea00eb",
+    "inspectRaw": {
+      "plan": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/analysis_plan/c9767aec68208363d05cd7034cd5de18a394d44a11c5395ab3b1e3696f1f5efd",
+      "execution": "exec_0880d6d65ad5455ba1366c3f4eff2d24",
+      "summary": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/workflow_summary/1caa67865caa29de0c38b874026aa619a8200b3d5edb4bb669913e79aedf7778"
+    },
+    "prepared": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/prepared_structure/ff8c7551287553225bc9324aaf6ecb1346687ebf05834436cb03032d49106feb",
+    "displayedPrepared": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/prepared_structure/ff8c7551287553225bc9324aaf6ecb1346687ebf05834436cb03032d49106feb",
+    "inspectPrepared": {
+      "plan": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/analysis_plan/88f24a6efa31956c04b71f58533cfa20207a68d7d9dff1941b666061f81e69bc",
+      "execution": "exec_3de991ec482641d598b632d610062c7d",
+      "summary": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/workflow_summary/af3853dfd124a4851ffae5c50fd38d606bfd98b66dd94825716de2c02f7aea7a"
+    },
+    "cavitiesMain": {
+      "plan": "obj://run_330f86ef23fd40aa99a98a6ce5305a60/analysis_plan/d4b0d2e427b2b781262865dc9c201460db7d41e1150d1d02da6bdfebf7dd9c84",
+      "execution": "exec_7b21a826d8d040459281f05d46ca9320"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_330f86ef23fd40aa99a98a6ce5305a60",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-09-29T08:20:56.871Z",
+  "finishedAt": "2026-09-29T08:21:40.036Z",
+  "error": null
+}

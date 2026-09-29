@@ -243,3 +243,14 @@ test("focus status text is truthful for each observed camera outcome", () => {
   assert.match(p.focusStatusText("interrupted"), /중단/);
   assert.doesNotMatch(p.focusStatusText("not_converged"), /초점 확인됨/);
 });
+
+test("an external open request uses the same guards as 기록에서 다시 열기", () => {
+  const prepared = { source_kind: "prepared_structure" }, chemical = { source_kind: "chemical_structure" };
+  same(p.pocketOpenRequestDecision("main", prepared, null), { allowed: true, reason: null });
+  same(p.pocketOpenRequestDecision("main", chemical, null), JSON.parse(JSON.stringify(p.reopenDecision("main", "chemical_structure"))));
+  same(p.pocketOpenRequestDecision("chemical", prepared, null), JSON.parse(JSON.stringify(p.reopenDecision("chemical", "prepared_structure"))));
+  same(p.pocketOpenRequestDecision("main", prepared, "비교 중"), { allowed: false, reason: "비교 중" });
+  const missing = p.pocketOpenRequestDecision("main", null, null);
+  assert.equal(missing.allowed, false);
+  assert.ok(missing.reason);
+});

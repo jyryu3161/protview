@@ -19,3 +19,6 @@
 | [0015](0015-scientific-data-egress-allowed.md) | 구조·좌표·서열·리간드의 외부 모델(JEV 등) 전송 허용, 단일 게이트·키 보호 유지 | 채택 (0005 일부 대체) |
 | [0016](0016-m12-acceptance-record.md) | M12 완료는 새 흐름 문서에 기록, `phases/protview-pockets`는 그대로 | 채택 |
 | [0017](0017-fpocket-locked-conda-install.md) | fpocket을 해시 잠금 conda 환경(`.deps/fpocket/env`)으로 격리 설치 | 채택 |
+| [0018](0018-m13-acceptance-record.md) | M13 완료는 새 흐름 문서에 기록, `phases/protview-workflows`는 그대로 | 채택 |
+| [0019](0019-analysis-plan-size-1mib.md) | 분석 계획 크기 한도 1 MiB(계약의 64 KiB 대체), 입력은 한 번만 저장 | 채택 |
+| [0020](0020-compact-committed-qa-evidence.md) | 커밋 QA 증거는 작은 텍스트만, 큰 증거는 해시와 함께 Git 제외 폴더로 | 채택 |

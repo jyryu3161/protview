@@ -6,7 +6,8 @@ import { Button } from "./primitives";
 import { cancelRerunNotice, capabilityStatusText, chainArgument, chainSelectionError, clampOpacity, clampTopK,
   DEFAULT_OPACITY, DEFAULT_TOP_K, DESCRIPTOR_KEYS, descriptorText, DRUGGABILITY_WARNING, focusStatusText, geometryError,
   LIMITATION_NOTE, MAX_TOP_K, NONDETERMINISM_NOTE,
-  OVERLAY_LABEL, overlayRequest, pocketActionCurrent, pocketDisplay, pocketUiState, RELATIVE_SCORE_NOTE, reopenDecision,
+  OVERLAY_LABEL, overlayRequest, pocketActionCurrent, pocketDisplay, pocketOpenRequestDecision, pocketUiState,
+  RELATIVE_SCORE_NOTE, reopenDecision,
   type PocketActionStamp, type PocketCapability, type PocketJob, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketPanelKind, type PocketPreflight, type PocketReportArtifact, type PocketSetRow, type PocketSourceKind,
   type PocketSummary } from "@/lib/pockets";
@@ -40,6 +41,12 @@ export interface PocketPanelProps {
   /** Main panel only: display the stored pocket source in the ordinary viewer. The host rejects another run's request. */
   onShowSource?: (runId: string, handle: string, kind: PocketSourceKind) => void;
   onReturnToSource: () => void;
+  /** M13 flow panel: open one stored pocket_set through the same path and guards as "기록에서 다시 열기".
+   * Each new token is handled once; the outcome (null = opened, else the guard's reason) goes to onOpenRequestResult. */
+  openRequest?: { token: number; runId: string; setHandle: string } | null;
+  onOpenRequestResult?: (token: number, refusal: string | null) => void;
+  /** Read-only report of the explicit chain selection (null = the default, nothing chosen explicitly). */
+  onChainSelection?: (selection: { runId: string; source: string; chains: string[] | null }) => void;
 }
 
 export function PocketPanel(p: PocketPanelProps) {
@@ -92,6 +99,11 @@ export function PocketPanel(p: PocketPanelProps) {
   }, []);
   const current = (captured: PocketActionStamp) =>
     pocketActionCurrent(captured, { ...live.current, action: action.current }, mounted.current);
+
+  // Read-only observation of the explicit chain selection for the M13 flow panel import.
+  useEffect(() => {
+    latest.current.onChainSelection?.({ runId, source: sourceHandle, chains: chainSelection });
+  }, [runId, sourceHandle, chainSelection]);
 
   const capability = p.capability;
   const sourceKind = p.sourceOptions.find(option => option.handle === sourceHandle)?.kind ?? null;
@@ -199,6 +211,41 @@ export function PocketPanel(p: PocketPanelProps) {
   // Only a newly completed job opens its own immutable result.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job?.job_id, job?.status]);
+
+  // M13 flow panel open request: re-read the stored sets, apply the reopen guards, then the ordinary openSet path.
+  const handledOpen = useRef<number | null>(null);
+  const openToken = p.openRequest?.token ?? null;
+  useEffect(() => {
+    const request = latest.current.openRequest;
+    if (!request || handledOpen.current === request.token) return;
+    handledOpen.current = request.token;
+    let reported = false, active = true;
+    const report = (refusal: string | null) => {
+      if (reported) return;
+      reported = true; latest.current.onOpenRequestResult?.(request.token, refusal);
+    };
+    if (request.runId !== runId) { report("다른 run의 포켓 결과 요청입니다."); return; }
+    const controller = new AbortController();
+    api.allPocketSets(runId, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)])).then(list => {
+      if (!active || !mounted.current) return;
+      if (list.schema !== "pocket_set_list@1" || list.rows.length !== list.total) throw new Error("포켓 결과 목록 형식이 다릅니다.");
+      setSets(list.rows); setSetsTotal(list.total); setSetsError("");
+      const row = list.rows.find(item => item.handle === request.setHandle) ?? null;
+      const decision = pocketOpenRequestDecision(latest.current.panel, row, latest.current.blockedReason);
+      if (!decision.allowed) { report(decision.reason); return; }
+      report(null);
+      void openSet(request.setHandle);
+    }).catch(e => { if (active) report(`포켓 기록 읽기 실패: ${errorText(e)}`); });
+    return () => {
+      active = false; controller.abort();
+      if (reported) return;
+      // Not answered yet: a dev re-mount re-handles the same token; a real unmount reports the cancellation.
+      handledOpen.current = null;
+      queueMicrotask(() => { if (!mounted.current) report("포켓 결과 열기 요청이 취소되었습니다."); });
+    };
+  // Handled once per token; the guards read the live props through `latest`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openToken, runId]);
 
   async function start(jobId: string) {
     const captured = stamp();

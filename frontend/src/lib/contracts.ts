@@ -73,3 +73,78 @@ export interface ToolSpec {
   params: Record<string, { type: string; enum?: string[]; min?: number; max?: number; default?: unknown; required?: boolean }>;
   emits: string; cost_class: CostClass; idempotent: boolean; read_only: boolean; typical_runtime_s: number; description: string;
 }
+
+// ---- M13 analysis workflows (backend/mw/analysis_plans.py, analysis_executions.py) ----
+export type AnalysisGoal = "inspect_ligand" | "measure_atoms" | "compare_structures" | "chemical_interactions" |
+  "find_cavities" | "minimize_protein";
+export type AnalysisLane = "run_call" | "durable_job" | "report";
+export type AnalysisExecutionStatus = "plan_only" | "awaiting_approval" | "ready" | "executing" | "waiting_job" |
+  "awaiting_scientific_approval" | "blocked" | "failed" | "cancelled" | "complete";
+export type AnalysisStepStatus = "pending" | "dispatched" | "waiting_job" | "completed" | "failed" | "interrupted" |
+  "cancelled" | "blocked";
+export type AnalysisAction = "approve" | "revoke" | "advance" | "retry" | "cancel" | "scientific_approval";
+
+export interface AnalysisTemplateRow { goal: AnalysisGoal; template_version: string; required_inputs: string[];
+  steps: string[]; available: boolean; method: string | null; reason_code: string | null; reason: string | null;
+  fixed?: { categories?: string[] } }
+export interface AnalysisTemplates { schema: "analysis_templates@1"; planner: string; source: string;
+  templates: AnalysisTemplateRow[]; natural_language_planning: { available: boolean; reason: string };
+  limits: Record<string, number> }
+export interface AnalysisWorkflowsCapability { available: boolean; planner?: string; source?: string;
+  templates?: Record<string, { available: boolean; method: string | null; reason_code: string | null; reason: string | null }>;
+  natural_language_planning?: { available: boolean; reason: string } }
+
+export interface AnalysisBinding { kind: "existing" | "step_output"; handle?: string; step_id?: string;
+  output_name?: string; expected_kind: string; expected_schema: string }
+export interface AnalysisPlanStep { step_id: string; operation: string; operation_version: string; lane: AnalysisLane;
+  bindings: Record<string, AnalysisBinding>; params: Record<string, unknown>;
+  outputs: { name: string; kind: string; schema: string }[]; depends_on: string[] }
+export interface AnalysisPrerequisite { code: string; message: string; detail: Record<string, unknown> }
+export interface AnalysisPlan { schema: "analysis_plan@1"; planner: "local_rules@1"; source: "local_rules"; plan_only: true;
+  goal: AnalysisGoal; template_version: string; inputs: Record<string, unknown>; compatibility: Record<string, unknown>;
+  steps: AnalysisPlanStep[]; limits: Record<string, number>; unmet_prerequisites: AnalysisPrerequisite[];
+  deferred_bindings: { step_id: string; output_name: string; kind: string; schema: string }[] }
+export interface AnalysisPlanRecord { handle: string; plan: AnalysisPlan; plan_sha256: string; executable: boolean;
+  ordinal: number; replayed?: boolean }
+export interface AnalysisPlanList { schema: "analysis_plan_list@1"; total: number;
+  rows: { handle: string; goal: AnalysisGoal; ordinal: number; created_seq: number; executable: boolean }[] }
+
+export interface AnalysisStepFailure { status: string | null; error: string | null; reason_code: string | null;
+  message: string | null; retryable: boolean | null }
+export interface AnalysisStepRecord { step_id: string; operation: string; lane: AnalysisLane; status: AnalysisStepStatus;
+  null_result: boolean | null; operation_id: string | null; dispatch_seqs: number[]; completed_seq: number | null;
+  attempts: number; retries_used: number; outputs: Record<string, string>; report_handle: string | null;
+  child_call_ids: string[]; job_id: string | null; job_ownership: "owned" | "observed_shared" | null;
+  job_status: string | null; job_cleanup_status: string | null; job_blocked_reason: string | null;
+  job_cancel_requested: boolean | null; shared_job_notice: string | null; deferred_reason: string | null;
+  failure: AnalysisStepFailure | null }
+export interface AnalysisExecution { schema: string; execution_id: string; run_id: string; plan_handle: string;
+  plan_sha256: string; goal: AnalysisGoal; template_version: string; source: "local_rules"; planner: string;
+  dry_run: boolean; status: AnalysisExecutionStatus; retryable_step: string | null; revision: number;
+  created_seq: number; current_step: string | null;
+  plan_approval: { approved: boolean; event_seq: number | null; plan_sha256: string | null;
+    revocations: { seq: number; outcome: string }[] };
+  scientific_approval: { required: boolean; run_approved: boolean;
+    state: "not_required" | "already_approved_in_run" | "pending" | "not_yet_requested";
+    pending_tool: string | null; recorded_seqs: number[] };
+  blocked_reason: { reason_code: string; message: string; step_id: string | null; detail: Record<string, unknown> } | null;
+  stop: { seq: number; reason: "stop" | "revoke" } | null;
+  notice: { code: string; step_id: string | null; message: string | null } | null;
+  driver: { in_progress: boolean; request_ids: string[] }; recovery_pending: boolean;
+  steps: AnalysisStepRecord[]; physical_attempts: number; active_wall_s: number; limits: Record<string, number>;
+  summary_handle: string | null; event_seqs: number[]; jobs_readable: boolean }
+// total counts every created execution; rows are capped at 100. A row whose record cannot be read carries
+// error {code:"execution_record_invalid"} and null goal/status/revision/dry_run/current_step/summary_handle.
+export interface AnalysisExecutionListRow { execution_id: string; plan_handle: string | null; goal: AnalysisGoal | null;
+  status: AnalysisExecutionStatus | null; revision: number | null; created_seq: number | null; dry_run: boolean | null;
+  current_step: string | null; summary_handle: string | null; error: { code: string; message: string } | null }
+export interface AnalysisExecutionList { schema: "analysis_execution_list@1"; total: number; rows: AnalysisExecutionListRow[] }
+export interface AnalysisEnvelope { execution: AnalysisExecution; replayed: boolean;
+  request: { request_id: string; action: string; state: "completed" | "pending"; outcome: string } }
+export interface AnalysisSummary { handle: string; summary: { schema: string; plan_handle: string; plan_hash: string;
+  execution_id: string; goal: AnalysisGoal; source: string; approval_event_seq: number | null;
+  first_event_seq: number | null; last_event_seq: number | null;
+  steps: { step_id: string; operation: string; status: string; null_result: boolean | null;
+    output_handles: string[]; report_handle: string | null; child_call_ids: string[];
+    job_ids: string[]; job_ownership: string | null; attempts: number }[];
+  physical_attempts: number; note?: string } }

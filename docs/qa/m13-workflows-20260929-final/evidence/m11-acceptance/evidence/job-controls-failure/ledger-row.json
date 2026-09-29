@@ -1,0 +1,71 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H06",
+    "H07",
+    "H09"
+  ],
+  "mode": "job-controls-failure",
+  "harnessMode": "job-controls",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "NUugf8EWW7h480ZPwlhqc",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced"
+  },
+  "fixtures": [
+    {
+      "name": "prolif-vina-rec.pdb",
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+    },
+    {
+      "name": "synthetic-pentavalent-carbon.sdf",
+      "sha256": "8e049f31b45954570e16612288810015d16daebcfdf8b67dceae42c80b557a56",
+      "provenance": "labeled synthetic failure-control SDF (impossible valence; no scientific output)"
+    }
+  ],
+  "provenanceLabels": [
+    "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+    "labeled synthetic failure-control SDF (impossible valence; no scientific output)"
+  ],
+  "fixtureLabels": [
+    "renderer-route fixtures: held jobs GET, held upload, held job submission"
+  ],
+  "runId": "run_29eb5e69eca042bc808286305fd85842",
+  "handles": {
+    "prepareJob": "job_8b423bc40b524800993685b15e8c4068"
+  },
+  "expectCapability": null,
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 54,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929c/m11-acceptance/evidence/job-controls-failure/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929c/m11-acceptance/evidence/job-controls-failure",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-09-29T10:30:08.149Z",
+  "finishedAt": "2026-09-29T10:30:30.149Z"
+}

@@ -1,9 +1,10 @@
 # frontend/ — Next.js 작업 화면과 Mol* 뷰어
 
 ## 담당 범위
-- 메인 화면 `app/page.tsx`: run·업로드·모델·전처리·리간드·cutoff 선택, 접촉표, 기록, Inspector 보고서, SASA·OpenMM 작업 패널, 저장된 보기·그림, M10 측정·비교, M11 화학 작업 공간, M12 포켓 패널.
+- 메인 화면 `app/page.tsx`: run·업로드·모델·전처리·리간드·cutoff 선택, 접촉표, 기록, Inspector 보고서, SASA·OpenMM 작업 패널, 저장된 보기·그림, M10 측정·비교, M11 화학 작업 공간, M12 포켓 패널, M13 분석 흐름 패널.
 - `src/components/MolstarViewer.tsx`: Mol* 5.11.0 인스턴스, 직렬화된 native 명령 큐, `captureScene`/`restoreScene`/`captureFigure`, sourceIndex ↔ AtomRef 대응, 적용 확인(ack).
 - `src/components/PocketPanel.tsx`: M12 포켓 패널. 메인 화면(전처리·최소화 구조)과 `ChemicalWorkspace`(화학 구조)에 같은 컴포넌트를 둔다. 순수 판단은 `src/lib/pockets.ts`.
+- `src/components/AnalysisWorkflowPanel.tsx`: M13 분석 흐름 패널. 메인 화면(`panel="main"`: `inspect_ligand`, `measure_atoms`, `compare_structures`, 전처리·최소화 구조 `find_cavities`, `minimize_protein`)과 `ChemicalWorkspace`(`panel="chemical"`: `chemical_interactions`, 화학 구조 `find_cavities`)에 같은 컴포넌트를 둔다. 순수 판단은 `src/lib/analysis.ts`. 결과 열기는 페이지·`PocketPanel`의 `openRequest` 같은 기존 보호 경로로 넘긴다.
 - `src/components/ViewerAgentPanel.tsx`: 뷰어 세션 소유, 로컬 명령·자연어 요청, 온라인 동의.
 - `src/lib/`: API 클라이언트(`api.ts`)와 순수 로직(이벤트 정규화, 보고서 선택, 보기·비교·화학 상태).
 - `src/design/`: `npm run tokens`(`design/build_tokens.py`)가 만드는 생성물이다. `tokens.css`/`tokens.ts`는 `design/tokens.json`에서, `components.css`는 `design/components.css`에서 복사된다(Google Fonts `@import`는 제거).
@@ -28,6 +29,10 @@
 - 화학 구조 보기는 M8·M9·M10의 입력으로 쓸 수 없다.
 - 포켓 오버레이는 저장된 알파 구 중심·반지름 그대로 그리고, 구는 선택 대상이 아니다(주변 잔기는 선택 가능). 오버레이 중 M9 저장·PNG와 M8 요청을 비활성화하고 이유를 보여 준다. M10 비교 중에는 포켓 검출·오버레이를 막는다. 최소화 구조의 포켓은 OpenMM 최소화 보기와 같은 상태로 보여 준다. run·소스가 바뀌면 늦은 포켓 응답은 패널과 페이지 두 곳에서 버린다.
 - 체인을 모두 해제한 상태로 포켓 검출을 실행하지 못한다(빈 목록은 서버에서 전체 체인을 뜻하므로).
+- 분석 흐름 패널은 서버가 컴파일한 계획만 보여 주고 단계를 보내지 않는다. 입력은 목표를 고르거나 "화면 선택 다시 가져오기"를 누를 때만 화면에서 가져오며, 만든 계획은 이후 화면 선택으로 바뀌지 않는다. 원자 두 개·CA 대응표·화학 준비 요청은 읽기 전용이고 없으면 "기존 화면에서 먼저 만드세요" 선행 조건이다. 리간드·체인을 자동으로 고르지 않는다.
+- 계획 미리보기는 "로컬 규칙으로 만든 계획이며 모델 판단이 아닙니다"와 계획은 측정 결과가 아니라는 안내를 보여 준다. 계획 승인과 계산 승인은 따로 각각의 상태로 보여 준다("이 run에서 이미 계산 승인됨" 포함). 자연어 계획은 누를 수 없는 항목으로 이유와 함께 보여 준다. dry-run run에서는 미리보기 전용 안내를 보여 준다.
+- "다음 단계 실행"은 한 번에 한 단계다. 여러 단계를 이어 누르는 자동 진행을 만들지 않는다. 모든 거절(409·412) 뒤에는 실행 기록을 다시 읽는다. 자동으로 다시 보내는 것은 `stale_revision`을 받은 중지 한 번뿐이다(`stopResend`). 폴링은 단계·작업이 진행 중이거나 이 패널의 요청이 도는 동안의 읽기만 하며 이벤트를 쓰지 않는다.
+- 화학 구조 결과는 화학 작업 화면에서만 연다. 메인 패널은 "화학 작업 화면에서 열기"로 안내한다. run·실행이 바뀌면 늦은 응답은 패널과 페이지 두 곳에서 버린다.
 - 사용할 수 없는 기능은 숫자 없이 이유를 보여 주고, 구현하지 않은 컨트롤은 누를 수 없게 한다.
 - 요청 중에 run이나 선택이 바뀌면, 늦게 도착한 응답이 새 화면을 덮거나 다운로드를 시작하면 안 된다. 대기·결과·오류 상태는 run과 handle 기준으로 관리한다.
 
@@ -40,6 +45,6 @@
 ## 테스트 지침
 - 순수 로직: `npm --prefix frontend run test:events`.
 - 타입과 빌드: `npm --prefix frontend run typecheck` 다음에 `npm --prefix frontend run build`(동시 실행 금지).
-- 바뀐 컨트롤은 실제 Electron 오프스크린에서 하나씩 실제 입력으로 검증한다(`isOffscreen()===true`, GPU·WebGL, paint, 외부 요청 0건). 공유 뷰어·페이지 코드를 바꿨다면 M8 normal-flow, M9 scenes-flow, M10 comparison-flow 회귀도 돌린다. 포켓 흐름은 `test:offscreen:pockets`, 전체 수락은 `scripts/m12_offscreen_acceptance.py`.
+- 바뀐 컨트롤은 실제 Electron 오프스크린에서 하나씩 실제 입력으로 검증한다(`isOffscreen()===true`, GPU·WebGL, paint, 외부 요청 0건). 공유 뷰어·페이지 코드를 바꿨다면 M8 normal-flow, M9 scenes-flow, M10 comparison-flow 회귀도 돌린다. 포켓 흐름은 `test:offscreen:pockets`, 전체 수락은 `scripts/m12_offscreen_acceptance.py`. 분석 흐름은 `test:offscreen:workflows`(`tests/offscreen/workflows-flow.cjs`, 순수 로직은 `tests/analysis.test.cjs`), 전체 수락과 M8–M12 회귀는 `scripts/m13_offscreen_acceptance.py`.
 - 반드시 다룰 경우: 빠른 소스 전환(A→B 뒤 B가 최종), 늦은 응답, WebGL 컨텍스트 손실, 읽기 오류 후 재시도, 비활성 상태의 이유 표시, null label·삽입 코드·비첫 모델 잔기 선택.
 - 실패한 실행 결과는 지우지 않고 회귀 증거로 남긴다.

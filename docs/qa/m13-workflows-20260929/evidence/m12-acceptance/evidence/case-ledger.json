@@ -1,0 +1,1101 @@
+{
+  "schema": "m12_case_ledger@1",
+  "generatedAt": "2026-09-29T08:59:18.809072+00:00",
+  "build": {
+    "buildId": "WCnxUsptjGLeenXzwlYhV",
+    "gitHead": "af1500b60f93a4fa24865f0e059ad2abe70b8126",
+    "gitStatusPorcelainSha256": "da3cc300ceb34bbc311c729f22ddf41b8d8ace620115c334228bcd6cc6c51ab2",
+    "dirtyFiles": [
+      "?? docs/qa/m13-workflows-20260929-run1/"
+    ],
+    "recordedAt": "2026-09-29T08:51:40.174419+00:00",
+    "harnessSha256": {
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+    },
+    "inputSha256": {
+      "public_1hsg.cif": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "derived_1hsg_first10_fixture.cif": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+      "prolif-vina-rec.pdb": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "prolif-vina-output.sdf": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    },
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d",
+    "qaInputsSha256": "f65692c4983bf9eaca6fb4d9b4bbed1792ba0d03ce3447403c8597d89ff5994f"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "scope": {
+    "partial": false,
+    "only": [],
+    "requiredSteps": [
+      "positive",
+      "empty",
+      "invalid",
+      "cancel",
+      "reopen",
+      "report-download",
+      "overlay-disables",
+      "distance-with-overlay",
+      "comparison-block",
+      "source-race",
+      "minimized-source",
+      "m11-create",
+      "chemical-workspace",
+      "regression-m8-normal",
+      "regression-m9-openmm",
+      "regression-m9-scenes-core",
+      "regression-m10-measure",
+      "regression-m10-alignment",
+      "regression-m11-capability-ready",
+      "regression-m11-empty",
+      "regression-m11-prepare-only",
+      "regression-m11-detect-controls",
+      "regression-m11-job-controls",
+      "regression-m11-running-cancel",
+      "regression-m11-reopen",
+      "replay-api-prebrowser",
+      "replay-positive",
+      "replay-empty",
+      "replay-api-postbrowser",
+      "unavailable-missing",
+      "unavailable-hash"
+    ]
+  },
+  "verdictParts": {
+    "steps": true,
+    "externalRequests": true,
+    "leftoverProcesses": true
+  },
+  "steps": {
+    "positive": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "positive",
+      "mode": "positive",
+      "problems": []
+    },
+    "empty": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "empty",
+      "mode": "empty",
+      "problems": []
+    },
+    "invalid": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "invalid",
+      "mode": "invalid",
+      "problems": []
+    },
+    "cancel": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "cancel",
+      "mode": "cancel",
+      "problems": []
+    },
+    "reopen": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "reopen",
+      "mode": "reopen",
+      "problems": []
+    },
+    "report-download": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "report-download",
+      "mode": "report-download",
+      "problems": []
+    },
+    "overlay-disables": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "overlay-disables",
+      "mode": "overlay-disables",
+      "problems": []
+    },
+    "distance-with-overlay": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "distance-with-overlay",
+      "mode": "distance-with-overlay",
+      "problems": []
+    },
+    "comparison-block": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "comparison-block",
+      "mode": "comparison-block",
+      "problems": []
+    },
+    "source-race": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "source-race",
+      "mode": "source-race",
+      "problems": []
+    },
+    "minimized-source": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "minimized-source",
+      "mode": "minimized-source",
+      "problems": []
+    },
+    "m11-create": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "m11-create",
+      "mode": "create",
+      "problems": []
+    },
+    "chemical-workspace": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "chemical-workspace",
+      "mode": "chemical-workspace",
+      "problems": []
+    },
+    "regression-m8-normal": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m8-normal",
+      "mode": "regression-m8-normal",
+      "problems": []
+    },
+    "regression-m9-openmm": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m9-openmm",
+      "mode": "regression-m9-openmm",
+      "problems": []
+    },
+    "regression-m9-scenes-core": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m9-scenes-core",
+      "mode": "regression-m9-scenes-core",
+      "problems": []
+    },
+    "regression-m10-measure": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m10-measure",
+      "mode": "regression-m10-measure",
+      "problems": []
+    },
+    "regression-m10-alignment": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m10-alignment",
+      "mode": "regression-m10-alignment",
+      "problems": []
+    },
+    "regression-m11-capability-ready": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-capability-ready",
+      "mode": "capability-ready",
+      "problems": []
+    },
+    "regression-m11-empty": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-empty",
+      "mode": "empty",
+      "problems": []
+    },
+    "regression-m11-prepare-only": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-prepare-only",
+      "mode": "prepare-only",
+      "problems": []
+    },
+    "regression-m11-detect-controls": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-detect-controls",
+      "mode": "detect-controls",
+      "problems": []
+    },
+    "regression-m11-job-controls": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-job-controls",
+      "mode": "job-controls",
+      "problems": []
+    },
+    "regression-m11-running-cancel": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-running-cancel",
+      "mode": "running-cancel",
+      "problems": []
+    },
+    "regression-m11-reopen": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "regression-m11-reopen",
+      "mode": "reopen",
+      "problems": []
+    },
+    "replay-api-prebrowser": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "replay-api-prebrowser",
+      "mode": "replay-api",
+      "problems": []
+    },
+    "replay-positive": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "replay-positive",
+      "mode": "replay",
+      "problems": []
+    },
+    "replay-empty": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "replay-empty",
+      "mode": "replay",
+      "problems": []
+    },
+    "replay-api-postbrowser": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "replay-api-postbrowser",
+      "mode": "replay-api",
+      "problems": []
+    },
+    "unavailable-missing": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "unavailable-missing",
+      "mode": "unavailable:not_installed",
+      "problems": []
+    },
+    "unavailable-hash": {
+      "status": "pass",
+      "attempts": 1,
+      "latest": "unavailable-hash",
+      "mode": "unavailable:unreviewed_build",
+      "problems": []
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "cancel",
+      "mode": "cancel",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_7ab4d4d5c74848e5a459baa8735e5315",
+      "handles": {
+        "set": "obj://run_7ab4d4d5c74848e5a459baa8735e5315/pocket_set/b4665879aa402d1c0f60e39d49398f17461dcbbea10455764c3e5c30d642c298",
+        "cancelledJob": "job_fec7679c5c1c4a0db56ca44564cd29c9"
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/cancel",
+      "finishedAt": "2026-09-29T08:52:12.474Z"
+    },
+    {
+      "step": "chemical-workspace",
+      "mode": "chemical-workspace",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_c83219aaf87b467f9d6f802042550208",
+      "handles": {
+        "chemicalResult": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_interaction_set/32b63d8a4a2ccc4121b33b148203bed4f87b085dfd52ec5fed7784f602cad49d",
+        "chemicalSource": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_structure/1dbc6f281309516b404cad0cde7e7eb8d0f4be38a4a62c8d9a2d21b09cfaf311",
+        "set": "obj://run_c83219aaf87b467f9d6f802042550208/pocket_set/f0112911858ce632a171095505b05db7aa372774e6ba5354ca9c36aa86d8e80d"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/chemical-workspace",
+      "finishedAt": "2026-09-29T08:55:01.345Z"
+    },
+    {
+      "step": "comparison-block",
+      "mode": "comparison-block",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/comparison-block",
+      "finishedAt": "2026-09-29T08:53:01.739Z"
+    },
+    {
+      "step": "distance-with-overlay",
+      "mode": "distance-with-overlay",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/distance-with-overlay",
+      "finishedAt": "2026-09-29T08:52:55.726Z"
+    },
+    {
+      "step": "empty",
+      "mode": "empty",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_d53a5882d63c467d8353352408212ee2",
+      "handles": {
+        "prepared": "obj://run_d53a5882d63c467d8353352408212ee2/prepared_structure/a0ba05c0d99c13e2feec6971f15b5ff83f13808d27254d0d5be48f82a3690869",
+        "set": "obj://run_d53a5882d63c467d8353352408212ee2/pocket_set/68e98862749359a3c2581943ddccd5bb3b16ca0d2e8c05479dcf167f41fe85f0",
+        "job": "job_e595715682204098a7789fd8edd510f8",
+        "report": "obj://run_d53a5882d63c467d8353352408212ee2/method_report_manifest/5b8be6212c513d8ca716b89f844962fd217356a3414e847a33287d3f8e499709"
+      },
+      "inputs": [
+        {
+          "name": "derived_1hsg_first10_fixture.cif",
+          "sha256": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+          "provenance": "derived fixture; not experimental evidence (a truncated fragment of a public entry, not an observed structure)"
+        }
+      ],
+      "provenanceLabels": [
+        "derived fixture; not experimental evidence (a truncated fragment of a public entry, not an observed structure)"
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/empty",
+      "finishedAt": "2026-09-29T08:52:02.769Z"
+    },
+    {
+      "step": "invalid",
+      "mode": "invalid",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_66651abd861248b894d1ff2fcaf93912,run_20c9354ecafe4eedaba20cf237ddd16d",
+      "handles": {},
+      "inputs": [
+        {
+          "name": "m12-invalid-cases.json",
+          "sha256": "4926d18be107400b4b6a0e76de16507908e8e175276bfa7a2795d7025e58e50d",
+          "provenance": "manifest of labeled synthetic M12 invalid-input controls (scripts/m12_qa_inputs.py)"
+        },
+        {
+          "name": "m12-synthetic-modified-residue.pdb",
+          "sha256": "c3a91360c70438428335b292b89ae3d02dbe510172ea6c10add7118999185874",
+          "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+        },
+        {
+          "name": "m12-synthetic-degenerate-collinear.pdb",
+          "sha256": "a25a960c543218056279e9da1cc00451a9706b9134d056ec225109643ed57f91",
+          "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+        }
+      ],
+      "provenanceLabels": [
+        "manifest of labeled synthetic M12 invalid-input controls (scripts/m12_qa_inputs.py)",
+        "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/invalid",
+      "finishedAt": "2026-09-29T08:52:07.508Z"
+    },
+    {
+      "step": "m11-create",
+      "mode": "create",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_c83219aaf87b467f9d6f802042550208",
+      "handles": {
+        "result": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_interaction_set/32b63d8a4a2ccc4121b33b148203bed4f87b085dfd52ec5fed7784f602cad49d",
+        "report": "obj://run_c83219aaf87b467f9d6f802042550208/method_report_manifest/d599ff0b4d3c96e609f0150e4fe7881075ea14064803392298f0ccfd9e5d0211",
+        "source": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_structure/1dbc6f281309516b404cad0cde7e7eb8d0f4be38a4a62c8d9a2d21b09cfaf311",
+        "graph": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_graph/91599cc2f6fb1703154d428a96647e3a5bb13d713c146de710f4fa78be37813f",
+        "prepareJob": "job_f8fd8c9e7d5b45feb60b898dc924a77e",
+        "detectJob": "job_7f7791b179f4488cb2caadd8721e4f3c"
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled non-approval 409 on Start"
+      ],
+      "externalRequestCount": 0,
+      "regression": [
+        "H02",
+        "H03",
+        "H04",
+        "H07",
+        "H08",
+        "H10",
+        "H11",
+        "H12",
+        "H14",
+        "H15"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/m11-create",
+      "finishedAt": "2026-09-29T08:54:34.194Z"
+    },
+    {
+      "step": "minimized-source",
+      "mode": "minimized-source",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_8383c3ce7c534617aa0ea708e7dcc8a3",
+      "handles": {
+        "prepared": "obj://run_8383c3ce7c534617aa0ea708e7dcc8a3/prepared_structure/37b60c56c3569cf2cccb509749c08f67153a0375b4683a0b930265cd08330fde",
+        "interaction": null,
+        "minimized": "obj://run_8383c3ce7c534617aa0ea708e7dcc8a3/openmm_minimized_structure/44a9c43f8873c15de1daa2bb0f968b717393c52d269bee5a1c3432610a0af833",
+        "set": "obj://run_8383c3ce7c534617aa0ea708e7dcc8a3/pocket_set/d646a3ecc045f30ad24c3e1c56487bdbebc60a978aada72dc6b174abc01004dc"
+      },
+      "inputs": [
+        {
+          "name": "public_1ubq.cif",
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture, M9 OpenMM input); fpocket candidates on it are not binding-site evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "public PDB entry 1UBQ (repository fixture, M9 OpenMM input); fpocket candidates on it are not binding-site evidence"
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/minimized-source",
+      "finishedAt": "2026-09-29T08:52:34.627Z"
+    },
+    {
+      "step": "overlay-disables",
+      "mode": "overlay-disables",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/overlay-disables",
+      "finishedAt": "2026-09-29T08:52:47.070Z"
+    },
+    {
+      "step": "positive",
+      "mode": "positive",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "original": "obj://run_dc42d30ad8414133817b08ba95af447a/structure/68c0690a8f4f31d0c5c395f68e43c9d41d2113039bab7b72379508423159eb57",
+        "prepared": "obj://run_dc42d30ad8414133817b08ba95af447a/prepared_structure/fcb262ad04557aabb5bb29b3cc59583249703e66a02e9cf892777755492a4ca8",
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed",
+        "job": "job_4dcacd3a367843feae7ae4f50e708131"
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled 503 on one pocket preflight GET (retry control)"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/positive",
+      "finishedAt": "2026-09-29T08:51:58.844Z"
+    },
+    {
+      "step": "regression-m10-alignment",
+      "mode": "regression-m10-alignment",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_948c565c49ed41268bbf7f3bfd0850ca",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": "M10",
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m10-alignment",
+      "finishedAt": "2026-09-29T08:57:03.106070+00:00"
+    },
+    {
+      "step": "regression-m10-measure",
+      "mode": "regression-m10-measure",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_9746bc4852284598b18a5eb93527951e",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": "M10",
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m10-measure",
+      "finishedAt": "2026-09-29T08:56:32.419090+00:00"
+    },
+    {
+      "step": "regression-m11-capability-ready",
+      "mode": "capability-ready",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_377f02db284549f8bebbf8222e1cc780",
+      "handles": {},
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": [
+        "H01"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-capability-ready",
+      "finishedAt": "2026-09-29T08:57:06.199Z"
+    },
+    {
+      "step": "regression-m11-detect-controls",
+      "mode": "detect-controls",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_b7f5da4dbd3745f5aee8456542d89bf6",
+      "handles": {
+        "detectJob": "job_10ecfeebc42d4d098972e631dc8cdf8d"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": [
+        "H07"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-detect-controls",
+      "finishedAt": "2026-09-29T08:58:24.992Z"
+    },
+    {
+      "step": "regression-m11-empty",
+      "mode": "empty",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_45b4f90e35024e6b924bbde9f3c301b7",
+      "handles": {
+        "result": "obj://run_45b4f90e35024e6b924bbde9f3c301b7/chemical_interaction_set/d5dc978394c98e9152feb9e1e5827205cb95bffa0337ad4662870fe6aeee72e6",
+        "report": "obj://run_45b4f90e35024e6b924bbde9f3c301b7/method_report_manifest/71e9b5e645323240e005e1ce90509c68d5b09a4de724671e404638a13405397e",
+        "source": "obj://run_45b4f90e35024e6b924bbde9f3c301b7/chemical_structure/be39abbed177b500841c30aa824a55100188b5243a71bf8cbe2c26c9433670ac",
+        "graph": "obj://run_45b4f90e35024e6b924bbde9f3c301b7/chemical_graph/94a6ce0e7e0cc2367138dc294faff842d9504404367a9444a7ef2d88ce342514",
+        "prepareJob": "job_b314306234eb44ad9f755224505039a1",
+        "detectJob": "job_dea48e600e5b4e49a325d5a2079db50c"
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "m11-synthetic-empty-1000A.sdf",
+          "sha256": "a856c3c5495ad5d757575d780ebe0fc95f1111d1805f51545f5f3f026591a778",
+          "provenance": "synthetic derivative: public SDF record 0 translated +1000 \u00c5 (empty-result control; not experimental evidence)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "synthetic derivative: public SDF record 0 translated +1000 \u00c5 (empty-result control; not experimental evidence)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled non-approval 409 on Start"
+      ],
+      "externalRequestCount": 0,
+      "regression": [
+        "H09"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-empty",
+      "finishedAt": "2026-09-29T08:57:54.827Z"
+    },
+    {
+      "step": "regression-m11-job-controls",
+      "mode": "job-controls",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_c1529f77582d4a1ebc939535131c835f",
+      "handles": {
+        "prepareJob": "job_9c98d51a01ff43be91562bf3c49b22df"
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixtures: held jobs GET, held upload, held job submission"
+      ],
+      "externalRequestCount": 0,
+      "regression": [
+        "H07",
+        "H15"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-job-controls",
+      "finishedAt": "2026-09-29T08:58:29.420Z"
+    },
+    {
+      "step": "regression-m11-prepare-only",
+      "mode": "prepare-only",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_b7f5da4dbd3745f5aee8456542d89bf6",
+      "handles": {
+        "source": "obj://run_b7f5da4dbd3745f5aee8456542d89bf6/chemical_structure/a9cbc286c185f0892f27cd86056de334cea371d60f55ae365ad73d2486bb2328",
+        "graph": "obj://run_b7f5da4dbd3745f5aee8456542d89bf6/chemical_graph/1a17543f05b9e28b5f858a2ece7cda908094739f055c845bd20ea9cd8e91c734",
+        "prepareJob": "job_4026e6016a9a4605ba135a8d4cb34882"
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled non-approval 409 on Start"
+      ],
+      "externalRequestCount": 0,
+      "regression": [
+        "H04",
+        "H07"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-prepare-only",
+      "finishedAt": "2026-09-29T08:58:18.022Z"
+    },
+    {
+      "step": "regression-m11-reopen",
+      "mode": "reopen",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_c83219aaf87b467f9d6f802042550208",
+      "handles": {
+        "result": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_interaction_set/32b63d8a4a2ccc4121b33b148203bed4f87b085dfd52ec5fed7784f602cad49d",
+        "source": "obj://run_c83219aaf87b467f9d6f802042550208/chemical_structure/1dbc6f281309516b404cad0cde7e7eb8d0f4be38a4a62c8d9a2d21b09cfaf311"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": [
+        "H14"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-reopen",
+      "finishedAt": "2026-09-29T08:59:01.072Z"
+    },
+    {
+      "step": "regression-m11-running-cancel",
+      "mode": "running-cancel",
+      "schema": "m11_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_ad32626b453d4573b33e420eb2806618",
+      "handles": {
+        "prepareJob": "job_8a7495bf385b44c38bd99806c85fed74"
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+        }
+      ],
+      "provenanceLabels": [
+        "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+        "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": [
+        "H07",
+        "H15"
+      ],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m11-running-cancel",
+      "finishedAt": "2026-09-29T08:58:37.349Z"
+    },
+    {
+      "step": "regression-m8-normal",
+      "mode": "regression-m8-normal",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_1a42644574a5434caf18b0eff65ea73f",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": "M8",
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m8-normal",
+      "finishedAt": "2026-09-29T08:55:17.113745+00:00"
+    },
+    {
+      "step": "regression-m9-openmm",
+      "mode": "regression-m9-openmm",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_95f883d08f0347d69b555f0625365f65",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": "M9 prerequisite (OpenMM run)",
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m9-openmm",
+      "finishedAt": "2026-09-29T08:55:38.684637+00:00"
+    },
+    {
+      "step": "regression-m9-scenes-core",
+      "mode": "regression-m9-scenes-core",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_95f883d08f0347d69b555f0625365f65",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": "M9",
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/regression-m9-scenes-core",
+      "finishedAt": "2026-09-29T08:56:26.440408+00:00"
+    },
+    {
+      "step": "reopen",
+      "mode": "reopen",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "renderer-route fixture: labeled 503 on one pocket result GET (retry control)"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/reopen",
+      "finishedAt": "2026-09-29T08:52:38.625Z"
+    },
+    {
+      "step": "replay-api-postbrowser",
+      "mode": "replay-api",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "direct_api",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a,run_d53a5882d63c467d8353352408212ee2",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/replay-api-postbrowser",
+      "finishedAt": "2026-09-29T08:59:09.833973+00:00"
+    },
+    {
+      "step": "replay-api-prebrowser",
+      "mode": "replay-api",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "direct_api",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a,run_d53a5882d63c467d8353352408212ee2",
+      "handles": {},
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/replay-api-prebrowser",
+      "finishedAt": "2026-09-29T08:59:03.307458+00:00"
+    },
+    {
+      "step": "replay-empty",
+      "mode": "replay",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_d53a5882d63c467d8353352408212ee2",
+      "handles": {
+        "set": "obj://run_d53a5882d63c467d8353352408212ee2/pocket_set/68e98862749359a3c2581943ddccd5bb3b16ca0d2e8c05479dcf167f41fe85f0",
+        "report": "obj://run_d53a5882d63c467d8353352408212ee2/method_report_manifest/5b8be6212c513d8ca716b89f844962fd217356a3414e847a33287d3f8e499709"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/replay-empty",
+      "finishedAt": "2026-09-29T08:59:09.279Z"
+    },
+    {
+      "step": "replay-positive",
+      "mode": "replay",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed",
+        "report": "obj://run_dc42d30ad8414133817b08ba95af447a/method_report_manifest/8fc0588cdd59b25f8de01571450f01d1f102c6c184b89a3ded72873e3f9c83bb"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/replay-positive",
+      "finishedAt": "2026-09-29T08:59:07.162Z"
+    },
+    {
+      "step": "report-download",
+      "mode": "report-download",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed",
+        "report": "obj://run_dc42d30ad8414133817b08ba95af447a/method_report_manifest/8fc0588cdd59b25f8de01571450f01d1f102c6c184b89a3ded72873e3f9c83bb"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/report-download",
+      "finishedAt": "2026-09-29T08:52:43.008Z"
+    },
+    {
+      "step": "source-race",
+      "mode": "source-race",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_dc42d30ad8414133817b08ba95af447a",
+      "handles": {
+        "set": "obj://run_dc42d30ad8414133817b08ba95af447a/pocket_set/7aec28b6a081a8bedfb5378b02d1291c79d0c30796ad009a27e40f6ff2d6eaed",
+        "otherRun": "run_d53a5882d63c467d8353352408212ee2"
+      },
+      "inputs": [],
+      "provenanceLabels": [],
+      "fixtureLabels": [
+        "renderer-route fixture: held real pocket geometry GET responses (released unchanged)"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/source-race",
+      "finishedAt": "2026-09-29T08:53:12.059Z"
+    },
+    {
+      "step": "unavailable-hash",
+      "mode": "unavailable:unreviewed_build",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_e2b52d2cbdc044a99d3734faf364d753",
+      "handles": {},
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+      ],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; real install record with a labeled placeholder bin/fpocket (SHA-256 42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822, not the reviewed build)"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/unavailable-hash",
+      "finishedAt": "2026-09-29T08:59:18.210Z"
+    },
+    {
+      "step": "unavailable-missing",
+      "mode": "unavailable:not_installed",
+      "schema": "m12_case_ledger_row@1",
+      "evidenceKind": "real_electron_offscreen",
+      "status": "pass",
+      "runId": "run_56ef4981de0e4f55b7f219e5d3b8a16b",
+      "handles": {},
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+        }
+      ],
+      "provenanceLabels": [
+        "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+      ],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+      ],
+      "externalRequestCount": 0,
+      "regression": null,
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/20260929b/m12-acceptance/evidence/unavailable-missing",
+      "finishedAt": "2026-09-29T08:59:13.945Z"
+    }
+  ]
+}

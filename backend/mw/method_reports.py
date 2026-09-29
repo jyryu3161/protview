@@ -10,7 +10,8 @@ from typing import Any
 from .core.errors import ToolFailure
 from .core.handles import canonical_json
 from .core.residue import ResidueRef
-from .reports import EvidenceError, _md, _provenance, _ref
+from .reports import EvidenceError, _md, _provenance, _ref, resume_linked_report
+from .runtime.orchestrator import link_fields
 from .tools.energetic import protocol_capabilities
 from .tools.registry import ToolContext
 from .tools.sasa import AMINO, _preflight, dependencies
@@ -251,10 +252,15 @@ def validate_method_claim(store: Any, proposed: dict[str, Any]) -> dict[str, Any
         raise EvidenceError("unresolved_method_claim") from exc
 
 
-def build_method_report(run: Any, result_handle: str) -> dict[str, Any]:
+def build_method_report(run: Any, result_handle: str, *, execution_link: Any = None) -> dict[str, Any]:
     with run._owner():
         run.store.rebuild_from_events()
         run._refresh()
+        existing = resume_linked_report(run, execution_link, event_type="method_report_created",
+                                        source_field="result_handle", source_handle=result_handle,
+                                        saved=saved_method_report, builder="interface_sasa")
+        if existing is not None:
+            return existing
         data, links = validated_sasa(run.store, result_handle)
         events = list(run.events.read())
         provenance = {
@@ -290,7 +296,7 @@ def build_method_report(run: Any, result_handle: str) -> dict[str, Any]:
                                                                      "analysis_type": "interface_sasa", "status": "complete"})
         run.events.append("method_report_created", report_handle=report_obj.handle,
                           markdown_handle=markdown_obj.handle, result_handle=result_handle,
-                          snapshot_event_seq=seq)
+                          snapshot_event_seq=seq, **link_fields(execution_link))
         return {"handle": report_obj.handle, "markdown_handle": markdown_obj.handle,
                 "manifest": manifest, "markdown": markdown}
 
