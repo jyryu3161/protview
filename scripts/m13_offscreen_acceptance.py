@@ -147,6 +147,28 @@ def redact(text: str, replacements: list[tuple[str, str]]) -> str:
     return text
 
 
+def sub_ledger_verdict(data: dict | None) -> tuple[str | None, int | None]:
+    """(verdict, measured non-loopback total) of an M11 or M12 acceptance ledger; the total is None if any row is unmeasured.
+
+    m11_case_ledger@1 has no verdict field: it passes iff summary.fail == 0, summary.missing == 0, at least one case
+    passed, every row measured its non-loopback requests and nonLoopbackRequestsTotal == 0.
+    m12_case_ledger@1 carries its own verdict, externalRequestsTotal and rowsWithUnknownExternalCount.
+    """
+    if not isinstance(data, dict):
+        return None, None
+    if data.get("schema") == "m11_case_ledger@1":
+        summary = data.get("summary") or {}
+        external = None if data.get("rowsWithUnknownRequestCount") else data.get("nonLoopbackRequestsTotal")
+        passed = (summary.get("fail") == 0 and summary.get("missing") == 0 and (summary.get("pass") or 0) > 0
+                  and external == 0)
+        return ("pass" if passed else "fail"), external
+    if data.get("schema") == "m12_case_ledger@1":
+        external = None if data.get("rowsWithUnknownExternalCount") else data.get("externalRequestsTotal")
+        verdict = data.get("verdict")
+        return (verdict if verdict != "pass" or external == 0 else "fail"), external
+    return None, None
+
+
 class Runner:
     def __init__(self, args: argparse.Namespace) -> None:
         self.code = Path(args.code_root).resolve()
@@ -523,12 +545,12 @@ class Runner:
             rc = subprocess.run(argv, cwd=self.code, env=child_env(), stdout=out, stderr=subprocess.STDOUT,
                                 check=False).returncode
         ledger = sub_artifacts / "case-ledger.json"
-        verdict = json.loads(ledger.read_text()).get("verdict") if ledger.exists() else None
+        verdict, external = sub_ledger_verdict(json.loads(ledger.read_text()) if ledger.exists() else None)
         passed = rc == 0 and verdict == "pass"
         self.write_row(step_dir, {"mode": step, "regression": script, "evidenceKind": "acceptance_runner",
                                   "status": "pass" if passed else "fail", "exitCode": rc, "cases": {},
                                   "subVerdict": verdict, "subLedger": str(ledger), "argv": argv,
-                                  "externalRequestCount": 0 if passed else None, "providerCallsZero": None,
+                                  "externalRequestCount": external, "providerCallsZero": None,
                                   "note": "Its own ledger requires a measured non-loopback count of 0 on every row."})
         self.record(step, "pass" if passed else "fail", exitCode=rc, verdict=verdict, ledger=str(ledger))
 
