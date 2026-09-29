@@ -23,7 +23,7 @@
 
 | 검사 | 결과 |
 |---|---|
-| `pytest backend/tests -q -rs` | 593개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치) |
+| `pytest backend/tests -q -rs` | 597개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치, `88796bc` 기준) |
 | `ruff check …`, 실행기·훅·fpocket 설치·M13 실행기 단위 테스트(한 명령) | 통과, 90개 통과 |
 | `node --check` `pocket-flow.cjs`·`workflows-flow.cjs` | 통과 |
 | `test:events`, `typecheck`, `build` | 148개 통과, 통과, 통과(게이트 BUILD_ID `byXhIMdNy_vdg0qZB-eX7`; 수락 QA는 실행기가 같은 소스로 도장 찍은 `NUugf8EWW7h480ZPwlhqc`) |

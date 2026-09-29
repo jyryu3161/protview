@@ -61,7 +61,7 @@
 
 - 독립 증거 검토(코드 검토자와 다른 인스턴스): **approve**, 막는 지적 없음, 권고 8개. 권고는 코드를 바꾸지 않고 기록으로 처리했다: 아래 수락 QA의 1차 실행 해석, 대체한 과거 검증 범위, `docs/tracking/findings.md`의 새 항목(상단 예산 카운터 지연, M10 측정 원자 선택 flake, 화학 화면 공동 찾기 다시 열기 미관찰, 스크롤된 결과 프레임), M8–M10 회귀 행의 렌더러 문자열 부재.
 
-- 최종 검토(Opus 5.5, 앞의 검토자들과 다른 인스턴스): 막는 지적 1개와 추가 지적. 모두 `86bbff3`에서 고쳤고 계약·명세 변경은 없었다.
+- 최종 검토(Opus 5.5, 앞의 검토자들과 다른 인스턴스): 막는 지적 1개와 추가 지적. 모두 `86bbff3`에서 고쳤다. 명세 변경은 없고, `docs/contracts.md`·`docs/business-rules.md`의 작업 API 규칙 문장(412는 소유 실행이 진행 중일 때만)을 새 동작에 맞췄다.
 
 | 구분 | 지적 | 처리 |
 |---|---|---|
@@ -77,6 +77,8 @@
 | 명령 | 결과 |
 |---|---|
 | `pytest backend/tests -q -rs` | 593 passed, skip 0 (fpocket·ProLIF 작업 환경 설치), 970.8 s |
+
+최종 재검토 권고로 `88796bc`에서 소유 작업 수동 거절 확인이 계획을 읽지 못할 때도 412 `job_owned_by_analysis_execution`을 돌려주게 하고(닫힌 쪽 유지) 테스트 4개를 더했다. 이 변경 뒤 `pytest backend/tests -q -rs` 597개 통과·skip 0, ruff 통과. 바뀐 코드는 계획을 읽지 못하는 오류 경로뿐이라 수락 QA(3차 실행)는 다시 돌리지 않았다.
 | `ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py` | 통과 |
 | `pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py -q` | 90 passed |
 | `node --check` `pocket-flow.cjs`, `workflows-flow.cjs` | 통과 |
