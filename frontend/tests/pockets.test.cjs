@@ -64,6 +64,10 @@ test("five UI states are distinct: empty is never failure and failure is never e
   assert.equal(p.pocketUiState({ capability: ready, readError: "HTTP 422" }), "failed");
   assert.equal(p.pocketUiState({ capability: ready, jobStatus: "done", summary: { null_result: true, total_count: 0 } }), "scientific_null");
   assert.equal(p.pocketUiState({ capability: ready, jobStatus: "done", summary: { null_result: false, total_count: 4 } }), "ready");
+  // Capabilities not read yet is loading, never "unavailable"; a backend without the capability is unavailable.
+  assert.equal(p.pocketUiState({ capability: undefined }), "loading");
+  assert.equal(p.pocketUiState({}), "loading");
+  assert.equal(p.pocketUiState({ capability: null }), "unavailable");
   // A stored result reopens even without the engine: it is not "unavailable".
   assert.equal(p.pocketUiState({ capability: unavailable, summary: { null_result: false, total_count: 4 } }), "ready");
   assert.equal(p.pocketUiState({ capability: unavailable, summary: { null_result: true, total_count: 0 } }), "scientific_null");
@@ -223,4 +227,19 @@ test("chain selection sends an empty list for the default of every protein chain
   same(p.chainArgument(["A", "B"], ["A", "B"]), []);
   same(p.chainArgument(["B"], ["A", "B"]), ["B"]);
   same(p.chainArgument(["B", "A"], ["A", "B", "C"]), ["A", "B"]);
+});
+
+test("unchecking every chain never becomes the all-chain default: detection is blocked with a reason", () => {
+  assert.equal(p.chainSelectionError(null), null, "no explicit selection is the default of every chain");
+  assert.equal(p.chainSelectionError(["A"]), null);
+  assert.equal(p.chainSelectionError([]), "체인을 하나 이상 고르세요.");
+  assert.throws(() => p.chainArgument([], ["A", "B"]), /체인을 하나 이상 고르세요/,
+    "an empty explicit selection must not be turned into [] (the server's all-chain default)");
+});
+
+test("focus status text is truthful for each observed camera outcome", () => {
+  assert.match(p.focusStatusText("focused"), /초점 확인됨/);
+  assert.match(p.focusStatusText("not_converged"), /초점 확인 안 됨/);
+  assert.match(p.focusStatusText("interrupted"), /중단/);
+  assert.doesNotMatch(p.focusStatusText("not_converged"), /초점 확인됨/);
 });

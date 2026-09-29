@@ -852,7 +852,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
           <a className="mw-btn mw-btn--sm" href={api.reportDownload(runId, reportHandle, "json")}>정확한 JSON 다운로드</a></div>}
         {reportMarkdown && <pre className="mw-report-preview" aria-label="저장된 화학 보고서">{reportMarkdown}</pre>}</InspectorSection>
       <InspectorSection><span className="mw-eyebrow">6 · fpocket 후보 공동 (화학 구조의 단백질 투영)</span>
-        <PocketPanel panel="chemical" run={run} capability={capabilities?.methods?.pocket_detection}
+        <PocketPanel panel="chemical" run={run} capability={capabilities ? capabilities.methods?.pocket_detection ?? null : undefined}
           sourceOptions={pocketSources} displayedSourceHandle={display?.view.handle ?? null} viewerReady={chemicalReady}
           blockedReason={null} overlay={pocketState?.request ?? null} overlayApplied={pocketReadback}
           overlayError={pocketOverlayError} overlayNotice={pocketNotice} onOverlay={requestPocketOverlay}

@@ -47,6 +47,7 @@ test("held latest-result B survives old physical source arrival while stale A an
     { view: "step", stepNumber: 7 }, { latestHandle: "structure/new-latest" },
     { inspectionRevision: 4 }, { distanceHandle: "structure/explicit" },
     { comparisonHandle: "alignment/explicit" }, { runId: "run/b" },
+    { pocketHandle: "prepared_structure/pocket-source" },
   ]) {
     const changedScope = comparisonViewIntentKey({ ...desired, ...change });
     assert.notEqual(changedScope, scope, JSON.stringify(change));

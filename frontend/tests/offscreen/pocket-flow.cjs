@@ -18,8 +18,8 @@ const PUBLIC_1HSG = path.join(FIXTURES, "public_1hsg.cif");
 const DERIVED = path.join(FIXTURES, "derived_1hsg_first10_fixture.cif");
 const DERIVED_PROVENANCE = path.join(FIXTURES, "derived_1hsg_first10_fixture.provenance.json");
 const MODES = ["positive", "empty", "invalid", "unavailable", "cancel", "reopen", "report-download", "source-race",
-  "overlay-disables", "comparison-block", "distance-with-overlay", "chemical-workspace", "replay"];
-const NEW_RUN_MODES = ["positive", "empty", "invalid", "unavailable", "cancel"];
+  "overlay-disables", "comparison-block", "distance-with-overlay", "chemical-workspace", "replay", "minimized-source"];
+const NEW_RUN_MODES = ["positive", "empty", "invalid", "unavailable", "cancel", "minimized-source"];
 const EXISTING_SET_MODES = ["reopen", "report-download", "source-race", "overlay-disables", "comparison-block",
   "distance-with-overlay", "replay"];
 const RESIDUE_FIELDS = ["model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname"];
@@ -27,6 +27,16 @@ const OVERLAY_REASON = "포켓 오버레이를 지우면 다시 사용할 수 �
 const COMPARISON_REASON = "두 구조 비교 중에는 포켓 검출과 오버레이를 사용할 수 없습니다";
 const CONTEXT_CLEARED = "표시 구조가 바뀌어 포켓 오버레이를 지웠습니다";
 const CHEMICAL_REASON = "화학 구조는 M8 프롬프트, M9 보기·PNG, M10 측정·비교 입력으로 쓸 수 없습니다";
+const EMPTY_CHAINS = "체인을 하나 이상 고르세요";
+const MINIMIZED_LEGEND = "OpenMM 최소화 단백질 좌표";
+const POCKET_SOURCE_LEGEND = "fpocket 포켓 결과의 소스 구조";
+const CONTACT_REGION = "기하 접촉 측정 행";
+// Contract units per descriptor key (spec 7) and the product's rendering of each unit.
+const DESCRIPTOR_UNITS = { score: "dimensionless", druggability_score: "dimensionless", alpha_sphere_count: "count",
+  total_sasa_A2: "A2", volume_A3: "A3" };
+const DESCRIPTOR_ORDER = ["score", "druggability_score", "alpha_sphere_count", "total_sasa_A2", "volume_A3"];
+const UNIT_RENDER = { A2: text => `${text} Å²`, A3: text => `${text} Å³`, count: text => `${text}개`,
+  dimensionless: text => `${text} (무차원)` };
 const SCIENCE_EVENT_TYPES = new Set(["object_created", "tool_called", "tool_succeeded", "tool_failed", "job_submitted",
   "job_terminal", "budget_reserved", "approval_requested", "approval_resolved"]);
 
@@ -39,6 +49,7 @@ const residueKey = residue => JSON.stringify(RESIDUE_FIELDS.map(field => residue
 
 function provenanceLabel(name) {
   if (name === "public_1hsg.cif") return "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence";
+  if (name === "public_1ubq.cif") return "public PDB entry 1UBQ (repository fixture, M9 OpenMM input); fpocket candidates on it are not binding-site evidence";
   if (name === "derived_1hsg_first10_fixture.cif") return JSON.parse(fs.readFileSync(DERIVED_PROVENANCE, "utf8")).label;
   if (name.startsWith("m12-synthetic-")) return "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure";
   if (name === "m12-invalid-cases.json") return "manifest of labeled synthetic M12 invalid-input controls (scripts/m12_qa_inputs.py)";
@@ -144,7 +155,8 @@ async function waitObserve(page, predicate, label, timeout = 45000) {
     await page.waitForTimeout(100);
   }
   throw new Error(`${label}: timed out; last=${JSON.stringify({ data: last?.data,
-    pocketOverlay: last?.native?.pocketOverlay ?? null, sourceHandle: last?.native?.sourceHandle })}`);
+    pocketOverlay: last?.native?.pocketOverlay ?? null, sourceHandle: last?.native?.sourceHandle,
+    ready: last?.native?.ready ?? null, catalogReady: last?.native?.catalogReady ?? null })}`);
 }
 const overlayApplied = (obs, set, rank) => obs.data?.pocketOverlay === "applied" &&
   obs.data.pocketSetHandle === set && Number(obs.data.pocketRank) === rank && !!obs.native?.pocketOverlay &&
@@ -307,12 +319,29 @@ async function detect(page, panel, run, { approve = true } = {}) {
   await panel.locator("[data-pocket-total-count], [data-pocket-null-result]").first().waitFor({ timeout: 60000 });
   return { job: durable, set, approvalSeen, previousJobs: before };
 }
-function descriptorCellsMatch(rowText, pocket) {
-  for (const [key, descriptor] of Object.entries(pocket.descriptors)) {
-    const text = descriptor.native_text ?? String(descriptor.value);
-    assert.ok(rowText.includes(text), `rank ${pocket.rank} ${key}: displayed row lacks stored value ${text}`);
-  }
-  return true;
+/** Each descriptor cell must equal the stored native text with the stored (contract) unit, in column order. */
+async function descriptorCellsMatch(row, pocket, units) {
+  const cells = await row.locator("td").allInnerTexts();
+  assert.equal(cells.length, 2 + DESCRIPTOR_ORDER.length + 1, `rank ${pocket.rank}: unexpected column count`);
+  assert.equal(cells[0].trim(), String(pocket.rank));
+  const seen = {};
+  DESCRIPTOR_ORDER.forEach((key, i) => {
+    const descriptor = pocket.descriptors[key];
+    assert.ok(descriptor, `rank ${pocket.rank}: stored descriptor ${key} missing`);
+    assert.equal(descriptor.unit, DESCRIPTOR_UNITS[key], `rank ${pocket.rank} ${key}: stored unit ${descriptor.unit}`);
+    if (units && key in units) assert.equal(units[key], descriptor.unit, `summary units.${key} differs from the row unit`);
+    const render = UNIT_RENDER[descriptor.unit];
+    assert.ok(render, `rank ${pocket.rank} ${key}: unit ${descriptor.unit} has no rendering`);
+    const expected = render(descriptor.native_text ?? String(descriptor.value));
+    const cell = cells[1 + i].replace(/\s+/g, " ").trim();
+    if (key === "druggability_score") {
+      assert.ok(cell.startsWith(expected), `rank ${pocket.rank} ${key}: cell "${cell}" != "${expected}"`);
+      assert.ok(cell.slice(expected.length).includes("약물성 증거 아님"), `rank ${pocket.rank}: druggability cell lacks the warning`);
+    } else assert.equal(cell, expected, `rank ${pocket.rank} ${key}: cell "${cell}" != "${expected}"`);
+    seen[key] = cell;
+  });
+  assert.equal(cells[1 + DESCRIPTOR_ORDER.length].trim(), String(pocket.lining_residue_count));
+  return seen;
 }
 async function assertSummaryTable(panel, summary, expectedShown) {
   const shown = Number(await panel.locator("[data-pocket-displayed-count]").getAttribute("data-pocket-displayed-count"));
@@ -327,14 +356,14 @@ async function assertSummaryTable(panel, summary, expectedShown) {
     const rank = Number(await row.getAttribute("data-pocket-rank"));
     const pocket = summary.pockets[i];
     assert.equal(rank, pocket.rank, "table row order differs from stored native rank order");
-    descriptorCellsMatch(await row.innerText(), pocket);
+    await descriptorCellsMatch(row, pocket, summary.units);
     ranks.push(rank);
   }
   return { displayed: shown, total, ranks };
 }
 /** Stored spheres vs what Mol* holds: centers are float32 GPU texture values (exact float32 of the stored
  *  double); radii are Mol*'s packed centi-Ångström size (exact integer/100 of the stored radius). */
-function compareSpheres(obs, geo) {
+function compareSpheres(obs, geo, catalogRows) {
   const attr = JSON.parse(obs.data.pocketSpheres);
   const native = obs.native.pocketOverlay;
   assert.equal(Number(obs.data.pocketSphereCount), geo.spheres.length, "sphere count differs from stored pocket");
@@ -358,12 +387,50 @@ function compareSpheres(obs, geo) {
   assert.equal(native.pickable, false);
   assert.equal(Number(obs.data.pocketLiningAtomCount), geo.lining_atoms.atoms.length);
   assert.equal(Number(obs.data.pocketLiningResidueCount), geo.lining_residues.length);
-  return { sphereCount: geo.spheres.length, comparedSpheres: geo.spheres.length, maxCenterDeltaFloat32_A: maxCenterDelta,
+  const lining = compareLining(obs, geo, catalogRows);
+  return { lining, sphereCount: geo.spheres.length, comparedSpheres: geo.spheres.length, maxCenterDeltaFloat32_A: maxCenterDelta,
     maxRadiusDelta_A: maxRadiusDelta, radiiExactlyAtStoredPrecision: radiiAtStoredPrecision,
     liningAtoms: geo.lining_atoms.atoms.length, liningResidues: geo.lining_residues.length,
     liningSitesInMolstar: native.liningNativeSourceIndices.length, rule: "center === Math.fround(stored); radius === round(stored*100)/100" };
 }
+/** The Mol* lining sites must be exactly the atom-catalog rows (viewer_source_index) of the stored lining residues,
+ *  and every stored lining AtomRef must map to exactly one catalog row inside that set. */
+function compareLining(obs, geo, catalogRows) {
+  const native = [...obs.native.pocketOverlay.liningNativeSourceIndices].sort((a, b) => a - b);
+  assert.equal(Number(obs.data.pocketLiningSiteCount), native.length);
+  if (obs.data.pocketLiningVisible !== "true") { assert.equal(native.length, 0, "hidden lining keeps Mol* sites"); return { visible: false }; }
+  const residueKeys = new Set(geo.lining_residues.map(residueKey));
+  const expected = catalogRows.filter(row => row.ref.structure_handle === geo.source_handle &&
+    residueKeys.has(residueKey(row.ref.residue))).map(row => row.viewer_source_index).sort((a, b) => a - b);
+  assert.deepEqual(native, expected, "Mol* lining sites differ from the catalog rows of the stored lining residues");
+  const expectedSet = new Set(expected);
+  for (const ref of geo.lining_atoms.atoms) {
+    const rows = catalogRows.filter(row => row.ref.site_index === ref.site_index &&
+      row.ref.structure_handle === ref.structure_handle && row.ref.atom_name === ref.atom_name &&
+      residueKey(row.ref.residue) === residueKey(ref.residue));
+    assert.equal(rows.length, 1, `lining atom site ${ref.site_index} does not map to exactly one catalog row`);
+    assert.ok(expectedSet.has(rows[0].viewer_source_index), `lining atom site ${ref.site_index} outside the lining residues`);
+  }
+  return { visible: true, sites: native.length, liningAtomsMapped: geo.lining_atoms.atoms.length,
+    rule: "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)" };
+}
+async function catalogRows(page, run, handle) {
+  const chemical = handle.includes("/chemical_structure/");
+  const limit = chemical ? 1000 : 500;
+  const out = [];
+  let total = null;
+  while (total === null || out.length < total) {
+    const route = chemical ? `/runs/${run}/chemical/structures/atoms` : `/runs/${run}/structures/atoms`;
+    const chunk = await readApi(page, `${route}?handle=${encodeURIComponent(handle)}&offset=${out.length}&limit=${limit}`);
+    total = chunk.total; out.push(...chunk.rows);
+    if (!chunk.rows.length) break;
+  }
+  assert.equal(out.length, total, "incomplete atom catalog");
+  return out;
+}
 function focusMatches(obs, geo) {
+  assert.equal(obs.data.pocketFocused, "true", "viewer does not report the pocket focus as confirmed");
+  assert.equal(obs.data.pocketFocusStatus, "focused");
   const target = obs.native.pocketOverlay.focusedTarget;
   assert.ok(Array.isArray(target), "pocket focus did not settle on the display center");
   const center = [geo.display_center.x_A, geo.display_center.y_A, geo.display_center.z_A];
@@ -405,7 +472,8 @@ async function selectAndCompare(page, panel, run, set, rank) {
   const settled = await waitObserve(page, value => overlayApplied(value, set, rank) &&
     Array.isArray(value.native.pocketOverlay.focusedTarget) && value.native.cameraTransitioning === false,
   `overlay rank ${rank} focus settled`, 30000);
-  return { rank, spheres: compareSpheres(settled, geo), focus: focusMatches(settled, geo),
+  const rows = await catalogRows(page, run, geo.source_handle);
+  return { rank, spheres: compareSpheres(settled, geo, rows), focus: focusMatches(settled, geo),
     liningVisible: obs.data.pocketLiningVisible, spheresVisible: obs.data.pocketSpheresVisible,
     geometrySha256: sha(Buffer.from(JSON.stringify(geo))) };
 }
@@ -467,6 +535,9 @@ function validateReport(manifest, markdown, summary, geometries, set) {
   assert.equal(manifest.source_handle, summary.source_handle);
   // The renderer escapes Markdown punctuation; compare statements against the unescaped text.
   const plain = markdown.replace(/\\([\\`*_{}\[\]()#+\-.!|>~])/g, "$1");
+  // The renderer also HTML-escapes text (html.escape, quote=True) before Markdown escaping.
+  const entities = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#x27;": "'" };
+  const plainText = plain.replace(/&(amp|lt|gt|quot|#x27);/g, entity => entities[entity]);
   assert.ok(plain.includes(manifest.evidence_statement), "report Markdown lacks the evidence statement");
   assert.ok(manifest.evidence_statement.includes("not binding-site, affinity or druggability evidence"));
   const byRank = new Map(summary.pockets.map(pocket => [pocket.rank, pocket]));
@@ -502,6 +573,36 @@ function validateReport(manifest, markdown, summary, geometries, set) {
       assert.equal(claim.exact_value, summary.quantization[claim.field_path.split(".")[1]]);
     } else assert.fail(`unexpected claim statement ${claim.statement_id}`);
   }
+  // Druggability warning, limitations, method parameters, chain selection and histidine name mapping.
+  assert.equal(typeof manifest.druggability_warning, "string");
+  assert.ok(/not druggability evidence/.test(manifest.druggability_warning), manifest.druggability_warning);
+  assert.ok(plainText.includes(manifest.druggability_warning), "report Markdown lacks the druggability warning");
+  assert.ok(Array.isArray(manifest.limitations) && manifest.limitations.length > 0, "report has no limitations");
+  for (const item of summary.limitations) assert.ok(manifest.limitations.includes(item), `report lacks limitation: ${item}`);
+  assert.ok(manifest.limitations.includes(manifest.evidence_statement));
+  assert.ok(manifest.limitations.includes(manifest.druggability_warning));
+  for (const item of manifest.limitations) assert.ok(plainText.includes(item), `report Markdown lacks limitation: ${item}`);
+  for (const key of ["engine", "release", "build", "parser_version", "seed_control", "fresh_execution_deterministic"])
+    assert.deepEqual(manifest.method[key], summary.method[key], `report method.${key} differs from the pocket_set`);
+  assert.ok(Array.isArray(manifest.method.argv) && manifest.method.argv.length > 0, "report lacks the fpocket argv");
+  if (summary.method.argv) assert.deepEqual(manifest.method.argv, summary.method.argv);
+  assert.ok(plainText.includes(`Arguments: ${manifest.method.argv.join(" ")}`), "report Markdown lacks the fpocket arguments");
+  const parameters = manifest.method.effective_parameters?.effective_parameters;
+  assert.ok(Array.isArray(parameters) && parameters.length > 0, "report lacks the effective parameters");
+  for (const entry of parameters) assert.ok(plainText.includes(`Parameter ${entry.field} = ${entry.value}`),
+    `report Markdown lacks parameter ${entry.field}`);
+  assert.deepEqual(manifest.selection.selected_chains, summary.selected_chains);
+  assert.deepEqual(manifest.selection.excluded_counts, summary.excluded_counts);
+  assert.deepEqual(manifest.resname_mapping, summary.resname_mapping, "report histidine mapping differs from the pocket_set");
+  // Residue-name mapping (histidine and other aliases sent under a standard name): wording-independent checks.
+  if (!manifest.resname_mapping.length) assert.ok(/name mapping: none needed/i.test(plainText), "report does not state that no mapping was needed");
+  for (const item of manifest.resname_mapping) {
+    assert.match(item.transport_resname, /^[A-Z]{3}$/);
+    assert.notEqual(item.transport_resname, item.original_resname);
+    assert.equal(item.residue.resname, item.original_resname, "mapped residue identity lost its original name");
+    assert.ok(plainText.includes(`sent as ${item.transport_resname} (original ${item.original_resname})`),
+      `report lacks mapping ${item.original_resname} -> ${item.transport_resname}`);
+  }
   assert.equal(manifest.pockets.length, summary.pockets.length);
   manifest.pockets.forEach((pocket, i) => {
     assert.equal(pocket.rank, summary.pockets[i].rank);
@@ -509,7 +610,9 @@ function validateReport(manifest, markdown, summary, geometries, set) {
     assert.deepEqual(pocket.display_center, summary.pockets[i].display_center);
     assert.deepEqual(pocket.lining_residues, geometries.get(pocket.rank).lining_residues);
   });
-  return { claims: manifest.claims.length, claimCounts: counts, pockets: manifest.pockets.length };
+  return { claims: manifest.claims.length, claimCounts: counts, pockets: manifest.pockets.length,
+    limitations: manifest.limitations.length, parameters: parameters.length, resnameMapping: manifest.resname_mapping.length,
+    druggabilityWarning: manifest.druggability_warning };
 }
 async function reportDownloads(session, panel, run, set, summary) {
   const { app, page } = session;
@@ -580,9 +683,44 @@ async function modePositive(session, input, rec) {
       assert.equal(await panel.getByRole("button", { name: "기본 체인으로" }).count(), 0);
       return { selected: chains };
     });
+    await step("P04-chain-none", "Uncheck every chain checkbox; detection must stay disabled (never 'all chains')", async () => {
+      const reads = [];
+      const listener = request => { if (new URL(request.url()).pathname === `/api/runs/${run}/pockets/preflight`) reads.push(request.url()); };
+      page.on("request", listener);
+      try {
+        for (const chain of chains) await panel.getByRole("checkbox", { name: `체인 ${chain}` }).uncheck();
+        await panel.locator("[data-pocket-chain-error]").waitFor({ timeout: 30000 });
+        await page.waitForTimeout(700);
+      } finally { page.off("request", listener); }
+      const button = panel.getByRole("button", { name: "포켓 검출 실행" });
+      let forced = "clicked";
+      const posts = [];
+      const postListener = request => { if (request.method() === "POST" && new URL(request.url()).pathname === `/api/runs/${run}/jobs`) posts.push(request.url()); };
+      page.on("request", postListener);
+      try { await button.click({ force: true, timeout: 5000 }); } catch (error) { forced = `input refused: ${String(error).slice(0, 160)}`; }
+      await page.waitForTimeout(700);
+      page.off("request", postListener);
+      return { reads, forced, posts, disabled: await button.isDisabled() };
+    }, async value => {
+      assert.equal(value.disabled, true, "detection enabled with no chain selected");
+      assert.deepEqual(value.posts, [], "a job was submitted with no chain selected");
+      const allChains = value.reads.filter(url => !new URL(url).searchParams.getAll("chains").length);
+      assert.deepEqual(allChains, [], "an all-chain preflight was sent after every chain was unchecked");
+      const reason = await panel.locator("[data-pocket-detect-reason]").innerText();
+      assert.ok(reason.includes(EMPTY_CHAINS), reason);
+      for (const chain of chains) assert.equal(await panel.getByRole("checkbox", { name: `체인 ${chain}` }).isChecked(), false);
+      assert.equal((await pocketJobs(page, run)).length, 0);
+      return { detectReason: reason, preflightReadsAfterUncheck: value.reads.length, forcedClick: value.forced };
+    });
+    await step("P04-chain-none-default", "Click 기본 체인으로 after unchecking every chain", async () => {
+      await panel.getByRole("button", { name: "기본 체인으로" }).click();
+      await waitPreflightText(panel, chains);
+    }, async () => {
+      assert.equal(await panel.locator("[data-pocket-chain-error]").count(), 0);
+      return { selected: chains };
+    });
     const fault = await failOnce(page, `**/api/runs/${run}/pockets/preflight?*`, "pocket preflight");
     await step("P04-preflight-fault", "Labeled 503 on the preflight read, then click a chain checkbox off", async () => {
-      // The failed read removes the chain list (no preflight), so this is a plain click, not uncheck().
       await panel.getByRole("checkbox", { name: `체인 ${dropped}` }).click();
       await panel.getByRole("button", { name: "입력 다시 확인" }).waitFor({ timeout: 30000 });
     }, async () => ({ routeHits: fault.hits(), visibleError: await panel.getByRole("alert").filter({ hasText: "입력 확인 실패" }).innerText() }));
@@ -685,7 +823,7 @@ async function modePositive(session, input, rec) {
       Number(obs.data.pocketFocusToken) === token + 1 && Array.isArray(obs.native.pocketOverlay.focusedTarget) &&
       obs.native.cameraTransitioning === false, "refocused");
     return { before, rotated: rotated.native.nativeCamera, focused, token };
-  }, async value => ({ pannedTarget: value.rotated.target, targetBefore: value.before.target,
+  }, async value => ({ focused: value.focused.data.pocketFocused, pannedTarget: value.rotated.target, targetBefore: value.before.target,
     focusToken: Number(value.focused.data.pocketFocusToken),
     focus: focusMatches(value.focused, await geometry(page, run, detected.set, lastRank)) }));
   await step("P13-clear", "Click 오버레이 지우기", async () => {
@@ -697,10 +835,21 @@ async function modePositive(session, input, rec) {
     return { overlay: obs.data.pocketOverlay };
   });
   await step("P14-return-to-source", "Select rank 1 again, then click 원래 소스로 돌아가기", async () => {
+    const before = (await observe(page)).native.sourceHandle;
     await selectRank(page, panel, run, detected.set, summary.pockets[0].rank);
+    const during = (await observe(page)).native.sourceHandle;
     await panel.getByRole("button", { name: "원래 소스로 돌아가기" }).click();
-    return waitObserve(page, obs => overlayNone(obs) && obs.native?.ready === true, "returned to source");
-  }, async obs => ({ overlay: obs.data.pocketOverlay, displayedSource: obs.native.sourceHandle }));
+    const obs = await waitObserve(page, value => overlayNone(value) && value.native?.ready === true, "returned to source");
+    await page.waitForTimeout(700);
+    return { before, during, obs: await viewerReady(page) };
+  }, async value => {
+    // The pocket source was already displayed, so the selection did not switch the source and return keeps it.
+    assert.equal(value.before, sources.prepared);
+    assert.equal(value.during, summary.source_handle);
+    assert.equal(value.obs.native.sourceHandle, value.before, "원래 소스로 돌아가기 did not return to the prior displayed source");
+    assert.ok(overlayNone(value.obs));
+    return { overlay: value.obs.data.pocketOverlay, displayedBefore: value.before, displayedAfter: value.obs.native.sourceHandle };
+  });
   evidence.sources = sources;
 }
 
@@ -1190,14 +1339,25 @@ async function modeDistanceWithOverlay(session, input, rec) {
   }, async obs => ({ representation: obs.native.representation }));
   await step("M02-overlay-on", `Click 포켓 rank ${rank} 선택`, () => selectRank(page, panel, input.run, input.set, rank),
     async obs => ({ overlay: obs.data.pocketOverlay, source: obs.native.sourceHandle }));
+  // Same-source measurement keeps the overlay; only an actual change of the displayed source may clear it (with notice).
+  const settledOverlay = (obs, extra) => extra(obs) && obs.native?.ready === true && (obs.native.sourceHandle === summary.source_handle
+    ? overlayApplied(obs, input.set, rank) : overlayNone(obs));
+  const overlayOutcome = async obs => {
+    if (obs.native.sourceHandle === summary.source_handle) {
+      assert.ok(overlayApplied(obs, input.set, rank), "overlay cleared although the displayed source did not change");
+      return { sourceChanged: false, overlayStillApplied: true };
+    }
+    assert.ok(overlayNone(obs));
+    const notice = await panel.locator("[data-pocket-overlay-notice]").innerText();
+    assert.ok(notice.includes(CONTEXT_CLEARED), notice);
+    return { sourceChanged: true, overlayStillApplied: false, notice };
+  };
   await step("M03-measure-mode", "Click 원자 거리 측정 with the overlay on", async () => {
     await m10.getByRole("button", { name: "원자 거리 측정", exact: true }).click();
-    return waitObserve(page, obs => obs.native?.measureMode === true, "measure mode");
-  }, async obs => {
-    const still = overlayApplied(obs, input.set, rank);
-    return { measureMode: true, overlayStillApplied: still, notice: still ? null :
-      await panel.locator("[data-pocket-overlay-notice]").innerText().catch(() => null) };
-  });
+    await waitObserve(page, obs => obs.native?.measureMode === true, "measure mode");
+    await page.waitForTimeout(700);
+    return waitObserve(page, obs => settledOverlay(obs, value => value.native.measureMode === true), "measure mode settled");
+  }, async obs => ({ measureMode: true, displayedSource: obs.native.sourceHandle, ...await overlayOutcome(obs) }));
   const geo = await geometry(page, input.run, input.set, rank);
   await step("M04-sphere-not-pickable", "Click the projected center of a stored alpha sphere", async () => {
     const obs = await waitObserve(page, value => value.native?.ready && value.native.cameraTransitioning === false, "camera idle");
@@ -1248,14 +1408,10 @@ async function modeDistanceWithOverlay(session, input, rec) {
   }, async value => {
     const detail = await readApi(page, `/runs/${input.run}/objects/measurement?handle=${encodeURIComponent(value.handle)}`);
     assert.equal(detail.result.structure_handle, summary.source_handle);
-    const obs = await observe(page);
-    const still = overlayApplied(obs, input.set, rank);
-    if (!still) {
-      assert.ok(overlayNone(obs));
-      assert.ok((await panel.locator("[data-pocket-overlay-notice]").innerText()).includes(CONTEXT_CLEARED));
-    }
-    return { handle: value.handle, distance_A: detail.result.distance_A, overlayStillApplied: still,
-      displayedSource: obs.native.sourceHandle };
+    await page.waitForTimeout(700);
+    const obs = await waitObserve(page, value => settledOverlay(value, () => true), "distance shown, overlay settled");
+    return { handle: value.handle, distance_A: detail.result.distance_A, displayedSource: obs.native.sourceHandle,
+      ...await overlayOutcome(obs) };
   });
   await step("M06-end-measure", "Click 원자 거리 측정 끝내기", async () => {
     await m10.getByRole("button", { name: "원자 거리 측정 끝내기" }).click();
@@ -1285,39 +1441,44 @@ async function modeSourceRace(session, input, rec) {
   const [a, b] = summary.pockets.map(pocket => pocket.rank);
   const geoPattern = `**/api/runs/${input.run}/pockets/geometry?*`;
   evidence.fixtureLabels.push("renderer-route fixture: held real pocket geometry GET responses (released unchanged)");
-  await step("S01-quick-switch", `Hold rank ${a} geometry, click rank ${a} then rank ${b}; release late rank ${a}`, async () => {
-    let first = true, held = null;
-    let release, started;
-    const gate = new Promise(resolve => { release = resolve; });
-    const startedGate = new Promise(resolve => { started = resolve; });
-    const handler = async route => {
-      if (!first) { await route.continue(); return; }
-      first = false;
-      const response = await route.fetch();
-      started();
-      await gate;
-      try { await route.fulfill({ response }); held = "fulfilled"; } catch (error) { held = `cancelled: ${String(error).slice(0, 120)}`; }
-    };
-    await page.route(geoPattern, handler);
-    try {
-      await panel.getByRole("button", { name: `포켓 rank ${a} 선택` }).click();
-      await startedGate;
-      await panel.getByRole("button", { name: `포켓 rank ${b} 선택` }).click().catch(async () => {
-        // The rank buttons are disabled while one geometry read is in flight: wait, then click B.
-        await page.waitForTimeout(100);
-      });
-      release();
-      await page.waitForTimeout(300);
-      if (!overlayApplied(await observe(page), input.set, b)) {
-        await panel.getByRole("button", { name: `포켓 rank ${b} 선택` }).click();
-      }
-      const obs = await waitObserve(page, value => overlayApplied(value, input.set, b), `rank ${b} final`, 60000);
+  const held = await holdRoute(page, geoPattern, "held rank geometry superseded by a reopen");
+  try {
+    await step("S01-concurrent-rank-read", `Hold rank ${a} geometry, click rank ${a}; rank ${b} is disabled while the read is ` +
+      `in flight (product prevents concurrent rank reads); click 포켓 결과 다시 열기 (newer action); release late rank ${a}`, async () => {
+      const buttonA = panel.getByRole("button", { name: `포켓 rank ${a} 선택` });
+      const buttonB = panel.getByRole("button", { name: `포켓 rank ${b} 선택` });
+      await buttonA.click();
+      const started = await held.started;
+      const bDisabled = await buttonB.isDisabled();
+      let bClick = "clicked";
+      try { await buttonB.click({ timeout: 2000 }); } catch (error) { bClick = `input refused: ${String(error).slice(0, 160)}`; }
+      await reopenSet(page, panel, input.run, input.set);
+      held.release();
+      const deadline = Date.now() + 15000;
+      while (!held.delivered.length && Date.now() < deadline) await page.waitForTimeout(100);
       await page.waitForTimeout(1500);
-      return { final: await observe(page), heldDelivery: held, firstApplied: obs.data.pocketRank };
-    } finally { release(); await page.unroute(geoPattern, handler); }
+      return { started, bDisabled, bClick, delivered: [...held.delivered], obs: await observe(page),
+        selectedRows: await panel.locator('tbody tr[aria-selected="true"]').count(),
+        overlayStatus: await panel.locator("[data-pocket-overlay-status]").count() };
+    }, async value => {
+      assert.equal(value.started.status, 200);
+      assert.equal(value.bDisabled, true, `rank ${b} was clickable while rank ${a} geometry was in flight`);
+      assert.match(value.bClick, /^input refused/, `rank ${b} accepted a click during the rank ${a} read`);
+      assert.deepEqual(value.delivered, ["fulfilled"], "the held rank A response did not reach the page late");
+      assert.ok(overlayNone(value.obs), "the late rank A response drew an overlay after the newer reopen");
+      assert.equal(value.selectedRows, 0, "the late rank A response re-selected a row");
+      assert.equal(value.overlayStatus, 0, "the late rank A response set an overlay request");
+      return { concurrentRankReads: "prevented by the product (rank buttons disabled during a geometry read)",
+        rankBDisabled: value.bDisabled, rankBClick: value.bClick, lateDelivery: value.delivered, lateApplied: false };
+    });
+  } finally { held.release(); await held.remove(); }
+  await step("S01-final-rank", `Click rank ${b}; rank ${b} is the final overlay`, async () => {
+    const obs = await selectRank(page, panel, input.run, input.set, b);
+    await page.waitForTimeout(1500);
+    return { first: obs, final: await observe(page) };
   }, async value => {
-    assert.ok(overlayApplied(value.final, input.set, b), "late rank A response replaced the final rank B overlay");
-    return { finalRank: Number(value.final.data.pocketRank), heldDelivery: value.heldDelivery };
+    assert.ok(overlayApplied(value.final, input.set, b), `rank ${b} is not the final overlay`);
+    return { finalRank: Number(value.final.data.pocketRank) };
   });
   await step("S02-display-source-change", "Overlay on; click the load_structure history step", async () => {
     await historyStepClick(page, "load_structure");
@@ -1402,7 +1563,9 @@ async function modeChemicalWorkspace(session, input, rec) {
   const summary = await summaryOf(page, input.run, detected.set);
   assert.equal(summary.source_kind, "chemical_structure");
   evidence.summary = { total: summary.total_count, null_result: summary.null_result };
-  if (!summary.null_result) {
+  if (summary.null_result) throw new Error("chemical source produced scientific_null; the overlay/annotation exclusivity " +
+    "steps (W05-W07) could not be exercised (the stored result is preserved, never replaced)");
+  {
     const rank = summary.pockets[0].rank;
     await step("W05-overlay-hides-annotation", `Click 포켓 rank ${rank} 선택 (annotation must turn off)`, async () => {
       const compared = await selectAndCompare(page, panel, input.run, detected.set, rank);
@@ -1451,6 +1614,112 @@ async function modeChemicalWorkspace(session, input, rec) {
   });
 }
 
+/** Minimized-display rules while a pocket of an OpenMM-minimized source is shown: the original complex contact rows
+ *  are hidden and the legend names the minimized coordinates; 원래 소스로 돌아가기 restores the prior view. */
+async function modeMinimizedSource(session, input, rec) {
+  const { page } = session;
+  const { step, evidence } = rec;
+  const panel = panelOf(page);
+  const run = await step("N01-new-run", "Click 새 run", () => newRun(page), async id => ({ run: id }));
+  evidence.run = run;
+  const sources = await step("N02-upload-prepare", `Choose ${path.basename(input.fixture)}, 구조 불러오기, 전처리`,
+    () => uploadLoadPrepare(page, run, input.fixture), async value => value);
+  evidence.inputs.push(sources.upload);
+  evidence.handles.prepared = sources.prepared;
+  const contacts = page.getByRole("region", { name: CONTACT_REGION });
+  // OpenMM minimization accepts only complete protein templates (public 1HSG lacks terminal OXT), so the
+  // runner uses public 1UBQ, which has no ligand instance: the contact-row gate is then observed only as absent.
+  const ligands = await page.getByRole("combobox", { name: /^리간드/ }).locator("option").count();
+  const interaction = ligands < 2 ? null : await step("N03-contacts", "Select the first ligand instance, click 기하 접촉 계산", async () => {
+    await page.getByRole("combobox", { name: /^리간드/ }).selectOption({ index: 1 });
+    const posted = page.waitForResponse(response => response.request().method() === "POST" &&
+      new URL(response.url()).pathname === `/api/runs/${run}/commands` &&
+      response.request().postDataJSON()?.tool === "compute_interactions", { timeout: 60000 });
+    await page.getByRole("button", { name: "기하 접촉 계산" }).click();
+    const response = await posted;
+    assert.equal(response.status(), 200, await response.text());
+    const body = await response.json();
+    assert.equal(body.ok, true, JSON.stringify(body));
+    await contacts.waitFor({ timeout: 60000 });
+    return body.handle.handle;
+  }, async handle => {
+    assert.ok(await contacts.locator("tbody tr").count() > 0, "the original complex contact rows are not shown");
+    return { interactionHandle: handle, contactRows: await contacts.locator("tbody tr").count() };
+  });
+  evidence.handles.interaction = interaction;
+  evidence.contactGate = interaction ? "exercised (contact rows present before, hidden while minimized)"
+    : "not exercised: the fixture has no ligand instance, so no contact rows exist to hide";
+  const openmm = page.getByText("OpenMM 단백질 전용 최소화 · kJ/mol").locator("..");
+  const minimized = await step("N04-openmm", "Click 단백질 입력·제외 항목 확인, both acknowledgements, OpenMM 작업 제출, " +
+    "작업 시작, 고비용 계산 승인 후 시작; wait for the real minimization", async () => {
+    await openmm.getByRole("button", { name: "단백질 입력·제외 항목 확인" }).click();
+    await openmm.getByRole("region", { name: "OpenMM 제외 성분" }).waitFor({ timeout: 60000 });
+    await openmm.getByLabel(/protein_only 선택과 제외 항목/).check();
+    await openmm.getByLabel(/기존 수소 제거 후 pH 7.0/).check();
+    await openmm.getByRole("button", { name: "OpenMM 작업 제출" }).click();
+    await openmm.getByText(/상태 queued/).waitFor({ timeout: 30000 });
+    const jobId = await openmm.getByLabel("작업").inputValue();
+    await openmm.getByRole("button", { name: "작업 시작" }).click();
+    const approve = openmm.getByRole("button", { name: "고비용 계산 승인 후 시작" });
+    await approve.or(openmm.getByText(/상태 (running|done)/)).first().waitFor({ timeout: 60000 });
+    if (await approve.isVisible().catch(() => false)) await approve.click();
+    await openmm.getByText(/상태 done/).waitFor({ timeout: 600000 });
+    const job = await readApi(page, `/runs/${run}/jobs/${encodeURIComponent(jobId)}`);
+    assert.equal(job.status, "done", JSON.stringify(job.failure));
+    const payload = await readApi(page, `/runs/${run}/openmm_minimization?handle=${encodeURIComponent(job.output_handles[0])}`);
+    return { jobId, result: job.output_handles[0], minimized: payload.result.minimized_structure };
+  }, async value => {
+    assert.match(value.minimized, /\/openmm_minimized_structure\//);
+    return value;
+  });
+  evidence.handles.minimized = minimized.minimized;
+  const detected = await step("N05-detect-minimized", "Choose the minimized source in 포켓 검출 소스, click 포켓 검출 실행", async () => {
+    const select = panel.getByRole("combobox", { name: "포켓 검출 소스" });
+    await select.locator(`option[value="${minimized.minimized}"]`).waitFor({ state: "attached", timeout: 30000 });
+    await select.selectOption(minimized.minimized);
+    const pre = await preflightFor(page, run, minimized.minimized);
+    await waitPreflightText(panel, pre.selected_chains);
+    return detect(page, panel, run);
+  }, async value => {
+    const summary = await summaryOf(page, run, value.set);
+    assert.equal(summary.source_kind, "openmm_minimized_structure");
+    assert.equal(summary.source_handle, minimized.minimized);
+    return { jobId: value.job.job_id, set: value.set, total: summary.total_count, approvalSeen: value.approvalSeen };
+  });
+  evidence.handles.set = detected.set;
+  const summary = await summaryOf(page, run, detected.set);
+  if (summary.null_result) throw new Error("minimized source produced scientific_null; the minimized-display steps could not " +
+    "be exercised (the stored result is preserved, never replaced)");
+  const shownBefore = await step("N06-before", "Observe the prepared complex with its contact rows before selecting a pocket", async () =>
+    viewerReady(page), async obs => {
+    assert.notEqual(obs.native.sourceHandle, minimized.minimized, "the minimized structure is already displayed");
+    if (interaction) assert.ok(await contacts.count() > 0, "contact rows not shown for the original complex");
+    assert.equal(await page.getByText(MINIMIZED_LEGEND, { exact: false }).count(), 0);
+    return { displayedSource: obs.native.sourceHandle };
+  });
+  const rank = summary.pockets[0].rank;
+  await step("N07-select-minimized-pocket", `Click 포켓 rank ${rank} 선택 (source switches to the minimized structure)`, () =>
+    selectAndCompare(page, panel, run, detected.set, rank), async value => {
+    const obs = await observe(page);
+    assert.equal(obs.native.sourceHandle, minimized.minimized, "the pocket overlay is not on the minimized source");
+    assert.equal(await contacts.count(), 0, "original complex contact rows are shown over minimized coordinates");
+    assert.ok(await page.getByText(MINIMIZED_LEGEND, { exact: false }).count() > 0, "the legend does not name the minimized coordinates");
+    assert.equal(await page.getByText(POCKET_SOURCE_LEGEND, { exact: false }).count(), 0,
+      "the legend shows the generic pocket-source label instead of the minimized-structure label");
+    assert.equal(await page.getByText("기하 접촉 ·", { exact: false }).count(), 0, "contact table heading shown for minimized coordinates");
+    return { ...value, displayedSource: obs.native.sourceHandle, contactRegions: 0 };
+  });
+  await step("N08-return", "Click 원래 소스로 돌아가기", async () => {
+    await panel.getByRole("button", { name: "원래 소스로 돌아가기" }).click();
+    return viewerReady(page, native => native.sourceHandle === shownBefore.native.sourceHandle);
+  }, async obs => {
+    assert.ok(overlayNone(await waitObserve(page, overlayNone, "overlay cleared on return")));
+    if (interaction) await contacts.waitFor({ timeout: 30000 });
+    assert.equal(await page.getByText(MINIMIZED_LEGEND, { exact: false }).count(), 0, "minimized legend remains after return");
+    return { displayedSource: obs.native.sourceHandle, restored: shownBefore.native.sourceHandle };
+  });
+}
+
 async function modeReplay(session, input, rec) {
   const { page } = session;
   const { step, evidence } = rec;
@@ -1490,7 +1759,8 @@ async function modeReplay(session, input, rec) {
 const RUNNERS = { positive: modePositive, empty: modeEmpty, invalid: modeInvalid, unavailable: modeUnavailable,
   cancel: modeCancel, reopen: modeReopen, "report-download": modeReportDownload, "source-race": modeSourceRace,
   "overlay-disables": modeOverlayDisables, "comparison-block": modeComparisonBlock,
-  "distance-with-overlay": modeDistanceWithOverlay, "chemical-workspace": modeChemicalWorkspace, replay: modeReplay };
+  "distance-with-overlay": modeDistanceWithOverlay, "chemical-workspace": modeChemicalWorkspace, replay: modeReplay,
+  "minimized-source": modeMinimizedSource };
 
 function buildId() {
   try { return fs.readFileSync(path.join(REPO, "frontend/.next/BUILD_ID"), "utf8").trim(); } catch { return null; }

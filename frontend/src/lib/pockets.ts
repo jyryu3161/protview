@@ -81,11 +81,16 @@ export interface PocketOverlayRequest {
 export interface PocketOverlayReadback {
   key: string; setHandle: string; sourceHandle: string; rank: number;
   sphereCount: number; centers: number[][]; radii: number[];
-  spheresVisible: boolean; pickable: false; opacity: number;
+  /** Read from the sphere render object's state (never a literal). */
+  spheresVisible: boolean; pickable: boolean; opacity: number;
   liningAtomCount: number; liningResidueCount: number; liningVisible: boolean;
   liningNativeSourceIndices: number[];
   focusToken: number; focusedTarget: number[] | null;
+  /** focused: the native camera target reached the display center for this focus token; not_converged: it did not
+   * within the frame budget; interrupted: a manual camera action happened first. */
+  focusStatus: PocketFocusStatus;
 }
+export type PocketFocusStatus = "focused" | "not_converged" | "interrupted";
 
 export const OVERLAY_LABEL = "fpocket 후보 공동";
 export const DEFAULT_TOP_K = 10;
@@ -112,6 +117,7 @@ export function pocketDisplay<T>(pockets: T[], totalCount: number, topK: number)
   return { rows, displayed_count: rows.length, total_count: totalCount, truncated: rows.length < totalCount };
 }
 
+/** `capability` undefined = capabilities not read yet (loading); null = the backend reports no pocket capability. */
 export function pocketUiState(input: { capability?: { available: boolean } | null; jobStatus?: string | null;
   summaryPending?: boolean; readError?: string | null;
   summary?: { null_result: boolean; total_count: number } | null }): PocketUiState {
@@ -124,6 +130,7 @@ export function pocketUiState(input: { capability?: { available: boolean } | nul
   if (summaryPending) return "loading";
   if (jobStatus && ["queued", "claimed", "running"].includes(jobStatus)) return "loading";
   if (jobStatus && ["failed", "interrupted", "cancelled"].includes(jobStatus)) return "failed";
+  if (capability === undefined) return "loading";
   if (!capability?.available) return "unavailable";
   return "ready";
 }
@@ -239,7 +246,15 @@ export function chemicalExclusive(action: "overlay_on" | "annotation_on",
     notice: state.overlayActive ? "M11 상호작용 주석을 켜서 포켓 오버레이를 지웠습니다. 두 표시는 동시에 켜지지 않습니다." : null };
 }
 
+export const EMPTY_CHAIN_SELECTION = "체인을 하나 이상 고르세요.";
+/** An explicit selection with every chain unchecked is not "all chains": detection stays disabled, no preflight. */
+export function chainSelectionError(selection: string[] | null): string | null {
+  return selection !== null && selection.length === 0 ? EMPTY_CHAIN_SELECTION : null;
+}
+
+/** Only for a non-empty selection (see chainSelectionError); [] means the default of every protein chain. */
 export function chainArgument(selected: string[], defaults: string[]): string[] {
+  if (!selected.length) throw new Error(EMPTY_CHAIN_SELECTION);
   const chosen = [...new Set(selected)].sort();
   const all = [...new Set(defaults)].sort();
   return chosen.length === all.length && chosen.every((chain, i) => chain === all[i]) ? [] : chosen;
@@ -249,4 +264,9 @@ export function capabilityStatusText(status: string | null | undefined): string 
   return ({ ready: "사용 가능", not_installed: "설치되지 않음", unreviewed_build: "검토되지 않은 빌드",
     handshake_failed: "작업 프로세스 확인 실패", unsupported_platform: "지원하지 않는 플랫폼",
     unsupported_input: "지원하지 않는 입력" } as Record<string, string>)[status ?? ""] ?? "확인할 수 없음";
+}
+
+export function focusStatusText(status: PocketFocusStatus | null | undefined): string {
+  return status === "focused" ? "초점 확인됨" : status === "interrupted" ? "초점 이동이 수동 카메라 조작으로 중단됨"
+    : status === "not_converged" ? "초점 확인 안 됨 (카메라가 포켓 중심에 도달하지 않음)" : "초점 확인 전";
 }
