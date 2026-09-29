@@ -1,7 +1,7 @@
 # backend/ — FastAPI 서버와 과학 런타임 (`mw` 패키지)
 
 ## 담당 범위
-- HTTP API(`mw/api/app.py`), 실행 경로 `Run.call`(`mw/runtime/`), 불변 객체·이벤트(`mw/core/`), 과학 도구(`mw/tools/`), 영속 작업 큐와 작업 프로세스 감독(`mw/jobs/`), 외부 요청 게이트(`mw/egress/`, `mw/llm/`), 보고서(`mw/*reports.py`), 뷰어 의도·저장된 보기(`mw/viewer_intents.py`, `mw/saved_scenes.py`), M11 화학 입력·번들·결과(`mw/chemical_*.py`), M12 포켓 투영·출력 파서·번들·보고서(`mw/pocket_*.py`, `mw/jobs/pocket_worker.py`), 고정 파이프라인(`mw/workflows.py`).
+- HTTP API(`mw/api/app.py`), 실행 경로 `Run.call`(`mw/runtime/`), 불변 객체·이벤트(`mw/core/`), 과학 도구(`mw/tools/`), 영속 작업 큐와 작업 프로세스 감독(`mw/jobs/`), 외부 요청 게이트(`mw/egress/`, `mw/llm/`), 보고서(`mw/*reports.py`), 뷰어 의도·저장된 보기(`mw/viewer_intents.py`, `mw/saved_scenes.py`), M11 화학 입력·번들·결과(`mw/chemical_*.py`), M12 포켓 투영·출력 파서·번들·보고서(`mw/pocket_*.py`, `mw/jobs/pocket_worker.py`), 고정 파이프라인(`mw/workflows.py`), M13 분석 흐름의 템플릿·계획(`mw/analysis_plans.py`)과 실행 driver(`mw/analysis_executions.py`).
 - 테스트: `backend/tests/`. fixture는 `backend/tests/fixtures/`에 있다. `chemical/`에는 출처(`PROVENANCE.json`, `SYNTHETIC-PROVENANCE.md`)와 라이선스가 함께 있다. 새 fixture는 공개·합성·파생 여부와 출처를 같은 방식으로 기록한다.
 
 ## 담당하지 않는 것
@@ -25,6 +25,8 @@
 - 새 run은 `NewRun.egress`가 `Literal["local_only"]`이므로 항상 로컬 전용이다. 온라인 전환은 `/viewer/online` 이벤트로만 한다.
 - 잔기 식별자 7필드와 AtomRef의 null label은 그대로 보존한다. 표시 문자열을 파싱해서 식별자를 만들지 않는다.
 - 포켓 결과를 게시하기 전에 현재 시도·취소·종료 상태를 확인하고, 읽을 때마다 보관한 원본 출력을 다시 파싱해 저장 값과 대조한다. 원본 출력 보관량은 게시된 결과 기준 run당 64 MiB다.
+- M13 분석 흐름: 계획 생성은 저장된 메타데이터·capability·읽기 전용 사전 검사만 쓰고 과학 구현·작업·보고서를 부르지 않는다. 실행은 `Run.call`·`JobQueue`·기존 보고서 함수에 `ExecutionLink`를 넘겨서만 하며, 링크는 서버 코드만 만든다(`checked_link`가 다른 타입을 거부). 같은 run의 워크플로 잠금(`analysis.lock`)은 입장·dispatch 기록·결과 기록 같은 짧은 전이에만 잡고 자식 실행 동안에는 놓는다. 실행별 driver 잠금이 advance·retry 전체 동안 한 실행에 driver 연산 하나만 들이고(동시 요청은 409 `busy`), 잠금 순서는 driver → 워크플로 → `Run._transition()`이다. 링크 콜백은 `Run._transition()` 안에서 돌며 잠금을 잡지 않는다. 단계 결과는 반환값이 아니라 연결된 자식 이벤트에서 조정해 얻는다(정상 경로와 충돌 복구가 같은 코드). 중지·철회는 `busy`로 거절하지 않고 `Run.cancel()`을 쓰지 않는다. 읽기(상세·목록·요약)는 이벤트를 쓰지 않는다.
+- 연결 필드가 없는 `Run.call`·작업·보고서의 이벤트는 바이트 그대로다(`link_fields(None)`은 빈 dict). 연결된 호출은 제안 전에 활동 시간 예산·열린 작업을 먼저 확인한다(풀린 호출이 가드를 올리지 않게). 흐름이 소유한 작업은 연결 없는 `start`·`retry`를 거절한다(412 `job_owned_by_analysis_execution`). 수동 `cancel`은 허용한다.
 - 도구 실패는 `ToolFailure(FailureClass.…)`로 던진다. 그 밖의 예외는 fatal로 분류한다. HTTP 매핑은 input_invalid 422, precondition 412, resource_exceeded 429, transient·fatal 503이다.
 
 ## 구현 패턴
@@ -35,9 +37,10 @@
 - 오류 메시지는 안전한 enum과 고정 문장으로 만든다. provider 응답 본문, 예외 문자열, 헤더를 외부로 향하는 필드나 이벤트에 넣지 않는다.
 
 ## 테스트 지침
-- 파일별 초점: `test_core`(해시·이벤트·복구), `test_structural`(파싱·전처리·접촉), `test_api`, `test_runtime`(재시도·가드·예산·dry-run·잠금), `test_llm_egress`(투영·전송 거부·감사·사용량), `test_jobs`(큐·실제 프로세스 수명·신원·취소), `test_reports`, `test_sasa`, `test_openmm`, `test_agent_viewer`, `test_saved_scenes`, `test_comparison`, `test_chemical_interactions`, `test_m11_job_api`, `test_pockets`(투영), `test_pocket_output`(파서·실제 엔진), `test_pocket_jobs`(작업·API·수명 주기·복구), `test_pocket_reports`.
+- 파일별 초점: `test_core`(해시·이벤트·복구), `test_structural`(파싱·전처리·접촉), `test_api`, `test_runtime`(재시도·가드·예산·dry-run·잠금), `test_llm_egress`(투영·전송 거부·감사·사용량), `test_jobs`(큐·실제 프로세스 수명·신원·취소), `test_reports`, `test_sasa`, `test_openmm`, `test_agent_viewer`, `test_saved_scenes`, `test_comparison`, `test_chemical_interactions`, `test_m11_job_api`, `test_pockets`(투영), `test_pocket_output`(파서·실제 엔진), `test_pocket_jobs`(작업·API·수명 주기·복구), `test_pocket_reports`, `test_execution_links`(`Run.call`·작업·보고서의 연결 필드, 연결 없는 이벤트 불변, 범위 한정 중지, 시도 훅), `test_analysis_workflows`(템플릿·계획·한도, dry-run 과학 호출 0회, 두 승인 분리, 멱등·stale revision·busy, 충돌 구간 1–4 결함 주입과 복구, 중지·철회, 재시도·한도·재시도 불가 분류, 공유 작업, 예산 checkpoint, events-only 복구, 실제 FreeSASA·OpenMM·ProLIF·fpocket 경로).
 - 반드시 다룰 경계: null label, 삽입 코드, 여러 글자 체인, 첫 모델이 아닌 모델, altloc(A가 이기지 않는 경우 포함), 같은 이름의 리간드 인스턴스, 중복 원자 이름·serial, scientific_null, NaN·Infinity 입력, 다른 run의 handle, 손상된 payload.
 - events-only 복구: 임시 run에서 업로드·객체·SQLite를 지우고 복구한 바이트를 비교한다. 엔진이나 모델 없이 다시 열려야 한다.
+- 분석 흐름 충돌 복구 테스트는 `analysis_executions._FAULT_HOOK`(테스트 전용 결함 주입)으로 입장 → 자식 → 성공 → 워크플로 이벤트 경계마다 멈춰 본다. 물리 작업 반복, 새 캐시 제안, 가드 증가, 보고서 재작성이 없어야 한다.
 - 외부 요청 테스트는 주입한 transport로 실제 transport 호출 수를 센다. sentinel 키가 모든 산출물에 나오지 않는지 검사한다. 실제 `.env`를 읽지 않는다.
 - 프로세스 테스트는 실제 하위 프로세스(SIGTERM을 무시하는 손자 프로세스 포함)를 쓰고, finally에서 반드시 정리한다.
 - FreeSASA·OpenMM·ProLIF·fpocket 네이티브 테스트는 엔진이 없을 때 성공으로 skip하면 안 된다. 수치 oracle은 해석해나 독립 계산을 쓴다. 같은 함수와 비교하는 것은 oracle이 아니다.

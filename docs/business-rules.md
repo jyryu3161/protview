@@ -115,6 +115,70 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - 자율 분기 가드: 같은 호출 키 제안은 2번까지 허용하고 3번째에서 멈춘다. 새 handle이 나오지 않는 완료 제안이 4번 이어지면 멈춘다. 6개 창 안에서 A/B 반복이 진전 없이 계속되면 멈춘다. 사람이 반복해서 읽는 캐시 조회는 가드에 걸리지 않는다.
 - dry-run은 저렴한 로컬 구조 검사만 실제로 실행한다. 비싼 계산은 `planned_call@1` 계획만 만들고 실제 함수로 넘어가지 않는다. 계획은 실제 과학 객체의 입력이 될 수 없다.
 
+## 분석 흐름 (M13)
+
+미리 정한 분석 목표 템플릿으로 기존 계산을 한 단계씩 실행하고 기록하는 기능이다. 계획은 로컬 규칙이 만든 것이며(`planner=local_rules@1`, `source=local_rules`) 모델 판단이 아니다. 계획·실행 기록·요약은 측정 결과가 아니고, 과학 값은 각 단계가 기존 `Run.call`·작업 큐·보고서 함수로 만든 결과뿐이다.
+
+### 템플릿 (goal 6개, 단계 순서 고정)
+
+| goal | 필수 입력 | 단계 |
+|---|---|---|
+| `inspect_ligand` | 원본 `structure`(전처리 정책 altloc·waters·hydrogens 명시) 또는 `prepared_structure`, 정확한 리간드 인스턴스(7필드), cutoff_A 2.5–6.0, 접촉 종류(비지 않은 부분집합) | [원본이면 `prepare_structure`] → `compute_interactions` → `compute_interface_sasa` → `inspection_report` → `method_report`(SASA) |
+| `measure_atoms` | 같은 소스의 AtomRef 두 개(M10에서 고른 것) | `measure_distance` → `method_report` |
+| `compare_structures` | 기준·이동 소스, 명시적 CA 쌍 3–1000개(M10 대응표) | `align_structures` → `method_report` |
+| `chemical_interactions` | M11 준비 요청 하나(`create_new` 또는 `attach_existing`, 미리보기 ready). 범주는 고정 5개 | `prolif_prepare_v1` → `prolif_detect_v1` → `method_report` |
+| `find_cavities` | `prepared_structure`·`chemical_structure`·`openmm_minimized_structure` 중 하나, 비지 않은 체인 목록 | `fpocket_detect_v1` → `method_report` |
+| `minimize_protein` | `prepared_structure`, `protein_only`·`rebuild_pH7` 확인 | `openmm_protein_minimize` → `method_report` |
+
+- 리간드는 사용자가 확인한 인스턴스 하나다. 하나뿐이어도 자동으로 고르지 않는다. 없거나 고르지 않았으면 선행 조건 미충족(`ligand_required`)이며 scientific_null이 아니다. 체인 자동 선택, 검출기 대체, 대체 단계(FreeSASA가 없을 때 SASA를 빼는 것 포함)는 없다. 방법을 사용할 수 없으면 계획은 실행할 수 없음으로 표시된다.
+- 원본에서 시작한 `inspect_ligand`와 화학 `attach_existing`은 준비 결과에서 선택 식별자가 요청과 같은지 다시 확인한다. 달라졌으면 단계는 막히고(`identity_changed`) 다른 식별자로 바꾸지 않는다.
+- 입력은 화면에서 고른 것을 가져온다. 원자 두 개·CA 대응표·화학 준비 요청은 기존 화면에서 만든 것만 읽기 전용으로 쓴다. 계획을 만든 뒤 화면 선택이 바뀌어도 계획은 바뀌지 않는다. 입력을 고치면 새 계획이고, 이전 승인은 새 실행에 적용되지 않는다.
+
+### 계획 `analysis_plan@1`
+- 불변 객체다. handle은 내용 해시이므로 같은 입력이면 같은 계획이다. 해시에 시각·승인·요청 ID·진행 상태는 들어가지 않는다.
+- 단계는 1–8개, 연산·lane(`run_call`, `durable_job`, `report`)·바인딩(기존 handle 또는 앞 단계 출력만)·고정 인자·기대 출력으로 이루어진다. 작업 단계의 `timeout_s`는 120초 고정이다. 임의 도구 이름·경로·식은 받지 않는다.
+- 호환성 지문(도구·프로토콜 버전, 보고서 schema·렌더 버전, 방법 capability 지문)을 담는다. 계획 승인과 각 단계 dispatch 때 다시 확인하고, 달라졌으면 실행은 `blocked`(`compatibility_changed`)이다.
+- 계획 JSON은 1 MiB 이하, run당 100개 이하다(결정 0019). 같은 입력은 `inputs`에 한 번만 저장하고 단계는 `{"input_ref": <이름>}`으로 가리킨다.
+- 계획 생성은 저장된 바이트·메타데이터·capability와 기존 읽기 전용 사전 검사만 쓴다. 과학 구현·작업 제출·보고서 생성·화학 추론·수치 미리보기를 하지 않는다. 비용 표시는 고정 한도와 현재 남은 예산뿐이다.
+- 자연어 계획과 모델 보조 실행은 사용할 수 없다. 과학 데이터 전송 통로(게이트 투영·전송 전 미리보기·예산, 로드맵 M24)와 새 실제 호출 할당이 없기 때문이다. M8 뷰어 동의는 흐름·모델·과학 권한을 주지 않는다.
+
+### 실행과 승인
+- 실행 상태: `plan_only`, `awaiting_approval`, `ready`, `executing`, `waiting_job`, `awaiting_scientific_approval`, `blocked`, `failed`, `cancelled`, `complete`. 단계 상태: `pending`, `dispatched`, `waiting_job`, `completed`(`null_result` 포함), `failed`, `interrupted`, `cancelled`, `blocked`. 종료 상태는 `complete`, `cancelled`, `blocked`, `retryable_step=null`인 `failed`다. run당 실행 100개.
+- 계획 승인은 실행·계획 handle·계획 해시·단계 집합·호환성에 묶인 기록 이벤트다. 요청에 계획 해시가 있어야 한다. 계획 승인은 비싼 계산 승인(`expensive_first_call`), 작업 시작 승인, 온라인 동의, 예산 한도를 만들지 않는다. 반대로 계산 승인이 계획 승인을 대신하지도 않는다.
+- 계산 승인은 기존 run 단위 규칙 그대로다. run에서 이미 받았으면 다시 묻지 않고 "이 run에서 이미 계산 승인됨"으로 보여 준다. 아직 없으면 작업 시작 때 요청이 기록되고 실행은 `awaiting_scientific_approval`이 된다.
+- 철회: 아직 자식을 시작한 단계가 없으면(dispatch가 자식 시작 없이 풀린 경우 포함) `awaiting_approval`로 돌아간다. 시작했으면 이후 단계를 막고 소유 작업에 범위 한정 취소를 걸며 `cancelled`가 된다.
+- "다음 단계 실행" 한 번은 끝난 자식 결과를 기록하는 조정(물리 작업 없음) 뒤 최대 한 단계 또는 작업 전이 하나를 한다. 작업 단계는 제출과 시작을 한 전이로 한다. 끝난 작업을 실행 기록에 반영하는 것도 다음 "다음 단계 실행"이 한다. 읽기·목록·다시 열기는 이벤트를 쓰지 않는다. 여러 단계를 이어 실행하는 버튼과 백그라운드 루프는 없다.
+- 모든 변경 요청은 `request_id`(UUID)를, 실행 요청은 `expected_revision`을 받는다. 같은 ID·같은 본문은 기록된 결과를 다시 돌려주고, 같은 ID·다른 본문은 409 `request_id_conflict`, revision 불일치는 409 `stale_revision`이다. 모든 변경 요청은 판단 전에 복구 조정을 하므로, 거절된 요청도 복구 이벤트를 남겨 revision을 올릴 수 있다.
+- run 예산이 소진돼 있으면 아무것도 dispatch하지 않고(과금 없음) `ready`에 머물며 이유를 보여 준다. 흐름은 한도를 올리지 않는다.
+
+### 실패, 재시도, scientific_null
+- 기존 실패 분류와 `Run.call`의 transient 재시도(2·4·8초)를 그대로 쓰고, 그 바깥에 자동 재시도를 두르지 않는다. 작업 단계에는 자동 재시도가 없다.
+- `input_invalid`·`precondition`·식별자 재확인 실패는 단계·실행 `blocked`다(새 계획 필요).
+- transient 소진, interrupted, 소유 작업 실패, 작업 시간 초과는 그 단계에 대해 명시적 재시도를 **한 번** 허용한다(`failed` + `retryable_step`). 이때 "다음 단계 실행"은 412 `retry_or_stop_required`다. 재시도는 같은 단계의 새 시도이며 이전 시도의 과금·시도 수를 되돌리지 않는다. 소유 작업은 기존 `JobQueue.retry` 허용량(시도 순번 4 미만) 안에서만 재시도한다.
+- 재시도 불가(종료 `failed`): 재시도를 이미 씀, 시간 초과가 아닌 `resource_exceeded`, fatal, 자율 분기 가드(`loop_guard_*`), run 취소, 수동으로 취소된 소유 작업(`job_cancelled`), 공유 작업 실패(`shared_job_failed`).
+- scientific_null은 성공이다. 단계를 `completed`(`null_result=true`)로 기록하고, 정상적인 빈 결과 보고서를 만들고, 이후 단계를 계속한다.
+- 한도: 실행당 물리 시도 24회(실패·취소·transient 시도 포함, 각 물리 시작 전에 영속 기록), 활동 시간 1800초(연결된 시도의 과금 시간 합, 승인 대기 제외). 한도는 `run_call`·`durable_job` 단계에만 적용하고, 물리 시작이 없는 보고서 단계는 거절하지 않는다. 넘으면 다음 시작을 거절하고 `failed`(`resource_exceeded`)다. run·방법의 더 엄격한 한도가 우선하고, 기존 비싼 계산 예약·과금은 바뀌지 않는다.
+- 캐시 적중은 진전이 아니다. 기존 자율 분기 가드를 유지하고, 복구 조정이나 예산 때문에 풀린 dispatch가 새 제안을 만들어 가드를 올리지 않는다. 캐시로 끝난 단계는 물리 시도 0으로 보일 수 있다.
+
+### 중지
+- 중지는 이 실행만 끝낸다. `Run.cancel()`(run 전체 취소)을 쓰지 않는다. 다른 실행과 수동 도구는 계속 쓸 수 있다. 중지와 철회는 `busy`로 거절하지 않으며 `plan_only`에서도 받는다.
+- 시작 전: 원자적으로 확인해 시작하지 않는다. `Run.call` 진행 중·재시도 대기 중: 다음 transient 재시도·대기 전에 이 실행의 중지 표시를 확인해 더 시도하지 않는다. 이미 시작된 동기 도구 시도는 중간에 끊지 못한다. 그 시도는 끝까지 가서 그대로 과금·기록되지만, 결과는 이 실행에 채택하지 않고 다음 단계도 시작하지 않는다.
+- 소유 작업: 기존 작업 취소(`request_cancel`)와 정리를 기다리고, 과금을 유지하며, 늦은 결과를 채택하지 않는다.
+- 단계가 도는 동안 시도 이벤트가 revision을 올리므로, 첫 중지 요청이 409 `stale_revision`을 받을 수 있다. 화면은 기록을 다시 읽고 중지를 한 번 자동으로 다시 보낸다.
+
+### 공유 작업
+- 같은 호출 키의 작업이 이미 있으면(수동으로 만들었거나 다른 실행의 작업) 흐름은 그 작업을 `observed_shared`로 관찰만 한다. 시작·재시도·취소하지 않는다. 성공으로 끝났으면 결과를 일반 캐시 규칙으로 검증해 단계 완료로 기록한다. 대기·실행 중이면 "원래 화면에서 시작·취소"를 안내한다. 실패·취소로 끝났으면 단계는 재시도 불가 `failed`(`shared_job_failed`)이며, 다시 하려면 원래 작업을 `/jobs`에서 직접 재시도해야 한다. 중지는 관찰만 끊고 작업은 그대로 둔다.
+- 반대로 흐름이 소유한 작업은 `/jobs`에서 수동으로 시작·재시도할 수 없다(412 `job_owned_by_analysis_execution`). 수동 취소는 허용하며, 흐름은 그 단계를 재시도 불가 `job_cancelled`로 기록한다.
+
+### dry-run
+- dry-run run에서도 계획을 만들고 미리 볼 수 있다. 실행 생성은 `plan_only` 기록만 만들고, 승인·다음 단계 실행·재시도·계산 승인은 412 `dry_run_plan_only`다(중지만 허용). 저렴한 도구를 포함해 어떤 과학 계산·작업 제출·보고서도 만들지 않는다. 기존 `Run.call` dry-run(저렴한 도구는 실제 실행)을 쓰지 않는다.
+- 화면 안내: "연습용 run의 계획은 미리보기 전용입니다. 실행하려면 일반 run에서 같은 입력으로 계획을 다시 만드세요." 다른 run으로 옮기는 기능은 없다.
+
+### 완료 요약 `workflow_summary@1`
+- 마지막 단계 완료를 기록한 요청이 요약 객체를 만들고 `complete`를 기록한다. 그 사이 충돌은 다음 변경 요청이 같은 요약으로 마무리한다. 실패·취소·차단 실행에는 요약이 없다.
+- 요약은 계획 handle·해시, 실행 ID, 승인·첫·마지막 이벤트 순번, 단계별 상태·`null_result`·출력·보고서 handle·자식 호출·작업 ID·작업 소유 여부·시도 수, 전체 물리 시도 수만 담는다. 과학 수치·순위·서술은 담지 않는다. 수치는 각 단계의 기존 보고서에서 본다. 합친 Markdown 보고서는 없다.
+- 화학 구조 결과는 화학 작업 화면에서만 연다(메인 화면에서는 "화학 작업 화면에서 열기" 안내).
+
 ## 뷰어 요청과 저장된 보기
 
 - 뷰어 명령은 표현(cartoon, ball-and-stick, surface), 정확한 잔기·리간드 선택과 초점, 선택 해제, 확대(1.25배)·축소(0.8배), 카메라 초기화뿐이다. 한 요청은 표현 → 선택 → 카메라 순으로 최대 3개 명령이 된다. 과학 계산, 보고서, 작업 제출·승인, 파일, URL은 뷰어 요청으로 실행할 수 없다.

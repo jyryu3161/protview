@@ -4,6 +4,7 @@
 - `execute.py`: `phases/<group>/index.json` 단계 실행기. 수락 명령(argv 배열)을 셸 없이 실행하고, SHA-256으로 묶인 검토 증거를 기록하며, `--verify`로 다시 확인한다.
 - `test_execute.py`, `test_codex_hooks.py`: 실행기와 `.codex/hooks/`(PreToolUse 위험 명령 차단, Stop 훅의 ruff·pytest) 테스트.
 - `setup_fpocket.py`: M12 fpocket 작업 환경을 `config/pockets/`의 35개 conda 패키지 해시 잠금으로 오프라인 설치하는 명시적 설정 명령(conda 필수, macOS ≥ 14.5 arm64). 테스트 `test_setup_fpocket.py`.
+- M13 QA 도구(런타임에서 호출되지 않음): `m13_offscreen_acceptance.py`(분석 흐름 수락 QA 전체 실행기. 흐름·엔진 없음·M8–M10 회귀를 자기 서비스로 돌리고, M11·M12 수락 실행기 전체를 하위 루트에서 실행해 그 대장을 합친다. `mw`를 import하지 않음), `test_m13_offscreen_acceptance.py`(하위 대장 판정 단위 테스트, 서비스 없음).
 - M12 QA 도구(런타임에서 호출되지 않음): `m12_offscreen_acceptance.py`(수락 QA 전체 실행기, `mw`를 import하지 않음), `m12_qa_inputs.py`(표시된 합성 잘못된 입력 2개, SHA-256 고정).
 - `setup_prolif_worker.py`: M11 ProLIF 작업 프로세스 환경을 해시 잠금 wheelhouse에서 설치하는 명시적 설정 명령. 런타임에는 호출되지 않는다.
 - M11 QA 도구(런타임에서 호출되지 않음):
@@ -26,11 +27,13 @@
 - 수락 명령 실패나 오래된 검토는 `completed`를 무효화하고, 단계 그룹 상태를 `error`로 만든다. 성공 결과를 미리 채워 넣지 않는다.
 - `--verify`는 확인 전용으로 쓴다. 실행 전에 `phases/index.json`과 대상 그룹 `index.json`을 복사해 두고, 끝나면 복사본으로 되돌린다. 과거 단계 기록 변경을 커밋하지 않는다.
 - `setup_fpocket.py`는 35개 archive의 이름·SHA-256, 플랫폼, 실행 파일 해시가 모두 맞을 때만 설치를 완료로 둔다. 이 확인을 느슨하게 하면 안 된다.
-- 수락 실행기의 남은 프로세스 확인은 작업 폴더가 수락 루트 안인 프로세스만 센다(같은 컴퓨터의 다른 pytest를 잡지 않도록).
+- 수락 실행기(M11·M12·M13)의 남은 프로세스 확인은 작업 폴더가 수락 루트 안인 프로세스만 센다(같은 컴퓨터의 다른 pytest를 잡지 않도록). M11 실행기도 M13에서 같은 방식으로 좁혔다.
+- M13 실행기는 하위 실행기 대장을 schema별로 판정한다(`sub_ledger_verdict`: M11은 `summary`·`nonLoopbackRequestsTotal`, M12는 `verdict`·`externalRequestsTotal`). 외부 요청 수를 모르는 행이 있으면 실패다. `--only`는 `partial_not_acceptance`이며 증거를 내보내지 않는다. 서비스는 `PYTHONPATH=<code root>/backend`로 띄우고 `import mw` 경로를 먼저 확인한다.
 - `setup_prolif_worker.py`는 33개 wheel의 이름·SHA-256이 모두 맞고, 실행 인터프리터가 CPython 3.11 macOS arm64일 때만 설치한다. 이 확인을 느슨하게 하면 안 된다.
 - Stop 훅(`.codex/hooks/stop.py`)의 pytest 세 그룹을 합치면 전체 백엔드·실행기 테스트와 같아야 한다. 그룹을 추가하거나 나눌 때 빠지는 테스트가 없게 한다. 전체 제한 600초는 `.claude/settings.json`과 `.codex/hooks.json`의 timeout과 같아야 한다.
 
 ## 테스트 지침
-- `.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py -q`
+- `.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py -q`
+- `scripts/test_m13_offscreen_acceptance.py`는 Stop 훅 pytest 그룹에 들어 있지 않다(`docs/tracking/findings.md`).
 - 훅을 바꾸면 위험 명령 패턴 차단(`rm -rf`, `git push --force`, `git reset --hard`, `DROP TABLE`)과 비차단 사례, Stop 훅의 시간 초과·실패 전달·프로세스 그룹 정리를 테스트한다.
 - `execute.py --dry-run`은 파일을 바꾸지 않아야 한다.

@@ -37,8 +37,9 @@
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
+node --check frontend/tests/offscreen/workflows-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
@@ -55,6 +56,7 @@ npm --prefix frontend run build
 
 - 외부 HTTP는 `backend/mw/egress/gate.py`의 `EgressGate`만 보낸다. 다른 백엔드 모듈이 직접 httpx 클라이언트를 만들어 외부로 요청하면 안 된다.
 - 과학 계산은 `Run.call`(동기, 저렴·보통 비용)과 `JobQueue`(비싼 비용) 두 경로로만 실행한다. API 라우트나 UI 전용 코드에서 과학 함수를 직접 부르면 안 된다. 읽기 API는 도구를 다시 실행하지 않는다.
+- M13 분석 흐름(`backend/mw/analysis_executions.py`)도 과학은 내부 `ExecutionLink`를 단 `Run.call`·`JobQueue`와 기존 보고서 함수로만 실행한다. `tools/` 계산 함수를 직접 부르거나, 자체 재시도 루프·백그라운드 루프를 두거나, 흐름 중지에 `Run.cancel()`을 쓰지 않는다. 계획 생성(`analysis_plans.py`)은 과학 호출을 하지 않는다. 연결 필드가 없는 기존 호출·작업·보고서의 이벤트와 바이트는 바꾸지 않는다.
 - 도구 레지스트리는 닫혀 있다. 새 도구는 `config/tools.yaml` 명세, `backend/mw/tools/` 구현, 새 모듈이면 `backend/mw/workspace.py`의 `build_registry()` 등록 호출, `app.py`의 `SUPPORTED_TOOLS` 허용 목록에 모두 추가해야 노출된다. yaml에만 있는 `measure`, `align`, `snapshot`, `define_mutations`, `rank_candidates`, Rosetta 도구는 구현이 없으므로 지원한다고 표시하지 않는다. 비싼 작업 전용 도구(`openmm_protein_minimize`, `prepare_chemical_structure`, `compute_chemical_interactions`, `detect_pockets`)는 `SUPPORTED_TOOLS`가 아니라 `JOB_PROTOCOLS`·`JOB_ONLY_TOOLS`와 작업 승인 허용 목록에 넣는다.
 - ProLIF/RDKit/MDAnalysis는 `.deps/prolif/venv-locked` 작업 프로세스 환경에만 설치한다. 서버 프로세스에서 import하면 안 된다. 서버와 작업 프로세스는 제한된 버전 JSON과 입력 바이트로만 주고받는다.
 - 프런트엔드는 `/api/*` 프록시(백엔드 `127.0.0.1:8000`)로만 통신한다. 과학 수치를 브라우저에서 계산하거나, 브라우저가 보낸 좌표를 측정에 쓰면 안 된다.

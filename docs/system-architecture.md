@@ -45,6 +45,9 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/pocket_input.py`, `pocket_output.py`, `pocket_bundle.py`, `pocket_reports.py`, `jobs/pocket_worker.py` | M12 단백질 투영·전송 PDB, fpocket 출력 엄격 파싱, capability·호출 키·게시·검증 읽기, 포켓 보고서, fpocket 실행 작업 프로세스 | core, jobs, tools |
 | `frontend/src/components/PocketPanel.tsx` | M12 포켓 패널(메인 화면과 화학 작업 화면 공용) | `src/lib/pockets.ts`, MolstarViewer 브리지 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
+| `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
+| `backend/mw/analysis_executions.py` | M13 실행 driver: 실행 기록 접기, 계획 승인·철회, 한 단계 진행, 재시도, 범위 한정 중지, 충돌 복구, `workflow_summary@1`. 과학은 `ExecutionLink`를 단 `Run.call`·`JobQueue`·기존 보고서 함수로만 실행 | analysis_plans, runtime, jobs, 보고서 모듈 |
+| `frontend/src/components/AnalysisWorkflowPanel.tsx` | M13 분석 흐름 패널(메인 화면과 화학 작업 화면 공용): 화면 선택 가져오기, 계획 미리보기, 두 승인, 단계 목록, 결과 열기, 요약 | `src/lib/analysis.ts`, `api.ts`, PocketPanel·페이지의 결과 열기 콜백 |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
 의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다.
@@ -62,6 +65,10 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 ## 비싼 계산의 작업 경로
 
 OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
+
+## 분석 흐름 (M13)
+
+`POST /analysis/plans`는 템플릿과 저장된 객체 메타데이터·capability만 읽어 불변 계획을 저장한다(과학 호출 없음). 실행을 만들고 계획을 승인하면, 사용자가 "다음 단계 실행"을 누를 때마다 driver가 짧은 워크플로 잠금 안에서 요청을 입장시키고 이전 자식 결과를 조정한 뒤, 다음 단계의 dispatch 기록을 남기고 잠금을 놓은 채 자식 하나를 실행한다. `run_call` 단계는 `Run.call`, `durable_job` 단계는 `JobQueue` 제출+시작, `report` 단계는 기존 보고서 함수다. 자식에는 내부 `ExecutionLink(execution_id, step_id, operation_id)`가 붙어, 자식 입장과 같은 전이 안에서 승인·순서·중지·인자 일치를 확인하고 물리 시도마다 시도 수를 먼저 기록한다. 링크는 이벤트의 `execution_link` 필드로 남고, 재시작 뒤에는 이 링크로 정확한 자식을 찾아 복구한다. 백그라운드 루프는 없고, 끝난 작업의 반영도 다음 요청이 한다. 흐름은 외부 요청을 하지 않는다.
 
 ## 외부 경계
 

@@ -87,6 +87,34 @@
 - 오버레이는 뷰어 세션·세대·소스·검증된 카탈로그와 자체 revision으로 확인한다. M8 작업 토큰을 쓰면 세션 재바인딩 때 오버레이가 조용히 취소된다. 세션이 바뀌면 오버레이를 다시 그린다.
 - 포켓 패널은 run을 바꾸면 이전 패널의 대기 응답을 모두 버리고, 페이지도 현재 run의 소스가 아닌 오버레이·소스 전환 요청을 거부한다(두 겹). 늦은 geometry 응답이 새 run 화면에 적용되던 결함의 대응이다.
 
+### git worktree에서 테스트가 주 체크아웃의 코드를 돌린다
+- **증상**: worktree에서 고친 백엔드 코드가 테스트·서비스에 반영되지 않는다.
+- **원인**: `.venv`의 `pip install -e './backend[dev]'`는 주 체크아웃의 `backend/`를 가리킨다. worktree에서 `.venv/bin/python`을 쓰면 `mw`를 주 체크아웃에서 import한다.
+- **대응**: worktree에서는 `PYTHONPATH=<worktree>/backend`를 주고 돌린다. M13 수락 실행기는 서비스를 띄울 때 `PYTHONPATH=<code root>/backend`를 주고, `import mw`가 그 경로에서 오는지 먼저 확인한다.
+
+### 예산 때문에 풀린 연결 호출이 자율 분기 가드를 올렸다
+- **증상**: M13 코드 검토에서, run 활동 시간 예산 checkpoint로 시작하지 못하고 풀린(release) 흐름 단계를 다시 실행하면 같은 호출 키 제안이 쌓여 가드(`loop_stop`)가 걸렸다.
+- **원인**: `Run.call`은 자율 branch 제안(`_propose`)을 기록한 뒤 실행 체인에서 활동 시간 예산·열린 작업을 확인한다. 흐름 호출(`decided_by=rule`, autonomous)도 이 순서를 따르면 시작하지 않은 호출이 제안으로 세어진다.
+- **대응**: 연결된 호출은 제안을 기록하기 전에 활동 시간 예산과 닫히지 않은 작업을 먼저 확인한다. 시작할 수 없으면 제안 없이 풀린다. 연결 없는 호출의 순서와 이벤트는 바꾸지 않았다(기존 바이트 불변). 검증: `test_run_budget_release_never_raises_the_loop_guard_and_resumes_after_the_limit_change`, `test_retry_released_by_the_run_budget_never_raises_the_loop_guard`.
+
+### 흐름 중지가 첫 요청에서 `stale_revision`을 받는다
+- **증상**: 작업 단계가 도는 중에 "중지"를 누르면 409 `stale_revision`이 돌아온다(M13 수락 ST05에서 관찰).
+- **원인**: 중지는 `expected_revision`을 요구하는데, 단계가 도는 동안 시도 기록·조정 이벤트가 revision을 올린다. 거절된 요청도 복구 조정 이벤트를 남길 수 있다.
+- **대응**: 화면은 모든 거절 뒤 실행 기록을 다시 읽고, 중지는 `stale_revision`이면 새 revision으로 한 번 자동으로 다시 보낸다(`stopResend`). 다른 동작은 자동으로 다시 보내지 않는다. 이미 시작된 동기 도구 시도는 중지로 끊기지 않는다(끝까지 가서 과금되고 채택되지 않음).
+
+### 하위 수락 실행기의 대장 형식이 서로 다르다
+- **증상**: M13 수락 1차 실행이 fail이었다. M11 하위 실행기는 exit 0, 17/17 통과였는데 M13 대장에는 M11 단계 fail, 외부 요청 수 None으로 기록되었다.
+- **원인**: M11 대장(`m11_case_ledger@1`)에는 `verdict` 키가 없고 `summary{pass, fail, missing}`·`nonLoopbackRequestsTotal`이 있다. M12 대장(`m12_case_ledger@1`)은 `verdict`·`externalRequestsTotal`이다.
+- **대응**: 대장 schema별로 판정하는 `sub_ledger_verdict`(`scripts/m13_offscreen_acceptance.py`)와 단위 테스트(`scripts/test_m13_offscreen_acceptance.py`)를 둔다. 하위 실행기를 추가하면 그 대장 형식을 여기에 넣고 테스트한다.
+
+### 수락 증거가 저장소에 넣기엔 너무 크다
+- **증상**: M13 수락 실행 한 번의 내보낸 텍스트 증거가 약 331 MB였다. M11 하위 실행기의 `chemical-evidence.json`은 파일 하나가 최대 약 62 MB다.
+- **대응**: 256 KiB를 넘는 텍스트 증거는 대장을 빼고 Git 제외 artifacts 폴더 `export-full/`로 옮기고 해시를 남긴다(결정 0020). 삭제하지 않는다.
+
+### Mol* 측정 모드 원자 클릭이 가끔 빈 loci를 돌려준다
+- **증상**: M13 수락 1차 실행의 M12 하위 실행기 `regression-m10-measure` C02-repeat-reverse에서 기준 원자 클릭 3회가 모두 Mol* `empty_loci`였고 "Mol* observation did not become ready"로 실패했다. 같은 사례를 단독으로 다시 돌리면 통과했고, 2차 실행에서는 세 실행기 모두 통과했다.
+- **대응**: 원인은 확인하지 못했다. 실패 증거는 지우지 않고, 재실행 통과를 수락으로 세지 않는다(`--only`는 partial).
+
 ## 동작 원리
 
 ### handle과 복구
