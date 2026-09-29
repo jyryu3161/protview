@@ -262,6 +262,46 @@ export function responseCurrent(captured: PanelStamp, live: PanelStamp, mounted:
 export function hostRequestAccepted(request: { runId: string }, host: { runId: string | null }): boolean {
   return host.runId !== null && request.runId === host.runId;
 }
+/** A created (or replayed) execution becomes the panel's execution: its own response must still count as current. */
+export function adoptExecution(captured: PanelStamp, executionId: string): PanelStamp {
+  return { ...captured, executionId };
+}
+
+/** Plan selection is separate from the open execution: a new or reopened plan is shown with 실행 만들기. */
+export type PlanFocus = "plan" | "execution";
+export function planView<P>(input: { plan: P | null; executionId: string | null; executionPlan: P | null; focus: PlanFocus }):
+  { shownPlan: P | null; createExecution: boolean } {
+  const planFocused = !!input.plan && (input.focus === "plan" || !input.executionId);
+  return { shownPlan: planFocused ? input.plan : input.executionId ? input.executionPlan : input.plan,
+    createExecution: planFocused };
+}
+
+/** A mutation that moved the same execution's record may have created objects (the host re-reads its event log). */
+export function objectsMayHaveChanged(before: Pick<AnalysisExecution, "execution_id" | "revision">,
+  after: Pick<AnalysisExecution, "execution_id" | "revision"> | null): boolean {
+  return !!after && after.execution_id === before.execution_id && after.revision > before.revision;
+}
+/** Of two reads of the append-only event log, the longer one is newer; a late shorter read is discarded. */
+export function newerEventLog<T>(previous: T[], next: T[]): T[] { return next.length >= previous.length ? next : previous; }
+
+/** Read-only polling: while a step or job runs, and while this panel's own Advance/Retry runs inside its request. */
+export function pollNeeded(record: Pick<AnalysisExecution, "status" | "driver"> | null, busy: string | null): boolean {
+  if (!record) return false;
+  return record.status === "executing" || record.status === "waiting_job" || record.driver.in_progress ||
+    busy === "advance" || busy === "retry";
+}
+export function acceptPolled(shown: Pick<AnalysisExecution, "execution_id" | "revision"> | null,
+  polled: Pick<AnalysisExecution, "execution_id" | "revision">): boolean {
+  return !shown || (shown.execution_id === polled.execution_id && polled.revision >= shown.revision);
+}
+
+/** A step-bound notice (record notice, 시작 보류) applies only to the current step while it is not completed. */
+export function noticeApplies(record: Pick<AnalysisExecution, "current_step"> & { steps: Partial<AnalysisStepRecord>[] },
+  stepId: string | null | undefined): boolean {
+  if (!stepId) return true;
+  const step = record.steps.find(item => item.step_id === stepId);
+  return !!step && step.status !== "completed" && stepId === record.current_step;
+}
 
 // ---------------------------------------------------------------------------------------------- display
 export function analysisUiState(input: { available: boolean; templateAvailable?: boolean; reading?: boolean;

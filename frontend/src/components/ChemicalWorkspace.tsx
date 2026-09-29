@@ -49,10 +49,12 @@ export interface ChemicalWorkspaceProps {
   run: RunSummary; runs: RunSummary[]; events: RunEvent[]; capabilities: Capabilities | null;
   onExit: () => void; onSwitchRun: (id: string) => void; onRestoreScene: (handle: string) => void;
   onTheme: () => void;
+  /** The analysis panel's mutation may have created objects: the page re-reads the run's event log. */
+  onObjectsChanged?: (runId: string) => void;
 }
 
 export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onSwitchRun,
-  onRestoreScene, onTheme }: ChemicalWorkspaceProps) {
+  onRestoreScene, onTheme, onObjectsChanged }: ChemicalWorkspaceProps) {
   const runId = run.run_id;
   const [mode, setMode] = useState<ChemicalMode>("create_new");
   const [imports, setImports] = useState<Partial<Record<ImportKind, ChemicalImport>>>({});
@@ -918,6 +920,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
         <AnalysisWorkflowPanel panel="chemical" run={run}
           capability={capabilities ? capabilities.methods?.analysis_workflows ?? null : undefined}
           sourceOptions={pocketSources} screen={analysisScreen} onOpenResult={openAnalysisResult}
+          onObjectsChanged={id => { if (hostRequestAccepted({ runId: id }, analysisHostRef.current)) onObjectsChanged?.(id); }}
           onExitToMain={id => { if (hostRequestAccepted({ runId: id }, analysisHostRef.current)) onExit(); }} /></InspectorSection>
       {status && <InspectorSection><p role="status">{status}</p></InspectorSection>}
       {failure && <InspectorSection><p role="alert" className="mw-table-error">{failure}</p>
