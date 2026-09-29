@@ -1,7 +1,7 @@
 # M13 결정적 로컬 분석 흐름 완료 기록
 
 - 판정: **완료** (2026-09-29)
-- 브랜치: `dryforge/m13-workflows` (`phase/m13-analysis-workflows` = main `1e91848`에서 분기). main 병합 여부와 방법은 사용자가 정한다.
+- 브랜치: `dryforge/m13-workflows` (`phase/m13-analysis-workflows` = main `1e91848`에서 분기). main 병합 `50ca0b4`(2026-09-29).
 - 최종 고정 소스: `e83071b`(최종 검토 수정 `86bbff3`). 공유 작업 경로가 바뀌어 전체 게이트와 수락 QA 전체를 이 고정에서 다시 돌렸다(3차 실행). 이전 고정: 제품 `d1eaf48`, 실행기 대장 판정 수정 `af1500b`(증거 커밋 `f630e20`).
 - 수락 증거: `docs/qa/m13-workflows-20260929-final/`(최종, 3차 실행). 이력: `docs/qa/m13-workflows-20260929/`(2차 실행, `af1500b`, pass), `docs/qa/m13-workflows-20260929-run1/`(1차 실행, fail 보존, `RUN1-NOTE.md`).
 - 옛 단계 폴더 `phases/protview-workflows/`는 index를 만들지 않고 `step0.md`도 그대로 둔다(결정 0018).
