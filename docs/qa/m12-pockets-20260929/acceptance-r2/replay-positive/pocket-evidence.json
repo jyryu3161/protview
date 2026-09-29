@@ -1,0 +1,259 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "replay",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "N_SPBIEzvm_zNQmbq8ILX",
+  "startedAt": "2026-09-29T01:15:09.330Z",
+  "run": "run_94a1c8d36eda43aa88b99b23d5e3baea",
+  "handles": {
+    "set": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/pocket_set/7f900e0c9a0c7b3df288153989612528699962f0f5f386b2e5a939db872f0610",
+    "report": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/method_report_manifest/526ce490a9b6c2928b2a8abc323ce178d1322df2f849508cec2c4d3faa4c72e8"
+  },
+  "inputs": [],
+  "fixtureLabels": [
+    "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+  ],
+  "expectCapability": "not_installed",
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 12,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m12-acceptance/20260929-r2/replay-positive/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 77,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "overlays": [
+    {
+      "rank": 1,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 238,
+          "liningAtomsMapped": 83,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 157,
+        "comparedSpheres": 157,
+        "maxCenterDeltaFloat32_A": 9.460449206244448e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 157,
+        "liningAtoms": 83,
+        "liningResidues": 33,
+        "liningSitesInMolstar": 238,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          13.552184713375798,
+          21.834299363057326,
+          6.35915923566879
+        ],
+        "focusedTarget": [
+          13.552184713375798,
+          21.834299363057326,
+          6.35915923566879
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          13.552184713375798,
+          21.834299363057326,
+          57.72817074364295
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "a9288348ecc55cd1090d1fceffd45fe6ce650884a610ee57e3c474ba9cd84788"
+    }
+  ],
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 66,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m12-acceptance/20260929-r2/replay-positive/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 118,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/result",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports/selected",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports/download",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports/download",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-09-29T01:15:13.029Z",
+  "externalRequestCount": 0
+}
