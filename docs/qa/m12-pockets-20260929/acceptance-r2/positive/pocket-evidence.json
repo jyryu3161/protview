@@ -1,0 +1,826 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "positive",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "N_SPBIEzvm_zNQmbq8ILX",
+  "startedAt": "2026-09-29T01:07:34.780Z",
+  "run": "run_94a1c8d36eda43aa88b99b23d5e3baea",
+  "handles": {
+    "original": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/structure/e63409528f0573f7390b2507340a64b47ba882cc06220b0dce2712ab00bba50e",
+    "prepared": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/prepared_structure/b7ba2795648704fc35e187984002d2d05dc40865f6e9c5e3cb11d1f56a520d23",
+    "set": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/pocket_set/7f900e0c9a0c7b3df288153989612528699962f0f5f386b2e5a939db872f0610",
+    "job": "job_cffb655ab509484b9ad3b70b2401bef3"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+    }
+  ],
+  "fixtureLabels": [
+    "renderer-route fixture: labeled 503 on one pocket preflight GET (retry control)"
+  ],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 10,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m12-acceptance/20260929-r2/positive/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 59,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "summary": {
+    "total": 8,
+    "null_result": false,
+    "chains": [
+      "A",
+      "B"
+    ]
+  },
+  "overlays": [
+    {
+      "rank": 1,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 238,
+          "liningAtomsMapped": 83,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 157,
+        "comparedSpheres": 157,
+        "maxCenterDeltaFloat32_A": 9.460449206244448e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 157,
+        "liningAtoms": 83,
+        "liningResidues": 33,
+        "liningSitesInMolstar": 238,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          13.552184713375798,
+          21.834299363057326,
+          6.35915923566879
+        ],
+        "focusedTarget": [
+          13.552184713375798,
+          21.834299363057326,
+          6.35915923566879
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          13.552184713375798,
+          21.834299363057326,
+          57.72817074364295
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "a9288348ecc55cd1090d1fceffd45fe6ce650884a610ee57e3c474ba9cd84788"
+    },
+    {
+      "rank": 2,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 59,
+          "liningAtomsMapped": 16,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 17,
+        "comparedSpheres": 17,
+        "maxCenterDeltaFloat32_A": 9.155273446026513e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 17,
+        "liningAtoms": 16,
+        "liningResidues": 7,
+        "liningSitesInMolstar": 59,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          22.229176470588236,
+          23.473823529411764,
+          15.879352941176471
+        ],
+        "focusedTarget": [
+          22.229176470588236,
+          23.473823529411764,
+          15.879352941176471
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          22.229176470588236,
+          23.473823529411764,
+          48.41519713868803
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "14e374bb2ec7319dfcd5fbf6c7a252f02b01243b11fe18b486d21015ed9edeab"
+    },
+    {
+      "rank": 3,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 55,
+          "liningAtomsMapped": 18,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 20,
+        "comparedSpheres": 20,
+        "maxCenterDeltaFloat32_A": 7.934570298573362e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 20,
+        "liningAtoms": 18,
+        "liningResidues": 7,
+        "liningSitesInMolstar": 55,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          6.646649999999999,
+          24.2659,
+          -7.6952
+        ],
+        "focusedTarget": [
+          6.646649999999999,
+          24.2659,
+          -7.6952
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          6.646649999999999,
+          24.2659,
+          26.02572721992454
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "4a65e652636d2027026d1a79f8c919c4f4d2fbac555e300081d19cc0683b4130"
+    },
+    {
+      "rank": 4,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 83,
+          "liningAtomsMapped": 26,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 32,
+        "comparedSpheres": 32,
+        "maxCenterDeltaFloat32_A": 9.460449206244448e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 32,
+        "liningAtoms": 26,
+        "liningResidues": 11,
+        "liningSitesInMolstar": 83,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          18.28865625,
+          17.1410625,
+          -18.58278125
+        ],
+        "focusedTarget": [
+          18.28865625,
+          17.1410625,
+          -18.58278125
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          18.28865625,
+          17.1410625,
+          16.673505022308344
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "268da3118326da8b2c82007ddc783679003ca549a89e28e17224b3e3db9b174b"
+    },
+    {
+      "rank": 5,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 33,
+          "liningAtomsMapped": 13,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 15,
+        "comparedSpheres": 15,
+        "maxCenterDeltaFloat32_A": 9.155273446026513e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 15,
+        "liningAtoms": 13,
+        "liningResidues": 4,
+        "liningSitesInMolstar": 33,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          -2.6531333333333333,
+          25.807000000000002,
+          16.499399999999998
+        ],
+        "focusedTarget": [
+          -2.6531333333333333,
+          25.807000000000002,
+          16.499399999999998
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          -2.6531333333333333,
+          25.807000000000002,
+          45.76016722963969
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "aff5ec13134482323ecd7c270472f196042509400ff54d42e68bcb330795c12b"
+    },
+    {
+      "rank": 6,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 80,
+          "liningAtomsMapped": 19,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 20,
+        "comparedSpheres": 20,
+        "maxCenterDeltaFloat32_A": 0.0000018310546892053026,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 20,
+        "liningAtoms": 19,
+        "liningResidues": 9,
+        "liningSitesInMolstar": 80,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          13.0881,
+          37.83755,
+          -5.980700000000001
+        ],
+        "focusedTarget": [
+          13.0881,
+          37.83755,
+          -5.980700000000001
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          13.0881,
+          37.83755,
+          25.236942856851933
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "e913f1b526a219e7887ed56083216a4b75cd340dabc76d3a46823fac356a0d63"
+    },
+    {
+      "rank": 7,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 53,
+          "liningAtomsMapped": 15,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 16,
+        "comparedSpheres": 16,
+        "maxCenterDeltaFloat32_A": 9.460449206244448e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 16,
+        "liningAtoms": 15,
+        "liningResidues": 7,
+        "liningSitesInMolstar": 53,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          30.5359375,
+          28.7336875,
+          -3.6546875
+        ],
+        "focusedTarget": [
+          30.5359375,
+          28.7336875,
+          -3.6546875
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          30.5359375,
+          28.7336875,
+          22.54919886462961
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "8d3eee6c9596c272a66a590e667895444ac8d6de7e34e1d3e7120762143fd0df"
+    },
+    {
+      "rank": 8,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 51,
+          "liningAtomsMapped": 15,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 17,
+        "comparedSpheres": 17,
+        "maxCenterDeltaFloat32_A": 0.0000018310546892053026,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 17,
+        "liningAtoms": 15,
+        "liningResidues": 7,
+        "liningSitesInMolstar": 51,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          26.66,
+          38.60635294117647,
+          18.459235294117647
+        ],
+        "focusedTarget": [
+          26.66,
+          38.60635294117647,
+          18.459235294117647
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          26.66,
+          38.60635294117647,
+          47.470187434963975
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "38b99f4988529881f46089541c28224f0f2f67fe03a2a3b0978391749e5766c1"
+    }
+  ],
+  "sources": {
+    "original": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/structure/e63409528f0573f7390b2507340a64b47ba882cc06220b0dce2712ab00bba50e",
+    "prepared": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/prepared_structure/b7ba2795648704fc35e187984002d2d05dc40865f6e9c5e3cb11d1f56a520d23",
+    "displayed": "obj://run_94a1c8d36eda43aa88b99b23d5e3baea/prepared_structure/b7ba2795648704fc35e187984002d2d05dc40865f6e9c5e3cb11d1f56a520d23",
+    "upload": {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+    }
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 358,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m12-acceptance/20260929-r2/positive/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 88052,
+      "sha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51",
+      "onDiskBytes": 88052,
+      "onDiskSha256": "135e709dcee651bd427b13b59a4e3b8412c6e0e24a800627d1d6b38e823bed51"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 168,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 503
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs/job_cffb655ab509484b9ad3b70b2401bef3/start",
+      "status": 409
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs/job_cffb655ab509484b9ad3b70b2401bef3",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs/approve",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/jobs/job_cffb655ab509484b9ad3b70b2401bef3/start",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/result",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/viewer/sessions/b746ae87-81c9-4804-aeb3-b19975ee3720/state",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_94a1c8d36eda43aa88b99b23d5e3baea/pockets/geometry",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-09-29T01:07:50.850Z",
+  "externalRequestCount": 0
+}

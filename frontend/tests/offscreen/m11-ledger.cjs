@@ -67,6 +67,13 @@ function helperSha256() { return sha(fs.readFileSync(__filename)); }
 function buildId() {
   try { return fs.readFileSync(path.join(FRONTEND, ".next/BUILD_ID"), "utf8").trim(); } catch { return null; }
 }
+/** paint-first.png as recorded by main.cjs, re-read from disk; a missing or 0-byte file is not paint evidence. */
+function firstPaintRecord(record) {
+  if (!record || typeof record.path !== "string") return null;
+  let bytes;
+  try { bytes = fs.readFileSync(record.path); } catch { return { ...record, onDiskBytes: null, onDiskSha256: null }; }
+  return { ...record, onDiskBytes: bytes.length, onDiskSha256: sha(bytes) };
+}
 /** Real Electron offscreen proof: isOffscreen, GPU, paint and blocked non-loopback requests, plus WebGL renderer. */
 async function offscreenProof(app, page) {
   const state = await app.evaluate(({ app: electronApp }) => electronApp.__offscreenQa.status());
@@ -80,7 +87,7 @@ async function offscreenProof(app, page) {
   });
   return { offscreen: state.offscreen, visible: state.visible, painting: state.painting,
     hardwareAccelerationEnabled: state.hardwareAccelerationEnabled, paintCount: state.paintCount,
-    webgl, nonLoopbackRequests: state.blockedRequests.length, blockedRequests: state.blockedRequests,
+    firstPaint: firstPaintRecord(state.firstPaint), webgl, nonLoopbackRequests: state.blockedRequests.length, blockedRequests: state.blockedRequests,
     loopbackRequestCount: state.loopbackRequestCount, versions: state.versions };
 }
 function handlesOf(evidence) {
@@ -100,7 +107,8 @@ function writeRow(input, evidence) {
   const mode = evidence.ledgerMode ?? ledgerMode(input);
   const proof = evidence.offscreen ?? null;
   const offscreenOk = !!proof && proof.offscreen === true && proof.visible === false && proof.painting === true &&
-    proof.hardwareAccelerationEnabled === true && proof.paintCount > 0 && !!proof.webgl;
+    proof.hardwareAccelerationEnabled === true && proof.paintCount > 0 && !!proof.webgl &&
+    !!proof.firstPaint && proof.firstPaint.onDiskBytes > 0 && proof.firstPaint.onDiskSha256 === proof.firstPaint.sha256;
   const pass = evidence.status === "observed_unreviewed" && offscreenOk && proof.nonLoopbackRequests === 0;
   const chosen = [...Object.values(evidence.files ?? {}), ...(evidence.cases ?? []).flatMap(item =>
     [...Object.values(item.files ?? {}), ...(item.upload ? [item.upload] : [])])]
@@ -129,7 +137,8 @@ function writeRow(input, evidence) {
     expectCapability: input.expectCapability ?? null,
     nonLoopbackRequests: proof ? proof.nonLoopbackRequests : null,
     offscreen: proof && { offscreen: proof.offscreen, visible: proof.visible, painting: proof.painting,
-      hardwareAccelerationEnabled: proof.hardwareAccelerationEnabled, paintCount: proof.paintCount, webgl: proof.webgl },
+      hardwareAccelerationEnabled: proof.hardwareAccelerationEnabled, paintCount: proof.paintCount,
+      firstPaint: proof.firstPaint, webgl: proof.webgl },
     artifacts: input.artifacts, evidenceFile: "chemical-evidence.json",
     startedAt: evidence.startedAt, finishedAt: evidence.finishedAt,
   };

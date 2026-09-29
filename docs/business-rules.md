@@ -46,12 +46,26 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 | OpenMM (M7) | 표준 단백질만. Amber14-all + GBn2, pH 7 수소 재구성, 제한된 최소화. `protein_only`와 `rebuild_pH7`를 명시적으로 확인해야 실행 | kJ/mol | 리간드 결합 에너지, ΔΔG, 안정성, Rosetta 점수 |
 | 원자 거리 (M10) | 같은 소스의 정확한 원자 두 개 사이 원본 좌표 유클리드 거리 | Å | — 겹친 좌표의 0 Å은 정상 값이며 scientific_null이 아니다 |
 | 강체 정렬 (M10) | 사용자가 고른 단백질 CA 쌍 3–1000개로 float64 Kabsch 회전(반사 금지) | RMSD Å | 모델 품질, 결합, 안정성. 선택한 쌍에만 해당한다 |
-| ProLIF (M11, 진행 중) | 사용자가 준비한 수용체(명시적 수소, 완전한 연결 정보) + SDF 리간드 1개. 프로토콜 `prolif_prepared_explicit_h@1` | D···A 거리 Å, D–H···A 각도 ° | 실험적 수소결합 확인, 염다리 에너지, 친화도, 안정성 |
+| ProLIF (M11) | 사용자가 준비한 수용체(명시적 수소, 완전한 연결 정보) + SDF 리간드 1개. 프로토콜 `prolif_prepared_explicit_h@1` | D···A 거리 Å, D–H···A 각도 ° | 실험적 수소결합 확인, 염다리 에너지, 친화도, 안정성 |
 
 - FreeSASA의 Shrake–Rupley 1000점 설정은 단일 구·분리 구 해석 검사에서 오차 한도(0.5% 겹침 허용)를 넘어 채택하지 않았다. 실패 증거는 보존한다. 숫자를 보정해서 맞추지 않는다.
 - 정렬 퇴화 조건: 중심화한 P, Q, H의 두 번째 특이값이 `max(1e-12, 1e-8 × 첫 번째)` 이하이면 `input_invalid`다. 세 점이 동일 평면에 있어도 한 직선 위만 아니면 유효하다.
 - 원자 거리는 두 원자가 같은 소스일 때만 계산한다. 정렬 오버레이에서 서로 다른 층의 원자 거리는 거부한다. 표시용 변환 좌표와 원본 좌표를 섞지 않는다.
 - 정렬 결과의 변환은 표시용이다. 원본 구조 좌표와 저장된 객체는 바꾸지 않는다.
+
+## 포켓 후보 (M12, `detect_pockets` / `fpocket_detect_v1`)
+
+- 엔진: fpocket 4.2.3(conda-forge `osx-arm64` `hb88c64c_2`, 실행 파일 SHA-256 고정). 고정 argv `-m 3.4 -M 6.2 -D 2.4 -C s -e e -i 15 -p 0.0 --number_apol_asph_pocket 3 -v 300 -w p`(짧은 `-A`는 이 빌드의 getopt에 없다). 유효 파라미터와 소스 근거는 `config/pockets/fpocket-4.2.3-parameters.json`.
+- 입력: 같은 run의 `prepared_structure`, M11 `chemical_structure`, `openmm_minimized_structure`. 원본 `structure`는 먼저 전처리해야 한다(precondition). 체인은 `chain_auth`로 명시 선택하고, 비우면 단백질 잔기가 있는 모든 체인이다. 호출 키에는 정렬된 실제 체인 목록이 들어가므로 빈 목록과 전체 명시는 같은 호출이다. 화면은 모두 해제한 상태로 실행하지 못하게 막는다.
+- 투영: 20개 표준 잔기의 중원자만. 물·리간드·이온·H/D·비선택 체인은 범주별 개수로 기록한다. 잔기 이름 대응은 정확히 10개다: `HID`·`HIE`·`HIP`·`HSD`·`HSE`·`HSP` → `HIS`, `CYX` → `CYS`, `ASH` → `ASP`, `GLH` → `GLU`, `LYN` → `LYS`. 원래 이름은 `resname_mapping`, 결과 식별자, 보고서에 남는다. 그 밖의 변형 잔기(MSE, TPO, CYM 등)는 `modified_residue_unsupported`로 거부한다.
+- 전송 PDB: 합성 잔기 번호·체인 ID, 원래 원자 이름·원소, 소수 셋째 자리 좌표(되읽기 축별 차이 ≤ 0.0005 Å). 한도: 중원자 10,000, 잔기 3,000, 체인 62, 입력 10 MiB, 겹치는 좌표 없음, 4원자·좌표 계수 3 이상. 넘거나 모자라면 실행 전에 거부하며 빈 결과가 아니다.
+- 주변 원자 대응은 (합성 체인, 합성 잔기 번호, 원자 이름, 원소)로만 하고 출력 정밀도로 좌표를 확인한다. serial, 최근접 좌표, 표시 문자열은 쓰지 않는다.
+- 결과 분류: 성공, scientific_null(exit 0, 0바이트 `protein_info.txt`, 원자 레코드 없는 `protein_pockets.pqr`, 포켓별 파일 없음, stdout은 시작·끝 배너만, stderr는 `! No Pockets Found while refining` 1줄 + `! No pocket to reindex.` 2줄 정확히), 실패, `resource_exceeded`(포켓 200개·알파 구 50,000개·출력 30 MiB·파일 1,000개·stdout/stderr 각 1 MiB 초과). 잘라서 저장하지 않는다.
+- 노출 기술자 5개: Score(무차원), Druggability Score(무차원, "fpocket 고유 점수이며 약물성 증거가 아님"을 항상 함께), Number of Alpha Spheres(개수), Total SASA(Å²), Volume(Å³, 몬테카를로 추정). Score와 Druggability Score는 같은 실행의 포켓들 안에서 정규화한 상대 점수다. 나머지 native 필드는 단위를 붙이지 않은 원래 문자열이다. 표시 중심은 저장된 구 중심의 산술 평균이며 fpocket 값이 아니다.
+- 결정성: fpocket이 시각으로 난수를 초기화하므로 `seed_control: unsupported`, `fresh_execution_deterministic: false`. 같은 호출은 저장 결과를 돌려주고, 원하는 결과가 나올 때까지 다시 돌리지 않는다. 취소한 호출도 같은 호출 키면 기존 작업을 돌려준다.
+- 원본 출력 보관: 파서가 읽는 파일과 stdout·stderr만 바이트로, 나머지는 경로·크기·해시만. 게시된 결과 기준 run당 64 MiB. 읽을 때마다 보관한 원본 출력을 다시 파싱해 저장 값과 대조한다.
+- 의미하지 않는 것: 확인된 결합 부위, 친화도, druggability, 해석적 부피.
+- 화면: 오버레이 중 M9 저장·PNG와 M8 요청 비활성, M10 비교 중 포켓 검출·오버레이 비활성, 같은 소스 거리 측정은 허용(알파 구는 선택 대상이 아님), 화학 작업 화면에서 M11 주석과 포켓 오버레이는 동시에 켜지 않는다.
 
 ## PyRosetta와 에너지 표시
 
@@ -60,7 +74,7 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - 에너지는 해당 엔진 고유 단위(Rosetta는 REU, OpenMM은 kJ/mol)를 유지한다. 임의로 kcal/mol로 변환하거나, 다른 방법의 값을 Rosetta·ΔΔG·친화도 이름으로 바꿔 부르지 않는다.
 - 돌연변이 순위는 SASA, RMSD, OpenMM 전위에서 만들어 내지 않는다.
 
-## M11 화학 입력 규칙 (현재 구현 중)
+## M11 화학 입력 규칙
 
 - 수용체는 명시적 수소 좌표와 완전한 공유 연결 정보가 있어야 한다. 연결 정보는 완전한 PDB CONECT 레코드나 `receptor_bonds@1` JSON 사이드카로만 받는다. 거리로 결합을 추론하지 않는다. 역방향 중복 CONECT는 결합 하나로 합치고, 자기 결합·범위 밖 참조·모호한 serial은 거부한다.
 - 리간드는 V2000 SDF 레코드 하나(최대 10 MiB). V3000은 거부한다. 리간드 수소 좌표는 SDF에서만 가져오며 AddHs로 만들지 않는다.

@@ -16,6 +16,9 @@ import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerBinding, ViewerBridge } from "@/components/MolstarViewer";
 import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgentPanel";
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
+import { PocketPanel } from "@/components/PocketPanel";
+import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
+  type PocketSourceKind } from "@/lib/pockets";
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
@@ -50,6 +53,10 @@ function identity(ref: ResidueRef) {
 function displayResidue(ref: ResidueRef) {
   return `${ref.resname} auth ${ref.chain_auth}/${ref.seq_auth}${ref.icode || ""}` +
     ` · label ${ref.chain_label ?? "unknown"}/${ref.seq_label ?? "unknown"} · model ${ref.model_number ?? "unknown"}`;
+}
+function bridgeStateReady(bridge: ViewerBridge | null): boolean {
+  const snapshot = bridge?.snapshot();
+  return snapshot?.ready === true && snapshot.catalogReady === true;
 }
 function beforeDeadline<T>(task: Promise<T>, milliseconds: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -105,6 +112,20 @@ export default function WorkspacePage() {
   const [sceneName, setSceneName] = useState("");
   const [chemicalActive, setChemicalActive] = useState(false);
   const [chemicalSceneToRestore, setChemicalSceneToRestore] = useState<string | null>(null);
+  const [pocketState, setPocketState] = useState<{ request: PocketOverlayRequest; boundContext: string | null } | null>(null);
+  const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
+  const [pocketOverlayError, setPocketOverlayError] = useState<string | null>(null);
+  const [pocketNotice, setPocketNotice] = useState<string | null>(null);
+  // Only a prepared pocket source is shown through pocketView; a minimized source goes through openmmViewHandle so every
+  // minimized-display rule (contact rows hidden, focus disabled, legend) applies unchanged.
+  const [pocketView, setPocketView] = useState<{ handle: string; kind: "prepared_structure" } | null>(null);
+  // The view that was on screen before a pocket selection switched the displayed source ("원래 소스로 돌아가기").
+  const pocketReturnRef = useRef<{ shown: string; openmmViewHandle: string | null;
+    pocketView: { handle: string; kind: "prepared_structure" } | null } | null>(null);
+  const pocketKeyRef = useRef<string | null>(null);
+  pocketKeyRef.current = pocketState?.request.key ?? null;
+  // Host-side stale guard: the run and pocket sources the screen currently shows (read by late callbacks).
+  const pocketHostRef = useRef<{ runId: string | null; sourceHandles: string[] }>({ runId: null, sourceHandles: [] });
   const [atomCatalogState, setAtomCatalogState] = useState<{ key: string; catalog: AtomCatalog } | null>(null);
   const [atomCatalogError, setAtomCatalogError] = useState("");
   const [atomReadRetry, setAtomReadRetry] = useState(0);
@@ -244,11 +265,13 @@ export default function WorkspacePage() {
     const latest = latestHandles(log);
     const lastLoadSeq = [...resultEvents(log)].reverse().find(event => event.tool === "load_structure")?.seq ?? 0;
     const pendingUpload = [...log].reverse().find(event => event.type === "upload_received" && event.seq > lastLoadSeq);
+    pocketHostRef.current = { runId: summary.run_id, sourceHandles: [] };
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
     setChemicalActive(false); setChemicalSceneToRestore(null);
+    setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); setPocketNotice(null); setPocketView(null); pocketReturnRef.current = null;
     sceneEpoch.current += 1; setSceneOverride(null); setRestorePendingToken(null); setViewerSession(null); setSceneBusy(""); setSceneError(""); setSceneStatus("");
     setSavedScenes([]); setSavedFigures([]); setSelectedSceneHandle(""); setSelectedFigureHandle("");
-    setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmPlan(null); setOpenmmViewHandle(null);
+    setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmPlan(null); setOpenmmViewHandle(null); setPocketView(null);
     // A completed contact/SASA/report call can reopen the same immutable
     // prepared handle. Keep its validated residue list in that case: the
     // loading effect is keyed by run+handle and will not rerun for identical
@@ -324,17 +347,17 @@ export default function WorkspacePage() {
   const comparisonReferenceKind = sourceOptions.find(item => item.handle === comparisonContext?.result.reference_handle)?.kind as
     StructureData["kind"] | undefined;
   const distanceSourceKind = sourceOptions.find(item => item.handle === distanceSourceHandle)?.kind as StructureData["kind"] | undefined;
-  const expectedKind = comparisonContext ? comparisonReferenceKind ?? "structure" : distanceSourceHandle ? distanceSourceKind ?? "structure" : sceneOverride ? sceneOverride.scene.value.structure_kind : openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
+  const expectedKind = comparisonContext ? comparisonReferenceKind ?? "structure" : distanceSourceHandle ? distanceSourceKind ?? "structure" : sceneOverride ? sceneOverride.scene.value.structure_kind : pocketView ? pocketView.kind : openmmViewHandle ? "openmm_minimized_structure" : selectedMeasurement ? "prepared_structure" : selectedStructure
     ? selectedTool === "load_structure" ? "structure" : "prepared_structure"
     : handles.prepared ? "prepared_structure" : "structure";
-  const associationError = !sceneOverride && !openmmViewHandle && selectedMeasurement && objectMeta &&
+  const associationError = !sceneOverride && !openmmViewHandle && !pocketView && selectedMeasurement && objectMeta &&
     (selectedHandle?.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") || objectMeta.kind !== (selectedSasa ? "interface_sasa" : "interaction_set") ||
       objectMeta.schema !== (selectedSasa ? "interface_sasa@1" : "interaction_set@1") ||
       typeof objectMeta.summary.structure !== "string" || !objectMeta.summary.structure)
       ? "측정 객체에 확인 가능한 입력 구조가 없습니다." :
-    !sceneOverride && !openmmViewHandle && selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
+    !sceneOverride && !openmmViewHandle && !pocketView && selectedStructure && objectMeta && (selectedHandle?.kind !== expectedKind || objectMeta.kind !== expectedKind)
       ? "선택한 단계의 구조 종류가 객체 메타데이터와 일치하지 않습니다." : null;
-  const targetHandle = comparisonContext?.result.reference_handle ?? (distanceSourceHandle || null) ?? sceneOverride?.scene.value.structure_handle ?? openmmViewHandle ?? (selectedMeasurement
+  const targetHandle = comparisonContext?.result.reference_handle ?? (distanceSourceHandle || null) ?? sceneOverride?.scene.value.structure_handle ?? pocketView?.handle ?? openmmViewHandle ?? (selectedMeasurement
     ? !associationError && objectMeta ? String(objectMeta.summary.structure) : null
     : selectedStructure ? !associationError && objectMeta ? objectMeta.handle : null
       : pipelineHandle?.handle ?? null);
@@ -371,7 +394,7 @@ export default function WorkspacePage() {
     pipelineHandle: (handles.interactions ?? pipelineHandle)?.handle ?? null,
     inspectionRevision, sceneToken: sceneOverride?.token ?? null,
     openmmHandle: openmmViewHandle, distanceHandle: distanceSourceHandle || null,
-    comparisonHandle: comparisonContext?.handle ?? null });
+    comparisonHandle: comparisonContext?.handle ?? null, pocketHandle: pocketView?.handle ?? null });
   const comparisonScope = JSON.stringify([runId, comparisonReference, comparisonMoving,
     correspondence.map(pair => [pair.reference.site_index, pair.moving.site_index]),
     comparisonViewKey, measurementSelection?.handle ?? null]);
@@ -461,6 +484,31 @@ export default function WorkspacePage() {
     viewerState.status === "ready" && viewerState.source === displaySource;
   const m10SceneBlocked = !singleSourceSceneCompatible(!!comparisonContext, measureMode,
     !!pendingAtom, !!measurementSelection);
+  const pocketGates = featureGates({ sourceKind: displayData?.kind ?? null, overlayActive: !!pocketState,
+    comparisonActive: !!comparisonContext });
+  const sceneBlocked = m10SceneBlocked || !!pocketGates.m9;
+  const pocketSourceOptions = sourceOptions.filter((item): item is { handle: string; kind: "prepared_structure" | "openmm_minimized_structure" } =>
+    item.kind === "prepared_structure" || item.kind === "openmm_minimized_structure");
+  pocketHostRef.current = { runId: run?.run_id ?? null, sourceHandles: pocketSourceOptions.map(item => item.handle) };
+  const pocketViewerReady = viewerReady && bridgeStateReady(viewerBridgeRef.current);
+  useEffect(() => {
+    const decision = overlayContextDecision(pocketState?.request ?? null, pocketState?.boundContext ?? null,
+      viewerContextKey, displaySource?.handle ?? null, pocketViewerReady);
+    if (decision.action === "bind" && viewerContextKey)
+      setPocketState(previous => previous && previous.boundContext === null ? { ...previous, boundContext: viewerContextKey } : previous);
+    else if (decision.action === "clear") {
+      setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); setPocketNotice(decision.reason);
+    }
+  }, [pocketState, viewerContextKey, displaySource?.handle, pocketViewerReady]);
+  const pocketOverlayForViewer = pocketState && pocketState.boundContext === viewerContextKey &&
+    displaySource?.handle === pocketState.request.sourceHandle ? pocketState.request : null;
+  const requestPocketOverlay = (request: PocketOverlayRequest | null) => {
+    if (!pocketRequestAccepted(request, pocketHostRef.current)) return;
+    setPocketOverlayError(null); setPocketNotice(null);
+    if (!request) { setPocketState(null); setPocketReadback(null); return; }
+    setPocketState(previous => ({ request, boundContext: previous && previous.request.key === request.key &&
+      previous.request.sourceHandle === request.sourceHandle ? previous.boundContext : null }));
+  };
   const bridgeState = viewerBridgeRef.current?.snapshot();
   const sceneSessionReady = viewerReady && !!viewerSession &&
     viewerSession.structure_handle === displaySource?.handle &&
@@ -499,6 +547,17 @@ export default function WorkspacePage() {
       result: openmmOutputRef.current, action: openmmActionRef.current });
   }
   useEffect(() => { setOpenmmBusy(false); }, [runId, openmmInput, openmmJobId, openmmOutput]);
+  // A completed OpenMM job publishes its minimized structure through job events; re-read the log so the new
+  // openmm_minimized_structure becomes an ordinary source option (M12 pocket detection) without a run reload.
+  useEffect(() => {
+    if (!runId || !openmmOutput) return;
+    const ticket = epoch.current;
+    const controller = new AbortController();
+    api.allEvents(runId, controller.signal).then(log => {
+      if (ticket === epoch.current) setEvents(previous => log.length >= previous.length ? log : previous);
+    }).catch(() => undefined);
+    return () => controller.abort();
+  }, [runId, openmmOutput]);
   useEffect(() => {
     const change = openmmContextChange(openmmContextRef.current, { runId, input: openmmInput, jobId: openmmJobId });
     if (change.resetPolicy) {
@@ -1041,7 +1100,7 @@ export default function WorkspacePage() {
     setHighlight(null); setFocusedResidue(null); setFocusError(null);
   }
   async function saveCurrentScene() {
-    if (!runId || !sceneSessionReady || !sceneName.trim() || sceneBusy || m10SceneBlocked) return;
+    if (!runId || !sceneSessionReady || !sceneName.trim() || sceneBusy || sceneBlocked) return;
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
     const context = viewerContextKey, name = sceneName.trim(), id = runId;
     setSceneBusy("저장 중"); setSceneError(""); setSceneStatus("");
@@ -1185,7 +1244,7 @@ export default function WorkspacePage() {
           selected.result.moving_handle !== comparisonMoving) return;
       comparisonBusyRef.current = false; setComparisonBusy("");
       manualViewerInvalidator.current?.(); viewerBridgeRef.current?.invalidate();
-      exitSceneOverride(); setOpenmmViewHandle(null); setHighlight(null); setFocusedResidue(null);
+      exitSceneOverride(); setOpenmmViewHandle(null); setPocketView(null); setHighlight(null); setFocusedResidue(null);
       setDistanceSourceHandle(""); setFocusPair(null); setComparisonContext({ handle: response.handle.handle, result: selected.result });
       setMeasurementSelection({ handle: response.handle.handle, result: selected.result });
       setComparisonAligned(true); setReferenceVisible(true); setMovingVisible(true);
@@ -1208,13 +1267,13 @@ export default function WorkspacePage() {
       setMeasurementSelection({ handle, result }); setComparisonReport(null); setFocusPair(null);
       if (result.schema === "rigid_alignment@1") {
         manualViewerInvalidator.current?.(); viewerBridgeRef.current?.invalidate();
-        exitSceneOverride(); setOpenmmViewHandle(null); setDistanceSourceHandle(""); setComparisonContext({ handle, result });
+        exitSceneOverride(); setOpenmmViewHandle(null); setPocketView(null); setDistanceSourceHandle(""); setComparisonContext({ handle, result });
         setComparisonReference(result.reference_handle); setComparisonMoving(result.moving_handle);
         setCorrespondence(result.pairs.map(pair => ({ reference: pair.reference, moving: pair.moving })));
         setComparisonAligned(true); setReferenceVisible(true); setMovingVisible(true);
       } else {
         manualViewerInvalidator.current?.(); viewerBridgeRef.current?.invalidate();
-        exitSceneOverride(); setOpenmmViewHandle(null); setComparisonContext(null);
+        exitSceneOverride(); setOpenmmViewHandle(null); setPocketView(null); setComparisonContext(null);
         setDistanceSourceHandle(result.structure_handle); setMeasureMode(true);
       }
     } catch (e) { if (comparisonActionCurrent(action, id, scope, ticket))
@@ -1242,7 +1301,7 @@ export default function WorkspacePage() {
       comparisonBusyRef.current = false; setComparisonBusy(""); } }
   }
   async function exportCurrentFigure() {
-    if (!runId || !selectedSceneHandle || !sceneSessionReady || sceneBusy || m10SceneBlocked) return;
+    if (!runId || !selectedSceneHandle || !sceneSessionReady || sceneBusy || sceneBlocked) return;
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
     const context = viewerContextKey, id = runId, selected = selectedSceneHandle;
     setSceneBusy("PNG 생성 중"); setSceneError(""); setSceneStatus("");
@@ -1313,8 +1372,8 @@ export default function WorkspacePage() {
           ? "이 측정의 입력 구조는 최신 전처리 구조와 다릅니다. 최신 파이프라인의 도구는 여기에서 사용할 수 없습니다."
           : displayDiffersFromPipeline ? "표시 중인 결과의 구조가 최신 파이프라인과 다릅니다. 새 계산은 최신 파이프라인에서 실행합니다."
             : "선택한 단계 검사 중 · 새 계산은 최신 파이프라인에서 실행합니다."}</span>
-          <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("latest_pipeline"); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setOffset(0); }}>최신 구조로 돌아가기</Button></div>}
-        {steps.length ? <StepList steps={steps} selected={selectedStep?.n} onSelect={step => { exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("step"); setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0); }} />
+          <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("latest_pipeline"); setPocketView(null); setSelectedStepNumber(null); setInspectionRevision(value => value + 1); setOffset(0); }}>최신 구조로 돌아가기</Button></div>}
+        {steps.length ? <StepList steps={steps} selected={selectedStep?.n} onSelect={step => { exitSceneOverride(); setOpenmmViewHandle(null); setViewIntent("step"); setPocketView(null); setSelectedStepNumber(step.n); setInspectionRevision(value => value + 1); setOffset(0); }} />
           : <p className="mw-empty-note">파일을 업로드하면 실제 도구 호출이 여기에 기록됩니다.</p>}
       </>,
       models: <div className="mw-rail-group">
@@ -1338,6 +1397,12 @@ export default function WorkspacePage() {
       comparison={comparisonContext && movingSource && movingCatalog ? { source: movingSource, catalog: movingCatalog,
         alignment: comparisonContext.result, aligned: comparisonAligned, referenceVisible, movingVisible } : null}
       focusPair={focusPair}
+      pocketOverlay={pocketOverlayForViewer}
+      onPocketOverlay={(key, readback, overlayError) => {
+        if (key === null) { setPocketReadback(previous => previous === null ? previous : null); return; }
+        if (key !== pocketKeyRef.current) return;
+        setPocketReadback(readback); setPocketOverlayError(overlayError);
+      }}
       selectedAtoms={pendingAtom ? [pendingAtom] : measurementSelection?.result.schema === "atom_distance@1" &&
         [displaySource?.handle, movingSource?.handle].includes(measurementSelection.result.structure_handle)
         ? [measurementSelection.result.first, measurementSelection.result.second] : []}
@@ -1368,17 +1433,20 @@ export default function WorkspacePage() {
     }} options={[
       { value: "cartoon", label: "cartoon" }, { value: "ball-and-stick", label: "ball-and-stick" }, { value: "surface", label: "surface" },
     ]} />}
-    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{comparisonContext ? `두 구조 비교 · 기준 ${comparisonContext.result.reference_model_number} / 이동 ${comparisonContext.result.moving_model_number}` : sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
-      {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}</>}
+    canvasLegend={(displayData || inspecting) && <><span className="mw-muted">{comparisonContext ? `두 구조 비교 · 기준 ${comparisonContext.result.reference_model_number} / 이동 ${comparisonContext.result.moving_model_number}` : sceneOverride ? `저장된 보기 · ${sceneOverride.scene.value.name}` : pocketView ? "fpocket 포켓 결과의 소스 구조" : openmmViewHandle ? "OpenMM 최소화 단백질 좌표" : viewIntent === "step" ? "선택한 단계의 구조" : viewIntent === "latest_result" ? "최근 결과의 구조" : "최신 파이프라인 구조"}{viewerReady ? ` · model ${displayResidues?.model_number ?? "—"}` : displayedError ? " · 표시 실패" : " · 불러오는 중"}</span>
+      {selectedFocus && <span className="mw-mono">선택: {displayResidue(selectedFocus)}</span>}
+      {pocketReadback && pocketOverlayForViewer && <span className="mw-muted">fpocket 후보 공동 · rank {pocketReadback.rank} · 알파 구 {pocketReadback.sphereCount}개</span>}</>}
     strip={<>{runId && <Button size="sm" disabled={!!chemicalEntryBlockedReason(busy)}
       title={chemicalEntryBlockedReason(busy) ?? undefined} onClick={() => {
       cancelPendingRestore(); revokeComparisonAction(); viewerBridgeRef.current?.invalidate();
       setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
       setMeasurementSelection(null); setComparisonContext(null); setFocusPair(null);
+      setPocketState(null); setPocketReadback(null); setPocketView(null);
       setChemicalActive(true);
     }}>화학 상호작용 작업 열기</Button>}
     {comparisonContext ? <p className="mw-muted">두 구조 비교 중에는 한 구조용 프롬프트 명령을 사용할 수 없습니다.</p> : <ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
       runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
+      disabledReason={pocketGates.m8}
       sourceHandle={displaySource?.handle ?? null} viewerReady={viewerReady} bridgeRef={viewerBridgeRef}
       representation={representation} selected={selectedFocus} residues={displayResidues} dryRun={run?.dry_run ?? false}
       restoreTarget={sceneOverride?.scene.value.selection ?? null} onSession={setViewerSession}
@@ -1488,14 +1556,15 @@ export default function WorkspacePage() {
     </div>
     <div className="mw-workflow" aria-label="저장된 보기와 그림">
       <div className="mw-workflow-row"><label>보기 이름 <input className="mw-input" type="text" maxLength={80} value={sceneName} onChange={e => setSceneName(e.target.value)} /></label>
-        <Button size="sm" disabled={m10SceneBlocked || !runId || !sceneSessionReady || !sceneName.trim() || !!sceneBusy} title={m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 보기를 저장하세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : "현재 장면을 저장합니다"} onClick={() => void saveCurrentScene()}>현재 보기 저장</Button>
+        <Button size="sm" disabled={sceneBlocked || !runId || !sceneSessionReady || !sceneName.trim() || !!sceneBusy} title={pocketGates.m9 ? pocketGates.m9 : m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 보기를 저장하세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : "현재 장면을 저장합니다"} onClick={() => void saveCurrentScene()}>현재 보기 저장</Button>
         <label>저장된 보기 <select className="mw-select" value={selectedSceneHandle} onChange={e => setSelectedSceneHandle(e.target.value)}>
           <option value="">보기 선택</option>{savedScenes.map(scene => <option key={scene.handle} value={scene.handle}>{scene.value.name} · {scene.value.structure_kind} · {scene.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
         </select></label>
         <Button size="sm" disabled={!runId || !selectedSceneHandle} onClick={() => void restoreSavedScene()}>저장된 보기 복원</Button>
         {sceneOverride && <Button size="sm" onClick={returnToCurrentStructure}>현재 구조로 돌아가기</Button>}
-        <Button size="sm" disabled={m10SceneBlocked || !runId || !selectedSceneHandle || !sceneSessionReady || !!sceneBusy} title={m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 PNG를 내보내세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : !selectedSceneHandle ? "저장된 보기를 먼저 선택하세요" : "현재 장면이 선택한 저장 보기와 정확히 일치해야 합니다"} onClick={() => void exportCurrentFigure()}>현재 보기 PNG 내보내기</Button>
+        <Button size="sm" disabled={sceneBlocked || !runId || !selectedSceneHandle || !sceneSessionReady || !!sceneBusy} title={pocketGates.m9 ? pocketGates.m9 : m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 PNG를 내보내세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : !selectedSceneHandle ? "저장된 보기를 먼저 선택하세요" : "현재 장면이 선택한 저장 보기와 정확히 일치해야 합니다"} onClick={() => void exportCurrentFigure()}>현재 보기 PNG 내보내기</Button>
       </div>
+      {pocketGates.m9 && <p className="mw-muted" role="status" data-pocket-m9-reason>보기 저장·PNG 내보내기 사용 불가: {pocketGates.m9}</p>}
       {m10SceneBlocked && <p className="mw-muted" role="status">원자 측정 표시와 두 구조 비교는 단일 구조 보기·PNG에 기록되지 않습니다. 측정을 지우거나 단일 구조로 돌아간 뒤 저장하세요.</p>}
       <div className="mw-workflow-row"><label>저장된 그림 <select className="mw-select" value={selectedFigureHandle} onChange={e => setSelectedFigureHandle(e.target.value)}>
         <option value="">그림 선택</option>{savedFigures.map(figure => <option key={figure.handle} value={figure.handle}>{figure.value.scene_handle.split("/").at(-1)?.slice(0, 12)} · {figure.value.width}×{figure.value.height} · {figure.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
@@ -1657,7 +1726,7 @@ export default function WorkspacePage() {
             onClick={() => void submitOpenmm()}>OpenMM 작업 제출</Button>
           {openmmPlan?.key === openmmPreflightKey && <p role="status" className="mw-capability">{openmmPlan.message}</p>}
         </>}
-        {openmmJobs.length > 0 && <label>작업 <select className="mw-select" value={openmmJobId ?? ""} onChange={e => { openmmJobRef.current = e.target.value; openmmOutputRef.current = undefined; setOpenmmJobId(e.target.value); setOpenmmViewHandle(null); }}>
+        {openmmJobs.length > 0 && <label>작업 <select className="mw-select" value={openmmJobId ?? ""} onChange={e => { openmmJobRef.current = e.target.value; openmmOutputRef.current = undefined; setOpenmmJobId(e.target.value); setOpenmmViewHandle(null); setPocketView(null); }}>
           {openmmJobs.map(job => <option key={job.job_id} value={job.job_id}>{job.job_id.slice(0, 18)} · {job.status}</option>)}
         </select></label>}
         {activeOpenmmJob && <>
@@ -1677,8 +1746,8 @@ export default function WorkspacePage() {
             <dt>결과 원자</dt><dd>{selectedOpenmmResult.atom_count} (추가 수소 {selectedOpenmmResult.added_hydrogen_count})</dd>
           </dl>
           <p className="mw-capability">수렴을 주장하지 않습니다. 원래 복합체 접촉표는 이 단백질 전용 좌표의 측정값이 아닙니다.</p>
-          <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(selectedOpenmmResult.minimized_structure); }}>최소화 단백질 좌표 보기</Button>
-          {openmmViewHandle && <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(null); }}>원래 구조로 돌아가기</Button>}
+          <Button size="sm" onClick={() => { exitSceneOverride(); setPocketView(null); setOpenmmViewHandle(selectedOpenmmResult.minimized_structure); }}>최소화 단백질 좌표 보기</Button>
+          {openmmViewHandle && <Button size="sm" onClick={() => { exitSceneOverride(); setOpenmmViewHandle(null); setPocketView(null); }}>원래 구조로 돌아가기</Button>}
           {!savedOpenmmReport && <Button size="sm" onClick={() => void createOpenmmReport()}>OpenMM 방법 보고서 만들기</Button>}
         </>}
         {selectedOpenmmReport && runId && <>
@@ -1695,6 +1764,32 @@ export default function WorkspacePage() {
         {activeOpenmmReportError && <p role="alert" className="mw-table-error">{activeOpenmmReportError}</p>}
         {openmmError && <p role="alert" className="mw-table-error">{openmmError}</p>}
       </InspectorSection>}
+      {run && <InspectorSection><PocketPanel key={run.run_id} panel="main" run={run}
+        capability={capabilities ? capabilities.methods?.pocket_detection ?? null : undefined} sourceOptions={pocketSourceOptions}
+        displayedSourceHandle={displaySource?.handle ?? null} viewerReady={pocketViewerReady}
+        blockedReason={pocketGates.pocket} overlay={pocketState?.request ?? null}
+        overlayApplied={pocketReadback} overlayError={pocketOverlayError} overlayNotice={pocketNotice}
+        onOverlay={requestPocketOverlay}
+        onShowSource={(requestRunId, handle, kind) => {
+          if (kind === "chemical_structure" || !pocketRequestAccepted({ runId: requestRunId, sourceHandle: handle },
+            pocketHostRef.current)) return;
+          const shownNow = pocketView?.handle ?? openmmViewHandle;
+          if (!pocketReturnRef.current || pocketReturnRef.current.shown !== shownNow)
+            pocketReturnRef.current = { shown: handle, openmmViewHandle, pocketView };
+          else pocketReturnRef.current = { ...pocketReturnRef.current, shown: handle };
+          exitSceneOverride(); setDistanceSourceHandle("");
+          if (kind === "openmm_minimized_structure") { setPocketView(null); setOpenmmViewHandle(handle); }
+          else { setOpenmmViewHandle(null); setPocketView({ handle, kind }); }
+        }}
+        onReturnToSource={() => {
+          requestPocketOverlay(null);
+          const prior = pocketReturnRef.current;
+          pocketReturnRef.current = null;
+          // Restore the view before the pocket selection switched the source, only while that switch is still on screen.
+          if (prior && prior.shown === (pocketView?.handle ?? openmmViewHandle)) {
+            setPocketView(prior.pocketView); setOpenmmViewHandle(prior.openmmViewHandle);
+          }
+        }} /></InspectorSection>}
       {budget && <InspectorSection><span className="mw-eyebrow">실제 예산</span><BudgetMeter budget={budget} /></InspectorSection>}
       {capabilities?.methods?.interface_sasa && <InspectorSection><span className="mw-eyebrow">지원하는 로컬 방법</span>
         <p className="mw-capability"><b>단백질–리간드 SASA</b><br />{capabilities.methods.interface_sasa.available

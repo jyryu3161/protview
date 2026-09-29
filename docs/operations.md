@@ -31,6 +31,17 @@ npm --prefix frontend run build
 - 이 스크립트를 실행하는 인터프리터가 CPython 3.11 macOS arm64가 아니면 설치를 거부한다.
 - 설치하지 않으면 `/capabilities`의 `chemical_interactions`가 사용할 수 없음으로 표시되고, 나머지 기능은 정상 동작한다.
 
+### M12 fpocket 작업 환경 (선택)
+
+```bash
+.venv/bin/python scripts/setup_fpocket.py --pkgs <35개 conda archive가 있는 디렉터리>
+```
+
+- conda와 macOS ≥ 14.5 arm64가 필요하다. 이 조건이 아니면 설치를 거부하고, 포켓 검출은 `/capabilities`에서 사용할 수 없음으로 표시된다(나머지 기능은 정상).
+- `--pkgs`에는 로컬 conda 패키지 캐시(예: `~/anaconda3/pkgs`)나 archive를 모아 둔 폴더를 준다. 스크립트는 `config/pockets/`의 잠금과 35개 이름·SHA-256을 모두 맞춘 뒤 `conda create --offline`으로 `.deps/fpocket/env/`에 설치하고, 실행 파일 SHA-256(`a79058e4…2894`)과 설치 기록 `.deps/fpocket/install-record.json`을 남긴다. 다운로드는 하지 않는다.
+- 이미 설치되어 있으면 거부한다. 다시 설치하려면 서비스를 멈추고 `.deps/fpocket/`을 직접 옮긴 뒤 실행한다.
+- conda 23.3.1은 새 환경을 `~/.conda/environments.txt`에 등록한다.
+
 ## 실행
 
 터미널 두 개에서 각각 실행한다.
@@ -63,14 +74,15 @@ npm --prefix frontend run start -- -p 3000
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py -q
+node --check frontend/tests/offscreen/pocket-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
-- 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF)는 해당 엔진이 설치되어 있어야 의미가 있다. M11 테스트는 `.deps/prolif/venv-locked`가 필요하다.
-- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
+- 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket)는 해당 엔진이 설치되어 있어야 의미가 있다. M11 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`가 필요하며, 없으면 skip이 아니라 실패한다.
+- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. M12 포켓 테스트가 들어간 세 번째 그룹(나머지 백엔드·실행기·fpocket 설치 테스트)은 2026-09-29 단독 실행에서 239초였다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
 
 ## 오프스크린 UI 검증
 
@@ -99,6 +111,20 @@ npm --prefix frontend run test:offscreen:chemical
 - 단계: M11 모드 전체(H01–H17) → M8 normal·OpenMM 준비·M9 scenes·M10 measure/alignment 회귀 → events-only 복구(원본 입력 없이, 작업 프로세스 없이) → 작업 프로세스 없음·버전 불일치 표시 → `case-ledger.json` 집계. `--only 단계,...`로 한 단계만 다시 돌리면 새 디렉터리에 기록하고 이전 증거를 덮어쓰지 않는다.
 - 입력: 공개 fixture는 `backend/tests/fixtures/chemical/`의 파일을 그대로 쓴다. 합성 파생 입력(연결용 복합체 PDB, 빈 결과 SDF, 수용체 결합 목록)은 `scripts/m11_qa_inputs.py --out <디렉터리>`가 만들고 기록된 SHA-256과 대조한다. run에 묶인 연결 입력은 `scripts/m11_attach_browser_setup.py`가 그 run의 실제 카탈로그로 만든다. 잘못된 입력 사례는 `scripts/m11_invalid_inputs.py`가 만든다.
 - 커밋하는 증거는 `docs/qa/m11-chemical-<날짜>/`에 두고, 스크린숏·다운로드 원본은 git에서 제외된 artifacts 폴더에 두며 해시만 기록한다. 절대 경로는 `<repo>` 같은 표시로 바꾼다.
+
+### M12 포켓 후보 수락 QA
+
+프런트엔드를 먼저 빌드하고(`typecheck` 다음 `build`), 8000·3000 포트가 비어 있는 상태에서 실행한다.
+
+```bash
+.venv/bin/python scripts/m12_offscreen_acceptance.py --root runs/m12-acceptance-<날짜> --artifacts frontend/tests/offscreen/artifacts/m12-acceptance/<이름> [--export-evidence <폴더>]
+```
+
+- 단계: 포켓 흐름 13개(양성, 빈 결과, 잘못된 입력, 취소, 다시 열기, 보고서 다운로드, 오버레이 중 비활성, 거리 측정, 비교 차단, 늦은 응답, 최소화 구조, M11 화학 구조 만들기와 화학 작업 화면) → M8·M9·M10·M11 회귀 → events-only 복구 → 엔진 없음·해시 불일치 → 남은 프로세스 확인 → `case-ledger.json`. 필수 단계가 빠지거나 실패하면 판정은 실패다.
+- 엔진 없음·해시 불일치는 수락 루트 안에 만든 코드 복사본(`layout-engine-*`)으로 확인한다. 요청이나 환경변수로 엔진 경로를 바꾸는 방법은 없다.
+- `--only 단계,...`는 새 폴더에 기록하고 대장을 `case-ledger-partial.json`(수락 아님)으로 남긴다.
+- 남은 프로세스 확인은 작업 폴더가 수락 루트 안인 프로세스만 센다. 그래도 수락 QA 중에는 Stop 훅 pytest가 겹치지 않게 하는 편이 증거를 읽기 쉽다.
+- `--export-evidence`는 로컬 경로를 `<repo>`·`<home>`으로 바꾼 텍스트 증거와 `SHA256SUMS`, 이진 파일 해시 목록을 쓴다. 커밋하는 증거(`docs/qa/m12-pockets-<날짜>/`)는 그중 작은 파일과 해시 목록만 둔다.
 
 ## 과거 단계 재검증
 

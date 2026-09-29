@@ -1,13 +1,14 @@
 # backend/ — FastAPI 서버와 과학 런타임 (`mw` 패키지)
 
 ## 담당 범위
-- HTTP API(`mw/api/app.py`), 실행 경로 `Run.call`(`mw/runtime/`), 불변 객체·이벤트(`mw/core/`), 과학 도구(`mw/tools/`), 영속 작업 큐와 작업 프로세스 감독(`mw/jobs/`), 외부 요청 게이트(`mw/egress/`, `mw/llm/`), 보고서(`mw/*reports.py`), 뷰어 의도·저장된 보기(`mw/viewer_intents.py`, `mw/saved_scenes.py`), M11 화학 입력·번들·결과(`mw/chemical_*.py`), 고정 파이프라인(`mw/workflows.py`).
+- HTTP API(`mw/api/app.py`), 실행 경로 `Run.call`(`mw/runtime/`), 불변 객체·이벤트(`mw/core/`), 과학 도구(`mw/tools/`), 영속 작업 큐와 작업 프로세스 감독(`mw/jobs/`), 외부 요청 게이트(`mw/egress/`, `mw/llm/`), 보고서(`mw/*reports.py`), 뷰어 의도·저장된 보기(`mw/viewer_intents.py`, `mw/saved_scenes.py`), M11 화학 입력·번들·결과(`mw/chemical_*.py`), M12 포켓 투영·출력 파서·번들·보고서(`mw/pocket_*.py`, `mw/jobs/pocket_worker.py`), 고정 파이프라인(`mw/workflows.py`).
 - 테스트: `backend/tests/`. fixture는 `backend/tests/fixtures/`에 있다. `chemical/`에는 출처(`PROVENANCE.json`, `SYNTHETIC-PROVENANCE.md`)와 라이선스가 함께 있다. 새 fixture는 공개·합성·파생 여부와 출처를 같은 방식으로 기록한다.
 
 ## 담당하지 않는 것
 - 화면, Mol* 렌더링, 브라우저 적용 확인: `frontend/`가 담당한다. 백엔드는 브라우저가 보낸 좌표로 측정하지 않고, 브라우저가 보낸 ack를 과학 사실로 취급하지 않는다.
 - 단계 기록과 과거 검증: `scripts/`, `phases/`가 담당한다. `mw`는 이것들을 import하지 않는다.
 - ProLIF/RDKit/MDAnalysis 코드: `.deps/prolif/venv-locked` 인터프리터에서 도는 `mw/jobs/chemical_worker.py`에만 둔다. 서버 프로세스 모듈에서 이 패키지들을 import하면 안 된다.
+- fpocket 실행: `mw/jobs/pocket_worker.py`만 한다(guardian GO 뒤, 고정 argv, 해시 확인한 실행 파일 복사본, 허용 목록 환경, 시도별 상대 TMPDIR). 서버 쪽 capability 확인은 fpocket을 실행하지 않고 해시만 본다. `mw/pocket_output.py`는 표준 라이브러리만 쓴다(작업 프로세스에서도 import).
 - 건드리지 말 것: `molecular_workspace.egg-info/`(생성물), `backend/tests/offscreen_agent_fixture/`(M8 QA 전용 fixture 서버).
 
 ## 불변 조건
@@ -23,6 +24,7 @@
 - 외부 HTTP는 `egress/gate.py`의 `EgressGate`만 보낸다. `follow_redirects=False`, `trust_env=False`, 목적지 1개 고정, 요청당 HTTP 1회를 지킨다. local_only/dry_run에서는 키를 읽지 않는다.
 - 새 run은 `NewRun.egress`가 `Literal["local_only"]`이므로 항상 로컬 전용이다. 온라인 전환은 `/viewer/online` 이벤트로만 한다.
 - 잔기 식별자 7필드와 AtomRef의 null label은 그대로 보존한다. 표시 문자열을 파싱해서 식별자를 만들지 않는다.
+- 포켓 결과를 게시하기 전에 현재 시도·취소·종료 상태를 확인하고, 읽을 때마다 보관한 원본 출력을 다시 파싱해 저장 값과 대조한다. 원본 출력 보관량은 게시된 결과 기준 run당 64 MiB다.
 - 도구 실패는 `ToolFailure(FailureClass.…)`로 던진다. 그 밖의 예외는 fatal로 분류한다. HTTP 매핑은 input_invalid 422, precondition 412, resource_exceeded 429, transient·fatal 503이다.
 
 ## 구현 패턴
@@ -33,10 +35,10 @@
 - 오류 메시지는 안전한 enum과 고정 문장으로 만든다. provider 응답 본문, 예외 문자열, 헤더를 외부로 향하는 필드나 이벤트에 넣지 않는다.
 
 ## 테스트 지침
-- 파일별 초점: `test_core`(해시·이벤트·복구), `test_structural`(파싱·전처리·접촉), `test_api`, `test_runtime`(재시도·가드·예산·dry-run·잠금), `test_llm_egress`(투영·전송 거부·감사·사용량), `test_jobs`(큐·실제 프로세스 수명·신원·취소), `test_reports`, `test_sasa`, `test_openmm`, `test_agent_viewer`, `test_saved_scenes`, `test_comparison`, `test_chemical_interactions`, `test_m11_job_api`.
+- 파일별 초점: `test_core`(해시·이벤트·복구), `test_structural`(파싱·전처리·접촉), `test_api`, `test_runtime`(재시도·가드·예산·dry-run·잠금), `test_llm_egress`(투영·전송 거부·감사·사용량), `test_jobs`(큐·실제 프로세스 수명·신원·취소), `test_reports`, `test_sasa`, `test_openmm`, `test_agent_viewer`, `test_saved_scenes`, `test_comparison`, `test_chemical_interactions`, `test_m11_job_api`, `test_pockets`(투영), `test_pocket_output`(파서·실제 엔진), `test_pocket_jobs`(작업·API·수명 주기·복구), `test_pocket_reports`.
 - 반드시 다룰 경계: null label, 삽입 코드, 여러 글자 체인, 첫 모델이 아닌 모델, altloc(A가 이기지 않는 경우 포함), 같은 이름의 리간드 인스턴스, 중복 원자 이름·serial, scientific_null, NaN·Infinity 입력, 다른 run의 handle, 손상된 payload.
 - events-only 복구: 임시 run에서 업로드·객체·SQLite를 지우고 복구한 바이트를 비교한다. 엔진이나 모델 없이 다시 열려야 한다.
 - 외부 요청 테스트는 주입한 transport로 실제 transport 호출 수를 센다. sentinel 키가 모든 산출물에 나오지 않는지 검사한다. 실제 `.env`를 읽지 않는다.
 - 프로세스 테스트는 실제 하위 프로세스(SIGTERM을 무시하는 손자 프로세스 포함)를 쓰고, finally에서 반드시 정리한다.
-- FreeSASA·OpenMM·ProLIF 네이티브 테스트는 엔진이 없을 때 성공으로 skip하면 안 된다. 수치 oracle은 해석해나 독립 계산을 쓴다. 같은 함수와 비교하는 것은 oracle이 아니다.
+- FreeSASA·OpenMM·ProLIF·fpocket 네이티브 테스트는 엔진이 없을 때 성공으로 skip하면 안 된다. 수치 oracle은 해석해나 독립 계산을 쓴다. 같은 함수와 비교하는 것은 oracle이 아니다.
 - 실행: `.venv/bin/python -m pytest backend/tests -q`, `.venv/bin/python -m ruff check backend/mw backend/tests`(한 줄 120자).

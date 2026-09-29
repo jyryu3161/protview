@@ -3,6 +3,8 @@
 ## 담당 범위
 - `execute.py`: `phases/<group>/index.json` 단계 실행기. 수락 명령(argv 배열)을 셸 없이 실행하고, SHA-256으로 묶인 검토 증거를 기록하며, `--verify`로 다시 확인한다.
 - `test_execute.py`, `test_codex_hooks.py`: 실행기와 `.codex/hooks/`(PreToolUse 위험 명령 차단, Stop 훅의 ruff·pytest) 테스트.
+- `setup_fpocket.py`: M12 fpocket 작업 환경을 `config/pockets/`의 35개 conda 패키지 해시 잠금으로 오프라인 설치하는 명시적 설정 명령(conda 필수, macOS ≥ 14.5 arm64). 테스트 `test_setup_fpocket.py`.
+- M12 QA 도구(런타임에서 호출되지 않음): `m12_offscreen_acceptance.py`(수락 QA 전체 실행기, `mw`를 import하지 않음), `m12_qa_inputs.py`(표시된 합성 잘못된 입력 2개, SHA-256 고정).
 - `setup_prolif_worker.py`: M11 ProLIF 작업 프로세스 환경을 해시 잠금 wheelhouse에서 설치하는 명시적 설정 명령. 런타임에는 호출되지 않는다.
 - M11 QA 도구(런타임에서 호출되지 않음):
   - `m11_qa_inputs.py`: 공개 fixture에서 합성 파생 QA 입력 3개를 결정적으로 만들고 SHA-256을 대조한다. 어긋나면 아무것도 쓰지 않고 실패한다.
@@ -23,6 +25,8 @@
 - 시간 초과 시 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 회수까지 마친 뒤 결과를 보고한다.
 - 수락 명령 실패나 오래된 검토는 `completed`를 무효화하고, 단계 그룹 상태를 `error`로 만든다. 성공 결과를 미리 채워 넣지 않는다.
 - `--verify`는 확인 전용으로 쓴다. 실행 전에 `phases/index.json`과 대상 그룹 `index.json`을 복사해 두고, 끝나면 복사본으로 되돌린다. 과거 단계 기록 변경을 커밋하지 않는다.
+- `setup_fpocket.py`는 35개 archive의 이름·SHA-256, 플랫폼, 실행 파일 해시가 모두 맞을 때만 설치를 완료로 둔다. 이 확인을 느슨하게 하면 안 된다.
+- 수락 실행기의 남은 프로세스 확인은 작업 폴더가 수락 루트 안인 프로세스만 센다(같은 컴퓨터의 다른 pytest를 잡지 않도록).
 - `setup_prolif_worker.py`는 33개 wheel의 이름·SHA-256이 모두 맞고, 실행 인터프리터가 CPython 3.11 macOS arm64일 때만 설치한다. 이 확인을 느슨하게 하면 안 된다.
 - Stop 훅(`.codex/hooks/stop.py`)의 pytest 세 그룹을 합치면 전체 백엔드·실행기 테스트와 같아야 한다. 그룹을 추가하거나 나눌 때 빠지는 테스트가 없게 한다. 전체 제한 600초는 `.claude/settings.json`과 `.codex/hooks.json`의 timeout과 같아야 한다.
 
