@@ -850,12 +850,16 @@ def _plan_handle(run: Any, plan: dict[str, Any]) -> str:
     return f"{HANDLE_PREFIX}{run.run_id}/{KIND}/{object_sha(KIND, SCHEMA, canonical_json(plan))}"
 
 
-def load_plan(run: Any, handle: Any) -> dict[str, Any]:
-    """A validated, recorded plan of this run. Raises ToolFailure(input_invalid) otherwise."""
+def load_plan(run: Any, handle: Any, events: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """A validated, recorded plan of this run. Raises ToolFailure(input_invalid) otherwise.
+
+    ``events`` lets a caller that already read the log (execution list) skip a second full read.
+    """
     meta = _meta(run, handle, "handle")
     if (meta["kind"], meta["schema"], meta["fmt"]) != (KIND, SCHEMA, "json"):
         raise _invalid("handle is not an analysis plan")
-    if not any(event["type"] == PLAN_EVENT and event.get("plan_handle") == handle for event in run.events.read()):
+    if not any(event["type"] == PLAN_EVENT and event.get("plan_handle") == handle
+               for event in (run.events.read() if events is None else events)):
         raise _invalid("analysis plan was not admitted in this run")
     try:
         plan = run.store.load_bounded_json(handle, MAX_PLAN_BYTES)

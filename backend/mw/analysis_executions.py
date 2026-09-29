@@ -74,6 +74,8 @@ EVENT_TYPES = (CREATED, ADMITTED, FINISHED, APPROVED, REVOKED, STOP, BLOCKED, DI
 
 JOB_TOOLS = frozenset({"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
                        "detect_pockets"})
+# JobQueue failure messages for a job timeout (recorded with error class resource_exceeded).
+JOB_TIMEOUT_MESSAGES = frozenset({"job timeout", "job timeout during guardian bootstrap"})
 BUSY_CODES = frozenset({"global_concurrency_busy", "global_job_cleanup_pending", "global_job_ledger_unavailable",
                         "job_cleanup_pending"})
 # analysis_type -> (module, builder function, builder label used by the report admission, saved reader).
@@ -528,15 +530,64 @@ def execution_detail(run: Any, execution_id: Any) -> dict[str, Any]:
 
 
 def list_executions(run: Any) -> dict[str, Any]:
+    """One event read and one fold per execution; a corrupt execution becomes an error row.
+
+    The detail GET for that execution still fails closed (409 run_corrupt).
+    """
     events = list(run.events.read())
-    rows = []
+    created: list[dict[str, Any]] = []
+    own: dict[str, list[dict[str, Any]]] = {}
+    linked: dict[str, list[dict[str, Any]]] = {}
+    approvals: list[dict[str, Any]] = []
     for event in events:
-        if event["type"] != CREATED:
-            continue
-        record = _record(run, event["execution_id"], events)
-        rows.append({key: record[key] for key in ("execution_id", "plan_handle", "goal", "status", "revision",
-                                                    "created_seq", "dry_run", "current_step", "summary_handle")})
-    return {"schema": "analysis_execution_list@1", "total": len(rows), "rows": rows[:MAX_EXECUTIONS_PER_RUN]}
+        kind = event["type"]
+        if kind in EVENT_TYPES and isinstance(event.get("execution_id"), str):
+            own.setdefault(event["execution_id"], []).append(event)
+            if kind == CREATED:
+                created.append(event)
+        link = event.get("execution_link")
+        if type(link) is dict and isinstance(link.get("execution_id"), str):
+            linked.setdefault(link["execution_id"], []).append(event)
+        if kind in {"approval_requested", "approval_resolved"}:
+            approvals.append(event)
+    plans_by_handle: dict[str, dict[str, Any]] = {}
+    jobs: list[dict[str, dict[str, Any]] | None] = []
+    rows = []
+    for event in created[:MAX_EXECUTIONS_PER_RUN]:
+        execution_id = event["execution_id"]
+        try:
+            handle = event["plan_handle"]
+            if handle not in plans_by_handle:
+                plans_by_handle[handle] = plans.load_plan(run, handle, events)
+            plan = plans_by_handle[handle]
+            if plans.canonical_plan_hash(plan) != event["plan_sha256"]:
+                raise ValueError("stored analysis plan differs from execution binding")
+            state = _fold(own[execution_id], execution_id, plan)
+            job_view = None
+            if any(step["lane"] == "durable_job" for step in plan["steps"]):
+                if not jobs:
+                    try:
+                        jobs.append(_jobs(run))
+                    except (KeyError, ValueError, TypeError):
+                        jobs.append(None)
+                job_view = jobs[0]
+            pending_driver = any(item["state"] == "pending" and item["action"] in {"advance", "retry"}
+                                 for item in state["requests"].values())
+            live = _driver_live(run, execution_id) if pending_driver else False
+            # _derive reads events only for this execution's linked job binding and run approval gates.
+            relevant = sorted(linked.get(execution_id, []) + approvals, key=lambda item: item["seq"])
+            status, _retryable = _derive(state, plan, relevant, job_view, live)
+            rows.append({"execution_id": execution_id, "plan_handle": state["plan_handle"], "goal": plan["goal"],
+                         "status": status, "revision": state["revision"], "created_seq": state["created_seq"],
+                         "dry_run": state["dry_run"], "current_step": _current(state),
+                         "summary_handle": state["complete"]["summary_handle"] if state["complete"] else None,
+                         "error": None})
+        except (KeyError, ValueError, TypeError, ToolFailure, AssertionError):
+            rows.append({"execution_id": execution_id, "plan_handle": event.get("plan_handle"), "goal": None,
+                         "status": None, "revision": None, "created_seq": event.get("seq"), "dry_run": None,
+                         "current_step": None, "summary_handle": None,
+                         "error": {"code": "execution_record_invalid", "message": MESSAGES["recovery_error"]}})
+    return {"schema": "analysis_execution_list@1", "total": len(created), "rows": rows}
 
 
 def _response(run: Any, execution_id: str, request_id: str, *, replayed: bool) -> dict[str, Any]:
@@ -859,8 +910,10 @@ class _Incompatible(Exception):
     pass
 
 
-def _limits_exhausted(state: dict[str, Any], plan: dict[str, Any], events: list[dict[str, Any]]) -> str | None:
-    if len(state["attempts"]) >= plan["limits"]["max_physical_attempts"]:
+def _limits_exhausted(state: dict[str, Any], plan: dict[str, Any], events: list[dict[str, Any]],
+                      lane: str) -> str | None:
+    # Report steps make no physical attempt, so the attempt limit never refuses them.
+    if lane != "report" and len(state["attempts"]) >= plan["limits"]["max_physical_attempts"]:
         return "max_physical_attempts"
     if _active_wall(events, state["execution_id"]) >= plan["limits"]["max_active_wall_s"]:
         return "max_active_wall"
@@ -1087,10 +1140,14 @@ def _job_outcome(run: Any, events: list[dict[str, Any]], state: dict[str, Any], 
     base = {"job_id": job_id, "ownership": ownership}
     terminal = next((event for event in reversed(events) if event["type"] == "job_terminal" and
                      event.get("job_id") == job_id), None)
-    if dispatch["attempt_kind"] == "retry" and job["status"] in {"failed", "interrupted"} and not any(
+    # A retry dispatch whose own job_retry_queued is missing started nothing. A job found queued here was
+    # re-queued outside this dispatch: release (never block or cancel someone's queued job).
+    if dispatch["attempt_kind"] == "retry" and job["status"] in {"failed", "interrupted", "queued"} and not any(
             event["type"] == "job_retry_queued" and event.get("job_id") == job_id and
             event.get("execution_link") == _link_record(execution_id, step_id, dispatch["operation_id"])
             for event in events):
+        if job["status"] == "queued":
+            return {"kind": "released", "reason_code": "not_started"}
         return _hint_outcome(hint, started=False) or {"kind": "released", "reason_code": "not_started"}
     status = job["status"]
     if status == "done":
@@ -1120,8 +1177,12 @@ def _job_outcome(run: Any, events: list[dict[str, Any]], state: dict[str, Any], 
         if outcome["kind"] == "failed":
             # Spec §6: an owned job failure or timeout is retryable once when JobQueue.retry permits it
             # (status failed/interrupted, recovery allowance left); the workflow's own limits are handled above.
-            outcome.update(retryable=job["attempt_ordinal"] < 4,
-                           reason_code="job_timeout" if failure.get("message") == "job timeout" else
+            # The queue records a timeout as resource_exceeded with a timeout message; any other
+            # resource_exceeded (memory/output/staged input/recovery allowance) is not retryable.
+            timeout = failure.get("message") in JOB_TIMEOUT_MESSAGES
+            outcome.update(retryable=job["attempt_ordinal"] < 4 and (
+                               timeout or status == "interrupted" or failure.get("error") != "resource_exceeded"),
+                           reason_code="job_timeout" if timeout else
                            "job_interrupted" if status == "interrupted" else "job_failed")
         return {**outcome, **base}
     if status == "cancelled":
@@ -1409,7 +1470,7 @@ def _next_work(run: Any, execution_id: str, plan: dict[str, Any], action: str,
     elif status != "failed" or retryable is None or retryable != current:
         return None, "retry_not_allowed"
     step = state["steps"][current]
-    exhausted = _limits_exhausted(state, plan, events)
+    exhausted = _limits_exhausted(state, plan, events, _plan_step(plan, current)["lane"])
     if exhausted is not None:
         _append(run, STEP_FAILED, execution_id=execution_id, step_id=current, operation_id=None,
                 request_id=request_id, status="failed", error="resource_exceeded", reason_code=exhausted,

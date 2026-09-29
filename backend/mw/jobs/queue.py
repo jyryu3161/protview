@@ -714,6 +714,13 @@ class JobQueue:
         return {**job, "execution_ownership": "observed_shared"}
 
     @staticmethod
+    def _refuse_unlinked_owned(job: dict[str, Any]) -> None:
+        """Manual start/retry never drives a workflow-owned job; its execution does (cancel stays manual)."""
+        if job.get("execution_link") is not None:
+            raise ToolFailure(FailureClass.precondition, "job is owned by an analysis execution",
+                              detail={"reason_code": "job_owned_by_analysis_execution", "job_id": job["job_id"]})
+
+    @staticmethod
     def _require_owner(job: dict[str, Any], link: ExecutionLink) -> None:
         owner = job.get("execution_link")
         if (owner is None or owner.get("execution_id") != link.execution_id or
@@ -773,6 +780,8 @@ class JobQueue:
                 self._require_owner(job, link)
                 if link.is_stopped():
                     raise ExecutionStopped("before_start")
+            else:
+                self._refuse_unlinked_owned(job)
             if job["status"] == "queued":
                 owner = "owner_" + uuid.uuid4().hex
                 self.run.events.append("job_claimed", job_id=job_id, owner_token=owner,
@@ -1628,6 +1637,8 @@ class JobQueue:
             job = self._rebuild()[job_id]
             if link is not None:
                 self._require_owner(job, link)
+            else:
+                self._refuse_unlinked_owned(job)
             if job["status"] not in {"failed", "interrupted"} or job["attempt_ordinal"] >= 4:
                 raise ToolFailure(FailureClass.precondition, "job recovery allowance exhausted or not eligible")
             if self.run._cancel_path.exists() or job["cancel_requested"]:
