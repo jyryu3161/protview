@@ -18,6 +18,7 @@ import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgent
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { PocketPanel } from "@/components/PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
+import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
@@ -1913,5 +1914,6 @@ export default function WorkspacePage() {
   />;
 
   return <WorkspaceTabs active={workspaceTab} runId={runId ?? null} budget={budget} structure={structureScreen}
+    reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} />}
     onSelect={tab => { setWorkspaceTab(tab); if (runId) refreshGlobalBudget(runId); }} />;
 }
