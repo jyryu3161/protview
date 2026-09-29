@@ -788,7 +788,7 @@ def execution_active(run: Any, execution_id: str) -> bool:
         events = list(run.events.read())
         plan = _plan_for(run, events, execution_id)
         return not _terminal(*_derive(_fold(events, execution_id, plan), plan, events, None, False))
-    except (AnalysisError, KeyError, ValueError, TypeError):
+    except (AnalysisError, KeyError, ValueError, TypeError, ToolFailure, OSError):
         return True
 
 

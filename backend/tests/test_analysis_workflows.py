@@ -2037,3 +2037,42 @@ def test_revoke_after_a_budget_released_call_returns_to_awaiting_approval(client
     assert _linked(run, eid, "execution_call_admitted") and not _linked(run, eid, "tool_called")
     revoked = _done(_act(client, rid, eid, "revoke"))
     assert revoked["status"] == "awaiting_approval"  # the admitted call never started: nothing to cancel
+
+
+def test_direct_queue_start_and_retry_without_owner_check_refuse_an_owned_job(client, ubq_run):
+    rid, run, eid, job_id = _gated_owned_job(client, ubq_run)
+    queue = JobQueue(api_module._run(rid))
+    assert queue.get(job_id).get("execution_link", {}).get("execution_id") == eid
+    for action in (queue.start, queue.retry):  # no owner_active: the refusal fails closed
+        with pytest.raises(ToolFailure) as refused:
+            action(job_id)
+        assert refused.value.detail["reason_code"] == "job_owned_by_analysis_execution"
+    assert not _types(run, "budget_reserved") and not _types(run, "job_retry_queued")
+    assert JobQueue(run).get(job_id)["status"] == "claimed"
+
+
+def test_manual_start_refuses_an_owned_job_while_its_execution_is_active(client, ubq_run):
+    rid, run, _eid, job_id = _gated_owned_job(client, ubq_run)
+    refused = client.post(f"/runs/{rid}/jobs/{job_id}/start")
+    assert refused.status_code == 412, refused.text
+    assert refused.json()["detail"]["reason_code"] == "job_owned_by_analysis_execution"
+    assert not _types(run, "budget_reserved") and JobQueue(run).get(job_id)["status"] == "claimed"
+
+
+@pytest.mark.parametrize("fault", [
+    ToolFailure(FailureClass.input_invalid, "stored analysis plan is corrupt"),
+    OSError("plan store unreadable"),
+])
+def test_manual_start_and_retry_stay_refused_when_the_owning_plan_is_unreadable(client, ubq_run, monkeypatch,
+                                                                                fault):
+    rid, run, _eid, job_id = _gated_owned_job(client, ubq_run)
+
+    def unreadable(*_a, **_k):  # FAULT FIXTURE: the owning execution's plan cannot be loaded
+        raise fault
+
+    monkeypatch.setattr(analysis_plans, "load_plan", unreadable)
+    for action in ("start", "retry"):
+        refused = client.post(f"/runs/{rid}/jobs/{job_id}/{action}")
+        assert refused.status_code == 412, refused.text
+        assert refused.json()["detail"]["reason_code"] == "job_owned_by_analysis_execution"
+    assert not _types(run, "budget_reserved") and not _types(run, "job_retry_queued")
