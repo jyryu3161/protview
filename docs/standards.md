@@ -37,14 +37,14 @@
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py -q
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
 - typecheck와 build는 동시에 돌리지 않고 순서대로 실행한다. 둘 다 같은 프런트엔드 빌드 산출물(`tsconfig.tsbuildinfo`, `.next/`)을 쓴다.
-- 사용 가능해야 하는 과학 엔진(FreeSASA, OpenMM, M11의 ProLIF 작업 프로세스)의 네이티브 테스트는 엔진이 없을 때 조용히 skip하면 안 된다. 단계 수락 시점에는 실제 엔진으로 실행해야 한다.
+- 사용 가능해야 하는 과학 엔진(FreeSASA, OpenMM, M11의 ProLIF 작업 프로세스, M12의 fpocket)의 네이티브 테스트는 엔진이 없을 때 조용히 skip하면 안 된다. 단계 수락 시점에는 실제 엔진으로 실행해야 한다.
 - UI를 바꾸면 실제 Electron 오프스크린 렌더러(`webContents.isOffscreen()===true`, GPU·WebGL 켜짐, paint 프레임 확인)에서 바뀐 컨트롤을 하나씩 실제 입력으로 눌러 보고 결과를 관찰해야 한다. 일반 headless 브라우저나 숨긴 탭은 이 증거로 인정하지 않는다. 계획만 세운 클릭을 테스트 완료로 부르지 않는다.
 - API와 프런트엔드 연동은 실제 입력 바이트로 확인한다. 공개 구조 fixture(`backend/tests/fixtures/public_1hsg.cif`, `public_1ubq.cif`)나 표시된 합성 fixture를 쓴다.
 - 오프라인 흐름을 검증할 때는 loopback이 아닌 요청이 0건임을 기록한다.
@@ -54,7 +54,7 @@ npm --prefix frontend run build
 
 - 외부 HTTP는 `backend/mw/egress/gate.py`의 `EgressGate`만 보낸다. 다른 백엔드 모듈이 직접 httpx 클라이언트를 만들어 외부로 요청하면 안 된다.
 - 과학 계산은 `Run.call`(동기, 저렴·보통 비용)과 `JobQueue`(비싼 비용) 두 경로로만 실행한다. API 라우트나 UI 전용 코드에서 과학 함수를 직접 부르면 안 된다. 읽기 API는 도구를 다시 실행하지 않는다.
-- 도구 레지스트리는 닫혀 있다. 새 도구는 `config/tools.yaml` 명세, `backend/mw/tools/` 구현, 새 모듈이면 `backend/mw/workspace.py`의 `build_registry()` 등록 호출, `app.py`의 `SUPPORTED_TOOLS` 허용 목록에 모두 추가해야 노출된다. yaml에만 있는 `detect_pockets`, `measure`, `align`, `snapshot`, `define_mutations`, `rank_candidates`, Rosetta 도구는 구현이 없으므로 지원한다고 표시하지 않는다.
+- 도구 레지스트리는 닫혀 있다. 새 도구는 `config/tools.yaml` 명세, `backend/mw/tools/` 구현, 새 모듈이면 `backend/mw/workspace.py`의 `build_registry()` 등록 호출, `app.py`의 `SUPPORTED_TOOLS` 허용 목록에 모두 추가해야 노출된다. yaml에만 있는 `measure`, `align`, `snapshot`, `define_mutations`, `rank_candidates`, Rosetta 도구는 구현이 없으므로 지원한다고 표시하지 않는다. 비싼 작업 전용 도구(`openmm_protein_minimize`, `prepare_chemical_structure`, `compute_chemical_interactions`, `detect_pockets`)는 `SUPPORTED_TOOLS`가 아니라 `JOB_PROTOCOLS`·`JOB_ONLY_TOOLS`와 작업 승인 허용 목록에 넣는다.
 - ProLIF/RDKit/MDAnalysis는 `.deps/prolif/venv-locked` 작업 프로세스 환경에만 설치한다. 서버 프로세스에서 import하면 안 된다. 서버와 작업 프로세스는 제한된 버전 JSON과 입력 바이트로만 주고받는다.
 - 프런트엔드는 `/api/*` 프록시(백엔드 `127.0.0.1:8000`)로만 통신한다. 과학 수치를 브라우저에서 계산하거나, 브라우저가 보낸 좌표를 측정에 쓰면 안 된다.
 
@@ -62,6 +62,7 @@ npm --prefix frontend run build
 
 - 과학 결과에 영향을 주는 의존성은 정확한 버전으로 고정한다: gemmi 0.7.5, numpy 2.4.6, freesasa 2.2.1, openmm 8.6.0, psutil 7.2.2 (`backend/pyproject.toml`), molstar 5.11.0, electron 44.4.5 (`frontend/package.json`). 버전을 바꾸면 해당 엔진의 수치 검증을 다시 해야 한다.
 - 프런트엔드 설치는 `npm ci`(lockfile 기준)만 쓴다.
+- fpocket은 `config/pockets/`의 35개 conda 패키지 해시 잠금으로만 설치한다(`scripts/setup_fpocket.py`, conda 필수, macOS ≥ 14.5 arm64, 오프라인). 실행 파일 SHA-256이 고정값과 다르면 사용할 수 없음으로 표시한다(결정 0017).
 - ProLIF 작업 프로세스 환경은 `config/chemical/`의 33개 wheel 해시 잠금 파일로만 설치한다(`scripts/setup_prolif_worker.py`, CPython 3.11 macOS arm64 전용). 런타임에 설치하거나 다운로드하지 않는다. `/tmp`의 조사용 경로를 운영 설정에 쓰지 않는다.
 - `../kbase_kinase`에서 가져올 수 있는 것은 범용 실행기·훅 인프라뿐이다. 그쪽의 과학 코드, 데이터, 결론은 가져오지 않는다.
 

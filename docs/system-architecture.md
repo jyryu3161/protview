@@ -16,7 +16,8 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   ├─ ObjectStore + EventLog (core/) ─ runs/<run_id>/ 아래 불변 객체·이벤트·SQLite 색인
   ├─ JobQueue + guardian (jobs/) ─ POSIX 프로세스 그룹으로 작업 프로세스 감독
   │     ├─ OpenMM 작업 프로세스 (프로젝트 .venv 인터프리터)
-  │     └─ ProLIF 작업 프로세스 (.deps/prolif/venv-locked 별도 인터프리터)
+  │     ├─ ProLIF 작업 프로세스 (.deps/prolif/venv-locked 별도 인터프리터)
+  │     └─ fpocket 작업 프로세스 (프로젝트 .venv, .deps/fpocket/env/bin/fpocket 고정 실행 파일)
   └─ EgressGate (egress/) ─ 유일한 외부 HTTP 출구
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
            — 해당 run에서 온라인 모드를 명시적으로 켰을 때만
@@ -41,6 +42,8 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/*_reports.py`, `reports.py` | 증거가 연결된 불변 보고서 생성·검증·렌더링 | core, tools 결과 객체 |
 | `backend/mw/viewer_intents.py`, `saved_scenes.py` | 뷰어 세션·대상 카탈로그·명령 컴파일러, 저장된 보기와 PNG | core, egress |
 | `backend/mw/chemical_*.py` | M11 입력 가져오기, 번들 조립, 결과·보고서 | core, jobs |
+| `backend/mw/pocket_input.py`, `pocket_output.py`, `pocket_bundle.py`, `pocket_reports.py`, `jobs/pocket_worker.py` | M12 단백질 투영·전송 PDB, fpocket 출력 엄격 파싱, capability·호출 키·게시·검증 읽기, 포켓 보고서, fpocket 실행 작업 프로세스 | core, jobs, tools |
+| `frontend/src/components/PocketPanel.tsx` | M12 포켓 패널(메인 화면과 화학 작업 화면 공용) | `src/lib/pockets.ts`, MolstarViewer 브리지 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
@@ -58,7 +61,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 
 ## 비싼 계산의 작업 경로
 
-OpenMM 최소화와 ProLIF 화학 계산은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
+OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
 
 ## 외부 경계
 

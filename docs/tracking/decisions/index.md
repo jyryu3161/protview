@@ -17,3 +17,5 @@
 | [0013](0013-host-allowlist.md) | Host 허용 목록을 백엔드·프런트엔드 두 곳에, 중복 Host는 알려진 한계 | 채택 |
 | [0014](0014-m11-acceptance-record.md) | M11 완료는 새 흐름 문서에 기록, 옛 단계 기록은 pending | 채택 |
 | [0015](0015-scientific-data-egress-allowed.md) | 구조·좌표·서열·리간드의 외부 모델(JEV 등) 전송 허용, 단일 게이트·키 보호 유지 | 채택 (0005 일부 대체) |
+| [0016](0016-m12-acceptance-record.md) | M12 완료는 새 흐름 문서에 기록, `phases/protview-pockets`는 그대로 | 채택 |
+| [0017](0017-fpocket-locked-conda-install.md) | fpocket을 해시 잠금 conda 환경(`.deps/fpocket/env`)으로 격리 설치 | 채택 |

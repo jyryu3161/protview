@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -103,13 +103,24 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 의도 상태: requested, interpreting, planned, applying, applied, partial, no_change, clarification, unsupported, rejected, cancelled, failed, detached. `applied`는 브라우저 확인이 온 뒤에만 표시한다.
 
-## M11 화학 (구현 중, 버전 1)
+## M11 화학 (버전 1)
 
 - `POST /runs/{id}/chemical/imports?kind=receptor|ligand_sdf|receptor_bonds&filename=…`: `application/octet-stream` 본문, 최대 10 MiB. 201로 `{schema: "chemical_raw_input@1", handle, kind, format, sha256, size}`를 돌려준다. 리간드는 V2000 SDF만 받고, V3000은 형식 오류로 거부한다.
 - `GET /chemical/imports/inspect`, `/chemical/imports/atoms`, `POST /chemical/preview`, `GET /chemical/prerequisites`: 가져온 입력 확인, 원자 목록, 제출 전 미리보기와 부족한 조건.
 - 화학 준비와 ProLIF 계산은 위의 작업 경로로 실행한다(`prepare_chemical_structure`, `compute_chemical_interactions`).
 - `GET /chemical/structures/view`, `/chemical/structures/atoms`, `/chemical/graphs`, `/chemical/preparation-manifests`, `/chemical/results`, `/chemical/results/rows`: 결과 읽기.
 - 화학 요청 본문은 최대 512 KiB다.
+
+## M12 포켓 후보
+
+- `GET /runs/{id}/pockets/preflight?structure=<handle>&chains=A,B`: 도구·작업을 실행하지 않는 입력 확인. 사용 가능 여부, 체인 목록, 범주별 제외 개수, 투영 원자·잔기 수, 잔기 이름 대응 예정 목록, 거부 사유(`reject.reason_code`와 식별자), 방법·한도·결정성 한계, capability, run의 원본 출력 보관 잔량, 예산 스냅숏.
+- 계산은 비싼 작업 경로로 한다: `POST /jobs` `{protocol_id: "fpocket_detect_v1", args: {structure, chains}, timeout_s}`. 다른 인자는 거부하고, 이 프로토콜의 `timeout_s` 상한은 120이다(화면은 120을 보낸다). 승인·예산·취소·재시도는 공통 작업 규칙과 같다. `detect_pockets`는 작업 전용 도구라 `/commands`로는 실행되지 않는다.
+- `GET /runs/{id}/pockets?offset&limit`: 이 run의 pocket_set 목록(소스, 소스 종류, 체인, 총 개수, null_result, 작업 ID, 생성 순번, total).
+- `GET /runs/{id}/pockets/result?handle=`: 검증된 요약(방법, 총 개수, 포켓별 rank·기술자 5개·주변 잔기 수·표시 중심). 구·원자 전체는 없다.
+- `GET /runs/{id}/pockets/geometry?handle=&rank=`: 그 포켓의 알파 구 전체(`x_A, y_A, z_A, radius_A`)와 주변 AtomRef·잔기 전체. 없는 rank는 404.
+- 읽기 검증 실패는 422 `method_evidence_invalid`. 읽기는 fpocket을 실행하지 않는다.
+- 보고서: `POST /runs/{id}/method_reports` `{result_handle: <pocket_set>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "pocket_detection"`, `result_schema: "pocket_set@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
+- `/capabilities`의 `methods.pocket_detection.status`: `ready` | `not_installed` | `unreviewed_build` | `handshake_failed` | `unsupported_platform`, 사유 문장과 엔진·build 정보.
 
 ## 과거 단계 실행기 (CLI)
 

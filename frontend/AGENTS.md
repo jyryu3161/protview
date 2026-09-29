@@ -1,8 +1,9 @@
 # frontend/ — Next.js 작업 화면과 Mol* 뷰어
 
 ## 담당 범위
-- 메인 화면 `app/page.tsx`: run·업로드·모델·전처리·리간드·cutoff 선택, 접촉표, 기록, Inspector 보고서, SASA·OpenMM 작업 패널, 저장된 보기·그림, M10 측정·비교, M11 화학 작업 공간.
+- 메인 화면 `app/page.tsx`: run·업로드·모델·전처리·리간드·cutoff 선택, 접촉표, 기록, Inspector 보고서, SASA·OpenMM 작업 패널, 저장된 보기·그림, M10 측정·비교, M11 화학 작업 공간, M12 포켓 패널.
 - `src/components/MolstarViewer.tsx`: Mol* 5.11.0 인스턴스, 직렬화된 native 명령 큐, `captureScene`/`restoreScene`/`captureFigure`, sourceIndex ↔ AtomRef 대응, 적용 확인(ack).
+- `src/components/PocketPanel.tsx`: M12 포켓 패널. 메인 화면(전처리·최소화 구조)과 `ChemicalWorkspace`(화학 구조)에 같은 컴포넌트를 둔다. 순수 판단은 `src/lib/pockets.ts`.
 - `src/components/ViewerAgentPanel.tsx`: 뷰어 세션 소유, 로컬 명령·자연어 요청, 온라인 동의.
 - `src/lib/`: API 클라이언트(`api.ts`)와 순수 로직(이벤트 정규화, 보고서 선택, 보기·비교·화학 상태).
 - `src/design/`: `npm run tokens`(`design/build_tokens.py`)가 만드는 생성물이다. `tokens.css`/`tokens.ts`는 `design/tokens.json`에서, `components.css`는 `design/components.css`에서 복사된다(Google Fonts `@import`는 제거).
@@ -25,6 +26,8 @@
 - 바인딩 6필드가 모두 같은 재발행은 새 사용자 동작이 아니다. 카탈로그 준비나 검증 같은 관찰은 `onSelect`를 호출하거나 복원을 취소하면 안 된다. 실제 클릭, 빈 곳 클릭, 회전은 대기 작업을 취소한다.
 - 최소화된 단백질을 표시할 때는 원래 복합체의 접촉 행을 숨기거나 비활성화하고, 범례에 OpenMM 최소화 구조임을 명시한다. 비교(오버레이) 중에는 단일 소스 저장 보기·PNG·M8 프롬프트를 비활성화하고 이유를 보여 준다.
 - 화학 구조 보기는 M8·M9·M10의 입력으로 쓸 수 없다.
+- 포켓 오버레이는 저장된 알파 구 중심·반지름 그대로 그리고, 구는 선택 대상이 아니다(주변 잔기는 선택 가능). 오버레이 중 M9 저장·PNG와 M8 요청을 비활성화하고 이유를 보여 준다. M10 비교 중에는 포켓 검출·오버레이를 막는다. 최소화 구조의 포켓은 OpenMM 최소화 보기와 같은 상태로 보여 준다. run·소스가 바뀌면 늦은 포켓 응답은 패널과 페이지 두 곳에서 버린다.
+- 체인을 모두 해제한 상태로 포켓 검출을 실행하지 못한다(빈 목록은 서버에서 전체 체인을 뜻하므로).
 - 사용할 수 없는 기능은 숫자 없이 이유를 보여 주고, 구현하지 않은 컨트롤은 누를 수 없게 한다.
 - 요청 중에 run이나 선택이 바뀌면, 늦게 도착한 응답이 새 화면을 덮거나 다운로드를 시작하면 안 된다. 대기·결과·오류 상태는 run과 handle 기준으로 관리한다.
 
@@ -37,6 +40,6 @@
 ## 테스트 지침
 - 순수 로직: `npm --prefix frontend run test:events`.
 - 타입과 빌드: `npm --prefix frontend run typecheck` 다음에 `npm --prefix frontend run build`(동시 실행 금지).
-- 바뀐 컨트롤은 실제 Electron 오프스크린에서 하나씩 실제 입력으로 검증한다(`isOffscreen()===true`, GPU·WebGL, paint, 외부 요청 0건). 공유 뷰어·페이지 코드를 바꿨다면 M8 normal-flow, M9 scenes-flow, M10 comparison-flow 회귀도 돌린다.
+- 바뀐 컨트롤은 실제 Electron 오프스크린에서 하나씩 실제 입력으로 검증한다(`isOffscreen()===true`, GPU·WebGL, paint, 외부 요청 0건). 공유 뷰어·페이지 코드를 바꿨다면 M8 normal-flow, M9 scenes-flow, M10 comparison-flow 회귀도 돌린다. 포켓 흐름은 `test:offscreen:pockets`, 전체 수락은 `scripts/m12_offscreen_acceptance.py`.
 - 반드시 다룰 경우: 빠른 소스 전환(A→B 뒤 B가 최종), 늦은 응답, WebGL 컨텍스트 손실, 읽기 오류 후 재시도, 비활성 상태의 이유 표시, null label·삽입 코드·비첫 모델 잔기 선택.
 - 실패한 실행 결과는 지우지 않고 회귀 증거로 남긴다.

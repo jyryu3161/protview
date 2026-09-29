@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-09-28, 브랜치 `dryforge/m11-finish`(`phase/m11-chemical-interactions`의 `0c8abba`에서 분기). M11 완료, main 병합은 사용자 결정 대기.
+기준: 2026-09-29, 브랜치 `dryforge/m12-pockets`(`phase/m12-pocket-candidates` = main `adb6291`에서 분기). M11은 main에 병합됨(`adb6291`). M12 완료, main 병합은 사용자 결정 대기.
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 
@@ -13,27 +13,28 @@
 | 통합 | M6–M8을 main에 병합, 오프스크린 보고서 캡처 안정화 | `ef6f2c7`, `6894ab4` | 통합 검증 통과 | — |
 | M9 | 저장된 보기(원본·전처리·최소화 구조), PNG + 출처 JSON 내보내기 | `479d961` | 검토 통과 | 오래됨(README) |
 | M10 | 원자 거리(Å), 명시적 CA 쌍 Kabsch 정렬·오버레이, 공유 선택 어댑터 수정 | `4ab0186` | 검토 통과 | 오래됨(README) |
-| M11 | ProLIF 화학 상호작용(준비된 수용체 + V2000 SDF, 새로 만들기·기존 복합체 연결), 작업 수명 주기 보강, Host 허용 목록 | 고정 소스 `4ec584f` (작업 브랜치, main 미병합) | 전체 게이트, 수락 QA H01–H17, M8–M10 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | 현재 기준(`docs/tracking/m11-acceptance.md`) |
+| M11 | ProLIF 화학 상호작용(준비된 수용체 + V2000 SDF, 새로 만들기·기존 복합체 연결), 작업 수명 주기 보강, Host 허용 목록 | 고정 소스 `4ec584f`, main 병합 `adb6291` | 전체 게이트, 수락 QA H01–H17, M8–M10 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | M12 수락 QA에서 일부 모드 회귀 확인 |
+| M12 | fpocket 4.2.3 로컬 포켓 후보(단백질만 투영, 알파 구·주변 잔기·fpocket 기술자 5개), Mol* 알파 구 오버레이(메인·화학 작업 화면), 포켓 보고서, 작업 수명 주기, 잔기 이름 대응 10개 | 고정 소스 `9e4edcb` (작업 브랜치, main 미병합) | 전체 게이트, 수락 QA 31단계, M8–M11 회귀, 코드·증거 독립 검토(Opus 5.5) 통과 | 현재 기준(`docs/tracking/m12-acceptance.md`) |
 
 "오래됨"은 기능이 망가졌다는 뜻이 아니다. 검토 당시 파일 해시와 현재 파일이 달라, `scripts/execute.py --verify`가 그 검토를 현재 증거로 인정하지 않는다는 뜻이다. 현재 기능이 동작하는지는 아래 검사로 확인한다.
 
-## 현재 검사 결과 (고정 소스 `4ec584f`, 2026-09-28)
+## 현재 검사 결과 (고정 소스 `9e4edcb`, 2026-09-29)
 
 | 검사 | 결과 |
 |---|---|
-| `pytest backend/tests -q -rs` | 377개 통과, skip 0 (ProLIF 작업 환경 설치) |
-| `ruff check …`, 실행기·훅 테스트 | 통과, 57개 통과 |
-| `test:events`, `typecheck`, `build` | 86개 통과, 통과, 통과 |
-| M11 수락 QA(`scripts/m11_offscreen_acceptance.py`) | H01–H17 통과, 외부 요청 0건 |
-| M8 normal·M9 scenes·M10 measure/alignment 회귀 | 통과 |
+| `pytest backend/tests -q -rs` | 497개 통과, skip 0 (fpocket·ProLIF 작업 환경 설치) |
+| `ruff check …`, 실행기·훅·fpocket 설치 테스트 | 통과, 85개 통과 |
+| `test:events`, `typecheck`, `build` | 106개 통과, 통과, 통과 |
+| M12 수락 QA(`scripts/m12_offscreen_acceptance.py`) | 31단계 통과, 외부 요청 0건, 남은 프로세스 없음 |
+| M8 normal·M9 OpenMM·scenes·M10 measure/alignment·M11 일부 모드 회귀 | 통과 |
 
-증거: `docs/qa/m11-chemical-20260928/`. 옛 단계 기록 `phases/protview-chemical-interactions/index.json`은 pending으로 둔다(결정 0014).
+증거: `docs/qa/m12-pockets-20260929/`(M12), `docs/qa/m11-chemical-20260928/`(M11). 옛 단계 기록은 M11 index pending(결정 0014), M12 index 없음(결정 0016).
 
 ## 남은 전체 범위 (우선순위 순)
 
-1. **M12 로컬 포켓 후보**: fpocket 4.2.3(conda-forge osx-arm64 빌드 `hb88c64c_2`, 패키지·실행 파일 해시 고정, macOS ≥ 14.5)을 단백질만 대상으로 격리 작업 프로세스에서 실행한다. 포켓 기하, 잔기 구성, fpocket 고유 기술자, Mol* 공동 오버레이, 보고서, 작업 수명 주기를 포함한다. 결과는 결합 부위나 druggability의 증거가 아니다. 설계는 끝났고 구현 전이다.
-2. **M13 결정적 로컬 분석 워크플로**: 미리 정한 분석 목표 템플릿, 계획 미리보기, 계획 승인과 과학 계산 승인을 따로 받기, 단계별 실행·취소·복구, 증거 연결 보고서. 계획은 `source=local_rules`로 표시한다. 자연어 계획과 모델 보조 과학 실행은 별도 투영·동의 설계와 새 호출 할당이 필요하므로 사용할 수 없음으로 둔다. 설계는 끝났고 구현 전이다.
-3. **정리 작업**: ProLIF 작업 프로세스의 Linux용 잠금 파일. `docs/tracking/findings.md`의 M11 후속 항목(중복 Host 한계, 이벤트 로그 재파싱, GO 전 guardian 종료 정리, 사례 대장 형식).
+1. **M13 결정적 로컬 분석 워크플로**: 미리 정한 분석 목표 템플릿, 계획 미리보기, 계획 승인과 과학 계산 승인을 따로 받기, 단계별 실행·취소·복구, 증거 연결 보고서. 계획은 `source=local_rules`로 표시한다. 자연어 계획과 모델 보조 과학 실행은 별도 투영·동의 설계와 새 호출 할당이 필요하므로 사용할 수 없음으로 둔다. 설계는 끝났고 구현 전이다.
+2. **M14–M28**: `docs/tracking/roadmap.md`.
+3. **정리 작업**: ProLIF·fpocket 작업 환경의 Linux용 잠금. `docs/tracking/findings.md`의 후속 항목(중복 Host 한계, 이벤트 로그 재파싱, GO 전 guardian 종료 정리, M12 QA 미검증 영역, 보고서 Markdown 이스케이프).
 
 ## 전체 로드맵
 
