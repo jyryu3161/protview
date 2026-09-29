@@ -9,7 +9,8 @@ import numpy as np
 
 from .core.errors import ToolFailure
 from .core.handles import canonical_json
-from .reports import EvidenceError, _md, _provenance
+from .reports import EvidenceError, _md, _provenance, resume_linked_report
+from .runtime.orchestrator import link_fields
 from .tools.comparison import RANK_ABSOLUTE, RANK_RELATIVE, AtomRefV1, atom_rows
 
 RESULTS = {"atom_distance": ("atom_distance", "atom_distance@1"),
@@ -279,10 +280,15 @@ def _render(result: dict[str, Any], claims: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def build_comparison_report(run: Any, result_handle: str) -> dict[str, Any]:
+def build_comparison_report(run: Any, result_handle: str, *, execution_link: Any = None) -> dict[str, Any]:
     with run._owner():
         run.store.rebuild_from_events()
         run._refresh()
+        existing = resume_linked_report(run, execution_link, event_type="method_report_created",
+                                        source_field="result_handle", source_handle=result_handle,
+                                        saved=saved_comparison_report, builder="comparison")
+        if existing is not None:
+            return existing
         result = _result(run.store, result_handle)
         claims = _claims(result_handle, result)
         events = list(run.events.read())
@@ -307,7 +313,7 @@ def build_comparison_report(run: Any, result_handle: str) -> dict[str, Any]:
                                                             "analysis_type": manifest["analysis_type"],
                                                             "status": "complete"})
         run.events.append("method_report_created", report_handle=saved.handle, markdown_handle=md.handle,
-                          result_handle=result_handle, snapshot_event_seq=seq)
+                          result_handle=result_handle, snapshot_event_seq=seq, **link_fields(execution_link))
         return {"handle": saved.handle, "markdown_handle": md.handle, "manifest": manifest, "markdown": markdown}
 
 

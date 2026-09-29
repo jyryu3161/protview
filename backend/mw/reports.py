@@ -7,6 +7,7 @@ import math
 import re
 import uuid
 from collections import Counter
+from collections.abc import Callable
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Literal
 
@@ -14,6 +15,7 @@ from pydantic import BaseModel, ConfigDict
 
 from .core.handles import canonical_json
 from .core.residue import ResidueRef
+from .runtime.orchestrator import checked_link, link_fields
 from .tools.energetic import protocol_capabilities
 
 
@@ -272,18 +274,53 @@ def _provenance(events: list[dict[str, Any]], handle: str,
             "completed_event_seq": success.get("seq") if success else None}
 
 
-def build_inspection_report(run: Any, interaction_handle: str, *, prepared_handle: str | None = None) -> dict[str, Any]:
+def resume_linked_report(run: Any, execution_link: Any, *, event_type: str, source_field: str,
+                         source_handle: str, saved: Callable[[Any, str], dict[str, Any]],
+                         builder: str) -> dict[str, Any] | None:
+    """Operation idempotency for linked report publication; the caller holds the run owner.
+
+    Returns the report this exact link already published (re-validated, never rewritten), or None
+    after admitting a new publication. Reuse of a link for another source fails closed.
+    """
+    link = checked_link(execution_link)
+    if link is None:
+        return None
+    published = [event for event in run.events.read()
+                 if event["type"] in {"report_created", "method_report_created"} and
+                 event.get("execution_link") == link.record()]
+    if published:
+        if (len(published) != 1 or published[0]["type"] != event_type or
+                published[0].get(source_field) != source_handle):
+            raise EvidenceError("execution_link_report_conflict")
+        return saved(run, published[0]["report_handle"])
+    if link.admit is not None:
+        with run._transition():
+            link.admit({"lane": "report", "builder": builder, "source_handle": source_handle})
+    return None
+
+
+def build_inspection_report(run: Any, interaction_handle: str, *, prepared_handle: str | None = None,
+                            execution_link: Any = None) -> dict[str, Any]:
     """Serialize report creation with run execution; never nests Run.call."""
     try:
         with run._owner():
             run.store.rebuild_from_events()
             run._refresh()
-            return _build_inspection_report(run, interaction_handle, prepared_handle=prepared_handle)
+            existing = resume_linked_report(run, execution_link, event_type="report_created",
+                                            source_field="interaction_handle", source_handle=interaction_handle,
+                                            saved=saved_report, builder="inspection")
+            if existing is not None:
+                if prepared_handle is not None and existing["manifest"]["prepared_handle"] != prepared_handle:
+                    raise EvidenceError("prepared_handle_mismatch")
+                return existing
+            return _build_inspection_report(run, interaction_handle, prepared_handle=prepared_handle,
+                                            execution_link=execution_link)
     except ValueError as exc:
         raise EvidenceError("unresolved_report_source") from exc
 
 
-def _build_inspection_report(run: Any, interaction_handle: str, *, prepared_handle: str | None = None) -> dict[str, Any]:
+def _build_inspection_report(run: Any, interaction_handle: str, *, prepared_handle: str | None = None,
+                             execution_link: Any = None) -> dict[str, Any]:
     """Create immutable Markdown + JSON manifest from one selected successful result."""
     try:
         interaction_meta = run.store.meta(interaction_handle)
@@ -394,7 +431,7 @@ def _build_inspection_report(run: Any, interaction_handle: str, *, prepared_hand
                                      summary={"interaction_handle": interaction_handle, "status": "complete"})
         run.events.append("report_created", report_handle=manifest_obj.handle,
                           markdown_handle=markdown_obj.handle, interaction_handle=interaction_handle,
-                          snapshot_event_seq=seq)
+                          snapshot_event_seq=seq, **link_fields(execution_link))
         return {"handle": manifest_obj.handle, "markdown_handle": markdown_obj.handle, "manifest": report,
                 "markdown": markdown}
     except EvidenceError:

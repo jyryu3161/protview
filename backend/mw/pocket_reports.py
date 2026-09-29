@@ -19,7 +19,8 @@ from .core.handles import canonical_json
 from .pocket_bundle import PocketEvidenceError, capability_snapshot, capability_snapshot_valid, validated_pocket_set
 from .pocket_input import EXCLUDED_CATEGORIES, RESIDUE_FIELDS
 from .pocket_output import DESCRIPTOR_KEYS, DETECTOR_SPECIFIC_NOTE, DISPLAY_CENTER_METHOD
-from .reports import EvidenceError, _md, _ref
+from .reports import EvidenceError, _md, _ref, resume_linked_report
+from .runtime.orchestrator import link_fields
 
 ANALYSIS_TYPE = "pocket_detection"
 RENDER_VERSION = "pocket_markdown@2"
@@ -282,10 +283,15 @@ def render_pocket_report(manifest: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def build_pocket_report(run: Any, result_handle: str) -> dict[str, Any]:
+def build_pocket_report(run: Any, result_handle: str, *, execution_link: Any = None) -> dict[str, Any]:
     with run._owner():
         run.store.rebuild_from_events()
         run._refresh()
+        existing = resume_linked_report(run, execution_link, event_type="method_report_created",
+                                        source_field="result_handle", source_handle=result_handle,
+                                        saved=saved_pocket_report, builder="pocket")
+        if existing is not None:
+            return existing
         manifest = _expected(run, result_handle)
         events = list(run.events.read())
         seq = events[-1]["seq"]
@@ -307,7 +313,7 @@ def build_pocket_report(run: Any, result_handle: str) -> dict[str, Any]:
                                summary={"result_handle": result_handle, "analysis_type": ANALYSIS_TYPE,
                                         "status": "complete"})
         run.events.append("method_report_created", report_handle=report.handle, markdown_handle=md.handle,
-                          result_handle=result_handle, snapshot_event_seq=seq)
+                          result_handle=result_handle, snapshot_event_seq=seq, **link_fields(execution_link))
         return {"handle": report.handle, "markdown_handle": md.handle, "manifest": manifest, "markdown": markdown}
 
 
