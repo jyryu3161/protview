@@ -19,10 +19,13 @@ Interface for the execution driver (M13 T3):
 * ``request_binding(events, request_id)``: the ``analysis_*`` event binding a request UUID.
 
 Step dict: ``{step_id, operation, operation_version, lane, bindings, params, outputs, depends_on}``.
+An explicit input is stored once, in ``inputs``. A step param value ``{"input_ref": name}`` (or a whole
+``params`` object ``{"input_ref": name}`` naming a dict input) refers to that top-level input; use
+``resolved_params(plan, step)`` to expand it. There is no other indirection.
 Bindings map a *tool argument name* to ``{"kind": "existing", handle, expected_kind, expected_schema}``
 or ``{"kind": "step_output", step_id, output_name, expected_kind, expected_schema}``.
 
-* ``run_call``: ``Run.call(operation, {**resolved bindings, **params})``.
+* ``run_call``: ``Run.call(operation, {**resolved bindings, **resolved_params(plan, step)})``.
 * ``durable_job``: ``params["timeout_s"]`` is the submit timeout; the remaining params plus
   resolved bindings are the job args, except ``prolif_prepare_v1`` whose job args are exactly
   ``params["request"]`` (its bindings list the request's handles for same-run verification only).
@@ -32,6 +35,7 @@ or ``{"kind": "step_output", step_id, output_name, expected_kind, expected_schem
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import uuid
@@ -50,7 +54,7 @@ KIND = "analysis_plan"
 PLANNER = "local_rules@1"
 SOURCE = "local_rules"
 PLAN_EVENT = "analysis_plan_created"
-MAX_PLAN_BYTES = 64 * 1024
+MAX_PLAN_BYTES = 1024 * 1024  # user decision 2026-09-29 (was 64 KiB): 1000 CA pairs / full mappings fit
 MAX_PLANS_PER_RUN = 100
 MAX_STEPS = 8
 LIMITS = {"max_steps": MAX_STEPS, "max_physical_attempts": 24, "max_active_wall_s": 1800,
@@ -342,7 +346,8 @@ def capability(methods: dict[str, dict[str, Any]] | None = None) -> dict[str, An
     return {"available": True, "planner": PLANNER, "source": SOURCE, "plan_schema": SCHEMA,
             "templates": _template_availability(methods),
             "natural_language_planning": {"available": False, "reason": NATURAL_LANGUAGE_REASON},
-            "limits": dict(LIMITS), "max_plans_per_run": MAX_PLANS_PER_RUN, "max_plan_bytes": MAX_PLAN_BYTES}
+            "limits": dict(LIMITS), "max_plans_per_run": MAX_PLANS_PER_RUN, "max_plan_bytes": MAX_PLAN_BYTES,
+            "max_executions_per_run": 100, "execution": "one step per explicit Advance; no background loop"}
 
 
 def templates() -> dict[str, Any]:
@@ -380,6 +385,11 @@ def _output(step_id: str, operation: str, name: str) -> dict[str, Any]:
     _, kind, schema = next(item for item in OPERATIONS[operation]["outputs"] if item[0] == name)
     return {"kind": "step_output", "step_id": step_id, "output_name": name, "expected_kind": kind,
             "expected_schema": schema}
+
+
+def _ref(name: str) -> dict[str, str]:
+    """A step param that reads one top-level plan input (inputs are stored once)."""
+    return {"input_ref": name}
 
 
 def _prereq(code: str, **detail: Any) -> dict[str, Any]:
@@ -431,7 +441,7 @@ def _inspect_ligand(run: Any, data: InspectLigandInputs, prereqs: list[dict[str,
               "cutoff_A": float(data.cutoff_A), "types": types, "engine": "geometric"}
     steps: list[tuple[str, dict, dict, list[str]]] = []
     if raw:
-        steps.append(("prepare_structure", {"structure": _existing(meta)}, dict(preparation), []))
+        steps.append(("prepare_structure", {"structure": _existing(meta)}, _ref("preparation"), []))
         prepared = _output("s01", "prepare_structure", "prepared_structure")
         base: list[str] = ["s01"]
     else:
@@ -440,9 +450,10 @@ def _inspect_ligand(run: Any, data: InspectLigandInputs, prereqs: list[dict[str,
     offset = len(steps)
     contacts, sasa = f"s{offset + 1:02d}", f"s{offset + 2:02d}"
     steps.append(("compute_interactions", {"structure": prepared},
-                  {"ligand": ligand, "cutoff_A": float(data.cutoff_A), "types": types, "engine": "geometric"},
+                  {"ligand": _ref("ligand"), "cutoff_A": _ref("cutoff_A"), "types": _ref("types"),
+                   "engine": _ref("engine")},
                   list(base)))
-    steps.append(("compute_interface_sasa", {"structure": prepared}, {"ligand": ligand}, list(base)))
+    steps.append(("compute_interface_sasa", {"structure": prepared}, {"ligand": _ref("ligand")}, list(base)))
     steps.append(("inspection_report", {"interaction_handle": _output(contacts, "compute_interactions",
                                                                        "interaction_set"),
                                         "prepared_handle": prepared},
@@ -469,7 +480,8 @@ def _measure_atoms(run: Any, data: MeasureAtomsInputs, prereqs: list[dict[str, A
         _resolved_atom(meta["handle"], first, catalog)
         _resolved_atom(meta["handle"], second, catalog)
     inputs = {"source": meta["handle"], "source_kind": meta["kind"], "first": first, "second": second}
-    steps = [("measure_distance", {"structure": _existing(meta)}, {"first": first, "second": second}, []),
+    steps = [("measure_distance", {"structure": _existing(meta)}, {"first": _ref("first"), "second": _ref("second")},
+              []),
              ("method_report", {"result_handle": _output("s01", "measure_distance", "atom_distance")},
               {"analysis_type": "atom_distance"}, ["s01"])]
     return inputs, steps
@@ -513,7 +525,7 @@ def _compare(run: Any, data: CompareInputs, prereqs: list[dict[str, Any]]) -> tu
     inputs = {"reference": reference["handle"], "reference_kind": reference["kind"], "moving": moving["handle"],
               "moving_kind": moving["kind"], "pairs": pairs}
     steps = [("align_structures", {"reference": _existing(reference), "moving": _existing(moving)},
-              {"pairs": pairs}, []),
+              {"pairs": _ref("pairs")}, []),
              ("method_report", {"result_handle": _output("s01", "align_structures", "rigid_alignment")},
               {"analysis_type": "rigid_alignment"}, ["s01"])]
     return inputs, steps
@@ -546,9 +558,9 @@ def _chemical(run: Any, data: ChemicalInputs, prereqs: list[dict[str, Any]]) -> 
             bindings["connectivity_sidecar"] = _existing(_meta(run, sidecar, "sidecar_handle"))
     inputs = {"request": request, "mode": request.get("mode") if request else None,
               "categories": list(CHEMICAL_CATEGORIES)}
-    steps = [("prolif_prepare_v1", bindings, {"request": request, "timeout_s": JOB_TIMEOUT_S}, []),
+    steps = [("prolif_prepare_v1", bindings, {"request": _ref("request"), "timeout_s": JOB_TIMEOUT_S}, []),
              ("prolif_detect_v1", {"graph_handle": _output("s01", "prolif_prepare_v1", "chemical_graph")},
-              {"schema": "chemical_detect_request@1", "categories": list(CHEMICAL_CATEGORIES),
+              {"schema": "chemical_detect_request@1", "categories": _ref("categories"),
                "timeout_s": JOB_TIMEOUT_S}, ["s01"]),
              ("method_report", {"result_handle": _output("s02", "prolif_detect_v1", "chemical_interaction_set")},
               {"analysis_type": "chemical_interactions"}, ["s02"])]
@@ -578,8 +590,8 @@ def _find_cavities(run: Any, data: FindCavitiesInputs, prereqs: list[dict[str, A
         elif summary.get("selected_chains") != chains:
             raise _invalid("chain selection does not resolve exactly")
     inputs = {"source": meta["handle"], "source_kind": meta["kind"], "chains": chains}
-    steps = [("fpocket_detect_v1", {"structure": _existing(meta)}, {"chains": chains, "timeout_s": JOB_TIMEOUT_S},
-              []),
+    steps = [("fpocket_detect_v1", {"structure": _existing(meta)},
+              {"chains": _ref("chains"), "timeout_s": JOB_TIMEOUT_S}, []),
              ("method_report", {"result_handle": _output("s01", "fpocket_detect_v1", "pocket_set")},
               {"analysis_type": "pocket_detection"}, ["s01"])]
     return inputs, steps
@@ -601,7 +613,7 @@ def _minimize(run: Any, data: MinimizeInputs, prereqs: list[dict[str, Any]],
     inputs = {"source": meta["handle"], "source_kind": meta["kind"], "selection_policy": data.selection_policy,
               "hydrogen_policy": data.hydrogen_policy}
     steps = [("openmm_protein_minimize", {"structure": _existing(meta)},
-              {"selection_policy": data.selection_policy, "hydrogen_policy": data.hydrogen_policy,
+              {"selection_policy": _ref("selection_policy"), "hydrogen_policy": _ref("hydrogen_policy"),
                "timeout_s": JOB_TIMEOUT_S}, []),
              ("method_report", {"result_handle": _output("s01", "openmm_protein_minimize", "openmm_minimization")},
               {"analysis_type": "openmm_protein_minimize"}, ["s01"])]
@@ -657,7 +669,7 @@ def compile_plan(run: Any, goal: Any, inputs: Any) -> dict[str, Any]:
             "steps": steps, "limits": dict(LIMITS), "unmet_prerequisites": prereqs, "deferred_bindings": deferred}
     validate_plan(plan)
     if len(canonical_json(plan)) > MAX_PLAN_BYTES:
-        raise ToolFailure(FailureClass.resource_exceeded, "analysis plan exceeds 64 KiB",
+        raise ToolFailure(FailureClass.resource_exceeded, "analysis plan exceeds 1 MiB",
                           detail={"reason_code": "plan_too_large"})
     return plan
 
@@ -703,6 +715,7 @@ def validate_plan(plan: Any) -> None:
             raise ValueError("analysis plan outputs differ")
         if type(step["params"]) is not dict or type(step["bindings"]) is not dict:
             raise ValueError("analysis plan params or bindings are not objects")
+        _check_refs(plan, step["params"])
         for binding in step["bindings"].values():
             if type(binding) is not dict:
                 raise ValueError("analysis plan binding shape differs")
@@ -723,6 +736,32 @@ def validate_plan(plan: Any) -> None:
     if type(prereqs) is not list or any(type(item) is not dict or set(item) != {"code", "message", "detail"} or
                                         item["code"] not in PREREQUISITE_MESSAGES for item in prereqs):
         raise ValueError("analysis plan prerequisites differ")
+
+
+def _is_ref(value: Any) -> bool:
+    return type(value) is dict and set(value) == {"input_ref"}
+
+
+def _check_refs(plan: dict[str, Any], params: dict[str, Any]) -> None:
+    inputs = plan["inputs"]
+    if type(inputs) is not dict:
+        raise ValueError("analysis plan inputs are not an object")
+    if _is_ref(params):
+        if type(inputs.get(params["input_ref"])) is not dict:
+            raise ValueError("analysis plan params reference is not an object input")
+        return
+    for value in params.values():
+        if _is_ref(value) and (type(value["input_ref"]) is not str or value["input_ref"] not in inputs):
+            raise ValueError("analysis plan param references an unknown input")
+
+
+def resolved_params(plan: dict[str, Any], step: dict[str, Any]) -> dict[str, Any]:
+    """Step params with ``{"input_ref": name}`` values replaced by the single stored input."""
+    params, inputs = step["params"], plan["inputs"]
+    if _is_ref(params):
+        return copy.deepcopy(inputs[params["input_ref"]])
+    return {name: copy.deepcopy(inputs[value["input_ref"]]) if _is_ref(value) else copy.deepcopy(value)
+            for name, value in params.items()}
 
 
 def canonical_plan_hash(plan: dict[str, Any]) -> str:
