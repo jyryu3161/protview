@@ -14,7 +14,8 @@ import { alignmentMat4, atomPickFailure, catalogSelectionReadback, nativeDeadlin
 import type { AtomDistance } from "@/lib/comparison";
 import { canonicalChemicalElement, chemicalFocusSettleTimeoutMs, settleChemicalFocus,
   waitForChemicalCameraSettle, type ChemicalCameraProbe } from "@/lib/chemical";
-import { OVERLAY_LABEL, readbackMismatch, type PocketOverlayReadback, type PocketOverlayRequest } from "@/lib/pockets";
+import { OVERLAY_LABEL, readbackMismatch, type PocketFocusStatus, type PocketOverlayReadback,
+  type PocketOverlayRequest } from "@/lib/pockets";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -116,7 +117,8 @@ type Instance = { plugin: Plugin; structure: StructureSelector; source: ViewerSo
   chemicalAnnotationReadback: Omit<NonNullable<ViewerQaSnapshot["chemicalAnnotation"]>, "nativeShapeRefs"> | null;
   validatedCatalogs: Map<string, { hash: string; catalog: AtomCatalog }>;
   pocketRepr?: PocketShapeRepr; pocketLiningRef?: string; pocketReadback: PocketOverlayReadback | null;
-  pocketFocus: { key: string; token: number } | null; pocketSessionKey: string; pocketEpoch: number };
+  pocketFocus: { key: string; token: number; status: PocketFocusStatus; target: number[] | null } | null;
+  pocketSessionKey: string; pocketEpoch: number };
 type PocketShapeRepr = import("molstar/lib/mol-repr/representation").Representation.Any;
 
 function nativeMainRepresentationReady(current: Instance): boolean {
@@ -1444,7 +1446,6 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
     current.queue = current.queue.then(() => {
       if (!active()) return;
       return nativeDeadline((async () => {
-        const previousFocusTarget = current.pocketReadback?.focusedTarget ?? null;
         await remove();
         if (!active()) return;
         if (!overlay) { current.pocketFocus = null; publish("none", null); return; }
@@ -1503,7 +1504,7 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
           if (!active()) return;
           const native = liningRepr.cell?.obj?.data.repr;
           if (!native) throw new Error("포켓 주변 잔기 표현을 확인하지 못했습니다.");
-          native.setState({ pickable: false });
+          // Lining residues are ordinary atoms of the source: they stay pickable (only alpha spheres are not).
           const substructure = component.cell?.obj?.data;
           if (!substructure) throw new Error("포켓 주변 잔기 구조를 읽지 못했습니다.");
           for (const unit of substructure.units)
@@ -1511,8 +1512,7 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
               liningResidueSites.push(StructureProperties.atom.sourceIndex(
                 StructureElement.Location.create(substructure, unit, unit.elements[index])));
           liningResidueSites = liningResidueSites.sort((a, b) => a - b);
-          if (liningResidueSites.length !== residueSites.size || liningResidueSites.some(site => !residueSites.has(site)) ||
-              native.renderObjects.some(object => object.state.pickable))
+          if (liningResidueSites.length !== residueSites.size || liningResidueSites.some(site => !residueSites.has(site)))
             throw new Error("Mol* 주변 잔기 site가 서버 AtomRef와 다릅니다.");
         }
         current.plugin.canvas3d?.requestDraw();
@@ -1524,29 +1524,33 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         if (mismatch) throw new Error(mismatch);
         if (observed.pickable || observed.visible !== overlay.showSpheres || Math.abs(observed.opacity - overlay.opacity) > 1e-6)
           throw new Error("Mol* 알파 구 표시 상태가 요청과 다릅니다.");
-        let focusedTarget: number[] | null = current.pocketFocus?.key === overlay.key &&
-          current.pocketFocus.token === overlay.focusToken ? previousFocusTarget : null;
+        // Focus is reported as observed: the native camera target reached the display center, did not within the
+        // frame budget, or a manual camera action interrupted it. A repeated publish for the same token keeps that result.
         if (current.pocketFocus?.key !== overlay.key || current.pocketFocus.token !== overlay.focusToken) {
           const revision = current.manualRevision;
           current.plugin.managers.camera.focusSphere({ center: Vec3.create(...overlay.focus.center),
             radius: overlay.focus.radius }, { durationMs: 0 });
-          current.pocketFocus = { key: overlay.key, token: overlay.focusToken };
-          for (let frame = 0; frame < 60 && active() && current.manualRevision === revision; frame++) {
+          let status: PocketFocusStatus = "not_converged", target: number[] | null = null;
+          for (let frame = 0; frame < 60 && active(); frame++) {
+            if (current.manualRevision !== revision) { status = "interrupted"; break; }
             await settledFrame();
             const camera = nativeCamera(current.plugin);
             if (camera && !current.plugin.canvas3d?.camera.transition.inTransition &&
                 Math.hypot(...[0, 1, 2].map(i => camera.target[i] - overlay.focus.center[i])) <= 1e-3) {
-              focusedTarget = camera.target; break;
+              status = "focused"; target = camera.target; break;
             }
           }
           if (!active()) return;
+          current.pocketFocus = { key: overlay.key, token: overlay.focusToken, status, target };
         }
+        const focus = current.pocketFocus;
         const readback: PocketOverlayReadback = { key: overlay.key, setHandle: overlay.setHandle,
           sourceHandle: current.source.handle, rank: overlay.rank, sphereCount: observed.centers.length,
-          centers: observed.centers, radii: observed.radii, spheresVisible: observed.visible, pickable: false,
+          centers: observed.centers, radii: observed.radii, spheresVisible: observed.visible, pickable: observed.pickable,
           opacity: observed.opacity, liningAtomCount: liningSites.length,
           liningResidueCount: overlay.liningResidues.length, liningVisible: overlay.showLining,
-          liningNativeSourceIndices: liningResidueSites, focusToken: overlay.focusToken, focusedTarget };
+          liningNativeSourceIndices: liningResidueSites, focusToken: overlay.focusToken,
+          focusedTarget: focus.status === "focused" ? focus.target : null, focusStatus: focus.status };
         current.pocketReadback = readback;
         publish("applied", readback);
       })(), 15000, () => { if (current.pocketEpoch === epoch) current.pocketEpoch += 1; });
@@ -1661,14 +1665,15 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
       data-pocket-spheres={pocketObserved.readback ? JSON.stringify(pocketObserved.readback.centers.map((center, i) =>
         [...center, pocketObserved.readback!.radii[i]])) : undefined}
       data-pocket-spheres-visible={pocketObserved.readback ? String(pocketObserved.readback.spheresVisible) : undefined}
-      data-pocket-pickable={pocketObserved.readback ? "false" : undefined}
+      data-pocket-pickable={pocketObserved.readback ? String(pocketObserved.readback.pickable) : undefined}
       data-pocket-opacity={pocketObserved.readback?.opacity}
       data-pocket-lining-atom-count={pocketObserved.readback?.liningAtomCount}
       data-pocket-lining-residue-count={pocketObserved.readback?.liningResidueCount}
       data-pocket-lining-visible={pocketObserved.readback ? String(pocketObserved.readback.liningVisible) : undefined}
       data-pocket-lining-site-count={pocketObserved.readback?.liningNativeSourceIndices.length}
       data-pocket-focus-token={pocketObserved.readback?.focusToken}
-      data-pocket-focused={pocketObserved.readback ? String(!!pocketObserved.readback.focusedTarget) : undefined}
+      data-pocket-focused={pocketObserved.readback ? String(pocketObserved.readback.focusStatus === "focused") : undefined}
+      data-pocket-focus-status={pocketObserved.readback?.focusStatus}
       data-pocket-error={pocketObserved.error || undefined}>
       <div ref={host} className="mw-molstar-host" />
       {state === "empty" && <div className={`mw-molstar-message${emptyIsError ? " mw-molstar-error" : ""}`} role={emptyIsError ? "alert" : "status"}>{emptyMessage ?? "로컬 PDB 또는 mmCIF 파일을 업로드하세요."}</div>}

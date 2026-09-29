@@ -116,7 +116,12 @@ export default function WorkspacePage() {
   const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
   const [pocketOverlayError, setPocketOverlayError] = useState<string | null>(null);
   const [pocketNotice, setPocketNotice] = useState<string | null>(null);
-  const [pocketView, setPocketView] = useState<{ handle: string; kind: Exclude<PocketSourceKind, "chemical_structure"> } | null>(null);
+  // Only a prepared pocket source is shown through pocketView; a minimized source goes through openmmViewHandle so every
+  // minimized-display rule (contact rows hidden, focus disabled, legend) applies unchanged.
+  const [pocketView, setPocketView] = useState<{ handle: string; kind: "prepared_structure" } | null>(null);
+  // The view that was on screen before a pocket selection switched the displayed source ("원래 소스로 돌아가기").
+  const pocketReturnRef = useRef<{ shown: string; openmmViewHandle: string | null;
+    pocketView: { handle: string; kind: "prepared_structure" } | null } | null>(null);
   const pocketKeyRef = useRef<string | null>(null);
   pocketKeyRef.current = pocketState?.request.key ?? null;
   // Host-side stale guard: the run and pocket sources the screen currently shows (read by late callbacks).
@@ -263,7 +268,7 @@ export default function WorkspacePage() {
     pocketHostRef.current = { runId: summary.run_id, sourceHandles: [] };
     setRun(summary); setEvents(log); setBudget(limits); setHandles(latest); setSavedReports(reports); setReportState(null); setSasaState(null); setMethodReportState(null);
     setChemicalActive(false); setChemicalSceneToRestore(null);
-    setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); setPocketNotice(null); setPocketView(null);
+    setPocketState(null); setPocketReadback(null); setPocketOverlayError(null); setPocketNotice(null); setPocketView(null); pocketReturnRef.current = null;
     sceneEpoch.current += 1; setSceneOverride(null); setRestorePendingToken(null); setViewerSession(null); setSceneBusy(""); setSceneError(""); setSceneStatus("");
     setSavedScenes([]); setSavedFigures([]); setSelectedSceneHandle(""); setSelectedFigureHandle("");
     setOpenmmJobs(jobs.filter(job => job.protocol_id === "openmm_protein_minimize")); setOpenmmJobId(jobs.find(job => job.protocol_id === "openmm_protein_minimize")?.job_id ?? null); setOpenmmResult(null); setOpenmmReport(null); setOpenmmPreflight(null); setOpenmmPlan(null); setOpenmmViewHandle(null); setPocketView(null);
@@ -389,7 +394,7 @@ export default function WorkspacePage() {
     pipelineHandle: (handles.interactions ?? pipelineHandle)?.handle ?? null,
     inspectionRevision, sceneToken: sceneOverride?.token ?? null,
     openmmHandle: openmmViewHandle, distanceHandle: distanceSourceHandle || null,
-    comparisonHandle: comparisonContext?.handle ?? null });
+    comparisonHandle: comparisonContext?.handle ?? null, pocketHandle: pocketView?.handle ?? null });
   const comparisonScope = JSON.stringify([runId, comparisonReference, comparisonMoving,
     correspondence.map(pair => [pair.reference.site_index, pair.moving.site_index]),
     comparisonViewKey, measurementSelection?.handle ?? null]);
@@ -542,6 +547,17 @@ export default function WorkspacePage() {
       result: openmmOutputRef.current, action: openmmActionRef.current });
   }
   useEffect(() => { setOpenmmBusy(false); }, [runId, openmmInput, openmmJobId, openmmOutput]);
+  // A completed OpenMM job publishes its minimized structure through job events; re-read the log so the new
+  // openmm_minimized_structure becomes an ordinary source option (M12 pocket detection) without a run reload.
+  useEffect(() => {
+    if (!runId || !openmmOutput) return;
+    const ticket = epoch.current;
+    const controller = new AbortController();
+    api.allEvents(runId, controller.signal).then(log => {
+      if (ticket === epoch.current) setEvents(previous => log.length >= previous.length ? log : previous);
+    }).catch(() => undefined);
+    return () => controller.abort();
+  }, [runId, openmmOutput]);
   useEffect(() => {
     const change = openmmContextChange(openmmContextRef.current, { runId, input: openmmInput, jobId: openmmJobId });
     if (change.resetPolicy) {
@@ -1749,7 +1765,7 @@ export default function WorkspacePage() {
         {openmmError && <p role="alert" className="mw-table-error">{openmmError}</p>}
       </InspectorSection>}
       {run && <InspectorSection><PocketPanel key={run.run_id} panel="main" run={run}
-        capability={capabilities?.methods?.pocket_detection} sourceOptions={pocketSourceOptions}
+        capability={capabilities ? capabilities.methods?.pocket_detection ?? null : undefined} sourceOptions={pocketSourceOptions}
         displayedSourceHandle={displaySource?.handle ?? null} viewerReady={pocketViewerReady}
         blockedReason={pocketGates.pocket} overlay={pocketState?.request ?? null}
         overlayApplied={pocketReadback} overlayError={pocketOverlayError} overlayNotice={pocketNotice}
@@ -1757,10 +1773,23 @@ export default function WorkspacePage() {
         onShowSource={(requestRunId, handle, kind) => {
           if (kind === "chemical_structure" || !pocketRequestAccepted({ runId: requestRunId, sourceHandle: handle },
             pocketHostRef.current)) return;
-          exitSceneOverride(); setOpenmmViewHandle(null); setDistanceSourceHandle("");
-          setPocketView({ handle, kind });
+          const shownNow = pocketView?.handle ?? openmmViewHandle;
+          if (!pocketReturnRef.current || pocketReturnRef.current.shown !== shownNow)
+            pocketReturnRef.current = { shown: handle, openmmViewHandle, pocketView };
+          else pocketReturnRef.current = { ...pocketReturnRef.current, shown: handle };
+          exitSceneOverride(); setDistanceSourceHandle("");
+          if (kind === "openmm_minimized_structure") { setPocketView(null); setOpenmmViewHandle(handle); }
+          else { setOpenmmViewHandle(null); setPocketView({ handle, kind }); }
         }}
-        onReturnToSource={() => { requestPocketOverlay(null); setPocketView(null); }} /></InspectorSection>}
+        onReturnToSource={() => {
+          requestPocketOverlay(null);
+          const prior = pocketReturnRef.current;
+          pocketReturnRef.current = null;
+          // Restore the view before the pocket selection switched the source, only while that switch is still on screen.
+          if (prior && prior.shown === (pocketView?.handle ?? openmmViewHandle)) {
+            setPocketView(prior.pocketView); setOpenmmViewHandle(prior.openmmViewHandle);
+          }
+        }} /></InspectorSection>}
       {budget && <InspectorSection><span className="mw-eyebrow">실제 예산</span><BudgetMeter budget={budget} /></InspectorSection>}
       {capabilities?.methods?.interface_sasa && <InspectorSection><span className="mw-eyebrow">지원하는 로컬 방법</span>
         <p className="mw-capability"><b>단백질–리간드 SASA</b><br />{capabilities.methods.interface_sasa.available

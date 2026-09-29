@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type RunSummary, type SavedReportRef } from "@/lib/api";
 import { Button } from "./primitives";
-import { cancelRerunNotice, capabilityStatusText, chainArgument, clampOpacity, clampTopK, DEFAULT_OPACITY, DEFAULT_TOP_K,
-  DESCRIPTOR_KEYS, descriptorText, DRUGGABILITY_WARNING, geometryError, LIMITATION_NOTE, MAX_TOP_K, NONDETERMINISM_NOTE,
+import { cancelRerunNotice, capabilityStatusText, chainArgument, chainSelectionError, clampOpacity, clampTopK,
+  DEFAULT_OPACITY, DEFAULT_TOP_K, DESCRIPTOR_KEYS, descriptorText, DRUGGABILITY_WARNING, focusStatusText, geometryError,
+  LIMITATION_NOTE, MAX_TOP_K, NONDETERMINISM_NOTE,
   OVERLAY_LABEL, overlayRequest, pocketActionCurrent, pocketDisplay, pocketUiState, RELATIVE_SCORE_NOTE, reopenDecision,
   type PocketActionStamp, type PocketCapability, type PocketJob, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketPanelKind, type PocketPreflight, type PocketReportArtifact, type PocketSetRow, type PocketSourceKind,
@@ -24,6 +25,7 @@ const mib = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
 export interface PocketPanelProps {
   panel: PocketPanelKind;
   run: RunSummary;
+  /** undefined while capabilities are being read; null when the backend reports no pocket capability. */
   capability: PocketCapability | null | undefined;
   sourceOptions: { handle: string; kind: PocketSourceKind }[];
   displayedSourceHandle: string | null;
@@ -45,6 +47,8 @@ export function PocketPanel(p: PocketPanelProps) {
   const [sourceHandle, setSourceHandle] = useState("");
   const [chainSelection, setChainSelection] = useState<string[] | null>(null);
   const [defaultChains, setDefaultChains] = useState<{ source: string; chains: string[] } | null>(null);
+  // The chain list of the source stays visible while a preflight is pending, failed or not sent (no chain checked).
+  const [knownChains, setKnownChains] = useState<{ source: string; chains: PocketPreflight["available_chains"] } | null>(null);
   const [preflight, setPreflight] = useState<{ key: string; value: PocketPreflight } | null>(null);
   const [preflightError, setPreflightError] = useState<{ key: string; message: string } | null>(null);
   const [preflightRetry, setPreflightRetry] = useState(0);
@@ -54,6 +58,7 @@ export function PocketPanel(p: PocketPanelProps) {
   const [jobError, setJobError] = useState("");
   const [notice, setNotice] = useState("");
   const [sets, setSets] = useState<PocketSetRow[]>([]);
+  const [setsTotal, setSetsTotal] = useState<number | null>(null);
   const [setsError, setSetsError] = useState("");
   const [setsRetry, setSetsRetry] = useState(0);
   const [setHandle, setSetHandle] = useState("");
@@ -88,13 +93,15 @@ export function PocketPanel(p: PocketPanelProps) {
   const current = (captured: PocketActionStamp) =>
     pocketActionCurrent(captured, { ...live.current, action: action.current }, mounted.current);
 
-  const capability = p.capability ?? null;
+  const capability = p.capability;
   const sourceKind = p.sourceOptions.find(option => option.handle === sourceHandle)?.kind ?? null;
-  const chainsForRequest = chainSelection === null ? [] : chainArgument(chainSelection,
+  const chainError = chainSelectionError(chainSelection);
+  const chainsForRequest = chainSelection === null || chainError ? [] : chainArgument(chainSelection,
     defaultChains?.source === sourceHandle ? defaultChains.chains : []);
-  const preflightKey = JSON.stringify([runId, sourceHandle, chainsForRequest, preflightRetry]);
-  const activePreflight = preflight?.key === preflightKey ? preflight.value : null;
-  const activePreflightError = preflightError?.key === preflightKey ? preflightError.message : "";
+  // No chain checked: nothing is sent (an empty list would mean "every chain" to the server).
+  const preflightKey = chainError ? null : JSON.stringify([runId, sourceHandle, chainsForRequest, preflightRetry]);
+  const activePreflight = preflightKey !== null && preflight?.key === preflightKey ? preflight.value : null;
+  const activePreflightError = preflightKey !== null && preflightError?.key === preflightKey ? preflightError.message : "";
   const uiState = pocketUiState({ capability, jobStatus: summary ? null : job?.status ?? null, summaryPending,
     readError: summaryError || null, summary });
   const display = summary ? pocketDisplay(summary.pockets, summary.total_count, topK) : null;
@@ -111,7 +118,7 @@ export function PocketPanel(p: PocketPanelProps) {
   }, [p.sourceOptions, p.displayedSourceHandle, sourceHandle]);
 
   useEffect(() => {
-    if (!sourceHandle) return;
+    if (!sourceHandle || preflightKey === null) return;
     let active = true;
     const controller = new AbortController();
     const key = preflightKey, source = sourceHandle, defaultRequest = chainSelection === null;
@@ -119,6 +126,7 @@ export function PocketPanel(p: PocketPanelProps) {
       .then(value => {
         if (!active || value.source_handle !== source) return;
         setPreflight({ key, value }); setPreflightError(null);
+        if (value.available_chains?.length) setKnownChains({ source, chains: value.available_chains });
         if (defaultRequest && value.ready) setDefaultChains({ source, chains: value.selected_chains });
       }).catch(e => { if (active) setPreflightError({ key, message: errorText(e) }); });
     return () => { active = false; controller.abort(); };
@@ -131,13 +139,27 @@ export function PocketPanel(p: PocketPanelProps) {
     let active = true;
     const controller = new AbortController();
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]);
-    Promise.all([api.pocketSets(runId, signal), api.reports(runId, signal)]).then(([list, saved]) => {
+    Promise.all([api.allPocketSets(runId, signal), api.reports(runId, signal)]).then(([list, saved]) => {
       if (!active) return;
-      if (list.schema !== "pocket_set_list@1") throw new Error("포켓 결과 목록 형식이 다릅니다.");
-      setSets(list.rows); setReports(saved); setSetsError("");
+      if (list.schema !== "pocket_set_list@1" || list.rows.length !== list.total) throw new Error("포켓 결과 목록 형식이 다릅니다.");
+      setSets(list.rows); setSetsTotal(list.total); setReports(saved); setSetsError("");
     }).catch(e => { if (active) setSetsError(`포켓 기록 읽기 실패: ${errorText(e)}`); });
     return () => { active = false; controller.abort(); };
   }, [runId, setsRetry]);
+
+  // After a remount or reload the durable job list tells whether a detection is still queued or running.
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    api.pocketJobs(runId, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)])).then(jobs => {
+      if (!active || !Array.isArray(jobs)) return;
+      const handles = new Set(latest.current.sourceOptions.map(option => option.handle));
+      const running = jobs.filter(item => item.run_id === runId && item.protocol_id === "fpocket_detect_v1" &&
+        ACTIVE_JOB.has(item.status) && handles.has(item.input_handles?.[0] ?? "")).at(-1);
+      if (running) setJob(previous => previous ?? running);
+    }).catch(() => undefined);
+    return () => { active = false; controller.abort(); };
+  }, [runId]);
 
   useEffect(() => {
     if (!job || !ACTIVE_JOB.has(job.status)) return;
@@ -202,7 +224,7 @@ export function PocketPanel(p: PocketPanelProps) {
   }
 
   async function detect() {
-    if (!activePreflight?.ready || !capability?.available || p.blockedReason) return;
+    if (chainError || !activePreflight?.ready || !capability?.available || p.blockedReason) return;
     const captured = stamp();
     const source = sourceHandle, chains = chainsForRequest;
     setJobBusy(true); setJobError(""); setNotice(""); setApprovalNeeded(false);
@@ -292,15 +314,18 @@ export function PocketPanel(p: PocketPanelProps) {
     finally { setReportBusy(false); }
   }
 
-  const detectDisabledReason = p.blockedReason ?? (!capability ? "fpocket 능력 상태를 확인하는 중입니다."
+  const detectDisabledReason = p.blockedReason ?? (capability === undefined ? "fpocket 능력 상태를 확인하는 중입니다."
+    : capability === null ? "사용할 수 없음: 백엔드가 fpocket 능력 상태를 알려 주지 않았습니다."
     : !capability.available ? `사용할 수 없음: ${capability.reason ?? capabilityStatusText(capability.status)}`
       : !sourceHandle ? "검출할 소스가 없습니다. 먼저 구조를 전처리하세요."
+        : chainError ? chainError
         : !activePreflight ? "입력 확인 중입니다."
           : !activePreflight.ready ? `입력을 사용할 수 없습니다: ${activePreflight.reject?.message ?? capabilityStatusText(activePreflight.status)}`
             : jobBusy ? "작업 요청을 처리하는 중입니다."
               : job && ACTIVE_JOB.has(job.status) ? "진행 중인 포켓 작업이 있습니다." : null);
-  const availableChains = activePreflight?.available_chains ?? [];
-  const checkedChains = chainSelection ?? activePreflight?.selected_chains ?? [];
+  const availableChains = activePreflight?.available_chains ?? (knownChains?.source === sourceHandle ? knownChains.chains : []);
+  const defaultSelected = activePreflight?.selected_chains ?? (defaultChains?.source === sourceHandle ? defaultChains.chains : []);
+  const checkedChains = chainSelection ?? defaultSelected;
 
   return <section className="mw-pocket" aria-label={OVERLAY_LABEL} data-pocket-panel={p.panel} data-pocket-ui-state={uiState}>
     <div className="mw-pocket-head"><strong>{OVERLAY_LABEL}</strong>
@@ -324,10 +349,11 @@ export function PocketPanel(p: PocketPanelProps) {
           <input type="checkbox" aria-label={`체인 ${chain}`}
           checked={checkedChains.includes(chain)} disabled={!!p.blockedReason || jobBusy}
           onChange={e => setChainSelection(previous => {
-            const base = previous ?? activePreflight?.selected_chains ?? [];
+            const base = previous ?? defaultSelected;
             return e.target.checked ? [...new Set([...base, chain])].sort() : base.filter(item => item !== chain);
           })} /> 체인 {chain} <small className="mw-muted">{has_protein ? `단백질 잔기 ${protein_residues}` : "단백질 없음"}</small></label>)}
         {chainSelection !== null && <Button size="sm" onClick={() => setChainSelection(null)}>기본 체인으로</Button>}
+        {chainError && <p role="alert" className="mw-table-error" data-pocket-chain-error>{chainError} 체인을 모두 해제하면 검출을 실행하지 않습니다(전체 체인으로 바꾸지 않음).</p>}
       </fieldset>}
       {activePreflightError && <div role="alert" className="mw-table-error"><p>입력 확인 실패: {activePreflightError}</p>
         <Button size="sm" onClick={() => setPreflightRetry(value => value + 1)}>입력 다시 확인</Button></div>}
@@ -337,8 +363,8 @@ export function PocketPanel(p: PocketPanelProps) {
             입력 거부 ({activePreflight.reject?.reason_code ?? activePreflight.status}): {activePreflight.reject?.message ?? capabilityStatusText(activePreflight.status)}</p>}
         {activePreflight.excluded_counts && <p className="mw-muted">제외 원자: {Object.entries(activePreflight.excluded_counts)
           .map(([category, count]) => `${EXCLUDED_LABELS[category] ?? category} ${count}`).join(" · ")}</p>}
-        {activePreflight.resname_mapping.length > 0 && <p className="mw-muted">히스티딘 이름 대응 {activePreflight.resname_mapping.length}개
-          ({[...new Set(activePreflight.resname_mapping.map(item => item.original_resname))].join(", ")} → HIS, 결과 식별자는 원래 이름 유지)</p>}
+        {activePreflight.resname_mapping.length > 0 && <p className="mw-muted" data-pocket-resname-mapping>표준 이름으로 바꿔 보낸 잔기 {activePreflight.resname_mapping.length}개
+          ({[...new Set(activePreflight.resname_mapping.map(item => `${item.original_resname} → ${item.transport_resname}`))].join(", ")}; 결과 식별자는 원래 이름 유지)</p>}
         <p className="mw-muted">한도: 제한 시간 {activePreflight.timeout_s}s · 중원자 {activePreflight.limits.heavy_atoms} · 잔기 {activePreflight.limits.residues}
           · 원본 출력 보관 잔량 {mib(activePreflight.retention.remaining_bytes)} / {mib(activePreflight.retention.limit_bytes)}
           {activePreflight.budget?.expensive_calls && ` · 비싼 계산 ${activePreflight.budget.expensive_calls.used}/${activePreflight.budget.expensive_calls.limit}`}</p>
@@ -415,8 +441,9 @@ export function PocketPanel(p: PocketPanelProps) {
         <Button size="sm" disabled={!overlayOn} onClick={() => { setSelectedRank(null); p.onOverlay(null); }}>오버레이 지우기</Button>
         <Button size="sm" disabled={!overlayOn} onClick={() => { setSelectedRank(null); p.onReturnToSource(); }}>원래 소스로 돌아가기</Button>
       </div>
-      {p.overlay && <p role="status" className="mw-muted" data-pocket-overlay-status={applied ? "applied" : p.overlayError ? "error" : "pending"}>
-        {applied ? `${OVERLAY_LABEL} rank ${applied.rank} 표시 확인 · 알파 구 ${applied.sphereCount}개 · 주변 원자 ${applied.liningAtomCount}개 (Mol* 읽기 확인, 선택 불가)`
+      {p.overlay && <p role="status" className="mw-muted" data-pocket-overlay-status={applied ? "applied" : p.overlayError ? "error" : "pending"}
+        data-pocket-focus-status={applied?.focusStatus}>
+        {applied ? `${OVERLAY_LABEL} rank ${applied.rank} 표시 확인 · 알파 구 ${applied.sphereCount}개 · 주변 원자 ${applied.liningAtomCount}개 (Mol* 읽기 확인, 알파 구 선택 불가) · ${focusStatusText(applied.focusStatus)}`
           : p.overlayError ? `오버레이 표시 실패: ${p.overlayError}`
             : p.overlay.sourceHandle !== p.displayedSourceHandle || !p.viewerReady ? "포켓 소스를 표시하는 중…" : "Mol*에 오버레이를 적용하는 중…"}</p>}
       {p.overlayNotice && <p role="status" className="mw-pocket-notice" data-pocket-overlay-notice>{p.overlayNotice}</p>}
@@ -433,7 +460,7 @@ export function PocketPanel(p: PocketPanelProps) {
     </div>}
 
     <details className="mw-pocket-group" aria-label="포켓 기록">
-      <summary>기록에서 다시 열기 ({sets.length})</summary>
+      <summary>기록에서 다시 열기 ({setsTotal ?? sets.length})</summary>
       {setsError && <p role="alert" className="mw-table-error">{setsError}</p>}
       <Button size="sm" onClick={refreshSets}>포켓 기록 다시 읽기</Button>
       {sets.map(row => { const decision = reopenDecision(p.panel, row.source_kind);

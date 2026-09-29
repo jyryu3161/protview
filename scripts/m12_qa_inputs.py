@@ -5,9 +5,10 @@ Every file is SYNTHETIC (idealized alanine-like heavy-atom offsets, the same geo
 backend/tests/test_pockets.py); none is an observed structure and none carries a scientific result.
 They exist only so the offscreen QA can show a pocket-detection input rejection before any job:
 
-- ``m12-synthetic-modified-residue.pdb``: three ALA residues plus one ``CYX`` residue written as ATOM
-  (a modified amino-acid name outside the 20 standard residues and the six histidine aliases);
-  expected preflight rejection ``modified_residue_unsupported``.
+- ``m12-synthetic-modified-residue.pdb``: three ALA residues plus one selenomethionine ``MSE`` residue
+  written as HETATM with its SE atom (a modified amino acid that is not one of the standard residues nor one
+  of the protonation/disulfide aliases the projection maps to a standard name); expected preflight rejection
+  ``modified_residue_unsupported``.
 - ``m12-synthetic-degenerate-collinear.pdb``: six GLY residues holding only a CA atom on one line
   (coordinate rank 1); expected preflight rejection ``degenerate_geometry``.
 
@@ -27,9 +28,12 @@ from pathlib import Path
 
 ALA = [("N", "N", (0.0, 0.0, 0.0)), ("CA", "C", (1.458, 0.0, 0.0)), ("C", "C", (2.009, 1.42, 0.0)),
        ("O", "O", (1.251, 2.39, 0.0)), ("CB", "C", (1.988, -0.773, -1.199))]
+# Idealized MSE side chain continuing from CB (synthetic offsets; not an observed conformation).
+MSE_SIDE = [("CG", "C", (3.505, -0.773, -1.199)), ("SE", "SE", (4.305, -1.105, -2.953)),
+            ("CE", "C", (6.187, -1.105, -2.553))]
 LABEL = "labeled synthetic M12 invalid-input control (idealized geometry; not an observed structure)"
 PINNED = {
-    "m12-synthetic-modified-residue.pdb": "f742043fb46deb39a41ca5d0d3da1fee5d518fb7c8f706ab7518d26cb685e006",
+    "m12-synthetic-modified-residue.pdb": "c3a91360c70438428335b292b89ae3d02dbe510172ea6c10add7118999185874",
     "m12-synthetic-degenerate-collinear.pdb": "a25a960c543218056279e9da1cc00451a9706b9134d056ec225109643ed57f91",
 }
 
@@ -44,8 +48,9 @@ def _line(serial: int, name: str, resname: str, chain: str, resseq: int, xyz, el
 def _pdb(residues: list[tuple[str, int, list[tuple[str, str, tuple[float, float, float]]]]]) -> bytes:
     lines, serial = [], 1
     for resname, seq, atoms in residues:
+        record = "HETATM" if resname == "MSE" else "ATOM"
         for name, element, xyz in atoms:
-            lines.append(_line(serial, name, resname, "A", seq, xyz, element))
+            lines.append(_line(serial, name, resname, "A", seq, xyz, element, record))
             serial += 1
     return ("\n".join(lines) + "\nEND\n").encode()
 
@@ -56,12 +61,15 @@ def _ala(seq: int, offset: tuple[float, float, float], resname: str = "ALA"):
 
 def build() -> dict[str, tuple[bytes, str, str]]:
     offsets = [(4.0 * i, 0.3 * i, 0.1 * i * i) for i in range(4)]
-    modified = _pdb([_ala(i + 1, offsets[i]) for i in range(3)] + [_ala(4, offsets[3], "CYX")])
+    resname, seq, atoms = _ala(4, offsets[3], "MSE")
+    side = [(n, e, tuple(a + b for a, b in zip(xyz, offsets[3]))) for n, e, xyz in MSE_SIDE]
+    modified = _pdb([_ala(i + 1, offsets[i]) for i in range(3)] + [(resname, seq, atoms + side)])
     collinear = _pdb([("GLY", i, [("CA", "C", (3.8 * i, 0.0, 0.0))]) for i in range(1, 7)])
     return {
         "m12-synthetic-modified-residue.pdb": (
             modified, "modified_residue_unsupported",
-            "three ALA plus one CYX (ATOM) residue in chain A; CYX is not a supported standard/histidine name"),
+            ("three ALA plus one MSE (HETATM, with SE) residue in chain A; MSE is a modified amino acid that the "
+             "projection neither accepts nor maps to a standard name")),
         "m12-synthetic-degenerate-collinear.pdb": (
             collinear, "degenerate_geometry", "six collinear GLY CA atoms (coordinate rank 1)"),
     }

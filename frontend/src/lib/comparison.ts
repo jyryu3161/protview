@@ -75,13 +75,15 @@ export function comparisonViewIntentKey(intent: {
   stepNumber: number | null; latestHandle: string | null; pipelineHandle: string | null;
   inspectionRevision: number; sceneToken: number | null; openmmHandle: string | null;
   distanceHandle: string | null; comparisonHandle: string | null;
+  /** M12: a pocket result's source shown in the ordinary viewer is a view change too. */
+  pocketHandle?: string | null;
 }): string {
   return JSON.stringify([intent.runId, intent.view,
     intent.view === "step" ? intent.stepNumber : null,
     intent.view === "latest_result" ? intent.latestHandle : null,
     intent.view === "latest_pipeline" ? intent.pipelineHandle : null,
     intent.inspectionRevision, intent.sceneToken, intent.openmmHandle,
-    intent.distanceHandle, intent.comparisonHandle]);
+    intent.distanceHandle, intent.comparisonHandle, intent.pocketHandle ?? null]);
 }
 
 /** A delayed view-change effect must not revoke work admitted under that view. */

@@ -256,8 +256,20 @@ export const api = {
   pocketPreflight: (id: string, structure: string, chains: string[], signal?: AbortSignal) =>
     request<PocketPreflight>(runPath(id, `/pockets/preflight?structure=${encodeURIComponent(structure)}${
       chains.map(chain => `&chains=${encodeURIComponent(chain)}`).join("")}`), { signal }),
-  pocketSets: (id: string, signal?: AbortSignal) =>
-    request<PocketSetList>(runPath(id, "/pockets?offset=0&limit=100"), { signal }),
+  pocketSets: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<PocketSetList>(runPath(id, `/pockets?offset=${offset}&limit=${limit}`), { signal }),
+  /** Every stored pocket_set of the run, read page by page (the route returns at most 100 rows per page). */
+  async allPocketSets(id: string, signal?: AbortSignal): Promise<PocketSetList> {
+    const first = await api.pocketSets(id, 0, 100, signal);
+    const rows = [...first.rows];
+    while (rows.length < first.total) {
+      const page = await api.pocketSets(id, rows.length, 100, signal);
+      if (page.schema !== first.schema || page.total !== first.total || !page.rows.length)
+        throw new Error("포켓 결과 목록이 읽는 동안 바뀌었습니다. 다시 읽으세요.");
+      rows.push(...page.rows);
+    }
+    return { ...first, offset: 0, limit: rows.length, rows };
+  },
   pocketResult: (id: string, handle: string, signal?: AbortSignal) =>
     request<PocketSummary>(runPath(id, `/pockets/result?${handleParam(handle)}`), { signal }),
   pocketGeometry: (id: string, handle: string, rank: number, signal?: AbortSignal) =>

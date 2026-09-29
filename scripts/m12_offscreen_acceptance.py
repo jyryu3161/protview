@@ -8,6 +8,13 @@ performs the events-only replay (only events.jsonl copied, original inputs withh
 shows the not_installed and unreviewed_build capability states, and assembles case-ledger.json.
 Every step writes its own ledger-row.json; failures are kept, never retried away or overwritten.
 
+The ledger verdict is keyed by step name: every step in ALL_STEPS must have a passing latest attempt (a missing
+step fails), every row must carry a measured non-loopback request count of zero, and no worker process or port
+may be left behind. ``--only`` runs are marked "partial_not_acceptance" (case-ledger-partial.json) and never
+produce an acceptance verdict. Child processes get an allowlisted environment (no OPENROUTER_* or other secrets).
+``--export-evidence <dir>`` writes a copy of the text evidence with absolute paths replaced by ``<repo>`` (and
+the home directory by ``<home>``) plus SHA256SUMS, for committing under docs/qa/.
+
 Labeled runtime layouts (under the QA root, never used by the product) are byte-identical copies of
 backend/mw and config/: ``layout-engine-missing`` has no .deps (fpocket not installed) and
 ``layout-engine-tampered`` holds the real install record next to a labeled placeholder executable whose
@@ -21,7 +28,7 @@ builds, installs, imports mw or contacts a non-loopback host. The runs root must
 Usage:
   .venv/bin/python scripts/m12_offscreen_acceptance.py --root runs/m12-acceptance-<date> \\
       --artifacts frontend/tests/offscreen/artifacts/m12-acceptance/<label> \\
-      [--phases pockets,regressions,replay,unavailable,ledger] [--only step,step]
+      [--phases pockets,regressions,replay,unavailable,ledger] [--only step,step] [--export-evidence <dir>]
 """
 from __future__ import annotations
 
@@ -55,7 +62,8 @@ API = "http://127.0.0.1:8000"
 WEB = "http://127.0.0.1:3000"
 PHASES = ["pockets", "regressions", "replay", "unavailable", "ledger"]
 POCKET_STEPS = ["positive", "empty", "invalid", "cancel", "reopen", "report-download", "overlay-disables",
-                "distance-with-overlay", "comparison-block", "source-race", "m11-create", "chemical-workspace"]
+                "distance-with-overlay", "comparison-block", "source-race", "minimized-source", "m11-create",
+                "chemical-workspace"]
 REGRESSION_STEPS = ["regression-m8-normal", "regression-m9-openmm", "regression-m9-scenes-core",
                     "regression-m10-measure", "regression-m10-alignment", "regression-m11-capability-ready",
                     "regression-m11-empty", "regression-m11-prepare-only", "regression-m11-detect-controls",
@@ -65,10 +73,19 @@ UNAVAILABLE_STEPS = ["unavailable-missing", "unavailable-hash"]
 ALL_STEPS = POCKET_STEPS + REGRESSION_STEPS + REPLAY_STEPS + UNAVAILABLE_STEPS
 PHASE_STEPS = {"pockets": POCKET_STEPS, "regressions": REGRESSION_STEPS, "replay": REPLAY_STEPS,
                "unavailable": UNAVAILABLE_STEPS, "ledger": []}
-# Pocket modes every acceptance ledger must contain (spec 12, "Electron offscreen acceptance QA").
-REQUIRED_MODES = ["positive", "empty", "invalid", "unavailable:not_installed", "unavailable:unreviewed_build",
-                  "cancel", "reopen", "report-download", "source-race", "overlay-disables", "comparison-block",
-                  "distance-with-overlay", "chemical-workspace", "replay"]
+# Every required case is keyed by its step name. The expected mode is checked for pocket-flow / direct-API rows;
+# M11 and regression rows are written by their own flows (None = no mode check).
+STEP_MODES: dict[str, str | None] = {
+    **{step: step for step in POCKET_STEPS if step != "m11-create"}, "m11-create": None,
+    **{step: None for step in REGRESSION_STEPS},
+    "replay-api-prebrowser": "replay-api", "replay-positive": "replay", "replay-empty": "replay",
+    "replay-api-postbrowser": "replay-api",
+    "unavailable-missing": "unavailable:not_installed", "unavailable-hash": "unavailable:unreviewed_build"}
+assert set(STEP_MODES) == set(ALL_STEPS)
+# Environment passed to every child process: nothing else (no OPENROUTER_* or other credentials) is inherited.
+ENV_ALLOW = frozenset({"PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "TMPDIR", "TERM", "TZ",
+                       "__CF_USER_TEXT_ENCODING"})
+ATTEMPT_SUFFIX = re.compile(r"-(\d{8}T\d+)$")
 STEP_TIMEOUT_S = 1800
 TAMPERED_ENGINE = (b"#!/bin/sh\n# ProtView M12 QA labeled placeholder: NOT the reviewed fpocket 4.2.3 hb88c64c_2 build.\n"
                    b"# Exists only so the capability check reports unreviewed_build. Never produces results.\nexit 97\n")
@@ -91,6 +108,23 @@ def tree_digest(root: Path) -> dict[str, str]:
             if path.is_file() and "__pycache__" not in path.parts}
 
 
+def child_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    kept = {key: value for key, value in os.environ.items() if key in ENV_ALLOW or key.startswith("LC_")}
+    return {**kept, **(extra or {})}
+
+
+def step_base(name: str) -> tuple[str, tuple[int, str]]:
+    """Directory name -> (step, attempt order): the first attempt has no suffix, reruns carry a UTC timestamp."""
+    found = ATTEMPT_SUFFIX.search(name)
+    return (name[:found.start()], (1, found.group(1))) if found else (name, (0, ""))
+
+
+def sanitize_text(text: str, replacements: list[tuple[str, str]]) -> str:
+    for old, new in replacements:
+        text = text.replace(old, new)
+    return text
+
+
 def listening(port: int) -> list[str]:
     return subprocess.run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"], capture_output=True, text=True,
                           check=False).stdout.split()
@@ -101,6 +135,8 @@ class Runner:
         self.root = Path(args.root).resolve()
         self.artifacts = Path(args.artifacts).resolve()
         self.only = set(filter(None, (args.only or "").split(",")))
+        self.partial = bool(self.only)
+        self.export = Path(args.export_evidence).resolve() if args.export_evidence else None
         unknown = self.only - set(ALL_STEPS)
         if unknown:
             raise SystemExit(f"unknown --only steps: {sorted(unknown)}; choose from {ALL_STEPS}")
@@ -161,7 +197,7 @@ class Runner:
         raise RuntimeError(f"service did not answer: {url}")
 
     def start_backend(self, name: str, runs_dir: Path, code_root: Path) -> None:
-        env = {**os.environ, "PYTHONPATH": str(code_root / "backend"), "MW_RUNS_DIR": str(runs_dir)}
+        env = child_env({"PYTHONPATH": str(code_root / "backend"), "MW_RUNS_DIR": str(runs_dir)})
         probe = subprocess.run([str(REPO / ".venv/bin/python"), "-c", "import mw;print(mw.__file__)"],
                                env=env, cwd=code_root, capture_output=True, text=True, check=True)
         if not probe.stdout.strip().startswith(str(code_root / "backend")):
@@ -184,7 +220,7 @@ class Runner:
         log.parent.mkdir(parents=True, exist_ok=True)
         self.services["frontend"] = subprocess.Popen(
             ["npm", "--prefix", str(FRONTEND), "run", "start", "--", "-p", "3000"], cwd=REPO,
-            stdout=log.open("a"), stderr=subprocess.STDOUT, start_new_session=True)
+            env=child_env(), stdout=log.open("a"), stderr=subprocess.STDOUT, start_new_session=True)
         self.wait_http(WEB + "/")
 
     def stop(self, name: str) -> None:
@@ -220,8 +256,8 @@ class Runner:
             out.write(json.dumps({"argv": argv, "startedAt": now()}) + "\n")
             out.flush()
             try:
-                rc = subprocess.run(argv, cwd=FRONTEND, stdout=out, stderr=subprocess.STDOUT, timeout=STEP_TIMEOUT_S,
-                                    check=False).returncode
+                rc = subprocess.run(argv, cwd=FRONTEND, env=child_env(), stdout=out, stderr=subprocess.STDOUT,
+                                    timeout=STEP_TIMEOUT_S, check=False).returncode
             except subprocess.TimeoutExpired:
                 rc = -9
         data = None
@@ -246,14 +282,14 @@ class Runner:
         out = self.root / "inputs" / "m12-invalid"
         if not (out / "m12-invalid-cases.json").exists():
             subprocess.run([str(REPO / ".venv/bin/python"), str(REPO / "scripts/m12_qa_inputs.py"), "--out", str(out)],
-                           check=True, capture_output=True)
+                           env=child_env(), check=True, capture_output=True)
         return out
 
     def m11_inputs(self) -> Path:
         out = self.root / "inputs" / "m11"
         if not (out / "m11-synthetic-empty-1000A.sdf").exists():
             subprocess.run([str(REPO / ".venv/bin/python"), str(REPO / "scripts/m11_qa_inputs.py"), "--out", str(out)],
-                           check=True, capture_output=True)
+                           env=child_env(), check=True, capture_output=True)
         return out
 
     # ----- pocket modes ------------------------------------------------------------------------
@@ -273,6 +309,9 @@ class Runner:
             self.pocket("invalid", "invalid", ["--variants", str(self.m12_inputs())])
         if self.wanted("cancel"):
             self.pocket("cancel", "cancel", ["--fixture", str(PUBLIC_1HSG)])
+        if self.wanted("minimized-source"):
+            # OpenMM needs complete Amber templates; public 1HSG lacks terminal OXT, 1UBQ minimizes (M9 fixture).
+            self.pocket("minimized-source", "minimized-source", ["--fixture", str(FIXTURES / "public_1ubq.cif")])
         self.save()
         positive = state.get("positive")
         if positive:
@@ -286,8 +325,11 @@ class Runner:
             for step in ("overlay-disables", "distance-with-overlay", "comparison-block"):
                 if self.wanted(step):
                     self.pocket(step, step, existing)
-            if self.wanted("source-race") and state.get("empty"):
-                self.pocket("source-race", "source-race", [*existing, "--other-run", state["empty"]["run"]])
+            if self.wanted("source-race"):
+                if state.get("empty"):
+                    self.pocket("source-race", "source-race", [*existing, "--other-run", state["empty"]["run"]])
+                else:
+                    self.record("source-race", "fail", reason="empty run unavailable (prerequisite failed)")
         else:
             for step in ("reopen", "report-download", "overlay-disables", "distance-with-overlay", "comparison-block",
                          "source-race"):
@@ -324,7 +366,12 @@ class Runner:
         if (step_dir / jsonl).exists():
             rows = [json.loads(line) for line in (step_dir / jsonl).read_text().splitlines() if line.strip()]
         statuses = [row.get("status") for row in rows]
-        passed = rc == 0 and bool(rows) and all(item in {"pass", "observed_unreviewed"} for item in statuses)
+        # Measured, not inferred: every captured row carries the renderer's cumulative blocked-request list.
+        measured = [len(row["after"]["blockedRequests"]) for row in rows
+                    if isinstance(row.get("after"), dict) and isinstance(row["after"].get("blockedRequests"), list)]
+        external = max(measured) if rows and len(measured) == len(rows) else None
+        passed = (rc == 0 and bool(rows) and all(item in {"pass", "observed_unreviewed"} for item in statuses) and
+                  external == 0)
         fixture = step_dir / "fixture-run.json"
         text = fixture.read_text() if fixture.exists() else (step_dir / jsonl).read_text() if rows else ""
         found = re.search(r'"runId"\s*:\s*"(run_[0-9a-f]{32})"', text) or re.search(r"(run_[0-9a-f]{32})", text)
@@ -335,8 +382,11 @@ class Runner:
                                   "statusCounts": {s: statuses.count(s) for s in set(statuses)},
                                   "harness": {"flowSha256": sha_file(OFFSCREEN / script),
                                               "runnerSha256": sha_file(Path(__file__))},
-                                  "externalRequestCount": 0 if passed else None,
-                                  "note": "The flow asserts zero blocked non-loopback requests at each captured step."})
+                                  "externalRequestCount": external,
+                                  "externalRequestMeasurement": {"rowsWithStatus": len(measured), "rows": len(rows),
+                                                                 "rule": "max(len(row.after.blockedRequests))"},
+                                  "note": "Non-loopback requests measured from the renderer status captured with "
+                                          "every step row (cumulative blocked-request list)."})
         self.record(step, "pass" if passed else "fail", exitCode=rc, run=run, artifacts=str(step_dir))
         return {"run": run} if passed else None
 
@@ -546,7 +596,7 @@ class Runner:
         self.save()
 
     # ----- ledger ------------------------------------------------------------------------------
-    def ledger(self) -> None:
+    def ledger(self, leftovers: list[str]) -> None:
         rows = []
         for row_file in sorted(self.artifacts.glob("*/ledger-row.json")):
             row = json.loads(row_file.read_text())
@@ -565,31 +615,74 @@ class Runner:
                                                                   "m11_case_ledger_row@1" else None),
                          "error": row.get("error"), "artifacts": row.get("artifacts"),
                          "finishedAt": row.get("finishedAt")})
-        by_mode: dict[str, list[dict]] = {}
+        # Each required step is judged by its latest attempt (reruns live in time-suffixed directories and every
+        # earlier attempt, failing or not, stays listed in rows). A step with no row is missing, which fails.
+        attempts: dict[str, list[tuple[tuple[int, str], dict]]] = {}
         for row in rows:
-            by_mode.setdefault(row["mode"], []).append(row)
-        modes = {}
-        for mode in REQUIRED_MODES:
-            found = by_mode.get(mode, [])
-            modes[mode] = ("pass" if any(r["status"] == "pass" for r in found)
-                           else "fail" if found else "missing")
-        # A rerun lives in a time-suffixed directory; a regression passes when any of its attempts passed
-        # (every failing attempt stays listed in rows).
-        regressions: dict[str, str] = {}
-        for row in rows:
-            base = re.sub(r"-\d{8}T\d+$", "", row["step"])
-            if base.startswith("regression-") or base == "m11-create":
-                passed = row["status"] == "pass" or regressions.get(base) == "pass"
-                regressions[base] = "pass" if passed else "fail"
+            base, order = step_base(row["step"])
+            attempts.setdefault(base, []).append((order, row))
+        required = sorted(self.only) if self.partial else ALL_STEPS
+        steps: dict[str, dict] = {}
+        for step in required:
+            found = sorted(attempts.get(step, []), key=lambda item: item[0])
+            if not found:
+                steps[step] = {"status": "missing", "attempts": 0}
+                continue
+            latest = found[-1][1]
+            expected_mode = STEP_MODES[step]
+            problems = []
+            if latest["status"] != "pass":
+                problems.append(f"status {latest['status']}")
+            if expected_mode is not None and latest["mode"] != expected_mode:
+                problems.append(f"mode {latest['mode']!r} != {expected_mode!r}")
+            if latest["externalRequestCount"] != 0:
+                problems.append(f"externalRequestCount {latest['externalRequestCount']!r}")
+            steps[step] = {"status": "fail" if problems else "pass", "attempts": len(found),
+                           "latest": latest["step"], "mode": latest["mode"], "problems": problems}
+        verdict_parts = {"steps": all(v["status"] == "pass" for v in steps.values()),
+                         "externalRequests": all(r["externalRequestCount"] == 0 for r in rows),
+                         "leftoverProcesses": not leftovers}
+        passed = all(verdict_parts.values())
+        verdict = "partial_not_acceptance" if self.partial else "pass" if passed else "fail"
         ledger = {"schema": "m12_case_ledger@1", "generatedAt": now(), "build": self.state.get("build"),
-                  "requiredModes": modes, "regressions": regressions,
+                  "verdict": verdict, "acceptance": not self.partial and passed,
+                  "scope": {"partial": self.partial, "only": sorted(self.only), "requiredSteps": required},
+                  "verdictParts": verdict_parts, "steps": steps, "leftoverProcesses": leftovers,
                   "externalRequestsTotal": sum(r["externalRequestCount"] or 0 for r in rows),
                   "rowsWithUnknownExternalCount": [r["step"] for r in rows if r["externalRequestCount"] is None],
                   "rows": rows}
-        (self.artifacts / "case-ledger.json").write_text(json.dumps(ledger, indent=2) + "\n")
-        passed = all(v == "pass" for v in modes.values()) and all(v == "pass" for v in regressions.values())
-        self.record("case-ledger", "pass" if passed else "fail", modes=modes,
-                    output=str(self.artifacts / "case-ledger.json"))
+        name = "case-ledger-partial.json" if self.partial else "case-ledger.json"
+        (self.artifacts / name).write_text(json.dumps(ledger, indent=2) + "\n")
+        status = "fail" if not passed else "partial" if self.partial else "pass"
+        self.record("case-ledger", status, verdict=verdict,
+                    steps={step: value["status"] for step, value in steps.items()}, output=str(self.artifacts / name))
+
+    def export_evidence(self) -> None:
+        """Text evidence for docs/qa/: absolute paths become <repo>/<home>; binaries are listed by hash only."""
+        assert self.export is not None
+        replacements = [(str(REPO), "<repo>"), (str(Path.home()), "<home>")]
+        self.export.mkdir(parents=True, exist_ok=True)
+        sums, binaries = [], []
+        for path in sorted(self.artifacts.rglob("*")):
+            if not path.is_file() or "services" in path.relative_to(self.artifacts).parts:
+                continue
+            rel = path.relative_to(self.artifacts)
+            if path.suffix in {".json", ".jsonl", ".log", ".md", ".txt"}:
+                target = self.export / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(sanitize_text(path.read_text(errors="replace"), replacements))
+                sums.append(f"{sha_file(target)}  {rel}")
+            else:
+                binaries.append({"path": str(rel), "bytes": path.stat().st_size, "sha256": sha_file(path)})
+        (self.export / "binary-artifacts.json").write_text(sanitize_text(json.dumps({
+            "note": "screenshots/paint frames/downloads stay in the git-ignored artifacts folder; hashes only",
+            "artifacts": sanitize_text(str(self.artifacts), replacements), "files": binaries}, indent=2), replacements)
+            + "\n")
+        sums.append(f"{sha_file(self.export / 'binary-artifacts.json')}  binary-artifacts.json")
+        (self.export / "SHA256SUMS").write_text("\n".join(sums) + "\n")
+        leaked = [str(p.relative_to(self.export)) for p in self.export.rglob("*") if p.is_file() and
+                  any(old in p.read_text(errors="replace") for old, _ in replacements)]
+        self.record("export-evidence", "fail" if leaked else "pass", output=str(self.export), leaked=leaked)
 
     def leftovers(self) -> list[str]:
         ps = subprocess.run(["ps", "-axo", "pid=,command="], capture_output=True, text=True,
@@ -648,7 +741,9 @@ class Runner:
         left = self.leftovers()
         self.record("leftover-processes", "pass" if not left else "fail", processes=left)
         if "ledger" in self.phases:
-            self.ledger()
+            self.ledger(left)
+        if self.export:
+            self.export_evidence()
         failed = [entry["step"] for entry in self.summary if entry["status"] == "fail"]
         print(json.dumps({"failedSteps": failed, "artifacts": str(self.artifacts)}), flush=True)
         return 1 if failed else 0
@@ -660,7 +755,9 @@ def main() -> int:
     parser.add_argument("--artifacts", required=True, help="git-ignored evidence dir, e.g. "
                         "frontend/tests/offscreen/artifacts/m12-acceptance/<label>")
     parser.add_argument("--phases", default=",".join(PHASES), help=f"comma list of {PHASES}")
-    parser.add_argument("--only", help=f"comma list of steps to (re)run: {ALL_STEPS}")
+    parser.add_argument("--only", help=f"comma list of steps to (re)run: {ALL_STEPS}; the ledger is then "
+                        "partial_not_acceptance")
+    parser.add_argument("--export-evidence", help="write sanitized text evidence (<repo> paths) + SHA256SUMS here")
     return Runner(parser.parse_args()).run()
 
 
