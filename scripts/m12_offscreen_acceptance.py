@@ -685,11 +685,28 @@ class Runner:
         self.record("export-evidence", "fail" if leaked else "pass", output=str(self.export), leaked=leaked)
 
     def leftovers(self) -> list[str]:
-        ps = subprocess.run(["ps", "-axo", "pid=,command="], capture_output=True, text=True,
-                            check=False).stdout.splitlines()
-        markers = [str(REPO / "backend/mw/jobs"), str(self.root)]
+        # Only processes working inside this acceptance root count: guardians and workers run with their
+        # cwd in the job attempt folder under the runs root, while unrelated pytest runs (e.g. the Stop hook)
+        # use the same scripts from their own temp folders. A short wait covers the guardian cleanup grace.
         workers = ("guardian.py", "chemical_worker.py", "openmm_worker.py", "pocket_worker.py", "fpocket")
-        left = [line.strip() for line in ps if any(m in line for m in markers) and any(w in line for w in workers)]
+        root = self.root.resolve()
+        left: list[str] = []
+        for _ in range(10):
+            ps = subprocess.run(["ps", "-axo", "pid=,command="], capture_output=True, text=True,
+                                check=False).stdout.splitlines()
+            left = []
+            for line in ps:
+                pid, _, command = line.strip().partition(" ")
+                if not any(w in command for w in workers):
+                    continue
+                cwd = subprocess.run(["lsof", "-a", "-p", pid, "-d", "cwd", "-Fn"], capture_output=True,
+                                     text=True, check=False).stdout
+                paths = [Path(item[1:]) for item in cwd.splitlines() if item.startswith("n")]
+                if str(root) in command or any(path == root or root in path.parents for path in paths):
+                    left.append(line.strip())
+            if not left:
+                break
+            time.sleep(0.5)
         for port in (8000, 3000):
             left += [f"port {port} still listening: pid {pid}" for pid in listening(port)]
         return left
