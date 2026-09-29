@@ -302,3 +302,20 @@
 .mw-pocket-history { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-1) 0; border-bottom: 1px solid var(--line); }
 .mw-pocket-history .mw-mono { overflow-wrap: anywhere; }
 .mw-pocket input[type="range"] { width: 120px; }
+
+/* M13 analysis workflow panel. A plan is an estimate (dashed); recorded execution results are solid. */
+.mw-analysis { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; font-size: 12px; }
+.mw-analysis p { margin: 0; overflow-wrap: anywhere; }
+.mw-analysis-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.mw-analysis-draft { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-analysis-draft > label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mw-analysis-plan { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px dashed var(--line-strong); border-radius: var(--radius-xs); background: var(--surface-100); }
+.mw-analysis-measured { border-left: 3px solid var(--state-done); padding-left: var(--space-2); }
+.mw-analysis-estimate { border-style: dashed; color: var(--ink-muted); }
+.mw-analysis-expensive { color: var(--ink); border-color: var(--fail-transient); }
+.mw-analysis-missing { padding: var(--space-1) var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); color: var(--ink); }
+.mw-analysis-approvals { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.mw-analysis-steps { display: flex; flex-direction: column; gap: var(--space-2); margin: 0; padding-left: var(--space-3); min-width: 0; }
+.mw-analysis-steps li { display: flex; flex-direction: column; gap: var(--space-1); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); min-width: 0; }
+.mw-analysis-json { max-height: 220px; margin: 0; overflow: auto; padding: var(--space-2); font: 11px/14px var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-200); border-radius: var(--radius-xs); }
+.mw-analysis-summary { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; overflow-x: auto; }

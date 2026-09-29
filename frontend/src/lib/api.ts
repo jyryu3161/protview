@@ -1,5 +1,7 @@
 /** Loopback-only M1 API client. See docs/M1_API.md. */
-import type { BudgetSnapshot, EgressMode, Handle, InteractionRow, ResidueRef, RunEvent, ToolError } from "./contracts";
+import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecutionList, AnalysisGoal, AnalysisPlanList,
+  AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, EgressMode, Handle,
+  InteractionRow, ResidueRef, RunEvent, ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
@@ -25,7 +27,8 @@ export interface Page<T> { meta: ObjectMeta; rows: T[]; total: number; offset: n
 export interface Capabilities { mode: "local_only"; supported: Record<string, string>; unavailable: Record<string, string>;
   methods?: { openmm_protein_minimize?: { available: boolean; method_id?: string; distribution_version?: string; engine_build?: string; unit?: string; limitations?: string; explanation?: string }; interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
     engine_version?: string; unit?: string; limitations?: string; explanation?: string };
-    chemical_interactions?: ChemicalCapability; pocket_detection?: PocketCapability } }
+    chemical_interactions?: ChemicalCapability; pocket_detection?: PocketCapability;
+    analysis_workflows?: AnalysisWorkflowsCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -67,7 +70,9 @@ export type CommandResult = { ok: true; handle: Handle } | ({ ok: false } & Tool
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public code?: string,
-    public approval?: { gate: string; tool: string; reason: string }) { super(message); }
+    public approval?: { gate: string; tool: string; reason: string },
+    /** Typed error detail of the JSON body (e.g. M13 `revision`, `retryable_step`); never used for science. */
+    public detail?: Record<string, unknown>) { super(message); }
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -82,12 +87,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const approval = detail?.approval ?? data.approval;
     throw new ApiError(response.status,
       detail?.message ?? data.message ?? approval?.reason ?? (typeof data.detail === "string" ? data.detail : `HTTP ${response.status}`),
-      detail?.error ?? data.error, approval);
+      detail?.error ?? data.error, approval, detail as Record<string, unknown> | undefined);
   }
   return response.json() as Promise<T>;
 }
 
 function runPath(runId: string, tail = "") { return `/runs/${encodeURIComponent(runId)}${tail}`; }
+function analysisPath(runId: string, executionId: string, tail = "") {
+  return runPath(runId, `/analysis/executions/${encodeURIComponent(executionId)}${tail}`);
+}
+const ANALYSIS_ACTION_PATH: Record<AnalysisAction, string> = { approve: "/approve", revoke: "/revoke", advance: "/advance",
+  retry: "/retry", cancel: "/cancel", scientific_approval: "/scientific-approval" };
+const jsonPost = (body: unknown, signal?: AbortSignal): RequestInit =>
+  ({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal });
 function handleParam(handle: string) { return `handle=${encodeURIComponent(handle)}`; }
 
 export const api = {
@@ -286,6 +298,26 @@ export const api = {
       headers: { "content-type": "application/json" }, body: JSON.stringify({ result_handle: setHandle }), signal }),
   pocketReport: (id: string, handle: string, signal?: AbortSignal) =>
     request<PocketReportArtifact>(runPath(id, `/reports/selected?${handleParam(handle)}`), { signal }),
+  // ---- M13 analysis workflows (loopback only; reads never run a tool, job or report) ----
+  analysisTemplates: (id: string, signal?: AbortSignal) =>
+    request<AnalysisTemplates>(runPath(id, "/analysis/templates"), { signal }),
+  analysisPlans: (id: string, signal?: AbortSignal) => request<AnalysisPlanList>(runPath(id, "/analysis/plans"), { signal }),
+  analysisPlan: (id: string, handle: string, signal?: AbortSignal) =>
+    request<AnalysisPlanRecord>(runPath(id, `/analysis/plans/detail?${handleParam(handle)}`), { signal }),
+  createAnalysisPlan: (id: string, body: { request_id: string; goal: AnalysisGoal; inputs: Record<string, unknown> },
+    signal?: AbortSignal) => request<AnalysisPlanRecord>(runPath(id, "/analysis/plans"), jsonPost(body, signal)),
+  analysisExecutions: (id: string, signal?: AbortSignal) =>
+    request<AnalysisExecutionList>(runPath(id, "/analysis/executions"), { signal }),
+  analysisExecution: (id: string, executionId: string, signal?: AbortSignal) =>
+    request<AnalysisExecution>(analysisPath(id, executionId), { signal }),
+  createAnalysisExecution: (id: string, body: { request_id: string; plan_handle: string }, signal?: AbortSignal) =>
+    request<AnalysisEnvelope>(runPath(id, "/analysis/executions"), jsonPost(body, signal)),
+  analysisAction: (id: string, executionId: string, action: AnalysisAction,
+    body: { request_id: string; expected_revision: number; plan_hash?: string; step_id?: string }, signal?: AbortSignal) =>
+    request<AnalysisEnvelope>(analysisPath(id, executionId, ANALYSIS_ACTION_PATH[action]), jsonPost(body, signal)),
+  analysisSummary: (id: string, executionId: string, signal?: AbortSignal) =>
+    request<AnalysisSummary>(analysisPath(id, executionId, "/summary"), { signal }),
+  analysisSummaryDownload: (id: string, executionId: string) => `/api${analysisPath(id, executionId, "/summary?download=json")}`,
   reportDownload: (id: string, handle: string, format: "markdown" | "json") =>
     `/api${runPath(id, `/reports/download?${handleParam(handle)}&format=${format}`)}`,
   async structure(id: string, handle: string, signal?: AbortSignal): Promise<ViewerSource> {
