@@ -7,7 +7,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from .core.errors import ToolFailure
-from .reports import EvidenceError, _md
+from .reports import EvidenceError, _md, resume_linked_report
+from .runtime.orchestrator import link_fields
 
 FIELDS = ("before_kJ_mol", "after_kJ_mol", "potential_change_kJ_mol")
 
@@ -181,10 +182,15 @@ def _markdown(manifest: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def build_openmm_report(run: Any, result_handle: str) -> dict[str, Any]:
+def build_openmm_report(run: Any, result_handle: str, *, execution_link: Any = None) -> dict[str, Any]:
     with run._owner():
         run.store.rebuild_from_events()
         run._refresh()
+        existing = resume_linked_report(run, execution_link, event_type="method_report_created",
+                                        source_field="result_handle", source_handle=result_handle,
+                                        saved=saved_openmm_report, builder="openmm")
+        if existing is not None:
+            return existing
         data = validated_openmm(run, result_handle)
         events = list(run.events.read())
         seq = events[-1]["seq"]
@@ -214,7 +220,7 @@ def build_openmm_report(run: Any, result_handle: str) -> dict[str, Any]:
         report = run.store.put("method_report_manifest", "method_report_manifest@1", manifest,
                                produced_by=call_id, summary={"result_handle": result_handle, "analysis_type": "openmm_protein_minimize"})
         run.events.append("method_report_created", report_handle=report.handle, markdown_handle=md.handle,
-                          result_handle=result_handle, snapshot_event_seq=seq)
+                          result_handle=result_handle, snapshot_event_seq=seq, **link_fields(execution_link))
         return {"handle": report.handle, "markdown_handle": md.handle, "manifest": manifest, "markdown": markdown}
 
 

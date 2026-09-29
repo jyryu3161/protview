@@ -90,6 +90,61 @@ class RunCancelled(Exception):
     pass
 
 
+_LINK_ID = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z")
+
+
+@dataclass(frozen=True)
+class ExecutionLink:
+    """Internal (execution_id, step_id, operation_id) link for one analysis-workflow operation.
+
+    Constructed only by server code; no HTTP request field can supply it. Callbacks are optional:
+    ``admit(info)`` runs under ``Run._transition()`` in the same critical section as child admission
+    and may raise to refuse; ``stopped()`` reports this execution's scoped Stop (never the run-wide
+    cancel marker); ``before_attempt(info)`` runs under ``Run._transition()`` before every physical
+    attempt so the caller can durably count it or raise to refuse. Callbacks must not re-enter
+    ``Run._transition()`` or the run owner.
+    """
+    execution_id: str
+    step_id: str
+    operation_id: str
+    admit: Callable[[dict[str, Any]], None] | None = field(default=None, compare=False, repr=False)
+    stopped: Callable[[], bool] | None = field(default=None, compare=False, repr=False)
+    before_attempt: Callable[[dict[str, Any]], None] | None = field(default=None, compare=False, repr=False)
+
+    def __post_init__(self) -> None:
+        for value in (self.execution_id, self.step_id, self.operation_id):
+            if not isinstance(value, str) or not _LINK_ID.fullmatch(value):
+                raise ValueError("invalid execution link identifier")
+
+    def record(self) -> dict[str, str]:
+        return {"execution_id": self.execution_id, "step_id": self.step_id,
+                "operation_id": self.operation_id}
+
+    def is_stopped(self) -> bool:
+        return self.stopped is not None and bool(self.stopped())
+
+
+class ExecutionStopped(Exception):
+    """A linked operation ended because its execution was stopped; the run itself is not cancelled."""
+
+    def __init__(self, stage: str) -> None:
+        super().__init__(f"execution stopped {stage}")
+        self.stage = stage
+
+
+def checked_link(value: Any) -> ExecutionLink | None:
+    if value is not None and not isinstance(value, ExecutionLink):
+        raise TypeError("execution_link must be an internal ExecutionLink")
+    return value
+
+
+def link_fields(value: ExecutionLink | dict[str, Any] | None) -> dict[str, Any]:
+    """Event kwargs for a link; empty when unlinked so historical events stay byte-identical."""
+    if value is None:
+        return {}
+    return {"execution_link": value.record() if isinstance(value, ExecutionLink) else dict(value)}
+
+
 @dataclass
 class Run:
     run_id: str
@@ -195,7 +250,8 @@ class Run:
                 os.close(fd)
 
     def reserve_attempt(self, attempt_id: str, root_call_id: str, tool: str,
-                        args: dict[str, Any], *, job_id: str | None = None) -> dict[str, Any]:
+                        args: dict[str, Any], *, job_id: str | None = None,
+                        before_reserve: Callable[[], None] | None = None) -> dict[str, Any]:
         """One durable expensive unit per physical attempt; caller holds the run owner."""
         with self._transition():
             self._refresh()
@@ -232,6 +288,9 @@ class Run:
                                        "first expensive call needs approval")
             if self.budget.would_exceed(expensive_calls=1):
                 self._checkpoint_budget(tool, args, "expensive_calls")
+            if before_reserve is not None:
+                # Linked attempts: scoped stop check + durable attempt count, same critical section.
+                before_reserve()
             event = self.events.append("budget_reserved", attempt_id=attempt_id,
                                        root_call_id=root_call_id, tool=tool, expensive_calls=1)
             self.budget.charge(expensive_calls=1)
@@ -371,7 +430,7 @@ class Run:
             self.budget.charge(wall_clock_s=charge)
             self.events.append("tool_interrupted", call_id=event["call_id"],
                                root_call_id=event.get("root_call_id", event["call_id"]),
-                               reason="owner_lost")
+                               reason="owner_lost", **link_fields(event.get("execution_link")))
             if self._time_left() <= 0:
                 self.events.append("checkpoint", reason="budget", axis="wall_clock_s",
                                    usage=self.budget.wall_clock_s,
@@ -621,7 +680,9 @@ class Run:
 
     def call(self, tool: str, args: dict[str, Any], *, decided_by: DecisionSource = "rule",
              execution_mode: ExecutionMode = "human", branch_id: str | None = None,
-             source_bytes: bytes | None = None, source_format: str | None = None) -> Handle:
+             source_bytes: bytes | None = None, source_format: str | None = None,
+             execution_link: ExecutionLink | None = None) -> Handle:
+        link = checked_link(execution_link)
         if execution_mode not in ("human", "autonomous") or (execution_mode == "autonomous" and not branch_id):
             raise ToolFailure(FailureClass.input_invalid, "autonomous calls require a branch_id")
         with self._mutation():
@@ -634,12 +695,24 @@ class Run:
                 key = self._key(tool, spec.version, normalized, source_bytes, source_format)
             except ToolFailure as failure:
                 self.events.append("proposal_rejected", proposal_id=proposal_id, root_call_id=proposal_id,
-                                   tool=tool, args=_event_safe(args), **_event_safe(failure.to_dict()))
+                                   tool=tool, args=_event_safe(args), **_event_safe(failure.to_dict()),
+                                   **link_fields(link))
                 if branch_id and execution_mode == "autonomous":
                     self._propose(branch_id, idempotency_key(tool, "invalid", {"repr": repr(args)}),
                                   tool, proposal_id)
                     self._observe(branch_id, proposal_id, None)
                 raise
+            if link is not None:
+                # Child admission: the caller's validation and the admission record share one
+                # short transition, before any proposal, cache observation or physical attempt.
+                with self._transition():
+                    if link.admit is not None:
+                        link.admit({"lane": "run_call", "tool": tool, "version": spec.version, "key": key,
+                                    "args": normalized, "proposal_id": proposal_id,
+                                    "branch_id": branch_id, "execution_mode": execution_mode,
+                                    "decided_by": decided_by})
+                    self.events.append("execution_call_admitted", proposal_id=proposal_id, tool=tool,
+                                       key=key, **link_fields(link))
             active_branch = branch_id if execution_mode == "autonomous" else None
             if active_branch:
                 self._propose(active_branch, key, tool, proposal_id)
@@ -649,15 +722,16 @@ class Run:
                                      else spec.emits)
                 self.events.append("cache_hit", observation_id=proposal_id, proposal_id=proposal_id,
                                    tool=tool, key=key, args=normalized, output=out.model_dump(by_alias=True),
-                                   source_call_id=done["call_id"], branch_id=active_branch)
+                                   source_call_id=done["call_id"], branch_id=active_branch,
+                                   **link_fields(link))
                 self._observe(active_branch, proposal_id, out.handle)
                 return out
             self._check_jobs_clear()
             try:
                 out = self._execute_chain(tool, normalized, key, proposal_id, None, "initial",
                                           decided_by, execution_mode, branch_id,
-                                          source_bytes, source_format)
-            except (ToolFailure, ApprovalRequired, RunCancelled):
+                                          source_bytes, source_format, link=link)
+            except (ToolFailure, ApprovalRequired, RunCancelled, ExecutionStopped):
                 self._observe(active_branch, proposal_id, None)
                 raise
             self._observe(active_branch, proposal_id, out.handle)
@@ -667,7 +741,7 @@ class Run:
                        parent: str | None, attempt_kind: str, decided_by: DecisionSource,
                        mode: ExecutionMode, branch_id: str | None,
                        source_bytes: bytes | None = None, source_format: str | None = None,
-                       allow_transient: bool = True) -> Handle:
+                       allow_transient: bool = True, link: ExecutionLink | None = None) -> Handle:
         spec, args = self._validated(tool, args)
         used = sum(event["attempt_kind"] == "transient_retry" for event in self.events.read()
                    if event["type"] == "tool_called" and event.get("root_call_id") == root)
@@ -690,19 +764,30 @@ class Run:
                                    root_call_id=root, parent_call_id=parent, args=args,
                                    attempt_kind=attempt_kind, decided_by=decided_by,
                                    execution_mode=mode, branch_id=branch_id, version=spec.version,
-                                   plan_only=True, remaining_wall_s=self._time_left())
+                                   plan_only=True, remaining_wall_s=self._time_left(), **link_fields(link))
                 self.events.append("tool_succeeded", tool=tool, key=key, call_id=call_id,
                                    output=out.model_dump(by_alias=True), null_result=False,
-                                   plan_only=True, duration_s=0)
+                                   plan_only=True, duration_s=0, **link_fields(link))
                 return out
             call_id = f"call_{uuid.uuid4().hex}"
+            gate = None
+            if link is not None:
+                def gate(call_id: str = call_id, attempt_kind: str = attempt_kind,
+                         parent: str | None = parent) -> None:
+                    self._linked_attempt_gate(link, {
+                        "lane": "run_call", "tool": tool, "key": key, "call_id": call_id,
+                        "root_call_id": root, "parent_call_id": parent, "attempt_kind": attempt_kind,
+                        "cost_class": spec.cost_class, "execution_link": link.record()})
             if spec.cost_class == "expensive":
-                self.reserve_attempt(call_id, root, tool, args)
+                self.reserve_attempt(call_id, root, tool, args, before_reserve=gate)
+            elif gate is not None:
+                with self._transition():
+                    gate()
             self.events.append("tool_called", tool=tool, key=key, call_id=call_id,
                                root_call_id=root, parent_call_id=parent, args=args,
                                attempt_kind=attempt_kind, decided_by=decided_by,
                                execution_mode=mode, branch_id=branch_id, version=spec.version,
-                               remaining_wall_s=self._time_left(), ts=self.utc())
+                               remaining_wall_s=self._time_left(), ts=self.utc(), **link_fields(link))
             start = self.monotonic()
             self._active_started = start
             ctx = ToolContext(store=self.store, call_id=call_id, dry_run=self.dry_run, seed=self.seed,
@@ -718,7 +803,7 @@ class Run:
                 self._verified({"output": out.model_dump(by_alias=True)}, spec.emits)
             except RunCancelled:
                 self.events.append("tool_interrupted", call_id=call_id, root_call_id=root,
-                                   reason="cancelled")
+                                   reason="cancelled", **link_fields(link))
                 self._charge_time(start, reason="attempt", call_id=call_id)
                 raise
             except ToolFailure as exc:
@@ -730,12 +815,12 @@ class Run:
             if failure:
                 self.events.append("tool_failed", tool=tool, key=key, call_id=call_id,
                                    root_call_id=root, parent_call_id=parent, args=args,
-                                   **_event_safe(failure.to_dict()))
+                                   **_event_safe(failure.to_dict()), **link_fields(link))
             else:
                 assert out is not None
                 self.events.append("tool_succeeded", tool=tool, key=key, call_id=call_id,
                                    output=out.model_dump(by_alias=True), duration_s=duration,
-                                   null_result=out.null_result)
+                                   null_result=out.null_result, **link_fields(link))
             self._check_cancelled()
             if self._time_left() <= 0:
                 self._checkpoint_budget(tool, args, "wall_clock_s")
@@ -743,6 +828,9 @@ class Run:
                 return out
             if failure.cls != FailureClass.transient or not allow_transient or used >= len(TRANSIENT_DELAYS_S):
                 raise failure
+            if link is not None and link.is_stopped():
+                # Scoped Stop: the finished attempt stays recorded and charged; no backoff or retry.
+                self._record_stop(link, "before_backoff", root, call_id)
             delay = TRANSIENT_DELAYS_S[used]
             if spec.cost_class == "expensive" and self.budget.would_exceed(expensive_calls=1):
                 self._checkpoint_budget(tool, args, "expensive_calls")
@@ -773,6 +861,18 @@ class Run:
             used += 1
             parent = call_id
             attempt_kind = "transient_retry"
+
+    def _record_stop(self, link: ExecutionLink, stage: str, root: str, after_call_id: str | None) -> None:
+        self.events.append("execution_call_stopped", stage=stage, root_call_id=root,
+                           after_call_id=after_call_id, **link_fields(link))
+        raise ExecutionStopped(stage)
+
+    def _linked_attempt_gate(self, link: ExecutionLink, info: dict[str, Any]) -> None:
+        """Caller holds ``_transition()``: scoped stop check, then the durable attempt hook."""
+        if link.is_stopped():
+            self._record_stop(link, "before_attempt", info["root_call_id"], info["parent_call_id"])
+        if link.before_attempt is not None:
+            link.before_attempt(info)
 
     def _failed(self, failed_id: str) -> dict[str, Any]:
         event = next((item for item in reversed(list(self.events.read()))
