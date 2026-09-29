@@ -18,7 +18,7 @@ import { ViewerAgentPanel, type SceneController } from "@/components/ViewerAgent
 import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { PocketPanel } from "@/components/PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
-import { hostRequestAccepted, importedPocketChains, type ScreenSelections } from "@/lib/analysis";
+import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
@@ -1361,6 +1361,16 @@ export default function WorkspacePage() {
     setPocketState(null); setPocketReadback(null); setPocketView(null);
     setChemicalActive(true);
   }
+  /** A workflow step may have created objects (prepared/chemical/minimized structures, reports): re-read this run's
+   * event log so they become ordinary source and history options without a reload. A newer run or reopen wins. */
+  function refreshEventsFromAnalysis(requestRunId: string) {
+    if (!hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current)) return;
+    const ticket = epoch.current;
+    api.allEvents(requestRunId).then(log => {
+      if (ticket === epoch.current && hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current))
+        setEvents(previous => newerEventLog(previous, log));
+    }).catch(() => undefined);
+  }
   function enterChemicalFromAnalysis(requestRunId: string) {
     if (!hostRequestAccepted({ runId: requestRunId }, analysisHostRef.current)) return;
     const blocked = chemicalEntryBlockedReason(busy);
@@ -1433,7 +1443,7 @@ export default function WorkspacePage() {
   }, [chemicalActive, chemicalSceneToRestore]);
 
   if (chemicalActive && run) return <ChemicalWorkspace key={run.run_id} run={run} runs={runs}
-    events={events} capabilities={capabilities} onTheme={toggleTheme}
+    events={events} capabilities={capabilities} onTheme={toggleTheme} onObjectsChanged={refreshEventsFromAnalysis}
     onExit={() => { setChemicalActive(false); setInspectionRevision(value => value + 1); }}
     onSwitchRun={id => { setChemicalActive(false); void switchRun(id); }}
     onRestoreScene={handle => { setChemicalSceneToRestore(handle); setChemicalActive(false); }} />;
@@ -1847,7 +1857,8 @@ export default function WorkspacePage() {
       {run && <InspectorSection><AnalysisWorkflowPanel key={run.run_id} panel="main" run={run}
         capability={capabilities ? capabilities.methods?.analysis_workflows ?? null : undefined}
         sourceOptions={sourceOptions} screen={analysisScreen}
-        onOpenResult={openAnalysisResult} onEnterChemical={enterChemicalFromAnalysis} /></InspectorSection>}
+        onOpenResult={openAnalysisResult} onEnterChemical={enterChemicalFromAnalysis}
+        onObjectsChanged={refreshEventsFromAnalysis} /></InspectorSection>}
       {run && <InspectorSection><PocketPanel key={run.run_id} panel="main" run={run}
         capability={capabilities ? capabilities.methods?.pocket_detection ?? null : undefined} sourceOptions={pocketSourceOptions}
         displayedSourceHandle={displaySource?.handle ?? null} viewerReady={pocketViewerReady}

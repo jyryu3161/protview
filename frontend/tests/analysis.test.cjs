@@ -369,3 +369,79 @@ test("pocket results open here in their own screen (through the pocket panel gua
   const decision = a.resultOpenDecision("main", "find_cavities", "openmm_minimized_structure", "fpocket_detect_v1");
   same([decision.action, decision.view, decision.label], ["open_here", "pocket", "결과 열기"]);
 });
+
+test("created execution: the response adopts the new execution id so busy is released; stale answers stay discarded", () => {
+  const captured = { runId: "run-a", executionId: null, action: 7 };
+  const adopted = a.adoptExecution(captured, "exec_new");
+  same(adopted, { runId: "run-a", executionId: "exec_new", action: 7 });
+  same(captured, { runId: "run-a", executionId: null, action: 7 }, "the captured stamp is not mutated");
+  const liveAfter = { runId: "run-a", executionId: "exec_new", action: 7 };
+  assert.equal(a.responseCurrent(captured, liveAfter, true), false, "the original stamp alone never matches (the bug)");
+  assert.equal(a.responseCurrent(adopted, liveAfter, true), true, "busy is cleared for the current panel");
+  assert.equal(a.responseCurrent(adopted, { ...liveAfter, action: 8 }, true), false, "a newer action wins");
+  assert.equal(a.responseCurrent(adopted, { ...liveAfter, runId: "run-b" }, true), false, "another run wins");
+  assert.equal(a.responseCurrent(adopted, { ...liveAfter, executionId: "exec_other" }, true), false, "another execution wins");
+  assert.equal(a.responseCurrent(adopted, liveAfter, false), false, "unmounted");
+});
+
+test("plan vs execution focus: a new or reopened plan is shown with 실행 만들기 even while an execution stays open", () => {
+  const P = { handle: "plan-P" }, Q = { handle: "plan-Q" };
+  same(a.planView({ plan: P, executionId: null, executionPlan: null, focus: "plan" }),
+    { shownPlan: P, createExecution: true });
+  same(a.planView({ plan: P, executionId: "exec_1", executionPlan: P, focus: "execution" }),
+    { shownPlan: P, createExecution: false }, "the execution made from P shows its own plan");
+  same(a.planView({ plan: Q, executionId: "exec_1", executionPlan: P, focus: "plan" }),
+    { shownPlan: Q, createExecution: true }, "new plan Q while exec_1 is open");
+  same(a.planView({ plan: null, executionId: "exec_1", executionPlan: P, focus: "plan" }),
+    { shownPlan: P, createExecution: false }, "no plan chosen: the open execution's plan");
+  same(a.planView({ plan: Q, executionId: "exec_1", executionPlan: P, focus: "execution" }),
+    { shownPlan: P, createExecution: false }, "reopened execution takes the focus back");
+  same(a.planView({ plan: null, executionId: null, executionPlan: null, focus: "plan" }),
+    { shownPlan: null, createExecution: false });
+});
+
+test("objects may have changed after a mutation only when the same execution's record moved", () => {
+  const before = record({ revision: 3 });
+  assert.equal(a.objectsMayHaveChanged(before, record({ revision: 4, status: "ready" })), true);
+  assert.equal(a.objectsMayHaveChanged(before, record({ revision: 3 })), false, "no-op answer");
+  assert.equal(a.objectsMayHaveChanged(before, record({ execution_id: "exec_99", revision: 9 })), false, "another execution");
+  assert.equal(a.objectsMayHaveChanged(before, null), false);
+});
+
+test("host event log refresh keeps the longer (newer) log so a late short read never drops objects", () => {
+  const prev = [{ seq: 1 }, { seq: 2 }];
+  assert.equal(a.newerEventLog(prev, [{ seq: 1 }, { seq: 2 }, { seq: 3 }]).length, 3);
+  assert.equal(a.newerEventLog(prev, [{ seq: 1 }]), prev, "a late, shorter log is discarded");
+});
+
+test("polling continues while the panel's own Advance/Retry runs inside the request", () => {
+  assert.equal(a.pollNeeded(record({ status: "ready" }), null), false);
+  assert.equal(a.pollNeeded(record({ status: "ready" }), "advance"), true);
+  assert.equal(a.pollNeeded(record({ status: "failed", retryable_step: "s01" }), "retry"), true);
+  assert.equal(a.pollNeeded(record({ status: "ready" }), "approve"), false);
+  assert.equal(a.pollNeeded(record({ status: "executing" }), null), true);
+  assert.equal(a.pollNeeded(record({ status: "waiting_job" }), null), true);
+  assert.equal(a.pollNeeded(record({ driver: { in_progress: true, request_ids: [] } }), null), true);
+  assert.equal(a.pollNeeded(null, "advance"), false, "nothing open");
+});
+
+test("a polled record is accepted only for the same execution and a revision not older than the shown one", () => {
+  const shown = record({ revision: 5 });
+  assert.equal(a.acceptPolled(shown, record({ revision: 6 })), true);
+  assert.equal(a.acceptPolled(shown, record({ revision: 5 })), true);
+  assert.equal(a.acceptPolled(shown, record({ revision: 4 })), false, "late older read");
+  assert.equal(a.acceptPolled(shown, record({ execution_id: "exec_99", revision: 9 })), false);
+  assert.equal(a.acceptPolled(null, record()), true);
+});
+
+test("record notices apply only to the current, not-yet-completed step", () => {
+  const steps = [{ step_id: "s01", status: "completed" }, { step_id: "s02", status: "pending" }];
+  const r = record({ current_step: "s02", steps });
+  assert.equal(a.noticeApplies(r, "s01"), false, "completed step: 시작 보류 is history, not a notice");
+  assert.equal(a.noticeApplies(r, "s02"), true);
+  assert.equal(a.noticeApplies(record({ current_step: "s02", steps: [{ step_id: "s01", status: "pending" }, steps[1]] }), "s01"),
+    false, "not the current step");
+  assert.equal(a.noticeApplies(record({ current_step: "s01", steps: [{ step_id: "s01", status: "completed" }] }), "s01"), false);
+  assert.equal(a.noticeApplies(r, null), true, "an execution-level notice without a step is kept");
+  assert.equal(a.noticeApplies(r, "s99"), false, "unknown step");
+});

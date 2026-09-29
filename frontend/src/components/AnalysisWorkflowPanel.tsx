@@ -5,11 +5,11 @@ import { api, ApiError, type RunSummary } from "@/lib/api";
 import type { AnalysisAction, AnalysisExecution, AnalysisExecutionList, AnalysisGoal, AnalysisPlanList,
   AnalysisPlanRecord, AnalysisStepRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot,
   ResidueRef } from "@/lib/contracts";
-import { allowedSourceKinds, ANALYSIS_GOALS, analysisUiState, approvalDisplay, BUSY_TEXT, CHEMICAL_CATEGORIES,
+import { acceptPolled, adoptExecution, allowedSourceKinds, ANALYSIS_GOALS, analysisUiState, approvalDisplay, BUSY_TEXT, CHEMICAL_CATEGORIES,
   classifyFailure, CONTACT_TYPES, DRY_RUN_NOTICE, draftInputs, EDIT_NEW_PLAN_NOTE, executionControls, executionProgressed,
-  GOAL_LABELS, goalPlacement, importDraft, isTerminal, keepRequestAfter, LOCAL_RULES_NOTE, MAKE_IN_SCREEN, outcomeText,
-  PLAN_ESTIMATE_NOTE, requestIdFor, requestKey, responseCurrent, resultOpenDecision, stepIsExpensive, stopResend,
-  type AnalysisDraft, type AnalysisPanelKind, type FailureKind, type PanelStamp, type PendingRequest, type ResultView,
+  GOAL_LABELS, goalPlacement, importDraft, isTerminal, keepRequestAfter, LOCAL_RULES_NOTE, MAKE_IN_SCREEN, noticeApplies,
+  objectsMayHaveChanged, outcomeText, PLAN_ESTIMATE_NOTE, planView, pollNeeded, requestIdFor, requestKey, responseCurrent, resultOpenDecision, stepIsExpensive, stopResend,
+  type AnalysisDraft, type AnalysisPanelKind, type FailureKind, type PanelStamp, type PendingRequest, type PlanFocus, type ResultView,
   type ScreenSelections } from "@/lib/analysis";
 import { Button } from "./primitives";
 
@@ -30,6 +30,8 @@ export interface AnalysisWorkflowPanelProps {
   onEnterChemical?: (runId: string) => void;
   /** Chemical panel: return to the ordinary structure screen. */
   onExitToMain?: (runId: string) => void;
+  /** A workflow mutation moved the record and may have created objects: the host re-reads its event log. */
+  onObjectsChanged?: (runId: string) => void;
 }
 
 const UI_STATE_TEXT = { loading: "불러오는 중", ready: "준비", scientific_null: "정상적인 빈 결과 (scientific_null)",
@@ -66,6 +68,8 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
     defaults: string[] } | null>(null);
   const [optionError, setOptionError] = useState("");
   const [plan, setPlan] = useState<AnalysisPlanRecord | null>(null);
+  // Which plan the preview shows: the chosen (new or reopened) plan, or the open execution's plan.
+  const [planFocus, setPlanFocus] = useState<PlanFocus>("plan");
   const [plans, setPlans] = useState<AnalysisPlanList | null>(null);
   const [executions, setExecutions] = useState<AnalysisExecutionList | null>(null);
   const [listsError, setListsError] = useState("");
@@ -169,21 +173,22 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId]);
 
-  // Read-only polling while a step or job is in progress (reads never write events or record job endings).
-  const pollNeeded = !!execution && (execution.status === "executing" || execution.status === "waiting_job" ||
-    execution.driver.in_progress);
+  // Read-only polling while a step or job is in progress, and while this panel's own Advance/Retry runs inside its
+  // request, so status and revision stay current (e.g. for 중지). Reads never write events or record job endings.
+  const polling = pollNeeded(execution, busy);
   useEffect(() => {
-    if (!executionId || !pollNeeded) return;
+    if (!executionId || !polling) return;
     const id = executionId;
     const timer = window.setInterval(() => {
       const captured = { ...live.current };
       void api.analysisExecution(runId, id).then(value => {
-        if (current(captured) && value.execution_id === id && value.run_id === runId) setExecution(value);
+        if (current(captured) && value.execution_id === id && value.run_id === runId)
+          setExecution(previous => acceptPolled(previous, value) ? value : previous);
       }).catch(() => undefined);
     }, 1500);
     return () => window.clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId, executionId, pollNeeded]);
+  }, [runId, executionId, polling]);
 
   function chooseGoal(next: AnalysisGoal | "") {
     stamp(); pendingRef.current = null;
@@ -216,7 +221,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
       pendingRef.current = null;
       if (record.plan.schema !== "analysis_plan@1" || record.plan.goal !== goal || record.plan.source !== "local_rules")
         throw new Error("계획 응답이 요청한 목표와 다릅니다.");
-      setPlan(record); refreshLists();
+      setPlan(record); setPlanFocus("plan"); refreshLists();
       setNotice(record.replayed ? "같은 요청의 저장된 계획을 다시 열었습니다." : `계획 #${record.ordinal}을 만들었습니다.`);
       void api.budget(runId).then(value => { if (current(captured)) setBudget(value); }).catch(() => undefined);
     } catch (e) {
@@ -235,7 +240,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
       const record = await api.analysisPlan(runId, handle);
       if (!current(captured)) return;
       if (record.handle !== handle) throw new Error("계획 응답의 handle이 다릅니다.");
-      setGoal(record.plan.goal); setDraft(null); setPlan(record);
+      setGoal(record.plan.goal); setDraft(null); setPlan(record); setPlanFocus("plan");
       setNotice("저장된 계획을 다시 열었습니다. 입력은 저장된 값 그대로입니다.");
     } catch (e) { if (current(captured)) setFailure(`계획 읽기 실패: ${errorText(e)}`); }
     finally { if (current(captured)) setBusy(null); }
@@ -244,6 +249,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
   async function createExecution() {
     if (!plan) return;
     const captured = stamp(), body = { plan_handle: plan.handle };
+    let settled = captured;
     const pending = requestIdFor(pendingRef.current, requestKey("create_execution", runId, body), newId);
     pendingRef.current = pending;
     setBusy("create_execution"); setFailure(""); setNotice("");
@@ -253,8 +259,10 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
       pendingRef.current = null;
       const record = envelope.execution;
       if (record.run_id !== runId || record.plan_handle !== plan.handle) throw new Error("실행 응답이 계획과 다릅니다.");
-      setExecutionId(record.execution_id); setExecution(record); setExecutionPlan(plan); setSummary(null);
+      setExecutionId(record.execution_id); setExecution(record); setExecutionPlan(plan); setSummary(null); setPlanFocus("execution");
       live.current = { ...live.current, executionId: record.execution_id };
+      // This response opened the new execution: it (not the pre-request stamp) decides whether busy is released.
+      settled = adoptExecution(captured, record.execution_id);
       setNotice(record.dry_run ? DRY_RUN_NOTICE : envelope.replayed ? "같은 요청의 저장된 실행을 다시 열었습니다." : "실행을 만들었습니다. 계획을 승인하세요.");
       refreshLists();
     } catch (e) {
@@ -264,14 +272,14 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
       const codes = Array.isArray(f.detail?.codes) ? ` (${(f.detail!.codes as string[]).join(", ")})` : "";
       setFailure(`실행 만들기 실패: ${f.message}${codes}`);
       refreshLists();
-    } finally { if (current(captured)) setBusy(null); }
+    } finally { if (current(settled)) setBusy(null); }
   }
 
   async function openExecution(id: string) {
     const captured = stamp({ executionId: id });
     live.current = { ...live.current, executionId: id };
     pendingRef.current = null;
-    setExecutionId(id); setExecution(null); setExecutionPlan(null); setSummary(null);
+    setExecutionId(id); setExecution(null); setExecutionPlan(null); setSummary(null); setPlanFocus("execution");
     setReading(true); setReadError(""); setFailure(""); setNotice(""); setWaitBusy(false);
     try {
       const value = await readExecution(id, captured);
@@ -311,6 +319,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
         (resends ? " (기록이 바뀌어 다시 읽은 뒤 한 번 다시 보냈습니다)" : ""));
       if (envelope.request.outcome === "run_busy") setWaitBusy(true);
       if (isTerminal(envelope.execution)) refreshLists();
+      if (objectsMayHaveChanged(before, envelope.execution)) hostRef.current.onObjectsChanged?.(runId);
       void api.budget(runId).then(value => { if (mounted.current) setBudget(value); }).catch(() => undefined);
     } catch (e) {
       if (!current(captured)) return;
@@ -322,6 +331,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
         if (current(captured)) setReadError(`실행 기록 다시 읽기 실패: ${errorText(readFailure)}`);
       }
       if (!current(captured)) return;
+      if (fresh && objectsMayHaveChanged(before, fresh)) hostRef.current.onObjectsChanged?.(runId);
       if (kind === "cancel" && fresh && stopResend(f.kind, resends)) { setBusy(null); await send(fresh, "cancel", {}, resends + 1); return; }
       if (f.kind === "busy") { setWaitBusy(true); setNotice(`${BUSY_TEXT}. 잠시 뒤 다시 누르세요.`); return; }
       if (f.kind === "transport" && fresh && executionProgressed(before, fresh)) {
@@ -377,7 +387,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
   // ------------------------------------------------------------------------------------------ derived view
   const mapping = draft ? draftInputs(draft) : null;
   const placement = goal ? goalPlacement(p.panel, goal) : null;
-  const shownPlan = executionId ? executionPlan : plan;
+  const { shownPlan, createExecution: showCreateExecution } = planView({ plan, executionId, executionPlan, focus: planFocus });
   const controls = execution ? executionControls(execution, { busy: busy !== null, busyAction: busy as AnalysisAction | null }) : null;
   const approvals = execution ? approvalDisplay(execution) : null;
   const uiState = analysisUiState({ available: !capabilityUnavailable, templateAvailable: execution ? true : templateAvailable,
@@ -444,7 +454,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
     </div>
 
     {shownPlan && <PlanPreview record={shownPlan} budget={budget} />}
-    {plan && !executionId && <div className="mw-analysis-inline">
+    {plan && showCreateExecution && <div className="mw-analysis-inline">
       <Button size="sm" variant="primary" disabled={!!executionDisabled} title={executionDisabled ?? undefined}
         onClick={() => void createExecution()}>실행 만들기</Button>
       {executionDisabled && <span className="mw-muted" data-analysis-execution-reason>{executionDisabled}</span>}
@@ -475,7 +485,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
         <p className="mw-muted">계획 승인은 이 계획의 단계 목록만 허가합니다. 작업 단계의 비싼 계산 승인·예산 한도는 따로이며 서로 대신하지 않습니다.</p>
         {execution.blocked_reason && <p role="alert" className="mw-table-error" data-analysis-blocked={execution.blocked_reason.reason_code}>
           차단 ({execution.blocked_reason.reason_code}{execution.blocked_reason.step_id ? ` · ${execution.blocked_reason.step_id}` : ""}): {execution.blocked_reason.message}</p>}
-        {execution.notice && <p role="status" className="mw-pocket-notice" data-analysis-record-notice={execution.notice.code}>
+        {execution.notice && noticeApplies(execution, execution.notice.step_id) && <p role="status" className="mw-pocket-notice" data-analysis-record-notice={execution.notice.code}>
           {execution.notice.message ?? execution.notice.code}{execution.notice.step_id ? ` (${execution.notice.step_id})` : ""}</p>}
         {execution.stop && <p role="status" className="mw-muted" data-analysis-stop={execution.stop.reason}>
           {execution.stop.reason === "revoke" ? "실행 중 승인 철회로 종료되었습니다." : "중지되었습니다. 이 실행만 끝났고 run의 다른 실행·수동 도구는 그대로입니다."} (이벤트 #{execution.stop.seq})</p>}
@@ -527,8 +537,7 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
       {plans?.rows.map(row => <div key={row.handle} className="mw-pocket-history" data-analysis-history-plan={row.handle}>
         <span className="mw-mono">#{row.ordinal} · {row.goal} · {shortHandle(row.handle)} · {row.executable ? "실행 가능" : "선행 조건 미충족"}</span>
         <Button size="sm" aria-label={`계획 다시 열기 ${row.ordinal}`} disabled={busy !== null}
-          onClick={() => { setExecutionId(null); setExecution(null); setExecutionPlan(null); setSummary(null);
-            live.current = { ...live.current, executionId: null }; void openPlan(row.handle); }}>다시 열기</Button>
+          onClick={() => void openPlan(row.handle)}>다시 열기</Button>
       </div>)}
     </details>
   </section>;
@@ -697,7 +706,7 @@ function StepList({ execution, planRecord, panel, runId, sourceKind, onOpen, onE
         {step.job_blocked_reason && <p className="mw-muted">작업 시작 대기 이유: {step.job_blocked_reason}</p>}
         {step.job_cancel_requested && <p className="mw-muted">작업 취소 요청됨 · 종료 확인 중</p>}
         {cleanupPending && <p role="status" className="mw-pocket-notice" data-analysis-cleanup-pending>작업 정리 대기 ({step.job_cleanup_status})</p>}
-        {step.deferred_reason && <p className="mw-muted">시작 보류: {step.deferred_reason}</p>}
+        {step.deferred_reason && noticeApplies(execution, step.step_id) && <p className="mw-muted">시작 보류: {step.deferred_reason}</p>}
         {step.failure && <p role="alert" className="mw-table-error" data-analysis-step-failure={step.failure.reason_code ?? step.failure.error ?? ""}>
           {step.failure.status ?? "failed"} · {step.failure.error ?? "—"}{step.failure.reason_code ? ` (${step.failure.reason_code})` : ""}: {step.failure.message ?? ""}
           {step.failure.retryable ? " · 재시도 1회 가능" : " · 재시도 불가"}</p>}
