@@ -151,6 +151,17 @@ export function reopenDecision(panel: PocketPanelKind, sourceKind: string | null
   return { allowed: false, reason: "이 소스 종류의 포켓 결과는 다시 열 수 없습니다." };
 }
 
+/** An open request from another panel (M13 analysis flow) for one stored pocket_set: exactly the guards of the
+ * "기록에서 다시 열기" button (source-kind screen rule, then the host block such as M10 comparison). */
+export function pocketOpenRequestDecision(panel: PocketPanelKind, row: { source_kind: string | null } | null,
+                                          blockedReason: string | null): { allowed: boolean; reason: string | null } {
+  if (!row) return { allowed: false, reason: "이 run의 포켓 기록에서 요청한 결과를 찾지 못했습니다." };
+  const decision = reopenDecision(panel, row.source_kind);
+  if (!decision.allowed) return decision;
+  if (blockedReason) return { allowed: false, reason: blockedReason };
+  return { allowed: true, reason: null };
+}
+
 export function cancelRerunNotice(job: { status: string; protocol_id: string } | null): string | null {
   if (!job || job.protocol_id !== "fpocket_detect_v1" || job.status !== "cancelled") return null;
   return "같은 소스·체인 선택의 검출은 이 run에서 이미 취소되었습니다. 같은 호출은 취소된 작업을 그대로 돌려주므로 다시 실행되지 않습니다. 다른 체인 조합을 고르거나 새 run에서 실행하세요.";

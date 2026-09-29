@@ -24,7 +24,8 @@ export interface AnalysisWorkflowPanelProps {
   sourceOptions: { handle: string; kind: string }[];
   /** Read only when a goal is chosen or 화면 선택 다시 가져오기 is pressed; later screen changes never alter a plan. */
   screen: ScreenSelections;
-  onOpenResult: (request: AnalysisOpenRequest) => void;
+  /** Resolves to null when the host opened the result, or to the refusing guard's reason. */
+  onOpenResult: (request: AnalysisOpenRequest) => string | null | void | Promise<string | null>;
   /** Main panel: enter the chemical workspace (chemical_interactions and chemical-structure results). */
   onEnterChemical?: (runId: string) => void;
   /** Chemical panel: return to the ordinary structure screen. */
@@ -358,14 +359,19 @@ export function AnalysisWorkflowPanel(p: AnalysisWorkflowPanelProps) {
     finally { if (current(captured)) { setReading(false); setBusy(null); } }
   }
 
-  function openResult(step: AnalysisStepRecord, view: ResultView) {
+  async function openResult(step: AnalysisStepRecord, view: ResultView) {
     if (!execution) return;
     const host = hostRef.current;
     if (host.run.run_id !== runId) return;
+    const captured = { ...live.current };
     const handle = Object.values(step.outputs ?? {}).find(value => value !== step.report_handle) ?? null;
-    host.onOpenResult({ runId, executionId: execution.execution_id, stepId: step.step_id, view, handle,
-      jobId: step.job_id, outputs: { ...step.outputs } });
-    setNotice(`${step.step_id} 결과를 기존 화면의 경로로 엽니다.`);
+    setNotice(`${step.step_id} 결과를 기존 화면의 경로로 엽니다.`); setFailure("");
+    const refusal = await host.onOpenResult({ runId, executionId: execution.execution_id, stepId: step.step_id, view,
+      handle, jobId: step.job_id, outputs: { ...step.outputs } });
+    if (!refusal || !responseCurrent(captured, { ...live.current, action: action.current }, mounted.current)) return;
+    setNotice("");
+    setFailure(`${step.step_id} 결과를 열 수 없습니다: ${refusal}` + (view === "pocket"
+      ? ` 조건이 풀리면 fpocket 후보 공동 패널의 "기록에서 다시 열기"에서 ${shortHandle(handle ?? "")} 항목을 여세요.` : ""));
   }
 
   // ------------------------------------------------------------------------------------------ derived view
@@ -665,7 +671,7 @@ function PlanPreview({ record, budget }: { record: AnalysisPlanRecord; budget: B
 
 function StepList({ execution, planRecord, panel, runId, sourceKind, onOpen, onEnterChemical, onExitToMain }: {
   execution: AnalysisExecution; planRecord: AnalysisPlanRecord | null; panel: AnalysisPanelKind; runId: string;
-  sourceKind: string | null; onOpen: (step: AnalysisStepRecord, view: ResultView) => void;
+  sourceKind: string | null; onOpen: (step: AnalysisStepRecord, view: ResultView) => Promise<void>;
   onEnterChemical?: () => void; onExitToMain?: () => void }) {
   return <ol className="mw-analysis-steps mw-analysis-measured" aria-label="실행 단계">
     {execution.steps.map(step => {
@@ -698,10 +704,9 @@ function StepList({ execution, planRecord, panel, runId, sourceKind, onOpen, onE
         {completed && step.null_result === true && <p role="status" data-analysis-null-result>정상적인 빈 결과 (scientific_null). 실패가 아니며 다음 단계를 계속합니다.</p>}
         {completed && Object.keys(step.outputs).length > 0 && <p className="mw-mono">
           {Object.entries(step.outputs).map(([name, handle]) => `${name} ${handle}`).join(" · ")}</p>}
-        {completed && decision.action === "open_here" && decision.view && (decision.view === "pocket"
-          ? <p className="mw-muted" data-analysis-pocket-guide>포켓 결과는 fpocket 후보 공동 패널의 &quot;기록에서 다시 열기&quot;에서 {shortHandle(Object.values(step.outputs)[0] ?? "")} 항목을 여세요
-            (같은 오버레이 보호 규칙).</p>
-          : <Button size="sm" aria-label={`결과 열기 ${step.step_id}`} onClick={() => onOpen(step, decision.view!)}>결과 열기</Button>)}
+        {completed && decision.action === "open_here" && decision.view &&
+          <Button size="sm" aria-label={`결과 열기 ${step.step_id}`} data-analysis-open-view={decision.view}
+            onClick={() => void onOpen(step, decision.view!)}>결과 열기</Button>}
         {completed && decision.action === "open_in_chemical_screen" && onEnterChemical &&
           <Button size="sm" aria-label={`화학 작업 화면에서 열기 ${step.step_id}`} title={decision.reason ?? undefined}
             onClick={onEnterChemical}>화학 작업 화면에서 열기</Button>}

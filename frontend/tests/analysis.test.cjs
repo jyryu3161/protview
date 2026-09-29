@@ -352,3 +352,20 @@ test("outcome text never invents progress for no-op and busy outcomes", () => {
   assert.equal(a.outcomeText("advanced"), "한 단계를 진행했습니다.");
   assert.equal(a.BUSY_TEXT, "다른 요청을 처리 중입니다");
 });
+
+test("pocket chain import: only an explicit selection of the displayed source of this run", () => {
+  const chosen = { runId: "run-a", source: PREPARED, chains: ["B", "A"] };
+  same(a.importedPocketChains(chosen, "run-a", PREPARED), ["A", "B"]);
+  assert.equal(a.importedPocketChains(chosen, "run-b", PREPARED), null, "another run");
+  assert.equal(a.importedPocketChains(chosen, "run-a", MINIMIZED), null, "not the displayed source");
+  assert.equal(a.importedPocketChains({ ...chosen, chains: null }, "run-a", PREPARED), null, "default = nothing explicit");
+  assert.equal(a.importedPocketChains({ ...chosen, chains: [] }, "run-a", PREPARED), null, "nothing checked");
+  assert.equal(a.importedPocketChains(null, "run-a", PREPARED), null);
+  const draft = a.importDraft("find_cavities", "main", screen({ pocketChains: a.importedPocketChains(chosen, "run-a", PREPARED) }));
+  same(draft.chains, ["A", "B"]);
+});
+
+test("pocket results open here in their own screen (through the pocket panel guards)", () => {
+  const decision = a.resultOpenDecision("main", "find_cavities", "openmm_minimized_structure", "fpocket_detect_v1");
+  same([decision.action, decision.view, decision.label], ["open_here", "pocket", "결과 열기"]);
+});

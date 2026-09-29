@@ -20,7 +20,7 @@ import { Button, InspectorSection, MolstarViewer, WorkspaceShell,
 import type { ViewerBridge, ViewerSource } from "./MolstarViewer";
 import { PocketPanel } from "./PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "./AnalysisWorkflowPanel";
-import { hostRequestAccepted, type ScreenSelections } from "@/lib/analysis";
+import { hostRequestAccepted, importedPocketChains, type ScreenSelections } from "@/lib/analysis";
 import { chemicalExclusive, featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback,
   type PocketOverlayRequest } from "@/lib/pockets";
 
@@ -169,6 +169,23 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
   // Host-side stale guard for the M13 analysis panel of this run.
   const analysisHostRef = useRef<{ runId: string | null }>({ runId: null });
   analysisHostRef.current = { runId };
+  // M13 flow panel ↔ pocket panel: explicit chain selection (read-only import) and stored-set open requests that go
+  // through the pocket panel's own "기록에서 다시 열기" guards.
+  const [pocketChainSelection, setPocketChainSelection] = useState<{ runId: string; source: string; chains: string[] | null } | null>(null);
+  const [pocketOpenRequest, setPocketOpenRequest] = useState<{ token: number; runId: string; setHandle: string } | null>(null);
+  const pocketOpenToken = useRef(0);
+  const pocketOpenResolvers = useRef(new Map<number, (refusal: string | null) => void>());
+  const requestPocketOpen = useCallback((requestRunId: string, setHandle: string) => new Promise<string | null>(resolve => {
+    for (const previous of pocketOpenResolvers.current.values()) previous("새 포켓 결과 열기 요청으로 대체되었습니다.");
+    pocketOpenResolvers.current.clear();
+    const token = ++pocketOpenToken.current;
+    pocketOpenResolvers.current.set(token, resolve);
+    setPocketOpenRequest({ token, runId: requestRunId, setHandle });
+  }), []);
+  const pocketOpenAnswered = useCallback((token: number, refusal: string | null) => {
+    const resolve = pocketOpenResolvers.current.get(token);
+    if (resolve) { pocketOpenResolvers.current.delete(token); resolve(refusal); }
+  }, []);
   function requestPocketOverlay(request: PocketOverlayRequest | null) {
     if (!pocketRequestAccepted(request, pocketHostRef.current)) return;
     setPocketOverlayError(null); setPocketNotice(null);
@@ -545,15 +562,17 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
   }
 
   /** Opens a workflow chemical result through the existing result selection path (chemical screen only). */
-  function openAnalysisResult(request: AnalysisOpenRequest) {
-    if (!hostRequestAccepted(request, analysisHostRef.current) || request.view !== "chemical") return;
+  function openAnalysisResult(request: AnalysisOpenRequest): Promise<string | null> | string | null {
+    if (!hostRequestAccepted(request, analysisHostRef.current)) return "다른 run의 요청입니다.";
+    if (request.view === "pocket") return request.handle ? requestPocketOpen(request.runId, request.handle) : "포켓 결과 handle이 없습니다.";
+    if (request.view !== "chemical") return "이 결과는 화학 작업 화면에서 열 수 없습니다.";
     const result = request.outputs.chemical_interaction_set;
     if (result) {
       setResultList(previous => [...new Set([...previous, result])]);
       chooseResult(result);
-      return;
+      return null;
     }
-    if (!request.jobId) return;
+    if (!request.jobId) return "열 수 있는 화학 결과가 없습니다.";
     // A preparation step: show its prepared chemical structure through the existing prepare-job display path.
     const jobId = request.jobId;
     chooseResult("");
@@ -565,13 +584,15 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
       setPrepareJob(job as ChemicalJob); setDetectJob(null);
       setJobHistory(previous => [job as ChemicalJob, ...previous.filter(saved => saved.job_id !== job.job_id)]);
     }).catch(e => { if (jobSelectionRevision.current === selection) setFailure(`분석 흐름 결과 열기 실패: ${errorText(e)}`); });
+    return null;
   }
   let analysisRequest: Record<string, unknown> | null = null;
   try { if (preview?.ready && previewMatchesRequest(previewRequest, makeArgs())) analysisRequest = makeArgs() as unknown as Record<string, unknown>; }
   catch { /* incomplete form: no ready request to import */ }
   const analysisScreen: ScreenSelections = {
     displayedSource: display ? { handle: display.view.handle, kind: "chemical_structure" } : null,
-    ligand: null, ligandSourceHandle: null, preparation: null, cutoff_A: null, types: null, pocketChains: null,
+    ligand: null, ligandSourceHandle: null, preparation: null, cutoff_A: null, types: null,
+    pocketChains: importedPocketChains(pocketChainSelection, runId, display?.view.handle ?? null),
     atoms: null, comparison: null, chemicalRequest: analysisRequest, openmmAcknowledged: null };
 
   const fileControl = (kind: ImportKind, label: string, accept: string) =>
@@ -891,6 +912,7 @@ export function ChemicalWorkspace({ run, runs, events, capabilities, onExit, onS
           sourceOptions={pocketSources} displayedSourceHandle={display?.view.handle ?? null} viewerReady={chemicalReady}
           blockedReason={null} overlay={pocketState?.request ?? null} overlayApplied={pocketReadback}
           overlayError={pocketOverlayError} overlayNotice={pocketNotice} onOverlay={requestPocketOverlay}
+          openRequest={pocketOpenRequest} onOpenRequestResult={pocketOpenAnswered} onChainSelection={setPocketChainSelection}
           onReturnToSource={() => requestPocketOverlay(null)} /></InspectorSection>
       <InspectorSection><span className="mw-eyebrow">7 · 분석 흐름</span>
         <AnalysisWorkflowPanel panel="chemical" run={run}

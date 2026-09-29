@@ -88,6 +88,15 @@ export function importDraft(goal: AnalysisGoal, panel: AnalysisPanelKind, screen
     atoms: screen.atoms, comparison: screen.comparison, chemicalRequest: screen.chemicalRequest };
 }
 
+/** The pocket panel's explicit chain selection, imported only for the displayed source of the same run.
+ * The panel default (null) or an empty selection imports nothing: no chain is chosen for the user. */
+export function importedPocketChains(selection: { runId: string; source: string; chains: string[] | null } | null,
+  runId: string | null, displayedHandle: string | null): string[] | null {
+  if (!selection || !runId || selection.runId !== runId || !displayedHandle || selection.source !== displayedHandle ||
+      !selection.chains?.length) return null;
+  return [...new Set(selection.chains)].sort();
+}
+
 export interface DraftMapping { inputs: Record<string, unknown> | null; blockers: string[]; missing: string[] }
 
 /** Maps the frozen panel values to the server `inputs`. Blockers disable 계획 만들기; missing items are sent as
