@@ -31,7 +31,7 @@ export interface WorkspaceShellProps {
 export function WorkspaceShell(p: WorkspaceShellProps) {
   const [tab, setTab] = useState<RailTab>("run");
   return (
-    <div className="mw-root mw-shell" style={{ height: "100vh" }}>
+    <div className="mw-root mw-shell" style={{ height: "100%" }}>
       <header className="mw-topbar">
         <span className="mw-mono" style={{ fontWeight: 500 }}>{p.runId ?? "no run"}</span>
         {p.pipeline && <span className="mw-muted" style={{ fontSize: 13 }}>{p.pipeline}</span>}
