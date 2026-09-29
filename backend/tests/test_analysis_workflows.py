@@ -1799,3 +1799,160 @@ def test_read_probe_never_makes_a_concurrent_advance_busy(client):
         stop.set()
         for reader in readers:
             reader.join(10)
+
+
+# ------------------------------------------------------------------------------ review follow-up (guards, jobs, list)
+def _branch_proposals(run: Run, eid: str) -> list[dict]:
+    return [e for e in run.events.read() if e["type"] == "branch_proposed" and e.get("branch_id") == f"analysis_{eid}"]
+
+
+def test_run_budget_release_never_raises_the_loop_guard_and_resumes_after_the_limit_change(client):
+    from mw.runtime.guards import BudgetLimits
+    rid, run, _body, eid = _approved_measure(client)
+    live = api_module._run(rid)
+    live.update_limits(BudgetLimits(wall_clock_s=max(live.budget.wall_clock_s, 1e-6)))
+    for _ in range(4):
+        record = _done(_act(client, rid, eid, "advance"))
+        assert record["status"] == "ready" and record["notice"]["code"] == "run_budget_exhausted"
+        assert record["steps"][0]["status"] == "pending" and record["steps"][0]["failure"] is None
+    assert not _branch_proposals(run, eid) and not _linked(run, eid, "tool_called")
+    assert record["physical_attempts"] == 0
+    live.update_limits(BudgetLimits(wall_clock_s=1800))  # the existing limit-change path; never the workflow
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["steps"][0]["status"] == "completed" and len(_branch_proposals(run, eid)) == 1
+    assert _drive(client, rid, eid)["status"] == "complete"
+
+
+def test_retry_released_by_the_run_budget_never_raises_the_loop_guard(client, monkeypatch):
+    from mw.runtime.guards import BudgetLimits
+    rid, run, _body, eid = _approved_measure(client)
+    live = api_module._run(rid)
+    live.sleep = lambda seconds: None
+    _fixture_tool(monkeypatch, "measure_distance", _transient(4))
+    assert _done(_act(client, rid, eid, "advance"))["retryable_step"] == "s01"
+    live.update_limits(BudgetLimits(wall_clock_s=max(live.budget.wall_clock_s, 1e-6)))
+    released = _done(_act(client, rid, eid, "retry", step_id="s01"))
+    assert released["status"] == "ready" and released["notice"]["code"] == "run_budget_exhausted"
+    assert released["steps"][0]["retries_used"] == 0  # a released retry is not used up
+    for _ in range(3):
+        again = _done(_act(client, rid, eid, "advance"))  # resumes the released retry; still not started
+        assert again["status"] == "ready" and again["notice"]["code"] == "run_budget_exhausted"
+    assert len(_branch_proposals(run, eid)) == 1  # only the first real call proposed
+    live.update_limits(BudgetLimits(wall_clock_s=1800))
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["steps"][0]["status"] == "completed" and record["steps"][0]["retries_used"] == 1
+    assert len(_branch_proposals(run, eid)) == 2
+
+
+def test_unclosed_job_release_records_no_proposal(client):
+    rid, run, _body, eid = _approved_measure(client)
+    live = api_module._run(rid)
+
+    def pending():  # FAULT FIXTURE: an unclosed physical job elsewhere in the run
+        raise ToolFailure(FailureClass.precondition, "running job needs verified cleanup before new work",
+                          detail={"job_id": "job_x", "reason_code": "job_cleanup_pending"})
+
+    live._check_jobs_clear = pending
+    try:
+        for _ in range(3):
+            record = _done(_act(client, rid, eid, "advance"))
+            assert record["status"] == "ready" and record["notice"]["code"] == "job_cleanup_pending"
+    finally:
+        del live._check_jobs_clear
+    assert not _branch_proposals(run, eid)
+    assert _done(_act(client, rid, eid, "advance"))["steps"][0]["status"] == "completed"
+
+
+@pytest.mark.parametrize(("failure", "retryable"), [
+    ({"error": "resource_exceeded", "message": "worker memory or output limit exceeded"}, False),
+    ({"error": "resource_exceeded", "message": "job timeout during guardian bootstrap"}, True),
+    ({"error": "fatal", "message": "worker exit or abandoned helper"}, True),
+])
+def test_owned_job_resource_exceeded_is_not_retryable_but_failure_and_timeout_are(client, ubq_run, monkeypatch,
+                                                                                    failure, retryable):
+    rid, _run, _body, eid = _cavities(client, ubq_run)
+    api_module._run(rid).approve("expensive_first_call")
+    monkeypatch.setattr(JobQueue, "_publish_pocket",  # FAULT FIXTURE: the real worker ran; the queue records this
+                        lambda self, *a, **k: {"status": "failed", "failure": dict(failure)})
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["status"] == "failed" and record["steps"][0]["failure"]["error"] == failure["error"]
+    assert record["retryable_step"] == ("s01" if retryable else None)
+    assert record["steps"][0]["failure"]["retryable"] is retryable
+
+
+def test_manual_start_and_retry_refuse_workflow_owned_jobs_but_cancel_is_observed(client, ubq_run):
+    rid, run, _body, eid = _cavities(client, ubq_run)
+    gated = _done(_act(client, rid, eid, "advance"))
+    job_id = gated["steps"][0]["job_id"]
+    assert gated["status"] == "awaiting_scientific_approval" and gated["steps"][0]["job_ownership"] == "owned"
+    api_module._run(rid).approve("expensive_first_call")
+    for action in ("start", "retry"):
+        refused = client.post(f"/runs/{rid}/jobs/{job_id}/{action}")
+        assert refused.status_code == 412, refused.text
+        assert refused.json()["detail"]["reason_code"] == "job_owned_by_analysis_execution"
+    assert not _types(run, "budget_reserved") and not _types(run, "job_retry_queued")
+    # Manual cancel stays a user safety control; the workflow observes it as a cancelled job.
+    assert client.post(f"/runs/{rid}/jobs/{job_id}/cancel").json()["status"] == "accepted"
+    record = _done(_act(client, rid, eid, "advance"))
+    assert record["status"] == "failed" and record["retryable_step"] is None
+    assert record["steps"][0]["failure"]["reason_code"] == "job_cancelled"
+
+
+def test_workflow_retry_that_finds_its_job_requeued_elsewhere_is_released_not_blocked(client, ubq_run, monkeypatch):
+    rid, run, _body, eid = _cavities(client, ubq_run)
+    api_module._run(rid).approve("expensive_first_call")
+    monkeypatch.setattr(JobQueue, "_publish_pocket",  # FAULT FIXTURE: an ordinary owned-job failure
+                        lambda self, *a, **k: {"status": "failed",
+                                               "failure": {"error": "fatal", "message": "fixture failure"}})
+    failed = _done(_act(client, rid, eid, "advance"))
+    job_id = failed["steps"][0]["job_id"]
+    assert failed["retryable_step"] == "s01"
+    with run._transition():  # FAULT FIXTURE: re-queued outside this execution (e.g. a pre-fix manual retry)
+        run.events.append("job_retry_queued", job_id=job_id, retry_index=1)
+    assert JobQueue(run).get(job_id)["status"] == "queued"
+    record = _done(_act(client, rid, eid, "retry", step_id="s01"))
+    assert record["status"] != "blocked" and record["blocked_reason"] is None
+    assert record["notice"]["code"] == "not_started" and record["steps"][0]["status"] == "pending"
+    assert JobQueue(run).get(job_id)["status"] == "queued" and not _types(run, "job_cancel_requested")
+
+
+def test_attempt_limit_never_refuses_a_report_step(client, monkeypatch):
+    monkeypatch.setitem(analysis_plans.LIMITS, "max_physical_attempts", 1)
+    rid, run, _body, eid = _approved_measure(client)
+    first = _done(_act(client, rid, eid, "advance"))
+    assert first["steps"][0]["status"] == "completed" and first["physical_attempts"] == 1
+    final = _done(_act(client, rid, eid, "advance"))
+    assert final["status"] == "complete" and final["steps"][1]["status"] == "completed"
+    assert not _types(run, "analysis_attempt_refused")
+
+
+def test_execution_list_reads_once_and_isolates_a_corrupt_execution(client):
+    rid, run, body, eid = _approved_measure(client)
+    other = _execution(client, rid, body["handle"])["execution_id"]
+    third = _execution(client, rid, body["handle"])["execution_id"]
+    _done(_act(client, rid, eid, "advance"))
+    reads = {"n": 0}
+    original = run.events.read
+
+    def counted(*args, **kwargs):
+        reads["n"] += 1
+        return original(*args, **kwargs)
+
+    run.events.read = counted
+    try:
+        listed = client.get(f"/runs/{rid}/analysis/executions").json()
+    finally:
+        del run.events.read
+    assert reads["n"] == 1 and listed["total"] == 3
+    assert [row["execution_id"] for row in listed["rows"]] == [eid, other, third]
+    assert all(row["error"] is None for row in listed["rows"])
+    assert listed["rows"][0]["status"] == "ready" and listed["rows"][1]["status"] == "awaiting_approval"
+    with run._transition():  # FAULT FIXTURE: a damaged causal record names a step outside the plan
+        run.events.append(ax.STEP_DONE, execution_id=other, step_id="s09", operation_id="op_x", outputs={},
+                          null_result=False, child={})
+    listed = client.get(f"/runs/{rid}/analysis/executions")
+    assert listed.status_code == 200
+    rows = {row["execution_id"]: row for row in listed.json()["rows"]}
+    assert rows[other]["error"]["code"] == "execution_record_invalid" and rows[other]["status"] is None
+    assert rows[eid]["status"] == "ready" and rows[third]["status"] == "awaiting_approval"
+    assert client.get(f"/runs/{rid}/analysis/executions/{other}").status_code == 409  # detail fails closed

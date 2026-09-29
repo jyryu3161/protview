@@ -714,9 +714,15 @@ class Run:
                     self.events.append("execution_call_admitted", proposal_id=proposal_id, tool=tool,
                                        key=key, **link_fields(link))
             active_branch = branch_id if execution_mode == "autonomous" else None
+            done = self.events.completed().get(key) if spec.idempotent else None
+            if link is not None and not done:
+                # A linked call that cannot start (run wall budget, unclosed job) records no branch
+                # proposal: guards must not rise from calls that never started. Same checks as the chain.
+                if self._time_left() <= 0:
+                    self._checkpoint_budget(tool, normalized, "wall_clock_s")
+                self._check_jobs_clear()
             if active_branch:
                 self._propose(active_branch, key, tool, proposal_id)
-            done = self.events.completed().get(key) if spec.idempotent else None
             if done:
                 out = self._verified(done, "planned_call" if self.dry_run and spec.cost_class == "expensive"
                                      else spec.emits)
