@@ -35,7 +35,7 @@
 | 오프스크린 탭 흐름·M14 수락 실행기 | `c4962e2` (병합 `d3e5914`) |
 | 코드 검토 권고 반영(탭 전환 예산 읽기 확인, 소스 도장 빌드 필수) = 고정 소스 | `4501aa1` |
 | 게이트·수락 QA·회귀 증거 | `fb47056`, `c661502` |
-| 완료 기록·하네스 문서 | 이 기록과 같은 커밋 |
+| 완료 기록·프로젝트 문서 갱신 | 이 기록과 같은 커밋 |
 
 ## 검토 (Opus 5.5, 구현하지 않은 서브에이전트)
 - 독립 코드 검토: **approved**, 막는 지적 없음, 권고 6개.
@@ -46,8 +46,8 @@
 | 예산 사례가 탭 전환 때의 `/budget` 읽기를 따로 확인하지 않음 | 수정(`4501aa1`): 탭 클릭 뒤 `GET /runs/{id}/budget`를 요청 기록에서 확인 |
 | 전역 예산 읽기가 실패하면 앞선 OpenMM 예산 읽기까지 밀려 값이 다음 읽기까지 멈춤 | 기록(`docs/tracking/findings.md`) |
 | 수락 판정이 소스 도장 빌드를 요구하지 않음 | 수정(`4501aa1`): `acceptance`는 `buildCurrentWithSource`가 true일 때만 |
-| 대기 중 저장 보기 복원이 탭 왕복을 견디는지 직접 확인하지 않음 | 수용(명세 최소 사례 밖, 탭 전환이 복원 취소 경로를 부르지 않음은 코드 검토로 확인) |
-| 탭 사이 화살표 키 이동 없음 | 수용(명세 요구 아님) |
+| 대기 중 저장 보기 복원이 탭 왕복을 견디는지 직접 확인하지 않음 | 수용(M14 수락 사례 범위 밖, 탭 전환이 복원 취소 경로를 부르지 않음은 코드 검토로 확인) |
+| 탭 사이 화살표 키 이동 없음 | 수용(M14 범위 밖) |
 
 - 독립 증거 검토(코드 검토자와 다른 인스턴스): **approve**, 막는 지적 없음, 권고 6개.
 
@@ -71,7 +71,7 @@
 | `pytest scripts/test_m14_offscreen_acceptance.py scripts/test_m13_offscreen_acceptance.py scripts/test_codex_hooks.py -q` | 37 passed |
 | `node --check` `tabs-flow.cjs`, `workflows-flow.cjs` | exit 0 |
 
-백엔드가 바뀌지 않았으므로 전체 백엔드 pytest는 필수 게이트로 돌리지 않았다(명세 10절 6).
+백엔드가 바뀌지 않으면 전체 백엔드 pytest는 필수 게이트가 아니라고 M14 착수 때 정했으므로 돌리지 않았다(M13 기준 597개 통과, skip 0).
 
 ## 수락 QA
 
@@ -91,7 +91,7 @@
 - 큰 텍스트 증거 50개(331,447,219 bytes)는 `frontend/tests/offscreen/artifacts/m14-acceptance/20260930-m13-regression/export-full/`로 옮겼다(`ARCHIVED-EVIDENCE.sha256`). M14 수락 폴더에서도 1개(1,191,726 bytes)를 `.../20260930/export-full/`로 옮겼다.
 
 ### 기존 검사 스크립트
-기존 `frontend/tests/offscreen/*.cjs`와 M11·M12·M13 수락 실행기는 고치지 않고 통과했다. 기존 파일 수정은 Stop 훅 기대 목록을 고정하는 `scripts/test_codex_hooks.py` 한 줄뿐이다. 과거 검토 파일·해시는 건드리지 않았다.
+기존 `frontend/tests/offscreen/*.cjs`와 M11·M12·M13 수락 실행기는 고치지 않고 통과했다. 기존 파일 수정은 Stop 훅 세 번째 그룹에 M14 실행기 테스트를 넣은 `.codex/hooks/stop.py` 한 줄과, 그 목록을 고정하는 `scripts/test_codex_hooks.py` 한 줄뿐이다. 과거 검토 파일·해시는 건드리지 않았다.
 
 ## 대체한 과거 검증 범위
 M14가 공유 화면 코드(`page.tsx`, `shell.tsx`)를 바꿨으므로, M8–M13의 현재 기준 화면 검증은 위 M8–M13 회귀(2026-09-29 15:13–15:49 UTC, 고정 `4501aa1`)로 대체한다. M13 수락 실행기가 돌리지 않는 과거 범위(M8 keyboard·dry-run 등 개별 흐름)는 M13 완료 기록의 "대체한 과거 검증 범위"와 같다.
