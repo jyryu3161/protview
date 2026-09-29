@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_plans
+from .. import analysis_executions, analysis_plans
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
 from ..chemical_bundle import validated_result as validated_chemical_result
@@ -98,6 +98,7 @@ CHEMICAL_REQUEST_LIMIT = 512 * 1024
 CHEMICAL_SOURCE_READ_LIMIT = 32 * 1024 * 1024
 CHEMICAL_MANIFEST_READ_LIMIT = 8 * 1024 * 1024
 ANALYSIS_REQUEST_LIMIT = 64 * 1024
+ANALYSIS_PLAN_REQUEST_LIMIT = 1024 * 1024  # plan creation carries full CA-pair maps / chemistry mappings
 
 # Host header allowlist (DNS-rebinding guard). Only loopback names, optional port, case-insensitive.
 HOST_REJECT_STATUS = 400
@@ -626,10 +627,10 @@ def analysis_templates(rid: str) -> dict[str, Any]:
 @app.post("/runs/{rid}/analysis/plans", status_code=201)
 async def analysis_plan_create(rid: str, request: Request) -> Any:
     try:
-        raw = await _bounded_chemical_body(request, ANALYSIS_REQUEST_LIMIT)
+        raw = await _bounded_chemical_body(request, ANALYSIS_PLAN_REQUEST_LIMIT)
     except HTTPException as exc:
         raise HTTPException(413, detail={"error": "resource_exceeded",
-                                         "message": "analysis request exceeds 64 KiB"}) from exc
+                                         "message": "analysis plan request exceeds 1 MiB"}) from exc
     try:
         body = AnalysisPlanRequest.model_validate(_chemical_json(raw))
     except (HTTPException, PydanticValidationError):
@@ -657,6 +658,157 @@ def analysis_plan_detail(rid: str, handle: str) -> Any:
         return analysis_plans.plan_detail(_run(rid), handle)
     except ToolFailure as exc:
         return _tool_error(exc)
+
+
+class AnalysisExecutionCreate(BaseModel):
+    request_id: str
+    plan_handle: str
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class AnalysisRevisionRequest(BaseModel):
+    request_id: str
+    expected_revision: int
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class AnalysisApproveRequest(AnalysisRevisionRequest):
+    plan_hash: str
+
+
+class AnalysisRetryRequest(AnalysisRevisionRequest):
+    step_id: str
+
+
+async def _analysis_body(request: Request, model: type[BaseModel]) -> BaseModel | None:
+    try:
+        raw = await _bounded_chemical_body(request, ANALYSIS_REQUEST_LIMIT)
+    except HTTPException as exc:
+        raise HTTPException(413, detail={"error": "resource_exceeded",
+                                         "message": "analysis request exceeds 64 KiB"}) from exc
+    try:
+        return model.model_validate(_chemical_json(raw))
+    except (HTTPException, PydanticValidationError):
+        return None
+
+
+def _analysis_error(error: analysis_executions.AnalysisError) -> JSONResponse:
+    return JSONResponse(status_code=error.status, content={"ok": False, "error": error.code, "message": error.message,
+                                                          "fix": None, "detail": error.detail})
+
+
+async def _analysis_call(fn: Any) -> Any:
+    try:
+        return await run_in_threadpool(fn)
+    except analysis_executions.AnalysisError as exc:
+        return _analysis_error(exc)
+    except analysis_plans.AnalysisConflict as exc:
+        return _analysis_conflict(exc)
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "analysis execution record invalid"}) from exc
+
+
+def _invalid_analysis_request() -> JSONResponse:
+    return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid analysis execution request"))
+
+
+@app.post("/runs/{rid}/analysis/executions", status_code=201)
+async def analysis_execution_create(rid: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisExecutionCreate)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.create_execution(run, body.request_id, body.plan_handle))
+
+
+@app.get("/runs/{rid}/analysis/executions")
+async def analysis_execution_list(rid: str) -> Any:
+    """Read-only list; never reconciles, retries or appends events."""
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.list_executions(run))
+
+
+@app.get("/runs/{rid}/analysis/executions/{execution_id}")
+async def analysis_execution_detail(rid: str, execution_id: str) -> Any:
+    """Read-only record; owned job state is a derived view, recorded only by the next Advance."""
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.execution_detail(run, execution_id))
+
+
+@app.post("/runs/{rid}/analysis/executions/{execution_id}/approve")
+async def analysis_execution_approve(rid: str, execution_id: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisApproveRequest)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.approve(
+        run, execution_id, body.request_id, body.expected_revision, body.plan_hash))
+
+
+@app.post("/runs/{rid}/analysis/executions/{execution_id}/revoke")
+async def analysis_execution_revoke(rid: str, execution_id: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisRevisionRequest)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.revoke(
+        run, execution_id, body.request_id, body.expected_revision))
+
+
+@app.post("/runs/{rid}/analysis/executions/{execution_id}/advance")
+async def analysis_execution_advance(rid: str, execution_id: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisRevisionRequest)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.advance(
+        run, execution_id, body.request_id, body.expected_revision))
+
+
+@app.post("/runs/{rid}/analysis/executions/{execution_id}/retry")
+async def analysis_execution_retry(rid: str, execution_id: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisRetryRequest)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.retry(
+        run, execution_id, body.request_id, body.expected_revision, body.step_id))
+
+
+@app.post("/runs/{rid}/analysis/executions/{execution_id}/cancel")
+async def analysis_execution_cancel(rid: str, execution_id: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisRevisionRequest)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.cancel(
+        run, execution_id, body.request_id, body.expected_revision))
+
+
+@app.post("/runs/{rid}/analysis/executions/{execution_id}/scientific-approval")
+async def analysis_execution_scientific_approval(rid: str, execution_id: str, request: Request) -> Any:
+    body = await _analysis_body(request, AnalysisRevisionRequest)
+    if body is None:
+        return _invalid_analysis_request()
+    run = _run(rid)
+    return await _analysis_call(lambda: analysis_executions.scientific_approval(
+        run, execution_id, body.request_id, body.expected_revision))
+
+
+@app.get("/runs/{rid}/analysis/executions/{execution_id}/summary")
+async def analysis_execution_summary(rid: str, execution_id: str,
+                                     download: Literal["json"] | None = None) -> Any:
+    run = _run(rid)
+    result = await _analysis_call(lambda: analysis_executions.summary(run, execution_id))
+    if not isinstance(result, dict):
+        return result
+    if download == "json":
+        return Response(result["raw"], media_type="application/json", headers={
+            "Content-Disposition": f'attachment; filename="protview-workflow-summary-{execution_id[5:17]}.json"',
+            "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+    return {"handle": result["handle"], "summary": result["summary"]}
 
 
 @app.get("/tools")
