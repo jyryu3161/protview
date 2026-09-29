@@ -1,7 +1,7 @@
 # M14 탭 4개 골격과 기존 화면 이관 완료 기록
 
 - 판정: **완료** (2026-09-30)
-- 브랜치: `dryforge/m14-tabs` (`phase/m14-tab-skeleton` = main `36b5679`에서 분기). 시작 전에 M13을 main에 병합했다(`50ca0b4`, 기록 커밋 `36b5679`). M14의 main 병합 여부와 방법은 사용자가 정한다.
+- 브랜치: `dryforge/m14-tabs` (`phase/m14-tab-skeleton` = main `36b5679`에서 분기). 시작 전에 M13을 main에 병합했다(`50ca0b4`, 기록 커밋 `36b5679`). M14 main 병합 `da5e4bc`(2026-09-30).
 - 고정 소스: `4501aa1`. 게이트·수락 QA·회귀를 모두 이 고정에서 돌렸다. 증거 커밋 `fb47056`(매니페스트 README 해시 갱신 `c661502`).
 - 수락 증거: `docs/qa/m14-tabs-20260930/`(M14 수락), `docs/qa/m14-tabs-20260930/m13-regression/`(M8–M13 회귀). 큰 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다.
 - 백엔드 변경 없음(`git diff 36b5679..4501aa1 -- backend/`가 비어 있음). 외부 요청 0건, OpenRouter 호출 0회.
