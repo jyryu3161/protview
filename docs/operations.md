@@ -74,14 +74,16 @@ npm --prefix frontend run start -- -p 3000
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
+node --check frontend/tests/offscreen/tabs-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
+- `scripts/test_m14_offscreen_acceptance.py`는 M14 실행기의 사례 판정·`acceptance` 판정을 보는 단위 테스트다(서비스를 띄우지 않음, Stop 훅 세 번째 그룹).
 - `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정, `acceptance` 판정, 빌드 출처 확인을 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 세 번째 pytest 그룹에 들어 있다.
 - git worktree에서 백엔드 테스트나 서비스를 돌릴 때는 `PYTHONPATH=<worktree>/backend`를 준다. `.venv`의 editable 설치가 주 체크아웃의 `backend/`를 가리키므로, 주지 않으면 worktree의 `mw`가 아니라 주 체크아웃의 `mw`를 import한다.
 - 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket)는 해당 엔진이 설치되어 있어야 의미가 있다. M11 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`가 필요하며, 없으면 skip이 아니라 실패한다.
@@ -144,6 +146,19 @@ npm --prefix frontend run test:offscreen:chemical
 - 흐름 스크립트만 따로 돌리려면 서비스를 띄운 상태에서 `npm --prefix frontend run test:offscreen:workflows -- --mode <모드> --artifacts <디렉터리>`를 쓴다. `race`는 `--run`·`--other-run`, `chemical-attach`는 `scripts/m11_attach_browser_setup.py` 산출물(`--run --complex --mapping --ligand --sidecar`)이 필요하고, 입력 준비 전체 순서는 실행기에 있다.
 - 커밋하는 증거(`docs/qa/m13-workflows-<날짜>/`)는 README, `gate-results.md`, `freeze-manifest.txt`, 사례 대장, 텍스트 증거, `SHA256SUMS`, `binary-artifacts.json`이다. 스크린숏·paint·다운로드 원본은 Git 제외 artifacts 폴더에 두고 해시만 기록한다.
 - 큰 텍스트 증거(결정 0020): 내보낸 뒤 256 KiB를 넘는 텍스트 파일은 대장(`case-ledger*.json`, `ledger-row.json`)을 빼고 그 실행의 artifacts 폴더 `export-full/`로 같은 상대 경로로 옮긴다(삭제하지 않음). 옮긴 파일의 SHA-256을 `ARCHIVED-EVIDENCE.sha256`에 쓰고, `SHA256SUMS`의 원래 줄은 남기며, README 끝 절에 목록·크기·해시와 확인 명령(`cd <artifacts>/export-full && shasum -a 256 -c <repo>/docs/qa/<폴더>/ARCHIVED-EVIDENCE.sha256`)을 적는다. 이 이동은 실행기가 하지 않으므로 내보낸 뒤 직접 한다. M11 하위 실행기의 `chemical-evidence.json`은 하나가 약 62 MB까지 커진다.
+
+### M14 탭 수락 QA
+
+8000·3000 포트가 비어 있는 상태에서 실행한다. 실행기가 loopback 서비스를 직접 띄우고 끝나면 정리하며, `--build auto`(기본)는 현재 프런트엔드 소스로 도장 찍은 빌드만 재사용한다. 대장의 `acceptance`는 모든 사례가 돌고 통과했고 빌드가 현재 소스와 맞을 때만 true다. 화학 모드는 코드 루트의 `.deps/prolif/venv-locked`가 필요하다(git worktree에서 돌릴 때는 주 체크아웃의 `.deps`를 Git 제외 심볼릭 링크로 둔다).
+
+```bash
+.venv/bin/python scripts/m14_offscreen_acceptance.py --root runs/m14-acceptance-<날짜> \
+    --artifacts frontend/tests/offscreen/artifacts/m14-acceptance/<이름> --out docs/qa/m14-tabs-<YYYYMMDD>
+```
+
+- 모드: `main`(run 없음 → 탭 순서·기본값 → 구조 상태 왕복 → 기능 없는 탭 → 보고서 목록·내용·다운로드·fault → 작업 진행 중 탭 왕복·예산 → run 전환·늦은 응답)과 `chemical`(화학 화면의 탭 막대·상태 유지·예산). 흐름만 따로 돌리려면 서비스를 띄운 뒤 `npm --prefix frontend run test:offscreen:tabs -- --mode <main|chemical> --artifacts <디렉터리>`.
+- M8–M13 회귀는 M13 실행기를 모든 phase로, 기존 M13 증거 폴더가 아닌 곳에 돌린다: `--phases workflows,unavailable,regressions,m11,m12,ledger --out docs/qa/m14-tabs-<YYYYMMDD>/m13-regression`.
+- 내보낸 뒤 큰 텍스트 증거는 결정 0020대로 옮기고, README를 고쳤으면 `SHA256SUMS`의 README 줄도 갱신한다.
 
 ## 과거 단계 재검증
 
