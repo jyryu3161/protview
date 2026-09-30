@@ -287,3 +287,9 @@ test("site regions follow the fixed kinase_key_sites@1 indexes", () => {
   assert.deepEqual([17, 24, 45, 46, 47, 48, 80, 81, 82, 83, 1].map(lib.siteRegion),
     ["III", "αC", "GK", "hinge", "hinge", "hinge", "xDFG", "xDFG", "xDFG", "xDFG", null]);
 });
+
+test("every site region has its own colour token", () => {
+  assert.deepEqual(Object.keys(lib.SITE_REGION_TOKEN).sort(), ["GK", "III", "hinge", "xDFG", "αC"].sort());
+  assert.equal(new Set(Object.values(lib.SITE_REGION_TOKEN)).size, 5);
+  for (const index of [17, 24, 45, 46, 47, 48, 80, 81, 82, 83]) assert.ok(lib.SITE_REGION_TOKEN[lib.siteRegion(index)]);
+});

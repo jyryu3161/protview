@@ -16,6 +16,10 @@ import { canonicalChemicalElement, chemicalFocusSettleTimeoutMs, settleChemicalF
   waitForChemicalCameraSettle, type ChemicalCameraProbe } from "@/lib/chemical";
 import { OVERLAY_LABEL, readbackMismatch, type PocketFocusStatus, type PocketOverlayReadback,
   type PocketOverlayRequest } from "@/lib/pockets";
+import type { SceneAnnotationRef } from "@/lib/contracts";
+import { FIGURE_LEGEND_TEXT, legendShouldComposite, polarPairsForDrawing, siteRegion, SITE_OTHER_CONTACT_TOKEN,
+  SITE_POLAR_LINE_TOKEN, SITE_REGION_TOKEN, type SiteAnnotationReadback, type SiteAnnotationRequest,
+  type SiteAnnotationRestoreOutcome, type SiteRegion } from "@/lib/site-annotation";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -54,6 +58,10 @@ export interface MolstarViewerProps {
   pocketOverlay?: PocketOverlayRequest | null;
   /** Reported only after Mol* readback (applied), after removal (null readback) or on failure (error). */
   onPocketOverlay?: (key: string | null, readback: PocketOverlayReadback | null, error: string | null) => void;
+  /** M16: one stored reference site annotation on this exact source; own revision, drawn only through the catalog. */
+  siteAnnotation?: SiteAnnotationRequest | null;
+  /** Reported only after Mol* readback (applied), after removal or while hidden (null readback) or on failure (error). */
+  onSiteAnnotation?: (key: string | null, readback: SiteAnnotationReadback | null, error: string | null) => void;
 }
 
 type Plugin = import("molstar/lib/mol-plugin/context").PluginContext;
@@ -89,14 +97,28 @@ export interface ViewerQaSnapshot {
   layers: { layer: "reference" | "moving"; sourceHandle: string; visible: boolean;
     transform: number[]; nativeAtomCount: number }[];
   pocketOverlay: PocketOverlayReadback | null;
+  /** Native readback of the drawn site annotation (null unless every native ref still exists). */
+  siteAnnotation: SiteAnnotationReadback | null;
+  siteAnnotationError: string | null;
 }
 export interface ViewerBridge {
   bind(binding: ViewerBinding | null): void;
   snapshot(): ViewerQaSnapshot;
   apply(command: ViewerCommand): Promise<{ status: "applied" | "no_change" | "failed"; reasonCode: string | null }>;
-  captureScene(expected: ViewerBinding): Promise<NativeSceneState>;
-  restoreScene(expected: ViewerBinding, scene: NativeSceneState): Promise<NativeSceneState>;
-  captureFigure(expected: ViewerBinding, scene: NativeSceneState): Promise<{ state: NativeSceneState; pngBase64: string; width: number; height: number }>;
+  /** With `annotation`, the capture also requires that exact annotation to be applied natively (viewer_scene@2). */
+  captureScene(expected: ViewerBinding, annotation?: SceneAnnotationRef | null): Promise<NativeSceneState>;
+  /**
+   * With `annotation` (the same request already set as the `siteAnnotation` prop), the stored annotation is drawn
+   * (or confirmed) before the camera; its outcome is reported apart from the scene (applied or rejected, no rollback).
+   */
+  restoreScene(expected: ViewerBinding, scene: NativeSceneState, annotation?: SiteAnnotationRequest | null):
+    Promise<NativeSceneState & { siteAnnotation?: SiteAnnotationRestoreOutcome }>;
+  /**
+   * With `annotation`, that annotation must be applied natively; the legend text is composited onto a corner of the
+   * PNG when `legendShouldComposite(annotation.legend, drawn lines)`. Without it, no annotation may be drawn.
+   */
+  captureFigure(expected: ViewerBinding, scene: NativeSceneState, annotation?: SceneAnnotationRef | null):
+    Promise<{ state: NativeSceneState; pngBase64: string; width: number; height: number; legendComposited: boolean }>;
   invalidate(): void;
   cancelNative(): void;
 }
@@ -118,7 +140,10 @@ type Instance = { plugin: Plugin; structure: StructureSelector; source: ViewerSo
   validatedCatalogs: Map<string, { hash: string; catalog: AtomCatalog }>;
   pocketRepr?: PocketShapeRepr; pocketLiningRef?: string; pocketReadback: PocketOverlayReadback | null;
   pocketFocus: { key: string; token: number; status: PocketFocusStatus; target: number[] | null } | null;
-  pocketSessionKey: string; pocketEpoch: number };
+  pocketSessionKey: string; pocketEpoch: number;
+  /** State-tree refs owned by the site annotation (components and measurement selections), deleted on removal. */
+  siteRefs: string[]; siteReadback: SiteAnnotationReadback | null; siteError: string | null;
+  siteAppliedIntent: string; siteAppliedSession: string; siteAppliedCatalog: AtomCatalog | null; siteEpoch: number };
 type PocketShapeRepr = import("molstar/lib/mol-repr/representation").Representation.Any;
 
 function nativeMainRepresentationReady(current: Instance): boolean {
@@ -361,7 +386,8 @@ function qaAtomScreens(current: Instance, reference: AtomCatalog | null, moving:
 }
 
 /** Loci over the displayed structure for an exact set of server-mapped sourceIndex sites (all must exist once). */
-async function sourceIndexLoci(current: Instance, expected: Set<number>, modelNumber: number) {
+async function sourceIndexLoci(current: Instance, expected: Set<number>, modelNumber: number,
+                               missing = "포켓 주변 원자 site가 Mol* 구조에 없습니다.") {
   const structure = current.structure.obj?.data;
   if (!structure) throw new Error("표시된 구조가 없습니다.");
   const [{ StructureElement, Unit }, { OrderedSet }] = await Promise.all([
@@ -379,7 +405,7 @@ async function sourceIndexLoci(current: Instance, expected: Set<number>, modelNu
     }
     if (indices.length) elements.push({ unit, indices: OrderedSet.ofSortedArray(indices) });
   }
-  if (seen.size !== expected.size || !elements.length) throw new Error("포켓 주변 원자 site가 Mol* 구조에 없습니다.");
+  if (seen.size !== expected.size || !elements.length) throw new Error(missing);
   return StructureElement.Loci(structure, elements as Parameters<typeof StructureElement.Loci>[1]);
 }
 
@@ -411,11 +437,295 @@ function readPocketSpheres(current: Instance) {
     opacity: Number(values.uAlpha.ref.value) };
 }
 
+const SITE_REGION_ORDER: readonly SiteRegion[] = ["III", "αC", "GK", "hinge", "xDFG"];
+
+/** Everything that decides what is drawn; any change redraws (the page key alone is not trusted for that). */
+function siteIntentKey(request: SiteAnnotationRequest): string {
+  return JSON.stringify([request.key, request.handle, request.sourceHandle, request.visible, request.legend]);
+}
+
+/** Colour from a design token (CSS custom property); a missing token is an error, never a guessed colour. */
+function tokenHex(token: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim().toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(value)) throw new Error(`디자인 토큰 --${token} 색을 읽지 못했습니다.`);
+  return value;
+}
+
+function siteIntact(current: Instance): boolean {
+  const readback = current.siteReadback;
+  return !!readback && [...readback.nativeShapeRefs, ...readback.nativeComponentRefs]
+    .every(ref => !!current.plugin.state.data.cells.get(ref)?.obj);
+}
+
+function siteApplied(current: Instance, intentKey: string, sessionKey: string, catalog: AtomCatalog): boolean {
+  return !!current.siteReadback && current.siteAppliedIntent === intentKey && current.siteAppliedSession === sessionKey &&
+    current.siteAppliedCatalog === catalog && siteIntact(current);
+}
+
+/** The applied annotation that a scene or figure capture names; anything else is an error. */
+function requireAppliedSite(current: Instance, annotation: SceneAnnotationRef): SiteAnnotationReadback {
+  const readback = current.siteReadback;
+  if (!readback || !siteIntact(current) || readback.handle !== annotation.handle ||
+      readback.sourceHandle !== current.source.handle)
+    throw new Error("참조 주석이 뷰어에 적용된 상태가 아닙니다. 주석이 표시된 뒤 다시 시도하세요.");
+  if (readback.legend !== annotation.legend) throw new Error("뷰어에 적용된 주석의 범례 설정이 요청과 다릅니다.");
+  return readback;
+}
+
+/** Deletes every state-tree node the annotation owns (components and measurement selections with their shapes). */
+async function removeSiteAnnotation(current: Instance): Promise<void> {
+  current.siteReadback = null;
+  current.siteAppliedIntent = ""; current.siteAppliedSession = ""; current.siteAppliedCatalog = null;
+  const refs = current.siteRefs;
+  current.siteRefs = [];
+  const state = current.plugin.state.data;
+  const present = refs.filter(ref => state.cells.has(ref));
+  if (present.length) {
+    const builder = state.build();
+    for (const ref of present) builder.delete(ref);
+    await builder.commit();
+  }
+  current.plugin.canvas3d?.requestDraw();
+}
+
+/**
+ * Draws one stored annotation: site residues (ball-and-stick, region colour, `display_label` text as stored), the
+ * polar pairs whose two ends resolve to exactly one catalog atom each (dashed line, stored distance as text; never
+ * re-measured), other contact residues (colour only) and the contact ligand instance. Success is returned only after
+ * reading back what Mol* holds. Returns null (after removing any partial drawing) when `active()` turns false.
+ */
+async function drawSiteAnnotation(current: Instance, request: SiteAnnotationRequest, intentKey: string,
+                                  catalog: AtomCatalog, sessionKey: string, active: () => boolean):
+  Promise<SiteAnnotationReadback | null> {
+  await removeSiteAnnotation(current);
+  if (!active()) return null;
+  const created: string[] = [];
+  current.siteRefs = created;
+  const abort = async () => { await removeSiteAnnotation(current); return null; };
+  try {
+    const annotation = request.annotation;
+    if (annotation.schema !== "reference_site_annotation@1" || request.sourceHandle !== current.source.handle ||
+        annotation.structure.handle !== request.sourceHandle || catalog.structure_handle !== request.sourceHandle ||
+        annotation.structure.model_number !== catalog.model_number)
+      throw new Error("참조 주석의 구조·모델이 표시된 구조와 다릅니다.");
+    const model = catalog.model_number;
+    const sites: { chain_auth: string; accession: string | null; klifs_label: string; region: SiteRegion;
+      display_label: string; sources: number[] }[] = [];
+    for (const group of annotation.groups) for (const site of group.sites) {
+      if (site.status !== "annotated") continue;
+      const region = siteRegion(site.klifs_index);
+      if (!site.residue || site.display_label === null || !region)
+        throw new Error("주석 부위의 잔기·이름표·KLIFS 구역이 올바르지 않습니다.");
+      const rows = rowsForAuthoritativeResidue(catalog, site.residue);
+      if (!rows.length) throw new Error(`주석 부위 잔기(${site.display_label})를 원자 목록에서 정확히 찾지 못했습니다.`);
+      sites.push({ chain_auth: group.chain_auth, accession: group.accession, klifs_label: site.klifs_label, region,
+        display_label: site.display_label, sources: rows.map(row => row.viewer_source_index).sort((a, b) => a - b) });
+    }
+    const siteSources = new Set(sites.flatMap(site => site.sources));
+    const otherSources = new Set<number>();
+    for (const other of annotation.other_contact_residues ?? []) {
+      const rows = rowsForAuthoritativeResidue(catalog, other.residue);
+      if (!rows.length) throw new Error("다른 접촉 잔기를 원자 목록에서 정확히 찾지 못했습니다.");
+      for (const row of rows) if (!siteSources.has(row.viewer_source_index)) otherSources.add(row.viewer_source_index);
+    }
+    let ligandSources = new Set<number>();
+    if (annotation.contacts) {
+      const rows = rowsForAuthoritativeResidue(catalog, annotation.contacts.ligand);
+      if (!rows.length) throw new Error("접촉 결과의 리간드 인스턴스를 원자 목록에서 정확히 찾지 못했습니다.");
+      ligandSources = new Set(rows.map(row => row.viewer_source_index));
+    }
+    const { drawn, undrawn } = polarPairsForDrawing(annotation, catalog);
+    const colors: Record<string, string> = {};
+    for (const region of SITE_REGION_ORDER)
+      if (sites.some(site => site.region === region)) colors[region] = tokenHex(SITE_REGION_TOKEN[region]);
+    if (otherSources.size) colors.other_contact = tokenHex(SITE_OTHER_CONTACT_TOKEN);
+    if (drawn.length) colors.polar_line = tokenHex(SITE_POLAR_LINE_TOKEN);
+    const [{ StructureElement, StructureProperties }, { Color }] = await Promise.all([
+      import("molstar/lib/mol-model/structure"), import("molstar/lib/mol-util/color")]);
+    if (!active()) return abort();
+    const plugin = current.plugin;
+    const missing = "주석 원자 site가 Mol* 구조에 없습니다.";
+    const componentRefs: string[] = [];
+    const componentReprRefs: string[] = [];
+    // Residue/ligand components are ordinary atoms of the source: they stay pickable (a click is the usual residue pick).
+    const component = async (key: string, label: string, sources: Set<number>, color: string | null, sizeFactor: number) => {
+      const loci = await sourceIndexLoci(current, sources, model, missing);
+      if (!active()) return null;
+      const selector = await plugin.builders.structure.tryCreateComponent(current.structure,
+        { type: { name: "bundle", params: StructureElement.Bundle.fromLoci(loci) }, nullIfEmpty: true, label }, key);
+      if (!selector) throw new Error(`${label} 표시를 만들지 못했습니다.`);
+      created.push(selector.ref);
+      if (!active()) return null;
+      const repr = await plugin.builders.structure.representation.addRepresentation(selector, color === null
+        ? { type: "ball-and-stick", typeParams: { sizeFactor } }
+        : { type: "ball-and-stick", color: "uniform", colorParams: { value: Color(Number.parseInt(color.slice(1), 16)) },
+          typeParams: { sizeFactor } });
+      if (!active()) return null;
+      const substructure = selector.cell?.obj?.data;
+      if (!substructure || !repr.cell?.obj?.data.repr) throw new Error(`${label} 표현을 확인하지 못했습니다.`);
+      const observed: number[] = [];
+      for (const unit of substructure.units)
+        for (let index = 0; index < unit.elements.length; index++)
+          observed.push(StructureProperties.atom.sourceIndex(StructureElement.Location.create(substructure, unit, unit.elements[index])));
+      observed.sort((a, b) => a - b);
+      if (observed.length !== sources.size || observed.some(site => !sources.has(site)))
+        throw new Error(`Mol* ${label} site가 서버 AtomRef와 다릅니다.`);
+      componentRefs.push(selector.ref); componentReprRefs.push(repr.ref);
+      return observed;
+    };
+    for (const region of SITE_REGION_ORDER) {
+      const members = sites.filter(site => site.region === region);
+      if (!members.length) continue;
+      const observed = await component(`protview-site-annotation-${SITE_REGION_TOKEN[region]}`, `참조 주석 ${region}`,
+        new Set(members.flatMap(site => site.sources)), colors[region], 0.22);
+      if (!observed) return abort();
+    }
+    let otherObserved: number[] = [];
+    if (otherSources.size) {
+      const observed = await component("protview-site-annotation-other", "참조 주석 다른 접촉 잔기", otherSources,
+        colors.other_contact, 0.18);
+      if (!observed) return abort();
+      otherObserved = observed;
+    }
+    let ligandObserved: number[] = [];
+    if (ligandSources.size) {
+      const observed = await component("protview-site-annotation-ligand", "참조 주석 리간드", ligandSources, null, 0.15);
+      if (!observed) return abort();
+      ligandObserved = observed;
+    }
+    const labelReprRefs: string[] = [];
+    for (const site of sites) {
+      const loci = await sourceIndexLoci(current, new Set(site.sources), model, missing);
+      if (!active()) return abort();
+      const label = await plugin.managers.structure.measurement.addLabel(loci,
+        { labelParams: { customText: site.display_label } });
+      if (!label) throw new Error("부위 이름표를 만들지 못했습니다.");
+      created.push(label.selection.ref);
+      labelReprRefs.push(label.representation.ref);
+      if (!active()) return abort();
+    }
+    const lineReprRefs: string[] = [];
+    const lineSelectionRefs: string[] = [];
+    for (const pair of drawn) {
+      const a = await sourceIndexLoci(current, new Set([pair.protein.viewer_source_index]), model, missing);
+      if (!active()) return abort();
+      const b = await sourceIndexLoci(current, new Set([pair.ligand.viewer_source_index]), model, missing);
+      if (!active()) return abort();
+      const line = await plugin.managers.structure.measurement.addDistance(a, b,
+        { customText: pair.label, visualParams: { linesColor: Color(Number.parseInt(colors.polar_line.slice(1), 16)) } });
+      if (!line) throw new Error("극성 접촉 점선을 만들지 못했습니다.");
+      created.push(line.selection.ref);
+      lineSelectionRefs.push(line.selection.ref); lineReprRefs.push(line.representation.ref);
+      // Lines and their distance text are never pickable, so a click reaches the atoms behind (selection unchanged).
+      line.representation.cell?.obj?.data.repr.setState({ pickable: false });
+      if (!active()) return abort();
+    }
+    plugin.canvas3d?.requestDraw();
+    await settledFrame();
+    if (!active()) return abort();
+    // Native readback: every shape is in the Mol* scene, visible, with the requested text and exact endpoint sites.
+    const inScene = new Set(plugin.canvas3d?.getRenderObjects() ?? []);
+    const cells = plugin.state.data.cells;
+    const reprObjects = (ref: string) => {
+      const repr = cells.get(ref)?.obj?.data?.repr as PocketShapeRepr | undefined;
+      const objects = repr?.renderObjects ?? [];
+      if (!objects.length || objects.some(object => !inScene.has(object) || !object.state.visible))
+        throw new Error("참조 주석 표현이 Mol* 장면에 보이지 않습니다.");
+      return objects;
+    };
+    const customText = (ref: string) => {
+      const text = (cells.get(ref)?.transform.params as { customText?: unknown } | undefined)?.customText;
+      if (typeof text !== "string") throw new Error("참조 주석 이름표 문자열을 읽지 못했습니다.");
+      return text;
+    };
+    for (const ref of componentReprRefs) reprObjects(ref);
+    const siteReadbacks = sites.map((site, index) => {
+      reprObjects(labelReprRefs[index]);
+      const labelText = customText(labelReprRefs[index]);
+      if (labelText !== site.display_label) throw new Error("Mol* 부위 이름표가 저장된 display_label과 다릅니다.");
+      return { chain_auth: site.chain_auth, accession: site.accession, klifs_label: site.klifs_label, region: site.region,
+        display_label: site.display_label, labelText, nativeSourceIndices: site.sources };
+    });
+    const lines = drawn.map((pair, index) => {
+      const objects = reprObjects(lineReprRefs[index]);
+      const labelText = customText(lineReprRefs[index]);
+      if (labelText !== pair.label) throw new Error("Mol* 점선 거리 이름표가 저장된 거리와 다릅니다.");
+      const selections = cells.get(lineSelectionRefs[index])?.obj?.data as
+        { key: string; loci: import("molstar/lib/mol-model/structure").StructureElement.Loci }[] | undefined;
+      const endpoint = (key: string) => {
+        const entry = selections?.find(item => item.key === key);
+        const location = entry && StructureElement.Loci.size(entry.loci) === 1 ? StructureElement.Loci.getFirstLocation(entry.loci) : undefined;
+        if (!location) throw new Error("Mol* 점선 끝 원자를 읽지 못했습니다.");
+        return StructureProperties.atom.sourceIndex(location);
+      };
+      const proteinSourceIndex = endpoint("a"), ligandSourceIndex = endpoint("b");
+      if (proteinSourceIndex !== pair.protein.viewer_source_index || ligandSourceIndex !== pair.ligand.viewer_source_index)
+        throw new Error("Mol* 점선 끝 원자가 카탈로그 원자와 다릅니다.");
+      return { klifs_label: pair.site.klifs_label, contact_row_index: pair.pair.contact_row_index,
+        protein_atom: pair.pair.protein_atom, ligand_atom: pair.pair.ligand_atom, proteinSourceIndex, ligandSourceIndex,
+        labelText, pickable: objects.some(object => object.state.pickable) };
+    });
+    if (lines.some(line => line.pickable)) throw new Error("Mol* 점선이 선택 가능한 상태로 남았습니다.");
+    const readback: SiteAnnotationReadback = { key: request.key, handle: request.handle, sourceHandle: current.source.handle,
+      legend: request.legend, drawnSiteCount: siteReadbacks.length, drawnLineCount: lines.length, sites: siteReadbacks, lines,
+      undrawnPairs: undrawn.map(item => ({ klifs_label: item.site.klifs_label, display_label: item.site.display_label,
+        contact_row_index: item.pair.contact_row_index, protein_atom: item.pair.protein_atom,
+        ligand_atom: item.pair.ligand_atom, side: item.side, reason: item.reason, text: item.text })),
+      labelTexts: [...siteReadbacks.map(site => site.labelText), ...lines.map(line => line.labelText)],
+      otherContactResidueCount: annotation.other_contact_residues?.length ?? 0,
+      otherContactNativeSourceIndices: otherObserved, ligandVisible: ligandObserved.length > 0,
+      ligandNativeSourceIndices: ligandObserved, colors,
+      nativeShapeRefs: [...labelReprRefs, ...lineReprRefs], nativeComponentRefs: [...componentRefs, ...componentReprRefs] };
+    current.siteReadback = readback;
+    current.siteAppliedIntent = intentKey; current.siteAppliedSession = sessionKey; current.siteAppliedCatalog = catalog;
+    return readback;
+  } catch (error) {
+    await removeSiteAnnotation(current).catch(() => undefined);
+    throw error;
+  }
+}
+
+/** Draws FIGURE_LEGEND_TEXT with a dashed sample into the lower-left corner; true only if pixels actually changed. */
+function compositeFigureLegend(context: CanvasRenderingContext2D, width: number, height: number, lineColor: string): boolean {
+  const style = getComputedStyle(document.documentElement);
+  const surface = style.getPropertyValue("--surface-100").trim() || "#ffffff";
+  const ink = style.getPropertyValue("--ink").trim() || "#000000";
+  const border = style.getPropertyValue("--line-strong").trim() || ink;
+  const fontSize = Math.max(12, Math.round(height * 0.026));
+  context.save();
+  context.font = `600 ${fontSize}px ${getComputedStyle(document.body).fontFamily || "sans-serif"}`;
+  const margin = Math.round(fontSize * 0.8), pad = Math.round(fontSize * 0.6), sample = fontSize * 2;
+  const maxText = width - 2 * margin - 3 * pad - sample;
+  const textWidth = Math.min(context.measureText(FIGURE_LEGEND_TEXT).width, maxText);
+  const boxWidth = Math.ceil(textWidth + 3 * pad + sample), boxHeight = Math.ceil(fontSize + 2 * pad);
+  const x = margin, y = height - margin - boxHeight;
+  if (maxText <= 0 || y < 0) { context.restore(); return false; }
+  const before = context.getImageData(x, y, boxWidth, boxHeight).data.slice();
+  context.globalAlpha = 0.9;
+  context.fillStyle = surface;
+  context.fillRect(x, y, boxWidth, boxHeight);
+  context.globalAlpha = 1;
+  context.strokeStyle = border; context.lineWidth = 1;
+  context.strokeRect(x + 0.5, y + 0.5, boxWidth - 1, boxHeight - 1);
+  context.strokeStyle = lineColor; context.lineWidth = Math.max(2, Math.round(fontSize / 8));
+  context.setLineDash([fontSize / 4, fontSize / 5]);
+  context.beginPath();
+  context.moveTo(x + pad, y + boxHeight / 2); context.lineTo(x + pad + sample, y + boxHeight / 2);
+  context.stroke();
+  context.setLineDash([]);
+  context.fillStyle = ink; context.textBaseline = "middle";
+  context.fillText(FIGURE_LEGEND_TEXT, x + 2 * pad + sample, y + boxHeight / 2, maxText);
+  const after = context.getImageData(x, y, boxWidth, boxHeight).data;
+  context.restore();
+  for (let i = 0; i < after.length; i++) if (after[i] !== before[i]) return true;
+  return false;
+}
+
 /** Canvas-only Mol*: no download action, remote extension, or automatic property service. */
 export function MolstarViewer({ source, representation, highlight, residues, onSelect, onLoadState, onFocusResult,
   onBridge, onManualInteraction, emptyMessage, emptyIsError, atomCatalog, measureMode = false, onAtomPick,
   comparison, focusPair, selectedAtoms, distanceResult, chemicalFocus, chemicalAnnotation,
-  pocketOverlay, onPocketOverlay }: MolstarViewerProps) {
+  pocketOverlay, onPocketOverlay, siteAnnotation, onSiteAnnotation }: MolstarViewerProps) {
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<Instance | null>(null);
   const requestedRepresentation = useRef(representation);
@@ -463,6 +773,21 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
   const [pocketSession, setPocketSession] = useState("");
   const [pocketObserved, setPocketObserved] = useState<{ status: "none" | "pending" | "applied" | "error";
     readback: PocketOverlayReadback | null; error: string }>({ status: "none", readback: null, error: "" });
+  const siteIntent = useRef({ key: "", revision: 0 });
+  const siteKey = siteAnnotation ? siteIntentKey(siteAnnotation) : "";
+  if (siteIntent.current.key !== siteKey) siteIntent.current = { key: siteKey, revision: siteIntent.current.revision + 1 };
+  const siteRef = useRef(siteAnnotation);
+  siteRef.current = siteAnnotation;
+  const siteCallback = useRef(onSiteAnnotation);
+  siteCallback.current = onSiteAnnotation;
+  const [siteObserved, setSiteObserved] = useState<{ status: "none" | "pending" | "applied" | "error";
+    readback: SiteAnnotationReadback | null; error: string }>({ status: "none", readback: null, error: "" });
+  const publishSite = (current: Instance, key: string | null, status: "none" | "pending" | "applied" | "error",
+                       readback: SiteAnnotationReadback | null, error = "") => {
+    current.siteError = status === "error" ? error : null;
+    setSiteObserved({ status, readback, error });
+    if (status !== "pending") siteCallback.current?.(key, readback, error || null);
+  };
   const [state, setState] = useState<"empty" | "loading" | "ready" | "error">("empty");
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -599,7 +924,9 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         !!comparisonRef.current?.aligned), lastAtomPick: null, atomPickRevision: 0,
         nativeClickRevision: 0, lastNativeClick: null, m10QueuePending: 0,
         chemicalAnnotationRefs: [], chemicalFocusReadback: null, chemicalAnnotationReadback: null,
-        validatedCatalogs: new Map(), pocketReadback: null, pocketFocus: null, pocketSessionKey: "", pocketEpoch: 0 };
+        validatedCatalogs: new Map(), pocketReadback: null, pocketFocus: null, pocketSessionKey: "", pocketEpoch: 0,
+        siteRefs: [], siteReadback: null, siteError: null, siteAppliedIntent: "", siteAppliedSession: "",
+        siteAppliedCatalog: null, siteEpoch: 0 };
       instance.current = current;
       if (initialCatalog) {
         await validateNativeCatalog(structure.obj.data, initialCatalog);
@@ -814,7 +1141,8 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         bind: binding => { if (instance.current === current) {
           current.operationToken = nativeTokenAfterBinding(current.operationToken, current.binding, binding);
           current.binding = binding;
-          // The pocket overlay is bound to the viewer session and scene generation (not to action revisions).
+          // The pocket overlay and the site annotation are bound to the viewer session and scene generation
+          // (not to action revisions); both redraw when this key changes.
           const sessionKey = binding ? `${binding.sessionId}:${binding.generation}` : "";
           if (sessionKey !== current.pocketSessionKey) { current.pocketSessionKey = sessionKey; setPocketSession(sessionKey); }
         } },
@@ -847,6 +1175,8 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
               current.plugin.canvas3d?.getRenderObjects().includes(current.pocketRepr.renderObjects[0]) &&
               (!current.pocketLiningRef || !!current.plugin.state.data.cells.get(current.pocketLiningRef)?.obj)
               ? current.pocketReadback : null,
+            siteAnnotation: current.siteReadback && siteIntact(current) ? current.siteReadback : null,
+            siteAnnotationError: current.siteError,
             catalogReady: !!validatedCatalog(current, atomRows.current) &&
               (!comparisonRef.current || !!validatedCatalog(current, comparisonRef.current.catalog)),
             atomPickRevision: current.atomPickRevision, qaAtoms: qaAtomScreens(current, atomRows.current ?? null,
@@ -965,15 +1295,16 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         },
         invalidate: () => { current.operationToken += 1; current.binding = null; },
         cancelNative: () => { current.operationToken += 1; },
-        captureScene: expected => guarded(expected, async token => {
+        captureScene: (expected, annotation) => guarded(expected, async token => {
           if (!bound(expected, token)) throw new Error("구조를 표시한 뒤 보기를 저장하세요.");
           const revision = current.manualRevision;
           await waitCameraSettled(expected, token, revision);
           const state = readScene();
           checkOperation(expected, token, revision);
+          if (annotation) requireAppliedSite(current, annotation);
           return state;
         }),
-        restoreScene: (expected, scene) => guarded(expected, async token => {
+        restoreScene: (expected, scene, annotation) => guarded(expected, async token => {
           if (!bound(expected, token) || scene.structure_handle !== current.source.handle)
             throw new Error("저장된 장면의 구조가 현재 뷰어와 다릅니다.");
           const revision = current.manualRevision;
@@ -1008,18 +1339,55 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
           await settledFrame();
           if (!bound(expected, token) || current.manualRevision !== revision || currentTheme() !== scene.theme)
             throw new Error("복원 중 장면이 변경되었습니다.");
+          // viewer_scene@2: redraw the stored annotation (no tool call) before the camera, report it apart.
+          let siteOutcome: SiteAnnotationRestoreOutcome | undefined;
+          if (annotation) {
+            const reject = (reason: string): SiteAnnotationRestoreOutcome => {
+              publishSite(current, annotation.key, "error", null, reason);
+              return { status: "rejected", reason };
+            };
+            const intentKey = siteIntentKey(annotation), sessionKey = current.pocketSessionKey;
+            const catalog = validatedCatalog(current, atomRows.current);
+            if (!siteRef.current || siteIntentKey(siteRef.current) !== intentKey)
+              siteOutcome = { status: "rejected", reason: "복원할 주석이 뷰어의 현재 주석 요청과 다릅니다. 주석 요청을 먼저 설정하세요." };
+            else if (!annotation.visible || annotation.sourceHandle !== scene.structure_handle || comparisonRef.current)
+              siteOutcome = reject("주석이 꺼져 있거나 보기의 구조와 달라 복원하지 않았습니다.");
+            else if (!catalog) siteOutcome = reject("원자 목록 검증이 끝나지 않아 주석을 그리지 않았습니다.");
+            else if (siteApplied(current, intentKey, sessionKey, catalog)) siteOutcome = { status: "applied", readback: current.siteReadback! };
+            else {
+              const intentRevision = siteIntent.current.revision;
+              const siteActive = () => bound(expected, token) && current.manualRevision === revision &&
+                siteIntent.current.revision === intentRevision && current.pocketSessionKey === sessionKey &&
+                validatedCatalog(current, atomRows.current) === catalog && !comparisonRef.current;
+              try {
+                const readback = await drawSiteAnnotation(current, annotation, intentKey, catalog, sessionKey, siteActive);
+                if (!readback) throw new Error("복원 중 장면이 변경되었습니다.");
+                publishSite(current, annotation.key, "applied", readback);
+                siteOutcome = { status: "applied", readback };
+              } catch (error) {
+                if (!bound(expected, token) || current.manualRevision !== revision) throw error;
+                siteOutcome = reject(error instanceof Error ? error.message : String(error));
+              }
+            }
+            if (!bound(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+          }
           await waitCameraSettled(expected, token, revision);
           const camera = plugin!.canvas3d!.camera;
           camera.setState(scene.camera as Parameters<typeof camera.setState>[0], 0);
-          return waitSceneRestored(expected, token, revision, scene);
-        }),
-        captureFigure: (expected, scene) => guarded(expected, async token => {
+          const restored = await waitSceneRestored(expected, token, revision, scene);
+          return siteOutcome ? { ...restored, siteAnnotation: siteOutcome } : restored;
+        }, annotation ? 25000 : 15000),
+        captureFigure: (expected, scene, annotation) => guarded(expected, async token => {
           if (!bound(expected, token)) throw new Error("구조를 표시한 뒤 이미지를 내보내세요.");
           const revision = current.manualRevision;
           await waitCameraSettled(expected, token, revision);
           const before = readScene();
           if (!sceneMatches(before, scene) || !bound(expected, token) || revision !== current.manualRevision)
             throw new Error("현재 장면이 저장된 보기와 다릅니다. 먼저 복원하세요.");
+          // The PNG shows exactly what is drawn: a drawn annotation needs an annotation scene, and vice versa.
+          const siteBefore = annotation ? requireAppliedSite(current, annotation) : null;
+          if (!annotation && (current.siteReadback || current.siteRefs.length))
+            throw new Error("참조 주석이 표시된 상태입니다. 주석이 없는 보기의 그림은 주석을 끈 뒤 저장하세요.");
           const { Task } = await import("molstar/lib/mol-task");
           if (!bound(expected, token) || revision !== current.manualRevision) throw new Error("이미지 캡처 중 장면이 변경되었습니다.");
           const imageData = await plugin!.runTask(Task.create("Capture molecular viewport", async ctx => {
@@ -1051,6 +1419,12 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
           const context = encoding.getContext("2d");
           if (!context) throw new Error("PNG 인코딩 캔버스를 만들 수 없습니다.");
           context.putImageData(imageData, 0, 0);
+          let legendComposited = false;
+          if (annotation && siteBefore && legendShouldComposite(annotation.legend, siteBefore.drawnLineCount)) {
+            legendComposited = compositeFigureLegend(context, encoding.width, encoding.height,
+              siteBefore.colors.polar_line ?? tokenHex(SITE_POLAR_LINE_TOKEN));
+            if (!legendComposited) throw new Error("PNG에 범례를 넣지 못했습니다.");
+          }
           const blob = await new Promise<Blob>((resolve, reject) => encoding.toBlob(value =>
             value ? resolve(value) : reject(new Error("PNG 인코딩에 실패했습니다.")), "image/png"));
           if (blob.size > 8 * 1024 * 1024) throw new Error("PNG 크기가 8 MiB 제한을 초과했습니다.");
@@ -1061,7 +1435,9 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
           const after = readScene();
           if (!bound(expected, token) || revision !== current.manualRevision || !sceneMatches(after, scene))
             throw new Error("이미지 인코딩 중 장면이 변경되었습니다.");
-          return { state: after, pngBase64: btoa(binary), width: imageData.width, height: imageData.height };
+          if (current.siteReadback !== siteBefore || (siteBefore && !siteIntact(current)))
+            throw new Error("이미지 캡처 중 참조 주석이 바뀌었습니다.");
+          return { state: after, pngBase64: btoa(binary), width: imageData.width, height: imageData.height, legendComposited };
         }),
       };
       window.__protviewQaSnapshot = bridge.snapshot;
@@ -1564,6 +1940,55 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
 
   useEffect(() => {
     const current = instance.current;
+    if (!current || state !== "ready") return;
+    const request = siteRef.current ?? null;
+    const intentKey = request ? siteIntentKey(request) : "";
+    const intentRevision = siteIntent.current.revision, sessionKey = current.pocketSessionKey;
+    const epoch = current.siteEpoch;
+    const catalog = validatedCatalog(current, atomRows.current);
+    if (request && comparisonRef.current) {
+      publishSite(current, request.key, "error", null, "두 구조 비교 중에는 참조 주석을 그릴 수 없습니다.");
+      return;
+    }
+    // Session/generation (binding), source, validated catalog, own intent revision and epoch around every await.
+    const active = () => instance.current === current && !current.contextLost &&
+      !current.canvas.getContext("webgl2")?.isContextLost() &&
+      siteIntent.current.revision === intentRevision && current.pocketSessionKey === sessionKey &&
+      current.siteEpoch === epoch && (!request || current.source.handle === request.sourceHandle) &&
+      !comparisonRef.current && validatedCatalog(current, atomRows.current) === catalog;
+    current.queue = current.queue.then(() => {
+      if (!active()) return;
+      return nativeDeadline((async () => {
+        if (!request || !request.visible) {
+          await removeSiteAnnotation(current);
+          if (active()) publishSite(current, request?.key ?? null, "none", null);
+          return;
+        }
+        if (!catalog) {
+          await removeSiteAnnotation(current);
+          if (active()) publishSite(current, request.key, "pending", null);
+          return;
+        }
+        // Already drawn for this exact intent, session and catalog (e.g. by a scene restore): report, do not redraw.
+        if (siteApplied(current, intentKey, sessionKey, catalog)) {
+          publishSite(current, request.key, "applied", current.siteReadback);
+          return;
+        }
+        publishSite(current, request.key, "pending", null);
+        const readback = await drawSiteAnnotation(current, request, intentKey, catalog, sessionKey, active);
+        if (!readback || !active()) return;
+        publishSite(current, request.key, "applied", readback);
+      })(), 20000, () => { if (current.siteEpoch === epoch) current.siteEpoch += 1; });
+    }).catch(async error => {
+      const timedOut = current.siteEpoch !== epoch && siteIntent.current.revision === intentRevision;
+      if (instance.current !== current || (!active() && !timedOut)) return;
+      await removeSiteAnnotation(current).catch(() => undefined);
+      publishSite(current, request?.key ?? null, "error", null, error instanceof Error ? error.message : String(error));
+    });
+  }, [state, siteKey, catalogRevision, pocketSession]);
+
+  useEffect(() => {
+    const current = instance.current;
     if (!current || comparisonRef.current) return;
     const intentRevision = representationIntent.current.revision;
     let live = true;
@@ -1674,7 +2099,16 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
       data-pocket-focus-token={pocketObserved.readback?.focusToken}
       data-pocket-focused={pocketObserved.readback ? String(pocketObserved.readback.focusStatus === "focused") : undefined}
       data-pocket-focus-status={pocketObserved.readback?.focusStatus}
-      data-pocket-error={pocketObserved.error || undefined}>
+      data-pocket-error={pocketObserved.error || undefined}
+      data-site-annotation={siteObserved.status}
+      data-site-annotation-handle={siteObserved.readback?.handle}
+      data-site-annotation-source-handle={siteObserved.readback?.sourceHandle}
+      data-site-annotation-sites={siteObserved.readback?.drawnSiteCount}
+      data-site-annotation-lines={siteObserved.readback?.drawnLineCount}
+      data-site-annotation-undrawn={siteObserved.readback?.undrawnPairs.length}
+      data-site-annotation-labels={siteObserved.readback ? JSON.stringify(siteObserved.readback.labelTexts) : undefined}
+      data-site-annotation-ligand-visible={siteObserved.readback ? String(siteObserved.readback.ligandVisible) : undefined}
+      data-site-annotation-error={siteObserved.error || undefined}>
       <div ref={host} className="mw-molstar-host" />
       {state === "empty" && <div className={`mw-molstar-message${emptyIsError ? " mw-molstar-error" : ""}`} role={emptyIsError ? "alert" : "status"}>{emptyMessage ?? "로컬 PDB 또는 mmCIF 파일을 업로드하세요."}</div>}
       {state === "loading" && <div className="mw-molstar-message" role="status">구조를 불러오는 중…</div>}
@@ -1682,6 +2116,8 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
       {state === "ready" && pickError && <div className="mw-molstar-pick-error" role="alert">{pickError}</div>}
       {state === "ready" && pocketObserved.status === "error" &&
         <div className="mw-molstar-pick-error" role="alert">포켓 오버레이 표시 실패: {pocketObserved.error}</div>}
+      {state === "ready" && siteObserved.status === "error" &&
+        <div className="mw-molstar-pick-error" role="alert">참조 주석 표시 실패: {siteObserved.error}</div>}
     </div>
   );
 }

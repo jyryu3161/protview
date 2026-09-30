@@ -381,3 +381,50 @@ export function polarPairsForDrawing(annotation: ReferenceSiteAnnotation, catalo
   }
   return { drawn, undrawn };
 }
+
+// ---- viewer bridge (MolstarViewer `siteAnnotation` prop, QA snapshot, scene restore) ----
+
+/** Design token (CSS custom property name without `--`) of each site region colour; also used for panel swatches. */
+export const SITE_REGION_TOKEN: Record<SiteRegion, string> = {
+  III: "site-iii", "αC": "site-ac", GK: "site-gk", hinge: "site-hinge", xDFG: "site-xdfg" };
+export const SITE_OTHER_CONTACT_TOKEN = "site-other-contact";
+export const SITE_POLAR_LINE_TOKEN = "site-polar-line";
+
+/** One stored annotation to draw on its own structure handle (spec 5.2). Any change of `key` redraws. */
+export interface SiteAnnotationRequest {
+  /** Revision key chosen by the page (e.g. run + annotation handle + source + toggle state). */
+  key: string;
+  handle: string;
+  sourceHandle: string;
+  annotation: ReferenceSiteAnnotation;
+  visible: boolean;
+  /** Recorded for the figure legend; drawing is the same either way. */
+  legend: boolean;
+}
+
+/** What Mol* actually holds after drawing (read from native components, selections and shape transforms). */
+export interface SiteAnnotationReadback {
+  key: string; handle: string; sourceHandle: string; legend: boolean;
+  drawnSiteCount: number;
+  drawnLineCount: number;
+  sites: { chain_auth: string; accession: string | null; klifs_label: string; region: SiteRegion;
+    display_label: string; labelText: string; nativeSourceIndices: number[] }[];
+  lines: { klifs_label: string; contact_row_index: number; protein_atom: string; ligand_atom: string;
+    proteinSourceIndex: number; ligandSourceIndex: number; labelText: string; pickable: boolean }[];
+  undrawnPairs: { klifs_label: string; display_label: string | null; contact_row_index: number;
+    protein_atom: string; ligand_atom: string; side: "protein" | "ligand"; reason: "none" | "ambiguous"; text: string }[];
+  /** Native label texts: site labels (in site order) then distance labels (in line order). */
+  labelTexts: string[];
+  otherContactResidueCount: number; otherContactNativeSourceIndices: number[];
+  ligandVisible: boolean; ligandNativeSourceIndices: number[];
+  /** Hex colours actually passed to Mol* for each drawn region, the other contact residues and the lines. */
+  colors: Record<string, string>;
+  /** State-tree refs of the label and distance shape representations. */
+  nativeShapeRefs: string[];
+  /** State-tree refs of the residue / ligand components. */
+  nativeComponentRefs: string[];
+}
+
+/** Annotation part of a `viewer_scene@2` restore: applied (with native readback) or rejected with a reason. */
+export type SiteAnnotationRestoreOutcome =
+  | { status: "applied"; readback: SiteAnnotationReadback } | { status: "rejected"; reason: string };
