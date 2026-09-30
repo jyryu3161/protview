@@ -58,6 +58,7 @@ from ..saved_scenes import (
     save_scene,
     scene_detail,
 )
+from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
@@ -1190,6 +1191,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             return build_pocket_report(run, body.result_handle)
         if kind == "residue_numbering_map":
             return build_numbering_report(run, body.result_handle)
+        if kind == "reference_site_annotation":
+            # The active reference set is recorded in the report snapshot only; the report reads stored objects.
+            return build_site_annotation_report(run, body.result_handle,
+                                                active_set_hash=numbering_reads.capability()["set_hash"])
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1214,7 +1219,8 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                     {"result_handle": e["result_handle"],
                      "analysis_type": (run.store.load_bounded_json(e["report_handle"], 8 * 1024 * 1024)
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
-                                       {"chemical_interactions", "pocket_detection", "residue_numbering"}
+                                       {"chemical_interactions", "pocket_detection", "residue_numbering",
+                                        "reference_site_annotation"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1228,7 +1234,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
         return saved_report(run, handle)
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
         report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
-                  if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering"}
+                  if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
+                                                              "reference_site_annotation"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1243,6 +1250,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_pocket_report(run, handle)
         if report.get("analysis_type") == "residue_numbering":
             return saved_numbering_report(run, handle)
+        if report.get("analysis_type") == "reference_site_annotation":
+            return saved_site_annotation_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
