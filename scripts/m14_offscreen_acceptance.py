@@ -9,7 +9,7 @@ with ledger-row.json, JSONL rows, screenshots and paint frames; failures are nev
 
 Phases (``--phases``, comma list, in this order):
   tabs    tabs-main (fresh root: no-run guidance first; tab bar; 1HSG structure state across the three other tabs;
-          unavailable notices and their requests; inspect_ligand workflow (interaction + method report, summary) and a
+          unavailable notices (protein/ligand; knowledge shows the M15 numbering screen) and their requests; inspect_ligand workflow (interaction + method report, summary) and a
           stopped execution; saved figure; reports tab lists/content/downloads; labeled 422 reports-list fault; 1UBQ
           OpenMM job progressing while another tab is shown; global run/budget; run switch with held late responses),
           tabs-chemical (chemical workspace: tab bar, state across a tab round trip, global run/budget after the
@@ -75,7 +75,9 @@ CASE_TEXT = {
                          "three tabs; non-empty paint after return",
     "T-running-job": "a running OpenMM job keeps progressing (polling) while another tab is shown",
     "T-chemical-preserved": "chemical workspace kept across a tab round trip; tab bar visible there",
-    "T-unavailable": "unavailable tabs: 사용할 수 없음, reason, opening stage; no numbers/controls; no requests of their own",
+    "T-unavailable": "unavailable tabs (단백질 공학, 리간드 설계·탐색): 사용할 수 없음, reason, opening stage; no "
+                     "numbers/controls; no requests of their own. 지식·보고서 shows the M15 numbering screen instead of "
+                     "its former notice",
     "T-reports-list": "interaction + method report, saved figure, completed summary listed; non-complete execution absent",
     "T-reports-content": "content shown; download bytes SHA-256 equal the backend bytes of the same format",
     "T-reports-fault": "reports-list fault (labeled fixture) affects only that list; retry; structure screen intact",
