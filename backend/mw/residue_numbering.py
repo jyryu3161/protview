@@ -42,7 +42,8 @@ CROSS_CHECK_ABSENT_REASONS = (
 )
 SIFTS_ABSENT_REASONS = ("sifts_no_residue_row", "sifts_number_mismatch", "sifts_not_observed",
                         "sifts_outside_segments")
-ALIGNMENT_ABSENT_REASONS = ("alignment_gap", "alignment_below_identity", "alignment_below_coverage")
+ALIGNMENT_ABSENT_REASONS = ("alignment_gap", "alignment_ambiguous", "alignment_below_identity",
+                            "alignment_below_coverage")
 # Accession-level KLIFS reasons: the klifs_numbering set plus one for a mapped accession without a UniProt sequence.
 KLIFS_ABSENT_REASONS = ("accession_not_in_klifs", "klifs_pocket_empty", "klifs_multiple_entries",
                         "uniprot_sequence_unavailable")
@@ -286,11 +287,14 @@ def alignment_answers(residues: Iterable[Mapping[str, Any]], accession: str,
     info = {"accession": accession, "identity_pct": result.identity_pct, "coverage_pct": result.coverage_pct,
             "aligned_pairs": result.aligned_pairs, "identical": result.identical,
             "chain_residue_count": len(residues), "score": result.score, "chain_reason": reasons,
+            "ambiguous_residue_count": len(result.ambiguous_positions),
             "aligned_strings": {"structure": result.aligned_structure, "uniprot": result.aligned_uniprot}}
     if reasons:
         return info, [{"absent_reason": reasons[0]} for _ in residues]
-    return info, [{"absent_reason": "alignment_gap"} if p is None else {"accession": accession, "position": p}
-                  for p in result.structure_to_uniprot]
+    ambiguous = set(result.ambiguous_positions)
+    return info, [{"absent_reason": "alignment_ambiguous"} if k in ambiguous else
+                  {"absent_reason": "alignment_gap"} if p is None else {"accession": accession, "position": p}
+                  for k, p in enumerate(result.structure_to_uniprot)]
 
 
 # ---------------------------------------------------------------------------------------------------------------

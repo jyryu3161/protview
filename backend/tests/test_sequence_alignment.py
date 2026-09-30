@@ -288,3 +288,105 @@ def test_300x700_runs_quickly():
     assert time.perf_counter() - t0 < 5.0
     assert r.structure_to_uniprot == tuple(range(201, 501))
     assert r.identity_pct == 100.0 and r.coverage_pct == 100.0
+
+
+# --------------------------------------------------------------------------------------------- co-optimal ambiguity
+
+def test_isolated_terminal_residue_with_two_equal_placements_is_ambiguous():
+    # Like 1MQ4 S388: "WS" vs "WSKKKS". S at UniProt 2 (end gap of 4 after) or at 6 (internal gap of 4 before)
+    # both score 11 + 4 - (10 + 0.5 * 3) = 3.5. W has one placement.
+    r = align_global("WS", "WSKKKS")
+    assert r.score == 3.5 and r.structure_to_uniprot == (1, 6)
+    assert r.ambiguous_positions == (1,)
+
+
+def test_unique_cases_stay_unambiguous():
+    r = align_global("WS", "WSKKKA")                      # only one S -> unique
+    assert r.structure_to_uniprot == (1, 2) and r.ambiguous_positions == ()
+    r = align_global("WCW", "WW")                         # C is a gap in the only optimal alignment
+    assert r.score == 12.0 and r.structure_to_uniprot == (1, None, 2) and r.ambiguous_positions == ()
+    assert align_global("", "").ambiguous_positions == () and align_global("A", "").ambiguous_positions == ()
+    assert align_global("ARNDCQEGHI", "ARNDCQEGHI").ambiguous_positions == ()
+
+
+def test_gap_in_some_optimal_alignments_is_ambiguous():
+    # "A" vs "AA": A at 1 or at 2 (the other UniProt A is an end gap either way) -> ambiguous.
+    r = align_global("A", "AA")
+    assert r.structure_to_uniprot == (2,) and r.ambiguous_positions == (0,)
+
+
+def _all_optimal_placements(a: str, b: str) -> list[set]:
+    """Brute force: every optimal alignment enumerated from full plain-Python Gotoh tables (general recurrence
+    everywhere, no boundary shortcuts); per structure index the set of UniProt positions (None = gap) it takes."""
+    neg = float("-inf")
+    go, ge = 10.0, 0.5
+    n, m = len(a), len(b)
+    tab = {s: [[neg] * (m + 1) for _ in range(n + 1)] for s in "MXY"}
+    tab["M"][0][0] = 0.0
+
+    def preds(s, i, j):
+        if s == "M" and i and j:
+            return [(t, i - 1, j - 1, B[a[i - 1]][b[j - 1]]) for t in "MXY"]
+        if s == "X" and i:
+            return [("M", i - 1, j, -go), ("X", i - 1, j, -ge), ("Y", i - 1, j, -go)]
+        if s == "Y" and j:
+            return [("M", i, j - 1, -go), ("Y", i, j - 1, -ge), ("X", i, j - 1, -go)]
+        return []
+
+    for i in range(n + 1):
+        for j in range(m + 1):
+            for s in "MXY":
+                if (i, j, s) != (0, 0, "M"):
+                    tab[s][i][j] = max([tab[t][p][q] + w for t, p, q, w in preds(s, i, j)], default=neg)
+    best = max(tab[s][n][m] for s in "MXY")
+    placements: list[set] = [set() for _ in range(n)]
+
+    def walk(s, i, j, path):
+        if (s, i, j) == ("M", 0, 0):
+            for k, pos in path:
+                placements[k].add(pos)
+            return
+        if s == "M":
+            path = path + [(i - 1, j)]
+        elif s == "X":
+            path = path + [(i - 1, None)]
+        for t, p, q, w in preds(s, i, j):
+            if tab[t][p][q] > neg and tab[t][p][q] + w == tab[s][i][j]:
+                walk(t, p, q, path)
+
+    for s in "MXY":
+        if tab[s][n][m] == best:
+            walk(s, n, m, [])
+    return placements
+
+
+def test_ambiguity_matches_brute_force_enumeration_of_all_optimal_alignments():
+    rng = random.Random(930)
+    ambiguous_seen = unique_seen = 0
+    for trial in range(400):
+        alphabet = "AAGS" if trial % 2 else "ARNDW"
+        s1 = "".join(rng.choice(alphabet) for _ in range(rng.randint(0, 7)))
+        s2 = "".join(rng.choice(alphabet) for _ in range(rng.randint(0, 9)))
+        r = align_global(s1, s2)
+        placements = _all_optimal_placements(s1, s2)
+        expected = tuple(k for k, p in enumerate(placements) if len(p) > 1)
+        assert r.ambiguous_positions == expected, (s1, s2, placements)
+        for k, p in enumerate(placements):
+            assert r.structure_to_uniprot[k] in p
+            if len(p) == 1:
+                unique_seen += 1
+        ambiguous_seen += len(expected)
+    assert ambiguous_seen > 50 and unique_seen > 200
+
+
+def test_near_cap_runs_within_cheap_budget():
+    rng = random.Random(2)
+    alphabet = "ARNDCQEGHILKMFPSTWYV"
+    u = "".join(rng.choice(alphabet) for _ in range(5000))
+    s = u[500:4500]
+    t0 = time.perf_counter()
+    r = align_global(s, u)
+    elapsed = time.perf_counter() - t0
+    assert not alignment_too_large(len(s), len(u))
+    assert r.structure_to_uniprot == tuple(range(501, 4501)) and r.ambiguous_positions == ()
+    assert elapsed < 10.0, elapsed

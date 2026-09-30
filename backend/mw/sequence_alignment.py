@@ -28,6 +28,16 @@ letter, where ``X`` never counts as identical (unknown residue); ``identity_pct 
 100`` (``None`` when ``aligned_pairs == 0``); ``coverage_pct = aligned_pairs / len(structure) * 100`` (``None``
 when the structure sequence is empty). Both sequences empty gives score 0.0 and an empty alignment.
 
+Co-optimal ambiguity (``ambiguous_positions``): the 0-based structure indices whose placement is not the same in
+every optimal alignment (two different UniProt positions, or a position in one optimal alignment and a gap in
+another). A residue that is a gap in every optimal alignment is not ambiguous. Computed exactly over all co-optimal
+alignments with a forward and a backward Gotoh pass: state s at cell (i, j) lies on some optimal alignment iff
+forward(s, i, j) + backward(s, i, j) == optimum (exact: all values are multiples of 0.5). Structure residue i is
+consumed by exactly one M or X cell of row i on any alignment, so it is unambiguous iff the optimal cells of row i
+are a single M cell and no X cell, or X cells only. Statistics and ``structure_to_uniprot`` still come from the
+single tie-broken alignment. The forward rows are recomputed from sqrt(n)-spaced checkpoints during the backward pass
+(memory O(sqrt(n) * m)).
+
 Memory: DP scores are kept for two rows only; traceback uses one uint8 per cell (2 bits per matrix, three
 matrices), so ``MAX_ALIGNMENT_CELLS`` = 20M cells needs about 20 MB.
 """
@@ -109,6 +119,7 @@ class SequenceAlignment:
     identity_pct: float | None
     coverage_pct: float | None
     params: dict[str, Any]
+    ambiguous_positions: tuple[int, ...] = ()  # 0-based structure indices not placed the same in all optima
 
 
 def _encode(seq: str, name: str) -> np.ndarray:
@@ -123,6 +134,81 @@ def _pick(m: np.ndarray, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.n
     best = np.maximum(np.maximum(m, x), y)
     state = np.where(m == best, _M, np.where(x == best, _X, _Y)).astype(np.uint8)
     return best, state
+
+
+def _forward_row(mp: np.ndarray, xp: np.ndarray, yp: np.ndarray, sub_row: np.ndarray | None,
+                 go: float, ge: float, ramp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Scores of one DP row from the previous one (``sub_row`` None = row 0), same recurrences as ``align_global``."""
+    m = len(mp) - 1
+    if sub_row is None:
+        mc = np.full(m + 1, _NEG)
+        mc[0] = 0.0
+        xc = np.full(m + 1, _NEG)
+    else:
+        mc = np.full(m + 1, _NEG)
+        if m:
+            mc[1:] = np.maximum(np.maximum(mp[:-1], xp[:-1]), yp[:-1]) + sub_row
+        xc = np.maximum(np.maximum(mp - go, xp - ge), yp - go)
+    yc = np.full(m + 1, _NEG)
+    if m:
+        h = np.maximum(mc[:-1], xc[:-1])
+        yc[1:] = np.maximum.accumulate(h + ramp) - go - ramp
+    return mc, xc, yc
+
+
+def _ambiguous_positions(a: np.ndarray, b: np.ndarray, optimum: float) -> tuple[int, ...]:
+    n, m = len(a), len(b)
+    if n == 0:
+        return ()
+    go, ge = float(GAP_OPEN), float(GAP_EXTEND)
+    ramp = ge * np.arange(m, dtype=np.float64)
+    cols = ge * np.arange(m + 1, dtype=np.float64)
+    step = max(1, int(np.ceil(np.sqrt(n + 1))))
+    checkpoints: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
+    rows = _forward_row(np.full(m + 1, _NEG), np.full(m + 1, _NEG), np.full(m + 1, _NEG), None, go, ge, ramp)
+    checkpoints[0] = rows
+    for i in range(1, n + 1):
+        rows = _forward_row(*rows, _MATRIX[a[i - 1], b], go, ge, ramp)
+        if i % step == 0:
+            checkpoints[i] = rows
+    if max(float(r[m]) for r in rows) != optimum:
+        raise AssertionError("forward recomputation differs from the alignment score")
+
+    ambiguous: list[int] = []
+    bm1 = bx1 = None  # backward M / X of row i + 1
+    block: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    for i in range(n, 0, -1):
+        if i not in block:
+            start = (i // step) * step
+            rows = checkpoints[start]
+            block = {start: (rows[0], rows[1])}
+            for k in range(start + 1, min(start + step, n + 1)):
+                rows = _forward_row(*rows, _MATRIX[a[k - 1], b], go, ge, ramp)
+                block[k] = (rows[0], rows[1])
+        # backward scores of row i: best score from state s at (i, j) to the end, excluding cell (i, j) itself
+        diag = np.full(m + 1, _NEG)
+        down = np.full(m + 1, _NEG)
+        if bm1 is not None:
+            if m:
+                diag[:-1] = _MATRIX[a[i], b] + bm1[1:]
+            down = bx1
+        d_y = np.maximum(diag, down - go)
+        d_m = np.maximum(diag, down - go)
+        d_x = np.maximum(diag, down - ge)
+        if i == n:
+            d_y[m] = d_m[m] = d_x[m] = 0.0
+        by = np.maximum.accumulate((d_y - cols)[::-1])[::-1] + cols
+        right = np.full(m + 1, _NEG)
+        right[:-1] = by[1:] - go
+        bm = np.maximum(d_m, right)
+        bx = np.maximum(d_x, right)
+        fm, fx = block[i]
+        on_m = int(np.count_nonzero(fm + bm == optimum))
+        on_x = int(np.count_nonzero(fx + bx == optimum))
+        if on_m > 1 or (on_m == 1 and on_x > 0):
+            ambiguous.append(i - 1)
+        bm1, bx1 = bm, bx
+    return tuple(reversed(ambiguous))
 
 
 def align_global(structure_seq: str, uniprot_seq: str) -> SequenceAlignment:
@@ -199,6 +285,7 @@ def align_global(structure_seq: str, uniprot_seq: str) -> SequenceAlignment:
         identical=identical,
         identity_pct=identical / pairs * 100 if pairs else None,
         coverage_pct=pairs / n * 100 if n else None,
+        ambiguous_positions=_ambiguous_positions(a, b, float(score[0])),
         params={
             "matrix": "BLOSUM62", "gap_open": GAP_OPEN, "gap_extend": GAP_EXTEND, "end_gaps": "penalized",
             "tie_break": TIE_BREAK, "implementation": IMPLEMENTATION_VERSION,

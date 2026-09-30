@@ -206,10 +206,12 @@ def test_alignment_answers_identity_boundary_by_hand():
 
 
 def test_alignment_answers_coverage_boundary_and_nonstandard_x():
-    # 20 residues; UniProt holds only the first 10 -> 10 aligned pairs = 50.0 % coverage (kept); 9 -> below.
-    names = ["ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE"] * 2
+    # 20 distinct residues; UniProt holds only the first 10 -> 10 aligned pairs = 50.0 % coverage (kept); 9 -> below.
+    names = ["ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
+             "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL"]
     residues = [_res(i + 1, resname=n) for i, n in enumerate(names)]
     info, answers = rn.alignment_answers(residues, "PX", "ARNDCQEGHI")
+    assert info["ambiguous_residue_count"] == 0
     assert info["aligned_pairs"] == 10 and info["coverage_pct"] == 50.0 and info["chain_reason"] == []
     assert sum("position" in a for a in answers) == 10
     assert sum(a.get("absent_reason") == "alignment_gap" for a in answers) == 10
@@ -277,14 +279,15 @@ def test_1mq4_oracle_sifts_vs_alignment_segment_arithmetic_and_klifs_match_resid
                for r in rows)
     # (2) SIFTS vs the independent alignment: equal for 260 of 261 residues. The C-terminal S388 is separated from
     # the rest by 15 unobserved residues; placing it at UniProt 388 (end gap after) or 403 (internal gap before)
-    # scores the same, and the fixed tie-break (matches as late as possible) picks 403. The row is therefore a
-    # conflict with both answers kept -- the conservative outcome, never a silent pick.
+    # scores the same, so over all co-optimal alignments its placement is not unique: alignment_ambiguous. With
+    # SIFTS giving 388 the row is a one_method_only conflict with both answers kept (spec 5.4 amendment).
     agree = [r for r in rows if r["sifts"] == r["alignment"]]
     differ = [r for r in rows if r["sifts"] != r["alignment"]]
     assert len(agree) == 260 and [r["residue"]["seq_auth"] for r in differ] == [TIE_RESIDUE]
-    assert differ[0]["alignment"] == {"accession": "O14965", "position": 403}
+    assert differ[0]["alignment"] == {"absent_reason": "alignment_ambiguous"}
     assert differ[0]["sifts"] == {"accession": "O14965", "position": 388}
-    assert differ[0]["status"] == "conflict" and differ[0]["conflict_reason"] == "positions_differ"
+    assert differ[0]["status"] == "conflict" and differ[0]["conflict_reason"] == "one_method_only"
+    assert align["ambiguous_residue_count"] == 1
     assert differ[0]["uniprot_position"] is None and differ[0]["klifs_index"] is None
     sequence = _uniprot_sequence("O14965")
     assert sequence[387] == "S" and sequence[402] == "S"
@@ -435,7 +438,8 @@ def test_positions_differ_when_sifts_segment_is_shifted(tmp_path, refroot):
     run, _ = _run(tmp_path)
     _, content = _map(run, _load(run, CIF_1MQ4), [{"chain_auth": "A"}], pdb_id="1MQ4")
     rows = content["rows"]
-    assert {r["status"] for r in rows} == {"conflict"} and {r["conflict_reason"] for r in rows} == {"positions_differ"}
+    assert {r["status"] for r in rows} == {"conflict"}
+    assert [r["residue"]["seq_auth"] for r in rows if r["conflict_reason"] != "positions_differ"] == [TIE_RESIDUE]
     assert all(r["sifts"]["position"] == r["residue"]["seq_label"] + SEGMENT_OFFSET + 1 for r in rows)
     assert all(r["uniprot_position"] is None and r["klifs_index"] is None for r in rows)
     assert content["null_result"] is True
@@ -559,7 +563,9 @@ def test_cross_check_absent_reasons(tmp_path, refroot, monkeypatch, reason, path
                                    "absent_reason": "uniprot_sequence_unavailable",
                                    "unresolved_regions": [], "gapped_regions": []}]
     else:
-        assert chain["counts"]["mapped"] == len(rows)
+        ambiguous = chain["alignment"]["ambiguous_residue_count"] if chain["alignment"] else 0
+        assert chain["counts"]["mapped"] == len(rows) - ambiguous
+        assert ambiguous == (1 if path == CIF_1MQ4 and chain["alignment"] else 0)
 
 
 # --- input validation: failure recorded like other validation failures, implementation never called ----------------
@@ -748,3 +754,18 @@ def test_argument_repair_path_runs_the_same_precheck(tmp_path, ref):
     assert len(calls) == 1 and run.store.load(out.handle)["pdb_id"] == "1MQ4"
     repaired = [e for e in _events(run, "tool_called") if e["tool"] == TOOL]
     assert repaired[-1]["attempt_kind"] == "argument_repair" and repaired[-1]["args"]["pdb_id"] == "1MQ4"
+
+
+def test_1mq4_alignment_only_does_not_map_the_ambiguous_residue(tmp_path, ref):
+    run, _ = _run(tmp_path)
+    _, content = _map(run, _load(run, CIF_1MQ4), [{"chain_auth": "A", "uniprot_accession": "O14965"}])
+    chain = _chain(content)
+    assert chain["methods_run"] == ["local_alignment"] and chain["cross_check_absent_reason"] == "pdb_id_not_given"
+    assert chain["alignment"]["ambiguous_residue_count"] == 1
+    assert chain["alignment"]["identity_pct"] == 100.0 and chain["alignment"]["coverage_pct"] == 100.0
+    assert chain["counts"] == {"mapped": 260, "unmapped": 1, "conflict": 0}
+    row = next(r for r in content["rows"] if r["residue"]["seq_auth"] == TIE_RESIDUE)
+    assert row["status"] == "unmapped" and row["alignment"] == {"absent_reason": "alignment_ambiguous"}
+    assert row["uniprot_position"] is None and row["klifs_index"] is None and row["sifts"] is None
+    mapped = [r for r in content["rows"] if r["status"] == "mapped"]
+    assert all(r["uniprot_position"] == r["residue"]["seq_label"] + SEGMENT_OFFSET for r in mapped)
