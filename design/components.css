@@ -405,3 +405,20 @@
 .mw-numbering-table th, .mw-numbering-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
 .mw-numbering-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
 .mw-numbering-answers { font-family: var(--font-mono); overflow-wrap: anywhere; }
+
+/* ---- M16 reference site annotation panel (main structure screen) ---- */
+.mw-site-annotation { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; font-size: 12px; }
+.mw-site-annotation p { margin: 0; overflow-wrap: anywhere; }
+.mw-site-annotation-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mw-site-annotation-group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); }
+.mw-site-annotation-choices { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); }
+.mw-site-annotation-choices legend { padding: 0 var(--space-1); color: var(--ink-muted); }
+.mw-site-annotation-choices label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.mw-site-annotation-choices .mw-mono { overflow-wrap: anywhere; }
+.mw-site-annotation-blocked { padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); color: var(--ink); }
+.mw-site-annotation-table { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.mw-site-annotation-swatches { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.mw-site-annotation-swatches span { display: inline-flex; align-items: center; gap: var(--space-1); }
+.mw-site-annotation-undrawn { margin: 0; padding-left: var(--space-4); }
+.mw-site-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; border: 1px solid var(--line-strong); }
+.mw-site-swatch--line { width: 16px; height: 0; border: 0; border-top: 2px dashed; border-radius: 0; }

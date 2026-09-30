@@ -293,3 +293,48 @@ test("every site region has its own colour token", () => {
   assert.equal(new Set(Object.values(lib.SITE_REGION_TOKEN)).size, 5);
   for (const index of [17, 24, 45, 46, 47, 48, 80, 81, 82, 83]) assert.ok(lib.SITE_REGION_TOKEN[lib.siteRegion(index)]);
 });
+
+test("viewer request key follows run, annotation, source and legend", () => {
+  const shown = { runId: "r1", sourceHandle: SRC, handle: "a1", annotation: annotation(), legend: true };
+  const request = lib.siteAnnotationRequest(shown);
+  assert.equal(request.visible, true);
+  assert.equal(request.legend, true);
+  assert.equal(request.handle, "a1");
+  assert.equal(request.sourceHandle, SRC);
+  assert.equal(request.annotation, shown.annotation);
+  const keys = new Set([request, lib.siteAnnotationRequest({ ...shown, legend: false }),
+    lib.siteAnnotationRequest({ ...shown, runId: "r2" }), lib.siteAnnotationRequest({ ...shown, handle: "a2" }),
+    lib.siteAnnotationRequest({ ...shown, sourceHandle: OTHER })].map(item => item.key));
+  assert.equal(keys.size, 5);
+  assert.equal(lib.siteAnnotationRequest({ ...shown }).key, request.key);
+});
+
+test("a shown annotation turns off on run or source change, comparison, or an unsupported source", () => {
+  const shown = { runId: "r1", sourceHandle: SRC, annotation: annotation() };
+  const live = { runId: "r1", sourceHandle: SRC, sourceKind: "prepared_structure", comparisonActive: false };
+  assert.equal(lib.annotationShownCurrent(shown, live), true);
+  assert.equal(lib.annotationShownCurrent(shown, { ...live, runId: "r2" }), false);
+  assert.equal(lib.annotationShownCurrent(shown, { ...live, sourceHandle: OTHER }), false);
+  assert.equal(lib.annotationShownCurrent(shown, { ...live, sourceHandle: null, sourceKind: null }), false);
+  assert.equal(lib.annotationShownCurrent(shown, { ...live, comparisonActive: true }), false);
+  assert.equal(lib.annotationShownCurrent(shown, { ...live, sourceKind: "openmm_minimized_structure" }), false);
+  assert.equal(lib.annotationShownCurrent(shown, { ...live, sourceKind: "chemical_structure" }), false);
+  // the stored annotation of another structure is never drawn on this source
+  assert.equal(lib.annotationShownCurrent({ ...shown, annotation: annotation({ structure: { handle: OTHER,
+    structure_kind: "structure", model_number: 1 } }) }, live), false);
+});
+
+test("host accepts show requests only for its run, displayed source and without a block", () => {
+  const request = { runId: "r1", sourceHandle: SRC, annotation: annotation() };
+  const host = { runId: "r1", sourceHandle: SRC, blocked: null };
+  assert.equal(lib.annotationShowAccepted(request, "r1", host), true);
+  assert.equal(lib.annotationShowAccepted(null, "r1", host), true);
+  assert.equal(lib.annotationShowAccepted(null, "r0", host), false, "late off of an older run");
+  assert.equal(lib.annotationShowAccepted(request, "r0", host), false);
+  assert.equal(lib.annotationShowAccepted({ ...request, runId: "r0" }, "r1", host), false);
+  assert.equal(lib.annotationShowAccepted(request, "r1", { ...host, sourceHandle: OTHER }), false, "late on of an older source");
+  assert.equal(lib.annotationShowAccepted(request, "r1", { ...host, blocked: lib.POCKET_OVERLAY_BLOCKS_ANNOTATION }), false);
+  assert.equal(lib.annotationShowAccepted({ ...request, annotation: annotation({ structure: { handle: OTHER,
+    structure_kind: "structure", model_number: 1 } }) }, "r1", host), false);
+  assert.notEqual(lib.SCIENTIFIC_NULL_LABEL, "정상적인 빈 결과 (scientific_null)");
+});
