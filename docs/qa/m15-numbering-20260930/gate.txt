@@ -1,0 +1,76 @@
+M15 T13 full gate (docs/standards.md 검증 게이트)
+frozen source: c1d824d8bb6400f98790b1196c04cf84c6950264
+working tree clean at start: yes
+started: 2026-09-30T04:19:24Z
+
+## [1] .venv/bin/python -m pytest backend/tests -q -rs
+exit: 0  duration_s: 963
+summary:
+      from starlette.testclient import TestClient as TestClient  # noqa
+  
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  806 passed, 1 warning in 962.75s (0:16:02)
+
+## [2] .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
+exit: 0  duration_s: 0
+summary:
+  All checks passed!
+
+## [3] .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py -q -rs
+exit: 0  duration_s: 4
+summary:
+  ........................................................................ [ 54%]
+  ...........................................................              [100%]
+  131 passed in 4.49s
+
+## [4] node --check frontend/tests/offscreen/pocket-flow.cjs && echo ok
+exit: 0  duration_s: 1
+summary:
+  ok
+
+## [5] node --check frontend/tests/offscreen/workflows-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [6] node --check frontend/tests/offscreen/tabs-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [7] node --check frontend/tests/offscreen/numbering-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [8] npm --prefix frontend run test:events
+exit: 0  duration_s: 0
+summary:
+  ℹ tests 180
+  ℹ suites 0
+  ℹ pass 180
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 322.585708
+
+## [9] npm --prefix frontend run typecheck
+exit: 0  duration_s: 4
+summary:
+  > molecular-workspace-web@0.1.0 typecheck
+  > tsc --noEmit
+  
+
+## [10] npm --prefix frontend run build
+exit: 0  duration_s: 12
+summary:
+  
+  
+  ƒ Middleware                               34 kB
+  
+  ○  (Static)  prerendered as static content
+  
+
+finished: 2026-09-30T04:35:48Z
+tree status after gate (excluding evidence folder):
