@@ -40,8 +40,8 @@ CROSS_CHECK_ABSENT_REASONS = (
     "sifts_chain_no_segments", "accession_differs_from_sifts", "multiple_sifts_accessions",
     "sifts_accession_not_in_uniprot_snapshot", "sifts_accession_uniprot_lookup_failed", "alignment_too_large",
 )
-SIFTS_ABSENT_REASONS = ("sifts_no_residue_row", "sifts_number_mismatch", "sifts_not_observed",
-                        "sifts_outside_segments")
+SIFTS_ABSENT_REASONS = ("sifts_no_residue_row", "sifts_ambiguous_residue_row", "sifts_number_mismatch",
+                        "sifts_not_observed", "sifts_outside_segments", "sifts_position_outside_sequence")
 ALIGNMENT_ABSENT_REASONS = ("alignment_gap", "alignment_ambiguous", "alignment_below_identity",
                             "alignment_below_coverage")
 # Accession-level KLIFS reasons: the klifs_numbering set plus one for a mapped accession without a UniProt sequence.
@@ -51,6 +51,11 @@ LIMITATIONS = ("UniProt positions, accessions and KLIFS pocket numbers are refer
                "processed snapshots), not ProtView calculations; ProtView computes only the alignment statistics. "
                "SIFTS chains are matched by author chain ID only. A conflict keeps both answers and picks neither.")
 _ALIGN_ALPHABET = frozenset("ARNDCQEGHILKMFPSTWYVBZX*")
+
+
+def absent(*reasons: str) -> dict[str, Any]:
+    """A method's "no answer" for one residue: every reason in order; ``absent_reason`` is the first (compatibility)."""
+    return {"absent_reason": reasons[0], "absent_reasons": list(reasons)}
 
 
 class NumberingInvalid(Exception):
@@ -241,21 +246,21 @@ def sifts_answers(residues: Iterable[Mapping[str, Any]], chain: sm.SiftsChain) -
             candidates = by_pdbe.get(residue["seq_label"], [])
             full = [r for r in candidates if (r["author_number"], r["icode"]) == author_key]
             partial = bool(candidates) or bool(by_author.get(author_key))
-            if len(full) != 1:
-                answers.append({"absent_reason": "sifts_number_mismatch" if partial and not full
-                                else "sifts_no_residue_row"})
-                continue
         else:
             full = by_author.get(author_key, [])
-            if len(full) != 1:
-                answers.append({"absent_reason": "sifts_no_residue_row"})
-                continue
+            partial = False
+        if len(full) > 1:
+            answers.append(absent("sifts_ambiguous_residue_row"))
+            continue
+        if not full:
+            answers.append(absent("sifts_number_mismatch" if partial else "sifts_no_residue_row"))
+            continue
         row = full[0]
         if not row["observed"]:
-            answers.append({"absent_reason": "sifts_not_observed"})
+            answers.append(absent("sifts_not_observed"))
             continue
         found = chain.uniprot_position(row["entity_id"], row["pdbe_number"])
-        answers.append({"absent_reason": sm.OUTSIDE_SEGMENTS} if found is None
+        answers.append(absent(sm.OUTSIDE_SEGMENTS) if found is None
                        else {"accession": found[0], "position": found[1]})
     return answers, key
 
@@ -290,10 +295,10 @@ def alignment_answers(residues: Iterable[Mapping[str, Any]], accession: str,
             "ambiguous_residue_count": len(result.ambiguous_positions),
             "aligned_strings": {"structure": result.aligned_structure, "uniprot": result.aligned_uniprot}}
     if reasons:
-        return info, [{"absent_reason": reasons[0]} for _ in residues]
+        return info, [absent(*reasons) for _ in residues]
     ambiguous = set(result.ambiguous_positions)
-    return info, [{"absent_reason": "alignment_ambiguous"} if k in ambiguous else
-                  {"absent_reason": "alignment_gap"} if p is None else {"accession": accession, "position": p}
+    return info, [absent("alignment_ambiguous") if k in ambiguous else
+                  absent("alignment_gap") if p is None else {"accession": accession, "position": p}
                   for k, p in enumerate(result.structure_to_uniprot)]
 
 
@@ -369,7 +374,13 @@ def build_map(*, structure_handle: str, structure_kind: str, model_number: int, 
         if plan.sifts_chain is not None:
             chain = plan.sifts_chain
             answers, residue_key = sifts_answers(residues, chain)
-            s_answers = list(answers)
+            # A SIFTS position beyond the snapshot's UniProt sequence is never an answer (sequence known only).
+            s_answers = []
+            for answer in answers:
+                sequence = (index.uniprot.get(answer.get("accession")) or {}).get("sequence")
+                if "position" in answer and sequence is not None and answer["position"] > len(sequence):
+                    answer = absent("sifts_position_outside_sequence")
+                s_answers.append(answer)
             sifts_info = {"accessions": list(plan.sifts_accessions), "sifts_chain_match": SIFTS_CHAIN_MATCH,
                           "sifts_residue_key": residue_key}
             uniprot_used.update(plan.sifts_accessions)

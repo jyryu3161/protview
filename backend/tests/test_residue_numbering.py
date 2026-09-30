@@ -161,16 +161,16 @@ def _install(refroot, tag, replace):
 @pytest.mark.parametrize(("sifts", "alignment", "expected"), [
     ({"accession": "P1", "position": 5}, {"accession": "P1", "position": 5}, ("mapped", 5, None)),
     ({"accession": "P1", "position": 5}, {"accession": "P1", "position": 6}, ("conflict", None, "positions_differ")),
-    ({"accession": "P1", "position": 5}, {"absent_reason": "alignment_gap"}, ("conflict", None, "one_method_only")),
-    ({"absent_reason": "sifts_no_residue_row"}, {"accession": "P1", "position": 6},
+    ({"accession": "P1", "position": 5}, {"absent_reason": "alignment_gap", "absent_reasons": ["alignment_gap"]}, ("conflict", None, "one_method_only")),
+    ({"absent_reason": "sifts_no_residue_row", "absent_reasons": ["sifts_no_residue_row"]}, {"accession": "P1", "position": 6},
      ("conflict", None, "one_method_only")),
-    ({"accession": "P1", "position": 5}, {"absent_reason": "alignment_below_identity"},
+    ({"accession": "P1", "position": 5}, {"absent_reason": "alignment_below_identity", "absent_reasons": ["alignment_below_identity"]},
      ("conflict", None, "one_method_only")),
-    ({"absent_reason": "sifts_not_observed"}, {"absent_reason": "alignment_gap"}, ("unmapped", None, None)),
+    ({"absent_reason": "sifts_not_observed", "absent_reasons": ["sifts_not_observed"]}, {"absent_reason": "alignment_gap", "absent_reasons": ["alignment_gap"]}, ("unmapped", None, None)),
     ({"accession": "P1", "position": 5}, None, ("mapped", 5, None)),
     (None, {"accession": "P1", "position": 7}, ("mapped", 7, None)),
-    ({"absent_reason": "sifts_outside_segments"}, None, ("unmapped", None, None)),
-    (None, {"absent_reason": "alignment_gap"}, ("unmapped", None, None)),
+    ({"absent_reason": "sifts_outside_segments", "absent_reasons": ["sifts_outside_segments"]}, None, ("unmapped", None, None)),
+    (None, {"absent_reason": "alignment_gap", "absent_reasons": ["alignment_gap"]}, ("unmapped", None, None)),
 ])
 def test_row_status_every_case(sifts, alignment, expected):
     status, agreed, reason = rn.row_status(sifts, alignment)
@@ -202,7 +202,11 @@ def test_alignment_answers_identity_boundary_by_hand():
     assert info["chain_reason"] == [] and [a["position"] for a in answers] == list(range(1, 11))
     info, answers = rn.alignment_answers(residues, "PX", "ARNDCQEGYV")      # H -> Y, I -> V
     assert info["identity_pct"] == 80.0 and info["chain_reason"] == ["alignment_below_identity"]
-    assert answers == [{"absent_reason": "alignment_below_identity"}] * 10
+    # both thresholds failed: every row carries both reasons (absent_reason = the first, kept for compatibility)
+    _, both = rn.alignment_answers(residues[:4], "PX", "WWWWWWWWWWWWW")
+    assert both == [{"absent_reason": "alignment_below_identity",
+                     "absent_reasons": ["alignment_below_identity", "alignment_below_coverage"]}] * 4
+    assert answers == [{"absent_reason": "alignment_below_identity", "absent_reasons": ["alignment_below_identity"]}] * 10
 
 
 def test_alignment_answers_coverage_boundary_and_nonstandard_x():
@@ -244,15 +248,15 @@ def test_sifts_answers_label_author_icode_and_reasons():
     answers, key = rn.sifts_answers(labelled, chain)
     assert key == "label_and_author"
     assert answers == [{"accession": "P1", "position": 101}, {"accession": "P1", "position": 102},
-                       {"accession": "P1", "position": 103}, {"absent_reason": "sifts_not_observed"},
-                       {"absent_reason": "sifts_outside_segments"}, {"absent_reason": "sifts_number_mismatch"},
-                       {"absent_reason": "sifts_number_mismatch"}, {"absent_reason": "sifts_no_residue_row"},
-                       {"absent_reason": "sifts_number_mismatch"}]
+                       {"accession": "P1", "position": 103}, {"absent_reason": "sifts_not_observed", "absent_reasons": ["sifts_not_observed"]},
+                       {"absent_reason": "sifts_outside_segments", "absent_reasons": ["sifts_outside_segments"]}, {"absent_reason": "sifts_number_mismatch", "absent_reasons": ["sifts_number_mismatch"]},
+                       {"absent_reason": "sifts_number_mismatch", "absent_reasons": ["sifts_number_mismatch"]}, {"absent_reason": "sifts_no_residue_row", "absent_reasons": ["sifts_no_residue_row"]},
+                       {"absent_reason": "sifts_number_mismatch", "absent_reasons": ["sifts_number_mismatch"]}]
     author_only = [_res(10), _res(11, icode="A"), _res(11, icode="B"), _res(900)]
     answers, key = rn.sifts_answers(author_only, chain)
     assert key == "author_only"
     assert answers == [{"accession": "P1", "position": 101}, {"accession": "P1", "position": 103},
-                       {"absent_reason": "sifts_no_residue_row"}, {"absent_reason": "sifts_no_residue_row"}]
+                       {"absent_reason": "sifts_no_residue_row", "absent_reasons": ["sifts_no_residue_row"]}, {"absent_reason": "sifts_no_residue_row", "absent_reasons": ["sifts_no_residue_row"]}]
 
 
 # --- 1MQ4: independent oracles --------------------------------------------------------------------------------------
@@ -284,7 +288,7 @@ def test_1mq4_oracle_sifts_vs_alignment_segment_arithmetic_and_klifs_match_resid
     agree = [r for r in rows if r["sifts"] == r["alignment"]]
     differ = [r for r in rows if r["sifts"] != r["alignment"]]
     assert len(agree) == 260 and [r["residue"]["seq_auth"] for r in differ] == [TIE_RESIDUE]
-    assert differ[0]["alignment"] == {"absent_reason": "alignment_ambiguous"}
+    assert differ[0]["alignment"] == {"absent_reason": "alignment_ambiguous", "absent_reasons": ["alignment_ambiguous"]}
     assert differ[0]["sifts"] == {"accession": "O14965", "position": 388}
     assert differ[0]["status"] == "conflict" and differ[0]["conflict_reason"] == "one_method_only"
     assert align["ambiguous_residue_count"] == 1
@@ -381,7 +385,7 @@ def test_insertion_code_must_match_and_is_preserved(tmp_path, ref):
     assert row["residue"] == {"model_number": 1, "chain_auth": "A", "chain_label": "Axp", "seq_auth": 240,
                               "seq_label": None, "icode": "A", "resname": "ALA"}
     # SIFTS knows author 241 without icode, never 240A: no row. The alignment still places it -> conflict.
-    assert row["sifts"] == {"absent_reason": "sifts_no_residue_row"}
+    assert row["sifts"] == {"absent_reason": "sifts_no_residue_row", "absent_reasons": ["sifts_no_residue_row"]}
     assert row["alignment"] == {"accession": "O14965", "position": 241}
     assert row["status"] == "conflict" and row["conflict_reason"] == "one_method_only"
     assert row["klifs_index"] is None and row["residue_match"] is None and row["uniprot_position"] is None
@@ -462,8 +466,8 @@ def test_one_method_only_and_both_absent(tmp_path, refroot):
     assert one and all(r["conflict_reason"] == "one_method_only" and r["sifts"]["absent_reason"] ==
                        "sifts_outside_segments" and "position" in r["alignment"] for r in one)
     both = [r for r in rows if r["status"] == "unmapped"]
-    assert both and all(r["sifts"] == {"absent_reason": "sifts_outside_segments"}
-                        and r["alignment"] == {"absent_reason": "alignment_gap"} for r in both)
+    assert both and all(r["sifts"] == {"absent_reason": "sifts_outside_segments", "absent_reasons": ["sifts_outside_segments"]}
+                        and r["alignment"] == {"absent_reason": "alignment_gap", "absent_reasons": ["alignment_gap"]} for r in both)
     assert all(r["klifs_index"] is None for r in one + both)
 
 
@@ -479,7 +483,7 @@ def test_alignment_below_threshold_with_sifts_positions_is_conflict(tmp_path, re
     assert chain["cross_check"] is True and chain["alignment"]["chain_reason"] == ["alignment_below_identity"]
     assert chain["alignment"]["identity_pct"] < 90
     assert chain["counts"] == {"mapped": 0, "unmapped": 0, "conflict": 261}
-    assert all(r["alignment"] == {"absent_reason": "alignment_below_identity"} and "position" in r["sifts"]
+    assert all(r["alignment"] == {"absent_reason": "alignment_below_identity", "absent_reasons": ["alignment_below_identity"]} and "position" in r["sifts"]
                and r["conflict_reason"] == "one_method_only" for r in content["rows"])
     assert content["null_result"] is True and chain["klifs"] == []
 
@@ -765,7 +769,62 @@ def test_1mq4_alignment_only_does_not_map_the_ambiguous_residue(tmp_path, ref):
     assert chain["alignment"]["identity_pct"] == 100.0 and chain["alignment"]["coverage_pct"] == 100.0
     assert chain["counts"] == {"mapped": 260, "unmapped": 1, "conflict": 0}
     row = next(r for r in content["rows"] if r["residue"]["seq_auth"] == TIE_RESIDUE)
-    assert row["status"] == "unmapped" and row["alignment"] == {"absent_reason": "alignment_ambiguous"}
+    assert row["status"] == "unmapped" and row["alignment"] == {"absent_reason": "alignment_ambiguous", "absent_reasons": ["alignment_ambiguous"]}
     assert row["uniprot_position"] is None and row["klifs_index"] is None and row["sifts"] is None
     mapped = [r for r in content["rows"] if r["status"] == "mapped"]
     assert all(r["uniprot_position"] == r["residue"]["seq_label"] + SEGMENT_OFFSET for r in mapped)
+
+
+def test_sifts_ambiguous_residue_row_when_two_rows_fully_match():
+    # SYNTHETIC SiftsChain: two polymer entities with segments both hold PDBe 1 / author 10.
+    seg = {1: (sm.SiftsSegment("P1", 1, 1, 1, 101, 101, 1.0, 1.0),),
+           2: (sm.SiftsSegment("P2", 2, 1, 1, 201, 201, 1.0, 1.0),)}
+    chain = _sifts_chain([(1, 1, 10, "", True), (2, 1, 10, "", True)], seg)
+    for residue in (_res(10, 1), _res(10)):
+        answers, _ = rn.sifts_answers([residue], chain)
+        assert answers == [{"absent_reason": "sifts_ambiguous_residue_row",
+                            "absent_reasons": ["sifts_ambiguous_residue_row"]}]
+    assert "sifts_ambiguous_residue_row" in rn.SIFTS_ABSENT_REASONS
+
+
+def test_sifts_position_beyond_uniprot_sequence_is_absent(tmp_path, refroot):
+    # SYNTHETIC: O14965 truncated after UniProt 380 while the SIFTS segment still reaches 391.
+    _install(refroot, "beyond", {("uniprot", "entries.jsonl"): _synthetic_uniprot(
+        _with_sequence("O14965", _uniprot_sequence("O14965")[:380]))})
+    run, _ = _run(tmp_path)
+    for chains, pdb_id in (([{"chain_auth": "A"}], "1MQ4"),):
+        _, content = _map(run, _load(run, CIF_1MQ4), chains, pdb_id)
+        beyond = [r for r in content["rows"] if r["residue"]["seq_label"] + SEGMENT_OFFSET > 380]
+        assert beyond and all(r["sifts"] == {"absent_reason": "sifts_position_outside_sequence",
+                                             "absent_reasons": ["sifts_position_outside_sequence"]} for r in beyond)
+        assert all(r["status"] != "mapped" and r["uniprot_position"] is None for r in beyond)
+        assert all(r["uniprot_residue"] is not None for r in content["rows"] if r["status"] == "mapped")
+
+
+def test_sifts_only_position_beyond_sequence_is_not_mapped(tmp_path, refroot, monkeypatch):
+    # SYNTHETIC as above; alignment disabled by the size cap -> SIFTS only, the beyond rows must be unmapped.
+    _install(refroot, "beyond_sifts", {("uniprot", "entries.jsonl"): _synthetic_uniprot(
+        _with_sequence("O14965", _uniprot_sequence("O14965")[:380]))})
+    monkeypatch.setattr(rn, "MAX_ALIGNMENT_CELLS", 1000)
+    run, _ = _run(tmp_path)
+    _, content = _map(run, _load(run, CIF_1MQ4), [{"chain_auth": "A"}], "1MQ4")
+    assert _chain(content)["methods_run"] == ["sifts"]
+    beyond = [r for r in content["rows"] if r["residue"]["seq_label"] + SEGMENT_OFFSET > 380]
+    assert beyond and all(r["status"] == "unmapped" for r in beyond)
+    assert _chain(content)["counts"]["mapped"] == 261 - len(beyond)
+
+
+def test_set_sequence_a_b_a_keeps_one_immutable_record_per_set(tmp_path, refroot):
+    # Content addressing: re-activating set A yields A's existing handle (no second object_created event); the new
+    # map embeds A's hash, and A's full manifest stays recorded in this run's events.
+    first = _install(refroot, "a", None)
+    run, calls = _run(tmp_path)
+    structure = _load(run, CIF_1MQ4)
+    _map(run, structure, [{"chain_auth": "A"}], "1MQ4")
+    _install(refroot, "b", None)
+    _map(run, structure, [{"chain_auth": "A"}], "1MQ4")
+    (refroot / "active.json").write_bytes(rs.canonical_json({"schema": rs.POINTER_SCHEMA, "set_hash": first}))
+    _, content = _map(run, structure, [{"chain_auth": "A", "uniprot_accession": "O14965"}], "1MQ4")
+    assert content["snapshot_set"]["set_hash"] == first and len(calls) == 3
+    recorded = [e["summary"]["set_hash"] for e in _created(run, "reference_snapshot_set")]
+    assert recorded[0] == first and len(recorded) == 2 and first in recorded
