@@ -27,11 +27,27 @@ Placement and uniqueness (definition):
 5. A region is resolved iff every one of its fragments has exactly one feasible occurrence, i.e. the region
    has exactly one placement over all order-consistent assignments. Otherwise the whole region is unresolved.
    If no complete assignment exists, every region in the chain is unresolved.
+   Regions resolved here carry ``klifs_match: "contiguous"``.
+
+Second pass, gapped unique placement (KLIFS sometimes drops sequence residues inside a region without a gap
+character, e.g. EGFR b.l pocket ``VDPHVCR`` vs UniProt ``VDNPHVCR``):
+6. Only regions left unresolved by steps 1-5 are attempted, and only when a region resolved in steps 1-5
+   exists both before and after it in KLIFS order. The window is the open interval between the last UniProt
+   position used by the nearest resolved region before it and the first UniProt position used by the nearest
+   resolved region after it (other unresolved regions in between share the same window).
+7. The region's non-gap letters, in KLIFS order, are matched as a subsequence of the window (residues in
+   between may be skipped). The number of distinct placements is counted exactly (capped at 2). Exactly one
+   placement numbers the region with ``klifs_match: "gapped_unique"``; zero or two or more leaves it
+   unresolved. Gap positions still get no number; each letter keeps its KLIFS index.
+8. Second-pass results never change another region's window (windows come from steps 1-5 only). If the
+   second-pass regions sharing one window do not give UniProt positions that strictly increase with KLIFS
+   index, all of them are left unresolved.
 """
 from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping
+from itertools import pairwise
 from typing import Any
 
 POCKET_LENGTH = 85
@@ -103,16 +119,36 @@ def _occurrences(sequence: str, text: str) -> list[int]:
 
 
 def _empty(accession: str, reason: str | None) -> dict[str, Any]:
-    return {"accession": accession, "absent_reason": reason, "positions": {}, "unresolved_regions": []}
+    return {"accession": accession, "absent_reason": reason, "positions": {}, "unresolved_regions": [],
+            "gapped_regions": []}
+
+
+def _unique_subsequence(window: str, letters: str) -> list[int] | None:
+    """0-based offsets of the only placement of ``letters`` as a subsequence of ``window``, else None."""
+    # ways[j] = number of placements (capped at 2) of letters[:j] in the window prefix scanned so far
+    ways = [1] + [0] * len(letters)
+    for ch in window:
+        for j in range(len(letters), 0, -1):
+            if letters[j - 1] == ch:
+                ways[j] = min(2, ways[j] + ways[j - 1])
+    if ways[-1] != 1:
+        return None
+    offsets: list[int] = []
+    for i, ch in enumerate(window):  # with exactly one placement, the leftmost greedy one is it
+        if len(offsets) < len(letters) and ch == letters[len(offsets)]:
+            offsets.append(i)
+    return offsets
 
 
 def klifs_table(accession: str, klifs_entries_for_accession: list[Mapping[str, Any]],
                 uniprot_sequence: str) -> dict[str, Any]:
     """Map UniProt positions to KLIFS pocket indexes for one accession.
 
-    Returns ``{"accession", "absent_reason", "positions", "unresolved_regions"}`` where ``positions`` maps a
-    1-based UniProt position (int) to ``{"klifs_index": 1..85, "klifs_label": "<region>.<index>"}`` and
-    ``unresolved_regions`` lists region labels in KLIFS order. See the module docstring for the rules.
+    Returns ``{"accession", "absent_reason", "positions", "unresolved_regions", "gapped_regions"}`` where
+    ``positions`` maps a 1-based UniProt position (int) to ``{"klifs_index": 1..85, "klifs_label":
+    "<region>.<index>", "klifs_match": "contiguous" | "gapped_unique"}``, ``unresolved_regions`` lists the
+    regions left without numbers and ``gapped_regions`` the regions numbered by the second pass, both in KLIFS
+    order. See the module docstring for the rules.
     """
     entries = list(klifs_entries_for_accession)
     for entry in entries:
@@ -171,18 +207,50 @@ def klifs_table(accession: str, klifs_entries_for_accession: list[Mapping[str, A
             continue
         placement.setdefault(region, []).append((text, first, options[0]))
 
-    positions: dict[int, dict[str, Any]] = {}
+    # first pass result: region -> [(KLIFS index, 0-based sequence index)]
+    assigned: dict[str, list[tuple[int, int]]] = {}
     for region, _start, _end in KLIFS_REGIONS:
         if region in unresolved or region not in placement:
             continue
-        for text, first, seq_start in placement[region]:
-            for offset in range(len(text)):
-                klifs_index = first + offset
-                positions[seq_start + offset + 1] = {"klifs_index": klifs_index,
-                                                     "klifs_label": f"{region}.{klifs_index}"}
+        assigned[region] = [(first + k, seq_start + k)
+                            for text, first, seq_start in placement[region] for k in range(len(text))]
+
+    # second pass: windows come only from first-pass regions
+    order = [r for r, _s, _e in KLIFS_REGIONS]
+    by_window: dict[tuple[int, int], list[tuple[str, list[tuple[int, int]]]]] = {}
+    for i, (region, start, end) in enumerate(KLIFS_REGIONS):
+        if region not in unresolved:
+            continue
+        before = next((r for r in reversed(order[:i]) if r in assigned), None)
+        after = next((r for r in order[i + 1:] if r in assigned), None)
+        if before is None or after is None:
+            continue
+        lo = max(s for _k, s in assigned[before]) + 1
+        hi = min(s for _k, s in assigned[after])
+        idxs = [k for k in range(start, end + 1) if pocket[k - 1] not in GAP_CHARS]
+        offsets = _unique_subsequence(uniprot_sequence[lo:hi], "".join(pocket[k - 1] for k in idxs))
+        if offsets is not None:
+            by_window.setdefault((lo, hi), []).append(
+                (region, [(k, lo + o) for k, o in zip(idxs, offsets, strict=True)]))
+    gapped: set[str] = set()
+    for group in by_window.values():
+        seq_positions = [s for _region, pairs in group for _k, s in pairs]
+        if all(a < b for a, b in pairwise(seq_positions)):
+            for region, pairs in group:
+                assigned[region] = pairs
+                gapped.add(region)
+                unresolved.discard(region)
+
+    positions: dict[int, dict[str, Any]] = {}
+    for region, pairs in assigned.items():
+        match = "gapped_unique" if region in gapped else "contiguous"
+        for klifs_index, seq_index in pairs:
+            positions[seq_index + 1] = {"klifs_index": klifs_index, "klifs_label": f"{region}.{klifs_index}",
+                                        "klifs_match": match}
     return {
         "accession": accession,
         "absent_reason": None,
         "positions": dict(sorted(positions.items())),
-        "unresolved_regions": [r for r, _s, _e in KLIFS_REGIONS if r in unresolved],
+        "unresolved_regions": [r for r in order if r in unresolved],
+        "gapped_regions": [r for r in order if r in gapped],
     }
