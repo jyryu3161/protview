@@ -172,6 +172,7 @@ def numbering_maps(run: Any, offset: int, limit: int) -> dict[str, Any]:
                      "chains": [chain["chain_auth"] for chain in content["chains"]],
                      "cross_checked_chains": [chain["chain_auth"] for chain in content["chains"]
                                               if chain["cross_check"]],
+                     "chain_details": content["chains"],
                      "set_hash": set_hash, "counts": counts, "row_count": len(content["rows"]),
                      "null_result": content["null_result"], "created_seq": created[handle],
                      "stale_snapshot": active is None or set_hash != active})

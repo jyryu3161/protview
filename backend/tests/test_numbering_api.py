@@ -264,6 +264,7 @@ def test_numbering_maps_list_stale_flag_and_row_paging(client, refroot):
     content = client.get(f"/runs/{rid}/objects/meta", params={"handle": handle}).json()["summary"]
     assert row["structure"] == structure and row["structure_kind"] == "structure" and row["pdb_id"] == "1MQ4"
     assert row["chains"] == ["A"] and row["set_hash"] == first_hash and row["stale_snapshot"] is False
+    assert [c["chain_auth"] for c in row["chain_details"]] == ["A"] and "counts" in row["chain_details"][0]
     assert row["counts"] == {k: content[k] for k in ("mapped", "unmapped", "conflict")}
     assert row["row_count"] == sum(row["counts"].values()) and row["null_result"] is False
     assert row["created_seq"] > 0 and listed["rows"][0]["created_seq"] > row["created_seq"]
