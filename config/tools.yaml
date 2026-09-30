@@ -98,6 +98,20 @@ tools:
     typical_runtime_s: 5
     description: 명시한 단백질 CA 쌍 3–1000개에 float64 고유 회전 Kabsch를 맞춘다
 
+  # M15: SIFTS + local global alignment numbering against the pinned local reference snapshot set (no network).
+  # A registry pre-check validates the whole input (reads the set and the structure) before the cache key.
+  - name: map_residue_numbering
+    level: L2
+    version: '1'
+    accepts: { structure: [structure, prepared_structure] }
+    emits: residue_numbering_map
+    cost_class: cheap
+    typical_runtime_s: 2
+    params:
+      pdb_id: { default: null }                          # user-confirmed 4-char PDB ID (normalized upper case) | null
+      chains: { type: list, required: true }             # [{chain_auth, uniprot_accession | null}], unique chain_auth
+    description: 체인 잔기를 참조 스냅샷의 UniProt 위치·KLIFS 포켓 번호에 대응한다(SIFTS·로컬 전역 정렬, 두 방법이 같을 때만 대응됨; 값은 참조 스냅샷 값)
+
   - name: align
     level: L2
     accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }
