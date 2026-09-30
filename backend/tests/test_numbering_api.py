@@ -103,6 +103,25 @@ def test_capability_three_states_and_templates_unaffected(client, refroot):
     assert invalid["analysis_workflows"]["templates"] == templates_before
 
 
+@pytest.mark.parametrize("source,name,data", [
+    ("uniprot", "entries.jsonl", b'{"id":"P00000","status":"ok","data":{"sequence":"not upper"}}\n'),
+    ("sifts", "residues.jsonl", b'{"chain":"A","synthetic":"fixture row without pdb_id"}\n'),
+    ("klifs", "kinases.jsonl", b'["synthetic fixture row that is not an object"]\n'),
+])
+def test_hash_valid_but_undecodable_set_is_snapshot_invalid(client, refroot, source, name, data):
+    # SYNTHETIC fixture set: every hash matches its manifest, but one file's content is in an unknown format
+    build_fixture_set(refroot, tag=f"undecodable-{source}", replace={(source, name): data})
+    assert rs.pin_active_set().set_hash  # the hashes themselves verify
+    numbering = client.get("/capabilities").json()["methods"]["residue_numbering"]
+    assert numbering == {"available": False, "reason_code": "snapshot_invalid", "reason": rs.REASONS["snapshot_invalid"],
+                         "set_hash": None, "sources": []}
+    body = client.get("/reference/snapshots").json()
+    assert body["available"] is False and body["reason_code"] == "snapshot_invalid" and body["sources"] == []
+    rid = _new_run(client)
+    listed = client.get(f"/runs/{rid}/numbering_maps").json()
+    assert listed["snapshot_available"] is False and listed["active_set_hash"] is None
+
+
 # --- /reference/snapshots -----------------------------------------------------------------------------------------
 
 def test_reference_snapshots_available_and_unavailable(client, refroot):
@@ -265,6 +284,11 @@ def test_numbering_maps_list_stale_flag_and_row_paging(client, refroot):
     assert row["structure"] == structure and row["structure_kind"] == "structure" and row["pdb_id"] == "1MQ4"
     assert row["chains"] == ["A"] and row["set_hash"] == first_hash and row["stale_snapshot"] is False
     assert [c["chain_auth"] for c in row["chain_details"]] == ["A"] and "counts" in row["chain_details"][0]
+    aligned = listed["rows"][0]["chain_details"][0]["alignment"]
+    assert aligned is not None and aligned["identity_pct"] is not None and "aligned_strings" not in aligned
+    import mw.api.app as appmod
+    stored = appmod._run(rid).store.load(second_handle)["chains"][0]["alignment"]
+    assert set(stored["aligned_strings"]) == {"structure", "uniprot"}  # kept in the object, list omits it
     assert row["counts"] == {k: content[k] for k in ("mapped", "unmapped", "conflict")}
     assert row["row_count"] == sum(row["counts"].values()) and row["null_result"] is False
     assert row["created_seq"] > 0 and listed["rows"][0]["created_seq"] > row["created_seq"]

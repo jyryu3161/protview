@@ -102,6 +102,15 @@ export function siftsPrefill(sifts: SiftsChainHint[] | null, chain: string): str
   return hint && !hint.reason_code && hint.accessions.length === 1 ? hint.accessions[0] : null;
 }
 
+/**
+ * Fused chain: SIFTS gives several usable accessions, so the server uses SIFTS alone and refuses an accession.
+ * A user choice stays in the form (it comes back if the PDB ID confirmation is withdrawn) but is never sent.
+ */
+export function siftsFused(sifts: SiftsChainHint[] | null, chain: string): boolean {
+  const hint = sifts?.find(item => item.chain_auth === chain);
+  return !!hint && !hint.reason_code && hint.accessions.length > 1;
+}
+
 /** Applies SIFTS hints: fills empty accessions with the single SIFTS accession; never overwrites a user choice. */
 export function applySiftsHints(form: NumberingForm, sifts: SiftsChainHint[] | null): NumberingForm {
   return { ...form, sifts,
@@ -135,8 +144,10 @@ export function checkForm(form: NumberingForm): FormCheck {
       errors.push(`체인 ${choice.chain_auth}: 확인한 PDB ID의 SIFTS 대응이 없으므로 UniProt 항목을 고르세요.`);
   }
   if (errors.length || !form.structure) return { ok: false, errors };
+  const fused = (chain: string) => form.pdbIdConfirmed && siftsFused(form.sifts, chain);
   return { ok: true, body: { structure: form.structure, pdb_id: form.pdbIdConfirmed ? pdbId : null,
-    chains: selected.map(choice => ({ chain_auth: choice.chain_auth, uniprot_accession: choice.accession })) } };
+    chains: selected.map(choice => ({ chain_auth: choice.chain_auth,
+      uniprot_accession: fused(choice.chain_auth) ? null : choice.accession })) } };
 }
 
 export type StatusFilter = "all" | NumberingStatus;
@@ -183,6 +194,22 @@ export function keyedResolve<T>(current: Keyed<T>, runId: string, seq: number, r
 export function withdrawSiftsHints(form: NumberingForm, userPicked: readonly string[]): NumberingForm {
   return { ...form, pdbIdConfirmed: false, sifts: null,
     chains: form.chains.map(choice => userPicked.includes(choice.chain_auth) ? choice : { ...choice, accession: null }) };
+}
+
+/**
+ * Percent with one decimal, the report rule: the value's decimal string (JS shortest repr, which matches Python
+ * `str(float)` here) quantized to 0.1 with ROUND_HALF_UP (97.25 -> "97.3"). Exponent forms are returned exactly.
+ */
+export function pctOneDecimal(value: number): string {
+  const text = String(value);
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(text);
+  if (!match) return text;
+  const [, sign, whole, frac = ""] = match;
+  let scaled = BigInt(whole + (frac[0] ?? "0"));
+  if (frac.length > 1 && frac[1] >= "5") scaled += 1n;
+  if (scaled === 0n) return "0.0";
+  const digits = scaled.toString().padStart(2, "0");
+  return `${sign}${digits.slice(0, -1)}.${digits.slice(-1)}`;
 }
 
 /** License text as recorded in the snapshot manifest; KLIFS states no terms (spec 4.3). */

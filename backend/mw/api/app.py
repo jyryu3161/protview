@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_executions, analysis_plans, numbering_reads, reference_snapshots
+from .. import analysis_executions, analysis_plans, numbering_reads
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
 from ..chemical_bundle import validated_result as validated_chemical_result
@@ -591,7 +591,7 @@ def capabilities() -> dict[str, Any]:
     methods = {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability(),
                "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}
     methods["analysis_workflows"] = analysis_plans.capability(methods)
-    methods["residue_numbering"] = reference_snapshots.capability()
+    methods["residue_numbering"] = numbering_reads.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",

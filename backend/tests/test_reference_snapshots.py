@@ -248,6 +248,21 @@ def test_hashes_verified_once_per_set_and_again_after_swap(ref, monkeypatch):
     assert len(calls) == 10  # the earlier verified set is still cached
 
 
+def test_verified_cache_keeps_only_the_latest_entry_per_set_folder(ref):
+    set_hash = _write_set(ref, "000001")
+    rs.pin_active_set()
+    path = ref / "sets" / set_hash / "files/uniprot/2026-01-05/entries.jsonl"
+    for _ in range(3):  # same bytes, new stat identity each time -> re-verified
+        data = path.read_bytes()
+        path.unlink()
+        path.write_bytes(data)
+        rs.pin_active_set()
+    assert len(rs._VERIFIED) == 1
+    second = _write_set(ref, "000002")
+    assert rs.pin_active_set().set_hash == second
+    assert len(rs._VERIFIED) == 2  # one per set folder
+
+
 def test_in_place_tamper_after_cache_is_detected(ref):
     set_hash = _write_set(ref, "000001")
     rs.pin_active_set()

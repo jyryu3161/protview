@@ -512,7 +512,7 @@ async function modeMain(session, input, rec_, evidence, log) {
         assert.deepEqual(chain.methods_run, ["sifts", "local_alignment"]);
         assert.deepEqual(summary.klifsApplied, ["true"]);
         assert.equal(await areaState(page, "detail"), "ready");
-        assert.ok(summary.text.includes("일치율 100 %"), summary.text);
+        assert.ok(summary.text.includes("일치율 100.0 %"), summary.text);
         return { handle: value.handle, summary, backendCounts: listed.counts, pdbId: listed.pdb_id };
       });
     maps.confirmed = made.handle;

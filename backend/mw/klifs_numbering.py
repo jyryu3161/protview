@@ -31,23 +31,21 @@ Placement and uniqueness (definition):
 
 Second pass, gapped unique placement (KLIFS sometimes drops sequence residues inside a region without a gap
 character, e.g. EGFR b.l pocket ``VDPHVCR`` vs UniProt ``VDNPHVCR``):
-6. Only regions left unresolved by steps 1-5 are attempted, and only when a region resolved in steps 1-5
-   exists both before and after it in KLIFS order. The window is the open interval between the last UniProt
-   position used by the nearest resolved region before it and the first UniProt position used by the nearest
-   resolved region after it (other unresolved regions in between share the same window).
+6. Only regions left unresolved by steps 1-5 are attempted, and only when BOTH immediately adjacent regions
+   (the previous and the next region in KLIFS order) were resolved in steps 1-5; the first and last regions and
+   a region next to another unresolved region are never attempted. The window is the open interval between the
+   last UniProt position of the previous region and the first UniProt position of the next region.
 7. The region's non-gap letters, in KLIFS order, are matched as a subsequence of the window (residues in
    between may be skipped). The number of distinct placements is counted exactly (capped at 2). Exactly one
    placement numbers the region with ``klifs_match: "gapped_unique"``; zero or two or more leaves it
    unresolved. Gap positions still get no number; each letter keeps its KLIFS index.
-8. Second-pass results never change another region's window (windows come from steps 1-5 only). If the
-   second-pass regions sharing one window do not give UniProt positions that strictly increase with KLIFS
-   index, all of them are left unresolved.
+8. Second-pass results never change another region's window (windows come from steps 1-5 only). Two
+   second-pass regions never share a window, so the result keeps UniProt positions increasing with KLIFS index.
 """
 from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping
-from itertools import pairwise
 from typing import Any
 
 POCKET_LENGTH = 85
@@ -215,31 +213,25 @@ def klifs_table(accession: str, klifs_entries_for_accession: list[Mapping[str, A
         assigned[region] = [(first + k, seq_start + k)
                             for text, first, seq_start in placement[region] for k in range(len(text))]
 
-    # second pass: windows come only from first-pass regions
+    # second pass: only a region whose immediately adjacent regions (previous and next in KLIFS order) were both
+    # resolved by the first pass; window = after the previous region's last position, before the next one's first
     order = [r for r, _s, _e in KLIFS_REGIONS]
-    by_window: dict[tuple[int, int], list[tuple[str, list[tuple[int, int]]]]] = {}
+    gapped: dict[str, list[tuple[int, int]]] = {}
     for i, (region, start, end) in enumerate(KLIFS_REGIONS):
-        if region not in unresolved:
+        if region not in unresolved or i == 0 or i == len(order) - 1:
             continue
-        before = next((r for r in reversed(order[:i]) if r in assigned), None)
-        after = next((r for r in order[i + 1:] if r in assigned), None)
-        if before is None or after is None:
+        before, after = order[i - 1], order[i + 1]
+        if before not in assigned or after not in assigned:
             continue
         lo = max(s for _k, s in assigned[before]) + 1
         hi = min(s for _k, s in assigned[after])
         idxs = [k for k in range(start, end + 1) if pocket[k - 1] not in GAP_CHARS]
         offsets = _unique_subsequence(uniprot_sequence[lo:hi], "".join(pocket[k - 1] for k in idxs))
         if offsets is not None:
-            by_window.setdefault((lo, hi), []).append(
-                (region, [(k, lo + o) for k, o in zip(idxs, offsets, strict=True)]))
-    gapped: set[str] = set()
-    for group in by_window.values():
-        seq_positions = [s for _region, pairs in group for _k, s in pairs]
-        if all(a < b for a, b in pairwise(seq_positions)):
-            for region, pairs in group:
-                assigned[region] = pairs
-                gapped.add(region)
-                unresolved.discard(region)
+            gapped[region] = [(k, lo + o) for k, o in zip(idxs, offsets, strict=True)]
+    for region, pairs in gapped.items():
+        assigned[region] = pairs
+        unresolved.discard(region)
 
     positions: dict[int, dict[str, Any]] = {}
     for region, pairs in assigned.items():

@@ -6,7 +6,7 @@ import type { CommandResult } from "@/lib/api";
 import {
   NUMBERING_STATUSES, PDB_ID_PATTERN, ROW_PAGE_LIMIT, STATUS_LABEL, answerText, applySiftsHints, checkForm, emptyForm,
   filterRows, keyedIdle, keyedRequest, keyedResolve, licenseText, numberingStructures, polymerChains, residueText,
-  sourceVersion, withdrawSiftsHints,
+  pctOneDecimal, siftsFused, sourceVersion, withdrawSiftsHints,
   type Keyed, type LoadState, type NumberingChain, type NumberingForm, type NumberingMapList, type NumberingMapListRow,
   type NumberingRow, type NumberingStructureKind, type PdbIdHint, type ReferenceSnapshots, type SiftsChains,
   type StatusFilter, type UniprotSearch,
@@ -291,6 +291,7 @@ export function NumberingPanel({ runId, onReportCreated }: NumberingPanelProps) 
                   accession={choice.accession} userPicked={userPicked.includes(choice.chain_auth)}
                   siftsHint={form.pdbIdConfirmed ? form.sifts?.find(item => item.chain_auth === choice.chain_auth) ?? null : null}
                   siftsLoaded={form.pdbIdConfirmed && form.sifts !== null}
+                  fused={form.pdbIdConfirmed && siftsFused(form.sifts, choice.chain_auth)}
                   onToggle={selected => toggleChain(choice.chain_auth, selected)}
                   onPick={accession => pickAccession(choice.chain_auth, accession)}
                   pickerOpen={pickerChain === choice.chain_auth}
@@ -395,6 +396,7 @@ function SnapshotArea({ state, onRetry }: { state: LoadState<ReferenceSnapshots>
 
 function ChainChoiceRow(p: { chain: string; selected: boolean; accession: string | null; userPicked: boolean;
   siftsHint: { accessions: string[]; reason_code: string | null; reason: string | null } | null; siftsLoaded: boolean;
+  fused: boolean;
   onToggle: (selected: boolean) => void; onPick: (accession: string | null) => void;
   pickerOpen: boolean; onOpenPicker: () => void; picker: ReactNode }) {
   return <div className="mw-numbering-chain" data-numbering-chain={p.chain}>
@@ -403,17 +405,20 @@ function ChainChoiceRow(p: { chain: string; selected: boolean; accession: string
       체인 <code>{p.chain}</code>
     </label>
     <span className="mw-numbering-note" data-testid={`numbering-accession-${p.chain}`}>
-      UniProt: {p.accession ? <><code>{p.accession}</code>{p.userPicked ? " (직접 고름)" : " (SIFTS 미리 채움)"}</> : "고르지 않음"}
+      UniProt: {p.fused ? "SIFTS 단독 사용(융합 체인: accession 여러 개)"
+        : p.accession ? <><code>{p.accession}</code>{p.userPicked ? " (직접 고름)" : " (SIFTS 미리 채움)"}</> : "고르지 않음"}
     </span>
     {p.siftsLoaded && <span className="mw-numbering-note">
       SIFTS: {!p.siftsHint ? "이 체인 대응 없음"
         : p.siftsHint.reason_code ? `${p.siftsHint.reason_code}${p.siftsHint.reason ? ` (${p.siftsHint.reason})` : ""}`
+        : p.fused ? <span data-testid={`numbering-sifts-fused-${p.chain}`}>{p.siftsHint.accessions.map((accession, i) =>
+          <span key={accession}>{i ? ", " : ""}<code>{accession}</code></span>)}</span>
         : p.siftsHint.accessions.map(accession => <Button key={accession} size="sm" onClick={() => p.onPick(accession)}
           data-testid={`numbering-sifts-pick-${p.chain}-${accession}`}>{accession}</Button>)}
     </span>}
-    <Button size="sm" data-testid={`numbering-picker-${p.chain}`} onClick={p.onOpenPicker}>UniProt 검색</Button>
-    {p.accession && <Button size="sm" data-testid={`numbering-clear-${p.chain}`} onClick={() => p.onPick(null)}>선택 지우기</Button>}
-    {p.pickerOpen && p.picker}
+    {!p.fused && <Button size="sm" data-testid={`numbering-picker-${p.chain}`} onClick={p.onOpenPicker}>UniProt 검색</Button>}
+    {!p.fused && p.accession && <Button size="sm" data-testid={`numbering-clear-${p.chain}`} onClick={() => p.onPick(null)}>선택 지우기</Button>}
+    {!p.fused && p.pickerOpen && p.picker}
   </div>;
 }
 
@@ -473,8 +478,8 @@ function MapButton({ row, selected, onSelect }: { row: NumberingMapListRow; sele
   </button>;
 }
 
-function pct(value: number | null): string {
-  return value === null ? "없음" : `${value} %`;
+function pct(value: number | null): ReactNode {
+  return value === null ? "없음" : <span title={`${value} %`}>{pctOneDecimal(value)} %</span>;
 }
 
 function ChainSummary({ chain }: { chain: NumberingChain }) {

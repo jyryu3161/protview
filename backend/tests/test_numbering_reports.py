@@ -134,6 +134,12 @@ def _verify_independently(run, manifest) -> dict:
                             if r["residue"]["chain_auth"] == claim["row_selector"]["chain_auth"]]
                     if sid == "chain_residue_mismatch_count":
                         expected = sum(r["residue_match"] is False for r in rows)
+                    elif sid == "chain_residue_mismatch_kind_count":
+                        sel = claim["row_selector"]
+                        expected = sum(r["residue_match"] is False and
+                                       r["residue"]["resname"] == sel["structure_resname"] and
+                                       r["uniprot_residue"] == sel["uniprot_residue"] for r in rows)
+                        assert expected > 0  # only kinds that occur are claimed
                     else:
                         assert sid == "chain_ambiguous_residue_count"
                         expected = sum("alignment_ambiguous" in r["alignment"].get("absent_reasons", [])
@@ -295,6 +301,24 @@ def test_substituted_reference_gives_exact_rounding_and_mismatch_counts(tmp_path
     mismatched = [r for r in stored["rows"] if r["residue_match"] is False]
     assert sorted(r["uniprot_position"] for r in mismatched) == list(SUBSTITUTED)
     assert "(ProtView 계산): 7\n" in markdown and "Alignment identity (ProtView 계산): 97.3 %" in markdown
+    # Mismatch counts by kind = (structure resname, UniProt one-letter) per chain, summing to the chain count.
+    kinds = [c for c in manifest["claims"] if c["statement_id"] == "chain_residue_mismatch_kind_count"]
+    oracle: dict = {}
+    for r in mismatched:
+        key = (r["residue"]["resname"], r["uniprot_residue"])
+        oracle[key] = oracle.get(key, 0) + 1
+    assert {(c["row_selector"]["structure_resname"], c["row_selector"]["uniprot_residue"]): c["exact_value"]
+            for c in kinds} == oracle
+    assert all(c["evidence_kind"] == "computed" and c["field_path"] == "rows.residue_match" for c in kinds)
+    assert sum(c["exact_value"] for c in kinds) == 7
+    for (resname, letter), count in oracle.items():
+        assert f"{resname}/{letter} {count}" in markdown
+    kind = kinds[0]
+    assert nr.validate_numbering_claim(run, handle, kind) == kind  # the correct count is accepted
+    for wrong in ({**kind, "exact_value": kind["exact_value"] + 1, "rendered_value": str(kind["exact_value"] + 1)},
+                  {**kind, "row_selector": {**kind["row_selector"], "uniprot_residue": "Z"}}):
+        with pytest.raises(EvidenceError, match="binding_mismatch|field_not_allowed"):
+            nr.validate_numbering_claim(run, handle, wrong)
     claim = manifest["claims"][_index(manifest, "chain_identity_pct", ".identity_pct")]
     for wrong in ("97.32", "97.4", "97.31800766283524"):
         with pytest.raises(EvidenceError, match="binding_mismatch"):

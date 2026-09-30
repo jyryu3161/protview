@@ -39,6 +39,7 @@ class NumberingBound:
     model_number: int
     pdb_id: str | None
     plans: tuple[rn.ChainPlan, ...]
+    normalized_args: dict[str, Any]
 
     @property
     def key_fields(self) -> dict[str, Any]:
@@ -105,6 +106,8 @@ def precheck(store: Any, args: dict[str, Any], bound: NumberingBound | None = No
     except rs.SnapshotUnavailable as exc:
         raise _unavailable(exc) from exc
     normalized, kind = _normalized(store, args)
+    if bound is not None and canonical_json(bound.normalized_args) == canonical_json(normalized):
+        return normalized, bound  # re-validation of the same call: the plans already fixed stay valid
     try:
         index = rn.reference_index(pinned)
     except rs.SnapshotUnavailable as exc:
@@ -131,7 +134,7 @@ def precheck(store: Any, args: dict[str, Any], bound: NumberingBound | None = No
         except rs.SnapshotUnavailable as exc:
             raise _unavailable(exc) from exc
     return normalized, NumberingBound(pinned, index, normalized["structure"], kind, model_number,
-                                      normalized["pdb_id"], tuple(plans))
+                                      normalized["pdb_id"], tuple(plans), normalized)
 
 
 def register(reg: ToolRegistry) -> None:

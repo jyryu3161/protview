@@ -1,5 +1,7 @@
 """M15 read-only projections for the residue numbering UI (no tool call, no job, no event).
 
+* ``pin_decoded()`` / ``capability()``: the active set pinned AND decoded (UniProt, KLIFS and SIFTS indexes build); a
+  set whose hashes verify but whose content format is unknown is unavailable ``snapshot_invalid``.
 * ``snapshots()``: the active reference set's manifest records, or the unavailable reason (always a 200 body).
 * ``pdb_id_hint()``: a PDB ID *suggestion* from the uploaded bytes a structure came from (``structure`` ->
   ``structure_source``; ``prepared_structure`` -> its preparation manifest's ``source_handle``): mmCIF ``_entry.id``
@@ -41,9 +43,27 @@ def _available(pinned: rs.PinnedSet) -> dict[str, Any]:
     return {"available": True, "reason_code": None, "reason": None, "set_hash": pinned.set_hash}
 
 
+def pin_decoded() -> rs.PinnedSet:
+    """``rs.pin_active_set()`` plus the cached content decoding (``rn.reference_index``; bad format -> snapshot_invalid)."""
+    pinned = rs.pin_active_set()
+    rn.reference_index(pinned)
+    return pinned
+
+
+def capability() -> dict[str, Any]:
+    """``/capabilities`` ``methods.residue_numbering``: ``rs.capability()`` with the content decoding check."""
+    try:
+        pinned = pin_decoded()
+    except rs.SnapshotUnavailable as exc:
+        return {"available": False, "reason_code": exc.reason_code, "reason": exc.reason, "set_hash": None,
+                "sources": []}
+    return {"available": True, "reason_code": None, "reason": None, "set_hash": pinned.set_hash,
+            "sources": pinned.summary()}
+
+
 def snapshots() -> dict[str, Any]:
     try:
-        pinned = rs.pin_active_set()
+        pinned = pin_decoded()
     except rs.SnapshotUnavailable as exc:
         return {"schema": "reference_snapshots@1", **_unavailable(exc), "origin": None, "imported_at": None,
                 "kbase_repo": None, "sources": []}
@@ -104,7 +124,7 @@ def pdb_id_hint(store: Any, handle: str, kind: str) -> dict[str, Any]:
 def sifts_chains(pdb_id: str) -> dict[str, Any]:
     pdb = normalized_pdb_id(pdb_id)
     try:
-        pinned = rs.pin_active_set()
+        pinned = pin_decoded()
         chains = sm.sifts_chains_for_pdb(pdb, pinned=pinned)
     except rs.SnapshotUnavailable as exc:
         return {"schema": "reference_sifts_chains@1", **_unavailable(exc), "pdb_id": pdb, "chains": []}
@@ -138,7 +158,7 @@ def _uniprot_entries(pinned: rs.PinnedSet) -> list[dict[str, Any]]:
 def uniprot_search(query: str, offset: int, limit: int) -> dict[str, Any]:
     head = {"schema": "reference_uniprot_search@1", "query": query, "offset": offset, "limit": limit}
     try:
-        pinned = rs.pin_active_set()
+        pinned = pin_decoded()
         entries = _uniprot_entries(pinned)
     except rs.SnapshotUnavailable as exc:
         return {**head, **_unavailable(exc), "total": 0, "entries": []}
@@ -148,9 +168,17 @@ def uniprot_search(query: str, offset: int, limit: int) -> dict[str, Any]:
     return {**head, **_available(pinned), "total": len(found), "entries": found[offset:offset + limit]}
 
 
+def _chain_detail(chain: dict[str, Any]) -> dict[str, Any]:
+    """A map chain for the list response: ``alignment.aligned_strings`` stays in the object only."""
+    alignment = chain.get("alignment")
+    if type(alignment) is not dict:
+        return chain
+    return {**chain, "alignment": {k: v for k, v in alignment.items() if k != "aligned_strings"}}
+
+
 def numbering_maps(run: Any, offset: int, limit: int) -> dict[str, Any]:
     try:
-        active: str | None = rs.pin_active_set().set_hash
+        active: str | None = pin_decoded().set_hash
     except rs.SnapshotUnavailable:
         active = None
     created: dict[str, int] = {}
@@ -172,7 +200,7 @@ def numbering_maps(run: Any, offset: int, limit: int) -> dict[str, Any]:
                      "chains": [chain["chain_auth"] for chain in content["chains"]],
                      "cross_checked_chains": [chain["chain_auth"] for chain in content["chains"]
                                               if chain["cross_check"]],
-                     "chain_details": content["chains"],
+                     "chain_details": [_chain_detail(chain) for chain in content["chains"]],
                      "set_hash": set_hash, "counts": counts, "row_count": len(content["rows"]),
                      "null_result": content["null_result"], "created_seq": created[handle],
                      "stale_snapshot": active is None or set_hash != active})

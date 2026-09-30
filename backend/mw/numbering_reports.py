@@ -5,7 +5,8 @@ Two evidence kinds are kept apart (spec M15 section 7):
 
 - ``computed`` -- values ProtView calculated: per-chain alignment ``identity_pct`` / ``coverage_pct`` (rendered with
   ``Decimal(str(v))`` quantized to 0.1, ``ROUND_HALF_UP``), row counts by status (``count_kind``), the count of
-  mapped rows whose structure residue differs from the UniProt letter, the count of alignment-ambiguous rows and the
+  mapped rows whose structure residue differs from the UniProt letter (also by kind = structure residue name and
+  UniProt letter, per chain), the count of alignment-ambiguous rows and the
   modified-residue count of the chain residue rule.
 - ``reference_value`` -- reference snapshot values, not calculations: accessions, UniProt positions and letters,
   KLIFS pocket numbers and labels. Each claim carries the reference set hash, the source snapshot(s) with version,
@@ -62,6 +63,7 @@ STATEMENTS = {
     "chain_identity_pct": "computed",
     "chain_coverage_pct": "computed",
     "chain_residue_mismatch_count": "computed",
+    "chain_residue_mismatch_kind_count": "computed",
     "chain_ambiguous_residue_count": "computed",
     "chain_modified_residue_count": "computed",
     "reference_accession": "reference_value",
@@ -300,6 +302,16 @@ def labelled_rows(content: dict[str, Any]) -> list[tuple[int, dict[str, Any]]]:
             if row["status"] == "mapped" and row["klifs_index"] is not None]
 
 
+def _mismatch_kinds(chain_rows: list[dict[str, Any]]) -> list[tuple[tuple[str, Any], int]]:
+    """Mismatched rows counted by (structure resname, UniProt letter), in sorted kind order; only kinds that occur."""
+    counts: dict[tuple[str, Any], int] = {}
+    for row in chain_rows:
+        if row["residue_match"] is False:
+            key = (row["residue"]["resname"], row["uniprot_residue"])
+            counts[key] = counts.get(key, 0) + 1
+    return sorted(counts.items(), key=lambda item: (str(item[0][0]), str(item[0][1])))
+
+
 def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
     """Every value statement of the report, each bound to one exact stored field or one count over ``rows``."""
     rows = content["rows"]
@@ -319,6 +331,12 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
                              "residue_mismatch_rows", "count",
                              sum(row["residue_match"] is False for row in chain_rows), "integer",
                              "count_kind(rows.residue_match == false; residue.chain_auth)", None))
+        for (resname, letter), count in _mismatch_kinds(chain_rows):
+            kind_sel = {**chain_sel, "structure_resname": resname, "uniprot_residue": letter}
+            claims.append(_claim("chain_residue_mismatch_kind_count", handle, "rows.residue_match", kind_sel,
+                                 kind_sel, "residue_mismatch_rows_by_kind", "count", count, "integer",
+                                 "count_kind(rows.residue_match == false; residue.chain_auth, residue.resname, "
+                                 "uniprot_residue)", None))
         claims.append(_claim("chain_modified_residue_count", handle, f"{prefix}.residue_rule.modified_residue_count",
                              chain_sel, chain_sel, "modified_residues", "count",
                              chain["residue_rule"]["modified_residue_count"], "integer", None, None))
@@ -438,6 +456,13 @@ def _license_text(source: dict[str, Any]) -> str:
     return KLIFS_TERMS if source["source"] == "klifs" else source["license"]
 
 
+def _kind_counts(manifest: dict[str, Any], chain_sel: dict[str, Any]) -> str:
+    kinds = [claim for claim in manifest["claims"] if claim["statement_id"] == "chain_residue_mismatch_kind_count"
+             and claim["row_selector"]["chain_auth"] == chain_sel["chain_auth"]]
+    return "; ".join(f"{claim['row_selector']['structure_resname']}/{claim['row_selector']['uniprot_residue']} "
+                     f"{claim['rendered_value']}" for claim in kinds) or "none"
+
+
 def render_numbering_report(manifest: dict[str, Any]) -> str:
     """Markdown from the manifest only; every value is the rendered text of a bound claim."""
     claims = {_key(claim): claim["rendered_value"] for claim in manifest["claims"]}
@@ -510,6 +535,8 @@ def render_numbering_report(manifest: dict[str, Any]) -> str:
         lines.extend([f"- Rows (ProtView 계산): {counts}",
                       (f"- Mapped rows whose structure residue differs from the UniProt residue (ProtView 계산): "
                        f"{value('chain_residue_mismatch_count', 'rows.residue_match', sel)}"),
+                      (f"- Mismatch kinds, structure residue/UniProt residue (ProtView 계산): "
+                       f"{_md(_kind_counts(manifest, sel))}"),
                       (f"- Residue rule: {_md(chain['residue_rule']['rule'])}; modified residues (ProtView 계산): "
                        f"{value('chain_modified_residue_count', f'{prefix}.residue_rule.modified_residue_count', sel)}")])
         for item in chain["klifs"]:
