@@ -19,6 +19,7 @@ from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
 from .. import analysis_executions, analysis_plans, numbering_reads
+from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
 from ..chemical_bundle import validated_result as validated_chemical_result
@@ -91,7 +92,8 @@ RUNS_DIR = Path(os.environ.get("MW_RUNS_DIR", "runs"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
-                   "measure_distance", "align_structures", "compile_state", "map_residue_numbering"}
+                   "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
+                   "annotate_reference_sites"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -592,6 +594,8 @@ def capabilities() -> dict[str, Any]:
                "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}
     methods["analysis_workflows"] = analysis_plans.capability(methods)
     methods["residue_numbering"] = numbering_reads.capability()
+    # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
+    methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1463,6 +1467,40 @@ def numbering_maps(rid: str, offset: int = Query(0, ge=0), limit: int = Query(50
         return numbering_reads.numbering_maps(run, offset, limit)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid residue numbering map"}) from exc
+
+
+def _only_query(request: Request, allowed: set[str]) -> None:
+    unknown = set(request.query_params) - allowed
+    if unknown:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": f"unknown parameters: {sorted(unknown)}"})
+
+
+@app.get("/runs/{rid}/site_annotations")
+def site_annotation_list(rid: str, request: Request, structure: str | None = None, offset: int = Query(0, ge=0),
+                         limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    """M16: this run's reference site annotations, newest first (optionally one structure); no event, no tool."""
+    _only_query(request, {"structure", "offset", "limit"})
+    run = _run(rid)
+    active = numbering_reads.capability()["set_hash"]   # None when no usable active reference set
+    try:
+        return site_annotations.list_annotations(run, structure, offset, limit, active)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
+
+
+@app.get("/runs/{rid}/site_annotations/detail")
+def site_annotation_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    """M16: one stored annotation as written by the tool; no event, no tool."""
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (site_annotations.KIND, site_annotations.SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a reference site annotation"})
+    try:
+        content = run.store.load(handle)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
+    return {"meta": meta, "annotation": content}
 
 
 @app.get("/runs/{rid}/interface_sasa")
