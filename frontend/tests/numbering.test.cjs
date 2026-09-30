@@ -128,3 +128,30 @@ test("license and version display keep manifest values; KLIFS none-stated is spe
   assert.equal(lib.sourceVersion({ version_hint: "2026_03", date: "2026-09-15" }), "2026_03");
   assert.equal(lib.sourceVersion({ version_hint: null, date: "2026-09-20" }), "2026-09-20");
 });
+
+test("percent display rounds the decimal string of the value to one place, half up (report rule)", () => {
+  for (const [value, text] of [[97.25, "97.3"], [96.19047619047619, "96.2"], [100, "100.0"], [32.432432432432435, "32.4"],
+    [0.05, "0.1"], [97.35, "97.4"], [97.24999, "97.2"], [99.95, "100.0"], [0, "0.0"], [7.5, "7.5"], [-0.04, "0.0"]])
+    assert.equal(lib.pctOneDecimal(value), text, String(value));
+  // exponent forms are shown exactly instead of guessing a decimal string
+  assert.equal(lib.pctOneDecimal(1e-7), "1e-7");
+  assert.equal(lib.pctOneDecimal(1e21), "1e+21");
+});
+
+test("a fused SIFTS chain (several accessions) uses SIFTS alone and never sends an accession", () => {
+  assert.equal(lib.siftsFused(sifts, "B"), true);
+  assert.equal(lib.siftsFused(sifts, "A"), false);
+  assert.equal(lib.siftsFused(sifts, "C"), false);
+  assert.equal(lib.siftsFused(null, "B"), false);
+  // No prefill for a fused chain; a user choice left in the form is not sent for it.
+  assert.equal(lib.applySiftsHints(form({ chains: [{ chain_auth: "B", selected: true, accession: null }] }), sifts)
+    .chains[0].accession, null);
+  const check = lib.checkForm(form({ pdbId: "1abc", pdbIdConfirmed: true, sifts,
+    chains: [{ chain_auth: "B", selected: true, accession: "Q9" }, { chain_auth: "A", selected: true, accession: "O14965" }] }));
+  assert.deepEqual(plain(check), { ok: true, body: { structure: "s", pdb_id: "1ABC", chains: [
+    { chain_auth: "B", uniprot_accession: null }, { chain_auth: "A", uniprot_accession: "O14965" }] } });
+  // Without a confirmed id there is no SIFTS answer, so the chain is not treated as fused.
+  const unconfirmed = lib.checkForm(form({ pdbId: "1abc", pdbIdConfirmed: false, sifts,
+    chains: [{ chain_auth: "B", selected: true, accession: "Q9" }] }));
+  assert.deepEqual(plain(unconfirmed.body.chains), [{ chain_auth: "B", uniprot_accession: "Q9" }]);
+});

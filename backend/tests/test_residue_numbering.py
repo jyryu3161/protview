@@ -760,6 +760,34 @@ def test_argument_repair_path_runs_the_same_precheck(tmp_path, ref):
     assert repaired[-1]["attempt_kind"] == "argument_repair" and repaired[-1]["args"]["pdb_id"] == "1MQ4"
 
 
+def test_revalidation_with_unchanged_args_reuses_the_bound(tmp_path, ref, monkeypatch):
+    import mw.tools.numbering as numbering_tool
+    parsed = []
+    real = numbering_tool._parse
+
+    def counting(ctx, handle):
+        parsed.append(handle)
+        return real(ctx, handle)
+
+    monkeypatch.setattr(numbering_tool, "_parse", counting)
+    run, calls = _run(tmp_path)
+    structure = _load(run, CIF_1MQ4)
+    parsed.clear()
+    out = run.call(TOOL, {"structure": structure, "pdb_id": "1mq4", "chains": [{"chain_auth": "A"}]})
+    assert len(calls) == 1 and run.store.load(out.handle)["pdb_id"] == "1MQ4"
+    assert parsed == [structure]  # the pre-check parsed once; _execute_chain reused its bound
+    first = numbering_tool.precheck(run.store, {"structure": structure, "pdb_id": "1mq4",
+                                                "chains": [{"chain_auth": "A"}]})[1]
+    parsed.clear()
+    changed = numbering_tool.precheck(run.store, {"structure": structure, "pdb_id": None,
+                                                  "chains": [{"chain_auth": "A", "uniprot_accession": "O14965"}]},
+                                      first)
+    assert parsed == [structure] and changed[1] is not first and changed[1].pinned is first.pinned
+    same = numbering_tool.precheck(run.store, {"structure": structure, "pdb_id": "1MQ4",
+                                               "chains": [{"chain_auth": "A", "uniprot_accession": None}]}, first)
+    assert same[1] is first and parsed == [structure]
+
+
 def test_1mq4_alignment_only_does_not_map_the_ambiguous_residue(tmp_path, ref):
     run, _ = _run(tmp_path)
     _, content = _map(run, _load(run, CIF_1MQ4), [{"chain_auth": "A", "uniprot_accession": "O14965"}])

@@ -26,7 +26,8 @@ CHECKS = [
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_m11_job_api.py"], {0}),
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py",
       "scripts/test_codex_hooks.py", "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
-      "scripts/test_m14_offscreen_acceptance.py",
+      "scripts/test_m14_offscreen_acceptance.py", "scripts/test_import_reference_snapshots.py",
+      "scripts/test_m15_offscreen_acceptance.py", "scripts/test_measure_klifs_numbering.py",
       "--ignore=backend/tests/test_chemical_interactions.py",
       "--ignore=backend/tests/test_m11_job_api.py"], {0}),
 ]

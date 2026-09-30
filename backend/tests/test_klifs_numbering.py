@@ -279,15 +279,17 @@ def test_conflicting_gapped_placements_in_one_window_are_dropped():
     assert len(out["positions"]) == 85 - 7
 
 
-def test_adjacent_unresolved_regions_each_resolve_in_the_shared_window():
+def test_consecutive_unresolved_regions_get_no_gapped_numbers():
+    # spec 5.7: the second pass needs BOTH immediately adjacent regions resolved in the first pass; IV and V
+    # are next to each other, so neither qualifies even though each would embed uniquely in the shared window
     pocket = _pocket_unique_gk()
     iv, v = pocket[37:41], pocket[41:44]
     seq = _with_segment(pocket, iv + SPACER + v, iv[:2] + "W" + iv[2:] + SPACER + v[0] + "W" + v[1:])
     out = klifs_table("P00000", [_entry(pocket)], seq)
-    assert out["unresolved_regions"] == []
-    assert out["gapped_regions"] == ["IV", "V"]
-    for pos, entry in out["positions"].items():
-        assert seq[pos - 1] == pocket[entry["klifs_index"] - 1]
+    assert out["unresolved_regions"] == ["IV", "V"]
+    assert out["gapped_regions"] == []
+    assert len(out["positions"]) == 85 - 7
+    assert {v["klifs_match"] for v in out["positions"].values()} == {"contiguous"}
 
 
 def test_invalid_inputs_raise():

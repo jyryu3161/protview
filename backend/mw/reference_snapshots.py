@@ -62,8 +62,9 @@ _SOURCE_KEYS = frozenset({"source", "snapshot_id", "date", "version_hint", "lice
                           "raw_sha256", "files"})
 _FILE_KEYS = frozenset({"name", "path", "sha256", "bytes", "rows", "use"})
 
-# (resolved set dir, set hash, per-file stat identity) of sets whose file hashes verified; success only.
-_VERIFIED: set[tuple] = set()
+# resolved set dir -> latest (resolved set dir, set hash, per-file stat identity) whose file hashes verified;
+# success only, one entry per set folder.
+_VERIFIED: dict[str, tuple] = {}
 _LOCK = threading.Lock()
 
 
@@ -246,7 +247,7 @@ def pin_active_set(root: Path | None = None) -> PinnedSet:
                 raise ValueError("file outside its set folder")
         key = (str(set_dir.resolve()), set_hash, tuple(_stat_identity(path) for path, _entry in files))
         with _LOCK:
-            cached = key in _VERIFIED
+            cached = _VERIFIED.get(key[0]) == key
         if not cached:
             for path, entry in files:
                 if _stat_identity(path)[2] != entry["bytes"] or _file_sha256(path) != entry["sha256"]:
@@ -254,14 +255,18 @@ def pin_active_set(root: Path | None = None) -> PinnedSet:
             if tuple(_stat_identity(path) for path, _entry in files) != key[2]:
                 raise ValueError("files changed during verification")
             with _LOCK:
-                _VERIFIED.add(key)
+                _VERIFIED[key[0]] = key
     except (OSError, ValueError) as exc:
         raise SnapshotUnavailable("snapshot_invalid") from exc
     return PinnedSet(set_hash, set_dir, raw, manifest)
 
 
 def capability(root: Path | None = None) -> dict[str, Any]:
-    """The ``methods.*`` shape: available, reason_code (null | not_installed | snapshot_invalid), fixed reason."""
+    """The ``methods.*`` shape: available, reason_code (null | not_installed | snapshot_invalid), fixed reason.
+
+    Hash-level only (content is not decoded here); ``/capabilities`` uses ``numbering_reads.capability()``, which
+    also decodes the set's content formats.
+    """
     try:
         pinned = pin_active_set(root)
     except SnapshotUnavailable as exc:
