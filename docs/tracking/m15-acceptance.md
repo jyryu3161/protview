@@ -1,7 +1,7 @@
 # M15 참조 스냅샷과 잔기 번호 대응 완료 기록
 
 - 판정: **완료** (2026-09-30)
-- 브랜치: `dryforge/m15-numbering` (`phase/m15-reference-numbering` = main `e866d42`에서 분기). M14는 시작 전에 main에 병합되어 있었다(`da5e4bc`, 기록 `e866d42`). main 병합은 아직 하지 않았다(사용자 결정 대기).
+- 브랜치: `dryforge/m15-numbering` (`phase/m15-reference-numbering` = main `e866d42`에서 분기). M14는 시작 전에 main에 병합되어 있었다(`da5e4bc`, 기록 `e866d42`). main 병합 `beaffcb`(2026-09-30, 사용자 승인 뒤 `--no-ff`).
 - 고정 소스: 첫 고정 `c1d824d`(`c1d824d8bb6400f98790b1196c04cf84c6950264`, 증거 커밋 `4737847`), 최종 고정 `93c4fb1`(`93c4fb1cc102563ce70f5c4f16e8ff97d65d6497`, 최종 검토 수정 `975cccf`의 병합, 증거 커밋 `0e376aa`). 첫 고정에서 게이트·KLIFS 측정·수락 QA·M14·M8–M13 회귀를 돌렸고, 최종 고정에서 전체 게이트·M15 수락 QA·M14 회귀를 다시 돌렸다(M13 회귀를 다시 돌리지 않은 이유는 아래 "재고정"). 최종 고정 뒤 소스 변경은 없다.
 - 수락 증거: `docs/qa/m15-numbering-20260930/`(첫 고정의 M15 수락, 게이트 `gate.txt`, KLIFS 측정, PDBe 번호 확인, `m14-regression/`, `m13-regression/`)와 `refreeze-93c4fb1/`(최종 고정의 게이트 `gate.txt`, M15 수락, `m14-regression/`). 큰 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다.
 - 참조 원천: `../kbase_kinase` 커밋 `77354f94b844a8c64e7cd47691ac20a2e96214b3`, 작업 트리 깨끗함(읽기만). 외부 요청 0건, OpenRouter 호출 0회. 개발 중 네트워크 사용은 1MQ4 mmCIF를 RCSB에서 한 번 받은 것뿐이다(사용자 승인, `backend/tests/fixtures/public_1mq4.provenance.json`).
