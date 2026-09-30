@@ -1,0 +1,76 @@
+{
+  "label": "fixture: verbatim subset of kbase_kinase processed SIFTS snapshot rows; not experimental evidence and not used at runtime",
+  "kbase_repo_commit": "77354f94b844a8c64e7cd47691ac20a2e96214b3",
+  "license": "EMBL-EBI-terms (PDBe/SIFTS data as processed by kbase_kinase)",
+  "extraction_rule": "Each listed row copied byte-for-byte as one JSONL line (row selected by its 'id' field), in the listed order. No field was changed.",
+  "generator": "one-off extraction script (not committed); verify with the per-line sha256 values against the source file lines",
+  "purpose": "M15 T4 SIFTS decoder tests (backend/tests/test_sifts_mapping.py)",
+  "files": [
+    {
+      "file": "residues_fixture.jsonl",
+      "sha256": "ea07f1d555e7ece16b4388609593e5a4312f5fd3e84296d66c00823390faa7a1",
+      "bytes": 31166,
+      "source_path": "kbase_kinase/ref/sifts/2026-09-20/residues.jsonl",
+      "source_sha256": "df65714811e60c08470b509c3b5cda19d3d838f26aed881041bc3f56ec4a3874",
+      "snapshot_id": "SNAP-sifts-2026-09-20",
+      "extracted_ids": [
+        "1MQ4:A",
+        "6T6F:A",
+        "3CS9:A",
+        "5JGA:A",
+        "1AD5:A",
+        "6Z1Q:B",
+        "5LQE:A"
+      ],
+      "extracted_line_sha256": {
+        "1MQ4:A": "4805a7b570e394c06955d793b419512440924af24bc5bffbfb212e76ed9565ef",
+        "6T6F:A": "7ce5e126d783b2f93624a9315a70d6951b2d301f66a794c376f5903522d42e01",
+        "3CS9:A": "b5ea1809d278b701ae32e8df6818eb35aacd66ff5299151e5031def685026af0",
+        "5JGA:A": "f1e7c0b9761f630dcfb2bd30880a7a014ce7561f34d0d5cb77a2545452adab35",
+        "1AD5:A": "428809524a3ea7570c4844696bf4f74f1b6e73baaecc4272b82ad3f4f2a19dae",
+        "6Z1Q:B": "a27e42351af59bebdc7c92af257421040b612dc987bdb97a3762373297ab87ad",
+        "5LQE:A": "2bc789fa65f618ddf8cebdea71c5276627d620e7a46342181ce6061cac9ce957"
+      }
+    },
+    {
+      "file": "segments_fixture.jsonl",
+      "sha256": "3a4b59d292f4f22e34b60b7011377a2f1ae03359a72ad27913c8660fd4070415",
+      "bytes": 2026,
+      "source_path": "kbase_kinase/ref/sifts/2026-09-20/segments.jsonl",
+      "source_sha256": "95b45306e0acbba420601fcca727c61fdfed10daab55a8f236b957f8b1e3d57b",
+      "snapshot_id": "SNAP-sifts-2026-09-20",
+      "extracted_ids": [
+        "1MQ4",
+        "6T6F",
+        "3CS9",
+        "5JGA",
+        "1AD5",
+        "6Z1Q",
+        "5LQE"
+      ],
+      "extracted_line_sha256": {
+        "1MQ4": "c6e3880573ce99e981e7cb900abbfb81deb59ec61c26ba599a35ce017c066df0",
+        "6T6F": "3a0766c3c943374e896c4250456926a401bbbe35cb2ba90bbbad35a9e5d2edde",
+        "3CS9": "ab15786898bdce2bb49c3eaab84cac07d0d3f9b5902f05d3f8984241dfb0e83e",
+        "5JGA": "f5c3c748bb436e7f88bea2bf79c8f302c62023670a27069a53898f922d6a5235",
+        "1AD5": "d318ca3da789936bd72d0f9a104b20da9c0721a8cd91f5bf741df58b4f777888",
+        "6Z1Q": "196ea222996fc0a9848f3ad1374e6ff3f3985ff0b26b3a2d952114cd7200d8e0",
+        "5LQE": "86b25acf6142e832498836db84906e37a85d2b213b6438eb2610d75b1a681fd4"
+      }
+    },
+    {
+      "file": "residues_v0_fixture.jsonl",
+      "sha256": "309e84e40bb9663cb73722427c857ff109d7e95ef640479d8825a594923274d2",
+      "bytes": 44678,
+      "source_path": "kbase_kinase/ref/sifts/2026-09-16/residues.jsonl",
+      "source_sha256": "0f951aa98399955340c5d4ccbf6d7750724a4e0d7f836398a9de6bb96a7d3d3f",
+      "snapshot_id": "SNAP-sifts-2026-09-16",
+      "extracted_ids": [
+        "1MQ4:A"
+      ],
+      "extracted_line_sha256": {
+        "1MQ4:A": "5c438ccf455a95dc901663927e3357d8c533f4f777fdac2ec47bc0f0e3c55b40"
+      }
+    }
+  ]
+}
