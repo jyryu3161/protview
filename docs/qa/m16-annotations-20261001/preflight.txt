@@ -1,0 +1,115 @@
+M16 T1 착수 확인 (preflight) — 2026-10-01, 브랜치 dryforge/m16-annotations, 기준 커밋 70507a5
+명세: .dryforge/spec.md 3절(부위 목록), 10절 2·6항.
+모든 값은 아래 스크립트를 실제로 실행한 출력에서 옮겼다(제품 코드는 바꾸지 않음). 스크립트는 세션 scratchpad의
+t1_1mq4.py(인자 fixture|deps), t1_atr.py이며 저장소에 넣지 않았다. 실행: .venv/bin/python <script>, 세 번 모두 exit 0.
+
+판정 요약
+- 3절 표기 10개가 1MQ4 전처리 구조 대응의 klifs_label과 문자 그대로 같다(αC는 U+03B1, UTF-8 ce b1). 멈출 이유 없음.
+- 10개 부위 모두 커밋된 1MQ4:A match_residues 발췌와 (Xray_position, KLIFS_position) 일치.
+- PDB ID 제안은 전처리 구조 handle에서 원본 업로드까지 추적되어 "1MQ4"(origin mmcif_entry_id).
+- ATR 5YZ0:A GK.45·hinge.46–48은 손 대조, 제품 규칙, KLIFS 구조별 표가 모두 같다. 어긋남 없음.
+  linker.49만 KLIFS 표와 한 칸 다르다(3절 부위가 아님, findings 기존 항목 그대로). 규칙 변경 없음.
+
+==================================================================================================
+1. 1MQ4 전처리 구조와 M15 번호 대응
+==================================================================================================
+입력 구조: backend/tests/fixtures/public_1mq4.cif (sha256 0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934)
+흐름(새 run, dry_run=False): load_structure(model_index 0) → prepare_structure({structure}만, 나머지 config 기본값)
+  → numbering_reads.pdb_id_hint(prepared) → map_residue_numbering(prepared, pdb_id=제안값, chains=[{chain_auth: A}]).
+전처리 manifest(출력 그대로): altloc highest_occupancy, waters keep_all, hydrogens strip, missing_residues leave_gaps,
+  symmetry_mates ignore, model_number 1, removed {altlocs 0, hydrogens 0, waters 0}, altloc_choices [].
+  주의: 기존 test_prepared_structure_maps_like_its_source는 waters=strip_all을 쓴다. 여기서는 config 기본값(keep_all,
+  화면 "전처리" 버튼과 같은 정책 이름)을 썼다. 1MQ4에는 수소·altloc이 없어 좌표는 원본과 같다(아래 atom_site 확인).
+
+참조 세트 두 가지로 실행, 부위 결과는 동일(handle 문자열 제외 diff 없음):
+  (a) FIXTURE 세트 backend/tests/reference_fixture_set.build_fixture_set → set_hash 9e0578ef…e89c9 (tag fixture)
+  (b) 설치된 .deps/reference 사용 중 세트 set_hash aa21ead9930f82ebea3a2acf976449d9b1c6280ed17206d74d8cb9dc3f923317
+
+pdb_id_hint(prepared_structure) 출력:
+  {"format": "cif", "origin": "mmcif_entry_id", "pdb_id": "1MQ4", "structure_kind": "prepared_structure", ...}
+  → 전처리 구조에서 manifest.source_handle로 원본 업로드 바이트를 찾아 제안이 동작함(backend/mw/numbering_reads.py 102–121행).
+대응 결과: kind residue_numbering_map, null_result False, structure {handle: <prepared>, structure_kind: prepared_structure,
+  model_number: 1}; methods_run [sifts, local_alignment], cross_check True, counts {mapped 260, unmapped 0, conflict 1}.
+  chain A klifs: [{accession O14965, applied true, absent_reason null, unresolved_regions [I, a.l], gapped_regions [b.l]}]
+
+부위 표 (1MQ4:A, 모든 행 status mapped, uniprot_accession O14965, residue_match true, klifs_match contiguous)
+잔기 7필드 공통: model_number 1, chain_auth "A", chain_label "A", icode "".
+klifs_index | klifs_label | UTF-8 hex          | 대응 행 | resname seq_auth seq_label | UniProt 위치·글자 | category | match_residues
+17 | III.17   | 4949492e3137       | 36  | LYS 162 43  | 162 K | polymer | Xray 162 III.17 일치
+24 | αC.24    | ceb1432e3234       | 55  | GLU 181 62  | 181 E | polymer | Xray 181 αC.24 일치
+45 | GK.45    | 474b2e3435         | 84  | LEU 210 91  | 210 L | polymer | Xray 210 GK.45 일치
+46 | hinge.46 | 68696e67652e3436   | 85  | GLU 211 92  | 211 E | polymer | Xray 211 hinge.46 일치
+47 | hinge.47 | 68696e67652e3437   | 86  | TYR 212 93  | 212 Y | polymer | Xray 212 hinge.47 일치
+48 | hinge.48 | 68696e67652e3438   | 87  | ALA 213 94  | 213 A | polymer | Xray 213 hinge.48 일치
+80 | xDFG.80  | 784446472e3830     | 147 | ALA 273 154 | 273 A | polymer | Xray 273 xDFG.80 일치
+81 | xDFG.81  | 784446472e3831     | 148 | ASP 274 155 | 274 D | polymer | Xray 274 xDFG.81 일치
+82 | xDFG.82  | 784446472e3832     | 149 | PHE 275 156 | 275 F | polymer | Xray 275 xDFG.82 일치
+83 | xDFG.83  | 784446472e3833     | 150 | GLY 276 157 | 276 G | polymer | Xray 276 xDFG.83 일치
+match_residues 발췌: backend/tests/fixtures/reference/klifs/match_residues_fixture.jsonl 1행(pdb_id 1MQ4, chain A)
+  (sha256 04587bf59e0a3a58ae35ea949c8ea2d8c7720b6a9f0105c1fd11154e9f151cbb). 각 부위는 그룹에서 정확히 한 행.
+HETATM 여부: 10개 부위 잔기 모두 atom_site group_PDB ATOM, structure_residues category polymer. HETATM 부위 없음
+  (HETATM 부위 경우는 별도 fixture가 필요, 예: structures_m15/derived_1mq4_a288_360_mse_fixture.*).
+
+==================================================================================================
+2. ADP 기하 접촉 독립 계산 (오라클)
+==================================================================================================
+리간드 후보(structure_residues ligands, 전처리 구조): PO4 {model 1, chain_auth A, chain_label D, seq_auth 1, seq_label null,
+  icode "", resname PO4}, ADP {model 1, chain_auth A, chain_label E, seq_auth 2001, seq_label null, icode "", resname ADP}.
+  ADP 인스턴스는 1개. 리간드가 둘이라 compute_interactions는 ligand 선택자가 필요하다(자동 선택 아님).
+사용한 리간드 인스턴스 7필드: {model_number 1, chain_auth "A", chain_label "E", seq_auth 2001, seq_label null, icode "", resname "ADP"}.
+방법: 전처리 구조의 prepared_coordinates 바이트(cif, 166683 bytes)를 gemmi.cif로 _atom_site 표만 읽어 numpy로 계산.
+  gemmi.Structure·compute_interactions를 쓰지 않음. atom_site 2211행, altloc 0, 수소 0. ADP 중원자 27개.
+  종류: 양쪽 원소 N/O → polar_contact, 양쪽 C → hydrophobic_contact, 그 밖 → contact. cutoff 4.0 이하(≤), 세 종류 모두.
+부위별 결과 (개수 contact/polar/hydrophobic, cutoff 안 최소 거리 = 세 종류 전체):
+  III.17 LYS162  : 7/3/0, min 2.6428630308814687
+  αC.24  GLU181  : 0/0/0, min 없음
+  GK.45  LEU210  : 2/0/0, min 3.912459584455801
+  hinge.46 GLU211: 2/1/0, min 2.695699723633924
+  hinge.47 TYR212: 0/0/0, min 없음
+  hinge.48 ALA213: 4/2/0, min 3.167315109047404
+  xDFG.80 ALA273 : 0/0/0, min 없음
+  xDFG.81 ASP274 : 8/4/0, min 2.853779599058067
+  xDFG.82 PHE275 : 0/0/0, min 없음
+  xDFG.83 GLY276 : 0/0/0, min 없음
+polar_contact 쌍(단백질 원자 – ADP 원자, 오라클 거리 Å, ROUND_HALF_UP 0.01 표시값):
+  III.17 LYS162  NZ  – O1A  2.6428630308814687  2.64
+  III.17 LYS162  NZ  – O1B  2.891246444009921   2.89
+  III.17 LYS162  NZ  – O3A  3.199847808880909   3.20
+  hinge.46 GLU211 O  – N6   2.695699723633924   2.70
+  hinge.48 ALA213 N  – N1   3.167315109047404   3.17
+  hinge.48 ALA213 O  – N1   3.84715804198372    3.85
+  xDFG.81 ASP274 OD1 – O1B  2.9342752086333013  2.93
+  xDFG.81 ASP274 OD1 – O2A  2.9254124495530527  2.93
+  xDFG.81 ASP274 OD1 – O3B  2.853779599058067   2.85
+  xDFG.81 ASP274 OD2 – O1B  2.9631592937268834  2.96
+  (GK.45 min 3.912459584455801 → 3.91)
+  원본 CIF 행(public_1mq4.cif): LYS162 NZ 3031, GLU211 O 3428, ALA213 N 3446, ALA213 O 3449, ASP274 OD1 3935, OD2 3936,
+  ADP O1B 4850, O3B 4852, O1A 4854, O2A 4855, O3A 4856, N6 4871, N1 4872.
+교차 확인(오라클 아님): 같은 전처리 구조·같은 리간드로 제품 compute_interactions 실행 → 70행, parameters {cutoff_A 4.0,
+  types [contact, hydrophobic_contact, polar_contact]}. 부위별 행 수(III.17 10, GK.45 2, hinge.46 3, hinge.48 6, xDFG.81 12,
+  나머지 0)와 polar 쌍 원자 이름이 오라클과 같다. 거리는 두 곳에서 마지막 자리만 다르다:
+  NZ–O3A 제품 3.1998478088809086 vs 오라클 3.199847808880909, O–N6 제품 2.6956997236339246 vs 오라클 2.695699723633924
+  (gemmi Position.dist와 numpy 부동소수 차이). 따라서 이후 테스트의 독립 비교는 정확 일치가 아니라 허용 오차
+  (예: abs ≤ 1e-9)로 해야 한다. 표시값(0.01 반올림)은 두 쪽 모두 같다.
+
+==================================================================================================
+3. ATR(Q13535) 5YZ0:A GK.45·hinge.46–48 손 대조 (명세 10절 6항)
+==================================================================================================
+자료(설치된 세트 aa21ead9…3317, ../kbase_kinase/ref 2026-09-19·2026-09-15 원본과 포켓·서열 동일 확인):
+  KLIFS kinases.jsonl 322행 (ATR, uniprot Q13535): pocket
+    LASLQKPKKISLKMMCKPKDLRKDCRLMEFNSLHIRTYAVICGIIEWVNTAGLRPILTKVGYI--LGLGDRHGENILFHVDFNCL (85자)
+  UniProt entries.jsonl 270행 (Q13535): 서열 길이 2644
+  KLIFS match_residues.jsonl 75행 (5YZ0, chain A) — 대조 전용
+  SIFTS segments.jsonl 218행 (5YZ0): chain A entity 1, res 1–2644 → Q13535 1–2644
+구역 글자(포켓 1-기준): IV 38–41 YAVI, V 42–44 CGI, GK 45 I, hinge 46–48 EWV, linker 49–52 NTAG, αD 53–59 LRPILTK.
+손 대조: 포켓 42–48 "CGIIEWV"가 UniProt에 정확히 한 번(시작 2374). 45–48 "IEWV"도 한 번(2377).
+  UniProt 2370–2385: L N D E C G I I E W V N N T A G (2370…2385)
+  KLIFS 45 I → 2377 I, 46 E → 2378 E, 47 W → 2379 W, 48 V → 2380 V.
+제품 규칙(mw.klifs_numbering.klifs_table, 대조용 호출): GK.45 2377, hinge.46 2378, hinge.47 2379, hinge.48 2380
+  (모두 contiguous). absent_reason null, unresolved [I, b.l].
+KLIFS 5YZ0:A 표: GK.45 Xray 2377, hinge.46 2378, hinge.47 2379, hinge.48 2380 → 일치. (III.17 2327, αC.24 2335,
+  xDFG.80–83 2493–2496도 제품과 일치.)
+어긋남: linker.49만. KLIFS 표 2381(N), 제품 2382(N). 포켓 linker "NTAG"는 UniProt에서 2382–2385에만 연속 일치하고
+  (49–52 "NTAG" 시작 [2382], 49–59 시작 [2382]), KLIFS 표는 49=2381, 50=2383으로 2382를 건너뛴다(2381·2382 모두 N).
+  linker.49는 3절 부위 목록에 없으므로 M16 표시에 영향 없음. findings "ATR 5YZ0:A의 KLIFS linker.49" 항목의 관찰과 같다.
+  규칙은 바꾸지 않았다.
