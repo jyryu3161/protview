@@ -463,3 +463,61 @@ def test_report_module_reads_only_stored_evidence():
     source = (Path(__file__).resolve().parents[1] / "mw" / "numbering_reports.py").read_text()
     for forbidden in ("subprocess", "requests", "httpx", "urllib", "socket", "pin_active_set", "reference_index"):
         assert forbidden not in source
+
+
+# --- snapshot scope and closed reason sets ---------------------------------------------------------------------------
+
+def test_report_states_snapshot_scope_without_numbers(tmp_path, refroot, client):
+    build_fixture_set(refroot)
+    rid, structure = _new_run(client)
+    handle = _map(client, rid, structure, [{"chain_auth": "A"}], pdb_id="1MQ4")
+    created = _report(client, rid, handle)
+    manifest, markdown = created["manifest"], created["markdown"]
+    assert nr.SNAPSHOT_SCOPE in manifest["limitations"]
+    limits = markdown.split("## Limitations", 1)[1]
+    assert f"- {nr._md(nr.SNAPSHOT_SCOPE)}\n" in limits
+    for fragment in ("kinase 한정", "원출처 원본 바이트 아님", "SIFTS 대응이나 KLIFS 번호가 없습니다"):
+        assert fragment in nr.SNAPSHOT_SCOPE
+    assert not re.search(r"\d", nr.SNAPSHOT_SCOPE)
+
+
+def test_saved_report_with_legacy_limitations_still_reopens(tmp_path, refroot, client):
+    build_fixture_set(refroot)
+    rid, structure = _new_run(client)
+    handle = _map(client, rid, structure, [{"chain_auth": "A"}], pdb_id="1MQ4")
+    with pytest.MonkeyPatch.context() as patch:   # a report saved before the snapshot-scope line existed
+        patch.setattr(nr, "REPORT_LIMITATIONS", list(nr.LEGACY_REPORT_LIMITATIONS))
+        old = _report(client, rid, handle)
+    assert nr.SNAPSHOT_SCOPE not in old["manifest"]["limitations"]
+    selected = client.get(f"/runs/{rid}/reports/selected", params={"handle": old["handle"]})
+    assert selected.status_code == 200, selected.text
+    assert selected.json()["markdown"] == old["markdown"]
+    # Any other limitation list is still a field mismatch.
+    forged = _forge(_run(rid), old["manifest"], old["markdown"], lambda f: f["limitations"].pop())
+    assert client.get(f"/runs/{rid}/reports/selected", params={"handle": forged}).status_code == 422
+
+
+@pytest.mark.parametrize(("mutate", "check"), [
+    (lambda c: c["rows"][0].update(sifts={"absent_reason": "made_up", "absent_reasons": ["made_up"]}), "rows"),
+    (lambda c: c["rows"][0].update(alignment={"absent_reason": "alignment_gap",
+                                              "absent_reasons": ["alignment_gap", "made_up"]}), "rows"),
+    (lambda c: c["rows"][0].update(sifts={"absent_reason": "alignment_gap", "absent_reasons": ["alignment_gap"]}),
+     "rows"),
+    (lambda c: c["rows"][0].update(conflict_reason="made_up"), "rows"),
+    (lambda c: c["chains"][0]["klifs"][0].update(applied=False, absent_reason="made_up"), "chains"),
+    (lambda c: c["chains"][0]["klifs"][0].update(applied=True, absent_reason="accession_not_in_klifs"), "chains"),
+], ids=["sifts", "alignment", "sifts_with_alignment_reason", "conflict", "klifs", "klifs_applied_with_reason"])
+def test_unknown_reason_codes_are_rejected(tmp_path, refroot, client, mutate, check):
+    build_fixture_set(refroot)
+    rid, structure = _new_run(client)
+    handle = _map(client, rid, structure, [{"chain_auth": "A"}], pdb_id="1MQ4")
+    content = copy.deepcopy(_run(rid).store.load(handle))
+    # rows[0] becomes a conflict row with both method answers (row order does not matter to the checks)
+    content["rows"].insert(0, content["rows"].pop(next(i for i, r in enumerate(content["rows"])
+                                                         if r["status"] == "conflict")))
+    nr._check_rows(content)
+    nr._check_chains(content)
+    assert content["rows"][0]["conflict_reason"] is not None and content["chains"][0]["klifs"]
+    mutate(content)
+    with pytest.raises(EvidenceError):
+        (nr._check_rows if check == "rows" else nr._check_chains)(content)

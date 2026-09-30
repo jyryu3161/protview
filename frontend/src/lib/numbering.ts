@@ -13,6 +13,12 @@ export const STATUS_LABEL: Record<NumberingStatus, string> = { mapped: "대응�
 export const NUMBERING_STRUCTURE_KINDS = ["structure", "prepared_structure"] as const;
 export type NumberingStructureKind = typeof NUMBERING_STRUCTURE_KINDS[number];
 export const PDB_ID_PATTERN = /^[0-9][A-Za-z0-9]{3}$/;
+/**
+ * Fixed scope of the reference snapshots, always shown in the snapshot area (no numbers). Same text as the report
+ * limitation `SNAPSHOT_SCOPE` in backend/mw/numbering_reports.py.
+ */
+export const SNAPSHOT_SCOPE = "참조 스냅샷은 kbase_kinase가 가공한 kinase 한정 자료입니다(원출처 원본 바이트 아님). "
+  + "스냅샷에 없는 PDB·단백질은 SIFTS 대응이나 KLIFS 번호가 없습니다.";
 /** Rows are read through `/objects` pages of this size (backend maximum). */
 export const ROW_PAGE_LIMIT = 100;
 
@@ -74,7 +80,11 @@ export function numberingStructures(events: RunEvent[]): { handle: string; kind:
   return result;
 }
 
-/** Chains that have polymer residues, in first-seen order. */
+/**
+ * Chains that have polymer residues, in first-seen order. Note: this uses the residue list's `category`, while the
+ * numbering tool selects chain residues by its gemmi rule (polymer entity or ATOM record, RESIDUE_RULE), so the two
+ * chain lists can differ for unusual files; the server decides.
+ */
 export function polymerChains(residues: { chain_auth: string; category: string }[]): string[] {
   const chains: string[] = [];
   for (const residue of residues) if (residue.category === "polymer" && !chains.includes(residue.chain_auth)) chains.push(residue.chain_auth);
@@ -158,10 +168,60 @@ export function filterRows(rows: NumberingRow[], filter: StatusFilter, offset: n
   return { total: rows.length, matched: matched.length, rows: matched.slice(offset, offset + limit) };
 }
 
+/**
+ * Korean labels of the backend reason codes (`mw.residue_numbering` CROSS_CHECK / SIFTS / ALIGNMENT / KLIFS absent
+ * reasons and CONFLICT_REASONS). The code list is duplicated in backend/tests/test_residue_numbering.py and
+ * frontend/tests/numbering.test.cjs (REASON_CODES); keep them equal.
+ */
+export const REASON_LABEL: Record<string, string> = {
+  pdb_id_not_given: "PDB ID를 주지 않음",
+  pdb_not_in_sifts_snapshot: "PDB 항목이 SIFTS 스냅샷에 없음",
+  chain_not_in_sifts_snapshot: "체인이 SIFTS 스냅샷에 없음",
+  sifts_chain_lookup_failed: "SIFTS 체인 기록을 사용할 수 없음",
+  sifts_chain_no_segments: "SIFTS에 이 체인의 UniProt 구간 없음",
+  accession_differs_from_sifts: "고른 UniProt 항목이 SIFTS와 다름",
+  multiple_sifts_accessions: "SIFTS UniProt 항목이 여러 개",
+  sifts_accession_not_in_uniprot_snapshot: "SIFTS UniProt 항목이 UniProt 스냅샷에 없음",
+  sifts_accession_uniprot_lookup_failed: "SIFTS UniProt 항목의 UniProt 조회 실패 기록",
+  alignment_too_large: "정렬 크기 한도 초과",
+  sifts_no_residue_row: "SIFTS에 이 잔기 행 없음",
+  sifts_ambiguous_residue_row: "SIFTS 잔기 행이 여러 개",
+  sifts_number_mismatch: "SIFTS 잔기 번호 불일치",
+  sifts_not_observed: "SIFTS에서 관측되지 않은 잔기",
+  sifts_outside_segments: "SIFTS UniProt 구간 밖",
+  sifts_position_outside_sequence: "SIFTS 위치가 UniProt 서열 밖",
+  alignment_gap: "정렬 틈(gap)",
+  alignment_ambiguous: "정렬이 모호함",
+  alignment_below_identity: "정렬 일치율 기준 미달",
+  alignment_below_coverage: "정렬 범위 기준 미달",
+  accession_not_in_klifs: "KLIFS 스냅샷에 없는 UniProt 항목",
+  klifs_pocket_empty: "KLIFS 포켓 서열 없음",
+  klifs_multiple_entries: "KLIFS 항목이 여러 개",
+  uniprot_sequence_unavailable: "UniProt 서열 없음",
+  positions_differ: "두 방법의 위치가 다름",
+  one_method_only: "한 방법만 답함",
+};
+
+/** "한국어 (code)" so the identifier stays visible; unknown codes are shown as is. */
+export function reasonText(code: string): string {
+  const label = Object.prototype.hasOwnProperty.call(REASON_LABEL, code) ? REASON_LABEL[code] : undefined;
+  return label ? `${label} (${code})` : code;
+}
+
 export function answerText(answer: MethodAnswer | null): string {
   if (!answer) return "실행 안 함";
   if ("position" in answer) return `${answer.accession} ${answer.position}`;
-  return (answer.absent_reasons?.length ? answer.absent_reasons : [answer.absent_reason]).join(", ");
+  return (answer.absent_reasons?.length ? answer.absent_reasons : [answer.absent_reason]).map(reasonText).join(", ");
+}
+
+/**
+ * Snapshot badge of a listed map: "stale" only when an active set exists and differs from the map's set;
+ * "no_active_set" when no snapshot is in use (the backend then marks every map stale_snapshot).
+ */
+export function snapshotBadge(row: Pick<NumberingMapListRow, "stale_snapshot">, snapshotAvailable: boolean):
+  "stale" | "no_active_set" | null {
+  if (!snapshotAvailable) return "no_active_set";
+  return row.stale_snapshot ? "stale" : null;
 }
 
 export function residueText(residue: ResidueRef & { model_number?: number }): string {

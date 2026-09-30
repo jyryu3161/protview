@@ -856,3 +856,29 @@ def test_set_sequence_a_b_a_keeps_one_immutable_record_per_set(tmp_path, refroot
     assert content["snapshot_set"]["set_hash"] == first and len(calls) == 3
     recorded = [e["summary"]["set_hash"] for e in _created(run, "reference_snapshot_set")]
     assert recorded[0] == first and len(recorded) == 2 and first in recorded
+
+
+# Every reason code the numbering map can carry. The same literal list is in frontend/tests/numbering.test.cjs
+# (REASON_CODES), which checks that each code has a Korean label; keep both copies equal.
+REASON_CODES = [
+    "pdb_id_not_given", "pdb_not_in_sifts_snapshot", "chain_not_in_sifts_snapshot", "sifts_chain_lookup_failed",
+    "sifts_chain_no_segments", "accession_differs_from_sifts", "multiple_sifts_accessions",
+    "sifts_accession_not_in_uniprot_snapshot", "sifts_accession_uniprot_lookup_failed", "alignment_too_large",
+    "sifts_no_residue_row", "sifts_ambiguous_residue_row", "sifts_number_mismatch", "sifts_not_observed",
+    "sifts_outside_segments", "sifts_position_outside_sequence",
+    "alignment_gap", "alignment_ambiguous", "alignment_below_identity", "alignment_below_coverage",
+    "accession_not_in_klifs", "klifs_pocket_empty", "klifs_multiple_entries", "uniprot_sequence_unavailable",
+    "positions_differ", "one_method_only",
+]
+
+
+def test_reason_code_sets_match_the_frontend_label_list():
+    from mw import klifs_numbering as kn
+    backend = [*rn.CROSS_CHECK_ABSENT_REASONS, *rn.SIFTS_ABSENT_REASONS, *rn.ALIGNMENT_ABSENT_REASONS,
+               *rn.KLIFS_ABSENT_REASONS, *rn.CONFLICT_REASONS]
+    assert len(backend) == len(set(backend))
+    assert set(backend) == set(REASON_CODES)
+    # The sets cover the codes the helper modules emit.
+    assert set(sm.REASONS) - {sm.OUTSIDE_SEGMENTS} <= set(rn.CROSS_CHECK_ABSENT_REASONS)
+    assert sm.OUTSIDE_SEGMENTS in rn.SIFTS_ABSENT_REASONS
+    assert set(kn.ABSENT_REASONS) <= set(rn.KLIFS_ABSENT_REASONS)

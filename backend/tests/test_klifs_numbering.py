@@ -7,6 +7,7 @@ positions (EGFR T790, ABL1 T315, CDK2 F80, BRAF T529) as an independent oracle.
 from __future__ import annotations
 
 import json
+import os
 import random
 from pathlib import Path
 
@@ -315,13 +316,14 @@ def test_index_helpers():
     assert idx.get("P3", []) == []
 
 
-KBASE = Path("/Users/jaeyongryu/Projects/kbase_kinase/ref")
+# kbase_kinase checkout next to the repository (<repo>/../kbase_kinase/ref); MW_KBASE_REF overrides (e.g. a worktree).
+KBASE = Path(os.environ.get("MW_KBASE_REF") or Path(__file__).resolve().parents[2].parent / "kbase_kinase" / "ref")
 KLIFS_KINASES = KBASE / "klifs/2026-09-19/kinases.jsonl"
 UNIPROT_ENTRIES = KBASE / "uniprot/2026-09-15/entries.jsonl"
 
 
 @pytest.mark.skipif(not (KLIFS_KINASES.exists() and UNIPROT_ENTRIES.exists()),
-                    reason="kbase_kinase KLIFS/UniProt snapshots absent at /Users/jaeyongryu/Projects/kbase_kinase/ref")
+                    reason=f"kbase_kinase KLIFS/UniProt snapshots absent at {KBASE} (set MW_KBASE_REF)")
 def test_real_snapshot_gatekeeper_and_hinge():
     index = index_kinases_by_uniprot(parse_kinases_jsonl(KLIFS_KINASES.read_text(encoding="utf-8")))
     sequences = {}
@@ -348,7 +350,7 @@ def test_real_snapshot_gatekeeper_and_hinge():
 
 
 @pytest.mark.skipif(not (KLIFS_KINASES.exists() and UNIPROT_ENTRIES.exists()),
-                    reason="kbase_kinase KLIFS/UniProt snapshots absent at /Users/jaeyongryu/Projects/kbase_kinase/ref")
+                    reason=f"kbase_kinase KLIFS/UniProt snapshots absent at {KBASE} (set MW_KBASE_REF)")
 def test_real_snapshot_every_numbered_letter_matches_the_pocket():
     index = index_kinases_by_uniprot(parse_kinases_jsonl(KLIFS_KINASES.read_text(encoding="utf-8")))
     sequences = {}
