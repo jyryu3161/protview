@@ -1,0 +1,52 @@
+{
+  "label": "fixture: verbatim subset of kbase_kinase processed KLIFS snapshot rows; not experimental evidence and not used at runtime",
+  "kbase_repo_commit": "77354f94b844a8c64e7cd47691ac20a2e96214b3",
+  "license": "none-stated (KLIFS data as processed by kbase_kinase; license field of the kbase snapshot is none-stated)",
+  "extraction_rule": "Each listed row copied byte-for-byte as one JSONL line (row selected by its id_field value), in the listed order, each followed by one newline. No field was changed.",
+  "generator": "one-off extraction script (not committed); verify with the per-line sha256 values against the source file lines",
+  "purpose": "M15 T5 reference fixture set (backend/tests/reference_fixture_set.py) and KLIFS measurement tests; match_residues rows are comparison_only (never product input)",
+  "files": [
+    {
+      "file": "kinases_fixture.jsonl",
+      "sha256": "5b0cd4c872a7d1f2cd6f9c314597e3c742c9d410e820bdbab1495744d6dba808",
+      "bytes": 1205,
+      "source_path": "kbase_kinase/ref/klifs/2026-09-19/kinases.jsonl",
+      "source_sha256": "bf60b1ce50fe194a1540485701d79622ec0534294ebba8a41ff07ebd4b82a444",
+      "snapshot_id": "SNAP-klifs-2026-09-19",
+      "id_field": "kinase_ID",
+      "extracted_ids": [
+        "259",
+        "110",
+        "504",
+        "465"
+      ],
+      "extracted_line_sha256": {
+        "259": "03fc88b17766fe0790c2ee4d7adc9dfa98254a3b59a9718357d3952dd8805f00",
+        "110": "52997707aab003d0d4ed6d7ebe0459b545bc71ef55784d4c77b96315c472b2b9",
+        "504": "cfcd0afb62e6ce4a33ca9848ae7e188f1190f56da4a0af064a186f53a6f8d32c",
+        "465": "69f78d445e8dad5ea14f3e9304a359222c1a11ae30a7c4907ab7bda992d8237a"
+      }
+    },
+    {
+      "file": "match_residues_fixture.jsonl",
+      "sha256": "04587bf59e0a3a58ae35ea949c8ea2d8c7720b6a9f0105c1fd11154e9f151cbb",
+      "bytes": 20983,
+      "source_path": "kbase_kinase/ref/klifs/2026-09-19/match_residues.jsonl",
+      "source_sha256": "05c9a053053a31de0494e2064de28d1e14a4e5f9ddd4c00ef336ff5c1470d81d",
+      "snapshot_id": "SNAP-klifs-2026-09-19",
+      "id_field": "id",
+      "extracted_ids": [
+        "1977",
+        "11939",
+        "6886",
+        "9480"
+      ],
+      "extracted_line_sha256": {
+        "1977": "f64c770dd4e4570b9dca2d051d814c147cded2e2e038944b02a8a5b4ceb377d5",
+        "11939": "1f36eac275191d641b75eaf62f35280da10379f0ab8ad2f0c6929fd7a9587530",
+        "6886": "ad8545ceb1809833bfe7df181f8460f3895ac1c4357413697b2f187e4a3763d3",
+        "9480": "08f8eed71ecf74eda84b19c153167aaaf49ee3b50d6566c53b412ebd788251fe"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+M15 T5 draft check: SIFTS PDBe residue numbers vs mmCIF label_seq_id (2026-09-30, Opus 5.5 implementer, not a review)
+structure: public_1mq4.cif sha256=0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934
+reference set: aa21ead9930f82ebea3a2acf976449d9b1c6280ed17206d74d8cb9dc3f923317; SIFTS snapshot SNAP-sifts-2026-09-20; chain 1MQ4:A decoded as SiftsChain
+SIFTS segments (entity: accession pdbe_start-pdbe_end -> unp_start-unp_end): 1: O14965 6-272 -> 125-391
+method: gemmi 0.7.5 read_structure + setup_entities; model 1, chain A; for every residue whose subchain belongs to a polymer entity: key (mmCIF entity id, auth_seq_id, pdbx_PDB_ins_code or '') looked up among SIFTS residues (T4 decoder mw.sifts_mapping, entity_id, author_number, icode); compare SIFTS pdbe_number with mmCIF label_seq_id and residue names. Also: every SIFTS residue of a mapped entity vs _entity_poly_seq (entity_id, num=pdbe_number) mon_id.
+polymer residues in model 1 chain A: 261
+matched (pdbe_number == label_seq_id and same residue name): 261
+mismatched: 0
+no unique SIFTS row: 0
+SIFTS residues of mapped entity vs _entity_poly_seq mon_id: match 272, mismatch 0 (observed 261, not_observed 11); _entity_poly_seq rows for entity 1: 272
+result: PDBe numbers equal label_seq_id for every polymer residue
