@@ -1,0 +1,29 @@
+{
+  "schema": "m12_case_ledger_row@1",
+  "step": "regression-m10-measure",
+  "buildId": "mc98KdfOBAIUwmBLTIM0q",
+  "harness": {
+    "flowSha256": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d"
+  },
+  "startedAt": "2026-09-30T05:12:42.582316+00:00",
+  "finishedAt": "2026-09-30T05:12:48.180852+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/m12-acceptance/evidence/regression-m10-measure",
+  "mode": "regression-m10-measure",
+  "regression": "M10",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "exitCode": 0,
+  "runId": "run_23065f15737448f5a2b97e2328854a8e",
+  "evidenceFile": "comparison-measure.jsonl",
+  "statusCounts": {
+    "pass": 17
+  },
+  "externalRequestCount": 0,
+  "externalRequestMeasurement": {
+    "rowsWithStatus": 17,
+    "rows": 17,
+    "rule": "max(len(row.after.blockedRequests))"
+  },
+  "note": "Non-loopback requests measured from the renderer status captured with every step row (cumulative blocked-request list)."
+}

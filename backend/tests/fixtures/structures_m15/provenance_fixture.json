@@ -1,0 +1,52 @@
+{
+  "label": "derived fixtures; not experimental evidence (fragments and renamings of a public entry, not observed structures)",
+  "source": "backend/tests/fixtures/public_1mq4.cif (public PDB entry 1MQ4, CC0)",
+  "source_sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+  "common_rule": "Only model 1, chain A, group ATOM rows with one of the 20 standard residue names are used (1MQ4 has no altlocs or insertion codes there); coordinates, occupancy and B are copied (PDB files format them %8.3f/%6.2f). Each fragment's residue numbers are contiguous in the source. PDB files start with REMARK 999 lines naming them as derived fixtures and have no HEADER (no PDB id is claimed).",
+  "generator": "backend/tests/fixtures/structures_m15/make_structures_m15.py::build_all (the test regenerates and compares bytes)",
+  "purpose": "M15 residue numbering tests: structures without label_seq_id, MSE, insertion codes, several chains and non-first models; each fragment aligns to UniProt O14965 at >=98% identity and 100% structure coverage",
+  "files": [
+    {
+      "file": "derived_1mq4_a200_285_fixture.pdb",
+      "sha256": "72905c1b20e355d0ce5bbfaf6c436026a7f420f6a2a3ac6e60bf0210242d3391",
+      "bytes": 55032,
+      "purpose": "(a) PDB format without SEQRES (no label_seq_id), contiguous kinase-domain fragment incl. hinge, catalytic loop and DFG",
+      "extraction_rule": "chain A model 1 ATOM rows of residues 200-285 re-formatted to PDB columns; atom serials renumbered from 1; TER; END"
+    },
+    {
+      "file": "derived_1mq4_a288_360_mse_fixture.cif",
+      "sha256": "14fbc0b67c5a7bf5e29889371a47018ed5079555199755b5e746d179656ca474",
+      "bytes": 59565,
+      "purpose": "(b) mmCIF with a HETATM MSE inside the chain and the full entity sequence (label_seq_id kept)",
+      "extraction_rule": "_entity/_entity_poly/_struct_asym minimal; _entity_poly_seq rows of entity 1 verbatim except num 181 MET->MSE; _atom_site header verbatim; chain A model 1 ATOM rows of residues 288-360 verbatim except residue 300: group_PDB HETATM, comp MSE, atom SD->SE with type_symbol SE (tokens joined by one space)"
+    },
+    {
+      "file": "derived_1mq4_a288_360_mse_fixture.pdb",
+      "sha256": "be2b13e99a671bcaba5c30aab98a7a86871af6b3bf5c1f1410a74025ef79c3b1",
+      "bytes": 48633,
+      "purpose": "(b) PDB format with SEQRES (full entity 1, MSE at 181) + MODRES and a HETATM MSE inside the chain",
+      "extraction_rule": "as the .cif but PDB columns; SEQRES = entity 1 sequence with MSE; MODRES 1MQ4 MSE A 300 MET"
+    },
+    {
+      "file": "derived_1mq4_a200_285_icode_fixture.pdb",
+      "sha256": "16f9ef02d6bef323dd75382c942bd2b3a186341878be3151911b59073421ee30",
+      "bytes": 55065,
+      "purpose": "(c) chain with an insertion code",
+      "extraction_rule": "as (a) but residue 241 written as 240A (resSeq 240, iCode A); no SEQRES"
+    },
+    {
+      "file": "derived_1mq4_two_chain_fixture.pdb",
+      "sha256": "8fc31481440291553e4cec03c4966a97a46f8bec3264097fc29a9c6c982e72f3",
+      "bytes": 101947,
+      "purpose": "(d) two chains in one model",
+      "extraction_rule": "chain A = residues 200-285; chain B = source chain A residues 126-199 relabeled B (real coordinates, no transform)"
+    },
+    {
+      "file": "derived_1mq4_two_model_fixture.pdb",
+      "sha256": "685d3e00a099fd4e0c0a709dff269d0914b191d183a6e4ff9c3e18b1b09c5938",
+      "bytes": 101973,
+      "purpose": "(d) non-first model",
+      "extraction_rule": "MODEL 1 = chain A residues 126-199; MODEL 2 = chain A residues 200-285"
+    }
+  ]
+}

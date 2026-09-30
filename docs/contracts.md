@@ -37,7 +37,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | `POST /runs` | `{goal?, context?, dry_run?: bool, egress?: "local_only"}`. egress에는 `local_only`만 넣을 수 있다 | 201, run 요약 | 422 |
 | `GET /runs`, `GET /runs/{id}` | — | run 요약 목록/단건 | 400, 404 |
 | `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, …모델·체인 요약}` | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
-| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state` 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
+| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
 | `POST /runs/{id}/inspect_complex` | 업로드 ID 또는 같은 run의 구조 handle, 모델, 전처리 정책, 선택적 리간드, cutoff | 완료된 handle 목록 또는 `needs_selection`/`no_ligand` | 412, 422, 409 |
 
 `load_structure`의 `source`는 이 run의 업로드 ID여야 한다. 파일 경로나 URL은 받지 않는다. `decided_by`는 기록용 출처 정보일 뿐이며, 승인 권한을 주지 않는다.
@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬 결과 handle | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응 결과 handle | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -153,6 +153,34 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - **이벤트**: `analysis_plan_created`, `analysis_execution_created`, `analysis_request_admitted`, `analysis_request_completed`, `analysis_plan_approved`, `analysis_approval_revoked`, `analysis_stop_requested`, `analysis_execution_blocked`, `analysis_step_dispatched`, `analysis_dispatch_released`, `analysis_step_deferred`, `analysis_step_completed`, `analysis_step_failed`, `analysis_attempt_recorded`, `analysis_attempt_refused`, `analysis_scientific_approval_recorded`, `analysis_execution_completed`. 연결된 자식 이벤트(`Run.call`의 호출·캐시·실패, `execution_call_admitted`, `execution_call_stopped`, 작업 제출·시도·취소·재시도, `job_observed`, 보고서 게시)에는 내부 필드 `execution_link: {execution_id, step_id, operation_id}`가 붙는다. 이 필드는 서버 코드만 만들며 어떤 HTTP 요청으로도 넣을 수 없다. 연결이 없는 기존 이벤트에는 이 필드가 없다. 기존 `inspect_complex`의 `workflow_*` 이벤트와는 별개다.
 - **작업 API와의 관계**: 흐름이 소유한 작업(`execution_link`가 있는 제출)에 소유 실행이 아직 끝나지 않았을 때 `POST /jobs/{job_id}/start`·`/retry`를 부르면 412 `precondition`, `detail: {reason_code: "job_owned_by_analysis_execution", job_id}`다. 소유 실행이 종료 상태(`complete`, `cancelled`, `blocked`, `retryable_step=null`인 `failed`)가 되면 기존 수동 시작·재시도 규칙(시도 4회까지)이 그대로 적용된다. `/jobs/{job_id}/cancel`은 언제나 허용된다.
 - `/capabilities`의 `methods.analysis_workflows`: `available: true`, `planner: "local_rules@1"`, `source`, `plan_schema`, 템플릿별 `{available, method, reason_code, reason}`(해당 방법 capability를 그대로 반영), `natural_language_planning: {available: false, reason}`, `limits{max_steps: 8, max_physical_attempts: 24, max_active_wall_s: 1800, max_retries_per_step: 1}`, `max_plans_per_run: 100`, `max_plan_bytes: 1048576`, `max_executions_per_run: 100`, `execution` 설명.
+
+## M15 잔기 번호 대응
+
+규칙은 `docs/business-rules.md` "잔기 번호 대응 (M15)". 읽기 호출은 로컬 참조 폴더와 run 객체만 읽고 도구·작업·이벤트·외부 요청을 만들지 않는다. 참조 읽기 응답은 스냅샷을 사용할 수 없어도 200이며 `{available: false, reason_code: "not_installed"|"snapshot_invalid", reason, set_hash: null}`와 빈 목록을 담는다.
+
+### 계산: `POST /runs/{id}/commands` `{tool: "map_residue_numbering", args}`
+- `args`: `{structure: <같은 run의 structure|prepared_structure handle>, pdb_id: <4자 PDB ID, [0-9][A-Za-z0-9]{3}> | null(기본), chains: [{chain_auth: str, uniprot_accession: str|null}]}`. `chains`는 1개 이상, `chain_auth` 중복 금지. 알 수 없는 필드는 거부한다. `pdb_id`는 대문자로 정규화한다.
+- 성공: 200 `{ok: true, handle: <envelope>}`, kind `residue_numbering_map`, schema `residue_numbering_map@1`, summary `{structure, chains, set_hash, mapped, unmapped, conflict}`. `mapped`가 0이면 `null_result: true`. 같은 입력·같은 세트면 같은 handle(호출 키에 세트 해시). 처음 쓰는 세트면 먼저 `reference_snapshot_set@1` 객체가 저장된다.
+- 실패(도구 실패 본문, `detail.reason_code`):
+  - 412 `precondition`: `not_installed`, `snapshot_invalid`(사용 중 세트 없음·손상, 캐시 조회 전).
+  - 422 `input_invalid`(도구 구현을 부르지 않음, 체인 문제는 `detail.chain_auth` 포함): `unknown_field`, `structure_invalid`(handle 형식·다른 run), `structure_kind_not_allowed`, `pdb_id_invalid`, `chains_invalid`, `duplicate_chain`, `chain_not_found`(그 모델에 사슬 잔기 없음), `accession_not_in_uniprot_snapshot`, `no_usable_method`, `accession_with_multiple_sifts_accessions`, `structure_entities_inconsistent`.
+- 결과 객체 주요 필드: `schema`, `method_version`(`mw.residue_numbering/v1`), `structure{handle, structure_kind, model_number}`, `snapshot_set{set_hash, origin, sources:[{source, snapshot_id, date, version_hint, license, file_sha256s}]}`, `pdb_id`, `alignment_params{matrix, gap_open, gap_extend, gap_cost, end_gaps, tie_break, implementation, min_identity_pct, min_coverage_pct, max_alignment_cells}`, `chains[]`, `reference_rows{uniprot, sifts, klifs}`, `rows[]`, `null_result`, `limitations`.
+  - 체인: `chain_auth`, `requested_uniprot_accession`, `methods_run`, `cross_check`, `cross_check_absent_reason`, `sifts{accessions, sifts_chain_match: "auth_only", sifts_residue_key}|null`, `alignment{accession, identity_pct, coverage_pct, aligned_pairs, identical, chain_residue_count, score, chain_reason, ambiguous_residue_count, aligned_strings{structure, uniprot}}|null`, `klifs[{accession, applied, absent_reason, unresolved_regions, gapped_regions}]`, `residue_rule{rule, modified_residue_count}`, `counts{mapped, unmapped, conflict}`.
+  - 행: `residue`(7필드, null 그대로), `status`, `uniprot_accession`, `uniprot_position`, `uniprot_residue`, `residue_match`, `klifs_index`, `klifs_label`, `klifs_match`(`contiguous`|`gapped_unique`), `conflict_reason`, `sifts`·`alignment`(`{accession, position}` 또는 `{absent_reason, absent_reasons}`, 실행 안 했으면 null).
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /reference/snapshots` | — | `reference_snapshots@1`: `{available, reason_code, reason, set_hash, origin, imported_at, kbase_repo{commit, dirty}, sources:[{source, snapshot_id, date, version_hint, license, origin, url_count, raw_sha256, files:[{name, path, sha256, bytes, rows, use}]}]}` | — |
+| `GET /reference/sifts_chains?pdb_id=` | 4자 PDB ID | `reference_sifts_chains@1`: `{available, …, pdb_id, chains:[{chain_auth, accessions, reason_code, reason}]}`. 스냅샷에 없는 PDB는 빈 목록 | 422 `input_invalid`(형식) |
+| `GET /reference/uniprot?query=&offset=&limit=` | query 최대 100자(빈 값 = 전체), limit 1–100(기본 20) | `reference_uniprot_search@1`: `{available, …, query, offset, limit, total, entries:[{accession, entry_name, gene, protein_name, organism, sequence_length}]}`. `status: ok` 항목만, accession·gene·entry_name·protein_name 부분 일치(대소문자 무시). 서열은 돌려주지 않는다 | 422 |
+| `GET /runs/{id}/reference/pdb_id_hint?structure=` | 같은 run의 `structure`·`prepared_structure` | `{structure, structure_kind, format, pdb_id|null, origin: "mmcif_entry_id"|"pdb_header"|null}`. 업로드 원본(전처리 구조는 원본 구조의 업로드)에서 읽은 **제안**일 뿐이다 | 404 없는 handle, 422 다른 kind, 409 `run_corrupt` |
+| `GET /runs/{id}/numbering_maps?offset=&limit=` | limit 1–100(기본 50) | `residue_numbering_map_list@1`: `{active_set_hash, snapshot_available, total, offset, limit, rows:[{handle, structure, structure_kind, model_number, pdb_id, chains, cross_checked_chains, chain_details, set_hash, counts{mapped, unmapped, conflict}, row_count, null_result, created_seq, stale_snapshot}]}`. 최신 순. `chain_details`는 객체의 체인 요약에서 `alignment.aligned_strings`만 뺀 것. `stale_snapshot`은 세트 해시가 사용 중 세트와 다르거나 사용 중 세트가 없을 때 true. `snapshot_available`은 사용 중 세트가 있을 때(`active_set_hash`가 null 아님) true. 화면은 `snapshot_available`이 false면 "사용 중 스냅샷 없음", true이고 `stale_snapshot`이면 "이전 스냅샷 기준"으로 표시한다 | 409 `run_corrupt` |
+| `GET /runs/{id}/objects?handle=<residue_numbering_map>&offset&limit&columns` | 기존 객체 페이지(50/100) | 대응 객체의 `rows` 배열 한 페이지와 `total`(= 행 수). `columns`는 행의 최상위 키 | 422 모르는 열 |
+
+- `/capabilities`의 `methods.residue_numbering`: `{available, reason_code: null|"not_installed"|"snapshot_invalid", reason, set_hash, sources:[{source, snapshot_id, date, version_hint, license, origin}]}`. 해시와 내용 형식 해석까지 확인한다.
+- 보고서: `POST /runs/{id}/method_reports` `{result_handle: <residue_numbering_map>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "residue_numbering"`, `render_version: "residue_numbering_markdown@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다. 주장(claim)의 주요 필드는 `{statement_id, evidence_kind: "computed"|"reference_value", source_handle, field_path, row_selector, subject, quantity, unit, exact_value, rendered_value, rounding, operation, reference}`이며, 종류가 맞지 않는 필드 경로는 422 `report_evidence_invalid`다. 대응 객체의 행 `absent_reasons`·`conflict_reason`과 체인 KLIFS `absent_reason`이 닫힌 이유 집합 밖이거나 KLIFS `applied`와 `absent_reason` null 여부가 맞지 않아도 422 `report_evidence_invalid`(`message`에 `numbering_row_shape`·`numbering_klifs_reason_invalid`)다. manifest `limitations` 마지막 줄은 스냅샷 범위 문장이며, 그 줄이 없는 이전 목록으로 저장된 보고서도 다시 열린다.
 
 ## 과거 단계 실행기 (CLI)
 

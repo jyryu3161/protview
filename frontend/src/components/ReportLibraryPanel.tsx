@@ -17,6 +17,8 @@ export interface ReportLibraryPanelProps {
   run: RunSummary | null;
   /** True while the tab is visible; lists are (re)read when it turns true and on run change while true. */
   active: boolean;
+  /** Incremented by another panel after it created a report; the reports list is re-read on each change. */
+  reloadToken?: number;
 }
 
 const LIST_KINDS: LibraryListKind[] = ["reports", "figures", "summaries"];
@@ -45,7 +47,7 @@ function sameItem(a: LibraryItem | null, b: LibraryItem): boolean {
   return b.kind !== "summary" && a.handle === b.handle;
 }
 
-export function ReportLibraryPanel({ run, active }: ReportLibraryPanelProps) {
+export function ReportLibraryPanel({ run, active, reloadToken = 0 }: ReportLibraryPanelProps) {
   const runId = run?.run_id ?? null;
   const [state, dispatch] = useReducer(libraryReducer, runId, initialLibraryState);
   const seqRef = useRef(0);
@@ -87,6 +89,13 @@ export function ReportLibraryPanel({ run, active }: ReportLibraryPanelProps) {
   const loadAll = useCallback(() => { for (const kind of LIST_KINDS) loadList(kind); }, [loadList]);
 
   useEffect(() => { if (active && runId !== null) loadAll(); }, [active, runId, loadAll]);
+
+  const seenReloadToken = useRef(reloadToken);
+  useEffect(() => {
+    if (seenReloadToken.current === reloadToken) return;
+    seenReloadToken.current = reloadToken;
+    if (active && runId !== null) loadList("reports");
+  }, [reloadToken, active, runId, loadList]);
 
   const select = useCallback((item: LibraryItem) => {
     if (runId === null) return;

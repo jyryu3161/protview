@@ -1,0 +1,29 @@
+{
+  "label": "fixture: verbatim subset of kbase_kinase processed UNIPROT snapshot rows; not experimental evidence and not used at runtime",
+  "kbase_repo_commit": "77354f94b844a8c64e7cd47691ac20a2e96214b3",
+  "license": "CC-BY-4.0 (UniProt data as processed by kbase_kinase)",
+  "extraction_rule": "Each listed row copied byte-for-byte as one JSONL line (row selected by its id_field value), in the listed order, each followed by one newline. No field was changed.",
+  "generator": "one-off extraction script (not committed); verify with the per-line sha256 values against the source file lines",
+  "purpose": "M15 T5 reference fixture set (backend/tests/reference_fixture_set.py) and KLIFS measurement tests",
+  "files": [
+    {
+      "file": "entries_fixture.jsonl",
+      "sha256": "4c3303e1ddb299fa296f909698e1c2f0fd1aa5b21c89308f2135294d6bbb0ff8",
+      "bytes": 2644,
+      "source_path": "kbase_kinase/ref/uniprot/2026-09-15/entries.jsonl",
+      "source_sha256": "8ec2ce992820246ddbd9af6ff9d4bdc0c867c300f3e7582d282446dbfcd4ed80",
+      "snapshot_id": "SNAP-uniprot-2026-09-15",
+      "id_field": "id",
+      "extracted_ids": [
+        "O14965",
+        "Q8IU85",
+        "O43318"
+      ],
+      "extracted_line_sha256": {
+        "O14965": "7dae619bae6b4b20b12335bec31f952d371c72ffff57933e452572436e89ebf8",
+        "Q8IU85": "88575af04dbc3d6118dc925bc830f89064649d43a42071884a24df10745cbce4",
+        "O43318": "8a161b51fb50423fc221c16fe49cf16d88720ec12d9ad4be8de71599848cf6de"
+      }
+    }
+  ]
+}

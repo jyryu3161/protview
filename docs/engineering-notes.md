@@ -115,6 +115,38 @@
 - **증상**: M13 수락 1차 실행의 M12 하위 실행기 `regression-m10-measure` C02-repeat-reverse에서 기준 원자 클릭 3회가 모두 Mol* `empty_loci`였고 "Mol* observation did not become ready"로 실패했다. 같은 사례를 단독으로 다시 돌리면 통과했고, 2차 실행에서는 세 실행기 모두 통과했다.
 - **대응**: 원인은 확인하지 못했다. 실패 증거는 지우지 않고, 재실행 통과를 수락으로 세지 않는다(`--only`는 partial).
 
+### KLIFS 포켓은 일부 구역에서 잔기를 gap 표시 없이 뺀다
+- **증상**: M15 KLIFS 번호 초안에서 b.l 구역이 대부분 번호를 얻지 못했다. 예: EGFR b.l 포켓 `VDPHVCR`에 대해 UniProt은 `VDNPHVCR`이라 연속 일치가 없다. linker 등 다른 구역에도 드물게 있다.
+- **원인**: KLIFS 85자 포켓은 구조 정렬로 만든 것이라, 포켓 번호 사이의 서열 잔기를 `-`/`_` 없이 건너뛰는 경우가 있다.
+- **대응**: 첫 단계(연속 일치가 유일한 구역만)는 그대로 두고, 바로 앞·뒤 구역이 모두 해결된 구역만 그 사이 구간에서 순서 유지 배치가 정확히 하나일 때 `klifs_match: "gapped_unique"`로 번호를 준다(결정 0023). 두 번째 단계 대상을 "가장 가까운 해결 구역"으로 넓히지 않는다(M15 독립 코드 검토에서 명세보다 넓다고 지적되어 좁혔다). a.l·I처럼 처음·마지막 구역은 이 단계 대상이 아니다.
+- **검증**: `pytest backend/tests/test_klifs_numbering.py -q`, 측정 `scripts/measure_klifs_numbering.py`(`gapped_unique` 1,613 일치·17 불일치, 첫 고정 `c1d824d`).
+
+### kbase SIFTS의 PDBe 번호는 엔티티마다 다시 시작하고, 예외 행의 `uniprot_resnum`은 UniProt 위치가 아니다
+- **증상**: SIFTS 잔기 행을 PDBe 번호만으로 찾으면 같은 체인 행 안의 리간드·물 엔티티 행과 섞인다. 예외 행의 `uniprot_resnum`을 UniProt 위치로 읽으면 엉뚱한 위치가 나온다.
+- **원인**: kbase `pdbe-residue-runs-v1`은 PDBe 잔기 목록을 run으로 압축한 것이다. 한 체인 행에 여러 엔티티가 섞여 있고 PDBe 번호는 엔티티마다 1부터 다시 시작한다. 예외 행은 PDBe 번호를 `uniprot_resnum`이라는 이름의 필드에 담는다(kbase 쪽 이름). 열 값과 `insertion_codes`는 kbase의 행 정렬 순서로 색인된다.
+- **대응**: 잔기는 항상 (엔티티, PDBe 번호)로 다루고, 그 체인에 UniProt segment가 있는 엔티티만 잇는다. 예외 행 필드는 PDBe 번호로 읽는다. 복원한 행 수·열 길이·삽입 코드·`not_observed` ↔ `observed_ratio == 0`을 교차 확인하고, 하나라도 어긋나면 그 체인을 `sifts_chain_lookup_failed`로 쓰지 않는다(추측하지 않음). kbase 코드는 import하지 않고 형식만 읽어 `backend/mw/sifts_mapping.py`에 다시 구현했다.
+- **검증**: `pytest backend/tests/test_sifts_mapping.py -q`, 1MQ4 체인 A PDBe 번호 = `label_seq_id` 확인(`docs/qa/m15-numbering-20260930/pdbe_label_check.txt`).
+
+### SIFTS segment의 `chain_id`가 author 체인 ID와 다를 수 있다
+- **증상**: 6Z1Q의 segment 행은 `chain_id`가 `AAA`/`BBB`인데 잔기 행 체인은 `A`/`B`다.
+- **대응**: segment는 `chain_id == chain_auth`로만 고른다. 맞는 segment가 없으면 그 체인은 `sifts_chain_no_segments`(또는 잔기 행 조회 실패면 `sifts_chain_lookup_failed`)로 SIFTS를 쓰지 않는다. 이름이 비슷하다고 이어 붙이지 않는다. segment 행에는 `chain` 키가 없을 수도 있다(그 엔트리를 가져오게 한 체인일 뿐).
+
+### 최적 정렬이 여럿이면 동점 규칙이 떨어진 말단 잔기를 틀린 위치에 둔다
+- **증상**: 1MQ4 체인 A의 C 말단 S388은 구조에서 앞 잔기들과 떨어져 있어, 고정 동점 규칙(M > X > Y, 끝에서 역추적)만으로는 UniProt 403에 놓였다. SIFTS는 다른 위치를 준다. 교차 확인 없는 정렬 경로라면 틀린 `mapped`가 된다.
+- **원인**: 떨어진 잔기 하나를 여러 자리에 두어도 점수가 같은 최적 정렬이 여럿 있다. 동점 규칙은 결정적이지만 맞다는 보장은 없다.
+- **대응**: 앞·뒤 Gotoh 계산으로 모든 최적 정렬을 정확히 보고, 어떤 잔기가 모든 최적 정렬에서 같은 UniProt 위치에 놓이지 않으면(gap 포함) `alignment_ambiguous`로 답을 없앤다(결정 0023). 통계는 여전히 동점 규칙으로 고른 정렬 하나에서 계산한다.
+- **검증**: `pytest backend/tests/test_sequence_alignment.py backend/tests/test_residue_numbering.py -q`, M15 수락 N-conflict-row·N-alignment-only.
+
+### 같은 스냅샷 파일을 다시 가져와도 세트 해시가 바뀐다
+- **증상**: `.deps/reference`의 측정 세트(`aa21ead9…`)와 수락 QA가 새로 가져온 세트(`1ad8413f…`)는 파일 바이트가 같은데 세트 해시가 다르다. 다시 가져온 뒤에는 기존 대응이 모두 "이전 스냅샷 기준"으로 보이고, 같은 요청도 새로 계산된다.
+- **원인**: 세트 해시는 매니페스트 바이트의 SHA-256이고, 매니페스트에 `imported_at`이 들어간다.
+- **대응**: 설계대로다(가져오기마다 새 기록). 두 세트의 파일이 같은지 보려면 매니페스트의 파일별 SHA-256을 비교한다. 다시 가져오기를 "변경 없음"으로 취급하려면 별도 결정이 필요하다.
+
+### M15 수락 실행기의 `--kbase` 기본값은 git worktree에서 틀리다
+- **증상**: worktree에서 `scripts/m15_offscreen_acceptance.py`를 기본값으로 돌리면 `--kbase has no ref/manifest.json`으로 멈춘다.
+- **원인**: 기본값이 `<저장소>/../kbase_kinase`라서, worktree 위치 기준으로는 kbase 체크아웃이 없다.
+- **대응**: `--kbase`에 절대 경로를 준다(2026-09-30 수락 QA도 그렇게 실행).
+
 ## 동작 원리
 
 ### handle과 복구
@@ -135,6 +167,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 
 신원이 불확실하면(권한 거부, 열거 실패, 신원 불일치) `cleanup_pending`으로 두고 대체 시도를 막는다. PID를 추측해서 신호를 보내지 않는다.
 
+### 참조 세트 고정과 사전 검사 훅 (M15)
+`map_residue_numbering`은 레지스트리 사전 검사 훅을 쓴다. `Run._validated_bound`가 모든 호출 경로(첫 호출, 인자 수정, 선행 조건 뒤 재시도, transient 재시도)에서 일반 인자 검사보다 먼저 훅을 부른다. 훅은 `active.json`을 한 번 읽어 세트를 고정하고(없거나 손상이면 `precondition`), 스냅샷과 구조를 읽어 입력 전체를 검증한 뒤 체인별 계획을 담은 `bound`를 돌려준다. 호출 키에는 `bound.key_fields`(세트 해시)가 들어가고, 구현은 `ToolContext.bound`로 같은 세트와 계획을 받는다. 같은 호출을 다시 검증할 때는 이전 `bound`를 넘겨 세트가 바뀌지 않게 한다. 훅이 없는 도구는 `bound=None`이라 기존 호출 키·이벤트가 바이트 그대로다. 파일 해시 확인은 세트 폴더·세트 해시·파일 stat이 같으면 서버 프로세스 안 캐시로 건너뛴다(폴더마다 최신 항목 하나). 내용 해석 색인(UniProt·KLIFS·SIFTS)은 세트 해시별로 최대 2개를 캐시한다.
+
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
 
@@ -148,7 +183,8 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 5. 보고서를 만든다면 필드 단위 증거 검증에 새 필드 경로와 단위를 추가하고, 잘못된 행·단위·구조로 같은 숫자를 주장했을 때 거부되는지 테스트한다.
 6. `/capabilities`와 UI의 사용 불가 표시가 같은 이유를 말하는지 확인한다.
 7. 검증: 전체 게이트 명령과, UI가 있으면 오프스크린 컨트롤 검증까지 실행한다.
-8. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
+8. 참조 데이터를 읽는 도구(M15 번호 대응 등)는 호출 시작 때 참조 세트를 고정하고, 그 세트 해시를 호출 키에 넣고(사전 검사 훅의 `key_fields`), 결과 객체에 세트 해시와 계산에 쓴 참조 행을 담아 참조 폴더 없이 다시 열리게 한다. 참조 값과 계산 값은 보고서에서 다른 증거 종류로 둔다.
+9. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
 
 ### UI 컨트롤 변경
 1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.

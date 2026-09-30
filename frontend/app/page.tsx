@@ -19,6 +19,7 @@ import { ChemicalWorkspace } from "@/components/ChemicalWorkspace";
 import { PocketPanel } from "@/components/PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
 import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
+import { NumberingPanel } from "@/components/NumberingPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
@@ -116,6 +117,7 @@ export default function WorkspacePage() {
   const [sceneName, setSceneName] = useState("");
   const [chemicalActive, setChemicalActive] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTabId>(DEFAULT_WORKSPACE_TAB);
+  const [reportsReloadToken, setReportsReloadToken] = useState(0);
   const [chemicalSceneToRestore, setChemicalSceneToRestore] = useState<string | null>(null);
   const [pocketState, setPocketState] = useState<{ request: PocketOverlayRequest; boundContext: string | null } | null>(null);
   const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
@@ -1914,6 +1916,8 @@ export default function WorkspacePage() {
   />;
 
   return <WorkspaceTabs active={workspaceTab} runId={runId ?? null} budget={budget} structure={structureScreen}
-    reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} />}
+    reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} reloadToken={reportsReloadToken} />}
+    numbering={<NumberingPanel key={run?.run_id ?? "none"} runId={run?.run_id ?? null}
+      onReportCreated={() => setReportsReloadToken(token => token + 1)} />}
     onSelect={tab => { setWorkspaceTab(tab); if (runId) refreshGlobalBudget(runId); }} />;
 }

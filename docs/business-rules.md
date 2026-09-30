@@ -9,6 +9,7 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - **scientific_null**: 입력이 유효하고 계산도 성공했지만 조건을 만족하는 결과가 없는 상태(`null_result=true`). 실패가 아니며 재시도하지 않는다.
 - **geometric contact**: 원자 좌표 사이 거리만으로 정한 접촉. 두 원자가 모두 N/O이면 `polar_contact`, 모두 C이면 `hydrophobic_contact`, 나머지는 `contact`로 분류한다. 원소만 보고 나눈 것이며 수소결합·염다리 판정이 아니다.
 - **chemical interaction assignment**(M11): ProLIF가 사용자가 제공한 수소·연결 정보·화학 그래프로 판정한 상호작용 범주. geometric contact와는 다른 결과 종류이며, 둘 중 하나로 다른 하나를 덮어쓰지 않는다.
+- **참조 스냅샷 값**(M15): UniProt accession·위치·잔기 글자, KLIFS 포켓 번호처럼 참조 스냅샷에서 그대로 가져온 값. ProtView가 계산한 값이 아니며, 화면·보고서에서 계산값과 다른 종류로 표시한다("참조 스냅샷 값, 계산 아님").
 
 ## 식별자
 
@@ -66,6 +67,76 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - 원본 출력 보관: 파서가 읽는 파일과 stdout·stderr만 바이트로, 나머지는 경로·크기·해시만. 게시된 결과 기준 run당 64 MiB. 읽을 때마다 보관한 원본 출력을 다시 파싱해 저장 값과 대조한다.
 - 의미하지 않는 것: 확인된 결합 부위, 친화도, druggability, 해석적 부피.
 - 화면: 오버레이 중 M9 저장·PNG와 M8 요청 비활성, M10 비교 중 포켓 검출·오버레이 비활성, 같은 소스 거리 측정은 허용(알파 구는 선택 대상이 아님), 화학 작업 화면에서 M11 주석과 포켓 오버레이는 동시에 켜지 않는다.
+
+## 잔기 번호 대응 (M15, `map_residue_numbering`)
+
+사용자 구조의 잔기(7필드)를 참조 스냅샷의 UniProt 위치와 KLIFS 포켓 번호(1–85)에 잇는다. 확실할 때만 "대응됨"이고, 나머지는 "대응 없음"이나 "충돌"로 이유와 함께 남긴다(결정 0023). 위치·번호는 모두 참조 스냅샷 값이고, ProtView가 계산하는 값은 정렬 통계(일치율, 정렬 범위, 개수)뿐이다.
+
+### 참조 스냅샷
+- 원천은 `kbase_kinase/ref`의 가공 JSONL이다(원출처 원본 바이트가 아님, kinase 한정. 결정 0022). 출처별 스냅샷 하나씩이 사용 중 세트이며, 세트 매니페스트(출처·kbase `snapshot_id`·날짜·`version_hint`·라이선스·파일별 SHA-256·바이트·행 수·`raw_sha256` 목록·kbase 커밋과 dirty 여부·`origin`·`imported_at`)의 SHA-256이 세트 해시다. `imported_at`이 들어가므로 같은 파일을 다시 가져와도 세트 해시는 새로 생긴다.
+- 사용 중 세트가 없으면 `not_installed`, 매니페스트·파일 해시가 맞지 않거나 내용 형식을 해석할 수 없으면 `snapshot_invalid`로 사용할 수 없음이다. 이때 화면은 숫자 없이 이유와 가져오기 명령만 보여 주고, 도구는 캐시 조회 전에 `precondition`으로 실패한다.
+- 도구 호출 하나는 시작 때 고정한 세트 하나만 본다. 그 세트가 run에 아직 기록되지 않았으면 대응 객체보다 먼저 `reference_snapshot_set@1`(매니페스트 전체)을 저장한다(같은 내용은 같은 handle). 대응 객체도 세트 해시·출처별 파일 해시와, 계산에 실제로 쓴 참조 행(UniProt 서열, SIFTS 잔기 행·segment, KLIFS 포켓)을 담으므로 참조 폴더 없이 이벤트만으로 다시 열린다.
+- 사용 중 세트와 해시가 다른 대응은 "이전 스냅샷 기준"으로 표시한다. 사용 중 세트가 없으면(가져오기 전, 손상) 대응마다 "사용 중 스냅샷 없음"으로 표시하고 "이전 스냅샷 기준"이라 하지 않는다. 대응마다 세트를 고르는 기능은 없다.
+- 범위 안내: 지식 탭 스냅샷 영역과 보고서 `limitations`에 "kbase_kinase가 가공한 kinase 한정 자료(원출처 원본 바이트 아님), 스냅샷에 없는 PDB·단백질은 SIFTS 대응이나 KLIFS 번호가 없음"을 숫자 없이 항상 보여 준다(`SNAPSHOT_SCOPE`).
+- 표시: 스냅샷 목록과 보고서에 출처·스냅샷 ID·날짜·버전·라이선스·"kbase_kinase 가공본"을 그대로 보여 준다. 라이선스는 UniProt `CC-BY-4.0`, SIFTS `EMBL-EBI-terms`, KLIFS `none-stated`이며, KLIFS는 "이용 조건 명시 없음(none-stated)"으로 항상 표시한다. KLIFS 값의 보고서·외부 전송 사용은 따로 막지 않는다(사용자 결정).
+
+### 입력과 대상 잔기
+- 입력: 같은 run의 `structure` 또는 `prepared_structure`, 사용자가 확인한 PDB ID(4자, 대문자로 정규화) 또는 null, 체인 목록 `[{chain_auth, uniprot_accession|null}]`(1개 이상, 중복 없음). `uniprot_accession`은 사용 중 UniProt 스냅샷의 `status: ok` 항목만 받는다. 화학 작업용 구조·OpenMM 최소화 구조는 대상이 아니다.
+- PDB ID는 업로드 원본의 mmCIF `_entry.id`나 PDB `HEADER` idcode에서 제안만 한다. 사용자가 확인하지 않으면 `pdb_id: null`이고 SIFTS를 쓰지 않는다.
+- 대상 잔기: 구조가 가리키는 모델의 그 체인에서 사슬 잔기만, 파일 순서대로. 사슬 잔기 = gemmi 엔티티 설정(mmCIF `_entity`, PDB SEQRES·MODRES)에서 polymer 엔티티에 속하거나 ATOM 레코드(`het_flag == "A"`)인 잔기(규칙 이름 `gemmi_polymer_entity_or_atom_record@1`). 그래서 HETATM 변형 잔기(MSE 등)도 들어가고 물·리간드는 빠진다. 이 판단은 번호 대응 전용이며 `structure_residues`의 `category`는 바꾸지 않는다. 체인별 변형 잔기 수를 기록한다.
+- 입력 검증은 스냅샷·구조를 읽는 검사까지 도구 구현을 부르기 전에 끝난다(모든 호출 경로에 같은 사전 검사). 없는 체인, 다른 run handle, 허용되지 않은 kind, 스냅샷에 없는 accession, 알 수 없는 필드, 쓸 수 있는 방법이 없는 체인은 `input_invalid`다.
+
+### 체인별 방법
+- **SIFTS**: `pdb_id`가 있고 스냅샷에 (pdb_id, chain_auth)가 있을 때. 체인은 author ID로만 맞춘다(`sifts_chain_match: "auth_only"`). 조회 실패·알 수 없는 형식·복원 불일치 체인은 쓰지 않는다.
+- **로컬 전역 정렬**: 정렬 accession은 사용자가 준 accession, 없으면 SIFTS accession이 하나일 때 그것(화면이 미리 채움). 사용자가 SIFTS와 다른 accession을 주면 SIFTS를 쓰지 않는다. SIFTS accession이 여러 개(융합)면 정렬하지 않고 SIFTS만 쓰며, 이때 accession을 주면 `input_invalid`다.
+- 체인 사슬 잔기 수 × UniProt 길이가 20,000,000칸을 넘으면 정렬하지 않는다. 남은 방법이 없으면 `input_invalid`다(사용자가 다른 accession을 골랐는데 상한을 넘는 경우 포함).
+- 두 방법이 모두 실행되면 교차 확인이다. 아니면 체인에 "교차 확인 없음"과 이유 하나를 남긴다: `pdb_id_not_given`, `pdb_not_in_sifts_snapshot`, `chain_not_in_sifts_snapshot`, `sifts_chain_lookup_failed`, `sifts_chain_no_segments`, `accession_differs_from_sifts`, `multiple_sifts_accessions`, `sifts_accession_not_in_uniprot_snapshot`, `sifts_accession_uniprot_lookup_failed`, `alignment_too_large`.
+
+### SIFTS 답
+- kbase 형식(`pdbe-residue-runs-v1`, 과거 v0 list)을 ProtView 코드로 다시 해석한다. PDBe 번호는 엔티티마다 1부터 다시 시작하므로 (엔티티, PDBe 번호)로 다루고, 그 체인에 UniProt segment가 있는 엔티티만 잇는다. 위치 = `unp_start + (PDBe 번호 − res_start)`. 삽입 코드 `None`·`''`는 `""`로 정규화한다.
+- 잔기 일치: 구조 잔기에 `seq_label`이 있으면 PDBe 번호 = `seq_label`, author 번호, 삽입 코드가 모두 같아야 한다(`sifts_residue_key: "label_and_author"`). `seq_label`이 null인 잔기(PDB 형식 등)는 author 번호 + 삽입 코드로 맞추고, 그런 잔기가 있는 체인에는 `"author_only"`를 남긴다. 1MQ4 체인 A에서 PDBe 번호 = `label_seq_id`임을 확인했다.
+- 없음 이유: `sifts_no_residue_row`, `sifts_number_mismatch`(label·author·삽입 코드 일부만 맞음), `sifts_ambiguous_residue_row`(완전히 맞는 행이 둘 이상), `sifts_not_observed`, `sifts_outside_segments`, `sifts_position_outside_sequence`(계산 위치가 스냅샷 UniProt 서열 길이를 넘음).
+
+### 정렬 답
+- Needleman–Wunsch 전역 정렬, affine gap(Gotoh), BLOSUM62, gap 열기 −10·확장 −0.5(길이 k gap = 10 + 0.5(k−1)), 끝 gap도 같은 벌점(EMBOSS 기본과 다름), 동점은 M > X > Y(끝에서부터 역추적). 구현 `mw.sequence_alignment/gotoh-global-v1`, numpy만. 구조 서열의 표준 20종 밖 잔기(MSE 등)는 `X`, UniProt의 BLOSUM62 밖 글자(U, O 등)도 정렬에서만 `X`다. `X`는 일치로 세지 않는다.
+- 통계: `aligned_pairs`(양쪽 모두 gap 아님), `identical`, `identity_pct = identical / aligned_pairs × 100`, `coverage_pct = aligned_pairs / 체인 사슬 잔기 수 × 100`. 고정 동점 규칙으로 고른 정렬 하나에서 계산한다.
+- 체인 기준: `identity_pct < 90` 또는 `coverage_pct < 50`이면 그 체인 모든 잔기의 정렬 답이 없음(`alignment_below_identity`, `alignment_below_coverage`, 둘 다면 둘 다). 적용한 기준값·행렬·벌점·동점 규칙·구현 버전·크기 상한은 결과의 `alignment_params`에 있다.
+- 기준을 넘으면 각 잔기는 맞춰진 UniProt 위치, gap이면 `alignment_gap`이다. 최고 점수가 같은 정렬 중 하나라도 그 잔기를 다른 위치나 gap에 두면 `alignment_ambiguous`다(앞·뒤 DP로 모든 최적 정렬을 정확히 본다). 체인 요약에 이런 잔기 수(`ambiguous_residue_count`)를 둔다.
+- 방법별 없음 답은 `{absent_reason: 첫 이유, absent_reasons: 모든 이유}`다.
+
+### 행 상태
+상태는 정확히 `mapped | unmapped | conflict`다.
+
+| 체인 | 두 방법 답 | 상태 |
+|---|---|---|
+| 교차 확인 | 둘 다 같은 (accession, 위치) | `mapped` |
+| 교차 확인 | 둘 다 위치, 서로 다름 | `conflict` (`positions_differ`) |
+| 교차 확인 | 한쪽만 위치(정렬 기준 미달로 전부 없음인 경우 포함) | `conflict` (`one_method_only`) |
+| 교차 확인 | 둘 다 없음 | `unmapped` |
+| 한 방법만 | 위치 있음 / 없음 | `mapped` / `unmapped` (체인에 교차 확인 없음 표시) |
+
+- `conflict` 행은 양쪽 답을 모두 보존하고 어느 쪽도 고르지 않는다. `unmapped` 행은 방법별 없음 이유를 보존한다. UniProt 위치·잔기·KLIFS 번호는 `mapped` 행에만 있다.
+- `mapped` 행은 구조 잔기 이름과 그 UniProt 위치의 글자를 함께 둔다. 표준 20종 대응으로 같으면 `residue_match: true`, 다르거나 비표준(MSE 등)이면 `false`이며 상태는 `mapped`로 유지한다. `mapped`가 아니면 null이다.
+- `mapped` 행이 0개면 `null_result: true`(scientific_null)다.
+
+### KLIFS 포켓 번호
+- 대응된 accession의 KLIFS kinases 항목이 하나이고 포켓이 비어 있지 않을 때만 붙인다. accession 수준 없음 이유: `accession_not_in_klifs`, `klifs_pocket_empty`, `klifs_multiple_entries`, `uniprot_sequence_unavailable`(SIFTS 전용 경로에서 스냅샷에 서열이 없음).
+- 85자 포켓을 구역으로 나눈다: I(1–3), g.l(4–9), II(10–13), III(14–19), αC(20–30), b.l(31–37), IV(38–41), V(42–44), GK(45), hinge(46–48), linker(49–52), αD(53–59), αE(60–64), VI(65–67), c.l(68–75), VII(76–78), VIII(79), xDFG(80–83), a.l(84–85). 표기는 `<구역>.<번호>`(예: `GK.45`)로 KLIFS `match_residues`와 대조해 맞췄다.
+- 첫 단계: 구역 안의 gap(`-`, `_`)으로 나뉜 연속 조각을 UniProt 서열에 정확히 일치시키되, 구역 순서와 조각 순서를 지키는 배치가 하나뿐인 구역만 번호를 준다(`klifs_match: "contiguous"`). gap 자리는 번호 없음.
+- 두 번째 단계: 첫 단계로 해결되지 않은 구역 중 바로 앞·뒤 구역이 모두 첫 단계로 해결된 구역만, 그 사이 구간에서 gap 아닌 글자를 순서대로(중간 잔기 건너뛰기 허용) 맞추는 배치가 정확히 하나일 때 번호를 준다(`klifs_match: "gapped_unique"`). 처음·마지막 구역은 시도하지 않는다. 두 번째 단계 결과는 다른 구역의 구간을 바꾸지 않는다. 남은 구역은 accession별 `unresolved_regions`에 둔다.
+- 번호는 `mapped` 행(불일치·교차 확인 없음 포함)에만 붙인다. `conflict`·`unmapped` 행에는 없다.
+- KLIFS 구조별 표(`match_residues`)는 대조·측정 전용이며 제품 계산에 쓰지 않는다. 측정(첫 고정 `c1d824d`): 279개 구조 22,618 위치 중 98.2% 일치, KLIFS가 번호를 둔 위치 기준 적용률 약 96.4%(`docs/tracking/m15-acceptance.md`).
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "residue_numbering"`, 렌더 `residue_numbering_markdown@1`. 문장은 고정 statement ID이고, 각 ID는 증거 종류 하나와 허용 필드 경로 집합을 갖는다. 다른 종류의 필드를 인용하면 값 비교 전에 거부한다.
+- **계산값**(`computed`): 체인별 `identity_pct`·`coverage_pct`(`Decimal(str(v))`를 0.1 단위 `ROUND_HALF_UP`, 정확히 일치), 상태별 행 수, 잔기 불일치 수와 (구조 잔기 이름, UniProt 글자) 종류별 수, `alignment_ambiguous` 행 수, 변형 잔기 수.
+- **참조값**(`reference_value`): accession, UniProt 위치·글자, KLIFS 번호·표기. 세트 해시와 출처별 스냅샷·버전·날짜·라이선스, "참조 스냅샷 값, 계산 아님"이 붙는다. 잔기 단위 참조값은 KLIFS 번호가 있는 `mapped` 행만 나열하고(체인·accession당 최대 85), 전체 행은 대응 객체에 있다.
+- 보고서를 만들고 다시 열 때 대응 객체를 검증한다: 행 상태는 세 가지, 방법별 `absent_reasons`는 그 방법(SIFTS·정렬)의 닫힌 이유 집합, `conflict_reason`은 `positions_differ`·`one_method_only`, 체인 KLIFS 항목은 `applied`가 참이면 `absent_reason`이 null이고 거짓이면 KLIFS 이유 집합 안의 값이어야 한다. 어긋나면 보고서를 만들지 않는다.
+- `limitations`는 고정 문장 목록이며 마지막에 스냅샷 범위 문장이 있다. 범위 문장이 들어가기 전 목록(`LEGACY_REPORT_LIMITATIONS`)으로 저장된 보고서도 다시 열린다.
+- 스냅샷 출처 표와 KLIFS 조건 안내를 담고, 충돌·대응 없음 개수를 숨기지 않는다. "결합", "중요" 같은 해석 문장은 쓰지 않으며 렌더러가 그런 표현이 든 Markdown을 거부한다. 만들기·다시 열기·다운로드는 대응을 다시 계산하지 않는다.
+
+### 의미하지 않는 것
+구조적·기능적 동일성, 잔기의 역할(hinge 결합 등), 대응되지 않은 잔기가 UniProt에 없다는 뜻. 대응 없음·충돌은 "이 스냅샷과 방법으로 확실하지 않음"이다.
 
 ## PyRosetta와 에너지 표시
 

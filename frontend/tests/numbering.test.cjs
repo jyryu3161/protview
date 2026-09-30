@@ -1,0 +1,194 @@
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+const ts = require("typescript");
+
+const source = fs.readFileSync(path.join(__dirname, "../src/lib/numbering.ts"), "utf8");
+const compiled = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const moduleObject = { exports: {} };
+vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports, require });
+const lib = moduleObject.exports;
+const plain = value => JSON.parse(JSON.stringify(value));
+
+test("numbering structures keep structure and prepared_structure handles in creation order, once", () => {
+  const events = [
+    { seq: 1, type: "object_created", handle: "s1", kind: "structure_source" },
+    { seq: 2, type: "object_created", handle: "s2", kind: "structure" },
+    { seq: 3, type: "object_created", handle: "p1", kind: "prepared_structure" },
+    { seq: 4, type: "object_created", handle: "c1", kind: "chemical_structure" },
+    { seq: 5, type: "object_created", handle: "s2", kind: "structure" },
+    { seq: 6, type: "call_completed" },
+  ];
+  assert.deepEqual(plain(lib.numberingStructures(events)), [
+    { handle: "s2", kind: "structure" }, { handle: "p1", kind: "prepared_structure" }]);
+});
+
+test("polymer chains exclude water and ligand-only chains", () => {
+  const residues = [{ chain_auth: "A", category: "polymer" }, { chain_auth: "A", category: "water" },
+    { chain_auth: "W", category: "water" }, { chain_auth: "B", category: "nonpolymer" }, { chain_auth: "AB", category: "polymer" }];
+  assert.deepEqual(plain(lib.polymerChains(residues)), ["A", "AB"]);
+});
+
+const form = over => ({ ...lib.emptyForm(), structure: "s", chains: [{ chain_auth: "A", selected: true, accession: null }], ...over });
+const sifts = [{ chain_auth: "A", accessions: ["O14965"], reason_code: null, reason: null },
+  { chain_auth: "B", accessions: ["P1", "P2"], reason_code: null, reason: null },
+  { chain_auth: "C", accessions: [], reason_code: "sifts_chain_no_segments", reason: "x" }];
+
+test("PDB id is sent only after confirmation and chains need a usable method", () => {
+  // Suggested but unconfirmed id is not sent and gives no SIFTS method.
+  let check = lib.checkForm(form({ pdbId: "1mq4", pdbIdConfirmed: false, sifts }));
+  assert.equal(check.ok, false);
+  assert.match(check.errors[0], /체인 A/);
+  // Confirmed id with SIFTS for the chain: ok without accession; id uppercased.
+  check = lib.checkForm(form({ pdbId: "1mq4", pdbIdConfirmed: true, sifts }));
+  assert.deepEqual(plain(check), { ok: true, body: { structure: "s", pdb_id: "1MQ4",
+    chains: [{ chain_auth: "A", uniprot_accession: null }] } });
+  // Unconfirmed + chosen accession: alignment only, pdb_id null.
+  check = lib.checkForm(form({ pdbId: "1MQ4", chains: [{ chain_auth: "A", selected: true, accession: "O14965" }] }));
+  assert.deepEqual(plain(check.body), { structure: "s", pdb_id: null, chains: [{ chain_auth: "A", uniprot_accession: "O14965" }] });
+  // Unusable SIFTS chain needs an accession.
+  check = lib.checkForm(form({ pdbId: "1MQ4", pdbIdConfirmed: true, sifts, chains: [{ chain_auth: "C", selected: true, accession: null }] }));
+  assert.equal(check.ok, false);
+  // Bad id format, no structure, no chain.
+  assert.equal(lib.checkForm(form({ pdbId: "MQ4", pdbIdConfirmed: true, sifts })).ok, false);
+  assert.equal(lib.checkForm(form({ structure: null })).ok, false);
+  assert.equal(lib.checkForm(form({ chains: [{ chain_auth: "A", selected: false, accession: "O14965" }] })).ok, false);
+});
+
+test("SIFTS prefill fills only a single usable accession and never overwrites a user choice", () => {
+  assert.equal(lib.siftsPrefill(sifts, "A"), "O14965");
+  assert.equal(lib.siftsPrefill(sifts, "B"), null);
+  assert.equal(lib.siftsPrefill(sifts, "C"), null);
+  assert.equal(lib.siftsPrefill(null, "A"), null);
+  const applied = lib.applySiftsHints(form({ chains: [
+    { chain_auth: "A", selected: true, accession: null }, { chain_auth: "B", selected: true, accession: "Q9" }] }), sifts);
+  assert.deepEqual(plain(applied.chains), [{ chain_auth: "A", selected: true, accession: "O14965" },
+    { chain_auth: "B", selected: true, accession: "Q9" }]);
+});
+
+test("row filter pages matched rows and always reports the full total", () => {
+  const rows = ["mapped", "conflict", "mapped", "unmapped", "mapped"].map((status, i) => ({ status, i }));
+  assert.deepEqual(plain(lib.filterRows(rows, "all", 0, 2)), { total: 5, matched: 5, rows: rows.slice(0, 2) });
+  const mapped = lib.filterRows(rows, "mapped", 1, 10);
+  assert.equal(mapped.total, 5); assert.equal(mapped.matched, 3);
+  assert.deepEqual(plain(mapped.rows).map(r => r.i), [2, 4]);
+  assert.equal(lib.filterRows(rows, "conflict", 0, 10).matched, 1);
+});
+
+test("method answers show positions or every absent reason", () => {
+  assert.equal(lib.answerText(null), "실행 안 함");
+  assert.equal(lib.answerText({ accession: "O14965", position: 388 }), "O14965 388");
+  assert.equal(lib.answerText({ absent_reason: "alignment_below_identity",
+    absent_reasons: ["alignment_below_identity", "alignment_below_coverage"] }),
+    "정렬 일치율 기준 미달 (alignment_below_identity), 정렬 범위 기준 미달 (alignment_below_coverage)");
+  assert.equal(lib.answerText({ absent_reason: "alignment_gap" }), "정렬 틈(gap) (alignment_gap)");
+  assert.equal(lib.answerText({ absent_reason: "not_a_known_code" }), "not_a_known_code");
+});
+
+// Every reason code the numbering map can carry. The same literal list is in backend/tests/test_residue_numbering.py
+// (REASON_CODES), which checks it equals the backend's closed reason sets; keep both copies equal.
+const REASON_CODES = [
+  "pdb_id_not_given", "pdb_not_in_sifts_snapshot", "chain_not_in_sifts_snapshot", "sifts_chain_lookup_failed",
+  "sifts_chain_no_segments", "accession_differs_from_sifts", "multiple_sifts_accessions",
+  "sifts_accession_not_in_uniprot_snapshot", "sifts_accession_uniprot_lookup_failed", "alignment_too_large",
+  "sifts_no_residue_row", "sifts_ambiguous_residue_row", "sifts_number_mismatch", "sifts_not_observed",
+  "sifts_outside_segments", "sifts_position_outside_sequence",
+  "alignment_gap", "alignment_ambiguous", "alignment_below_identity", "alignment_below_coverage",
+  "accession_not_in_klifs", "klifs_pocket_empty", "klifs_multiple_entries", "uniprot_sequence_unavailable",
+  "positions_differ", "one_method_only",
+];
+
+test("every backend reason code has a Korean label shown with the code; unknown codes stay raw", () => {
+  assert.deepEqual(Object.keys(lib.REASON_LABEL).sort(), [...REASON_CODES].sort());
+  for (const code of REASON_CODES) {
+    const text = lib.reasonText(code);
+    assert.ok(text.endsWith(` (${code})`) && /[가-힣]/.test(text), text);
+  }
+  assert.equal(lib.reasonText("constructor"), "constructor");
+  assert.equal(lib.reasonText("made_up"), "made_up");
+});
+
+test("snapshot badge: stale only against a differing active set; no active set is its own badge", () => {
+  assert.equal(lib.snapshotBadge({ stale_snapshot: true }, true), "stale");
+  assert.equal(lib.snapshotBadge({ stale_snapshot: false }, true), null);
+  assert.equal(lib.snapshotBadge({ stale_snapshot: true }, false), "no_active_set");
+});
+
+test("snapshot scope text states kinase-only processed snapshots and the consequence, with no numbers", () => {
+  for (const part of ["kbase_kinase", "kinase 한정", "원출처 원본 바이트 아님", "SIFTS 대응이나 KLIFS 번호가 없습니다"])
+    assert.ok(lib.SNAPSHOT_SCOPE.includes(part), part);
+  assert.ok(!/\d/.test(lib.SNAPSHOT_SCOPE));
+});
+
+test("residue text keeps null labels explicit and insertion codes", () => {
+  assert.equal(lib.residueText({ model_number: 1, chain_auth: "A", seq_auth: 240, icode: "A", chain_label: null, seq_label: null, resname: "GLY" }),
+    "모델 1 A GLY 240A (label 없음)");
+  assert.equal(lib.residueText({ model_number: 2, chain_auth: "A", seq_auth: 126, icode: "", chain_label: "A", seq_label: 7, resname: "ARG" }),
+    "모델 2 A ARG 126 (label A/7)");
+});
+
+test("keyed reads drop responses of an older run or an older request", () => {
+  let k = lib.keyedIdle("r1");
+  k = lib.keyedRequest(k, "r1", 1);
+  assert.equal(k.state.status, "loading");
+  const late = lib.keyedResolve(k, "r1", 0, { status: "ready", value: 1 });
+  assert.equal(late.state.status, "loading");
+  k = lib.keyedRequest(k, "r2", 2);
+  assert.equal(lib.keyedResolve(k, "r1", 1, { status: "ready", value: 1 }).state.status, "loading");
+  k = lib.keyedResolve(k, "r2", 2, { status: "ready", value: 2 });
+  assert.deepEqual(plain(k.state), { status: "ready", value: 2 });
+  assert.equal(lib.keyedRequest(k, "r2", 2), k);
+  assert.equal(lib.keyedRequest(k, null, 3), k);
+});
+
+test("withdrawing the PDB ID confirmation keeps user-picked accessions and clears SIFTS prefills", () => {
+  const confirmed = lib.applySiftsHints({ ...lib.emptyForm(), structure: "s", pdbId: "1ABC", pdbIdConfirmed: true,
+    chains: [{ chain_auth: "A", selected: true, accession: null }, { chain_auth: "B", selected: true, accession: "Q9" },
+      { chain_auth: "C", selected: false, accession: null }] }, sifts);
+  assert.equal(confirmed.chains[0].accession, "O14965");
+  const withdrawn = lib.withdrawSiftsHints(confirmed, ["B"]);
+  assert.equal(withdrawn.pdbIdConfirmed, false);
+  assert.equal(withdrawn.sifts, null);
+  assert.equal(withdrawn.pdbId, "1ABC");
+  assert.deepEqual(plain(withdrawn.chains.map(choice => [choice.chain_auth, choice.selected, choice.accession])),
+    [["A", true, null], ["B", true, "Q9"], ["C", false, null]]);
+});
+
+test("license and version display keep manifest values; KLIFS none-stated is spelled out", () => {
+  assert.equal(lib.licenseText("none-stated"), "이용 조건 명시 없음(none-stated)");
+  assert.equal(lib.licenseText("CC-BY-4.0"), "CC-BY-4.0");
+  assert.equal(lib.licenseText("EMBL-EBI-terms"), "EMBL-EBI-terms");
+  assert.equal(lib.sourceVersion({ version_hint: "2026_03", date: "2026-09-15" }), "2026_03");
+  assert.equal(lib.sourceVersion({ version_hint: null, date: "2026-09-20" }), "2026-09-20");
+});
+
+test("percent display rounds the decimal string of the value to one place, half up (report rule)", () => {
+  for (const [value, text] of [[97.25, "97.3"], [96.19047619047619, "96.2"], [100, "100.0"], [32.432432432432435, "32.4"],
+    [0.05, "0.1"], [97.35, "97.4"], [97.24999, "97.2"], [99.95, "100.0"], [0, "0.0"], [7.5, "7.5"], [-0.04, "0.0"]])
+    assert.equal(lib.pctOneDecimal(value), text, String(value));
+  // exponent forms are shown exactly instead of guessing a decimal string
+  assert.equal(lib.pctOneDecimal(1e-7), "1e-7");
+  assert.equal(lib.pctOneDecimal(1e21), "1e+21");
+});
+
+test("a fused SIFTS chain (several accessions) uses SIFTS alone and never sends an accession", () => {
+  assert.equal(lib.siftsFused(sifts, "B"), true);
+  assert.equal(lib.siftsFused(sifts, "A"), false);
+  assert.equal(lib.siftsFused(sifts, "C"), false);
+  assert.equal(lib.siftsFused(null, "B"), false);
+  // No prefill for a fused chain; a user choice left in the form is not sent for it.
+  assert.equal(lib.applySiftsHints(form({ chains: [{ chain_auth: "B", selected: true, accession: null }] }), sifts)
+    .chains[0].accession, null);
+  const check = lib.checkForm(form({ pdbId: "1abc", pdbIdConfirmed: true, sifts,
+    chains: [{ chain_auth: "B", selected: true, accession: "Q9" }, { chain_auth: "A", selected: true, accession: "O14965" }] }));
+  assert.deepEqual(plain(check), { ok: true, body: { structure: "s", pdb_id: "1ABC", chains: [
+    { chain_auth: "B", uniprot_accession: null }, { chain_auth: "A", uniprot_accession: "O14965" }] } });
+  // Without a confirmed id there is no SIFTS answer, so the chain is not treated as fused.
+  const unconfirmed = lib.checkForm(form({ pdbId: "1abc", pdbIdConfirmed: false, sifts,
+    chains: [{ chain_auth: "B", selected: true, accession: "Q9" }] }));
+  assert.deepEqual(plain(unconfirmed.body.chains), [{ chain_auth: "B", uniprot_accession: "Q9" }]);
+});

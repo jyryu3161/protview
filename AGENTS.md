@@ -1,6 +1,6 @@
 # ProtView
 
-로컬 PDB/mmCIF 구조를 불러와 전처리하고, Mol*로 렌더링하고, 실제 좌표로 기하 접촉·SASA·단백질 전위·원자 거리·강체 정렬·화학 상호작용·포켓 후보를 계산해, 근거가 필드 단위로 연결된 보고서를 만드는 단일 사용자 작업 공간이다. 연구실·팀 구성원이 각자 자기 컴퓨터나 혼자 쓰는 서버에 설치해 쓴다. FastAPI 백엔드(Python 3.11)와 Next.js 프런트엔드로 이루어져 있고, 기본 작업은 네트워크나 API 키 없이 끝난다. M0–M14는 끝났고(M14 완료 기록: `docs/tracking/m14-acceptance.md`, 탭 4개 골격과 기존 화면 이관), 다음은 M15(참조 스냅샷과 잔기 번호 대응)이며 전체 로드맵은 `docs/tracking/roadmap.md`(M13–M28)다.
+로컬 PDB/mmCIF 구조를 불러와 전처리하고, Mol*로 렌더링하고, 실제 좌표로 기하 접촉·SASA·단백질 전위·원자 거리·강체 정렬·화학 상호작용·포켓 후보를 계산해, 근거가 필드 단위로 연결된 보고서를 만드는 단일 사용자 작업 공간이다. 연구실·팀 구성원이 각자 자기 컴퓨터나 혼자 쓰는 서버에 설치해 쓴다. FastAPI 백엔드(Python 3.11)와 Next.js 프런트엔드로 이루어져 있고, 기본 작업은 네트워크나 API 키 없이 끝난다. M0–M15는 끝났고(M15 완료 기록: `docs/tracking/m15-acceptance.md`, 참조 스냅샷과 잔기 번호 대응), 다음은 M16(참조 주석 표시·상호작용 강조)이며 전체 로드맵은 `docs/tracking/roadmap.md`(M13–M28)다.
 
 ## 프로젝트 구조
 
@@ -19,13 +19,13 @@ protview/
 │   │   ├── status.md              → 완료·검증 상태와 남은 작업
 │   │   ├── roadmap.md             → M13–M28 단계 로드맵(탭·시나리오·하지 않는 것)
 │   │   ├── roadmap-analysis-20260929.md → 로드맵 배경 분석(작성 시점 스냅숏)
-│   │   ├── m11-acceptance.md … m14-acceptance.md → 단계 완료 기록
-│   │   ├── decisions/index.md     → 결정 기록 목록(0001–0021)
+│   │   ├── m11-acceptance.md … m15-acceptance.md → 단계 완료 기록
+│   │   ├── decisions/index.md     → 결정 기록 목록(0001–0023)
 │   │   └── findings.md            → 지금 해결하지 못한 문제와 그 이유
 │   └── (대문자 문서들)             → M0–M13 단계별 원본 설계·계약·검토 기록. 수정·이동 금지
 ├── backend/AGENTS.md              → mw 패키지: API, 런타임, 객체·이벤트, 도구, 작업 큐, 외부 게이트
 ├── frontend/AGENTS.md             → Next.js 화면, Mol* 브리지, 오프스크린 QA 하네스
-└── scripts/AGENTS.md              → 과거 단계 실행기, 훅 테스트, ProLIF 작업 환경 설치
+└── scripts/AGENTS.md              → 과거 단계 실행기, 훅 테스트, 작업 환경·참조 스냅샷 설치, 수락 QA 실행기
 ```
 
 ## 필수 규칙 (요약. 전체 규칙은 docs/standards.md)
@@ -43,7 +43,8 @@ protview/
 - **M12 포켓 작업**: `docs/business-rules.md`의 "포켓 후보"와 원본 계약 `docs/M12_POCKET_DETECTION_CONTRACT.md`(빈 결과 진단 stream·잔기 이름 대응·기록 방식은 business-rules와 완료 기록이 우선). 완료 기록은 `docs/tracking/m12-acceptance.md`.
 - **M13 분석 흐름 작업**: `docs/business-rules.md`의 "분석 흐름 (M13)", `docs/contracts.md`의 분석 흐름 API, 완료 기록 `docs/tracking/m13-acceptance.md`. 원본 계약 `docs/M13_WORKFLOWS_CONTRACT.md`와 다른 곳(계획 1 MiB(결정 0019), Astra/Sol 역할·step0 index 미적용(결정 0018) 등)은 business-rules와 완료 기록이 우선한다.
 - **탭·화면 구조를 바꿀 때(M14)**: `frontend/AGENTS.md`의 최상위 탭 불변 조건(구조 분석 탭은 숨긴 채 유지), 완료 기록 `docs/tracking/m14-acceptance.md`, 공용화 범위 결정 0021.
-- **M15 이후 착수**: `docs/tracking/roadmap.md`. 세부 구현은 착수 때 사용자와 정하고, 실제 스키마·도구 버전과 맞는지 다시 확인한다.
+- **M15 번호 대응·참조 스냅샷 작업**: `docs/business-rules.md`의 "잔기 번호 대응 (M15)", `docs/contracts.md`의 M15 API, 결정 0022(kbase `ref/` 가공 스냅샷만, 가져오기 명령으로)·0023(대응 규칙), 완료 기록 `docs/tracking/m15-acceptance.md`, `docs/engineering-notes.md`의 SIFTS·KLIFS·정렬 모호성 함정. 상태·이유 집합과 기준값을 바꾸려면 사용자 결정이 필요하다. 위치·KLIFS 번호는 참조 값이며 계산값과 섞지 않는다.
+- **M16 이후 착수**: `docs/tracking/roadmap.md`. 세부 구현은 착수 때 사용자와 정하고, 실제 스키마·도구 버전과 맞는지 다시 확인한다.
 - **뷰어·선택·저장된 보기를 바꿀 때**: `docs/engineering-notes.md`의 Mol* label 함정과 바인딩 재발행 함정, `frontend/AGENTS.md`의 브리지 불변 조건.
 - **작업 큐·프로세스를 바꿀 때**: `docs/engineering-notes.md`의 psutil 신원 함정과 시작 핸드셰이크, `backend/AGENTS.md`의 예약·잠금 규칙.
 - **외부 요청·모델 관련**: `docs/security.md` 전체와 결정 0015. 새 데이터 종류를 보내려면 게이트 투영과 UI 미리보기·예산 설계를 추가한다(보내는 것 자체는 허용됨).

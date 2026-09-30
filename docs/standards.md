@@ -37,10 +37,11 @@
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
 node --check frontend/tests/offscreen/tabs-flow.cjs
+node --check frontend/tests/offscreen/numbering-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
@@ -49,7 +50,7 @@ npm --prefix frontend run build
 - typecheck와 build는 동시에 돌리지 않고 순서대로 실행한다. 둘 다 같은 프런트엔드 빌드 산출물(`tsconfig.tsbuildinfo`, `.next/`)을 쓴다.
 - 사용 가능해야 하는 과학 엔진(FreeSASA, OpenMM, M11의 ProLIF 작업 프로세스, M12의 fpocket)의 네이티브 테스트는 엔진이 없을 때 조용히 skip하면 안 된다. 단계 수락 시점에는 실제 엔진으로 실행해야 한다.
 - UI를 바꾸면 실제 Electron 오프스크린 렌더러(`webContents.isOffscreen()===true`, GPU·WebGL 켜짐, paint 프레임 확인)에서 바뀐 컨트롤을 하나씩 실제 입력으로 눌러 보고 결과를 관찰해야 한다. 일반 headless 브라우저나 숨긴 탭은 이 증거로 인정하지 않는다. 계획만 세운 클릭을 테스트 완료로 부르지 않는다.
-- API와 프런트엔드 연동은 실제 입력 바이트로 확인한다. 공개 구조 fixture(`backend/tests/fixtures/public_1hsg.cif`, `public_1ubq.cif`)나 표시된 합성 fixture를 쓴다.
+- API와 프런트엔드 연동은 실제 입력 바이트로 확인한다. 공개 구조 fixture(`backend/tests/fixtures/public_1hsg.cif`, `public_1ubq.cif`, M15 번호 대응용 `public_1mq4.cif`)나 표시된 합성 fixture를 쓴다.
 - 오프라인 흐름을 검증할 때는 loopback이 아닌 요청이 0건임을 기록한다.
 - 제품이 OpenRouter를 실제로 호출하는 검증은 사용자가 그때마다 정해 준 횟수 안에서만 한다. M8의 4회 할당은 모두 썼다. fixture transport 테스트에는 이 제한이 없다.
 
@@ -68,7 +69,7 @@ npm --prefix frontend run build
 - 프런트엔드 설치는 `npm ci`(lockfile 기준)만 쓴다.
 - fpocket은 `config/pockets/`의 35개 conda 패키지 해시 잠금으로만 설치한다(`scripts/setup_fpocket.py`, conda 필수, macOS ≥ 14.5 arm64, 오프라인). 실행 파일 SHA-256이 고정값과 다르면 사용할 수 없음으로 표시한다(결정 0017).
 - ProLIF 작업 프로세스 환경은 `config/chemical/`의 33개 wheel 해시 잠금 파일로만 설치한다(`scripts/setup_prolif_worker.py`, CPython 3.11 macOS arm64 전용). 런타임에 설치하거나 다운로드하지 않는다. `/tmp`의 조사용 경로를 운영 설정에 쓰지 않는다.
-- `../kbase_kinase`에서 가져올 수 있는 것은 범용 실행기·훅 인프라뿐이다. 그쪽의 과학 코드, 데이터, 결론은 가져오지 않는다.
+- `../kbase_kinase`에서 가져올 수 있는 것은 범용 실행기·훅 인프라와, `ref/`의 가공 스냅샷(UniProt·SIFTS·KLIFS)뿐이다(결정 0022). 스냅샷은 가져오기 명령 `scripts/import_reference_snapshots.py`로만 로컬 참조 폴더(`.deps/reference/`, `MW_REFERENCE_DIR`)에 복사하고, 서버는 그 폴더만 읽는다. 화면·보고서에는 "kbase_kinase 가공본"으로 표시한다. 그쪽의 과학 코드(import·복사), `dist/`의 데이터·결론은 가져오지 않는다. 형식을 이해하려고 kbase 소스를 읽는 것은 된다.
 
 ## 입력 검증과 오류
 

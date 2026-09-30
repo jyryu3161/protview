@@ -23,3 +23,5 @@
 | [0019](0019-analysis-plan-size-1mib.md) | 분석 계획 크기 한도 1 MiB(계약의 64 KiB 대체), 입력은 한 번만 저장 | 채택 |
 | [0020](0020-compact-committed-qa-evidence.md) | 커밋 QA 증거는 작은 텍스트만, 큰 증거는 해시와 함께 Git 제외 폴더로 | 채택 |
 | [0021](0021-m14-minimal-shared-components.md) | M14는 현재 run·예산·보고서 목록만 공용화, 소스·보기·작업 공용화는 필요한 탭 단계로 | 채택 |
+| [0022](0022-kbase-ref-processed-snapshots.md) | `kbase_kinase/ref` 가공 스냅샷은 가져오기 명령으로 로컬 참조 폴더에 복사해 서버가 읽는다(코드 import·`dist/`는 여전히 금지, "kbase_kinase 가공본" 표시) | 채택 (`docs/standards.md` kbase 문장 좁힘) |
+| [0023](0023-m15-residue-numbering-rules.md) | M15 번호 대응: SIFTS + 로컬 정렬이 같을 때만 대응됨, 한쪽만이면 충돌, 90%·50% 기준, 모호한 정렬 위치는 대응 없음, KLIFS 구역별 유일 배치, KLIFS none-stated 표시하되 사용 제한 없음 | 채택 |

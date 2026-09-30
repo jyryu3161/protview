@@ -11,6 +11,8 @@ import type { ChemicalCapability, ChemicalImport, ChemicalInspect, ChemicalJob,
   ChemicalView } from "./chemical";
 import type { PocketCapability, PocketGeometry, PocketJob, PocketPreflight, PocketReportArtifact, PocketSetList,
   PocketSummary } from "./pockets";
+import type { NumberingMapList, NumberingRow, PdbIdHint, ReferenceSnapshots, SiftsChains,
+  UniprotSearch } from "./numbering";
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -28,7 +30,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
   methods?: { openmm_protein_minimize?: { available: boolean; method_id?: string; distribution_version?: string; engine_build?: string; unit?: string; limitations?: string; explanation?: string }; interface_sasa?: { available: boolean; method_id?: string; algorithm?: string; n_slices?: number;
     engine_version?: string; unit?: string; limitations?: string; explanation?: string };
     chemical_interactions?: ChemicalCapability; pocket_detection?: PocketCapability;
-    analysis_workflows?: AnalysisWorkflowsCapability } }
+    analysis_workflows?: AnalysisWorkflowsCapability;
+    residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null } } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -48,7 +51,8 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
   residues: SasaResidueRow[] }
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1";
-  analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection";
+  analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
+    | "residue_numbering";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -206,7 +210,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -218,6 +222,17 @@ export const api = {
     }
   },
   budget: (id: string) => request<BudgetSnapshot>(runPath(id, "/budget")),
+  referenceSnapshots: (signal?: AbortSignal) => request<ReferenceSnapshots>("/reference/snapshots", { signal }),
+  siftsChains: (pdbId: string, signal?: AbortSignal) =>
+    request<SiftsChains>(`/reference/sifts_chains?pdb_id=${encodeURIComponent(pdbId)}`, { signal }),
+  uniprotSearch: (query: string, offset = 0, limit = 20, signal?: AbortSignal) =>
+    request<UniprotSearch>(`/reference/uniprot?query=${encodeURIComponent(query)}&offset=${offset}&limit=${limit}`, { signal }),
+  pdbIdHint: (id: string, structure: string, signal?: AbortSignal) =>
+    request<PdbIdHint>(runPath(id, `/reference/pdb_id_hint?structure=${encodeURIComponent(structure)}`), { signal }),
+  numberingMaps: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<NumberingMapList>(runPath(id, `/numbering_maps?offset=${offset}&limit=${limit}`), { signal }),
+  numberingRows: (id: string, handle: string, offset: number, limit: number, signal?: AbortSignal) =>
+    request<Page<NumberingRow>>(runPath(id, `/objects?${handleParam(handle)}&offset=${offset}&limit=${limit}`), { signal }),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

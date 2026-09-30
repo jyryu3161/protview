@@ -1,0 +1,128 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "pcbgeXT7695xhpke_ImKb",
+    "gitHead": "93c4fb1cc102563ce70f5c4f16e8ff97d65d6497",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e7b88637a0aa817dc2452ca181f82e1ce0c9b4412cc2744606ed5ed22765a0d8",
+    "dirtyFiles": [
+      "?? docs/qa/m15-numbering-20260930/refreeze-93c4fb1/"
+    ],
+    "recordedAt": "2026-09-30T06:22:40.424123+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "numbering-flow.cjs": "8996b7fc22495aeeca03600e7f97a4988dc2955ffb05d0b21deeb0e5c9944b8f",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "fbf063db5d81af19dc14213a1f5b67d7c9b2308beb774f062e2248ce0dcb5a90"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m15-acceptance-20260930-refreeze2/runs",
+      "reference": "<repo>/runs/m15-acceptance-20260930-refreeze2/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-09-30T06:22:42.601097+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m15-acceptance-20260930-refreeze2/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/refreeze2/services/reference-import.log",
+      "setHash": "f92cfd9544366ddfc9affc99b9f8bb8e9b70223515549de1c5b9c09b0bd45809",
+      "served": {
+        "available": true,
+        "set_hash": "f92cfd9544366ddfc9affc99b9f8bb8e9b70223515549de1c5b9c09b0bd45809",
+        "imported_at": "2026-09-30T06:22:46.346428Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    },
+    "reference-reimport": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "-c",
+        "import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); from reference_fixture_set import build_fixture_set; print(build_fixture_set(Path(sys.argv[2]), tag=sys.argv[3]))",
+        "<repo>/backend/tests",
+        "<repo>/runs/m15-acceptance-20260930-refreeze2/reference",
+        "m15-qa-marked-fixture-20260930T062306"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/refreeze2/services/reference-reimport.log",
+      "setHash": "865f0faf3f4135ebcc22a798df3566b94b81ca0b18b242415b0a34048eff402f",
+      "served": {
+        "available": true,
+        "set_hash": "865f0faf3f4135ebcc22a798df3566b94b81ca0b18b242415b0a34048eff402f",
+        "imported_at": "2026-09-30T00:00:00Z m15-qa-marked-fixture-20260930T062306",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  }
+}

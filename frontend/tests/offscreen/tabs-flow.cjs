@@ -24,8 +24,8 @@ const TAB_IDS = ["structure", "protein", "ligand", "knowledge"];
 const UNAVAILABLE = {
   protein: { tab: "단백질 공학", title: "단백질 공학", stages: ["M20", "M21"], extra: [] },
   ligand: { tab: "리간드 설계·탐색", title: "리간드 설계·탐색", stages: ["M17", "M18"], extra: ["구조 분석 탭"] },
-  knowledge: { tab: "지식·보고서", title: "지식", stages: ["M15"], extra: [] },
 };
+// M15 replaced the knowledge tab's "사용할 수 없음" notice with the residue numbering screen (NumberingPanel).
 const NO_RUN_TEXT = "구조 분석 탭에서 run을 먼저 선택하세요";
 const LIST_NAMES = { reports: "저장된 보고서", figures: "저장된 그림", summaries: "분석 흐름 요약" };
 const FAULT_LABEL = "QA fault fixture (labeled renderer route, not a scientific value): reports list read failure";
@@ -250,8 +250,7 @@ async function unavailableNotice(page, key) {
   await section.waitFor({ timeout: 10000 });
   const text = (await section.innerText()).replace(/\s+/g, " ").trim();
   const controls = await section.locator("button, input, select, textarea, a, [role=button], [tabindex]").count();
-  const panelControls = key === "knowledge" ? null
-    : await panel.locator("button, input, select, textarea, a, [role=button], [tabindex], img, canvas").count();
+  const panelControls = await panel.locator("button, input, select, textarea, a, [role=button], [tabindex], img, canvas").count();
   assert.ok(text.includes("사용할 수 없음"), `${key}: 사용할 수 없음 missing: ${text}`);
   assert.ok(text.includes(spec.title), `${key}: title missing`);
   assert.ok(/구현하지 않/.test(text), `${key}: reason missing: ${text}`);
@@ -259,8 +258,18 @@ async function unavailableNotice(page, key) {
   for (const extra of spec.extra) assert.ok(text.includes(extra), `${key}: ${extra} missing`);
   assert.ok(!/\d/.test(text.replace(/M\d+/g, "")), `${key}: a number besides the stage ids is shown: ${text}`);
   assert.equal(controls, 0, `${key}: the notice holds controls`);
-  if (panelControls !== null) assert.equal(panelControls, 0, `${key}: the tab holds controls/placeholders`);
+  assert.equal(panelControls, 0, `${key}: the tab holds controls/placeholders`);
   return { key, text, controls, panelControls };
+}
+/** M15: the knowledge tab shows the residue numbering screen and the report library, no unavailable notice. */
+async function knowledgeScreen(page) {
+  const panel = page.getByRole("tabpanel", { name: "지식·보고서", exact: true });
+  await panel.waitFor({ timeout: 10000 });
+  await panel.locator("section.mw-numbering").waitFor({ timeout: 10000 });
+  await library(page).waitFor({ timeout: 10000 });
+  const notices = await panel.locator("section.mw-unavailable").count();
+  assert.equal(notices, 0, "knowledge: the M14 unavailable notice is still shown");
+  return { key: "knowledge", numberingScreen: true, reportLibrary: true, unavailableNotices: notices };
 }
 
 // ------------------------------------------------------------------ structure screen paths (copied from workflows-flow.cjs)
@@ -795,11 +804,13 @@ async function modeMain(session, input, rec_, evidence, log) {
     const trip = [];
     for (const [key, label] of [["protein", "단백질 공학"], ["ligand", "리간드 설계·탐색"], ["knowledge", "지식·보고서"]]) {
       const cases = key === "knowledge" ? ["T-structure-state", "T-unavailable"] : ["T-structure-state", "T-unavailable"];
-      trip.push(await rec_.step(`S02-${key}`, cases, `Click ${label}: 사용할 수 없음 notice; requests while shown`, async () => {
+      trip.push(await rec_.step(`S02-${key}`, cases, key === "knowledge"
+        ? `Click ${label}: numbering screen + report library (M15), no unavailable notice`
+        : `Click ${label}: 사용할 수 없음 notice; requests while shown`, async () => {
         const baseline = new Set(apiPaths(log, 0).map(row => `${row.method} ${row.path}`));
         const started = Date.now();
         await selectTab(page, label);
-        const notice = await unavailableNotice(page, key);
+        const notice = key === "knowledge" ? await knowledgeScreen(page) : await unavailableNotice(page, key);
         await page.waitForTimeout(3000);
         const during = apiPaths(log, started);
         return { notice, during, baseline: [...baseline], line: await globalLine(page),

@@ -1,0 +1,48 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "chemical-create",
+  "run": "run_a5af42b78f734707aa1640f9c780bc5b",
+  "inputs": [
+    {
+      "name": "prolif-vina-rec.pdb",
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+      "bytes": 504575,
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+      "handle": "obj://run_a5af42b78f734707aa1640f9c780bc5b/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+      "bytes": 60682,
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+      "handle": "obj://run_a5af42b78f734707aa1640f9c780bc5b/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+    }
+  ],
+  "handles": {
+    "chemicalCreate": {
+      "plan": "obj://run_a5af42b78f734707aa1640f9c780bc5b/analysis_plan/ebd40737f672309f7b79cee98548814586810bb537c6543945eeba07cc43e49d",
+      "execution": "exec_f236cf399e2c4a80bd5fb651a3efd418",
+      "result": "obj://run_a5af42b78f734707aa1640f9c780bc5b/chemical_interaction_set/5a2789a869df5630cc2265b1a0a2f5f767b1a2af7314f8ad350d577495f5362f"
+    },
+    "chemicalCavities": {
+      "plan": "obj://run_a5af42b78f734707aa1640f9c780bc5b/analysis_plan/a4519ae72b0516ee7b80131f8ddc75459aab8ff512198d856c3ec5bed777ea38",
+      "execution": "exec_91951b3740bb4e0292c0a7298b93ff28"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_a5af42b78f734707aa1640f9c780bc5b",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-09-30T04:40:47.709Z",
+  "finishedAt": "2026-09-30T04:42:30.163Z",
+  "error": null
+}

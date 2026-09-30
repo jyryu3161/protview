@@ -1,0 +1,401 @@
+M15 T5 KLIFS numbering measurement (draft, Opus 5.5 implementer; not a review; not a product result)
+command: python scripts/measure_klifs_numbering.py  (no network; comparison-only match_residues)
+reference set: aa21ead9930f82ebea3a2acf976449d9b1c6280ed17206d74d8cb9dc3f923317
+snapshots: uniprot=SNAP-uniprot-2026-09-15, sifts=SNAP-sifts-2026-09-20, klifs=SNAP-klifs-2026-09-19
+match_residues rows: 318; structures compared: 279; skipped: {"accession_not_in_sifts_chain": 4, "klifs_table:klifs_multiple_entries": 14, "sifts:sifts_chain_lookup_failed": 3, "sifts:sifts_chain_no_segments": 18}
+positions compared: 22618; agree 22211; disagree 407; agreement 98.201%
+ours_missing (KLIFS maps, we have no number): 852 by region {"GK": 1, "I": 60, "IV": 4, "V": 3, "VI": 3, "VIII": 118, "a.l": 306, "b.l": 337, "g.l": 6, "hinge": 3, "linker": 1, "xDFG": 4, "αC": 1, "αD": 5}
+ours_extra (we number, KLIFS has no structure residue): 104
+excluded non-numeric Xray_position: 244 {"\"_\"": 241, "\"_1\"": 1, "\"_2\"": 1, "\"_3\"": 1}
+KLIFS number not mappable through SIFTS: {"sifts_no_residue": 0, "sifts_ambiguous_author": 0, "sifts_outside_segments": 1, "sifts_other_accession": 0}
+label mismatches (our label vs KLIFS_position for the same index): 0
+by klifs_match: {"contiguous": {"agree": 20598, "disagree": 390, "ours_extra": 104}, "gapped_unique": {"agree": 1613, "disagree": 17}}
+disagreements by region: {"GK": 5, "I": 6, "II": 20, "III": 30, "IV": 20, "V": 15, "VI": 15, "VII": 15, "VIII": 2, "a.l": 8, "b.l": 25, "c.l": 40, "g.l": 26, "hinge": 15, "linker": 24, "xDFG": 21, "αC": 54, "αD": 41, "αE": 25}
+disagreements where the residue at the KLIFS Xray_position is not the KLIFS pocket letter: 318 of 407
+disagreements where our UniProt letter is not the KLIFS pocket letter: 0 of 407
+disagreements per structure: {"7TYM:A": 84, "6TLJ:S": 81, "8E06:A": 81, "6CD6:D": 76, "8U7L:A": 72, "6BQ1:A": 9, "2C47:B": 1, "2W4O:A": 1, "5YKS:A": 1, "5YZ0:A": 1}
+first 20 of 407 disagreements:
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 4, "klifs_label": "g.l.4", "xray_position": "145", "klifs_uniprot": 145, "ours_uniprot": 1249, "klifs_match": "contiguous", "pocket_letter": "G", "klifs_residue": "G", "ours_letter": "G"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 5, "klifs_label": "g.l.5", "xray_position": "148", "klifs_uniprot": 148, "ours_uniprot": 1250, "klifs_match": "contiguous", "pocket_letter": "Q", "klifs_residue": "S", "ours_letter": "Q"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 6, "klifs_label": "g.l.6", "xray_position": "164", "klifs_uniprot": 164, "ours_uniprot": 1251, "klifs_match": "contiguous", "pocket_letter": "G", "klifs_residue": "G", "ours_letter": "G"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 7, "klifs_label": "g.l.7", "xray_position": "165", "klifs_uniprot": 165, "ours_uniprot": 1252, "klifs_match": "contiguous", "pocket_letter": "G", "klifs_residue": "H", "ours_letter": "G"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 8, "klifs_label": "g.l.8", "xray_position": "166", "klifs_uniprot": 166, "ours_uniprot": 1253, "klifs_match": "contiguous", "pocket_letter": "S", "klifs_residue": "L", "ours_letter": "S"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 9, "klifs_label": "g.l.9", "xray_position": "167", "klifs_uniprot": 167, "ours_uniprot": 1254, "klifs_match": "contiguous", "pocket_letter": "G", "klifs_residue": "G", "ours_letter": "G"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 10, "klifs_label": "II.10", "xray_position": "168", "klifs_uniprot": 168, "ours_uniprot": 1255, "klifs_match": "contiguous", "pocket_letter": "T", "klifs_residue": "V", "ours_letter": "T"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 11, "klifs_label": "II.11", "xray_position": "169", "klifs_uniprot": 169, "ours_uniprot": 1256, "klifs_match": "contiguous", "pocket_letter": "V", "klifs_residue": "V", "ours_letter": "V"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 12, "klifs_label": "II.12", "xray_position": "170", "klifs_uniprot": 170, "ours_uniprot": 1257, "klifs_match": "contiguous", "pocket_letter": "I", "klifs_residue": "K", "ours_letter": "I"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 13, "klifs_label": "II.13", "xray_position": "171", "klifs_uniprot": 171, "ours_uniprot": 1258, "klifs_match": "contiguous", "pocket_letter": "Y", "klifs_residue": "L", "ours_letter": "Y"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 14, "klifs_label": "III.14", "xray_position": "198", "klifs_uniprot": 198, "ours_uniprot": 1267, "klifs_match": "contiguous", "pocket_letter": "V", "klifs_residue": "L", "ours_letter": "V"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 15, "klifs_label": "III.15", "xray_position": "201", "klifs_uniprot": 201, "ours_uniprot": 1268, "klifs_match": "contiguous", "pocket_letter": "A", "klifs_residue": "A", "ours_letter": "A"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 16, "klifs_label": "III.16", "xray_position": "202", "klifs_uniprot": 202, "ours_uniprot": 1269, "klifs_match": "contiguous", "pocket_letter": "V", "klifs_residue": "I", "ours_letter": "V"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 17, "klifs_label": "III.17", "xray_position": "203", "klifs_uniprot": 203, "ours_uniprot": 1270, "klifs_match": "contiguous", "pocket_letter": "K", "klifs_residue": "K", "ours_letter": "K"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 18, "klifs_label": "III.18", "xray_position": "204", "klifs_uniprot": 204, "ours_uniprot": 1271, "klifs_match": "contiguous", "pocket_letter": "R", "klifs_residue": "S", "ours_letter": "R"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 19, "klifs_label": "III.19", "xray_position": "214", "klifs_uniprot": 214, "ours_uniprot": 1272, "klifs_match": "contiguous", "pocket_letter": "F", "klifs_residue": "L", "ours_letter": "F"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 20, "klifs_label": "αC.20", "xray_position": "255", "klifs_uniprot": 255, "ours_uniprot": 1303, "klifs_match": "contiguous", "pocket_letter": "E", "klifs_residue": "A", "ours_letter": "E"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 21, "klifs_label": "αC.21", "xray_position": "270", "klifs_uniprot": 270, "ours_uniprot": 1304, "klifs_match": "contiguous", "pocket_letter": "F", "klifs_residue": "L", "ours_letter": "F"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 22, "klifs_label": "αC.22", "xray_position": "280", "klifs_uniprot": 280, "ours_uniprot": 1305, "klifs_match": "contiguous", "pocket_letter": "R", "klifs_residue": "I", "ours_letter": "R"}
+  {"structure": "8E06:A", "accession": "Q38SD2", "klifs_index": 23, "klifs_label": "αC.23", "xray_position": "281", "klifs_uniprot": 281, "ours_uniprot": 1306, "klifs_match": "contiguous", "pocket_letter": "Q", "klifs_residue": "T", "ours_letter": "Q"}
+
+JSON:
+{
+  "set_hash": "aa21ead9930f82ebea3a2acf976449d9b1c6280ed17206d74d8cb9dc3f923317",
+  "snapshots": {
+    "uniprot": "SNAP-uniprot-2026-09-15",
+    "sifts": "SNAP-sifts-2026-09-20",
+    "klifs": "SNAP-klifs-2026-09-19"
+  },
+  "match_rows": 318,
+  "structures_compared": 279,
+  "structures_skipped": {
+    "accession_not_in_sifts_chain": 4,
+    "klifs_table:klifs_multiple_entries": 14,
+    "sifts:sifts_chain_lookup_failed": 3,
+    "sifts:sifts_chain_no_segments": 18
+  },
+  "accessions_with_table": 279,
+  "positions_compared": 22618,
+  "agree": 22211,
+  "disagree": 407,
+  "agreement_pct": 98.201,
+  "ours_missing": 852,
+  "ours_extra": 104,
+  "excluded_non_numeric": 244,
+  "excluded_values": {
+    "\"_\"": 241,
+    "\"_1\"": 1,
+    "\"_2\"": 1,
+    "\"_3\"": 1
+  },
+  "sifts_unmapped": {
+    "sifts_no_residue": 0,
+    "sifts_ambiguous_author": 0,
+    "sifts_outside_segments": 1,
+    "sifts_other_accession": 0
+  },
+  "label_mismatch": 0,
+  "disagree_klifs_residue_differs_from_pocket": 318,
+  "disagree_ours_letter_differs_from_pocket": 0,
+  "disagreeing_structures": {
+    "7TYM:A": 84,
+    "6TLJ:S": 81,
+    "8E06:A": 81,
+    "6CD6:D": 76,
+    "8U7L:A": 72,
+    "6BQ1:A": 9,
+    "2C47:B": 1,
+    "2W4O:A": 1,
+    "5YKS:A": 1,
+    "5YZ0:A": 1
+  },
+  "by_klifs_match": {
+    "contiguous": {
+      "agree": 20598,
+      "disagree": 390,
+      "ours_extra": 104
+    },
+    "gapped_unique": {
+      "agree": 1613,
+      "disagree": 17
+    }
+  },
+  "disagree_by_region": {
+    "GK": 5,
+    "I": 6,
+    "II": 20,
+    "III": 30,
+    "IV": 20,
+    "V": 15,
+    "VI": 15,
+    "VII": 15,
+    "VIII": 2,
+    "a.l": 8,
+    "b.l": 25,
+    "c.l": 40,
+    "g.l": 26,
+    "hinge": 15,
+    "linker": 24,
+    "xDFG": 21,
+    "αC": 54,
+    "αD": 41,
+    "αE": 25
+  },
+  "ours_missing_by_region": {
+    "GK": 1,
+    "I": 60,
+    "IV": 4,
+    "V": 3,
+    "VI": 3,
+    "VIII": 118,
+    "a.l": 306,
+    "b.l": 337,
+    "g.l": 6,
+    "hinge": 3,
+    "linker": 1,
+    "xDFG": 4,
+    "αC": 1,
+    "αD": 5
+  },
+  "disagreements_total": 407,
+  "disagreements_first": [
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 4,
+      "klifs_label": "g.l.4",
+      "xray_position": "145",
+      "klifs_uniprot": 145,
+      "ours_uniprot": 1249,
+      "klifs_match": "contiguous",
+      "pocket_letter": "G",
+      "klifs_residue": "G",
+      "ours_letter": "G"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 5,
+      "klifs_label": "g.l.5",
+      "xray_position": "148",
+      "klifs_uniprot": 148,
+      "ours_uniprot": 1250,
+      "klifs_match": "contiguous",
+      "pocket_letter": "Q",
+      "klifs_residue": "S",
+      "ours_letter": "Q"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 6,
+      "klifs_label": "g.l.6",
+      "xray_position": "164",
+      "klifs_uniprot": 164,
+      "ours_uniprot": 1251,
+      "klifs_match": "contiguous",
+      "pocket_letter": "G",
+      "klifs_residue": "G",
+      "ours_letter": "G"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 7,
+      "klifs_label": "g.l.7",
+      "xray_position": "165",
+      "klifs_uniprot": 165,
+      "ours_uniprot": 1252,
+      "klifs_match": "contiguous",
+      "pocket_letter": "G",
+      "klifs_residue": "H",
+      "ours_letter": "G"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 8,
+      "klifs_label": "g.l.8",
+      "xray_position": "166",
+      "klifs_uniprot": 166,
+      "ours_uniprot": 1253,
+      "klifs_match": "contiguous",
+      "pocket_letter": "S",
+      "klifs_residue": "L",
+      "ours_letter": "S"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 9,
+      "klifs_label": "g.l.9",
+      "xray_position": "167",
+      "klifs_uniprot": 167,
+      "ours_uniprot": 1254,
+      "klifs_match": "contiguous",
+      "pocket_letter": "G",
+      "klifs_residue": "G",
+      "ours_letter": "G"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 10,
+      "klifs_label": "II.10",
+      "xray_position": "168",
+      "klifs_uniprot": 168,
+      "ours_uniprot": 1255,
+      "klifs_match": "contiguous",
+      "pocket_letter": "T",
+      "klifs_residue": "V",
+      "ours_letter": "T"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 11,
+      "klifs_label": "II.11",
+      "xray_position": "169",
+      "klifs_uniprot": 169,
+      "ours_uniprot": 1256,
+      "klifs_match": "contiguous",
+      "pocket_letter": "V",
+      "klifs_residue": "V",
+      "ours_letter": "V"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 12,
+      "klifs_label": "II.12",
+      "xray_position": "170",
+      "klifs_uniprot": 170,
+      "ours_uniprot": 1257,
+      "klifs_match": "contiguous",
+      "pocket_letter": "I",
+      "klifs_residue": "K",
+      "ours_letter": "I"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 13,
+      "klifs_label": "II.13",
+      "xray_position": "171",
+      "klifs_uniprot": 171,
+      "ours_uniprot": 1258,
+      "klifs_match": "contiguous",
+      "pocket_letter": "Y",
+      "klifs_residue": "L",
+      "ours_letter": "Y"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 14,
+      "klifs_label": "III.14",
+      "xray_position": "198",
+      "klifs_uniprot": 198,
+      "ours_uniprot": 1267,
+      "klifs_match": "contiguous",
+      "pocket_letter": "V",
+      "klifs_residue": "L",
+      "ours_letter": "V"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 15,
+      "klifs_label": "III.15",
+      "xray_position": "201",
+      "klifs_uniprot": 201,
+      "ours_uniprot": 1268,
+      "klifs_match": "contiguous",
+      "pocket_letter": "A",
+      "klifs_residue": "A",
+      "ours_letter": "A"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 16,
+      "klifs_label": "III.16",
+      "xray_position": "202",
+      "klifs_uniprot": 202,
+      "ours_uniprot": 1269,
+      "klifs_match": "contiguous",
+      "pocket_letter": "V",
+      "klifs_residue": "I",
+      "ours_letter": "V"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 17,
+      "klifs_label": "III.17",
+      "xray_position": "203",
+      "klifs_uniprot": 203,
+      "ours_uniprot": 1270,
+      "klifs_match": "contiguous",
+      "pocket_letter": "K",
+      "klifs_residue": "K",
+      "ours_letter": "K"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 18,
+      "klifs_label": "III.18",
+      "xray_position": "204",
+      "klifs_uniprot": 204,
+      "ours_uniprot": 1271,
+      "klifs_match": "contiguous",
+      "pocket_letter": "R",
+      "klifs_residue": "S",
+      "ours_letter": "R"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 19,
+      "klifs_label": "III.19",
+      "xray_position": "214",
+      "klifs_uniprot": 214,
+      "ours_uniprot": 1272,
+      "klifs_match": "contiguous",
+      "pocket_letter": "F",
+      "klifs_residue": "L",
+      "ours_letter": "F"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 20,
+      "klifs_label": "αC.20",
+      "xray_position": "255",
+      "klifs_uniprot": 255,
+      "ours_uniprot": 1303,
+      "klifs_match": "contiguous",
+      "pocket_letter": "E",
+      "klifs_residue": "A",
+      "ours_letter": "E"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 21,
+      "klifs_label": "αC.21",
+      "xray_position": "270",
+      "klifs_uniprot": 270,
+      "ours_uniprot": 1304,
+      "klifs_match": "contiguous",
+      "pocket_letter": "F",
+      "klifs_residue": "L",
+      "ours_letter": "F"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 22,
+      "klifs_label": "αC.22",
+      "xray_position": "280",
+      "klifs_uniprot": 280,
+      "ours_uniprot": 1305,
+      "klifs_match": "contiguous",
+      "pocket_letter": "R",
+      "klifs_residue": "I",
+      "ours_letter": "R"
+    },
+    {
+      "structure": "8E06:A",
+      "accession": "Q38SD2",
+      "klifs_index": 23,
+      "klifs_label": "αC.23",
+      "xray_position": "281",
+      "klifs_uniprot": 281,
+      "ours_uniprot": 1306,
+      "klifs_match": "contiguous",
+      "pocket_letter": "Q",
+      "klifs_residue": "T",
+      "ours_letter": "Q"
+    }
+  ]
+}

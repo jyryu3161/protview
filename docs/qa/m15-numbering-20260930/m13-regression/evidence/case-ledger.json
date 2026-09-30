@@ -1,0 +1,1064 @@
+{
+  "schema": "m13_case_ledger@1",
+  "generatedAt": "2026-09-30T05:15:33.001372+00:00",
+  "build": {
+    "buildId": "mc98KdfOBAIUwmBLTIM0q",
+    "gitHead": "c1d824d8bb6400f98790b1196c04cf84c6950264",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "dc7f03a106c4f81373f7b2071b191950e95a621bd93107a2d52702bf1392bc47",
+    "dirtyFiles": [
+      "?? docs/qa/m15-numbering-20260930/"
+    ],
+    "recordedAt": "2026-09-30T04:38:56.830866+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "workflows-flow.cjs": "8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da"
+    },
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "acceptancePhases": [
+    "workflows",
+    "unavailable",
+    "regressions",
+    "m11",
+    "m12"
+  ],
+  "phases": [
+    "workflows",
+    "unavailable",
+    "regressions",
+    "m11",
+    "m12",
+    "ledger"
+  ],
+  "scope": {
+    "partial": false,
+    "only": [],
+    "requiredSteps": [
+      "main",
+      "m10",
+      "race",
+      "minimize",
+      "chemical-create",
+      "attach-setup",
+      "chemical-attach",
+      "chemical-error",
+      "dry-run",
+      "unavailable",
+      "regression-m8-normal",
+      "regression-m9-openmm",
+      "regression-m9-scenes-core",
+      "regression-m10-measure",
+      "regression-m10-alignment",
+      "m11-acceptance",
+      "m12-acceptance"
+    ]
+  },
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "W-inspect-raw": {
+      "text": "inspect_ligand from the raw structure (prepare step in the plan)",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "W-inspect-prepared": {
+      "text": "inspect_ligand from a prepared structure",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "W-cavities-main": {
+      "text": "find_cavities, main screen, prepared source with explicit chains",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "W-measure": {
+      "text": "measure_atoms from two real atom picks",
+      "modes": {
+        "m10": "pass"
+      },
+      "status": "pass"
+    },
+    "W-compare": {
+      "text": "compare_structures from explicit CA pairs",
+      "modes": {
+        "m10": "pass"
+      },
+      "status": "pass"
+    },
+    "W-minimize": {
+      "text": "minimize_protein (1UBQ)",
+      "modes": {
+        "minimize": "pass"
+      },
+      "status": "pass"
+    },
+    "W-chem-create": {
+      "text": "chemical_interactions create_new",
+      "modes": {
+        "chemical-create": "pass"
+      },
+      "status": "pass"
+    },
+    "W-cavities-chemical": {
+      "text": "find_cavities on a chemical_structure (chemical screen)",
+      "modes": {
+        "chemical-create": "pass"
+      },
+      "status": "pass"
+    },
+    "W-chem-attach": {
+      "text": "chemical_interactions attach_existing",
+      "modes": {
+        "chemical-attach": "pass"
+      },
+      "status": "pass"
+    },
+    "S-unavailable": {
+      "text": "method engine absent \u2192 \uc0ac\uc6a9\ud560 \uc218 \uc5c6\uc74c with the reason",
+      "modes": {
+        "unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "S-nl-unavailable": {
+      "text": "natural-language planning shown unavailable (disabled, reason)",
+      "modes": {
+        "main": "pass",
+        "unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "S-prereq-ligand": {
+      "text": "prerequisite unmet: no ligand",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "S-prereq-chains": {
+      "text": "prerequisite unmet: no explicit chains",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "S-prereq-ca": {
+      "text": "prerequisite unmet: no CA pairs",
+      "modes": {
+        "m10": "pass"
+      },
+      "status": "pass"
+    },
+    "S-prereq-chem": {
+      "text": "prerequisite unmet: no chemistry request",
+      "modes": {
+        "chemical-create": "pass"
+      },
+      "status": "pass"
+    },
+    "S-error": {
+      "text": "step error shown (typed native failure; job failure)",
+      "modes": {
+        "chemical-error": "pass",
+        "minimize": "pass"
+      },
+      "status": "pass"
+    },
+    "S-retry": {
+      "text": "one explicit retry after a labeled worker fault",
+      "modes": {
+        "minimize": "pass"
+      },
+      "status": "pass"
+    },
+    "S-stop-plan-approval": {
+      "text": "Stop while waiting for plan approval",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "S-stop-scientific-approval": {
+      "text": "Stop while the job waits for scientific approval",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "S-stop-running": {
+      "text": "Stop while the owned job runs",
+      "modes": {
+        "minimize": "pass"
+      },
+      "status": "pass"
+    },
+    "S-shared": {
+      "text": "shared-job explanation (observed_shared)",
+      "modes": {
+        "minimize": "pass"
+      },
+      "status": "pass"
+    },
+    "S-scientific-already": {
+      "text": "\uc774 run\uc5d0\uc11c \uc774\ubbf8 \uacc4\uc0b0 \uc2b9\uc778\ub428 shown instead of a second approval",
+      "modes": {
+        "minimize": "pass",
+        "chemical-create": "pass"
+      },
+      "status": "pass"
+    },
+    "S-race-clicks": {
+      "text": "two quick clicks start one step",
+      "modes": {
+        "main": "pass"
+      },
+      "status": "pass"
+    },
+    "S-race-window": {
+      "text": "second window: concurrent Advance",
+      "modes": {
+        "race": "pass"
+      },
+      "status": "pass"
+    },
+    "S-race-run-switch": {
+      "text": "held Advance response across a run switch",
+      "modes": {
+        "race": "pass"
+      },
+      "status": "pass"
+    },
+    "S-dry-run": {
+      "text": "dry-run run: plan_only + notice",
+      "modes": {
+        "dry-run": "pass"
+      },
+      "status": "pass"
+    },
+    "S-chem-placement": {
+      "text": "chemical goal/results placed in the chemical screen",
+      "modes": {
+        "chemical-create": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "main": {
+      "status": "pass",
+      "latest": "main",
+      "problems": [],
+      "attempts": 1
+    },
+    "m10": {
+      "status": "pass",
+      "latest": "m10",
+      "problems": [],
+      "attempts": 1
+    },
+    "race": {
+      "status": "pass",
+      "latest": "race",
+      "problems": [],
+      "attempts": 1
+    },
+    "minimize": {
+      "status": "pass",
+      "latest": "minimize",
+      "problems": [],
+      "attempts": 1
+    },
+    "chemical-create": {
+      "status": "pass",
+      "latest": "chemical-create",
+      "problems": [],
+      "attempts": 1
+    },
+    "attach-setup": {
+      "status": "pass",
+      "latest": "attach-setup",
+      "problems": [],
+      "attempts": 1
+    },
+    "chemical-attach": {
+      "status": "pass",
+      "latest": "chemical-attach",
+      "problems": [],
+      "attempts": 1
+    },
+    "chemical-error": {
+      "status": "pass",
+      "latest": "chemical-error",
+      "problems": [],
+      "attempts": 1
+    },
+    "dry-run": {
+      "status": "pass",
+      "latest": "dry-run",
+      "problems": [],
+      "attempts": 1
+    },
+    "unavailable": {
+      "status": "pass",
+      "latest": "unavailable",
+      "problems": [],
+      "attempts": 1
+    },
+    "regression-m8-normal": {
+      "status": "pass",
+      "latest": "regression-m8-normal",
+      "problems": [],
+      "attempts": 1
+    },
+    "regression-m9-openmm": {
+      "status": "pass",
+      "latest": "regression-m9-openmm",
+      "problems": [],
+      "attempts": 1
+    },
+    "regression-m9-scenes-core": {
+      "status": "pass",
+      "latest": "regression-m9-scenes-core",
+      "problems": [],
+      "attempts": 1
+    },
+    "regression-m10-measure": {
+      "status": "pass",
+      "latest": "regression-m10-measure",
+      "problems": [],
+      "attempts": 1
+    },
+    "regression-m10-alignment": {
+      "status": "pass",
+      "latest": "regression-m10-alignment",
+      "problems": [],
+      "attempts": 1
+    },
+    "m11-acceptance": {
+      "status": "pass",
+      "latest": "m11-acceptance",
+      "problems": [],
+      "attempts": 1
+    },
+    "m12-acceptance": {
+      "status": "pass",
+      "latest": "m12-acceptance",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rows": [
+    {
+      "step": "attach-setup",
+      "mode": "attach-setup",
+      "status": "pass",
+      "cases": {},
+      "runId": "run_fc6f09cc189141cb8e1c7b97f0ee92c9",
+      "evidenceKind": "labeled_api_setup",
+      "handles": {
+        "complex": "obj://run_fc6f09cc189141cb8e1c7b97f0ee92c9/structure/a792c8257524c928b897573097b472dfb70b2ca51d8a272f3b4041d5782279c3",
+        "sdfImport": "obj://run_fc6f09cc189141cb8e1c7b97f0ee92c9/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+      },
+      "inputs": [
+        {
+          "name": "m11-attach-complex.pdb",
+          "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03",
+          "provenance": "synthetic derivative attach complex; not experimental evidence"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF"
+        }
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/attach-setup",
+      "finishedAt": "2026-09-30T04:42:32.508868+00:00"
+    },
+    {
+      "step": "chemical-attach",
+      "mode": "chemical-attach",
+      "status": "pass",
+      "cases": {
+        "W-chem-attach": "pass"
+      },
+      "runId": "run_fc6f09cc189141cb8e1c7b97f0ee92c9",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "chemicalAttach": {
+          "plan": "obj://run_fc6f09cc189141cb8e1c7b97f0ee92c9/analysis_plan/391c26e2f5765fede410c31c156a333a26ba68bdd6af34660aadc2fe31df567c",
+          "execution": "exec_c3f4b7da7c3b48cc98e698121fc8b806",
+          "result": "obj://run_fc6f09cc189141cb8e1c7b97f0ee92c9/chemical_interaction_set/55c36f4c1ed16623d05a5191a6842029ade50990da19fd843287c4016c1c7d96"
+        }
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-output.sdf",
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+          "bytes": 60682,
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+          "handle": "obj://run_fc6f09cc189141cb8e1c7b97f0ee92c9/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+        },
+        {
+          "name": "m11-attach-bonds-run.json",
+          "path": "<repo>/runs/m15-m13-regression-20260930/inputs/attach-setup/m11-attach-bonds-run.json",
+          "bytes": 3388517,
+          "sha256": "e9b85db9d9629eca2901fa8446d4238ed521669d1f85dbcd88ceb4ff215b3b1a",
+          "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog",
+          "handle": "obj://run_fc6f09cc189141cb8e1c7b97f0ee92c9/chemical_raw_input/50853cbffe6fc6ee94bd3ee4100ef9fe5084911876a8db18417ad99c127b373b"
+        },
+        {
+          "name": "m11-attach-mapping-run.json",
+          "path": "<repo>/runs/m15-m13-regression-20260930/inputs/attach-setup/m11-attach-mapping-run.json",
+          "bytes": 43727,
+          "sha256": "d43af72e27061a862343dfe371c8de1425825931829787f5f44b60228612a94e",
+          "provenance": "run-bound labeled map_existing SDF\u2192AtomRef mapping from the QA run's source catalog"
+        },
+        {
+          "name": "m11-attach-ligand-instance-run.json",
+          "path": "<repo>/runs/m15-m13-regression-20260930/inputs/attach-setup/m11-attach-ligand-instance-run.json",
+          "bytes": 141,
+          "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+          "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+        }
+      ],
+      "fixtureLabels": [
+        "labeled loopback API setup (runner): synthetic attach complex upload/load and SDF import only"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:43:48.831Z"
+    },
+    {
+      "step": "chemical-create",
+      "mode": "chemical-create",
+      "status": "pass",
+      "cases": {
+        "S-prereq-chem": "pass",
+        "W-chem-create": "pass",
+        "W-cavities-chemical": "pass",
+        "S-scientific-already": "pass",
+        "S-chem-placement": "pass"
+      },
+      "runId": "run_a5af42b78f734707aa1640f9c780bc5b",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "chemicalCreate": {
+          "plan": "obj://run_a5af42b78f734707aa1640f9c780bc5b/analysis_plan/ebd40737f672309f7b79cee98548814586810bb537c6543945eeba07cc43e49d",
+          "execution": "exec_f236cf399e2c4a80bd5fb651a3efd418",
+          "result": "obj://run_a5af42b78f734707aa1640f9c780bc5b/chemical_interaction_set/5a2789a869df5630cc2265b1a0a2f5f767b1a2af7314f8ad350d577495f5362f"
+        },
+        "chemicalCavities": {
+          "plan": "obj://run_a5af42b78f734707aa1640f9c780bc5b/analysis_plan/a4519ae72b0516ee7b80131f8ddc75459aab8ff512198d856c3ec5bed777ea38",
+          "execution": "exec_91951b3740bb4e0292c0a7298b93ff28"
+        }
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+          "bytes": 504575,
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+          "handle": "obj://run_a5af42b78f734707aa1640f9c780bc5b/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+          "bytes": 60682,
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+          "handle": "obj://run_a5af42b78f734707aa1640f9c780bc5b/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+        }
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:42:30.163Z"
+    },
+    {
+      "step": "chemical-error",
+      "mode": "chemical-error",
+      "status": "pass",
+      "cases": {
+        "S-error": "pass"
+      },
+      "runId": "run_77547e365865471a9c423c85b741d4e8",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "chemicalError": {
+          "plan": "obj://run_77547e365865471a9c423c85b741d4e8/analysis_plan/2c58338acea98d77b0ce4266fdb9ccf15d52dce4c6db1d9d16d922325aad3166",
+          "execution": "exec_00440682cfca444b80c0b19a4e3d1e6a"
+        }
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+          "bytes": 504575,
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+          "handle": "obj://run_77547e365865471a9c423c85b741d4e8/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+        },
+        {
+          "name": "synthetic-pentavalent-carbon.sdf",
+          "path": "<repo>/backend/tests/fixtures/chemical/synthetic-pentavalent-carbon.sdf",
+          "bytes": 659,
+          "sha256": "8e049f31b45954570e16612288810015d16daebcfdf8b67dceae42c80b557a56",
+          "provenance": "labeled synthetic failure-control SDF (impossible valence; no scientific output)",
+          "handle": "obj://run_77547e365865471a9c423c85b741d4e8/chemical_raw_input/af826d00aab4bb1a72d0d9c7a200866f603933d6ac6cef36b75298ce55108b27"
+        }
+      ],
+      "fixtureLabels": [
+        "labeled synthetic failure-control SDF (impossible valence); the real native preparation refuses it"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:44:16.377Z"
+    },
+    {
+      "step": "dry-run",
+      "mode": "dry-run",
+      "status": "pass",
+      "cases": {
+        "S-dry-run": "pass"
+      },
+      "runId": "run_0e1a55ae7562485980cb48cb743a0963",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "dryRun": {
+          "plan": "obj://run_0e1a55ae7562485980cb48cb743a0963/analysis_plan/06a3ba706da6923ebd9da8df73d07a0839131a19e8283f6a786262eaf7548779",
+          "execution": "exec_2299c196b07e4c53bc4f4b8c8289cd1b"
+        }
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+          "bytes": 212124,
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture)"
+        }
+      ],
+      "fixtureLabels": [
+        "labeled loopback API setup: only the initial dry_run:true run record"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:44:21.937Z"
+    },
+    {
+      "step": "m10",
+      "mode": "m10",
+      "status": "pass",
+      "cases": {
+        "W-measure": "pass",
+        "W-compare": "pass",
+        "S-prereq-ca": "pass"
+      },
+      "runId": "run_7d7d021e381c472bba5ff2ebccc5ebd7",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "measure": {
+          "plan": "obj://run_7d7d021e381c472bba5ff2ebccc5ebd7/analysis_plan/559add2fc76ead88c0d643b02af71b1227c50816b4af85651bb4b1080c7658b0",
+          "execution": "exec_f602a3b7c0664edba1ce5f9e25bb1b0a",
+          "result": "obj://run_7d7d021e381c472bba5ff2ebccc5ebd7/atom_distance/5498e46e12eec7417f47d91c9e2516e56e217c467c7d1e2da16417afb0041ee5"
+        },
+        "compare": {
+          "plan": "obj://run_7d7d021e381c472bba5ff2ebccc5ebd7/analysis_plan/ec2255490b40c4fa32137fbc5d3afd4083f8ef662d5f722301613ee9f089188d",
+          "execution": "exec_3cacbe3ac43d40429a8e6234a88efabe",
+          "result": "obj://run_7d7d021e381c472bba5ff2ebccc5ebd7/rigid_alignment/e1f99ec8f8d948da4dce8e7168f28c2f681f457b44e383fd69b7e13a8ed4e87a"
+        }
+      },
+      "inputs": [
+        {
+          "name": "m10-distance.pdb",
+          "path": "<repo>/frontend/tests/offscreen/fixtures/m10-distance.pdb",
+          "bytes": 516,
+          "sha256": "0402c32ac2f19a8e5a8b262359762901a531fa5a6e7277774fa503855dc29345",
+          "provenance": "labeled synthetic M10 coordinate fixture (frontend/tests/offscreen/fixtures)"
+        },
+        {
+          "name": "m10-reference.pdb",
+          "path": "<repo>/frontend/tests/offscreen/fixtures/m10-reference.pdb",
+          "bytes": 1516,
+          "sha256": "0cdabb3b42644f11391f428e09b63185dafa47a2cdbd6ebe1e18e70b93572312",
+          "provenance": "labeled synthetic M10 coordinate fixture (frontend/tests/offscreen/fixtures)"
+        },
+        {
+          "name": "m10-moving.pdb",
+          "path": "<repo>/frontend/tests/offscreen/fixtures/m10-moving.pdb",
+          "bytes": 1513,
+          "sha256": "350688839e0da24e75b3ff28beea394c2d8490127ceb477700f2999166c210db",
+          "provenance": "labeled synthetic M10 coordinate fixture (frontend/tests/offscreen/fixtures)"
+        }
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:39:55.379Z"
+    },
+    {
+      "step": "m11-acceptance",
+      "mode": "m11-acceptance",
+      "status": "pass",
+      "cases": {},
+      "runId": null,
+      "evidenceKind": "acceptance_runner",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/m11-acceptance",
+      "finishedAt": "2026-09-30T05:07:55.652989+00:00"
+    },
+    {
+      "step": "m12-acceptance",
+      "mode": "m12-acceptance",
+      "status": "pass",
+      "cases": {},
+      "runId": null,
+      "evidenceKind": "acceptance_runner",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/m12-acceptance",
+      "finishedAt": "2026-09-30T05:15:32.755660+00:00"
+    },
+    {
+      "step": "main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "S-no-egress": "pass",
+        "S-nl-unavailable": "pass",
+        "W-inspect-raw": "pass",
+        "S-prereq-ligand": "pass",
+        "S-stop-plan-approval": "pass",
+        "W-inspect-prepared": "pass",
+        "S-race-clicks": "pass",
+        "S-prereq-chains": "pass",
+        "S-stop-scientific-approval": "pass",
+        "W-cavities-main": "pass"
+      },
+      "runId": "run_15abedacb52747f0bed074ddff9ffe1c",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "raw": "obj://run_15abedacb52747f0bed074ddff9ffe1c/structure/b302b70669c3465a76ef34b64e8a73f42849f3222eec5551dde11a5b7fe2f6dc",
+        "stoppedBeforeApproval": "exec_3a567fc7f31d4c9ab7a4263692ed7790",
+        "inspectRaw": {
+          "plan": "obj://run_15abedacb52747f0bed074ddff9ffe1c/analysis_plan/ad530a0894bbf6fd73f1fa89f483e38a24987e578475f32acd83644fbba5d366",
+          "execution": "exec_30437e49b16e448590f9ef5fb662677a",
+          "summary": "obj://run_15abedacb52747f0bed074ddff9ffe1c/workflow_summary/e4ab119175968c459f7918cf6fb868672fff9c09a25038b36101f677a7130eb3"
+        },
+        "prepared": "obj://run_15abedacb52747f0bed074ddff9ffe1c/prepared_structure/88126389090db4eddc2c014b3d1a1f243d0f0a5f8581a0ae280d07119b17229d",
+        "displayedPrepared": "obj://run_15abedacb52747f0bed074ddff9ffe1c/prepared_structure/88126389090db4eddc2c014b3d1a1f243d0f0a5f8581a0ae280d07119b17229d",
+        "inspectPrepared": {
+          "plan": "obj://run_15abedacb52747f0bed074ddff9ffe1c/analysis_plan/4b3704b34f5e5ce8282dc66815caef00c99ff13137681e070bbead7bf03c146b",
+          "execution": "exec_d38e4c43a087408bb87e2cb80402454a",
+          "summary": "obj://run_15abedacb52747f0bed074ddff9ffe1c/workflow_summary/344e08eb0e58e9a01d3a9ec0d646aaa57db41197789bb276d1fa2d52eb7574ed"
+        },
+        "cavitiesMain": {
+          "plan": "obj://run_15abedacb52747f0bed074ddff9ffe1c/analysis_plan/bb72b993e4dfd8e6c55b6381fd87818c2531131187e69b7f72f2df8b718fcd46",
+          "execution": "exec_12acafe7803043d48e22720465836384"
+        }
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+          "bytes": 212124,
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture)"
+        }
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:39:40.482Z"
+    },
+    {
+      "step": "minimize",
+      "mode": "minimize",
+      "status": "pass",
+      "cases": {
+        "W-minimize": "pass",
+        "S-retry": "pass",
+        "S-error": "pass",
+        "S-shared": "pass",
+        "S-stop-running": "pass",
+        "S-scientific-already": "pass"
+      },
+      "runId": "run_47f07eaa242347199a20b7d35c3e0d8d",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "minPlan": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/analysis_plan/dc4265adfaba82e1e71de945b2259b9b7f4ac3902172a42e4faaa39bac7cac35",
+        "minimize": {
+          "plan": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/analysis_plan/dc4265adfaba82e1e71de945b2259b9b7f4ac3902172a42e4faaa39bac7cac35",
+          "execution": "exec_598c78f9fee94b04a725c45d681368a8",
+          "summary": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/workflow_summary/4f7967ca5558c90d81889434867a884ac4d5a2bc2cdc9f983c4f7f3e45284c72",
+          "record": {
+            "schema": "analysis_execution@1",
+            "execution_id": "exec_598c78f9fee94b04a725c45d681368a8",
+            "run_id": "run_47f07eaa242347199a20b7d35c3e0d8d",
+            "plan_handle": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/analysis_plan/dc4265adfaba82e1e71de945b2259b9b7f4ac3902172a42e4faaa39bac7cac35",
+            "plan_sha256": "11428dafa2aedfbc04c06d998a5644c7ba1547aed411ebac961e2a06e75862f5",
+            "goal": "minimize_protein",
+            "template_version": "minimize_protein@1",
+            "source": "local_rules",
+            "planner": "local_rules@1",
+            "dry_run": false,
+            "status": "complete",
+            "retryable_step": null,
+            "revision": 25,
+            "created_seq": 21,
+            "current_step": null,
+            "plan_approval": {
+              "approved": true,
+              "event_seq": 23,
+              "plan_sha256": "11428dafa2aedfbc04c06d998a5644c7ba1547aed411ebac961e2a06e75862f5",
+              "revocations": []
+            },
+            "scientific_approval": {
+              "required": true,
+              "run_approved": true,
+              "state": "already_approved_in_run",
+              "pending_tool": null,
+              "recorded_seqs": [
+                36
+              ]
+            },
+            "blocked_reason": null,
+            "stop": null,
+            "notice": null,
+            "driver": {
+              "in_progress": false,
+              "request_ids": []
+            },
+            "recovery_pending": false,
+            "steps": [
+              {
+                "step_id": "s01",
+                "operation": "openmm_protein_minimize",
+                "lane": "durable_job",
+                "status": "completed",
+                "null_result": false,
+                "operation_id": "op_9e9f9a65b6664b328f79b3116c99f704",
+                "dispatch_seqs": [
+                  26,
+                  51
+                ],
+                "completed_seq": 71,
+                "attempts": 2,
+                "retries_used": 1,
+                "outputs": {
+                  "openmm_minimization": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/openmm_minimization/20d775fd7e89e0cd3ab59774a81a5df0d887902584fa6cde4ea337e6c4b414bc"
+                },
+                "report_handle": null,
+                "child_call_ids": [],
+                "job_id": "job_241f36c15ea5461eaa2df052453487e3",
+                "job_ownership": "owned",
+                "job_status": "done",
+                "job_cleanup_status": "verified",
+                "job_blocked_reason": null,
+                "job_cancel_requested": false,
+                "shared_job_notice": null,
+                "deferred_reason": null,
+                "failure": {
+                  "status": "failed",
+                  "error": "fatal",
+                  "reason_code": "job_failed",
+                  "message": null,
+                  "retryable": true
+                }
+              },
+              {
+                "step_id": "s02",
+                "operation": "method_report",
+                "lane": "report",
+                "status": "completed",
+                "null_result": false,
+                "operation_id": "op_6c378ee9b7104153bb07f7187dd90803",
+                "dispatch_seqs": [
+                  74
+                ],
+                "completed_seq": 78,
+                "attempts": 0,
+                "retries_used": 0,
+                "outputs": {
+                  "report": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/method_report_manifest/88c1d3594dca939fd25c887a91befa1bb717a952fad7cc45247c3b6f51bd3851"
+                },
+                "report_handle": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/method_report_manifest/88c1d3594dca939fd25c887a91befa1bb717a952fad7cc45247c3b6f51bd3851",
+                "child_call_ids": [],
+                "job_id": null,
+                "job_ownership": null,
+                "job_status": null,
+                "job_cleanup_status": null,
+                "job_blocked_reason": null,
+                "job_cancel_requested": null,
+                "shared_job_notice": null,
+                "deferred_reason": null,
+                "failure": null
+              }
+            ],
+            "physical_attempts": 2,
+            "active_wall_s": 12.382544707972556,
+            "limits": {
+              "max_active_wall_s": 1800,
+              "max_physical_attempts": 24,
+              "max_retries_per_step": 1,
+              "max_steps": 8
+            },
+            "summary_handle": "obj://run_47f07eaa242347199a20b7d35c3e0d8d/workflow_summary/4f7967ca5558c90d81889434867a884ac4d5a2bc2cdc9f983c4f7f3e45284c72",
+            "event_seqs": [
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              31,
+              32,
+              33,
+              36,
+              37,
+              38,
+              39,
+              48,
+              49,
+              50,
+              51,
+              54,
+              71,
+              72,
+              73,
+              74,
+              78,
+              80,
+              81
+            ],
+            "jobs_readable": true
+          }
+        },
+        "sharedExecution": "exec_d2160624b3984096b3161e00b693033a"
+      },
+      "inputs": [
+        {
+          "name": "public_1ubq.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+          "bytes": 103220,
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture; OpenMM input, 1HSG is refused by OpenMM)"
+        }
+      ],
+      "fixtureLabels": [
+        "labeled OS fault fixture: SIGKILL of this QA run's own openmm_worker.py (scoped by cwd to the QA runs root); no result is produced by the fixture"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:40:47.506Z"
+    },
+    {
+      "step": "race",
+      "mode": "race",
+      "status": "pass",
+      "cases": {
+        "S-race-window": "pass",
+        "S-race-run-switch": "pass"
+      },
+      "runId": "run_15abedacb52747f0bed074ddff9ffe1c",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "race": {
+          "plan": "obj://run_15abedacb52747f0bed074ddff9ffe1c/analysis_plan/0ab4ea8b49c292cfd3ce6dc293530ff95d58033368c6f9a7a695a4e3b12413a0",
+          "execution": "exec_20ae4eb5f2724b1198a13333e9a4e304"
+        }
+      },
+      "inputs": [],
+      "fixtureLabels": [
+        "second real offscreen Electron window (own browser profile) on the same run and execution",
+        "renderer-route fixture: real Advance POST committed by the backend, response held and released unchanged after a run switch"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:40:09.826Z"
+    },
+    {
+      "step": "regression-m10-alignment",
+      "mode": "regression-m10-alignment",
+      "status": "pass",
+      "cases": {},
+      "runId": "run_0e489f811dc24276ba589f9125a88eb5",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/regression-m10-alignment",
+      "finishedAt": "2026-09-30T04:46:48.629946+00:00"
+    },
+    {
+      "step": "regression-m10-measure",
+      "mode": "regression-m10-measure",
+      "status": "pass",
+      "cases": {},
+      "runId": "run_d5e1c9de6083454da3d5b25f414c036d",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/regression-m10-measure",
+      "finishedAt": "2026-09-30T04:46:11.928197+00:00"
+    },
+    {
+      "step": "regression-m8-normal",
+      "mode": "regression-m8-normal",
+      "status": "pass",
+      "cases": {},
+      "runId": "run_f88a6c547b5341768d6ca8261781d016",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/regression-m8-normal",
+      "finishedAt": "2026-09-30T04:44:43.728948+00:00"
+    },
+    {
+      "step": "regression-m9-openmm",
+      "mode": "regression-m9-openmm",
+      "status": "pass",
+      "cases": {},
+      "runId": "run_8a47ffc4349e494aaf9fe97a6c789569",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/regression-m9-openmm",
+      "finishedAt": "2026-09-30T04:45:11.701653+00:00"
+    },
+    {
+      "step": "regression-m9-scenes-core",
+      "mode": "regression-m9-scenes-core",
+      "status": "pass",
+      "cases": {},
+      "runId": "run_8a47ffc4349e494aaf9fe97a6c789569",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": null,
+      "partFailures": [],
+      "error": null,
+      "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m13-regression/regression-m9-scenes-core",
+      "finishedAt": "2026-09-30T04:46:00.824933+00:00"
+    },
+    {
+      "step": "unavailable",
+      "mode": "unavailable",
+      "status": "pass",
+      "cases": {
+        "S-unavailable": "pass",
+        "S-nl-unavailable": "pass"
+      },
+      "runId": "run_0c284ec6331f40f5b12c9dbb03b8d73d",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+          "bytes": 212124,
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture)"
+        }
+      ],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy; .deps absent (fpocket and the ProLIF worker environment not installed)"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-09-30T04:46:52.326Z"
+    }
+  ]
+}
