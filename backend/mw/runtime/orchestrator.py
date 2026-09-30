@@ -553,6 +553,16 @@ class Run:
         return snapshot
 
     def _validated(self, tool: str, args: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+        spec, normalized, _bound = self._validated_bound(tool, args)
+        return spec, normalized
+
+    def _validated_bound(self, tool: str, args: dict[str, Any],
+                         bound: Any = None) -> tuple[Any, dict[str, Any], Any]:
+        """Argument validation; a registered pre-check runs first and returns (normalized args, bound).
+
+        ``bound`` from an earlier validation of the same call is handed back to the pre-check so the call keeps the
+        state it pinned (M15: the reference snapshot set). Tools without a pre-check always get ``None``.
+        """
         spec = self.registry.specs.get(tool)
         if spec is None or tool not in self.registry.impls:
             raise ToolFailure(FailureClass.input_invalid, f"unknown or unimplemented tool '{tool}'")
@@ -561,6 +571,11 @@ class Run:
                               detail={"reason_code": "job_only_tool"})
         if not isinstance(args, dict):
             raise ToolFailure(FailureClass.input_invalid, "tool args must be an object")
+        precheck = self.registry.prechecks.get(tool)
+        if precheck is not None:
+            args, bound = precheck(self.store, args, bound)
+        else:
+            bound = None
         normalized = check_args(spec, args, self.store.kind_of)
         for name in spec.accepts:
             value = normalized[name]
@@ -568,7 +583,7 @@ class Run:
                 self.store.load(handle)
         if not self.dry_run and tool in self.registry.unavailable:
             raise ToolFailure(FailureClass.precondition, self.registry.unavailable[tool])
-        return spec, normalized
+        return spec, normalized, bound
 
     def _source_input(self, tool: str, args: dict[str, Any],
                       source_bytes: bytes | None,
@@ -596,7 +611,7 @@ class Run:
         return source_bytes, fmt
 
     def _key(self, tool: str, version: str, args: dict[str, Any],
-             source_bytes: bytes | None, source_format: str | None) -> str:
+             source_bytes: bytes | None, source_format: str | None, bound: Any = None) -> str:
         effective = dict(args)
         effective["_run_seed"] = self.seed
         effective["_dry_run"] = self.dry_run
@@ -608,6 +623,9 @@ class Run:
         if tool == "compute_interface_sasa":
             from ..tools.sasa import dependencies
             effective["_scientific_dependencies"] = dependencies()
+        if bound is not None:
+            # Pre-checked tools add what they pinned (M15: reference set hash); others keep historical keys.
+            effective.update(getattr(bound, "key_fields", {}))
         return idempotency_key(tool, version, effective)
 
     def _verified(self, event: dict[str, Any], expected_kind: str) -> Handle:
@@ -689,10 +707,10 @@ class Run:
             self._check_cancelled()
             proposal_id = f"proposal_{uuid.uuid4().hex}"
             try:
-                spec, normalized = self._validated(tool, args)
+                spec, normalized, bound = self._validated_bound(tool, args)
                 source_bytes, source_format = self._source_input(tool, normalized,
                                                                  source_bytes, source_format)
-                key = self._key(tool, spec.version, normalized, source_bytes, source_format)
+                key = self._key(tool, spec.version, normalized, source_bytes, source_format, bound)
             except ToolFailure as failure:
                 self.events.append("proposal_rejected", proposal_id=proposal_id, root_call_id=proposal_id,
                                    tool=tool, args=_event_safe(args), **_event_safe(failure.to_dict()),
@@ -736,7 +754,7 @@ class Run:
             try:
                 out = self._execute_chain(tool, normalized, key, proposal_id, None, "initial",
                                           decided_by, execution_mode, branch_id,
-                                          source_bytes, source_format, link=link)
+                                          source_bytes, source_format, link=link, bound=bound)
             except (ToolFailure, ApprovalRequired, RunCancelled, ExecutionStopped):
                 self._observe(active_branch, proposal_id, None)
                 raise
@@ -747,8 +765,9 @@ class Run:
                        parent: str | None, attempt_kind: str, decided_by: DecisionSource,
                        mode: ExecutionMode, branch_id: str | None,
                        source_bytes: bytes | None = None, source_format: str | None = None,
-                       allow_transient: bool = True, link: ExecutionLink | None = None) -> Handle:
-        spec, args = self._validated(tool, args)
+                       allow_transient: bool = True, link: ExecutionLink | None = None,
+                       bound: Any = None) -> Handle:
+        spec, args, bound = self._validated_bound(tool, args, bound)
         used = sum(event["attempt_kind"] == "transient_retry" for event in self.events.read()
                    if event["type"] == "tool_called" and event.get("root_call_id") == root)
         while True:
@@ -799,7 +818,7 @@ class Run:
             ctx = ToolContext(store=self.store, call_id=call_id, dry_run=self.dry_run, seed=self.seed,
                               source_bytes=source_bytes, source_format=source_format,
                               remaining_s=lambda started=start: max(0, self._time_left() - (self.monotonic() - started)),
-                              check_cancelled=self._check_cancelled)
+                              check_cancelled=self._check_cancelled, bound=bound)
             failure: ToolFailure | None = None
             out: Handle | None = None
             try:
@@ -903,7 +922,7 @@ class Run:
             if any(event["type"] == "tool_called" and event.get("root_call_id") == root and
                    event.get("attempt_kind") == "argument_repair" for event in self.events.read()):
                 raise ToolFailure(FailureClass.input_invalid, "argument repair already used")
-            spec, fixed = self._validated(failed["tool"], corrected_args)
+            spec, fixed, bound = self._validated_bound(failed["tool"], corrected_args)
             original = failed["args"]
             try:
                 old = check_args(spec, original, self.store.kind_of)
@@ -913,10 +932,10 @@ class Run:
                 raise ToolFailure(FailureClass.input_invalid, "repair must change effective arguments")
             source_bytes, source_format = self._source_input(failed["tool"], fixed,
                                                              source_bytes, source_format)
-            key = self._key(failed["tool"], spec.version, fixed, source_bytes, source_format)
+            key = self._key(failed["tool"], spec.version, fixed, source_bytes, source_format, bound)
             return self._execute_chain(failed["tool"], fixed, key, root, failed_call_id,
                                        "argument_repair", "human", "human", None,
-                                       source_bytes, source_format)
+                                       source_bytes, source_format, bound=bound)
 
     def satisfy_precondition(self, failed_call_id: str) -> Handle:
         with self._mutation():
@@ -951,10 +970,10 @@ class Run:
                                        "accepted_kind": pre.kind, "target_argument": target})
             rebound = dict(args)
             rebound[target] = pre.handle
-            spec, rebound = self._validated(failed["tool"], rebound)
-            key = self._key(failed["tool"], spec.version, rebound, None, None)
+            spec, rebound, bound = self._validated_bound(failed["tool"], rebound)
+            key = self._key(failed["tool"], spec.version, rebound, None, None, bound)
             return self._execute_chain(failed["tool"], rebound, key, root, pre_call,
-                                       "prerequisite_retry", "rule", "human", None)
+                                       "prerequisite_retry", "rule", "human", None, bound=bound)
 
 
 def replay(events_path: Path, new_dir: Path, registry: ToolRegistry, run_id: str) -> set[str]:

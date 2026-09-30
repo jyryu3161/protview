@@ -11,11 +11,16 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from ..core.contracts import ToolSpec, load_specs
 from ..core.handles import Handle, ObjectStore
 
 ToolFn = Callable[..., Handle]
+# Pre-check hook: (store, raw args, previous bound or None) -> (normalized args, bound). Runs inside the orchestrator's
+# argument validation on every call path, before the generic check, the cache key and the implementation; it raises
+# ToolFailure. A bound may expose ``key_fields`` (merged into the cache key) and reaches the tool as ToolContext.bound.
+PrecheckFn = Callable[[Any, dict[str, Any], Any], tuple[dict[str, Any], Any]]
 
 
 @dataclass
@@ -28,6 +33,7 @@ class ToolContext:
     source_format: str | None = None
     remaining_s: Callable[[], float] | None = None
     check_cancelled: Callable[[], None] | None = None
+    bound: Any = None
 
 
 class ToolRegistry:
@@ -36,13 +42,15 @@ class ToolRegistry:
         self.impls: dict[str, ToolFn] = {}
         self.stubs: dict[str, ToolFn] = {}   # used for expensive tools in dry_run
         self.unavailable: dict[str, str] = {}
+        self.prechecks: dict[str, PrecheckFn] = {}
 
     @classmethod
     def from_yaml(cls, path: Path) -> ToolRegistry:
         return cls(load_specs(path))
 
     def register(self, name: str, *, stub: ToolFn | None = None,
-                 unavailable_reason: str | None = None) -> Callable[[ToolFn], ToolFn]:
+                 unavailable_reason: str | None = None,
+                 precheck: PrecheckFn | None = None) -> Callable[[ToolFn], ToolFn]:
         if name not in self.specs:
             raise KeyError(f"tool '{name}' has no spec in tools.yaml")
 
@@ -52,6 +60,8 @@ class ToolRegistry:
                 self.stubs[name] = stub
             if unavailable_reason:
                 self.unavailable[name] = unavailable_reason
+            if precheck:
+                self.prechecks[name] = precheck
             return fn
         return deco
 
