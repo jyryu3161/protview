@@ -279,7 +279,7 @@ def test_invalid_upload_command_handle_and_run(api, pdb_path, monkeypatch):
     assert {tool["name"] for tool in client.get("/tools", params={"levels": "L1,L2,L3,L4,L5"}).json()} == {
             "load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
             "openmm_protein_minimize", "measure_distance", "align_structures", "compile_state",
-            "map_residue_numbering"}
+            "map_residue_numbering", "annotate_reference_sites"}
 
 
 def test_upload_parent_symlink_never_reads_or_writes_outside(api, pdb_path, tmp_path):
