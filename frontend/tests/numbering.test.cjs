@@ -83,8 +83,45 @@ test("method answers show positions or every absent reason", () => {
   assert.equal(lib.answerText(null), "실행 안 함");
   assert.equal(lib.answerText({ accession: "O14965", position: 388 }), "O14965 388");
   assert.equal(lib.answerText({ absent_reason: "alignment_below_identity",
-    absent_reasons: ["alignment_below_identity", "alignment_below_coverage"] }), "alignment_below_identity, alignment_below_coverage");
-  assert.equal(lib.answerText({ absent_reason: "alignment_gap" }), "alignment_gap");
+    absent_reasons: ["alignment_below_identity", "alignment_below_coverage"] }),
+    "정렬 일치율 기준 미달 (alignment_below_identity), 정렬 범위 기준 미달 (alignment_below_coverage)");
+  assert.equal(lib.answerText({ absent_reason: "alignment_gap" }), "정렬 틈(gap) (alignment_gap)");
+  assert.equal(lib.answerText({ absent_reason: "not_a_known_code" }), "not_a_known_code");
+});
+
+// Every reason code the numbering map can carry. The same literal list is in backend/tests/test_residue_numbering.py
+// (REASON_CODES), which checks it equals the backend's closed reason sets; keep both copies equal.
+const REASON_CODES = [
+  "pdb_id_not_given", "pdb_not_in_sifts_snapshot", "chain_not_in_sifts_snapshot", "sifts_chain_lookup_failed",
+  "sifts_chain_no_segments", "accession_differs_from_sifts", "multiple_sifts_accessions",
+  "sifts_accession_not_in_uniprot_snapshot", "sifts_accession_uniprot_lookup_failed", "alignment_too_large",
+  "sifts_no_residue_row", "sifts_ambiguous_residue_row", "sifts_number_mismatch", "sifts_not_observed",
+  "sifts_outside_segments", "sifts_position_outside_sequence",
+  "alignment_gap", "alignment_ambiguous", "alignment_below_identity", "alignment_below_coverage",
+  "accession_not_in_klifs", "klifs_pocket_empty", "klifs_multiple_entries", "uniprot_sequence_unavailable",
+  "positions_differ", "one_method_only",
+];
+
+test("every backend reason code has a Korean label shown with the code; unknown codes stay raw", () => {
+  assert.deepEqual(Object.keys(lib.REASON_LABEL).sort(), [...REASON_CODES].sort());
+  for (const code of REASON_CODES) {
+    const text = lib.reasonText(code);
+    assert.ok(text.endsWith(` (${code})`) && /[가-힣]/.test(text), text);
+  }
+  assert.equal(lib.reasonText("constructor"), "constructor");
+  assert.equal(lib.reasonText("made_up"), "made_up");
+});
+
+test("snapshot badge: stale only against a differing active set; no active set is its own badge", () => {
+  assert.equal(lib.snapshotBadge({ stale_snapshot: true }, true), "stale");
+  assert.equal(lib.snapshotBadge({ stale_snapshot: false }, true), null);
+  assert.equal(lib.snapshotBadge({ stale_snapshot: true }, false), "no_active_set");
+});
+
+test("snapshot scope text states kinase-only processed snapshots and the consequence, with no numbers", () => {
+  for (const part of ["kbase_kinase", "kinase 한정", "원출처 원본 바이트 아님", "SIFTS 대응이나 KLIFS 번호가 없습니다"])
+    assert.ok(lib.SNAPSHOT_SCOPE.includes(part), part);
+  assert.ok(!/\d/.test(lib.SNAPSHOT_SCOPE));
 });
 
 test("residue text keeps null labels explicit and insertion codes", () => {

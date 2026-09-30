@@ -48,11 +48,15 @@ KLIFS_TERMS = "이용 조건 명시 없음(none-stated)"
 REFERENCE_STATEMENT = ("Accessions, UniProt positions and residues, and KLIFS pocket numbers and labels in this report "
                        "are reference snapshot values (참조 스냅샷 값, 계산 아님), not ProtView calculations. ProtView "
                        "computed only the alignment identity and coverage and the counts.")
-REPORT_LIMITATIONS = [
+# Limitations of reports created before the snapshot-scope line was added; saved reports carrying them still reopen.
+LEGACY_REPORT_LIMITATIONS = [
     "This report states the numbering correspondence only; it makes no statement about function or structure.",
     ("Residue-level reference values are listed only for mapped rows with a KLIFS pocket number; every row (all "
      "statuses, both method answers and absent reasons) is in the numbering map object."),
 ]
+SNAPSHOT_SCOPE = ("참조 스냅샷은 kbase_kinase가 가공한 kinase 한정 자료입니다(원출처 원본 바이트 아님). "
+                  "스냅샷에 없는 PDB·단백질은 SIFTS 대응이나 KLIFS 번호가 없습니다.")
+REPORT_LIMITATIONS = [*LEGACY_REPORT_LIMITATIONS, SNAPSHOT_SCOPE]
 AMBIGUOUS_REASON = "alignment_ambiguous"
 
 EVIDENCE_KINDS = ("computed", "reference_value")
@@ -139,7 +143,8 @@ def _residue_ok(residue: Any) -> bool:
     return type(residue) is dict and set(residue) == RESIDUE_KEYS
 
 
-def _answer_ok(answer: Any) -> bool:
+def _answer_ok(answer: Any, reasons: tuple[str, ...]) -> bool:
+    """A method answer: a position, or absent reasons from that method's closed set (``reasons``)."""
     if answer is None:
         return True
     if type(answer) is not dict:
@@ -148,14 +153,16 @@ def _answer_ok(answer: Any) -> bool:
         return type(answer["accession"]) is str and type(answer["position"]) is int
     return (set(answer) == {"absent_reason", "absent_reasons"} and type(answer["absent_reasons"]) is list and
             bool(answer["absent_reasons"]) and answer["absent_reason"] == answer["absent_reasons"][0] and
-            all(type(reason) is str for reason in answer["absent_reasons"]))
+            all(type(reason) is str and reason in reasons for reason in answer["absent_reasons"]))
 
 
 def _check_rows(content: dict[str, Any]) -> None:
     for row in content["rows"]:
         if type(row) is not dict or set(row) != ROW_KEYS or not _residue_ok(row["residue"]):
             raise EvidenceError("numbering_row_shape")
-        if row["status"] not in STATUSES or not _answer_ok(row["sifts"]) or not _answer_ok(row["alignment"]):
+        if (row["status"] not in STATUSES or not _answer_ok(row["sifts"], rn.SIFTS_ABSENT_REASONS) or
+                not _answer_ok(row["alignment"], rn.ALIGNMENT_ABSENT_REASONS) or
+                (row["conflict_reason"] is not None and row["conflict_reason"] not in rn.CONFLICT_REASONS)):
             raise EvidenceError("numbering_row_shape")
         if row["status"] == "mapped":
             if (type(row["uniprot_accession"]) is not str or type(row["uniprot_position"]) is not int or
@@ -217,6 +224,11 @@ def _check_chains(content: dict[str, Any]) -> None:
                     alignment["coverage_pct"] != (pairs / n * 100 if n else None) or
                     type(alignment["accession"]) is not str):
                 raise EvidenceError("numbering_alignment_statistics_mismatch")
+        if type(chain["klifs"]) is not list or any(
+                type(item) is not dict or item["applied"] is not (item["absent_reason"] is None) or
+                (item["absent_reason"] is not None and item["absent_reason"] not in rn.KLIFS_ABSENT_REASONS)
+                for item in chain["klifs"]):
+            raise EvidenceError("numbering_klifs_reason_invalid")
         modified = chain["residue_rule"]["modified_residue_count"]
         if type(modified) is not int or modified < 0 or chain["residue_rule"]["rule"] != rn.RESIDUE_RULE:
             raise EvidenceError("numbering_residue_rule_invalid")
@@ -623,6 +635,8 @@ def saved_numbering_report(run: Any, report_handle: str) -> dict[str, Any]:
     for claim in report["claims"]:
         match_claim(expected["claims"], claim)
     for key, value in expected.items():
+        if key == "limitations" and report[key] == [value[0], *LEGACY_REPORT_LIMITATIONS]:
+            continue
         if canonical_json(report[key]) != canonical_json(value):
             raise EvidenceError(f"numbering_report_field_mismatch: {key}")
     snapshot = report["snapshot"]

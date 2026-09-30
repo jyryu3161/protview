@@ -6,7 +6,7 @@ import type { CommandResult } from "@/lib/api";
 import {
   NUMBERING_STATUSES, PDB_ID_PATTERN, ROW_PAGE_LIMIT, STATUS_LABEL, answerText, applySiftsHints, checkForm, emptyForm,
   filterRows, keyedIdle, keyedRequest, keyedResolve, licenseText, numberingStructures, polymerChains, residueText,
-  pctOneDecimal, siftsFused, sourceVersion, withdrawSiftsHints,
+  pctOneDecimal, reasonText, SNAPSHOT_SCOPE, siftsFused, snapshotBadge, sourceVersion, withdrawSiftsHints,
   type Keyed, type LoadState, type NumberingChain, type NumberingForm, type NumberingMapList, type NumberingMapListRow,
   type NumberingRow, type NumberingStructureKind, type PdbIdHint, type ReferenceSnapshots, type SiftsChains,
   type StatusFilter, type UniprotSearch,
@@ -26,7 +26,7 @@ export interface NumberingPanelProps {
   onReportCreated?: () => void;
 }
 
-export const IMPORT_COMMAND = "python scripts/import_reference_snapshots.py --from ../kbase_kinase";
+export const IMPORT_COMMAND = ".venv/bin/python scripts/import_reference_snapshots.py --from ../kbase_kinase --dest .deps/reference";
 const ROWS_PER_PAGE = 50;
 const SEARCH_LIMIT = 20;
 
@@ -353,12 +353,14 @@ export function NumberingPanel({ runId, onReportCreated }: NumberingPanelProps) 
           </div>
           {!maps.value.rows.length ? <p className="mw-numbering-note">아직 대응이 없습니다.</p>
             : <ul className="mw-numbering-maps">{maps.value.rows.map(row => <li key={row.handle}>
-              <MapButton row={row} selected={row.handle === selectedMap} onSelect={() => selectMap(row.handle)} />
+              <MapButton row={row} snapshotAvailable={maps.value.snapshot_available} selected={row.handle === selectedMap}
+                onSelect={() => selectMap(row.handle)} />
             </li>)}</ul>}
         </>}
     </Area>
 
-    {selectedMap && <MapDetail handle={selectedMap} row={selectedRow} rows={rows} filter={filter} page={page}
+    {selectedMap && <MapDetail handle={selectedMap} row={selectedRow}
+      snapshotAvailable={maps.status === "ready" && maps.value.snapshot_available} rows={rows} filter={filter} page={page}
       onFilter={value => { setFilter(value); setPage(0); }} onPage={setPage} onRetry={() => readRows(selectedMap)}
       report={report} onReport={() => createReport(selectedMap)} />}
   </section>;
@@ -367,6 +369,7 @@ export function NumberingPanel({ runId, onReportCreated }: NumberingPanelProps) 
 function SnapshotArea({ state, onRetry }: { state: LoadState<ReferenceSnapshots>; onRetry: () => void }) {
   const areaState: AreaState = state.status === "ready" && !state.value.available ? "unavailable" : stateOf(state);
   return <Area area="snapshots" title="참조 스냅샷 상태" state={areaState}>
+    <p className="mw-numbering-note" data-testid="numbering-snapshot-scope">{SNAPSHOT_SCOPE}</p>
     {state.status === "loading" || state.status === "idle" ? <Loading />
       : state.status === "error" ? <FailureLine failure={state} onRetry={onRetry} testId="numbering-snapshots-retry" />
       : !state.value.available ? <div className="mw-numbering-unavailable" data-testid="numbering-snapshot-unavailable">
@@ -465,15 +468,24 @@ function Counts({ counts }: { counts: Record<"mapped" | "unmapped" | "conflict",
     <span key={status} data-count-status={status}>{STATUS_LABEL[status]} {counts[status]}</span>)}</span>;
 }
 
-function MapButton({ row, selected, onSelect }: { row: NumberingMapListRow; selected: boolean; onSelect: () => void }) {
+function SnapshotBadge({ row, snapshotAvailable }: { row: NumberingMapListRow; snapshotAvailable: boolean }) {
+  const badge = snapshotBadge(row, snapshotAvailable);
+  return badge === "stale" ? <span className="mw-numbering-badge mw-numbering-badge--stale" title={row.set_hash}>이전 스냅샷 기준</span>
+    : badge === "no_active_set" ? <span className="mw-numbering-badge mw-numbering-badge--stale" title={row.set_hash}>사용 중 스냅샷 없음</span>
+    : null;
+}
+
+function MapButton({ row, snapshotAvailable, selected, onSelect }: { row: NumberingMapListRow; snapshotAvailable: boolean;
+  selected: boolean; onSelect: () => void }) {
+  const badge = snapshotBadge(row, snapshotAvailable);
   return <button type="button" className="mw-numbering-map" aria-pressed={selected} data-numbering-map={row.handle}
-    data-stale={row.stale_snapshot} data-null-result={row.null_result} onClick={onSelect}>
+    data-stale={badge === "stale"} data-no-active-set={badge === "no_active_set"} data-null-result={row.null_result} onClick={onSelect}>
     <span><Handle handle={row.structure} kind={row.structure_kind} /> · 모델 {row.model_number}</span>
     <span>체인 {row.chains.join(", ")}</span>
     <span>{row.pdb_id ?? "PDB ID 없음"}</span>
     <Counts counts={row.counts} />
     {row.null_result && <span className="mw-numbering-badge mw-numbering-badge--null">대응된 잔기 없음(계산은 성공)</span>}
-    {row.stale_snapshot && <span className="mw-numbering-badge mw-numbering-badge--stale" title={row.set_hash}>이전 스냅샷 기준</span>}
+    <SnapshotBadge row={row} snapshotAvailable={snapshotAvailable} />
     <span className="mw-numbering-note">생성 순번 {row.created_seq}</span>
   </button>;
 }
@@ -488,19 +500,19 @@ function ChainSummary({ chain }: { chain: NumberingChain }) {
     <dl className="mw-numbering-facts">
       <dt>실행한 방법</dt><dd>{chain.methods_run.length ? chain.methods_run.join(", ") : "없음"}</dd>
       {chain.requested_uniprot_accession !== undefined && <><dt>고른 UniProt</dt><dd>{chain.requested_uniprot_accession ?? "없음"}</dd></>}
-      <dt>교차 확인</dt><dd>{chain.cross_check ? "예" : `교차 확인 없음${chain.cross_check_absent_reason ? ` (${chain.cross_check_absent_reason})` : ""}`}</dd>
+      <dt>교차 확인</dt><dd>{chain.cross_check ? "예" : `교차 확인 없음${chain.cross_check_absent_reason ? `: ${reasonText(chain.cross_check_absent_reason)}` : ""}`}</dd>
       {chain.sifts && <><dt>SIFTS</dt><dd>{chain.sifts.accessions.join(", ") || "accession 없음"} · {chain.sifts.sifts_chain_match} · {chain.sifts.sifts_residue_key}</dd></>}
       {chain.alignment && <>
         <dt>정렬 (ProtView 계산)</dt>
         <dd>{chain.alignment.accession} · 일치율 {pct(chain.alignment.identity_pct)} · 정렬 범위 {pct(chain.alignment.coverage_pct)}
           {" "}· 정렬 쌍 {chain.alignment.aligned_pairs} · 같은 잔기 {chain.alignment.identical} · 체인 잔기 {chain.alignment.chain_residue_count}
           {chain.alignment.ambiguous_residue_count !== undefined ? ` · 모호 잔기 ${chain.alignment.ambiguous_residue_count}` : ""}
-          {chain.alignment.chain_reason.length ? ` · 체인 기준 미달: ${chain.alignment.chain_reason.join(", ")}` : ""}</dd>
+          {chain.alignment.chain_reason.length ? ` · 체인 기준 미달: ${chain.alignment.chain_reason.map(reasonText).join(", ")}` : ""}</dd>
       </>}
       <dt>KLIFS</dt>
       <dd>{!chain.klifs.length ? "대응된 accession 없음" : chain.klifs.map(entry => <span key={entry.accession} className="mw-numbering-klifs"
         data-klifs-applied={entry.applied}>
-        {entry.accession}: {entry.applied ? "적용됨" : `적용 안 됨 (${entry.absent_reason ?? "이유 없음"})`}
+        {entry.accession}: {entry.applied ? "적용됨" : `적용 안 됨: ${entry.absent_reason ? reasonText(entry.absent_reason) : "이유 없음"}`}
         {entry.unresolved_regions.length ? ` · 미해결 구역 ${entry.unresolved_regions.join(", ")}` : ""}
         {entry.gapped_regions?.length ? ` · 건너뛴 일치 구역 ${entry.gapped_regions.join(", ")}` : ""}
       </span>)}</dd>
@@ -513,7 +525,7 @@ function ChainSummary({ chain }: { chain: NumberingChain }) {
 const FILTERS: { value: StatusFilter; label: string }[] = [{ value: "all", label: "전체" },
   ...NUMBERING_STATUSES.map(status => ({ value: status as StatusFilter, label: STATUS_LABEL[status] }))];
 
-function MapDetail(p: { handle: string; row: NumberingMapListRow | null; rows: LoadState<RowsValue>; filter: StatusFilter; page: number;
+function MapDetail(p: { handle: string; row: NumberingMapListRow | null; snapshotAvailable: boolean; rows: LoadState<RowsValue>; filter: StatusFilter; page: number;
   onFilter: (value: StatusFilter) => void; onPage: (page: number) => void; onRetry: () => void;
   report: LoadState<MethodReportArtifact>; onReport: () => void }) {
   const loaded = p.rows.status === "ready" && p.rows.value.handle === p.handle ? p.rows.value : null;
@@ -522,8 +534,8 @@ function MapDetail(p: { handle: string; row: NumberingMapListRow | null; rows: L
   const view = loaded ? filterRows(loaded.rows, p.filter, p.page * ROWS_PER_PAGE, ROWS_PER_PAGE) : null;
   const pages = view ? Math.max(1, Math.ceil(view.matched / ROWS_PER_PAGE)) : 1;
   return <Area area="detail" title="고른 대응" state={areaState}>
-    <p className="mw-numbering-note">대응 <Handle handle={p.handle} />{p.row?.stale_snapshot ? " · " : ""}
-      {p.row?.stale_snapshot && <span className="mw-numbering-badge mw-numbering-badge--stale">이전 스냅샷 기준</span>}</p>
+    <p className="mw-numbering-note">대응 <Handle handle={p.handle} />{p.row && snapshotBadge(p.row, p.snapshotAvailable) ? " · " : ""}
+      {p.row && <SnapshotBadge row={p.row} snapshotAvailable={p.snapshotAvailable} />}</p>
     <div className="mw-numbering-inline">
       <Button size="sm" data-testid="numbering-report" disabled={p.report.status === "loading"} onClick={p.onReport}>보고서 만들기</Button>
       {p.report.status === "loading" && <span className="mw-numbering-note" aria-busy="true">보고서를 만드는 중</span>}
@@ -550,7 +562,7 @@ function MapDetail(p: { handle: string; row: NumberingMapListRow | null; rows: L
               const chain = chainByAuth.get(row.residue.chain_auth);
               return <tr key={p.page * ROWS_PER_PAGE + index} data-numbering-status={row.status}>
                 <td className="mw-mono">{residueText(row.residue)}</td>
-                <td>{STATUS_LABEL[row.status]}{row.conflict_reason ? ` (${row.conflict_reason})` : ""}</td>
+                <td>{STATUS_LABEL[row.status]}{row.conflict_reason ? `: ${reasonText(row.conflict_reason)}` : ""}</td>
                 <td>{row.uniprot_accession !== null
                   ? <><code>{row.uniprot_accession}</code> {row.uniprot_position ?? "없음"} {row.uniprot_residue ?? ""}</> : "없음"}</td>
                 <td>{row.residue_match === false ? <span className="mw-numbering-badge" data-residue-mismatch="true">잔기 불일치</span>

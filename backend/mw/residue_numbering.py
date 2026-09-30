@@ -47,6 +47,7 @@ ALIGNMENT_ABSENT_REASONS = ("alignment_gap", "alignment_ambiguous", "alignment_b
 # Accession-level KLIFS reasons: the klifs_numbering set plus one for a mapped accession without a UniProt sequence.
 KLIFS_ABSENT_REASONS = ("accession_not_in_klifs", "klifs_pocket_empty", "klifs_multiple_entries",
                         "uniprot_sequence_unavailable")
+CONFLICT_REASONS = ("positions_differ", "one_method_only")
 LIMITATIONS = ("UniProt positions, accessions and KLIFS pocket numbers are reference snapshot values (kbase_kinase "
                "processed snapshots), not ProtView calculations; ProtView computes only the alignment statistics. "
                "SIFTS chains are matched by author chain ID only. A conflict keeps both answers and picks neither.")
