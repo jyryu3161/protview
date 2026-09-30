@@ -48,12 +48,12 @@ from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
 from ..saved_scenes import (
-    FigureSave,
-    SceneSave,
     figure_detail,
     figure_download,
     list_figures,
     list_scenes,
+    parse_figure_save,
+    parse_scene_save,
     save_figure,
     save_scene,
     scene_detail,
@@ -907,7 +907,7 @@ async def _bounded_scene_body(request: Request, limit: int) -> bytes:
 @app.post("/runs/{rid}/viewer/scenes", status_code=201)
 async def viewer_scene_save(rid: str, request: Request) -> dict[str, Any]:
     try:
-        body = SceneSave.model_validate_json(await _bounded_scene_body(request, SCENE_BODY_LIMIT))
+        body = parse_scene_save(await _bounded_scene_body(request, SCENE_BODY_LIMIT))
         return await run_in_threadpool(lambda: save_scene(_run(rid), body))
     except PydanticValidationError as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid scene payload"}) from exc
@@ -934,7 +934,7 @@ def viewer_scene_selected(rid: str, handle: str) -> dict[str, Any]:
 @app.post("/runs/{rid}/viewer/figures", status_code=201)
 async def viewer_figure_save(rid: str, request: Request) -> dict[str, Any]:
     try:
-        body = FigureSave.model_validate_json(await _bounded_scene_body(request, FIGURE_BODY_LIMIT))
+        body = parse_figure_save(await _bounded_scene_body(request, FIGURE_BODY_LIMIT))
         return await run_in_threadpool(lambda: save_figure(_run(rid), body))
     except PydanticValidationError as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid figure payload"}) from exc
