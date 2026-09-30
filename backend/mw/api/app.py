@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_executions, analysis_plans
+from .. import analysis_executions, analysis_plans, numbering_reads, reference_snapshots
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
 from ..chemical_bundle import validated_result as validated_chemical_result
@@ -590,6 +590,7 @@ def capabilities() -> dict[str, Any]:
     methods = {"interface_sasa": sasa, "openmm_protein_minimize": openmm_capability(),
                "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}
     methods["analysis_workflows"] = analysis_plans.capability(methods)
+    methods["residue_numbering"] = reference_snapshots.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1390,11 +1391,14 @@ def materialize(rid: str, handle: str, columns: str | None = None, offset: int =
             return _tool_error(exc)
     selected = columns.split(",") if columns is not None else None
     try:
-        rows = run.store.materialize(handle, selected, offset, limit)
-        content = run.store.load(handle)
+        if meta["kind"] == "residue_numbering_map":
+            rows, total = numbering_reads.numbering_rows(run.store.load(handle), selected, offset, limit)
+        else:
+            rows = run.store.materialize(handle, selected, offset, limit)
+            content = run.store.load(handle)
+            total = len(content["rows"] if meta["kind"] == "interaction_set" else content)
     except (TypeError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": str(exc)}) from exc
-    total = len(content["rows"] if meta["kind"] == "interaction_set" else content)
     return {"meta": meta, "rows": rows, "total": total, "offset": offset, "limit": limit}
 
 
@@ -1408,6 +1412,52 @@ def object_meta(rid: str, handle: str) -> dict[str, Any]:
         except ToolFailure as exc:
             return _tool_error(exc)
     return meta
+
+
+def _read_invalid(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "input_invalid", "message": str(exc)})
+
+
+@app.get("/reference/snapshots")
+def reference_snapshot_summary() -> dict[str, Any]:
+    """Active reference set records or the unavailable reason; reads the local reference folder only."""
+    return numbering_reads.snapshots()
+
+
+@app.get("/reference/sifts_chains")
+def reference_sifts_chains(pdb_id: str) -> dict[str, Any]:
+    try:
+        return numbering_reads.sifts_chains(pdb_id)
+    except numbering_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+
+
+@app.get("/reference/uniprot")
+def reference_uniprot(query: str = Query("", max_length=100), offset: int = Query(0, ge=0),
+                      limit: int = Query(20, ge=1, le=100)) -> dict[str, Any]:
+    return numbering_reads.uniprot_search(query, offset, limit)
+
+
+@app.get("/runs/{rid}/reference/pdb_id_hint")
+def reference_pdb_id_hint(rid: str, structure: str) -> dict[str, Any]:
+    """A PDB ID suggestion from the structure's uploaded bytes; runs no tool and writes no event."""
+    run = _run(rid)
+    meta = _object(run, structure)
+    try:
+        return numbering_reads.pdb_id_hint(run.store, structure, meta["kind"])
+    except numbering_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except (KeyError, TypeError, ValueError, UnicodeError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid structure source"}) from exc
+
+
+@app.get("/runs/{rid}/numbering_maps")
+def numbering_maps(rid: str, offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    run = _run(rid)
+    try:
+        return numbering_reads.numbering_maps(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid residue numbering map"}) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")
