@@ -33,6 +33,8 @@ export interface PocketPanelProps {
   viewerReady: boolean;
   /** A reason that blocks pocket detection and overlay (e.g. M10 comparison). */
   blockedReason: string | null;
+  /** A reason that blocks only turning a pocket overlay on (M16: a shown reference annotation); detection stays allowed. */
+  overlayBlockedReason?: string | null;
   overlay: PocketOverlayRequest | null;
   overlayApplied: PocketOverlayReadback | null;
   overlayError: string | null;
@@ -316,7 +318,7 @@ export function PocketPanel(p: PocketPanelProps) {
   }
 
   async function selectPocket(rank: number) {
-    if (!summary || p.blockedReason) return;
+    if (!summary || p.blockedReason || p.overlayBlockedReason) return;
     const captured = stamp({ setHandle: summary.handle, rank });
     live.current = { ...live.current, rank };
     setSelectedRank(rank); setSelectionError(""); setGeometryBusy(true);
@@ -462,7 +464,8 @@ export function PocketPanel(p: PocketPanelProps) {
                 {DESCRIPTOR_KEYS.map(key => <td key={key} className="mw-mono">{descriptorText(row.descriptors[key])}
                   {key === "druggability_score" && <small className="mw-pocket-warning-inline"> 약물성 증거 아님</small>}</td>)}
                 <td>{row.lining_residue_count}</td>
-                <td><Button size="sm" aria-label={`포켓 rank ${row.rank} 선택`} disabled={!!p.blockedReason || geometryBusy}
+                <td><Button size="sm" aria-label={`포켓 rank ${row.rank} 선택`} disabled={!!p.blockedReason || !!p.overlayBlockedReason || geometryBusy}
+                  title={p.overlayBlockedReason ?? undefined}
                   onClick={() => void selectPocket(row.rank)}>{row.rank === selectedRank ? "다시 선택" : "선택"}</Button></td>
               </tr>)}</tbody></table>
           </div>
@@ -477,6 +480,7 @@ export function PocketPanel(p: PocketPanelProps) {
     {selectionError && <p role="alert" className="mw-table-error">{selectionError}</p>}
 
     <div className="mw-pocket-group" aria-label="포켓 오버레이">
+      {p.overlayBlockedReason && <p role="status" className="mw-pocket-blocked" data-pocket-overlay-blocked>{p.overlayBlockedReason}</p>}
       <div className="mw-chemical-inline">
         <label><input type="checkbox" checked={showSpheres} onChange={e => updateView({ showSpheres: e.target.checked })} /> 알파 구 표시</label>
         <label><input type="checkbox" checked={showLining} onChange={e => updateView({ showLining: e.target.checked })} /> 주변 잔기 표시</label>

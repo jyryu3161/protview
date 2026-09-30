@@ -68,6 +68,8 @@ export interface ViewerAgentPanelProps {
   registerSceneController?: (controller: SceneController | null) => void;
   /** A visible reason that disables every viewer request (e.g. an active M12 pocket overlay). */
   disabledReason?: string | null;
+  /** A visible reason that blocks only natural-language requests (M16: a shown reference annotation); local `/` commands stay. */
+  naturalLanguageDisabledReason?: string | null;
 }
 
 export interface SceneController {
@@ -340,7 +342,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   const submit = useCallback(async (value: string, local = false) => {
     const current = sessionRef.current;
     if (!p.runId || !current || !p.bridgeRef.current?.snapshot().catalogReady || busy || submittingRef.current ||
-        p.disabledReason ||
+        p.disabledReason || (!local && !value.trim().startsWith("/") && !!p.naturalLanguageDisabledReason) ||
         !viewerPromptAllowed(value, online?.enabled ?? false, p.dryRun)) return;
     p.onManualSceneAction?.();
     submittingRef.current = true;
@@ -438,7 +440,8 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
   const catalogReady = p.bridgeRef.current?.snapshot().catalogReady === true;
   const canSend = !!session && p.viewerReady && catalogReady && !busy && !p.disabledReason &&
     !!p.bridgeRef.current?.snapshot().ready;
-  const promptAllowed = viewerPromptAllowed(prompt, online?.enabled ?? false, p.dryRun);
+  const promptAllowed = viewerPromptAllowed(prompt, online?.enabled ?? false, p.dryRun) &&
+    (prompt.trim().startsWith("/") || !p.naturalLanguageDisabledReason);
   return <section className="mw-agent-panel" aria-label="뷰어 요청">
     <div className="mw-agent-row"><strong>뷰어 요청</strong>
       <span className="mw-badge">{p.dryRun ? "dry-run" : online?.mode ?? "local_only"}</span>
@@ -475,6 +478,7 @@ export function ViewerAgentPanel(p: ViewerAgentPanelProps) {
       <button type="button" className="mw-btn mw-btn--sm" disabled={!canSend} onClick={() => void submit("/reset", true)}>시점 초기화</button>
       <button type="button" className="mw-btn mw-btn--sm" disabled={!canSend} onClick={() => void submit("/clear", true)}>선택 해제</button>
     </div>
+    {p.naturalLanguageDisabledReason && <p className="mw-agent-row mw-muted" role="status" data-viewer-natural-language-disabled>자연어 요청 사용 불가: {p.naturalLanguageDisabledReason}</p>}
     {p.disabledReason && <p className="mw-agent-row mw-muted" role="status" data-viewer-request-disabled>뷰어 요청 사용 불가: {p.disabledReason}</p>}
     <div className="mw-agent-row mw-agent-status" role="status">{error || explanation(intent)}
       {p.viewerReady && !catalogReady && <span className="mw-muted">원자 목록을 검증하는 중입니다. 실패하면 구조의 원자 목록 다시 읽기를 사용하세요.</span>}

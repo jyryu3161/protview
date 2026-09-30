@@ -20,6 +20,7 @@ import { PocketPanel } from "@/components/PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
 import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
+import { SiteAnnotationPanel } from "@/components/SiteAnnotationPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
   type PocketSourceKind } from "@/lib/pockets";
@@ -28,6 +29,9 @@ import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { DEFAULT_WORKSPACE_TAB, type WorkspaceTabId } from "@/lib/workspace-tabs";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
+import { ANNOTATION_BLOCKS_POCKET_OVERLAY, ANNOTATION_REQUEST_NOT_READY, annotationGates, annotationShowAccepted,
+  annotationShownCurrent, figureSaveBody, sceneAnnotation, sceneRestoreDecision, sceneSaveBody, siteAnnotationRequest,
+  type SiteAnnotationReadback, type SiteAnnotationRequest, type SiteAnnotationShown } from "@/lib/site-annotation";
 import { atomLabel, catalogAttemptKey, catalogForAttempt, catalogResponseCurrent, retainCatalogState,
   comparisonViewChangeRevokes, comparisonViewIntentKey,
   sameComparisonAction, sameResidueRef, singleSourceSceneCompatible,
@@ -123,6 +127,18 @@ export default function WorkspacePage() {
   const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
   const [pocketOverlayError, setPocketOverlayError] = useState<string | null>(null);
   const [pocketNotice, setPocketNotice] = useState<string | null>(null);
+  // M16 reference annotation shown in the viewer (null = off) and its native readback for the current request key.
+  const [annotationShown, setAnnotationShown] = useState<SiteAnnotationShown | null>(null);
+  const [annotationReadback, setAnnotationReadback] = useState<SiteAnnotationReadback | null>(null);
+  const [annotationViewerError, setAnnotationViewerError] = useState<string | null>(null);
+  // Annotation part of the latest viewer_scene@2 restore, shown apart from the scene status (never a rollback claim).
+  const [annotationRestore, setAnnotationRestore] = useState<{ token: number; status: "applied" | "rejected"; text: string } | null>(null);
+  const restoreAnnotationRef = useRef<{ token: number; rejected: string | null } | null>(null);
+  const annotationKeyRef = useRef<string | null>(null);
+  // Host-side guard of late panel requests and of the pocket overlay while an annotation is on.
+  const annotationHostRef = useRef<{ runId: string | null; sourceHandle: string | null; blocked: string | null; on: boolean }>(
+    { runId: null, sourceHandle: null, blocked: null, on: false });
+  const exclusivityRef = useRef({ pocketOverlayActive: false, comparisonActive: false });
   // Only a prepared pocket source is shown through pocketView; a minimized source goes through openmmViewHandle so every
   // minimized-display rule (contact rows hidden, focus disabled, legend) applies unchanged.
   const [pocketView, setPocketView] = useState<{ handle: string; kind: "prepared_structure" } | null>(null);
@@ -528,6 +544,29 @@ export default function WorkspacePage() {
     item.kind === "prepared_structure" || item.kind === "openmm_minimized_structure");
   pocketHostRef.current = { runId: run?.run_id ?? null, sourceHandles: pocketSourceOptions.map(item => item.handle) };
   const pocketViewerReady = viewerReady && bridgeStateReady(viewerBridgeRef.current);
+  // M16: the annotation panel follows the displayed (or loading) source; drawing needs the loaded source itself.
+  const annotationSourceKind = targetHandle ? expectedKind : null;
+  const siteGates = annotationGates({ sourceKind: displayData?.kind ?? null, annotationOn: !!annotationShown,
+    pocketOverlayActive: !!pocketState, comparisonActive: !!comparisonContext });
+  annotationHostRef.current = { runId: runId ?? null, sourceHandle: targetHandle, blocked: siteGates.annotation, on: !!annotationShown };
+  exclusivityRef.current = { pocketOverlayActive: !!pocketState, comparisonActive: !!comparisonContext };
+  const annotationRequest = useMemo(() => annotationShown ? siteAnnotationRequest(annotationShown) : null, [annotationShown]);
+  annotationKeyRef.current = annotationRequest?.key ?? null;
+  const annotationForViewer: SiteAnnotationRequest | null = annotationRequest && annotationShown?.runId === runId &&
+    displaySource?.handle === annotationRequest.sourceHandle && !comparisonContext ? annotationRequest : null;
+  const annotationApplied = annotationForViewer && annotationReadback?.key === annotationForViewer.key ? annotationReadback : null;
+  // Run or source change, comparison start or an unsupported source turns a shown annotation off (spec 5.1, 5.3).
+  useEffect(() => {
+    if (annotationShown && !annotationShownCurrent(annotationShown, { runId: runId ?? null, sourceHandle: targetHandle,
+      sourceKind: annotationSourceKind, comparisonActive: !!comparisonContext })) {
+      setAnnotationShown(null); setAnnotationReadback(null); setAnnotationViewerError(null);
+    }
+  }, [annotationShown, runId, targetHandle, annotationSourceKind, comparisonContext]);
+  const requestAnnotation = (requestRunId: string, request: SiteAnnotationShown | null) => {
+    if (!annotationShowAccepted(request, requestRunId, annotationHostRef.current)) return;
+    setAnnotationReadback(null); setAnnotationViewerError(null); setAnnotationRestore(null);
+    setAnnotationShown(request);
+  };
   useEffect(() => {
     const decision = overlayContextDecision(pocketState?.request ?? null, pocketState?.boundContext ?? null,
       viewerContextKey, displaySource?.handle ?? null, pocketViewerReady);
@@ -541,6 +580,7 @@ export default function WorkspacePage() {
     displaySource?.handle === pocketState.request.sourceHandle ? pocketState.request : null;
   const requestPocketOverlay = (request: PocketOverlayRequest | null) => {
     if (!pocketRequestAccepted(request, pocketHostRef.current)) return;
+    if (request && annotationHostRef.current.on) { setPocketNotice(ANNOTATION_BLOCKS_POCKET_OVERLAY); return; }
     setPocketOverlayError(null); setPocketNotice(null);
     if (!request) { setPocketState(null); setPocketReadback(null); return; }
     setPocketState(previous => ({ request, boundContext: previous && previous.request.key === request.key &&
@@ -663,10 +703,22 @@ export default function WorkspacePage() {
       actionRevision: viewerSession.action_revision };
     const bridge = viewerBridgeRef.current;
     if (!bridge || !bridge.snapshot().catalogReady) return;
+    // viewer_scene@2: the annotation prop must already hold the same request (set with the scene override).
+    const annotationRef = sceneAnnotation(current.scene.value);
+    const plan = restoreAnnotationRef.current?.token === current.token ? restoreAnnotationRef.current : null;
+    const annotationArg = annotationRef && plan && !plan.rejected && annotationForViewer &&
+      annotationForViewer.handle === annotationRef.handle && annotationForViewer.legend === annotationRef.legend
+      ? annotationForViewer : null;
+    if (annotationRef && !annotationArg && plan && !plan.rejected)
+      setAnnotationRestore({ token: current.token, status: "rejected", text: "주석 요청이 준비되지 않아 주석은 복원하지 않았습니다." });
     restoredSceneToken.current = current.token;
     setSceneBusy("복원 중"); setSceneError("");
-    void bridge.restoreScene(binding, current.scene.value).then(restored => {
+    void bridge.restoreScene(binding, current.scene.value, annotationArg).then(restored => {
       if (sceneEpoch.current !== current.token || !sceneMatches(restored, current.scene.value)) return;
+      const outcome = restored.siteAnnotation;
+      if (outcome) setAnnotationRestore({ token: current.token, status: outcome.status, text: outcome.status === "applied"
+        ? `참조 주석 다시 그림 · 부위 ${outcome.readback.drawnSiteCount}개 · 점선 ${outcome.readback.drawnLineCount}개 (Mol* 읽기 확인)`
+        : `참조 주석 복원 거부: ${outcome.reason}` });
       restoredSceneToken.current = current.token;
       pendingRestoreTokenRef.current = null;
       setRestorePendingToken(null);
@@ -677,7 +729,7 @@ export default function WorkspacePage() {
       if (sceneEpoch.current === current.token) { pendingRestoreTokenRef.current = null; setRestorePendingToken(null);
         setSceneError(`저장된 보기 복원 실패: ${e instanceof Error ? e.message : String(e)}`); }
     }).finally(() => { if (sceneEpoch.current === current.token) setSceneBusy(""); });
-  }, [sceneOverride, runId, viewerReady, viewerSession, displaySource, viewerContextKey, bridgeState?.catalogReady]);
+  }, [sceneOverride, runId, viewerReady, viewerSession, displaySource, viewerContextKey, bridgeState?.catalogReady, annotationForViewer]);
 
   useEffect(() => {
     if (sceneOverride && displayedError) {
@@ -1146,9 +1198,13 @@ export default function WorkspacePage() {
       const bridge = viewerBridgeRef.current;
       if (!sameSceneAction(action, ticket, context)) return;
       if (!session || !bridge || session.structure_handle !== displaySource?.handle) throw new Error("현재 뷰어 세션이 안정될 때까지 기다리세요.");
-      const native = await bridge.captureScene(bindingFor(session));
+      // A shown annotation is recorded as viewer_scene@2; without one the viewer_scene@1 body is sent unchanged.
+      if (annotationShown && !annotationForViewer) throw new Error(ANNOTATION_REQUEST_NOT_READY);
+      const annotationRef = annotationForViewer ? { handle: annotationForViewer.handle, legend: annotationForViewer.legend } : null;
+      const native = await bridge.captureScene(bindingFor(session), annotationRef);
       if (!sameSceneAction(action, ticket, context)) return;
-      const saved = await api.saveScene(id, { ...requestBinding(session), schema: "viewer_scene@1", name, ...native });
+      const saved = await api.saveScene(id, sceneSaveBody({ ...requestBinding(session), schema: "viewer_scene@1" as const, name, ...native },
+        annotationRef));
       const currentSession = await sceneControllerRef.current?.settledSession();
       if (!sameSceneAction(action, ticket, context)) return;
       if (!currentSession ||
@@ -1166,6 +1222,10 @@ export default function WorkspacePage() {
   }
   async function restoreSavedScene(requestedHandle?: string) {
     if (!runId || !(requestedHandle ?? selectedSceneHandle)) return;
+    // viewer_scene@2 is refused while a pocket overlay or a comparison is on, before any side effect (spec 5.4).
+    const listed = savedScenes.find(row => row.handle === (requestedHandle ?? selectedSceneHandle));
+    const early = listed ? sceneRestoreDecision(listed.value, exclusivityRef.current) : null;
+    if (early && !early.allowed) { setSceneStatus(""); setSceneError(early.reason ?? ""); return; }
     revokeComparisonAction(); setPendingAtom(null);
     const ticket = epoch.current, action = ++sceneActionEpoch.current;
     const context = viewerContextKey, id = runId, selected = requestedHandle ?? selectedSceneHandle;
@@ -1185,10 +1245,34 @@ export default function WorkspacePage() {
     try {
       const detail = await api.savedScene(id, selected, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]));
       if (!sameSceneAction(action, ticket, context) || detail.handle !== selected) return;
+      const decision = sceneRestoreDecision(detail.value, exclusivityRef.current);
+      if (!decision.allowed) { setSceneError(decision.reason ?? ""); setSceneBusy(""); return; }
+      // viewer_scene@2: the stored annotation is read (no tool call) and set as the viewer prop before the restore.
+      const annotationRef = sceneAnnotation(detail.value);
+      let restoredAnnotation: SiteAnnotationShown | null = null, annotationRejected: string | null = null;
+      if (annotationRef) {
+        try {
+          const read = await api.siteAnnotation(id, annotationRef.handle, AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]));
+          if (!sameSceneAction(action, ticket, context)) return;
+          if (read.meta.handle !== annotationRef.handle || read.annotation.schema !== "reference_site_annotation@1" ||
+              read.annotation.structure.handle !== detail.value.structure_handle)
+            throw new Error("저장된 보기의 주석이 보기의 구조와 다릅니다.");
+          restoredAnnotation = { runId: id, sourceHandle: detail.value.structure_handle, handle: annotationRef.handle,
+            annotation: read.annotation, legend: annotationRef.legend };
+        } catch (e) {
+          if (!sameSceneAction(action, ticket, context)) return;
+          annotationRejected = `주석을 읽지 못했습니다: ${e instanceof Error ? e.message : String(e)}`;
+        }
+        const again = sceneRestoreDecision(detail.value, exclusivityRef.current);
+        if (!again.allowed) { setSceneError(again.reason ?? ""); setSceneBusy(""); return; }
+      }
       setComparisonContext(null); setDistanceSourceHandle(""); setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
       setMeasurementSelection(null); setComparisonReport(null); setFocusPair(null); setLastPickedAtom(null);
       const token = ++sceneEpoch.current;
       pendingRestoreTokenRef.current = token;
+      restoreAnnotationRef.current = annotationRef ? { token, rejected: annotationRejected } : null;
+      setAnnotationShown(restoredAnnotation); setAnnotationReadback(null); setAnnotationViewerError(null);
+      setAnnotationRestore(annotationRejected ? { token, status: "rejected", text: annotationRejected } : null);
       setRepresentation(detail.value.representation === "ball_and_stick" ? "ball-and-stick" : detail.value.representation);
       setSceneOverride({ scene: detail, token }); setRestorePendingToken(token);
       setHighlight(null); setFocusedResidue(null); setFocusError(null);
@@ -1349,10 +1433,10 @@ export default function WorkspacePage() {
       const bridge = viewerBridgeRef.current;
       if (!sameSceneAction(action, ticket, context)) return;
       if (!session || !bridge || session.structure_handle !== scene.value.structure_handle) throw new Error("저장된 보기의 구조와 현재 세션이 다릅니다.");
-      const image = await bridge.captureFigure(bindingFor(session), scene.value);
+      const image = await bridge.captureFigure(bindingFor(session), scene.value, sceneAnnotation(scene.value));
       if (!sameSceneAction(action, ticket, context)) return;
-      const figure = await api.saveFigure(id, { ...requestBinding(session), schema: "viewer_figure@1",
-        scene_handle: scene.handle, ...image.state, png_base64: image.pngBase64 });
+      const figure = await api.saveFigure(id, figureSaveBody({ ...requestBinding(session), schema: "viewer_figure@1" as const,
+        scene_handle: scene.handle, ...image.state, png_base64: image.pngBase64 }, scene.value.schema, image.legendComposited));
       const currentSession = await sceneControllerRef.current?.settledSession();
       if (!sameSceneAction(action, ticket, context)) return;
       if (!currentSession ||
@@ -1374,6 +1458,7 @@ export default function WorkspacePage() {
     setMeasureMode(false); setPendingAtom(null); setPairPickSide(null);
     setMeasurementSelection(null); setComparisonContext(null); setFocusPair(null);
     setPocketState(null); setPocketReadback(null); setPocketView(null);
+    setAnnotationShown(null); setAnnotationReadback(null); setAnnotationViewerError(null);
     setChemicalActive(true);
   }
   /** A workflow step may have created objects (prepared/chemical/minimized structures, reports): re-read this run's
@@ -1519,6 +1604,12 @@ export default function WorkspacePage() {
         if (key !== pocketKeyRef.current) return;
         setPocketReadback(readback); setPocketOverlayError(overlayError);
       }}
+      siteAnnotation={annotationForViewer}
+      onSiteAnnotation={(key, readback, siteError) => {
+        if (key === null) { setAnnotationReadback(previous => previous === null ? previous : null); return; }
+        if (key !== annotationKeyRef.current) return;
+        setAnnotationReadback(readback); setAnnotationViewerError(siteError);
+      }}
       selectedAtoms={pendingAtom ? [pendingAtom] : measurementSelection?.result.schema === "atom_distance@1" &&
         [displaySource?.handle, movingSource?.handle].includes(measurementSelection.result.structure_handle)
         ? [measurementSelection.result.first, measurementSelection.result.second] : []}
@@ -1557,6 +1648,7 @@ export default function WorkspacePage() {
     {comparisonContext ? <p className="mw-muted">두 구조 비교 중에는 한 구조용 프롬프트 명령을 사용할 수 없습니다.</p> : <ViewerAgentPanel key={viewerContextKey ?? `empty-${runId ?? "none"}`}
       runId={runId ?? null} clientId={viewerClientId.current ?? ""} sceneGeneration={sceneToken.current.generation}
       disabledReason={pocketGates.m8}
+      naturalLanguageDisabledReason={siteGates.m8}
       sourceHandle={displaySource?.handle ?? null} viewerReady={viewerReady} bridgeRef={viewerBridgeRef}
       representation={representation} selected={selectedFocus} residues={displayResidues} dryRun={run?.dry_run ?? false}
       restoreTarget={sceneOverride?.scene.value.selection ?? null} onSession={setViewerSession}
@@ -1668,7 +1760,7 @@ export default function WorkspacePage() {
       <div className="mw-workflow-row"><label>보기 이름 <input className="mw-input" type="text" maxLength={80} value={sceneName} onChange={e => setSceneName(e.target.value)} /></label>
         <Button size="sm" disabled={sceneBlocked || !runId || !sceneSessionReady || !sceneName.trim() || !!sceneBusy} title={pocketGates.m9 ? pocketGates.m9 : m10SceneBlocked ? "원자 측정 표시를 지우거나 두 구조 비교에서 나간 뒤 단일 구조 보기를 저장하세요." : !viewerReady ? "구조를 먼저 불러오세요" : !sceneSessionReady ? "뷰어 세션을 준비하는 중입니다" : "현재 장면을 저장합니다"} onClick={() => void saveCurrentScene()}>현재 보기 저장</Button>
         <label>저장된 보기 <select className="mw-select" value={selectedSceneHandle} onChange={e => setSelectedSceneHandle(e.target.value)}>
-          <option value="">보기 선택</option>{savedScenes.map(scene => <option key={scene.handle} value={scene.handle}>{scene.value.name} · {scene.value.structure_kind} · {scene.handle.split("/").at(-1)?.slice(0, 12)}</option>)}
+          <option value="">보기 선택</option>{savedScenes.map(scene => <option key={scene.handle} value={scene.handle}>{scene.value.name} · {scene.value.structure_kind} · {scene.handle.split("/").at(-1)?.slice(0, 12)}{sceneAnnotation(scene.value) ? " · 참조 주석" : ""}</option>)}
         </select></label>
         <Button size="sm" disabled={!runId || !selectedSceneHandle} onClick={() => void restoreSavedScene()}>저장된 보기 복원</Button>
         {sceneOverride && <Button size="sm" onClick={returnToCurrentStructure}>현재 구조로 돌아가기</Button>}
@@ -1686,6 +1778,9 @@ export default function WorkspacePage() {
         {sceneBusy && <span role="status" className="mw-muted">{sceneBusy}…</span>}
         {sceneStatus && <span role="status" className="mw-muted">{sceneStatus}</span>}
         {sceneError && <span role="alert" className="mw-workflow-error">{sceneError}</span>}
+        {annotationRestore && annotationRestore.token === sceneOverride?.token && <span role={annotationRestore.status === "applied" ? "status" : "alert"}
+          className={annotationRestore.status === "applied" ? "mw-muted" : "mw-workflow-error"} data-testid="scene-annotation-restore"
+          data-scene-annotation-restore={annotationRestore.status}>{annotationRestore.text}</span>}
       </div>
       <p className="mw-muted">PNG는 현재 장면을 Mol*에서 로컬로 렌더링한 그림입니다. 저장된 보기와 장면이 일치하고 뷰어가 준비된 경우에만 내보낼 수 있습니다. 새 과학 계산 결과가 아닙니다.</p>
     </div>
@@ -1882,7 +1977,7 @@ export default function WorkspacePage() {
       {run && <InspectorSection><PocketPanel key={run.run_id} panel="main" run={run}
         capability={capabilities ? capabilities.methods?.pocket_detection ?? null : undefined} sourceOptions={pocketSourceOptions}
         displayedSourceHandle={displaySource?.handle ?? null} viewerReady={pocketViewerReady}
-        blockedReason={pocketGates.pocket} overlay={pocketState?.request ?? null}
+        blockedReason={pocketGates.pocket} overlayBlockedReason={siteGates.pocketOverlay} overlay={pocketState?.request ?? null}
         overlayApplied={pocketReadback} overlayError={pocketOverlayError} overlayNotice={pocketNotice}
         onOverlay={requestPocketOverlay}
         openRequest={pocketOpenRequest} onOpenRequestResult={pocketOpenAnswered} onChainSelection={setPocketChainSelection}
@@ -1906,6 +2001,13 @@ export default function WorkspacePage() {
             setPocketView(prior.pocketView); setOpenmmViewHandle(prior.openmmViewHandle);
           }
         }} /></InspectorSection>}
+      {run && <InspectorSection><SiteAnnotationPanel key={run.run_id} run={run}
+        capability={capabilities ? capabilities.methods?.reference_site_annotation ?? null : undefined}
+        sourceHandle={targetHandle} sourceKind={annotationSourceKind} viewerReady={pocketViewerReady && displaySource?.handle === targetHandle}
+        events={events} blockedReason={siteGates.annotation} shown={annotationShown}
+        applied={annotationApplied} appliedError={annotationForViewer ? annotationViewerError : null}
+        onShow={requestAnnotation} onObjectsChanged={refreshEventsFromAnalysis}
+        onReportCreated={() => setReportsReloadToken(token => token + 1)} /></InspectorSection>}
       {budget && <InspectorSection><span className="mw-eyebrow">실제 예산</span><BudgetMeter budget={budget} /></InspectorSection>}
       {capabilities?.methods?.interface_sasa && <InspectorSection><span className="mw-eyebrow">지원하는 로컬 방법</span>
         <p className="mw-capability"><b>단백질–리간드 SASA</b><br />{capabilities.methods.interface_sasa.available

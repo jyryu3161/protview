@@ -428,3 +428,43 @@ export interface SiteAnnotationReadback {
 /** Annotation part of a `viewer_scene@2` restore: applied (with native readback) or rejected with a reason. */
 export type SiteAnnotationRestoreOutcome =
   | { status: "applied"; readback: SiteAnnotationReadback } | { status: "rejected"; reason: string };
+
+// ---- page wiring (M16 T7) ----
+
+/** UI label of the scientific_null state (distinct from the M12 pocket text "정상적인 빈 결과 (scientific_null)"). */
+export const SCIENTIFIC_NULL_LABEL = "주요 부위 없음 (scientific_null)";
+export const ANNOTATION_REQUEST_NOT_READY = "참조 주석 표시가 아직 뷰어에 준비되지 않았습니다. 주석이 표시된 뒤 다시 시도하세요.";
+
+/** The annotation the page asked the viewer to show (always visible; "off" is null). */
+export interface SiteAnnotationShown { runId: string; sourceHandle: string; handle: string;
+  annotation: ReferenceSiteAnnotation; legend: boolean }
+
+/** Viewer prop for a shown annotation; the key changes with run, annotation, source or legend. */
+export function siteAnnotationRequest(shown: SiteAnnotationShown): SiteAnnotationRequest {
+  return { key: JSON.stringify([shown.runId, shown.handle, shown.sourceHandle, shown.legend]), handle: shown.handle,
+    sourceHandle: shown.sourceHandle, annotation: shown.annotation, visible: true, legend: shown.legend };
+}
+
+/**
+ * A shown annotation stays on only for its own run and displayed source handle, on a source kind that can carry an
+ * annotation, outside a comparison, and when the stored annotation's structure is that source.
+ */
+export function annotationShownCurrent(shown: Pick<SiteAnnotationShown, "runId" | "sourceHandle" | "annotation">,
+                                       live: { runId: string | null; sourceHandle: string | null; sourceKind: string | null;
+                                         comparisonActive: boolean }): boolean {
+  return shown.runId === live.runId && shown.sourceHandle === live.sourceHandle && !live.comparisonActive &&
+    sourceUnavailableReason(live.sourceKind) === null && annotationMatchesSource(shown.annotation, live.sourceHandle);
+}
+
+/**
+ * Host-side guard of a panel "show" request: turning off is always accepted for the current run; turning on needs the
+ * same run and displayed source, no blocking reason, and an annotation of that source.
+ */
+export function annotationShowAccepted(request: Pick<SiteAnnotationShown, "runId" | "sourceHandle" | "annotation"> | null,
+                                       requestRunId: string,
+                                       host: { runId: string | null; sourceHandle: string | null; blocked: string | null }): boolean {
+  if (requestRunId !== host.runId) return false;
+  if (!request) return true;
+  return request.runId === host.runId && request.sourceHandle === host.sourceHandle && host.blocked === null &&
+    annotationMatchesSource(request.annotation, host.sourceHandle);
+}
