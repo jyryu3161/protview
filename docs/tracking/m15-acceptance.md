@@ -95,7 +95,7 @@
 수정으로 생긴 중복(이유 코드 목록이 백엔드·프런트 테스트에 따로 있음, `SNAPSHOT_SCOPE`가 `numbering.ts`와 `numbering_reports.py`에 따로 있음)은 `docs/tracking/findings.md`에 기록했다.
 
 ## 재고정 (최종 고정 `93c4fb1`, `docs/qa/m15-numbering-20260930/refreeze-93c4fb1/`, 증거 커밋 `0e376aa`)
-- 첫 고정 대비 `docs/` 밖 변경은 코드·테스트 8개(`numbering_reports.py`, `residue_numbering.py`의 `CONFLICT_REASONS` 1줄, 백엔드 테스트 3개, `NumberingPanel.tsx`, `lib/numbering.ts`, `tests/numbering.test.cjs`)와 안내 문서 5개다. 수락 실행기·오프스크린 하네스 해시는 첫 고정과 같다. 시작 때 작업 트리가 깨끗했고 고정 뒤 소스 변경은 없다. `MW_KBASE_REF`는 설정하지 않았고 `<repo>/../kbase_kinase/ref`가 있어 KLIFS 실제 스냅샷 테스트 2개가 돌았다.
+- 첫 고정 대비 `docs/` 밖 변경은 코드·테스트 8개(`numbering_reports.py`, `residue_numbering.py`의 `CONFLICT_REASONS` 1줄, 백엔드 테스트 3개(`test_klifs_numbering.py`, `test_numbering_reports.py`, `test_residue_numbering.py`), `NumberingPanel.tsx`, `lib/numbering.ts`, `tests/numbering.test.cjs`)와 안내 문서 5개다. 수락 실행기·오프스크린 흐름 스크립트 해시는 첫 고정과 같다. 시작 때 작업 트리가 깨끗했고 고정 뒤 소스 변경은 없다. `MW_KBASE_REF`는 설정하지 않았고 `<repo>/../kbase_kinase/ref`가 있어 KLIFS 실제 스냅샷 테스트 2개가 돌았다.
 
 | 검사 (`gate.txt`, 2026-09-30 06:04–06:21 UTC) | 결과 |
 |---|---|
@@ -110,7 +110,7 @@
 
 - M15 수락 시도 1은 사례·단계가 모두 pass(`acceptance: true`, 14/14)였지만 마지막 증거 내보내기에서 exit 1로 끝났다. QA 실행자가 먼저 증거 폴더에 써 둔 자기 `gate.txt`의 pytest 경고 줄에 가리지 않은 절대 경로가 있어 누출 검사(`leaked: ["gate.txt"]`)에 걸린 것이며 제품 코드 문제가 아니다. `gate.txt`를 가림 처리한 뒤 새 `--root`·`--artifacts`로 다시 돌린 시도 2를 채택했다. 시도 1의 출력은 지우지 않고 Git 제외 `frontend/tests/offscreen/artifacts/m15-acceptance/refreeze/attempt1-export/`에 두었다.
 - 보고서 JSON 다운로드는 590,108 bytes로 첫 고정(589,907)보다 201 bytes 크다. 늘어난 부분은 `limitations`의 스냅샷 범위 문장이다(증거 README에서 확인).
-- M8–M13 회귀는 다시 돌리지 않았다. 첫 고정에서 28/28로 통과했고, 그 뒤 바뀐 프런트엔드 코드는 지식·보고서 탭에만 그려지는 `NumberingPanel`과 그것만 실행 코드로 가져다 쓰는 `lib/numbering.ts`뿐이며(`lib/api.ts`는 타입만 가져옴), 바뀐 백엔드 코드는 번호 대응 보고서 검증(`numbering_reports.py`)과 상수 1줄(`residue_numbering.py`)뿐이라 M11–M13 도구·작업·보고서 경로가 쓰지 않는다. 전체 백엔드 pytest(815)와 M14 회귀가 최종 고정에서 통과했다. 근거 전체는 증거 README의 "M13 회귀를 다시 돌리지 않은 이유".
+- M8–M13 회귀는 다시 돌리지 않았다. 첫 고정에서 28/28로 통과했고, 그 뒤 바뀐 프런트엔드 코드는 지식·보고서 탭에만 그려지는 `NumberingPanel`과 그것만 실행 코드로 가져다 쓰는 `lib/numbering.ts`뿐이며(`lib/api.ts`는 타입만 가져옴), 바뀐 백엔드 코드는 번호 대응 보고서 검증·`limitations` 범위 문장(`numbering_reports.py`)과 상수 1줄(`residue_numbering.py`)뿐이라 M11–M13 도구·작업·보고서 경로가 쓰지 않는다. 전체 백엔드 pytest(815)와 M14 회귀가 최종 고정에서 통과했다. 근거 전체는 증거 README의 "M13 회귀를 다시 돌리지 않은 이유".
 
 ## 게이트 (첫 고정 소스 `c1d824d`, `docs/qa/m15-numbering-20260930/gate.txt`, 2026-09-30 04:19–04:35 UTC)
 

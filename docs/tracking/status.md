@@ -33,7 +33,7 @@
 | KLIFS 번호 측정(`scripts/measure_klifs_numbering.py`, 첫 고정 `c1d824d`. 최종 검토 수정은 번호 계산을 바꾸지 않음) | 279개 구조 22,618 위치 중 22,211 일치(98.2%), 불일치 407, 번호 없음 852(적용률 약 96.4%) |
 | M15 수락 QA(`scripts/m15_offscreen_acceptance.py`) | 14사례·5단계 통과(`acceptance: true`), 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음. 시도 1은 QA 실행자 자신의 `gate.txt`에 가리지 않은 경로가 있어 증거 내보내기에서 exit 1, 시도 2 채택(`docs/tracking/m15-acceptance.md`) |
 | M14 회귀(`scripts/m14_offscreen_acceptance.py`) | 15사례 통과(`acceptance: true`). 지식 탭 사례는 번호 대응 화면 확인으로 바뀜 |
-| M8–M13 회귀(`scripts/m13_offscreen_acceptance.py` 전체) | 첫 고정 `c1d824d`에서 17단계·28사례 통과(`acceptance: true`), M11 17/17, M12 31/31. 최종 고정에서는 바뀐 코드가 지식 탭 번호 대응 화면과 번호 대응 보고서 검증뿐이라 다시 돌리지 않음(이유는 완료 기록) |
+| M8–M13 회귀(`scripts/m13_offscreen_acceptance.py` 전체) | 첫 고정 `c1d824d`에서 17단계·28사례 통과(`acceptance: true`), M11 17/17, M12 31/31. 최종 고정에서는 바뀐 코드가 지식 탭 번호 대응 화면과 번호 대응 보고서 검증·범위 문장뿐이라 다시 돌리지 않음(이유는 완료 기록) |
 
 증거: `docs/qa/m15-numbering-20260930/`(M15 첫 고정, `m14-regression/`·`m13-regression/` 포함, 최종 고정은 `refreeze-93c4fb1/`), `docs/qa/m14-tabs-20260930/`(M14), `docs/qa/m13-workflows-20260929-final/`(M13 최종), `docs/qa/m12-pockets-20260929/`(M12), `docs/qa/m11-chemical-20260928/`(M11). 옛 단계 기록은 M11 index pending(결정 0014), M12·M13 index 없음(결정 0016·0018). 다시 돌리지 않은 과거 범위는 `docs/tracking/m15-acceptance.md`·`m14-acceptance.md`·`m13-acceptance.md`의 "대체한 과거 검증 범위".
 
