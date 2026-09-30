@@ -86,7 +86,8 @@ export function buildReportRows(refs: SavedReportRef[]): ReportLibraryRow[] {
 
 export function reportKindLabel(row: ReportLibraryRow): string {
   if (row.kind === INTERACTION_REPORT_KIND) return "상호작용 보고서";
-  return row.kind === "residue_numbering" ? "잔기 번호 대응 보고서" : row.kind;
+  if (row.kind === "residue_numbering") return "잔기 번호 대응 보고서";
+  return row.kind === "reference_site_annotation" ? "참조 주석 보고서" : row.kind;
 }
 
 /** Server order (newest first) is kept as-is. */
