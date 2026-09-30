@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 import mw.api.app as api_module
 import mw.saved_scenes as scenes_module
+from mw.core.handles import canonical_json, object_sha
 from mw.saved_scenes import validate_png
 
 FIX = Path(__file__).parent / "fixtures"
@@ -406,3 +407,284 @@ def test_figure_admission_png_budget_and_final_replay(monkeypatch, tmp_path):
     resumed = client.post(f"/runs/{rid}/viewer/figures", json=body)
     assert resumed.status_code == 201, resumed.text
     assert client.get(f"/runs/{rid}/viewer/figures").json()["total"] == 1
+
+
+# --- M16: viewer_scene@2 / viewer_figure@2 (annotation provenance) ---------------------------------------------
+
+# Pinned on the pre-M16 code (commit a9f3fe3) with the mini_complex fixture and the default _scene_body/_png: the
+# sha256 of the canonical stored value after replacing the run id, the loaded structure handle and the scene handle
+# (the structure handle differs per upload) with placeholders. Saving without an annotation must keep producing
+# exactly these bytes, and the handles must stay the viewer_scene@1 / viewer_figure@1 object identities.
+GOLDEN_SCENE_SHA = "f24f0e63e9d028eedd97eb796cc531b6f5fb4539da6626504d43411b30751bb6"
+GOLDEN_FIGURE_SHA = "f30bdf0d94023b8a3c0ef4013acc78229e3a3d89d8dc70fb13bfdd93e21b1abc"
+CIF_1MQ4 = FIX / "public_1mq4.cif"
+ADP = {"model_number": 1, "chain_auth": "A", "seq_auth": 2001, "icode": "", "resname": "ADP"}
+
+
+def _canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def _normalized(value, rid, structure, scene):
+    raw = _canonical(value).replace(structure.encode(), b"STRUCTURE").replace(scene.encode(), b"SCENE")
+    return raw.replace(rid.encode(), b"RID")
+
+
+def _sha(raw):
+    import hashlib
+    return hashlib.sha256(raw).hexdigest()
+
+
+def test_scene_and_figure_without_annotation_match_pre_m16_golden(monkeypatch, tmp_path):
+    client, rid, handle, session = _setup(monkeypatch, tmp_path)
+    body = _scene_body(handle, session)
+    scene = client.post(f"/runs/{rid}/viewer/scenes", json=body)
+    assert scene.status_code == 201, scene.text
+    scene = scene.json()
+    assert scene["value"]["schema"] == "viewer_scene@1" and "annotation" not in scene["value"]
+    assert _sha(_normalized(scene["value"], rid, handle, scene["handle"])) == GOLDEN_SCENE_SHA
+    assert scene["handle"] == f"obj://{rid}/viewer_scene/" + object_sha("viewer_scene", "viewer_scene@1",
+                                                                          canonical_json(scene["value"]))
+    figure_body = _figure_body(scene, session, _png())
+    figure = client.post(f"/runs/{rid}/viewer/figures", json=figure_body)
+    assert figure.status_code == 201, figure.text
+    figure = figure.json()
+    assert figure["value"]["schema"] == "viewer_figure@1" and "annotation" not in figure["value"]
+    assert _sha(_normalized(figure["value"], rid, handle, scene["handle"])) == GOLDEN_FIGURE_SHA
+    assert figure["handle"] == f"obj://{rid}/viewer_figure/" + object_sha("viewer_figure", "viewer_figure@1",
+                                                                            canonical_json(figure["value"]))
+    # The idempotency hash is still the request body without request_id (no added default keys).
+    run = api_module.RUNS[rid]
+    for event_type, sent in (("viewer_scene_saved", body), ("viewer_figure_saved", figure_body)):
+        event = next(e for e in run.events.read() if e["type"] == event_type)
+        expected = {key: value for key, value in sent.items() if key != "request_id"}
+        assert event["payload_sha256"] == _sha(_canonical(expected))
+    # An annotation field on a viewer_scene@1 body and a legend flag on a viewer_figure@1 body are unknown fields.
+    extra = {**_scene_body(handle, session), "annotation": {"handle": handle, "legend": True}}
+    assert client.post(f"/runs/{rid}/viewer/scenes", json=extra).status_code == 422
+    extra = {**_figure_body(scene, session, _png()), "legend_composited": False}
+    assert client.post(f"/runs/{rid}/viewer/figures", json=extra).status_code == 422
+
+
+def _m16_setup(monkeypatch, tmp_path):
+    from reference_fixture_set import build_fixture_set
+
+    from mw import reference_snapshots as rs
+    root = tmp_path / "reference"
+    root.mkdir()
+    monkeypatch.setenv(rs.ENV_VAR, str(root))
+    build_fixture_set(root)
+    monkeypatch.setattr(api_module, "RUNS_DIR", tmp_path / "runs")
+    api_module.RUNS.clear()
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
+
+    def new_run():
+        rid = client.post("/runs", json={}).json()["run_id"]
+        upload = client.post(f"/runs/{rid}/uploads", params={"filename": "1mq4.cif"},
+                             content=CIF_1MQ4.read_bytes()).json()
+
+        def command(tool, args):
+            response = client.post(f"/runs/{rid}/commands", json={"tool": tool, "args": args})
+            assert response.status_code == 200, response.text
+            return response.json()["handle"]["handle"]
+        structure = command("load_structure", {"source": upload["upload_id"]})
+        prepared = command("prepare_structure", {"structure": structure})
+        numbering_map = command("map_residue_numbering", {"structure": prepared, "pdb_id": "1MQ4",
+                                                          "chains": [{"chain_auth": "A"}]})
+        contacts = command("compute_interactions", {"structure": prepared, "ligand": ADP})
+        annotation = command("annotate_reference_sites", {"numbering_map": numbering_map, "contacts": contacts})
+        bare = command("annotate_reference_sites", {"numbering_map": numbering_map})
+        return {"rid": rid, "structure": structure, "prepared": prepared, "numbering_map": numbering_map,
+                "contacts": contacts, "annotation": annotation, "bare": bare}
+    return client, new_run
+
+
+def _session(client, rid, structure, generation, client_id):
+    response = client.post(f"/runs/{rid}/viewer/sessions", json={"client_instance_id": client_id,
+                           "scene_generation": generation, "structure_handle": structure})
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def _scene2(handle, session, annotation, legend=True, **changes):
+    return _scene_body(handle, session, schema="viewer_scene@2",
+                       annotation={"handle": annotation, "legend": legend}, **changes)
+
+
+def _figure2(scene, session, png, composited):
+    return {**_figure_body(scene, session, png), "schema": "viewer_figure@2", "legend_composited": composited}
+
+
+def _admissions(client, rid):
+    return [e for e in api_module.RUNS[rid].events.read() if e["type"].startswith("viewer_") and
+            e["type"].endswith(("_admitted", "_saved"))]
+
+
+def test_scene_v2_save_validates_the_annotation(monkeypatch, tmp_path):
+    client, new_run = _m16_setup(monkeypatch, tmp_path)
+    r = new_run()
+    other = new_run()
+    rid, prepared = r["rid"], r["prepared"]
+    client_id = _id()
+    original_session = _session(client, rid, r["structure"], 1, client_id)
+    # The annotation is on the prepared structure; a scene of the original structure must not carry it.
+    mismatch = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(r["structure"], original_session,
+                                                                       r["annotation"]))
+    assert mismatch.status_code == 422 and mismatch.json()["detail"]["error"] == "structure_mismatch"
+    session = _session(client, rid, prepared, 2, client_id)
+    for wrong in (r["numbering_map"], r["contacts"], prepared, other["annotation"],
+                  f"obj://{rid}/reference_site_annotation/" + "0" * 64, "not-a-handle"):
+        response = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(prepared, session, wrong))
+        assert response.status_code == 422 and response.json()["detail"]["error"] == "input_invalid", wrong
+    malformed = [
+        _scene_body(prepared, session, schema="viewer_scene@2"),                           # annotation missing
+        _scene2(prepared, session, r["annotation"], legend="yes"),
+        _scene2(prepared, session, r["annotation"], legend=1),
+        {**_scene2(prepared, session, r["annotation"]), "annotation": {"handle": r["annotation"]}},
+        {**_scene2(prepared, session, r["annotation"]),
+         "annotation": {"handle": r["annotation"], "legend": True, "extra": 1}},
+        {**_scene2(prepared, session, r["annotation"]), "unexpected": 1},
+        _scene_body(prepared, session, schema="viewer_scene@3"),
+    ]
+    for body in malformed:
+        assert client.post(f"/runs/{rid}/viewer/scenes", json=body).status_code == 422, body
+    assert _admissions(client, rid) == []
+    body = _scene2(prepared, session, r["annotation"])
+    saved = client.post(f"/runs/{rid}/viewer/scenes", json=body)
+    assert saved.status_code == 201, saved.text
+    value = saved.json()["value"]
+    assert value["schema"] == "viewer_scene@2"
+    assert value["annotation"] == {"handle": r["annotation"], "legend": True}
+    plain = client.post(f"/runs/{rid}/viewer/scenes", json=_scene_body(prepared, session)).json()["value"]
+    assert {key: val for key, val in value.items() if key not in ("schema", "annotation")} == \
+        {key: val for key, val in plain.items() if key != "schema"}
+    assert client.post(f"/runs/{rid}/viewer/scenes", json=body).json()["handle"] == saved.json()["handle"]
+    changed = {**body, "annotation": {"handle": r["annotation"], "legend": False}}
+    assert client.post(f"/runs/{rid}/viewer/scenes", json=changed).status_code == 409
+    off = client.post(f"/runs/{rid}/viewer/scenes", json={**changed, "request_id": _id()})
+    assert off.status_code == 201 and off.json()["handle"] != saved.json()["handle"]
+    assert off.json()["value"]["annotation"]["legend"] is False
+    bare = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(prepared, session, r["bare"]))
+    assert bare.status_code == 201
+
+
+def test_figure_v2_records_annotation_provenance_and_capture_method(monkeypatch, tmp_path):
+    client, new_run = _m16_setup(monkeypatch, tmp_path)
+    r = new_run()
+    rid, prepared = r["rid"], r["prepared"]
+    session = _session(client, rid, prepared, 1, _id())
+    on = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(prepared, session, r["annotation"])).json()
+    off = client.post(f"/runs/{rid}/viewer/scenes",
+                      json=_scene2(prepared, session, r["annotation"], legend=False, name="no legend")).json()
+    plain = client.post(f"/runs/{rid}/viewer/scenes", json=_scene_body(prepared, session, name="plain")).json()
+    content = client.get(f"/runs/{rid}/site_annotations/detail", params={"handle": r["annotation"]}).json()
+    content = content["annotation"]
+    labels = [site["display_label"] for group in content["groups"] for site in group["sites"]
+              if site["status"] == "annotated"]
+    assert "Glu211 (hinge.46)" in labels and len(labels) == 10
+    png = _png()
+    composited = client.post(f"/runs/{rid}/viewer/figures", json=_figure2(on, session, png, True))
+    assert composited.status_code == 201, composited.text
+    value = composited.json()["value"]
+    assert value["schema"] == "viewer_figure@2" and value["capture_method"] == "molstar_image_pass+legend"
+    assert value["annotation"] == {"handle": r["annotation"], "legend": True, "numbering_map": r["numbering_map"],
+                                   "contacts": r["contacts"], "snapshot_set_hash": content["snapshot_set_hash"],
+                                   "display_labels": labels}
+    plain_figure = client.post(f"/runs/{rid}/viewer/figures", json=_figure_body(plain, session, png)).json()["value"]
+    assert {key: val for key, val in value.items() if key not in ("schema", "annotation", "scene_handle",
+                                                                  "capture_method")} == \
+        {key: val for key, val in plain_figure.items() if key not in ("schema", "scene_handle", "capture_method")}
+    # Legend on but nothing composited (e.g. no dashed line): the existing capture method.
+    not_composited = client.post(f"/runs/{rid}/viewer/figures", json=_figure2(on, session, _png(pixel=b"\x40\x70\x90\xff"),
+                                                                             False))
+    assert not_composited.status_code == 201
+    assert not_composited.json()["value"]["capture_method"] == "molstar_image_pass"
+    no_legend = client.post(f"/runs/{rid}/viewer/figures", json=_figure2(off, session, png, False))
+    assert no_legend.status_code == 201
+    assert no_legend.json()["value"]["capture_method"] == "molstar_image_pass"
+    assert no_legend.json()["value"]["annotation"]["legend"] is False
+    before = _admissions(client, rid)
+    # A composited legend on a legend-off scene, or a schema that does not match the scene, is refused.
+    rejected = client.post(f"/runs/{rid}/viewer/figures", json=_figure2(off, session, png, True))
+    assert rejected.status_code == 422 and rejected.json()["detail"]["error"] == "input_invalid"
+    assert client.post(f"/runs/{rid}/viewer/figures", json=_figure_body(on, session, png)).status_code == 409
+    assert client.post(f"/runs/{rid}/viewer/figures", json=_figure2(plain, session, png, False)).status_code == 409
+    assert client.post(f"/runs/{rid}/viewer/figures", json=_figure2(on, session, png, "yes")).status_code == 422
+    missing = {key: val for key, val in _figure2(on, session, png, True).items() if key != "legend_composited"}
+    assert client.post(f"/runs/{rid}/viewer/figures", json=missing).status_code == 422
+    assert _admissions(client, rid) == before
+    bare_scene = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(prepared, session, r["bare"],
+                                                                        name="bare")).json()
+    bare_figure = client.post(f"/runs/{rid}/viewer/figures", json=_figure2(bare_scene, session, png, False))
+    assert bare_figure.status_code == 201 and bare_figure.json()["value"]["annotation"]["contacts"] is None
+    handle = composited.json()["handle"]
+    downloaded = client.get(f"/runs/{rid}/viewer/figures/download", params={"handle": handle, "format": "json"})
+    assert downloaded.status_code == 200 and downloaded.content == _canonical(value)
+    downloaded = client.get(f"/runs/{rid}/viewer/figures/download", params={"handle": handle, "format": "png"})
+    assert downloaded.content == png
+
+
+def test_mixed_v1_v2_list_detail_download_tamper_and_events_only_recovery(monkeypatch, tmp_path):
+    import shutil
+    client, new_run = _m16_setup(monkeypatch, tmp_path)
+    r = new_run()
+    rid, prepared = r["rid"], r["prepared"]
+    session = _session(client, rid, prepared, 1, _id())
+    v1 = client.post(f"/runs/{rid}/viewer/scenes", json=_scene_body(prepared, session)).json()
+    v2 = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(prepared, session, r["annotation"])).json()
+    png = _png()
+    f1 = client.post(f"/runs/{rid}/viewer/figures", json=_figure_body(v1, session, png)).json()
+    f2 = client.post(f"/runs/{rid}/viewer/figures", json=_figure2(v2, session, png, True)).json()
+    scenes = client.get(f"/runs/{rid}/viewer/scenes").json()
+    figures = client.get(f"/runs/{rid}/viewer/figures").json()
+    assert [row["handle"] for row in scenes["rows"]] == [v2["handle"], v1["handle"]] and scenes["total"] == 2
+    assert [row["handle"] for row in figures["rows"]] == [f2["handle"], f1["handle"]] and figures["total"] == 2
+    events_before = client.get(f"/runs/{rid}/events", params={"limit": 500}).json()
+    expected = {}
+    for scene in (v1, v2):
+        detail = client.get(f"/runs/{rid}/viewer/scenes/selected", params={"handle": scene["handle"]})
+        assert detail.status_code == 200 and detail.json() == scene
+    for figure in (f1, f2):
+        detail = client.get(f"/runs/{rid}/viewer/figures/selected", params={"handle": figure["handle"]})
+        assert detail.status_code == 200 and detail.json() == figure
+        for fmt in ("png", "json"):
+            response = client.get(f"/runs/{rid}/viewer/figures/download",
+                                  params={"handle": figure["handle"], "format": fmt})
+            assert response.status_code == 200
+            expected[(figure["handle"], fmt)] = response.content
+    assert expected[(f2["handle"], "json")] == _canonical(f2["value"])
+    assert client.get(f"/runs/{rid}/events", params={"limit": 500}).json() == events_before
+    run = api_module.RUNS[rid]
+    # Tampered viewer_scene@2 / viewer_figure@2 manifests are refused on read.
+    for change in ({"annotation": {"handle": r["numbering_map"], "legend": True}},
+                   {"annotation": {"handle": r["annotation"], "legend": True, "x": 1}},
+                   {"annotation": None}, {"structure_handle": r["structure"]}):
+        artifact = run.store.put("viewer_scene", "viewer_scene@2", {**v2["value"], **change})
+        assert client.get(f"/runs/{rid}/viewer/scenes/selected", params={"handle": artifact.handle}).status_code == 409
+    no_legend = client.post(f"/runs/{rid}/viewer/scenes", json=_scene2(prepared, session, r["annotation"],
+                                                                        legend=False, name="off")).json()
+    annotation = f2["value"]["annotation"]
+    for change in ({"annotation": {**annotation, "display_labels": ["Met1 (hinge.46)"]}},
+                   {"annotation": {**annotation, "contacts": None}},
+                   {"annotation": {**annotation, "legend": False}},
+                   {"scene_handle": no_legend["handle"],
+                    "annotation": {**annotation, "legend": False}},                  # +legend on a legend-off scene
+                   {"scene_handle": v1["handle"]}, {"capture_method": "fake"}, {"annotation": None}):
+        artifact = run.store.put("viewer_figure", "viewer_figure@2", {**f2["value"], **change})
+        assert client.get(f"/runs/{rid}/viewer/figures/selected", params={"handle": artifact.handle}).status_code == 409
+    artifact = run.store.put("viewer_figure", "viewer_figure@1", {**f1["value"], "scene_handle": v2["handle"]})
+    assert client.get(f"/runs/{rid}/viewer/figures/selected", params={"handle": artifact.handle}).status_code == 409
+    # Events-only recovery: objects, SQLite, uploads and the reference folder removed.
+    api_module.RUNS.pop(rid).store.db.close()
+    root = tmp_path / "runs" / rid
+    shutil.rmtree(root / "objects")
+    (root / "index.sqlite").unlink()
+    shutil.rmtree(root / "uploads", ignore_errors=True)
+    shutil.rmtree(tmp_path / "reference")
+    assert [row["handle"] for row in client.get(f"/runs/{rid}/viewer/scenes").json()["rows"]] == \
+        [no_legend["handle"], v2["handle"], v1["handle"]]
+    assert client.get(f"/runs/{rid}/viewer/scenes/selected", params={"handle": v2["handle"]}).json() == v2
+    assert client.get(f"/runs/{rid}/viewer/figures/selected", params={"handle": f2["handle"]}).json() == f2
+    for (handle, fmt), raw in expected.items():
+        response = client.get(f"/runs/{rid}/viewer/figures/download", params={"handle": handle, "format": fmt})
+        assert response.status_code == 200 and response.content == raw

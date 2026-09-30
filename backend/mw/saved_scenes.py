@@ -12,10 +12,21 @@ import math
 import struct
 import uuid
 import zlib
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 
+from . import site_annotation as site_annotations
 from .core.errors import ToolFailure
 from .core.handles import canonical_json, object_sha, sha256_hex
 from .openmm_reports import validated_minimized_structure
@@ -24,6 +35,13 @@ from .viewer_intents import ViewerError, _current_session, _session
 
 SCENE_SCHEMA = "viewer_scene@1"
 FIGURE_SCHEMA = "viewer_figure@1"
+# M16: a scene saved with a reference site annotation shown, and its figures. @1 stays unchanged.
+SCENE_SCHEMA_V2 = "viewer_scene@2"
+FIGURE_SCHEMA_V2 = "viewer_figure@2"
+SCENE_SCHEMAS = (SCENE_SCHEMA, SCENE_SCHEMA_V2)
+FIGURE_SCHEMAS = (FIGURE_SCHEMA, FIGURE_SCHEMA_V2)
+CAPTURE_METHOD = "molstar_image_pass"
+CAPTURE_METHOD_LEGEND = "molstar_image_pass+legend"
 PNG_SCHEMA = "viewer_png@1"
 RENDERER = {"name": "molstar", "version": "5.11.0", "scene_schema": "protview_scene@1"}
 LIMITATIONS = "Client-rendered molecular view; this figure is not a new scientific measurement."
@@ -130,6 +148,16 @@ class SceneSave(Binding):
         return _valid_name(value)
 
 
+class SceneAnnotation(ExactModel):
+    handle: str
+    legend: StrictBool
+
+
+class SceneSaveV2(SceneSave):
+    schema_: Literal["viewer_scene@2"] = Field(alias="schema")
+    annotation: SceneAnnotation
+
+
 def _valid_name(value: str) -> str:
     if value != value.strip() or not 1 <= len(value) <= 80 or len(value.encode("utf-8")) > 320:
         raise ValueError("invalid scene name")
@@ -163,6 +191,11 @@ class SceneArtifact(ExactModel):
         return _valid_name(value)
 
 
+class SceneArtifactV2(SceneArtifact):
+    schema_: Literal["viewer_scene@2"] = Field(alias="schema")
+    annotation: SceneAnnotation
+
+
 class FigureArtifact(ExactModel):
     schema_: Literal["viewer_figure@1"] = Field(alias="schema")
     scene_handle: str
@@ -190,6 +223,41 @@ class FigureSave(Binding):
     png_base64: str
 
 
+class FigureAnnotation(ExactModel):
+    handle: str
+    legend: StrictBool
+    numbering_map: str
+    contacts: str | None
+    snapshot_set_hash: str
+    display_labels: list[str]
+
+
+class FigureArtifactV2(FigureArtifact):
+    schema_: Literal["viewer_figure@2"] = Field(alias="schema")
+    capture_method: Literal["molstar_image_pass", "molstar_image_pass+legend"]
+    annotation: FigureAnnotation
+
+
+class FigureSaveV2(FigureSave):
+    schema_: Literal["viewer_figure@2"] = Field(alias="schema")
+    # True when the client drew the fixed legend text into the PNG (only allowed when the scene's legend is on).
+    legend_composited: StrictBool
+
+
+_SCENE_SAVE = TypeAdapter(Annotated[SceneSave | SceneSaveV2, Field(discriminator="schema_")])
+_FIGURE_SAVE = TypeAdapter(Annotated[FigureSave | FigureSaveV2, Field(discriminator="schema_")])
+
+
+def parse_scene_save(raw: bytes) -> SceneSave:
+    """``viewer_scene@1`` or ``viewer_scene@2`` save body by its ``schema``; pydantic ValidationError otherwise."""
+    return _SCENE_SAVE.validate_json(raw)
+
+
+def parse_figure_save(raw: bytes) -> FigureSave:
+    """``viewer_figure@1`` or ``viewer_figure@2`` save body by its ``schema``; pydantic ValidationError otherwise."""
+    return _FIGURE_SAVE.validate_json(raw)
+
+
 def _source(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any]]:
     try:
         meta = run.store.meta(handle)
@@ -211,6 +279,39 @@ def _selection(residues: dict[str, Any], selection: ExactResidue | None) -> dict
     if len(matches) != 1:
         raise ViewerError("scene_invalid", "selected residue is not a unique authoritative source residue")
     return expected
+
+
+def _annotation(run: Any, handle: str, structure_handle: str) -> dict[str, Any]:
+    """The same run's ``reference_site_annotation@1`` whose structure is the scene source (typed failure otherwise)."""
+    if not handle.startswith(f"obj://{run.run_id}/"):
+        raise ViewerError("input_invalid", "annotation handle is not an object of this run")
+    try:
+        meta = run.store.meta(handle)
+    except KeyError as exc:
+        raise ViewerError("input_invalid", "annotation not found in this run") from exc
+    if (meta["kind"], meta["schema"]) != (site_annotations.KIND, site_annotations.SCHEMA):
+        raise ViewerError("input_invalid", "handle is not a reference site annotation")
+    try:
+        content = run.store.load(handle)
+        if type(content) is not dict or content.get("schema") != site_annotations.SCHEMA:
+            raise ValueError("annotation payload invalid")
+        annotated_structure = content["structure"]["handle"]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ViewerError("scene_invalid", "annotation is missing or corrupt", 409) from exc
+    if annotated_structure != structure_handle:
+        raise ViewerError("structure_mismatch", "annotation structure differs from the scene source")
+    return content
+
+
+def _figure_annotation(run: Any, scene: dict[str, Any]) -> dict[str, Any]:
+    """``viewer_figure@2`` annotation provenance, copied from the stored annotation object (nothing recomputed)."""
+    content = _annotation(run, scene["annotation"]["handle"], scene["structure_handle"])
+    return {"handle": scene["annotation"]["handle"], "legend": scene["annotation"]["legend"],
+            "numbering_map": content["numbering_map"],
+            "contacts": content["contacts"]["handle"] if content["contacts"] is not None else None,
+            "snapshot_set_hash": content["snapshot_set_hash"],
+            "display_labels": [site["display_label"] for group in content["groups"] for site in group["sites"]
+                               if site["status"] == "annotated"]}
 
 
 def _binding(run: Any, body: Binding, structure_handle: str, representation: str,
@@ -240,7 +341,7 @@ def _admission_type(event_type: str) -> str:
     return event_type.replace("_saved", "_admitted")
 
 
-def _completed_handles(run: Any, event_type: str, kind: str, schema: str) -> list[str]:
+def _completed_handles(run: Any, event_type: str, kind: str, schemas: tuple[str, ...]) -> list[str]:
     """An admitted object is visible once its immutable bytes are durable.
 
     A crash after ObjectStore.put but before the final event cannot hide a
@@ -254,7 +355,7 @@ def _completed_handles(run: Any, event_type: str, kind: str, schema: str) -> lis
             meta = run.store.meta(handle)
         except KeyError:
             continue
-        if (meta["kind"], meta["schema"]) == (kind, schema):
+        if meta["kind"] == kind and meta["schema"] in schemas:
             handles.append(handle)
     handles.reverse()
     return handles
@@ -282,13 +383,13 @@ def _request_hash(body: Binding) -> str:
     return sha256_hex(canonical_json(payload))
 
 
-def _detail(run: Any, handle: str, kind: str, schema: str) -> dict[str, Any]:
+def _detail(run: Any, handle: str, kind: str, schemas: tuple[str, ...]) -> dict[str, Any]:
     try:
         meta = run.store.meta(handle)
-        if (meta["kind"], meta["schema"]) != (kind, schema):
+        if meta["kind"] != kind or meta["schema"] not in schemas:
             raise ViewerError("input_invalid", "wrong saved viewer artifact kind")
         value = run.store.load(handle)
-        if not isinstance(value, dict) or value.get("schema") != schema:
+        if not isinstance(value, dict) or value.get("schema") != meta["schema"]:
             raise ViewerError("scene_invalid", "saved viewer artifact is corrupt", 409)
     except KeyError as exc:
         raise ViewerError("not_found", "saved viewer artifact not found", 404) from exc
@@ -298,10 +399,10 @@ def _detail(run: Any, handle: str, kind: str, schema: str) -> dict[str, Any]:
 
 
 def scene_detail(run: Any, handle: str) -> dict[str, Any]:
-    detail = _detail(run, handle, "viewer_scene", SCENE_SCHEMA)
+    detail = _detail(run, handle, "viewer_scene", SCENE_SCHEMAS)
     scene = detail["value"]
     try:
-        parsed = SceneArtifact.model_validate(scene)
+        parsed = (SceneArtifactV2 if scene["schema"] == SCENE_SCHEMA_V2 else SceneArtifact).model_validate(scene)
         if parsed.renderer.model_dump() != RENDERER:
             raise ValueError("unsupported renderer")
         meta, residues = _source(run, parsed.structure_handle)
@@ -309,6 +410,8 @@ def scene_detail(run: Any, handle: str) -> dict[str, Any]:
                 residues["model_number"] != scene["model_number"]):
             raise ViewerError("scene_invalid", "saved source identity changed", 409)
         _selection(residues, parsed.selection)
+        if isinstance(parsed, SceneArtifactV2):
+            _annotation(run, parsed.annotation.handle, parsed.structure_handle)
     except (ValueError, KeyError, ViewerError) as exc:
         raise ViewerError("scene_invalid", "saved scene validation failed", 409) from exc
     return detail
@@ -317,13 +420,19 @@ def scene_detail(run: Any, handle: str) -> dict[str, Any]:
 def save_scene(run: Any, body: SceneSave) -> dict[str, Any]:
     meta, residues = _source(run, body.structure_handle)
     selection = _selection(residues, body.selection)
-    content = {"schema": SCENE_SCHEMA, "name": body.name, "structure_handle": body.structure_handle,
+    schema = SCENE_SCHEMA
+    if isinstance(body, SceneSaveV2):
+        _annotation(run, body.annotation.handle, body.structure_handle)
+        schema = SCENE_SCHEMA_V2
+    content = {"schema": schema, "name": body.name, "structure_handle": body.structure_handle,
                "structure_kind": meta["kind"], "structure_schema": meta["schema"],
                "model_number": residues["model_number"], "selection": selection,
                "representation": body.representation, "camera": body.camera.model_dump(),
                "theme": body.theme, "renderer": RENDERER}
+    if isinstance(body, SceneSaveV2):
+        content["annotation"] = body.annotation.model_dump()
     payload_hash = _request_hash(body)
-    candidate_handle = f"obj://{run.run_id}/viewer_scene/{object_sha('viewer_scene', SCENE_SCHEMA, canonical_json(content))}"
+    candidate_handle = f"obj://{run.run_id}/viewer_scene/{object_sha('viewer_scene', schema, canonical_json(content))}"
     with run._transition():
         duplicate = _admit(run, "viewer_scene_saved", body, payload_hash, MAX_SCENES, candidate_handle)
         if duplicate is not None and duplicate["type"] == "viewer_scene_saved":
@@ -332,7 +441,7 @@ def save_scene(run: Any, body: SceneSave) -> dict[str, Any]:
             _binding(run, body, body.structure_handle, body.representation, selection)
             run.events.append("viewer_scene_admitted", handle=candidate_handle, request_id=body.request_id,
                               payload_sha256=payload_hash, viewer_session_id=body.viewer_session_id)
-        saved = run.store.put("viewer_scene", SCENE_SCHEMA, content,
+        saved = run.store.put("viewer_scene", schema, content,
                               summary={"name": body.name, "structure_handle": body.structure_handle,
                                        "model_number": residues["model_number"]})
         run.events.append("viewer_scene_saved", handle=saved.handle, request_id=body.request_id,
@@ -341,7 +450,7 @@ def save_scene(run: Any, body: SceneSave) -> dict[str, Any]:
 
 
 def list_scenes(run: Any, offset: int = 0, limit: int = 50) -> dict[str, Any]:
-    handles = _completed_handles(run, "viewer_scene_saved", "viewer_scene", SCENE_SCHEMA)
+    handles = _completed_handles(run, "viewer_scene_saved", "viewer_scene", SCENE_SCHEMAS)
     return {"total": len(handles), "offset": offset, "limit": limit,
             "rows": [scene_detail(run, handle) for handle in handles[offset:offset + limit]]}
 
@@ -450,11 +559,18 @@ def _png_budget_allows(run: Any, png_handle: str, byte_count: int) -> None:
 
 
 def figure_detail(run: Any, handle: str) -> dict[str, Any]:
-    detail = _detail(run, handle, "viewer_figure", FIGURE_SCHEMA)
+    detail = _detail(run, handle, "viewer_figure", FIGURE_SCHEMAS)
     value = detail["value"]
     try:
-        parsed = FigureArtifact.model_validate(value)
+        v2 = value["schema"] == FIGURE_SCHEMA_V2
+        parsed = (FigureArtifactV2 if v2 else FigureArtifact).model_validate(value)
         scene = scene_detail(run, parsed.scene_handle)["value"]
+        if scene["schema"] != (SCENE_SCHEMA_V2 if v2 else SCENE_SCHEMA):
+            raise ValueError("figure schema does not match its scene")
+        if isinstance(parsed, FigureArtifactV2) and (
+                parsed.annotation.model_dump() != _figure_annotation(run, scene) or
+                (parsed.capture_method == CAPTURE_METHOD_LEGEND and not parsed.annotation.legend)):
+            raise ValueError("figure annotation provenance mismatch")
         png_meta = run.store.meta(parsed.png_handle)
         if (png_meta["kind"], png_meta["schema"], png_meta["fmt"]) != ("viewer_png", PNG_SCHEMA, "png"):
             raise ValueError("wrong PNG object")
@@ -480,19 +596,28 @@ def save_figure(run: Any, body: FigureSave) -> dict[str, Any]:
         raise ViewerError("image_invalid", "PNG base64 invalid") from exc
     width, height = validate_png(raw)
     scene = scene_detail(run, body.scene_handle)["value"]
+    v2 = isinstance(body, FigureSaveV2)
+    if scene["schema"] != (SCENE_SCHEMA_V2 if v2 else SCENE_SCHEMA):
+        raise ViewerError("scene_mismatch", "figure schema does not match the saved scene schema", 409)
+    if v2 and body.legend_composited and not scene["annotation"]["legend"]:
+        raise ViewerError("input_invalid", "legend composited although the saved scene has the legend off")
     if (scene["structure_handle"] != body.structure_handle or scene["selection"] !=
             (body.selection.model_dump() if body.selection else None) or scene["representation"] != body.representation or
             not _camera_matches(body.camera.model_dump(), scene["camera"]) or scene["theme"] != body.theme):
         raise ViewerError("scene_mismatch", "current rendered view differs from saved scene", 409)
     payload_hash = _request_hash(body)
     png_handle = f"obj://{run.run_id}/viewer_png/{object_sha('viewer_png', PNG_SCHEMA, raw)}"
-    value = {"schema": FIGURE_SCHEMA, "scene_handle": body.scene_handle,
+    schema = FIGURE_SCHEMA_V2 if v2 else FIGURE_SCHEMA
+    value = {"schema": schema, "scene_handle": body.scene_handle,
              "structure_handle": scene["structure_handle"], "model_number": scene["model_number"],
              "png_handle": png_handle, "png_sha256": hashlib.sha256(raw).hexdigest(),
              "width": width, "height": height, "media_type": "image/png", "renderer": RENDERER,
-             "capture_method": "molstar_image_pass", "provenance": "client_rendered_local_view",
+             "capture_method": CAPTURE_METHOD, "provenance": "client_rendered_local_view",
              "limitations": LIMITATIONS}
-    figure_handle = f"obj://{run.run_id}/viewer_figure/{object_sha('viewer_figure', FIGURE_SCHEMA, canonical_json(value))}"
+    if v2:
+        value["capture_method"] = CAPTURE_METHOD_LEGEND if body.legend_composited else CAPTURE_METHOD
+        value["annotation"] = _figure_annotation(run, scene)
+    figure_handle = f"obj://{run.run_id}/viewer_figure/{object_sha('viewer_figure', schema, canonical_json(value))}"
     with run._transition():
         duplicate = _admit(run, "viewer_figure_saved", body, payload_hash, MAX_FIGURES, figure_handle)
         if duplicate is not None and duplicate["type"] == "viewer_figure_saved":
@@ -516,7 +641,7 @@ def save_figure(run: Any, body: FigureSave) -> dict[str, Any]:
                             summary={"width": width, "height": height})
         if png.handle != png_handle:
             raise ViewerError("scene_invalid", "saved image identity mismatch", 409)
-        figure = run.store.put("viewer_figure", FIGURE_SCHEMA, value,
+        figure = run.store.put("viewer_figure", schema, value,
                                summary={"scene_handle": body.scene_handle, "width": width, "height": height})
         run.events.append("viewer_figure_saved", handle=figure.handle, request_id=body.request_id,
                           payload_sha256=payload_hash, viewer_session_id=body.viewer_session_id)
@@ -524,7 +649,7 @@ def save_figure(run: Any, body: FigureSave) -> dict[str, Any]:
 
 
 def list_figures(run: Any, offset: int = 0, limit: int = 50) -> dict[str, Any]:
-    handles = _completed_handles(run, "viewer_figure_saved", "viewer_figure", FIGURE_SCHEMA)
+    handles = _completed_handles(run, "viewer_figure_saved", "viewer_figure", FIGURE_SCHEMAS)
     return {"total": len(handles), "offset": offset, "limit": limit,
             "rows": [figure_detail(run, handle) for handle in handles[offset:offset + limit]]}
 
