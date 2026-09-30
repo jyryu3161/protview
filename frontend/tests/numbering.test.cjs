@@ -107,3 +107,24 @@ test("keyed reads drop responses of an older run or an older request", () => {
   assert.equal(lib.keyedRequest(k, "r2", 2), k);
   assert.equal(lib.keyedRequest(k, null, 3), k);
 });
+
+test("withdrawing the PDB ID confirmation keeps user-picked accessions and clears SIFTS prefills", () => {
+  const confirmed = lib.applySiftsHints({ ...lib.emptyForm(), structure: "s", pdbId: "1ABC", pdbIdConfirmed: true,
+    chains: [{ chain_auth: "A", selected: true, accession: null }, { chain_auth: "B", selected: true, accession: "Q9" },
+      { chain_auth: "C", selected: false, accession: null }] }, sifts);
+  assert.equal(confirmed.chains[0].accession, "O14965");
+  const withdrawn = lib.withdrawSiftsHints(confirmed, ["B"]);
+  assert.equal(withdrawn.pdbIdConfirmed, false);
+  assert.equal(withdrawn.sifts, null);
+  assert.equal(withdrawn.pdbId, "1ABC");
+  assert.deepEqual(plain(withdrawn.chains.map(choice => [choice.chain_auth, choice.selected, choice.accession])),
+    [["A", true, null], ["B", true, "Q9"], ["C", false, null]]);
+});
+
+test("license and version display keep manifest values; KLIFS none-stated is spelled out", () => {
+  assert.equal(lib.licenseText("none-stated"), "이용 조건 명시 없음(none-stated)");
+  assert.equal(lib.licenseText("CC-BY-4.0"), "CC-BY-4.0");
+  assert.equal(lib.licenseText("EMBL-EBI-terms"), "EMBL-EBI-terms");
+  assert.equal(lib.sourceVersion({ version_hint: "2026_03", date: "2026-09-15" }), "2026_03");
+  assert.equal(lib.sourceVersion({ version_hint: null, date: "2026-09-20" }), "2026-09-20");
+});

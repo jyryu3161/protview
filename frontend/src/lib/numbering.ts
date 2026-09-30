@@ -176,3 +176,21 @@ export function keyedResolve<T>(current: Keyed<T>, runId: string, seq: number, r
   return { ...current, state: result };
 }
 
+/**
+ * Withdraws the PDB ID confirmation: SIFTS hints are dropped and accessions that only came from the SIFTS
+ * prefill are cleared; accessions the user picked (`userPicked` chains) stay.
+ */
+export function withdrawSiftsHints(form: NumberingForm, userPicked: readonly string[]): NumberingForm {
+  return { ...form, pdbIdConfirmed: false, sifts: null,
+    chains: form.chains.map(choice => userPicked.includes(choice.chain_auth) ? choice : { ...choice, accession: null }) };
+}
+
+/** License text as recorded in the snapshot manifest; KLIFS states no terms (spec 4.3). */
+export function licenseText(license: string): string {
+  return license === "none-stated" ? "이용 조건 명시 없음(none-stated)" : license;
+}
+
+/** Version shown for a snapshot source: the manifest version hint, else the snapshot date. */
+export function sourceVersion(source: Pick<SnapshotSource, "version_hint" | "date">): string {
+  return source.version_hint ?? source.date;
+}

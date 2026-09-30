@@ -10,6 +10,7 @@ export interface WorkspaceTabsProps {
   budget?: BudgetSnapshot | null; // read-only view of the page's budget state
   structure: ReactNode;           // existing structure screen; stays mounted while another tab is shown
   reports?: ReactNode;            // 지식·보고서 tab report body (rendered only while that tab is shown)
+  numbering?: ReactNode;          // 지식·보고서 tab residue numbering screen (rendered only while that tab is shown)
 }
 
 function UnavailableSection({ notice }: { notice: UnavailableNotice }) {
@@ -57,7 +58,7 @@ export function WorkspaceTabs(p: WorkspaceTabsProps) {
           <UnavailableSection notice={UNAVAILABLE_NOTICES.ligand} />
         </div>}
         {p.active === "knowledge" && <div role="tabpanel" id="mw-app-panel-knowledge" aria-labelledby="mw-app-tab-knowledge" className="mw-app-panel">
-          <UnavailableSection notice={UNAVAILABLE_NOTICES.knowledge} />
+          {p.numbering != null && <div className="mw-app-numbering">{p.numbering}</div>}
           {p.reports != null && <div className="mw-app-reports">{p.reports}</div>}
         </div>}
       </div>

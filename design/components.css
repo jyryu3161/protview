@@ -361,3 +361,47 @@
 .mw-library-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
 .mw-library-links { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-1); }
 .mw-library-figure { max-width: 100%; height: auto; border: 1px solid var(--line); background: var(--surface-200); }
+
+/* M15 residue numbering (지식·보고서 tab) ---------------------------------- */
+.mw-app-numbering { margin: var(--space-3); }
+.mw-numbering { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); min-width: 0; }
+.mw-numbering-heading { margin: 0; font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.mw-numbering-section { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-000); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-numbering-title { margin: 0; font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.mw-numbering-note { margin: 0; font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+.mw-numbering-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
+.mw-numbering-errors { margin: 0; padding-left: var(--space-4); font-size: 12px; color: var(--fail-input); }
+.mw-numbering-unavailable { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-numbering-unavailable p { margin: 0; }
+.mw-numbering-command { margin: 0; padding: var(--space-2); background: var(--surface-100); border: 1px solid var(--line); font: 400 12px/16px var(--font-mono); overflow-x: auto; }
+.mw-numbering-null { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-precondition); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-numbering-facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0; font-size: 12px; }
+.mw-numbering-facts dt { color: var(--ink-muted); }
+.mw-numbering-facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.mw-numbering code { font-family: var(--font-mono); overflow-wrap: anywhere; }
+.mw-numbering-form { display: flex; flex-direction: column; gap: var(--space-2); }
+.mw-numbering-field { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--ink); }
+.mw-numbering-fieldset { margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-numbering-fieldset legend { padding: 0 var(--space-1); font-size: 12px; color: var(--ink-muted); }
+.mw-numbering-input { height: var(--control-sm); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-200); color: var(--ink); font: 400 12px/16px var(--font-mono); padding: 0 var(--space-2); min-width: 0; }
+.mw-numbering-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-numbering-check { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--ink); }
+.mw-numbering-chain { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding: var(--space-1) 0; border-bottom: 1px solid var(--line); }
+.mw-numbering-picker { flex-basis: 100%; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2); background: var(--surface-100); border: 1px solid var(--line); border-radius: var(--radius-xs); }
+.mw-numbering-results, .mw-numbering-maps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); max-height: 320px; overflow: auto; }
+.mw-numbering-result, .mw-numbering-map { width: 100%; text-align: left; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-100); color: var(--ink); font: 400 12px/16px var(--font-sans); cursor: pointer; }
+.mw-numbering-result:hover, .mw-numbering-map:hover { background: var(--surface-200); }
+.mw-numbering-map[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
+.mw-numbering-counts { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
+.mw-numbering-badge { display: inline-block; margin-left: var(--space-1); padding: 0 var(--space-1); border: 1px solid var(--line-strong); border-radius: var(--radius-xs); font-size: 11px; line-height: 16px; color: var(--ink); background: var(--surface-200); }
+.mw-numbering-badge--stale { border-color: var(--fail-transient); }
+.mw-numbering-badge--null { border-color: var(--fail-precondition); }
+.mw-numbering-chains { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-2); }
+.mw-numbering-chain-summary { border: 1px solid var(--line); border-radius: var(--radius-xs); padding: var(--space-2); background: var(--surface-100); min-width: 0; }
+.mw-numbering-chain-summary h4 { margin: 0 0 var(--space-1); font: 600 12px/16px var(--font-sans); }
+.mw-numbering-klifs { display: block; }
+.mw-numbering-table-wrap { overflow-x: auto; max-height: 480px; overflow-y: auto; }
+.mw-numbering-table { border-collapse: collapse; width: 100%; font-size: 12px; color: var(--ink); }
+.mw-numbering-table th, .mw-numbering-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
+.mw-numbering-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
+.mw-numbering-answers { font-family: var(--font-mono); overflow-wrap: anywhere; }
