@@ -2,8 +2,8 @@
 
 - 판정: **완료** (2026-09-30)
 - 브랜치: `dryforge/m15-numbering` (`phase/m15-reference-numbering` = main `e866d42`에서 분기). M14는 시작 전에 main에 병합되어 있었다(`da5e4bc`, 기록 `e866d42`). main 병합은 아직 하지 않았다(사용자 결정 대기).
-- 고정 소스: `c1d824d`(`c1d824d8bb6400f98790b1196c04cf84c6950264`). 게이트·KLIFS 측정·수락 QA·회귀를 모두 이 고정에서 돌렸고 고정 뒤 소스 변경은 없다. 증거 커밋 `4737847`.
-- 수락 증거: `docs/qa/m15-numbering-20260930/`(M15 수락, 게이트 `gate.txt`, KLIFS 측정, PDBe 번호 확인), `m14-regression/`(M14 탭 회귀), `m13-regression/`(M8–M13 회귀). 큰 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다.
+- 고정 소스: 첫 고정 `c1d824d`(`c1d824d8bb6400f98790b1196c04cf84c6950264`, 증거 커밋 `4737847`), 최종 고정 `93c4fb1`(`93c4fb1cc102563ce70f5c4f16e8ff97d65d6497`, 최종 검토 수정 `975cccf`의 병합, 증거 커밋 `0e376aa`). 첫 고정에서 게이트·KLIFS 측정·수락 QA·M14·M8–M13 회귀를 돌렸고, 최종 고정에서 전체 게이트·M15 수락 QA·M14 회귀를 다시 돌렸다(M13 회귀를 다시 돌리지 않은 이유는 아래 "재고정"). 최종 고정 뒤 소스 변경은 없다.
+- 수락 증거: `docs/qa/m15-numbering-20260930/`(첫 고정의 M15 수락, 게이트 `gate.txt`, KLIFS 측정, PDBe 번호 확인, `m14-regression/`, `m13-regression/`)와 `refreeze-93c4fb1/`(최종 고정의 게이트 `gate.txt`, M15 수락, `m14-regression/`). 큰 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다.
 - 참조 원천: `../kbase_kinase` 커밋 `77354f94b844a8c64e7cd47691ac20a2e96214b3`, 작업 트리 깨끗함(읽기만). 외부 요청 0건, OpenRouter 호출 0회. 개발 중 네트워크 사용은 1MQ4 mmCIF를 RCSB에서 한 번 받은 것뿐이다(사용자 승인, `backend/tests/fixtures/public_1mq4.provenance.json`).
 
 ## 결과물
@@ -13,13 +13,13 @@
 - 도구 `map_residue_numbering`(값싼 동기 도구, `Run.call`): `backend/mw/tools/numbering.py`, 계산 `backend/mw/residue_numbering.py`, 결과 `residue_numbering_map@1`, 세트 기록 `reference_snapshot_set@1`. 레지스트리 사전 검사 훅(`ToolRegistry.register(..., precheck=)`, `Run._validated_bound`)이 모든 호출 경로에서 세트 고정 → 입력 검증 → 호출 키(세트 해시 포함) → 같은 세트로 실행 순서를 지킨다. `config/tools.yaml`, `workspace.py`, `SUPPORTED_TOOLS` 등록.
 - 읽기 API `backend/mw/numbering_reads.py`: `/reference/snapshots`, `/reference/sifts_chains`, `/reference/uniprot`, `/runs/{id}/reference/pdb_id_hint`, `/runs/{id}/numbering_maps`, `/objects`의 대응 행 페이지, `/capabilities`의 `methods.residue_numbering`. 이벤트를 쓰지 않는다.
 - 보고서 `backend/mw/numbering_reports.py`: `method_report_manifest@1`, `analysis_type: "residue_numbering"`, 증거 종류 `computed`·`reference_value` 분리, 렌더 `residue_numbering_markdown@1`.
-- 화면: 지식·보고서 탭의 M14 "사용할 수 없음" 안내를 `frontend/src/components/NumberingPanel.tsx`(순수 로직 `src/lib/numbering.ts`)로 바꿨다. 스냅샷 상태, 대응 만들기(구조 → 체인 → PDB ID 제안 확인 → SIFTS accession 미리 채움 또는 UniProt 검색), 대응 목록과 체인 요약, 행 표(상태 필터·페이지), "이전 스냅샷 기준", 보고서 만들기. 만든 보고서는 `ReportLibraryPanel`의 `reloadToken`으로 목록이 다시 읽힌다. 스타일 `design/components.css`(`mw-numbering-*`)와 생성물.
+- 화면: 지식·보고서 탭의 M14 "사용할 수 없음" 안내를 `frontend/src/components/NumberingPanel.tsx`(순수 로직 `src/lib/numbering.ts`)로 바꿨다. 스냅샷 상태와 스냅샷 범위 문장(kinase 한정 가공 자료), 대응 만들기(구조 → 체인 → PDB ID 제안 확인 → SIFTS accession 미리 채움 또는 UniProt 검색), 대응 목록과 체인 요약, 행 표(상태 필터·페이지), 이유 코드의 한국어 이름("한국어 (code)"), "이전 스냅샷 기준"·"사용 중 스냅샷 없음" 표시, 보고서 만들기. 만든 보고서는 `ReportLibraryPanel`의 `reloadToken`으로 목록이 다시 읽힌다. 스타일 `design/components.css`(`mw-numbering-*`)와 생성물.
 - 테스트 자료: `backend/tests/fixtures/public_1mq4.cif`(RCSB 원본, CC0), 파생 구조 `structures_m15/`(label 없는 PDB, 삽입 코드, MSE mmCIF·PDB, 두 체인, 두 모델, 생성 스크립트와 출처), 참조 부분집합 `fixtures/reference/`(실제 스냅샷 행 발췌와 표시된 fixture, 출처 파일), 표시된 fixture 세트 빌더 `backend/tests/reference_fixture_set.py`.
 - 테스트: 백엔드 `test_reference_snapshots`, `test_reference_fixture_set`, `test_sifts_mapping`, `test_sequence_alignment`, `test_klifs_numbering`, `test_residue_numbering`, `test_numbering_api`, `test_numbering_reports`. 프런트 `tests/numbering.test.cjs`. 스크립트 `test_import_reference_snapshots.py`, `test_m15_offscreen_acceptance.py`, `test_measure_klifs_numbering.py`.
-- QA 도구: `frontend/tests/offscreen/numbering-flow.cjs`(`test:offscreen:numbering`, 모드 `numbering-empty`·`numbering-main`·`numbering-stale`), `scripts/m15_offscreen_acceptance.py`, KLIFS 측정 `scripts/measure_klifs_numbering.py`.
+- QA 도구: `frontend/tests/offscreen/numbering-flow.cjs`(`test:offscreen:numbering`, 모드 `empty`·`main`·`stale`. 수락 실행기는 이 모드를 단계 `numbering-empty`·`numbering-main`·`numbering-stale`로 부른다), `scripts/m15_offscreen_acceptance.py`, KLIFS 측정 `scripts/measure_klifs_numbering.py`.
 
 ## 사용자 결정 (2026-09-30)
-명세 확정 때 정한 것과 구현 중 추가한 것(★). 근거는 결정 0022·0023.
+명세 확정 때와 착수 전 문서 확인 때 정한 것, 구현 중 추가한 것(★). 근거는 결정 0022·0023.
 - 데이터: `kbase_kinase/ref` 가공 스냅샷(원본 바이트 아님, kinase 한정: SIFTS 약 658체인, 사람 kinase UniProt 542개)을 가져오기 명령으로 복사해 쓴다. 이 한계를 알고 택했다(결정 0022).
 - 방법: SIFTS + 로컬 전역 정렬, 둘 다 가능하면 둘 다. 둘이 같을 때만 대응됨, 한쪽만이면 충돌. 한 방법만 쓸 수 있으면 그 답 + "교차 확인 없음"과 이유.
 - PDB ID는 파일에서 제안하고 사용자가 확인한 뒤에만 쓴다. SIFTS 잔기 키는 label + author + 삽입 코드, label이 없으면 author만(기록). SIFTS 체인은 author만(기록).
@@ -28,33 +28,36 @@
 - KLIFS 번호는 구역별 정확한 연속 일치가 유일할 때만. 대응됨 행(불일치·교차 확인 없음 포함)에만 붙인다. KLIFS 라이선스 `none-stated`는 항상 표시하되 사용은 막지 않는다(처음 "로컬만" → 이후 외부 전송 허용으로 바꿈).
 - 스냅샷 버전은 출처별 최신 하나, 다시 가져오면 사용 중 세트 교체, 이전 세트로 만든 대응은 "이전 스냅샷 기준".
 - 대상은 `structure`·`prepared_structure`. 정렬기는 자체 구현(새 의존성 없음, numpy 허용). 화면은 지식 탭 표와 보고서(뷰어 강조는 M16). M13 흐름 템플릿은 추가하지 않는다. 테스트용 RCSB 다운로드는 1MQ4 한 번. 보고서는 참조값과 계산값을 분리한다.
+- 정렬 크기 상한 20,000,000칸 → `alignment_too_large`(착수 전 문서 확인 때 결정).
+- HETATM 변형 잔기(MSE 등)는 번호 대응에서만 사슬 잔기로 넣는다(착수 전 문서 확인 때 결정).
 - ★ KLIFS 두 번째 단계: 해결되지 않은 구역 중 앞뒤 구역이 모두 해결된 구역만, 사이 구간에서 순서 유지 배치가 유일할 때 `gapped_unique`로 번호를 준다.
-- ★ 정렬 크기 상한 20,000,000칸 → `alignment_too_large`.
-- ★ HETATM 변형 잔기(MSE 등)는 번호 대응에서만 사슬 잔기로 넣는다.
 - ★ 최적 정렬마다 위치가 달라지는 잔기는 `alignment_ambiguous`(1MQ4 S388이 이 규칙 없이는 UniProt 403에 놓였다).
 
 ## 커밋
 
 | 작업 | 커밋 |
 |---|---|
-| T1 참조 스냅샷 가져오기·서버 세트 읽기 | `e90ad81` (병합 `6b4c6eb`) |
-| T2 전역 정렬기 | `71171fd` (병합 `d05c2ee`) |
-| T3 KLIFS 포켓 → UniProt 표, 두 번째 단계 | `fc1796a` (병합 `715cb04`), `04d5738` (병합 `686a3cb`) |
-| T4 SIFTS 해석기 | `4333d91` (병합 `e819221`) |
-| T5 테스트 구조·참조 fixture·PDBe 번호 확인·KLIFS 측정 초안 | `01d3e2c` (병합 `82464dd`) |
-| T6 번호 대응 도구·사전 검사 훅, 모호성 규칙, 없음 이유 전부 보존·서열 밖 SIFTS 위치 | `106586f`, `7e94fcd`, `bb9258c` (병합 `6afa2ff`) |
-| T7 읽기 API·capability | `7b16e0c` (병합 `5357bae`) |
-| T8 보고서 | `c49f331` (병합 `59c9e1a`) |
-| T9 프런트 API·순수 로직·목록의 체인 요약 | `7eefc1e` |
-| T10 지식 탭 번호 대응 화면 | `1caddba` (병합 `c08e7ad`) |
-| T11 오프스크린 흐름·M15 수락 실행기 | `83535f1` (병합 `f378626`) |
-| T12 독립 코드 검토 수정 = 고정 소스 | `86397ef` (병합 `c1d824d`) |
-| T13 게이트·KLIFS 측정·수락 QA·회귀 증거 | `4737847` |
-| T15 완료 기록·결정 0022·0023·프로젝트 문서 | 이 기록과 같은 커밋 |
+| 참조 스냅샷 가져오기·서버 세트 읽기 | `e90ad81` (병합 `6b4c6eb`) |
+| 전역 정렬기 | `71171fd` (병합 `d05c2ee`) |
+| KLIFS 포켓 → UniProt 표, 두 번째 단계 | `fc1796a` (병합 `715cb04`), `04d5738` (병합 `686a3cb`) |
+| SIFTS 해석기 | `4333d91` (병합 `e819221`) |
+| 테스트 자료·측정 작업: 테스트 구조·참조 fixture·PDBe 번호 확인·KLIFS 측정 초안 | `01d3e2c` (병합 `82464dd`) |
+| 번호 대응 도구 작업: 도구·사전 검사 훅, 모호성 규칙, 없음 이유 전부 보존·서열 밖 SIFTS 위치 | `106586f`, `7e94fcd`, `bb9258c` (병합 `6afa2ff`) |
+| 읽기 API·capability | `7b16e0c` (병합 `5357bae`) |
+| 보고서 | `c49f331` (병합 `59c9e1a`) |
+| 프런트 API·순수 로직·목록의 체인 요약 | `7eefc1e` |
+| 지식 탭 번호 대응 화면 | `1caddba` (병합 `c08e7ad`) |
+| 오프스크린 흐름·M15 수락 실행기 | `83535f1` (병합 `f378626`) |
+| 독립 코드 검토 수정 = 첫 고정 소스 | `86397ef` (병합 `c1d824d`) |
+| 첫 고정의 게이트·KLIFS 측정·수락 QA·회귀 증거 | `4737847` |
+| 완료 기록·결정 0022·0023·프로젝트 문서 | `8e49505` |
+| 최종 검토 수정 = 최종 고정 소스 | `975cccf` (병합 `93c4fb1`) |
+| 재고정 게이트·M15 수락 QA·M14 회귀 증거 | `0e376aa` |
+| 최종 검토·재고정 기록 | 이 기록과 같은 커밋 |
 
 ## 검토 (Opus 5.5, 구현하지 않은 서브에이전트)
-- T6 중간 명세 검토: **통과**. 권고는 T6 안에서 반영했다(`bb9258c`: 방법별 없음 이유를 `absent_reasons` 전체로 보존하고 첫 이유를 `absent_reason`에, 스냅샷 서열 길이를 넘는 SIFTS 위치는 `sifts_position_outside_sequence`, 완전히 일치하는 SIFTS 행이 둘 이상이면 `sifts_ambiguous_residue_row`). 같은 시기에 1MQ4 S388로 찾은 모호성 문제는 사용자 결정으로 `7e94fcd`에 반영했다.
-- T12 독립 코드 검토: **수정 필요**. 모두 `86397ef`에서 고쳤다.
+- 번호 대응 도구 작업 중간 명세 검토: **통과**. 권고는 그 작업 안에서 반영했다(`bb9258c`: 방법별 없음 이유를 `absent_reasons` 전체로 보존하고 첫 이유를 `absent_reason`에, 스냅샷 서열 길이를 넘는 SIFTS 위치는 `sifts_position_outside_sequence`, 완전히 일치하는 SIFTS 행이 둘 이상이면 `sifts_ambiguous_residue_row`). 같은 시기에 1MQ4 S388로 찾은 모호성 문제는 사용자 결정으로 `7e94fcd`에 반영했다.
+- 독립 코드 검토: **수정 필요**. 모두 `86397ef`에서 고쳤다.
 
 | 지적 | 처리 (`86397ef`) |
 |---|---|
@@ -67,7 +70,7 @@
 | 대응 목록 응답에 `alignment.aligned_strings`가 들어감, 같은 호출의 재검증이 계획을 다시 만듦 | 목록에서 뺌(객체에는 있음), 인자가 같으면 고정한 계획 재사용 |
 | 검증된 세트 캐시가 세트 폴더마다 항목을 쌓음 | 폴더마다 최신 항목 하나만 |
 
-- T14 독립 증거 검토(코드 검토자와 다른 인스턴스): **approve**, 막는 지적 없음. 권고는 아래처럼 기록했다.
+- 독립 증거 검토(코드 검토자와 다른 인스턴스): **approve**, 막는 지적 없음. 권고는 아래처럼 기록했다.
 
 | 권고 | 처리 |
 |---|---|
@@ -76,11 +79,44 @@
 | 측정 텍스트 머리글에 "draft"가 남음 | 기록. 스크립트에 고정된 문자열이며 수치는 고정 소스로 다시 잰 최종값(초안과 바이트 동일). `docs/tracking/findings.md` |
 | M13 회귀 행 중 하위 실행기·회귀 행 7개에 `providerCallsZero`가 없음(null) | 기록. M14 회귀 증거와 같은 형식이고 그 행들의 외부 요청은 0건 |
 
-## 게이트 (고정 소스 `c1d824d`, `docs/qa/m15-numbering-20260930/gate.txt`, 2026-09-30 04:19–04:35 UTC)
+- 최종 검토(완료 기록 `8e49505` 뒤, 구현하지 않은 새 인스턴스): **approve**, 막는 지적 없음. 권고는 코드 수정(`975cccf`, 병합 `93c4fb1` = 최종 고정)이나 기록으로 처리했다.
+
+| 권고 | 처리 |
+|---|---|
+| 참조 스냅샷이 kinase 한정 가공 자료라는 범위가 화면·보고서에 없음 | `975cccf`: 스냅샷 영역에 범위 문장(`SNAPSHOT_SCOPE`), 보고서 `limitations`에 같은 문장 추가. 그 전 목록으로 저장된 보고서는 `LEGACY_REPORT_LIMITATIONS`로 계속 다시 열린다 |
+| 이유 코드가 코드 그대로만 보임 | `975cccf`: 모든 백엔드 이유 코드에 한국어 이름, "한국어 (code)"로 표시(모르는 코드는 그대로) |
+| 사용 중 세트가 없을 때 모든 대응이 "이전 스냅샷 기준"으로 보임 | `975cccf`: 사용 중 세트가 없으면 "사용 중 스냅샷 없음"(`data-no-active-set`), "이전 스냅샷 기준"은 사용 중 세트가 있고 다를 때만 |
+| 보고서 검증기가 행·KLIFS·충돌 이유를 닫힌 집합으로 확인하지 않음 | `975cccf`: 행 `absent_reasons`(방법별 집합), `conflict_reason`, KLIFS `absent_reason`을 닫힌 집합으로 확인하고 KLIFS `applied` ⇔ `absent_reason` null을 확인 |
+| KLIFS 실제 스냅샷 테스트가 고정 절대 경로를 읽음 | `975cccf`: `<repo>/../kbase_kinase/ref`, `MW_KBASE_REF`로 바꿀 수 있음 |
+| 화면의 가져오기 명령이 `docs/operations.md`와 다름 | `975cccf`: `.venv/bin/python scripts/import_reference_snapshots.py --from ../kbase_kinase --dest .deps/reference`, 운영 문서도 같게 |
+| 화면 체인 목록(`structure_residues`의 `category` polymer)과 도구의 사슬 잔기 규칙(gemmi 엔티티 또는 ATOM)이 다름 | `975cccf`에 코드 주석, `docs/tracking/findings.md`에 기록 |
+| 완료 기록의 ★ 시점·내부 작업 번호·흐름 모드 이름, 운영 문서의 경로, `frontend/AGENTS.md`의 보고서 버튼 문장 범위 | 이 기록 커밋에서 문서를 고침 |
+
+수정으로 생긴 중복(이유 코드 목록이 백엔드·프런트 테스트에 따로 있음, `SNAPSHOT_SCOPE`가 `numbering.ts`와 `numbering_reports.py`에 따로 있음)은 `docs/tracking/findings.md`에 기록했다.
+
+## 재고정 (최종 고정 `93c4fb1`, `docs/qa/m15-numbering-20260930/refreeze-93c4fb1/`, 증거 커밋 `0e376aa`)
+- 첫 고정 대비 `docs/` 밖 변경은 코드·테스트 8개(`numbering_reports.py`, `residue_numbering.py`의 `CONFLICT_REASONS` 1줄, 백엔드 테스트 3개, `NumberingPanel.tsx`, `lib/numbering.ts`, `tests/numbering.test.cjs`)와 안내 문서 5개다. 수락 실행기·오프스크린 하네스 해시는 첫 고정과 같다. 시작 때 작업 트리가 깨끗했고 고정 뒤 소스 변경은 없다. `MW_KBASE_REF`는 설정하지 않았고 `<repo>/../kbase_kinase/ref`가 있어 KLIFS 실제 스냅샷 테스트 2개가 돌았다.
+
+| 검사 (`gate.txt`, 2026-09-30 06:04–06:21 UTC) | 결과 |
+|---|---|
+| `.venv/bin/python -m pytest backend/tests -q -rs` | exit 0, 815 passed, 0 skipped(977초) |
+| `ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py` | exit 0 |
+| 스크립트 pytest 8개 파일 | exit 0, 131 passed |
+| `node --check` 흐름 4개 | exit 0 ×4 |
+| `npm --prefix frontend run test:events` | exit 0, 183 pass, 0 fail, 0 skipped |
+| `typecheck` → `build` | exit 0 → exit 0 |
+| M15 수락(시도 2 채택, 빌드 `pcbgeXT7695xhpke_ImKb`, gitHead `93c4fb1`) | exit 0, `acceptance: true`, 사례 14/14, 단계 5개, 외부 요청 0건, 제공자 호출 0회, 남은 프로세스 없음 |
+| M14 회귀(`refreeze-93c4fb1/m14-regression/`) | exit 0, `acceptance: true`, 15/15 |
+
+- M15 수락 시도 1은 사례·단계가 모두 pass(`acceptance: true`, 14/14)였지만 마지막 증거 내보내기에서 exit 1로 끝났다. QA 실행자가 먼저 증거 폴더에 써 둔 자기 `gate.txt`의 pytest 경고 줄에 가리지 않은 절대 경로가 있어 누출 검사(`leaked: ["gate.txt"]`)에 걸린 것이며 제품 코드 문제가 아니다. `gate.txt`를 가림 처리한 뒤 새 `--root`·`--artifacts`로 다시 돌린 시도 2를 채택했다. 시도 1의 출력은 지우지 않고 Git 제외 `frontend/tests/offscreen/artifacts/m15-acceptance/refreeze/attempt1-export/`에 두었다.
+- 보고서 JSON 다운로드는 590,108 bytes로 첫 고정(589,907)보다 201 bytes 크다. 늘어난 부분은 `limitations`의 스냅샷 범위 문장이다(증거 README에서 확인).
+- M8–M13 회귀는 다시 돌리지 않았다. 첫 고정에서 28/28로 통과했고, 그 뒤 바뀐 프런트엔드 코드는 지식·보고서 탭에만 그려지는 `NumberingPanel`과 그것만 실행 코드로 가져다 쓰는 `lib/numbering.ts`뿐이며(`lib/api.ts`는 타입만 가져옴), 바뀐 백엔드 코드는 번호 대응 보고서 검증(`numbering_reports.py`)과 상수 1줄(`residue_numbering.py`)뿐이라 M11–M13 도구·작업·보고서 경로가 쓰지 않는다. 전체 백엔드 pytest(815)와 M14 회귀가 최종 고정에서 통과했다. 근거 전체는 증거 README의 "M13 회귀를 다시 돌리지 않은 이유".
+
+## 게이트 (첫 고정 소스 `c1d824d`, `docs/qa/m15-numbering-20260930/gate.txt`, 2026-09-30 04:19–04:35 UTC)
 
 | 명령 | 결과 |
 |---|---|
-| `.venv/bin/python -m pytest backend/tests -q -rs` | exit 0, 806 passed, 0 skipped(963초). 실제 kbase 스냅샷을 고정 절대 경로로 읽는 KLIFS 테스트 2개가 포함된다(경로가 없으면 skip, `docs/tracking/findings.md`) |
+| `.venv/bin/python -m pytest backend/tests -q -rs` | exit 0, 806 passed, 0 skipped(963초). 실제 kbase 스냅샷을 읽는 KLIFS 테스트 2개가 포함된다(당시에는 고정 절대 경로, 경로가 없으면 skip. 최종 검토 수정에서 `<repo>/../kbase_kinase/ref`와 `MW_KBASE_REF`로 바꿨다) |
 | `ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py` | exit 0 |
 | 스크립트 pytest 8개 파일(`docs/standards.md` 줄) | exit 0, 131 passed |
 | `node --check` `pocket-flow`·`workflows-flow`·`tabs-flow`·`numbering-flow` | exit 0 ×4 |
@@ -88,7 +124,7 @@
 | `npm --prefix frontend run typecheck` → `build` | exit 0 → exit 0 |
 
 ## KLIFS 번호 측정 (`klifs_measurement.txt`·`.json`)
-- 명령: `.venv/bin/python scripts/measure_klifs_numbering.py --reference-dir .deps/reference --out docs/qa/m15-numbering-20260930/klifs_measurement.txt`, 고정 소스, 네트워크 없음. 세트 `aa21ead9…3317`. 결과는 T5 초안과 바이트 동일해 초안 폴더는 지웠다. 이것은 대조용 측정이며 제품 결과가 아니다.
+- 명령: `.venv/bin/python scripts/measure_klifs_numbering.py --reference-dir .deps/reference --out docs/qa/m15-numbering-20260930/klifs_measurement.txt`, 고정 소스, 네트워크 없음. 세트 `aa21ead9…3317`. 결과는 테스트 자료·측정 작업의 초안과 바이트 동일해 초안 폴더는 지웠다. 이것은 대조용 측정이며 제품 결과가 아니다.
 - 방법: KLIFS 구조별 표(`match_residues`, 대조 전용)의 author 번호를 SIFTS로 UniProt 위치로 옮겨, 우리 KLIFS 표가 같은 KLIFS 번호에 준 UniProt 위치와 비교한다.
 - 비교 구조 279개(표 318행 중 39개 건너뜀: SIFTS segment 없음 18, KLIFS 항목 여러 개 14, SIFTS 체인 accession 아님 4, SIFTS 조회 실패 3), 비교 위치 22,618개: **일치 22,211(98.2%)**, 불일치 407, 우리 번호 없음(ours_missing) 852, 우리만 번호 있음(ours_extra, KLIFS가 그 구조에 잔기를 두지 않은 자리) 104, 숫자 아닌 `Xray_position` 제외 244. label 불일치 0.
 - 불일치 407개 중 394개가 5개 구조에 몰려 있다: 7TYM:A 84, 6TLJ:S 81, 8E06:A 81, 6CD6:D 76, 8U7L:A 72. 불일치 전체에서 우리 UniProt 글자는 항상 KLIFS 포켓 글자와 같고(0/407 다름), KLIFS `Xray_position` 자리의 잔기가 포켓 글자와 다른 경우가 318/407이다. 증거 검토자는 이 5개 구조를 KLIFS 쪽 산물로 판단했다. 예외로 ATR 5YZ0:A의 `linker.49` 1개는 포켓 앞뒤에 N이 겹쳐 생긴 한 칸 차이로 보이며, 어느 쪽이 맞는지 정하지 않았다(`docs/tracking/findings.md`).
@@ -96,9 +132,9 @@
 - 정렬 시간(구현 중 로컬 측정, 로그는 커밋하지 않음): 1MQ4 체인 A 크기(261 × 403) 약 0.01초, 상한 근처 4,000 × 5,000 약 1.3초(모호성 앞·뒤 계산 포함). 값싼 동기 도구로 둘 수 있는 범위다. 테스트(`test_sequence_alignment.py`의 `test_near_cap_runs_within_cheap_budget`)는 상한 근처가 10초 안에 끝나는지만 검사한다.
 
 ## PDBe 번호 확인 (`pdbe_label_check.txt`)
-1MQ4 체인 A 사슬 잔기 261개 모두 kbase SIFTS의 PDBe 번호 = mmCIF `label_seq_id`, 잔기 이름 같음(관측 261, 미관측 11, `_entity_poly_seq` 272행과도 일치). 명세의 착수 전 확인 조건을 만족해 SIFTS 키를 설계대로 썼다. T5 초안을 내용 그대로 옮겼고, 이를 만든 스크립트는 저장소에 없다.
+1MQ4 체인 A 사슬 잔기 261개 모두 kbase SIFTS의 PDBe 번호 = mmCIF `label_seq_id`, 잔기 이름 같음(관측 261, 미관측 11, `_entity_poly_seq` 272행과도 일치). 명세의 착수 전 확인 조건을 만족해 SIFTS 키를 설계대로 썼다. 테스트 자료·측정 작업의 초안을 내용 그대로 옮겼고, 이를 만든 스크립트는 저장소에 없다.
 
-## 수락 QA
+## 수락 QA (첫 고정 `c1d824d`)
 
 ### M15 수락 (`scripts/m15_offscreen_acceptance.py`, 2026-09-30 04:36 UTC)
 - 명령: `.venv/bin/python scripts/m15_offscreen_acceptance.py --root runs/m15-acceptance-20260930 --artifacts frontend/tests/offscreen/artifacts/m15-acceptance/final --out docs/qa/m15-numbering-20260930 --kbase <home>/Projects/kbase_kinase`
@@ -128,4 +164,4 @@
 
 ## 대체한 과거 검증 범위
 - M15는 공유 소스를 바꿨다: 백엔드 `runtime/orchestrator.py`(사전 검사 훅, 호출 키에 고정 상태 추가 — 훅이 없는 도구는 기존 키·이벤트 그대로), `tools/registry.py`, `workspace.py`, `api/app.py`(capability, 방법 보고서 분기, `/objects` 페이지), `config/tools.yaml`. 프런트 `app/page.tsx`, `WorkspaceTabs.tsx`, `ReportLibraryPanel.tsx`, `workspace-tabs.ts`, `report-library.ts`.
-- 이 소스 기준의 현재 검증은 전체 백엔드 pytest(806개, skip 0)와 위 M14 회귀·M8–M13 회귀(고정 `c1d824d`)로 대체한다. M14 수락의 지식 탭 "안내 문구·이유·여는 단계·컨트롤 없음" 확인은 안내가 없어졌으므로 위 `knowledgeScreen` 확인으로 대체한다. M13 수락 실행기가 돌리지 않는 과거 범위는 M13 완료 기록의 "대체한 과거 검증 범위"와 같다.
+- 이 소스 기준의 현재 검증은 전체 백엔드 pytest(최종 고정 `93c4fb1`에서 815개, skip 0)와 M14 회귀(첫 고정·최종 고정 모두), M8–M13 회귀(첫 고정 `c1d824d`, 최종 고정에서 다시 돌리지 않은 이유는 위 "재고정")로 대체한다. M14 수락의 지식 탭 "안내 문구·이유·여는 단계·컨트롤 없음" 확인은 안내가 없어졌으므로 위 `knowledgeScreen` 확인으로 대체한다. M13 수락 실행기가 돌리지 않는 과거 범위는 M13 완료 기록의 "대체한 과거 검증 범위"와 같다.

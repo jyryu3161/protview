@@ -118,8 +118,8 @@
 ### KLIFS 포켓은 일부 구역에서 잔기를 gap 표시 없이 뺀다
 - **증상**: M15 KLIFS 번호 초안에서 b.l 구역이 대부분 번호를 얻지 못했다. 예: EGFR b.l 포켓 `VDPHVCR`에 대해 UniProt은 `VDNPHVCR`이라 연속 일치가 없다. linker 등 다른 구역에도 드물게 있다.
 - **원인**: KLIFS 85자 포켓은 구조 정렬로 만든 것이라, 포켓 번호 사이의 서열 잔기를 `-`/`_` 없이 건너뛰는 경우가 있다.
-- **대응**: 첫 단계(연속 일치가 유일한 구역만)는 그대로 두고, 바로 앞·뒤 구역이 모두 해결된 구역만 그 사이 구간에서 순서 유지 배치가 정확히 하나일 때 `klifs_match: "gapped_unique"`로 번호를 준다(결정 0023). 두 번째 단계 대상을 "가장 가까운 해결 구역"으로 넓히지 않는다(T12 검토에서 명세보다 넓다고 지적되어 좁혔다). a.l·I처럼 처음·마지막 구역은 이 단계 대상이 아니다.
-- **검증**: `pytest backend/tests/test_klifs_numbering.py -q`, 측정 `scripts/measure_klifs_numbering.py`(`gapped_unique` 1,613 일치·17 불일치, 고정 `c1d824d`).
+- **대응**: 첫 단계(연속 일치가 유일한 구역만)는 그대로 두고, 바로 앞·뒤 구역이 모두 해결된 구역만 그 사이 구간에서 순서 유지 배치가 정확히 하나일 때 `klifs_match: "gapped_unique"`로 번호를 준다(결정 0023). 두 번째 단계 대상을 "가장 가까운 해결 구역"으로 넓히지 않는다(M15 독립 코드 검토에서 명세보다 넓다고 지적되어 좁혔다). a.l·I처럼 처음·마지막 구역은 이 단계 대상이 아니다.
+- **검증**: `pytest backend/tests/test_klifs_numbering.py -q`, 측정 `scripts/measure_klifs_numbering.py`(`gapped_unique` 1,613 일치·17 불일치, 첫 고정 `c1d824d`).
 
 ### kbase SIFTS의 PDBe 번호는 엔티티마다 다시 시작하고, 예외 행의 `uniprot_resnum`은 UniProt 위치가 아니다
 - **증상**: SIFTS 잔기 행을 PDBe 번호만으로 찾으면 같은 체인 행 안의 리간드·물 엔티티 행과 섞인다. 예외 행의 `uniprot_resnum`을 UniProt 위치로 읽으면 엉뚱한 위치가 나온다.

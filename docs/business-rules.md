@@ -76,7 +76,8 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - 원천은 `kbase_kinase/ref`의 가공 JSONL이다(원출처 원본 바이트가 아님, kinase 한정. 결정 0022). 출처별 스냅샷 하나씩이 사용 중 세트이며, 세트 매니페스트(출처·kbase `snapshot_id`·날짜·`version_hint`·라이선스·파일별 SHA-256·바이트·행 수·`raw_sha256` 목록·kbase 커밋과 dirty 여부·`origin`·`imported_at`)의 SHA-256이 세트 해시다. `imported_at`이 들어가므로 같은 파일을 다시 가져와도 세트 해시는 새로 생긴다.
 - 사용 중 세트가 없으면 `not_installed`, 매니페스트·파일 해시가 맞지 않거나 내용 형식을 해석할 수 없으면 `snapshot_invalid`로 사용할 수 없음이다. 이때 화면은 숫자 없이 이유와 가져오기 명령만 보여 주고, 도구는 캐시 조회 전에 `precondition`으로 실패한다.
 - 도구 호출 하나는 시작 때 고정한 세트 하나만 본다. 그 세트가 run에 아직 기록되지 않았으면 대응 객체보다 먼저 `reference_snapshot_set@1`(매니페스트 전체)을 저장한다(같은 내용은 같은 handle). 대응 객체도 세트 해시·출처별 파일 해시와, 계산에 실제로 쓴 참조 행(UniProt 서열, SIFTS 잔기 행·segment, KLIFS 포켓)을 담으므로 참조 폴더 없이 이벤트만으로 다시 열린다.
-- 사용 중 세트와 해시가 다른 대응은 "이전 스냅샷 기준"으로 표시한다. 대응마다 세트를 고르는 기능은 없다.
+- 사용 중 세트와 해시가 다른 대응은 "이전 스냅샷 기준"으로 표시한다. 사용 중 세트가 없으면(가져오기 전, 손상) 대응마다 "사용 중 스냅샷 없음"으로 표시하고 "이전 스냅샷 기준"이라 하지 않는다. 대응마다 세트를 고르는 기능은 없다.
+- 범위 안내: 지식 탭 스냅샷 영역과 보고서 `limitations`에 "kbase_kinase가 가공한 kinase 한정 자료(원출처 원본 바이트 아님), 스냅샷에 없는 PDB·단백질은 SIFTS 대응이나 KLIFS 번호가 없음"을 숫자 없이 항상 보여 준다(`SNAPSHOT_SCOPE`).
 - 표시: 스냅샷 목록과 보고서에 출처·스냅샷 ID·날짜·버전·라이선스·"kbase_kinase 가공본"을 그대로 보여 준다. 라이선스는 UniProt `CC-BY-4.0`, SIFTS `EMBL-EBI-terms`, KLIFS `none-stated`이며, KLIFS는 "이용 조건 명시 없음(none-stated)"으로 항상 표시한다. KLIFS 값의 보고서·외부 전송 사용은 따로 막지 않는다(사용자 결정).
 
 ### 입력과 대상 잔기
@@ -124,12 +125,14 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - 첫 단계: 구역 안의 gap(`-`, `_`)으로 나뉜 연속 조각을 UniProt 서열에 정확히 일치시키되, 구역 순서와 조각 순서를 지키는 배치가 하나뿐인 구역만 번호를 준다(`klifs_match: "contiguous"`). gap 자리는 번호 없음.
 - 두 번째 단계: 첫 단계로 해결되지 않은 구역 중 바로 앞·뒤 구역이 모두 첫 단계로 해결된 구역만, 그 사이 구간에서 gap 아닌 글자를 순서대로(중간 잔기 건너뛰기 허용) 맞추는 배치가 정확히 하나일 때 번호를 준다(`klifs_match: "gapped_unique"`). 처음·마지막 구역은 시도하지 않는다. 두 번째 단계 결과는 다른 구역의 구간을 바꾸지 않는다. 남은 구역은 accession별 `unresolved_regions`에 둔다.
 - 번호는 `mapped` 행(불일치·교차 확인 없음 포함)에만 붙인다. `conflict`·`unmapped` 행에는 없다.
-- KLIFS 구조별 표(`match_residues`)는 대조·측정 전용이며 제품 계산에 쓰지 않는다. 측정(고정 `c1d824d`): 279개 구조 22,618 위치 중 98.2% 일치, KLIFS가 번호를 둔 위치 기준 적용률 약 96.4%(`docs/tracking/m15-acceptance.md`).
+- KLIFS 구조별 표(`match_residues`)는 대조·측정 전용이며 제품 계산에 쓰지 않는다. 측정(첫 고정 `c1d824d`): 279개 구조 22,618 위치 중 98.2% 일치, KLIFS가 번호를 둔 위치 기준 적용률 약 96.4%(`docs/tracking/m15-acceptance.md`).
 
 ### 보고서
 - `method_report_manifest@1`, `analysis_type: "residue_numbering"`, 렌더 `residue_numbering_markdown@1`. 문장은 고정 statement ID이고, 각 ID는 증거 종류 하나와 허용 필드 경로 집합을 갖는다. 다른 종류의 필드를 인용하면 값 비교 전에 거부한다.
 - **계산값**(`computed`): 체인별 `identity_pct`·`coverage_pct`(`Decimal(str(v))`를 0.1 단위 `ROUND_HALF_UP`, 정확히 일치), 상태별 행 수, 잔기 불일치 수와 (구조 잔기 이름, UniProt 글자) 종류별 수, `alignment_ambiguous` 행 수, 변형 잔기 수.
 - **참조값**(`reference_value`): accession, UniProt 위치·글자, KLIFS 번호·표기. 세트 해시와 출처별 스냅샷·버전·날짜·라이선스, "참조 스냅샷 값, 계산 아님"이 붙는다. 잔기 단위 참조값은 KLIFS 번호가 있는 `mapped` 행만 나열하고(체인·accession당 최대 85), 전체 행은 대응 객체에 있다.
+- 보고서를 만들고 다시 열 때 대응 객체를 검증한다: 행 상태는 세 가지, 방법별 `absent_reasons`는 그 방법(SIFTS·정렬)의 닫힌 이유 집합, `conflict_reason`은 `positions_differ`·`one_method_only`, 체인 KLIFS 항목은 `applied`가 참이면 `absent_reason`이 null이고 거짓이면 KLIFS 이유 집합 안의 값이어야 한다. 어긋나면 보고서를 만들지 않는다.
+- `limitations`는 고정 문장 목록이며 마지막에 스냅샷 범위 문장이 있다. 범위 문장이 들어가기 전 목록(`LEGACY_REPORT_LIMITATIONS`)으로 저장된 보고서도 다시 열린다.
 - 스냅샷 출처 표와 KLIFS 조건 안내를 담고, 충돌·대응 없음 개수를 숨기지 않는다. "결합", "중요" 같은 해석 문장은 쓰지 않으며 렌더러가 그런 표현이 든 Markdown을 거부한다. 만들기·다시 열기·다운로드는 대응을 다시 계산하지 않는다.
 
 ### 의미하지 않는 것
