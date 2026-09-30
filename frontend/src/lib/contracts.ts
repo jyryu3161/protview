@@ -1,4 +1,5 @@
 // Mirrors backend/mw (docs/contracts.md). Change BOTH sides together.
+import type { SavedFigure, SavedScene } from "./saved-scene";
 
 export type FailureClass = "transient" | "input_invalid" | "precondition" | "resource_exceeded" | "fatal";
 /** UI-only: an empty scientific result shown next to failure classes. Never an error. */
@@ -148,3 +149,68 @@ export interface AnalysisSummary { handle: string; summary: { schema: string; pl
     output_handles: string[]; report_handle: string | null; child_call_ids: string[];
     job_ids: string[]; job_ownership: string | null; attempts: number }[];
   physical_attempts: number; note?: string } }
+
+// ---- M16 reference site annotation (backend/mw/site_annotation.py, saved_scenes.py) ----
+/** Residue identity with all 7 fields (null kept); compared exactly, never rebuilt from a display string. */
+export type ExactResidueRef = ResidueRef & { model_number: number };
+export type SiteStatus = "annotated" | "absent";
+export type SiteAbsentReason = "klifs_not_applied" | "pocket_gap" | "region_unresolved" | "no_mapped_residue";
+export type SiteGroupAbsentReason = "accession_not_in_klifs" | "klifs_pocket_empty" | "klifs_multiple_entries" |
+  "uniprot_sequence_unavailable" | "no_mapped_accession";
+export interface SiteTypeCount { computed: boolean; count: number | null }
+export interface SitePolarPair { contact_row_index: number; protein_atom: string; ligand_atom: string; distance_A: number }
+export interface SiteContact {
+  assessed: boolean; not_assessed_reason: "residue_not_checked_by_contact_method" | null;
+  by_type: Record<GeometricContactType, SiteTypeCount>;
+  min_distance_A: number | null; min_distance_row_index: number | null;
+  /** null when polar_contact was not computed (or the residue is not assessed); [] when computed with no rows. */
+  polar_pairs: SitePolarPair[] | null;
+}
+export interface AnnotationSite {
+  klifs_index: number; klifs_label: string; status: SiteStatus; absent_reason: SiteAbsentReason | null;
+  residue: ExactResidueRef | null; map_row_index: number | null; residue_match: boolean | null;
+  klifs_match: "contiguous" | "gapped_unique" | null;
+  /** Server-built label (`Met318 (hinge.47)`); shown as is. */
+  display_label: string | null;
+  contact: SiteContact | null;
+}
+export interface AnnotationGroup { chain_auth: string; accession: string | null; klifs_applied: boolean;
+  klifs_absent_reason: SiteGroupAbsentReason | null; sites: AnnotationSite[] }
+export interface AnnotationContacts { handle: string; ligand: ExactResidueRef; cutoff_A: number; types: GeometricContactType[] }
+export interface ReferenceSiteAnnotation {
+  schema: "reference_site_annotation@1";
+  method_version: string;
+  site_set: { id: "kinase_key_sites@1"; sites: { klifs_index: number; klifs_label: string }[] };
+  numbering_map: string;
+  snapshot_set_hash: string;
+  structure: { handle: string; structure_kind: "structure" | "prepared_structure"; model_number: number };
+  contacts: AnnotationContacts | null;
+  groups: AnnotationGroup[];
+  other_contact_residues: { residue: ExactResidueRef; row_indexes: number[] }[] | null;
+  null_result: boolean;
+  limitations: string[];
+}
+export interface SiteAnnotationListRow {
+  handle: string; structure: string; structure_kind: "structure" | "prepared_structure"; model_number: number;
+  numbering_map: string; contacts: string | null; ligand: ExactResidueRef | null; set_hash: string;
+  groups: { chain_auth: string; accession: string | null }[]; counts: Record<SiteStatus, number>;
+  null_result: boolean; created_seq: number;
+  /** True also when no active reference set exists; decide the badge with `snapshotBadge` (numbering.ts). */
+  stale_snapshot: boolean;
+}
+/** Newest first. */
+export interface SiteAnnotationList { schema: "reference_site_annotation_list@1"; active_set_hash: string | null;
+  total: number; offset: number; limit: number; rows: SiteAnnotationListRow[] }
+
+/** `viewer_scene@2`: every `viewer_scene@1` field plus the shown annotation. */
+export interface SceneAnnotationRef { handle: string; legend: boolean }
+export type SavedSceneV2 = Omit<SavedScene, "schema"> & { schema: "viewer_scene@2"; annotation: SceneAnnotationRef };
+export type AnySavedScene = SavedScene | SavedSceneV2;
+export interface AnySavedSceneDetail { handle: string; value: AnySavedScene }
+export type FigureCaptureMethod = "molstar_image_pass" | "molstar_image_pass+legend";
+export interface FigureAnnotationProvenance { handle: string; legend: boolean; numbering_map: string;
+  contacts: string | null; snapshot_set_hash: string; display_labels: string[] }
+export type SavedFigureV2 = Omit<SavedFigure, "schema" | "capture_method"> & { schema: "viewer_figure@2";
+  capture_method: FigureCaptureMethod; annotation: FigureAnnotationProvenance };
+export type AnySavedFigure = SavedFigure | SavedFigureV2;
+export interface AnySavedFigureDetail { handle: string; value: AnySavedFigure }
