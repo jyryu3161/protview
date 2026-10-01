@@ -36,8 +36,8 @@ test("tab id guard accepts only the four ids", () => {
   for (const value of ["run", "models", "reports", "", null, undefined, 0, "STRUCTURE"]) assert.equal(isWorkspaceTabId(value), false);
 });
 
-test("unavailable notices cover protein and ligand only; structure and knowledge (M15 numbering) have none", () => {
-  assert.deepEqual([...Object.keys(UNAVAILABLE_NOTICES)].sort(), ["ligand", "protein"]);
+test("unavailable notices cover protein only; structure, ligand (M17 screen) and knowledge (M15 numbering) have none", () => {
+  assert.deepEqual([...Object.keys(UNAVAILABLE_NOTICES)].sort(), ["protein"]);
   assert.equal(UNAVAILABLE_STATUS, "사용할 수 없음");
   for (const notice of Object.values(UNAVAILABLE_NOTICES)) {
     assert.ok(notice.title.length > 0);
@@ -53,9 +53,6 @@ test("unavailable notices cover protein and ligand only; structure and knowledge
 test("notices name the stage that opens each feature", () => {
   const stages = key => JSON.parse(JSON.stringify(UNAVAILABLE_NOTICES[key].opens.map(item => [item.stage, item.feature])));
   assert.deepEqual(stages("protein"), [["M20", "변이 후보 생성"], ["M21", "변이 구조 모델링"]]);
-  assert.deepEqual(stages("ligand"), [["M17", "결합 부위 지정·후보 생성·필터"], ["M18", "도킹"]]);
-  assert.match(UNAVAILABLE_NOTICES.ligand.note, /M11/);
-  assert.match(UNAVAILABLE_NOTICES.ligand.note, /구조 분석/);
 });
 
 test("notice text carries no measured-looking numbers beyond stage names", () => {

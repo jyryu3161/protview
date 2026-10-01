@@ -20,6 +20,7 @@ import { PocketPanel } from "@/components/PocketPanel";
 import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/AnalysisWorkflowPanel";
 import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
+import { LigandPanel } from "@/components/LigandPanel";
 import { SiteAnnotationPanel } from "@/components/SiteAnnotationPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
@@ -2033,6 +2034,10 @@ export default function WorkspacePage() {
     reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} reloadToken={reportsReloadToken} />}
     numbering={<NumberingPanel key={run?.run_id ?? "none"} runId={run?.run_id ?? null}
       onReportCreated={() => setReportsReloadToken(token => token + 1)} />}
+    ligand={<LigandPanel key={run?.run_id ?? "none"} run={run}
+      capability={capabilities ? capabilities.methods?.ligand_candidates ?? null : undefined}
+      onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+        setReportsReloadToken(token => token + 1); }} />}
     onSelect={tab => { setWorkspaceTab(tab); if (tab === "structure") setStructureTabEntries(value => value + 1);
       if (runId) refreshGlobalBudget(runId); }} />;
 }

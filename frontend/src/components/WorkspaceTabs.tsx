@@ -11,6 +11,7 @@ export interface WorkspaceTabsProps {
   structure: ReactNode;           // existing structure screen; stays mounted while another tab is shown
   reports?: ReactNode;            // 지식·보고서 tab report body (rendered only while that tab is shown)
   numbering?: ReactNode;          // 지식·보고서 tab residue numbering screen (rendered only while that tab is shown)
+  ligand?: ReactNode;             // 리간드 설계·탐색 tab body (M17; rendered only while that tab is shown)
 }
 
 function UnavailableSection({ notice }: { notice: UnavailableNotice }) {
@@ -55,7 +56,7 @@ export function WorkspaceTabs(p: WorkspaceTabsProps) {
           <UnavailableSection notice={UNAVAILABLE_NOTICES.protein} />
         </div>}
         {p.active === "ligand" && <div role="tabpanel" id="mw-app-panel-ligand" aria-labelledby="mw-app-tab-ligand" className="mw-app-panel">
-          <UnavailableSection notice={UNAVAILABLE_NOTICES.ligand} />
+          {p.ligand != null && <div className="mw-app-ligand">{p.ligand}</div>}
         </div>}
         {p.active === "knowledge" && <div role="tabpanel" id="mw-app-panel-knowledge" aria-labelledby="mw-app-tab-knowledge" className="mw-app-panel">
           {p.numbering != null && <div className="mw-app-numbering">{p.numbering}</div>}

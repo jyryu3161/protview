@@ -290,6 +290,8 @@ export const api = {
     request<LigandSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "rdkit_enumerate_v1", args, timeout_s: 120 })),
   ligandJob: (id: string, jobId: string, signal?: AbortSignal) =>
     request<LigandJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  /** Every job of the run (read only); the ligand tab re-attaches to its own queued or running job after a remount. */
+  ligandJobs: (id: string, signal?: AbortSignal) => request<LigandJob[]>(runPath(id, "/jobs"), { signal }),
   /** Report of one stored candidate set; `filters` null sends no filter spec (nothing is generated again). */
   createLigandReport: (id: string, setHandle: string, filters: LigandFilterSpec | null, signal?: AbortSignal) =>
     request<LigandReportArtifact>(runPath(id, "/method_reports"),

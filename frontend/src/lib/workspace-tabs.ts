@@ -28,17 +28,12 @@ export interface UnavailableNotice {
 }
 
 // Notices only: no numbers, placeholder values or controls. These tabs make no backend calls.
-// The knowledge tab has no notice since M15: it shows the residue numbering screen and the report library.
-export const UNAVAILABLE_NOTICES: Record<"protein" | "ligand", UnavailableNotice> = {
+// The knowledge tab has no notice since M15 (residue numbering screen and report library) and the ligand tab
+// none since M17 (ligand partial-replacement candidate screen).
+export const UNAVAILABLE_NOTICES: Record<"protein", UnavailableNotice> = {
   protein: {
     title: "단백질 공학",
     reason: "아직 구현하지 않았습니다.",
     opens: [{ stage: "M20", feature: "변이 후보 생성" }, { stage: "M21", feature: "변이 구조 모델링" }],
-  },
-  ligand: {
-    title: "리간드 설계·탐색",
-    reason: "아직 구현하지 않았습니다.",
-    opens: [{ stage: "M17", feature: "결합 부위 지정·후보 생성·필터" }, { stage: "M18", feature: "도킹" }],
-    note: "M11 화학 상호작용 계산은 구조 분석 탭의 화학 상호작용 작업 화면에 있습니다.",
   },
 };
