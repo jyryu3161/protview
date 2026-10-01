@@ -110,15 +110,6 @@ export function minDistanceText(annotation: Pick<ReferenceSiteAnnotation, "conta
   return distanceText(site.contact.min_distance_A);
 }
 
-/** Polar pair list state of a site: null polar_pairs is "not computed", never an empty list. */
-export function polarPairsText(annotation: Pick<ReferenceSiteAnnotation, "contacts">, site: AnnotationSite): string | null {
-  if (site.status !== "annotated") return ABSENT_SITE_TEXT;
-  if (!annotation.contacts || !site.contact) return NO_CONTACT_RESULT_TEXT;
-  if (!site.contact.assessed) return NOT_ASSESSED_TEXT;
-  if (site.contact.polar_pairs === null) return NOT_COMPUTED_TEXT;
-  return site.contact.polar_pairs.length ? null : "극성 접촉 0";
-}
-
 /** Status cell: "주석됨" or "없음: 한국어 (code)". */
 export function siteStatusText(site: AnnotationSite): string {
   return site.status === "annotated" ? "주석됨" : `없음: ${site.absent_reason ? siteReasonText(site.absent_reason) : "이유 없음"}`;
@@ -274,17 +265,6 @@ export function annotationGates(input: { sourceKind: string | null; annotationOn
     m8: input.annotationOn ? ANNOTATION_BLOCKS_M8 : null, m9: null };
 }
 
-/**
- * Whether a shown annotation must be turned off: a run or source change, a comparison start, or a source that
- * cannot carry an annotation.
- */
-export function annotationMustTurnOff(previous: { runId: string | null; sourceHandle: string | null },
-                                      next: { runId: string | null; sourceHandle: string | null; sourceKind: string | null;
-                                        comparisonActive: boolean }): boolean {
-  return previous.runId !== next.runId || previous.sourceHandle !== next.sourceHandle || next.comparisonActive ||
-    sourceUnavailableReason(next.sourceKind) !== null;
-}
-
 /** `viewer_scene@2` restore is refused (with reason) while a pocket overlay or a comparison is active. */
 export function sceneRestoreDecision(scene: { schema: string },
                                      state: { pocketOverlayActive: boolean; comparisonActive: boolean }):
@@ -310,10 +290,6 @@ export function annotationResponseCurrent(captured: AnnotationStamp, live: Annot
     captured.seq === live.seq;
 }
 
-export function annotationRequestKey(stamp: AnnotationStamp): string {
-  return JSON.stringify([stamp.runId, stamp.sourceHandle, stamp.seq]);
-}
-
 // ---- save bodies (spec 5.4) ----
 
 /**
@@ -336,6 +312,33 @@ export function figureSaveBody<T extends { schema: "viewer_figure@1" }>(body: T,
 /** Composite the legend only when the scene's legend is on and at least one dashed line is drawn. */
 export function legendShouldComposite(legend: boolean, drawnPairCount: number): boolean {
   return legend && drawnPairCount > 0;
+}
+
+/** Figure capture refusal when the legend cannot be drawn at its font size inside the image. */
+export const FIGURE_LEGEND_NO_FIT = "그림이 작아 범례를 같은 글자 크기로 넣을 수 없어 그림을 저장하지 않았습니다. 패널에서 범례를 끄거나 뷰어를 키운 뒤 다시 저장하세요.";
+
+/**
+ * Wraps legend text into lines no wider than `maxWidth` at the measured (unchanged) font size: at spaces first, a
+ * word wider than a line by characters. Null when even one character does not fit (the text is never squeezed).
+ */
+export function wrapLegendText(text: string, maxWidth: number, measure: (value: string) => number): string[] | null {
+  if (!(maxWidth > 0)) return null;
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(" ")) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (measure(candidate) <= maxWidth) { line = candidate; continue; }
+    if (line) lines.push(line);
+    line = "";
+    for (const char of Array.from(word)) {
+      if (measure(line + char) <= maxWidth) { line += char; continue; }
+      if (!line || measure(char) > maxWidth) return null;
+      lines.push(line);
+      line = char;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 // ---- exact atom resolution (spec 5.2) ----

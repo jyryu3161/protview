@@ -712,8 +712,15 @@ export default function WorkspacePage() {
     const annotationArg = annotationRef && plan && !plan.rejected && annotationForViewer &&
       annotationForViewer.handle === annotationRef.handle && annotationForViewer.legend === annotationRef.legend
       ? annotationForViewer : null;
-    if (annotationRef && !annotationArg && plan && !plan.rejected)
+    // A rejected annotation restore also withdraws the annotation request, so the normal draw cannot show it later.
+    const withdrawRestoredAnnotation = (handle: string) => {
+      setAnnotationShown(previous => previous && previous.handle === handle ? null : previous);
+      setAnnotationReadback(null); setAnnotationViewerError(null);
+    };
+    if (annotationRef && !annotationArg && plan && !plan.rejected) {
       setAnnotationRestore({ token: current.token, status: "rejected", text: "주석 요청이 준비되지 않아 주석은 복원하지 않았습니다." });
+      withdrawRestoredAnnotation(annotationRef.handle);
+    }
     restoredSceneToken.current = current.token;
     setSceneBusy("복원 중"); setSceneError("");
     void bridge.restoreScene(binding, current.scene.value, annotationArg).then(restored => {
@@ -722,6 +729,7 @@ export default function WorkspacePage() {
       if (outcome) setAnnotationRestore({ token: current.token, status: outcome.status, text: outcome.status === "applied"
         ? `참조 주석 다시 그림 · 부위 ${outcome.readback.drawnSiteCount}개 · 점선 ${outcome.readback.drawnLineCount}개 (Mol* 읽기 확인)`
         : `참조 주석 복원 거부: ${outcome.reason}` });
+      if (outcome?.status === "rejected" && annotationRef) withdrawRestoredAnnotation(annotationRef.handle);
       restoredSceneToken.current = current.token;
       pendingRestoreTokenRef.current = null;
       setRestorePendingToken(null);

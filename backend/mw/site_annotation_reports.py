@@ -33,6 +33,7 @@ from . import numbering_reports as nr
 from . import site_annotation as sa
 from .core.handles import canonical_json
 from .reports import EvidenceError, _md, _provenance, _ref
+from .tools.structural import structure_residues
 
 ANALYSIS_TYPE = "reference_site_annotation"
 RENDER_VERSION = "reference_site_annotation_markdown@1"
@@ -78,7 +79,7 @@ REFERENCE_FIELDS = re.compile(
     r"rows\[\d+\]\.(uniprot_accession|uniprot_position|klifs_index|klifs_label|residue)|"
     r"chains\[\d+\]\.klifs\[\d+\]\.accession")
 CLAIM_KEYS = nr.CLAIM_KEYS
-INTERPRETIVE = re.compile(nr.INTERPRETIVE.pattern + "|촉매", re.IGNORECASE)
+INTERPRETIVE = re.compile(nr.INTERPRETIVE.pattern + r"|촉매|hydrogen[\s_-]?bond|\bh-?bond|catalytic", re.IGNORECASE)
 SNAPSHOT_KEYS = {"event_seq", "time_utc", "run_egress_mode", "budget", "active_set_hash", "stale_snapshot"}
 MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
@@ -180,10 +181,14 @@ def _site_rows(map_content: dict[str, Any], chain_auth: str, accession: Any, ind
             r["status"] == "mapped" and r["uniprot_accession"] == accession and r["klifs_index"] == index]
 
 
-def _check_site_contact(site: dict[str, Any], rows: list[dict[str, Any]], types: list[str]) -> None:
+def _check_site_contact(site: dict[str, Any], rows: list[dict[str, Any]], types: list[str],
+                        polymer: set[tuple[Any, ...]]) -> None:
     contact = site["contact"]
     if type(contact) is not dict or set(contact) != CONTACT_KEYS or contact["assessed"] not in (True, False):
         raise EvidenceError("site_contact_shape")
+    if contact["assessed"] is not (sa.identity(site["residue"]) in polymer):
+        # The contact tool checks polymer records only (structure residue category, as the annotation tool reads it).
+        raise EvidenceError("site_contact_assessed_mismatch")
     key = sa.identity(site["residue"])
     mine = [(i, r) for i, r in enumerate(rows) if sa.identity(r["residue"]) == key]
     by_type = contact["by_type"]
@@ -215,9 +220,14 @@ def _check_site_contact(site: dict[str, Any], rows: list[dict[str, Any]], types:
         raise EvidenceError("site_contact_polar_pairs_mismatch")
 
 
-def check_annotation(content: dict[str, Any], map_content: dict[str, Any],
-                     contacts: dict[str, Any] | None) -> None:
-    """The stored annotation against the stored map and contact rows it cites; raises ``EvidenceError``."""
+def check_annotation(content: dict[str, Any], map_content: dict[str, Any], contacts: dict[str, Any] | None,
+                     residues: list[dict[str, Any]] | None) -> None:
+    """The stored annotation against the stored map and contact rows it cites; raises ``EvidenceError``.
+
+    ``residues`` are the mapped structure's residues (``structure_residues``), needed only with contacts: a site's
+    ``assessed`` must equal whether its residue is a polymer record. Site status and the first applicable absent
+    reason are re-derived from the stored map with the annotation tool's own rule (``sa.site_groups``).
+    """
     try:
         if (type(content) is not dict or set(content) != TOP_KEYS or content["schema"] != sa.SCHEMA or
                 content["method_version"] != sa.METHOD_VERSION or content["site_set"] != sa.site_set() or
@@ -231,6 +241,17 @@ def check_annotation(content: dict[str, Any], map_content: dict[str, Any],
             raise EvidenceError("site_annotation_contacts_mismatch")
         rows = _check_contacts(content, contacts) if contacts is not None else None
         types = content["contacts"]["types"] if contacts is not None else None
+        polymer = None
+        if contacts is not None:
+            if type(residues) is not list:
+                raise EvidenceError("site_structure_residues_missing")
+            known = {sa.identity(r) for r in residues}
+            polymer = {sa.identity(r) for r in residues if r["category"] == "polymer"}
+        try:
+            expected_sites = [[(s["status"], s["absent_reason"]) for s in g["sites"]]
+                              for g in sa.site_groups(map_content)]
+        except sa.AnnotationInvalid as exc:
+            raise EvidenceError(f"site_map_invalid: {exc.reason_code}") from exc
         groups = content["groups"]
         if type(groups) is not list or any(type(g) is not dict or set(g) != GROUP_KEYS for g in groups):
             raise EvidenceError("site_group_shape")
@@ -243,11 +264,14 @@ def check_annotation(content: dict[str, Any], map_content: dict[str, Any],
                 _expected_groups(map_content):
             raise EvidenceError("site_groups_mismatch")
         annotated: set[tuple[Any, ...]] = set()
-        for group in groups:
+        for group, expected in zip(groups, expected_sites, strict=True):
             sites = group["sites"]
             if type(sites) is not list or [(s.get("klifs_index"), s.get("klifs_label")) for s in sites] != \
                     list(sa.SITES) or any(set(s) != SITE_KEYS for s in sites):
                 raise EvidenceError("site_list_mismatch")
+            if [(s["status"], s["absent_reason"]) for s in sites] != expected:
+                # absent: exactly the first applicable reason in spec order, as the tool derives it from the map
+                raise EvidenceError("site_status_or_reason_mismatch")
             for site in sites:
                 status, reason = site["status"], site["absent_reason"]
                 if status not in sa.STATUSES:
@@ -274,7 +298,9 @@ def check_annotation(content: dict[str, Any], map_content: dict[str, Any],
                     if site["contact"] is not None:
                         raise EvidenceError("site_contact_without_contacts")
                 else:
-                    _check_site_contact(site, rows, types)
+                    if sa.identity(site["residue"]) not in known:
+                        raise EvidenceError("site_residue_not_in_structure")
+                    _check_site_contact(site, rows, types, polymer)
         if content["null_result"] is not (not annotated):
             raise EvidenceError("site_null_result_mismatch")
         if rows is not None:
@@ -313,7 +339,11 @@ def validated_annotation(run: Any, handle: str) -> tuple[dict[str, Any], dict[st
             provenance["contacts"] = _provenance(events, record["handle"], expected_tool=CONTACT_TOOL)
         else:
             provenance["contacts"] = None
-        check_annotation(content, map_content, contacts)
+        # Residue categories of the mapped structure, read with the annotation tool's own helper (no contacts,
+        # numbering or annotation is recomputed).
+        residues = (structure_residues(run.store, map_content["structure"]["handle"])["residues"]
+                    if contacts is not None else None)
+        check_annotation(content, map_content, contacts, residues)
         return content, {"map": map_content, "reference_set_handle": map_context["reference_set_handle"],
                          "contacts": contacts, "provenance": provenance}
     except EvidenceError:

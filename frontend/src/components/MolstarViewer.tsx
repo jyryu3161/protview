@@ -17,9 +17,9 @@ import { canonicalChemicalElement, chemicalFocusSettleTimeoutMs, settleChemicalF
 import { OVERLAY_LABEL, readbackMismatch, type PocketFocusStatus, type PocketOverlayReadback,
   type PocketOverlayRequest } from "@/lib/pockets";
 import type { SceneAnnotationRef } from "@/lib/contracts";
-import { FIGURE_LEGEND_TEXT, legendShouldComposite, polarPairsForDrawing, siteRegion, SITE_OTHER_CONTACT_TOKEN,
+import { FIGURE_LEGEND_NO_FIT, FIGURE_LEGEND_TEXT, legendShouldComposite, polarPairsForDrawing, siteRegion, SITE_OTHER_CONTACT_TOKEN,
   SITE_POLAR_LINE_TOKEN, SITE_REGION_TOKEN, type SiteAnnotationReadback, type SiteAnnotationRequest,
-  type SiteAnnotationRestoreOutcome, type SiteRegion } from "@/lib/site-annotation";
+  type SiteAnnotationRestoreOutcome, type SiteRegion, wrapLegendText } from "@/lib/site-annotation";
 
 export type ViewerRepresentation = "cartoon" | "ball-and-stick" | "surface";
 export interface ViewerSource {
@@ -685,7 +685,11 @@ async function drawSiteAnnotation(current: Instance, request: SiteAnnotationRequ
   }
 }
 
-/** Draws FIGURE_LEGEND_TEXT with a dashed sample into the lower-left corner; true only if pixels actually changed. */
+/**
+ * Draws FIGURE_LEGEND_TEXT with a dashed sample into the lower-left corner at one font size, wrapped onto more lines
+ * when it is too wide (never squeezed). Throws FIGURE_LEGEND_NO_FIT when it cannot fit inside the image; true only if
+ * pixels actually changed.
+ */
 function compositeFigureLegend(context: CanvasRenderingContext2D, width: number, height: number, lineColor: string): boolean {
   const style = getComputedStyle(document.documentElement);
   const surface = style.getPropertyValue("--surface-100").trim() || "#ffffff";
@@ -695,11 +699,15 @@ function compositeFigureLegend(context: CanvasRenderingContext2D, width: number,
   context.save();
   context.font = `600 ${fontSize}px ${getComputedStyle(document.body).fontFamily || "sans-serif"}`;
   const margin = Math.round(fontSize * 0.8), pad = Math.round(fontSize * 0.6), sample = fontSize * 2;
+  const lineHeight = Math.ceil(fontSize * 1.3);
   const maxText = width - 2 * margin - 3 * pad - sample;
-  const textWidth = Math.min(context.measureText(FIGURE_LEGEND_TEXT).width, maxText);
-  const boxWidth = Math.ceil(textWidth + 3 * pad + sample), boxHeight = Math.ceil(fontSize + 2 * pad);
+  const measure = (text: string) => context.measureText(text).width;
+  const lines = wrapLegendText(FIGURE_LEGEND_TEXT, maxText, measure);
+  const boxHeight = lines ? Math.ceil(lines.length * lineHeight + 2 * pad) : 0;
   const x = margin, y = height - margin - boxHeight;
-  if (maxText <= 0 || y < 0) { context.restore(); return false; }
+  if (!lines || y < 0) { context.restore(); throw new Error(FIGURE_LEGEND_NO_FIT); }
+  const textWidth = Math.max(...lines.map(measure));
+  const boxWidth = Math.ceil(textWidth + 3 * pad + sample);
   const before = context.getImageData(x, y, boxWidth, boxHeight).data.slice();
   context.globalAlpha = 0.9;
   context.fillStyle = surface;
@@ -707,14 +715,15 @@ function compositeFigureLegend(context: CanvasRenderingContext2D, width: number,
   context.globalAlpha = 1;
   context.strokeStyle = border; context.lineWidth = 1;
   context.strokeRect(x + 0.5, y + 0.5, boxWidth - 1, boxHeight - 1);
+  const firstLine = y + pad + lineHeight / 2;
   context.strokeStyle = lineColor; context.lineWidth = Math.max(2, Math.round(fontSize / 8));
   context.setLineDash([fontSize / 4, fontSize / 5]);
   context.beginPath();
-  context.moveTo(x + pad, y + boxHeight / 2); context.lineTo(x + pad + sample, y + boxHeight / 2);
+  context.moveTo(x + pad, firstLine); context.lineTo(x + pad + sample, firstLine);
   context.stroke();
   context.setLineDash([]);
   context.fillStyle = ink; context.textBaseline = "middle";
-  context.fillText(FIGURE_LEGEND_TEXT, x + 2 * pad + sample, y + boxHeight / 2, maxText);
+  lines.forEach((line, i) => context.fillText(line, x + 2 * pad + sample, firstLine + i * lineHeight));
   const after = context.getImageData(x, y, boxWidth, boxHeight).data;
   context.restore();
   for (let i = 0; i < after.length; i++) if (after[i] !== before[i]) return true;
@@ -778,6 +787,9 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
   if (siteIntent.current.key !== siteKey) siteIntent.current = { key: siteKey, revision: siteIntent.current.revision + 1 };
   const siteRef = useRef(siteAnnotation);
   siteRef.current = siteAnnotation;
+  // Intent revision whose scene restore reported the annotation rejected: the normal draw never draws that intent
+  // (the page withdraws it; a new request is a new revision).
+  const siteRestoreRejected = useRef<{ revision: number; reason: string } | null>(null);
   const siteCallback = useRef(onSiteAnnotation);
   siteCallback.current = onSiteAnnotation;
   const [siteObserved, setSiteObserved] = useState<{ status: "none" | "pending" | "applied" | "error";
@@ -1370,6 +1382,8 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
               }
             }
             if (!bound(expected, token) || current.manualRevision !== revision) throw new Error("복원 중 장면이 변경되었습니다.");
+            if (siteOutcome.status === "rejected")
+              siteRestoreRejected.current = { revision: siteIntent.current.revision, reason: siteOutcome.reason };
           }
           await waitCameraSettled(expected, token, revision);
           const camera = plugin!.canvas3d!.camera;
@@ -1962,6 +1976,12 @@ export function MolstarViewer({ source, representation, highlight, residues, onS
         if (!request || !request.visible) {
           await removeSiteAnnotation(current);
           if (active()) publishSite(current, request?.key ?? null, "none", null);
+          return;
+        }
+        const rejected = siteRestoreRejected.current;
+        if (rejected && rejected.revision === intentRevision) {
+          await removeSiteAnnotation(current);
+          if (active()) publishSite(current, request.key, "error", null, rejected.reason);
           return;
         }
         if (!catalog) {

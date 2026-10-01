@@ -77,12 +77,10 @@ test("counts keep 0, not computed, not assessed and no contact result apart", ()
     min_distance_A: null, min_distance_row_index: null, polar_pairs: null } });
   for (const type of lib.CONTACT_TYPES) assert.equal(lib.contactCountText(a, hetatm, type), "접촉 도구가 검사하지 않는 잔기");
   assert.equal(lib.minDistanceText(a, hetatm), "접촉 도구가 검사하지 않는 잔기");
-  assert.equal(lib.polarPairsText(a, hetatm), "접촉 도구가 검사하지 않는 잔기");
   const none = annotation({ contacts: null, other_contact_residues: null });
   const bare = site({ contact: null });
   assert.equal(lib.contactCountText(none, bare, "contact"), "접촉 결과 없음");
   assert.equal(lib.minDistanceText(none, bare), "접촉 결과 없음");
-  assert.equal(lib.polarPairsText(none, bare), "접촉 결과 없음");
   assert.equal(lib.contactCountText(a, absent("pocket_gap"), "contact"), "—");
   assert.equal(lib.minDistanceText(a, s), "2.94 Å");
   // zero-row contact result: computed types 0, distance null (never "0.00 Å")
@@ -91,12 +89,6 @@ test("counts keep 0, not computed, not assessed and no contact result apart", ()
     min_distance_A: null, min_distance_row_index: null, polar_pairs: [] } });
   assert.equal(lib.contactCountText(a, zero, "polar_contact"), "0");
   assert.equal(lib.minDistanceText(a, zero), "계산한 종류·cutoff 안 접촉 없음");
-  assert.equal(lib.polarPairsText(a, zero), "극성 접촉 0");
-  // polar_contact not computed: polar_pairs null -> "계산하지 않음", not an empty list
-  const noPolar = site({ contact: { ...zero.contact, polar_pairs: null,
-    by_type: byType({ computed: true, count: 2 }, { computed: false, count: null }, { computed: false, count: null }) } });
-  assert.equal(lib.polarPairsText(a, noPolar), "계산하지 않음");
-  assert.equal(lib.polarPairsText(a, s), null);
 });
 
 test("panel has five distinct states", () => {
@@ -184,14 +176,6 @@ test("exclusivity: pocket overlay, comparison, minimized/chemical source, M8 blo
   assert.match(on.pocketOverlay, /참조 주석/);
   assert.match(on.m8, /자연어 뷰어 요청/);
   assert.equal(on.m9, null);
-  // turning off: run/source change, comparison start, unsupported source
-  const prev = { runId: "r1", sourceHandle: SRC };
-  const next = over => ({ runId: "r1", sourceHandle: SRC, sourceKind: "prepared_structure", comparisonActive: false, ...over });
-  assert.equal(lib.annotationMustTurnOff(prev, next()), false);
-  assert.equal(lib.annotationMustTurnOff(prev, next({ runId: "r2" })), true);
-  assert.equal(lib.annotationMustTurnOff(prev, next({ sourceHandle: OTHER })), true);
-  assert.equal(lib.annotationMustTurnOff(prev, next({ comparisonActive: true })), true);
-  assert.equal(lib.annotationMustTurnOff(prev, next({ sourceKind: "openmm_minimized_structure" })), true);
 });
 
 test("viewer_scene@2 restore is refused while pocket overlay or comparison is active", () => {
@@ -213,8 +197,6 @@ test("late responses need the same run, source and request sequence", () => {
   assert.equal(lib.annotationResponseCurrent(stamp, { ...stamp, sourceHandle: OTHER }), false);
   assert.equal(lib.annotationResponseCurrent(stamp, { ...stamp, seq: 4 }), false);
   assert.equal(lib.annotationResponseCurrent({ ...stamp, runId: null }, { ...stamp, runId: null }), false);
-  assert.notEqual(lib.annotationRequestKey(stamp), lib.annotationRequestKey({ ...stamp, seq: 4 }));
-  assert.equal(lib.annotationRequestKey(stamp), lib.annotationRequestKey({ ...stamp }));
 });
 
 test("save bodies: @1 unchanged byte for byte, @2 adds annotation / legend_composited", () => {
@@ -240,6 +222,23 @@ test("save bodies: @1 unchanged byte for byte, @2 adds annotation / legend_compo
   assert.equal(lib.legendShouldComposite(true, 0), false);
   assert.equal(lib.legendShouldComposite(false, 3), false);
   assert.equal(lib.FIGURE_LEGEND_TEXT, "점선: 기하 극성 접촉(원자 거리), 수소결합 판정 아님");
+});
+
+test("figure legend wraps at the same font size and is refused when it cannot fit", () => {
+  const measure = text => Array.from(text).length * 10;   // 10 px per character
+  const text = lib.FIGURE_LEGEND_TEXT;
+  assert.deepEqual(plain(lib.wrapLegendText(text, 10000, measure)), [text]);
+  const wrapped = lib.wrapLegendText(text, 120, measure);
+  assert.ok(wrapped.length > 1);
+  for (const line of wrapped) assert.ok(measure(line) <= 120, line);
+  assert.equal(wrapped.join(" "), text);   // only spaces become line breaks when every word fits
+  // a word wider than the line is broken by characters, nothing is dropped or squeezed
+  const narrow = lib.wrapLegendText(text, 40, measure);
+  for (const line of narrow) assert.ok(measure(line) <= 40, line);
+  assert.equal(narrow.join("").replace(/ /g, ""), text.replace(/ /g, ""));
+  assert.equal(lib.wrapLegendText(text, 9, measure), null);
+  assert.equal(lib.wrapLegendText(text, 0, measure), null);
+  assert.match(lib.FIGURE_LEGEND_NO_FIT, /범례/);
 });
 
 const atomRow = (residue, atom, index, over = {}) => ({ ref: { structure_handle: SRC, residue, atom_name: atom, altloc: "",
