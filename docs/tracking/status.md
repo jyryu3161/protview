@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-10-01, 브랜치 `dryforge/m17-ligand`(`phase/m17-ligand-candidates` = main `fb5f108`에서 분기). M16까지 main에 병합됨(M16 병합 `0fb3426`, 기록 `fb5f108`). M17 완료(고정 `e6ab4f9`, 증거 커밋 `a81f50a`, 수락 증거 `docs/qa/m17-ligand-20261001/`), main 병합은 사용자 결정 대기.
+기준: 2026-10-01, 브랜치 `dryforge/m17-ligand`(`phase/m17-ligand-candidates` = main `fb5f108`에서 분기). M16까지 main에 병합됨(M16 병합 `0fb3426`, 기록 `fb5f108`). M17 완료(고정 `e6ab4f9`, 증거 커밋 `a81f50a`, 수락 증거 `docs/qa/m17-ligand-20261001/`), main 병합 `45ccad6`(2026-10-02).
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 
@@ -56,4 +56,4 @@ M13 이후 단계는 `docs/tracking/roadmap.md`에 정했다(2026-09-29 사용�
 
 ## 차단 요소
 
-없음. M17은 작업 브랜치에서 완료, main 병합 방법은 사용자에게 묻는다. 다음은 M18.
+없음. M17은 main에 병합됨(`45ccad6`). 다음은 M18.
