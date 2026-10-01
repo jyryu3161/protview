@@ -101,7 +101,7 @@
 ### 시도 2 (재고정 `3a2e20c`, `acceptance-attempt2/`, 01:39 UTC) — 채택
 - 명령: `.venv/bin/python scripts/m16_offscreen_acceptance.py --root runs/m16-acceptance-20261001-attempt2 --artifacts frontend/tests/offscreen/artifacts/m16-acceptance/attempt2 --kbase <home>/Projects/kbase_kinase --out docs/qa/m16-annotations-20261001/acceptance-attempt2`
 - 같은 빌드 `q6eypdtQJ4Qgom9x2qBFB`(gitHead `3a2e20c`, 소스 도장 일치). Electron 44.4.5, `isOffscreen()===true`, WebGL, paint. `verdict: pass`, `acceptance: true`, 사례 19/19, 단계 3개 모두 첫 시도. 비-loopback 요청 0건, 제공자 호출 0회, 남은 프로세스·리스너 없음. 참조 세트(격리 가져오기) `96abf6e4…7d3c`(시도 1은 `67e062ad…b9e5`: 가져올 때마다 세트 해시가 다르다).
-- 관찰 요약: 1MQ4 → 전처리 → ADP 기하 접촉(인스턴스를 명시 선택, PO4도 후보로 표시) → 지식 탭에서 전처리 구조 대응(PDB ID 1MQ4 확인) → 패널에서 같은 구조의 대응·접촉 결과만 나열하고 자동 선택 없음 → 주석 만들기. 부위 표의 이름표·상태·개수·최소 거리가 저장 객체와 T1 oracle과 같고, 계산했으나 0인 개수는 0, cutoff 안 접촉 없음은 문장으로 표시. Mol* readback: 부위 10개, 이름표 = `display_label`(예: `Glu211 (hinge.46)`), 점선 = T1 극성 쌍 10개(정확한 카탈로그 원자 사이), 거리 이름표 `ROUND_HALF_UP`, 그리지 못한 쌍 0.
+- 관찰 요약: 1MQ4 → 전처리 → ADP 기하 접촉(인스턴스를 명시 선택, PO4도 후보로 표시) → 지식 탭에서 전처리 구조 대응(PDB ID 1MQ4 확인) → 패널에서 같은 구조의 대응·접촉 결과만 나열하고 자동 선택 없음 → 주석 만들기. 부위 표의 이름표·상태·개수·최소 거리가 저장 객체와 착수 확인 oracle(`preflight.txt`)과 같고, 계산했으나 0인 개수는 0, cutoff 안 접촉 없음은 문장으로 표시. Mol* readback: 부위 10개, 이름표 = `display_label`(예: `Glu211 (hinge.46)`), 점선 = 착수 확인의 극성 쌍 10개(정확한 카탈로그 원자 사이), 거리 이름표 `ROUND_HALF_UP`, 그리지 못한 쌍 0.
 - 그림: `viewer_scene@2`(범례 켬) + `viewer_figure@2` `molstar_image_pass+legend`, 범례 끈 보기 → `molstar_image_pass`, 주석 끈 저장은 `annotation` 키 없는 `viewer_scene@1`·`viewer_figure@1`. PNG·출처 JSON 다시 받기 바이트가 백엔드와 같다. 같은 카메라의 세 PNG 비교: 범례 그림과 범례 없는 그림의 차이 픽셀 **밀도**가 범례 상자 안 0.1872, 상자 밖 0.00393(판정: 안 ≥ 20 × 밖, 밖 ≤ 0.01). 즉 "범례 픽셀이 상자 안에만 있다"가 아니라 상자 안에 몰려 있다는 판정이며, 증거 검토자 계산으로 차이 픽셀의 약 39%는 상자 밖(다시 렌더링한 두 그림 사이의 안티앨리어싱 차이)이다. 점선 색 픽셀은 범례 그림 139, 범례 없는 그림 87, 주석 끈 그림 0 → Mol* 이미지 패스에 점선이 담긴다.
 - 그 밖: 주석 끈 뒤 `viewer_scene@2` 복원으로 저장된 주석 다시 그림(도구 호출 없음), 주석 중 M8 자연어 요청 막힘·`/zoom in`은 동작, 보고서 만들기 → 지식 탭 목록 "참조 주석 보고서", 다운로드 바이트 동일, 접촉 결과 없이 주석(셀 "접촉 결과 없음", 점선 0), 포켓 오버레이 배타(양방향, `@2` 복원 거절 시 오버레이 유지), 비교 시작 때 주석 꺼짐·켤 수 없음·`@2` 복원 거절, run 전환 때 주석 꺼짐·이전 run의 늦은 목록 응답 버림, 표시된 읽기 실패 3종 → 다시 읽기로 회복, OpenMM 최소화 1UBQ 소스에서는 이유만 보이고 숫자·컨트롤 없음.
 
@@ -129,4 +129,4 @@
 
 ## 남은 일
 - main 병합 방법은 사용자에게 묻는다(push하지 않음).
-- 새 미해결 문제(`docs/tracking/findings.md`): 뷰어가 `viewer_scene@2` 복원을 거부하는 경로는 실제 화면에서 지나가지 않음, 부위 이름표가 선택 가능한 Mol* 도형으로 남음, 다른 접촉 잔기는 회색 막대 모형으로 겹쳐 그림, 비교를 끝내면 패널의 주석 선택이 지워짐, 가져오기마다 세트 해시가 다름. 지식 탭 체인 목록 항목은 다시 미뤘다.
+- 새 미해결 문제(`docs/tracking/findings.md`): 뷰어가 `viewer_scene@2` 복원을 거부하는 경로는 실제 화면에서 지나가지 않음, 부위 이름표가 선택 가능한 Mol* 도형으로 남음, 다른 접촉 잔기는 회색 막대 모형으로 겹쳐 그림, 비교를 끝내면 패널의 주석 선택이 지워짐, 가져오기마다 세트 해시가 다름, 없음 이유의 한국어 이름이 화면과 보고서에서 다름. 지식 탭 체인 목록 항목은 다시 미뤘다.
