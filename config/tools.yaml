@@ -112,6 +112,19 @@ tools:
       chains: { type: list, required: true }             # [{chain_auth, uniprot_accession | null}], unique chain_auth
     description: 체인 잔기를 참조 스냅샷의 UniProt 위치·KLIFS 포켓 번호에 대응한다(SIFTS·로컬 전역 정렬, 두 방법이 같을 때만 대응됨; 값은 참조 스냅샷 값)
 
+  # M16: fixed kinase key sites from one residue numbering map + optional geometric contacts of the same structure.
+  # A registry pre-check validates both handles (null contacts allowed) before the generic argument check.
+  - name: annotate_reference_sites
+    level: L2
+    version: '1'
+    accepts: { numbering_map: [residue_numbering_map] }
+    emits: reference_site_annotation
+    cost_class: cheap
+    typical_runtime_s: 1
+    params:
+      contacts: { default: null }                        # interaction_set handle of the same structure | null
+    description: 번호 대응의 KLIFS 주요 부위(kinase_key_sites@1)를 부위별로 모으고 같은 구조의 기하 접촉 행을 붙인다(번호는 참조값, 접촉은 기하 거리)
+
   - name: align
     level: L2
     accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }

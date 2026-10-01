@@ -19,6 +19,7 @@ from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
 from .. import analysis_executions, analysis_plans, numbering_reads
+from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
 from ..chemical_bundle import validated_result as validated_chemical_result
@@ -47,16 +48,17 @@ from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
 from ..saved_scenes import (
-    FigureSave,
-    SceneSave,
     figure_detail,
     figure_download,
     list_figures,
     list_scenes,
+    parse_figure_save,
+    parse_scene_save,
     save_figure,
     save_scene,
     scene_detail,
 )
+from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
@@ -91,7 +93,8 @@ RUNS_DIR = Path(os.environ.get("MW_RUNS_DIR", "runs"))
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
-                   "measure_distance", "align_structures", "compile_state", "map_residue_numbering"}
+                   "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
+                   "annotate_reference_sites"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -592,6 +595,8 @@ def capabilities() -> dict[str, Any]:
                "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}
     methods["analysis_workflows"] = analysis_plans.capability(methods)
     methods["residue_numbering"] = numbering_reads.capability()
+    # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
+    methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -902,7 +907,7 @@ async def _bounded_scene_body(request: Request, limit: int) -> bytes:
 @app.post("/runs/{rid}/viewer/scenes", status_code=201)
 async def viewer_scene_save(rid: str, request: Request) -> dict[str, Any]:
     try:
-        body = SceneSave.model_validate_json(await _bounded_scene_body(request, SCENE_BODY_LIMIT))
+        body = parse_scene_save(await _bounded_scene_body(request, SCENE_BODY_LIMIT))
         return await run_in_threadpool(lambda: save_scene(_run(rid), body))
     except PydanticValidationError as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid scene payload"}) from exc
@@ -929,7 +934,7 @@ def viewer_scene_selected(rid: str, handle: str) -> dict[str, Any]:
 @app.post("/runs/{rid}/viewer/figures", status_code=201)
 async def viewer_figure_save(rid: str, request: Request) -> dict[str, Any]:
     try:
-        body = FigureSave.model_validate_json(await _bounded_scene_body(request, FIGURE_BODY_LIMIT))
+        body = parse_figure_save(await _bounded_scene_body(request, FIGURE_BODY_LIMIT))
         return await run_in_threadpool(lambda: save_figure(_run(rid), body))
     except PydanticValidationError as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid figure payload"}) from exc
@@ -1186,6 +1191,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             return build_pocket_report(run, body.result_handle)
         if kind == "residue_numbering_map":
             return build_numbering_report(run, body.result_handle)
+        if kind == "reference_site_annotation":
+            # The active reference set is recorded in the report snapshot only; the report reads stored objects.
+            return build_site_annotation_report(run, body.result_handle,
+                                                active_set_hash=numbering_reads.capability()["set_hash"])
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1210,7 +1219,8 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                     {"result_handle": e["result_handle"],
                      "analysis_type": (run.store.load_bounded_json(e["report_handle"], 8 * 1024 * 1024)
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
-                                       {"chemical_interactions", "pocket_detection", "residue_numbering"}
+                                       {"chemical_interactions", "pocket_detection", "residue_numbering",
+                                        "reference_site_annotation"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1224,7 +1234,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
         return saved_report(run, handle)
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
         report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
-                  if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering"}
+                  if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
+                                                              "reference_site_annotation"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1239,6 +1250,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_pocket_report(run, handle)
         if report.get("analysis_type") == "residue_numbering":
             return saved_numbering_report(run, handle)
+        if report.get("analysis_type") == "reference_site_annotation":
+            return saved_site_annotation_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -1463,6 +1476,40 @@ def numbering_maps(rid: str, offset: int = Query(0, ge=0), limit: int = Query(50
         return numbering_reads.numbering_maps(run, offset, limit)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid residue numbering map"}) from exc
+
+
+def _only_query(request: Request, allowed: set[str]) -> None:
+    unknown = set(request.query_params) - allowed
+    if unknown:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": f"unknown parameters: {sorted(unknown)}"})
+
+
+@app.get("/runs/{rid}/site_annotations")
+def site_annotation_list(rid: str, request: Request, structure: str | None = None, offset: int = Query(0, ge=0),
+                         limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    """M16: this run's reference site annotations, newest first (optionally one structure); no event, no tool."""
+    _only_query(request, {"structure", "offset", "limit"})
+    run = _run(rid)
+    active = numbering_reads.capability()["set_hash"]   # None when no usable active reference set
+    try:
+        return site_annotations.list_annotations(run, structure, offset, limit, active)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
+
+
+@app.get("/runs/{rid}/site_annotations/detail")
+def site_annotation_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    """M16: one stored annotation as written by the tool; no event, no tool."""
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (site_annotations.KIND, site_annotations.SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a reference site annotation"})
+    try:
+        content = run.store.load(handle)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
+    return {"meta": meta, "annotation": content}
 
 
 @app.get("/runs/{rid}/interface_sasa")

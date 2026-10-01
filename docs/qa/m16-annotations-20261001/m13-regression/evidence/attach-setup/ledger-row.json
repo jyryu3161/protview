@@ -1,0 +1,48 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "step": "attach-setup",
+  "buildId": "q6eypdtQJ4Qgom9x2qBFB",
+  "harness": {
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "finishedAt": "2026-10-01T00:57:20.891277+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/m16-regression/attach-setup",
+  "mode": "attach-setup",
+  "evidenceKind": "labeled_api_setup",
+  "status": "pass",
+  "cases": {},
+  "runId": "run_7a9c9131361447669656b4cf2758395b",
+  "externalRequestCount": 0,
+  "providerCallsZero": true,
+  "handles": {
+    "complex": "obj://run_7a9c9131361447669656b4cf2758395b/structure/761ef292d87aebeb000578f97dd375277e5b5faa073e660a1955b53cba6f8212",
+    "sdfImport": "obj://run_7a9c9131361447669656b4cf2758395b/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "inputs": [
+    {
+      "name": "m11-attach-complex.pdb",
+      "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03",
+      "provenance": "synthetic derivative attach complex; not experimental evidence"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF"
+    }
+  ],
+  "setupOutput": {
+    "out": "<repo>/runs/m16-m13-regression-20261001/inputs/attach-setup",
+    "ligand_sdf": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+    "files": {
+      "m11-attach-bonds-run.json": "c971b9f01f36ebdaaa1a18b11cc3ba9ff7ffc3b8fa89716b54ca38317303e7a3",
+      "m11-attach-request-run.json": "965b6f749d118543f131ca09c2d893d93c32af29eee7bac3a4f6347eb0fb846f",
+      "m11-attach-mapping-run.json": "f1aa31f6ad4e85184007f2fa8f9b8831ceac91a0ec92d731f021832ac63b22bc",
+      "m11-attach-mapping-replace-run.json": "16d0b3625a64ca03d00ceb8451ab32fe559f359b4c224306c0b2111623cbe87b",
+      "m11-attach-ligand-instance-run.json": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95"
+    },
+    "mapping_count": 79,
+    "replacement_heavy_mapping_count": 43,
+    "sidecar_handle_set": false
+  },
+  "note": "Setup only (loopback upload/load/import); covers no case."
+}

@@ -1,0 +1,224 @@
+{
+  "schema": "m16_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "A-load-prepare-contacts": "pass",
+    "A-numbering-prepared": "pass",
+    "A-panel-create": "pass",
+    "A-site-table": "pass",
+    "A-show-readback": "pass",
+    "A-figure-legend": "pass",
+    "A-figure-no-legend": "pass",
+    "A-scene-v1-unchanged": "pass",
+    "A-figure-pixels": "pass",
+    "A-restore-redraw": "pass",
+    "A-blocked-m8": "pass",
+    "A-report": "pass",
+    "A-no-contacts": "pass",
+    "A-blocked-pocket": "pass",
+    "A-blocked-comparison": "pass",
+    "A-run-switch-late": "pass",
+    "A-read-retry": "pass"
+  },
+  "runId": "run_b4d79704476e454782971ada2bcfaf14",
+  "runs": {
+    "A": "run_b4d79704476e454782971ada2bcfaf14",
+    "B": "run_cfcedf7a125946d3a40ec016e914a2d3"
+  },
+  "handles": {
+    "structure": "obj://run_b4d79704476e454782971ada2bcfaf14/structure/bc4b883feadc4af7c6b61cb44fa7ad0a152103c352d9854e48c86c94305c64ad",
+    "prepared": "obj://run_b4d79704476e454782971ada2bcfaf14/prepared_structure/ad0bf8c0a4c47e998d6a48516a839a9f0fb33b4b6b264599855e3d277fe704bb",
+    "contacts": "obj://run_b4d79704476e454782971ada2bcfaf14/interaction_set/21c43015c2cb7ececc160036976423a28e4769a122a9f2912cde52545ba534a8",
+    "map": "obj://run_b4d79704476e454782971ada2bcfaf14/residue_numbering_map/4aa6d68a41d7a15c41232c3dcafb6bb4ed1aed5d41cc95648fb2750010d41f19",
+    "annotation": "obj://run_b4d79704476e454782971ada2bcfaf14/reference_site_annotation/36a7f0996a24ccb3c367c600b0cbeecad72b6ce1e9383b468c95c7b1c620820b",
+    "report": "obj://run_b4d79704476e454782971ada2bcfaf14/method_report_manifest/ba67be3a58f5aeca4a01589288869621801bcb7e2ddfdebc60c23870cc2e5162",
+    "noContacts": "obj://run_b4d79704476e454782971ada2bcfaf14/reference_site_annotation/7c7977baf0ca001bc30d35fc91bd57d6787afc48fb2fda83e5044adca07edd3a",
+    "runBStructure": "obj://run_cfcedf7a125946d3a40ec016e914a2d3/structure/f37979a9cda677a17108151d6e9d62cd52de1269de998d8321a3bfa690edd229"
+  },
+  "inputs": [
+    {
+      "name": "preflight.txt",
+      "path": "<repo>/docs/qa/m16-annotations-20261001/preflight.txt",
+      "bytes": 10404,
+      "sha256": "c9b2a2a84d1164d7e30e87777e220f972b626eefb4e6f3982efe165529cdb033",
+      "provenance": "M16 T1 independent numpy oracle (committed QA text)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP)"
+    }
+  ],
+  "fixtureLabels": [
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)",
+    "QA fault fixture (labeled renderer route, not a scientific value): site annotation read failure"
+  ],
+  "controls": {
+    "site-annotation-maps": [
+      {
+        "checked": "obj://run_b4d79704476e454782971ada2bcfaf14/residue_numbering_map/4aa6d68a41d7a15c41232c3dcafb6bb4ed1aed5d41cc95648fb2750010d41f19"
+      }
+    ],
+    "site-annotation-contacts:set": [
+      {
+        "checked": "obj://run_b4d79704476e454782971ada2bcfaf14/interaction_set/21c43015c2cb7ececc160036976423a28e4769a122a9f2912cde52545ba534a8"
+      }
+    ],
+    "site-annotation-create": [
+      {
+        "created": "obj://run_b4d79704476e454782971ada2bcfaf14/reference_site_annotation/36a7f0996a24ccb3c367c600b0cbeecad72b6ce1e9383b468c95c7b1c620820b",
+        "listed": 1
+      }
+    ],
+    "site-annotation-toggle:show": [
+      {
+        "data": "applied",
+        "lines": "10"
+      }
+    ],
+    "site-annotation-legend": [
+      {
+        "checked": false,
+        "readbackLegend": false,
+        "lines": 10
+      },
+      {
+        "checked": true,
+        "shown": false
+      }
+    ],
+    "site-annotation-toggle:off": [
+      {
+        "data": "none"
+      }
+    ],
+    "site-annotation-report": [
+      {
+        "handle": "obj://run_b4d79704476e454782971ada2bcfaf14/method_report_manifest/ba67be3a58f5aeca4a01589288869621801bcb7e2ddfdebc60c23870cc2e5162",
+        "text": "보고서를 저장했습니다 · ba67be3a58f5. 지식·보고서 탭의 보고서 목록에서 열고 받을 수 있습니다."
+      }
+    ],
+    "site-annotation-contacts:none": [
+      {
+        "checked": "none"
+      }
+    ],
+    "site-annotation-maps-retry": [
+      {
+        "maps": 1
+      }
+    ],
+    "site-annotation-list-retry": [
+      {
+        "rows": 2
+      }
+    ],
+    "site-annotation-list": [
+      {
+        "checked": "obj://run_b4d79704476e454782971ada2bcfaf14/reference_site_annotation/36a7f0996a24ccb3c367c600b0cbeecad72b6ce1e9383b468c95c7b1c620820b"
+      }
+    ],
+    "site-annotation-detail-retry": [
+      {
+        "table": "obj://run_b4d79704476e454782971ada2bcfaf14/reference_site_annotation/36a7f0996a24ccb3c367c600b0cbeecad72b6ce1e9383b468c95c7b1c620820b"
+      }
+    ]
+  },
+  "buildId": "q6eypdtQJ4Qgom9x2qBFB",
+  "harness": {
+    "annotation-flow.cjs": "8f670b8262fa02ca11c29625fb3be563e305d475df43935f7f31f1cf61fd5d85",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "96abf6e4842c2999c03c22ad1e27febf535c30142c7d96f180f52767dec17d3c",
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 664,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m16-acceptance/attempt2/annotation-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 491,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 9,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m16-acceptance/attempt2/annotation-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_b4d79704476e454782971ada2bcfaf14",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_cfcedf7a125946d3a40ec016e914a2d3",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "annotation-main.jsonl",
+  "startedAt": "2026-10-01T01:38:42.556Z",
+  "finishedAt": "2026-10-01T01:39:18.790Z"
+}

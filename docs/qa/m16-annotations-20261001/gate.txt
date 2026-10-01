@@ -1,0 +1,120 @@
+M16 T10 full gate (docs/standards.md 검증 게이트 + annotation-flow.cjs + test_m16_offscreen_acceptance.py)
+frozen source: b23cb10f624d1942666d0f0080e49e449055b53e
+working tree clean at start: yes
+env: MW_KBASE_REF=<home>/Projects/kbase_kinase/ref
+started: 2026-10-01T00:31:41Z
+
+## [1] .venv/bin/python -m pytest backend/tests -q -rs
+exit: 0  duration_s: 969
+summary:
+  ........................................................................ [ 73%]
+  ........................................................................ [ 81%]
+  ........................................................................ [ 89%]
+  ........................................................................ [ 97%]
+  ......................                                                   [100%]
+  =============================== warnings summary ===============================
+  .venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+    <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+      from starlette.testclient import TestClient as TestClient  # noqa
+  
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  886 passed, 1 warning in 969.01s (0:16:09)
+
+## [2] .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
+exit: 0  duration_s: 0
+summary:
+  All checks passed!
+
+## [3] .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py -q -rs
+exit: 0  duration_s: 5
+summary:
+  ........................................................................ [ 49%]
+  ........................................................................ [ 99%]
+  .                                                                        [100%]
+  145 passed in 5.61s
+
+## [4] node --check frontend/tests/offscreen/pocket-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [5] node --check frontend/tests/offscreen/workflows-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [6] node --check frontend/tests/offscreen/tabs-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [7] node --check frontend/tests/offscreen/numbering-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [8] node --check frontend/tests/offscreen/annotation-flow.cjs && echo ok
+exit: 0  duration_s: 0
+summary:
+  ok
+
+## [9] npm --prefix frontend run test:events
+exit: 0  duration_s: 0
+summary:
+  ✔ tab id guard accepts only the four ids (0.0855ms)
+  ✔ unavailable notices cover protein and ligand only; structure and knowledge (M15 numbering) have none (0.136542ms)
+  ✔ notices name the stage that opens each feature (2.15375ms)
+  ✔ notice text carries no measured-looking numbers beyond stage names (0.166417ms)
+  ℹ tests 200
+  ℹ suites 0
+  ℹ pass 200
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 322.50675
+
+## [10] npm --prefix frontend run typecheck
+exit: 0  duration_s: 4
+summary:
+  
+  > molecular-workspace-web@0.1.0 typecheck
+  > tsc --noEmit
+
+## [11] npm --prefix frontend run build
+exit: 0  duration_s: 12
+summary:
+  ┌ ○ /                                    81.6 kB         230 kB
+  ├ ○ /_not-found                            999 B         104 kB
+  └ ○ /gallery                             4.45 kB         153 kB
+  + First Load JS shared by all             103 kB
+    ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB
+    ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB
+    └ other shared chunks (total)          2.42 kB
+  
+  
+  ƒ Middleware                               34 kB
+  
+  ○  (Static)  prerendered as static content
+
+finished: 2026-10-01T00:48:13Z
+tree status after gate (excluding evidence folder):
+
+## re-freeze 3a2e20c8e65c550a492cb51c7298e07215970231
+working tree clean at start: yes
+changed since b23cb10 (excluding docs/qa): frontend/tests/offscreen/annotation-flow.cjs only (harness). Backend and frontend build sources unchanged since b23cb10, so backend pytest, ruff, test:events, typecheck and build are not re-run; their results above stand.
+started: 2026-10-01T01:38:28Z
+
+## [R1] node --check frontend/tests/offscreen/annotation-flow.cjs && echo ok
+exit: 0
+summary:
+  ok
+
+## [R2] .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py -q -rs
+exit: 0
+summary:
+  ........................................................................ [ 99%]
+  .                                                                        [100%]
+  145 passed in 5.59s
+
+finished: 2026-10-01T01:38:34Z

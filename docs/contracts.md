@@ -37,7 +37,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | `POST /runs` | `{goal?, context?, dry_run?: bool, egress?: "local_only"}`. egress에는 `local_only`만 넣을 수 있다 | 201, run 요약 | 422 |
 | `GET /runs`, `GET /runs/{id}` | — | run 요약 목록/단건 | 400, 404 |
 | `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, …모델·체인 요약}` | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
-| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
+| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
 | `POST /runs/{id}/inspect_complex` | 업로드 ID 또는 같은 run의 구조 handle, 모델, 전처리 정책, 선택적 리간드, cutoff | 완료된 handle 목록 또는 `needs_selection`/`no_ligand` | 412, 422, 409 |
 
 `load_structure`의 `source`는 이 run의 업로드 ID여야 한다. 파일 경로나 URL은 받지 않는다. `decided_by`는 기록용 출처 정보일 뿐이며, 승인 권한을 주지 않는다.
@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응 결과 handle | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석 결과 handle | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -96,8 +96,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | `GET /viewer/intents`, `/intents/{iid}` | — | 기록과 상태. 읽을 때 모델 요청을 하지 않는다 |
 | `POST /viewer/intents/{iid}/cancel` | `{client_instance_id, viewer_session_id, scene_generation}` | 이 의도만 취소한다. 작업이나 승인에는 영향이 없다 |
 | `POST /viewer/intents/{iid}/ack` | `{command_id, status: applied|no_change|failed, reason_code?, client_instance_id, viewer_session_id, scene_generation, action_revision}` | 발행한 계획·세션과 정확히 맞아야 한다 |
-| `POST/GET /runs/{id}/viewer/scenes`, `/scenes/selected` | `viewer_scene@1` 저장 요청과 현재 바인딩(본문 최대 64 KiB) | 201, 보기 handle. 바인딩이 오래됐으면 거부, run당 100개 |
-| `POST/GET /runs/{id}/viewer/figures`, `/figures/selected`, `/figures/download?format=png|json` | 저장된 보기 handle, PNG(최대 8 MiB) | 201, 그림 handle. run당 100개, PNG 총 64 MiB |
+| `POST/GET /runs/{id}/viewer/scenes`, `/scenes/selected` | `viewer_scene@1` 또는 M16 `viewer_scene@2` 저장 요청과 현재 바인딩(본문 최대 64 KiB) | 201, 보기 handle. 바인딩이 오래됐으면 거부, run당 100개. 목록·상세는 @1과 @2를 모두 돌려준다 |
+| `POST/GET /runs/{id}/viewer/figures`, `/figures/selected`, `/figures/download?format=png|json` | 저장된 보기 handle, PNG(최대 8 MiB). schema `viewer_figure@1` 또는 M16 `viewer_figure@2` | 201, 그림 handle. run당 100개, PNG 총 64 MiB. 목록·상세·다운로드는 @1과 @2를 모두 받는다(출처 JSON은 저장된 그림 값 그대로) |
 
 모든 뷰어 요청 모델은 알 수 없는 필드를 거부한다.
 
@@ -181,6 +181,37 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 - `/capabilities`의 `methods.residue_numbering`: `{available, reason_code: null|"not_installed"|"snapshot_invalid", reason, set_hash, sources:[{source, snapshot_id, date, version_hint, license, origin}]}`. 해시와 내용 형식 해석까지 확인한다.
 - 보고서: `POST /runs/{id}/method_reports` `{result_handle: <residue_numbering_map>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "residue_numbering"`, `render_version: "residue_numbering_markdown@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다. 주장(claim)의 주요 필드는 `{statement_id, evidence_kind: "computed"|"reference_value", source_handle, field_path, row_selector, subject, quantity, unit, exact_value, rendered_value, rounding, operation, reference}`이며, 종류가 맞지 않는 필드 경로는 422 `report_evidence_invalid`다. 대응 객체의 행 `absent_reasons`·`conflict_reason`과 체인 KLIFS `absent_reason`이 닫힌 이유 집합 밖이거나 KLIFS `applied`와 `absent_reason` null 여부가 맞지 않아도 422 `report_evidence_invalid`(`message`에 `numbering_row_shape`·`numbering_klifs_reason_invalid`)다. manifest `limitations` 마지막 줄은 스냅샷 범위 문장이며, 그 줄이 없는 이전 목록으로 저장된 보고서도 다시 열린다.
+
+## M16 참조 주석
+
+규칙은 `docs/business-rules.md` "참조 주석 (M16)"과 "뷰어 요청과 저장된 보기". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다.
+
+### 계산: `POST /runs/{id}/commands` `{tool: "annotate_reference_sites", args}`
+- `args`: `{numbering_map: <같은 run의 residue_numbering_map handle>, contacts: <같은 run의 interaction_set handle> | null(기본)}`. 다른 키는 거부한다.
+- 성공: 200 `{ok: true, handle: <envelope>}`, kind `reference_site_annotation`, schema `reference_site_annotation@1`, summary `{numbering_map, contacts, structure, set_hash, annotated, absent}`. `annotated`가 0이면 `null_result: true`. 같은 입력이면 같은 handle(호출 키에 세트 해시 없음, 훅이 `bound`를 돌려주지 않음).
+- 실패: 422 `input_invalid`(도구 구현을 부르지 않음, `detail.reason_code`): `unknown_field`, `numbering_map_invalid`(handle 아님·다른 run·없음·다른 종류), `contacts_invalid`(같은 경우), `structure_mismatch`(접촉 결과의 구조 ≠ 대응의 구조), `duplicate_site_residue`(한 그룹에서 같은 KLIFS 번호의 `mapped` 행이 둘 이상).
+- 결과 객체: `schema`, `method_version`(`mw.site_annotation/v1`), `site_set{id: "kinase_key_sites@1", sites:[{klifs_index, klifs_label}×10]}`, `numbering_map`, `snapshot_set_hash`, `structure{handle, structure_kind, model_number}`, `contacts{handle, ligand(7필드), cutoff_A, types}|null`, `groups:[{chain_auth, accession, klifs_applied, klifs_absent_reason, sites}]`, `other_contact_residues:[{residue, row_indexes}]|null`, `null_result`, `limitations`(고정 4문장).
+  - 부위: `klifs_index`, `klifs_label`, `status`(`annotated`|`absent`), `absent_reason`(`klifs_not_applied`|`pocket_gap`|`region_unresolved`|`no_mapped_residue`|null), `residue`(7필드), `map_row_index`, `residue_match`, `klifs_match`, `display_label`, `contact`.
+  - `contact`: `{assessed, not_assessed_reason, by_type:{contact|polar_contact|hydrophobic_contact: {computed, count}}, min_distance_A, min_distance_row_index, polar_pairs:[{contact_row_index, protein_atom, ligand_atom, distance_A}]|null}` 또는 null(`absent` 부위, 접촉 결과 없음).
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/site_annotations?structure=&offset=&limit=` | `structure`(선택, 구조 handle로 거르기), limit 1–100(기본 50) | `reference_site_annotation_list@1`: `{active_set_hash, total, offset, limit, rows:[{handle, structure, structure_kind, model_number, numbering_map, contacts, ligand, set_hash, groups:[{chain_auth, accession}], counts{annotated, absent}, null_result, created_seq, stale_snapshot}]}`. 최신 순. `stale_snapshot`은 사용 중 세트가 없거나 주석의 세트와 다를 때 true(화면은 M15 `snapshotBadge` 규칙으로 표시) | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/site_annotations/detail?handle=` | 주석 handle | `{meta, annotation}`(도구가 쓴 그대로) | 404 없는 handle, 422 다른 종류·모르는 파라미터, 409 `run_corrupt` |
+
+- `/capabilities`의 `methods.reference_site_annotation`: 항상 `{available: true, reason_code: null, reason: null}`(run 객체만 읽음).
+
+### 저장된 보기·그림
+- 보기 저장 `POST /runs/{id}/viewer/scenes`: `schema`로 본문을 가른다. `viewer_scene@1` 본문은 그대로이며 `annotation` 키가 있으면 422 `input_invalid`. `viewer_scene@2`는 @1 본문 + 필수 `annotation: {handle, legend: bool}`(없으면 422). 주석 handle이 다른 run·없음·다른 종류면 422 `input_invalid`, 주석의 구조가 보기 소스와 다르면 422 `structure_mismatch`. 멱등(요청 UUID + 정규화 본문) 규칙은 같다. 저장된 @2 보기는 @1 필드 + `annotation{handle, legend}`.
+- 그림 저장 `POST /runs/{id}/viewer/figures`: `viewer_figure@2`는 @1 본문 + 필수 `legend_composited: bool`. 그림 schema가 보기 schema와 짝이 맞지 않으면 409 `scene_mismatch`, 보기의 `legend`가 거짓인데 `legend_composited: true`면 422 `input_invalid`. 저장된 @2 그림은 @1 필드 + `capture_method`(`molstar_image_pass+legend`|`molstar_image_pass`) + `annotation{handle, legend, numbering_map, contacts, snapshot_set_hash, display_labels}`(서버가 저장된 주석에서 복사). 다시 열 때 이 값이 주석 객체와 다르면 409 `scene_invalid`.
+- PNG 크기·개수 한도는 @1과 같다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <reference_site_annotation>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "reference_site_annotation"`, `render_version: "reference_site_annotation_markdown@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
+- 주장 statement ID: `computed` — `site_status_count`, `site_absent_reason_count`(주석 객체 인용), `site_contact_count`, `site_min_distance_A`(접촉 결과 행 인용). `reference_value` — `reference_accession`, `reference_uniprot_position`, `reference_klifs_index`, `reference_klifs_label`, `reference_site_residue`(대응 객체 인용). 주장 필드 구조는 M15 보고서와 같다. 종류가 맞지 않는 필드 경로, 주석과 인용 행의 불일치, 닫힌 집합 밖 상태·이유는 422 `report_evidence_invalid`.
+- 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `budget`, `active_set_hash`(보고서 생성 때 사용 중 세트, 없으면 null), `stale_snapshot`.
 
 ## 과거 단계 실행기 (CLI)
 

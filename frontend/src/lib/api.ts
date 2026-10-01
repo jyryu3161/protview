@@ -1,7 +1,8 @@
 /** Loopback-only M1 API client. See docs/M1_API.md. */
 import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecutionList, AnalysisGoal, AnalysisPlanList,
   AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, EgressMode, Handle,
-  InteractionRow, ResidueRef, RunEvent, ToolError } from "./contracts";
+  InteractionRow, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
+  ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
@@ -31,7 +32,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     engine_version?: string; unit?: string; limitations?: string; explanation?: string };
     chemical_interactions?: ChemicalCapability; pocket_detection?: PocketCapability;
     analysis_workflows?: AnalysisWorkflowsCapability;
-    residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null } } }
+    residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null };
+    reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null } } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -52,7 +54,7 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
-    | "residue_numbering";
+    | "residue_numbering" | "reference_site_annotation";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -69,6 +71,17 @@ export interface OpenmmResult { schema: "openmm_protein_minimization@1"; structu
 export interface OpenmmReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "openmm_protein_minimize"; result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number } }; markdown: string }
+
+/** M16 `GET /runs/{id}/site_annotations/detail`: the stored annotation as written by the tool. */
+export interface SiteAnnotationDetail { meta: ObjectMeta; annotation: ReferenceSiteAnnotation }
+type SceneSaveBase = SceneBindingRequest & NativeSceneState & { name: string };
+/** `viewer_scene@1` (annotation off, unchanged) or `viewer_scene@2` (annotation shown). */
+export type SceneSaveBody = (SceneSaveBase & { schema: "viewer_scene@1" }) |
+  (SceneSaveBase & { schema: "viewer_scene@2"; annotation: SceneAnnotationRef });
+type FigureSaveBase = SceneBindingRequest & NativeSceneState & { scene_handle: string; png_base64: string };
+/** The figure schema must match its scene's schema (server: 409 scene_mismatch otherwise). */
+export type FigureSaveBody = (FigureSaveBase & { schema: "viewer_figure@1" }) |
+  (FigureSaveBase & { schema: "viewer_figure@2"; legend_composited: boolean });
 
 export type CommandResult = { ok: true; handle: Handle } | ({ ok: false } & ToolError) | { ok: false; approval: { gate: string; tool: string; reason: string } } | { ok: false; loop_stop: { reason: string } };
 
@@ -171,12 +184,11 @@ export const api = {
     request<ChemicalResultPage>(runPath(id, `/chemical/results/rows?${handleParam(handle)}&offset=${offset}&limit=${limit}${category ? `&category=${encodeURIComponent(category)}` : ""}`), { signal }),
   savedScenes: (id: string, offset = 0) => request<SavedPage<SavedSceneDetail>>(runPath(id, `/viewer/scenes?offset=${offset}&limit=50`)),
   savedScene: (id: string, handle: string, signal?: AbortSignal) => request<SavedSceneDetail>(runPath(id, `/viewer/scenes/selected?${handleParam(handle)}`), { signal }),
-  saveScene: (id: string, body: SceneBindingRequest & NativeSceneState & { schema: "viewer_scene@1"; name: string }) =>
+  saveScene: (id: string, body: SceneSaveBody) =>
     request<SavedSceneDetail>(runPath(id, "/viewer/scenes"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
   savedFigures: (id: string, offset = 0) => request<SavedPage<SavedFigureDetail>>(runPath(id, `/viewer/figures?offset=${offset}&limit=50`)),
   savedFigure: (id: string, handle: string) => request<SavedFigureDetail>(runPath(id, `/viewer/figures/selected?${handleParam(handle)}`)),
-  saveFigure: (id: string, body: SceneBindingRequest & NativeSceneState & { schema: "viewer_figure@1";
-    scene_handle: string; png_base64: string }) => request<SavedFigureDetail>(runPath(id, "/viewer/figures"),
+  saveFigure: (id: string, body: FigureSaveBody) => request<SavedFigureDetail>(runPath(id, "/viewer/figures"),
     { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
   figureDownload: (id: string, handle: string, format: "png" | "json") =>
     `/api${runPath(id, `/viewer/figures/download?${handleParam(handle)}&format=${format}`)}`,
@@ -210,7 +222,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -233,6 +245,18 @@ export const api = {
     request<NumberingMapList>(runPath(id, `/numbering_maps?offset=${offset}&limit=${limit}`), { signal }),
   numberingRows: (id: string, handle: string, offset: number, limit: number, signal?: AbortSignal) =>
     request<Page<NumberingRow>>(runPath(id, `/objects?${handleParam(handle)}&offset=${offset}&limit=${limit}`), { signal }),
+  // ---- M16 reference site annotations (reads write no event and run no tool) ----
+  /** Runs `annotate_reference_sites` through the ordinary Run.call command route. `contacts: null` = no contacts. */
+  annotateReferenceSites: (id: string, numberingMap: string, contacts: string | null, signal?: AbortSignal) =>
+    api.command(id, "annotate_reference_sites", { numbering_map: numberingMap, contacts }, signal),
+  siteAnnotations: (id: string, structure: string | null, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<SiteAnnotationList>(runPath(id, `/site_annotations?${structure === null ? ""
+      : `structure=${encodeURIComponent(structure)}&`}offset=${offset}&limit=${limit}`), { signal }),
+  siteAnnotation: (id: string, handle: string, signal?: AbortSignal) =>
+    request<SiteAnnotationDetail>(runPath(id, `/site_annotations/detail?${handleParam(handle)}`), { signal }),
+  /** Method report `analysis_type: "reference_site_annotation"` of one stored annotation (nothing recomputed). */
+  createSiteAnnotationReport: (id: string, annotationHandle: string, signal?: AbortSignal) =>
+    api.createMethodReport(id, annotationHandle, signal),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>
