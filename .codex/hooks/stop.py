@@ -29,6 +29,7 @@ CHECKS = [
       "scripts/test_m14_offscreen_acceptance.py", "scripts/test_import_reference_snapshots.py",
       "scripts/test_m15_offscreen_acceptance.py", "scripts/test_measure_klifs_numbering.py",
       "scripts/test_m16_offscreen_acceptance.py",
+      "scripts/test_m17_offscreen_acceptance.py",
       "--ignore=backend/tests/test_chemical_interactions.py",
       "--ignore=backend/tests/test_m11_job_api.py"], {0}),
 ]
