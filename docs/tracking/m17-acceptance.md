@@ -3,7 +3,7 @@
 - 판정: **완료** (2026-10-01). main 병합 전(병합 방법은 사용자에게 묻는다).
 - 브랜치: `dryforge/m17-ligand` (`phase/m17-ligand-candidates` = main에서 분기). M16은 시작 전에 main에 병합되어 있었다(`0fb3426`, 기록 `fb5f108`).
 - 고정 소스: `e6ab4f9`(`e6ab4f9b82808aaddb67c1e2d53ef80628dc097a`, 독립 코드 검토 수정). 증거 커밋 `a81f50a`. 고정 뒤 소스 변경 없음(이 기록 커밋은 기록 문서와 Stop 훅 테스트 목록만 바꾼다, 아래 "기존 검사 스크립트").
-- 수락 증거: `docs/qa/m17-ligand-20261001/`(`preflight.txt` 착수 확인, `gate.txt` 게이트, `acceptance/` M17 수락, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 큰 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(각 폴더의 `ARCHIVED-EVIDENCE.sha256`, `m16-regression/`은 옮길 파일 없음).
+- 수락 증거: `docs/qa/m17-ligand-20261001/`(`preflight.txt` 착수 확인, `gate.txt` 게이트, `acceptance/` M17 수락, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 큰 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(각 폴더의 `ARCHIVED-EVIDENCE.sha256`, `acceptance/`·`m16-regression/`은 옮길 파일 없음).
 - 외부 요청 0건, OpenRouter 호출 0회(모든 흐름 행).
 
 ## 결과물

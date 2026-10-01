@@ -251,7 +251,7 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 - 사용 가능 여부(`methods.ligand_candidates`): 잠긴 환경 존재, RDKit 고정 버전 일치, PAINS 카탈로그 고정 항목 수 로드가 모두 확인될 때만 사용 가능이다(서버는 작업 모듈의 handshake만 실행). 아니면 숫자·컨트롤 없이 이유(`worker_missing`, `handshake_failed`, `rdkit_version_mismatch`, `pains_catalog_unavailable`).
 
 ### 결과 객체
-- `ligand_inspection@1`(부모가 거부되면 객체 없이 typed 실패): 부모 SHA-256·SDF 원자 수·중원자 수·정규 SMILES, 중원자 원자 표(`serial`, `element`, `formal_charge`, `neighbors`), 결합 목록 `{a, b, order}`, 명시적 수소 `{serial, attached_to}`, 번호 붙은 2D SVG(원자 번호 라벨 = SDF 번호), 부모 속성, block 라이브러리별 요약(수락 개수, 거부 레코드, `rejected_counts`, 고정 교체·규칙 대상 수, `block_limit_reached`), 규칙별 검증 결과, 입력 SHA-256.
+- `ligand_inspection@1`(부모가 거부되면 객체 없이 typed 실패): 부모 SHA-256·SDF 원자 수·중원자 수·정규 SMILES, 중원자 원자 표(`serial`, `element`, `formal_charge`, `neighbors`), 결합 목록 `{a, b, order}`, 명시적 수소 `{serial, attached_to}`, 번호 붙은 2D SVG(원자 번호 라벨 = SDF 번호), 부모 속성, block 라이브러리별 요약(수락 개수, 거부 레코드, `rejected_counts`, 고정 교체·규칙 대상 수, `block_limit_reached`), 규칙별 검증 결과, RDKit 버전, 입력 SHA-256.
 - `ligand_candidate_set@1`: 점검 handle·부모 handle·block handle, 부위·교차 결합·`retained_parent_atoms`, 사용한 규칙(텍스트 그대로), 방법, block 라이브러리 요약, 후보 행, 개수(`blocks_accepted`, `raw_products`, `candidates`, `duplicate_products`, `rejected{이유별}`, `not_applicable{규칙별}`), 상한·`limit_reached`·`stop_reason`, 부모 속성, `property_methods`, `limitations`.
 - 두 객체 모두 게시 전에 현재 시도·취소·종료 상태와 스키마·작업 ID·시도 ID·유한값·닫힌 집합을 검증하고, 읽을 때마다 완료된 게시 한 건과 입력에 대조한다. events-only로 다시 열린다(원본 가져오기·RDKit 없이). 새 부모를 올리면 새 점검 객체이고 이전 객체는 지우지 않는다. 화면은 점검 객체를 자동으로 고르지 않는다.
 - `limitations`는 이 다섯 문장, 이 순서·문자 그대로다(결과·보고서·capability 공통):
