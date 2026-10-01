@@ -214,3 +214,125 @@ export type SavedFigureV2 = Omit<SavedFigure, "schema" | "capture_method"> & { s
   capture_method: FigureCaptureMethod; annotation: FigureAnnotationProvenance };
 export type AnySavedFigure = SavedFigure | SavedFigureV2;
 export interface AnySavedFigureDetail { handle: string; value: AnySavedFigure }
+
+// ---- M17 ligand candidates (backend/mw/ligand_reads.py, ligand_bundle.py, ligand_filters.py) ----
+export type LigandImportKind = "ligand_sdf" | "building_blocks_sdf" | "building_blocks_smiles";
+export type LigandPropertyName = "mol_weight" | "crippen_logp" | "hbd" | "hba" | "tpsa" | "rotatable_bonds" |
+  "heavy_atoms" | "formal_charge";
+export type LigandSortKey = "generation_order" | LigandPropertyName;
+export type LigandSortDirection = "asc" | "desc";
+export type LigandBondOrder = "single" | "double" | "triple" | "aromatic";
+export type LigandStereoFlag = "none" | "parent_stereo_lost" | "new_unspecified_center";
+export type LigandStopReason = "candidate_limit" | "attempt_limit";
+/** RDKit values as stored (never null); rounding happens only for display. */
+export type LigandProperties = Record<LigandPropertyName, number>;
+
+/** `POST /runs/{id}/chemical/imports` answer for the three ligand kinds. */
+export interface LigandImport { schema: "chemical_raw_input@1"; handle: string; kind: LigandImportKind; format: string;
+  sha256: string; size: number }
+/** `methods.ligand_candidates` of `/capabilities` and `capability` of the prerequisites read. */
+export interface LigandCapability { schema: "ligand_capability@1"; available: boolean; status: string;
+  reason_code: string | null; reason: string | null; engine: "rdkit"; rdkit_version_expected: string;
+  protocols: string[]; tools: Record<string, string>; execution_lane: string; timeout_s: number;
+  limits: Record<string, number>; limitations: string[]; pins: Record<string, string> | null;
+  pains_catalog_entries: Record<string, number> | null }
+export interface LigandPrerequisites { schema: "ligand_prerequisites@1"; capability: LigandCapability;
+  import_counts: Record<LigandImportKind, number>;
+  imports: { handle: string; input_kind: LigandImportKind; sha256: string | null; created_seq: number }[];
+  inspections: number; candidate_sets: number; requires: string[]; starts_job: false }
+
+/** SDF 1-based atom-block serials (H lines included), heavy atoms only. */
+export interface LigandAtom { serial: number; element: string; formal_charge: number; neighbors: number[] }
+export interface LigandBond { a: number; b: number; order: LigandBondOrder }
+export interface LigandParent { sha256: string; atoms_in_sdf: number; heavy_atom_count: number; canonical_smiles: string;
+  atoms: LigandAtom[]; bonds: LigandBond[]; hydrogens: { serial: number; attached_to: number }[];
+  /** RDKit 2D drawing; shown only as an `<img>` data URI, never inserted into the DOM. */
+  svg: string; svg_bytes: number; properties: LigandProperties }
+export interface LigandBlockLibrary { kind: "building_blocks_sdf" | "building_blocks_smiles"; input_format: string;
+  sha256: string; records_total: number; records_read: number; block_limit_reached: boolean; accepted: number;
+  rejected: { ordinal: number; name: string; reason: string }[]; rejected_total: number;
+  rejected_counts: Record<string, number>; fixed_targets: number; rule_targets: number }
+/** `status` is "valid" or a rule reason code; `text` is null when the rule was `too_large`. */
+export interface LigandRuleRow { rule_id: string; status: string; text: string | null; text_sha256: string }
+export interface LigandInspection { schema: "ligand_inspection@1"; protocol: "rdkit_inspect_v1";
+  method: Record<string, string>; parent_handle: string; block_handles: string[];
+  input_sha256: { parent: string; blocks: string[]; rules: string[] }; parent: LigandParent;
+  property_methods: Record<LigandPropertyName, string>; block_libraries: LigandBlockLibrary[]; rules: LigandRuleRow[] }
+export interface LigandInspectionDetail { schema: "ligand_inspection_detail@1"; handle: string; job_id: string;
+  inspection: LigandInspection; meta: Record<string, unknown> }
+/** Creation order (oldest first). A row that does not validate has `valid: false` and null fields. */
+export interface LigandInspectionListRow { handle: string; created_seq: number; valid: boolean; reason_code: string | null;
+  job_id: string | null; parent_handle: string | null; parent_sha256: string | null;
+  parent_canonical_smiles: string | null; heavy_atom_count: number | null; block_handles: string[] | null;
+  blocks_accepted: number | null; rules_total: number | null; rules_valid: number | null }
+export interface LigandInspectionList { schema: "ligand_inspection_list@1"; total: number; offset: number; limit: number;
+  rows: LigandInspectionListRow[] }
+
+export interface LigandRuleUsed { rule_id: string; method: string; text: string | null }
+export interface LigandCrossingBond { core_atom: number; site_atom: number; order: LigandBondOrder }
+export interface LigandCounts { blocks_accepted: number; raw_products: number; candidates: number;
+  duplicate_products: number; rejected: Record<string, number>; not_applicable: Record<string, number> }
+export interface LigandCandidate { id: string; smiles: string; origins: { rule_id: string; block_name: string }[];
+  retained_parent_atoms: number[]; stereo_flag: LigandStereoFlag; properties: LigandProperties;
+  pains: { matches: { catalog: string; name: string }[] } }
+export interface LigandCandidateSet { schema: "ligand_candidate_set@1"; protocol: "rdkit_enumerate_v1";
+  method: Record<string, string>; inspection_handle: string; parent_handle: string; block_handles: string[];
+  input_sha256: Record<string, unknown>; parent_sha256: string; parent_canonical_smiles: string;
+  parent_properties: LigandProperties; property_methods: Record<LigandPropertyName, string>; site_atoms: number[];
+  retained_parent_atoms: number[]; crossing_bond: LigandCrossingBond; use_fixed: boolean; rules_used: LigandRuleUsed[];
+  methods: string[]; block_libraries: LigandBlockLibrary[]; counts: LigandCounts;
+  limits: { max_candidates: number; max_attempts: number }; limit_reached: boolean;
+  stop_reason: LigandStopReason | null; limitations: string[] }
+/** Detail read: the set without its rows (`candidate_count` rows are paged by the rows read). */
+export interface LigandCandidateSetDetail { schema: "ligand_candidate_set_detail@1"; handle: string; job_id: string;
+  candidate_count: number; candidate_set: LigandCandidateSet; meta: Record<string, unknown> }
+export interface LigandCandidateSetListRow { handle: string; created_seq: number; valid: boolean;
+  reason_code: string | null; job_id: string | null; inspection_handle: string | null; site_atoms: number[] | null;
+  use_fixed: boolean | null; rule_ids: string[] | null; candidates: number | null; raw_products: number | null;
+  null_result: boolean | null; limit_reached: boolean | null; stop_reason: LigandStopReason | null }
+export interface LigandCandidateSetList { schema: "ligand_candidate_set_list@1"; inspection_handle: string | null;
+  total: number; offset: number; limit: number; rows: LigandCandidateSetListRow[] }
+
+/** Normalized filter spec (server form; also what a report records). Bounds are inclusive. */
+export interface LigandFilterSpec { ranges: Partial<Record<LigandPropertyName, { min: number | null; max: number | null }>>;
+  pains_exclude: boolean }
+export interface LigandCandidatePageRow { generation_order: number; candidate: LigandCandidate;
+  /** Per applied filter (range names and `pains_exclude`) pass/fail, decided by the server. */
+  filters: Record<string, boolean>; passes_all: boolean | null }
+export interface LigandCandidatePage { schema: "ligand_candidate_page@1"; handle: string; inspection_handle: string;
+  parent_handle: string; parent_canonical_smiles: string; parent_properties: LigandProperties;
+  property_methods: Record<LigandPropertyName, string>; site_atoms: number[]; retained_parent_atoms: number[];
+  crossing_bond: LigandCrossingBond; use_fixed: boolean; rules_used: LigandRuleUsed[]; counts: LigandCounts;
+  limits: { max_candidates: number; max_attempts: number }; limit_reached: boolean;
+  stop_reason: LigandStopReason | null; limitations: string[];
+  /** null when no filter is applied (as `passing`). */
+  failing: number | null; total: number; passing: number | null; filter_pass_counts: Record<string, number>;
+  matched: number; hidden_by_filter: number; sort: LigandSortKey; direction: LigandSortDirection; offset: number;
+  limit: number; passes_only: boolean; filter_spec: LigandFilterSpec; rows: LigandCandidatePageRow[] }
+
+export interface LigandSiteCheck { schema: "ligand_site_check@1"; valid: boolean; reason: string | null;
+  site_atoms: number[]; unknown_atoms: number[] | null; core_atoms: number[] | null;
+  crossing_bonds: LigandCrossingBond[] | null; site_hydrogens: number[] | null; retained_parent_atoms: number[] | null }
+/** `POST /runs/{id}/ligand/preview` body (also the enumeration job args). */
+export interface LigandEnumerateArgs { inspection_handle: string; site_atoms: number[]; use_fixed: boolean;
+  rule_ids: string[] }
+export interface LigandSitePreview { schema: "ligand_site_preview@1"; inspection_handle: string;
+  site_check: LigandSiteCheck; use_fixed: boolean;
+  rules: { rule_id: string; status: string | null; usable: boolean }[]; generation_method_selected: boolean;
+  ready: boolean; blocking_reasons: string[]; starts_job: false }
+
+export interface LigandInspectArgs { parent_sdf_handle: string; block_handles: string[]; rules: string[] }
+export type LigandProtocol = "rdkit_inspect_v1" | "rdkit_enumerate_v1";
+export interface LigandJob { job_id: string; run_id: string; protocol_id: LigandProtocol; tool_id: string;
+  status: string; blocked_reason: string | null;
+  failure: { error: string; message: string; reason_code?: string } | null; input_handles: string[];
+  output_handles: string[]; attempt_ordinal: number; cancel_requested: boolean; timeout_s: number;
+  artifacts: { ligand_inspection?: string; ligand_candidate_set?: string } }
+/** Dry-run submission: a plan only, no job and no result object. */
+export interface LigandPlanOnly { plan_only: true; protocol_id: LigandProtocol; reason_code: "dry_run"; available: false;
+  output_handles: []; normalized_parameters: Record<string, unknown> }
+export type LigandSubmission = LigandJob | LigandPlanOnly;
+export interface LigandReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "ligand_candidates"; result_handle: string;
+  filter_spec: LigandFilterSpec; null_result: boolean; snapshot: { event_seq: number } } & Record<string, unknown>;
+  markdown: string }
