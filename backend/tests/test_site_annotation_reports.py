@@ -21,12 +21,14 @@ from pathlib import Path
 import gemmi
 import pytest
 from reference_fixture_set import build_fixture_set
+from test_reference_site_annotation import _map_row, _res, _synthetic_map
 
 from mw import reference_snapshots as rs
 from mw import site_annotation as sa
 from mw import site_annotation_reports as sr
 from mw.core.handles import canonical_json
 from mw.reports import EvidenceError
+from mw.tools.structural import structure_residues
 
 FIX = Path(__file__).resolve().parent / "fixtures"
 REF = FIX / "reference"
@@ -213,7 +215,8 @@ def test_forbidden_words_with_the_four_fixed_limitation_lines_exempt():
     text = "\n".join(["# x", *sa.LIMITATIONS, "ok"])
     assert sr.check_no_interpretation(text) == text
     for bad in ("hinge 결합 잔기", "촉매 Lys", "수소결합 2개", "중요한 부위", "핵심 잔기", "기능 부위", "important site",
-                "binding pocket", "affinity", "억제", "친화"):
+                "binding pocket", "affinity", "억제", "친화", "hydrogen bond", "Hydrogen-bonds to ADP", "H-bond",
+                "two h-bonds", "HBOND", "hbond count", "hydrogenbond", "catalytic Lys", "CATALYTIC"):
         with pytest.raises(EvidenceError, match="interpretive_statement"):
             sr.check_no_interpretation(f"ok\n{bad}")
     # A limitation line with anything added (a list marker, a trailing word) is checked like any other line.
@@ -513,10 +516,67 @@ def test_annotation_validation_rejects_inconsistent_objects(refroot, client, mut
     content = copy.deepcopy(run.store.load(ids["annotation"]))
     map_content = run.store.load(ids["map"])
     contacts = run.store.load(ids["contacts"])
-    sr.check_annotation(content, map_content, contacts)   # the stored object passes
+    residues = structure_residues(run.store, map_content["structure"]["handle"])["residues"]
+    sr.check_annotation(content, map_content, contacts, residues)   # the stored object passes
     mutate(content, contacts["rows"])
     with pytest.raises(EvidenceError):
-        sr.check_annotation(content, map_content, contacts)
+        sr.check_annotation(content, map_content, contacts, residues)
+
+
+def test_assessed_must_follow_the_structure_residue_category(refroot, client):
+    # LABELED TEST FABRICATIONS of the stored 1MQ4 annotation (and of the residue list the validator reads).
+    build_fixture_set(refroot)
+    ids = _setup(client)
+    run = _run(ids["rid"])
+    stored = run.store.load(ids["annotation"])
+    map_content = run.store.load(ids["map"])
+    contacts = run.store.load(ids["contacts"])
+    residues = structure_residues(run.store, map_content["structure"]["handle"])["residues"]
+    # A polymer site residue without contact rows (αC.24) claimed as not assessed.
+    content = copy.deepcopy(stored)
+    site = next(s for s in content["groups"][0]["sites"] if s["klifs_label"] == "αC.24")
+    assert site["contact"]["assessed"] is True and site["contact"]["min_distance_A"] is None
+    site["contact"] = {"assessed": False, "not_assessed_reason": sa.NOT_ASSESSED_REASON,
+                       "by_type": {t: {"computed": True, "count": None} for t in TYPES},
+                       "min_distance_A": None, "min_distance_row_index": None, "polar_pairs": None}
+    with pytest.raises(EvidenceError, match="site_contact_assessed_mismatch"):
+        sr.check_annotation(content, map_content, contacts, residues)
+    # The stored annotation says assessed, but the structure lists that residue as a non-polymer record.
+    key = _key7(next(s for s in stored["groups"][0]["sites"] if s["klifs_label"] == "αC.24")["residue"])
+    changed = [{**r, "category": "nonpolymer"} if _key7(r) == key else r for r in residues]
+    assert changed != residues
+    with pytest.raises(EvidenceError, match="site_contact_assessed_mismatch"):
+        sr.check_annotation(stored, map_content, contacts, changed)
+    # Contacts without the structure residues cannot be checked.
+    with pytest.raises(EvidenceError, match="site_structure_residues_missing"):
+        sr.check_annotation(stored, map_content, contacts, None)
+
+
+@pytest.mark.parametrize(("label", "forged_reason"), [
+    ("GK.45", "region_unresolved"),        # pocket_gap applies first (GK is also unresolved)
+    ("GK.45", "no_mapped_residue"),
+    ("xDFG.81", "no_mapped_residue"),      # region_unresolved applies first
+    ("xDFG.81", "pocket_gap"),             # not a gap
+    ("III.17", "pocket_gap"),              # no_mapped_residue is the only applicable reason
+    ("III.17", "region_unresolved"),
+])
+def test_absent_reason_must_be_the_first_applicable_one(label, forged_reason):
+    # SYNTHETIC map (same shape as test_reference_site_annotation's): site 45 is a gap in an unresolved region,
+    # xDFG is unresolved, site 46 mapped, site 47 only a conflict row. The annotation is built by the product's pure
+    # builder; the forged reason is a LABELED TEST FABRICATION.
+    pocket = ["A"] * 85
+    pocket[44] = "-"
+    klifs = [{"accession": "P1", "applied": True, "absent_reason": None, "unresolved_regions": ["GK", "xDFG"],
+              "gapped_regions": []}]
+    rows = [_map_row(_res(211), 46), _map_row(_res(212), 47, status="conflict")]
+    map_content = _synthetic_map(rows, klifs=klifs, pocket="".join(pocket))
+    content = sa.build_annotation("obj://map/x", map_content, [], None, None)
+    sr.check_annotation(content, map_content, None, None)
+    site = next(s for s in content["groups"][0]["sites"] if s["klifs_label"] == label)
+    assert site["status"] == "absent" and site["absent_reason"] != forged_reason
+    site["absent_reason"] = forged_reason
+    with pytest.raises(EvidenceError, match="site_status_or_reason_mismatch"):
+        sr.check_annotation(content, map_content, None, None)
 
 
 def test_unpublished_annotation_is_not_reported(refroot, client):
@@ -539,5 +599,5 @@ def test_unpublished_annotation_is_not_reported(refroot, client):
 def test_report_module_reads_only_stored_evidence():
     source = (Path(__file__).resolve().parents[1] / "mw" / "site_annotation_reports.py").read_text()
     for forbidden in ("subprocess", "requests", "httpx", "urllib", "socket", "reference_snapshots", "numbering_reads",
-                      "pin_active_set", "compute_interactions(", "build_annotation(", "structure_residues"):
+                      "pin_active_set", "compute_interactions(", "build_annotation("):
         assert forbidden not in source
