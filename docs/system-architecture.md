@@ -53,6 +53,9 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/sifts_mapping.py`, `sequence_alignment.py`, `klifs_numbering.py` | M15 순수 해석·계산: kbase SIFTS 형식 해석, Gotoh 전역 정렬(numpy), KLIFS 포켓 → UniProt 위치 표 | reference_snapshots(SIFTS만), numpy |
 | `backend/mw/residue_numbering.py`, `tools/numbering.py` | M15 `map_residue_numbering`: 사슬 잔기 판단, 체인별 방법 결정, 행 상태, `residue_numbering_map@1`. 도구 모듈의 사전 검사 훅이 세트 고정·입력 검증을 구현 전에 한다 | 위 세 모듈, tools(structural 파서), core |
 | `backend/mw/numbering_reads.py`, `numbering_reports.py` | M15 읽기 API(스냅샷·SIFTS 체인·UniProt 검색·PDB ID 제안·대응 목록·행 페이지·capability)와 계산값·참조값을 분리한 보고서 | residue_numbering, reports, core |
+| `backend/mw/site_annotation.py`, `tools/site_annotation.py` | M16 `annotate_reference_sites`: 번호 대응 1개 + 선택적 기하 접촉 결과 1개를 KLIFS 주요 10자리 기준으로 합친 `reference_site_annotation@1`. 사전 검사 훅이 두 handle·같은 구조를 구현 전에 검사한다. 참조 폴더를 읽지 않는다. 목록·상세 읽기 API | residue_numbering 결과, tools(structural 잔기 목록), core |
+| `backend/mw/site_annotation_reports.py` | M16 부위 주석 보고서: 참조값(대응 행)·계산값(접촉 행 count·minimum) 분리, 다시 열 때 주석을 대응·접촉·구조 잔기와 대조 | site_annotation, reports, core |
+| `frontend/src/components/SiteAnnotationPanel.tsx` | M16 구조 분석 탭 메인 화면의 참조 주석 패널: 같은 구조의 대응·접촉 결과 선택, 주석 만들기·켜기, 범례, 부위 표, 보고서 만들기. Mol* 그리기는 MolstarViewer 브리지의 `siteAnnotation` | `src/lib/site-annotation.ts`, `api.ts`, MolstarViewer 브리지 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
 | `backend/mw/analysis_executions.py` | M13 실행 driver: 실행 기록 접기, 계획 승인·철회, 한 단계 진행, 재시도, 범위 한정 중지, 충돌 복구, `workflow_summary@1`. 과학은 `ExecutionLink`를 단 `Run.call`·`JobQueue`·기존 보고서 함수로만 실행 | analysis_plans, runtime, jobs, 보고서 모듈 |
@@ -82,6 +85,10 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출은 `Run.call`로 �
 ## 참조 스냅샷과 번호 대응 (M15)
 
 참조 데이터는 사용자가 실행하는 가져오기 명령 `scripts/import_reference_snapshots.py`만 쓴다. 이 명령이 `../kbase_kinase/ref`의 가공 스냅샷을 해시 대조 뒤 `.deps/reference/sets/<set_hash>/`로 복사하고 `active.json`을 rename으로 바꾼다. 서버는 이 폴더만 읽는다. `POST /commands`의 `map_residue_numbering`은 `Run.call`에서 사전 검사 훅이 세트를 고정하고 구조·스냅샷으로 입력을 검증한 뒤(세트 해시가 호출 키에 들어감), 구현이 같은 세트로 SIFTS 답·정렬 답·행 상태·KLIFS 번호를 만들어 `reference_snapshot_set@1`(처음 쓰는 세트면)과 `residue_numbering_map@1`을 저장한다. 대응 객체는 세트 해시와 계산에 쓴 참조 행을 담으므로 참조 폴더 없이 이벤트만으로 다시 열린다. 지식 탭은 읽기 API로 스냅샷·대응을 보여 주고, 보고서는 기존 `method_reports` 경로로 만든다. 네트워크는 쓰지 않는다.
+
+## 참조 주석 (M16)
+
+구조 분석 탭 패널에서 사용자가 현재 표시 구조와 같은 handle의 번호 대응과(선택적으로) 기하 접촉 결과를 고르면, `POST /commands`의 `annotate_reference_sites`가 `Run.call` 값싼 도구로 `reference_site_annotation@1`을 저장한다. 결과는 대응 객체의 행과 접촉 행을 그대로 옮겨 담으므로 이벤트만으로 다시 열린다. 패널은 읽기 API로 주석을 받아 MolstarViewer 브리지에 넘기고, 브리지는 검증된 원자 카탈로그로만 점선 끝 원자를 찾아 그린 뒤 native readback으로 적용을 확인한다. 주석이 켜진 보기는 `viewer_scene@2`, 그 그림은 `viewer_figure@2`(범례 합성 여부 기록)로 저장되고, 보고서는 기존 `method_reports` 경로로 만든다. 네트워크는 쓰지 않는다.
 
 ## 외부 경계
 
