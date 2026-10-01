@@ -23,9 +23,9 @@ const TAB_IDS = ["structure", "protein", "ligand", "knowledge"];
 // Spec §6: what each unavailable part must name (reason + opening stages).
 const UNAVAILABLE = {
   protein: { tab: "단백질 공학", title: "단백질 공학", stages: ["M20", "M21"], extra: [] },
-  ligand: { tab: "리간드 설계·탐색", title: "리간드 설계·탐색", stages: ["M17", "M18"], extra: ["구조 분석 탭"] },
 };
-// M15 replaced the knowledge tab's "사용할 수 없음" notice with the residue numbering screen (NumberingPanel).
+// M15 replaced the knowledge tab's "사용할 수 없음" notice with the residue numbering screen (NumberingPanel);
+// M17 replaced the ligand tab's notice with the ligand candidate screen (LigandPanel).
 const NO_RUN_TEXT = "구조 분석 탭에서 run을 먼저 선택하세요";
 const LIST_NAMES = { reports: "저장된 보고서", figures: "저장된 그림", summaries: "분석 흐름 요약" };
 const FAULT_LABEL = "QA fault fixture (labeled renderer route, not a scientific value): reports list read failure";
@@ -260,6 +260,16 @@ async function unavailableNotice(page, key) {
   assert.equal(controls, 0, `${key}: the notice holds controls`);
   assert.equal(panelControls, 0, `${key}: the tab holds controls/placeholders`);
   return { key, text, controls, panelControls };
+}
+/** M17: the ligand tab shows the ligand candidate screen for the global run, no unavailable notice. */
+async function ligandScreen(page) {
+  const panel = page.getByRole("tabpanel", { name: "리간드 설계·탐색", exact: true });
+  await panel.waitFor({ timeout: 10000 });
+  const screen = panel.locator('[data-testid="ligand-panel"]');
+  await screen.waitFor({ timeout: 10000 });
+  const notices = await panel.locator("section.mw-unavailable").count();
+  assert.equal(notices, 0, "ligand: the M14 unavailable notice is still shown");
+  return { key: "ligand", ligandScreen: true, state: await screen.getAttribute("data-ligand-state"), unavailableNotices: notices };
 }
 /** M15: the knowledge tab shows the residue numbering screen and the report library, no unavailable notice. */
 async function knowledgeScreen(page) {
@@ -806,11 +816,13 @@ async function modeMain(session, input, rec_, evidence, log) {
       const cases = key === "knowledge" ? ["T-structure-state", "T-unavailable"] : ["T-structure-state", "T-unavailable"];
       trip.push(await rec_.step(`S02-${key}`, cases, key === "knowledge"
         ? `Click ${label}: numbering screen + report library (M15), no unavailable notice`
-        : `Click ${label}: 사용할 수 없음 notice; requests while shown`, async () => {
+        : key === "ligand" ? `Click ${label}: ligand candidate screen (M17), no unavailable notice; read requests only`
+          : `Click ${label}: 사용할 수 없음 notice; requests while shown`, async () => {
         const baseline = new Set(apiPaths(log, 0).map(row => `${row.method} ${row.path}`));
         const started = Date.now();
         await selectTab(page, label);
-        const notice = key === "knowledge" ? await knowledgeScreen(page) : await unavailableNotice(page, key);
+        const notice = key === "knowledge" ? await knowledgeScreen(page)
+          : key === "ligand" ? await ligandScreen(page) : await unavailableNotice(page, key);
         await page.waitForTimeout(3000);
         const during = apiPaths(log, started);
         return { notice, during, baseline: [...baseline], line: await globalLine(page),
@@ -821,7 +833,8 @@ async function modeMain(session, input, rec_, evidence, log) {
           const baseline = new Set(value.baseline);
           const fresh = value.during.filter(row => !baseline.has(`${row.method} ${row.path}`));
           const writes = value.during.filter(row => row.method !== "GET");
-          assert.deepEqual(fresh, [], `the ${label} tab caused requests outside the pre-switch polling paths`);
+          // M17: the ligand screen reads its own lists (GET only) while shown; the unavailable tab sends none.
+          if (key !== "ligand") assert.deepEqual(fresh, [], `the ${label} tab caused requests outside the pre-switch polling paths`);
           assert.deepEqual(writes, []);
         }
         return { notice: value.notice, requestsWhileShown: value.during.map(row => `${row.method} ${row.path}`),
