@@ -295,6 +295,29 @@ def test_1mq4_prepared_adp_sites_match_numpy_oracle_and_preflight(tmp_path, ref)
     assert {(k[3], k[5]) for k in got_other} == oracle_other
 
 
+def test_1mq4_site_labels_and_residues_equal_the_klifs_match_residues_excerpt(tmp_path, ref):
+    # Spec 10.2: the committed KLIFS per-structure table (comparison-only, parsed here, not via product code) gives
+    # each pocket index its label and author residue number; the excerpt has no residue name, so the name is read
+    # independently from the 1MQ4 mmCIF itself with gemmi.
+    table = next(r for r in _rows("klifs/match_residues_fixture.jsonl")
+                 if r["pdb_id"] == "1MQ4" and r["chain"] == "A")["data"]
+    table = json.loads(table) if isinstance(table, str) else table
+    excerpt = {item["index"]: item for item in table}
+    model = gemmi.read_structure(str(CIF_1MQ4))[0]
+    names = {(res.seqid.num, res.seqid.icode.strip()): res.name for res in model["A"]}
+    run, _ = _run(tmp_path)
+    prepared = _prepare(run, _load(run, CIF_1MQ4))
+    _, content = _annotate(run, _map(run, prepared), _contacts(run, prepared))
+    sites = content["groups"][0]["sites"]
+    assert [s["klifs_index"] for s in sites] == list(PREFLIGHT)
+    for site in sites:
+        item = excerpt[site["klifs_index"]]
+        assert site["status"] == "annotated" and site["klifs_label"] == item["KLIFS_position"]
+        assert str(site["residue"]["seq_auth"]) == item["Xray_position"] and site["residue"]["icode"] == ""
+        assert site["residue"]["chain_auth"] == "A"
+        assert site["residue"]["resname"] == names[(int(item["Xray_position"]), "")]
+
+
 def test_same_input_same_handle_and_omitted_contacts_is_null(tmp_path, ref):
     run, calls = _run(tmp_path)
     prepared = _prepare(run, _load(run, CIF_1MQ4))
