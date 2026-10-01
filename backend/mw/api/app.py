@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_executions, analysis_plans, numbering_reads
+from .. import analysis_executions, analysis_plans, ligand_bundle, ligand_reads, numbering_reads
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
@@ -603,6 +603,8 @@ def capabilities() -> dict[str, Any]:
     methods["residue_numbering"] = numbering_reads.capability()
     # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
+    # M17: pinned environment + RDKit version + PAINS A/B/C, checked by the worker handshake (no RDKit here).
+    methods["ligand_candidates"] = ligand_bundle.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1516,6 +1518,105 @@ def site_annotation_detail(rid: str, request: Request, handle: str) -> dict[str,
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
     return {"meta": meta, "annotation": content}
+
+
+# ----------------------------------------------------------------- M17 ligand reads (no event, job, tool or RDKit)
+LIGAND_PREVIEW_LIMIT = 64 * 1024
+
+
+def _ligand_object(run: Run, handle: str, kind: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (kind, f"{kind}@1"):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": f"handle is not a {kind}"})
+    return meta
+
+
+def _ligand_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid ligand evidence"})
+
+
+def _ligand_corrupt(exc: Exception) -> HTTPException:
+    return HTTPException(409, detail={"error": "run_corrupt", "message": "invalid ligand object record"})
+
+
+@app.get("/runs/{rid}/ligand/prerequisites")
+def ligand_prerequisites(rid: str, request: Request) -> dict[str, Any]:
+    """M17 input readiness: ligand import counts, inspection/candidate-set counts, capability; starts nothing."""
+    _only_query(request, set())
+    return ligand_reads.prerequisites(_run(rid))
+
+
+@app.get("/runs/{rid}/ligand/inspections")
+def ligand_inspections(rid: str, request: Request, offset: int = Query(0, ge=0),
+                       limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return ligand_reads.list_inspections(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise _ligand_corrupt(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/inspections/detail")
+def ligand_inspection_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _ligand_object(run, handle, ligand_reads.INSPECTION)
+    try:
+        return {**ligand_reads.inspection_detail(run, handle), "meta": meta}
+    except ligand_bundle.LigandEvidenceError as exc:
+        raise _ligand_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/candidate_sets")
+def ligand_candidate_sets(rid: str, request: Request, inspection: str | None = None, offset: int = Query(0, ge=0),
+                          limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    _only_query(request, {"inspection", "offset", "limit"})
+    run = _run(rid)
+    try:
+        return ligand_reads.list_candidate_sets(run, inspection, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise _ligand_corrupt(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/candidate_sets/detail")
+def ligand_candidate_set_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _ligand_object(run, handle, ligand_reads.CANDIDATE_SET)
+    try:
+        return {**ligand_reads.candidate_set_detail(run, handle), "meta": meta}
+    except ligand_bundle.LigandEvidenceError as exc:
+        raise _ligand_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/candidate_sets/rows")
+def ligand_candidate_rows(rid: str, request: Request) -> dict[str, Any]:
+    """Filter spec, sort and page from the query; evaluated on stored values by the server (spec 5)."""
+    try:
+        query = ligand_reads.parse_page_query(list(request.query_params.multi_items()))
+    except ligand_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    run = _run(rid)
+    _ligand_object(run, query["handle"], ligand_reads.CANDIDATE_SET)
+    try:
+        return ligand_reads.candidate_page(run, query)
+    except ligand_bundle.LigandEvidenceError as exc:
+        raise _ligand_evidence_error(exc) from exc
+    except ToolFailure as exc:  # a stored row the filter module refuses is corrupt evidence
+        raise _ligand_evidence_error(exc) from exc
+
+
+@app.post("/runs/{rid}/ligand/preview")
+async def ligand_preview(rid: str, request: Request) -> Any:
+    """Site pre-check on the stored inspection graph (spec 4.1); pure, no event, no job."""
+    _only_query(request, set())
+    body = _chemical_json(await _bounded_chemical_body(request, LIGAND_PREVIEW_LIMIT))
+    run = _run(rid)
+    try:
+        return await run_in_threadpool(lambda: ligand_reads.preview(run, body))
+    except ToolFailure as exc:
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/interface_sasa")
