@@ -1,7 +1,10 @@
 /** Loopback-only M1 API client. See docs/M1_API.md. */
 import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecutionList, AnalysisGoal, AnalysisPlanList,
   AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, EgressMode, Handle,
-  InteractionRow, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
+  InteractionRow, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
+  LigandEnumerateArgs, LigandFilterSpec, LigandImport, LigandImportKind, LigandInspectArgs, LigandInspectionDetail,
+  LigandInspectionList, LigandJob, LigandPrerequisites, LigandReportArtifact, LigandSitePreview, LigandSubmission,
+  ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
   ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
@@ -33,7 +36,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     chemical_interactions?: ChemicalCapability; pocket_detection?: PocketCapability;
     analysis_workflows?: AnalysisWorkflowsCapability;
     residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null };
-    reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null } } }
+    reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null };
+    ligand_candidates?: LigandCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -54,7 +58,7 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
-    | "residue_numbering" | "reference_site_annotation";
+    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -257,6 +261,41 @@ export const api = {
   /** Method report `analysis_type: "reference_site_annotation"` of one stored annotation (nothing recomputed). */
   createSiteAnnotationReport: (id: string, annotationHandle: string, signal?: AbortSignal) =>
     api.createMethodReport(id, annotationHandle, signal),
+  // ---- M17 ligand candidates (reads and the preview write no event and start no job) ----
+  /** Parent SDF (`ligand_sdf`, the M11 kind) or a building-block library; octet-stream, at most 10 MiB. */
+  ligandImport: (id: string, kind: LigandImportKind, file: File, signal?: AbortSignal) =>
+    request<LigandImport>(runPath(id, `/chemical/imports?kind=${kind}&filename=${encodeURIComponent(file.name)}`),
+      { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file, signal }),
+  ligandPrerequisites: (id: string, signal?: AbortSignal) =>
+    request<LigandPrerequisites>(runPath(id, "/ligand/prerequisites"), { signal }),
+  ligandInspections: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<LigandInspectionList>(runPath(id, `/ligand/inspections?offset=${offset}&limit=${limit}`), { signal }),
+  ligandInspection: (id: string, handle: string, signal?: AbortSignal) =>
+    request<LigandInspectionDetail>(runPath(id, `/ligand/inspections/detail?${handleParam(handle)}`), { signal }),
+  /** `inspection` null = every candidate set of the run. */
+  ligandCandidateSets: (id: string, inspection: string | null, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<LigandCandidateSetList>(runPath(id, `/ligand/candidate_sets?${inspection === null ? ""
+      : `inspection=${encodeURIComponent(inspection)}&`}offset=${offset}&limit=${limit}`), { signal }),
+  ligandCandidateSet: (id: string, handle: string, signal?: AbortSignal) =>
+    request<LigandCandidateSetDetail>(runPath(id, `/ligand/candidate_sets/detail?${handleParam(handle)}`), { signal }),
+  /** `query` comes from `candidateRowsQuery` (ligand.ts); the server evaluates filters on stored values. */
+  ligandCandidateRows: (id: string, query: string, signal?: AbortSignal) =>
+    request<LigandCandidatePage>(runPath(id, `/ligand/candidate_sets/rows?${query}`), { signal }),
+  ligandPreview: (id: string, body: LigandEnumerateArgs, signal?: AbortSignal) =>
+    request<LigandSitePreview>(runPath(id, "/ligand/preview"), jsonPost(body, signal)),
+  /** Start, approval (`approveOpenmm`), retry and cancel use the shared job routes (`startJob` etc.). */
+  submitLigandInspect: (id: string, args: LigandInspectArgs) =>
+    request<LigandSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "rdkit_inspect_v1", args, timeout_s: 120 })),
+  submitLigandEnumerate: (id: string, args: LigandEnumerateArgs) =>
+    request<LigandSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "rdkit_enumerate_v1", args, timeout_s: 120 })),
+  ligandJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<LigandJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  /** Every job of the run (read only); the ligand tab re-attaches to its own queued or running job after a remount. */
+  ligandJobs: (id: string, signal?: AbortSignal) => request<LigandJob[]>(runPath(id, "/jobs"), { signal }),
+  /** Report of one stored candidate set; `filters` null sends no filter spec (nothing is generated again). */
+  createLigandReport: (id: string, setHandle: string, filters: LigandFilterSpec | null, signal?: AbortSignal) =>
+    request<LigandReportArtifact>(runPath(id, "/method_reports"),
+      jsonPost(filters === null ? { result_handle: setHandle } : { result_handle: setHandle, filters }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

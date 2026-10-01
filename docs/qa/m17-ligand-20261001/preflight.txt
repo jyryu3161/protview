@@ -1,0 +1,132 @@
+M17 T1 착수 확인 (preflight) — 2026-10-01, 브랜치 dryforge/m17-ligand, 기준 커밋 fb5f108
+명세: .dryforge/spec.md 3·4·5·6.2·6.3·12절 2. 제품 코드(mw)는 바꾸지 않았다.
+실행한 스크립트(세션 scratchpad, 저장소에 넣지 않음): probe.py, probe_svg.py, probe_svg2.py, gen_parents.py,
+build_expected.py, verify.py, measure.py. 인터프리터는 모두 .deps/prolif/venv-locked/bin/python
+(Python 3.11.11, RDKit 2026.03.6). 서버 .venv에서는 RDKit을 import하지 않았다.
+  verify.py  → exit 0, PASS 83 / FAIL 0
+  measure.py → exit 0
+  probe*.py, gen_parents.py, build_expected.py → exit 0
+
+판정 요약
+- 멈출 사유 없음: SMILES `*`, SDF `*`, SDF `R#`(M RGP 있음/없음) 모두 원자번호 0으로 읽힘. 반응·PAINS A/B/C·SVG 동작.
+- 이벤트·객체 크기 한도는 코드에 없음. 후보 2,000행 실측 0.77 MiB(작은 부모)~3.24 MiB(191 중원자 코어). 한도에 걸리지 않음.
+- 손 계산 oracle과 RDKit 교차 확인: 화학 값 불일치 0건. 확인 스크립트 쪽 규약 불일치 1건(아래 4.6, 스크립트를 고침).
+- 구현 단계(T2/T3)가 정해야 할 점 4개: 아래 5절.
+
+==================================================================================================
+1. RDKit 기능 확인 (venv-locked)
+==================================================================================================
+1.1 rdChemReactions: ReactionFromSmarts("[O:1][CH3].[C:2][Br]>>[O:1][C:2]") → 반응물 2, 생성물 1, Validate()=(0,0).
+    RunReactants((methacetin, CCBr)) → ['CCOc1ccc(NC(C)=O)cc1'].
+1.2 FilterCatalog: PAINS_A 16항목, PAINS_B 55항목, PAINS_C 409항목(합 480). 카탈로그별로 따로 만들어 이름이
+    어느 카탈로그에서 왔는지 알 수 있다(항목 설명 예 'ene_rhod_A(235)').
+1.3 SMILES `*`: MolFromSmiles("*OC") → 원자 0 = 원자번호 0, 기호 '*'.
+1.4 SDF `*`/`R#` (V2000 원자 블록 기호):
+    `*`                  → 원자번호 0, 기호 '*', 정규 SMILES '*OC'
+    `R#` + "M  RGP  1   1   1" → 원자번호 0, 기호 'R1', _MolFileRLabel=1, isotope=1, 정규 SMILES '[1*]OC'
+    `R#` (RGP 줄 없음)    → 원자번호 0, 기호 'R#', 정규 SMILES '*OC'
+    주의: R 라벨은 dummy의 isotope로 들어간다. 고정 교체는 표시 원자를 지우므로 산출물에는 영향이 없다(검증됨:
+    sdf_rgroup_ethoxy 산출물 = CCOc1ccc(NC(C)=O)cc1). 표시 원자 판정은 GetAtomicNum()==0으로만 해야 한다.
+1.5 rdMolDraw2D SVG 번호 라벨: 원자 속성 "atomNote"에 SDF 번호 문자열을 넣는다. addAtomIndices는 쓰지 않는다
+    (RemoveHs 뒤 내부 index라 수소가 있는 SDF에서 틀림).
+    - 기본(FreeType) MolDraw2DSVG: 라벨은 <path class='note'>(글자 모양 경로), 글자 수만큼. 수소 명시판 12원자 →
+      note 경로 19개 = "1 5 6 7 9 10 12 14 15 17 19 20"의 숫자 수 19. <script> 없음. XML 선언 encoding iso-8859-1.
+    - MolDraw2DSVG(w,h,-1,-1,True)(noFreetype): 라벨이 <text class='note'>로 나와 읽을 수 있음. 원자 순서대로
+      이은 글자 = "1567910121415171920"(수소 명시판), "123456789101112"(무수소판). verify.py가 이를 검사한다.
+    - Cairo PNG로 그려 눈으로 확인: 20=CH3, 19=O, 14=고리 C(O), 15/17·12/10 고리, 9=C(N), 7=NH, 5=C(=O), 6=O, 1=CH3.
+      SDF 원자 블록 순번과 같다.
+1.6 원자 번호 추적(수소 명시판): MolFromMolBlock(text, removeHs=False) → 모든 원자에 SetIntProp("sdf_serial", idx+1)
+    → Chem.RemoveHs(mol). RemoveHs 뒤에도 원자 속성이 남는다:
+    [(0,C,1),(1,C,5),(2,O,6),(3,N,7),(4,C,9),(5,C,10),(6,C,12),(7,C,14),(8,C,15),(9,C,17),(10,O,19),(11,C,20)].
+    기본 MolFromMolBlock(removeHs=True)는 원래 순번 속성을 남기지 않으므로(속성은 _CIPRank 등뿐) 쓰면 안 된다.
+    두 판의 정규 SMILES는 같음(COc1ccc(NC(C)=O)cc1). 정리 뒤 결합형: 고리 aromatic, 그 밖 single/double.
+
+==================================================================================================
+2. 이벤트·객체 크기 한도 (코드 위치)
+==================================================================================================
+한도 없음:
+- backend/mw/core/events.py EventLog.append(57–66행): 이벤트 한 줄 크기 검사 없음. json.dumps(ensure_ascii=False,
+  sort_keys=True, allow_nan=False) 한 줄 + fsync.
+- backend/mw/core/handles.py ObjectStore.put(106–138행): 객체 크기 검사 없음. object_created 이벤트에 payload_b64
+  (raw의 base64, 약 4/3배)를 통째로 싣는다.
+관련 기존 한도(새 프로토콜이 그대로 쓰면 걸리는 것 포함):
+- jobs/queue.py:72 MAX_GLOBAL_EVENT_LINE = 256 MiB (다른 run 원장 스캔 시 한 줄 최대. object_created 줄도 읽음).
+- jobs/queue.py:1260 작업 프로세스 입력(staged structure.json) 한도: CHEMICAL_PROTOCOLS 32 MiB, 그 밖 4,000,000 B,
+  포켓 48 MiB(:54). ★ 새 리간드 프로토콜이 일반 분기를 타면 4,000,000 B 한도에 걸린다. block 파일 최대 10 MiB×2 +
+  부모를 넘기면 초과하므로 T3가 분기·한도를 정해야 한다(명세 상한은 바꾸지 않음).
+- jobs/queue.py:632 화학 선택 입력 canonical JSON 32 MiB.
+- jobs/guardian.py:325–327 작업 결과 result.json 한도: CHEMICAL_ADAPTERS 30 MiB, 포켓 64 KiB, 그 밖 64,000,000 B.
+  guardian.py:28 MAX_RESULT 8192 B는 lifecycle fixture 전용.
+- jobs/queue.py:1586 화학 결과 descriptor output_bytes ≤ 30 MiB, :1521 OpenMM 결과 ≤ 64,000,000 B.
+- 읽기 쪽: ObjectStore.load_bounded_json(handle, max_bytes)(handles.py:332). 화학 파생 객체 8/32 MiB(queue.py:879),
+  보고서 8 MiB(app.py:1220, 1236), app.py:100 CHEMICAL_IMPORT_LIMIT 10 MiB, :93 업로드 25 MiB.
+참고(한도는 아님): EventLog.append와 read가 매번 events.jsonl 전체를 json.loads 한다(events.py:60, 71, 74–81).
+수 MiB object_created 줄이 생기면 이후 모든 이벤트 추가가 그만큼 더 읽는다(성능 비용, 정확성 문제 아님).
+
+==================================================================================================
+3. 후보 2,000행 크기 실측 (measure.py, 실제 RDKit 분자)
+==================================================================================================
+행 = {id(c_+SHA-256 16hex), smiles(RDKit 정규), origins, retained_parent_atoms, stereo_flag, properties 8개(RDKit 값),
+pains{matches}}; canonical_json(sort_keys, (",",":"), ensure_ascii=False) 기준. 2,000개 서로 다른 SMILES
+(코어 + C0..59 사슬 × 치환기 50종), PAINS A+B+C 실제 계산.
+- S1 methacetin 코어(retained 10개, origin 1개, 이름 16자): 810,461 B (0.77 MiB), 행당 약 405 B,
+  base64(object_created) 1,080,616 B (1.03 MiB), PAINS 일치 행 47, 최대 SMILES 72자.
+- S2 191 중원자 코어(retained 200개·3자리 번호, origin 3개, 이름 32자): 3,401,802 B (3.24 MiB), 행당 약 1,700 B,
+  base64 4,535,736 B (4.33 MiB), 최대 SMILES 422자.
+판정: 코드에 이벤트·객체 한도가 없고, 기존 결과 한도(64,000,000 B / 30 MiB)와 원장 줄 한도(256 MiB)보다 훨씬 작다.
+명세 상한(2,000행)·행 구조는 바꾸지 않는다. 2,000개 생성+PAINS+속성 계산 두 시나리오 합계 24.7 s(120 s 안).
+
+SVG 크기(atomNote 3자리 번호, 900×700 캔버스) — 명세 6.2의 SVG ≤ 256 KiB(262,144 B):
+  중원자 55: FreeType 103,928 B / noFreetype 62,030 B
+  중원자 115: FreeType 234,951 B / noFreetype 129,251 B
+  중원자 235: FreeType 499,583 B / noFreetype 266,494 B
+→ FreeType 기본 출력이면 중원자 약 120개 이상, noFreetype이어도 약 230개 이상의 부모는 점검이
+  resource_exceeded로 실패한다(부모 중원자 한도 256보다 낮음). 명세대로의 동작이므로 바꾸지 않고 보고만 한다.
+
+==================================================================================================
+4. Fixture와 손 계산 oracle (backend/tests/fixtures/ligand/)
+==================================================================================================
+파일·SHA-256·생성 방법: backend/tests/fixtures/ligand/SYNTHETIC-PROVENANCE.md. 기대값: expected.json(값마다 how).
+4.1 부모: 4-methoxyacetanilide 두 판. 무수소판 번호 1–12, 수소 명시판 중원자 1,5,6,7,9,10,12,14,15,17,19,20
+    (수소 2,3,4,8,11,13,16,18,21,22,23). 부위 = 메톡시 O+CH3: 무수소 [11,12], 수소판 [19,20](+수소 21–23 함께 제거).
+    교차 결합 8–11 / 14–19 single. retained_parent_atoms = 1–10 / 1,5,6,7,9,10,12,14,15,17.
+4.2 block: SMILES 18레코드(수락 12, 거부 6: unparseable 1, element_not_allowed 2(B, Se), duplicate_name 1,
+    multiple_fragments 1, too_many_atoms 1(65 C)); 고정 교체 대상 8, 규칙 대상 3(CCBr, CC(=O)O, C64).
+    SDF 10레코드(수락 5, 거부 5: empty, element_not_allowed, multiple_fragments, unparseable, duplicate_name 각 1);
+    고정 대상 4(`*`·`R#`·빈 제목→block_3·sdf_methyl), 규칙 대상 1(CBr).
+4.3 규칙 10개: user_1·2·3·10 valid, user_4 reactant_count, user_5 product_count, user_6 no_mapped_atom,
+    user_7 reaction_parse_failed, user_8 duplicate_rule, user_9 too_large(4097 B; user_10은 정확히 4096 B).
+4.4 산출물(손으로 쓴 SMILES = 코어 문자열 'CC(=O)Nc1ccc(cc1)' + 치환기 문자열 조립, 두 정규형이 같음을 확인):
+    고정·SMILES: methyl, chloro, morpholino, phenyl, CF3, hydroxy(block_15) 후보 6; methoxy → equals_parent;
+      methyl_alt → methyl과 중복(duplicate 1). not_applicable(fixed) 4.
+    고정·SDF: ethyl, phenacetin(R# ethoxy), nitrile(block_3), methyl 후보 4.
+    규칙: user_1×CCBr → phenacetin(고정 R# ethoxy와 중복 경로), user_2×CC(=O)O → aryl acetate,
+      user_3 → 아세틸(부위 밖) 매치 → outside_site, user_1×CBr(SDF) → equals_parent.
+    두 라이브러리·고정+규칙 합집합 고유 후보 10개. stereo 요소 없음 → stereo_flag 모두 none.
+4.5 속성 손 계산: 분자량 = IUPAC 약식 표준 원자량 합(C 12.011, H 1.008, N 14.007, O 15.999, F 18.998, Cl 35.453),
+    HBD/HBA = Lipinski NH+OH / N+O, TPSA = Ertl 2000 조각 합(NH 12.03, N(3) 3.24, N# 23.79, OH 20.23, O 9.23,
+    =O 17.07), 회전 결합 = RDKit Strict SMARTS(libRDKitDescriptors에서 읽음)와 NonStrict SMARTS를 손으로 적용.
+4.6 RDKit 교차 확인(verify.py): 같은 RDKit을 쓰되 프로토타입 경로(RWMol로 고정 교체, RunReactants로 규칙)로
+    산출물을 만들어 손 값과 비교 — 83항목 전부 일치. 화학 값 불일치 0건:
+    - 11개 분자 MolWt |차| < 5e-4, CalcNumLipinskiHBD/HBA 일치, CalcTPSA |차| < 5e-3,
+      CalcNumRotatableBonds 기본값(=Strict) 손 Strict 값과 일치, NonStrict 값 일치, 중원자·전하 일치.
+    - PAINS: 양성 5개 + 후보 morpholino(anil_di_alk_A(478), PAINS_A) 모두 기대 항목 포함, 각각 그 항목 하나만 일치.
+      음성 4개 일치 0. 나머지 후보 10개(부모 포함) 일치 0.
+    - 첫 실행의 FAIL 1건은 확인 스크립트 쪽 규약 차이: 0원자 SDF 레코드에서 스크립트가 markers=None을 돌려줌.
+      oracle의 0이 맞으므로(원자 0개 → 표시 원자 0개) 스크립트를 고쳤고 oracle은 고치지 않았다. 재실행 exit 0.
+    관찰값(oracle 아님, 기록용) crippen_logp: methacetin 1.6536, methyl 1.9534, chloro 2.2984, morpholino 1.4816,
+      phenyl 3.312, CF3 2.6638, hydroxy 1.3506, ethyl 2.2074, nitrile 1.5167, phenacetin 2.0437, acetate 1.5703.
+
+==================================================================================================
+5. 구현 단계가 정할 점 (명세는 바꾸지 않음)
+==================================================================================================
+5.1 HBD/HBA 함수: 명세 "Lipinski 정의"에는 rdMolDescriptors.CalcNumLipinskiHBD/CalcNumLipinskiHBA를 써야 한다.
+    CalcNumHBD/CalcNumHBA(Lipinski.NumHDonors/NumHAcceptors)는 다른 정의다(methacetin HBA 3 vs 2).
+5.2 회전 결합: RDKit 기본값은 Strict(아미드·에스터·CF3·tBu 결합 제외, anilide N–아릴은 셈). 손 oracle은 둘 다 적었다.
+    T3는 기본값(Strict)을 쓰고 그 정의 이름을 결과에 남기는 것이 oracle과 맞는다.
+5.3 SMILES block 이름 순번: expected.json은 "건너뛴 빈 줄·# 줄을 빼고 센 레코드 순번"(`*O` → block_15, 파일 18행)을
+    가정했다. 파일 줄 번호로 세면 block_18. T2/T3가 하나로 정하고 oracle과 맞춰야 한다.
+5.4 outside_site 개수 단위(매치당/생성물당/block당)는 명세가 정하지 않았다. oracle은 "user_3 × bromoethane,
+    user_3 × CBr 각각 outside_site로 행 없음"까지만 정했다(이 fixture에서는 매치가 각 1개).
+그 밖: 부모 거부(V3000·레코드 2개·조각·원소) fixture는 T1 범위가 아니어서 만들지 않았다(기존
+backend/tests/fixtures/chemical/synthetic-disconnected-methane-water.sdf 등을 T3가 재사용할 수 있음). 입체 fixture도 없다.

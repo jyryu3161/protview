@@ -21,7 +21,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy` |
 | 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등) |
 | 413 | 본문 크기 초과(`resource_exceeded`) |
-| 415 | M11 가져오기에 `application/octet-stream`이 아닌 본문 |
+| 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문 |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
 | 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과) |
 | 503 | 도구의 `transient` 또는 `fatal` |
@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, ligand_candidates}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석 결과 handle | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -105,7 +105,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 ## M11 화학 (버전 1)
 
-- `POST /runs/{id}/chemical/imports?kind=receptor|ligand_sdf|receptor_bonds&filename=…`: `application/octet-stream` 본문, 최대 10 MiB. 201로 `{schema: "chemical_raw_input@1", handle, kind, format, sha256, size}`를 돌려준다. 리간드는 V2000 SDF만 받고, V3000은 형식 오류로 거부한다.
+- `POST /runs/{id}/chemical/imports?kind=receptor|ligand_sdf|receptor_bonds&filename=…`(M17이 `building_blocks_sdf`·`building_blocks_smiles`를 더했다, 아래 "M17 리간드 후보"): `application/octet-stream` 본문, 최대 10 MiB. 201로 `{schema: "chemical_raw_input@1", handle, kind, format, sha256, size}`를 돌려준다. 리간드는 V2000 SDF만 받고, V3000은 형식 오류로 거부한다.
 - `GET /chemical/imports/inspect`, `/chemical/imports/atoms`, `POST /chemical/preview`, `GET /chemical/prerequisites`: 가져온 입력 확인, 원자 목록, 제출 전 미리보기와 부족한 조건.
 - 화학 준비와 ProLIF 계산은 위의 작업 경로로 실행한다(`prepare_chemical_structure`, `compute_chemical_interactions`).
 - `GET /chemical/structures/view`, `/chemical/structures/atoms`, `/chemical/graphs`, `/chemical/preparation-manifests`, `/chemical/results`, `/chemical/results/rows`: 결과 읽기.
@@ -212,6 +212,45 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - `POST /runs/{id}/method_reports` `{result_handle: <reference_site_annotation>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "reference_site_annotation"`, `render_version: "reference_site_annotation_markdown@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
 - 주장 statement ID: `computed` — `site_status_count`, `site_absent_reason_count`(주석 객체 인용), `site_contact_count`, `site_min_distance_A`(접촉 결과 행 인용). `reference_value` — `reference_accession`, `reference_uniprot_position`, `reference_klifs_index`, `reference_klifs_label`, `reference_site_residue`(대응 객체 인용). 주장 필드 구조는 M15 보고서와 같다. 종류가 맞지 않는 필드 경로, 주석과 인용 행의 불일치, 닫힌 집합 밖 상태·이유는 422 `report_evidence_invalid`.
 - 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `budget`, `active_set_hash`(보고서 생성 때 사용 중 세트, 없으면 null), `stale_snapshot`.
+
+## M17 리간드 후보
+
+규칙은 `docs/business-rules.md` "리간드 후보 (M17)". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·RDKit·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 서버 프로세스는 RDKit을 import하지 않는다.
+
+### 가져오기
+- `POST /runs/{id}/chemical/imports?kind=building_blocks_sdf|building_blocks_smiles&filename=…`: `application/octet-stream`, 최대 10 MiB. 확장자 `.sdf`(SDF) / `.smi`·`.txt`(SMILES), UTF-8·NUL 없음, SDF는 `$$$$` 기준 레코드 1–1,000개, SMILES는 레코드 줄 1개 이상. 201 `{schema: "chemical_raw_input@1", handle, kind, format: "sdf_multi"|"smiles_list", sha256, size}`. 부모는 기존 `kind=ligand_sdf`(M11 그대로). 같은 바이트를 다른 종류로 가져오면 422.
+
+### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
+- `{protocol_id: "rdkit_inspect_v1", args: {parent_sdf_handle, block_handles?: [<0–2개, 종류마다 1개>], rules?: [<반응 SMARTS 문자열, 0–10개>]}, timeout_s}` → 완료 작업의 `artifacts.ligand_inspection`.
+- `{protocol_id: "rdkit_enumerate_v1", args: {inspection_handle, site_atoms: [<SDF 번호>], use_fixed: bool, rule_ids?: ["user_<n>", …]}, timeout_s}` → `artifacts.ligand_candidate_set`. 규칙 텍스트는 받지 않는다(서버가 점검 객체에서 꺼냄).
+- `timeout_s` 상한 120. 다른 인자는 거부한다. 요청 필드로 인터프리터·모듈·경로를 고를 수 없다. 두 도구(`rdkit_inspect_ligand`, `rdkit_enumerate_ligands`)는 작업 전용이라 `/commands`로는 실행되지 않는다.
+- 입장 거절(작업을 만들지 않음, 422 `input_invalid`, `detail.reason_code`): `invalid_job_arguments`, `rule_text_invalid`, `parent_import_invalid`, `block_import_invalid`, `no_generation_method`, `inspection_invalid`, `site_atoms_invalid`, 부위 이유 5개(`site_empty`, `site_atom_unknown`, `core_empty`, `crossing_bond_count`, `crossing_bond_not_single`, `detail.site_check` 포함), `rule_invalid`(`detail.rule_id`, `detail.status`). 환경을 쓸 수 없으면 412 `precondition`(`detail.reason_code`는 capability 이유).
+- 작업 실패(과금됨, 결과 객체 없음, `failure{error, reason_code, message}`): `input_invalid` — 부모 거부 이유 5개(`unparseable`, `record_count`, `multiple_fragments`, `element_not_allowed`, `too_many_atoms`), 작업 안 부위·규칙 재검사 이유. `resource_exceeded` — `svg_limit`(2D SVG > 256 KiB), `output_limit`. `fatal` — `staged_input_invalid`, `rdkit_version_mismatch`, `worker_internal_error`, 잘못된 오류 봉투. 시간 초과·취소는 결과 없음.
+- 같은 정규화 입력은 같은 호출 키(부모·block handle은 종류별, 규칙은 요청 순서, 부위 오름차순, 불리언, 상한, 고정 환경 pin)라 기존 작업을 돌려준다. dry-run run은 계획만.
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/ligand/prerequisites` | — | `ligand_prerequisites@1`: `{capability, import_counts{ligand_sdf, building_blocks_sdf, building_blocks_smiles}, imports:[{handle, input_kind, sha256, created_seq}], inspections, candidate_sets, requires, starts_job: false}` | 422 모르는 파라미터 |
+| `GET /runs/{id}/ligand/inspections?offset&limit` | limit 1–100(기본 50) | `ligand_inspection_list@1`: `{total, offset, limit, rows:[{handle, created_seq, valid, reason_code, job_id, parent_handle, parent_sha256, parent_canonical_smiles, heavy_atom_count, block_handles, blocks_accepted, rules_total, rules_valid}]}`. 만든 순서(오래된 것 먼저). 검증에 실패한 행은 `valid: false`, `reason_code: "evidence_invalid"`, 나머지 null | 409 `run_corrupt` |
+| `GET /runs/{id}/ligand/inspections/detail?handle=` | 점검 handle | `ligand_inspection_detail@1`: `{handle, job_id, inspection, meta}`(SVG 포함) | 404 없는 handle, 422 다른 종류, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/ligand/candidate_sets?inspection=&offset&limit` | `inspection`(선택, 점검 handle로 거르기) | `ligand_candidate_set_list@1`: `{inspection_handle, total, offset, limit, rows:[{handle, created_seq, valid, reason_code, job_id, inspection_handle, site_atoms, use_fixed, rule_ids, candidates, raw_products, null_result, limit_reached, stop_reason}]}` | 409 `run_corrupt` |
+| `GET /runs/{id}/ligand/candidate_sets/detail?handle=` | 후보 집합 handle | `ligand_candidate_set_detail@1`: `{handle, job_id, candidate_count, candidate_set(후보 행 제외), meta}` | 404, 422, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/ligand/candidate_sets/rows?handle=&offset&limit&sort&direction&passes_only&pains_exclude&<속성>_min&<속성>_max` | 각 파라미터 최대 1번. limit 1–100(기본 50), offset ≤ 1,000,000, `sort`는 `generation_order`·속성 8개, `direction` `asc|desc`, 불리언은 `true|false`, 경계는 10진 숫자(경계 포함) | `ligand_candidate_page@1`: 후보 집합의 부모·부위·규칙·개수·상한·`limitations` + `{total, passing, failing, filter_pass_counts, matched, hidden_by_filter, sort, direction, offset, limit, passes_only, filter_spec, rows:[{generation_order, candidate, filters, passes_all}]}`. 적용한 필터가 없으면 `passing`·`failing`·`passes_all`은 null | 422 모르는·반복·잘못된 파라미터, `min > max`, 404, 422 `method_evidence_invalid` |
+| `POST /runs/{id}/ligand/preview` | `{inspection_handle, site_atoms, use_fixed, rule_ids?}`(본문 최대 64 KiB, 다른 키 거부) | `ligand_site_preview@1`: `{inspection_handle, site_check, use_fixed, rules:[{rule_id, status, usable}], generation_method_selected, ready, blocking_reasons, starts_job: false}`. `site_check`(`ligand_site_check@1`)는 `{valid, reason, site_atoms, unknown_atoms, core_atoms, crossing_bonds, site_hydrogens, retained_parent_atoms}`이며 판정하지 않은 필드는 null. `blocking_reasons`는 `no_generation_method`, 부위 이유, `rule_invalid` | 412 `inspection_required`(run에 점검 없음), 422 `invalid_preview_request`·`inspection_invalid`·`site_atoms_invalid`(도구 실패 본문) |
+
+- 미리보기의 `site_check.retained_parent_atoms`는 코어 수소 번호를 포함한다. 후보 집합의 `retained_parent_atoms`는 코어 중원자만이다.
+- 서버의 경계 파서는 10진 문자열을 int 또는 float로 바꾼다(그래서 `1.0000000000000001`은 1.0). 화면은 사용자가 입력한 문자열을 그대로 보낸다.
+- 일반 `GET /runs/{id}/objects`·`/objects/meta`도 두 종류를 읽을 수 있지만 리간드 검증을 거치지 않는다(M12 포켓과 같은 관례). 화면은 위 `/ligand/*`만 쓴다.
+
+### capability
+- `/capabilities`의 `methods.ligand_candidates`(`ligand_capability@1`): `{available, status, reason_code, reason, engine: "rdkit", rdkit_version_expected: "2026.03.6", protocols, tools, execution_lane: "durable_job", timeout_s: 120, limits{input_bytes_per_file, blocks, rules, rule_bytes, parent_heavy_atoms, candidates, attempts, svg_bytes, inspection_bytes}, limitations, pins, pains_catalog_entries}`. 사용할 수 없으면 `available: false`, `reason_code`는 `worker_missing | handshake_failed | rdkit_version_mismatch | pains_catalog_unavailable`, `pins`·`pains_catalog_entries`는 null. 서버는 작업 모듈의 handshake만 실행하고, 성공한 handshake만 캐시한다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <ligand_candidate_set>, filters?: {ranges?: {<속성>: {min?, max?}}, pains_exclude?: bool}}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_candidates"`, `render_version: "ligand_candidates_markdown@1"`, 정규화한 `filter_spec`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다. 다른 결과 종류에 `filters`를 보내면 422 `report_evidence_invalid`.
+- 주장은 모두 `evidence_kind: "computed"`. statement ID: `parent_property`, `candidate_count`, `generation_count`, `rejected_count`, `not_applicable_count`, `limit_state`, `site_atoms`, `rule_text`(저장 필드), `pains_match_count`, `stereo_flag_count`, `filter_pass_count`, `filter_all_pass_count`(`count_where`, 조건은 `row_selector`). 주장 필드는 `{statement_id, evidence_kind, source_handle, source_kind, source_schema, source_sha256, field_path, row_selector, subject, quantity, unit, exact_value, rendered_value, rounding, operation}`. 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 완료되지 않았거나 변조된 후보 집합은 422 `report_evidence_invalid`.
+- 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`, `budget`.
 
 ## 과거 단계 실행기 (CLI)
 

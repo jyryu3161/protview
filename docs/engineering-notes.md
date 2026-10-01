@@ -172,6 +172,53 @@
 - **원인**: 구조 분석 탭은 다른 탭이 보일 때도 언마운트하지 않으므로(M14 불변 조건), 패널이 처음 마운트될 때 한 번만 목록을 읽었다.
 - **대응**: 페이지가 구조 분석 탭에 들어올 때마다 `mapsReloadToken`을 올려 패널이 목록을 다시 읽는다(읽기만, 이벤트·도구 없음). 숨긴 채 유지되는 화면이 다른 탭에서 만든 객체를 보여야 하면 같은 방식을 쓴다.
 
+### RDKit의 HBD/HBA 함수는 두 정의가 있다 (M17)
+- **증상**: methacetin의 HBA가 함수에 따라 3 또는 2로 나온다.
+- **원인**: `rdMolDescriptors.CalcNumLipinskiHBD/HBA`(Lipinski 정의: NH+OH / N+O)와 `CalcNumHBD/HBA`(`Lipinski.NumHDonors/NumHAcceptors`, 다른 정의)가 다르다.
+- **대응**: 명세의 "Lipinski 정의"는 반드시 `CalcNumLipinskiHBD/HBA`로 계산하고 정의 이름을 결과의 `property_methods`에 남긴다. 회전 결합은 `CalcNumRotatableBonds` 기본값(Strict)이다(`docs/qa/m17-ligand-20261001/preflight.txt` 5.1–5.2).
+
+### RDKit 원자 인덱스는 SDF 번호가 아니다 (M17)
+- **증상**: 수소가 명시된 SDF에서 원자 표·그림의 번호가 SDF 원자 블록 순번과 다르다.
+- **원인**: `RemoveHs` 뒤 RDKit 인덱스는 중원자만 다시 센 내부 번호다. `MolFromMolBlock`의 기본(`removeHs=True`)은 원래 순번 속성을 남기지 않고, `MolDraw2D`의 `addAtomIndices`는 내부 인덱스를 그린다.
+- **대응**: `MolFromMolBlock(removeHs=False)`로 읽어 모든 원자에 `sdf_serial` 정수 속성을 넣은 뒤 `RemoveHs`한다(속성은 남는다). 그림 번호는 원자 속성 `atomNote`에 SDF 번호 문자열을 넣는다. 번호가 필요한 모든 곳(원자 표, 결합 목록, 부위, `retained_parent_atoms`, 생성물의 코어 원자 추적)은 `sdf_serial`만 쓴다.
+
+### 표시 원자 `*`·`R#`는 원자번호 0으로만 판별한다 (M17)
+- **증상**: SDF `R#`에 `M  RGP` 줄이 있으면 기호가 `R1`, 정규 SMILES가 `[1*]…`로 나온다(R 라벨이 isotope로 들어감). 없으면 `R#`·`*…`다.
+- **대응**: 표시 원자는 `GetAtomicNum() == 0`으로만 판별한다. 기호나 SMILES 문자열로 판별하지 않는다. 고정 교체는 표시 원자를 지우므로 산출물에는 R 라벨이 남지 않는다(착수 확인 1.4).
+
+### 2D 그림 SVG가 큰 부모에서 256 KiB를 넘는다 (M17)
+- **증상**: 기본(FreeType) `MolDraw2DSVG`는 번호 라벨을 글자 모양 경로로 그려, 중원자 약 120개부터 256 KiB를 넘는다.
+- **대응**: `noFreetype` 출력(라벨이 `<text>`)을 쓴다. 그래도 중원자 약 230개를 넘으면 넘으므로(부모 한도 256보다 낮음) 그런 부모의 점검은 `resource_exceeded`(`svg_limit`)로 실패한다. 상한을 올리거나 그림 없이 점검을 성공시키려면 사용자 결정이 필요하다(`docs/tracking/findings.md`).
+
+### 리간드 작업의 입력 스테이징은 일반 작업 한도를 넘는다 (M17)
+- **증상**: 부모와 block 파일 두 개(각 10 MiB)를 base64로 넘기면 일반 작업 입력 한도 4,000,000 B에 걸린다.
+- **대응**: 이 두 프로토콜만 스테이징 한도 48 MiB(`ligand_bundle.STAGED_LIMIT`, 작업 모듈의 읽기 한도와 같음)를 쓰고, 결과 한도는 32 MiB다. 입력 바이트는 작업 기록에 넣지 않고 스테이징 때 불변 가져오기 객체에서 다시 읽어 SHA-256을 대조한다. 다른 프로토콜의 한도는 바꾸지 않았다.
+
+### 생성 작업은 규칙 텍스트를 요청에서 받지 않는다 (M17)
+- 생성(`rdkit_enumerate_v1`) 요청은 `rule_ids`만 받고, 서버가 점검 객체에서 `valid`인 규칙의 텍스트를 꺼내 스테이징한다. 화면이 규칙 텍스트를 다시 보내게 바꾸면 점검하지 않은 규칙이 생성에 들어갈 수 있다. 규칙 SMARTS 오류는 서버가 RDKit 없이 알 수 없으므로 점검 작업(예산 1단위)을 돌려야 드러난다.
+
+### 보고서 금지어 "활성" 때문에 "활성 필터"라고 쓸 수 없다 (M17)
+- 리간드 보고서는 "활성"을 해석 금지어로 거부하고, 화면도 같은 문구를 쓴다. 필터가 켜진 상태는 "적용한 필터"라고 쓴다(`frontend/src/lib/ligand.ts`). 새 문구를 더할 때 `ligand_reports.INTERPRETIVE`에 걸리는지 확인한다.
+
+### 필터 경계는 화면과 서버에서 숫자 형식이 다르다 (M17)
+- 화면은 사용자가 입력한 경계 문자열을 그대로 쿼리로 보내고(코드 검토 수정 `e6ab4f9`), 서버(`ligand_reads._number`)는 정수 모양이면 int, 아니면 float로 바꾼다. 그래서 `1.0000000000000001`은 서버에서 1.0이 된다. 경계 비교는 서버만 하고 화면은 다시 하지 않는다. 보고서 요청 본문은 숫자 그대로 보낸다.
+
+### `decimalHalfUp`은 지수 표기를 푼다 (M17, M16과 공용)
+- **증상**: `frontend/src/lib/site-annotation.ts`의 `decimalHalfUp`은 JS `String(value)`가 `1e-7`처럼 지수 표기이면 그대로 돌려줬다.
+- **대응**: 코드 검토 수정(`e6ab4f9`)에서 Python `Decimal(str(v))`처럼 지수 표기를 풀어 반올림한다(`1e-7` → `0.00`). M16 사용처는 지수 표기 입력에서만 결과가 달라진다(M16 회귀 통과).
+
+### 이름 없는 block 번호와 거부 목록 `ordinal`은 다른 순번이다 (M17)
+- `block_<n>`은 가져온 순서의 모든 라이브러리를 이은 연속 레코드 순번이고(코드 검토 수정 `e6ab4f9`, 그 전에는 라이브러리마다 다시 세어 두 라이브러리의 이름 없는 레코드가 같은 이름이 될 수 있었다), 거부 레코드 목록의 `ordinal`은 그 라이브러리 안 순번이다. 두 값을 섞어 레코드를 찾지 않는다.
+
+### 미리보기와 후보 집합의 `retained_parent_atoms`는 뜻이 다르다 (M17)
+- 미리보기 `site_check.retained_parent_atoms`(`ligand_site.check_site`)는 코어 중원자 + 코어에 붙은 명시적 수소 번호다. 후보 집합(과 후보 행)의 같은 이름 필드는 코어 중원자만이다(명세 4.4). 화면은 후보 집합 쪽을 쓴다. 이름을 바꾸면 저장 객체·보고서·화면이 함께 바뀌므로 그대로 두었다(`docs/tracking/findings.md`).
+
+### 비싼 계산 승인 UI는 run의 첫 작업에서만 나온다 (M17)
+- 승인은 run 단위라 리간드 탭에서는 보통 첫 점검에서만 승인 안내가 나오고, 같은 run의 생성 작업은 승인 없이 시작된다. 오프스크린 검사에서 생성 쪽 승인 UI를 기대하면 안 된다. 승인 안내는 작업 시작·queued 이탈 때 지운다(`e6ab4f9`).
+
+### 리간드 탭 패널의 늦은 응답은 두 층으로 버린다 (M17)
+- 패널은 run·점검 선택이 바뀌면 진행 중 요청을 abort하고, 영역별 요청 순번(stamp)이 맞지 않는 응답도 버린다. M17 수락 QA의 run 전환 사례(`L-run-switch-late`)는 abort 층만 실제로 관찰했다. stamp 층은 `frontend/tests/ligand.test.cjs`로만 확인한다.
+
 ## 동작 원리
 
 ### handle과 복구
@@ -194,6 +241,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 
 ### 참조 세트 고정과 사전 검사 훅 (M15)
 `map_residue_numbering`은 레지스트리 사전 검사 훅을 쓴다. `Run._validated_bound`가 모든 호출 경로(첫 호출, 인자 수정, 선행 조건 뒤 재시도, transient 재시도)에서 일반 인자 검사보다 먼저 훅을 부른다. 훅은 `active.json`을 한 번 읽어 세트를 고정하고(없거나 손상이면 `precondition`), 스냅샷과 구조를 읽어 입력 전체를 검증한 뒤 체인별 계획을 담은 `bound`를 돌려준다. 호출 키에는 `bound.key_fields`(세트 해시)가 들어가고, 구현은 `ToolContext.bound`로 같은 세트와 계획을 받는다. 같은 호출을 다시 검증할 때는 이전 `bound`를 넘겨 세트가 바뀌지 않게 한다. 훅이 없는 도구는 `bound=None`이라 기존 호출 키·이벤트가 바이트 그대로다. 파일 해시 확인은 세트 폴더·세트 해시·파일 stat이 같으면 서버 프로세스 안 캐시로 건너뛴다(폴더마다 최신 항목 하나). 내용 해석 색인(UniProt·KLIFS·SIFTS)은 세트 해시별로 최대 2개를 캐시한다.
+
+### 리간드 작업 경로 (M17)
+`POST /jobs`의 `rdkit_inspect_v1`·`rdkit_enumerate_v1`은 `ligand_bundle.submission`이 RDKit 없이 입장을 검사한다(같은 run 가져오기 handle과 종류, 생성은 저장된 점검 객체의 결합 목록으로 부위 검사·`valid` 규칙 확인). 통과하면 capability handshake로 얻은 고정 pin(RDKit 버전, 작업 모듈·상수·잠금 파일 SHA-256)을 호출 키와 작업 기록에 넣는다. 시작 때 pin이 바뀌었으면 `precondition`으로 막는다. 스테이징은 불변 가져오기 객체에서 바이트를 다시 읽어 SHA-256을 대조하고, guardian이 고정 진입점 `mw/jobs/ligand_worker.py`를 `.deps/prolif/venv-locked` 인터프리터로 띄운다. 작업 모듈의 출력은 게시 전에 현재 시도·취소 상태를 확인하고(`_publish_ligand`), 스테이징한 선택과 닫힌 집합으로 다시 검증한 뒤에만 객체로 저장한다. 객체 내용에는 시각·작업·시도 ID가 없어 같은 입력은 같은 handle이다. 읽기는 매번 완료된 게시 한 건과 입력에 대조한다. capability는 성공한 handshake만 서버 프로세스 안에 캐시하며 키는 인터프리터·작업 모듈·상수·잠금 파일 정보다(ProLIF와 같이, 환경을 제자리에서 바꾸면 백엔드를 다시 시작한다).
 
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.

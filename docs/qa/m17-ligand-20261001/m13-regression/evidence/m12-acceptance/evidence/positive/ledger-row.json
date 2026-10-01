@@ -1,0 +1,63 @@
+{
+  "schema": "m12_case_ledger_row@1",
+  "mode": "positive",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "error": null,
+  "buildId": "sqA-QDPAIvtGu2INokvMg",
+  "harness": {
+    "pocketFlowSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+    "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+    }
+  ],
+  "provenanceLabels": [
+    "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+  ],
+  "fixtureLabels": [
+    "renderer-route fixture: labeled 503 on one pocket preflight GET (retry control)"
+  ],
+  "runId": "run_1cc78414f94a4da3b59af36018a1d30e",
+  "handles": {
+    "original": "obj://run_1cc78414f94a4da3b59af36018a1d30e/structure/d4eab50d6b510056dc1e88c7db5fb71eaf5b6a5f43792541e93bd161dd302b0e",
+    "prepared": "obj://run_1cc78414f94a4da3b59af36018a1d30e/prepared_structure/c5462295cd73eb296c0bf84c0f1c51f3e97946aa44c79e168352d0f3d6adc6c5",
+    "set": "obj://run_1cc78414f94a4da3b59af36018a1d30e/pocket_set/8065cb4237dc2923c7e027874723945b816eb91ad370b28b81a10973e00c9a3f",
+    "job": "job_18ce7f4961224486893f9ae71b87ce6a"
+  },
+  "expectCapability": null,
+  "externalRequestCount": 0,
+  "steps": 34,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 343,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/m17-regression/m12-acceptance/evidence/positive/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m13-acceptance/m17-regression/m12-acceptance/evidence/positive",
+  "evidenceFile": "pocket-positive.jsonl",
+  "startedAt": "2026-10-01T11:10:05.756Z",
+  "finishedAt": "2026-10-01T11:10:21.774Z"
+}

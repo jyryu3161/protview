@@ -1,0 +1,48 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "main",
+  "run": "run_2407ee09d39f42ee81715f89e296db29",
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "handles": {
+    "raw": "obj://run_2407ee09d39f42ee81715f89e296db29/structure/f494b93f83e1f1324370641bae487343bef8ce089bf1abbe3559fb8f155c2cd9",
+    "stoppedBeforeApproval": "exec_c04ad06b8c894868a4b22798c0655d67",
+    "inspectRaw": {
+      "plan": "obj://run_2407ee09d39f42ee81715f89e296db29/analysis_plan/5c1bed12be86dd0b8612726e3da8786fabedfcf0ae1f06cae0e67d964559a321",
+      "execution": "exec_c75689b0077e46c99564c556eac2af04",
+      "summary": "obj://run_2407ee09d39f42ee81715f89e296db29/workflow_summary/4051ebfdb990ce58b8e667c9e569d98b0ec6e7467271c5e3a32b4d2af649a905"
+    },
+    "prepared": "obj://run_2407ee09d39f42ee81715f89e296db29/prepared_structure/f2f7b9a0cea300e6cd91ed6d3ebaccd64314e54986eb1fbb3588820f32be0547",
+    "displayedPrepared": "obj://run_2407ee09d39f42ee81715f89e296db29/prepared_structure/f2f7b9a0cea300e6cd91ed6d3ebaccd64314e54986eb1fbb3588820f32be0547",
+    "inspectPrepared": {
+      "plan": "obj://run_2407ee09d39f42ee81715f89e296db29/analysis_plan/b3378e4be3d59756153a38c67162c1d5af4e628ff81af5a65834c8c4b1c70986",
+      "execution": "exec_3e5c374a40be42b6bba11bc36df10547",
+      "summary": "obj://run_2407ee09d39f42ee81715f89e296db29/workflow_summary/7c48b3763631a31e8f944d955f342e7b9dc24bb8d9d3d4dff281822eb35f344d"
+    },
+    "cavitiesMain": {
+      "plan": "obj://run_2407ee09d39f42ee81715f89e296db29/analysis_plan/18892f466d2abe485438fe49f2dc670f1f88adf79c99d2cbf389f99f10ab55d4",
+      "execution": "exec_778f706618f34cf69397a11af1ad9285"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_2407ee09d39f42ee81715f89e296db29",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-01T10:42:51.185Z",
+  "finishedAt": "2026-10-01T10:43:30.275Z",
+  "error": null
+}

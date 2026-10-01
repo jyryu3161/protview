@@ -48,7 +48,9 @@ test("distance text is two-decimal ROUND_HALF_UP on the decimal string", () => {
   assert.equal(lib.distanceText(2.995), "3.00 Å");
   assert.equal(lib.distanceText(0.004), "0.00 Å");
   assert.equal(lib.decimalHalfUp(-1.005, 2), "-1.01");
-  assert.equal(lib.decimalHalfUp(1e-7, 2), "1e-7");
+  assert.equal(lib.decimalHalfUp(1e-7, 2), "0.00");     // exponent form expanded, as Decimal(str(v)) does
+  assert.equal(lib.decimalHalfUp(1e21, 1), "1000000000000000000000.0");
+  assert.equal(lib.decimalHalfUp(1.25e-3, 3), "0.001");
   assert.equal(lib.decimalHalfUp(97.25, 1), "97.3");
 });
 

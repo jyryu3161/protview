@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_executions, analysis_plans, numbering_reads
+from .. import analysis_executions, analysis_plans, ligand_bundle, ligand_reads, numbering_reads
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
@@ -34,6 +34,7 @@ from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE, canonical_json
 from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
+from ..ligand_reports import build_ligand_report, saved_ligand_report
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..numbering_reports import build_numbering_report, saved_numbering_report
 from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
@@ -172,6 +173,7 @@ class ReportRequest(BaseModel):
 
 class MethodReportRequest(BaseModel):
     result_handle: str
+    filters: dict[str, Any] | None = None  # ligand_candidates only (M17 filter spec, applied to stored rows)
     model_config = {"extra": "forbid"}
 
 
@@ -338,6 +340,10 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
         result["artifacts"] = {"chemical_interaction_set": job["output_handles"][0]}
     elif job.get("protocol_id") == "fpocket_detect_v1" and job.get("status") == "done":
         result["artifacts"] = {"pocket_set": job["output_handles"][0]}
+    elif job.get("protocol_id") == "rdkit_inspect_v1" and job.get("status") == "done":
+        result["artifacts"] = {"ligand_inspection": job["output_handles"][0]}
+    elif job.get("protocol_id") == "rdkit_enumerate_v1" and job.get("status") == "done":
+        result["artifacts"] = {"ligand_candidate_set": job["output_handles"][0]}
     else:
         result["artifacts"] = {}
     return result
@@ -414,7 +420,9 @@ def _completed_chemical(run: Run, handle: str) -> None:
 
 
 @app.post("/runs/{rid}/chemical/imports", status_code=201)
-async def chemical_import(rid: str, request: Request, kind: Literal["receptor", "ligand_sdf", "receptor_bonds"],
+async def chemical_import(rid: str, request: Request,
+                          kind: Literal["receptor", "ligand_sdf", "receptor_bonds", "building_blocks_sdf",
+                                        "building_blocks_smiles"],
                           filename: str) -> Any:
     if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/octet-stream":
         raise HTTPException(415, detail={"error": "input_invalid", "message": "expected octet-stream import"})
@@ -597,6 +605,8 @@ def capabilities() -> dict[str, Any]:
     methods["residue_numbering"] = numbering_reads.capability()
     # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
+    # M17: pinned environment + RDKit version + PAINS A/B/C, checked by the worker handshake (no RDKit here).
+    methods["ligand_candidates"] = ligand_bundle.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1177,6 +1187,11 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
     try:
         run = _run(rid)
         kind = run.store.meta(body.result_handle)["kind"]
+        if kind == "ligand_candidate_set":
+            # Reads the stored candidate set only; nothing is enumerated again.
+            return build_ligand_report(run, body.result_handle, filters=body.filters)
+        if body.filters is not None:
+            raise EvidenceError("filters_apply_only_to_ligand_candidates")
         if kind == "interface_sasa":
             return build_method_report(run, body.result_handle)
         if kind == "openmm_minimization":
@@ -1220,7 +1235,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                      "analysis_type": (run.store.load_bounded_json(e["report_handle"], 8 * 1024 * 1024)
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
-                                        "reference_site_annotation"}
+                                        "reference_site_annotation", "ligand_candidates"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1235,7 +1250,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
         report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
-                                                              "reference_site_annotation"}
+                                                              "reference_site_annotation", "ligand_candidates"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1252,6 +1267,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_numbering_report(run, handle)
         if report.get("analysis_type") == "reference_site_annotation":
             return saved_site_annotation_report(run, handle)
+        if report.get("analysis_type") == "ligand_candidates":
+            return saved_ligand_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -1317,7 +1334,7 @@ def approve_job(rid: str) -> dict[str, Any]:
                  event.get("gate") == "expensive_first_call"]
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
-                      "detect_pockets"}
+                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1510,6 +1527,105 @@ def site_annotation_detail(rid: str, request: Request, handle: str) -> dict[str,
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
     return {"meta": meta, "annotation": content}
+
+
+# ----------------------------------------------------------------- M17 ligand reads (no event, job, tool or RDKit)
+LIGAND_PREVIEW_LIMIT = 64 * 1024
+
+
+def _ligand_object(run: Run, handle: str, kind: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (kind, f"{kind}@1"):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": f"handle is not a {kind}"})
+    return meta
+
+
+def _ligand_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid ligand evidence"})
+
+
+def _ligand_corrupt(exc: Exception) -> HTTPException:
+    return HTTPException(409, detail={"error": "run_corrupt", "message": "invalid ligand object record"})
+
+
+@app.get("/runs/{rid}/ligand/prerequisites")
+def ligand_prerequisites(rid: str, request: Request) -> dict[str, Any]:
+    """M17 input readiness: ligand import counts, inspection/candidate-set counts, capability; starts nothing."""
+    _only_query(request, set())
+    return ligand_reads.prerequisites(_run(rid))
+
+
+@app.get("/runs/{rid}/ligand/inspections")
+def ligand_inspections(rid: str, request: Request, offset: int = Query(0, ge=0),
+                       limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return ligand_reads.list_inspections(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise _ligand_corrupt(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/inspections/detail")
+def ligand_inspection_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _ligand_object(run, handle, ligand_reads.INSPECTION)
+    try:
+        return {**ligand_reads.inspection_detail(run, handle), "meta": meta}
+    except ligand_bundle.LigandEvidenceError as exc:
+        raise _ligand_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/candidate_sets")
+def ligand_candidate_sets(rid: str, request: Request, inspection: str | None = None, offset: int = Query(0, ge=0),
+                          limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    _only_query(request, {"inspection", "offset", "limit"})
+    run = _run(rid)
+    try:
+        return ligand_reads.list_candidate_sets(run, inspection, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise _ligand_corrupt(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/candidate_sets/detail")
+def ligand_candidate_set_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _ligand_object(run, handle, ligand_reads.CANDIDATE_SET)
+    try:
+        return {**ligand_reads.candidate_set_detail(run, handle), "meta": meta}
+    except ligand_bundle.LigandEvidenceError as exc:
+        raise _ligand_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/candidate_sets/rows")
+def ligand_candidate_rows(rid: str, request: Request) -> dict[str, Any]:
+    """Filter spec, sort and page from the query; evaluated on stored values by the server (spec 5)."""
+    try:
+        query = ligand_reads.parse_page_query(list(request.query_params.multi_items()))
+    except ligand_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    run = _run(rid)
+    _ligand_object(run, query["handle"], ligand_reads.CANDIDATE_SET)
+    try:
+        return ligand_reads.candidate_page(run, query)
+    except ligand_bundle.LigandEvidenceError as exc:
+        raise _ligand_evidence_error(exc) from exc
+    except ToolFailure as exc:  # a stored row the filter module refuses is corrupt evidence
+        raise _ligand_evidence_error(exc) from exc
+
+
+@app.post("/runs/{rid}/ligand/preview")
+async def ligand_preview(rid: str, request: Request) -> Any:
+    """Site pre-check on the stored inspection graph (spec 4.1); pure, no event, no job."""
+    _only_query(request, set())
+    body = _chemical_json(await _bounded_chemical_body(request, LIGAND_PREVIEW_LIMIT))
+    run = _run(rid)
+    try:
+        return await run_in_threadpool(lambda: ligand_reads.preview(run, body))
+    except ToolFailure as exc:
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/interface_sasa")

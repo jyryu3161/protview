@@ -38,6 +38,7 @@ test("report rows keep every kind, expose target handle, and order by created_se
   assert.equal(reportKindLabel(rows[1]), "interface_sasa");
   assert.equal(reportKindLabel({ kind: "residue_numbering", handle: "h", target_handle: null, created_seq: 1 }), "잔기 번호 대응 보고서");
   assert.equal(reportKindLabel({ kind: "reference_site_annotation", handle: "h", target_handle: "a", created_seq: 2 }), "참조 주석 보고서");
+  assert.equal(reportKindLabel({ kind: "ligand_candidates", handle: "h", target_handle: "c", created_seq: 3 }), "리간드 후보 보고서");
   assert.deepEqual(plain(buildReportRows([])), []);
 });
 

@@ -1,0 +1,68 @@
+{
+  "buildCommands": {
+    "typecheck": 0,
+    "build": 0,
+    "sourceSha256": "243a4faebb0742e8b266c52c4f3a0e9f57cf32dc6d77dbfccc6804b1bc9dd407"
+  },
+  "build": {
+    "buildId": "sqA-QDPAIvtGu2INokvMg",
+    "gitHead": "e6ab4f9b82808aaddb67c1e2d53ef80628dc097a",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "c3cfbecc7029dd9a0f95385051d58b8ef7e44b935c82bf7534f0d3160cf9f6d5",
+    "dirtyFiles": [
+      "?? docs/qa/m17-ligand-20261001/gate.txt"
+    ],
+    "recordedAt": "2026-10-01T10:36:01.130462+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "ligand-flow.cjs": "61f6503a72b57d0255281afbda7b3c563edde0e6dbb5cc5d656adb27792c3000",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "7583d335fbd25f65b8cc97da0b28e1b9493e4395c8d238447eecb2f91eaedf65"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m17-acceptance-20261001/runs",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-01T10:36:03.395161+00:00"
+    },
+    {
+      "name": "backend-worker-missing",
+      "runs": "<repo>/runs/m17-acceptance-20261001/unavailable-runs",
+      "code": "<repo>/runs/m17-acceptance-20261001/layout-worker-missing",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/runs/m17-acceptance-20261001/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-01T10:38:50.798071+00:00"
+    }
+  ],
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked RDKit environment absent: capability worker_missing)",
+      "files": 81,
+      "treeSha256": "2c1eef81f6f67546330733978f2819ccc0a2c51ba9c8642dcc7482edce4c3af7"
+    }
+  },
+  "environment": {
+    "workerPython": true,
+    "workerPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "rdkit",
+        "rdkit_version": "2026.03.6",
+        "worker_sha256": "24e2d9a27d48f70d322721b16d82a8d213f43a493ede84f5785544b60b6d22fb",
+        "constants_sha256": "dc195402de4598b879bcdc8813750c16b6d50397874ccd4498d184f0e18d72a3",
+        "lock_sha256": "be320702daba7ea9922e278c49d6c69efc6f3ce7962a7be47623421b2387999a"
+      }
+    },
+    "layoutReason": "worker_missing"
+  }
+}

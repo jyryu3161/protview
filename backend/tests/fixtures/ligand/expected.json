@@ -1,0 +1,1400 @@
+{
+ "_fixture": "SYNTHETIC-FIXTURE ProtView M17 T1 oracle. Values are hand-derived (see each 'how'); RDKit was used only to canonicalise hand-written SMILES. Cross-check results are in docs/qa/m17-ligand-20261001/preflight.txt.",
+ "rdkit_version_for_canonicalisation": "2026.03.6",
+ "atomic_weights": {
+  "C": "12.011",
+  "H": "1.008",
+  "N": "14.007",
+  "O": "15.999",
+  "F": "18.998",
+  "Cl": "35.453"
+ },
+ "tpsa_contributions_ertl2000": {
+  "NH(-*)-*": "12.03",
+  "N(-*)(-*)-*": "3.24",
+  "N#*": "23.79",
+  "OH-*": "20.23",
+  "O(-*)-*": "9.23",
+  "O=*": "17.07"
+ },
+ "rotatable_bond_definitions": {
+  "strict": "RDKit NumRotatableBondsOptions.Strict (= Default) SMARTS, read from libRDKitDescriptors: [!$(*#*)&!D1&!$(C(F)(F)F)&!$(C(Cl)(Cl)Cl)&!$(C(Br)(Br)Br)&!$(C([CH3])([CH3])[CH3])&!$([CH3])&!$([CD3](=[N,O,S])-!@[#7,O,S!D1])&!$([#7,O,S!D1]-!@[CD3]=[N,O,S])&!$([CD3](=[N+])-!@[#7!D1])&!$([#7!D1]-!@[CD3]=[N+])]-,:;!@[!$(*#*)&!D1&!$(C(F)(F)F)&!$(C(Cl)(Cl)Cl)&!$(C(Br)(Br)Br)&!$(C([CH3])([CH3])[CH3])&!$([CH3])]",
+  "nonstrict": "RDKit NonStrict / Lipinski.py RotatableBondSmarts [!$(*#*)&!D1]-&!@[!$(*#*)&!D1]"
+ },
+ "parents": {
+  "no_h": {
+   "file": "synthetic-parent-methacetin-no-h.sdf",
+   "atoms_in_sdf": 12,
+   "heavy_atoms": [
+    {
+     "serial": 1,
+     "element": "C"
+    },
+    {
+     "serial": 2,
+     "element": "C"
+    },
+    {
+     "serial": 3,
+     "element": "O"
+    },
+    {
+     "serial": 4,
+     "element": "N"
+    },
+    {
+     "serial": 5,
+     "element": "C"
+    },
+    {
+     "serial": 6,
+     "element": "C"
+    },
+    {
+     "serial": 7,
+     "element": "C"
+    },
+    {
+     "serial": 8,
+     "element": "C"
+    },
+    {
+     "serial": 9,
+     "element": "C"
+    },
+    {
+     "serial": 10,
+     "element": "C"
+    },
+    {
+     "serial": 11,
+     "element": "O"
+    },
+    {
+     "serial": 12,
+     "element": "C"
+    }
+   ],
+   "bonds_heavy": [
+    [
+     1,
+     2,
+     "single"
+    ],
+    [
+     2,
+     3,
+     "double"
+    ],
+    [
+     2,
+     4,
+     "single"
+    ],
+    [
+     4,
+     5,
+     "single"
+    ],
+    [
+     5,
+     6,
+     "aromatic"
+    ],
+    [
+     6,
+     7,
+     "aromatic"
+    ],
+    [
+     7,
+     8,
+     "aromatic"
+    ],
+    [
+     8,
+     9,
+     "aromatic"
+    ],
+    [
+     9,
+     10,
+     "aromatic"
+    ],
+    [
+     5,
+     10,
+     "aromatic"
+    ],
+    [
+     8,
+     11,
+     "single"
+    ],
+    [
+     11,
+     12,
+     "single"
+    ]
+   ],
+   "site_methoxy": [
+    11,
+    12
+   ],
+   "crossing_bond": [
+    8,
+    11,
+    "single"
+   ],
+   "core_retained_parent_atoms": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "_how": "written by hand from the atom block order chosen at generation; bond orders are the RDKit-sanitized types (ring = aromatic). Serial = 1-based SDF atom-block line, H lines included."
+  },
+  "explicit_h": {
+   "file": "synthetic-parent-methacetin-explicit-h.sdf",
+   "atoms_in_sdf": 23,
+   "heavy_atoms": [
+    {
+     "serial": 1,
+     "element": "C"
+    },
+    {
+     "serial": 5,
+     "element": "C"
+    },
+    {
+     "serial": 6,
+     "element": "O"
+    },
+    {
+     "serial": 7,
+     "element": "N"
+    },
+    {
+     "serial": 9,
+     "element": "C"
+    },
+    {
+     "serial": 10,
+     "element": "C"
+    },
+    {
+     "serial": 12,
+     "element": "C"
+    },
+    {
+     "serial": 14,
+     "element": "C"
+    },
+    {
+     "serial": 15,
+     "element": "C"
+    },
+    {
+     "serial": 17,
+     "element": "C"
+    },
+    {
+     "serial": 19,
+     "element": "O"
+    },
+    {
+     "serial": 20,
+     "element": "C"
+    }
+   ],
+   "bonds_heavy": [
+    [
+     1,
+     5,
+     "single"
+    ],
+    [
+     5,
+     6,
+     "double"
+    ],
+    [
+     5,
+     7,
+     "single"
+    ],
+    [
+     7,
+     9,
+     "single"
+    ],
+    [
+     9,
+     10,
+     "aromatic"
+    ],
+    [
+     10,
+     12,
+     "aromatic"
+    ],
+    [
+     12,
+     14,
+     "aromatic"
+    ],
+    [
+     14,
+     15,
+     "aromatic"
+    ],
+    [
+     15,
+     17,
+     "aromatic"
+    ],
+    [
+     9,
+     17,
+     "aromatic"
+    ],
+    [
+     14,
+     19,
+     "single"
+    ],
+    [
+     19,
+     20,
+     "single"
+    ]
+   ],
+   "site_methoxy": [
+    19,
+    20
+   ],
+   "crossing_bond": [
+    14,
+    19,
+    "single"
+   ],
+   "core_retained_parent_atoms": [
+    1,
+    5,
+    6,
+    7,
+    9,
+    10,
+    12,
+    14,
+    15,
+    17
+   ],
+   "_how": "written by hand from the atom block order chosen at generation; bond orders are the RDKit-sanitized types (ring = aromatic). Serial = 1-based SDF atom-block line, H lines included.",
+   "hydrogen_serials": [
+    2,
+    3,
+    4,
+    8,
+    11,
+    13,
+    16,
+    18,
+    21,
+    22,
+    23
+   ],
+   "site_hydrogens_removed_with_site": [
+    21,
+    22,
+    23
+   ]
+  },
+  "properties_key": "parent_methacetin"
+ },
+ "block_libraries": {
+  "_ordinal_assumption": "SMILES ordinal = 1-based count of non-skipped lines (blank and '#' lines are not records), so '*O' is record 15 on file line 18 and is named block_15. If the implementation counts file lines instead the name would be block_18; spec 3.3 says 'input ordinal', T2/T3 must fix this choice.",
+  "_rejection_precedence_assumption": "each rejected record here has exactly one applicable reason",
+  "smiles": {
+   "file": "synthetic-blocks.smi",
+   "records": [
+    {
+     "ordinal": 1,
+     "line": 2,
+     "smiles": "*C",
+     "name": "methyl",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 2,
+     "line": 3,
+     "smiles": "*Cl",
+     "name": "chloro",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 3,
+     "line": 4,
+     "smiles": "*OC",
+     "name": "methoxy",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 4,
+     "line": 5,
+     "smiles": "*N1CCOCC1",
+     "name": "morpholino",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 5,
+     "line": 6,
+     "smiles": "*c1ccccc1",
+     "name": "phenyl",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 6,
+     "line": 7,
+     "smiles": "*C(F)(F)F",
+     "name": "trifluoromethyl",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 7,
+     "line": 8,
+     "smiles": "C*",
+     "name": "methyl_alt",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 8,
+     "line": 9,
+     "smiles": "CCBr",
+     "name": "bromoethane",
+     "status": "accepted",
+     "reason": null,
+     "markers": 0,
+     "fixed_eligible": false,
+     "rule_eligible": true
+    },
+    {
+     "ordinal": 9,
+     "line": 10,
+     "smiles": "CC(=O)O",
+     "name": "acetic_acid",
+     "status": "accepted",
+     "reason": null,
+     "markers": 0,
+     "fixed_eligible": false,
+     "rule_eligible": true
+    },
+    {
+     "ordinal": 10,
+     "line": 11,
+     "smiles": "*CC*",
+     "name": "bis_star",
+     "status": "accepted",
+     "reason": null,
+     "markers": 2,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 11,
+     "line": 14,
+     "smiles": "C1CC",
+     "name": "broken_ring",
+     "status": "rejected",
+     "reason": "unparseable",
+     "markers": null,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 12,
+     "line": 15,
+     "smiles": "*B(O)O",
+     "name": "boronic",
+     "status": "rejected",
+     "reason": "element_not_allowed",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 13,
+     "line": 16,
+     "smiles": "*[Se]C",
+     "name": "methylselanyl",
+     "status": "rejected",
+     "reason": "element_not_allowed",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 14,
+     "line": 17,
+     "smiles": "*F",
+     "name": "chloro",
+     "status": "rejected",
+     "reason": "duplicate_name",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 15,
+     "line": 18,
+     "smiles": "*O",
+     "name": "block_15",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 16,
+     "line": 19,
+     "smiles": "CC.O",
+     "name": "two_fragments",
+     "status": "rejected",
+     "reason": "multiple_fragments",
+     "markers": 0,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 17,
+     "line": 20,
+     "smiles": "*CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+     "name": "chain65_star",
+     "status": "rejected",
+     "reason": "too_many_atoms",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 18,
+     "line": 21,
+     "smiles": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+     "name": "chain64",
+     "status": "accepted",
+     "reason": null,
+     "markers": 0,
+     "fixed_eligible": false,
+     "rule_eligible": true
+    }
+   ],
+   "summary": {
+    "accepted": 12,
+    "rejected_counts": {
+     "duplicate_name": 1,
+     "element_not_allowed": 2,
+     "multiple_fragments": 1,
+     "too_many_atoms": 1,
+     "unparseable": 1
+    },
+    "fixed_targets": 8,
+    "rule_targets": 3,
+    "fixed_not_applicable": 4,
+    "rule_not_applicable_per_rule": 9
+   }
+  },
+  "sdf": {
+   "file": "synthetic-blocks.sdf",
+   "records": [
+    {
+     "ordinal": 1,
+     "content": "*CC (symbol *)",
+     "name": "sdf_ethyl",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 2,
+     "content": "R#-OCC with M  RGP label 1",
+     "name": "sdf_rgroup_ethoxy",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 3,
+     "content": "*C#N, empty title",
+     "name": "block_3",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 4,
+     "content": "0 atoms",
+     "name": "sdf_empty",
+     "status": "rejected",
+     "reason": "empty",
+     "markers": 0,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 5,
+     "content": "*[Se]C",
+     "name": "sdf_selenium",
+     "status": "rejected",
+     "reason": "element_not_allowed",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 6,
+     "content": "*C + O (2 components)",
+     "name": "sdf_two_fragments",
+     "status": "rejected",
+     "reason": "multiple_fragments",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 7,
+     "content": "bond to atom 9 of 2",
+     "name": "sdf_unparseable",
+     "status": "rejected",
+     "reason": "unparseable",
+     "markers": null,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 8,
+     "content": "*CCC, repeated title",
+     "name": "sdf_ethyl",
+     "status": "rejected",
+     "reason": "duplicate_name",
+     "markers": 1,
+     "fixed_eligible": false,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 9,
+     "content": "*C",
+     "name": "sdf_methyl",
+     "status": "accepted",
+     "reason": null,
+     "markers": 1,
+     "fixed_eligible": true,
+     "rule_eligible": false
+    },
+    {
+     "ordinal": 10,
+     "content": "CBr",
+     "name": "sdf_bromomethane",
+     "status": "accepted",
+     "reason": null,
+     "markers": 0,
+     "fixed_eligible": false,
+     "rule_eligible": true
+    }
+   ],
+   "summary": {
+    "accepted": 5,
+    "rejected_counts": {
+     "empty": 1,
+     "element_not_allowed": 1,
+     "multiple_fragments": 1,
+     "unparseable": 1,
+     "duplicate_name": 1
+    },
+    "fixed_targets": 4,
+    "rule_targets": 1,
+    "fixed_not_applicable": 1,
+    "rule_not_applicable_per_rule": 4
+   }
+  }
+ },
+ "rules": {
+  "file": "synthetic-reaction-rules.json",
+  "results": [
+   {
+    "rule_id": "user_1",
+    "status": "valid",
+    "how": "2 reactants, 1 product, O:1 mapped in first template"
+   },
+   {
+    "rule_id": "user_2",
+    "status": "valid",
+    "how": "2 reactants, 1 product, O:1 mapped"
+   },
+   {
+    "rule_id": "user_3",
+    "status": "valid",
+    "how": "valid form; first template matches the acetyl group (outside site)"
+   },
+   {
+    "rule_id": "user_4",
+    "status": "reactant_count",
+    "how": "1 reactant template"
+   },
+   {
+    "rule_id": "user_5",
+    "status": "product_count",
+    "how": "2 product templates"
+   },
+   {
+    "rule_id": "user_6",
+    "status": "no_mapped_atom",
+    "how": "first template [O][CH3] has no atom map"
+   },
+   {
+    "rule_id": "user_7",
+    "status": "reaction_parse_failed",
+    "how": "unclosed bracket '[CH3.'"
+   },
+   {
+    "rule_id": "user_8",
+    "status": "duplicate_rule",
+    "how": "same text as user_1"
+   },
+   {
+    "rule_id": "user_9",
+    "status": "too_large",
+    "how": "4097 UTF-8 bytes > 4 KiB"
+   },
+   {
+    "rule_id": "user_10",
+    "status": "valid",
+    "how": "exactly 4096 bytes (boundary), same form as user_1"
+   }
+  ]
+ },
+ "generation_with_site_methoxy": {
+  "_how": "site = methoxy O+CH3 (no-H serials [11,12], explicit-H [19,20]); products written by hand, string-assembled as core 'CC(=O)Nc1ccc(cc1)' + substituent, then RDKit-canonicalised.",
+  "fixed_smiles_library": [
+   {
+    "block": "methyl",
+    "outcome": "candidate",
+    "product": "fixed_methyl"
+   },
+   {
+    "block": "chloro",
+    "outcome": "candidate",
+    "product": "fixed_chloro"
+   },
+   {
+    "block": "methoxy",
+    "outcome": "rejected_equals_parent",
+    "product": "parent_methacetin"
+   },
+   {
+    "block": "morpholino",
+    "outcome": "candidate",
+    "product": "fixed_morpholino"
+   },
+   {
+    "block": "phenyl",
+    "outcome": "candidate",
+    "product": "fixed_phenyl"
+   },
+   {
+    "block": "trifluoromethyl",
+    "outcome": "candidate",
+    "product": "fixed_trifluoromethyl"
+   },
+   {
+    "block": "methyl_alt",
+    "outcome": "duplicate_of_methyl",
+    "product": "fixed_methyl"
+   },
+   {
+    "block": "block_15",
+    "outcome": "candidate",
+    "product": "fixed_hydroxy_block_15"
+   }
+  ],
+  "fixed_smiles_counts": {
+   "raw_products": 8,
+   "candidates": 6,
+   "duplicate_products": 1,
+   "rejected": {
+    "equals_parent": 1
+   },
+   "not_applicable": {
+    "fixed": 4
+   }
+  },
+  "fixed_sdf_library": [
+   {
+    "block": "sdf_ethyl",
+    "outcome": "candidate",
+    "product": "fixed_sdf_ethyl"
+   },
+   {
+    "block": "sdf_rgroup_ethoxy",
+    "outcome": "candidate",
+    "product": "phenacetin"
+   },
+   {
+    "block": "block_3",
+    "outcome": "candidate",
+    "product": "fixed_sdf_nitrile_block_3"
+   },
+   {
+    "block": "sdf_methyl",
+    "outcome": "candidate",
+    "product": "fixed_methyl"
+   }
+  ],
+  "fixed_sdf_counts": {
+   "raw_products": 4,
+   "candidates": 4,
+   "duplicate_products": 0,
+   "rejected": {},
+   "not_applicable": {
+    "fixed": 1
+   }
+  },
+  "rules_smiles_library": [
+   {
+    "rule_id": "user_1",
+    "block": "bromoethane",
+    "outcome": "candidate",
+    "product": "phenacetin"
+   },
+   {
+    "rule_id": "user_2",
+    "block": "acetic_acid",
+    "outcome": "candidate",
+    "product": "rule_aryl_acetate"
+   },
+   {
+    "rule_id": "user_3",
+    "block": "bromoethane",
+    "outcome": "rejected_outside_site",
+    "how": "[CH3][C:1]=[O:2] matches acetyl serials 1,2,3 (no-H), all outside site"
+   }
+  ],
+  "rules_sdf_library": [
+   {
+    "rule_id": "user_1",
+    "block": "sdf_bromomethane",
+    "outcome": "rejected_equals_parent",
+    "product": "parent_methacetin"
+   },
+   {
+    "rule_id": "user_3",
+    "block": "sdf_bromomethane",
+    "outcome": "rejected_outside_site"
+   }
+  ],
+  "rule_not_matching": "user_1/user_2/user_3/user_10 give no product with chain64, acetic_acid (except user_2) or bromoethane (except user_1/user_3); user_10 needs a 4065-carbon chain block",
+  "union_unique_candidates_fixed_plus_valid_rules_both_libraries": [
+   "fixed_chloro",
+   "fixed_hydroxy_block_15",
+   "fixed_methyl",
+   "fixed_morpholino",
+   "fixed_phenyl",
+   "fixed_sdf_ethyl",
+   "fixed_sdf_nitrile_block_3",
+   "fixed_trifluoromethyl",
+   "phenacetin",
+   "rule_aryl_acetate"
+  ],
+  "_union_duplicates": "fixed_methyl from methyl, methyl_alt, sdf_methyl (3 paths); phenacetin from sdf_rgroup_ethoxy (fixed) and user_1 x bromoethane (2 paths)",
+  "stereo_flag_all": "none (no stereo element in parent or blocks)"
+ },
+ "properties": {
+  "parent_methacetin": {
+   "hand_smiles": "CC(=O)Nc1ccc(OC)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)OC",
+   "canonical_smiles": "COc1ccc(NC(C)=O)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "165.192",
+    "formula": "C9H11NO2",
+    "how": "average atomic weight sum 9x12.011(C) + 11x1.008(H) + 1x14.007(N) + 2x15.999(O) = 165.192 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 3,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "38.33",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] + 1x9.23[O(-*)-*] = 38.33 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 2,
+    "how": "N-c(ar), c(ar)-O; C(=O)-N excluded as amide; CH3 bonds excluded"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 3,
+    "how": "C(=O)-N, N-c(ar), c(ar)-O; terminal CH3 bonds are D1"
+   },
+   "heavy_atoms": {
+    "value": 12,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_methyl": {
+   "hand_smiles": "CC(=O)Nc1ccc(C)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)C",
+   "canonical_smiles": "CC(=O)Nc1ccc(C)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "149.193",
+    "formula": "C9H11NO",
+    "how": "average atomic weight sum 9x12.011(C) + 11x1.008(H) + 1x14.007(N) + 1x15.999(O) = 149.193 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 2,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "29.10",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] = 29.10 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 1,
+    "how": "N-c(ar) only"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 2,
+    "how": "C(=O)-N, N-c(ar)"
+   },
+   "heavy_atoms": {
+    "value": 11,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_chloro": {
+   "hand_smiles": "CC(=O)Nc1ccc(Cl)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)Cl",
+   "canonical_smiles": "CC(=O)Nc1ccc(Cl)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "169.611",
+    "formula": "C8H8ClNO",
+    "how": "average atomic weight sum 8x12.011(C) + 8x1.008(H) + 1x35.453(Cl) + 1x14.007(N) + 1x15.999(O) = 169.611 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 2,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "29.10",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] = 29.10 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 1,
+    "how": "N-c(ar) only; Cl is D1"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 2,
+    "how": "C(=O)-N, N-c(ar)"
+   },
+   "heavy_atoms": {
+    "value": 11,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_morpholino": {
+   "hand_smiles": "CC(=O)Nc1ccc(N2CCOCC2)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)N1CCOCC1",
+   "canonical_smiles": "CC(=O)Nc1ccc(N2CCOCC2)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "220.272",
+    "formula": "C12H16N2O2",
+    "how": "average atomic weight sum 12x12.011(C) + 16x1.008(H) + 2x14.007(N) + 2x15.999(O) = 220.272 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 4,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "41.57",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] + 1x9.23[O(-*)-*] + 1x3.24[N(-*)(-*)-*] = 41.57 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 2,
+    "how": "N-c(ar), c(ar)-N(morpholine); ring bonds excluded"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 3,
+    "how": "C(=O)-N, N-c(ar), c(ar)-N"
+   },
+   "heavy_atoms": {
+    "value": 16,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_phenyl": {
+   "hand_smiles": "CC(=O)Nc1ccc(-c2ccccc2)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)c1ccccc1",
+   "canonical_smiles": "CC(=O)Nc1ccc(-c2ccccc2)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "211.264",
+    "formula": "C14H13NO",
+    "how": "average atomic weight sum 14x12.011(C) + 13x1.008(H) + 1x14.007(N) + 1x15.999(O) = 211.264 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 2,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "29.10",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] = 29.10 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 2,
+    "how": "N-c(ar), biaryl c-c"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 3,
+    "how": "C(=O)-N, N-c(ar), biaryl c-c"
+   },
+   "heavy_atoms": {
+    "value": 16,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_trifluoromethyl": {
+   "hand_smiles": "CC(=O)Nc1ccc(C(F)(F)F)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)C(F)(F)F",
+   "canonical_smiles": "CC(=O)Nc1ccc(C(F)(F)F)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "203.163",
+    "formula": "C9H8F3NO",
+    "how": "average atomic weight sum 9x12.011(C) + 8x1.008(H) + 3x18.998(F) + 1x14.007(N) + 1x15.999(O) = 203.163 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 2,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "29.10",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] = 29.10 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 1,
+    "how": "N-c(ar); c-CF3 excluded by !$(C(F)(F)F)"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 3,
+    "how": "C(=O)-N, N-c(ar), c(ar)-CF3 (CF3 carbon is D4)"
+   },
+   "heavy_atoms": {
+    "value": 14,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_hydroxy_block_15": {
+   "hand_smiles": "CC(=O)Nc1ccc(O)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)O",
+   "canonical_smiles": "CC(=O)Nc1ccc(O)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "151.165",
+    "formula": "C8H9NO2",
+    "how": "average atomic weight sum 8x12.011(C) + 9x1.008(H) + 1x14.007(N) + 2x15.999(O) = 151.165 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 2,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 3,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "49.33",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] + 1x20.23[OH-*] = 49.33 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 1,
+    "how": "N-c(ar); OH is D1"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 2,
+    "how": "C(=O)-N, N-c(ar)"
+   },
+   "heavy_atoms": {
+    "value": 11,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_sdf_ethyl": {
+   "hand_smiles": "CC(=O)Nc1ccc(CC)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)CC",
+   "canonical_smiles": "CCc1ccc(NC(C)=O)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "163.220",
+    "formula": "C10H13NO",
+    "how": "average atomic weight sum 10x12.011(C) + 13x1.008(H) + 1x14.007(N) + 1x15.999(O) = 163.220 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 2,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "29.10",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] = 29.10 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 2,
+    "how": "N-c(ar), c(ar)-CH2"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 3,
+    "how": "C(=O)-N, N-c(ar), c(ar)-CH2"
+   },
+   "heavy_atoms": {
+    "value": 12,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "fixed_sdf_nitrile_block_3": {
+   "hand_smiles": "CC(=O)Nc1ccc(C#N)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)C#N",
+   "canonical_smiles": "CC(=O)Nc1ccc(C#N)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "160.176",
+    "formula": "C9H8N2O",
+    "how": "average atomic weight sum 9x12.011(C) + 8x1.008(H) + 2x14.007(N) + 1x15.999(O) = 160.176 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 3,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "52.89",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] + 1x23.79[N#*] = 52.89 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 1,
+    "how": "N-c(ar); c-C#N excluded (triple-bond atom)"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 2,
+    "how": "C(=O)-N, N-c(ar); c-C#N excluded"
+   },
+   "heavy_atoms": {
+    "value": 12,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "phenacetin": {
+   "hand_smiles": "CCOc1ccc(NC(C)=O)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)OCC",
+   "canonical_smiles": "CCOc1ccc(NC(C)=O)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "179.219",
+    "formula": "C10H13NO2",
+    "how": "average atomic weight sum 10x12.011(C) + 13x1.008(H) + 1x14.007(N) + 2x15.999(O) = 179.219 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 3,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "38.33",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 1x17.07[O=*] + 1x9.23[O(-*)-*] = 38.33 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 3,
+    "how": "N-c(ar), c(ar)-O, O-CH2"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 4,
+    "how": "C(=O)-N, N-c(ar), c(ar)-O, O-CH2"
+   },
+   "heavy_atoms": {
+    "value": 13,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  },
+  "rule_aryl_acetate": {
+   "hand_smiles": "CC(=O)Nc1ccc(OC(C)=O)cc1",
+   "assembled_smiles": "CC(=O)Nc1ccc(cc1)OC(C)=O",
+   "canonical_smiles": "CC(=O)Nc1ccc(OC(C)=O)cc1",
+   "_canonical_how": "RDKit MolToSmiles(MolFromSmiles(hand_smiles)); equals canonical of assembled_smiles (core string 'CC(=O)Nc1ccc(cc1)' + substituent text)",
+   "mol_weight": {
+    "value": "193.202",
+    "formula": "C10H11NO3",
+    "how": "average atomic weight sum 10x12.011(C) + 11x1.008(H) + 1x14.007(N) + 3x15.999(O) = 193.202 Da (IUPAC abridged conventional weights)"
+   },
+   "hbd": {
+    "value": 1,
+    "how": "Lipinski 1997 NH+OH hydrogens (RDKit CalcNumLipinskiHBD); none of these has NH2"
+   },
+   "hba": {
+    "value": 4,
+    "how": "Lipinski 1997 N+O atom count (RDKit CalcNumLipinskiHBA)"
+   },
+   "tpsa": {
+    "value": "55.40",
+    "how": "Ertl 2000 fragment sum: 1x12.03[NH(-*)-*] + 2x17.07[O=*] + 1x9.23[O(-*)-*] = 55.40 A^2 (no S/P; RDKit default includeSandP=False)"
+   },
+   "rotatable_bonds_strict": {
+    "value": 2,
+    "how": "N-c(ar), c(ar)-O; ester O-C(=O) and amide excluded"
+   },
+   "rotatable_bonds_nonstrict": {
+    "value": 4,
+    "how": "C(=O)-N, N-c(ar), c(ar)-O, O-C(=O)"
+   },
+   "heavy_atoms": {
+    "value": 14,
+    "how": "count of non-H atoms in hand_smiles"
+   },
+   "formal_charge": {
+    "value": 0,
+    "how": "no charged atoms written"
+   },
+   "crippen_logp": {
+    "value": null,
+    "how": "no hand oracle (Wildman-Crippen atom-type table not hand-summed in T1)"
+   }
+  }
+ },
+ "pains": {
+  "file": "pains-panel.smi",
+  "source": "Baell JB, Holloway GA, J Med Chem 2010, 53, 2719-2740 (doi:10.1021/jm901137j); SMARTS as shipped in RDKit 2026.03.6 Data/Pains/wehi_pains.csv; family A/B/C as listed by RDKit FilterCatalog PAINS_A/B/C",
+  "positives": [
+   {
+    "name": "pos_A_ene_rhod_A_5-benzylidenerhodanine",
+    "must_include": {
+     "catalog": "PAINS_A",
+     "name": "ene_rhod_A(235)"
+    },
+    "how": "ring N1-C(=S)-S-C(=C)-C1=O is exactly [#7]-1-[#6](=[#16])-[#16]-[#6](=[#6])-[#6]-1=[#8]"
+   },
+   {
+    "name": "pos_A_quinone_A_p-benzoquinone",
+    "must_include": {
+     "catalog": "PAINS_A",
+     "name": "quinone_A(370)"
+    },
+    "how": "O=C1C=CC(=O)C=C1 fits [!#6&!#1]=[#6]1[#6]=,:[#6][#6](=[!#6&!#1])[#6]=,:[#6]1"
+   },
+   {
+    "name": "pos_B_catechol_A_catechol",
+    "must_include": {
+     "catalog": "PAINS_B",
+     "name": "catechol_A(92)"
+    },
+    "how": "two ortho aromatic OH: c:1:c:c(:c(:c:c:1)-[#8]-[#1])-[#8]-[#1]"
+   },
+   {
+    "name": "pos_B_anil_no_alk_4-aminophenol",
+    "must_include": {
+     "catalog": "PAINS_B",
+     "name": "anil_no_alk(40)"
+    },
+    "how": "ring NH2 with para O and four ring H"
+   },
+   {
+    "name": "pos_C_anil_OH_alk_A_4-benzylaminophenol",
+    "must_include": {
+     "catalog": "PAINS_C",
+     "name": "anil_OH_alk_A(8)"
+    },
+    "how": "PhCH2-NH-aryl with para OH and four ring H"
+   },
+   {
+    "name": "candidate fixed_morpholino",
+    "smiles_ref": "fixed_morpholino",
+    "must_include": {
+     "catalog": "PAINS_A",
+     "name": "anil_di_alk_A(478)"
+    },
+    "how": "aryl N(CH2)(CH2) with para ring atom bearing N (acetamide N), ring H at the checked positions"
+   }
+  ],
+  "negatives": [
+   {
+    "name": "neg_methacetin_parent",
+    "expected_matches": []
+   },
+   {
+    "name": "neg_paracetamol",
+    "expected_matches": []
+   },
+   {
+    "name": "neg_benzene",
+    "expected_matches": []
+   },
+   {
+    "name": "neg_aspirin",
+    "expected_matches": []
+   }
+  ],
+  "_negatives_how": "textbook non-PAINS compounds; checked by hand against the A-family SMARTS only (anil_di_alk_C needs N-CX4 on the para-alkoxy aniline N, methacetin has N-C(=O)). B/C families were not exhaustively hand-checked; RDKit cross-check records the result."
+ }
+}

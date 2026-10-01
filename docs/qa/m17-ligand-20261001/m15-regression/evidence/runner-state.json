@@ -1,0 +1,130 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "sqA-QDPAIvtGu2INokvMg",
+    "gitHead": "e6ab4f9b82808aaddb67c1e2d53ef80628dc097a",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "b3af8b6b920d7772ba0f699b0ca48754b02f89dd8325e74f52ac6a001f061e5d",
+    "dirtyFiles": [
+      "?? docs/qa/m17-ligand-20261001/acceptance/",
+      "?? docs/qa/m17-ligand-20261001/gate.txt",
+      "?? docs/qa/m17-ligand-20261001/m16-regression/"
+    ],
+    "recordedAt": "2026-10-01T10:40:22.908697+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "numbering-flow.cjs": "8996b7fc22495aeeca03600e7f97a4988dc2955ffb05d0b21deeb0e5c9944b8f",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "fbf063db5d81af19dc14213a1f5b67d7c9b2308beb774f062e2248ce0dcb5a90"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m17-m15-regression-20261001/runs",
+      "reference": "<repo>/runs/m17-m15-regression-20261001/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-01T10:40:25.144775+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m17-m15-regression-20261001/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m17-regression/services/reference-import.log",
+      "setHash": "52d2a2e0b03f926aae306a3afd22d37020533ed65362f33074e72cc08f73232f",
+      "served": {
+        "available": true,
+        "set_hash": "52d2a2e0b03f926aae306a3afd22d37020533ed65362f33074e72cc08f73232f",
+        "imported_at": "2026-10-01T10:40:28.784799Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    },
+    "reference-reimport": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "-c",
+        "import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); from reference_fixture_set import build_fixture_set; print(build_fixture_set(Path(sys.argv[2]), tag=sys.argv[3]))",
+        "<repo>/backend/tests",
+        "<repo>/runs/m17-m15-regression-20261001/reference",
+        "m15-qa-marked-fixture-20261001T104048"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m17-regression/services/reference-reimport.log",
+      "setHash": "1d4a7743b352c804f38d9fb31ecc1ea58793e722cbad31e3ddb587510a5d877d",
+      "served": {
+        "available": true,
+        "set_hash": "1d4a7743b352c804f38d9fb31ecc1ea58793e722cbad31e3ddb587510a5d877d",
+        "imported_at": "2026-09-30T00:00:00Z m15-qa-marked-fixture-20261001T104048",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  }
+}

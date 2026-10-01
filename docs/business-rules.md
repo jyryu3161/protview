@@ -200,6 +200,77 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 ### 의미하지 않는 것
 수소결합·염다리·화학 상호작용 판정, 잔기의 역할(촉매·hinge 결합 등), 결합 세기·친화도. `absent`는 "이 스냅샷과 방법으로 확실하지 않음"이다. 그림 상한은 올리지 않았다(결정 0024).
 
+## 리간드 후보 (M17, `rdkit_inspect_v1` / `rdkit_enumerate_v1`)
+
+부모 리간드(V2000 SDF 한 분자)에서 사용자가 고른 한 부위를 building block이나 사용자 반응 규칙으로 바꾼 후보 분자를 만들고, 후보마다 RDKit 속성과 PAINS 구조 경고 일치를 붙인다(결정 0025). 후보는 2D 그래프(SMILES)일 뿐이며 3D 배치·점수는 M18의 일이다. 모든 값은 실제 RDKit 2026.03.6 작업 프로세스(`.deps/prolif/venv-locked`)가 낸 저장값이고, 서버 프로세스는 RDKit을 import하지 않는다.
+
+### 입력
+- 가져오기는 기존 `chemical_raw_input@1`(파일당 최대 10 MiB)이다. 부모는 기존 `ligand_sdf`(M11 가져오기 그대로, V3000 거부), building block은 새 종류 `building_blocks_sdf`(`.sdf`, `input_format: sdf_multi`, `$$$$` 기준 레코드 1–1,000개)와 `building_blocks_smiles`(`.smi`·`.txt`, `smiles_list`, 비어 있지 않고 `#`로 시작하지 않는 줄 1개 이상). 가져오기는 크기·UTF-8·NUL·레코드 수만 보고, 화학 검증은 점검 작업이 한다. 같은 바이트를 다른 종류로 가져오면 거부한다. 기존 `/chemical/prerequisites`·가져오기 inspect는 M11 세 종류 그대로다.
+- **부모**(점검이 검증): SDF 레코드 정확히 1개, 중원자가 연결된 단일 분자, 중원자 ≤ 256, 원소는 H C N O S P F Cl Br I만. 거부 이유(typed 실패): `unparseable`, `record_count`, `multiple_fragments`, `element_not_allowed`, `too_many_atoms`. 수소·양성자화·토토머 상태는 입력 그대로이며 검사·추가하지 않는다. SDF 좌표는 점검 객체에 저장하지 않는다.
+- **원자 번호**: 화면·점검 객체·부위·후보의 모든 원자 번호는 SDF 원자 블록의 1-기반 순번(수소 포함)이다. 원자 표와 2D 그림은 중원자만 보여 주되 번호는 SDF 순번 그대로라 수소 자리는 건너뛴다. RDKit 내부 인덱스를 번호로 쓰지 않는다.
+- **building block**: SDF는 레코드 제목, SMILES는 줄의 두 번째 토큰이 이름이다. 이름이 비면 `block_<n>`이고, n은 가져온 순서의 모든 라이브러리를 이어서 센 레코드 순번이다(건너뛴 빈 줄·`#` 줄은 세지 않음). 이름은 128자 이하, 한 요청의 모든 라이브러리에서 유일해야 하며 뒤의 중복은 `duplicate_name`(첫 번째 유지). 레코드 거부 이유(이 순서): `unparseable`, `empty`, `multiple_fragments`, `element_not_allowed`, `too_many_atoms`(중원자 > 64), `duplicate_name`. 거부 레코드 목록(최대 200개)의 `ordinal`은 그 라이브러리 안 순번이라 `block_<n>`과 다를 수 있다. 이유별 총 개수는 `rejected_counts`에 따로 있다.
+- block 상한 1,000개는 두 라이브러리를 합친 것이다. 넘으면 가져온 순서대로 처음 1,000개 레코드만 읽고 `block_limit_reached`를 표시한다(조용히 자르지 않음).
+- **표시(붙임) 원자**: 원자번호 0인 원자(SMILES `*`, SDF `*`·`R#`). `R#`는 `[1*]`로 보일 수 있으므로 기호가 아니라 원자번호로만 판별한다. 표시 원자가 정확히 1개이고 그 이웃이 단일 결합으로 이은 중원자 1개인 block만 고정 교체에, 표시 원자가 없는 block만 사용자 규칙에 쓴다. 맞지 않는 조합은 오류가 아니라 규칙별 `not_applicable` 개수다.
+
+### 부위
+- 부모 중원자의 비어 있지 않은 집합이고, 부위 밖(코어)도 비어 있지 않으며, 부위와 코어를 잇는 결합이 정확히 1개이고 그 결합의 `order`가 `single`이다(결합형 `single | double | triple | aromatic`은 RDKit 정리 뒤 값). 부위에 붙은 명시적 수소는 부위와 함께 떨어진다. 연결이 2개 이상인 링커 교체와 부위 자동 제안은 없다.
+- 검사는 서버가 RDKit 없이 점검 객체의 원자·결합·수소 목록으로 한다(미리보기 읽기와 생성 요청 입장). 이유(이 순서로 첫 해당 하나): `site_empty`, `site_atom_unknown`(중원자 표에 없는 번호, 수소 번호 포함), `core_empty`, `crossing_bond_count`, `crossing_bond_not_single`. 점검 전에는 부위를 고를 수 없다.
+
+### 생성 방법
+- **고정 교체 `replace_single_bond_v1`**(`rule_id: "fixed"`): 부위 원자와 그 수소를 떼고, 교차 결합의 코어 쪽 원자와 block 표시 원자의 이웃을 단일 결합으로 잇는다. 표시 원자는 지운다. 산출물을 정리(sanitize)한다.
+- **사용자 반응 규칙 `user_reaction_smarts_v1`**: 요청당 0–10개, 텍스트 4 KiB 이하, 반응 SMARTS 텍스트 그대로 저장. `rule_id`는 요청 순서의 `user_<n>`이며 점검·생성·보고서가 같은 id를 쓴다. 형태는 반응물 템플릿 정확히 2개(부모 쪽 첫째, block 쪽 둘째)·생성물 1개·첫째 반응물에 원자 맵 1개 이상이다. 점검이 규칙마다 `valid` 또는 이유(`reaction_parse_failed`, `reactant_count`, `product_count`, `no_mapped_atom`, `too_large`, `duplicate_rule`)를 기록한다. 규칙 하나가 틀려도 점검은 성공한다. 생성은 점검에서 `valid`인 규칙만 받는다.
+- **적용 범위**: 첫째 템플릿이 부모에서 맞춘 모든 원자(맵 유무 무관)가 부위 안이어야 한다. 하나라도 부위 밖이면 그 매치를 `outside_site`로 세고 건너뛴다(RDKit 반응물 매치 하나 = (규칙, block, 매치) 한 건). 코어가 끊기는 매치도 부위 밖 원자를 맞춘 것이므로 `outside_site`다. 그래서 코어는 항상 그대로 남는다.
+- 고정 교체만, 규칙만, 둘 다 쓸 수 있고 둘 다 끄면 거절(`no_generation_method`)이다.
+
+### 후보·중복·거부
+- 생성 순서(결정적): 고정 교체 → 사용자 규칙(요청 순서), 규칙마다 block 입력 순서 × RDKit 매치 순서.
+- 정규 SMILES는 RDKit 이성질체 정규 SMILES(수소 생략형)이다. 부모 코어의 입체는 유지하고 새로 생긴 입체 중심은 미지정이며, 입체이성질체는 열거하지 않는다. `stereo_flag`: `none | parent_stereo_lost`(부모 코어의 지정된 키랄 중심·입체 이중결합이 산출물에서 미지정) `| new_unspecified_center`(부모 코어에서 오지 않은 미지정 입체 중심, `FindMolChiralCenters(includeUnassigned=True)`), 둘 다면 `parent_stereo_lost`.
+- 후보 행은 입체 포함 정규 SMILES당 1개다. 같은 SMILES가 다른 경로로 또 나오면 첫 행의 `origins`(`{rule_id, block_name}`)에 더하고 `duplicate_products`만 올린다. 후보 id = `c_` + 그 SMILES의 SHA-256 앞 16 hex.
+- 생성물 거부(행 없음, 이유별 개수만): `sanitize_failed`, `element_not_allowed`, `too_many_atoms`(중원자 > 256), `equals_parent`, `outside_site`.
+- 상한: 저장 후보 2,000개(`stop_reason: "candidate_limit"`), 원시 생성물 시도 20,000개(`"attempt_limit"`). 닿으면 정해진 순서에서 멈추고 `limit_reached: true`로 저장한다. 부분 결과 저장은 이 두 경우뿐이다. 작업 안에 시간 기반 중단은 없다. 시간 초과·취소·크래시는 결과를 저장하지 않는다.
+- 후보 행 `retained_parent_atoms`는 부위 밖 부모 **중원자**의 SDF 번호 오름차순(코어 중원자 전체)이다. 미리보기 응답의 `site_check.retained_parent_atoms`는 코어 수소 번호도 포함하므로 같은 이름이지만 뜻이 다르다(화면은 후보 집합 쪽을 쓴다).
+- 후보 0개는 빈 과학 결과(scientific_null)이지 실패가 아니다(거부 이유별·`not_applicable` 개수를 함께 보여 준다).
+
+### 속성과 PAINS
+- 후보와 부모 모두 항상 계산·저장(null 없음): `mol_weight`(Descriptors.MolWt, 평균 분자량, Da), `crippen_logp`(Crippen.MolLogP, Wildman–Crippen 추정, 무차원), `hbd`·`hba`(Lipinski 정의 `CalcNumLipinskiHBD`·`CalcNumLipinskiHBA`. `NumHDonors`/`NumHAcceptors`는 다른 정의라 쓰지 않음), `tpsa`(CalcTPSA, Å², S·P 미포함), `rotatable_bonds`(CalcNumRotatableBonds 기본 = Strict), `heavy_atoms`, `formal_charge`(합). 정의 이름은 결과의 `property_methods`에 있다. 값은 RDKit 반환 그대로이고 반올림은 표시 때만 한다.
+- PAINS: RDKit `FilterCatalog` PAINS A·B·C(16·55·409항목) 일치 목록 `pains.matches: [{catalog, name}]`. "구조 경고 일치"일 뿐 화합물의 좋고 나쁨 판정이 아니다.
+- 표시: 분자량·logP·TPSA는 소수 둘째 자리 `ROUND_HALF_UP`(10진 문자열 기준), 개수는 정수, 단위 Da·Å²·무차원. 속성은 "RDKit 추정값"으로 부른다.
+
+### 필터
+- 필터는 생성 입력이 아니다. 후보 집합은 필터와 무관하게 한 번 만들어 저장하고, 필터는 화면 읽기(`/ligand/candidate_sets/rows`)와 보고서 시점에 서버 순수 함수가 저장값으로 평가한다(이벤트 없음). 화면은 경계 비교를 다시 하지 않는다.
+- 명세: 속성별 선택적 `min`·`max`(경계 포함, 기본 없음, 미리 채우지 않음)와 `pains_exclude`(기본 끔). 필터별 통과·실패와 `passes_all`(적용한 필터가 없으면 null)을 돌려준다. 후보는 필터와 무관하게 모두 보이며 "필터 통과만 보기"를 고를 수 있다. 전체 수와 필터로 숨긴 수를 함께 보여 준다.
+- 정렬 키는 `generation_order`(기본)와 속성 8개, 방향 오름·내림(같은 값은 생성 순서).
+- "활성"이 보고서 금지어이므로 화면·보고서는 "적용한 필터"라고 쓴다.
+
+### 작업과 예산
+- 점검(`rdkit_inspect_v1`, 도구 `rdkit_inspect_ligand`)과 생성(`rdkit_enumerate_v1`, 도구 `rdkit_enumerate_ligands`)은 둘 다 기존 `JobQueue` 비싼 작업 경로이고 각각 비싼 계산 1단위를 쓴다(run 단위 첫 비싼 계산 승인, 시간 상한 120초). 번호 붙은 2D 그림이 RDKit을 요구하므로 점검도 작업이다. 부모를 올리거나 규칙을 고칠 때마다 점검 1단위가 든다.
+- 같은 정규화 입력은 같은 호출 키라 기존 작업·결과를 다시 쓴다(새 작업·과금 없음). 결과 객체에 시각·작업·시도 ID가 없어 같은 입력은 같은 handle이다.
+- 생성 요청은 규칙 텍스트를 받지 않는다. 서버가 점검 객체에서 `valid` 규칙의 텍스트를 꺼낸다. 다른 run·종류의 handle, 잘못된 부위, `valid`가 아닌 규칙은 작업을 만들기 전에 거절한다.
+- dry-run run에서는 계획(`planned_call`)만 만들고 결과 객체가 없다.
+- 2D SVG는 256 KiB 이하(넘으면 점검 `resource_exceeded`), 점검 객체 전체는 1 MiB 이하다. 그래서 중원자 약 230개를 넘는 부모는 점검할 수 없다(부모 한도 256보다 낮음). SVG는 `<img>` data URI로만 표시한다.
+- 사용 가능 여부(`methods.ligand_candidates`): 잠긴 환경 존재, RDKit 고정 버전 일치, PAINS 카탈로그 고정 항목 수 로드가 모두 확인될 때만 사용 가능이다(서버는 작업 모듈의 handshake만 실행). 아니면 숫자·컨트롤 없이 이유(`worker_missing`, `handshake_failed`, `rdkit_version_mismatch`, `pains_catalog_unavailable`).
+
+### 결과 객체
+- `ligand_inspection@1`(부모가 거부되면 객체 없이 typed 실패): 부모 SHA-256·SDF 원자 수·중원자 수·정규 SMILES, 중원자 원자 표(`serial`, `element`, `formal_charge`, `neighbors`), 결합 목록 `{a, b, order}`, 명시적 수소 `{serial, attached_to}`, 번호 붙은 2D SVG(원자 번호 라벨 = SDF 번호), 부모 속성, block 라이브러리별 요약(수락 개수, 거부 레코드, `rejected_counts`, 고정 교체·규칙 대상 수, `block_limit_reached`), 규칙별 검증 결과, RDKit 버전, 입력 SHA-256.
+- `ligand_candidate_set@1`: 점검 handle·부모 handle·block handle, 부위·교차 결합·`retained_parent_atoms`, 사용한 규칙(텍스트 그대로), 방법, block 라이브러리 요약, 후보 행, 개수(`blocks_accepted`, `raw_products`, `candidates`, `duplicate_products`, `rejected{이유별}`, `not_applicable{규칙별}`), 상한·`limit_reached`·`stop_reason`, 부모 속성, `property_methods`, `limitations`.
+- 두 객체 모두 게시 전에 현재 시도·취소·종료 상태와 스키마·작업 ID·시도 ID·유한값·닫힌 집합을 검증하고, 읽을 때마다 완료된 게시 한 건과 입력에 대조한다. events-only로 다시 열린다(원본 가져오기·RDKit 없이). 새 부모를 올리면 새 점검 객체이고 이전 객체는 지우지 않는다. 화면은 점검 객체를 자동으로 고르지 않는다.
+- `limitations`는 이 다섯 문장, 이 순서·문자 그대로다(결과·보고서·capability 공통):
+  1. "속성값은 RDKit 추정값이며 측정값·예측 활성이 아니다."
+  2. "PAINS 일치는 구조 경고일 뿐 화합물의 좋고 나쁨 판정이 아니다."
+  3. "후보는 2D 그래프이며 3D 배치·점수·합성 가능성은 계산하지 않았다."
+  4. "새로 생긴 입체 중심은 미지정이며 입체이성질체는 열거하지 않았다."
+  5. "수소·양성자화·토토머 상태는 입력 그대로이다."
+- 부모·block·부위·생성물·규칙 이유 집합, `stereo_flag` 값, 한계 문장은 `backend/mw/ligand_constants.py` 상수이며 바꾸려면 사용자 결정이 필요하다.
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "ligand_candidates"`, 렌더 `ligand_candidates_markdown@1`. 입력은 후보 집합 handle 하나와 선택적 필터 명세(정규화해 manifest에 저장). 만들기·다시 열기·다운로드는 후보를 다시 생성하지 않고, 다시 열 때 후보 집합을 검증한 뒤 manifest·주장·Markdown 바이트를 저장 객체에서 다시 만든 것과 비교한다.
+- 증거는 모두 계산값(`computed`)이며 후보 집합 handle·필드 경로에 묶인다: 부모 속성, 후보 수, block·원시 생성물·중복 개수, 거부 이유별·규칙별 `not_applicable` 개수, 상한 상태, 부위 원자 번호, 사용자 규칙 텍스트. `count_where` 파생값(저장 행에 조건을 적용해 검증할 때마다 다시 셈, 조건은 `row_selector`에 기록): 적용한 필터별 통과 수, 모든 필터 통과 수, PAINS 일치 후보 수, `stereo_flag`별 수. 후보를 행 단위 증거로 연결하지 않는다(전체 표는 리간드 탭). 후보가 0개면 행 통계가 없고, 적용한 필터가 없으면 필터 문장도 없다.
+- 소수 속성은 `Decimal(str(v))`를 0.01 `ROUND_HALF_UP`, 정수는 그대로. 틀린 반올림, 다른 statement의 필드 인용, 계산하지 않은 값을 0으로 쓰기는 거부한다.
+- 해석 금지어: M15·M16 목록에 좋은·나쁜·약물 유사·독성·안전·활성·친화·억제·합성 가능·최적·중요·핵심·기능(과 영어 대응어)을 더해 모든 줄을 검사하고, 고정 한계 다섯 문장과 문자 그대로 같은 줄만 뺀다. 속성·필터 결과를 특성 판정으로 쓰지 않는다.
+
+### 의미하지 않는 것
+약물 유사성, 독성·안전성, 활성·친화도, 합성 가능성, 3D 결합 자세. PAINS 일치는 구조 경고일 뿐 화합물을 버리라는 판정이 아니고, 필터 통과는 사용자가 정한 범위 안이라는 뜻일 뿐이다. 후보는 2D 그래프이며 수소·양성자화·토토머는 입력 그대로다.
+
 ## PyRosetta와 에너지 표시
 
 - `relax_structure`, `estimate_stability`(Cartesian ddG), `score_interface`, `residue_energies`는 현재 사용할 수 없다. 이유를 담은 unavailable/precondition 응답을 돌려주고, 숫자 자리표시자나 순위는 만들지 않는다.

@@ -19,6 +19,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   ├─ JobQueue + guardian (jobs/) ─ POSIX 프로세스 그룹으로 작업 프로세스 감독
   │     ├─ OpenMM 작업 프로세스 (프로젝트 .venv 인터프리터)
   │     ├─ ProLIF 작업 프로세스 (.deps/prolif/venv-locked 별도 인터프리터)
+  │     ├─ RDKit 리간드 작업 프로세스 (M17 ligand_worker.py, 같은 venv-locked 인터프리터)
   │     └─ fpocket 작업 프로세스 (프로젝트 .venv, .deps/fpocket/env/bin/fpocket 고정 실행 파일)
   └─ EgressGate (egress/) ─ 유일한 외부 HTTP 출구
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
@@ -55,6 +56,10 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/numbering_reads.py`, `numbering_reports.py` | M15 읽기 API(스냅샷·SIFTS 체인·UniProt 검색·PDB ID 제안·대응 목록·행 페이지·capability)와 계산값·참조값을 분리한 보고서 | residue_numbering, reports, core |
 | `backend/mw/site_annotation.py`, `tools/site_annotation.py` | M16 `annotate_reference_sites`: 번호 대응 1개 + 선택적 기하 접촉 결과 1개를 KLIFS 주요 10자리 기준으로 합친 `reference_site_annotation@1`. 사전 검사 훅이 두 handle·같은 구조를 구현 전에 검사한다. 참조 폴더를 읽지 않는다. 목록·상세 읽기 API | residue_numbering 결과, tools(structural 잔기 목록), core |
 | `backend/mw/site_annotation_reports.py` | M16 부위 주석 보고서: 참조값(대응 행)·계산값(접촉 행 count·minimum) 분리, 다시 열 때 주석을 대응·접촉·구조 잔기와 대조 | site_annotation, reports, core |
+| `backend/mw/ligand_constants.py`, `ligand_inputs.py`, `ligand_site.py`, `ligand_filters.py` | M17 서버 쪽 순수 모듈(RDKit 없음): 닫힌 이유 집합·상한·고정 한계 문장, building block 가져오기 경량 검사, 점검 객체 결합 목록으로 하는 부위 그래프 검사, 저장 후보 행의 필터 평가·정렬·페이지 | core(표준 라이브러리) |
+| `backend/mw/ligand_bundle.py`, `jobs/ligand_worker.py` | M17 리간드 작업 경로: capability handshake(작업 모듈 `--handshake`만 실행), 입장 검사·호출 키·스테이징(48 MiB), 게시 검증, `ligand_inspection@1`·`ligand_candidate_set@1` 검증 읽기. 작업 모듈은 `.deps/prolif/venv-locked`에서 RDKit으로 점검(원자 표·번호 붙은 2D SVG·속성·block·규칙 검증)과 생성(고정 교체·사용자 반응 규칙·중복·상한·속성·PAINS)을 한다 | 서버: core, ligand 순수 모듈. 작업 모듈: RDKit, `ligand_constants` |
+| `backend/mw/ligand_reads.py`, `ligand_reports.py` | M17 읽기 API(준비 상태·목록·상세·후보 행 페이지·부위 미리보기, 이벤트 없음)와 요약 증거 보고서(`count_where`) | ligand_bundle, ligand 순수 모듈, reports, core |
+| `frontend/src/components/LigandPanel.tsx` | M17 리간드 설계·탐색 탭 화면: 가져오기, 점검·생성 작업(승인·예산), 번호 붙은 그림(`<img>` data URI)·원자 표·부위 체크, 후보 표·필터·정렬·페이지, 보고서 만들기 | `src/lib/ligand.ts`, `api.ts` |
 | `frontend/src/components/SiteAnnotationPanel.tsx` | M16 구조 분석 탭 메인 화면의 참조 주석 패널: 같은 구조의 대응·접촉 결과 선택, 주석 만들기·켜기, 범례, 부위 표, 보고서 만들기. Mol* 그리기는 MolstarViewer 브리지의 `siteAnnotation` | `src/lib/site-annotation.ts`, `api.ts`, MolstarViewer 브리지 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
@@ -62,7 +67,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `frontend/src/components/AnalysisWorkflowPanel.tsx` | M13 분석 흐름 패널(메인 화면과 화학 작업 화면 공용): 화면 선택 가져오기, 계획 미리보기, 두 승인, 단계 목록, 결과 열기, 요약 | `src/lib/analysis.ts`, `api.ts`, PocketPanel·페이지의 결과 열기 콜백 |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
-의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다.
+의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다.
 
 ## 대표 흐름: 업로드부터 보고서까지
 
@@ -76,7 +81,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 
 ## 비싼 계산의 작업 경로
 
-OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
+OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간드 점검·생성은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
 
 ## 분석 흐름 (M13)
 
@@ -89,6 +94,10 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출은 `Run.call`로 �
 ## 참조 주석 (M16)
 
 구조 분석 탭 패널에서 사용자가 현재 표시 구조와 같은 handle의 번호 대응과(선택적으로) 기하 접촉 결과를 고르면, `POST /commands`의 `annotate_reference_sites`가 `Run.call` 값싼 도구로 `reference_site_annotation@1`을 저장한다. 결과는 대응 객체의 행과 접촉 행을 그대로 옮겨 담으므로 이벤트만으로 다시 열린다. 패널은 읽기 API로 주석을 받아 MolstarViewer 브리지에 넘기고, 브리지는 검증된 원자 카탈로그로만 점선 끝 원자를 찾아 그린 뒤 native readback으로 적용을 확인한다. 주석이 켜진 보기는 `viewer_scene@2`, 그 그림은 `viewer_figure@2`(범례 합성 여부 기록)로 저장되고, 보고서는 기존 `method_reports` 경로로 만든다. 네트워크는 쓰지 않는다.
+
+## 리간드 후보 (M17)
+
+리간드 탭에서 사용자가 부모 SDF와 building block 파일을 `/chemical/imports`로 가져오고 반응 규칙을 쓰면, 화면이 `POST /jobs`로 `rdkit_inspect_v1`을 제출·승인·시작한다. 서버는 RDKit 없이 입장을 검사하고 가져오기 바이트를 스테이징하며, guardian이 `.deps/prolif/venv-locked`의 `ligand_worker.py`를 띄운다. 작업 모듈이 낸 점검 결과(원자 표·결합·수소, 번호 붙은 2D SVG, 속성, block·규칙 검증)를 서버가 검증해 `ligand_inspection@1`로 저장한다. 사용자가 원자 표에서 부위를 체크하면 `POST /ligand/preview`가 저장된 결합 목록으로 부위를 검사하고(이벤트 없음), 생성 요청 `rdkit_enumerate_v1`은 같은 검사를 입장에서 다시 한 뒤 점검 객체의 `valid` 규칙 텍스트와 함께 작업 모듈에 넘긴다. 결과 `ligand_candidate_set@1`은 필터와 무관하게 모든 후보를 담는다. 후보 표는 `/ligand/candidate_sets/rows`가 저장값에 필터·정렬·페이지를 적용해 돌려주고, 보고서는 기존 `method_reports` 경로로 요약 증거만 만든다. 두 객체는 이벤트만으로 다시 열린다. 네트워크는 쓰지 않는다.
 
 ## 외부 경계
 
