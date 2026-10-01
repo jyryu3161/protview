@@ -42,6 +42,8 @@ export interface SiteAnnotationPanelProps {
   onShow: (requestRunId: string, request: SiteAnnotationShown | null) => void;
   onObjectsChanged: (runId: string) => void;
   onReportCreated: () => void;
+  /** Changes when numbering maps may have been made elsewhere (지식·보고서 tab): re-reads the run's map list. */
+  mapsReloadToken?: number;
 }
 
 async function allMaps(runId: string, signal: AbortSignal): Promise<NumberingMapList> {
@@ -120,9 +122,9 @@ export function SiteAnnotationPanel(p: SiteAnnotationPanelProps) {
       if (current("maps", captured)) setMaps({ status: "ready", value });
     }).catch(e => { if (current("maps", captured)) setMaps({ status: "error", message: `번호 대응 목록 읽기 실패: ${errorText(e)}` }); });
     return () => controller.abort();
-  // stamp/current read live refs; the read is keyed by run and retry.
+  // stamp/current read live refs; the read is keyed by run, retry and the reload token.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId, mapsRetry]);
+  }, [runId, mapsRetry, p.mapsReloadToken]);
 
   useEffect(() => {
     if (!source) return;

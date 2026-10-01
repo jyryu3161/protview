@@ -122,6 +122,9 @@ export default function WorkspacePage() {
   const [chemicalActive, setChemicalActive] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTabId>(DEFAULT_WORKSPACE_TAB);
   const [reportsReloadToken, setReportsReloadToken] = useState(0);
+  // M16: numbering maps are made in the 지식·보고서 tab while the structure screen stays mounted; entering the structure
+  // tab re-reads the annotation panel's map list (a read only; no event or tool).
+  const [structureTabEntries, setStructureTabEntries] = useState(0);
   const [chemicalSceneToRestore, setChemicalSceneToRestore] = useState<string | null>(null);
   const [pocketState, setPocketState] = useState<{ request: PocketOverlayRequest; boundContext: string | null } | null>(null);
   const [pocketReadback, setPocketReadback] = useState<PocketOverlayReadback | null>(null);
@@ -2007,6 +2010,7 @@ export default function WorkspacePage() {
         events={events} blockedReason={siteGates.annotation} shown={annotationShown}
         applied={annotationApplied} appliedError={annotationForViewer ? annotationViewerError : null}
         onShow={requestAnnotation} onObjectsChanged={refreshEventsFromAnalysis}
+        mapsReloadToken={structureTabEntries}
         onReportCreated={() => setReportsReloadToken(token => token + 1)} /></InspectorSection>}
       {budget && <InspectorSection><span className="mw-eyebrow">실제 예산</span><BudgetMeter budget={budget} /></InspectorSection>}
       {capabilities?.methods?.interface_sasa && <InspectorSection><span className="mw-eyebrow">지원하는 로컬 방법</span>
@@ -2021,5 +2025,6 @@ export default function WorkspacePage() {
     reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} reloadToken={reportsReloadToken} />}
     numbering={<NumberingPanel key={run?.run_id ?? "none"} runId={run?.run_id ?? null}
       onReportCreated={() => setReportsReloadToken(token => token + 1)} />}
-    onSelect={tab => { setWorkspaceTab(tab); if (runId) refreshGlobalBudget(runId); }} />;
+    onSelect={tab => { setWorkspaceTab(tab); if (tab === "structure") setStructureTabEntries(value => value + 1);
+      if (runId) refreshGlobalBudget(runId); }} />;
 }
