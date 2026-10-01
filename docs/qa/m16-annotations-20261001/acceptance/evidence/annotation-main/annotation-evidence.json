@@ -1,0 +1,141 @@
+{
+  "schema": "m16_annotation_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_5c027ffaf7804d94a324baab011b861d",
+    "B": "run_948a0219a4e04b4d8e8768c190431099"
+  },
+  "inputs": [
+    {
+      "name": "preflight.txt",
+      "path": "<repo>/docs/qa/m16-annotations-20261001/preflight.txt",
+      "bytes": 10404,
+      "sha256": "c9b2a2a84d1164d7e30e87777e220f972b626eefb4e6f3982efe165529cdb033",
+      "provenance": "M16 T1 independent numpy oracle (committed QA text)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP)"
+    }
+  ],
+  "handles": {
+    "structure": "obj://run_5c027ffaf7804d94a324baab011b861d/structure/ff021110d9145e002aa6d27051624d4990d559d30c4fc5bd72cb54253d517c11",
+    "prepared": "obj://run_5c027ffaf7804d94a324baab011b861d/prepared_structure/058f52aeda1d300e35aa4fee554030cb89ed664b1a2326a3c0b39c4afabade31",
+    "contacts": "obj://run_5c027ffaf7804d94a324baab011b861d/interaction_set/802c4d0ebc7a0c653f62823b86754d5f165b32ae41121c90794aa1c2805f22df",
+    "map": "obj://run_5c027ffaf7804d94a324baab011b861d/residue_numbering_map/3462bdd22dfd160ab1d6814509db951aa0fcd6730a605118d5dd5a63d671d4c9",
+    "annotation": "obj://run_5c027ffaf7804d94a324baab011b861d/reference_site_annotation/f3d6a23b3a43bc04a45a50a00a439941b667c78addbabc9e9e7cb293721fc90f",
+    "report": "obj://run_5c027ffaf7804d94a324baab011b861d/method_report_manifest/9e72c3ca3cc3a4992e7693109050ee1fafa65a83b40f569ae8ec0c7945290af3",
+    "noContacts": "obj://run_5c027ffaf7804d94a324baab011b861d/reference_site_annotation/2f4e7bcf916727fe97418ecc6b53c3864cee116202e8eda4e6dcfc02e595bcfa",
+    "runBStructure": "obj://run_948a0219a4e04b4d8e8768c190431099/structure/3fec755f5ebb894f7940244c68424b1694dd645c417fc3394db0371c207684c1"
+  },
+  "fixtureLabels": [
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)",
+    "QA fault fixture (labeled renderer route, not a scientific value): site annotation read failure"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_5c027ffaf7804d94a324baab011b861d",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_948a0219a4e04b4d8e8768c190431099",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [
+    {
+      "part": "figures",
+      "cases": [
+        "A-figure-legend",
+        "A-figure-no-legend",
+        "A-figure-pixels",
+        "A-scene-v1-unchanged"
+      ],
+      "error": "AssertionError [ERR_ASSERTION]: {\"legendInside\":0.08313859136643947,\"legendOutside\":0.004660611322602907}"
+    }
+  ],
+  "controls": {
+    "site-annotation-maps": [
+      {
+        "checked": "obj://run_5c027ffaf7804d94a324baab011b861d/residue_numbering_map/3462bdd22dfd160ab1d6814509db951aa0fcd6730a605118d5dd5a63d671d4c9"
+      }
+    ],
+    "site-annotation-contacts:set": [
+      {
+        "checked": "obj://run_5c027ffaf7804d94a324baab011b861d/interaction_set/802c4d0ebc7a0c653f62823b86754d5f165b32ae41121c90794aa1c2805f22df"
+      }
+    ],
+    "site-annotation-create": [
+      {
+        "created": "obj://run_5c027ffaf7804d94a324baab011b861d/reference_site_annotation/f3d6a23b3a43bc04a45a50a00a439941b667c78addbabc9e9e7cb293721fc90f",
+        "listed": 1
+      }
+    ],
+    "site-annotation-toggle:show": [
+      {
+        "data": "applied",
+        "lines": "10"
+      }
+    ],
+    "site-annotation-legend": [
+      {
+        "checked": false,
+        "readbackLegend": false,
+        "lines": 10
+      },
+      {
+        "checked": true,
+        "shown": false
+      }
+    ],
+    "site-annotation-toggle:off": [
+      {
+        "data": "none"
+      }
+    ],
+    "site-annotation-report": [
+      {
+        "handle": "obj://run_5c027ffaf7804d94a324baab011b861d/method_report_manifest/9e72c3ca3cc3a4992e7693109050ee1fafa65a83b40f569ae8ec0c7945290af3",
+        "text": "보고서를 저장했습니다 · 9e72c3ca3cc3. 지식·보고서 탭의 보고서 목록에서 열고 받을 수 있습니다."
+      }
+    ],
+    "site-annotation-contacts:none": [
+      {
+        "checked": "none"
+      }
+    ],
+    "site-annotation-maps-retry": [
+      {
+        "maps": 1
+      }
+    ],
+    "site-annotation-list-retry": [
+      {
+        "rows": 2
+      }
+    ],
+    "site-annotation-list": [
+      {
+        "checked": "obj://run_5c027ffaf7804d94a324baab011b861d/reference_site_annotation/f3d6a23b3a43bc04a45a50a00a439941b667c78addbabc9e9e7cb293721fc90f"
+      }
+    ],
+    "site-annotation-detail-retry": [
+      {
+        "table": "obj://run_5c027ffaf7804d94a324baab011b861d/reference_site_annotation/f3d6a23b3a43bc04a45a50a00a439941b667c78addbabc9e9e7cb293721fc90f"
+      }
+    ]
+  },
+  "startedAt": "2026-10-01T00:48:37.877Z",
+  "finishedAt": "2026-10-01T00:49:14.044Z",
+  "error": null,
+  "requestCount": 412
+}
