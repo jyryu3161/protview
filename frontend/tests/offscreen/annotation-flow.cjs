@@ -18,6 +18,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const vm = require("node:vm");
 const sharp = require("sharp");
 const { launchOffscreen, capture, downloadByClick } = require("./driver.cjs");
 const { waitForViewer } = require("./normal-flow.cjs");
@@ -554,14 +555,67 @@ async function crop(file, box, out) {
   await sharp(file).extract({ left, top, width, height }).resize(width * 3, height * 3, { kernel: "nearest" }).toFile(out);
   return fileRecord(out);
 }
-/** The lower-left legend box geometry of MolstarViewer.compositeFigureLegend (for the region split only). */
-function legendRegion(width, height) {
+/** Loads a product src/lib module (TypeScript, transpiled in memory) so the harness uses the product's own pure helpers. */
+function loadLib(filename, dependencies = {}) {
+  const ts = require("typescript");
+  const source = fs.readFileSync(path.join(__dirname, `../../src/lib/${filename}.ts`), "utf8");
+  const compiled = ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const moduleObject = { exports: {} };
+  vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports,
+    require: name => dependencies[name] ?? require(name) });
+  return moduleObject.exports;
+}
+let siteAnnotationLib = null;
+function siteLib() {
+  siteAnnotationLib ??= loadLib("site-annotation", { "./comparison": loadLib("comparison"),
+    "./numbering": loadLib("numbering"), "./event-model": loadLib("event-model") });
+  assert.equal(siteAnnotationLib.FIGURE_LEGEND_TEXT, FIGURE_LEGEND_TEXT, "harness legend text differs from the product");
+  return siteAnnotationLib;
+}
+/**
+ * Canvas text widths, in the page, of every contiguous substring of FIGURE_LEGEND_TEXT at the figure legend font
+ * (`600 ${fontSize}px ${body font-family}`, as MolstarViewer.compositeFigureLegend sets it). wrapLegendText only
+ * measures contiguous substrings of the text (words joined by its single spaces, or characters of one word).
+ */
+async function legendWidths(page, fontSize) {
+  return page.evaluate(({ text, fontSize }) => {
+    const context = document.createElement("canvas").getContext("2d");
+    context.font = `600 ${fontSize}px ${getComputedStyle(document.body).fontFamily || "sans-serif"}`;
+    const chars = Array.from(text), widths = {};
+    for (let i = 0; i < chars.length; i++)
+      for (let j = i + 1; j <= chars.length; j++) {
+        const value = chars.slice(i, j).join("");
+        widths[value] ??= context.measureText(value).width;
+      }
+    return widths;
+  }, { text: FIGURE_LEGEND_TEXT, fontSize });
+}
+/**
+ * The lower-left legend box of MolstarViewer.compositeFigureLegend (for the region split only), computed with the
+ * same font size, margin, padding, line height, sample width and the product's own wrapLegendText; `widths` comes from
+ * legendWidths(page, fontSize). Bounds are the drawn box ± 2 px.
+ */
+function legendRegion(width, height, widths) {
   const fontSize = Math.max(12, Math.round(height * 0.026));
-  const margin = Math.round(fontSize * 0.8), pad = Math.round(fontSize * 0.6);
-  const boxHeight = Math.ceil(fontSize + 2 * pad);
+  const margin = Math.round(fontSize * 0.8), pad = Math.round(fontSize * 0.6), sample = fontSize * 2;
+  const lineHeight = Math.ceil(fontSize * 1.3);
+  const maxText = width - 2 * margin - 3 * pad - sample;
+  const measure = text => {
+    assert.ok(Object.hasOwn(widths, text), `legend width not measured: ${JSON.stringify(text)}`);
+    return widths[text];
+  };
+  const lines = siteLib().wrapLegendText(FIGURE_LEGEND_TEXT, maxText, measure);
+  assert.ok(lines && lines.length >= 1, "legend does not fit the figure");
+  assert.equal(lines.join("").replace(/ /g, ""), FIGURE_LEGEND_TEXT.replace(/ /g, ""), "wrapped legend lines");
+  const boxHeight = Math.ceil(lines.length * lineHeight + 2 * pad);
+  const boxWidth = Math.ceil(Math.max(...lines.map(measure)) + 3 * pad + sample);
   const y0 = height - margin - boxHeight;
-  return { fontSize, x0: margin - 2, y0: y0 - 2, y1: height - margin + 2,
-    contains: (x, y) => x >= margin - 2 && y >= y0 - 2 && y <= height - margin + 2 };
+  assert.ok(y0 >= 0, "legend box above the figure");
+  const region = { fontSize, lines, lineHeight, pad, boxWidth, boxHeight,
+    x0: margin - 2, x1: Math.min(width - 1, margin + boxWidth + 1), y0: y0 - 2, y1: Math.min(height - 1, height - margin + 2) };
+  region.contains = (x, y) => x >= region.x0 && x <= region.x1 && y >= region.y0 && y <= region.y1;
+  return region;
 }
 
 // ------------------------------------------------------------------ modes
@@ -883,16 +937,18 @@ async function modeMain(session, input, rec_, evidence, log) {
         cameraEqual(scenes.legend.value.camera, scenes.plain.value.camera);
         cameraEqual(scenes.legend.value.camera, scenes.off.value.camera);
         const [legend, plain, off] = await Promise.all([figures.legend, figures.plain, figures.off].map(item => decode(item.download.png.file)));
-        const region = legendRegion(legend.width, legend.height);
+        const fontSize = Math.max(12, Math.round(legend.height * 0.026));
+        const region = legendRegion(legend.width, legend.height, await legendWidths(page, fontSize));
         const legendDiff = pixelDiff(legend, plain, region.contains);
         const annotationDiff = pixelDiff(plain, off, region.contains);
         const lineColor = readback.colors.polar_line;
-        const regionPixels = (legend.width - region.x0) * (region.y1 - region.y0 + 1);
+        const regionPixels = (region.x1 - region.x0 + 1) * (region.y1 - region.y0 + 1);
         const crops = { annotationOn: await crop(figures.plain.download.png.file, annotationDiff.box, path.join(rec_.artifacts, "M13-crop-annotation-on.png")),
           annotationOff: await crop(figures.off.download.png.file, annotationDiff.box, path.join(rec_.artifacts, "M13-crop-annotation-off.png")),
           legend: await crop(figures.legend.download.png.file, { x0: 0, y0: region.y0, x1: legend.width - 1, y1: legend.height - 1 },
             path.join(rec_.artifacts, "M13-crop-legend.png")) };
-        return { size: [legend.width, legend.height], region: { x0: region.x0, y0: region.y0, y1: region.y1, fontSize: region.fontSize },
+        return { size: [legend.width, legend.height], region: { x0: region.x0, x1: region.x1, y0: region.y0, y1: region.y1, fontSize: region.fontSize,
+          lines: region.lines, lineHeight: region.lineHeight, boxWidth: region.boxWidth, boxHeight: region.boxHeight },
           legendDiff, annotationDiff, lineColor, crops,
           densities: { legendInside: legendDiff.inside / regionPixels, legendOutside: legendDiff.outside / (legendDiff.pixels - regionPixels) },
           lineColorExact: { plain: colorPixels(plain, lineColor), off: colorPixels(off, lineColor) },
