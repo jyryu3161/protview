@@ -25,3 +25,4 @@
 | [0021](0021-m14-minimal-shared-components.md) | M14는 현재 run·예산·보고서 목록만 공용화, 소스·보기·작업 공용화는 필요한 탭 단계로 | 채택 |
 | [0022](0022-kbase-ref-processed-snapshots.md) | `kbase_kinase/ref` 가공 스냅샷은 가져오기 명령으로 로컬 참조 폴더에 복사해 서버가 읽는다(코드 import·`dist/`는 여전히 금지, "kbase_kinase 가공본" 표시) | 채택 (`docs/standards.md` kbase 문장 좁힘) |
 | [0023](0023-m15-residue-numbering-rules.md) | M15 번호 대응: SIFTS + 로컬 정렬이 같을 때만 대응됨, 한쪽만이면 충돌, 90%·50% 기준, 모호한 정렬 위치는 대응 없음, KLIFS 구역별 유일 배치, KLIFS none-stated 표시하되 사용 제한 없음 | 채택 |
+| [0024](0024-m16-reference-site-annotations.md) | M16 참조 주석: KLIFS 주요 부위 10개 고정, 같은 구조 handle에만, 기하 접촉만(극성 점선 + 저장 거리), 새 불변 결과 `reference_site_annotation@1`, `viewer_scene@2`·범례 기본 켬, 포켓 오버레이·M8 자연어와 배타, 그림 상한 유지, 사용자 지정 잔기 제외 | 채택 |

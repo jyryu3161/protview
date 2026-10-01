@@ -138,6 +138,68 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 ### 의미하지 않는 것
 구조적·기능적 동일성, 잔기의 역할(hinge 결합 등), 대응되지 않은 잔기가 UniProt에 없다는 뜻. 대응 없음·충돌은 "이 스냅샷과 방법으로 확실하지 않음"이다.
 
+## 참조 주석 (M16, `annotate_reference_sites`)
+
+kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조값)와 그 부위가 리간드와 어떤 기하 접촉을 이루는지(M1 기하 접촉, 계산값)를 한 결과로 모아 구조 분석 탭 뷰어·PNG 그림·보고서에 보인다(결정 0024). 새 계산은 없다. 모든 번호·위치는 저장된 대응 행, 모든 개수·거리는 저장된 접촉 행에서 온다.
+
+### 부위 목록 `kinase_key_sites@1`
+- 10자리, 이 순서로 고정해 결과에 그대로 기록한다: `III.17`, `αC.24`, `GK.45`, `hinge.46`, `hinge.47`, `hinge.48`, `xDFG.80`, `xDFG.81`, `xDFG.82`, `xDFG.83`(`αC`는 그리스 문자 U+03B1). 표기는 M15 `klifs_label`과 문자 그대로 같다.
+- 관용 이름(촉매 Lys 자리, gatekeeper 등)은 결과·화면·보고서에 넣지 않는다. 그 잔기가 실제로 Lys·Glu라거나 역할을 한다는 주장이 아니다. KLIFS 구역 이름(`III`, `αC`, `GK`, `hinge`, `xDFG`)만 쓴다. 사용자가 고른 잔기를 부위로 표시하는 길과 85자리 전체 표시는 없다.
+
+### 입력과 같은 구조 규칙
+- 입력: `numbering_map`(같은 run의 `residue_numbering_map@1`, 필수), `contacts`(같은 run의 `interaction_set@1` 또는 null, 기본 null). 리간드 인스턴스 하나의 접촉 결과 하나만 받는다. 리간드가 여럿이면 주석을 따로 만든다.
+- 접촉 결과의 `structure`는 대응 객체의 `structure.handle`과 같아야 한다(다르면 `input_invalid` `structure_mismatch`). 기하 접촉은 전처리 구조에서만 계산되므로, 접촉과 함께 주석하려면 전처리 구조로 번호 대응을 만든다. 원본 구조로 만든 대응을 전처리 구조에 옮기지 않는다.
+- 레지스트리 사전 검사 훅이 구현을 부르기 전에 검증한다: 알 수 없는 인자(`unknown_field`), 잘못된 종류·다른 run handle(`numbering_map_invalid`, `contacts_invalid`), `structure_mismatch`, `duplicate_site_residue`. 모두 `input_invalid`다.
+- 참조 폴더·스냅샷을 읽지 않는다(대응 객체에 담긴 참조 행만). 부위 잔기가 접촉 도구의 검사 대상인지만 구조 handle의 잔기 목록(`structure_residues`의 `category`)으로 정한다. 외부 요청 없음. 그래서 capability는 항상 사용 가능이다. 같은 입력이면 같은 handle이고, events-only로 다시 열린다(업로드·참조 폴더 없이). dry-run에서도 실제로 실행한다(값싼 도구).
+- 대응 객체가 이전 스냅샷 세트로 만든 것이어도 그대로 쓰고 그 세트 해시를 기록한다(화면은 "이전 스냅샷 기준" 표시).
+
+### 그룹과 부위 상태
+- 대응 객체의 체인마다, 그 체인의 KLIFS 항목(accession)마다 그룹 하나 `(chain_auth, accession)`. 대응된 accession이 없는 체인은 `accession: null` 그룹 하나(`klifs_absent_reason: no_mapped_accession`). 융합 체인은 accession마다 그룹이다. 그룹 이유 집합: M15 KLIFS 이유 4개(`accession_not_in_klifs`, `klifs_pocket_empty`, `klifs_multiple_entries`, `uniprot_sequence_unavailable`)와 `no_mapped_accession`.
+- 부위 상태는 정확히 `annotated | absent`다. `annotated`는 그 그룹에서 `status == mapped`, `uniprot_accession == accession`, 이 KLIFS 번호인 대응 행이 정확히 하나일 때다. 둘 이상이면 고르지 않고 도구 전체가 `input_invalid`(`duplicate_site_residue`)다. `conflict`·`unmapped` 행은 절대 주석하지 않는다.
+- `absent` 이유는 닫힌 집합이며 이 순서로 첫 해당 이유 하나다: `klifs_not_applied`(그룹에 KLIFS 번호 적용 안 됨) → `pocket_gap`(그 accession의 KLIFS 포켓 문자열에서 이 자리가 `-`·`_`) → `region_unresolved`(이 자리의 구역이 그 그룹의 `unresolved_regions`에 있음) → `no_mapped_residue`(그 밖에 이 번호의 `mapped` 행 없음).
+- 어느 그룹에도 `annotated` 부위가 없으면 `null_result: true`(scientific_null)다.
+- 상태·이유 집합과 순서를 바꾸려면 사용자 결정이 필요하다.
+
+### 접촉 부분 (`contacts`가 있을 때)
+- 결과에 접촉 결과 handle, 리간드 인스턴스 7필드, `cutoff_A`, 계산한 접촉 종류(`parameters.types`)를 기록한다.
+- `annotated` 부위마다 `contact`:
+  - `assessed`: 접촉 도구는 폴리머 레코드(`category == "polymer"`, `het_flag == "A"`) 잔기만 검사한다. 부위 잔기가 그렇지 않으면(HETATM 변형 잔기 MSE 등) `assessed: false`, `not_assessed_reason: "residue_not_checked_by_contact_method"`이고 개수·거리·쌍은 null이다.
+  - `by_type`: `contact`, `polar_contact`, `hydrophobic_contact` 각각 `{computed, count}`. 계산하지 않은 종류는 `computed: false`, `count: null`. 계산했으면 그 잔기와 7필드(null 포함)가 정확히 같은 접촉 행 수(0 가능).
+  - `min_distance_A`: 계산한 종류 전체에서 그 잔기 행들의 `distance_A` 최솟값(저장값 그대로)과 그 행 인덱스(같은 값이면 가장 작은 인덱스). 행이 없으면 null. "계산한 종류·cutoff 안의 최소"라는 뜻이다.
+  - `polar_pairs`: 그 잔기의 `polar_contact` 행마다 `{contact_row_index, protein_atom, ligand_atom, distance_A}`. `polar_contact`를 계산하지 않았으면 빈 목록이 아니라 null.
+- `absent` 부위의 `contact`는 null. `other_contact_residues`는 접촉 행이 있으나 `annotated` 부위가 아닌 잔기(7필드, 행 인덱스 목록)다.
+- 접촉 결과가 0행이면 계산한 종류의 개수는 0, 거리는 null. `contacts`가 없으면 결과의 `contacts`와 모든 부위의 `contact`·`other_contact_residues`가 null("접촉 결과 없음")이다.
+- **0이 아닌 것**: 계산하지 않음, 접촉 도구가 검사하지 않는 잔기, 접촉 결과 없음은 화면·그림·보고서 어디서도 0이나 0 Å으로 보이지 않는다. 0은 계산한 종류에서 행이 없을 때만 쓴다.
+
+### 이름표
+- `display_label` = `<잔기 이름><seq_auth><icode> (<klifs_label>)`. 표준 20종이면 첫 글자만 대문자(`MET` → `Met`), 그 밖(`MSE` 등)은 원래 이름. 예: `Met318 (hinge.47)`, `Ala100A (hinge.46)`. 서버가 만들고 화면·그림이 그대로 쓴다. 표시 문자열에서 식별자를 다시 만들지 않는다.
+
+### 결과 객체 `reference_site_annotation@1`
+- 최상위 키: `schema`, `method_version`(`mw.site_annotation/v1`), `site_set`, `numbering_map`, `snapshot_set_hash`, `structure{handle, structure_kind, model_number}`, `contacts`, `groups`, `other_contact_residues`, `null_result`, `limitations`. 부위 필드: `klifs_index`, `klifs_label`, `status`, `absent_reason`, `residue`, `map_row_index`, `residue_match`, `klifs_match`, `display_label`, `contact`.
+- `limitations`는 이 네 문장, 이 순서·문자 그대로다:
+  1. "기하 접촉은 중원자 사이 거리만으로 정한 것이며 수소결합이나 화학 상호작용 판정이 아니다."
+  2. "KLIFS 번호는 참조 스냅샷 값이며 잔기의 역할을 뜻하지 않는다."
+  3. "없음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이다."
+  4. "접촉 도구는 폴리머 레코드 잔기만 검사하므로 HETATM 변형 잔기는 검사하지 않는다."
+
+### 화면과 그림
+- 구조 분석 탭 메인 화면에만 있다(화학 작업 화면·지식 탭에는 없음). 표시 소스가 원본 또는 전처리 구조일 때만 동작하고, 최소화 구조는 숫자 없이 "최소화 구조에는 번호 대응이 없어 주석할 수 없음"만 보인다. 대응·접촉 결과 목록은 표시 소스와 구조 handle이 같은 것만이며 자동으로 고르지 않는다(하나뿐이어도).
+- 뷰어: `annotated` 부위 잔기는 막대 모형 + 구역 색 + `display_label` 이름표. `polar_pairs`는 쌍마다 점선과 저장된 `distance_A`를 소수 둘째 자리 `ROUND_HALF_UP`(10진 문자열 기준)으로 `2.93 Å`처럼. 점선 끝 원자는 (잔기 7필드 + 원자 이름)이 검증된 원자 카탈로그에서 정확히 원자 하나로 풀릴 때만 그리고, 0개·여럿이면 그리지 않고 "그리지 못함(원자 대응 없음/모호)"으로 패널에 남긴다. 좌표 최근접·Mol* label·PDB serial로 찾지 않는다. 다른 접촉 잔기는 색 강조만(점선 없음), 접촉 결과의 리간드 인스턴스도 보이게 한다.
+- 범례: 패널은 "점선: 기하 극성 접촉(N/O–N/O 원자 거리, cutoff 이내). 수소결합 판정 아님."과 KLIFS 번호가 참조값이라는 안내, 구역 색 설명. PNG는 아래 저장된 보기 규칙.
+- 배타: 포켓 오버레이와 주석은 동시에 켜지지 않는다(막힌 쪽은 이유 표시). M10 비교를 시작하면 주석이 꺼지고 비교 중에는 켤 수 없다. 주석이 켜진 동안 M8 자연어 뷰어 요청은 막고(로컬 `/` 명령은 그대로), M9 보기 저장·PNG는 허용한다. run·소스가 바뀌면 늦은 응답을 버리고 주석을 끈다.
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "reference_site_annotation"`, 렌더 `reference_site_annotation_markdown@1`. 입력은 주석 handle 하나. 만들기·다시 열기·다운로드는 주석·대응·접촉을 다시 계산하지 않는다.
+- 만들고 다시 열 때 저장된 주석을 저장된 대응·접촉 행과 대조한다: 상태 두 가지, 없음 이유·그룹 이유가 닫힌 집합 안이고 첫 해당 이유와 같음, `assessed`가 저장된 구조 잔기 목록의 polymer 분류와 같음, 개수·최소 거리가 인용한 접촉 행과 같음. 어긋나면 만들지 않는다.
+- **참조값**(`reference_value`): 부위별 accession, UniProt 위치, KLIFS 번호·표기, 구조 잔기(7필드). 대응 객체 필드를 인용하고 세트 해시·출처, "참조 스냅샷 값, 계산 아님"이 붙는다.
+- **계산값**(`computed`): 부위·종류별 접촉 개수, 부위별 최소 거리(Å, 접촉 행 `distance_A` 인용, 0.01 `ROUND_HALF_UP`), 상태별·없음 이유별 부위 수. statement ID는 고정이며 다른 종류의 필드를 인용하면 거부한다.
+- 계산하지 않은 종류는 "계산하지 않음", 검사하지 않은 잔기는 "접촉 도구가 검사하지 않는 잔기", 접촉 결과가 없으면 "접촉 결과 없음"으로 쓰고 숫자를 쓰지 않는다. 접촉 결과의 리간드 인스턴스·cutoff·계산한 종류를 적고, 최소 거리는 "계산한 종류·cutoff 안의 최소"라고 적는다. `absent` 부위와 이유별 개수를 숨기지 않는다.
+- 스냅숏에 보고서 생성 때의 사용 중 세트 해시(없으면 null)와 대응의 세트와 다른지(`stale_snapshot`)를 기록한다.
+- 해석 금지어: M15 렌더러 목록에 `촉매`, `hydrogen bond`, `H-bond`/`hbond`, `catalytic`를 더해 모든 줄을 검사하고, 위 고정 `limitations` 네 문장과 문자 그대로 같은 줄만 뺀다(부정 안내). 그 밖에 "수소결합"이라는 말을 쓰지 않는다.
+
+### 의미하지 않는 것
+수소결합·염다리·화학 상호작용 판정, 잔기의 역할(촉매·hinge 결합 등), 결합 세기·친화도. `absent`는 "이 스냅샷과 방법으로 확실하지 않음"이다. 그림 상한은 올리지 않았다(결정 0024).
+
 ## PyRosetta와 에너지 표시
 
 - `relax_structure`, `estimate_stability`(Cartesian ddG), `score_interface`, `residue_energies`는 현재 사용할 수 없다. 이유를 담은 unavailable/precondition 응답을 돌려주고, 숫자 자리표시자나 순위는 만들지 않는다.
@@ -256,4 +318,9 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - "적용됨"은 Mol*가 실제로 반영했다는 브라우저 확인이 온 뒤에만 표시한다. 모델이 고른 계획과 적용 결과는 따로 기록한다. 확인이 오지 않으면 detached/unacknowledged이지 applied가 아니다.
 - 모델 요청은 run마다, 동의 한 번에 최대 4회다. 요청 하나가 비싼 계산 1단위, 외부 토큰 16,384, USD 0.05를 예약한다. 온라인 모드를 껐다 켜도 누적 횟수는 초기화되지 않는다. 자동 재시도는 없다.
 - 저장된 보기(`viewer_scene@1`)는 소스 handle, 모델, 선택 잔기, 표현, 카메라 11필드, 테마를 담은 보기 기록이며 과학 측정이 아니다. 복원은 명시적인 브라우저 동작이고 도구를 다시 실행하지 않는다. run별로 보기 100개, 그림 100개, PNG 원본 총 64 MiB, PNG 하나 최대 8 MiB(64–2048 px, 400만 픽셀 이하)로 제한한다.
+- M16 `viewer_scene@2`: 참조 주석이 켜진 상태로 저장한 보기다. `viewer_scene@1`의 모든 필드 + `annotation{handle, legend}`. 저장할 때 서버는 주석 handle이 같은 run의 `reference_site_annotation@1`이고 그 `structure.handle`이 보기 소스 handle과 같은지 확인한다(아니면 `input_invalid` 또는 `structure_mismatch`). 주석이 꺼져 있으면 지금처럼 `viewer_scene@1`로 저장하고 바이트·handle이 바뀌지 않는다. 기존 `viewer_scene@1`·`viewer_figure@1`은 그대로 다시 열린다.
+- `viewer_scene@2` 복원은 카메라·표현 등 기존 복원에 더해 저장된 주석을 다시 그린다(도구를 다시 실행하지 않음). 일부만 적용되면 적용된 것과 거부된 것을 나눠 보여 주고 롤백을 주장하지 않는다. 포켓 오버레이가 켜져 있거나 M10 비교 중이면 복원을 거절하고 이유를 보여 준다(오버레이·비교를 조용히 끄지 않음). `viewer_scene@1` 복원은 켜진 주석을 끈다.
+- M16 그림: `viewer_scene@1` 보기의 그림은 `viewer_figure@1`(바이트 불변). `viewer_scene@2` 보기의 그림은 `viewer_figure@2`: @1 필드 + `annotation{handle, legend, numbering_map, contacts, snapshot_set_hash, display_labels}`(저장된 주석 객체에서 복사), `capture_method`는 범례를 그려 넣었으면 `molstar_image_pass+legend`, 아니면 `molstar_image_pass`. 그림 schema는 보기 schema와 짝이 맞아야 한다.
+- PNG 범례: 보기의 `legend`가 참(기본)이고 그린 점선이 하나 이상이면 PNG 한 구석에 고정 문구 "점선: 기하 극성 접촉(원자 거리), 수소결합 판정 아님"을 같은 글자 크기로(필요하면 줄바꿈) 그려 넣는다. 그래도 들어가지 않으면 그림을 저장하지 않는다. 사용자가 패널에서 범례를 끄면 그 값이 보기의 `legend`에 기록된다. `legend`가 거짓인 보기에 범례를 그려 넣었다는 그림은 거부한다. 범례 문구를 바꾸거나 없애지 않는다.
+- PNG 크기·개수 한도는 M16에서도 그대로다(위 한도, 결정 0024).
 - PNG는 그 시점 렌더링일 뿐이다. GPU마다 픽셀이 다를 수 있으므로 다시 렌더링한 PNG의 바이트가 같다고 주장하지 않는다. 저장한 PNG를 다시 받을 때는 바이트가 같아야 한다.
