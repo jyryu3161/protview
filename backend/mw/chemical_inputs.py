@@ -16,6 +16,8 @@ import gemmi
 
 from .core.errors import FailureClass, ToolFailure
 from .core.handles import object_sha
+from .ligand_constants import BLOCK_IMPORT_KINDS
+from .ligand_inputs import import_raw as import_block_raw
 from .tools.comparison import AtomRefV1, CompleteResidueRef, atom_rows
 from .tools.registry import ToolContext
 from .tools.structural import _parse, _res_ref
@@ -52,6 +54,8 @@ def _bytes(store: Any, handle: str, input_kind: str) -> tuple[bytes, str]:
 
 
 def import_raw(store: Any, kind: str, filename: str, raw: bytes) -> dict[str, Any]:
+    if kind in BLOCK_IMPORT_KINDS:  # M17 building blocks: light checks only (ligand_inputs)
+        return import_block_raw(store, kind, filename, raw)
     if (kind not in {"receptor", "ligand_sdf", "receptor_bonds"} or type(filename) is not str or
             not filename or len(filename.encode("utf-8")) > 200 or "/" in filename or "\\" in filename or
             type(raw) is not bytes or not 0 < len(raw) <= MAX_RAW):

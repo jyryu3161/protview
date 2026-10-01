@@ -414,7 +414,9 @@ def _completed_chemical(run: Run, handle: str) -> None:
 
 
 @app.post("/runs/{rid}/chemical/imports", status_code=201)
-async def chemical_import(rid: str, request: Request, kind: Literal["receptor", "ligand_sdf", "receptor_bonds"],
+async def chemical_import(rid: str, request: Request,
+                          kind: Literal["receptor", "ligand_sdf", "receptor_bonds", "building_blocks_sdf",
+                                        "building_blocks_smiles"],
                           filename: str) -> Any:
     if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/octet-stream":
         raise HTTPException(415, detail={"error": "input_invalid", "message": "expected octet-stream import"})
