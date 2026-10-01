@@ -1,0 +1,57 @@
+INFO:     Started server process [90666]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50298 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50299 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/analysis/executions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/viewer/intents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/viewer/online HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/analysis/plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/pockets?offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/numbering_maps?offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/viewer/scenes?offset=0&limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/viewer/figures?offset=0&limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/pockets?offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/analysis/executions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/analysis/plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/viewer/scenes?offset=0&limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/analysis/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports?kind=receptor&filename=prolif-vina-rec.pdb HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/inspect?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/atoms?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=0&limit=1000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/objects/meta?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/atoms?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=1000&limit=1000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/atoms?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=2000&limit=1000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports?kind=ligand_sdf&filename=prolif-vina-output.sdf HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/atoms?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=3000&limit=1000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/inspect?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/imports/atoms?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=4000&limit=1000 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/objects/meta?handle=obj%3A%2F%2Frun_63a565cb83604c5a91befbcd870d6f8d%2Fchemical_raw_input%2F4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/preview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_63a565cb83604c5a91befbcd870d6f8d/chemical/preview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_63a565cb83604c5a91befbcd870d6f8d/jobs HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [90666]
