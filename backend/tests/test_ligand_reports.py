@@ -63,6 +63,21 @@ def client(world, monkeypatch):
     return TestClient(api_module.app, base_url="http://127.0.0.1")
 
 
+@pytest.fixture
+def private_client(world, monkeypatch, tmp_path):
+    """A function-scoped copy of the shared run, for tests that store forged reports (``_forge``).
+
+    Forged report objects make the run's report list fail closed, so they must never reach the module-scoped run
+    that other tests read; the copy keeps the same run id, handles and stored bytes.
+    """
+    root = tmp_path / "runs"
+    shutil.copytree(world["root"] / world["rid"], root / world["rid"])
+    monkeypatch.setattr(api_module, "RUNS_DIR", root)
+    api_module.RUNS.clear()
+    yield TestClient(api_module.app, base_url="http://127.0.0.1")
+    api_module.RUNS.clear()
+
+
 def _run(world):
     return api_module._run(world["rid"])
 
@@ -318,7 +333,8 @@ def test_capped_set_report_shows_the_limit(client, world):
 
 
 # ----------------------------------------------------------------- rejections
-def test_mixed_evidence_is_rejected(client, world):
+def test_mixed_evidence_is_rejected(private_client, world):
+    client = private_client
     run = _run(world)
     handle = world["candidate_set"]
     created = _report(client, world, filters=_filters(world))
@@ -352,7 +368,8 @@ def test_mixed_evidence_is_rejected(client, world):
         assert _selected(client, world, forged).status_code == 422, reason
 
 
-def test_wrong_rounding_is_rejected(client, world):
+def test_wrong_rounding_is_rejected(private_client, world):
+    client = private_client
     run = _run(world)
     created = _report(client, world)
     manifest = created["manifest"]
@@ -376,7 +393,8 @@ def test_wrong_rounding_is_rejected(client, world):
     assert _selected(client, world, edited).status_code == 422
 
 
-def test_interpretive_statements_are_rejected(client, world):
+def test_interpretive_statements_are_rejected(private_client, world):
+    client = private_client
     run = _run(world)
     created = _report(client, world)
     manifest, markdown = created["manifest"], created["markdown"]
@@ -392,7 +410,8 @@ def test_interpretive_statements_are_rejected(client, world):
     assert client.get(f"/runs/{world['rid']}/reports").status_code == 422
 
 
-def test_uncomputed_values_written_as_zero_are_rejected(client, world):
+def test_uncomputed_values_written_as_zero_are_rejected(private_client, world):
+    client = private_client
     run = _run(world)
     created = _report(client, world, world["empty"])
     manifest, markdown = created["manifest"], created["markdown"]
@@ -421,7 +440,8 @@ def test_uncomputed_values_written_as_zero_are_rejected(client, world):
                                   "row_selector": {"filter": "pains_exclude"}})
 
 
-def test_count_where_is_recomputed_from_stored_rows(client, world):
+def test_count_where_is_recomputed_from_stored_rows(private_client, world):
+    client = private_client
     run = _run(world)
     created = _report(client, world, filters=_filters(world))
     manifest, markdown = created["manifest"], created["markdown"]
@@ -459,15 +479,14 @@ def test_count_where_is_recomputed_from_stored_rows(client, world):
 
 def test_reopen_rejects_tampered_objects(world, monkeypatch, tmp_path):
     """A copy of the run whose stored candidate set bytes were edited in place (labeled fault injection)."""
-    monkeypatch.setattr(api_module, "RUNS_DIR", world["root"])
+    # The report is made in the copy too: the shared run never receives it (later tests count its new objects).
+    root = tmp_path / "runs"
+    shutil.copytree(world["root"] / world["rid"], root / world["rid"])
+    monkeypatch.setattr(api_module, "RUNS_DIR", root)
     api_module.RUNS.clear()
     client = TestClient(api_module.app, base_url="http://127.0.0.1")
     created = _report(client, world, filters=_filters(world))
     api_module.RUNS.clear()
-    root = tmp_path / "runs"
-    shutil.copytree(world["root"] / world["rid"], root / world["rid"])
-    monkeypatch.setattr(api_module, "RUNS_DIR", root)
-    client = TestClient(api_module.app, base_url="http://127.0.0.1")
     rid = world["rid"]
     assert _selected(client, world, created["handle"]).status_code == 200
     path = root / rid / "objects" / f"{world['candidate_set'].rsplit('/', 1)[-1]}.json"
@@ -484,7 +503,8 @@ def test_reopen_rejects_tampered_objects(world, monkeypatch, tmp_path):
     assert response.status_code == 422
 
 
-def test_unpublished_or_wrong_kind_sources_and_bad_filters_are_refused(client, world):
+def test_unpublished_or_wrong_kind_sources_and_bad_filters_are_refused(private_client, world):
+    client = private_client
     run = _run(world)
     # LABELED TEST FABRICATION: a candidate set object that no enumeration job published
     content = copy.deepcopy(run.store.load(world["candidate_set"]))

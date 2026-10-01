@@ -148,6 +148,17 @@ test("properties show the stored value's decimal string rounded half up, with un
   assert.equal(lib.countText(2000), "2000");
 });
 
+test("property text matches the report's Decimal(str(v)) ROUND_HALF_UP, exponent forms included", () => {
+  // Expected strings are backend/mw/ligand_reports.py render_property outputs for the same floats.
+  const cases = [[1e-7, "0.00"], [-2.220446049250313e-16, "0.00"], [1e21, "1000000000000000000000.00"],
+    [1.2345e22, "12345000000000000000000.00"], [1.005, "1.01"], [2.675, "2.68"], [-2.675, "-2.68"], [0.995, "1.00"],
+    [0, "0.00"], [-0, "0.00"], [-0.004, "0.00"], [-5e-3, "-0.01"], [0.9995, "1.00"]];
+  for (const [value, expected] of cases) {
+    assert.equal(lib.propertyText("crippen_logp", value), expected, String(value));
+    assert.equal(siteAnnotation.decimalHalfUp(value, 2), expected, String(value));
+  }
+});
+
 test("PAINS matches read as structure alert matches, not as a verdict", () => {
   assert.equal(lib.painsText([]), "구조 경고 일치 없음");
   assert.equal(lib.painsText([{ catalog: "PAINS_A", name: "ene_one_A(1)" }, { catalog: "PAINS_C", name: "x(2)" }]),
@@ -159,11 +170,13 @@ test("filter input: empty means none, numbers only, min > max refused, eight pro
   const input = lib.emptyFilterInput();
   assert.deepEqual(Object.keys(input.ranges), [...lib.PROPERTY_NAMES]);
   assert.equal(input.painsExclude, false);
-  assert.deepEqual(plain(lib.checkFilterInput(input)), { ok: true, spec: { ranges: {}, pains_exclude: false } });
+  assert.deepEqual(plain(lib.checkFilterInput(input)), { ok: true, spec: { ranges: {}, pains_exclude: false },
+    bounds: {} });
   const set = (name, min, max, extra = {}) => ({ ...input, ...extra,
     ranges: { ...input.ranges, [name]: { min, max } } });
   assert.deepEqual(plain(lib.checkFilterInput(set("mol_weight", " 150 ", "", { painsExclude: true }))),
-    { ok: true, spec: { ranges: { mol_weight: { min: 150, max: null } }, pains_exclude: true } });
+    { ok: true, spec: { ranges: { mol_weight: { min: 150, max: null } }, pains_exclude: true },
+      bounds: { mol_weight: { min: "150", max: null } } });
   assert.deepEqual(plain(lib.checkFilterInput(set("crippen_logp", "-1.5", "2.5e0")).spec.ranges),
     { crippen_logp: { min: -1.5, max: 2.5 } });
   assert.deepEqual(plain(lib.checkFilterInput(set("tpsa", "20", "20")).spec.ranges), { tpsa: { min: 20, max: 20 } });
@@ -179,13 +192,42 @@ test("filter input: empty means none, numbers only, min > max refused, eight pro
 
 test("candidate rows query carries handle, applied filters, sort and page only", () => {
   const view = { sort: "generation_order", direction: "asc", offset: 0, limit: 50, passesOnly: false };
-  assert.equal(lib.candidateRowsQuery("obj://r/ligand_candidate_set/ab", { ranges: {}, pains_exclude: false }, view),
+  assert.equal(lib.candidateRowsQuery("obj://r/ligand_candidate_set/ab", lib.emptyAppliedFilter(), view),
     "handle=obj%3A%2F%2Fr%2Fligand_candidate_set%2Fab&sort=generation_order&direction=asc&offset=0&limit=50");
-  const spec = { ranges: { mol_weight: { min: 150, max: null }, tpsa: { min: null, max: 90.5 } }, pains_exclude: true };
-  assert.equal(lib.candidateRowsQuery("h", spec, { sort: "tpsa", direction: "desc", offset: 100, limit: 100,
+  const applied = { spec: { ranges: { mol_weight: { min: 150, max: null }, tpsa: { min: null, max: 90.5 } },
+    pains_exclude: true }, bounds: { mol_weight: { min: "150", max: null }, tpsa: { min: null, max: "90.5" } } };
+  assert.equal(lib.candidateRowsQuery("h", applied, { sort: "tpsa", direction: "desc", offset: 100, limit: 100,
     passesOnly: true }),
   "handle=h&mol_weight_min=150&tpsa_max=90.5&pains_exclude=true&passes_only=true&sort=tpsa&direction=desc" +
     "&offset=100&limit=100");
+});
+
+test("filter bounds go to the rows query as typed; the report body keeps JSON numbers", () => {
+  const input = lib.emptyFilterInput();
+  input.ranges.crippen_logp = { min: " 1.0000000000000001 ", max: "2.5e0" };
+  input.ranges.mol_weight = { min: "", max: "12345678901234567890" };
+  const check = lib.checkFilterInput(input);
+  assert.equal(check.ok, true);
+  assert.deepEqual(plain(check.bounds), { mol_weight: { min: null, max: "12345678901234567890" },
+    crippen_logp: { min: "1.0000000000000001", max: "2.5e0" } });
+  // Report request body `filters` (spec) stays numeric.
+  assert.deepEqual(plain(check.spec.ranges), { mol_weight: { min: null, max: 12345678901234567890 },
+    crippen_logp: { min: 1, max: 2.5 } });
+  const view = { sort: "generation_order", direction: "asc", offset: 0, limit: 50, passesOnly: false };
+  assert.equal(lib.candidateRowsQuery("h", check, view),
+    "handle=h&mol_weight_max=12345678901234567890&crippen_logp_min=1.0000000000000001&crippen_logp_max=2.5e0" +
+    "&sort=generation_order&direction=asc&offset=0&limit=50");
+});
+
+test("the approval notice is cleared once the job leaves queued; other notices stay", () => {
+  const approval = lib.LIGAND_APPROVAL_NOTICE;
+  assert.match(approval, /승인을 기록했습니다/);
+  assert.equal(lib.ligandNoticeAfterJob(approval, "queued"), approval);
+  for (const status of ["claimed", "running", "done", "failed", "interrupted", "cancelled"])
+    assert.equal(lib.ligandNoticeAfterJob(approval, status), "", status);
+  const resubmitted = "같은 입력의 기존 작업을 다시 표시합니다 · j1 · done (새 작업을 만들지 않았습니다)";
+  assert.equal(lib.ligandNoticeAfterJob(resubmitted, "done"), resubmitted);
+  assert.equal(lib.ligandNoticeAfterJob("", "done"), "");
 });
 
 const page = over => ({ total: 10, passing: null, failing: null, matched: 10, hidden_by_filter: 0,

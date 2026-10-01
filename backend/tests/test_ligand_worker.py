@@ -278,7 +278,8 @@ def test_block_name_over_128_characters_is_unparseable(tmp_path):
     out = _inspect(tmp_path, (FIX / NO_H).read_bytes(), [smiles, sdf])
     assert out["block_libraries"][0]["rejected"] == [{"ordinal": 1, "name": "block_1", "reason": "unparseable"}]
     assert out["block_libraries"][0]["accepted"] == 1
-    assert out["block_libraries"][1]["rejected"] == [{"ordinal": 1, "name": "block_1", "reason": "unparseable"}]
+    # unnamed names count records across libraries in import order (SMILES library had 2): ordinal stays per library
+    assert out["block_libraries"][1]["rejected"] == [{"ordinal": 1, "name": "block_3", "reason": "unparseable"}]
 
 
 def test_output_echoes_the_control_job_and_attempt(tmp_path):
@@ -293,9 +294,22 @@ def test_duplicate_name_spans_libraries_and_unnamed_records_use_their_ordinal(tm
     second = _block("building_blocks_smiles", b"*N methyl\n*O block_2\n*F\n")
     out = _inspect(tmp_path, (FIX / NO_H).read_bytes(), [first, second])
     assert out["block_libraries"][0]["rejected"] == []
+    # "*Cl" is block_2 (2nd record overall); rejected `ordinal` is the record's place in its own library
     assert out["block_libraries"][1]["rejected"] == [{"ordinal": 1, "name": "methyl", "reason": "duplicate_name"},
                                                      {"ordinal": 2, "name": "block_2", "reason": "duplicate_name"}]
-    assert out["block_libraries"][1]["accepted"] == 1  # "*F" -> block_3
+    assert out["block_libraries"][1]["accepted"] == 1  # "*F" -> block_5 (5th record across both libraries)
+
+
+def test_unnamed_records_in_two_libraries_get_distinct_names(tmp_path):
+    first = _block("building_blocks_smiles", b"*C\n*Cl\n")
+    second = _block("building_blocks_smiles", b"# header\n*N\n*O\n")
+    out = _inspect(tmp_path, (FIX / NO_H).read_bytes(), [first, second])
+    assert [lib["rejected"] for lib in out["block_libraries"]] == [[], []]
+    assert [lib["accepted"] for lib in out["block_libraries"]] == [2, 2]
+    # the names (block_1..block_4) are the origins of fixed-replacement candidates
+    out = _enumerate(tmp_path, (FIX / NO_H).read_bytes(), [first, second], [11, 12])
+    names = {origin["block_name"] for row in out["candidates"] for origin in row["origins"]}
+    assert names <= {"block_1", "block_2", "block_3", "block_4"} and "block_3" in names
 
 
 # ------------------------------------------------------------------ enumeration against the hand oracle

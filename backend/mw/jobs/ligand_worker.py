@@ -362,9 +362,12 @@ def read_libraries(blocks: list[dict[str, Any]], raws: list[bytes]) -> tuple[lis
     Names are unique across all libraries of one request (a later record whose name is already held by an
     accepted block is ``duplicate_name``), so ``{rule_id, block_name}`` origins are unambiguous. The block cap
     is shared: records are read in input order across the libraries until ``MAX_BLOCKS`` records were read;
-    the rest are not read and their library is marked ``block_limit_reached``.
+    the rest are not read and their library is marked ``block_limit_reached``. An unnamed record is
+    ``block_<n>``, ``n`` its 1-based place among all read records of all libraries in import order (so two
+    libraries never give the same default name); a rejected record's ``ordinal`` stays its place in its library.
     """
     used: set[str] = set()
+    serial = 0
     accepted: list[Block] = []
     summaries = []
     remaining = K.MAX_BLOCKS
@@ -380,8 +383,9 @@ def read_libraries(blocks: list[dict[str, Any]], raws: list[bytes]) -> tuple[lis
         rejected: list[dict[str, Any]] = []
         n_accepted = fixed_targets = rule_targets = 0
         for ordinal, record in enumerate(considered, start=1):
+            serial += 1
             name, mol, reason = _parse_block(kind, record)
-            name = name or f"block_{ordinal}"
+            name = name or f"block_{serial}"
             if reason is None and name in used:
                 reason = "duplicate_name"
             if reason is not None:

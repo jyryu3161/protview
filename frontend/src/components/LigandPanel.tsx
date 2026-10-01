@@ -7,13 +7,13 @@ import type { BudgetSnapshot, LigandBlockLibrary, LigandCandidatePage, LigandCan
   LigandInspectionDetail, LigandInspectionList, LigandJob, LigandPropertyName, LigandProperties, LigandProtocol,
   LigandReportArtifact, LigandSitePreview, LigandSortDirection, LigandSortKey } from "@/lib/contracts";
 import { appliedFilterCount, blockLimitText, CANDIDATE_2D_NOTE, CANDIDATE_PAGE_LIMIT, candidateCountText,
-  candidateRowsQuery, checkFilterInput, countText, emptyFilterInput, emptySiteSelection, enumerateArgs, enumerateReady,
-  filterSummaryText, inspectArgs, LIGAND_TOOLS, ligandApprovalRequired, ligandJobPhase, ligandJobText, ligandPanelState,
+  candidateRowsQuery, checkFilterInput, countText, emptyAppliedFilter, emptyFilterInput, emptySiteSelection, enumerateArgs, enumerateReady,
+  filterSummaryText, inspectArgs, LIGAND_APPROVAL_NOTICE, LIGAND_TOOLS, ligandApprovalRequired, ligandJobPhase, ligandJobText, ligandNoticeAfterJob, ligandPanelState,
   ligandReasonText, ligandResponseCurrent, ligandStartBlockedReason, ligandStartProgressed, ligandSubmitText,
   limitReachedText, MAX_RULES, PAINS_HEADER, PAINS_NOTE, painsText, passText, previewBlockingText, PRODUCT_REJECT_REASONS,
   PROPERTY_LABEL, PROPERTY_NAMES, PROPERTY_NOTE, propertyHeader, propertyText, RULE_VALID, ruleStatusText, SORT_KEYS,
   siteAtomChecked, siteSelectionDisabledReason, svgDataUri, toggleSiteAtom, usableRuleIds,
-  type CandidateView, type LigandFilterInput, type LigandStamp, type SiteSelection } from "@/lib/ligand";
+  type AppliedFilter, type CandidateView, type LigandFilterInput, type LigandStamp, type SiteSelection } from "@/lib/ligand";
 import { Button } from "./primitives";
 
 /**
@@ -132,7 +132,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
   const [setDetail, setSetDetail] = useState<{ handle: string; load: Load<LigandCandidateSetDetail> } | null>(null);
   const [filterInput, setFilterInput] = useState<LigandFilterInput>(emptyFilterInput);
   const [filterErrors, setFilterErrors] = useState<string[]>([]);
-  const [applied, setApplied] = useState<LigandFilterSpec>({ ranges: {}, pains_exclude: false });
+  const [applied, setApplied] = useState<AppliedFilter>(emptyAppliedFilter);
   const [view, setView] = useState<CandidateView>({ sort: "generation_order", direction: "asc", offset: 0,
     limit: CANDIDATE_PAGE_LIMIT, passesOnly: false });
   const [rows, setRows] = useState<{ key: string; load: Load<LigandCandidatePage> } | null>(null);
@@ -226,6 +226,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
   // A finished job refreshes the lists; its result is never opened automatically (the user picks it).
   useEffect(() => {
     if (!job) return;
+    setNotice(previous => ligandNoticeAfterJob(previous, job.status));
     if (job.status === "done") {
       const handle = job.artifacts.ligand_inspection ?? job.artifacts.ligand_candidate_set ?? null;
       if (job.protocol_id === "rdkit_inspect_v1") {
@@ -347,7 +348,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
 
   async function start(before: LigandJob) {
     const captured = stamp("job");
-    setBusy(true); setJobError(""); setJobFocus(true);
+    setBusy(true); setJobError(""); setNotice(""); setJobFocus(true);
     try {
       const value = await api.startJob(runId, before.job_id) as unknown as LigandJob;
       if (!current("job", captured)) return;
@@ -392,7 +393,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
       await api.approveOpenmm(runId);
       if (!current("job", captured)) return;
       setApprovalPending(false); setBudgetReload(value => value + 1);
-      setNotice("승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다.");
+      setNotice(LIGAND_APPROVAL_NOTICE);
     } catch (e) { if (current("job", captured)) setJobError(`승인 실패: ${errorText(e)}`); }
     finally { if (mounted.current) setBusy(false); }
   }
@@ -410,7 +411,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
 
   async function makeReport() {
     if (!openedSet || !selectedSet || report?.load.status === "loading") return;
-    const handle = selectedSet, filters = appliedFilterCount(applied) ? applied : null, captured = stamp("report");
+    const handle = selectedSet, filters = appliedFilterCount(applied.spec) ? applied.spec : null, captured = stamp("report");
     setReport({ handle, load: { status: "loading" } });
     try {
       const artifact = await api.createLigandReport(runId, handle, filters, AbortSignal.timeout(60000));
@@ -425,11 +426,11 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
   function applyFilters() {
     const check = checkFilterInput(filterInput);
     if (!check.ok) { setFilterErrors(check.errors); return; }
-    setFilterErrors([]); setApplied(check.spec); setView(previous => ({ ...previous, offset: 0 }));
+    setFilterErrors([]); setApplied({ spec: check.spec, bounds: check.bounds }); setView(previous => ({ ...previous, offset: 0 }));
   }
 
   function clearFilters() {
-    setFilterInput(emptyFilterInput()); setFilterErrors([]); setApplied({ ranges: {}, pains_exclude: false });
+    setFilterInput(emptyFilterInput()); setFilterErrors([]); setApplied(emptyAppliedFilter());
     setView(previous => ({ ...previous, offset: 0 }));
   }
 
@@ -598,7 +599,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
         <ErrorLine message={setDetail.load.message} onRetry={() => selectedSet && openSet(selectedSet)} />}
       {openedSet && <SetSummary detail={openedSet} />}
       {openedSet && <>
-        <FilterForm input={filterInput} errors={filterErrors} applied={applied} onInput={setFilterInput}
+        <FilterForm input={filterInput} errors={filterErrors} applied={applied.spec} onInput={setFilterInput}
           onApply={applyFilters} onClear={clearFilters} />
         <div className="mw-ligand-inline" aria-label="표시 설정">
           <label className="mw-ligand-check"><input type="checkbox" data-testid="ligand-passes-only" checked={view.passesOnly}
@@ -620,7 +621,7 @@ function LigandWorkspace({ run, capability, onReportCreated }: { run: RunSummary
         <div className="mw-ligand-inline" aria-label="후보 보고서">
           <Button size="sm" data-testid="ligand-report" disabled={report?.handle === selectedSet && report.load.status === "loading"}
             onClick={() => void makeReport()}>⑥ 보고서 만들기</Button>
-          <span className="mw-ligand-note" data-testid="ligand-report-filter">보고서에 넣을 필터: {filterSummaryText(applied)}</span>
+          <span className="mw-ligand-note" data-testid="ligand-report-filter">보고서에 넣을 필터: {filterSummaryText(applied.spec)}</span>
         </div>
         {report?.handle === selectedSet && report.load.status === "loading" && <p className="mw-ligand-note" aria-busy="true">보고서를 만드는 중</p>}
         {report?.handle === selectedSet && report.load.status === "ready" && <p role="status" className="mw-ligand-note"

@@ -229,14 +229,24 @@ export function emptyFilterInput(): LigandFilterInput {
 /** Same number syntax as the backend query parser (`ligand_reads._NUMBER_RE`). */
 const NUMBER_RE = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$/;
 
-export type FilterCheck = { ok: true; spec: LigandFilterSpec } | { ok: false; errors: string[] };
+/** Checked bounds exactly as typed (trimmed): the rows query sends these strings, never a re-printed number. */
+export type FilterBoundsText = Partial<Record<LigandPropertyName, { min: string | null; max: string | null }>>;
+/** `spec` (JSON numbers) is the report request body's `filters`; `bounds` is what the rows query carries. */
+export interface AppliedFilter { spec: LigandFilterSpec; bounds: FilterBoundsText }
+export type FilterCheck = ({ ok: true } & AppliedFilter) | { ok: false; errors: string[] };
+
+export function emptyAppliedFilter(): AppliedFilter {
+  return { spec: { ranges: {}, pains_exclude: false }, bounds: {} };
+}
 
 /** Empty bound = none; otherwise a finite decimal number; min must not exceed max. */
 export function checkFilterInput(input: LigandFilterInput): FilterCheck {
   const errors: string[] = [];
   const ranges: LigandFilterSpec["ranges"] = {};
+  const boundsText: FilterBoundsText = {};
   for (const name of PROPERTY_NAMES) {
     const bounds: { min: number | null; max: number | null } = { min: null, max: null };
+    const typed: { min: string | null; max: string | null } = { min: null, max: null };
     for (const side of ["min", "max"] as const) {
       const text = input.ranges[name][side].trim();
       if (!text) continue;
@@ -246,12 +256,14 @@ export function checkFilterInput(input: LigandFilterInput): FilterCheck {
         continue;
       }
       bounds[side] = value;
+      typed[side] = text;
     }
     if (bounds.min !== null && bounds.max !== null && bounds.min > bounds.max)
       errors.push(`${PROPERTY_LABEL[name]}: 최솟값이 최댓값보다 큽니다.`);
-    if (bounds.min !== null || bounds.max !== null) ranges[name] = bounds;
+    if (bounds.min !== null || bounds.max !== null) { ranges[name] = bounds; boundsText[name] = typed; }
   }
-  return errors.length ? { ok: false, errors } : { ok: true, spec: { ranges, pains_exclude: input.painsExclude } };
+  return errors.length ? { ok: false, errors }
+    : { ok: true, spec: { ranges, pains_exclude: input.painsExclude }, bounds: boundsText };
 }
 
 export function appliedFilterCount(spec: LigandFilterSpec): number {
@@ -266,15 +278,18 @@ export function filterSummaryText(spec: LigandFilterSpec): string {
 export interface CandidateView { sort: LigandSortKey; direction: LigandSortDirection; offset: number; limit: number;
   passesOnly: boolean }
 
-/** Query string of `GET …/ligand/candidate_sets/rows` (only known parameters; defaults left out). */
-export function candidateRowsQuery(handle: string, spec: LigandFilterSpec, view: CandidateView): string {
+/**
+ * Query string of `GET …/ligand/candidate_sets/rows` (only known parameters; defaults left out). Bounds are the
+ * checked strings as typed (same syntax as the server parser), so "1.0000000000000001" is not sent as "1".
+ */
+export function candidateRowsQuery(handle: string, applied: AppliedFilter, view: CandidateView): string {
   const params: [string, string][] = [["handle", handle]];
   for (const name of PROPERTY_NAMES) {
-    const bounds = spec.ranges[name];
-    if (bounds?.min != null) params.push([`${name}_min`, String(bounds.min)]);
-    if (bounds?.max != null) params.push([`${name}_max`, String(bounds.max)]);
+    const bounds = applied.bounds[name];
+    if (bounds?.min != null) params.push([`${name}_min`, bounds.min]);
+    if (bounds?.max != null) params.push([`${name}_max`, bounds.max]);
   }
-  if (spec.pains_exclude) params.push(["pains_exclude", "true"]);
+  if (applied.spec.pains_exclude) params.push(["pains_exclude", "true"]);
   if (view.passesOnly) params.push(["passes_only", "true"]);
   params.push(["sort", view.sort], ["direction", view.direction], ["offset", String(view.offset)],
     ["limit", String(view.limit)]);
@@ -359,6 +374,14 @@ export function ligandJobText(protocol: LigandProtocol, job: { status: string; c
       return job && ["failed", "interrupted"].includes(job.status) ? `${label} 실패: ${failureText(job.failure)}`
         : `${label} 실패: 알 수 없는 작업 상태 (${job?.status})`;
   }
+}
+
+/** Shown after an approval; it asks for a start, so it is stale once the job leaves queued. */
+export const LIGAND_APPROVAL_NOTICE = "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다.";
+
+/** The notice kept after the job status changes: only the approval notice is dropped (other notices stay). */
+export function ligandNoticeAfterJob(notice: string, status: string): string {
+  return notice === LIGAND_APPROVAL_NOTICE && status !== "queued" ? "" : notice;
 }
 
 /** Submission is idempotent: identical inputs return the existing job; a dry-run run returns a plan only. */

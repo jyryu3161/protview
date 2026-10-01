@@ -23,6 +23,7 @@ from mw import ligand_bundle
 from mw import ligand_constants as C
 from mw.api import app as api_module
 from mw.jobs import guardian as guardian_module
+from mw.jobs import process_identity
 from mw.jobs.queue import JobQueue
 from mw.tools.energetic import JOB_ONLY_TOOLS, JOB_PROTOCOLS
 
@@ -324,6 +325,51 @@ def test_cancel_during_worker_and_timeout_store_nothing(tmp_path, monkeypatch):
     assert _used(client, rid) == 2 and _ligand_objects(root, rid) == []
     time.sleep(0.1)
     _workers_gone(root, rid)
+
+
+def test_enumerate_cancel_during_worker_and_timeout_store_nothing(tmp_path, monkeypatch):
+    root = tmp_path / "runs"
+    client = _client(root, monkeypatch)
+    rid = _new_run(client, "M17 enumerate cancel and timeout")
+    parent, smiles, sdf = _imports(client, rid)
+    try:
+        inspected = _run_job(client, rid, "rdkit_inspect_v1",
+                             {"parent_sdf_handle": parent, "block_handles": [smiles, sdf], "rules": RULES})
+        assert inspected["status"] == "done", inspected
+        inspection = inspected["artifacts"]["ligand_inspection"]
+        original = JobQueue._record_control
+        seen: list[int] = []
+
+        def cancel_when_started(self, message, job_id, attempt_id, nonce):
+            done = original(self, message, job_id, attempt_id, nonce)
+            if message and message.get("kind") == "STARTED" and not seen:
+                seen.append(message["pid"])
+                self.request_cancel(job_id)
+            return done
+
+        with monkeypatch.context() as patch:
+            patch.setattr(JobQueue, "_record_control", cancel_when_started)
+            cancelled = _run_job(client, rid, "rdkit_enumerate_v1", {"inspection_handle": inspection,
+                                                                     "site_atoms": [11, 12], "use_fixed": True})
+        assert cancelled["status"] == "cancelled" and cancelled["output_handles"] == [] and seen
+        assert cancelled["cleanup_status"] == "verified"
+        timed_out = _run_job(client, rid, "rdkit_enumerate_v1",
+                             {"inspection_handle": inspection, "site_atoms": [11, 12], "use_fixed": False,
+                              "rule_ids": VALID_RULE_IDS}, timeout_s=0.2)
+        assert timed_out["status"] == "failed" and timed_out["failure"]["error"] == "resource_exceeded"
+        assert timed_out["failure"]["message"] == "job timeout" and timed_out["output_handles"] == []
+        assert _used(client, rid) == 3
+        assert [e["kind"] for e in _ligand_objects(root, rid)] == ["ligand_inspection"]  # no candidate set stored
+        time.sleep(0.1)
+        _workers_gone(root, rid)
+    finally:  # a worker left by a failed assertion is killed only when its recorded start identity still matches
+        for event in _events(root, rid):
+            if event["type"] == "job_worker_started" and process_identity.matches(event["pid"],
+                                                                                   event["start_identity"]):
+                try:
+                    psutil.Process(event["pid"]).kill()
+                except psutil.Error:
+                    pass
 
 
 def test_cancel_after_genuine_worker_or_tampered_output_publishes_nothing(tmp_path, monkeypatch):

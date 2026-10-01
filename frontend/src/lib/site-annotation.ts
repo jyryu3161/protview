@@ -65,13 +65,17 @@ export function siteReasonText(code: string): string {
 
 /**
  * The value's decimal string (JS shortest repr, equal to Python `repr(float)` here) quantized with ROUND_HALF_UP
- * (away from zero at a tie). Exponent forms are returned exactly.
+ * (away from zero at a tie). Exponent forms (1e-7, 1e+21) are expanded to plain decimals first, as Python
+ * `Decimal(str(v))` does; a zero result has no sign. Non-finite values are returned as is.
  */
 export function decimalHalfUp(value: number, digits: number): string {
   const text = String(value);
-  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(text);
+  const match = /^(-?)(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/.exec(text);
   if (!match || !Number.isInteger(digits) || digits < 0) return text;
-  const [, sign, whole, frac = ""] = match;
+  const [, sign, mantWhole, mantFrac = "", exponent = "0"] = match;
+  const allDigits = mantWhole + mantFrac, point = mantWhole.length + Number(exponent);
+  const whole = point <= 0 ? "0" : allDigits.slice(0, point).padEnd(point, "0");
+  const frac = point <= 0 ? "0".repeat(-point) + allDigits : allDigits.slice(point);
   let scaled = BigInt(whole + frac.slice(0, digits).padEnd(digits, "0"));
   if (frac.length > digits && frac[digits] >= "5") scaled += 1n;
   if (scaled === 0n) return digits ? `0.${"0".repeat(digits)}` : "0";
