@@ -17,5 +17,13 @@ canonicalise the hand-written SMILES. The cross-check against RDKit is recorded 
 | `pains-panel.smi` | `d2ce144e51e7f479b5d655cc5832a7b3016cef14efd9a1ab609c2b289ad11fef` | Hand-written SMILES of textbook structures (benzylidene rhodanine, p-benzoquinone, catechol, 4-aminophenol, 4-benzylaminophenol; negatives methacetin, paracetamol, benzene, aspirin). Structures only, no assay data. PAINS source: Baell & Holloway, J Med Chem 2010, 53, 2719 (doi:10.1021/jm901137j); SMARTS as shipped in RDKit `Data/Pains/wehi_pains.csv`. |
 | `expected.json` | `5d6790aa0d2f9a4a91a1810fb766cd9c6e4e3fb63bdd3122a146ec0cea607606` | Hand oracle: parent atom tables and bonds in both numberings, block accept/reject per record, rule validity, fixed-replacement and rule products for site = methoxy, properties, PAINS. Every value has a `how` field. |
 
+Added in T3a (stereo cases for `backend/tests/test_ligand_worker.py`; expected products and `stereo_flag` values are
+written by hand in that test before running, and only canonicalised with RDKit):
+
+| File | SHA-256 | What it is |
+|---|---|---|
+| `synthetic-parent-stereo-methoxyethylbenzene.sdf` | `b22d997a57baa3d118b8a0c1500c7b4a04eebf19fa29caf6e54b2da62da48129` | V2000, 10 heavy atoms, no H lines, one wedge. Pinned RDKit 2026.03.6: `MolFromSmiles("C[C@H](OC)c1ccccc1")`, `Compute2DCoords(canonOrient=False)`, `SDWriter` with a `fixture_provenance` data field. Serials follow the SMILES order (1 CH3, 2 stereocentre, 3 O, 4 OCH3, 5–10 ring); site = [3, 4]. |
+| `synthetic-stereo-blocks.smi` | `2af4fea4c783eba134cbff30f14415614dd45e6b0ee0e02e725e8e231484d21d` | Hand-written `SMILES name` list: chloro, ethyl, methyl (makes the parent centre non-stereogenic), sec-butyl unspecified (new unspecified centre), sec-butyl specified, bromoethane (rule block). |
+
 Methacetin, phenacetin and paracetamol are named only as structure identifiers. Nothing here claims any property of
 those compounds beyond the hand-computed descriptor arithmetic.
