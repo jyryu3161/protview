@@ -1,6 +1,6 @@
 """Event-authoritative local queue and fixed POSIX guardian supervision.
 
-Only fixed OpenMM/ProLIF/fpocket workers and internal lifecycle fixtures can dispatch.
+Only fixed OpenMM/ProLIF/fpocket/RDKit-ligand workers and internal lifecycle fixtures can dispatch.
 Fixtures are injected by Python tests, never selected by an API field.
 """
 from __future__ import annotations
@@ -52,6 +52,7 @@ GUARDIAN = Path(__file__).with_name("guardian.py").resolve()
 CHEMICAL_PROTOCOLS = frozenset({"prolif_prepare_v1", "prolif_detect_v1"})
 POCKET_PROTOCOL = "fpocket_detect_v1"
 POCKET_STAGED_LIMIT = 48 * 1024 * 1024
+LIGAND_PROTOCOLS = frozenset({"rdkit_inspect_v1", "rdkit_enumerate_v1"})
 CHEMICAL_DERIVED_KINDS = frozenset({"chemical_preparation_manifest", "chemical_structure",
                                     "chemical_graph", "chemical_interaction_set"})
 CHEMICAL_INPUT_REASONS = frozenset({"ligand_disconnected", "stereo_unsupported", "stereo_conflict",
@@ -614,7 +615,8 @@ class JobQueue:
         if not isinstance(args, dict) or any(key in args for key in
                                               ("argv", "executable", "module", "env", "path", "cwd", "fixture")):
             raise ToolFailure(FailureClass.input_invalid, "unsafe job arguments")
-        bound = 120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS else 900
+        bound = (120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS or
+                 protocol in LIGAND_PROTOCOLS else 900)
         if not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or not 0 < timeout_s <= bound:
             raise ToolFailure(FailureClass.input_invalid, "invalid job timeout")
         spec = self.run.registry.specs[JOB_PROTOCOLS[protocol][0]]
@@ -636,6 +638,10 @@ class JobQueue:
             from ..pocket_bundle import submission
 
             selected, normalized, pocket_pins = submission(self.run, args)
+        elif protocol in LIGAND_PROTOCOLS:
+            from ..ligand_bundle import submission as ligand_submission
+
+            selected, normalized, input_handles = ligand_submission(self.run, protocol, args)
         else:
             normalized = check_args(spec, args, self.run.store.kind_of)
             for name in spec.accepts:
@@ -645,7 +651,8 @@ class JobQueue:
         if self.run.dry_run:
             return {"plan_only": True, "protocol_id": protocol, "reason_code": "dry_run",
                     "available": False, "output_handles": [], "normalized_parameters": normalized}
-        if protocol not in CHEMICAL_PROTOCOLS and protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL}:
+        if (protocol not in CHEMICAL_PROTOCOLS and protocol not in LIGAND_PROTOCOLS and
+                protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL}):
             require_protocol(protocol)
             raise AssertionError("unreachable")
         if protocol == OPENMM_PROTOCOL:
@@ -658,6 +665,13 @@ class JobQueue:
             require_ready()
             implementation = IMPLEMENTATION
             input_handles = [normalized["structure"]]
+        elif protocol in LIGAND_PROTOCOLS:
+            from ..ligand_bundle import IMPLEMENTATIONS
+            from ..ligand_bundle import call_key as ligand_call_key
+            from ..ligand_bundle import require_ready as ligand_ready
+
+            ligand_pins = ligand_ready()
+            implementation = IMPLEMENTATIONS[protocol]
         else:
             capability = chemical_capability()
             if not capability["available"]:
@@ -670,6 +684,7 @@ class JobQueue:
                              ([args["connectivity"]["sidecar_handle"]] if
                               args.get("connectivity", {}).get("sidecar_handle") else []))
         key = (call_key(selected, pocket_pins) if protocol == POCKET_PROTOCOL else
+               ligand_call_key(protocol, selected, ligand_pins) if protocol in LIGAND_PROTOCOLS else
                idempotency_key(protocol, implementation,
                                {"selected": selected, "parameters": normalized,
                                 **({"worker_sha256": capability["worker_sha256"],
@@ -699,6 +714,8 @@ class JobQueue:
             elif protocol == POCKET_PROTOCOL:
                 job["method"] = pocket_pins
                 job["worker_sha256"] = worker_sha256()
+            elif protocol in LIGAND_PROTOCOLS:
+                job["method"] = ligand_pins
             self.run.events.append("job_submitted", job=job, **link_fields(link))
             created = self._rebuild()[job_id]
             return created if link is None else {**created, "execution_ownership": "owned"}
@@ -1140,8 +1157,8 @@ class JobQueue:
             if job["fixture_only"]:
                 if self._fixture_mode is None:
                     raise ToolFailure(FailureClass.precondition, "internal fixture adapter unavailable")
-            elif (job["protocol_id"] not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, *CHEMICAL_PROTOCOLS} or
-                  self._fixture_mode is not None):
+            elif (job["protocol_id"] not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, *CHEMICAL_PROTOCOLS,
+                                             *LIGAND_PROTOCOLS} or self._fixture_mode is not None):
                 raise ToolFailure(FailureClass.precondition, "production adapter unavailable")
             if job["protocol_id"] in CHEMICAL_PROTOCOLS:
                 capability = chemical_capability()
@@ -1162,6 +1179,16 @@ class JobQueue:
                         capability["package_sha256"] != job["method"]["package_sha256"] or
                         worker_sha256() != job["worker_sha256"]):
                     raise ToolFailure(FailureClass.precondition, "pinned fpocket build or worker changed",
+                                      detail={"reason_code": "worker_version_invalid"})
+            if job["protocol_id"] in LIGAND_PROTOCOLS:
+                from ..ligand_bundle import capability as ligand_capability
+
+                capability = ligand_capability()
+                if not capability["available"]:
+                    raise ToolFailure(FailureClass.precondition, capability["reason"],
+                                      detail={"reason_code": capability["reason_code"]})
+                if capability["pins"] != job.get("method"):
+                    raise ToolFailure(FailureClass.precondition, "pinned RDKit ligand worker changed",
                                       detail={"reason_code": "worker_version_invalid"})
             if job["cancel_requested"] or self.run._cancel_path.exists():
                 return self._terminal(job_id, None, "cancelled")
@@ -1255,13 +1282,20 @@ class JobQueue:
 
                     raw = stage(self.run, job, attempt_id)
                     limit = POCKET_STAGED_LIMIT
+                elif job["protocol_id"] in LIGAND_PROTOCOLS:
+                    from ..ligand_bundle import STAGED_LIMIT
+                    from ..ligand_bundle import stage as ligand_stage
+
+                    raw = ligand_stage(self.run, job, attempt_id)
+                    limit = STAGED_LIMIT  # own bound: base64 parent + two 10 MiB block libraries (~41 MiB)
                 else:
                     raw = canonical_json(job["selected"])
                     limit = 32 * 1024 * 1024 if job["protocol_id"] in CHEMICAL_PROTOCOLS else 4_000_000
                 if len(raw) > limit:
                     raise ToolFailure(FailureClass.resource_exceeded, "staged scientific input exceeds limit")
                 data = {"nonce": nonce, "job_id": job_id, "attempt_id": attempt_id,
-                        "adapter": (job["protocol_id"] if job["protocol_id"] in {*CHEMICAL_PROTOCOLS, POCKET_PROTOCOL}
+                        "adapter": (job["protocol_id"] if job["protocol_id"] in {*CHEMICAL_PROTOCOLS, POCKET_PROTOCOL,
+                                                                                 *LIGAND_PROTOCOLS}
                                     else "openmm_protein_minimize_v1"),
                         "input_sha256": hashlib.sha256(raw).hexdigest()}
                 input_fd = os.open(attempt_dir / "structure.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -1319,7 +1353,7 @@ class JobQueue:
                                source="parent_group_check" if identity else "no_go_or_no_launch",
                                guardian_clean=result.get("clean") if result else None)
         preparation_handles = None if job["fixture_only"] or attempt_dir is None or job["protocol_id"] in {
-            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL} else self._record_preparation(job, attempt_id)
+            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS} else self._record_preparation(job, attempt_id)
         if error is None:
             if result is None:
                 error = {"error": "fatal", "message": "missing guardian result"}
@@ -1336,6 +1370,9 @@ class JobQueue:
             elif result.get("returncode") != 0 or result.get("unexpected_members"):
                 error = (self._chemical_worker_error(job, attempt_dir)
                          if job["protocol_id"] in CHEMICAL_PROTOCOLS and attempt_dir is not None and
+                         not result.get("unexpected_members") else
+                         self._ligand_worker_error(attempt_dir)
+                         if job["protocol_id"] in LIGAND_PROTOCOLS and attempt_dir is not None and
                          not result.get("unexpected_members") else
                          {"error": "fatal", "message": "worker exit or abandoned helper"})
             else:
@@ -1359,8 +1396,10 @@ class JobQueue:
             try:
                 if job["protocol_id"] in CHEMICAL_PROTOCOLS:
                     handles = self._publish_chemical(job, attempt_id, attempt_dir, result["payload"])
-                elif job["protocol_id"] == POCKET_PROTOCOL:
-                    outcome = self._publish_pocket(job, attempt_id, attempt_dir, result["payload"])
+                elif job["protocol_id"] in {POCKET_PROTOCOL, *LIGAND_PROTOCOLS}:
+                    outcome = (self._publish_pocket(job, attempt_id, attempt_dir, result["payload"])
+                               if job["protocol_id"] == POCKET_PROTOCOL else
+                               self._publish_ligand(job, attempt_id, attempt_dir, result["payload"]))
                     if type(outcome) is dict:
                         return self._terminal(job_id, attempt_id, outcome["status"], outcome.get("failure"))
                     handles = outcome
@@ -1437,6 +1476,12 @@ class JobQueue:
                     "source_atoms": data["source_atoms"], "sdf_atom_indices": indices}
         except (OSError, ValueError, TypeError, KeyError, UnicodeError, RecursionError):
             return fatal
+
+    @staticmethod
+    def _ligand_worker_error(attempt_dir: Path) -> dict[str, Any]:
+        from ..ligand_bundle import worker_error
+
+        return worker_error(attempt_dir)
 
     def _read_preparation_checkpoint(self, job_id: str, attempt_id: str) -> bytes | None:
         if not _safe_id(job_id) or not _safe_id(attempt_id):
@@ -1633,6 +1678,22 @@ class JobQueue:
         try:
             return publish(self.run, job, attempt_id, attempt_dir, descriptor)
         except PocketJobFailure as failure:
+            return {"status": "failed", "failure": failure.to_error()}
+
+    def _publish_ligand(self, job: dict[str, Any], attempt_id: str, attempt_dir: Path,
+                        descriptor: dict[str, Any]) -> list[str] | dict[str, Any]:
+        """Same guard as fpocket: a stale or cancelled completion stores nothing; typed failures stay typed."""
+        from ..ligand_bundle import LigandJobFailure, publish
+
+        with self.run._transition():
+            current = self.get(job["job_id"])
+            if current["cancel_requested"] or self.run._cancel_path.exists():
+                return {"status": "cancelled"}
+            if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
+                return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
+        try:
+            return publish(self.run, job, attempt_id, attempt_dir, descriptor)
+        except LigandJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
 
     def retry(self, job_id: str, *, execution_link: ExecutionLink | None = None,

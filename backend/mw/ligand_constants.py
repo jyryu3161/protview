@@ -18,7 +18,8 @@ MAX_BLOCK_SDF_RECORDS = 1_000
 ALLOWED_ELEMENTS = ("H", "C", "N", "O", "S", "P", "F", "Cl", "Br", "I")
 MAX_PARENT_HEAVY_ATOMS = 256
 MAX_BLOCK_HEAVY_ATOMS = 64
-MAX_BLOCKS = 1_000
+MAX_BLOCKS = 1_000  # shared by both libraries of one request, in input (import) order
+MAX_BLOCK_NAME_CHARS = 128  # a longer name makes its record ``unparseable``
 
 # 6.2 parent rejection (typed inspection failure).
 PARENT_REJECT_REASONS = ("unparseable", "record_count", "multiple_fragments", "element_not_allowed",

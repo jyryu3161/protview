@@ -44,6 +44,25 @@ tools:
       chains: { type: list, default: [] }                # chain_auth list; empty = every protein chain
     description: 선택한 단백질 체인의 표준 잔기 중원자만 고정 fpocket 4.2.3으로 검출한 공동 후보(결합 부위·친화도·druggability 증거 아님); durable_job lane
 
+  # Fixed asynchronous M17 RDKit 2026.03.6 lane (protocols rdkit_inspect_v1 / rdkit_enumerate_v1); execution is
+  # JobQueue, not Run.call. The worker module and interpreter are fixed by code; arguments are validated on admission.
+  - name: rdkit_inspect_ligand
+    level: L3
+    version: '1'
+    emits: ligand_inspection
+    cost_class: expensive
+    typical_runtime_s: 5
+    description: 부모 리간드 SDF·building block·반응 규칙을 고정 RDKit 작업으로 점검한다(원자 표·번호 붙은 2D 그림·RDKit 추정 속성); durable_job lane
+
+  - name: rdkit_enumerate_ligands
+    level: L3
+    version: '1'
+    accepts: { inspection_handle: [ligand_inspection] }
+    emits: ligand_candidate_set
+    cost_class: expensive
+    typical_runtime_s: 30
+    description: 점검한 부모의 한 부위를 고정 교체·사용자 반응 규칙으로 바꾼 2D 후보와 RDKit 추정 속성·PAINS 구조 경고 일치를 만든다(친화도·약물 유사성 아님); durable_job lane
+
   - name: compute_interactions
     level: L2
     accepts: { structure: [prepared_structure, relaxed_structure] }

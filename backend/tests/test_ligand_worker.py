@@ -255,6 +255,39 @@ def test_block_limit_reads_the_first_thousand_records(tmp_path):
     assert summary["block_limit_reached"] is True and summary["rejected"] == []
 
 
+def test_block_limit_is_shared_by_both_libraries_in_input_order(tmp_path):
+    first = _block("building_blocks_smiles", "".join(f"*C{'C' * (i % 3)} a{i}\n" for i in range(1, 601)).encode())
+    second = _block("building_blocks_smiles", "".join(f"*N{'C' * (i % 3)} b{i}\n" for i in range(1, 601)).encode())
+    out = _inspect(tmp_path, (FIX / NO_H).read_bytes(), [first, second])
+    one, two = out["block_libraries"]
+    assert (one["records_total"], one["records_read"], one["accepted"], one["block_limit_reached"]) == (
+        600, 600, 600, False)
+    assert (two["records_total"], two["records_read"], two["accepted"], two["block_limit_reached"]) == (
+        600, 400, 400, True)
+    full = _block("building_blocks_smiles", "".join(f"*C c{i}\n" for i in range(1, 1001)).encode())
+    out = _inspect(tmp_path, (FIX / NO_H).read_bytes(), [full, second])
+    assert [(s["records_read"], s["block_limit_reached"]) for s in out["block_libraries"]] == [(1000, False),
+                                                                                             (0, True)]
+
+
+def test_block_name_over_128_characters_is_unparseable(tmp_path):
+    long_name, ok_name = "n" * 129, "m" * 128
+    smiles = _block("building_blocks_smiles", f"*C {long_name}\n*Cl {ok_name}\n".encode())
+    sdf_raw = (FIX / "synthetic-blocks.sdf").read_text().split("$$$$")[0].lstrip("\n").splitlines()
+    sdf = _block("building_blocks_sdf", ("\n".join([long_name, *sdf_raw[1:]]) + "\n$$$$\n").encode())
+    out = _inspect(tmp_path, (FIX / NO_H).read_bytes(), [smiles, sdf])
+    assert out["block_libraries"][0]["rejected"] == [{"ordinal": 1, "name": "block_1", "reason": "unparseable"}]
+    assert out["block_libraries"][0]["accepted"] == 1
+    assert out["block_libraries"][1]["rejected"] == [{"ordinal": 1, "name": "block_1", "reason": "unparseable"}]
+
+
+def test_output_echoes_the_control_job_and_attempt(tmp_path):
+    out = _inspect(tmp_path, (FIX / NO_H).read_bytes())
+    assert (out["job_id"], out["attempt_id"]) == ("job_t", "att_t")
+    out = _enumerate(tmp_path, (FIX / NO_H).read_bytes(), [SMI], [11, 12])
+    assert (out["job_id"], out["attempt_id"]) == ("job_t", "att_t")
+
+
 def test_duplicate_name_spans_libraries_and_unnamed_records_use_their_ordinal(tmp_path):
     first = _block("building_blocks_smiles", b"# header\n\n*C methyl\n*Cl\n")
     second = _block("building_blocks_smiles", b"*N methyl\n*O block_2\n*F\n")

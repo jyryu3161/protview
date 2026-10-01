@@ -338,6 +338,10 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
         result["artifacts"] = {"chemical_interaction_set": job["output_handles"][0]}
     elif job.get("protocol_id") == "fpocket_detect_v1" and job.get("status") == "done":
         result["artifacts"] = {"pocket_set": job["output_handles"][0]}
+    elif job.get("protocol_id") == "rdkit_inspect_v1" and job.get("status") == "done":
+        result["artifacts"] = {"ligand_inspection": job["output_handles"][0]}
+    elif job.get("protocol_id") == "rdkit_enumerate_v1" and job.get("status") == "done":
+        result["artifacts"] = {"ligand_candidate_set": job["output_handles"][0]}
     else:
         result["artifacts"] = {}
     return result
@@ -1319,7 +1323,7 @@ def approve_job(rid: str) -> dict[str, Any]:
                  event.get("gate") == "expensive_first_call"]
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
-                      "detect_pockets"}
+                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):

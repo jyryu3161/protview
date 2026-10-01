@@ -33,8 +33,13 @@ CHEMICAL_PYTHON = Path(__file__).resolve().parents[3] / ".deps/prolif/venv-locke
 CHEMICAL_ADAPTERS = {"prolif_prepare_v1", "prolif_detect_v1"}
 POCKET = Path(__file__).with_name("pocket_worker.py")
 POCKET_ADAPTER = "fpocket_detect_v1"
+# M17: fixed RDKit worker in the same pinned interpreter as the chemical worker.
+LIGAND = Path(__file__).with_name("ligand_worker.py")
+LIGAND_ADAPTERS = {"rdkit_inspect_v1", "rdkit_enumerate_v1"}
+LIGAND_OUTPUT_LIMIT = 32 * 1024 * 1024
+PINNED_PYTHON_ADAPTERS = CHEMICAL_ADAPTERS | LIGAND_ADAPTERS
 # Adapters whose running worker tree is sampled for memory and output limits.
-MONITORED_ADAPTERS = CHEMICAL_ADAPTERS | {POCKET_ADAPTER}
+MONITORED_ADAPTERS = CHEMICAL_ADAPTERS | {POCKET_ADAPTER} | LIGAND_ADAPTERS
 RSS_LIMIT = 2 * 1024 * 1024 * 1024
 STREAM_LIMIT = 1024 * 1024
 # fpocket job root, private TMPDIR and engine streams written by pocket_worker.py in the attempt directory.
@@ -216,7 +221,7 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
     if (set(input_data) != expected or
             not isinstance(input_data["nonce"], str) or not re.fullmatch(r"[0-9a-f]{32}", input_data["nonce"]) or
             adapter not in {"internal_lifecycle_fixture", "openmm_protein_minimize_v1", *CHEMICAL_ADAPTERS,
-                            POCKET_ADAPTER} or
+                            POCKET_ADAPTER, *LIGAND_ADAPTERS} or
             (adapter == "internal_lifecycle_fixture" and input_data["fixture_mode"] not in FIXTURE_MODES) or
             (adapter != "internal_lifecycle_fixture" and
              not re.fullmatch(r"[0-9a-f]{64}", input_data["input_sha256"])) or
@@ -250,9 +255,10 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
     if command is None or command.get("kind") != "GO" or command.get("nonce") != nonce:
         return 0
     worker = (FIXTURE if adapter == "internal_lifecycle_fixture" else
-              CHEMICAL if adapter in CHEMICAL_ADAPTERS else POCKET if adapter == POCKET_ADAPTER else OPENMM)
-    interpreter = str(CHEMICAL_PYTHON) if adapter in CHEMICAL_ADAPTERS else sys.executable
-    if adapter in CHEMICAL_ADAPTERS and not CHEMICAL_PYTHON.is_file():
+              CHEMICAL if adapter in CHEMICAL_ADAPTERS else POCKET if adapter == POCKET_ADAPTER else
+              LIGAND if adapter in LIGAND_ADAPTERS else OPENMM)
+    interpreter = str(CHEMICAL_PYTHON) if adapter in PINNED_PYTHON_ADAPTERS else sys.executable
+    if adapter in PINNED_PYTHON_ADAPTERS and not CHEMICAL_PYTHON.is_file():
         return 2
     stdout_file = stderr_file = None
     if adapter in MONITORED_ADAPTERS:
@@ -323,7 +329,8 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
         try:
             path = Path("result.json")
             output_limit = (30 * 1024 * 1024 if adapter in CHEMICAL_ADAPTERS else
-                            64 * 1024 if adapter == POCKET_ADAPTER else 64_000_000)
+                            64 * 1024 if adapter == POCKET_ADAPTER else
+                            LIGAND_OUTPUT_LIMIT if adapter in LIGAND_ADAPTERS else 64_000_000)
             if path.is_symlink() or not path.is_file() or path.stat().st_size > output_limit:
                 raise ValueError("invalid scientific output")
             raw = path.read_bytes()

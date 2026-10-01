@@ -6,8 +6,9 @@ file path (standard library only, no package import), so closed reason sets, cap
 sentences have one copy.
 
 Job mode (no arguments, cwd = private attempt directory): ``input.json`` is the control record
-(``adapter`` = ``rdkit_inspect_v1`` | ``rdkit_enumerate_v1``, ``input_sha256`` of ``structure.json``;
-other control keys are ignored). ``structure.json`` is the canonical staged payload:
+(``adapter`` = ``rdkit_inspect_v1`` | ``rdkit_enumerate_v1``, ``input_sha256`` of ``structure.json``,
+``job_id`` and ``attempt_id`` echoed into the output; other control keys are ignored). ``structure.json`` is
+the canonical staged payload:
 
     inspect:   {"schema": "ligand_inspect_worker_input@1",
                 "parent": {"sdf_b64": str, "sha256": str},
@@ -21,7 +22,8 @@ other control keys are ignored). ``structure.json`` is the canonical staged payl
 Success writes canonical ``result.json`` (``ligand_inspect_worker_output@1`` / ``ligand_enumerate_worker_output@1``)
 and exits 0. Any refusal writes a small ``error.json`` (``ligand_worker_error@1``: ``error_class`` input_invalid
 | resource_exceeded | fatal, ``reason_code``, ``message``) and exits 1 with no result. Results are a pure
-function of the staged bytes and the RDKit version (no time, seed or randomness); a stop on the candidate
+function of the staged bytes, the echoed control identity and the RDKit version (no time, seed or
+randomness); a stop on the candidate
 or attempt cap is the only partial result. Wall-clock time and cancellation are enforced by the caller.
 
 Handshake mode (``--handshake``): print versions and PAINS catalog sizes; nothing is computed.
@@ -102,6 +104,7 @@ PROPERTY_METHODS = {"mol_weight": "rdkit Descriptors.MolWt (average, Da)",
                     "heavy_atoms": "rdkit GetNumHeavyAtoms", "formal_charge": "rdkit GetFormalCharge (sum)"}
 SHA_RE = re.compile(r"[0-9a-f]{64}")
 RULE_ID_RE = re.compile(r"user_([1-9][0-9]*)")
+CONTROL_ID_RE = re.compile(r"[a-z0-9_]{1,100}")
 CHIRAL_TAGS = (Chem.ChiralType.CHI_TETRAHEDRAL_CW, Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
 STEREO_BONDS = (Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ,
                 Chem.BondStereo.STEREOCIS, Chem.BondStereo.STEREOTRANS)
@@ -320,6 +323,8 @@ def _parse_block(kind: str, record: str) -> tuple[str | None, Chem.Mol | None, s
         except (ValueError, RuntimeError):
             mol = None
     name = name or None
+    if name is not None and len(name) > K.MAX_BLOCK_NAME_CHARS:
+        return None, None, "unparseable"  # an over-long name is not a name: the record gets block_<n>
     if mol is None:
         return name, None, "unparseable"
     if not any(atom.GetAtomicNum() > 0 for atom in mol.GetAtoms()):
@@ -355,18 +360,22 @@ def read_libraries(blocks: list[dict[str, Any]], raws: list[bytes]) -> tuple[lis
     """Summaries per library and the accepted blocks in input order (library order, then record order).
 
     Names are unique across all libraries of one request (a later record whose name is already held by an
-    accepted block is ``duplicate_name``), so ``{rule_id, block_name}`` origins are unambiguous.
+    accepted block is ``duplicate_name``), so ``{rule_id, block_name}`` origins are unambiguous. The block cap
+    is shared: records are read in input order across the libraries until ``MAX_BLOCKS`` records were read;
+    the rest are not read and their library is marked ``block_limit_reached``.
     """
     used: set[str] = set()
     accepted: list[Block] = []
     summaries = []
+    remaining = K.MAX_BLOCKS
     for block, raw in zip(blocks, raws, strict=True):
         kind = block["kind"]
         text = _decode(raw)
         if text is None:
             raise _malformed("building-block bytes are not UTF-8")
         records = split_sdf_records(text) if kind == "building_blocks_sdf" else smiles_record_lines(text)
-        considered = records[:K.MAX_BLOCKS]
+        considered = records[:remaining]
+        remaining -= len(considered)
         counts = dict.fromkeys(K.BLOCK_REJECT_REASONS, 0)
         rejected: list[dict[str, Any]] = []
         n_accepted = fixed_targets = rule_targets = 0
@@ -389,7 +398,7 @@ def read_libraries(blocks: list[dict[str, Any]], raws: list[bytes]) -> tuple[lis
             rule_targets += markers == 0
         summaries.append({"kind": kind, "input_format": K.BLOCK_INPUT_FORMATS[kind], "sha256": block["sha256"],
                           "records_total": len(records), "records_read": len(considered),
-                          "block_limit_reached": len(records) > K.MAX_BLOCKS, "accepted": n_accepted,
+                          "block_limit_reached": len(records) > len(considered), "accepted": n_accepted,
                           "rejected": rejected, "rejected_total": sum(counts.values()),
                           "rejected_counts": counts, "fixed_targets": fixed_targets, "rule_targets": rule_targets})
     return summaries, accepted
@@ -757,12 +766,16 @@ def run_job() -> dict[str, Any]:
         raise _malformed("staged JSON unreadable") from exc
     if (type(control) is not dict or control.get("adapter") not in (INSPECT, ENUMERATE) or
             type(control.get("input_sha256")) is not str or _sha(raw) != control["input_sha256"] or
-            type(payload) is not dict):
+            type(payload) is not dict or
+            any(type(control.get(key)) is not str or not CONTROL_ID_RE.fullmatch(control[key])
+                for key in ("job_id", "attempt_id"))):
         raise _malformed("control record or staged hash mismatch")
     expected = {INSPECT: "ligand_inspect_worker_input@1", ENUMERATE: "ligand_enumerate_worker_input@1"}
     if payload.get("schema") != expected[control["adapter"]]:
         raise _malformed("staged schema does not match the adapter")
-    return inspect(payload) if control["adapter"] == INSPECT else enumerate_candidates(payload)
+    output = inspect(payload) if control["adapter"] == INSPECT else enumerate_candidates(payload)
+    # Echo the attempt identity so the server binds this result to the attempt it launched.
+    return {**output, "job_id": control["job_id"], "attempt_id": control["attempt_id"]}
 
 
 def main(argv: list[str]) -> int:
