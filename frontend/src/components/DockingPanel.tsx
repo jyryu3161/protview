@@ -446,6 +446,11 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
             가져온 파일은 아래 목록에서 직접 고르세요(자동으로 고르지 않음).</span>}
         </div>
         {importState.status === "error" && <ErrorLine message={importState.message} testId="docking-import-error" />}
+        {/* Candidate sets and parent SDFs made in the candidate area above appear here only after a re-read. */}
+        {prereq.status !== "loading" && <div className="mw-ligand-inline">
+          <Button size="sm" data-testid="docking-prereq-refresh" onClick={() => setPrereqReload(value => value + 1)}>
+            입력 목록 다시 읽기</Button>
+          <span className="mw-ligand-note">위 후보 영역에서 만든 후보 집합·가져온 부모 SDF는 다시 읽어야 보입니다.</span></div>}
         {prereq.status === "loading" && <p className="mw-ligand-note" aria-busy="true">입력 준비 목록을 읽는 중</p>}
         {prereq.status === "error" && <ErrorLine message={prereq.message} onRetry={() => setPrereqReload(value => value + 1)} />}
       </div>
