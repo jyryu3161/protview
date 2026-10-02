@@ -1,0 +1,54 @@
+{
+  "schema": "m15_numbering_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_149893ea75d947bfa2b669a476bd7027",
+    "B": "run_25b3a64a3aa641778abea3da08b34830"
+  },
+  "inputs": [
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain)"
+    }
+  ],
+  "handles": {
+    "maps": {
+      "confirmed": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/0ba3797647d8c254500c727b694e1644ee0661ed9dec63d701c2fd965ff08e73",
+      "alignmentOnly": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/3eb08bca20241c5c7c0463f7f9292456aab68f26cf87b39505105c023c624453",
+      "belowIdentity": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/db49a4cfb39db39129f17086f9582db88ca0b5dbf7beeadc36bd99a494e94733",
+      "report": "obj://run_149893ea75d947bfa2b669a476bd7027/method_report_manifest/6364f4c908aa071771df243aacf6d39a9a6931e62c31f6129f7eac0548b71a13",
+      "prepared": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/ca8524ae1e284a2562fc60c0addecf0cc3383cff5690febcdf9a0d4d8ac3a401",
+      "runB": "obj://run_25b3a64a3aa641778abea3da08b34830/residue_numbering_map/4c55fbedde6e7d5a8f23e7baf4290ef7e5feb78185e7bc3c2bf8ecc423dd6f15"
+    },
+    "structure": "obj://run_149893ea75d947bfa2b669a476bd7027/structure/f806285e130751b0e1e0c7e379d801b76fef971997e826f8972d0de94c5543c9",
+    "prepared": "obj://run_149893ea75d947bfa2b669a476bd7027/prepared_structure/a9e5787f3c9c66c9884cf3b2d1b49cb068c94f5047ca6f7f1fbb347ad298f1ba"
+  },
+  "fixtureLabels": [
+    "QA fault fixture (labeled renderer route, not a scientific value): numbering read failure",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_149893ea75d947bfa2b669a476bd7027",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_25b3a64a3aa641778abea3da08b34830",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-02T03:24:44.824Z",
+  "finishedAt": "2026-10-02T03:25:03.895Z",
+  "error": null,
+  "requestCount": 312
+}

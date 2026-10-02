@@ -48,6 +48,7 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 | 원자 거리 (M10) | 같은 소스의 정확한 원자 두 개 사이 원본 좌표 유클리드 거리 | Å | — 겹친 좌표의 0 Å은 정상 값이며 scientific_null이 아니다 |
 | 강체 정렬 (M10) | 사용자가 고른 단백질 CA 쌍 3–1000개로 float64 Kabsch 회전(반사 금지) | RMSD Å | 모델 품질, 결합, 안정성. 선택한 쌍에만 해당한다 |
 | ProLIF (M11) | 사용자가 준비한 수용체(명시적 수소, 완전한 연결 정보) + SDF 리간드 1개. 프로토콜 `prolif_prepared_explicit_h@1` | D···A 거리 Å, D–H···A 각도 ° | 실험적 수소결합 확인, 염다리 에너지, 친화도, 안정성 |
+| qvina (M18) | QuickVina 2.1 자유 도킹 또는 코어 고정 구속 샘플의 `--score_only`. 강체 수용체(M11 입력 규칙) + 리간드 1개, seed 고정·CPU 1. 아래 "리간드 도킹 (M18)" | qvina 점수 kcal/mol(Vina 계열 스코어링 함수 값), 거리 Å | 결합 친화도·자유 에너지, ΔΔG, 순위, 실험 결합 자세 |
 
 - FreeSASA의 Shrake–Rupley 1000점 설정은 단일 구·분리 구 해석 검사에서 오차 한도(0.5% 겹침 허용)를 넘어 채택하지 않았다. 실패 증거는 보존한다. 숫자를 보정해서 맞추지 않는다.
 - 정렬 퇴화 조건: 중심화한 P, Q, H의 두 번째 특이값이 `max(1e-12, 1e-8 × 첫 번째)` 이하이면 `input_invalid`다. 세 점이 동일 평면에 있어도 한 직선 위만 아니면 유효하다.
@@ -270,6 +271,100 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 
 ### 의미하지 않는 것
 약물 유사성, 독성·안전성, 활성·친화도, 합성 가능성, 3D 결합 자세. PAINS 일치는 구조 경고일 뿐 화합물을 버리라는 판정이 아니고, 필터 통과는 사용자가 정한 범위 안이라는 뜻일 뿐이다. 후보는 2D 그래프이며 수소·양성자화·토토머는 입력 그대로다.
+
+## 리간드 도킹 (M18, `qvina_dock_v1`)
+
+수용체 하나와 리간드 하나(사용자가 준비한 3D SDF 또는 M17 후보)를 격리된 QuickVina 2.1로 도킹하거나(자유), 후보의 부모 코어 좌표를 그대로 둔 구속 형태 샘플에 점수만 매겨(코어 고정) 포즈·점수·기하 접촉 표를 만든다(결정 0026). 점수는 엔진이 낸 값이며 친화도·결합 강도·순위가 아니다. 모든 값은 실제 qvina·RDKit·Meeko 실행 결과이거나 입력에서 정해진 값이고, 서버 프로세스는 RDKit·Meeko·MDAnalysis를 import하지 않고 qvina를 실행하지 않는다.
+
+### 엔진과 환경
+- 엔진은 `qvina2`(conda-forge `qvina 2.1.0`, build `h4a521e9_8`, 실행 파일 SHA-256 고정, `.deps/qvina/env`) 하나다. 같은 패키지의 `vina`(AutoDock Vina 1.1.2)는 호출하지 않는다. 요청 필드로 엔진·실행 파일·모듈을 고를 수 없다.
+- PDBQT 준비는 작업 환경 `.deps/docking/venv-locked`(Meeko 0.8.0, RDKit 2026.03.6, MDAnalysis 2.10.0, gemmi 0.7.5)의 `mw/jobs/docking_worker.py`가 한다. 원자 유형은 AutoDock4(`ad4`), 부분 전하는 Gasteiger이며 Meeko·RDKit 버전과 함께 결과 `preparation`에 기록한다.
+
+### 입력
+- 새 가져오기 종류는 없다. M11 `chemical_raw_input@1`의 `receptor`(pdb·cif·mmcif), `receptor_bonds`(`receptor_bonds@1`), `ligand_sdf`를 그대로 쓴다(파일당 최대 10 MiB). 후보 입력은 `ligand_candidate_set@1` handle, 후보 `id`, 그 후보 집합의 부모 SDF를 가져온 `ligand_sdf` handle이다. 다른 run·다른 종류의 handle은 작업을 만들기 전에 거절한다.
+- 화면 입력 순서: 수용체(+결합 사이드카) → 뺄 인스턴스 하나 또는 "없음(단백질만)" → 리간드 출처 → 방식 → 상자 출처 → 값(seed 필수)과 확인 세 항목 → 작업 시작. 어떤 선택도 자동으로 하지 않는다.
+
+### 수용체 (M11 화학 입력 규칙과의 관계)
+- M11 수용체 규칙을 그대로 쓴다: 명시적 수소 좌표와 완전한 공유 연결 정보(완전한 PDB CONECT 또는 `receptor_bonds@1` 사이드카). 연결 정보 검증은 M11 `_bonds`와 같은 규칙(자기 결합·범위 밖 참조·모호한 serial 거부, CONECT 역방향 중복은 합침, 사이드카 중복 결합은 거부)이며, M11 비공개 함수가 M11 요청 모양을 받으므로 `docking_inputs.py`가 같은 규칙을 다시 구현했다. PDB CONECT는 원본이 PDB일 때만이다. 수소·양성자화·토토머·누락 원자는 만들거나 고치지 않는다. 모델은 `receptor_model_number`로 명시한다(파일에 없으면 `receptor_invalid`). 원자 수 ≤ 10,000(뺀 인스턴스 포함).
+- 비표준 잔기 인스턴스 = 물이 아니면서 HETATM이거나 이름이 M11 지원 아미노산 목록(`AMINO`, HSD·HSE·HID 등 포함)에 없는 잔기. 인스턴스 목록 읽기는 gemmi로 서버에서 잔기 7필드·원자 수·원소별 개수를 보여 주고 물은 개수만 센다(선택 보조일 뿐, 입장과 작업이 다시 검사).
+- **인스턴스 하나 빼기**: `receptor_instance`(잔기 7필드, null 그대로)를 주면 7필드가 정확히 같은 비표준 잔기가 하나일 때만 그 원자(수소 포함)를 뺀다. 없으면 `receptor_instance_unknown`, 둘 이상이면 `receptor_instance_ambiguous`(첫 번째를 고르지 않음), 나머지 수용체와 공유 결합이 있으면 `receptor_instance_covalent`. 뺀 인스턴스(7필드, 원자 수, 원소별 개수)는 결과 `inputs.receptor.removed_instance`에 남는다. 주지 않으면(null) 수용체에 비표준 잔기가 없어야 한다.
+- 뺀 뒤에도 물·금속 이온·보조인자·다른 리간드·변형 잔기, H C N O S가 아닌 원소가 남으면 `receptor_unsupported_residue`, altloc이 있으면 `receptor_altloc_present`로 거부한다. 조용히 지우거나 고르지 않는다. 거부 상세는 항목 최대 20개(`items`: 잔기 7필드와 원자 이름, altloc이면 altloc)와 전체 개수(`total`)이며 화면이 그대로 보여 준다.
+- 명시적 수소가 하나도 없으면 `receptor_hydrogens_missing`. 일부만 없는 경우는 M11과 같이 거부하지 않는다(화학 추론 결과는 `receptor_prep_failed`로만 막힘).
+- 수용체 PDBQT: M11 화학 추론(MDAnalysis `MDAnalysisInferrer(max_iter=200, sanitize=True)`, M11 `chemical_worker._receptor`와 같은 인자와 단백질 그래프 검사)으로 만든 RDKit 그래프를 공유 결합 조각마다 Meeko `MoleculePreparation`에 넘겨 원자 유형·전하를 받고, 입력 순서·입력 좌표로 ATOM 줄을 쓴다(비극성 수소는 Meeko 규칙대로 병합). 수용체는 강체다. Meeko 수용체 준비(`Polymer`)는 쓰지 않는다. 실패는 `receptor_prep_failed`(M11 검사 이름은 `detail.m11_check`).
+- 제출 전 확인 세 항목(M11 확인 방식, 모두 true여야 함, 아니면 `acknowledgement_missing`): `keep_input_protonation`(입력 양성자화·수소를 그대로 씀), `tool_assigned_types_charges`(AutoDock4 원자 유형·부분 전하는 Meeko가 정함), `rigid_no_optimization`(수용체는 강체, 양성자화·최적화 없음). 결과 입력에 기록하지만 호출 키에는 넣지 않는다.
+
+### 리간드 (출처 하나)
+- **`sdf`**: V2000 SDF 레코드 정확히 1개, 연결된 단일 분자, 원소 H C N O S P F Cl Br I(M17과 같은 집합), 중원자 ≤ 100, Meeko가 센 능동 비틀림 ≤ 32(qvina 한도). V3000 거부. 모든 원자의 z가 같으면(평면) `ligand_not_3d`. 암시 수소가 남은 원자가 있으면 `ligand_hydrogens_missing`(수소를 만들지 않음). 원자 번호는 SDF 원자 블록 1-기반 순번(수소 포함)이다. 입력 좌표가 수용체와 같은 좌표계라고 가정하며(화면에 적음) 도구는 이를 검증하지 못한다.
+- **`candidate`**: 부모 SDF의 SHA-256이 후보 집합의 `parent_sha256`과 같아야 한다(`parent_mismatch`, 항상 검사). 후보 `id`가 없으면 `candidate_unknown`. 후보 SMILES에 RDKit `AddHs` 뒤 형태를 만든다(seed 고정, 힘장 최소화 없음). 이 수소·좌표는 "생성된 것"(`generated.hydrogens`·`generated.coordinates` 참)으로 결과·화면·보고서에 표시하고 M11의 "사용자가 준 수소" 지위를 갖지 않는다. 형식 전하·양성자화·토토머는 후보 SMILES 그대로다. 부모 좌표를 쓰는 경우(코어 고정이거나 상자 출처가 `ligand_range`)에만 부모 평면 검사를 한다(`parent_not_3d`).
+- 후보의 미지정 입체(M17 `stereo_flag` 포함)는 거부하지 않고 RDKit이 임의로 정한 입체로 형태를 만든다. 후보 행의 `stereo_flag`와 미지정 입체 요소 수 `unspecified_stereo_centers`를 `inputs.ligand`에 기록한다. 중원자·비틀림 한도는 `sdf` 출처와 같다.
+- 리간드 준비는 Meeko `MoleculePreparation(rigid_macrocycles=True)`(고리 형태는 입력 형태 그대로)이며 실패는 `ligand_prep_failed`다.
+
+### 상자 (출처 셋, 사용자가 명시적으로 고름)
+- `ligand_range`: 입력 리간드(`sdf`는 그 SDF, `candidate`는 부모 SDF) 중원자 좌표의 최솟값·최댓값. 중심 = (최소 + 최대)/2, 한 변 = (최대 − 최소) + 2 × 여백. 여백 기본 8 Å(0–20 Å).
+- `instance_range`: 뺀 수용체 인스턴스 중원자 범위에 같은 여백. `receptor_instance`가 있을 때만 쓸 수 있다(아니면 `box_invalid`).
+- `manual`: 중심 x,y,z와 크기 x,y,z(Å). 한 변 8–40 Å, 유한수, 중심 절댓값 ≤ 100,000 Å.
+- 범위 상자의 중심·크기는 1e-6 Å로 반올림한다(입력 좌표 자릿수 밖의 부동소수 잡음 제거, 기록된 값이 qvina가 읽는 값과 같도록). 한 변이 40 Å을 넘으면 줄이지 않고 `box_too_large`, 상자 안에 수용체 중원자가 하나도 없으면 `box_no_receptor_atoms`(좌표계가 맞지 않는 흔한 실수를 막는 검사이며, 좌표계 일치를 검증하는 것은 이것뿐이다). 그 밖의 잘못된 상자 값은 `box_invalid`. 계산한 상자는 결과 `box`에 그대로 기록한다.
+
+### 값과 재현성
+- `seed`(필수, 정수 0–2147483647), `exhaustiveness`(1–32, 기본 8), `num_modes`(1–20, 기본 9), `energy_range`(1–5 kcal/mol, 기본 3), `conformers`(코어 고정만 1–200, 기본 50, 자유 도킹은 키를 보내면 거절). `cpu`는 1 고정. 작업 시간 상한은 작업 인자가 아니라 `POST /jobs`의 `timeout_s`(화면은 600 고정, 최대 900)이며 호출 키에 들어가지 않는다.
+- 같은 정규화 입력(수용체·결합·리간드 handle, 후보 id, 인스턴스, 방식, 상자, 모든 값, seed)은 같은 호출 키라 기존 작업·결과를 돌려준다(새 작업·과금 없음). seed가 다르면 새 호출 키다. 결과 객체에는 시각·작업·시도 ID가 없어 같은 입력은 같은 handle이다. 같은 seed·`--cpu 1`은 같은 포즈·점수를 낸다(착수 확인과 수락 QA 재현 검사).
+
+### 방식
+- **자유 도킹(`free`, 방법 `qvina_free_v1`)**: `qvina2`를 고정 인자(`--cpu 1 --seed … --exhaustiveness … --num_modes … --energy_range …`, 상자)로 검색 실행한다. 모드는 엔진 출력 순서대로 `mode` 1부터 번호를 붙이고 "모드 n(엔진 출력 순서)"라 부른다. 점수(`score_kcal_mol`)는 엔진이 출력한 값(출력 파일에 소수 첫째 자리까지만 있음), `engine_rmsd_lb_A`·`engine_rmsd_ub_A`는 엔진이 모드 1에 대해 낸 RMSD 한계를 그대로 저장한다. 후보 출처는 RDKit 형태 하나를 시작점으로 쓴다(한계 문장 10). 유효한 입력인데 모드가 0개면 scientific_null이다(`modes: []`, `null_result: true`, 재시도 없음).
+- **코어 고정(`core_fixed`, 방법 `qvina_core_fixed_score_only_v1`, `candidate` 출처만, 아니면 `mode_source_mismatch`)**: 코어는 후보 행의 `retained_parent_atoms`(부위 밖 부모 중원자 SDF 번호)다. 후보 그래프에 코어 부분 그래프를 맞춰 대응을 구한다(없으면 `core_match_failed`, 서로 다른 좌표 배치를 주는 일치가 둘 이상이면 `core_match_ambiguous`. 코어 자기 대칭으로 같은 배치가 되는 경우는 허용하고 첫 일치를 씀). RDKit이 코어 중원자 좌표를 부모 값으로 구속한 형태를 `conformers`개 만들고(coordMap ETKDG, seed 고정, 힘장 최소화 없음, 하나도 안 되면 `embed_failed`), 각 형태를 코어로 강체 맞춤한 뒤 코어 중원자 좌표를 부모 좌표로 덮어쓴다. 각 형태에 `qvina2 --score_only --cpu 1`만 매긴다(구조 최적화·충돌 해소 없음, 상자 인자 없음). 형태를 점수 오름차순(같으면 형태 번호 순)으로 나열해 처음 `num_modes`개만 행으로 저장하고, 만든 수 `samples_generated`와 점수를 매긴 수 `samples_scored`를 센다. 이 나열은 순위가 아니며 행은 "샘플 n(점수 오름차순 나열)"이라 부른다. 저장 필드 이름은 두 방식 모두 `mode`다. 행에 `conformer_index`(0부터)를 남기고 `engine_rmsd_*`는 null이다.
+- `core_max_deviation_A`(코어 고정만): 포즈의 코어 중원자와 부모 좌표 사이 최대 거리. 덮어쓴 뒤 재므로 정의상 0에 가깝다. 덮어쓰기 전 구속 임베딩 잔차(착수 확인 0.118–0.125 Å)는 기록하지 않는다. 코어 수소는 고정 대상이 아니다(RDKit이 만든 위치).
+- 모드마다 상자 밖 중원자 수 `atoms_outside_box`와 포즈 중원자–수용체 중원자 최소 거리 `min_heavy_atom_distance_A`(계산값)를 기록·표시한다. 0이 아니거나 충돌이 커도 모드를 버리거나 점수를 보정하지 않는다(자유 도킹도 상자 밖 원자가 나올 수 있다).
+- 포즈 SDF(`pose_sdf`): V2000, 제목 `mode_<n>`, 원자 순서 = 입력 원자 순서(`sdf`는 SDF 순번, `candidate`는 RDKit `AddHs` 순서). 수소를 담는다. qvina 출력에 없는 비극성 수소(Meeko가 병합)는 포즈 중원자에서 RDKit `AddHs(addCoords=True)`로 다시 놓은 위치다.
+
+### 접촉 표 (기하 접촉)
+- 모드마다 포즈 리간드 중원자와 수용체 중원자 사이 거리 ≤ 4.0 Å(`cutoff_A`, M2와 같은 값, 이 단계에서 조정 불가) 쌍을 센다. 종류는 M2 원소 규칙(`polar_contact`: 둘 다 N/O, `hydrophobic_contact`: 둘 다 C, 나머지 `contact`)이며 수소결합·염다리 판정이 아니다.
+- 행: `ligand_serial`(포즈 SDF 1-기반 순번), `ligand_element`, `ligand_parent_serial`(코어 고정의 코어 중원자만 부모 SDF 번호, 그 밖과 자유 도킹은 null), `receptor_atom`(`residue` 7필드·`atom_name`·`altloc`·`element`·`site_index`. `site_index`는 수용체 파일의 M11 원자 순회 순번이며 뺀 인스턴스 원자도 센다), `distance_A`, `kind`. 정렬 `ligand_serial`, `site_index` 오름차순.
+- 접촉 0개 모드는 빈 목록이며 계산하지 않음과 다르다. 모드당 접촉이 500행을 넘으면 자르지 않고 작업이 `resource_exceeded`로 실패한다. 게시할 때 서버가 모든 접촉의 수용체 원자 식별자와 거리를 수용체 가져오기 바이트와 저장 포즈 좌표로 다시 대조한다(거리 허용 1e-3 Å).
+
+### 점수 표기
+- 화면·보고서의 점수 이름은 "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"(결과 요약·보고서는 이 문구 전체, 표 열 머리는 "qvina 점수(kcal/mol)"). 엔진 출력의 "affinity" 낱말은 옮기지 않는다.
+- 점수는 소수 첫째 자리, 거리·상자는 소수 둘째 자리 `ROUND_HALF_UP`(10진 문자열 기준), 개수는 정수. 화면은 점수·접촉을 계산하지 않고 서버 값을 표시한다. 순위·best·최적·최고·개선·결합 강도를 쓰지 않는다.
+
+### 결과 객체 `docking_result@1`
+- 최상위 키: `schema`, `protocol`, `method`, `input_sha256`(acknowledgement를 뺀 정규화 입력의 SHA-256), `inputs{receptor{handle, sha256, model_number, connectivity, removed_instance, acknowledgement}, ligand{source, sdf_handle, sdf_sha256, candidate_set_handle, candidate_id, parent_sdf_handle, parent_sdf_sha256, generated{hydrogens, coordinates}, stereo_flag, unspecified_stereo_centers}, mode}`, `box{center_A, size_A, source, margin_A}`, `parameters{seed, exhaustiveness, num_modes, energy_range, conformers, cpu}`, `engine{name, version, binary_sha256, package}`, `preparation{tool, version, rdkit_version, atom_typing, charges}`, `modes[]`, `counts{modes, contacts_by_mode, null_result, samples_generated, samples_scored}`, `limitations`.
+- 모드 행: `mode`, `score_kcal_mol`, `engine_rmsd_lb_A`, `engine_rmsd_ub_A`, `conformer_index`, `core_max_deviation_A`, `atoms_outside_box`, `min_heavy_atom_distance_A`, `pose_sdf`, `contacts`.
+- 객체 전체 ≤ 4 MiB. 넘으면 자르지 않고 `resource_exceeded`. 게시 전에 현재 시도·취소·종료 상태, 스키마, 작업·시도 ID, 유한값, 닫힌 집합, 스테이징한 선택과의 일치를 검증하고, 읽을 때마다 완료된 게시 한 건(예약 → 정리 확인 → 결과 후보 → 종료 순서)과 입력에 대조한다. events-only로 다시 열린다(가져온 원본·qvina·Meeko 없이). 시간 초과·취소·크래시는 결과를 저장하지 않는다. dry-run run에서는 계획(`planned_call`)만 만든다.
+
+### 닫힌 이유 집합 (`backend/mw/docking_constants.py`, 바꾸려면 사용자 결정)
+- 수용체: `receptor_invalid`, `receptor_hydrogens_missing`, `receptor_unsupported_residue`, `receptor_altloc_present`, `receptor_instance_unknown`, `receptor_instance_ambiguous`, `receptor_instance_covalent`, `receptor_prep_failed`.
+- 리간드: `ligand_unparseable`, `ligand_record_count`, `ligand_multiple_fragments`, `ligand_element_not_allowed`, `ligand_too_many_atoms`, `ligand_too_many_torsions`, `ligand_not_3d`, `ligand_hydrogens_missing`, `ligand_prep_failed`.
+- 후보·코어: `candidate_unknown`, `parent_mismatch`, `parent_not_3d`, `core_match_failed`, `core_match_ambiguous`, `embed_failed`.
+- 상자: `box_invalid`, `box_too_large`, `box_no_receptor_atoms`. 엔진·자원: `engine_failed`, `engine_output_invalid`, `resource_exceeded`.
+- 서버 입장에서만: `invalid_job_arguments`, `mode_source_mismatch`, `acknowledgement_missing`. 입장 검사는 작업을 만들기 전에 위 집합(수용체·상자·후보 일부 포함)으로 거절하고 예산을 쓰지 않는다. 작업 프로세스는 같은 검사를 다시 하고 위 집합으로만 실패한다. 스테이징 기록이 잘못된 경우처럼 사용자 입력이 아닌 결함은 가장 가까운 `engine_failed`와 짧은 설명이다.
+- capability 이유: `worker_missing`, `engine_missing`, `engine_hash_mismatch`, `handshake_failed`, `version_mismatch`. 작업 시작 때 pin이 바뀌었으면 기존 큐 이유 `worker_version_invalid`.
+
+### 고정 한계 문장 (문자 그대로, 순서 고정, 해당 조건일 때만)
+  1. (항상) "점수는 qvina 2.1(Vina 계열 스코어링 함수)이 낸 값(kcal/mol)이며 결합 친화도·결합 자유 에너지가 아니다."
+  2. (항상) "같은 수용체·상자·seed·방식(자유/코어 고정)·값에서 나온 점수끼리만 나란히 볼 수 있다."
+  3. (항상) "수용체는 입력 그대로의 강체이며 수소·양성자화·토토머를 바꾸지 않았고, AutoDock4 원자 유형·부분 전하는 Meeko가 정한 값이다."
+  4. (항상) "리간드 고리 형태는 입력 형태(후보는 RDKit이 만든 형태)로 고정되어 탐색하지 않았다."
+  5. (항상) "접촉은 거리만으로 센 기하 접촉이며 수소결합 등 상호작용 판정이 아니다."
+  6. (`free`) "포즈는 엔진이 낸 배치이며 실험으로 확인한 결합 자세가 아니다."
+  7. (`candidate`) "후보의 3D 좌표와 수소는 RDKit이 만든 것이며 입력 구조가 아니다."
+  8. (`core_fixed`) "코어 중원자 좌표만 부모 값으로 고정했고 나머지는 RDKit 구속 형태 샘플이며, 점수만 매기고 구조는 최적화하지 않았다. 이 배치는 실험으로 확인한 결합 자세가 아니다."
+  9. (뺀 인스턴스가 있을 때) "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다."
+  10. (`candidate` + `free`) "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다."
+  11. (`unspecified_stereo_centers` > 0) "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다."
+- 결과·보고서·capability가 같은 문장을 쓴다. 화면은 후보 출처를 고르면 제출 전에 문장 7·10·11을 안내한다.
+
+### 작업과 예산
+- 기존 `JobQueue` 비싼 작업 경로(run 단위 첫 비싼 계산 승인, 예산, 취소, 재시도, guardian). 도킹 한 번(수용체 변환·샘플 생성·qvina 실행 전부)이 비싼 계산 1단위다. 한 번에 한 작업만 화면에서 진행한다.
+- 사용 가능 여부(`methods.ligand_docking`): 두 잠긴 환경과 설치 기록·잠금 파일이 있고, `qvina2` 해시가 설치 기록과 고정값 모두와 같고, 작업 모듈 handshake의 Meeko·RDKit·MDAnalysis·gemmi 버전이 고정값과 같을 때만 사용 가능. 아니면 숫자·컨트롤 없이 이유만.
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "ligand_docking"`, 렌더 `ligand_docking_markdown@1`. 입력은 도킹 결과 handle 하나(자유·코어 고정을 한 보고서에 섞지 않음). 만들기·다시 열기·다운로드는 도킹을 다시 하지 않고, 다시 열 때 결과 객체를 검증한 뒤 manifest·주장·Markdown 바이트를 저장 객체에서 다시 만든 것과 비교한다.
+- 증거는 모두 계산값(`computed`)이며 결과 handle·필드 경로에 묶인다: 모드 수, 모드별 `score_kcal_mol`, 접촉 수(`count`·종류별 `count_where`, 저장 접촉 행에 조건을 적용해 검증할 때마다 다시 셈, 조건은 `row_selector`), 상자 중심·크기·출처·여백, 파라미터, 엔진 이름·버전, Meeko·RDKit 버전, 수용체 입력, 뺀 인스턴스(7필드·원자 수), 리간드 출처 필드, 상자 밖 원자 수, 최소 거리, 코어 고정이면 샘플 수와 `core_max_deviation_A`. 파생값은 저장 점수의 최솟값·최댓값만("점수 최솟값", "점수 최댓값", "최고·최적"이라 쓰지 않음). 모드가 0개면 행 통계가 없다. null 필드는 주장이 되지 않으므로 0으로 쓰이지 않는다.
+- 후보 출처 결과는 후보 출처·생성된 수소·좌표 표시·부모 해시를, 코어 고정 결과는 모든 행의 `core_max_deviation_A`를 반드시 싣는다(없으면 보고서를 만들지 않음). 코어 고정 행은 "샘플"이라 부른다.
+- 점수는 `Decimal(str(v))`를 0.1 `ROUND_HALF_UP`, 거리·상자는 0.01, 개수는 정확히 일치. 틀린 반올림, 다른 statement의 필드 인용, 계산하지 않은 값을 0으로 쓰기는 거부한다.
+- 해석 금지어: M17 목록(M15·M16 포함)에 순위·최고·개선·결합 강도·rank·best·improve·stronger를 더해 모든 줄을 검사한다. 고정 한계 문장과 문자 그대로 같은 줄은 건너뛰고, 그 밖의 줄은 고정 점수 문구(`SCORE_LABEL`, 금지어 "친화"를 포함)만 지운 뒤 나머지를 검사한다(명세의 "한계 문장 줄만 제외"보다 한 가지 넓음, 결정 0026).
+
+### 의미하지 않는 것
+결합 친화도·결합 자유 에너지·ΔΔG·결합 강도, 후보·포즈의 순위나 개선, 실험으로 확인한 결합 자세, 수소결합·염다리 판정, 약물 유사성·활성·합성 가능성. 점수는 같은 수용체·상자·seed·방식·값에서 나온 것끼리만 나란히 볼 수 있다. 수용체는 입력 그대로의 강체이고, 후보의 3D 좌표·수소는 RDKit이 만든 것이다.
 
 ## PyRosetta와 에너지 표시
 

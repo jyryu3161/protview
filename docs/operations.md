@@ -2,7 +2,7 @@
 
 ## 필요 조건
 
-- CPython 3.11 이상. 검증 환경은 3.11.11이다. M11 ProLIF 작업 프로세스는 **CPython 3.11, macOS arm64**에서만 설치할 수 있다.
+- CPython 3.11 이상. 검증 환경은 3.11.11이다. M11 ProLIF 작업 프로세스와 M18 도킹 작업 환경은 **CPython 3.11, macOS arm64**에서만, M18 qvina 환경은 conda가 있는 macOS ≥ 11.0 arm64에서만 설치할 수 있다.
 - Node.js 22 이상, npm. 검증 환경은 Node 24.3.0, npm 11.4.2다.
 - POSIX 운영체제(Darwin 또는 Linux). 작업 감독은 psutil 7.2.2 기반 프로세스 신원이 Darwin/Linux에서만 동작하므로, 다른 OS에서는 새 작업이 시작되지 않는다.
 - 설치할 때만 네트워크가 필요하다. 설치 후 구조 검사, 계산, 보고서 생성은 오프라인으로 동작한다.
@@ -42,6 +42,19 @@ npm --prefix frontend run build
 - `--pkgs`에는 로컬 conda 패키지 캐시(예: `~/anaconda3/pkgs`)나 archive를 모아 둔 폴더를 준다. 스크립트는 `config/pockets/`의 잠금과 35개 이름·SHA-256을 모두 맞춘 뒤 `conda create --offline`으로 `.deps/fpocket/env/`에 설치하고, 실행 파일 SHA-256(`a79058e4…2894`)과 설치 기록 `.deps/fpocket/install-record.json`을 남긴다. 다운로드는 하지 않는다.
 - 이미 설치되어 있으면 거부한다. 다시 설치하려면 서비스를 멈추고 `.deps/fpocket/`을 직접 옮긴 뒤 실행한다.
 - conda 23.3.1은 새 환경을 `~/.conda/environments.txt`에 등록한다.
+
+### M18 도킹 환경 (선택, 둘 다 필요)
+
+```bash
+.venv/bin/python scripts/setup_qvina.py --pkgs <8개 conda archive가 있는 디렉터리> [--prefix .deps/qvina/env] [--conda <conda 실행 파일>]
+.venv/bin/python scripts/setup_docking_worker.py --wheelhouse <26개 wheel이 있는 디렉터리> [--destination .deps/docking/venv-locked]
+```
+
+- `setup_qvina.py`: conda가 필요하고(`--conda`, 없으면 `$CONDA_EXE`나 PATH의 `conda`) macOS ≥ 11.0 arm64가 아니면 거부한다. `config/docking/qvina-conda-lock-hashes-osx-arm64.json`·`qvina-conda-explicit-osx-arm64.txt`의 8개 archive(conda-forge `qvina 2.1.0` `h4a521e9_8`와 의존) 이름·크기·SHA-256을 모두 맞춘 뒤, 검증한 복사본만 가리키는 명시 목록으로 `conda create --offline`을 한다. 기본 위치 `.deps/qvina/env/`, 설치 기록은 그 부모 `.deps/qvina/install-record.json`(`qvina2` SHA-256 `caf5f22a…f79c`, `--version` 출력 해시, 패키지·라이선스 해시, 설치 시각·플랫폼)이며 마지막에 쓴다. 같은 패키지의 `vina`는 해시만 기록하고 실행하지 않는다.
+- `setup_docking_worker.py`: 실행 인터프리터가 CPython 3.11 macOS arm64가 아니면 거부한다. `config/docking/docking-wheel-hashes-macos-arm64-py311.json`·`docking-requirements-macos-arm64-py311.txt`의 26개 wheel(Meeko 0.8.0, RDKit 2026.3.6, MDAnalysis 2.10.0, gemmi 0.7.5, numpy 2.4.6, scipy 1.17.1 등. Meeko 밖의 25개는 M11 ProLIF 잠금과 같은 파일)을 맞춘 뒤 `pip --no-index --require-hashes --no-deps`로 새 venv에 설치한다. 기본 위치 `.deps/docking/venv-locked/`, 설치 기록 `.deps/docking/install-record.json`(Meeko 라이선스 LGPL-2.1, `pip check` 결과).
+- 둘 다 다운로드하지 않는다. `--pkgs`에는 로컬 conda 패키지 캐시(예: `~/anaconda3/pkgs`)나 archive를 모아 둔 폴더를, `--wheelhouse`에는 잠금과 같은 wheel을 모아 둔 폴더를 준다(받는 일은 이 명령 밖의 준비 단계이고 잠금 해시로 검증한다). 실패하면 이 실행이 만든 것을 지운다. 이미 설치되어 있으면 거부한다("already exists"). 다시 설치하려면 서비스를 멈추고 기존 폴더를 직접 옮긴 뒤 실행한다. 기존 `.deps/prolif`·`.deps/fpocket`은 건드리지 않는다.
+- git worktree에서 설치할 때는 `--prefix`·`--destination`에 주 체크아웃의 절대 경로를 준다(worktree의 `.deps`는 심볼릭 링크이거나 없다).
+- 하나라도 없거나 해시·버전이 맞지 않으면 `/capabilities`의 `ligand_docking`이 사용할 수 없음(`worker_missing`, `engine_missing`, `engine_hash_mismatch`, `handshake_failed`, `version_mismatch`)으로 표시되고 리간드 탭 도킹 영역은 이유만 보여 준다. 나머지 기능은 정상이다.
 
 ### M15 참조 스냅샷 (선택)
 
@@ -88,24 +101,26 @@ npm --prefix frontend run start -- -p 3000
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
 node --check frontend/tests/offscreen/tabs-flow.cjs
 node --check frontend/tests/offscreen/numbering-flow.cjs
 node --check frontend/tests/offscreen/annotation-flow.cjs
 node --check frontend/tests/offscreen/ligand-flow.cjs
+node --check frontend/tests/offscreen/docking-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
-- `scripts/test_import_reference_snapshots.py`(가져오기: 해시 불일치 시 무변경, 원자적 교체, 매니페스트 필드, 네트워크 없음), `scripts/test_m15_offscreen_acceptance.py`(M15 실행기 판정), `scripts/test_measure_klifs_numbering.py`(측정 분류), `scripts/test_m16_offscreen_acceptance.py`(M16 실행기 판정), `scripts/test_m17_offscreen_acceptance.py`(M17 실행기 판정)는 서비스를 띄우지 않으며 Stop 훅 세 번째 그룹에 들어 있다. 백엔드 M15 테스트는 대부분 커밋된 fixture 세트(`backend/tests/reference_fixture_set.py`)를 임시 참조 폴더에 만들어 쓰므로 `.deps/reference`가 없어도 돈다. 예외로 `backend/tests/test_klifs_numbering.py`의 실제 스냅샷 테스트 2개는 kbase 스냅샷을 직접 읽는다. 경로는 `<저장소>/../kbase_kinase/ref`이고 환경변수 `MW_KBASE_REF`로 바꿀 수 있다(git worktree나 다른 위치의 체크아웃). 경로가 없으면 skip하므로 게이트의 "skip 0"을 맞추려면 kbase 체크아웃을 옆에 두거나 `MW_KBASE_REF`를 준다.
-- `scripts/test_m14_offscreen_acceptance.py`는 M14 실행기의 사례 판정·`acceptance` 판정을 보는 단위 테스트다(서비스를 띄우지 않음, Stop 훅 세 번째 그룹).
-- `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정, `acceptance` 판정, 빌드 출처 확인을 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 세 번째 pytest 그룹에 들어 있다.
+- `scripts/test_import_reference_snapshots.py`(가져오기: 해시 불일치 시 무변경, 원자적 교체, 매니페스트 필드, 네트워크 없음), `scripts/test_m15_offscreen_acceptance.py`(M15 실행기 판정), `scripts/test_measure_klifs_numbering.py`(측정 분류), `scripts/test_m16_offscreen_acceptance.py`(M16 실행기 판정), `scripts/test_m17_offscreen_acceptance.py`(M17 실행기 판정)는 서비스를 띄우지 않으며 Stop 훅 네 번째 그룹(나머지 백엔드·실행기)에 들어 있다. 백엔드 M15 테스트는 대부분 커밋된 fixture 세트(`backend/tests/reference_fixture_set.py`)를 임시 참조 폴더에 만들어 쓰므로 `.deps/reference`가 없어도 돈다. 예외로 `backend/tests/test_klifs_numbering.py`의 실제 스냅샷 테스트 2개는 kbase 스냅샷을 직접 읽는다. 경로는 `<저장소>/../kbase_kinase/ref`이고 환경변수 `MW_KBASE_REF`로 바꿀 수 있다(git worktree나 다른 위치의 체크아웃). 경로가 없으면 skip하므로 게이트의 "skip 0"을 맞추려면 kbase 체크아웃을 옆에 두거나 `MW_KBASE_REF`를 준다.
+- `scripts/test_m14_offscreen_acceptance.py`는 M14 실행기의 사례 판정·`acceptance` 판정을 보는 단위 테스트다(서비스를 띄우지 않음, Stop 훅 네 번째 그룹).
+- `scripts/test_m18_offscreen_acceptance.py`(M18 실행기 판정), `scripts/test_setup_qvina.py`·`scripts/test_setup_docking_worker.py`(잠금·플랫폼 불일치 거부, 실패 때 만든 것 삭제, 설치 기록 내용. 실제 설치는 하지 않음)는 서비스를 띄우지 않는다. 이 세 파일은 게이트 명령과 Stop 훅 네 번째 그룹에 있다.
+- `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정, `acceptance` 판정, 빌드 출처 확인을 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 네 번째 pytest 그룹에 들어 있다.
 - git worktree에서 백엔드 테스트나 서비스를 돌릴 때는 `PYTHONPATH=<worktree>/backend`를 준다. `.venv`의 editable 설치가 주 체크아웃의 `backend/`를 가리키므로, 주지 않으면 worktree의 `mw`가 아니라 주 체크아웃의 `mw`를 import한다.
-- 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket, M17 RDKit 리간드 작업)는 해당 엔진이 설치되어 있어야 의미가 있다. M11·M17 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`가 필요하며, 없으면 skip이 아니라 실패한다.
-- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 세 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. 세 번째 그룹(나머지 백엔드·실행기·fpocket 설치·M13·M14·M15·M16·M17 수락 실행기·가져오기·측정 단위 테스트)은 M13 테스트가 들어간 뒤 2026-09-29 단독 실행에서 382초(634개)였다(M14 실행기 테스트 8개는 서비스를 띄우지 않아 몇 초 이내, 다시 재지 않음. M15에서 백엔드 테스트가 815개로 늘었고 전체 백엔드 pytest 단독 실행이 977초였다(최종 고정 게이트, 두 화학 그룹 포함). 세 번째 그룹만 다시 재지는 않았다. M16 첫 고정 게이트는 886개, 969초. M17 고정 게이트는 1206개, 1016초). 그룹 제한 480초에 여유가 크지 않으므로, 테스트가 더 늘면 그룹을 나눈다. ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
+- 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket, M17 RDKit 리간드 작업, M18 qvina 도킹 작업)는 해당 엔진이 설치되어 있어야 의미가 있다. M11·M17 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`, M18 테스트는 `.deps/docking/venv-locked`와 `.deps/qvina/env`가 필요하며, 없으면 skip이 아니라 실패한다.
+- Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 네 그룹을 동시에 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 테스트 다섯 파일(`test_docking_inputs.py`·`test_docking_worker.py`·`test_docking_jobs.py`·`test_docking_api.py`·`test_docking_reports.py`), 나머지 백엔드와 실행기 테스트. 그룹마다 480초 제한이 있고, 전체 제한은 600초다. 나머지 그룹(네 번째, 나머지 백엔드·실행기·fpocket 설치·M13·M14·M15·M16·M17 수락 실행기·가져오기·측정 단위 테스트)은 M13 테스트가 들어간 뒤 2026-09-29 단독 실행에서 382초(634개)였다(M14 실행기 테스트 8개는 서비스를 띄우지 않아 몇 초 이내, 다시 재지 않음. M15에서 백엔드 테스트가 815개로 늘었고 전체 백엔드 pytest 단독 실행이 977초였다(최종 고정 게이트, 두 화학 그룹 포함). 세 번째 그룹만 다시 재지는 않았다. M16 첫 고정 게이트는 886개, 969초. M17 고정 게이트는 1206개, 1016초. M18 고정 게이트는 1404개, 1214초). 그룹 제한 480초에 여유가 크지 않으므로, 테스트가 더 늘면 그룹을 나눈다. M18 작업 중 한 그룹이 480초 제한에 걸려 시간 초과로 보고되어, 도킹 테스트를 별도 네 번째 그룹으로 나눴다(고정 뒤 변경, 커밋 `306971b`). ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
 
 ## 오프스크린 UI 검증
 
@@ -227,6 +242,22 @@ npm --prefix frontend run test:offscreen:chemical
 - 흐름만 따로 돌리려면 서비스를 띄운 뒤 `npm --prefix frontend run test:offscreen:ligand -- --mode <main|unavailable> --artifacts <디렉터리>`(`--url` 기본 `http://127.0.0.1:3000`. `unavailable`은 새 runs 루트와 작업 환경 없는 백엔드가 필요). 전체 순서는 실행기에 있다.
 - 회귀: M16 실행기(`--kbase <절대 경로> --out docs/qa/m17-ligand-<YYYYMMDD>/m16-regression`), M15 실행기(`--kbase <절대 경로> --out .../m15-regression`), M14 실행기(`--out .../m14-regression`), M13 실행기 모든 phase(`--phases workflows,unavailable,regressions,m11,m12,ledger --out .../m13-regression`)를 각각 새 `--root`·`--artifacts`로 돌린다(2026-10-01: `--root runs/m17-m1X-regression-20261001`, `--artifacts frontend/tests/offscreen/artifacts/m1X-acceptance/m17-regression`). 큰 텍스트 증거는 결정 0020대로 옮긴다.
 - 2026-10-01 증거: `docs/qa/m17-ligand-20261001/`(`preflight.txt`, `gate.txt`, `acceptance/`, 회귀 4개). 수락은 `--root runs/m17-acceptance-20261001 --artifacts frontend/tests/offscreen/artifacts/m17-acceptance/final`로 한 번 돌렸다.
+
+### M18 리간드 도킹 수락 QA
+
+8000·3000 포트가 비어 있는 상태에서 실행한다. 실행기가 loopback 서비스(`PYTHONPATH=<code root>/backend`, `MW_RUNS_DIR=<root>/runs`)를 직접 띄우고 끝나면 정리하며, `--build auto`(기본, `always`·`never`도 있음)는 현재 프런트엔드 소스로 도장 찍은 빌드만 재사용한다. 코드 루트의 `.deps/docking/venv-locked`, `.deps/qvina/env/bin/qvina2`, M17 작업 환경 `.deps/prolif/venv-locked`가 있어야 하고 백엔드가 `ligand_docking`·`ligand_candidates`를 사용 가능으로 보고해야 한다. 아니면 "사용할 수 없음"이 아니라 수락 실패다. M13·M15·M17 실행기의 함수(빌드 도장·환경·경로 가리기·포트, 서비스·빌드)를 그대로 쓴다. `--kbase`는 없다.
+
+```bash
+.venv/bin/python scripts/m18_offscreen_acceptance.py --root runs/m18-acceptance-<날짜> \
+    --artifacts frontend/tests/offscreen/artifacts/m18-acceptance/<이름> \
+    --out docs/qa/m18-docking-<YYYYMMDD>/acceptance
+```
+
+- 순서: 환경 확인 → `docking-main`(구조 분석 탭 새 run + 1MQ4 → 리간드 탭 → 공개 수용체·3D SDF 가져오기 → 확인 누락·방식/상자 호환 → 자유 도킹(승인 UI, 실제 qvina) → 요약·모드 표·접촉 표·SDF 다운로드 바이트 → 보고서·지식 탭 목록·다운로드 → 합성 복합체 인스턴스 빼기·인스턴스 범위 상자 → 실제 M17 점검·생성 → 코어 고정 → 구조 분석 탭 유지 → run 전환·늦은 응답 → 평면·암시 수소 SDF·상자 한도 거부 → 물·아연·altloc 수용체 거부 목록 → qvina 실행 중 취소 → 금지어 없음) → 재현 검사(같은 입력·값·seed를 새 run 두 개에서 API로 다시 도킹해 점수와 전체 모드 SDF 바이트 비교) → `docking-unavailable`(`<root>/layout-worker-missing`의 `.deps` 없는 코드 복사본 백엔드로 run 없음·`worker_missing` 이유만). 모드 0개 사례는 입력을 위조하지 않고 "관찰하지 않음"으로 기록한다. 대장의 `acceptance`는 환경 확인 통과, 모든 단계가 이번 실행에서 돌고 모든 사례 통과, 모든 흐름 행의 외부 요청 0건·제공자 호출 0회, 소스 도장 빌드, 남은 작업 프로세스·`qvina2`·8000/3000 리스너 없음일 때만 true다.
+- `--root`는 새 폴더여야 하고 `/tmp` 아래면 거부한다. `--artifacts`는 Git 제외 폴더여야 한다. 다시 돌릴 때는 새 `--root`·`--artifacts`·`--out`을 쓰고 실패한 시도의 폴더를 지우지 않는다. `--code-root`로 서비스·하네스를 띄울 코드 루트를 바꿀 수 있다.
+- 흐름만 따로 돌리려면 서비스를 띄운 뒤 `npm --prefix frontend run test:offscreen:docking -- --mode <main|unavailable> --artifacts <디렉터리>`(`main`은 `--runs-dir`도 필요, `--url` 기본 `http://127.0.0.1:3000`. `unavailable`은 새 runs 루트와 작업 환경 없는 백엔드가 필요). 전체 순서는 실행기에 있다.
+- 회귀: M17 실행기(`--out docs/qa/m18-docking-<YYYYMMDD>/m17-regression`), M16 실행기(`--kbase <절대 경로> --out .../m16-regression`), M15 실행기(`--kbase <절대 경로> --out .../m15-regression`), M14 실행기(`--out .../m14-regression`), M13 실행기 모든 phase(`--phases workflows,unavailable,regressions,m11,m12,ledger --out .../m13-regression`)를 각각 새 `--root`·`--artifacts`로 하나씩 돌린다(2026-10-02: `--root runs/m18-m1X-regression-20261002`, `--artifacts frontend/tests/offscreen/artifacts/m1X-acceptance/m18-regression`). 큰 텍스트 증거는 결정 0020대로 옮긴다.
+- 2026-10-02 증거: `docs/qa/m18-docking-20261002/`(`preflight.txt`, `t2-install.txt`, `lock-inputs.json`, `gate.txt`, `summary.txt`, `acceptance/`, 회귀 5개). 수락은 `--root runs/m18-acceptance-20261002 --artifacts frontend/tests/offscreen/artifacts/m18-acceptance/final`로 한 번 돌렸다. 전체 게이트 로그는 `frontend/tests/offscreen/artifacts/m18-acceptance/gate/`(Git 제외).
 
 ### M15 KLIFS 번호 측정
 

@@ -1,0 +1,107 @@
+{
+  "build": {
+    "buildId": "TQn8wObN5_83HO7HbKqrf",
+    "gitHead": "23e2c03d87038092edd1e1ec4c10d5ff398adb11",
+    "gitStatusPorcelainSha256": "cf0fbe1200386d7727bdfa795118a385521c0fa23cb298147c211d43b3c99a73",
+    "dirtyFiles": [
+      "?? docs/qa/m18-docking-20261002/acceptance/",
+      "?? docs/qa/m18-docking-20261002/gate.txt",
+      "?? docs/qa/m18-docking-20261002/m14-regression/",
+      "?? docs/qa/m18-docking-20261002/m15-regression/",
+      "?? docs/qa/m18-docking-20261002/m16-regression/",
+      "?? docs/qa/m18-docking-20261002/m17-regression/"
+    ],
+    "recordedAt": "2026-10-02T03:54:23.323538+00:00",
+    "harnessSha256": {
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+    },
+    "inputSha256": {
+      "public_1hsg.cif": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "derived_1hsg_first10_fixture.cif": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+      "prolif-vina-rec.pdb": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "prolif-vina-output.sdf": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    },
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d",
+    "qaInputsSha256": "f65692c4983bf9eaca6fb4d9b4bbed1792ba0d03ce3447403c8597d89ff5994f"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T03:54:26.224353+00:00"
+    },
+    {
+      "name": "backend-replay-engine-missing",
+      "runs": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/replay-runs",
+      "code": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T04:01:25.950812+00:00"
+    },
+    {
+      "name": "backend-unavailable-missing",
+      "runs": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/unavailable-missing-runs",
+      "code": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T04:01:33.224605+00:00"
+    },
+    {
+      "name": "backend-unavailable-hash",
+      "runs": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/unavailable-hash-runs",
+      "code": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/layout-engine-tampered",
+      "mw": "<repo>/runs/m18-m13-regression-20261002/m12-acceptance/layout-engine-tampered/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T04:01:37.315139+00:00"
+    }
+  ],
+  "positive": {
+    "run": "run_136cb4fd15164455968caf6a158ff392",
+    "set": "obj://run_136cb4fd15164455968caf6a158ff392/pocket_set/f10ab25cb0f07cee8dd8d474563892a57ecc7fae36d96536297fae46063b0c99",
+    "prepared": "obj://run_136cb4fd15164455968caf6a158ff392/prepared_structure/25c90cc407da547e2796c9366919878107658c6291a7ead772657f9b1f234f08",
+    "original": "obj://run_136cb4fd15164455968caf6a158ff392/structure/4eb6f8b0930dcc8f2a660272ca4353c0d023121530a9cfaaef51fff6696de672",
+    "report": "obj://run_136cb4fd15164455968caf6a158ff392/method_report_manifest/e4c9cf9dfe625e00753ac43adb50bb8513292f1dd59b976d8b225404834ff353",
+    "md": "a43a8fa3e60c193c4e12d73febd40e587a5fcf35b56599b28cdbc830bc6e2d97",
+    "json": "29610202197de8caa93e48b73296b60381fb9262e335a85395180fc3d4332d11"
+  },
+  "empty": {
+    "run": "run_e7135e50f3204cfebab1c73ee0545401",
+    "set": "obj://run_e7135e50f3204cfebab1c73ee0545401/pocket_set/187102bfb0591d255a5f514c00ed0bde4b082c93247f5e458f4972c6ee98b562",
+    "report": "obj://run_e7135e50f3204cfebab1c73ee0545401/method_report_manifest/0a98e7386bb9eebd7b28ba3e2cc74bb2fdb88a2a30a64973124a0889a06e9730",
+    "md": "89dd50044f26df8b457c1b9c7dc2e55c7383385d2807f42075a8904a006b4079",
+    "json": "310fe03782377df637b787cc262e64ffb882c6bb8366908ea37d71bdd7f44f55"
+  },
+  "chemical": {
+    "run": "run_8844449b6b894d25b6f0816c76221eb0",
+    "result": "obj://run_8844449b6b894d25b6f0816c76221eb0/chemical_interaction_set/150352de5b08e79f4efb6d67a2e854e7010d7639b8c532c9bf6aca440a19c601"
+  },
+  "scenesRun": "run_3179621108504b9da5695a710e30cc83",
+  "m11Prepared": {
+    "run": "run_0737bcc4b39b4613be3f127d043c0979",
+    "graph": "obj://run_0737bcc4b39b4613be3f127d043c0979/chemical_graph/9b3337182c2255a18756d8e0c8c9bd2eedd8399852357f79acc6e9fefb5db465"
+  },
+  "layouts": {
+    "layout-engine-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent",
+      "files": 91,
+      "treeSha256": "efa78c61fea2dc3915f42e472970b082ddb6b8e73d964dd7bfe23a94c1d0dcac",
+      "engine": null
+    },
+    "layout-engine-tampered": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; real install record with a labeled placeholder bin/fpocket (SHA-256 42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822, not the reviewed build)",
+      "files": 91,
+      "treeSha256": "efa78c61fea2dc3915f42e472970b082ddb6b8e73d964dd7bfe23a94c1d0dcac",
+      "engine": {
+        "path": ".deps/fpocket/env/bin/fpocket",
+        "sha256": "42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822"
+      }
+    }
+  }
+}

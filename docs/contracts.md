@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -105,7 +105,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 ## M11 화학 (버전 1)
 
-- `POST /runs/{id}/chemical/imports?kind=receptor|ligand_sdf|receptor_bonds&filename=…`(M17이 `building_blocks_sdf`·`building_blocks_smiles`를 더했다, 아래 "M17 리간드 후보"): `application/octet-stream` 본문, 최대 10 MiB. 201로 `{schema: "chemical_raw_input@1", handle, kind, format, sha256, size}`를 돌려준다. 리간드는 V2000 SDF만 받고, V3000은 형식 오류로 거부한다.
+- `POST /runs/{id}/chemical/imports?kind=receptor|ligand_sdf|receptor_bonds&filename=…`(M17이 `building_blocks_sdf`·`building_blocks_smiles`를 더했다, 아래 "M17 리간드 후보". M18 도킹은 세 종류를 그대로 쓴다): `application/octet-stream` 본문, 최대 10 MiB. 201로 `{schema: "chemical_raw_input@1", handle, kind, format, sha256, size}`를 돌려준다. 리간드는 V2000 SDF만 받고, V3000은 형식 오류로 거부한다.
 - `GET /chemical/imports/inspect`, `/chemical/imports/atoms`, `POST /chemical/preview`, `GET /chemical/prerequisites`: 가져온 입력 확인, 원자 목록, 제출 전 미리보기와 부족한 조건.
 - 화학 준비와 ProLIF 계산은 위의 작업 경로로 실행한다(`prepare_chemical_structure`, `compute_chemical_interactions`).
 - `GET /chemical/structures/view`, `/chemical/structures/atoms`, `/chemical/graphs`, `/chemical/preparation-manifests`, `/chemical/results`, `/chemical/results/rows`: 결과 읽기.
@@ -251,6 +251,57 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - `POST /runs/{id}/method_reports` `{result_handle: <ligand_candidate_set>, filters?: {ranges?: {<속성>: {min?, max?}}, pains_exclude?: bool}}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_candidates"`, `render_version: "ligand_candidates_markdown@1"`, 정규화한 `filter_spec`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다. 다른 결과 종류에 `filters`를 보내면 422 `report_evidence_invalid`.
 - 주장은 모두 `evidence_kind: "computed"`. statement ID: `parent_property`, `candidate_count`, `generation_count`, `rejected_count`, `not_applicable_count`, `limit_state`, `site_atoms`, `rule_text`(저장 필드), `pains_match_count`, `stereo_flag_count`, `filter_pass_count`, `filter_all_pass_count`(`count_where`, 조건은 `row_selector`). 주장 필드는 `{statement_id, evidence_kind, source_handle, source_kind, source_schema, source_sha256, field_path, row_selector, subject, quantity, unit, exact_value, rendered_value, rounding, operation}`. 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 완료되지 않았거나 변조된 후보 집합은 422 `report_evidence_invalid`.
 - 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`, `budget`.
+
+## M18 리간드 도킹
+
+규칙은 `docs/business-rules.md` "리간드 도킹 (M18, `qvina_dock_v1`)". 읽기 호출은 run 객체(수용체 인스턴스 목록은 가져오기 바이트를 gemmi로)만 읽고 도구·작업·이벤트·RDKit·Meeko·qvina·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 가져오기는 M11 `kind=receptor|receptor_bonds|ligand_sdf` 그대로다.
+
+### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
+- `{protocol_id: "qvina_dock_v1", args, timeout_s}`. `timeout_s` 상한은 공통 900이고 화면은 600을 보낸다(인자가 아니며 호출 키에 들어가지 않음). 완료 작업의 `artifacts.docking_result`.
+- `args`(고정 모양, 알 수 없거나 빠진 키는 `invalid_job_arguments`):
+```json
+{"receptor_handle": "obj://…/chemical_raw_input/…",
+ "receptor_model_number": 1,
+ "connectivity": {"kind": "pdb_conect" | "sidecar", "sidecar_handle": null | "obj://…"},
+ "receptor_instance": null | {"model_number": 1, "chain_auth": "A", "chain_label": null, "seq_auth": 300,
+                              "seq_label": null, "icode": "", "resname": "XYZ"},
+ "ligand": {"source": "sdf", "sdf_handle": "obj://…"} |
+           {"source": "candidate", "candidate_set_handle": "obj://…", "candidate_id": "c_…",
+            "parent_sdf_handle": "obj://…"},
+ "mode": "free" | "core_fixed",
+ "box": {"source": "ligand_range" | "instance_range", "margin_A": 8.0} |
+        {"source": "manual", "center_A": [0, 0, 0], "size_A": [20, 20, 20]},
+ "parameters": {"seed": 0, "exhaustiveness": 8, "num_modes": 9, "energy_range": 3, "conformers": 50},
+ "acknowledgement": {"keep_input_protonation": true, "tool_assigned_types_charges": true,
+                     "rigid_no_optimization": true}}
+```
+  `seed`는 필수, `exhaustiveness`·`num_modes`·`energy_range`·`margin_A`와 코어 고정의 `conformers`는 빼면 기본값으로 채운다. 자유 도킹에 `conformers` 키가 있으면(null 포함) 거절하고 정규화 때 null로 둔다. 정수는 bool·float가 아니어야 한다. 호출 키에는 `acknowledgement`를 뺀 정규화 인자와 고정 환경 pin이 들어간다.
+- 입장 거절(작업을 만들지 않음, 예산 없음, 422 `input_invalid`, `detail.reason_code`): `invalid_job_arguments`(모양·범위·종류·다른 run handle), `mode_source_mismatch`, `acknowledgement_missing`, `box_invalid`, `box_too_large`(직접 입력 한 변 > 40 Å), `candidate_unknown`, `parent_mismatch`, 수용체 이유(`receptor_invalid`, `receptor_hydrogens_missing`, `receptor_unsupported_residue`, `receptor_altloc_present`, `receptor_instance_unknown`, `receptor_instance_ambiguous`, `receptor_instance_covalent`). `receptor_unsupported_residue`·`receptor_altloc_present`의 `detail`은 `items`(최대 20개: `{residue(7필드), atom_names}` 또는 `{residue, atom_name, altloc}`)와 `total`, `receptor_instance_covalent`의 `detail`은 `bonds`(최대 20쌍의 원자 식별자)와 `total`이다. 환경을 쓸 수 없으면 412 `precondition`(`detail.reason_code`는 capability 이유).
+- 작업 실패(과금됨, 결과 객체 없음, `failure{error, reason_code, message, detail}`): `input_invalid` — 수용체·리간드·후보·코어·상자 이유(작업 프로세스가 같은 검사를 다시 함), `resource_exceeded` — 모드당 접촉 500행 초과·결과 4 MiB 초과, `fatal` — `engine_failed`, `engine_output_invalid`, 잘못된 오류 봉투. 시작 때 고정 pin이 바뀌었으면 `precondition`(`worker_version_invalid`). 시간 초과·취소는 결과 없음. dry-run run은 계획만.
+- `POST /jobs/{id}/start`는 작업이 끝날 때까지 응답하지 않는다. 화면은 제출 응답의 job id로 `GET /jobs/{id}`·`POST /jobs/{id}/cancel`을 따로 부른다. 도구 `qvina_dock_ligand`는 작업 전용이라 `/commands`로 실행되지 않는다.
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/docking/prerequisites` | — | `docking_prerequisites@1`: `{capability, import_counts{receptor, receptor_bonds, ligand_sdf}, imports:[{handle, input_kind, input_format, size, sha256, created_seq}], candidate_sets:[{handle, valid, candidates, parent_handle, parent_sha256, parent_sdf_handles}], docking_results, starts_job: false}`. `parent_sdf_handles`는 SHA-256이 후보 집합의 `parent_sha256`과 같은 이 run의 `ligand_sdf` 가져오기. 검증에 실패한 후보 집합은 `valid: false`, 나머지 null | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/docking/receptor_instances?handle=` | 같은 run의 `receptor` 가져오기 handle | `{schema: "docking_receptor_instances@1", handle, sha256, format: "pdb"|"cif", model_numbers, models:[{model_number, water_residue_count, instances:[{residue(7필드), atom_count, element_counts}]}], selection_aid_only: true, starts_job: false}` | 422 `input_invalid`(handle·종류·형식), 422 도구 실패 본문 `receptor_invalid`(구조로 읽히지 않음), 409 `run_corrupt` |
+| `GET /runs/{id}/docking/results?offset&limit` | limit 1–100(기본 50) | `docking_result_list@1`: `{total, offset, limit, rows:[{handle, created_seq, valid, reason_code, job_id, method, mode, ligand_source, candidate_id, receptor_handle, seed, box_source, modes, null_result}]}`. 만든 순서(오래된 것 먼저). 행마다 다시 검증하고, 실패한 행은 `valid: false`, `reason_code: "evidence_invalid"`, 나머지 null | 409 `run_corrupt` |
+| `GET /runs/{id}/docking/results/detail?handle=` | 도킹 결과 handle | `docking_result_detail@1`: `{schema, handle, job_id, score_label, result, meta}`. `result`는 저장 객체에서 모드 행의 `pose_sdf`·`contacts`를 빼고 행마다 `contact_count`를 더한 것 | 404 없는 handle, 422 다른 종류, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/docking/results/contacts?handle=&mode=&offset&limit` | `mode` 1–20(필수), limit 1–500(기본 100) | `docking_contact_page@1`: `{handle, mode, method, cutoff_A, total, offset, limit, rows}`. 행은 저장 순서(`ligand_serial`, `site_index`) | 404 없는 모드·handle, 422, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/docking/results/pose_sdf?handle=&mode=` | `mode` 1–20(필수) | 그 모드의 저장 `pose_sdf` 바이트 그대로(레코드 하나, `$$$$` 없음), `chemical/x-mdl-sdfile`, 첨부 이름 `protview-docking-<handle 해시 앞 12>-mode_<n>.sdf` | 404 없는 모드, 422, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/docking/results/poses_sdf?handle=` | — | 모든 모드의 저장 `pose_sdf`를 모드 순서로, 레코드마다 뒤에 `$$$$`(제목은 저장된 `mode_<n>`), 첨부 이름 `…-modes.sdf` | 404 모드 0개(빈 과학 결과), 422, 422 `method_evidence_invalid` |
+
+- 모드별 `pose_sdf`와 전체 `poses_sdf`는 경로 이름이 한 글자(`s`) 다르다. 모드별은 `mode`가 필수이고 `$$$$`가 없으며, 전체는 `mode`를 받지 않는다(보내면 422).
+- 모든 결과 읽기는 `docking_bundle.validated_result`(크기 제한 읽기, 완료된 게시 한 건, 입력·닫힌 집합 대조)를 거친다. 일반 `GET /runs/{id}/objects`·`/objects/meta`도 `docking_result`를 읽을 수 있지만 이 검증을 거치지 않는다(M12·M17과 같은 관례). 화면은 위 `/docking/*`만 쓴다.
+
+### capability
+- `/capabilities`의 `methods.ligand_docking`(`docking_capability@1`): `{available, status, reason_code, reason, protocol_id, tool_id, engine: "qvina", execution_lane: "durable_job", methods{free, core_fixed}, timeout_s{default: 600, max: 900}, limits{input_bytes_per_file, receptor_atoms, ligand_heavy_atoms, active_torsions, box_side_A, result_bytes, contacts_per_mode}, score_label, limitations, pins, versions}`. 사용할 수 없으면 `available: false`, `reason_code`는 `worker_missing | engine_missing | engine_hash_mismatch | handshake_failed | version_mismatch`, `pins`·`versions`는 null. 서버는 `qvina2` 파일 해시를 재고 작업 모듈 `--handshake`만 실행하며(qvina를 실행하지 않음), 구조가 맞는 handshake만 캐시한다(판정은 매번 다시 함).
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <docking_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_docking"`, `render_version: "ligand_docking_markdown@1"`, `result_schema: "docking_result@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
+- 주장은 모두 `evidence_kind: "computed"`. statement ID: `mode_count`, `sample_count`, `score`, `score_minimum`, `score_maximum`, `contact_count`, `contact_kind_count`, `atoms_outside_box`, `min_heavy_atom_distance`, `core_max_deviation`, `box`, `parameter`, `engine`, `preparation`, `receptor_input`, `removed_instance`, `ligand_input`. 주장 필드는 M17과 같다. 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 필수 필드(후보 출처·`core_max_deviation_A`) 누락, 완료되지 않았거나 변조된 결과는 422 `report_evidence_invalid`.
+- 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`(`available`, `status`, `reason_code`, `pins`), `budget`.
 
 ## 과거 단계 실행기 (CLI)
 

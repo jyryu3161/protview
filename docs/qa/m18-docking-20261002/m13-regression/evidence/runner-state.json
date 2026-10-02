@@ -1,0 +1,66 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "TQn8wObN5_83HO7HbKqrf",
+    "gitHead": "23e2c03d87038092edd1e1ec4c10d5ff398adb11",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "cf0fbe1200386d7727bdfa795118a385521c0fa23cb298147c211d43b3c99a73",
+    "dirtyFiles": [
+      "?? docs/qa/m18-docking-20261002/acceptance/",
+      "?? docs/qa/m18-docking-20261002/gate.txt",
+      "?? docs/qa/m18-docking-20261002/m14-regression/",
+      "?? docs/qa/m18-docking-20261002/m15-regression/",
+      "?? docs/qa/m18-docking-20261002/m16-regression/",
+      "?? docs/qa/m18-docking-20261002/m17-regression/"
+    ],
+    "recordedAt": "2026-10-02T03:27:01.225767+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "workflows-flow.cjs": "8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da"
+    },
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m18-m13-regression-20261002/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T03:27:04.090226+00:00"
+    },
+    {
+      "name": "backend-unavailable",
+      "runs": "<repo>/runs/m18-m13-regression-20261002/unavailable-runs",
+      "code": "<repo>/runs/m18-m13-regression-20261002/layout-engines-missing",
+      "mw": "<repo>/runs/m18-m13-regression-20261002/layout-engines-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T03:34:22.256122+00:00"
+    }
+  ],
+  "mainRun": "run_d25004a7c17845d6a5bccc807ec4ea97",
+  "m10Run": "run_62ec6d3c84e54539a789282115f94661",
+  "attach": {
+    "run": "run_b64e8b00a7634439946dd8c0729527c4",
+    "complex": "obj://run_b64e8b00a7634439946dd8c0729527c4/structure/8668e6fa452bd8ed829d734c890b2545e6b1de59b9224c19df00a01b9d6e09f8",
+    "dir": "<repo>/runs/m18-m13-regression-20261002/inputs/attach-setup",
+    "sdfImport": "obj://run_b64e8b00a7634439946dd8c0729527c4/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "scenesRun": "run_382889096edb40638a613be9279384c9",
+  "layouts": {
+    "layout-engines-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps absent (fpocket and the ProLIF worker environment not installed)",
+      "files": 91,
+      "treeSha256": "efa78c61fea2dc3915f42e472970b082ddb6b8e73d964dd7bfe23a94c1d0dcac"
+    }
+  }
+}

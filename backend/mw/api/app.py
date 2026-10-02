@@ -18,7 +18,15 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_executions, analysis_plans, ligand_bundle, ligand_reads, numbering_reads
+from .. import (
+    analysis_executions,
+    analysis_plans,
+    docking_bundle,
+    docking_reads,
+    ligand_bundle,
+    ligand_reads,
+    numbering_reads,
+)
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
@@ -32,6 +40,7 @@ from ..chemical_reports import build_chemical_report, saved_chemical_report
 from ..comparison_reports import build_comparison_report, saved_comparison_report, validated_comparison_result
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE, canonical_json
+from ..docking_reports import build_docking_report, saved_docking_report
 from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_reports import build_ligand_report, saved_ligand_report
@@ -344,6 +353,8 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
         result["artifacts"] = {"ligand_inspection": job["output_handles"][0]}
     elif job.get("protocol_id") == "rdkit_enumerate_v1" and job.get("status") == "done":
         result["artifacts"] = {"ligand_candidate_set": job["output_handles"][0]}
+    elif job.get("protocol_id") == "qvina_dock_v1" and job.get("status") == "done":
+        result["artifacts"] = {"docking_result": job["output_handles"][0]}
     else:
         result["artifacts"] = {}
     return result
@@ -607,6 +618,9 @@ def capabilities() -> dict[str, Any]:
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
     # M17: pinned environment + RDKit version + PAINS A/B/C, checked by the worker handshake (no RDKit here).
     methods["ligand_candidates"] = ligand_bundle.capability()
+    # M18: both locked environments, qvina2 hash = install record = pin, worker handshake versions (no RDKit/Meeko
+    # import and no qvina run here).
+    methods["ligand_docking"] = docking_bundle.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1210,6 +1224,9 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # The active reference set is recorded in the report snapshot only; the report reads stored objects.
             return build_site_annotation_report(run, body.result_handle,
                                                 active_set_hash=numbering_reads.capability()["set_hash"])
+        if kind == "docking_result":
+            # Reads the stored docking result only (validated against its publication); nothing is docked again.
+            return build_docking_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1235,7 +1252,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                      "analysis_type": (run.store.load_bounded_json(e["report_handle"], 8 * 1024 * 1024)
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
-                                        "reference_site_annotation", "ligand_candidates"}
+                                        "reference_site_annotation", "ligand_candidates", "ligand_docking"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1250,7 +1267,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"]) == ("method_report_manifest", "method_report_manifest@1"):
         report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
-                                                              "reference_site_annotation", "ligand_candidates"}
+                                                              "reference_site_annotation", "ligand_candidates",
+                                                              "ligand_docking"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1269,6 +1287,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_site_annotation_report(run, handle)
         if report.get("analysis_type") == "ligand_candidates":
             return saved_ligand_report(run, handle)
+        if report.get("analysis_type") == "ligand_docking":
+            return saved_docking_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -1334,7 +1354,7 @@ def approve_job(rid: str) -> dict[str, Any]:
                  event.get("gate") == "expensive_first_call"]
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
-                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands"}
+                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1626,6 +1646,123 @@ async def ligand_preview(rid: str, request: Request) -> Any:
         return await run_in_threadpool(lambda: ligand_reads.preview(run, body))
     except ToolFailure as exc:
         return _tool_error(exc)
+
+
+# ----------------------------------------------------------------- M18 docking reads (no event, job, tool or engine)
+def _docking_result(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (docking_reads.RESULT, docking_reads.RESULT_SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a docking_result"})
+    return meta
+
+
+def _docking_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid docking evidence"})
+
+
+def _docking_mode_unknown(exc: Exception) -> HTTPException:
+    return HTTPException(404, detail={"error": "not_found", "message": str(exc)})
+
+
+def _docking_sdf(raw: bytes, filename: str) -> Response:
+    return Response(raw, media_type="chemical/x-mdl-sdfile", headers={
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/runs/{rid}/docking/prerequisites")
+def docking_prerequisites(rid: str, request: Request) -> dict[str, Any]:
+    """M18 input readiness: receptor/bonds/ligand imports, M17 candidate sets, capability; starts nothing."""
+    _only_query(request, set())
+    run = _run(rid)
+    try:
+        return docking_reads.prerequisites(run)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid docking input record"}) from exc
+
+
+@app.get("/runs/{rid}/docking/receptor_instances")
+def docking_receptor_instances(rid: str, request: Request, handle: str) -> Any:
+    """Nonstandard residue instances of one receptor import (gemmi); a selection aid, rechecked at admission."""
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    try:
+        return docking_reads.receptor_instances(run, handle)
+    except docking_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except ToolFailure as exc:
+        return _tool_error(exc)
+    except ValueError as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid receptor import"}) from exc
+
+
+@app.get("/runs/{rid}/docking/results")
+def docking_results(rid: str, request: Request, offset: int = Query(0, ge=0),
+                    limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return docking_reads.list_results(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid docking object record"}) from exc
+
+
+@app.get("/runs/{rid}/docking/results/detail")
+def docking_result_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _docking_result(run, handle)
+    try:
+        return {**docking_reads.result_detail(run, handle), "meta": meta}
+    except docking_bundle.DockingEvidenceError as exc:
+        raise _docking_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/docking/results/contacts")
+def docking_result_contacts(rid: str, request: Request, handle: str,
+                            mode: int = Query(..., ge=1, le=docking_reads.MODE_MAX),
+                            offset: int = Query(0, ge=0),
+                            limit: int = Query(docking_reads.CONTACT_LIMIT_DEFAULT, ge=1,
+                                               le=docking_reads.CONTACT_LIMIT_MAX)) -> dict[str, Any]:
+    """One mode's stored geometric contact rows (ligand_serial, site_index order), paged."""
+    _only_query(request, {"handle", "mode", "offset", "limit"})
+    run = _run(rid)
+    _docking_result(run, handle)
+    try:
+        return docking_reads.contact_page(run, handle, mode, offset, limit)
+    except docking_bundle.DockingEvidenceError as exc:
+        raise _docking_evidence_error(exc) from exc
+    except docking_reads.ModeUnknown as exc:
+        raise _docking_mode_unknown(exc) from exc
+
+
+@app.get("/runs/{rid}/docking/results/pose_sdf")
+def docking_pose_sdf(rid: str, request: Request, handle: str,
+                     mode: int = Query(..., ge=1, le=docking_reads.MODE_MAX)) -> Response:
+    """One mode's stored pose SDF record (no $$$$), byte for byte."""
+    _only_query(request, {"handle", "mode"})
+    run = _run(rid)
+    _docking_result(run, handle)
+    try:
+        return _docking_sdf(*docking_reads.pose_sdf(run, handle, mode))
+    except docking_bundle.DockingEvidenceError as exc:
+        raise _docking_evidence_error(exc) from exc
+    except docking_reads.ModeUnknown as exc:
+        raise _docking_mode_unknown(exc) from exc
+
+
+@app.get("/runs/{rid}/docking/results/poses_sdf")
+def docking_poses_sdf(rid: str, request: Request, handle: str) -> Response:
+    """Every mode's stored pose SDF record in mode order, each followed by $$$$ (titles mode_<n> as stored)."""
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    _docking_result(run, handle)
+    try:
+        return _docking_sdf(*docking_reads.all_poses_sdf(run, handle))
+    except docking_bundle.DockingEvidenceError as exc:
+        raise _docking_evidence_error(exc) from exc
+    except docking_reads.ModeUnknown as exc:
+        raise _docking_mode_unknown(exc) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")

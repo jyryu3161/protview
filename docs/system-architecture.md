@@ -20,6 +20,8 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   │     ├─ OpenMM 작업 프로세스 (프로젝트 .venv 인터프리터)
   │     ├─ ProLIF 작업 프로세스 (.deps/prolif/venv-locked 별도 인터프리터)
   │     ├─ RDKit 리간드 작업 프로세스 (M17 ligand_worker.py, 같은 venv-locked 인터프리터)
+  │     ├─ qvina 도킹 작업 프로세스 (M18 docking_worker.py, .deps/docking/venv-locked 별도 인터프리터,
+  │     │    자식으로 .deps/qvina/env/bin/qvina2 고정 실행 파일)
   │     └─ fpocket 작업 프로세스 (프로젝트 .venv, .deps/fpocket/env/bin/fpocket 고정 실행 파일)
   └─ EgressGate (egress/) ─ 유일한 외부 HTTP 출구
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
@@ -60,6 +62,10 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/ligand_bundle.py`, `jobs/ligand_worker.py` | M17 리간드 작업 경로: capability handshake(작업 모듈 `--handshake`만 실행), 입장 검사·호출 키·스테이징(48 MiB), 게시 검증, `ligand_inspection@1`·`ligand_candidate_set@1` 검증 읽기. 작업 모듈은 `.deps/prolif/venv-locked`에서 RDKit으로 점검(원자 표·번호 붙은 2D SVG·속성·block·규칙 검증)과 생성(고정 교체·사용자 반응 규칙·중복·상한·속성·PAINS)을 한다 | 서버: core, ligand 순수 모듈. 작업 모듈: RDKit, `ligand_constants` |
 | `backend/mw/ligand_reads.py`, `ligand_reports.py` | M17 읽기 API(준비 상태·목록·상세·후보 행 페이지·부위 미리보기, 이벤트 없음)와 요약 증거 보고서(`count_where`) | ligand_bundle, ligand 순수 모듈, reports, core |
 | `frontend/src/components/LigandPanel.tsx` | M17 리간드 설계·탐색 탭 화면: 가져오기, 점검·생성 작업(승인·예산), 번호 붙은 그림(`<img>` data URI)·원자 표·부위 체크, 후보 표·필터·정렬·페이지, 보고서 만들기 | `src/lib/ligand.ts`, `api.ts` |
+| `backend/mw/docking_constants.py`, `docking_inputs.py` | M18 서버 쪽 순수 모듈(RDKit·Meeko 없음): 닫힌 이유 집합·값 범위·점수 문구·고정 한계 문장 11개(의존성 없음, 작업 모듈도 파일 경로로 읽음), 작업 인자 입장 검사·호출 키 입력, gemmi로 수용체 인스턴스 목록·M11 규칙 수용체 검사 | core, `chemical_inputs`(상수·gemmi 파서), `tools/structural`(`_res_ref`) |
+| `backend/mw/docking_bundle.py`, `jobs/docking_worker.py` | M18 도킹 작업 경로: capability(`qvina2` 해시 + 작업 모듈 `--handshake`만, qvina 실행 없음), 입장 검사·호출 키·스테이징(48 MiB), 게시 검증(접촉의 수용체 원자·거리 재대조), `docking_result@1` 검증 읽기. 작업 모듈은 `.deps/docking/venv-locked`에서 수용체 검사·M11 화학 추론(MDAnalysis)·Meeko PDBQT·리간드 검사·RDKit 형태 생성·`qvina2` 실행(자유 검색 또는 `--score_only`)·포즈 복원·기하 접촉을 한다 | 서버: core, docking 순수 모듈, `ligand_bundle`(후보 집합 검증 읽기). 작업 모듈: gemmi, MDAnalysis, Meeko, RDKit, `docking_constants`, `qvina2` |
+| `backend/mw/docking_reads.py`, `docking_reports.py` | M18 읽기 API(준비 상태·수용체 인스턴스·결과 목록·상세·접촉 페이지·포즈 SDF, 이벤트 없음)와 계산값 증거 보고서(`count_where`, 점수 최솟값·최댓값) | docking_bundle, docking 순수 모듈, `ligand_reports`·`numbering_reports`·`pocket_reports`(공용 검사·한도), reports, core |
+| `frontend/src/components/DockingPanel.tsx` | M18 리간드 설계·탐색 탭의 도킹 영역(후보 영역 다음): 수용체·사이드카·SDF 가져오기, 인스턴스 선택, 리간드 출처·방식·상자·값·확인 세 항목, 작업(승인·예산·취소), 요약·모드 표·접촉 표·SDF 내려받기·거부 목록, 보고서 만들기 | `src/lib/docking.ts`, `api.ts` |
 | `frontend/src/components/SiteAnnotationPanel.tsx` | M16 구조 분석 탭 메인 화면의 참조 주석 패널: 같은 구조의 대응·접촉 결과 선택, 주석 만들기·켜기, 범례, 부위 표, 보고서 만들기. Mol* 그리기는 MolstarViewer 브리지의 `siteAnnotation` | `src/lib/site-annotation.ts`, `api.ts`, MolstarViewer 브리지 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
@@ -67,7 +73,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `frontend/src/components/AnalysisWorkflowPanel.tsx` | M13 분석 흐름 패널(메인 화면과 화학 작업 화면 공용): 화면 선택 가져오기, 계획 미리보기, 두 승인, 단계 목록, 결과 열기, 요약 | `src/lib/analysis.ts`, `api.ts`, PocketPanel·페이지의 결과 열기 콜백 |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
-의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다.
+의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈만 자식 프로세스로 실행한다.
 
 ## 대표 흐름: 업로드부터 보고서까지
 
@@ -81,7 +87,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 
 ## 비싼 계산의 작업 경로
 
-OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간드 점검·생성은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
+OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간드 점검·생성, M18 qvina 도킹은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
 
 ## 분석 흐름 (M13)
 
@@ -99,13 +105,17 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간�
 
 리간드 탭에서 사용자가 부모 SDF와 building block 파일을 `/chemical/imports`로 가져오고 반응 규칙을 쓰면, 화면이 `POST /jobs`로 `rdkit_inspect_v1`을 제출·승인·시작한다. 서버는 RDKit 없이 입장을 검사하고 가져오기 바이트를 스테이징하며, guardian이 `.deps/prolif/venv-locked`의 `ligand_worker.py`를 띄운다. 작업 모듈이 낸 점검 결과(원자 표·결합·수소, 번호 붙은 2D SVG, 속성, block·규칙 검증)를 서버가 검증해 `ligand_inspection@1`로 저장한다. 사용자가 원자 표에서 부위를 체크하면 `POST /ligand/preview`가 저장된 결합 목록으로 부위를 검사하고(이벤트 없음), 생성 요청 `rdkit_enumerate_v1`은 같은 검사를 입장에서 다시 한 뒤 점검 객체의 `valid` 규칙 텍스트와 함께 작업 모듈에 넘긴다. 결과 `ligand_candidate_set@1`은 필터와 무관하게 모든 후보를 담는다. 후보 표는 `/ligand/candidate_sets/rows`가 저장값에 필터·정렬·페이지를 적용해 돌려주고, 보고서는 기존 `method_reports` 경로로 요약 증거만 만든다. 두 객체는 이벤트만으로 다시 열린다. 네트워크는 쓰지 않는다.
 
+## 리간드 도킹 (M18)
+
+리간드 탭 도킹 영역에서 사용자가 수용체(+결합 사이드카)와 리간드 SDF를 `/chemical/imports`로 가져오고(M11 종류 그대로), 수용체에 비표준 잔기가 있으면 `GET /docking/receptor_instances`(gemmi, 이벤트 없음)에서 뺄 인스턴스 하나를 고른다. 리간드 출처(3D SDF 또는 M17 후보 + 부모 SDF)·방식·상자·값·확인 세 항목을 정하면 화면이 `POST /jobs`로 `qvina_dock_v1`을 제출·승인·시작한다. 서버는 RDKit·Meeko 없이 입장을 검사하고(작업 인자, 같은 run handle, 후보 집합·부모 해시, 수용체 M11 규칙·인스턴스 일치를 gemmi로), 가져오기 바이트를 스테이징하며, guardian이 `.deps/docking/venv-locked`의 `docking_worker.py`를 띄운다. 작업 모듈은 수용체를 다시 검사한 뒤 M11 화학 추론 그래프 → Meeko로 수용체 PDBQT를, Meeko로 리간드 PDBQT를 만들고, `.deps/qvina/env/bin/qvina2`를 자식으로 실행한다(자유: 검색, 코어 고정: RDKit 구속 형태마다 `--score_only`). 포즈를 입력 원자 순서로 되돌려 포즈 SDF·상자 밖 원자·최소 거리·기하 접촉을 만들고, 서버가 이를 검증해(접촉의 수용체 원자·거리를 수용체 가져오기로 재대조) `docking_result@1`로 저장한다. 읽기는 `/docking/*`가 매번 완료된 게시에 대조해 돌려주고, 보고서는 기존 `method_reports` 경로로 만든다. 결과는 이벤트만으로 다시 열린다(qvina·Meeko 없이). 작업 모듈은 화학 패키지 import 전에 Python socket을 막고, 제품 실행 중 네트워크는 쓰지 않는다.
+
 ## 외부 경계
 
 - 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다.
 - 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 서열, 원자·리간드 이름, 로컬 경로, handle, run ID, 자격 증명, 이전 대화.
 - 정책 변경(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 아직 게이트 투영이 이 데이터 종류를 만들지 않으므로 실제 전송은 다음 단계에서 구현한다. 자격 증명은 계속 전송 금지다.
 - 브라우저의 글꼴·스크립트·Mol* 자산·예시 구조는 모두 로컬 번들이다. 오프스크린 QA는 loopback이 아닌 요청을 전부 차단하고 기록한다.
-- 초기 설치(`pip`, `npm ci`, ProLIF wheelhouse)에만 네트워크가 필요하다. 실행 중에는 다운로드하지 않는다. 참조 스냅샷 가져오기도 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
+- 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)에만 네트워크가 필요하다. 실행 중에는 다운로드하지 않는다. 참조 스냅샷 가져오기도 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
 
 ## 저장소 배치
 

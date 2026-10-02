@@ -1,0 +1,143 @@
+{
+  "schema": "m15_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "N-confirmed-sifts": "pass",
+    "N-klifs-oracle": "pass",
+    "N-status-filter": "pass",
+    "N-conflict-row": "pass",
+    "N-alignment-only": "pass",
+    "N-below-identity": "pass",
+    "N-report": "pass",
+    "N-prepared": "pass",
+    "N-read-retry": "pass",
+    "N-run-switch": "pass",
+    "N-late-response": "pass"
+  },
+  "runId": "run_149893ea75d947bfa2b669a476bd7027",
+  "runs": {
+    "A": "run_149893ea75d947bfa2b669a476bd7027",
+    "B": "run_25b3a64a3aa641778abea3da08b34830"
+  },
+  "handles": {
+    "maps": {
+      "confirmed": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/0ba3797647d8c254500c727b694e1644ee0661ed9dec63d701c2fd965ff08e73",
+      "alignmentOnly": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/3eb08bca20241c5c7c0463f7f9292456aab68f26cf87b39505105c023c624453",
+      "belowIdentity": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/db49a4cfb39db39129f17086f9582db88ca0b5dbf7beeadc36bd99a494e94733",
+      "report": "obj://run_149893ea75d947bfa2b669a476bd7027/method_report_manifest/6364f4c908aa071771df243aacf6d39a9a6931e62c31f6129f7eac0548b71a13",
+      "prepared": "obj://run_149893ea75d947bfa2b669a476bd7027/residue_numbering_map/ca8524ae1e284a2562fc60c0addecf0cc3383cff5690febcdf9a0d4d8ac3a401",
+      "runB": "obj://run_25b3a64a3aa641778abea3da08b34830/residue_numbering_map/4c55fbedde6e7d5a8f23e7baf4290ef7e5feb78185e7bc3c2bf8ecc423dd6f15"
+    },
+    "structure": "obj://run_149893ea75d947bfa2b669a476bd7027/structure/f806285e130751b0e1e0c7e379d801b76fef971997e826f8972d0de94c5543c9",
+    "prepared": "obj://run_149893ea75d947bfa2b669a476bd7027/prepared_structure/a9e5787f3c9c66c9884cf3b2d1b49cb068c94f5047ca6f7f1fbb347ad298f1ba"
+  },
+  "inputs": [
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain)"
+    }
+  ],
+  "fixtureLabels": [
+    "QA fault fixture (labeled renderer route, not a scientific value): numbering read failure",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "buildId": "TQn8wObN5_83HO7HbKqrf",
+  "harness": {
+    "numbering-flow.cjs": "8996b7fc22495aeeca03600e7f97a4988dc2955ffb05d0b21deeb0e5c9944b8f",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "0f7cfef10b5264204149493e0e9f9321e3953f4aa8ca245f17f04e8e3e51ed2f",
+  "previousSetHash": null,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 354,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m18-regression/numbering-main/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 412,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m15-acceptance/m18-regression/numbering-main/paint-first.png",
+        "paintOrdinal": 2,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 95,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_149893ea75d947bfa2b669a476bd7027",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_25b3a64a3aa641778abea3da08b34830",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "numbering-main.jsonl",
+  "startedAt": "2026-10-02T03:24:44.824Z",
+  "finishedAt": "2026-10-02T03:25:03.895Z"
+}

@@ -1,0 +1,410 @@
+{
+  "schema": "m16_case_ledger@1",
+  "generatedAt": "2026-10-02T03:24:32.578133+00:00",
+  "build": {
+    "buildId": "TQn8wObN5_83HO7HbKqrf",
+    "gitHead": "23e2c03d87038092edd1e1ec4c10d5ff398adb11",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "a296e88c20fe229f6106f3fd1b8787aaeb54f559a93a6a6555fc59dd20bd5d29",
+    "dirtyFiles": [
+      "?? docs/qa/m18-docking-20261002/acceptance/",
+      "?? docs/qa/m18-docking-20261002/gate.txt",
+      "?? docs/qa/m18-docking-20261002/m17-regression/"
+    ],
+    "recordedAt": "2026-10-02T03:23:36.180893+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "annotation-flow.cjs": "8f670b8262fa02ca11c29625fb3be563e305d475df43935f7f31f1cf61fd5d85",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "7172edb88a386383d8ba5e43e65ab7a427687aedb89469d5ee1ac6dedfd47394"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "reference": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "A-load-prepare-contacts": {
+      "text": "public_1mq4.cif loaded, 전처리, 기하 접촉 with the ADP instance chosen explicitly (7 fields equal the T1 preflight ligand; PO4 also offered)",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-numbering-prepared": {
+      "text": "지식·보고서: numbering map on the prepared structure with PDB ID 1MQ4 confirmed",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-panel-create": {
+      "text": "panel lists only same-structure maps and contact results, chooses nothing automatically; map + ADP contacts → 주석 만들기 (annotate_reference_sites)",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-site-table": {
+      "text": "site table labels/status/counts/min distance equal the stored annotation and the T1 numpy oracle; computed zero shown as 0, no contact within cutoff shown as text",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-show-readback": {
+      "text": "Mol* readback: 10 sites, labels equal display_labels (Glu211 (hinge.46)), lines equal the 10 T1 polar pairs between the exact catalog atoms, distance labels ROUND_HALF_UP, 0 undrawn",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-figure-legend": {
+      "text": "viewer_scene@2 (legend on) + viewer_figure@2 molstar_image_pass+legend; PNG/JSON download bytes equal the backend; legend pixels only in the lower-left box",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-figure-no-legend": {
+      "text": "legend unticked → redraw → viewer_scene@2 legend false → figure capture molstar_image_pass",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-figure-pixels": {
+      "text": "same camera: annotation-on vs annotation-off PNG differ; polar line colour only with annotation",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-scene-v1-unchanged": {
+      "text": "annotation off → viewer_scene@1 body without annotation key, viewer_figure@1",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-restore-redraw": {
+      "text": "annotation off, restore the @2 view → stored annotation redrawn (no tool call)",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-blocked-m8": {
+      "text": "annotation shown: natural-language request blocked with reason, nothing sent; /zoom in works",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-report": {
+      "text": "보고서 만들기 → 참조 주석 보고서 in the knowledge-tab library; downloads equal the backend bytes",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-no-contacts": {
+      "text": "접촉 결과 없이 → annotation with contacts null; 접촉 결과 없음 cells, 0 lines",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-blocked-pocket": {
+      "text": "annotation on blocks the pocket overlay (reason); overlay on blocks the annotation and refuses the @2 restore without clearing the overlay",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-blocked-comparison": {
+      "text": "M10 comparison start turns the annotation off; it cannot be turned on; @2 restore refused",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-run-switch-late": {
+      "text": "run switch turns the annotation off; a held run A annotation-list response is not applied",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "A-read-retry": {
+      "text": "labeled read failures (map list, annotation list, detail) → 다시 읽기 controls recover",
+      "modes": {
+        "annotation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-minimized": {
+      "text": "OpenMM-minimized 1UBQ source: only the unavailable reason, no numbers or controls",
+      "modes": {
+        "annotation-minimized": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "annotation-main": {
+      "status": "pass",
+      "latest": "annotation-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "annotation-minimized": {
+      "status": "pass",
+      "latest": "annotation-minimized",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "reference": {
+    "kbase": "<home>/Projects/kbase_kinase",
+    "folder": "<repo>/runs/m18-m16-regression-20261002/reference",
+    "emptyAtStart": {
+      "available": false,
+      "reason_code": "not_installed",
+      "reason": "참조 스냅샷 세트가 설치되어 있지 않습니다(가져오기 명령 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+    },
+    "changes": {
+      "reference-import": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "<repo>/scripts/import_reference_snapshots.py",
+          "--from",
+          "<home>/Projects/kbase_kinase",
+          "--dest",
+          "<repo>/runs/m18-m16-regression-20261002/reference"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m16-acceptance/m18-regression/services/reference-import.log",
+        "setHash": "941e263803d6880782253762d8378895e1ef168279c1d185f0a36995a1d85541",
+        "served": {
+          "available": true,
+          "set_hash": "941e263803d6880782253762d8378895e1ef168279c1d185f0a36995a1d85541",
+          "imported_at": "2026-10-02T03:23:38.951724Z",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      }
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "annotation-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "A-load-prepare-contacts": "pass",
+        "A-numbering-prepared": "pass",
+        "A-panel-create": "pass",
+        "A-site-table": "pass",
+        "A-show-readback": "pass",
+        "A-figure-legend": "pass",
+        "A-figure-no-legend": "pass",
+        "A-scene-v1-unchanged": "pass",
+        "A-figure-pixels": "pass",
+        "A-restore-redraw": "pass",
+        "A-blocked-m8": "pass",
+        "A-report": "pass",
+        "A-no-contacts": "pass",
+        "A-blocked-pocket": "pass",
+        "A-blocked-comparison": "pass",
+        "A-run-switch-late": "pass",
+        "A-read-retry": "pass"
+      },
+      "runs": {
+        "A": "run_77d2c11a5b724b7f9fb76456430c6cb6",
+        "B": "run_ceffa40823824c19aa7ed790fbd7d211"
+      },
+      "runId": "run_77d2c11a5b724b7f9fb76456430c6cb6",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "structure": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/structure/f02c25322a0a42f0185d8f14260e463bc851bd8fd8fbee23aea98a994f0b1033",
+        "prepared": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/prepared_structure/3f297df926745cf2dac9a1d9f5f2304efdcb4a4b99338148b5afcceaeba885c5",
+        "contacts": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/interaction_set/df50892678328a9faafbd3aef719f077c1da245747d179a812da09cc0313ac6d",
+        "map": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/residue_numbering_map/a1bb562e41057af61808c6de9e48d2adbeca046c52837982a2db88c5c6c8b9b6",
+        "annotation": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/reference_site_annotation/ed4aa8b4a2369eb253101386324ac287105f8e9131a92c34ab899a41df9c8eda",
+        "report": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/method_report_manifest/f7ab33e1b27884b2d4edcd4b3213b0a425b751b277fbec7b30228bdbc1873c15",
+        "noContacts": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/reference_site_annotation/ea53af7bc5bcbbdf1b9bc37f70b914712b65329faba4ab353cfeb16e290afb4c",
+        "runBStructure": "obj://run_ceffa40823824c19aa7ed790fbd7d211/structure/c0d20bb898bd4b0d77862e9464cdf6bace6430ab99832f28a69bc84c7766637b"
+      },
+      "inputs": [
+        {
+          "name": "preflight.txt",
+          "path": "<repo>/docs/qa/m16-annotations-20261001/preflight.txt",
+          "bytes": 10404,
+          "sha256": "c9b2a2a84d1164d7e30e87777e220f972b626eefb4e6f3982efe165529cdb033",
+          "provenance": "M16 T1 independent numpy oracle (committed QA text)"
+        },
+        {
+          "name": "public_1mq4.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+          "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP)"
+        }
+      ],
+      "fixtureLabels": [
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)",
+        "QA fault fixture (labeled renderer route, not a scientific value): site annotation read failure"
+      ],
+      "controls": {
+        "site-annotation-maps": [
+          {
+            "checked": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/residue_numbering_map/a1bb562e41057af61808c6de9e48d2adbeca046c52837982a2db88c5c6c8b9b6"
+          }
+        ],
+        "site-annotation-contacts:set": [
+          {
+            "checked": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/interaction_set/df50892678328a9faafbd3aef719f077c1da245747d179a812da09cc0313ac6d"
+          }
+        ],
+        "site-annotation-create": [
+          {
+            "created": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/reference_site_annotation/ed4aa8b4a2369eb253101386324ac287105f8e9131a92c34ab899a41df9c8eda",
+            "listed": 1
+          }
+        ],
+        "site-annotation-toggle:show": [
+          {
+            "data": "applied",
+            "lines": "10"
+          }
+        ],
+        "site-annotation-legend": [
+          {
+            "checked": false,
+            "readbackLegend": false,
+            "lines": 10
+          },
+          {
+            "checked": true,
+            "shown": false
+          }
+        ],
+        "site-annotation-toggle:off": [
+          {
+            "data": "none"
+          }
+        ],
+        "site-annotation-report": [
+          {
+            "handle": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/method_report_manifest/f7ab33e1b27884b2d4edcd4b3213b0a425b751b277fbec7b30228bdbc1873c15",
+            "text": "보고서를 저장했습니다 · f7ab33e1b278. 지식·보고서 탭의 보고서 목록에서 열고 받을 수 있습니다."
+          }
+        ],
+        "site-annotation-contacts:none": [
+          {
+            "checked": "none"
+          }
+        ],
+        "site-annotation-maps-retry": [
+          {
+            "maps": 1
+          }
+        ],
+        "site-annotation-list-retry": [
+          {
+            "rows": 2
+          }
+        ],
+        "site-annotation-list": [
+          {
+            "checked": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/reference_site_annotation/ed4aa8b4a2369eb253101386324ac287105f8e9131a92c34ab899a41df9c8eda"
+          }
+        ],
+        "site-annotation-detail-retry": [
+          {
+            "table": "obj://run_77d2c11a5b724b7f9fb76456430c6cb6/reference_site_annotation/ed4aa8b4a2369eb253101386324ac287105f8e9131a92c34ab899a41df9c8eda"
+          }
+        ]
+      },
+      "setHash": "941e263803d6880782253762d8378895e1ef168279c1d185f0a36995a1d85541",
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-02T03:24:14.816Z"
+    },
+    {
+      "step": "annotation-minimized",
+      "mode": "minimized",
+      "status": "pass",
+      "cases": {
+        "B-minimized": "pass"
+      },
+      "runs": {
+        "A": "run_48dfa14ff25649759a55daab9534bda3"
+      },
+      "runId": "run_48dfa14ff25649759a55daab9534bda3",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "prepared": "obj://run_48dfa14ff25649759a55daab9534bda3/prepared_structure/a123b73efcfa9452751e55f04a8e8038dcdacf829105c4ecf42c8dc65316541f",
+        "minimized": "obj://run_48dfa14ff25649759a55daab9534bda3/openmm_minimized_structure/f1ef6f5dcffc92899b0e533a48998086e3086c0dfa6a883228886d31bbfefa97"
+      },
+      "inputs": [
+        {
+          "name": "public_1ubq.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+          "bytes": 103220,
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture; ubiquitin, no ligand)"
+        }
+      ],
+      "fixtureLabels": [],
+      "controls": {},
+      "setHash": null,
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-02T03:24:32.126Z"
+    }
+  ]
+}

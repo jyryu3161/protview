@@ -1,0 +1,36 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "dry-run",
+  "run": "run_75175a03ba3e404280bf3a0b242ef8c1",
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "handles": {
+    "dryRun": {
+      "plan": "obj://run_75175a03ba3e404280bf3a0b242ef8c1/analysis_plan/d76f22f14dcc61c61280790640543c76dfd2decaf4eac8baa63f3bff3abb7580",
+      "execution": "exec_0e45fde009af477a9036277a437bfed8"
+    }
+  },
+  "fixtureLabels": [
+    "labeled loopback API setup: only the initial dry_run:true run record"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_75175a03ba3e404280bf3a0b242ef8c1",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-02T03:32:01.220Z",
+  "finishedAt": "2026-10-02T03:32:06.502Z",
+  "error": null
+}

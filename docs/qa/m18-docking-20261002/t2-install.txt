@@ -1,0 +1,31 @@
+M18 T2 — installation evidence (2026-10-02, macOS 15.6 arm64, CPython 3.11.11, conda 23.3.1)
+
+Archives: session scratchpad m18-pkgs/ (conda/ 8 archives; wheelhouse-mda-probe/ holds the 26 locked wheels
+plus dill/multiprocess/networkx, which are not in the lock and were not installed). No download during setup.
+Locks: config/docking/qvina-conda-explicit-osx-arm64.txt          sha256 e35dd7d7eb168209a28d1857b5906e9af6c97baddc2c71fe7ece125e71b7eb1e
+       config/docking/qvina-conda-lock-hashes-osx-arm64.json      sha256 f20e50c9240f53d4500ed1764d525b612c6e0603c11431283e7bb96bd7a32b53
+       config/docking/docking-requirements-macos-arm64-py311.txt  sha256 a869bd266fd459421419be59746176368240fa661f8024af2944d458461467e8
+       config/docking/docking-wheel-hashes-macos-arm64-py311.json sha256 ec38e8e80d5fc90c72324a45e36f60c47ca8a0e6381c2a25e146a537c8ea8c7f
+All 25 non-Meeko wheels are byte-identical (name, size, SHA-256) to the M11 ProLIF lock; prolif, pandas,
+psutil, dill, multiprocess, networkx are not included (no worker module imports psutil; queue.py runs in the server).
+
+Install (absolute main-repository paths, not the worktree symlink):
+  .venv/bin/python scripts/setup_qvina.py --pkgs <m18-pkgs>/conda --prefix /Users/jaeyongryu/Projects/protview/.deps/qvina/env --conda /Users/jaeyongryu/anaconda3/bin/conda   -> exit 0
+  .venv/bin/python scripts/setup_docking_worker.py --wheelhouse <m18-pkgs>/wheelhouse-mda-probe --destination /Users/jaeyongryu/Projects/protview/.deps/docking/venv-locked   -> exit 0
+Install records:
+  .deps/qvina/install-record.json   sha256 d5d167fe069caf940659d06ef789325f559b30bdb846f194fdf74110a0307c7f
+    qvina2 sha256 caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c; --version stdout "QuickVina 2.1 (24 Dec, 2017)" sha256 f5749196ee2e33e4d6daa6725ad4ba27c90fe67d01fb0db10af3f5ae0cf3f069
+    bin/vina (AutoDock Vina 1.1.2) hashed only, never run: 57f5a6232d75bcf81911127f7a268b7cf4273de1682297b5214e1c69fb1bd514; license Apache-2.0
+  .deps/docking/install-record.json sha256 7c2dd076fada748f7d1b85952da56ee70d4e233c9eee54f0bc66ba2a4c2aab1e
+    meeko 0.8.0 (license LGPL-2.1, LICENSE sha256 20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331), rdkit 2026.3.6, mdanalysis 2.10.0; 26 wheels; pip check "No broken requirements found."
+
+Checks:
+  .deps/qvina/env/bin/qvina2 --version                                      -> exit 0, "QuickVina 2.1 (24 Dec, 2017)"
+  .deps/docking/venv-locked/bin/python -c "import meeko, rdkit, MDAnalysis, gemmi"  -> exit 0 (0.8.0 2026.03.6 2.10.0 0.7.5)
+  .deps/docking/venv-locked/bin/python -m pip check                        -> exit 0
+  re-run of each setup command against the installed paths                  -> exit 2 "already exists" (no change)
+  grep for the worktree path inside .deps/qvina and .deps/docking           -> no match
+
+Existing environments unchanged (find -type f | shasum -a 256 per file + symlink targets + directory list, digest of the listing):
+  .deps/prolif   before afcf925f1ad7503af9e2bd09710b9826bc5d65c24bb891fd0577335c3cb2f278  after afcf925f1ad7503af9e2bd09710b9826bc5d65c24bb891fd0577335c3cb2f278  (32115 lines, cmp identical)
+  .deps/fpocket  before 5f20f2d4c8df11a68d41d3c0798b2eaa26fecea53e488981338aa01ab4c56895  after 5f20f2d4c8df11a68d41d3c0798b2eaa26fecea53e488981338aa01ab4c56895  (11015 lines, cmp identical)

@@ -88,6 +88,7 @@ export function reportKindLabel(row: ReportLibraryRow): string {
   if (row.kind === INTERACTION_REPORT_KIND) return "상호작용 보고서";
   if (row.kind === "residue_numbering") return "잔기 번호 대응 보고서";
   if (row.kind === "ligand_candidates") return "리간드 후보 보고서";
+  if (row.kind === "ligand_docking") return "리간드 도킹 보고서";
   return row.kind === "reference_site_annotation" ? "참조 주석 보고서" : row.kind;
 }
 

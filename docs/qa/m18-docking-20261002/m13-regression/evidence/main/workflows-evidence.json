@@ -1,0 +1,48 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "main",
+  "run": "run_d25004a7c17845d6a5bccc807ec4ea97",
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "handles": {
+    "raw": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/structure/761b9075d89097f324a4477f1adc1190a80fc89808bfadfbb1975c93c07961f6",
+    "stoppedBeforeApproval": "exec_1b8cda959e85463bb6017779cb1b423c",
+    "inspectRaw": {
+      "plan": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/analysis_plan/25735fd6acbd0397ce234fa883517699163310b720b7ddce30030f6a70ee51ec",
+      "execution": "exec_c313cbe1977c495da49415b3280f2208",
+      "summary": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/workflow_summary/43c5d8f4a445eab3f07581984579d50bbeee178e58a929fe6bee1f1b0a0929d4"
+    },
+    "prepared": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/prepared_structure/6fb060ebc0f661a35ba191e4202932f2e4837e15809cab9fd362796eb45e321c",
+    "displayedPrepared": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/prepared_structure/6fb060ebc0f661a35ba191e4202932f2e4837e15809cab9fd362796eb45e321c",
+    "inspectPrepared": {
+      "plan": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/analysis_plan/d4410690ad3416cc640b8b1f368dc7e25e67c474b629d195ffad02d1ba5e8489",
+      "execution": "exec_2069b92a9e614cd2ad56d18b23932649",
+      "summary": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/workflow_summary/a1c3b23f38f86c79950af5f351cd682bb3ae109e91cebd89991e3ef82cb998e6"
+    },
+    "cavitiesMain": {
+      "plan": "obj://run_d25004a7c17845d6a5bccc807ec4ea97/analysis_plan/db4bdd285844d913019f298903cef4bcd02bb66c0c27353a975930cf9d5a3a5f",
+      "execution": "exec_7426f11eebcb4be7944a619ef0b3e2ba"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_d25004a7c17845d6a5bccc807ec4ea97",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-02T03:27:04.248Z",
+  "finishedAt": "2026-10-02T03:27:43.470Z",
+  "error": null
+}
