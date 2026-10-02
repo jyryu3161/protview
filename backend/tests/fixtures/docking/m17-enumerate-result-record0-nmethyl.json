@@ -1,0 +1,357 @@
+{
+ "attempt_id": "att_t1",
+ "block_libraries": [
+  {
+   "accepted": 3,
+   "block_limit_reached": false,
+   "fixed_targets": 3,
+   "input_format": "smiles_list",
+   "kind": "building_blocks_smiles",
+   "records_read": 3,
+   "records_total": 3,
+   "rejected": [],
+   "rejected_counts": {
+    "duplicate_name": 0,
+    "element_not_allowed": 0,
+    "empty": 0,
+    "multiple_fragments": 0,
+    "too_many_atoms": 0,
+    "unparseable": 0
+   },
+   "rejected_total": 0,
+   "rule_targets": 0,
+   "sha256": "966f7a8607d3011fc3570a39f64e05ab284281fe0602c1cb18f847352d6392ec"
+  }
+ ],
+ "candidates": [
+  {
+   "id": "c_1afb7cd3e603456c",
+   "origins": [
+    {
+     "block_name": "ethyl",
+     "rule_id": "fixed"
+    }
+   ],
+   "pains": {
+    "matches": []
+   },
+   "properties": {
+    "crippen_logp": 0.9638000000000055,
+    "formal_charge": 1,
+    "hba": 10,
+    "hbd": 4,
+    "heavy_atoms": 44,
+    "mol_weight": 596.7080000000001,
+    "rotatable_bonds": 5,
+    "tpsa": 119.41
+   },
+   "retained_parent_atoms": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43
+   ],
+   "smiles": "CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+   "stereo_flag": "none"
+  },
+  {
+   "id": "c_2c7a25e0cc0ad3f2",
+   "origins": [
+    {
+     "block_name": "trifluoromethyl",
+     "rule_id": "fixed"
+    }
+   ],
+   "pains": {
+    "matches": []
+   },
+   "properties": {
+    "crippen_logp": 1.4637000000000004,
+    "formal_charge": 1,
+    "hba": 10,
+    "hbd": 4,
+    "heavy_atoms": 46,
+    "mol_weight": 636.6510000000002,
+    "rotatable_bonds": 4,
+    "tpsa": 119.41
+   },
+   "retained_parent_atoms": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43
+   ],
+   "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C(F)(F)F)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+   "stereo_flag": "none"
+  },
+  {
+   "id": "c_21d6c6f0d07e3759",
+   "origins": [
+    {
+     "block_name": "cyclopropyl",
+     "rule_id": "fixed"
+    }
+   ],
+   "pains": {
+    "matches": []
+   },
+   "properties": {
+    "crippen_logp": 1.1063000000000027,
+    "formal_charge": 1,
+    "hba": 10,
+    "hbd": 4,
+    "heavy_atoms": 45,
+    "mol_weight": 608.7190000000004,
+    "rotatable_bonds": 5,
+    "tpsa": 119.41
+   },
+   "retained_parent_atoms": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43
+   ],
+   "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+   "stereo_flag": "none"
+  }
+ ],
+ "counts": {
+  "blocks_accepted": 3,
+  "candidates": 3,
+  "duplicate_products": 0,
+  "not_applicable": {
+   "fixed": 0
+  },
+  "raw_products": 3,
+  "rejected": {
+   "element_not_allowed": 0,
+   "equals_parent": 0,
+   "outside_site": 0,
+   "sanitize_failed": 0,
+   "too_many_atoms": 0
+  }
+ },
+ "crossing_bond": {
+  "core_atom": 21,
+  "order": "single",
+  "site_atom": 22
+ },
+ "input_sha256": {
+  "blocks": [
+   "966f7a8607d3011fc3570a39f64e05ab284281fe0602c1cb18f847352d6392ec"
+  ],
+  "parent": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+  "rules": []
+ },
+ "job_id": "job_t1",
+ "limit_reached": false,
+ "limitations": [
+  "\uc18d\uc131\uac12\uc740 RDKit \ucd94\uc815\uac12\uc774\uba70 \uce21\uc815\uac12\u00b7\uc608\uce21 \ud65c\uc131\uc774 \uc544\ub2c8\ub2e4.",
+  "PAINS \uc77c\uce58\ub294 \uad6c\uc870 \uacbd\uace0\uc77c \ubfd0 \ud654\ud569\ubb3c\uc758 \uc88b\uace0 \ub098\uc068 \ud310\uc815\uc774 \uc544\ub2c8\ub2e4.",
+  "\ud6c4\ubcf4\ub294 2D \uadf8\ub798\ud504\uc774\uba70 3D \ubc30\uce58\u00b7\uc810\uc218\u00b7\ud569\uc131 \uac00\ub2a5\uc131\uc740 \uacc4\uc0b0\ud558\uc9c0 \uc54a\uc558\ub2e4.",
+  "\uc0c8\ub85c \uc0dd\uae34 \uc785\uccb4 \uc911\uc2ec\uc740 \ubbf8\uc9c0\uc815\uc774\uba70 \uc785\uccb4\uc774\uc131\uc9c8\uccb4\ub294 \uc5f4\uac70\ud558\uc9c0 \uc54a\uc558\ub2e4.",
+  "\uc218\uc18c\u00b7\uc591\uc131\uc790\ud654\u00b7\ud1a0\ud1a0\uba38 \uc0c1\ud0dc\ub294 \uc785\ub825 \uadf8\ub300\ub85c\uc774\ub2e4."
+ ],
+ "limits": {
+  "max_attempts": 20000,
+  "max_candidates": 2000
+ },
+ "methods": [
+  "replace_single_bond_v1"
+ ],
+ "parent_canonical_smiles": "C[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+ "parent_properties": {
+  "crippen_logp": 0.5737000000000068,
+  "formal_charge": 1,
+  "hba": 10,
+  "hbd": 4,
+  "heavy_atoms": 43,
+  "mol_weight": 582.6810000000002,
+  "rotatable_bonds": 4,
+  "tpsa": 119.41
+ },
+ "parent_sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+ "property_methods": {
+  "crippen_logp": "rdkit Crippen.MolLogP (Wildman-Crippen estimate)",
+  "formal_charge": "rdkit GetFormalCharge (sum)",
+  "hba": "rdkit CalcNumLipinskiHBA",
+  "hbd": "rdkit CalcNumLipinskiHBD",
+  "heavy_atoms": "rdkit GetNumHeavyAtoms",
+  "mol_weight": "rdkit Descriptors.MolWt (average, Da)",
+  "rotatable_bonds": "rdkit CalcNumRotatableBonds (default = Strict)",
+  "tpsa": "rdkit CalcTPSA (A^2, includeSandP=False)"
+ },
+ "protocol": "rdkit_enumerate_v1",
+ "rdkit_version": "2026.03.6",
+ "retained_parent_atoms": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  41,
+  42,
+  43
+ ],
+ "rules_used": [
+  {
+   "method": "replace_single_bond_v1",
+   "rule_id": "fixed",
+   "text": null
+  }
+ ],
+ "schema": "ligand_enumerate_worker_output@1",
+ "site_atoms": [
+  22
+ ],
+ "stop_reason": null,
+ "use_fixed": true
+}

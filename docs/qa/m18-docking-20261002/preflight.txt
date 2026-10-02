@@ -1,0 +1,233 @@
+M18 T1 착수 확인 (preflight) — 2026-10-02, 브랜치 dryforge/m18-t1, 기준 커밋 d1f819b
+명세: .dryforge/spec.md 3·4·5·12절 2 (a)–(f)·(d0). 제품 코드(mw)는 바꾸지 않았다. 서버 .venv에서 RDKit·Meeko를 import하지 않았다.
+프로브 스크립트(세션 scratchpad/t1, 저장소에 넣지 않음): nonet.py(모든 프로브 첫 import, socket connect·getaddrinfo 차단·기록),
+rec_survey.py, c_try_a.py, c_try_b.py, m11_rows.py, m11_graph.py, c_try_c3.py, c_try_c2x.py, c3_single.py, rec_prep_probe.py,
+b_ligand.py, box.py, dock.sh, analyze.py, core_fixed_probe.py, m17_candidates.py, crosscheck.py.
+임시 환경(모두 scratchpad 아래, 저장소 밖):
+  qv/            conda-forge qvina 2.1.0 환경(조율 세션이 미리 만듦, 이 작업은 사용만)
+  t1/offline/env 같은 8개 보관 파일로 오프라인 재생성한 환경(아래 a)
+  dockvenv/      CPython 3.11.11 venv: meeko 0.8.0, rdkit 2026.3.6, numpy 2.4.6, scipy 1.17.1, gemmi 0.7.5, pillow 12.3.0
+  dockvenv-mda/  위 + MDAnalysis 2.10.0과 그 의존(ProLIF 잠금과 같은 wheel) — (c) 경로 확인용
+내려받은 패키지: scratchpad/m18-pkgs/ (conda/ 8개, wheelhouse/ 6개, wheelhouse-mda-probe/ 29개). 목록·크기·SHA-256은
+lock-inputs.json. 외부 요청은 conda-forge(conda create, 조율 세션)와 PyPI(pip download)뿐. 모든 프로브의 네트워크 시도 기록:
+c_try_a.py에서 Meeko가 files.rcsb.org를 5회 조회하려다 차단됨(아래 c1) — 그 밖 0건.
+
+판정 요약
+- 멈출 사유 없음. (a)(b)(c)(d)(e)(f) 모두 기대를 만족했다.
+- (c) 수용체 PDBQT: Meeko 수용체 준비(Polymer.from_pdb_string)는 공개 예제를 직접 받지 못한다(HSD/HSE를 모르고 rcsb.org에서
+  내려받으려 함, CHARMM 말단 캡 4개 잔기 템플릿 불일치). 되는 경로: M11과 같은 연결·화학 추론(MDAnalysis 2.10.0 inferrer,
+  chemical_worker._receptor와 같은 인자)으로 만든 RDKit 분자를 Meeko MoleculePreparation에 공유 결합 조각별로 넘겨 AD4 유형·
+  Gasteiger 전하를 받고, 입력 순서대로 ATOM 줄을 쓴다(비극성 수소는 Meeko가 병합). Meeko 자체 수용체 경로와 원자 2,894개에서
+  유형 불일치 0, 전하 차 ≤ 0.004.
+- (d) 같은 seed·--cpu 1 두 번: 출력 PDBQT 바이트 동일. (e) 모드 1 중원자 RMSD 1.300 Å(≤ 2.5), --score_only −12.21087.
+- (f) 이벤트·객체 크기 한도는 코드에 없다. 모드 8개 결과 형태 JSON 239,478 B. 모드당 접촉 상한은 4 MiB 안에 들도록 정해야 한다
+  (num_modes 20·최악 행 기준 약 554행). 아래 6절.
+- T2·T3·T4가 정해야 할 점: 아래 9절(작업 환경에 MDAnalysis를 넣을지, 포즈 원자 순서 복원, 코어 좌표 고정 방법, Meeko 네트워크 경로).
+
+==================================================================================================
+(a) qvina 2.1.0 conda 환경
+==================================================================================================
+명령: conda list -p qv --explicit --md5 / qvina2 --version / --help / --help_advanced / otool -L / shasum -a 256
+- 환경 패키지 8개(conda-forge osx-arm64): bzip2-1.0.8-h4e30115_10, icu-75.1-hfee45f7_0, libcxx-23.1.2-h55c6f16_0,
+  liblzma-5.8.3-h8088a28_1, libzlib-1.3.2-h8088a28_3, zstd-1.5.7-hf451053_7, libboost-1.84.0-hc9fb7c5_7, qvina-2.1.0-h4a521e9_8.
+  conda 기록: `conda create -y -q -p ./qv -c conda-forge --override-channels qvina=2.1.0` (conda 23.3.1).
+- 보관 파일: conda 패키지 캐시(/Users/jaeyongryu/anaconda3/pkgs)에서 m18-pkgs/conda/로 복사. 8개 모두 파일 SHA-256·크기·MD5가
+  캐시의 info/repodata_record.json 값과 일치. 합계 15,419,324 B. 라이선스: qvina Apache-2.0(info/licenses/LICENSE SHA-256
+  cfc7749b…3d30), libboost BSL-1.0, icu MIT, libcxx Apache-2.0 WITH LLVM-exception, zstd BSD-3-Clause, liblzma 0BSD, libzlib Zlib,
+  bzip2 bzip2-1.0.6.
+- 오프라인 재생성(setup_fpocket.py와 같은 방식): file:// 명시 목록 + CONDA_PKGS_DIRS=새 캐시, CONDA_OFFLINE=true,
+  `conda create --offline --yes --prefix t1/offline/env --file explicit-local.txt` → exit 0, conda-meta 8개, qvina2 해시 동일.
+- bin/qvina2: Mach-O arm64, SHA-256 caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c.
+  링크: @rpath/libboost_filesystem, program_options, thread, libc++, libSystem.
+- `qvina2 --version` → exit 0, stdout "QuickVina 2.1 (24 Dec, 2017)\n" (SHA-256 f5749196…f069).
+- 옵션: --receptor --ligand --center_x/y/z --size_x/y/z --out --log --cpu --seed --exhaustiveness(=8) --num_modes(=9)
+  --energy_range(=3); 고급 --score_only("search space can be omitted"), --local_only, --randomize_only, 가중치들.
+- --seed: stdout에 "Using random seed: 42". --cpu 1: 아래 (d) 실행에서 사용, exit 0. --score_only: 아래 (e), exit 0, 0.02 s.
+- 주의: 같은 패키지가 bin/vina(AutoDock Vina 1.1.2, SHA-256 57f5a623…d514), vina_split, qvina2_split, qvinaw, qvinaw_split를
+  함께 설치한다. vina는 호출하지 않았다(명세 4.1).
+- 엔진 출력 머리말이 "affinity (kcal/mol)", --score_only는 "Affinity: … (kcal/mol)"이라고 쓴다. 제품은 이 낱말을 옮기지 않고
+  "qvina 점수(kcal/mol, …)"로만 불러야 한다(파서는 값만 읽음).
+결론: (a) 통과.
+
+==================================================================================================
+(b) Meeko 0.8.0 + RDKit 2026.3.6 파이썬 환경, 리간드 PDBQT
+==================================================================================================
+명령: pip download --no-deps --only-binary=:all: --platform macosx_14_0_arm64 --python-version 3.11 --implementation cp
+      meeko==0.8.0 rdkit==2026.3.6 numpy==2.4.6 scipy==1.17.1 gemmi==0.7.5 pillow==12.3.0
+      python3.11 -m venv dockvenv; pip install --no-index --find-links wheelhouse --no-deps (같은 6개); pip check
+- 6개 wheel 내려받음. rdkit·numpy·scipy·gemmi·pillow 5개는 M17 잠금(config/chemical/prolif-wheel-hashes…json)과 파일명·크기·
+  SHA-256이 같다(재사용 가능). meeko-0.8.0-py3-none-any.whl 1,424,010 B, SHA-256 38e73da7…d1d6.
+- Meeko METADATA에 Requires-Dist가 없다. 코드가 import하는 것: rdkit, numpy, scipy, gemmi; prody는 선택(try import, 미설치).
+  rdkit wheel이 Pillow를 요구해 pillow 12.3.0을 넣었다. Meeko가 더 요구하는 wheel은 없다. pip check: No broken requirements.
+  Meeko 라이선스 LGPL-2.1(dist-info/licenses/LICENSE).
+- import 확인: meeko 0.8.0, rdkit 2026.03.6, numpy 2.4.6, scipy 1.17.1, gemmi 0.7.5.
+- 리간드(b_ligand.py): SDMolSupplier(removeHs=False) 레코드 0 → MoleculePreparation() 기본값 → PDBQTWriterLegacy.write_string.
+  원자 79(중원자 43, H 36), 암시 수소 0, 조각 1, 형식 전하 +1, 서로 다른 z 77개. write ok=True.
+  PDBQT 원자 줄 47, TORSDOF 5, BRANCH 5, 유형 A 14·C 19·HD 4·N 5·OA 5, 전하 합 +1.003. 병합(무시)된 원자 32개는 모두 C에 붙은 H.
+  PDBQT 좌표 47개가 모두 입력 좌표(소수 셋째 자리)와 같다. REMARK SMILES / SMILES IDX / H PARENT 줄이 붙는다
+  (add_index_map=True면 REMARK INDEX MAP도).
+- 거부 사례 관찰: 평면 SDF(z 모두 0)는 Meeko가 아무 말 없이 준비한다 → 3D 검사는 제품이 직접 해야 한다. 암시 수소 SDF는 Meeko가
+  "RDKit molecule has implicit Hs. Need explicit Hs."로 ValueError → 제품이 먼저 자기 이유(ligand_hydrogens_missing)로 거부해야 한다.
+결론: (b) 통과.
+
+==================================================================================================
+(c) M11 수용체 입력(수소 + CONECT) → 수용체 PDBQT  [가장 중요]
+==================================================================================================
+입력: backend/tests/fixtures/chemical/prolif-vina-rec.pdb (공개 준비 예제). gemmi 순회 원자 4,988개(체인 A 38–249, B 298–387,
+302 잔기, 간격 없음), PDB CONECT 결합 5,053개(M11 _bonds 규칙으로 읽음, 역방향 중복 합침). CHARMM 이름: HSD 3·HSE 2(히스티딘),
+HN, HB1/HB2, 그리고 체인 머리·꼬리 잔기 4개(A:38 TYR, A:249 LYS, B:298 LEU, B:387 LYS)에 말단 캡 원자가 같은 잔기로 합쳐져 있다
+(CAY/HY1-3/CY/OY, NT/HNT/CAT/HT1-3).
+
+c1. Meeko 수용체 준비 직접 — 실패
+  명령: Polymer.from_pdb_string(pdb) (c_try_a.py)
+  결과: PolymerCreationError. HSD/HSE가 residue_templates에 없어 Meeko가 chemtempgen.fetch_from_pdb로
+  https://files.rcsb.org/ligands/download/HSE.cif 를 내려받으려 했다(재시도 포함 getaddrinfo 5회, 프로브 차단기가 막음).
+  ★ Meeko 0.8.0은 모르는 잔기 이름을 만나면 네트워크로 템플릿을 받으려 한다. 제품 작업 프로세스가 이 경로를 쓰면 안 된다
+    (작업 프로세스의 네트워크 차단은 유지하되, 애초에 Polymer 경로를 쓰지 않는 것이 맞다).
+c2. Meeko 수용체 준비 + 히스티딘 템플릿 지정 — 실패
+  명령: Polymer.from_pdb_string(pdb, set_template={HSD→HID, HSE→HIE, 잔기 5개}) (c_try_b.py)
+  결과: 네트워크 시도 0. "Template matching failed for: ['A:38', 'A:249', 'B:298', 'B:387']" — 합쳐진 말단 캡 때문에 모든 후보
+  템플릿(NLYS/CLYS 등)과 중원자 초과(heavy_excess=2)로 불일치. allow_bad_res=True면 이 4개 잔기를 지우고 진행하는데, 이것은
+  조용히 수용체를 자르는 것이라 명세 3.2·절대 조건 5에 어긋난다(사용하지 않음, 아래 비교용으로만 씀).
+  또 Meeko Polymer 출력은 원자 이름을 템플릿 이름으로 바꾼다(HN→H 287, ILE CD→CD1 29, SER HG1→HG 23)고, ARG·ASN·GLN의 NH2
+  수소 이름을 그래프 대칭으로 서로 바꿔 붙인다(80개). 입력 원자 이름 보존(식별자 규칙)과도 맞지 않는다.
+c3. M11 연결·화학 추론 → RDKit 분자 → Meeko 원자 유형 → 강체 PDBQT — 성공
+  절차: (1) gemmi 순회 행 + CONECT 결합(m11_rows.py, chemical_inputs.receptor_atoms/_bonds와 같은 규칙)
+        (2) 수정하지 않은 M11 작업 함수 chemical_worker._receptor (.deps/prolif/venv-locked, MDAnalysis 2.10.0
+            MDAnalysisInferrer(max_iter=200, sanitize=True))로 결합 차수·형식 전하 추론(m11_graph.py, 13.8 s 중 대부분 import)
+            → 원자 4,988, 결합 5,053(SINGLE 4,403 / DOUBLE 349 / AROMATIC 301), 형식 전하 0: 4,940, +1: 30, −1: 18, 히스티딘 5.
+        (3) dockvenv에서 RWMol 재구성(SetNoImplicit, 결합 차수·방향족), SanitizeMol, 암시 수소 0 확인
+        (4) Meeko MoleculePreparation(rigidify_bonds_smarts=["[*]~[*]"], rigidify_bonds_indices=[(0,1)])를 공유 결합 조각마다
+            prepare(분자 전체를 넘기면 "RDKit molecule has 2 fragments. Must have 1."). 조각 2개(3,445 / 1,543 원자), 0.28 s.
+        (5) 입력 순서대로 is_ignore가 아닌 원자만 PDBQTWriterLegacy._make_pdbqt_line(Meeko의 줄 형식)으로 ATOM 줄. 이름·잔기·
+            체인·번호·삽입 코드는 입력 값.
+  결과: PDBQT 2,955줄(입력 4,988 − 병합 수소 2,033). 병합된 원자는 모두 C에 붙은 H(2,033). 남은 H 512개는 모두 HD(N에 449, O에 59, S에
+        4 — CYS SG의 H도 Meeko 규칙으로 HD, Meeko 자체 수용체 경로와 같음).
+        유형 A 273, C 1,350, HD 512, N 388, NA 5(HSE A81 ND1, HSD A139 NE2, HSD A205 NE2, HSE B347 ND1, HSD B381 NE2 —
+        히스티딘마다 수소 없는 고리 N 1개), OA 412, SA 15(MET SD 7 + CYS SG 8).
+        전하 합 +12.000 = 형식 전하 합 +12. 전하 범위 −0.550 … +0.344. 좌표는 입력과 같다.
+  교차 확인(c_try_c2x.py): c2를 allow_bad_res=True로 돌려 얻은 Meeko 자체 수용체 PDBQT(298 잔기, 2,894줄)와 좌표로 짝지어
+        비교 → 2,894개 모두 짝이 있고 AD4 유형 불일치 0, 전하 차 최대 0.004(평균 0.0005). c3에만 있는 61줄은 말단 캡 4개 잔기.
+  한 인터프리터 확인(c3_single.py, dockvenv-mda): prolif 없이 같은 Universe 구성 + u.atoms.convert_to.rdkit(
+        implicit_hydrogens=False, force=False, inferrer=MDAnalysisInferrer(max_iter=200, sanitize=True))로 만든 그래프가
+        M11 작업 함수 출력과 원소·형식 전하·방향족·결합 차수까지 동일(True), 0.53 s.
+  끝에서 끝(rec_prep_probe.py, dockvenv-mda 한 인터프리터): 공개 수용체 → PDBQT가 c3(두 인터프리터 경로)와 바이트 동일.
+        합성 복합체에서 인스턴스(L/LIG/1, 7필드 일치 1개)를 빼면 79원자(C 33, H 36, N 5, O 5) 제거 후 PDBQT가 수용체만의
+        PDBQT와 바이트 동일. 거부 사례: 인스턴스 미지정 → 비표준 잔기 [LIG L 1]; 같은 7필드 2개 → ambiguous; 없는 7필드 →
+        unknown; 공유 결합(CAY–C14) → covalent; 물·아연 → [HOH W 1, ZN Z 1]; altloc → [A 38 CB A]. 네트워크 시도 0.
+결론: (c) 통과 — 단, 경로는 "Meeko 수용체 준비(Polymer)"가 아니라 "M11 추론 그래프 → Meeko 원자 유형·전하"다. AD4 유형·전하는
+  Meeko(MoleculePreparation, ad4_types, gasteiger)가 정한 값이고 Meeko 자체 수용체 경로와 일치한다. M11 추론을 작업 환경에서
+  그대로 쓰려면 MDAnalysis 2.10.0과 의존 wheel(ProLIF 잠금과 같은 해시)이 docking 환경에 필요하다(9절 1).
+
+==================================================================================================
+(d0)(d)(e) 도킹 실행 — 공개 예제 재도킹
+==================================================================================================
+수용체 rec_c3.pdbqt(위 c3), 리간드 lig0.pdbqt(위 b). 상자 = 레코드 0 중원자 범위 + 여백 8 Å(box.py):
+  min (0.249, −5.036, 5.514), max (6.570, 6.471, 17.114) → center (3.4095, 0.7175, 11.3140), size (22.3210, 27.5070, 27.6000).
+명령(dock.sh): qvina2 --receptor rec_c3.pdbqt --ligand lig0.pdbqt --center_x 3.4095 --center_y 0.7175 --center_z 11.3140
+  --size_x 22.3210 --size_y 27.5070 --size_z 27.6000 --seed 42 --cpu 1 --exhaustiveness 8 --num_modes 9 --energy_range 3 --out …
+(d) 재현성
+  s42a: exit 0, 벽시계 28.82 s("searching finished in 28.496 seconds"). s42b: exit 0, 28.97 s.
+  출력 PDBQT 두 개 바이트 동일(cmp), SHA-256 767cf747887396a2e999a771f481968d8a19a1ed100491fe1c86d1b64c49566a.
+  stdout은 시간 줄("searching finished in … seconds")만 다르다 → 제품은 stdout 전체가 아니라 출력 PDBQT·점수만 비교해야 한다.
+  stderr 0 B. seed 7: 출력이 다르다(모드 7개). --score_only 두 번: stdout 동일.
+(e) 재도킹·점수만
+  seed 42 모드(엔진 출력 순서, 점수 kcal/mol, 엔진 rmsd l.b./u.b. = 모드 1 대비): 1 −13.6 0/0, 2 −12.8 1.571/4.193,
+  3 −12.1 1.502/1.962, 4 −12.0 2.110/5.123, 5 −11.6 1.525/4.272, 6 −10.9 10.795/12.282, 7 −10.9 3.485/6.701, 8 −10.7 2.606/10.080.
+  num_modes 9를 줬지만 energy_range 3 안의 모드가 8개 → 8개 출력. 출력 PDBQT의 점수는 소수 첫째 자리까지만 있다
+  ("REMARK VINA RESULT:     -13.6 …").
+  중원자 RMSD(기준 = 레코드 0, 정렬 없음, 대칭 고려 rdMolAlign.CalcRMS, analyze.py): 1.300, 4.194, 2.094, 5.143, 4.246, 12.091,
+  6.272, 9.607 Å → 모드 1이 1.300 Å(≤ 2.5 Å). seed 7: 모드 1 1.295 Å.
+  --score_only(기준 포즈 = lig0.pdbqt 입력 좌표, 같은 상자, --cpu 1): exit 0, "Affinity: -12.21087 (kcal/mol)", 0.02 s.
+  상자 인자 없이도 같은 값.
+  주의: 기준 포즈 자체가 Vina 출력(공개 준비 도킹 예제)이다. 실험 결합 자세와의 비교가 아니다.
+(d0) 상자 밖 중원자(포즈 중원자 좌표가 center ± size/2 밖): seed 42 모드별 0,0,0,0,0,1,0,0 (모드 6에 1개). seed 7: 0,0,0,0,0,2,0.
+  → 자유 도킹에서도 0이 아닐 수 있다(명세 4.4대로 기록·표시만).
+포즈 원자 순서: Meeko RDKitMolCreate.from_pdbqt_mol로 되돌린 분자는 원자 79(H 36 복원), 정규 SMILES는 입력과 같지만 원자 순서가
+  입력 SDF 순서와 다르다(SMILES 순서). 그래프 일치 1,000개(메틸 수소 대칭 등) 모두에서 중원자 좌표 배정은 유일했다. PDBQT에
+  REMARK INDEX MAP(입력 순번 ↔ PDBQT 순번)을 쓸 수 있다 → 포즈 SDF 번호를 입력 순번으로 복원하는 일은 T4가 해야 한다(9절 2).
+결론: (d) 통과, (e) 통과, (d0) 관찰 기록.
+
+==================================================================================================
+(f) 크기 — 이벤트·객체 한도와 결과 실측
+==================================================================================================
+코드 확인(이번 기준 커밋):
+- backend/mw/core/events.py EventLog.append(57–66행): 이벤트 한 줄 크기 검사 없음.
+- backend/mw/core/handles.py ObjectStore.put: 객체 크기 검사 없음, object_created 이벤트에 payload_b64(약 4/3배)를 싣는다.
+  읽기는 load_bounded_json(handle, max_bytes)로 호출자가 상한을 준다(handles.py 297–336행).
+→ 이벤트·객체 크기 한도는 코드에 없다.
+관련 기존 상한: jobs/queue.py:73 MAX_GLOBAL_EVENT_LINE 256 MiB; queue.py:1293 일반 프로토콜 staged 입력 4,000,000 B(화학 32 MiB,
+  포켓 48 MiB(:54), 리간드 ligand_bundle.STAGED_LIMIT) ★ 수용체 최대 10 MiB를 스테이징하는 도킹이 일반 분기를 타면 4,000,000 B에
+  걸린다 → T5가 도킹 분기·한도를 둬야 한다; guardian.py:331–333 result.json 상한(화학 30 MiB, 리간드 32 MiB, 그 밖 64,000,000 B),
+  guardian.py:43–44 RSS 2 GiB·stdout/stderr 1 MiB; queue.py:1498·1566 결과 파일 ≤ 64,000,000 B.
+실측(analyze.py, 모드 8개, 명세 5.2 최상위 키 모두 채운 형태, canonical JSON sort_keys·(",",":")):
+  객체 239,478 B(0.23 MiB), base64 319,304 B. 모드당 25,275–32,468 B. 포즈 SDF(V2000, 79원자, 수소 포함) 6,738 B.
+  접촉 행 315–334 B(평균 327.1), 모드당 접촉 55–77개(seed 7: 최대 80). 9모드 환산 약 0.27 MiB.
+최악 추정(접촉 상한을 정하기 위한 값):
+  - 상자 안 격자점에서 수용체 중원자 4.0 Å 안 개수: 최소 거리 ≥ 3.0 Å인 점 최대 17(p99 8), ≥ 2.5 Å 최대 22, 충돌 허용(코어 고정
+    샘플) 최대 27. → 중원자 100개 리간드면 모드당 최대 약 1,700(비충돌)–2,700(충돌) 행이 가능하다.
+  - 최악 행 346 B(긴 이름·번호·라벨), 200원자 포즈 SDF 약 17,058 B, 모드 외 부분 2,258 B.
+  - 객체 ≤ 4 MiB(4,194,304 B)를 지키는 모드당 접촉 상한: num_modes 9면 약 1,294행, num_modes 20(최대)이면 약 554행.
+  → 명세대로 "모드당 접촉 상한"을 코드 상수로 둔다면 num_modes 최대 20 기준 500행 정도가 4 MiB 안에 든다. 실측 최대 80행보다
+    훨씬 크지만, 큰 리간드의 충돌 샘플은 넘을 수 있고 그때는 resource_exceeded로 실패한다(조용히 자르지 않음). 정확한 값은 T3가
+    정한다(명세가 T1 실측으로 정하도록 맡긴 값이며 범위 변경 아님).
+결론: (f) 한도 없음 확인, 한도에 걸리지 않음.
+
+==================================================================================================
+참고 — 코어 고정 실행 가능성(명세 4.3, (a)–(f) 밖, T4 참고용)
+==================================================================================================
+M17 후보 c_1afb7cd3e603456c(ethyl, 아래 fixture)로 core_fixed_probe.py:
+- 코어(부모 중원자 42개 = 22번 제외) ↔ 후보 부분 구조 일치 2개(useChirality=False). 원자별 좌표 배정은 2가지지만 좌표 집합으로는
+  1가지 — 페닐 고리 뒤집기(코어 자기 대칭 2개). 명세 4.3의 "자기 대칭으로 같은 좌표 집합" 허용 사례에 해당.
+- AddHs 후 EmbedMultipleConfs(numConfs=10, randomSeed=42, coordMap=코어 부모 좌표): 10/10 성공, 0.7 s.
+  ★ coordMap은 거리만 구속하므로 좌표계가 부모와 다르다. 코어로 강체 맞춤(Kabsch) 뒤 코어 최대 이탈 0.118–0.125 Å(0이 아님).
+- 각 형태 Meeko PDBQT → qvina2 --score_only --cpu 1: 10개 모두 exit 0, −10.12 … −12.10.
+→ 명세의 "코어 중원자는 부모 좌표 그대로"를 지키려면 T4가 맞춤 뒤 코어 중원자 좌표를 부모 값으로 덮어쓰는지(이탈 0, 연결부
+  결합 길이 미세 변형), 맞춤만 하고 core_max_deviation_A(약 0.12 Å)를 기록하는지 정해야 한다(9절 3).
+
+==================================================================================================
+Fixture와 손 계산 oracle (backend/tests/fixtures/docking/)
+==================================================================================================
+파일·SHA-256·만든 방법: SYNTHETIC-PROVENANCE.md. 기대값: expected.json(값마다 how). 재생성: build_docking_fixtures.py --check → exit 0.
+- public-derived-parent-record0.sdf: 레코드 0(제목만 PUBLIC-DERIVED-FIXTURE로). 3D 리간드·M17 부모·재도킹 기준.
+- 합성 복합체 3종(인스턴스 1개 / 같은 7필드 2개 / 공유 결합), 물·아연 수용체, altloc 수용체, 평면 SDF, 암시 수소 SDF.
+  rec_prep_probe.py로 각 기대 이유가 실제로 나옴을 확인(위 c3).
+- M17 후보: 수정하지 않은 ligand_worker.py(.deps/prolif/venv-locked)로 inspect → enumerate(site [22] N-메틸, 블록 3개, fixed).
+  두 번 모두 exit 0, 후보 3개. 고정 후보 c_1afb7cd3e603456c(ethyl, stereo_flag none, retained 1–21·23–43). 출력 그대로 저장.
+- 접촉 oracle: 손으로 놓은 수용체 원자 6개(수소 1개 포함, 사슬 B 삽입 코드 A 포함) + 메탄올 포즈. 중원자 쌍 10개의 거리를 손으로
+  풀어 적음(4.0 Å 경계 포함 1쌍, 4.01 Å 제외 1쌍). 접촉 6개(polar 1, hydrophobic 1, contact 4), 최소 거리 3.0 Å, 상자 3사례
+  (리간드 범위+8 Å → 밖 0, 직접 (0,0,0)/(2,2,2) → 밖 1, 먼 상자 → 수용체 원자 0 → box_no_receptor_atoms).
+- 공개 예제 상자 손 계산: 원자 블록 열을 읽은 min/max → center (3.4095, 0.7175, 11.314), size (22.321, 27.507, 27.6).
+교차 확인(crosscheck.py, dockvenv: 텍스트 열 직접 파싱 + math.dist + gemmi 잔기 필드 + RDKit SDF 읽기, 제품 함수 아님):
+  52항목, 실패 0, exit 0. (첫 실행 때 RDKit이 oracle 포즈 SDF 머리 줄에 차원 코드가 없어 2D로 표시된다고 경고 → 2행을
+  "  M18T1   10022600003D"로 고쳐 다시 실행, 경고 없음. 값은 바뀌지 않음.)
+
+==================================================================================================
+9. T2–T4가 정해야 할 점 (멈출 사유 아님, 범위 변경 없음)
+==================================================================================================
+1. 수용체 화학 추론 위치: M11과 같은 추론을 쓰려면 docking 환경에 MDAnalysis 2.10.0과 의존(ProLIF 잠금과 같은 wheel 20개 남짓,
+   lock-inputs.json "docking_python_mdanalysis_option")을 넣어야 한다. 넣지 않으면 같은 결과를 내는 추론을 새로 구현해야 하고,
+   그 동등성을 다시 검증해야 한다. 명세 6절 "numpy·scipy·gemmi와 필요한 것" 범위 안이다. 추천: MDAnalysis를 넣고 M11 인자 그대로.
+   M11의 _protein_chemistry 검사(히스티딘 상태, 말단 캡, 산·아마이드)를 도킹 입장에도 쓸지 T4가 정한다.
+2. 포즈 원자 순서: Meeko 출력 분자는 SMILES 순서다. 포즈 SDF의 원자 번호 = 입력 SDF 순번(명세 4.5)을 지키려면 REMARK INDEX MAP
+   또는 그래프 일치로 되돌려야 한다(공개 예제에서 중원자 배정은 유일). 비극성 수소 위치는 Meeko가 복원한 값이다(명세 5.2 문장).
+3. 코어 고정 좌표: coordMap 임베딩만으로는 코어 이탈이 약 0.12 Å 남는다. 덮어쓸지·기록만 할지 T4 결정(명세 "부모 좌표 그대로").
+4. Meeko 네트워크 경로: Polymer(수용체 템플릿) 경로는 모르는 잔기에서 rcsb.org를 부른다. 작업 모듈은 Polymer 경로를 쓰지 않고,
+   기존 작업 모듈처럼 시작 시 socket 차단(_deny_network)을 둔다.
+5. 스테이징 한도: 일반 분기 4,000,000 B로는 수용체(최대 10 MiB)를 못 넘긴다 → 도킹 전용 분기·상수(T5).
+6. 재현 비교: qvina stdout에는 검색 시간이 들어 있어 실행마다 다르다. 재현 검사는 출력 PDBQT(또는 파싱한 점수·좌표)로 한다.
+7. 출력 점수는 소수 첫째 자리 문자열로만 나온다(-13.6). 화면·보고서의 첫째 자리 반올림은 같은 값을 다시 쓰는 셈이다.
+
+==================================================================================================
+검증 게이트(이 작업 해당분)
+==================================================================================================
+.venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py → exit 0 (All checks passed)
+python3 backend/tests/fixtures/docking/build_docking_fixtures.py --check → exit 0
+scratchpad/dockvenv/bin/python crosscheck.py → exit 0 (52/52)
+.venv/bin/python -m pytest backend/tests -q -p no:cacheprovider → exit 1: 1,202 passed, 2 skipped, 2 failed (1,014.8 s).
+  두 실패는 워크트리 실행 환경 탓이다: 워크트리의 .venv는 메인 저장소 .venv로 가는 심볼릭 링크이고 그 편집 설치가 mw를
+  /Users/jaeyongryu/Projects/protview/backend/mw(메인 checkout)에서 import한다. 그래서 경로를 비교하는 두 검사
+  (test_ligand_jobs::test_registration_dispatch_table_and_capability: guardian.LIGAND 경로, test_reference_snapshots::
+  test_default_dir_is_project_deps: .deps/reference 경로)가 워크트리 경로와 달라 실패했다. 이 작업은 mw 코드를 바꾸지 않았다.
+  skip 2개는 기존 플랫폼 조건 skip(test_jobs의 Darwin 관련 조건)이다. 이 결과는 메인 checkout의 mw를 시험한 것이므로 T1 산출물에
+  대한 회귀 증거로 쓰지 않는다(fixture만 추가, pytest가 수집하는 파일 없음).
