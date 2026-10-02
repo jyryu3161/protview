@@ -1321,7 +1321,8 @@ def test_chemical_dependency_handshake_is_cached_per_interpreter_lock_and_worker
     real_run = chemical_bundle.subprocess.run
 
     def counting_run(argv, *args, **kwargs):
-        spawned.append(argv[0])
+        if str(chemical_bundle.WORKER) in map(str, argv):  # /capabilities also handshakes other workers
+            spawned.append(argv[0])
         return real_run(argv, *args, **kwargs)
 
     monkeypatch.setattr(chemical_bundle.subprocess, "run", counting_run)
