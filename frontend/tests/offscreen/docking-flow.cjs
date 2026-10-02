@@ -20,7 +20,8 @@
 //                report + 지식·보고서 list + downloads → complex receptor with one removed instance (instance_range box) →
 //                real M17 inspection + enumeration → core-fixed docking of the fixture candidate → structure tab kept
 //                mounted → run B: run switch with a held late response → rejections (planar SDF, implicit H, box over
-//                40 Å on screen and in the worker) → cancel while qvina runs (worker and qvina processes gone) →
+//                40 Å on screen and in the worker) → receptor refusal lists on screen (water + zinc left, altloc; seven
+//                residue fields and atom names against the fixture oracle) → cancel while qvina runs (worker and qvina processes gone) →
 //                screen wording (no rank/best/improvement/affinity claims)
 //   unavailable  backend started from a layout without the locked environments (runner): no-run and
 //                capability-unavailable states show a reason only (no numbers, no controls, no docking requests)
@@ -44,6 +45,8 @@ const PARENT = path.join(DOCK, "public-derived-parent-record0.sdf");
 const COMPLEX = path.join(DOCK, "synthetic-complex-receptor-lig.pdb");
 const PLANAR = path.join(DOCK, "synthetic-ligand-planar-z0.sdf");
 const IMPLICIT = path.join(DOCK, "synthetic-ligand-implicit-h.sdf");
+const WATER_ZINC = path.join(DOCK, "synthetic-receptor-water-zinc.pdb");
+const ALTLOC = path.join(DOCK, "synthetic-receptor-altloc.pdb");
 const BLOCKS_SMI = path.join(DOCK, "synthetic-docking-blocks.smi");
 const EXPECTED = path.join(DOCK, "expected.json");
 const M17_RESULT = path.join(DOCK, "m17-enumerate-result-record0-nmethyl.json");
@@ -113,7 +116,39 @@ function oracle() {
     candidateRetained: m17.candidates.find(item => item.id === expected.m17_candidate.fixed_candidate_id).retained_parent_atoms,
     planarReason: expected.ligand_fixtures["synthetic-ligand-planar-z0.sdf"].expected_reason,
     implicitReason: expected.ligand_fixtures["synthetic-ligand-implicit-h.sdf"].expected_reason,
+    waterZinc: receptors["synthetic-receptor-water-zinc.pdb"],
+    altloc: receptors["synthetic-receptor-altloc.pdb"],
   };
+}
+
+// Receptor refusal lists (spec §3.2), derived without the product: the residues named in expected.json ("HOH W 1 (3
+// atoms)", "TYR A 38 CB altloc A") and the atom names read from the fixture PDB columns (file order). gemmi reads PDB
+// without label fields (expected.json "how"), so chain_label and seq_label are null and must stay null on screen.
+const RESIDUE_FIELDS = ["model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname"];
+const pdbResidue = (resname, chain, seq) => ({ model_number: 1, chain_auth: chain, chain_label: null, seq_auth: seq,
+  seq_label: null, icode: "", resname });
+function pdbAtomNames(file, resname, chain, seq) {
+  return fs.readFileSync(file, "utf8").split("\n").filter(line => /^(ATOM  |HETATM)/.test(line) &&
+    line.slice(17, 20).trim() === resname && line.slice(21, 22) === chain && Number(line.slice(22, 26)) === seq)
+    .map(line => line.slice(12, 16).trim());
+}
+function refusalOracle(o) {
+  const unsupported = o.waterZinc.nonstandard.map(text => {
+    const [, resname, chain, seq, atoms] = /^(\S+) (\S) (\d+) \((\d+) atoms?\)$/.exec(text);
+    const names = pdbAtomNames(WATER_ZINC, resname, chain, Number(seq));
+    assert.equal(names.length, Number(atoms), `${text}: atom count in the fixture`);
+    return { residue: pdbResidue(resname, chain, Number(seq)), atom_names: names };
+  });
+  const altloc = o.altloc.altloc_atoms.map(text => {
+    const [, resname, chain, seq, atom, alt] = /^(\S+) (\S) (\d+) (\S+) altloc (\S)$/.exec(text);
+    return { residue: pdbResidue(resname, chain, Number(seq)), atom_name: atom, altloc: alt };
+  });
+  return { receptor_unsupported_residue: unsupported, receptor_altloc_present: altloc };
+}
+/** One screen line per item, formatted here independently: seven fields as JSON values (null kept), then atoms. */
+function refusalLine(item) {
+  const head = RESIDUE_FIELDS.map(key => `${key}=${JSON.stringify(item.residue[key])}`).join(", ");
+  return item.atom_names ? `${head} · 원자 ${item.atom_names.join(", ")}` : `${head} · 원자 ${item.atom_name} · altloc ${item.altloc}`;
 }
 
 /** Decimal-string ROUND_HALF_UP (ties away from zero), written independently of the product's helper. */
@@ -1237,6 +1272,68 @@ async function modeMain(session, input, rec_, evidence, log) {
     return files;
   });
 
+  // ---- receptor refusal lists (run B): water + zinc left in the receptor, an altloc atom; listed on screen
+  await rec_.part("receptor-refusal", ["D-reject-receptor"], async () => {
+    assert.ok(rejected, "run B inputs missing");
+    const cases = ["D-reject-receptor"];
+    const want = refusalOracle(o);
+    const receptors = await rec_.step("N06-receptor-imports", cases, "Run B: choose synthetic-receptor-water-zinc.pdb " +
+      "(수용체), 가져오기; then synthetic-receptor-altloc.pdb, 가져오기", async () => ({
+      waterZinc: (await importDocking(page, rejectRun, { receptor: WATER_ZINC }, evidence)).receptor,
+      altloc: (await importDocking(page, rejectRun, { receptor: ALTLOC }, evidence)).receptor,
+    }), async value => { assert.ok(value.waterZinc && value.altloc); return value; });
+    const refused = (caseId, file, handle, reason) => rec_.step(caseId, cases, `Choose ${path.basename(file)}, model 1, ` +
+      "없음(단백질만), PDB CONECT, the 3D SDF, 자유 도킹, 리간드 범위+여백 8, all acknowledgements; click 도킹 작업 시작: the " +
+      `submission is refused with ${reason} and the refusal list shows each leftover's seven residue fields (null kept) ` +
+      "and atom names; no job is created, no budget is used, no result is stored", async () => {
+      await fillForm(page, { ...freeSpec, receptor: handle, sdf: rejected.parent }, evidence);
+      await waitFor(page, async () => (await startState(page)).enabled ? true : null, "start enabled", 15000);
+      const jobsBefore = (await readApi(page, `/runs/${rejectRun}/jobs`)).length;
+      const budgetBefore = await budgetUsed(page, rejectRun);
+      const posted = page.waitForResponse(response => response.request().method() === "POST" &&
+        new URL(response.url()).pathname === `/api/runs/${rejectRun}/jobs`, { timeout: 60000 });
+      await dt(page, "docking-start").click();
+      control(evidence, "docking-start", { clicked: true, expectRefusal: reason });
+      const response = await posted;
+      const body = await response.json().catch(() => null);
+      const list = dt(page, "docking-refusal-list");
+      await list.waitFor({ timeout: 30000 });
+      return { status: response.status(), detail: body?.detail ?? null,
+        source: await list.getAttribute("data-docking-refusal-source"), reasonCode: await list.getAttribute("data-reason-code"),
+        total: await list.getAttribute("data-total"), shown: await list.getAttribute("data-shown"),
+        heading: clean(await list.locator("span").first().textContent()),
+        lines: (await list.locator("li[data-refusal-item]").allTextContents()).map(clean),
+        visible: await list.isVisible(), jobError: clean(await dt(page, "docking-job-error").textContent({ timeout: 2000 })
+          .catch(() => "")), state: await dockState(page), jobsBefore, budgetBefore,
+        jobsAfter: (await readApi(page, `/runs/${rejectRun}/jobs`)).length, budgetAfter: await budgetUsed(page, rejectRun),
+        results: await readApi(page, `/runs/${rejectRun}/docking/results`) };
+    }, async value => {
+      const items = want[reason];
+      assert.equal(value.status, 422, JSON.stringify(value.detail));
+      assert.equal(value.detail?.reason_code, reason, JSON.stringify(value.detail));
+      assert.deepEqual(value.detail.items, items, "API refusal items differ from the fixture oracle");
+      assert.equal(value.detail.total, items.length);
+      assert.equal(value.visible, true);
+      assert.equal(value.source, "admission");
+      assert.equal(value.reasonCode, reason);
+      assert.equal(value.total, String(items.length));
+      assert.equal(value.shown, String(items.length));
+      assert.deepEqual(value.lines, items.map(refusalLine), "screen refusal lines differ from the fixture oracle");
+      for (const line of value.lines) assert.ok(line.includes("chain_label=null") && line.includes("seq_label=null"), line);
+      assert.ok(value.heading.includes(`(${reason})`), value.heading);
+      assert.ok(value.jobError.includes(`(${reason})`), value.jobError);
+      assert.equal(value.state, "failure");
+      assert.equal(value.jobsAfter, value.jobsBefore, "a refused submission created a job");
+      assert.deepEqual(value.budgetAfter, value.budgetBefore, "a refused submission used budget");
+      assert.equal(value.results.total, 0);
+      const found = await checkWording(`refusal ${reason}`, []);
+      assert.deepEqual(found, [], JSON.stringify(found));
+      return { reason, lines: value.lines, heading: value.heading };
+    });
+    await refused("N07-refusal-water-zinc", WATER_ZINC, receptors.waterZinc, "receptor_unsupported_residue");
+    await refused("N08-refusal-altloc", ALTLOC, receptors.altloc, "receptor_altloc_present");
+  });
+
   // ---- cancel while qvina runs: the worker and qvina2 processes are gone, no result is stored
   await rec_.part("cancel", ["D-cancel"], async () => {
     assert.ok(rejected, "run B inputs missing");
@@ -1434,4 +1531,4 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, oracle, halfUp, expectedLimitations, contactKind, forbiddenWords };
+module.exports = { options, main, oracle, halfUp, expectedLimitations, contactKind, forbiddenWords, refusalOracle, refusalLine };

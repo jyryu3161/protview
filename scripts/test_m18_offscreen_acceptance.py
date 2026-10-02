@@ -41,7 +41,8 @@ def test_every_spec_case_is_planned_and_covered():
     assert all(modes and set(modes) <= set(m18.FLOW_STEPS) for modes in m18.CASE_PLAN.values())
     assert all(_cases(step) for step in m18.FLOW_STEPS)
     assert set(m18.MODE_OF) == set(m18.FLOW_STEPS)
-    assert len(m18.CASE_PLAN) == 21
+    assert len(m18.CASE_PLAN) == 22
+    assert "D-reject-receptor" in m18.CASE_PLAN
     assert m18.REPRO_CASE not in m18.CASE_PLAN and "D-zero-modes" not in m18.CASE_PLAN
     assert set(m18.NOT_OBSERVED) == {"D-zero-modes"}
 

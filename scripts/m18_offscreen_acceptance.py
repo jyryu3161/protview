@@ -17,8 +17,9 @@ Sequence:
                         the stored pose_sdf → report + knowledge-tab list + downloads → complex receptor with one removed
                         instance (instance_range box) → real M17 inspection + enumeration → core-fixed docking → structure
                         tab kept mounted → run B: run switch with a held late response → rejections (planar SDF, implicit
-                        H, box over 40 Å on screen and in the worker) → cancel while qvina runs (no worker/qvina process
-                        left) → no rank/best/improvement/affinity wording on screen.
+                        H, box over 40 Å on screen and in the worker) → receptor refusal lists on screen (water + zinc,
+                        altloc) → cancel while qvina runs (no worker/qvina process left) → no rank/best/improvement/affinity
+                        wording on screen.
   2. reproducibility    the free-docking inputs and values of step 1 are docked again in two fresh runs over the API
                         (approve, start); scores and the all-modes pose SDF bytes must equal step 1's stored result.
   3. docking-unavailable the backend is restarted from <root>/layout-worker-missing (byte-identical backend/mw and
@@ -81,7 +82,8 @@ CASE_PLAN: dict[str, list[str]] = {
     "D-contacts": ["docking-main"], "D-downloads": ["docking-main"], "D-report": ["docking-main"],
     "D-instance": ["docking-main"], "D-m17-candidates": ["docking-main"], "D-core-fixed": ["docking-main"],
     "D-structure-kept": ["docking-main"], "D-run-switch-late": ["docking-main"], "D-reject-planar": ["docking-main"],
-    "D-reject-implicit-h": ["docking-main"], "D-reject-box": ["docking-main"], "D-cancel": ["docking-main"],
+    "D-reject-implicit-h": ["docking-main"], "D-reject-box": ["docking-main"], "D-reject-receptor": ["docking-main"],
+    "D-cancel": ["docking-main"],
     "D-wording": ["docking-main"], "D-no-run": ["docking-unavailable"], "D-unavailable": ["docking-unavailable"],
 }
 CASE_TEXT = {
@@ -116,6 +118,10 @@ CASE_TEXT = {
     "D-reject-implicit-h": "implicit-H SDF → job failed ligand_hydrogens_missing, no result stored",
     "D-reject-box": "manual side 41 Å → start disabled (box_too_large, no job request); ligand range + margin 20 → worker "
                     "box_too_large, no result stored",
+    "D-reject-receptor": "receptor with water + zinc left (instance 없음) → submission refused "
+                         "receptor_unsupported_residue; receptor with an altloc atom → receptor_altloc_present; the on-screen "
+                         "refusal list shows each item's seven residue fields (nulls kept) and atom names (altloc) equal to "
+                         "the fixture oracle; no job, no budget, no result",
     "D-cancel": "exhaustiveness 32 job running with a qvina2 process → 작업 취소 → cancelled, no worker/guardian/qvina2 "
                 "process left, no result stored",
     "D-wording": "no rank/best/optimum/improvement/binding-strength/affinity word on screen outside the fixed limitation "
