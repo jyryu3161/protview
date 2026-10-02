@@ -67,6 +67,9 @@ export const DOCKING_LIMITATIONS: readonly string[] = [
   "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다.",
   "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다.",
 ];
+/** Shown before submission when the candidate source is chosen: spec 5.4 sentences 7, 10 and 11, verbatim. */
+export const CANDIDATE_SOURCE_NOTES: readonly string[] = [DOCKING_LIMITATIONS[6], DOCKING_LIMITATIONS[9],
+  DOCKING_LIMITATIONS[10]];
 export const BOX_FRAME_NOTE = "리간드 좌표가 수용체와 같은 좌표계에 있다고 가정합니다. 도구는 상자 안에 수용체 중원자가 " +
   "하나라도 있는지만 검사하며, 그 밖의 좌표계 어긋남은 검증하지 못합니다.";
 export const CONTACT_NOTE = "접촉은 거리 4.0 Å 이하로 센 기하 접촉이며 수소결합 등 상호작용 판정이 아닙니다.";
@@ -148,7 +151,7 @@ export function dockingCapabilityText(capability: Pick<DockingCapability, "reaso
   return capability.reason_code ? dockingReasonText(capability.reason_code) : UNAVAILABLE_DEFAULT;
 }
 
-type FailureLike = { error: string; message: string; reason_code?: string } | null;
+type FailureLike = { error: string; message: string; reason_code?: string; detail?: unknown } | null;
 
 /** Job failure "한국어 (code) · message"; `resource_exceeded` adds the "reduce the mode count" hint. */
 export function dockingFailureText(failure: FailureLike): string {
@@ -170,6 +173,68 @@ export function dockingRequestErrorText(error: { message: string; code?: string;
   const total = typeof error.detail?.total === "number" ? error.detail.total : null;
   const listed = items !== null && total !== null ? ` · 목록 ${total}개 중 ${items}개 표시` : "";
   return `${head} · ${error.message}${reason === "resource_exceeded" ? ` · ${RESOURCE_EXCEEDED_HINT}` : ""}${listed}`;
+}
+
+// ---- receptor refusal list (spec 3.2: at most 20 items, seven residue fields and atom names, altloc) ----
+
+const LISTED_REASONS = ["receptor_unsupported_residue", "receptor_altloc_present"];
+const RESIDUE_FIELDS = ["model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname"] as const;
+const MALFORMED_ITEM = "형식을 읽을 수 없는 항목";
+
+/** The seven residue fields exactly as stored: strings quoted, null shown as null (never filled in or rebuilt). */
+export function receptorResidueFieldsText(residue: ExactResidueRef): string {
+  return RESIDUE_FIELDS.map(key => `${key}=${JSON.stringify(residue[key])}`).join(", ");
+}
+
+function residueShape(value: unknown): value is ExactResidueRef {
+  if (!value || typeof value !== "object") return false;
+  const r = value as Record<string, unknown>;
+  const optionalString = (x: unknown) => x === null || typeof x === "string";
+  const optionalInt = (x: unknown) => x === null || Number.isInteger(x);
+  return Number.isInteger(r.model_number) && typeof r.chain_auth === "string" && optionalString(r.chain_label) &&
+    Number.isInteger(r.seq_auth) && optionalInt(r.seq_label) && typeof r.icode === "string" &&
+    typeof r.resname === "string";
+}
+
+function refusalItemText(item: unknown): string {
+  if (!item || typeof item !== "object") return MALFORMED_ITEM;
+  const row = item as { residue?: unknown; atom_names?: unknown; atom_name?: unknown; altloc?: unknown };
+  if (!residueShape(row.residue)) return MALFORMED_ITEM;
+  const head = receptorResidueFieldsText(row.residue);
+  if (Array.isArray(row.atom_names) && row.atom_names.every(name => typeof name === "string"))
+    return `${head} · 원자 ${row.atom_names.join(", ")}`;
+  if (typeof row.atom_name === "string" && typeof row.altloc === "string")
+    return `${head} · 원자 ${row.atom_name} · altloc ${row.altloc}`;
+  return MALFORMED_ITEM;
+}
+
+export interface DockingRefusalList { reason_code: string; total: number | null; shown: number; heading: string;
+  lines: string[] }
+
+/**
+ * The listed receptor leftovers of a `receptor_unsupported_residue` / `receptor_altloc_present` refusal, one line per
+ * item (`detail.items`, at most 20, counted against `detail.total`); null for any other reason or without items.
+ * Admission (422 `detail`) and worker-stage job failure (`failure.detail`) carry the same item shapes.
+ */
+export function dockingRefusalList(reason: unknown, detail: unknown): DockingRefusalList | null {
+  if (typeof reason !== "string" || !LISTED_REASONS.includes(reason) || !detail || typeof detail !== "object") return null;
+  const { items, total } = detail as { items?: unknown; total?: unknown };
+  if (!Array.isArray(items)) return null;
+  const counted = Number.isInteger(total) ? total as number : null;
+  const heading = counted === null ? `거부 목록: ${items.length}개 표시 (최대 20개)`
+    : `거부 목록: 전체 ${counted}개 중 ${items.length}개 표시 (최대 20개)`;
+  return { reason_code: reason, total: counted, shown: items.length, heading, lines: items.map(refusalItemText) };
+}
+
+/** List of a refused request (`ApiError.detail` = `{reason_code, items, total}`). */
+export function dockingRequestRefusalList(error: { detail?: Record<string, unknown> }): DockingRefusalList | null {
+  return dockingRefusalList(error.detail?.reason_code, error.detail);
+}
+
+/** List of a failed job (`failure.reason_code` + `failure.detail`); null unless the job failed. */
+export function dockingJobRefusalList(job: JobLike | null): DockingRefusalList | null {
+  if (!job || !["failed", "interrupted"].includes(job.status) || !job.failure) return null;
+  return dockingRefusalList(job.failure.reason_code, job.failure.detail);
 }
 
 // ---- panel state ----
@@ -576,6 +641,15 @@ export function dockingActiveJob<T extends { run_id: string; protocol_id: string
 
 export function dockingJobActive(job: { status: string } | null): boolean {
   return !!job && ACTIVE_STATUSES.includes(job.status);
+}
+
+/**
+ * Cancel is offered for a known active job (queued, claimed, running) unless a cancel was already requested or is in
+ * flight. It never waits for the submit/start request, which the server holds until the job ends.
+ */
+export function dockingCancelEnabled(input: { job: { status: string; cancel_requested: boolean } | null;
+  cancelling: boolean }): boolean {
+  return dockingJobActive(input.job) && !input.job!.cancel_requested && !input.cancelling;
 }
 
 /** Imports of one kind, in creation order (the server's list); never filtered by name. */

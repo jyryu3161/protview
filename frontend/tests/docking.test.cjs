@@ -653,3 +653,80 @@ test("api: docking submission sends the fixed protocol and timeout; reads and do
   assert.equal(api.dockingPosesSdfUrl("r", "obj://r/docking_result/x"),
     "/api/runs/r/docking/results/poses_sdf?handle=obj%3A%2F%2Fr%2Fdocking_result%2Fx");
 });
+
+// ---- review fixes: receptor refusal list, cancel availability, candidate note ----
+
+const WATER = { model_number: 1, chain_auth: "W", chain_label: null, seq_auth: 1, seq_label: null, icode: "",
+  resname: "HOH" };
+const ZINC = { model_number: 1, chain_auth: "Z", chain_label: "C", seq_auth: 2, seq_label: 7, icode: "A", resname: "ZN" };
+
+test("receptor refusal list (422 admission detail): every item with seven fields (nulls kept) and atom names", () => {
+  // ApiError.detail of POST /jobs: {reason_code, items: [{residue, atom_names}], total} (docking_inputs.check_receptor)
+  const detail = { reason_code: "receptor_unsupported_residue",
+    items: [{ residue: WATER, atom_names: ["O", "H1", "H2"] }, { residue: ZINC, atom_names: ["ZN"] }], total: 25 };
+  const list = plain(lib.dockingRefusalList(detail.reason_code, detail));
+  assert.deepEqual(list, { reason_code: "receptor_unsupported_residue", total: 25, shown: 2,
+    heading: "거부 목록: 전체 25개 중 2개 표시 (최대 20개)",
+    lines: [
+      'model_number=1, chain_auth="W", chain_label=null, seq_auth=1, seq_label=null, icode="", resname="HOH" · 원자 O, H1, H2',
+      'model_number=1, chain_auth="Z", chain_label="C", seq_auth=2, seq_label=7, icode="A", resname="ZN" · 원자 ZN',
+    ] });
+  assert.equal(lib.receptorResidueFieldsText(WATER),
+    'model_number=1, chain_auth="W", chain_label=null, seq_auth=1, seq_label=null, icode="", resname="HOH"');
+  for (const text of [list.heading, ...list.lines]) assert.deepEqual(plain(lib.dockingForbiddenWords(text)), [], text);
+});
+
+test("receptor refusal list (job failure detail): altloc items carry atom name and altloc value", () => {
+  // DockingJob.failure of a worker-stage refusal: {error, reason_code, message, detail: {items, total}}
+  const failure = { error: "input_invalid", reason_code: "receptor_altloc_present", message: "receptor has alternate locations",
+    detail: { items: [{ residue: { ...WATER, chain_auth: "A", resname: "SER", seq_auth: 12 }, atom_name: "OG", altloc: "B" }],
+      total: 1 } };
+  const list = plain(lib.dockingRefusalList(failure.reason_code, failure.detail));
+  assert.equal(list.heading, "거부 목록: 전체 1개 중 1개 표시 (최대 20개)");
+  assert.deepEqual(list.lines, [
+    'model_number=1, chain_auth="A", chain_label=null, seq_auth=12, seq_label=null, icode="", resname="SER" · 원자 OG · altloc B']);
+  assert.deepEqual(plain(lib.dockingJobRefusalList({ status: "failed", failure })), list);
+  assert.equal(lib.dockingJobRefusalList({ status: "running", failure }), null);
+  assert.equal(lib.dockingJobRefusalList(null), null);
+  assert.deepEqual(plain(lib.dockingRequestRefusalList({ detail: { reason_code: "receptor_altloc_present",
+    items: failure.detail.items, total: 1 } })), list);
+});
+
+test("receptor refusal list: other reasons and missing items give no list; malformed items are named, not dropped", () => {
+  assert.equal(lib.dockingRefusalList("box_too_large", { items: [{ residue: WATER, atom_names: ["O"] }], total: 1 }), null);
+  assert.equal(lib.dockingRefusalList("receptor_unsupported_residue", {}), null);
+  assert.equal(lib.dockingRefusalList("receptor_unsupported_residue", undefined), null);
+  assert.equal(lib.dockingRefusalList(undefined, { items: [] }), null);
+  assert.equal(lib.dockingRequestRefusalList({ detail: undefined }), null);
+  const odd = plain(lib.dockingRefusalList("receptor_unsupported_residue",
+    { items: [{ residue: { resname: "X" }, atom_names: ["C1"] }, "x"] }));
+  assert.equal(odd.heading, "거부 목록: 2개 표시 (최대 20개)");
+  assert.deepEqual(odd.lines, ["형식을 읽을 수 없는 항목", "형식을 읽을 수 없는 항목"]);
+});
+
+test("cancel is available whenever the known job is active, independent of a pending start request", () => {
+  const job = { status: "queued", cancel_requested: false };
+  assert.equal(lib.dockingCancelEnabled({ job, cancelling: false }), true);
+  assert.equal(lib.dockingCancelEnabled({ job: { ...job, status: "running" }, cancelling: false }), true);
+  assert.equal(lib.dockingCancelEnabled({ job: { ...job, status: "claimed" }, cancelling: false }), true);
+  assert.equal(lib.dockingCancelEnabled({ job, cancelling: true }), false);
+  assert.equal(lib.dockingCancelEnabled({ job: { ...job, cancel_requested: true }, cancelling: false }), false);
+  for (const status of ["done", "failed", "cancelled", "interrupted"])
+    assert.equal(lib.dockingCancelEnabled({ job: { ...job, status }, cancelling: false }), false, status);
+  assert.equal(lib.dockingCancelEnabled({ job: null, cancelling: false }), false);
+  // The panel: the cancel button no longer depends on the start/submit `busy` flag.
+  const source = fs.readFileSync(path.join(__dirname, "../src/components/DockingPanel.tsx"), "utf8");
+  const cancelButton = /data-testid="docking-job-cancel"[^>]*>/.exec(source)[0];
+  assert.ok(!/\bbusy\b/.test(cancelButton), cancelButton);
+  assert.ok(/dockingCancelEnabled\(/.test(cancelButton), cancelButton);
+});
+
+test("candidate source note before submission reuses spec 5.4 sentences 7, 10 and 11 verbatim", () => {
+  assert.deepEqual(plain(lib.CANDIDATE_SOURCE_NOTES), [lib.DOCKING_LIMITATIONS[6], lib.DOCKING_LIMITATIONS[9],
+    lib.DOCKING_LIMITATIONS[10]]);
+  for (const text of lib.CANDIDATE_SOURCE_NOTES) assert.deepEqual(plain(lib.dockingForbiddenWords(text)), [], text);
+  const source = fs.readFileSync(path.join(__dirname, "../src/components/DockingPanel.tsx"), "utf8");
+  assert.ok(/CANDIDATE_SOURCE_NOTES\.map/.test(source));
+  assert.ok(/data-testid="docking-candidate-notes"/.test(source));
+  assert.ok(/data-testid="docking-refusal-list"/.test(source));
+});
