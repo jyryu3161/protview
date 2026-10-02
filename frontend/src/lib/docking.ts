@@ -10,8 +10,8 @@
  * binding strength (`dockingForbiddenWords`).
  */
 import type { DockingAcknowledgementKey, DockingArgs, DockingBoxSource, DockingCapability, DockingContact,
-  DockingJob, DockingLigandSource, DockingMode, DockingReceptorAtom, DockingReceptorInstance, DockingResult,
-  ExactResidueRef, GeometricContactType } from "./contracts";
+  DockingJob, DockingLigandSource, DockingMode, DockingModeSummary, DockingReceptorAtom, DockingReceptorInstance,
+  DockingResult, ExactResidueRef, GeometricContactType } from "./contracts";
 import { CONTACT_TYPE_LABEL, decimalHalfUp } from "./site-annotation";
 
 // ---- closed sets (same values and order as backend/mw/docking_constants.py; tests compare them) ----
@@ -536,6 +536,151 @@ export function removedInstanceText(removed: DockingReceptorInstance | null): st
   if (!removed) return "뺀 인스턴스 없음(단백질만)";
   const elements = Object.entries(removed.element_counts).map(([element, count]) => `${element} ${count}`).join(", ");
   return `${residueText(removed.residue)} · 원자 ${removed.atom_count}개(${elements})`;
+}
+
+// ---- screen wiring (T9: the panel keeps no decision of its own) ----
+
+export const DOCKING_STATE_TEXT: Record<DockingPanelState["state"], string> = { loading: "불러오는 중", ready: "준비",
+  scientific_null: "빈 과학 결과 (모드 0개)", failure: "실패", unavailable: "사용할 수 없음" };
+
+/**
+ * Applies a form edit and clears every choice the edit invalidates, so a stale choice is never sent: a new receptor
+ * clears the model and the instance; a new model clears the instance; a new candidate set clears the candidate and
+ * its parent SDF; leaving the sidecar clears its handle; core-fixed is dropped when the source is not a candidate;
+ * the instance range is dropped when no instance is chosen. Nothing is chosen automatically in its place.
+ */
+export function patchDockingForm(form: DockingForm, patch: Partial<DockingForm>): DockingForm {
+  const next: DockingForm = { ...form, ...patch };
+  if (next.receptorHandle !== form.receptorHandle) {
+    if (!("receptorModelNumber" in patch)) next.receptorModelNumber = null;
+    if (!("instance" in patch)) next.instance = { kind: "unset" };
+  }
+  if (next.receptorModelNumber !== form.receptorModelNumber && !("instance" in patch)) next.instance = { kind: "unset" };
+  if (next.candidateSetHandle !== form.candidateSetHandle) {
+    if (!("candidateId" in patch)) next.candidateId = null;
+    if (!("parentSdfHandle" in patch)) next.parentSdfHandle = null;
+  }
+  if (next.connectivity !== "sidecar") next.sidecarHandle = null;
+  if (next.mode === "core_fixed" && next.ligandSource !== "candidate") next.mode = null;
+  if (next.boxSource === "instance_range" && next.instance.kind !== "instance") next.boxSource = null;
+  return next;
+}
+
+/** The docking job of this run that is still queued or running (the latest one), for re-attaching after a remount. */
+export function dockingActiveJob<T extends { run_id: string; protocol_id: string; status: string }>(jobs: unknown,
+  runId: string): T | null {
+  if (!Array.isArray(jobs)) return null;
+  return (jobs as T[]).filter(job => job && job.run_id === runId && job.protocol_id === DOCKING_PROTOCOL &&
+    ACTIVE_STATUSES.includes(job.status)).at(-1) ?? null;
+}
+
+export function dockingJobActive(job: { status: string } | null): boolean {
+  return !!job && ACTIVE_STATUSES.includes(job.status);
+}
+
+/** Imports of one kind, in creation order (the server's list); never filtered by name. */
+export function importsOfKind<T extends { input_kind: string }>(imports: readonly T[], kind: string): T[] {
+  return imports.filter(row => row.input_kind === kind);
+}
+
+/** Why no parent SDF can be chosen for a candidate set (null = at least one same-SHA ligand_sdf import exists). */
+export function parentSdfMissingReason(set: { valid: boolean; parent_sdf_handles: string[] | null } | null): string | null {
+  if (!set) return "후보 집합을 먼저 고르세요.";
+  if (!set.valid) return `이 후보 집합은 읽을 수 없습니다: ${dockingReasonText("evidence_invalid")}`;
+  if (!set.parent_sdf_handles?.length)
+    return "후보 집합의 부모와 SHA-256이 같은 리간드 SDF 가져오기가 없습니다. 부모 3D SDF를 가져오세요 (parent_mismatch 방지).";
+  return null;
+}
+
+const STEREO_FLAG_LABEL: Record<string, string> = { none: "입체 표시 없음", parent_stereo_lost: "부모 코어의 입체 지정이 사라짐",
+  new_unspecified_center: "새로 생긴 미지정 입체 중심" };
+
+/** M17 candidate `stereo_flag` as "한국어 (code)"; null when the ligand is not a candidate. */
+export function stereoFlagText(flag: string | null): string {
+  if (flag === null) return "해당 없음(SDF 출처)";
+  return STEREO_FLAG_LABEL[flag] ? `${STEREO_FLAG_LABEL[flag]} (${flag})` : flag;
+}
+
+type SummaryResult = Pick<DockingResult, "method" | "inputs" | "box" | "parameters" | "engine" | "preparation" | "counts">;
+
+/**
+ * Summary lines of one stored result ([label, value]); every value is a stored field (rounded for display only).
+ * The score name appears in full here; the table header uses `SCORE_COLUMN_LABEL`.
+ */
+export function dockingSummaryRows(result: SummaryResult): [string, string][] {
+  const { inputs, parameters: values, engine, preparation, counts } = result;
+  const ligand = inputs.ligand;
+  const rows: [string, string][] = [
+    ["점수", SCORE_LABEL],
+    ["방식", `${MODE_LABEL[inputs.mode]} · ${result.method}`],
+    ["엔진", `${engine.name} ${engine.version} · ${engine.package} · 실행 파일 SHA-256 ${engine.binary_sha256}`],
+    ["입력 준비", `${preparation.tool} ${preparation.version} · RDKit ${preparation.rdkit_version} · 원자 유형 ` +
+      `${preparation.atom_typing} · 부분 전하 ${preparation.charges}`],
+    ["seed", String(values.seed)],
+    ["값", `exhaustiveness ${values.exhaustiveness} · num_modes ${values.num_modes} · energy_range ` +
+      `${decimalHalfUp(values.energy_range, 2)} kcal/mol · cpu ${values.cpu}` +
+      (values.conformers === null ? "" : ` · conformers ${values.conformers}`)],
+    ["상자", boxText(result.box)],
+    ["수용체", `${inputs.receptor.handle} · SHA-256 ${inputs.receptor.sha256} · 모델 ${inputs.receptor.model_number} · ` +
+      `연결 정보 ${inputs.receptor.connectivity.kind === "sidecar" ? `결합 사이드카 ${inputs.receptor.connectivity.sidecar_handle}`
+        : "PDB CONECT"}`],
+    ["뺀 인스턴스", removedInstanceText(inputs.receptor.removed_instance)],
+    ["리간드 출처", ligand.source === "sdf" ? `3D SDF ${ligand.sdf_handle} · SHA-256 ${ligand.sdf_sha256}`
+      : `M17 후보 ${ligand.candidate_id} · 후보 집합 ${ligand.candidate_set_handle} · 부모 SDF ${ligand.parent_sdf_handle} · ` +
+        `부모 SHA-256 ${ligand.parent_sdf_sha256}`],
+    ["생성 여부", generatedText(ligand.generated)],
+    ["후보 stereo_flag", stereoFlagText(ligand.stereo_flag)],
+    ["미지정 입체 중심 수", ligand.unspecified_stereo_centers === null ? "해당 없음(SDF 출처)"
+      : countText(ligand.unspecified_stereo_centers)],
+    [inputs.mode === "core_fixed" ? "샘플 수" : "모드 수", countText(counts.modes)],
+  ];
+  if (inputs.mode === "core_fixed")
+    rows.push(["만든 형태 · 점수를 매긴 형태", `${counts.samples_generated === null ? "해당 없음" : countText(counts.samples_generated)}` +
+      ` · ${counts.samples_scored === null ? "해당 없음" : countText(counts.samples_scored)}`]);
+  return rows;
+}
+
+/** Mode table header for the result's mode (free docking has engine RMSD bounds; core-fixed the core deviation). */
+export function modeTableHeaders(mode: DockingMode): string[] {
+  const head = [modeColumnLabel(mode), SCORE_COLUMN_LABEL, "접촉 수(기하)", "최소 중원자 거리", "상자 밖 중원자 수"];
+  return mode === "core_fixed" ? [...head, "코어 최대 이탈", "형태 번호"] : [...head, "엔진 RMSD 하한·상한(모드 1 기준)"];
+}
+
+/** One mode row as displayed (stored values only; `contact_count` is the server's count). */
+export function modeTableCells(mode: DockingMode, row: DockingModeSummary): string[] {
+  const head = [modeRowLabel(mode, row.mode), scoreText(row.score_kcal_mol), countText(row.contact_count),
+    distanceText(row.min_heavy_atom_distance_A), countText(row.atoms_outside_box)];
+  if (mode === "core_fixed")
+    return [...head, optionalDistanceText(row.core_max_deviation_A),
+      row.conformer_index === null ? "해당 없음" : String(row.conformer_index)];
+  return [...head, row.engine_rmsd_lb_A === null || row.engine_rmsd_ub_A === null ? "해당 없음"
+    : `${optionalDistanceText(row.engine_rmsd_lb_A)} · ${optionalDistanceText(row.engine_rmsd_ub_A)}`];
+}
+
+/** "접촉 n개 중 a–b" for a contact page; an empty mode says so (never shown as "not computed"). */
+export function contactPageText(page: { total: number; offset: number; rows: readonly unknown[] }): string {
+  if (page.total === 0) return "이 모드의 기하 접촉은 0개입니다(4.0 Å 안에 중원자 쌍 없음).";
+  return `기하 접촉 ${page.total}개 중 ${page.offset + 1}–${page.offset + page.rows.length}`;
+}
+
+/** One stored result in the list (or why it cannot be read). */
+export function dockingResultRowText(row: { created_seq: number; valid: boolean; reason_code: string | null;
+  mode: DockingMode | null; ligand_source: DockingLigandSource | null; candidate_id: string | null; seed: number | null;
+  box_source: DockingBoxSource | null; modes: number | null; null_result: boolean | null }): string {
+  if (!row.valid) return `생성 순번 ${row.created_seq} · 읽을 수 없음: ${dockingReasonText(row.reason_code ?? "evidence_invalid")}`;
+  const mode = row.mode ?? "free";
+  const source = row.ligand_source === "candidate" ? `후보 ${row.candidate_id}` : "3D SDF";
+  const count = row.null_result ? `${mode === "core_fixed" ? "샘플" : "모드"} 0개 (빈 과학 결과)`
+    : `${mode === "core_fixed" ? "샘플" : "모드"} ${row.modes}개`;
+  return `생성 순번 ${row.created_seq} · ${MODE_LABEL[mode]} · ${source} · seed ${row.seed} · ` +
+    `${row.box_source ? boxSourceLabel(row.box_source) : ""} · ${count}`;
+}
+
+/** The report answer belongs to the chosen result (otherwise it is not shown as created). */
+export function dockingReportMatches(artifact: { manifest: { schema: string; analysis_type: string; result_handle: string } },
+  resultHandle: string): boolean {
+  return artifact.manifest.schema === "method_report_manifest@1" && artifact.manifest.analysis_type === "ligand_docking" &&
+    artifact.manifest.result_handle === resultHandle;
 }
 
 // ---- wording check (screen text never claims rank, best, improvement or binding strength) ----
