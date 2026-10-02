@@ -251,8 +251,11 @@ class Run:
 
     def reserve_attempt(self, attempt_id: str, root_call_id: str, tool: str,
                         args: dict[str, Any], *, job_id: str | None = None,
-                        before_reserve: Callable[[], None] | None = None) -> dict[str, Any]:
-        """One durable expensive unit per physical attempt; caller holds the run owner."""
+                        before_reserve: Callable[[], None] | None = None, units: int = 1) -> dict[str, Any]:
+        """``units`` durable expensive units per physical attempt (default one; an M19 batch reserves its new rows,
+        possibly zero); caller holds the run owner."""
+        if type(units) is not int or units < 0:
+            raise ValueError("reservation units must be a non-negative integer")
         with self._transition():
             self._refresh()
             # Admission belongs to the same short critical section as the debit.
@@ -262,7 +265,7 @@ class Run:
                              e.get("attempt_id") == attempt_id), None)
             if existing:
                 if (existing.get("root_call_id") != root_call_id or existing.get("tool") != tool or
-                        existing.get("expensive_calls") != 1):
+                        existing.get("expensive_calls") != units):
                     raise ValueError("attempt reservation identity mismatch")
                 return existing
             if self._cancel_path.exists() or self.cancelled:
@@ -286,14 +289,14 @@ class Run:
                 self.events.append("approval_requested", gate="expensive_first_call", tool=tool, args=args)
                 raise ApprovalRequired("expensive_first_call", tool, args,
                                        "first expensive call needs approval")
-            if self.budget.would_exceed(expensive_calls=1):
+            if self.budget.would_exceed(expensive_calls=units):
                 self._checkpoint_budget(tool, args, "expensive_calls")
             if before_reserve is not None:
                 # Linked attempts: scoped stop check + durable attempt count, same critical section.
                 before_reserve()
             event = self.events.append("budget_reserved", attempt_id=attempt_id,
-                                       root_call_id=root_call_id, tool=tool, expensive_calls=1)
-            self.budget.charge(expensive_calls=1)
+                                       root_call_id=root_call_id, tool=tool, expensive_calls=units)
+            self.budget.charge(expensive_calls=units)
             return event
 
     def _refresh(self) -> None:
