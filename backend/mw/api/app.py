@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.concurrency import run_in_threadpool
 
-from .. import analysis_executions, analysis_plans, ligand_bundle, ligand_reads, numbering_reads
+from .. import analysis_executions, analysis_plans, docking_bundle, ligand_bundle, ligand_reads, numbering_reads
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
 from ..chemical_bundle import validated_graph as validated_chemical_graph
@@ -344,6 +344,8 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
         result["artifacts"] = {"ligand_inspection": job["output_handles"][0]}
     elif job.get("protocol_id") == "rdkit_enumerate_v1" and job.get("status") == "done":
         result["artifacts"] = {"ligand_candidate_set": job["output_handles"][0]}
+    elif job.get("protocol_id") == "qvina_dock_v1" and job.get("status") == "done":
+        result["artifacts"] = {"docking_result": job["output_handles"][0]}
     else:
         result["artifacts"] = {}
     return result
@@ -607,6 +609,9 @@ def capabilities() -> dict[str, Any]:
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
     # M17: pinned environment + RDKit version + PAINS A/B/C, checked by the worker handshake (no RDKit here).
     methods["ligand_candidates"] = ligand_bundle.capability()
+    # M18: both locked environments, qvina2 hash = install record = pin, worker handshake versions (no RDKit/Meeko
+    # import and no qvina run here).
+    methods["ligand_docking"] = docking_bundle.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1334,7 +1339,7 @@ def approve_job(rid: str) -> dict[str, Any]:
                  event.get("gate") == "expensive_first_call"]
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
-                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands"}
+                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):

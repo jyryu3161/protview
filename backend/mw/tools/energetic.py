@@ -20,10 +20,11 @@ JOB_PROTOCOLS = {**PROTOCOLS, "openmm_protein_minimize": ("openmm_protein_minimi
                  "prolif_detect_v1": ("compute_chemical_interactions", "prolif"),
                  "fpocket_detect_v1": ("detect_pockets", "fpocket"),
                  "rdkit_inspect_v1": ("rdkit_inspect_ligand", "rdkit"),
-                 "rdkit_enumerate_v1": ("rdkit_enumerate_ligands", "rdkit")}
+                 "rdkit_enumerate_v1": ("rdkit_enumerate_ligands", "rdkit"),
+                 "qvina_dock_v1": ("qvina_dock_ligand", "qvina")}
 JOB_ONLY_TOOLS = frozenset({"openmm_protein_minimize", "prepare_chemical_structure",
                             "compute_chemical_interactions", "detect_pockets",
-                            "rdkit_inspect_ligand", "rdkit_enumerate_ligands"})
+                            "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand"})
 
 
 def protocol_capabilities() -> dict[str, Any]:
@@ -69,6 +70,7 @@ def register(reg: ToolRegistry) -> None:
     reg.register("detect_pockets", unavailable_reason="use the fixed durable fpocket job lane")(queued_only)
     for name in ("rdkit_inspect_ligand", "rdkit_enumerate_ligands"):
         reg.register(name, unavailable_reason="use the fixed durable RDKit ligand job lane")(queued_only)
+    reg.register("qvina_dock_ligand", unavailable_reason="use the fixed durable qvina docking job lane")(queued_only)
 
     @reg.register("define_mutations")
     def define_mutations(ctx: ToolContext, structure: str, mutations: list) -> Handle:
