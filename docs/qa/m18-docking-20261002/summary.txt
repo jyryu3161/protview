@@ -1,0 +1,80 @@
+M18 T12 summary: source freeze, full gate, M18 acceptance QA, regressions (2026-10-02)
+
+frozen source: 23e2c03d87038092edd1e1ec4c10d5ff398adb11
+  = M18 T12 commit "offscreen receptor refusal-list step (water + zinc, altloc)" on top of 5a23462 (T11 review fixes).
+  No source change after the freeze. Every run below used this HEAD and the same frontend build
+  TQn8wObN5_83HO7HbKqrf (stamped by the M18 runner from the current frontend source; regressions reused it).
+
+environment
+  OS: macOS 15.6 (24G84), arm64; Python 3.11.11 (.venv); Node v24.3.0
+  qvina: QuickVina 2.1 (24 Dec, 2017), conda-forge qvina-2.1.0-h4a521e9_8, qvina2 SHA-256
+         caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c (.deps/qvina/env, install record)
+  docking worker (.deps/docking/venv-locked): RDKit 2026.03.6, Meeko 0.8.0, gemmi 0.7.5, CPython 3.11.11
+  M17 worker (.deps/prolif/venv-locked): unchanged
+  backend capability methods.ligand_docking: available (pins in acceptance/ evidence)
+
+attempt history
+  T12 step 1 (before freeze): added the receptor refusal-list step to frontend/tests/offscreen/docking-flow.cjs
+    (part receptor-refusal, case D-reject-receptor, steps N06-N08) and the case to scripts/m18_offscreen_acceptance.py
+    (22 planned cases). No product (screen) change was needed. Committed as the frozen source.
+  gate: one run, all exit 0 (gate.txt).
+  M18 acceptance: attempt 1 only, acceptance true. No failed attempt.
+  regressions: one run each, all acceptance true. No failed attempt.
+
+gate (gate.txt)
+  [1] backend pytest: exit 0, 1404 passed, 0 skipped, 1214 s (MW_KBASE_REF=<home>/Projects/kbase_kinase/ref)
+  [2] ruff: exit 0
+  [3] scripts pytest (13 files incl. test_m18_offscreen_acceptance, test_setup_qvina, test_setup_docking_worker):
+      exit 0, 269 passed
+  [4]-[10] node --check pocket/workflows/tabs/numbering/annotation/ligand/docking flows: exit 0
+  [11] test:events: exit 0, 256 pass, 0 fail, 0 skipped
+  [12] typecheck: exit 0; [13] build: exit 0 (run after typecheck, not concurrently)
+
+M18 acceptance (acceptance/)
+  .venv/bin/python scripts/m18_offscreen_acceptance.py --root runs/m18-acceptance-20261002 \
+      --artifacts frontend/tests/offscreen/artifacts/m18-acceptance/final --out docs/qa/m18-docking-20261002/acceptance
+  verdict pass, acceptance true; 24 judged cases pass (21 flow cases + D-reject-receptor + D-reproducible + S-no-egress);
+  steps docking-main (35 recorded rows, all pass) and docking-unavailable pass; D-zero-modes recorded as not observed
+  (not forged). Non-loopback requests 0 on every row; provider calls zero on every run; no leftover worker, guardian,
+  qvina2, 8000 or 3000 listener.
+  Receptor refusal step (new): water + zinc receptor → 422 receptor_unsupported_residue; altloc receptor → 422
+  receptor_altloc_present. The on-screen docking-refusal-list (source admission) showed, line for line, the oracle
+  built from expected.json and the fixture PDB columns:
+    model_number=1, chain_auth="W", chain_label=null, seq_auth=1, seq_label=null, icode="", resname="HOH" · 원자 O, H1, H2
+    model_number=1, chain_auth="Z", chain_label=null, seq_auth=1, seq_label=null, icode="", resname="ZN" · 원자 ZN
+    model_number=1, chain_auth="A", chain_label=null, seq_auth=38, seq_label=null, icode="", resname="TYR" · 원자 CB · altloc A
+  no job created, no budget used, no result stored.
+  Reproducibility: two fresh-run re-dockings gave the same scores (-12.9, -10.9, -10.7) and the same all-modes pose SDF
+  bytes as the flow's free-docking result.
+
+regressions (each with a fresh --root and --artifacts, serially, ports free before and after)
+  M17: scripts/m17_offscreen_acceptance.py --root runs/m18-m17-regression-20261002
+       --artifacts frontend/tests/offscreen/artifacts/m17-acceptance/m18-regression --out .../m17-regression
+       → acceptance true, 21/21 cases
+  M16: scripts/m16_offscreen_acceptance.py --root runs/m18-m16-regression-20261002 --kbase <home>/Projects/kbase_kinase
+       --artifacts frontend/tests/offscreen/artifacts/m16-acceptance/m18-regression --out .../m16-regression
+       → acceptance true, 19/19
+  M15: scripts/m15_offscreen_acceptance.py --root runs/m18-m15-regression-20261002 --kbase <home>/Projects/kbase_kinase
+       --artifacts frontend/tests/offscreen/artifacts/m15-acceptance/m18-regression --out .../m15-regression
+       → acceptance true, 14/14
+  M14: scripts/m14_offscreen_acceptance.py --root runs/m18-m14-regression-20261002
+       --artifacts frontend/tests/offscreen/artifacts/m14-acceptance/m18-regression --out .../m14-regression
+       → acceptance true, 15/15
+  M8-M13: scripts/m13_offscreen_acceptance.py --root runs/m18-m13-regression-20261002
+       --artifacts frontend/tests/offscreen/artifacts/m13-acceptance/m18-regression
+       --phases workflows,unavailable,regressions,m11,m12,ledger --out .../m13-regression
+       → acceptance true, 17 required steps, 28/28 cases (M11 and M12 sub-runners pass)
+  External requests total 0 in every ledger; no leftover processes or listeners.
+  Changed existing expectations: none. The M17 ligand flow and M14 tab flow passed unchanged with the docking area
+  mounted in the ligand tab.
+
+evidence layout
+  Committed here: small text/JSON only (gate.txt, summary.txt, acceptance/, m1X-regression/ with SHA256SUMS and
+  binary-artifacts.json hashes). Screenshots, paint frames and downloads stay in the git-ignored artifacts folders above.
+  Decision 0020: text files over 256 KiB were moved to <artifacts>/export-full/ (m13-regression 52 files, m14-regression
+  1, m15-regression 1); see each folder's ARCHIVED-EVIDENCE.sha256 and README last section (verified shasum -c, all OK).
+  Full gate logs: frontend/tests/offscreen/artifacts/m18-acceptance/gate/.
+
+note
+  preflight.txt and t2-install.txt (T1/T2, committed earlier, not edited here) contain unredacted absolute paths
+  (/Users/...); later evidence uses <repo>/<home>.

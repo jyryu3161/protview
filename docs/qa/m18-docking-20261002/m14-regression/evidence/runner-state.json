@@ -1,0 +1,49 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "TQn8wObN5_83HO7HbKqrf",
+    "gitHead": "23e2c03d87038092edd1e1ec4c10d5ff398adb11",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "609fd888eea2bbfb082287db86bd12689833bc1c19d4b4a5a1a5cd1b3bd1ea16",
+    "dirtyFiles": [
+      "?? docs/qa/m18-docking-20261002/acceptance/",
+      "?? docs/qa/m18-docking-20261002/gate.txt",
+      "?? docs/qa/m18-docking-20261002/m15-regression/",
+      "?? docs/qa/m18-docking-20261002/m16-regression/",
+      "?? docs/qa/m18-docking-20261002/m17-regression/"
+    ],
+    "recordedAt": "2026-10-02T03:25:12.974226+00:00",
+    "codeRoot": "<repo>",
+    "deps": {
+      "present": true,
+      "symlink": false,
+      "resolved": "<repo>/.deps"
+    },
+    "harnessSha256": {
+      "tabs-flow.cjs": "b404797c1228eb2027c99d83a6d9637052e139d44d89ea53c464877d8a75c828",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "0d31abfa50fe8b3cdb49afe28da034f97a08f2a5642bd853fb45fed298688b72"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m18-m14-regression-20261002/runs",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-02T03:25:15.850935+00:00"
+    }
+  ],
+  "chemicalCapability": {
+    "available": true,
+    "method": "chemical_interactions",
+    "reason_code": null,
+    "reason": null
+  }
+}
