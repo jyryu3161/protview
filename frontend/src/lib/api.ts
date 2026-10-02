@@ -1,6 +1,8 @@
 /** Loopback-only M1 API client. See docs/M1_API.md. */
 import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecutionList, AnalysisGoal, AnalysisPlanList,
-  AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, EgressMode, Handle,
+  AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, DockingArgs,
+  DockingCapability, DockingContactPage, DockingJob, DockingPrerequisites, DockingReceptorInstances,
+  DockingReportArtifact, DockingResultDetail, DockingResultList, DockingSubmission, EgressMode, Handle,
   InteractionRow, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
   LigandEnumerateArgs, LigandFilterSpec, LigandImport, LigandImportKind, LigandInspectArgs, LigandInspectionDetail,
   LigandInspectionList, LigandJob, LigandPrerequisites, LigandReportArtifact, LigandSitePreview, LigandSubmission,
@@ -17,6 +19,9 @@ import type { PocketCapability, PocketGeometry, PocketJob, PocketPreflight, Pock
   PocketSummary } from "./pockets";
 import type { NumberingMapList, NumberingRow, PdbIdHint, ReferenceSnapshots, SiftsChains,
   UniprotSearch } from "./numbering";
+
+/** Fixed `POST /jobs` time limit of a docking job (spec 4.1/5.1: not a job argument, not shown on screen). */
+export const DOCKING_TIMEOUT_S = 600;
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -37,7 +42,7 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     analysis_workflows?: AnalysisWorkflowsCapability;
     residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null };
     reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null };
-    ligand_candidates?: LigandCapability } }
+    ligand_candidates?: LigandCapability; ligand_docking?: DockingCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -58,7 +63,7 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
-    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates";
+    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -296,6 +301,37 @@ export const api = {
   createLigandReport: (id: string, setHandle: string, filters: LigandFilterSpec | null, signal?: AbortSignal) =>
     request<LigandReportArtifact>(runPath(id, "/method_reports"),
       jsonPost(filters === null ? { result_handle: setHandle } : { result_handle: setHandle, filters }, signal)),
+  // ---- M18 ligand docking (reads write no event and start no job; imports reuse `chemicalImport`) ----
+  dockingPrerequisites: (id: string, signal?: AbortSignal) =>
+    request<DockingPrerequisites>(runPath(id, "/docking/prerequisites"), { signal }),
+  /** Nonstandard residue instances of one receptor import (a selection aid; admission checks the choice again). */
+  dockingReceptorInstances: (id: string, receptorHandle: string, signal?: AbortSignal) =>
+    request<DockingReceptorInstances>(runPath(id, `/docking/receptor_instances?${handleParam(receptorHandle)}`),
+      { signal }),
+  /** Start, approval (`approveOpenmm`), retry and cancel use the shared job routes. `timeout_s` is fixed (not shown). */
+  submitDocking: (id: string, args: DockingArgs) =>
+    request<DockingSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "qvina_dock_v1", args,
+      timeout_s: DOCKING_TIMEOUT_S })),
+  dockingJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<DockingJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  /** Every job of the run (read only); the docking area re-attaches to its own queued or running job. */
+  dockingJobs: (id: string, signal?: AbortSignal) => request<DockingJob[]>(runPath(id, "/jobs"), { signal }),
+  dockingResults: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<DockingResultList>(runPath(id, `/docking/results?offset=${offset}&limit=${limit}`), { signal }),
+  dockingResult: (id: string, handle: string, signal?: AbortSignal) =>
+    request<DockingResultDetail>(runPath(id, `/docking/results/detail?${handleParam(handle)}`), { signal }),
+  dockingContacts: (id: string, handle: string, mode: number, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<DockingContactPage>(runPath(id, `/docking/results/contacts?${handleParam(handle)}&mode=${mode}` +
+      `&offset=${offset}&limit=${limit}`), { signal }),
+  /** Stored pose SDF of one mode (one record). */
+  dockingPoseSdfUrl: (id: string, handle: string, mode: number) =>
+    `/api${runPath(id, `/docking/results/pose_sdf?${handleParam(handle)}&mode=${mode}`)}`,
+  /** Stored pose SDF of every mode in one file (`$$$$` separated, titles `mode_<n>`). */
+  dockingPosesSdfUrl: (id: string, handle: string) =>
+    `/api${runPath(id, `/docking/results/poses_sdf?${handleParam(handle)}`)}`,
+  /** Report `analysis_type: "ligand_docking"` of one stored docking result (nothing is docked again). */
+  createDockingReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
+    request<DockingReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

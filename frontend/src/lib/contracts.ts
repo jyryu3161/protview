@@ -336,3 +336,112 @@ export interface LigandReportArtifact { handle: string; markdown_handle: string;
   schema: "method_report_manifest@1"; analysis_type: "ligand_candidates"; result_handle: string;
   filter_spec: LigandFilterSpec; null_result: boolean; snapshot: { event_seq: number } } & Record<string, unknown>;
   markdown: string }
+
+// ---- M18 ligand docking (backend/mw/docking_inputs.py, docking_bundle.py, docking_reads.py) ----
+export type DockingMode = "free" | "core_fixed";
+export type DockingLigandSource = "sdf" | "candidate";
+export type DockingBoxSource = "ligand_range" | "instance_range" | "manual";
+export type DockingMethod = "qvina_free_v1" | "qvina_core_fixed_score_only_v1";
+export type DockingAcknowledgementKey = "keep_input_protonation" | "tool_assigned_types_charges" | "rigid_no_optimization";
+export type DockingTriple = [number, number, number];
+
+/** `qvina_dock_v1` job arguments (fixed shape; the server refuses unknown keys). `conformers` only for `core_fixed`. */
+export interface DockingArgs {
+  receptor_handle: string;
+  receptor_model_number: number;
+  connectivity: { kind: "pdb_conect"; sidecar_handle: null } | { kind: "sidecar"; sidecar_handle: string };
+  /** Exactly the seven residue fields (nulls kept); null = protein only, no instance removed. */
+  receptor_instance: ExactResidueRef | null;
+  ligand: { source: "sdf"; sdf_handle: string } |
+    { source: "candidate"; candidate_set_handle: string; candidate_id: string; parent_sdf_handle: string };
+  mode: DockingMode;
+  box: { source: "ligand_range" | "instance_range"; margin_A: number } |
+    { source: "manual"; center_A: DockingTriple; size_A: DockingTriple };
+  parameters: { seed: number; exhaustiveness: number; num_modes: number; energy_range: number; conformers?: number };
+  acknowledgement: Record<DockingAcknowledgementKey, true>;
+}
+
+/** `methods.ligand_docking` of `/capabilities` and `capability` of the prerequisites read. */
+export interface DockingCapability { schema: "docking_capability@1"; protocol_id: "qvina_dock_v1";
+  tool_id: "qvina_dock_ligand"; engine: "qvina"; execution_lane: string; methods: Record<DockingMode, DockingMethod>;
+  timeout_s: { default: number; max: number };
+  limits: { input_bytes_per_file: number; receptor_atoms: number; ligand_heavy_atoms: number; active_torsions: number;
+    box_side_A: [number, number]; result_bytes: number; contacts_per_mode: number };
+  score_label: string; limitations: string[]; available: boolean; status: string; reason_code: string | null;
+  reason: string | null; pins: Record<string, unknown> | null; versions: Record<string, string> | null }
+
+export type DockingImportKind = "receptor" | "receptor_bonds" | "ligand_sdf";
+export interface DockingPrerequisites { schema: "docking_prerequisites@1"; capability: DockingCapability;
+  import_counts: Record<DockingImportKind, number>;
+  imports: { handle: string; input_kind: DockingImportKind; input_format: string | null; size: number;
+    sha256: string | null; created_seq: number }[];
+  /** A set that does not validate has `valid: false` and null fields. */
+  candidate_sets: { handle: string; valid: boolean; candidates: number | null; parent_handle: string | null;
+    parent_sha256: string | null; parent_sdf_handles: string[] | null }[];
+  docking_results: number; starts_job: false }
+
+export interface DockingReceptorInstance { residue: ExactResidueRef; atom_count: number;
+  element_counts: Record<string, number> }
+/** Selection aid only (gemmi read of one receptor import); admission and the worker check the choice again. */
+export interface DockingReceptorInstances { schema: "docking_receptor_instances@1"; handle: string;
+  sha256: string | null; format: "pdb" | "cif"; model_numbers: number[];
+  models: { model_number: number; water_residue_count: number; instances: DockingReceptorInstance[] }[];
+  selection_aid_only: true; starts_job: false }
+
+export interface DockingReceptorAtom { residue: ExactResidueRef; atom_name: string; altloc: string; element: string;
+  site_index: number }
+/** Geometric contact (distance only, 4.0 Å); not a hydrogen bond or any interaction call. */
+export interface DockingContact { ligand_serial: number; ligand_element: string; ligand_parent_serial: number | null;
+  receptor_atom: DockingReceptorAtom; distance_A: number; kind: GeometricContactType }
+interface DockingModeFields { mode: number; score_kcal_mol: number; engine_rmsd_lb_A: number | null;
+  engine_rmsd_ub_A: number | null; conformer_index: number | null; core_max_deviation_A: number | null;
+  atoms_outside_box: number; min_heavy_atom_distance_A: number }
+/** One stored mode row of `docking_result@1`. */
+export interface DockingModeRow extends DockingModeFields { pose_sdf: string; contacts: DockingContact[] }
+/** Mode row of the detail read: no pose SDF and no contact rows, the stored contact count instead. */
+export interface DockingModeSummary extends DockingModeFields { contact_count: number }
+export interface DockingResult { schema: "docking_result@1"; protocol: "qvina_dock_v1"; method: DockingMethod;
+  input_sha256: string;
+  inputs: {
+    receptor: { handle: string; sha256: string; model_number: number;
+      connectivity: { kind: "pdb_conect" | "sidecar"; sidecar_handle: string | null };
+      removed_instance: DockingReceptorInstance | null; acknowledgement: Record<DockingAcknowledgementKey, true> };
+    ligand: { source: DockingLigandSource; sdf_handle: string | null; sdf_sha256: string | null;
+      candidate_set_handle: string | null; candidate_id: string | null; parent_sdf_handle: string | null;
+      parent_sdf_sha256: string | null; generated: { hydrogens: boolean; coordinates: boolean };
+      stereo_flag: LigandStereoFlag | null; unspecified_stereo_centers: number | null };
+    mode: DockingMode };
+  box: { center_A: DockingTriple; size_A: DockingTriple; source: DockingBoxSource; margin_A: number | null };
+  parameters: { seed: number; exhaustiveness: number; num_modes: number; energy_range: number;
+    conformers: number | null; cpu: 1 };
+  engine: { name: "qvina"; version: string; binary_sha256: string; package: string };
+  preparation: { tool: "Meeko"; version: string; rdkit_version: string; atom_typing: string; charges: string };
+  modes: DockingModeRow[];
+  counts: { modes: number; contacts_by_mode: number[]; null_result: boolean; samples_generated: number | null;
+    samples_scored: number | null };
+  limitations: string[] }
+export interface DockingResultDetail { schema: "docking_result_detail@1"; handle: string; job_id: string;
+  score_label: string; result: Omit<DockingResult, "modes"> & { modes: DockingModeSummary[] };
+  meta: Record<string, unknown> }
+/** Creation order (oldest first). A row that does not validate has `valid: false` and null fields. */
+export interface DockingResultListRow { handle: string; created_seq: number; valid: boolean; reason_code: string | null;
+  job_id: string | null; method: DockingMethod | null; mode: DockingMode | null;
+  ligand_source: DockingLigandSource | null; candidate_id: string | null; receptor_handle: string | null;
+  seed: number | null; box_source: DockingBoxSource | null; modes: number | null; null_result: boolean | null }
+export interface DockingResultList { schema: "docking_result_list@1"; total: number; offset: number; limit: number;
+  rows: DockingResultListRow[] }
+export interface DockingContactPage { schema: "docking_contact_page@1"; handle: string; mode: number;
+  method: DockingMethod; cutoff_A: number; total: number; offset: number; limit: number; rows: DockingContact[] }
+
+export interface DockingJob { job_id: string; run_id: string; protocol_id: "qvina_dock_v1"; tool_id: string;
+  status: string; blocked_reason: string | null;
+  failure: { error: string; message: string; reason_code?: string } | null; input_handles: string[];
+  output_handles: string[]; attempt_ordinal: number; cancel_requested: boolean; timeout_s: number;
+  artifacts: { docking_result?: string } }
+/** Dry-run submission: a plan only, no job and no result object. */
+export interface DockingPlanOnly { plan_only: true; protocol_id: "qvina_dock_v1"; reason_code: "dry_run";
+  available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
+export type DockingSubmission = DockingJob | DockingPlanOnly;
+export interface DockingReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "ligand_docking"; result_handle: string; null_result: boolean;
+  snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
