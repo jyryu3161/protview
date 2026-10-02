@@ -139,7 +139,8 @@ class TestStop:
                                  "backend/tests/test_docking_reports.py"]
         assert groups[3][4:] == ["backend/tests/test_docking_batch_inputs.py",
                                  "backend/tests/test_docking_batch_bundle.py",
-                                 "backend/tests/test_docking_batch_worker.py"]
+                                 "backend/tests/test_docking_batch_worker.py",
+                                 "backend/tests/test_docking_batch_jobs.py"]
         assert groups[4][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
                                  "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
                                  "scripts/test_m14_offscreen_acceptance.py",
@@ -159,7 +160,8 @@ class TestStop:
                                  "--ignore=backend/tests/test_docking_reports.py",
                                  "--ignore=backend/tests/test_docking_batch_inputs.py",
                                  "--ignore=backend/tests/test_docking_batch_bundle.py",
-                                 "--ignore=backend/tests/test_docking_batch_worker.py"]
+                                 "--ignore=backend/tests/test_docking_batch_worker.py",
+                                 "--ignore=backend/tests/test_docking_batch_jobs.py"]
 
     def test_default_groups_really_run_concurrently_and_all_must_pass(self, tmp_path, monkeypatch):
         stop = _load("stop")

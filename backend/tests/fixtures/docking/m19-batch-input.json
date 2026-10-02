@@ -35,9 +35,9 @@
     "shortfall": {"expensive_calls": 17, "wall_clock_s": 6000}, "full_batch_may_be_partial": true, "how": "25*300+300 = 7800 (cap reached); 7500 > 7200."},
    {"new_dockings": 51, "used": {"expensive_calls": 0, "wall_clock_s": 0}, "needed": {"expensive_calls": 51, "wall_clock_s": 7800},
     "shortfall": {"expensive_calls": 43, "wall_clock_s": 6000}, "full_batch_may_be_partial": true, "how": "min(7800, 15600) = 7800; increment 43 <= 51 and 6000 <= 7800."},
-   {"new_dockings": 0, "used": {"expensive_calls": 8, "wall_clock_s": 1800}, "needed": {"expensive_calls": 0, "wall_clock_s": 300},
-    "shortfall": {"expensive_calls": 0, "wall_clock_s": 300}, "full_batch_may_be_partial": false,
-    "how": "Formula as written gives needed wall 300 even for N = 0 (spec 6.3); see preflight.txt (g) - T2 must confirm whether N = 0 needs any wall headroom."}
+   {"new_dockings": 0, "used": {"expensive_calls": 8, "wall_clock_s": 1800}, "needed": {"expensive_calls": 0, "wall_clock_s": 60},
+    "shortfall": {"expensive_calls": 0, "wall_clock_s": 60}, "full_batch_may_be_partial": false,
+    "how": "Spec 6.3: N = 0 needs 60 s (no unit); with nothing left the shortfall is 60 s."}
   ],
   "admission": [
    {"case": "candidate_ids []", "reason_code": "batch_empty"},
