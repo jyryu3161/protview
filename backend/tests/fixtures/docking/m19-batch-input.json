@@ -1,0 +1,75 @@
+{
+ "schema": "m19_batch_fixture@1",
+ "label": "SYNTHETIC/PUBLIC-DERIVED FIXTURE for M19 batch docking tests (T1, 2026-10-03). Not experimental data; scores are engine outputs recorded as observations, never oracle values. See SYNTHETIC-PROVENANCE.md.",
+ "inputs": {
+  "how": "Same inputs as the M18 fixtures: receptor = ../chemical/prolif-vina-rec.pdb (public prepared docking example, connectivity pdb_conect, model 1, no instance removed); parent = public-derived-parent-record0.sdf (also the M17 parent); candidate set = the real M17 job output m17-enumerate-result-record0-nmethyl.json (a fresh real M17 inspect+enumerate job on these files gave the same three ids in the same order on 2026-10-03).",
+  "receptor_file": "../chemical/prolif-vina-rec.pdb",
+  "receptor_sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+  "parent_sdf_file": "public-derived-parent-record0.sdf",
+  "parent_sdf_sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+  "candidate_set_file": "m17-enumerate-result-record0-nmethyl.json",
+  "candidate_ids_in_set_order": ["c_1afb7cd3e603456c", "c_2c7a25e0cc0ad3f2", "c_21d6c6f0d07e3759"],
+  "box": {"source": "ligand_range", "margin_A": 8.0, "center_A": [3.4095, 0.7175, 11.314], "size_A": [22.321, 27.507, 27.6],
+          "how": "Parent heavy-atom range (expected.json public_example_box) + 2*8; ligand_range uses the parent SDF, so every row of a batch has this box."},
+  "parameters": {"seed": 42, "exhaustiveness": 8, "num_modes": 9, "energy_range": 3, "conformers_core_fixed": 50}
+ },
+ "hand_oracle": {
+  "how": "Arithmetic from .dryforge/spec.md 3.1, 4.2-4.4, 6.2-6.3 only (no product code). needed_wall = min(7800, N*300 + 300); full_batch_may_be_partial = N*300 > 7200; shortfall = max(0, needed - (limit - used)); default limits expensive_calls 8, wall_clock_s 1800 (mw/runtime/guards.BudgetLimits).",
+  "row_order": [
+   {"selected_ids": ["c_21d6c6f0d07e3759", "c_1afb7cd3e603456c"], "include_parent": false,
+    "rows": [["candidate", "c_1afb7cd3e603456c"], ["candidate", "c_21d6c6f0d07e3759"]],
+    "how": "Set order, not click order."},
+   {"selected_ids": ["c_2c7a25e0cc0ad3f2", "c_21d6c6f0d07e3759", "c_1afb7cd3e603456c"], "include_parent": true,
+    "rows": [["parent", null], ["candidate", "c_1afb7cd3e603456c"], ["candidate", "c_2c7a25e0cc0ad3f2"], ["candidate", "c_21d6c6f0d07e3759"]],
+    "how": "Parent row first (free mode only)."}
+  ],
+  "budget_cases": [
+   {"new_dockings": 4, "used": {"expensive_calls": 0, "wall_clock_s": 0}, "needed": {"expensive_calls": 4, "wall_clock_s": 1500},
+    "shortfall": {"expensive_calls": 0, "wall_clock_s": 0}, "full_batch_may_be_partial": false, "how": "4*300+300 = 1500 <= 1800; 4 <= 8."},
+   {"new_dockings": 4, "used": {"expensive_calls": 6, "wall_clock_s": 600}, "needed": {"expensive_calls": 4, "wall_clock_s": 1500},
+    "shortfall": {"expensive_calls": 2, "wall_clock_s": 300}, "full_batch_may_be_partial": false,
+    "how": "remaining 8-6 = 2 -> 4-2 = 2; remaining 1800-600 = 1200 -> 1500-1200 = 300."},
+   {"new_dockings": 24, "used": {"expensive_calls": 0, "wall_clock_s": 0}, "needed": {"expensive_calls": 24, "wall_clock_s": 7500},
+    "shortfall": {"expensive_calls": 16, "wall_clock_s": 5700}, "full_batch_may_be_partial": false, "how": "24*300 = 7200, not > 7200."},
+   {"new_dockings": 25, "used": {"expensive_calls": 0, "wall_clock_s": 0}, "needed": {"expensive_calls": 25, "wall_clock_s": 7800},
+    "shortfall": {"expensive_calls": 17, "wall_clock_s": 6000}, "full_batch_may_be_partial": true, "how": "25*300+300 = 7800 (cap reached); 7500 > 7200."},
+   {"new_dockings": 51, "used": {"expensive_calls": 0, "wall_clock_s": 0}, "needed": {"expensive_calls": 51, "wall_clock_s": 7800},
+    "shortfall": {"expensive_calls": 43, "wall_clock_s": 6000}, "full_batch_may_be_partial": true, "how": "min(7800, 15600) = 7800; increment 43 <= 51 and 6000 <= 7800."},
+   {"new_dockings": 0, "used": {"expensive_calls": 8, "wall_clock_s": 1800}, "needed": {"expensive_calls": 0, "wall_clock_s": 300},
+    "shortfall": {"expensive_calls": 0, "wall_clock_s": 300}, "full_batch_may_be_partial": false,
+    "how": "Formula as written gives needed wall 300 even for N = 0 (spec 6.3); see preflight.txt (g) - T2 must confirm whether N = 0 needs any wall headroom."}
+  ],
+  "admission": [
+   {"case": "candidate_ids []", "reason_code": "batch_empty"},
+   {"case": "51 distinct candidate ids", "reason_code": "batch_too_large"},
+   {"case": "include_parent true + mode core_fixed", "reason_code": "batch_parent_not_allowed"},
+   {"case": "candidate id not in set (e.g. c_0000000000000000)", "reason_code": "candidate_unknown"},
+   {"case": "parent_sdf = synthetic-ligand-planar-z0.sdf (different SHA-256 from parent_sha256)", "reason_code": "parent_mismatch"}
+  ],
+  "batch_status": [
+   {"row_states": ["scored", "scored", "failed"], "status": "complete", "stop_reason": null},
+   {"row_states": ["scored", "cancelled", "not_run"], "status": "partial", "stop_reason": "cancelled", "how": "user cancel during row 2"},
+   {"row_states": ["scored", "scored", "failed"], "status": "complete", "stop_reason": null, "how": "worker crash during the last row: failed/worker_failed, no not_run row"},
+   {"row_states": ["scored", "failed", "not_run"], "status": "partial", "stop_reason": "worker_failed", "how": "crash during row 2"},
+   {"row_states": ["null_result", "cancelled", "not_run", "not_run"], "status": "partial", "stop_reason": "time_exhausted"}
+  ],
+  "limitations": [
+   {"rows": "parent + candidates, free", "batch_statements": ["B1", "B3"], "how": "B2 only when partial."},
+   {"rows": "candidates only, core_fixed, partial", "batch_statements": ["B1", "B2"]}
+  ]
+ },
+ "t1_observations": {
+  "how": "Real qvina2 2.1.0 / Meeko 0.8.0 / RDKit 2026.03.6 runs on 2026-10-03 (Apple arm64, --cpu 1), parameters above. Standalone = one real M18 qvina_dock_v1 job per row; shared = same staged payloads, receptor PDBQT prepared once in one worker process. All seven pairs were byte-identical (worker output, docking_result@1 content and handle). Engine values are observations only; they say nothing about binding.",
+  "receptor_pdbqt_sha256": "65c0f73156d9e95a21d2b68d47202f79466b15dc686e3dedfb63686e16a4cfcb",
+  "rows": [
+   {"row": "parent", "mode": "free", "modes": 8, "score_mode1_kcal_mol": -13.6, "handle_sha": "c738cda0b938c51bbb5573d2a5e81f12598e98d6fa553ad63932deef6e3f7530", "content_bytes": 239736},
+   {"row": "c_1afb7cd3e603456c", "mode": "free", "modes": 9, "score_mode1_kcal_mol": -12.1, "handle_sha": "af4a9ca02b3256bd114804d1de82ae0d2287199cb90d6fb2498851e292a11219", "content_bytes": 295254},
+   {"row": "c_2c7a25e0cc0ad3f2", "mode": "free", "modes": 9, "score_mode1_kcal_mol": -11.8, "handle_sha": "47dba214abbc824149ee51e9017305e4b63bfb7663694730e0b30e9ce96c68de", "content_bytes": 313126},
+   {"row": "c_21d6c6f0d07e3759", "mode": "free", "modes": 9, "score_mode1_kcal_mol": -11.8, "handle_sha": "78d57ff6304094199ecdf4ff37c1d5509a88f0b4d63dac7942857964726fb142", "content_bytes": 301578},
+   {"row": "c_1afb7cd3e603456c", "mode": "core_fixed", "modes": 9, "score_mode1_kcal_mol": -12.32139, "samples": 50, "handle_sha": "ee5be2f6a567ac6cb7ecd084835d66a0f77dc8fe4aa6d617922892fb1d27f110", "content_bytes": 266886},
+   {"row": "c_2c7a25e0cc0ad3f2", "mode": "core_fixed", "modes": 9, "score_mode1_kcal_mol": -13.03236, "samples": 50, "handle_sha": "9b79dae633cccac1bed524f9b04650fc051025bc2a8b3675f5c3d4964fcb171c", "content_bytes": 296246},
+   {"row": "c_21d6c6f0d07e3759", "mode": "core_fixed", "modes": 9, "score_mode1_kcal_mol": -12.73359, "samples": 50, "handle_sha": "640270c5238e6526fb68035283e5b6e18ec718fe31fa1c009d7ca7fb1835db29", "content_bytes": 281924}
+  ],
+  "note_handles": "Handle = sha256(kind, schema, canonical content); content holds run-scoped import handles, so the full obj:// handle is run-specific. The sha above is for run id m19_t1_standalone and is reproducible only with the same import handles."
+ }
+}

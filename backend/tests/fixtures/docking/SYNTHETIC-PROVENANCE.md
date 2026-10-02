@@ -44,3 +44,16 @@ exactly as `backend/tests/test_ligand_worker.py::_call` does (`input.json` contr
 Scores, poses, RMSD values and contact counts recorded for the public example are engine outputs used as test
 observations. They say nothing about how the molecule binds. The geometric contacts are distance counts, not
 hydrogen bonds or other interaction judgements.
+
+## M19 batch fixture (T1, 2026-10-03)
+
+- `m19-batch-input.json` (hand-written, see git for SHA-256): the batch input description for M19 tests built only from
+  the files above (public receptor, `public-derived-parent-record0.sdf`, the real M17 candidate set
+  `m17-enumerate-result-record0-nmethyl.json`; a fresh real M17 inspect + enumerate job on 2026-10-03 returned the same
+  three candidate ids in the same order). No new structure, SDF or candidate file was made.
+- `hand_oracle` values are arithmetic from the M19 spec (row order, budget need/shortfall, `full_batch_may_be_partial`,
+  admission reasons, batch status rules, batch statement applicability), each with a `how`. They do not come from
+  product code.
+- `t1_observations` are real qvina2 / Meeko / RDKit outputs (scores, mode counts, content sizes, run-specific handle
+  hashes) recorded as observations, not oracle values and not binding claims. The measurement (standalone M18 jobs vs one
+  worker process with the receptor PDBQT prepared once) is in `docs/qa/m19-batch-20261003/preflight.txt`.

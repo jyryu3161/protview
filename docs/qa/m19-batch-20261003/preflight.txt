@@ -1,0 +1,206 @@
+M19 T1 착수 확인 (preflight) — 2026-10-03, 브랜치 dryforge/m19-batch-docking, 기준 커밋 2c04db4
+명세: .dryforge/spec.md 4·5·6·7·13절 2, 계획 T1 (a)–(g). 제품 코드(mw)는 바꾸지 않았다. 서버 .venv에서 RDKit·Meeko·MDAnalysis를
+import하지 않았다(작업 환경 인터프리터에서만). 외부 요청 0건(작업 모듈의 socket 차단 그대로, OpenRouter 호출 0회).
+경로 표기: <repo> = 저장소 루트, <scratch> = 세션 scratchpad(저장소 밖). 프로브 스크립트 <scratch>/t1/measure_a.py,
+<scratch>/t1/shared_b.py는 커밋하지 않았다.
+새 fixture: backend/tests/fixtures/docking/m19-batch-input.json(+ SYNTHETIC-PROVENANCE.md 절 추가).
+
+판정 요약
+- 멈출 사유 없음. (a) 수용체 PDBQT를 한 번 만들어 여러 행에 써도 7행 모두 단독 M18과 바이트 동일(작업 출력·docking_result@1
+  내용·handle·input_sha256·점수·포즈).
+- (b) 행당 시간은 자유 32–41 s(작업 안), 코어 고정 5.5–6.2 s. 후보 50개 + 부모가 7200 s 안에 든다(이 크기의 리간드 기준).
+- (c) 큐 구조상 "M18과 같은 검증 순서(예약 → 정리 확인 → 결과 후보 → 종료)"로 행이 끝날 때마다 게시하는 것은 불가능하다
+  (정리 확인은 프로세스 그룹이 끝난 뒤에만 기록됨). 명세 7.2 대체 설계(내구적 행별 스테이징 + 종료 때 서버 게시)를 권한다.
+  조율 세션이 사용자에게 알려야 한다(명세 7.2). 멈출 사유는 아님.
+- (d) 7800 s는 가능하지만 숨은 한도가 두 군데 더 있다: API JobSubmit.timeout_s le=900, queue.submit 일반 상한 900.
+- (e) 결과 하나 240–313 KB, 이벤트 줄 320–418 KB. 51행 ≈ 16 MB 결과·≈ 21 MB 이벤트. 스테이징·4 MiB 한도 문제 없음.
+- (f) reserve_attempt만 고치면 재생(_refresh)은 이미 N을 그대로 더한다. budget_limit_updated에 맥락 필드를 더해도 재생 불변.
+- (g) M18 producer()·보고서가 일괄 행 결과를 받아들이지 못한다 등 계획에 반영할 점 8개(아래).
+
+==================================================================================================
+(a) 수용체 한 번 준비 = 단독 M18 (같은 seed)
+==================================================================================================
+명령(저장소 루트):
+  PYTHONPATH=backend:backend/tests .venv/bin/python <scratch>/t1/measure_a.py <scratch>/t1/out1
+방법:
+- 단독: 새 run(run id m19_t1_standalone, 측정용으로만 update_limits(wall 7200, calls 20) by="test")에 공개 수용체
+  ../chemical/prolif-vina-rec.pdb(pdb_conect, model 1, 뺄 인스턴스 없음)와 부모 SDF를 가져오고, 실제 M17
+  rdkit_inspect_v1 → rdkit_enumerate_v1(site_atoms [22], use_fixed) 작업으로 후보 집합을 만들었다(후보 id 3개가 커밋된
+  fixture m17-enumerate-result-record0-nmethyl.json과 같은 순서로 같음). 그다음 실제 M18 qvina_dock_v1 작업 7개
+  (JobQueue → guardian → .deps/docking/venv-locked 작업 모듈 → qvina2): 부모(sdf, free) 1 + 후보 3 free + 후보 3 core_fixed.
+  값: seed 42, exhaustiveness 8, num_modes 9, energy_range 3, conformers 50(core_fixed), box ligand_range margin 8, timeout 900.
+- 공유: 위 7개 작업 기록에서 docking_bundle.stage(run, job, attempt_id)로 작업 모듈이 받은 것과 같은 staged 바이트를 다시
+  만들고, 작업 환경 인터프리터 하나(python -I)에서 수정하지 않은 docking_worker.py를 경로로 불러 receptor_graph·
+  receptor_pdbqt를 "첫 호출 결과 재사용"으로 감싼 뒤 dock()을 7번 차례로 불렀다(행마다 새 qvina_work, 같은 수용체 바이트임을
+  키로 확인). 출력은 run_job()처럼 job_id·attempt_id를 붙인 canonical JSON.
+- 비교: 단독 작업의 attempt 디렉터리 result.json 바이트 vs 공유 출력 바이트, 그리고 서버 docking_bundle.result_content(job,
+  공유 출력) → check_result 통과 → object_sha("docking_result", schema, canonical) vs 단독으로 게시된 handle.
+출력(요약):
+  receptor_prep_calls {"graph": 1, "pdbqt": 1}, receptor_prep_s 0.93, receptor PDBQT SHA-256 65c0f731…cfcb
+  행                      방식        모드  모드1 점수     작업 출력 바이트  내용   handle  input_sha256  점수  포즈
+  parent                  free        8    -13.6         동일              동일   동일    동일          동일  동일
+  c_1afb7cd3e603456c      free        9    -12.1         동일              동일   동일    동일          동일  동일
+  c_2c7a25e0cc0ad3f2      free        9    -11.8         동일              동일   동일    동일          동일  동일
+  c_21d6c6f0d07e3759      free        9    -11.8         동일              동일   동일    동일          동일  동일
+  c_1afb7cd3e603456c      core_fixed  9    -12.32139     동일              동일   동일    동일          동일  동일
+  c_2c7a25e0cc0ad3f2      core_fixed  9    -13.03236     동일              동일   동일    동일          동일  동일
+  c_21d6c6f0d07e3759      core_fixed  9    -12.73359     동일              동일   동일    동일          동일  동일
+  handle sha(단독 = 공유): c738cda0…7530, af4a9ca0…1219, 47dba214…68de, 78d57ff6…b142, ee5be2f6…f110, 9b79dae6…171c,
+  640270c5…29 (전체 값은 m19-batch-input.json t1_observations). 점수는 엔진 관찰값이며 결합에 대해 아무것도 말하지 않는다.
+결론: 만족. 수용체 PDBQT 준비를 한 번으로 줄여도 행 결과는 단독 M18과 같은 handle이다. 이유: docking_result@1 내용에는
+수용체 PDBQT 텍스트가 들어가지 않고, 같은 수용체 바이트에서 준비한 PDBQT가 같으며(같은 프로세스 재사용), 그 밖의 계산은
+행별 staged 바이트와 seed만의 함수다. 같은 프로세스에서 행을 이어 돌려도(RDKit·Meeko 상태 공유) 결과가 바뀌지 않았다.
+한계: 후보 3개 + 부모 1개, 수용체 하나(인스턴스 제거 없음, pdb_conect)만 관찰했다. 사이드카·인스턴스 제거 경로는 T3 테스트에서
+같은 비교를 다시 한다.
+
+==================================================================================================
+(b) 행당 시간 분포와 50개 가늠
+==================================================================================================
+명령: (a)와 같은 실행. "작업"은 단독 M18 작업 전체(guardian·인터프리터 시작·import·수용체 준비 포함, start 호출 앞뒤
+monotonic), "행"은 공유 프로세스 안 dock() 한 번(수용체 준비 제외).
+출력:
+  free:       작업 35.54 / 36.91 / 50.09 / 44.62 s,  행 32.41 / 32.86 / 41.17 / 39.99 s
+  core_fixed: 작업  8.12 /  7.82 /  8.54 s,           행  5.86 /  5.54 /  6.15 s (형태 50개 × --score_only)
+  공유 프로세스 전체(import + 수용체 준비 0.93 s + 7행) 164.56 s
+가늠: 자유 일괄 51행 × 최대 관찰 41.2 s ≈ 2,100 s(행 평균 36.6 s면 ≈ 1,870 s) + 시작 수 초 → 7200 s의 약 30%. 코어 고정 50행
+× 6.2 s ≈ 310 s. 행당 300 s 상한까지 여유가 7배 이상이다.
+결론: 이 fixture 크기(중원자 43–45, 같은 상자)에서는 꽉 찬 일괄도 7200 s 안에 끝난다. 다만 시간은 exhaustiveness·비틀림 수·
+상자 크기에 비례해 늘어나므로(exhaustiveness 32면 대략 4배 → 자유 행 약 130–165 s, 51행 ≈ 7,500 s 이상) 명세가 정한
+"full_batch_may_be_partial = N × 300 > 7200" 안내는 상한 기준 경고로 맞다. 측정 기기: Apple arm64, --cpu 1.
+
+==================================================================================================
+(c) 한 작업에서 결과 여러 개를 행마다 게시할 수 있는가
+==================================================================================================
+명령: 코드 읽기 backend/mw/jobs/queue.py(_execute_claim_with_slot, _execute_reserved, _supervise, _terminal, _state,
+_publish_docking, retry, reconcile_run), backend/mw/jobs/guardian.py(main), backend/mw/docking_bundle.py(publish, producer,
+validated_result), backend/mw/docking_reports.py:326–327.
+관찰:
+1. 순서: reserve_attempt(budget_reserved) → job_dispatch_intent → _supervise(HELLO → launch_identity → execution_authorized
+   → GO → 0.05 s마다 취소·마감 확인 + guardian 메시지 대기) → 그룹 정리 확인(job_cleanup_verified) → 게시(_publish_docking:
+   transition 아래 취소·stale 확인 → publish → store.put) → job_result_candidate(output_handles) → _terminal("done", handles).
+   guardian가 보내는 메시지는 STARTED와 RESULT 둘뿐이며 RESULT는 작업 프로세스가 끝난 뒤에만 온다.
+2. job_cleanup_verified는 작업 프로세스 그룹이 비었음을 확인한 뒤에만 기록된다. producer()는 게시 증거로
+   budget_reserved < job_cleanup_verified < job_result_candidate(output_handles == [handle]) 와 job_terminal(status done,
+   output_handles == [handle], protocol qvina_dock_v1, tool qvina_dock_ligand)을 요구한다. 따라서 실행 중에 행 결과를 게시하면
+   M18과 같은 검증 순서(예약 → 정리 확인 → 결과 후보 → 종료)를 지킬 수 없다.
+3. _terminal은 cancel_requested면 status를 cancelled로, handles를 []로 강제한다. 시간 초과는 failed(resource_exceeded),
+   복구는 interrupted이며 모두 output_handles []. _state도 done만 output_handles를 갖고 candidates는 시도당 목록 하나다.
+4. 서버 감독 루프(_supervise)는 run._owner()(실행 잠금)를 쥔 채 돌며, 매 0.05 s마다 self.get() → _state()로 events.jsonl
+   전체를 다시 읽는다. 실행 중 행마다 수백 KB 객체 이벤트를 쓰면 이 폴링과 EventLog.append(매 추가 때 로그 전체를
+   읽음)가 점점 무거워진다.
+결론: 행마다 즉시 게시(실행 중 store.put + 새 증거 이벤트)는 기술적으로 가능하지만 M18 검증 순서·producer 규칙·_terminal 의미를
+새로 정의해야 하는 큰 변경이다(정리 확인 전에 저장한 객체를 "검증된 게시"로 인정하는 새 규칙). 권장: 명세 7.2 대체 설계 —
+작업 모듈이 rows/<n>.started, rows/<n>.status.json, rows/<n>.result.json을 끝나는 즉시 원자적으로(임시 파일 + fsync +
+os.replace + 디렉터리 fsync) 쓰고, 서버가 그룹 정리 확인 뒤 어떤 종료 상태든 스테이징을 읽어 검증 가능한 행을 M18과 같은
+검증으로 게시하고 요약을 마지막에 게시한다. 이 대체 사용은 조율 세션이 사용자에게 알린다(명세 7.2, 계획 공통 규칙).
+대체 설계에 필요한 변경 목록:
+ a. queue._execute_reserved: 일괄 프로토콜 분기에서 cancelled·timeout·failed(작업 출력 오류)·done 모든 경우에 job_cleanup_verified
+    뒤, _terminal 전에 일괄 게시 함수를 부른다(지금은 cancelled면 바로 _terminal로 가고, timeout은 error로 바로 failed).
+    수용체 변환 실패(행 시작 전)만 요약 없이 failed.
+ b. 게시 증거: 시도당 output_handles 하나의 규칙을 깨지 않도록 새 이벤트(예: docking_batch_row_published{job_id, attempt_id,
+    row_index, handle}·docking_batch_published{summary_handle, reused_rows})를 events.py EventType에 더하고, _terminal의
+    output_handles는 done일 때 [요약 handle]만 둔다(행 handle 51개를 넣으면 _state가 폴링마다 모두 load한다). cancelled·
+    interrupted·failed 종료에서도 게시가 있었음을 새 이벤트가 증명해야 한다(_terminal은 그때 handles []를 강제).
+ c. docking_bundle.producer()·validated_result·docking_reports(326–327): qvina_batch_dock_v1 행 게시 증거(위 이벤트 +
+    budget_reserved(tool qvina_dock_batch) < cleanup_verified < row_published, 행의 정규화 인자로 만든 행별 selection)를
+    받아들이게 확장. check_result(run, content, job)는 job["selected"](docking_selection@1)와 job["method"](M18 pins)를
+    쓰므로 일괄 작업 기록에서 행별 selection을 만들 수 있어야 한다(요청 매니페스트에 행별 docking_selection@1 저장 권장).
+    그렇지 않으면 명세 9의 "행에서 기존 M18 상세로 이동"과 M18 보고서가 일괄 행 결과에 대해 실패한다.
+ d. reconcile_run: 일괄 작업이면 그룹 정리 확인 뒤 _terminal("interrupted") 전에(또는 직후 같은 transition 규칙으로) 스테이징을
+    게시하고 요약(partial, worker_failed)을 만든다. retry()는 일괄 프로토콜을 거절(시도 1회).
+ e. 서버 읽기: rows/ 파일은 O_NOFOLLOW·크기 상한·canonical JSON·행 번호 일치·job/attempt id 일치로 읽고, 결과 파일은
+    M18 publish와 같은 result_content → check_result → _check_receptor_atoms를 거친다(descriptor 대신 파일 크기·해시 직접 계산).
+ f. guardian: 진입점·인터프리터 분기에 일괄 어댑터 추가, MONITORED_ADAPTERS에 넣고, 일괄은 result.json이 없을 수 있으므로
+    RESULT payload 없이도 서버가 rows/로 게시하도록(guardian는 payload를 고치지 않아도 됨). 종료 신호: guardian STOP →
+    cleanup()이 그룹 전체에 SIGTERM, 감시 어댑터 유예 2.0 s 뒤 SIGKILL. qvina2도 같은 그룹이라 SIGTERM을 직접 받는다.
+    작업 모듈은 SIGTERM 처리기에서 2 s 안에 진행 행 status(cancelled)를 써야 하고, 못 쓰면 .started만 남아 서버 규칙으로 처리.
+ g. 작업 모듈은 rows/ 디렉터리 출력 총량(128 MiB)을 스스로 세야 한다. guardian는 도킹 어댑터의 출력 디렉터리 크기를 재지
+    않는다(pocket만 pocket_output_exceeded). stdout.log·stderr.log 1 MiB 상한은 그대로(작업 모듈은 qvina 출력을 capture).
+ h. 진행 표시는 명세대로 "게시된 결과 수"인데 대체 설계에서는 종료 전까지 게시가 0이다. 진행은 rows/*.status.json 수를 읽는
+    읽기 경로가 필요하다(이벤트 없이, 명세 7.2 문장 "진행 표시는 게시된 후보별 결과 수와 작업 상태에서 얻는다"와 충돌 →
+    조율 세션 결정 필요, 아래 (g)).
+
+==================================================================================================
+(d) 작업 시간 한도 7800 s와 2시간 작업
+==================================================================================================
+명령: 코드 읽기 queue.submit(611–622), app.py JobSubmit(170–174), queue._execute_reserved(1348), _supervise(1006),
+guardian.py(MAX_GO_WAIT_S, main 루프, cleanup), process_identity.py, _global_worker_slot·_unclosed_jobs, reconcile_run,
+_settle_terminal_wall.
+관찰:
+- 한도가 두 곳: queue.submit의 bound(OPENMM/POCKET/CHEMICAL/LIGAND 120, 그 밖 900)와 API 모델 JobSubmit.timeout_s
+  Field(le=900). 둘 다 일괄 프로토콜에만 7800을 허용해야 한다(API는 le를 7800으로 올리고 queue가 프로토콜별로 거절).
+  docking_constants.TIMEOUT_MAX_S = 900은 M18 capability 표시용이며 그대로 둔다.
+- 마감: deadline = started + min(remaining_wall, timeout_s) (queue 1348). 잔여 활동 시간이 7800보다 작으면 그 값이 마감이다.
+- guardian MAX_GO_WAIT_S 3600은 GO 대기 상한일 뿐이고(go_wait_s = min(3600, 남은 시간 + 5)), GO 뒤 실행 시간에는 상한이 없다.
+  guardian 루프는 0.025 s마다 RSS(2 GiB, 자식 포함)·stdout/stderr 크기만 본다.
+- process_identity는 psutil 내부 monotonic 생성 시각 기록이며 나이·만료 개념이 없다. 2시간 실행에 숨은 한도 없음.
+- 복구·청구: reconcile_run과 _settle_terminal_wall은 min(경과, remaining_wall_s, timeout_s)로 청구 → 7800을 그대로 쓴다.
+- 전역 슬롯: 실행 중에는 모든 run에서 다른 비싼 작업이 global_concurrency_busy로 막힌다(최대 2시간). 같은 run의 Run.call·
+  보고서 생성 등 실행 잠금(_owner)이 필요한 쓰기도 그동안 busy(409/transient). 읽기 라우트는 잠금 없이 동작.
+결론: 7800 s는 가능하다(위 두 상한만 프로토콜 전용으로 바꾸면 됨). 2시간 동안 run 실행 잠금·전역 작업 슬롯을 쥐는 것은 M18과
+같은 구조의 결과이며 사용자 화면 안내가 필요할 수 있다(아래 (g)).
+
+==================================================================================================
+(e) 출력 크기와 스테이징 한도
+==================================================================================================
+명령: (a) 실행 결과의 result.json 크기, canonical 내용 크기, events.jsonl의 object_created 줄 길이(python으로 측정).
+출력: result.json 239,389–312,672 B, 내용 239,736–313,126 B, object_created 줄 320,327–418,189 B(base64 약 1.33배),
+staged structure.json 682,493–682,941 B(수용체 + 부모 SDF base64). 7개 작업 뒤 events.jsonl 3,493,545 B.
+가늠: 51행 × 최대 313 KB ≈ 16 MB(128 MiB 상한의 12%), 이벤트 ≈ 21 MB. 최악(행당 4 MiB × 51)이면 출력 총량 상한 128 MiB에 먼저
+닿고 이벤트는 ≈ 171 MiB까지 늘 수 있다. 단일 이벤트 줄 상한 MAX_GLOBAL_EVENT_LINE 256 MiB에는 걸리지 않는다.
+스테이징: 일괄 입력은 수용체 + 사이드카 + 부모 SDF(각 ≤ 10 MiB, base64 ≈ 40 MiB) + 행 매니페스트(행당 수 KB)로 M18 48 MiB
+안에 든다. 결과 한도: guardian DOCKING_OUTPUT_LIMIT 4 MiB와 docking_bundle 4 MiB는 result.json 한 개 기준이고, 일괄 행 파일은
+guardian가 읽지 않으므로 행별 4 MiB 검사와 합계 128 MiB는 작업 모듈과 서버 게시가 맡아야 한다. 요약 1 MiB: 51행 × 행당 약
+400 B ≈ 20 KB로 충분.
+결론: 한도 문제 없음. 다만 전역 장부 검사 _unclosed_jobs는 모든 run의 events.jsonl을 줄 단위로 20 s 안에 읽어야 하므로
+(MAX_GLOBAL_SCAN_S), 일괄을 여러 번 돌린 run이 많아지면 객체 이벤트 바이트가 이 시간에 영향을 줄 수 있다(관찰 아님, 가늠).
+
+==================================================================================================
+(f) N단위 예약, 시도 1회, 0단위, 한도 증액 이벤트
+==================================================================================================
+명령: 코드 읽기 orchestrator.reserve_attempt(252–297), _refresh(299–345), update_limits(543–546), _mutation(216–236),
+core/events.py, queue._state(473–479, 500–507), grep budget_reserved·budget_limit_updated·update_limits(backend/mw,
+scripts, frontend/src, frontend/tests).
+관찰과 필요한 변경:
+- reserve_attempt: would_exceed(expensive_calls=1), append(budget_reserved, expensive_calls=1), charge(1), 기존 예약 재확인
+  `existing.get("expensive_calls") != 1`. 단위 인자 units(기본 1)를 받아 세 곳과 재확인 비교를 units로 바꾸면 된다.
+  기본 1이면 이벤트 바이트(필드 이름·값)가 지금과 같다.
+- 재생(_refresh): budget_reserved는 event["expensive_calls"]를 그대로 더하므로 N을 이미 지원한다. 변경 불필요.
+- 다른 소비자: queue._state는 예약 존재·root_call_id·tool만 보고 단위는 보지 않는다. openmm_reports(98)는 OpenMM 예약이 1인지
+  보며 OpenMM 경로는 계속 1. egress gate·viewer는 자기 예약(audit_id)으로 별개. 프런트 오프스크린 검사는 예약 개수만 센다.
+- 시도 1회: reserve_attempt의 "root당 예약 4회" 상한과 queue의 attempt_ordinal >= 4, retry()가 일반 규칙이다. 일괄은
+  프로토콜 상수로 최대 시도 1을 두고 retry()와 _execute_claim_with_slot(attempt_ordinal >= 1이면 거절)에서 막는 것이 가장 작다.
+- 0단위(N = 0): queue._state는 job_dispatch_intent마다 같은 attempt_id의 budget_reserved가 있어야 하고(없으면 ValueError),
+  producer류 증거도 예약 이벤트를 요구한다. 따라서 "예약 없이"는 budget_reserved(expensive_calls=0)로 표현하는 것이 기존
+  재생·검사를 바꾸지 않는 방법이다(would_exceed(0)은 항상 통과). 남는 질문: N = 0일 때 expensive_first_call 승인을 요구할지
+  (reserve_attempt는 단위와 무관하게 승인을 먼저 요구) — 아래 (g).
+- budget_limit_updated: EventLog.append는 임의 필드를 받고 _refresh는 event["limits"]만 읽으므로, batch_input_sha256·
+  before·after·needed·increment 같은 맥락 필드를 같은 이벤트에 더해도 재생 결과는 같다. 새 이벤트 종류는 필요 없다(별도
+  맥락 이벤트를 원하면 EventType에 추가 가능). update_limits는 지금 limits·by만 받으므로 맥락 kwargs를 받도록 넓혀야 한다.
+- update_limits의 HTTP 라우트는 없다(app.py에 호출 없음). 사용처는 테스트뿐.
+- 주의: update_limits는 _mutation 안에서 돌아 끝날 때 runtime_overhead를 wall_charged로 청구한다. 증액 직후 잔여 활동 시간이
+  필요량보다 수 ms 작아져 "부족분 > 0 → batch_limit_raise_required"가 다시 날 수 있다. T5는 증액 계산에 이 오버헤드를 넣거나
+  입장 검사에 허용 오차를 두어야 한다(아래 (g)).
+결론: 기본 1 유지로 기존 이벤트·재생 불변이 가능. 일괄 승인 맥락은 기존 budget_limit_updated 필드 추가로 담을 수 있다.
+
+==================================================================================================
+(g) 명세·계획을 실행하기 전에 정해야 할 점
+==================================================================================================
+1. (c) 대체 설계 사용 — 조율 세션이 사용자에게 알림(명세 7.2). 진행 표시 문장(7.2 마지막)과 충돌: 대체 설계에서는 종료 전
+   게시가 0이므로, 진행은 rows/*.status.json 개수를 읽는 이벤트 없는 읽기로 보여 주는 것을 권한다.
+2. M18 producer()·validated_result·docking_reports는 "qvina_dock_v1 작업의 단일 output_handles" 증거만 받는다. 일괄 행 결과의
+   M18 상세 이동(명세 9)과 M18 보고서를 위해 producer 확장이 필요하다(M18 바이트·이벤트 불변 조건 안에서). T4 범위에 넣어야 함.
+3. 재사용 탐지(명세 4.5)의 "M18 호출 키"에는 pins(worker_sha256 = docking_worker.py SHA-256, 상수·잠금 SHA)가 들어간다.
+   T3가 docking_worker.py에서 행 계산을 추출하면(동작 불변이어도) worker_sha256이 바뀌어, 그 전에 만든 M18 결과는 같은
+   호출 키로 찾을 수 없다(handle은 같음). 일괄 작업의 pins도 M18 pins와 다르다(일괄 작업 모듈 해시). 재사용은
+   input_sha256 + 엔진·준비 pins로 판단할지, 호출 키 그대로일지 T2에서 정해야 한다.
+4. 일괄 행 결과의 check_result에는 행별 docking_selection@1과 M18 pins 모양(PIN_KEYS)이 필요하다. 일괄 작업 기록에
+   행별 selection을 저장할지(작업 기록 크기: 행당 수 KB × 51) 정해야 한다.
+5. 증액 직후 runtime_overhead 청구로 잔여 < 필요량이 될 수 있다((f) 주의). 명세 6.3의 "잔여가 필요량 이상"을 지키려면
+   T5가 오버헤드를 넣어 계산하거나 증액 경로가 오버헤드를 청구하지 않게 해야 한다.
+6. N = 0: 명세 6.3 공식은 needed_wall = 300(0 × 300 + 300)이고, reserve_attempt는 단위와 무관하게 expensive_first_call 승인을
+   요구한다. N = 0 작업에 승인·활동 시간 여유를 요구할지 결정 필요(fixture budget_cases 마지막 행 참고).
+7. 2시간 동안 run 실행 잠금과 전역 작업 슬롯을 쥔다((d)). 같은 run의 다른 계산·보고서 생성과 다른 run의 비싼 작업이 그동안
+   막힌다. 시작 화면 안내 문장이 필요한지 조율 세션 결정.
+8. 감독 폴링 비용: _supervise가 0.05 s마다 events.jsonl 전체를 접는다. 행 결과를 실행 중 이벤트로 쓰지 않는 대체 설계가 이
+   비용을 늘리지 않는다(실행 중 이벤트 증가 없음). done 종료의 output_handles는 [요약]만 권장((c) b).
