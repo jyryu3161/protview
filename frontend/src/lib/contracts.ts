@@ -435,8 +435,9 @@ export interface DockingContactPage { schema: "docking_contact_page@1"; handle: 
 
 export interface DockingJob { job_id: string; run_id: string; protocol_id: "qvina_dock_v1"; tool_id: string;
   status: string; blocked_reason: string | null;
-  failure: { error: string; message: string; reason_code?: string } | null; input_handles: string[];
-  output_handles: string[]; attempt_ordinal: number; cancel_requested: boolean; timeout_s: number;
+  /** `detail` is the worker's typed refusal detail (e.g. the receptor leftover list); never a science value. */
+  failure: { error: string; message: string; reason_code?: string; detail?: Record<string, unknown> } | null;
+  input_handles: string[]; output_handles: string[]; attempt_ordinal: number; cancel_requested: boolean; timeout_s: number;
   artifacts: { docking_result?: string } }
 /** Dry-run submission: a plan only, no job and no result object. */
 export interface DockingPlanOnly { plan_only: true; protocol_id: "qvina_dock_v1"; reason_code: "dry_run";

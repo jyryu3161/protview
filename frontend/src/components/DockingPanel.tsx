@@ -7,15 +7,15 @@ import type { BudgetSnapshot, DockingAcknowledgementKey, DockingBoxSource, Docki
   DockingJob, DockingLigandSource, DockingMode, DockingPrerequisites, DockingReceptorInstances, DockingReportArtifact,
   DockingResultDetail, DockingResultList, LigandCandidatePage } from "@/lib/contracts";
 import { ACKNOWLEDGEMENT_KEYS, ACKNOWLEDGEMENT_LABEL, BOX_FRAME_NOTE, BOX_SIDE_MAX_A, BOX_SIDE_MIN_A, BOX_SOURCES,
-  boxSourceDisabledReason, boxSourceLabel, CONFORMERS_MAX, CONFORMERS_MIN, CONTACT_NOTE, CONTACT_PAGE_LIMIT,
+  boxSourceDisabledReason, boxSourceLabel, CANDIDATE_SOURCE_NOTES, CONFORMERS_MAX, CONFORMERS_MIN, CONTACT_NOTE, CONTACT_PAGE_LIMIT,
   contactKindText, contactPageText, distanceText, DOCKING_STATE_TEXT, DOCKING_TOOL, dockingActiveJob, dockingApprovalRequired,
-  dockingArgs, dockingJobActive, dockingJobPhase, dockingJobText, dockingPanelState, dockingReasonText,
-  dockingReportMatches, dockingRequestErrorText, dockingResponseCurrent, dockingResultRowText, dockingSubmitBlockedReason,
+  dockingArgs, dockingCancelEnabled, dockingJobActive, dockingJobRefusalList, dockingJobPhase, dockingJobText, dockingPanelState, dockingReasonText,
+  dockingReportMatches, dockingRequestErrorText, dockingRequestRefusalList, dockingResponseCurrent, dockingResultRowText, dockingSubmitBlockedReason,
   dockingSubmitText, dockingSummaryRows, ENERGY_RANGE_MAX, ENERGY_RANGE_MIN, EXHAUSTIVENESS_MAX, EXHAUSTIVENESS_MIN,
   exactResidue, importsOfKind, initialDockingForm, LIGAND_SOURCES, ligandAtomText, MARGIN_MAX_A, MARGIN_MIN_A, MODE_LABEL,
   modeDisabledReason, modelInstances, modeRowLabel, MODES, modeTableCells, modeTableHeaders, NUM_MODES_MAX, NUM_MODES_MIN,
   parentSdfMissingReason, patchDockingForm, receptorAtomText, removedInstanceText, sameResidue, SCORE_LABEL, SEED_MAX,
-  SEED_MIN, stereoFlagText, type DockingForm, type DockingStamp } from "@/lib/docking";
+  SEED_MIN, stereoFlagText, type DockingForm, type DockingRefusalList, type DockingStamp } from "@/lib/docking";
 import { CANDIDATE_PAGE_LIMIT, candidateRowsQuery, emptyAppliedFilter, LIGAND_APPROVAL_NOTICE, ligandNoticeAfterJob,
   ligandStartProgressed } from "@/lib/ligand";
 import { Button } from "./primitives";
@@ -36,7 +36,8 @@ export interface DockingPanelProps {
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
-type Area = "prereq" | "imports" | "instances" | "candidates" | "job" | "budget" | "results" | "detail" | "contacts" | "report";
+type Area = "prereq" | "imports" | "instances" | "candidates" | "job" | "cancel" | "budget" | "results" | "detail" | "contacts" |
+  "report";
 type Slot = "receptor" | "bonds" | "ligand";
 const SLOT_KIND: Record<Slot, ChemicalImport["kind"]> = { receptor: "receptor", bonds: "receptor_bonds", ligand: "ligand_sdf" };
 const SLOT_LABEL: Record<Slot, string> = { receptor: "수용체 (PDB·mmCIF, 명시적 수소와 연결 정보 포함)",
@@ -109,7 +110,11 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
   const [jobFocus, setJobFocus] = useState(false);
   const [approvalPending, setApprovalPending] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Cancel has its own flag: the start request is held until the job ends, so `busy` must not block cancelling.
+  const [cancelling, setCancelling] = useState(false);
   const [jobError, setJobError] = useState("");
+  /** Receptor leftover list of the last refused submission (422 detail), shown with `jobError`. */
+  const [refusal, setRefusal] = useState<DockingRefusalList | null>(null);
   const [notice, setNotice] = useState("");
   const [resultNotice, setResultNotice] = useState<{ text: string; handle: string | null } | null>(null);
   const [budget, setBudget] = useState<BudgetSnapshot | null>(null);
@@ -126,8 +131,8 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
 
   // Late responses: keyed by run (page key), the area's selection key and the area's request sequence.
   const mounted = useRef(true);
-  const seqs = useRef<Record<Area, number>>({ prereq: 0, imports: 0, instances: 0, candidates: 0, job: 0, budget: 0,
-    results: 0, detail: 0, contacts: 0, report: 0 });
+  const seqs = useRef<Record<Area, number>>({ prereq: 0, imports: 0, instances: 0, candidates: 0, job: 0, cancel: 0,
+    budget: 0, results: 0, detail: 0, contacts: 0, report: 0 });
   const live = useRef({ receptor: form.receptorHandle, set: form.candidateSetHandle, result: selectedResult });
   live.current = { receptor: form.receptorHandle, set: form.candidateSetHandle, result: selectedResult };
   useEffect(() => {
@@ -321,7 +326,7 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
 
   async function start(before: DockingJob) {
     const captured = stamp("job");
-    setBusy(true); setJobError(""); setNotice(""); setJobFocus(true);
+    setBusy(true); setJobError(""); setRefusal(null); setNotice(""); setJobFocus(true);
     try {
       const value = await api.startJob(runId, before.job_id) as unknown as DockingJob;
       if (!current("job", captured)) return;
@@ -344,7 +349,8 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
   async function submit() {
     if (submitBlocked || !check.ok) return;
     const captured = stamp("job");
-    setBusy(true); setJobError(""); setNotice(""); setResultNotice(null); setApprovalPending(false); setJobFocus(true);
+    setBusy(true); setJobError(""); setRefusal(null); setNotice(""); setResultNotice(null); setApprovalPending(false);
+    setJobFocus(true);
     try {
       const result = await api.submitDocking(runId, check.args);
       if (!current("job", captured)) return;
@@ -353,14 +359,18 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
       setJob(result);
       if (result.status !== "queued") { setNotice(dockingSubmitText(result)); return; }
       await start(result);
-    } catch (e) { if (current("job", captured)) setJobError(`작업 제출 실패: ${errorText(e)}`); }
+    } catch (e) {
+      if (!current("job", captured)) return;
+      setJobError(`작업 제출 실패: ${errorText(e)}`);
+      setRefusal(e instanceof ApiError ? dockingRequestRefusalList(e) : null);
+    }
     finally { if (mounted.current) setBusy(false); }
   }
 
   async function approve() {
     if (!job) return;
     const captured = stamp("job");
-    setBusy(true); setJobError("");
+    setBusy(true); setJobError(""); setRefusal(null);
     try {
       await api.approveOpenmm(runId);
       if (!current("job", captured)) return;
@@ -370,15 +380,28 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
     finally { if (mounted.current) setBusy(false); }
   }
 
-  async function jobAction(kind: "cancel" | "retry") {
+  async function retryJob() {
     if (!job) return;
     const captured = stamp("job"), jobId = job.job_id;
-    setBusy(true); setJobError("");
+    setBusy(true); setJobError(""); setRefusal(null);
     try {
-      const value = (kind === "cancel" ? (await api.cancelJob(runId, jobId)).job : await api.retryJob(runId, jobId)) as unknown as DockingJob;
+      const value = await api.retryJob(runId, jobId) as unknown as DockingJob;
       if (current("job", captured) && value.run_id === runId && value.job_id === jobId) setJob(value);
-    } catch (e) { if (current("job", captured)) setJobError(`작업 ${kind === "cancel" ? "취소" : "재시도"} 실패: ${errorText(e)}`); }
+    } catch (e) { if (current("job", captured)) setJobError(`작업 재시도 실패: ${errorText(e)}`); }
     finally { if (mounted.current) setBusy(false); }
+  }
+
+  // Not tied to the "job" sequence or `busy`: a held start request stays current and keeps its own answer.
+  async function cancelJob() {
+    if (!job || !dockingCancelEnabled({ job, cancelling })) return;
+    const captured = stamp("cancel"), jobId = job.job_id;
+    setCancelling(true);
+    try {
+      const value = (await api.cancelJob(runId, jobId)).job as unknown as DockingJob;
+      if (current("cancel", captured) && value.run_id === runId && value.job_id === jobId)
+        setJob(previous => previous?.job_id === jobId ? value : previous);
+    } catch (e) { if (current("cancel", captured)) setJobError(`작업 취소 실패: ${errorText(e)}`); }
+    finally { if (mounted.current) setCancelling(false); }
   }
 
   async function makeReport() {
@@ -406,6 +429,7 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
     error: readError, job: jobFocus ? job : null,
     result: opened ? { modes: opened.result.counts.modes, mode: opened.result.inputs.mode } : null });
   const phase = dockingJobPhase(job, approvalPending);
+  const jobRefusal = dockingJobRefusalList(job);
   const prereqValue = prereq.status === "ready" ? prereq.value : null;
   const receptors = prereqValue ? importsOfKind(prereqValue.imports, "receptor") : [];
   const sidecars = prereqValue ? importsOfKind(prereqValue.imports, "receptor_bonds") : [];
@@ -523,6 +547,8 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
         </select></label>}
       {form.ligandSource === "candidate" && <>
         <p className="mw-ligand-note">후보는 2D 그래프입니다. 도킹 입력의 3D 좌표와 수소는 작업에서 RDKit이 만들며 결과에 "생성됨"으로 표시됩니다.</p>
+        <ul className="mw-ligand-list" data-testid="docking-candidate-notes" aria-label="후보 출처 안내 (제출 전)">
+          {CANDIDATE_SOURCE_NOTES.map(sentence => <li key={sentence}>{sentence}</li>)}</ul>
         <label className="mw-ligand-check">후보 집합
           <select className="mw-select" data-testid="docking-candidate-set" value={form.candidateSetHandle ?? ""}
             onChange={event => { setCandidateOffset(0); update({ candidateSetHandle: event.target.value || null }); }}>
@@ -635,16 +661,18 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
               onClick={() => void approve()}>비싼 계산 승인</Button>}
             {phase === "saved" && <Button size="sm" data-testid="docking-job-start" disabled={busy || run.dry_run}
               onClick={() => void start(job)}>작업 시작</Button>}
-            {dockingJobActive(job) && <Button size="sm" data-testid="docking-job-cancel" disabled={busy || job.cancel_requested}
-              onClick={() => void jobAction("cancel")}>작업 취소</Button>}
+            {dockingJobActive(job) && <Button size="sm" data-testid="docking-job-cancel"
+              disabled={!dockingCancelEnabled({ job, cancelling })} onClick={() => void cancelJob()}>작업 취소</Button>}
             {["failed", "interrupted"].includes(job.status) && job.attempt_ordinal < 4 && <Button size="sm"
-              data-testid="docking-job-retry" disabled={busy} onClick={() => void jobAction("retry")}>작업 재시도</Button>}
+              data-testid="docking-job-retry" disabled={busy} onClick={() => void retryJob()}>작업 재시도</Button>}
           </div>
+          {jobRefusal && <RefusalList list={jobRefusal} source="job" />}
         </div>}
         {notice && <p role="status" className="mw-ligand-note" data-testid="docking-notice">{notice}</p>}
         {resultNotice && <p role="status" className="mw-ligand-note" data-testid="docking-result-notice"
           data-docking-new-result={resultNotice.handle ?? undefined}>{resultNotice.text}</p>}
         {jobError && <ErrorLine message={jobError} testId="docking-job-error" />}
+        {jobError && refusal && <RefusalList list={refusal} source="admission" />}
       </div>}
     </Section>
 
@@ -689,6 +717,15 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
       </>}
     </Section>
   </section>;
+}
+
+/** Listed receptor leftovers of a refusal (spec 3.2): seven residue fields (nulls kept), atom names, altloc. */
+function RefusalList({ list, source }: { list: DockingRefusalList; source: "admission" | "job" }) {
+  return <div className="mw-ligand-error" data-testid="docking-refusal-list" data-docking-refusal-source={source}
+    data-reason-code={list.reason_code} data-total={list.total ?? undefined} data-shown={list.shown}>
+    <span>{list.heading} · {dockingReasonText(list.reason_code)}</span>
+    <ul className="mw-ligand-list mw-mono">{list.lines.map((line, i) => <li key={i} data-refusal-item={i}>{line}</li>)}</ul>
+  </div>;
 }
 
 function CandidateChoices({ page, runId, chosen, onChoose, onPage }: { page: LigandCandidatePage; runId: string;

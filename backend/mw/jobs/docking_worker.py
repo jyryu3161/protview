@@ -164,7 +164,9 @@ RECEPTOR_ELEMENTS = {"H", "C", "N", "O", "S"}
 MAX_BONDS = 20_000
 POLAR = {"N", "O"}
 ALLOWED_ATOMIC_NUMBERS = frozenset(Chem.GetPeriodicTable().GetAtomicNumber(s) for s in K.ALLOWED_LIGAND_ELEMENTS)
-SCORE_ONLY_RE = re.compile(r"^Affinity:\s+(-?[0-9]+(?:\.[0-9]+)?)\s+\(kcal/mol\)\s*$", re.MULTILINE)
+SCORE_ONLY_RE = re.compile(r"^Affinity:\s+(\S+)\s+\(kcal/mol\)\s*$", re.MULTILINE)
+# Decimal with optional exponent (qvina prints large clash values as e.g. 1.2e+05); nan/inf/hex never match.
+SCORE_NUMBER_RE = re.compile(r"[-+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][-+]?[0-9]+)?")
 VINA_RESULT_RE = re.compile(r"^REMARK VINA RESULT:\s+(\S+)\s+(\S+)\s+(\S+)\s*$")
 ENGINE_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C", "OMP_NUM_THREADS": "1"}
 
@@ -827,6 +829,22 @@ def _number(text: str) -> float:
     return value
 
 
+def parse_score_only(text: str) -> float:
+    """The one ``Affinity: <value> (kcal/mol)`` line of ``qvina2 --score_only``: a finite decimal (exponent allowed).
+
+    No line, several lines, a malformed number, nan, inf or an overflowing value is ``engine_output_invalid``.
+    """
+    found = SCORE_ONLY_RE.findall(text)
+    if len(found) != 1:
+        raise _fatal("engine_output_invalid", "qvina2 --score_only printed no single score line")
+    if SCORE_NUMBER_RE.fullmatch(found[0]) is None:
+        raise _fatal("engine_output_invalid", "malformed --score_only value")
+    try:
+        return _number(found[0])
+    except ValueError as exc:
+        raise _fatal("engine_output_invalid", "nonfinite --score_only value") from exc
+
+
 def parse_modes(text: str, ligand_text: str) -> list[dict[str, Any]]:
     """qvina ``--out`` models: score, RMSD bounds and coordinates by PDBQT atom number, lines checked against input."""
     template = [line for line in ligand_text.splitlines() if line.startswith(("ATOM", "HETATM"))]
@@ -1131,13 +1149,7 @@ def dock(p: dict[str, Any], workdir: Path) -> dict[str, Any]:
                               "--cpu", str(K.CPU)], workdir)
             if proc.returncode != 0:
                 raise _fatal("engine_failed", f"qvina2 --score_only exited {proc.returncode}")
-            found = SCORE_ONLY_RE.findall(proc.stdout.decode("utf-8", "replace"))
-            if len(found) != 1:
-                raise _fatal("engine_output_invalid", "qvina2 --score_only printed no single score line")
-            try:
-                scored.append((_number(found[0]), position, sample))
-            except ValueError as exc:
-                raise _fatal("engine_output_invalid", "nonfinite --score_only value") from exc
+            scored.append((parse_score_only(proc.stdout.decode("utf-8", "replace")), position, sample))
         scored.sort(key=lambda item: (item[0], item[1]))
         pconf = parent.GetConformer()
         modes = []

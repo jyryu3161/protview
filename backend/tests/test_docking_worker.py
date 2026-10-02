@@ -600,3 +600,26 @@ def test_refusal_writes_error_json_and_exit_1(tmp_path):
     code, result, error = _call(tmp_path / "c", planar, control={"adapter": "qvina_dock_v1", "job_id": "job_t4",
                                                                  "attempt_id": "att_t4", "input_sha256": "0" * 64})
     assert code == 1 and result is None and error["reason_code"] == "engine_failed" and _sha(raw) != "0" * 64
+
+
+def test_score_only_parser_reads_exponent_notation_and_refuses_nonfinite_or_malformed_values():
+    """``--score_only`` stdout parsing alone (no engine run): finite exponent notation passes, nan/inf/garbage do not."""
+    lines = {"plain": "Affinity: -7.25 (kcal/mol)", "positive": "Affinity: 3.1 (kcal/mol)",
+             "integer": "Affinity: 12 (kcal/mol)", "exp_plus": "Affinity: 1.2e+05 (kcal/mol)",
+             "exp_upper": "Affinity: -4.5E-01 (kcal/mol)", "exp_bare": "Affinity: 2e3 (kcal/mol)",
+             "nan": "Affinity: nan (kcal/mol)", "inf": "Affinity: inf (kcal/mol)", "neg_inf": "Affinity: -inf (kcal/mol)",
+             "overflow": "Affinity: 1e400 (kcal/mol)", "garbage": "Affinity: 1.2.3 (kcal/mol)",
+             "hex": "Affinity: 0x1p3 (kcal/mol)", "missing": "Intermolecular contributions only",
+             "two": "Affinity: -1.0 (kcal/mol)\nAffinity: -2.0 (kcal/mol)"}
+    data = {name: f"Detected 4 CPUs\nReading input ... done.\n{line}\nIntramolecular energy: 0.1\n"
+            for name, line in lines.items()}
+    code = ("out = {}\n"
+            "for name, text in json.load(sys.stdin).items():\n"
+            "    try:\n        out[name] = m.parse_score_only(text)\n"
+            "    except m.DockingWorkerError as exc:\n        out[name] = [exc.error_class, exc.reason_code]\n"
+            "print(json.dumps(out))\n")
+    out = _py(code, data)
+    assert out["plain"] == -7.25 and out["positive"] == 3.1 and out["integer"] == 12.0
+    assert out["exp_plus"] == 1.2e5 and out["exp_upper"] == -0.45 and out["exp_bare"] == 2000.0
+    for name in ("nan", "inf", "neg_inf", "overflow", "garbage", "hex", "missing", "two"):
+        assert out[name] == ["fatal", "engine_output_invalid"], name
