@@ -470,3 +470,11 @@
 .mw-ligand-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-2); }
 .mw-ligand-filter { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
 .mw-ligand-filter > span { flex-basis: 100%; color: var(--ink-muted); }
+
+/* M18 docking area (DockingPanel, ligand tab, below the candidate area) */
+.mw-docking { border-top: 1px solid var(--line-strong); }
+.mw-docking-section select.mw-select { max-width: 100%; }
+.mw-docking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-2); }
+.mw-docking-result, .mw-docking-contacts, .mw-docking-contact-page { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-docking-summary dd { overflow-wrap: anywhere; word-break: break-all; text-align: right; }
+.mw-docking-row--selected td { background: var(--brand-soft); }

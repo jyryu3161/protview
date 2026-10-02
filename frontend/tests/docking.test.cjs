@@ -453,6 +453,169 @@ test("every fixed screen string of this module passes the wording check", () => 
   for (const text of texts) assert.deepEqual(plain(lib.dockingForbiddenWords(text)), [], text);
 });
 
+// ---- screen wiring (T9) ----
+
+test("form edits clear the choices they invalidate and never choose anything in their place", () => {
+  const base = form({ connectivity: "sidecar", sidecarHandle: "obj://r/chemical_raw_input/b",
+    instance: { kind: "instance", residue: LIGAND_RES }, boxSource: "instance_range", ligandSource: "candidate",
+    sdfHandle: null, candidateSetHandle: "obj://r/ligand_candidate_set/s", candidateId: "c_1",
+    parentSdfHandle: "obj://r/chemical_raw_input/p", mode: "core_fixed" });
+  // New receptor: model and instance cleared; the instance range box is dropped with the instance.
+  const receptor = lib.patchDockingForm(base, { receptorHandle: "obj://r/chemical_raw_input/other" });
+  assert.equal(receptor.receptorModelNumber, null);
+  assert.deepEqual(plain(receptor.instance), { kind: "unset" });
+  assert.equal(receptor.boxSource, null);
+  // Same receptor again changes nothing.
+  assert.deepEqual(plain(lib.patchDockingForm(base, { receptorHandle: base.receptorHandle })), plain(base));
+  // New model: instance cleared.
+  assert.deepEqual(plain(lib.patchDockingForm(base, { receptorModelNumber: 2 }).instance), { kind: "unset" });
+  // "None" also drops the instance range box; other box sources stay.
+  assert.equal(lib.patchDockingForm(base, { instance: { kind: "none" } }).boxSource, null);
+  assert.equal(lib.patchDockingForm({ ...base, boxSource: "manual" }, { instance: { kind: "none" } }).boxSource, "manual");
+  // New candidate set: candidate and parent SDF cleared.
+  const set = lib.patchDockingForm(base, { candidateSetHandle: "obj://r/ligand_candidate_set/t" });
+  assert.equal(set.candidateId, null);
+  assert.equal(set.parentSdfHandle, null);
+  // SDF source: core-fixed dropped (never switched to free automatically).
+  const sdf = lib.patchDockingForm(base, { ligandSource: "sdf" });
+  assert.equal(sdf.mode, null);
+  assert.equal(lib.patchDockingForm({ ...base, mode: "free" }, { ligandSource: "sdf" }).mode, "free");
+  // Leaving the sidecar clears its handle.
+  assert.equal(lib.patchDockingForm(base, { connectivity: "pdb_conect" }).sidecarHandle, null);
+  // Core-fixed cannot be set without the candidate source; instance range cannot be set without an instance.
+  assert.equal(lib.patchDockingForm(sdf, { mode: "core_fixed" }).mode, null);
+  assert.equal(lib.patchDockingForm(receptor, { boxSource: "instance_range" }).boxSource, null);
+  // The input is not mutated.
+  assert.equal(base.mode, "core_fixed");
+  // A complete form stays complete through unrelated edits.
+  assert.equal(lib.dockingArgs(lib.patchDockingForm(form(), { seed: "11" })).ok, true);
+});
+
+test("re-attaching to this run's active docking job; imports by kind; parent SDF reason", () => {
+  const jobs = [
+    { job_id: "a", run_id: "r", protocol_id: "qvina_dock_v1", status: "done" },
+    { job_id: "b", run_id: "r", protocol_id: "rdkit_enumerate_v1", status: "running" },
+    { job_id: "c", run_id: "other", protocol_id: "qvina_dock_v1", status: "running" },
+    { job_id: "d", run_id: "r", protocol_id: "qvina_dock_v1", status: "queued" },
+    { job_id: "e", run_id: "r", protocol_id: "qvina_dock_v1", status: "running" },
+  ];
+  assert.equal(lib.dockingActiveJob(jobs, "r").job_id, "e");
+  assert.equal(lib.dockingActiveJob(jobs.slice(0, 3), "r"), null);
+  assert.equal(lib.dockingActiveJob({ not: "a list" }, "r"), null);
+  assert.ok(lib.dockingJobActive({ status: "claimed" }));
+  assert.ok(!lib.dockingJobActive({ status: "done" }));
+  assert.ok(!lib.dockingJobActive(null));
+  const imports = [{ handle: "1", input_kind: "receptor" }, { handle: "2", input_kind: "ligand_sdf" },
+    { handle: "3", input_kind: "receptor" }];
+  assert.deepEqual(plain(lib.importsOfKind(imports, "receptor").map(row => row.handle)), ["1", "3"]);
+  assert.match(lib.parentSdfMissingReason(null), /후보 집합/);
+  assert.match(lib.parentSdfMissingReason({ valid: false, parent_sdf_handles: null }), /\(evidence_invalid\)/);
+  assert.match(lib.parentSdfMissingReason({ valid: true, parent_sdf_handles: [] }), /부모 3D SDF를 가져오세요/);
+  assert.equal(lib.parentSdfMissingReason({ valid: true, parent_sdf_handles: ["h"] }), null);
+  assert.equal(lib.stereoFlagText(null), "해당 없음(SDF 출처)");
+  assert.equal(lib.stereoFlagText("new_unspecified_center"), "새로 생긴 미지정 입체 중심 (new_unspecified_center)");
+  assert.equal(lib.stereoFlagText("unknown_flag"), "unknown_flag");
+});
+
+function resultFixture(mode, overrides = {}) {
+  const core = mode === "core_fixed";
+  return {
+    method: core ? "qvina_core_fixed_score_only_v1" : "qvina_free_v1",
+    inputs: {
+      receptor: { handle: "obj://r/chemical_raw_input/rec", sha256: "a".repeat(64), model_number: 1,
+        connectivity: { kind: "pdb_conect", sidecar_handle: null },
+        removed_instance: { residue: LIGAND_RES, atom_count: 3, element_counts: { C: 2, O: 1 } },
+        acknowledgement: ACK_ALL },
+      ligand: core ? { source: "candidate", sdf_handle: null, sdf_sha256: null,
+        candidate_set_handle: "obj://r/ligand_candidate_set/s", candidate_id: "c_0001",
+        parent_sdf_handle: "obj://r/chemical_raw_input/p", parent_sdf_sha256: "b".repeat(64),
+        generated: { hydrogens: true, coordinates: true }, stereo_flag: "none", unspecified_stereo_centers: 0 }
+        : { source: "sdf", sdf_handle: "obj://r/chemical_raw_input/lig", sdf_sha256: "c".repeat(64),
+          candidate_set_handle: null, candidate_id: null, parent_sdf_handle: null, parent_sdf_sha256: null,
+          generated: { hydrogens: false, coordinates: false }, stereo_flag: null, unspecified_stereo_centers: null },
+      mode },
+    box: { center_A: [1.005, 2, 3], size_A: [20, 20, 20], source: "instance_range", margin_A: 8 },
+    parameters: { seed: 7, exhaustiveness: 8, num_modes: 9, energy_range: 3, conformers: core ? 50 : null, cpu: 1 },
+    engine: { name: "qvina", version: "2.1.0", binary_sha256: "d".repeat(64), package: "conda-forge qvina 2.1.0" },
+    preparation: { tool: "Meeko", version: "0.8.0", rdkit_version: "2026.03.6", atom_typing: "AD4", charges: "gasteiger" },
+    counts: { modes: 2, contacts_by_mode: [3, 0], null_result: false, samples_generated: core ? 50 : null,
+      samples_scored: core ? 50 : null },
+    limitations: [],
+    ...overrides,
+  };
+}
+const MODE_ROW = { mode: 1, score_kcal_mol: -7.25, contact_count: 3, min_heavy_atom_distance_A: 2.675,
+  atoms_outside_box: 0, engine_rmsd_lb_A: 0, engine_rmsd_ub_A: 0, conformer_index: null, core_max_deviation_A: null };
+
+test("result summary shows stored fields: engine, seed, values, box, receptor hash, removed instance, generated flags", () => {
+  const free = new Map(plain(lib.dockingSummaryRows(resultFixture("free"))));
+  assert.equal(free.get("점수"), lib.SCORE_LABEL);
+  assert.equal(free.get("seed"), "7");
+  assert.match(free.get("엔진"), /^qvina 2\.1\.0 · conda-forge qvina 2\.1\.0 · 실행 파일 SHA-256 d{64}$/);
+  assert.equal(free.get("값"), "exhaustiveness 8 · num_modes 9 · energy_range 3.00 kcal/mol · cpu 1");
+  assert.equal(free.get("상자"), "중심 (1.01, 2.00, 3.00) Å · 크기 (20.00, 20.00, 20.00) Å · 수용체 안 인스턴스 범위+여백 · 여백 8.00 Å");
+  assert.match(free.get("수용체"), new RegExp(`SHA-256 ${"a".repeat(64)} · 모델 1 · 연결 정보 PDB CONECT$`));
+  assert.equal(free.get("뺀 인스턴스"), "모델 1 · 체인 A · XYZ 300 · 원자 3개(C 2, O 1)");
+  assert.equal(free.get("생성 여부"), "수소: 입력 그대로 · 3D 좌표: 입력 그대로");
+  assert.equal(free.get("후보 stereo_flag"), "해당 없음(SDF 출처)");
+  assert.equal(free.get("미지정 입체 중심 수"), "해당 없음(SDF 출처)");
+  assert.equal(free.get("모드 수"), "2");
+  assert.ok(!free.has("만든 형태 · 점수를 매긴 형태"));
+  const core = new Map(plain(lib.dockingSummaryRows(resultFixture("core_fixed"))));
+  assert.match(core.get("리간드 출처"), /^M17 후보 c_0001 · .* · 부모 SHA-256 b{64}$/);
+  assert.equal(core.get("생성 여부"), "수소: RDKit이 만든 것(생성됨) · 3D 좌표: RDKit이 만든 것(생성됨)");
+  assert.equal(core.get("후보 stereo_flag"), "입체 표시 없음 (none)");
+  // 0 unspecified centres is a stored count, shown as 0 (not "not applicable").
+  assert.equal(core.get("미지정 입체 중심 수"), "0");
+  assert.equal(core.get("샘플 수"), "2");
+  assert.equal(core.get("만든 형태 · 점수를 매긴 형태"), "50 · 50");
+  assert.match(core.get("값"), /conformers 50$/);
+});
+
+test("mode table: free 'mode n' with engine RMSD, core-fixed 'sample n' with core deviation; stored values rounded", () => {
+  assert.deepEqual(plain(lib.modeTableHeaders("free")), ["모드", "qvina 점수(kcal/mol)", "접촉 수(기하)", "최소 중원자 거리",
+    "상자 밖 중원자 수", "엔진 RMSD 하한·상한(모드 1 기준)"]);
+  assert.deepEqual(plain(lib.modeTableHeaders("core_fixed")).slice(-2), ["코어 최대 이탈", "형태 번호"]);
+  assert.deepEqual(plain(lib.modeTableCells("free", MODE_ROW)),
+    ["모드 1(엔진 출력 순서)", "-7.3", "3", "2.68 Å", "0", "0.00 Å · 0.00 Å"]);
+  assert.deepEqual(plain(lib.modeTableCells("free", { ...MODE_ROW, mode: 2, engine_rmsd_lb_A: null, engine_rmsd_ub_A: null })).at(-1),
+    "해당 없음");
+  assert.deepEqual(plain(lib.modeTableCells("core_fixed", { ...MODE_ROW, engine_rmsd_lb_A: null, engine_rmsd_ub_A: null,
+    conformer_index: 0, core_max_deviation_A: 0.004, atoms_outside_box: 2, contact_count: 0 })),
+  ["샘플 1(점수 오름차순 나열)", "-7.3", "0", "2.68 Å", "2", "0.00 Å", "0"]);
+  assert.equal(lib.modeTableHeaders("free").length, lib.modeTableCells("free", MODE_ROW).length);
+  assert.equal(lib.modeTableHeaders("core_fixed").length, lib.modeTableCells("core_fixed", MODE_ROW).length);
+});
+
+test("contact page text, result list rows and report check", () => {
+  assert.match(lib.contactPageText({ total: 0, offset: 0, rows: [] }), /0개/);
+  assert.equal(lib.contactPageText({ total: 250, offset: 100, rows: new Array(100) }), "기하 접촉 250개 중 101–200");
+  const row = { created_seq: 12, valid: true, reason_code: null, mode: "free", ligand_source: "sdf", candidate_id: null,
+    seed: 7, box_source: "manual", modes: 9, null_result: false };
+  assert.equal(lib.dockingResultRowText(row), "생성 순번 12 · 자유 도킹 · 3D SDF · seed 7 · 직접 입력 · 모드 9개");
+  assert.match(lib.dockingResultRowText({ ...row, mode: "core_fixed", ligand_source: "candidate", candidate_id: "c_1",
+    modes: 0, null_result: true }), /후보 c_1 .* 샘플 0개 \(빈 과학 결과\)$/);
+  assert.match(lib.dockingResultRowText({ ...row, valid: false, reason_code: null }), /읽을 수 없음: .*\(evidence_invalid\)$/);
+  const artifact = { manifest: { schema: "method_report_manifest@1", analysis_type: "ligand_docking", result_handle: "h" } };
+  assert.ok(lib.dockingReportMatches(artifact, "h"));
+  assert.ok(!lib.dockingReportMatches(artifact, "other"));
+  assert.ok(!lib.dockingReportMatches({ manifest: { ...artifact.manifest, analysis_type: "ligand_candidates" } }, "h"));
+});
+
+test("screen wording: generated texts and every line of DockingPanel.tsx pass the forbidden-word check", () => {
+  const texts = [
+    ...lib.dockingSummaryRows(resultFixture("free")).flat(), ...lib.dockingSummaryRows(resultFixture("core_fixed")).flat(),
+    ...lib.modeTableHeaders("free"), ...lib.modeTableHeaders("core_fixed"), ...lib.modeTableCells("free", MODE_ROW),
+    ...Object.values(lib.DOCKING_STATE_TEXT), lib.contactPageText({ total: 0, offset: 0, rows: [] }),
+    lib.parentSdfMissingReason({ valid: true, parent_sdf_handles: [] }),
+  ];
+  for (const text of texts) assert.deepEqual(plain(lib.dockingForbiddenWords(text)), [], text);
+  const source = fs.readFileSync(path.join(__dirname, "../src/components/DockingPanel.tsx"), "utf8");
+  assert.deepEqual(plain(lib.dockingForbiddenWords(source)), []);
+  // The panel shows no timeout (fixed 600 s, not on screen) and renders no HTML string.
+  assert.ok(!/timeout_s|dangerouslySetInnerHTML|innerHTML/.test(source));
+});
+
 // ---- api.ts calls (fetch replaced; nothing leaves the process) ----
 
 test("api: docking submission sends the fixed protocol and timeout; reads and download URLs use the docking routes", async () => {
