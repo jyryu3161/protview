@@ -1,6 +1,6 @@
 # M18 단일 리간드 도킹(qvina) 완료 기록
 
-- 판정: **완료** (2026-10-02). main 병합 해시는 병합 뒤 기록한다(push 없음).
+- 판정: **완료** (2026-10-02). main 병합 `e0b84ea`(push 없음).
 - 브랜치: `dryforge/m18-docking` (`phase/m18-docking` = main `d1f819b`에서 분기). M17은 시작 전에 main에 병합되어 있었다(`45ccad6`, 기록 `d1f819b`).
 - 고정 소스: `23e2c03`(`23e2c03d87038092edd1e1ec4c10d5ff398adb11`, 오프스크린 수용체 거부 목록 단계 추가. 그 아래 `5a23462`가 독립 코드 검토 수정 병합). 증거 커밋 `8cb5d31`. 고정 뒤 제품 소스 변경 없음. 고정 뒤 변경은 Stop 훅의 pytest 그룹 분리(`306971b`: `.codex/hooks/stop.py`, `scripts/test_codex_hooks.py`)와 기록 문서뿐이다.
 - 수락 증거: `docs/qa/m18-docking-20261002/`(`preflight.txt` 착수 확인, `t2-install.txt` 설치, `lock-inputs.json`, `gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M18 수락, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 52개, m14-regression 1개, m15-regression 1개, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`).

@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-10-02, 브랜치 `dryforge/m18-docking`(`phase/m18-docking` = main `d1f819b`에서 분기). M17까지 main에 병합됨(M17 병합 `45ccad6`, 기록 `d1f819b`). M18 완료(고정 `23e2c03`, 증거 커밋 `8cb5d31`, 수락 증거 `docs/qa/m18-docking-20261002/`). main 병합 해시는 병합 뒤 기록한다.
+기준: 2026-10-02, 브랜치 `dryforge/m18-docking`(`phase/m18-docking` = main `d1f819b`에서 분기). M17까지 main에 병합됨(M17 병합 `45ccad6`, 기록 `d1f819b`). M18 완료(고정 `23e2c03`, 증거 커밋 `8cb5d31`, 수락 증거 `docs/qa/m18-docking-20261002/`). main 병합 `e0b84ea`(2026-10-02).
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 
@@ -20,7 +20,7 @@
 | M15 | 지식 탭 첫 기능: `kbase_kinase/ref` 가공 참조 스냅샷 가져오기·세트 고정(결정 0022), 잔기 번호 대응 `map_residue_numbering`(SIFTS + 자체 전역 정렬, 두 방법이 같을 때만 대응됨, 충돌·대응 없음과 이유, KLIFS 포켓 번호, 결정 0023), `residue_numbering_map@1`, 읽기 API, 계산값·참조값을 분리한 보고서, 지식 탭 번호 대응 화면 | 첫 고정 `c1d824d`(증거 `4737847`), 최종 고정 `93c4fb1`(최종 검토 수정 `975cccf`, 증거 `0e376aa`), main 병합 `beaffcb` | 첫 고정: 전체 게이트(백엔드 806개), KLIFS 측정, M15 수락 QA 14사례, M14 회귀, M8–M13 회귀, 코드(수정 필요 → 반영)·증거(approve) 독립 검토. 최종 검토(approve, 권고 반영) 뒤 최종 고정: 전체 게이트(백엔드 815개, skip 0), M15 수락 QA 14사례, M14 회귀. 검토는 모두 Opus 5.5 | M18 회귀(M15 수락 실행기 14/14, 고정 `23e2c03`) |
 | M16 | 구조 분석 탭 참조 주석: 값싼 도구 `annotate_reference_sites` → `reference_site_annotation@1`(KLIFS 주요 부위 10개 `kinase_key_sites@1`, 같은 구조의 기하 접촉을 부위별로, 결정 0024), 읽기 API, 참조 주석 패널, Mol* 부위 강조·이름표·극성 접촉 점선(저장 거리), `viewer_scene@2`·`viewer_figure@2`(범례 기본 켬), 보고서 `reference_site_annotation`, 포켓 오버레이·M10 비교·M8 자연어와 배타. 그림 상한 유지 | 첫 고정 `b23cb10`(코드 검토 수정 `cc3da8e`, 증거 `a4ca298`), 재고정 `3a2e20c`(하네스만, 증거 `6f14094`), 테스트 추가 `71a3fa1`, main 병합 `0fb3426` | 첫 고정: 전체 게이트(백엔드 886개, skip 0), M16 수락 시도 1 실패(하네스 범례 영역), M15·M14·M13 회귀. 재고정: 하네스 관련 게이트, M16 수락 시도 2 19/19. 명세 검토 2회 통과, 코드 검토(권고 6, 반영), 증거 검토(approve, 권고 처리). 검토는 모두 Opus 5.5 | M18 회귀(M16 수락 실행기 19/19, 고정 `23e2c03`) |
 | M17 | 리간드 설계·탐색 탭 첫 기능: 부모 V2000 SDF 한 분자의 한 부위(나머지와 단일 결합 하나로 이어진 중원자 집합)를 고정 교체 `replace_single_bond_v1`·사용자 반응 SMARTS `user_reaction_smarts_v1`로 바꾼 2D 후보(SMILES), RDKit 속성 8개·PAINS A/B/C 구조 경고 일치, 작업 두 개 `rdkit_inspect_v1` → `ligand_inspection@1`·`rdkit_enumerate_v1` → `ligand_candidate_set@1`(각 승인·예산 1단위, 격리된 RDKit 2026.03.6 작업 프로세스), block SDF·SMILES 가져오기, 읽기 API 7개(필터는 저장값에 서버 평가), 보고서 `ligand_candidates`(요약 증거, `count_where`), 리간드 탭 화면(결정 0025) | 고정 `e6ab4f9`(코드 검토 수정), 증거 `a81f50a`, main 병합 `45ccad6` | 전체 게이트(백엔드 1206개, skip 0), M17 수락 QA 21사례, M16·M15·M14 회귀, M8–M13 회귀(M13 실행기 전체). 명세 검토 2회(지적 반영), 코드 검토(막는 지적 3 → 반영, 권고 다수), 증거 검토(approve, 권고 4 처리). 검토는 모두 Opus 5.5 | M18 회귀(M17 수락 실행기 21/21, 고정 `23e2c03`) |
-| M18 | 리간드 설계·탐색 탭 도킹 영역: 수용체 하나(M11 입력 규칙, 지정한 리간드 인스턴스 하나만 빼고 나머지 비표준 요소 거부) + 리간드 하나(3D SDF 또는 M17 후보)를 격리된 QuickVina 2.1(`qvina2`, conda-forge 2.1.0)로 자유 도킹하거나 코어 고정 구속 샘플에 `--score_only`만, 작업 `qvina_dock_v1` → `docking_result@1`(승인·예산 1단위, seed 직접·CPU 1, Meeko 0.8.0·RDKit 2026.03.6·MDAnalysis 2.10.0 작업 환경), 상자 출처 셋, 기하 접촉 표, 포즈 SDF 내려받기, 읽기 API 7개, 보고서 `ligand_docking`, 점수는 "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"(결정 0026) | 고정 `23e2c03`(코드 검토 수정 `283cc72`), 증거 `8cb5d31`, main 병합 해시는 병합 뒤 기록 | 전체 게이트(백엔드 1404개, skip 0), 착수 확인(재도킹 RMSD 1.30 Å, 같은 seed 바이트 동일), M18 수락 QA 24사례(재현 검사 포함), M17·M16·M15·M14 회귀, M8–M13 회귀(M13 실행기 전체). 코드 검토(막는 지적 1 → 반영, 권고 반영·기록), 증거 검토(approve). 검토는 모두 Opus 5.5 | 현재 기준(`docs/tracking/m18-acceptance.md`) |
+| M18 | 리간드 설계·탐색 탭 도킹 영역: 수용체 하나(M11 입력 규칙, 지정한 리간드 인스턴스 하나만 빼고 나머지 비표준 요소 거부) + 리간드 하나(3D SDF 또는 M17 후보)를 격리된 QuickVina 2.1(`qvina2`, conda-forge 2.1.0)로 자유 도킹하거나 코어 고정 구속 샘플에 `--score_only`만, 작업 `qvina_dock_v1` → `docking_result@1`(승인·예산 1단위, seed 직접·CPU 1, Meeko 0.8.0·RDKit 2026.03.6·MDAnalysis 2.10.0 작업 환경), 상자 출처 셋, 기하 접촉 표, 포즈 SDF 내려받기, 읽기 API 7개, 보고서 `ligand_docking`, 점수는 "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"(결정 0026) | 고정 `23e2c03`(코드 검토 수정 `283cc72`), 증거 `8cb5d31`, main 병합 `e0b84ea` | 전체 게이트(백엔드 1404개, skip 0), 착수 확인(재도킹 RMSD 1.30 Å, 같은 seed 바이트 동일), M18 수락 QA 24사례(재현 검사 포함), M17·M16·M15·M14 회귀, M8–M13 회귀(M13 실행기 전체). 코드 검토(막는 지적 1 → 반영, 권고 반영·기록), 증거 검토(approve). 검토는 모두 Opus 5.5 | 현재 기준(`docs/tracking/m18-acceptance.md`) |
 
 "오래됨"은 기능이 망가졌다는 뜻이 아니다. 검토 당시 파일 해시와 현재 파일이 달라, `scripts/execute.py --verify`가 그 검토를 현재 증거로 인정하지 않는다는 뜻이다. 현재 기능이 동작하는지는 아래 검사로 확인한다.
 
@@ -58,4 +58,4 @@ M13 이후 단계는 `docs/tracking/roadmap.md`에 정했다(2026-09-29 사용�
 
 ## 차단 요소
 
-없음. M18은 완료했고 main 병합 방법은 사용자에게 묻는다(병합 해시는 병합 뒤 기록). 다음은 M19.
+없음. M18은 main에 병합됨(`e0b84ea`). 다음은 M19.
