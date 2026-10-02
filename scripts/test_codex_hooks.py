@@ -124,7 +124,7 @@ class TestStop:
     def test_measured_check_budgets_fit_outer_hook_deadline(self):
         stop = _load("stop")
         assert stop.check_timeout(stop.CHECKS[0][0]) == 45
-        assert len(stop.CHECKS) == 4
+        assert len(stop.CHECKS) == 5
         assert all(stop.check_timeout(command) == 480 for command, _ in stop.CHECKS[1:])
         assert 45 + max(stop.check_timeout(command) for command, _ in stop.CHECKS[1:]) + 4 < 600
 
@@ -134,7 +134,10 @@ class TestStop:
         assert all(command[1:4] == ["-m", "pytest", "-q"] for command in groups)
         assert groups[0][4:] == ["backend/tests/test_chemical_interactions.py"]
         assert groups[1][4:] == ["backend/tests/test_m11_job_api.py"]
-        assert groups[2][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
+        assert groups[2][4:] == ["backend/tests/test_docking_inputs.py", "backend/tests/test_docking_worker.py",
+                                 "backend/tests/test_docking_jobs.py", "backend/tests/test_docking_api.py",
+                                 "backend/tests/test_docking_reports.py"]
+        assert groups[3][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
                                  "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
                                  "scripts/test_m14_offscreen_acceptance.py",
                                  "scripts/test_import_reference_snapshots.py",
@@ -142,22 +145,29 @@ class TestStop:
                                  "scripts/test_measure_klifs_numbering.py",
                                  "scripts/test_m16_offscreen_acceptance.py",
                                  "scripts/test_m17_offscreen_acceptance.py",
+                                 "scripts/test_m18_offscreen_acceptance.py", "scripts/test_setup_qvina.py",
+                                 "scripts/test_setup_docking_worker.py",
                                  "--ignore=backend/tests/test_chemical_interactions.py",
-                                 "--ignore=backend/tests/test_m11_job_api.py"]
+                                 "--ignore=backend/tests/test_m11_job_api.py",
+                                 "--ignore=backend/tests/test_docking_inputs.py",
+                                 "--ignore=backend/tests/test_docking_worker.py",
+                                 "--ignore=backend/tests/test_docking_jobs.py",
+                                 "--ignore=backend/tests/test_docking_api.py",
+                                 "--ignore=backend/tests/test_docking_reports.py"]
 
     def test_default_groups_really_run_concurrently_and_all_must_pass(self, tmp_path, monkeypatch):
         stop = _load("stop")
         gate = ("from pathlib import Path; import sys,time; "
                 "p=Path(sys.argv[1]); p.write_text('started'); "
                 "end=time.monotonic()+3; "
-                "exec('while time.monotonic()<end and len(list(p.parent.glob(\"group-*\")))<3: "
+                "exec('while time.monotonic()<end and len(list(p.parent.glob(\"group-*\")))<4: "
                 "time.sleep(0.01)\\n'); "
-                "raise SystemExit(0 if len(list(p.parent.glob('group-*')))==3 else 9)")
+                "raise SystemExit(0 if len(list(p.parent.glob('group-*')))==4 else 9)")
         checks = [(PASS, {0})] + [([sys.executable, "-c", gate, str(tmp_path / f"group-{i}")], {0})
-                                 for i in range(3)]
+                                 for i in range(4)]
         monkeypatch.setattr(stop, "CHECKS", checks)
         assert stop.run_checks(tmp_path, stop.CHECKS) == []
-        checks[2] = (FAIL, {0})
+        checks[3] = (FAIL, {0})
         assert any("E501 boom" in failure for failure in stop.run_checks(tmp_path, stop.CHECKS))
 
     def test_timeout_blocks_and_retains_partial_output(self, tmp_path, monkeypatch):
