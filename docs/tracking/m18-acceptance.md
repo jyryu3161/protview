@@ -2,7 +2,7 @@
 
 - 판정: **완료** (2026-10-02). main 병합 해시는 병합 뒤 기록한다(push 없음).
 - 브랜치: `dryforge/m18-docking` (`phase/m18-docking` = main `d1f819b`에서 분기). M17은 시작 전에 main에 병합되어 있었다(`45ccad6`, 기록 `d1f819b`).
-- 고정 소스: `23e2c03`(`23e2c03d87038092edd1e1ec4c10d5ff398adb11`, 오프스크린 수용체 거부 목록 단계 추가. 그 아래 `5a23462`가 독립 코드 검토 수정 병합). 증거 커밋 `8cb5d31`. 고정 뒤 소스 변경 없음(이 기록 커밋은 기록 문서만 바꾼다).
+- 고정 소스: `23e2c03`(`23e2c03d87038092edd1e1ec4c10d5ff398adb11`, 오프스크린 수용체 거부 목록 단계 추가. 그 아래 `5a23462`가 독립 코드 검토 수정 병합). 증거 커밋 `8cb5d31`. 고정 뒤 제품 소스 변경 없음. 고정 뒤 변경은 Stop 훅의 pytest 그룹 분리(`306971b`: `.codex/hooks/stop.py`, `scripts/test_codex_hooks.py`)와 기록 문서뿐이다.
 - 수락 증거: `docs/qa/m18-docking-20261002/`(`preflight.txt` 착수 확인, `t2-install.txt` 설치, `lock-inputs.json`, `gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M18 수락, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 52개, m14-regression 1개, m15-regression 1개, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`).
 - 외부 요청 0건, OpenRouter 호출 0회(모든 흐름 행).
 
@@ -51,7 +51,7 @@
 - 정할 점 7개(작업 환경에 MDAnalysis, 포즈 원자 순서 복원, 코어 좌표 덮어쓰기 여부, Meeko 네트워크 경로, 스테이징 한도, 재현 비교 대상, 점수 자릿수)는 T2–T5에서 정했다(결정 0026, `docs/engineering-notes.md`).
 
 ## 검토 (Opus 5.5, 구현하지 않은 서브에이전트)
-- 독립 코드 검토(고정 전): 막는 지적 1건(수용체 거부 목록 `receptor_unsupported_residue`·`receptor_altloc_present`의 항목이 화면에 나오지 않음)과 권고 여럿. `283cc72`에서 고친 것: 거부 목록을 입장 거절(422)과 작업 실패 두 경로 모두 화면에 표시(잔기 7필드 null 그대로, 원자 이름, altloc), 취소 버튼을 시작 요청과 분리(서버가 시작 요청을 작업 종료까지 붙잡으므로 제출된 job id로 바로 취소), `--score_only` 값의 지수 표기 파싱(nan·inf·넘침·잘못된 값은 계속 `engine_output_invalid`), 후보 출처 선택 때 한계 문장 7·10·11을 제출 전에 안내. 막는 지적은 T12 오프스크린 단계 `D-reject-receptor`로 실제 화면에서 확인했다. 고치지 않은 권고는 아래 "알려진 한계"와 `docs/tracking/findings.md`에 적었다.
+- 독립 코드 검토(고정 전): 막는 지적 1건(수용체 거부 목록 `receptor_unsupported_residue`·`receptor_altloc_present`의 항목이 화면에 나오지 않음)과 권고 여럿. `283cc72`에서 고친 것: 거부 목록을 입장 거절(422)과 작업 실패 두 경로 모두 화면에 표시(잔기 7필드 null 그대로, 원자 이름, altloc), 취소 버튼을 시작 요청과 분리(서버가 시작 요청을 작업 종료까지 붙잡으므로 제출된 job id로 바로 취소), `--score_only` 값의 지수 표기 파싱(nan·inf·넘침·잘못된 값은 계속 `engine_output_invalid`), 후보 출처 선택 때 한계 문장 7·10·11을 제출 전에 안내. 입장 거절(422) 경로의 거부 목록은 T12 오프스크린 단계 `D-reject-receptor`로 실제 화면에서 확인했다. 작업 실패 경로의 목록 표시는 오프스크린에서 관찰하지 않았고 프런트 단위 테스트로만 덮는다. 고치지 않은 권고는 아래 "알려진 한계"와 `docs/tracking/findings.md`에 적었다.
 - 독립 증거 검토(코드 검토자와 다른 새 인스턴스, 고정 뒤): **approve**. 권고는 이 기록(관찰하지 못한 사례, 재현 범위, 초기 증거 파일의 절대 경로)과 `findings.md`로 처리했다.
 
 ## 게이트 (고정 `23e2c03`, `gate.txt`, 2026-10-02 02:57:03–03:17:34 UTC)
@@ -107,4 +107,4 @@
 
 ## 남은 일
 - main 병합(방법은 사용자에게 묻는다). push하지 않았다.
-- 새 미해결 문제(`docs/tracking/findings.md`): 좌표계 일치 미검증, 포즈 뷰어 표시 없음, 수용체 비표준 요소 거부, 코어 수소 미고정·`core_max_deviation_A`의 뜻, 수용체 수소 일부 누락, 시작 요청 붙잡힘, 모드 0개·코어 고정 재현 미관찰, 목록 읽기 비용, 공용 승인 경로, Stop 훅 시간 제한, 초기 증거 절대 경로. 플랫폼 잠금 항목은 기존 항목에 합쳤다.
+- 새 미해결 문제(`docs/tracking/findings.md`): 좌표계 일치 미검증, 포즈 뷰어 표시 없음, 수용체 비표준 요소 거부, 코어 수소 미고정·`core_max_deviation_A`의 뜻, 수용체 수소 일부 누락, 시작 요청 붙잡힘, 모드 0개·코어 고정 재현 미관찰, 목록 읽기 비용, 공용 승인 경로, 초기 증거 절대 경로. 플랫폼 잠금 항목은 기존 항목에 합쳤다.

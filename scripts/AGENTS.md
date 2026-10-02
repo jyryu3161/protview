@@ -44,7 +44,7 @@
 - M13 실행기는 하위 실행기 대장을 schema별로 판정한다(`sub_ledger_verdict`: M11은 `summary`·`nonLoopbackRequestsTotal`, M12는 `verdict`·`externalRequestsTotal`). 외부 요청 수를 모르는 행이 있으면 실패다. `--only`는 `partial_not_acceptance`이며 증거를 내보내지 않는다. 서비스는 `PYTHONPATH=<code root>/backend`로 띄우고 `import mw` 경로를 먼저 확인한다.
 - M14 실행기는 M13 실행기를 import해 빌드 도장(`build_is_current`·`stamp_build`), 서비스 환경(`child_env`), 경로 가리기(`redact`), 포트 확인(`listening`)을 그대로 쓴다. M13 실행기의 이 함수들을 바꾸면 M14 수락도 바뀌므로 두 실행기의 단위 테스트를 함께 돌린다. M14의 `acceptance`는 모든 사례가 돌고 통과했으며 빌드가 현재 소스 도장과 맞을 때만 true다.
 - `setup_prolif_worker.py`는 33개 wheel의 이름·SHA-256이 모두 맞고, 실행 인터프리터가 CPython 3.11 macOS arm64일 때만 설치한다. 이 확인을 느슨하게 하면 안 된다.
-- Stop 훅(`.codex/hooks/stop.py`)의 pytest 세 그룹을 합치면 전체 백엔드·실행기 테스트와 같아야 한다. 그룹을 추가하거나 나눌 때 빠지는 테스트가 없게 한다. 전체 제한 600초는 `.claude/settings.json`과 `.codex/hooks.json`의 timeout과 같아야 한다.
+- Stop 훅(`.codex/hooks/stop.py`)의 pytest 네 그룹을 합치면 전체 백엔드·실행기 테스트와 같아야 한다. 그룹을 추가하거나 나눌 때 빠지는 테스트가 없게 한다. 전체 제한 600초는 `.claude/settings.json`과 `.codex/hooks.json`의 timeout과 같아야 한다.
 
 ## 테스트 지침
 - `.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py -q`

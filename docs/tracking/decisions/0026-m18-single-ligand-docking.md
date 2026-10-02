@@ -37,4 +37,5 @@ M18의 여는 시나리오는 "리간드 배치와 점수"(로드맵 M18)다. �
 
 ## 결과
 - 착수 확인(`docs/qa/m18-docking-20261002/preflight.txt`, 공개 준비 도킹 예제이며 실험 검증 아님): 수용체 PDBQT를 위 경로로 만들 수 있었다(Meeko 자체 수용체 경로와 원자 2,894개에서 AD4 유형 불일치 0, 전하 차 ≤ 0.004). 같은 seed·`--cpu 1` 두 번의 출력 PDBQT가 바이트 동일했다(stdout은 검색 시간 줄만 다름). 공개 예제 재도킹에서 모드 1 중원자 RMSD 1.300 Å, 기준 포즈 `--score_only` −12.21087(kcal/mol, 상자 인자 없이도 같은 값). 이벤트·객체 크기 한도는 코드에 없고, 모드 8개 접촉 포함 결과 형태 JSON은 239,478 B였다. 결과 객체 한도 4 MiB 안에 들도록 모드당 접촉 상한을 500행으로 두었다(`MAX_CONTACTS_PER_MODE`, 넘으면 `resource_exceeded`).
+- 조율 세션이 정한 항목(확인 세 항목, 입체 임의 선택 표시, 한계 문장 11개 등)은 사용자의 최종 확인(M18 완료 승인) 때 함께 확인받는다. 변경 요청이 있으면 이 결정을 고친다.
 - 규칙 전체: `docs/business-rules.md` "리간드 도킹 (M18, `qvina_dock_v1`)". API: `docs/contracts.md` "M18 리간드 도킹". 완료 기록: `docs/tracking/m18-acceptance.md`.
