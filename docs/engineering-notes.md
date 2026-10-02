@@ -91,6 +91,7 @@
 - **증상**: worktree에서 고친 백엔드 코드가 테스트·서비스에 반영되지 않는다.
 - **원인**: `.venv`의 `pip install -e './backend[dev]'`는 주 체크아웃의 `backend/`를 가리킨다. worktree에서 `.venv/bin/python`을 쓰면 `mw`를 주 체크아웃에서 import한다.
 - **대응**: worktree에서는 `PYTHONPATH=<worktree>/backend`를 주고 돌린다. M13 수락 실행기는 서비스를 띄울 때 `PYTHONPATH=<code root>/backend`를 주고, `import mw`가 그 경로에서 오는지 먼저 확인한다.
+- **M18 관찰**: 착수 확인 worktree에서 `PYTHONPATH` 없이 전체 백엔드 pytest를 돌리자, 경로를 비교하는 두 테스트(`test_ligand_jobs`의 guardian 경로, `test_reference_snapshots`의 `.deps/reference` 경로)가 주 체크아웃 경로와 달라 실패했다. 그 결과는 회귀 증거로 쓰지 않았다(`docs/qa/m18-docking-20261002/preflight.txt` 마지막 절). 설치 스크립트도 worktree의 `.deps` 심볼릭 링크가 아니라 주 체크아웃의 절대 경로(`--prefix`·`--destination`)로 실행했다(`t2-install.txt`).
 
 ### 예산 때문에 풀린 연결 호출이 자율 분기 가드를 올렸다
 - **증상**: M13 코드 검토에서, run 활동 시간 예산 checkpoint로 시작하지 못하고 풀린(release) 흐름 단계를 다시 실행하면 같은 호출 키 제안이 쌓여 가드(`loop_stop`)가 걸렸다.
@@ -219,6 +220,41 @@
 ### 리간드 탭 패널의 늦은 응답은 두 층으로 버린다 (M17)
 - 패널은 run·점검 선택이 바뀌면 진행 중 요청을 abort하고, 영역별 요청 순번(stamp)이 맞지 않는 응답도 버린다. M17 수락 QA의 run 전환 사례(`L-run-switch-late`)는 abort 층만 실제로 관찰했다. stamp 층은 `frontend/tests/ligand.test.cjs`로만 확인한다.
 
+### Meeko 수용체 준비(`Polymer`)는 모르는 잔기 템플릿을 인터넷에서 받으려 한다 (M18)
+- **증상**: 공개 준비 예제 `prolif-vina-rec.pdb`에 `Polymer.from_pdb_string`을 부르면 `PolymerCreationError`가 나고, 그 전에 `https://files.rcsb.org/ligands/download/HSE.cif`를 받으려 했다(착수 확인의 socket 차단기가 getaddrinfo 5회를 막음). 히스티딘 템플릿을 지정해도 합쳐진 말단 캡 잔기 4개(A:38, A:249, B:298, B:387)가 템플릿과 맞지 않았다.
+- **원인**: Meeko 0.8.0은 `residue_templates`에 없는 잔기 이름(CHARMM `HSD`·`HSE`)을 만나면 `chemtempgen.fetch_from_pdb`로 템플릿을 내려받는다. `allow_bad_res=True`는 맞지 않는 잔기를 지우고 진행하며, 출력은 원자 이름을 템플릿 이름으로 바꾼다(`HN`→`H` 등).
+- **대응**: `Polymer` 경로를 쓰지 않는다. M11 화학 추론(MDAnalysis `MDAnalysisInferrer`)으로 만든 RDKit 그래프를 공유 결합 조각마다 `MoleculePreparation`에 넘기고(분자 전체를 넘기면 "RDKit molecule has 2 fragments. Must have 1."), 입력 순서·이름·좌표로 ATOM 줄을 쓴다. 작업 모듈은 화학 패키지 import 전에 Python socket을 막는다(`_deny_network`). Meeko 자체 수용체 경로와 비교해 AD4 유형 불일치 0, 전하 차 ≤ 0.004였다(`docs/qa/m18-docking-20261002/preflight.txt` (c)).
+
+### Meeko는 평면 SDF를 말없이 받고, 암시 수소 SDF에는 자기 오류를 낸다 (M18)
+- **증상**: z가 모두 0인 SDF도 Meeko가 PDBQT로 만든다. 암시 수소가 남은 SDF는 Meeko가 "RDKit molecule has implicit Hs. Need explicit Hs."로 `ValueError`를 낸다.
+- **대응**: 작업 모듈이 Meeko 전에 직접 검사한다: 모든 원자의 z가 같으면 `ligand_not_3d`, 암시 수소가 있으면 `ligand_hydrogens_missing`(닫힌 이유). Meeko 예외 문자열을 이유로 쓰지 않는다.
+
+### qvina 탐색은 상자 값의 마지막 비트에 민감하다 (M18)
+- **증상**: 범위 상자 중심이 `0.7175000000000002` 같은 부동소수 잡음을 가지면, 기록한 값과 qvina가 읽는 값이 달라질 수 있다.
+- **대응**: 범위 상자(리간드·인스턴스)의 중심·크기를 1e-6 Å로 반올림해(`BOX_DECIMALS = 6`) 기록하고, 같은 값을 `repr`로 qvina 인자에 넘긴다. 입력 좌표는 소수 셋째(PDB)·넷째(SDF) 자리라 이 반올림은 잡음만 없앤다.
+
+### `--score_only`는 상자를 보지 않는다 (M18)
+- 기준 포즈의 `--score_only` 값(−12.21087)은 상자 인자를 줘도 빼도 같았다(착수 확인 (e)). 코어 고정은 상자 인자 없이 `--score_only --cpu 1`만 부른다. 상자는 코어 고정에서 `atoms_outside_box` 계산과 `box_no_receptor_atoms` 검사에만 쓰인다.
+- qvina는 큰 충돌 값을 지수 표기(예: `1.2e+05`)로 낼 수 있다. 파서는 유한 10진수(지수 허용)만 받고 nan·inf·넘침·형식 오류는 `engine_output_invalid`다(코드 검토 수정 `283cc72`).
+
+### 같은 seed라도 qvina stdout은 실행마다 다르다 (M18)
+- **증상**: 같은 입력·seed·`--cpu 1` 두 번의 stdout이 "searching finished in … seconds" 줄만 다르다.
+- **대응**: 재현 비교는 stdout이 아니라 출력 PDBQT(또는 파싱한 점수·좌표)로 한다. 착수 확인에서 출력 PDBQT 두 개가 바이트 동일했고, 수락 QA 재현 검사는 저장 점수와 전체 모드 SDF 바이트를 비교했다. 출력 PDBQT의 점수는 소수 첫째 자리 문자열뿐이다(`REMARK VINA RESULT: -13.6 …`).
+
+### 도킹 포즈의 원자 순서는 입력 순서가 아니다 (M18)
+- **증상**: Meeko `RDKitMolCreate.from_pdbqt_mol`로 되돌린 분자는 정규 SMILES는 같지만 원자 순서가 입력 SDF 순서가 아니라 SMILES 순서였다.
+- **대응**: 리간드 PDBQT를 `add_index_map=True`로 써서 `REMARK INDEX MAP`(입력 순번 ↔ PDBQT 순번)을 읽고, 포즈 좌표를 입력 원자 순서로 되돌린다(`restore_pose`). PDBQT에 없는 원자는 Meeko가 병합한 비극성 수소뿐이어야 하며, 그 위치는 포즈 중원자에서 RDKit `AddHs(addCoords=True)`로 다시 놓는다. 그래서 포즈 SDF 원자 i = `ligand_serial` i = 입력 SDF 순번 i다.
+
+### 구속 임베딩은 코어 좌표를 그대로 두지 않는다 (M18)
+- **증상**: `EmbedMultipleConfs(coordMap=…)`로 만든 형태는 코어 원자 사이 거리만 구속되어 좌표계가 부모와 다르고, 코어로 강체 맞춤해도 최대 이탈이 0.118–0.125 Å 남았다(착수 확인 참고 절).
+- **대응**: 맞춤 뒤 코어 중원자 좌표를 부모 좌표로 덮어쓴다(연결부 결합 길이가 조금 변형됨). 그래서 `core_max_deviation_A`는 정의상 0에 가깝고 덮어쓰기 전 잔차는 기록하지 않는다(결정 0026, `docs/tracking/findings.md`).
+
+### qvina conda 패키지에는 `vina`도 들어 있다 (M18)
+- conda-forge `qvina 2.1.0`은 `qvina2` 외에 `vina`(AutoDock Vina 1.1.2), `vina_split`, `qvina2_split`, `qvinaw`, `qvinaw_split`을 설치한다. 작업 모듈은 고정 경로 `qvina2`만 실행하고 `vina`는 설치 기록에 해시만 남긴다. 엔진 출력은 "affinity (kcal/mol)"라고 쓰지만 제품은 이 낱말을 옮기지 않는다.
+
+### 도킹 작업의 입력 스테이징도 일반 작업 한도를 넘는다 (M18)
+- 수용체·사이드카·SDF(각 최대 10 MiB)를 base64로 넘기면 일반 작업 입력 한도 4,000,000 B에 걸린다. `qvina_dock_v1`은 스테이징 한도 48 MiB(`docking_bundle.STAGED_LIMIT`, 작업 모듈 읽기 한도와 같음), 결과 한도 4 MiB를 쓴다. M17처럼 입력 바이트는 작업 기록에 넣지 않고 스테이징 때 불변 가져오기 객체에서 다시 읽어 SHA-256을 대조한다.
+
 ## 동작 원리
 
 ### handle과 복구
@@ -244,6 +280,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 
 ### 리간드 작업 경로 (M17)
 `POST /jobs`의 `rdkit_inspect_v1`·`rdkit_enumerate_v1`은 `ligand_bundle.submission`이 RDKit 없이 입장을 검사한다(같은 run 가져오기 handle과 종류, 생성은 저장된 점검 객체의 결합 목록으로 부위 검사·`valid` 규칙 확인). 통과하면 capability handshake로 얻은 고정 pin(RDKit 버전, 작업 모듈·상수·잠금 파일 SHA-256)을 호출 키와 작업 기록에 넣는다. 시작 때 pin이 바뀌었으면 `precondition`으로 막는다. 스테이징은 불변 가져오기 객체에서 바이트를 다시 읽어 SHA-256을 대조하고, guardian이 고정 진입점 `mw/jobs/ligand_worker.py`를 `.deps/prolif/venv-locked` 인터프리터로 띄운다. 작업 모듈의 출력은 게시 전에 현재 시도·취소 상태를 확인하고(`_publish_ligand`), 스테이징한 선택과 닫힌 집합으로 다시 검증한 뒤에만 객체로 저장한다. 객체 내용에는 시각·작업·시도 ID가 없어 같은 입력은 같은 handle이다. 읽기는 매번 완료된 게시 한 건과 입력에 대조한다. capability는 성공한 handshake만 서버 프로세스 안에 캐시하며 키는 인터프리터·작업 모듈·상수·잠금 파일 정보다(ProLIF와 같이, 환경을 제자리에서 바꾸면 백엔드를 다시 시작한다).
+
+### 도킹 작업 경로 (M18)
+`POST /jobs`의 `qvina_dock_v1`은 `docking_bundle.submission`이 RDKit·Meeko 없이 입장을 검사한다(작업 인자 모양·범위는 `docking_inputs.validate_arguments`, 같은 run 가져오기 handle과 종류, M17 후보 집합 검증 읽기와 후보 id·부모 해시, 수용체 가져오기 바이트의 M11 규칙 검사와 인스턴스 일치를 gemmi로). 통과하면 capability로 얻은 고정 pin(`qvina2` 해시·패키지, Meeko·RDKit·MDAnalysis·gemmi 버전, 작업 모듈·상수·두 잠금 파일 SHA-256)을 호출 키와 작업 기록에 넣고, 시작 때 pin이 바뀌었으면 `precondition`으로 막는다. capability는 `qvina2` 파일 해시를 설치 기록·고정값과 비교하고 작업 모듈 `--handshake`만 실행한다(qvina는 실행하지 않음). 구조가 맞는 handshake만 서버 프로세스 안에 캐시하며 키는 인터프리터·`qvina2` 파일 정보와 qvina 설치 기록·작업 환경 잠금 파일·작업 모듈·상수의 SHA-256이다(환경을 제자리에서 바꾸면 백엔드를 다시 시작한다). guardian은 고정 진입점 `mw/jobs/docking_worker.py`를 `.deps/docking/venv-locked` 인터프리터로 띄우고, 작업 모듈이 `qvina2`를 같은 프로세스 그룹의 자식으로 실행하므로 정리·빈 그룹 확인이 엔진까지 덮는다. 게시(`_publish_docking`)는 현재 시도·취소를 확인하고, 스테이징한 선택·닫힌 집합으로 출력을 검증하고, 접촉마다 수용체 원자 식별자와 거리를 수용체 가져오기 바이트로 다시 대조한 뒤에만 객체를 저장한다. 서버는 작업 시작 요청을 작업이 끝날 때까지 붙잡으므로, 화면은 제출 응답의 job id로 폴링·취소한다.
 
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
