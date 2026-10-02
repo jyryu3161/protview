@@ -1,0 +1,90 @@
+{
+  "schema": "m18_docking_fixture_expectations@1",
+  "label": "SYNTHETIC/PUBLIC-DERIVED FIXTURE EXPECTATIONS. Hand-computed oracle values and T1 observations; none is experimental.",
+  "contact_oracle": {
+    "how": "Hand arithmetic on hand-placed coordinates (synthetic-contact-oracle-receptor.pdb, synthetic-contact-oracle-pose.sdf). Distance = sqrt(dx^2+dy^2+dz^2) written out per pair below; cutoff 4.0 A inclusive; heavy atoms only (receptor HB1 and ligand H 3-6 excluded); kind by element pair: N/O-N/O polar_contact, C-C hydrophobic_contact, else contact. Sorted by ligand_serial then site_index.",
+    "cutoff_A": 4.0,
+    "receptor_sites": [
+      {"site_index": 0, "atom_name": "CB", "element": "C", "xyz": [0.0, 0.0, 3.5], "residue": {"model_number": 1, "chain_auth": "A", "chain_label": null, "seq_auth": 1, "seq_label": null, "icode": "", "resname": "ALA"}},
+      {"site_index": 1, "atom_name": "HB1", "element": "H", "xyz": [0.0, 0.0, 2.5], "residue": {"model_number": 1, "chain_auth": "A", "chain_label": null, "seq_auth": 1, "seq_label": null, "icode": "", "resname": "ALA"}},
+      {"site_index": 2, "atom_name": "N", "element": "N", "xyz": [1.43, 3.0, 0.0], "residue": {"model_number": 1, "chain_auth": "A", "chain_label": null, "seq_auth": 2, "seq_label": null, "icode": "", "resname": "GLY"}},
+      {"site_index": 3, "atom_name": "O", "element": "O", "xyz": [-4.0, 0.0, 0.0], "residue": {"model_number": 1, "chain_auth": "A", "chain_label": null, "seq_auth": 2, "seq_label": null, "icode": "", "resname": "GLY"}},
+      {"site_index": 4, "atom_name": "CA", "element": "C", "xyz": [0.0, 0.0, -4.01], "residue": {"model_number": 1, "chain_auth": "A", "chain_label": null, "seq_auth": 2, "seq_label": null, "icode": "", "resname": "GLY"}},
+      {"site_index": 5, "atom_name": "SG", "element": "S", "xyz": [1.43, 0.0, -3.9], "residue": {"model_number": 1, "chain_auth": "B", "chain_label": null, "seq_auth": 3, "seq_label": null, "icode": "A", "resname": "CYS"}}
+    ],
+    "ligand_heavy": [
+      {"ligand_serial": 1, "element": "C", "xyz": [0.0, 0.0, 0.0]},
+      {"ligand_serial": 2, "element": "O", "xyz": [1.43, 0.0, 0.0]}
+    ],
+    "all_heavy_pairs": [
+      {"ligand_serial": 1, "site_index": 0, "work": "sqrt(0^2+0^2+3.5^2) = 3.5", "distance_A": 3.5, "within": true, "kind": "hydrophobic_contact"},
+      {"ligand_serial": 1, "site_index": 2, "work": "sqrt(1.43^2+3^2) = sqrt(2.0449+9) = sqrt(11.0449)", "distance_A": 3.323387, "within": true, "kind": "contact"},
+      {"ligand_serial": 1, "site_index": 3, "work": "sqrt(4^2) = 4.0 (boundary, included)", "distance_A": 4.0, "within": true, "kind": "contact"},
+      {"ligand_serial": 1, "site_index": 4, "work": "sqrt(4.01^2) = 4.01", "distance_A": 4.01, "within": false, "kind": null},
+      {"ligand_serial": 1, "site_index": 5, "work": "sqrt(1.43^2+3.9^2) = sqrt(2.0449+15.21) = sqrt(17.2549)", "distance_A": 4.153902, "within": false, "kind": null},
+      {"ligand_serial": 2, "site_index": 0, "work": "sqrt(1.43^2+3.5^2) = sqrt(2.0449+12.25) = sqrt(14.2949)", "distance_A": 3.78086, "within": true, "kind": "contact"},
+      {"ligand_serial": 2, "site_index": 2, "work": "sqrt(0^2+3^2) = 3.0", "distance_A": 3.0, "within": true, "kind": "polar_contact"},
+      {"ligand_serial": 2, "site_index": 3, "work": "sqrt(5.43^2) = 5.43", "distance_A": 5.43, "within": false, "kind": null},
+      {"ligand_serial": 2, "site_index": 4, "work": "sqrt(1.43^2+4.01^2) = sqrt(2.0449+16.0801) = sqrt(18.125)", "distance_A": 4.257347, "within": false, "kind": null},
+      {"ligand_serial": 2, "site_index": 5, "work": "sqrt(3.9^2) = 3.9", "distance_A": 3.9, "within": true, "kind": "contact"}
+    ],
+    "contacts_sorted": [[1, 0, "hydrophobic_contact"], [1, 2, "contact"], [1, 3, "contact"], [2, 0, "contact"], [2, 2, "polar_contact"], [2, 5, "contact"]],
+    "contact_count": 6,
+    "count_by_kind": {"polar_contact": 1, "hydrophobic_contact": 1, "contact": 4},
+    "min_heavy_atom_distance_A": {"value": 3.0, "how": "smallest of the ten heavy pair distances above (ligand 2 to site 2)"},
+    "distance_tolerance_A": 1e-5,
+    "boxes": [
+      {"case": "ligand_range margin 8", "how": "heavy min (0,0,0), max (1.43,0,0); center = (min+max)/2; size = (max-min) + 2*8", "center_A": [0.715, 0.0, 0.0], "size_A": [17.43, 16.0, 16.0], "atoms_outside_box": 0},
+      {"case": "manual center (0,0,0) size (2,2,2)", "how": "box spans [-1,1] on each axis; ligand 2 has x = 1.43 > 1, ligand 1 inside", "center_A": [0.0, 0.0, 0.0], "size_A": [2.0, 2.0, 2.0], "atoms_outside_box": 1},
+      {"case": "manual center (100,100,100) size (8,8,8)", "how": "box spans [96,104]; every receptor heavy atom has |coordinate| <= 4.01", "receptor_heavy_atoms_in_box": 0, "expected_reason": "box_no_receptor_atoms"}
+    ]
+  },
+  "public_example_box": {
+    "how": "Hand reading of the V2000 atom block columns of public-derived-parent-record0.sdf (heavy atoms = serials 1-43): x min 0.2490 / max 6.5700, y min -5.0360 / max 6.4710, z min 5.5140 / max 17.1140; center = (min+max)/2; size = (max-min) + 2*8.",
+    "margin_A": 8.0,
+    "heavy_min_A": [0.249, -5.036, 5.514],
+    "heavy_max_A": [6.57, 6.471, 17.114],
+    "center_A": [3.4095, 0.7175, 11.314],
+    "size_A": [22.321, 27.507, 27.6]
+  },
+  "public_example_numbering": {
+    "how": "Read from the V2000 atom and bond blocks of public-derived-parent-record0.sdf.",
+    "atoms": 79,
+    "heavy_serials": "1-43",
+    "hydrogen_serials": "44-79",
+    "elements_heavy": {"C": 33, "N": 5, "O": 5},
+    "n_methyl_site": {"site_atom": 22, "attached_to": 21, "attached_formal_charge": 1, "site_hydrogens": [60, 61, 62]},
+    "retained_parent_atoms_for_site_22": "1-21, 23-43"
+  },
+  "receptor_fixtures": {
+    "how": "Construction in build_docking_fixtures.py; residue fields as gemmi 0.7.5 reads PDB (no label fields).",
+    "instance": {"model_number": 1, "chain_auth": "L", "chain_label": null, "seq_auth": 1, "seq_label": null, "icode": "", "resname": "LIG"},
+    "synthetic-complex-receptor-lig.pdb": {"total_atoms": 5067, "instance_atoms": 79, "instance_element_counts": {"C": 33, "H": 36, "N": 5, "O": 5}, "with_instance": "accept; remaining 4988 atoms identical to prolif-vina-rec.pdb in order", "without_instance": "receptor_unsupported_residue"},
+    "synthetic-complex-duplicate-instance.pdb": {"instance_matches": 2, "expected_reason": "receptor_instance_ambiguous"},
+    "synthetic-complex-covalent-instance.pdb": {"extra_bond": "ligand serial 5010 (SDF atom 22, name C14) - receptor serial 1 (CAY, TYR A 38)", "expected_reason": "receptor_instance_covalent"},
+    "unknown_instance_seq_auth_2": {"expected_reason": "receptor_instance_unknown"},
+    "synthetic-receptor-water-zinc.pdb": {"nonstandard": ["HOH W 1 (3 atoms)", "ZN Z 1 (1 atom)"], "expected_reason": "receptor_unsupported_residue"},
+    "synthetic-receptor-altloc.pdb": {"altloc_atoms": ["TYR A 38 CB altloc A"], "expected_reason": "receptor_altloc_present"}
+  },
+  "ligand_fixtures": {
+    "synthetic-ligand-planar-z0.sdf": {"distinct_z": 1, "expected_reason": "ligand_not_3d", "note": "Meeko 0.8.0 prepares it without complaint (T1); the 3D check must be the product's own."},
+    "synthetic-ligand-implicit-h.sdf": {"atoms": 43, "explicit_h": 0, "expected_reason": "ligand_hydrogens_missing", "note": "Meeko 0.8.0 raises 'RDKit molecule has implicit Hs' (T1); the product must reject first with its own reason."}
+  },
+  "m17_candidate": {
+    "how": "Produced by the unmodified M17 worker (mw/jobs/ligand_worker.py, .deps/prolif/venv-locked, RDKit 2026.03.6) on public-derived-parent-record0.sdf + synthetic-docking-blocks.smi, site_atoms [22], use_fixed true; full output in m17-enumerate-result-record0-nmethyl.json. See SYNTHETIC-PROVENANCE.md for the command.",
+    "fixed_candidate_id": "c_1afb7cd3e603456c",
+    "fixed_candidate_block": "ethyl",
+    "parent_sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+    "stereo_flag": "none",
+    "core_match": {"core_heavy_atoms": 42, "substructure_matches": 2, "distinct_unordered_coordinate_sets": 1, "how": "T1 observation: the 2 matches are the phenyl ring flip (core self-automorphisms = 2); same coordinate set, so not core_match_ambiguous under spec 4.3."}
+  },
+  "public_example_observations": {
+    "label": "public prepared docking example (ProLIF 2.2.2 examples/vina), not experimental validation; T1 measurements, not hand oracle",
+    "engine": "QuickVina 2.1 (24 Dec, 2017), conda-forge qvina-2.1.0-h4a521e9_8, qvina2 sha256 caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c",
+    "receptor_pdbqt": {"route": "M11 graph (MDAnalysis 2.10.0 inferrer, max_iter=200) -> Meeko 0.8.0 MoleculePreparation AD4 typing per covalent fragment -> ATOM lines, input order, merged nonpolar H omitted", "lines": 2955, "merged_h": 2033, "types": {"A": 273, "C": 1350, "HD": 512, "N": 388, "NA": 5, "OA": 412, "SA": 15}},
+    "ligand_pdbqt": {"atom_lines": 47, "torsdof": 5, "types": {"A": 14, "C": 19, "HD": 4, "N": 5, "OA": 5}},
+    "score_only_reference_pose_kcal_mol": -12.21087,
+    "free_seed_42": {"exhaustiveness": 8, "num_modes": 9, "energy_range": 3, "cpu": 1, "modes_returned": 8, "scores": [-13.6, -12.8, -12.1, -12.0, -11.6, -10.9, -10.9, -10.7], "mode1_heavy_rmsd_to_reference_A": 1.3, "min_heavy_rmsd_any_mode_A": 1.3, "atoms_outside_box": [0, 0, 0, 0, 0, 1, 0, 0], "output_sha256": "767cf747887396a2e999a771f481968d8a19a1ed100491fe1c86d1b64c49566a", "repeat_byte_identical": true},
+    "free_seed_7": {"modes_returned": 7, "scores": [-13.6, -12.8, -12.1, -11.4, -11.0, -10.8, -10.7], "mode1_heavy_rmsd_to_reference_A": 1.295, "differs_from_seed_42": true}
+  }
+}
