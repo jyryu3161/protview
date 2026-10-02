@@ -33,6 +33,9 @@ bytes, with this job's ``job_id``/``attempt_id``, scored and null_result rows on
 closed reason, ``candidate_timeout``), ``cancelled`` (``cancelled`` | ``time_exhausted``) and ``not_run``
 (``resource_exceeded``: the total output cap). A row that fails still continues the batch; a cancel, the total
 clock or the output cap stops it and later rows get no files. A hard kill leaves ``<n>.started`` alone.
+After the receptor preparation and before the first row the worker writes ``prepared.json`` (same durable write,
+canonical ``{"box": <the batch box in the row result's shape>, "engine": <engine identity>}``); a box refusal there
+(``box_*``) fails the batch before any row like a receptor refusal.
 
 Clocks (``time.monotonic``, inside the worker): ``ROW_LIMIT_S`` covers the whole row (ligand, sampling, qvina,
 geometry); ``TOTAL_LIMIT_S`` counts from worker start (receptor preparation included). A deadline or SIGTERM
@@ -201,6 +204,27 @@ def row_payload(p: dict[str, Any], index: int) -> dict[str, Any]:
 
 
 # ------------------------------------------------------------------ batch
+def batch_box(p: dict[str, Any], shared: dict[str, Any]) -> dict[str, Any]:
+    """The box every row computes (``dock_row``'s box steps: ``ligand_range`` is the parent SDF heavy-atom range),
+    in the row result's shape. A refusal (``box_*``, unreadable parent) fails the batch before any row."""
+    req, receptor = p["box"], shared["checked"]
+    rows = receptor["rows"]
+    if req["source"] == "manual":
+        box = {"center_A": [float(x) + 0.0 for x in req["center_A"]], "size_A": [float(x) + 0.0 for x in req["size_A"]]}
+    elif req["source"] == "instance_range":
+        if not receptor["instance_sites"]:
+            raise dw._refuse("box_invalid", "instance_range needs a receptor_instance")
+        box = dw.range_box([rows[s]["coordinate_A"] for s in receptor["instance_sites"]
+                            if rows[s]["element"].upper() != "H"] or
+                           [rows[s]["coordinate_A"] for s in receptor["instance_sites"]], float(req["margin_A"]))
+    else:
+        parent = dw.read_sdf(dw._entry(p["parent_sdf"]), parent=True)
+        box = dw.range_box(dw._heavy_points(parent), float(req["margin_A"]))
+    dw.check_box(box, [atom["xyz"] for atom in shared["heavy"]])
+    return {"center_A": box["center_A"], "size_A": box["size_A"], "source": req["source"],
+            "margin_A": None if req["source"] == "manual" else float(req["margin_A"]) + 0.0}
+
+
 def _row(p: dict[str, Any], index: int, shared: dict[str, Any], prepared: tuple[str, dict[str, Any]],
          control: dict[str, Any]) -> tuple[str, str | None, bytes | None]:
     """(state, reason, output bytes) of one row; interrupted by ``_Stop`` from the clocks or SIGTERM."""
@@ -233,6 +257,9 @@ def run_batch(p: dict[str, Any], control: dict[str, Any]) -> str | None:
         return "cancelled" if stop.reason == "cancelled" else "time_exhausted"
     finally:
         _quiet()
+    # The batch box (one per batch) and engine identity, durable before any row starts: the server builds the
+    # summary from them even when no row produces a result or the worker dies later.
+    _write_durable(Path("prepared.json"), dw.canonical_json({"box": batch_box(p, shared), "engine": prepared[1]}))
     total = 0
     for index, row in enumerate(p["rows"]):
         if row["reuse"]:

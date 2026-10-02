@@ -12,7 +12,9 @@ The worker reads only staged JSON with base64 bytes. Publication re-validates th
 staged selection and the closed sets, cross-checks every contact's receptor atom and distance against the receptor
 import, and stores one ``docking_result@1`` object whose content never includes time, job or attempt identities (same
 input -> same handle). Every read re-validates the stored object against its single completed publication and its
-inputs; the object recovers from ``events.jsonl`` alone (``object_created`` payloads), without any engine.
+inputs; the object recovers from ``events.jsonl`` alone (``object_created`` payloads), without any engine. An M19
+batch row's publication (``docking_batch_row_published`` + the batch summary publication) is accepted as the same
+evidence, checked against that row's own selection.
 """
 from __future__ import annotations
 
@@ -667,7 +669,12 @@ def publish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path, d
     data = _read_result(attempt_dir, descriptor)
     if type(data) is not dict or data.get("job_id") != job["job_id"] or data.get("attempt_id") != attempt_id:
         raise ValueError("docking output identity mismatch")
-    content = result_content(job, data)
+    return [store_result(run, job, attempt_id, result_content(job, data))]
+
+
+def store_result(run: Any, job: dict[str, Any], attempt_id: str, content: dict[str, Any]) -> str:
+    """Check one ``docking_result@1`` content against ``job`` (an M18 job, or an M19 batch row's view) and the
+    receptor import, then store it; the handle (or raise, storing nothing)."""
     if len(canonical_json(content)) > MAX_RESULT_BYTES:
         raise DockingJobFailure("resource_exceeded", "resource_exceeded",
                                 f"docking result exceeds {MAX_RESULT_BYTES} bytes; never truncated")
@@ -681,15 +688,17 @@ def publish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path, d
                                  "receptor_handle": content["inputs"]["receptor"]["handle"],
                                  "input_sha256": content["input_sha256"], "modes": counts["modes"],
                                  "null_result": counts["null_result"]})
-    return [out.handle]
+    return out.handle
 
 
 # ----------------------------------------------------------------- validated reads (never run anything)
 def producer(run: Any, handle: str) -> dict[str, Any]:
-    """The single completed ``qvina_dock_v1`` publication of ``handle`` (else an evidence error)."""
+    """The earliest completed publication of ``handle``: a ``qvina_dock_v1`` job or an M19 batch row (else an
+    evidence error)."""
     events = list(run.events.read())
     jobs = {event["job"]["job_id"]: event["job"] for event in events if event["type"] == "job_submitted"}
     created = [event for event in events if event["type"] == "object_created" and event.get("handle") == handle]
+    m18 = None
     for terminal in events:
         if (terminal["type"] != "job_terminal" or terminal.get("status") != "done" or
                 terminal.get("output_handles") != [handle]):
@@ -708,9 +717,47 @@ def producer(run: Any, handle: str) -> dict[str, Any]:
         if (len(candidates) == 1 and len(cleaned) == 1 and len(reserved) == 1 and created and
                 reserved[0]["seq"] < cleaned[0]["seq"] < candidates[0]["seq"] and
                 created[0]["seq"] < candidates[0]["seq"]):
-            return {"job_id": job["job_id"], "attempt_id": attempt, "job": job,
-                    "created_seq": created[0]["seq"], "published_seq": terminal["seq"]}
+            m18 = {"job_id": job["job_id"], "attempt_id": attempt, "job": job,
+                   "created_seq": created[0]["seq"], "published_seq": terminal["seq"]}
+            break
+    # The earliest completed publication is the producer, so later ones (an M18 job and an M19 batch row can
+    # publish the same handle) never change what an existing read or report was checked against.
+    found = [item for item in (m18, _batch_row_producer(events, jobs, created, handle)) if item is not None]
+    if found:
+        return min(found, key=lambda item: item["published_seq"])
     raise DockingEvidenceError("object has no completed qvina_dock_v1 publication")
+
+
+def _batch_row_producer(events: list[dict[str, Any]], jobs: dict[str, Any], created: list[dict[str, Any]],
+                        handle: str) -> dict[str, Any] | None:
+    """M19: a row of a ``qvina_batch_dock_v1`` attempt published this M18 result (reservation < verified cleanup <
+    row publication, then the batch summary publication). ``job`` is the row's view: the batch job with that row's
+    own ``docking_selection@1`` and the batch's M18 pins, so the M18 checks apply unchanged."""
+    from . import docking_batch_constants as BC
+
+    for row in events:
+        if row["type"] != "docking_batch_row_published" or row.get("handle") != handle:
+            continue
+        job = jobs.get(row.get("job_id"))
+        attempt = row.get("attempt_id")
+        if job is None or job.get("protocol_id") != BC.PROTOCOL or job.get("tool_id") != BC.TOOL:
+            continue
+        reserved = [event for event in events if event["type"] == "budget_reserved" and
+                    event.get("attempt_id") == attempt and event.get("tool") == BC.TOOL]
+        cleaned = [event for event in events if event["type"] == "job_cleanup_verified" and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event.get("group_empty") is True]
+        summary = [event for event in events if event["type"] == "docking_batch_published" and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event["seq"] > row["seq"]]
+        rows = job.get("selected", {}).get("rows", [])
+        index = row.get("row_index")
+        if (len(reserved) == 1 and cleaned and summary and created and type(index) is int and
+                0 <= index < len(rows) and reserved[0]["seq"] < cleaned[0]["seq"] < row["seq"] and
+                created[0]["seq"] < row["seq"]):
+            return {"job_id": job["job_id"], "attempt_id": attempt, "job": {**job, "selected": rows[index]["selected"]},
+                    "created_seq": created[0]["seq"], "published_seq": summary[0]["seq"], "row_index": index}
+    return None
 
 
 def validated_result(run: Any, handle: Any) -> dict[str, Any]:

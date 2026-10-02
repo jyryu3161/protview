@@ -21,6 +21,7 @@ from starlette.concurrency import run_in_threadpool
 from .. import (
     analysis_executions,
     analysis_plans,
+    docking_batch_jobs,
     docking_bundle,
     docking_reads,
     ligand_bundle,
@@ -170,7 +171,8 @@ class Command(BaseModel):
 class JobSubmit(BaseModel):
     protocol_id: str
     args: dict[str, Any] = Field(default_factory=dict)
-    timeout_s: float = Field(default=60, gt=0, le=900, allow_inf_nan=False)
+    # 7800 s only for qvina_batch_dock_v1; JobQueue.submit keeps every other protocol's own bound (<= 900 s).
+    timeout_s: float = Field(default=60, gt=0, le=7800, allow_inf_nan=False)
     model_config = {"extra": "forbid"}
 
 
@@ -331,7 +333,7 @@ def _chemical_json(raw: bytes) -> dict[str, Any]:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid chemical JSON"}) from exc
 
 
-def _public_job(job: dict[str, Any]) -> dict[str, Any]:
+def _public_job(job: dict[str, Any], run: Run | None = None) -> dict[str, Any]:
     """Keep private launch nonce, owner token and process identities off HTTP."""
     intent = job.get("dispatch_intent") or {}
     result = {key: job.get(key) for key in ("job_id", "run_id", "root_call_id", "call_key",
@@ -355,8 +357,13 @@ def _public_job(job: dict[str, Any]) -> dict[str, Any]:
         result["artifacts"] = {"ligand_candidate_set": job["output_handles"][0]}
     elif job.get("protocol_id") == "qvina_dock_v1" and job.get("status") == "done":
         result["artifacts"] = {"docking_result": job["output_handles"][0]}
+    elif job.get("protocol_id") == "qvina_batch_dock_v1" and job.get("status") == "done":
+        result["artifacts"] = {"docking_batch_result": job["output_handles"][0]}
     else:
         result["artifacts"] = {}
+    if job.get("protocol_id") == "qvina_batch_dock_v1" and run is not None:
+        # Progress = readable rows/*.status.json of the attempt; the summary handle once published (any end state).
+        result["batch"] = docking_batch_jobs.progress(run, job)
     return result
 
 
@@ -621,6 +628,8 @@ def capabilities() -> dict[str, Any]:
     # M18: both locked environments, qvina2 hash = install record = pin, worker handshake versions (no RDKit/Meeko
     # import and no qvina run here).
     methods["ligand_docking"] = docking_bundle.capability()
+    # M19: ligand_docking + the batch worker and constants (no handshake of its own; same environment and pins).
+    methods["ligand_docking_batch"] = docking_batch_jobs.capability(methods["ligand_docking"])
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1354,7 +1363,8 @@ def approve_job(rid: str) -> dict[str, Any]:
                  event.get("gate") == "expensive_first_call"]
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
-                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand"}
+                      "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand",
+                      "qvina_dock_batch"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1365,13 +1375,15 @@ def approve_job(rid: str) -> dict[str, Any]:
 
 @app.get("/runs/{rid}/jobs")
 def jobs(rid: str) -> list[dict[str, Any]]:
-    return [_public_job(job) for job in JobQueue(_run(rid)).list()]
+    run = _run(rid)
+    return [_public_job(job, run) for job in JobQueue(run).list()]
 
 
 @app.get("/runs/{rid}/jobs/{job_id}")
 def job_detail(rid: str, job_id: str) -> dict[str, Any]:
     try:
-        return _public_job(JobQueue(_run(rid)).get(job_id))
+        run = _run(rid)
+        return _public_job(JobQueue(run).get(job_id), run)
     except KeyError as exc:
         raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
 
@@ -1396,7 +1408,7 @@ def start_job(rid: str, job_id: str) -> Any:
     try:
         run = _run(rid)
         return _public_job(JobQueue(run).start(
-            job_id, owner_active=lambda eid: analysis_executions.execution_active(run, eid)))
+            job_id, owner_active=lambda eid: analysis_executions.execution_active(run, eid)), run)
     except KeyError as exc:
         raise HTTPException(404, detail={"error": "not_found", "message": "unknown job"}) from exc
     except ApprovalRequired as exc:

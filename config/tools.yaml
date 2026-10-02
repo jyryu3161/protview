@@ -73,6 +73,16 @@ tools:
     typical_runtime_s: 120
     description: 수용체·리간드 하나를 고정 QuickVina 2.1로 도킹(자유)하거나 코어 고정 샘플에 점수만 매긴다(qvina 점수, 친화도 아님; 기하 접촉 표); durable_job lane
 
+  # Fixed asynchronous M19 batch lane (protocol qvina_batch_dock_v1): one job docks <= 50 M17 candidates (+ an optional
+  # parent row) in order, each row being the M18 qvina_dock_v1 computation; execution is JobQueue, not Run.call.
+  - name: qvina_dock_batch
+    level: L3
+    version: '1'
+    emits: docking_batch_result
+    cost_class: expensive
+    typical_runtime_s: 1800
+    description: 한 수용체·상자·seed·방식으로 M17 후보 여러 개(+선택 부모 행)를 차례로 고정 QuickVina 2.1 도킹하고 후보별 결과와 일괄 요약을 남긴다(qvina 점수, 친화도·순위 아님); durable_job lane
+
   - name: compute_interactions
     level: L2
     accepts: { structure: [prepared_structure, relaxed_structure] }

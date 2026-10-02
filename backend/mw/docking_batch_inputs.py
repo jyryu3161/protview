@@ -177,14 +177,24 @@ def row_call_keys(selected: dict[str, Any], pins: dict[str, Any]) -> list[str]:
 
 
 def published_m18_results(events: Iterable[dict[str, Any]]) -> dict[str, str]:
-    """call key -> handle of every completed standalone ``qvina_dock_v1`` job (the caller still validates the
-    handle with ``docking_bundle.validated_result`` before reusing it)."""
+    """call key -> handle of every completed standalone ``qvina_dock_v1`` job and every row a batch published (its
+    M18 call key under the batch job's M18 pins). The caller still validates the handle with
+    ``docking_bundle.validated_result`` before reusing it."""
     events = list(events)
     keys = {event["job"]["job_id"]: event["job"]["call_key"] for event in events
             if event["type"] == "job_submitted" and event["job"].get("protocol_id") == C.PROTOCOL}
-    return {keys[event["job_id"]]: event["output_handles"][0] for event in events
-            if event["type"] == "job_terminal" and event.get("status") == "done" and event.get("job_id") in keys
-            and type(event.get("output_handles")) is list and len(event["output_handles"]) == 1}
+    found = {keys[event["job_id"]]: event["output_handles"][0] for event in events
+             if event["type"] == "job_terminal" and event.get("status") == "done" and event.get("job_id") in keys
+             and type(event.get("output_handles")) is list and len(event["output_handles"]) == 1}
+    batches = {event["job"]["job_id"]: event["job"] for event in events
+               if event["type"] == "job_submitted" and event["job"].get("protocol_id") == BC.PROTOCOL}
+    for event in events:
+        job = batches.get(event.get("job_id")) if event["type"] == "docking_batch_row_published" else None
+        if job is not None:
+            key = docking_bundle.call_key(job["selected"]["rows"][event["row_index"]]["selected"]["arguments"],
+                                          job["method"])
+            found.setdefault(key, event["handle"])
+    return found
 
 
 # ---------------------------------------------------------------- budget arithmetic (spec 6.1-6.3)
