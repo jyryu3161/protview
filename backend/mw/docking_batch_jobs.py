@@ -4,8 +4,9 @@
 The server never imports RDKit, Meeko or MDAnalysis and never executes qvina2. ``JobQueue`` calls these functions:
 
 - ``capability`` / ``require_ready``: ``ligand_docking`` (M18 environments, engine hash, worker handshake) plus the
-  batch worker and batch constants files. Pins: the M18 pins (a row's call key and result checks are M18's) and the
-  two batch file hashes.
+  batch worker and batch constants files and the batch worker's own ``--handshake`` (cached per file-hash key, its
+  ``worker_sha256``/``row_worker_sha256`` checked against the files). Pins: the M18 pins (a row's call key and
+  result checks are M18's) and the two batch file hashes.
 - ``submission``: ``docking_batch_inputs.submission`` (every refusal before any job, no budget).
 - ``reuse_plan``: per planned row, the validated stored ``docking_result@1`` with the row's full M18 call key, or None.
   Reused rows are not computed and not charged (spec 4.5); ``N`` = the rows left.
@@ -27,11 +28,14 @@ deadline it is ``time_exhausted``, and under a parent loss or kill it is no stat
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
 import re
 import stat
+import subprocess
+import threading
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -65,6 +69,9 @@ ACTIVE = ("queued", "claimed", "running")
 ID_RE = re.compile(r"(job|attempt)_[0-9a-z_]{1,90}")
 WORKER_STOPS = (None, "cancelled", "time_exhausted", "resource_exceeded")
 
+_HANDSHAKE_CACHE: dict[tuple, dict[str, Any]] = {}
+_HANDSHAKE_LOCK = threading.Lock()
+
 
 def _sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
@@ -76,9 +83,51 @@ def batch_pins() -> dict[str, str]:
             "batch_constants_sha256": _sha(BATCH_CONSTANTS.read_bytes())}
 
 
+def _handshake_key() -> tuple:
+    return (*docking_bundle._handshake_key(), _sha(BATCH_WORKER.read_bytes()), _sha(BATCH_CONSTANTS.read_bytes()))
+
+
+def _handshake() -> dict[str, Any]:
+    """``docking_batch_worker.py --handshake`` in the pinned interpreter (the M18 handshake's fixed argv shape)."""
+    proc = subprocess.run([str(docking_bundle.WORKER_PYTHON), "-I", str(BATCH_WORKER), "--handshake"], cwd=ROOT,
+                          env={"PATH": "/usr/bin:/bin", "LANG": "C", "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"},
+                          stdin=subprocess.DEVNULL, capture_output=True, timeout=120, check=True)
+    if len(proc.stdout) > 8192 or len(proc.stderr) > 8192:
+        raise ValueError("oversized handshake output")
+    data = json.loads(proc.stdout)
+    if type(data) is not dict:
+        raise ValueError("invalid docking batch worker handshake")
+    return data
+
+
+def _check_handshake(data: Any) -> None:
+    if (type(data) is not dict or data.get("schema") != "docking_batch_worker_handshake@1" or
+            data.get("protocols") != [BC.PROTOCOL] or data.get("worker_sha256") != _sha(BATCH_WORKER.read_bytes()) or
+            data.get("row_worker_sha256") != _sha(docking_bundle.WORKER.read_bytes())):
+        raise ValueError("invalid docking batch worker handshake")
+
+
+def _handshake_ok() -> bool:
+    """The batch worker imports and names this protocol and both module hashes; only a verified record is cached,
+    per file-hash key (the M18 key plus both batch file hashes)."""
+    with _HANDSHAKE_LOCK:
+        try:
+            key = _handshake_key()
+            data = copy.deepcopy(_HANDSHAKE_CACHE.get(key))
+            if data is None:
+                data = _handshake()
+                _check_handshake(data)
+                _HANDSHAKE_CACHE.clear()
+                _HANDSHAKE_CACHE[key] = copy.deepcopy(data)
+            _check_handshake(data)
+        except (OSError, subprocess.SubprocessError, UnicodeError, ValueError, TypeError, KeyError, AttributeError):
+            return False
+    return True
+
+
 def capability(docking: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Available only with ``ligand_docking`` available and the batch worker and constants present; otherwise the
-    M18 capability reason (same closed set) and no pins or limits."""
+    """Available only with ``ligand_docking`` available, the batch worker and constants present and the batch
+    worker's own verified handshake; otherwise the M18 capability reason (same closed set) and no pins or limits."""
     docking = docking_bundle.capability() if docking is None else docking
     base = {"schema": "docking_batch_capability@1", "protocol_id": BC.PROTOCOL, "tool_id": BC.TOOL,
             "engine": BC.ENGINE, "execution_lane": "durable_job"}
@@ -93,6 +142,8 @@ def capability(docking: dict[str, Any] | None = None) -> dict[str, Any]:
         pins = batch_pins()
     except OSError:
         return unavailable("worker_missing", docking_bundle.REASONS["worker_missing"])
+    if not _handshake_ok():
+        return unavailable("handshake_failed", docking_bundle.REASONS["handshake_failed"])
     return {**base, "available": True, "status": "ready", "reason_code": None, "reason": None,
             "pins": dict(docking["pins"]), "batch_pins": pins, "methods": dict(C.METHODS),
             "timeout_s": {"max": BC.TIMEOUT_MAX_S},

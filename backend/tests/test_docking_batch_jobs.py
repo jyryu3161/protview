@@ -256,6 +256,47 @@ def test_registration_capability_and_protocol_timeout_bound(tmp_path, monkeypatc
     assert guardian_module.parse_argv(argv[3:]) == (3, None, MAX_GO_WAIT_S)
 
 
+def test_capability_runs_the_batch_worker_handshake_once_per_file_key(tmp_path, monkeypatch):
+    """``ligand_docking_batch`` is available only after the batch worker's own ``--handshake`` (cached per file-hash
+    key) names the batch protocol and both module hashes; otherwise the M18 reason ``handshake_failed`` only."""
+    monkeypatch.setattr(BJ, "_HANDSHAKE_CACHE", {})
+    real, calls = BJ._handshake, []
+
+    def counted():
+        calls.append(1)
+        return real()
+
+    monkeypatch.setattr(BJ, "_handshake", counted)
+    assert BJ.capability()["available"] is True and BJ.capability()["available"] is True
+    assert len(calls) == 1   # a verified handshake is reused while its key is unchanged
+    good = real()
+
+    def state(**patches) -> dict:
+        with monkeypatch.context() as patch:
+            patch.setattr(BJ, "_HANDSHAKE_CACHE", {})
+            for name, value in patches.items():
+                patch.setattr(BJ, name, value)
+            return BJ.capability()
+
+    broken = tmp_path / "docking_batch_worker.py"   # labeled fault: a batch worker that fails to import
+    broken.write_text("raise ImportError('labeled fault')\n" + BJ.BATCH_WORKER.read_text())
+    downs = [state(BATCH_WORKER=broken)]
+    for wrong in ({"worker_sha256": "0" * 64}, {"row_worker_sha256": "0" * 64}, {"protocols": ["qvina_dock_v1"]},
+                  {"schema": "docking_worker_handshake@1"}):
+        downs.append(state(_handshake=lambda wrong=wrong: {**good, **wrong}))
+    downs.append(state(_handshake=lambda: (_ for _ in ()).throw(ValueError("labeled fault"))))
+    for down in downs:
+        assert (down["available"], down["reason_code"], down["pins"], down["batch_pins"]) == (
+            False, "handshake_failed", None, None)
+        assert down["reason"] == docking_bundle.REASONS["handshake_failed"] and "limits" not in down
+    # Admission records no pins from an unverified worker.
+    with pytest.raises(ToolFailure) as refused, monkeypatch.context() as patch:
+        patch.setattr(BJ, "_HANDSHAKE_CACHE", {})
+        patch.setattr(BJ, "BATCH_WORKER", broken)
+        BJ.require_ready()
+    assert refused.value.detail == {"reason_code": "handshake_failed"}
+
+
 def test_reserve_attempt_takes_a_unit_count_and_replays_it(tmp_path):
     run = new_ligand_run(tmp_path, "run_units")
     with pytest.raises(ApprovalRequired):   # zero units still needs the run's first expensive approval
