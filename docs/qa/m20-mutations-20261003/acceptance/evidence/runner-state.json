@@ -1,0 +1,95 @@
+{
+  "buildCommands": {
+    "typecheck": 0,
+    "build": 0,
+    "sourceSha256": "7ecceafd7e764b6c0e18c46e830f4bcaa280ee6d68e9df404a0fd4257e0608b3"
+  },
+  "build": {
+    "buildId": "vPeuYWb5CrtGZ__mURwva",
+    "gitHead": "ea2913c7346bf2660853e6415a4dbb5b27e2d298",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-03T14:30:16.007650+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "mutation-flow.cjs": "ddc4b0cad31ecf7bb62ab10883d6e6d84eb74ab1ea4c278a778d685b865fc27c",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "8ebd1be88e14dcc0c90072012a17af92fbb9021fa72df6e675143d477047a3ff"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m20-acceptance-20261003-attempt1/runs",
+      "reference": "<repo>/runs/m20-acceptance-20261003-attempt1/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-03T14:30:19.291426+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m20-acceptance-20261003-attempt1/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/services/reference-import.log",
+      "setHash": "999392929c374dfea125f46a4f8489a84bc71649f1e7e96e36cd7b163b489375",
+      "served": {
+        "available": true,
+        "set_hash": "999392929c374dfea125f46a4f8489a84bc71649f1e7e96e36cd7b163b489375",
+        "imported_at": "2026-10-03T14:30:19.447527Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  },
+  "environment": {
+    "mutationAvailable": true,
+    "pocketAvailable": true,
+    "pocketCapability": {
+      "available": true,
+      "status": "ready",
+      "engine": "fpocket",
+      "release": "4.2.3",
+      "build": "hb88c64c_2"
+    }
+  }
+}

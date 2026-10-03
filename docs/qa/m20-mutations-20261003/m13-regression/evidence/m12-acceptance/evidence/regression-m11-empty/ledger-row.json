@@ -1,0 +1,74 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H09"
+  ],
+  "mode": "empty",
+  "harnessMode": "empty",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "vPeuYWb5CrtGZ__mURwva",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced"
+  },
+  "fixtures": [
+    {
+      "name": "prolif-vina-rec.pdb",
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+    },
+    {
+      "name": "m11-synthetic-empty-1000A.sdf",
+      "sha256": "a856c3c5495ad5d757575d780ebe0fc95f1111d1805f51545f5f3f026591a778",
+      "provenance": "synthetic derivative: public SDF record 0 translated +1000 Å (empty-result control; not experimental evidence)"
+    }
+  ],
+  "provenanceLabels": [
+    "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+    "synthetic derivative: public SDF record 0 translated +1000 Å (empty-result control; not experimental evidence)"
+  ],
+  "fixtureLabels": [
+    "renderer-route fixture: labeled non-approval 409 on Start"
+  ],
+  "runId": "run_e4a162544eb346b8bbfb9a83ffe11907",
+  "handles": {
+    "result": "obj://run_e4a162544eb346b8bbfb9a83ffe11907/chemical_interaction_set/e06d5d10fa88c6bd4f4e85bc6ffa116d035762a29fdfbd2642d26dd242be68b5",
+    "report": "obj://run_e4a162544eb346b8bbfb9a83ffe11907/method_report_manifest/2eaa081f43651d12d1fe624409f14a621a5d99108c5181615e171c36b85791ad",
+    "source": "obj://run_e4a162544eb346b8bbfb9a83ffe11907/chemical_structure/fed9f92b68826e654057af4ead378b53845a799051b32b8ffa961c43eb132d4f",
+    "graph": "obj://run_e4a162544eb346b8bbfb9a83ffe11907/chemical_graph/f8b1de599df8e863eb34513ca46353ae9cfd48b6ee7ed4c1464d493342ad1d50",
+    "prepareJob": "job_a4f74396a4af4f278cb01abd85ad770d",
+    "detectJob": "job_6dde30eeb4ff4d2fb692288680f8f16c"
+  },
+  "expectCapability": null,
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 124,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/regression-m11-empty/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/regression-m11-empty",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-10-03T15:14:42.239Z",
+  "finishedAt": "2026-10-03T15:15:32.925Z"
+}

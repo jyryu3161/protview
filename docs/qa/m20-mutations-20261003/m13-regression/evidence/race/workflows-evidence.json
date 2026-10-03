@@ -1,0 +1,224 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "race",
+  "run": "run_1bff8bc8352b4cf6835d670729c92244",
+  "inputs": [],
+  "handles": {
+    "race": {
+      "plan": "obj://run_1bff8bc8352b4cf6835d670729c92244/analysis_plan/674803f7957de35ce629281a1aabe16a8162ce641f7c97c007d0de4028d8c0af",
+      "execution": "exec_ab2b60d6d7654f58b43af883ea9e7c79"
+    }
+  },
+  "fixtureLabels": [
+    "second real offscreen Electron window (own browser profile) on the same run and execution",
+    "renderer-route fixture: real Advance POST committed by the backend, response held and released unchanged after a run switch"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_1bff8bc8352b4cf6835d670729c92244",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-03T14:42:17.010Z",
+  "race": [
+    {
+      "status": 200,
+      "body": {
+        "execution": {
+          "schema": "analysis_execution@1",
+          "execution_id": "exec_ab2b60d6d7654f58b43af883ea9e7c79",
+          "run_id": "run_1bff8bc8352b4cf6835d670729c92244",
+          "plan_handle": "obj://run_1bff8bc8352b4cf6835d670729c92244/analysis_plan/674803f7957de35ce629281a1aabe16a8162ce641f7c97c007d0de4028d8c0af",
+          "plan_sha256": "d5409f03d72b39caf93f1cb098805272ac0e55cfe7a330ce550e6fae8e47a3aa",
+          "goal": "inspect_ligand",
+          "template_version": "inspect_ligand@1",
+          "source": "local_rules",
+          "planner": "local_rules@1",
+          "dry_run": false,
+          "status": "ready",
+          "retryable_step": null,
+          "revision": 9,
+          "created_seq": 209,
+          "current_step": "s02",
+          "plan_approval": {
+            "approved": true,
+            "event_seq": 211,
+            "plan_sha256": "d5409f03d72b39caf93f1cb098805272ac0e55cfe7a330ce550e6fae8e47a3aa",
+            "revocations": []
+          },
+          "scientific_approval": {
+            "required": false,
+            "run_approved": true,
+            "state": "not_required",
+            "pending_tool": null,
+            "recorded_seqs": []
+          },
+          "blocked_reason": null,
+          "stop": null,
+          "notice": null,
+          "driver": {
+            "in_progress": false,
+            "request_ids": []
+          },
+          "recovery_pending": false,
+          "steps": [
+            {
+              "step_id": "s01",
+              "operation": "compute_interactions",
+              "lane": "run_call",
+              "status": "completed",
+              "null_result": false,
+              "operation_id": "op_2dd81c49905f424392a5ad08f988295b",
+              "dispatch_seqs": [
+                215
+              ],
+              "completed_seq": 225,
+              "attempts": 1,
+              "retries_used": 0,
+              "outputs": {
+                "interaction_set": "obj://run_1bff8bc8352b4cf6835d670729c92244/interaction_set/a0d7bcdd646db05d40854f1bbc3d28d05da3a50f6e714ce3ebc9591286a5adf9"
+              },
+              "report_handle": null,
+              "child_call_ids": [
+                "call_99fbbccd2a3244ad9689daa56d5110b6"
+              ],
+              "job_id": null,
+              "job_ownership": null,
+              "job_status": null,
+              "job_cleanup_status": null,
+              "job_blocked_reason": null,
+              "job_cancel_requested": null,
+              "shared_job_notice": null,
+              "deferred_reason": null,
+              "failure": null
+            },
+            {
+              "step_id": "s02",
+              "operation": "compute_interface_sasa",
+              "lane": "run_call",
+              "status": "pending",
+              "null_result": null,
+              "operation_id": null,
+              "dispatch_seqs": [],
+              "completed_seq": null,
+              "attempts": 0,
+              "retries_used": 0,
+              "outputs": {},
+              "report_handle": null,
+              "child_call_ids": [],
+              "job_id": null,
+              "job_ownership": null,
+              "job_status": null,
+              "job_cleanup_status": null,
+              "job_blocked_reason": null,
+              "job_cancel_requested": null,
+              "shared_job_notice": null,
+              "deferred_reason": null,
+              "failure": null
+            },
+            {
+              "step_id": "s03",
+              "operation": "inspection_report",
+              "lane": "report",
+              "status": "pending",
+              "null_result": null,
+              "operation_id": null,
+              "dispatch_seqs": [],
+              "completed_seq": null,
+              "attempts": 0,
+              "retries_used": 0,
+              "outputs": {},
+              "report_handle": null,
+              "child_call_ids": [],
+              "job_id": null,
+              "job_ownership": null,
+              "job_status": null,
+              "job_cleanup_status": null,
+              "job_blocked_reason": null,
+              "job_cancel_requested": null,
+              "shared_job_notice": null,
+              "deferred_reason": null,
+              "failure": null
+            },
+            {
+              "step_id": "s04",
+              "operation": "method_report",
+              "lane": "report",
+              "status": "pending",
+              "null_result": null,
+              "operation_id": null,
+              "dispatch_seqs": [],
+              "completed_seq": null,
+              "attempts": 0,
+              "retries_used": 0,
+              "outputs": {},
+              "report_handle": null,
+              "child_call_ids": [],
+              "job_id": null,
+              "job_ownership": null,
+              "job_status": null,
+              "job_cleanup_status": null,
+              "job_blocked_reason": null,
+              "job_cancel_requested": null,
+              "shared_job_notice": null,
+              "deferred_reason": null,
+              "failure": null
+            }
+          ],
+          "physical_attempts": 1,
+          "active_wall_s": 0.07389716664329171,
+          "limits": {
+            "max_active_wall_s": 1800,
+            "max_physical_attempts": 24,
+            "max_retries_per_step": 1,
+            "max_steps": 8
+          },
+          "summary_handle": null,
+          "event_seqs": [
+            209,
+            210,
+            211,
+            212,
+            214,
+            215,
+            218,
+            225,
+            226
+          ],
+          "jobs_readable": true
+        },
+        "replayed": false,
+        "request": {
+          "request_id": "72e17cc1-6c36-4cb7-9543-bd8090ffe7b1",
+          "action": "advance",
+          "state": "completed",
+          "outcome": "advanced"
+        }
+      },
+      "requestBody": {
+        "request_id": "72e17cc1-6c36-4cb7-9543-bd8090ffe7b1",
+        "expected_revision": 4
+      }
+    },
+    {
+      "status": 409,
+      "body": {
+        "ok": false,
+        "error": "busy",
+        "message": "다른 요청을 처리 중입니다. 잠시 뒤 다시 시도하세요.",
+        "fix": null,
+        "detail": {}
+      },
+      "requestBody": {
+        "request_id": "4466c651-44bc-4e22-a593-5c71896d018e",
+        "expected_revision": 4
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T14:42:30.349Z",
+  "error": null
+}

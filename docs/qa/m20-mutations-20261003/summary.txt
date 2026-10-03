@@ -1,0 +1,107 @@
+M20 T10 summary: source freeze, full gate, M20 acceptance QA, regressions (2026-10-03 UTC)
+
+frozen source: ea2913c7346bf2660853e6415a4dbb5b27e2d298
+  = M20 T9 commit "code review fixes (null distance, report wording check, late report notice)".
+  No source change after the freeze. Working tree clean at start (git status --porcelain empty). Every run below used
+  this HEAD and the same frontend build vPeuYWb5CrtGZ__mURwva, stamped by the M20 runner from the current frontend
+  source (runner-state sourceSha256 7ecceafd...08b3, gitHead = frozen source, dirtyFiles [], buildCurrentWithSource
+  true). The M19, M18, M17, M16, M15, M14 and M13 regression ledgers record the same buildId and gitHead with
+  buildCurrentWithSource true.
+
+index (this folder; small text/JSON only, decision 0020)
+  preflight.txt     T1 착수 확인 (committed earlier, not edited here)
+  gate.txt          full gate: commands, exit codes, counts
+  summary.txt       this file
+  acceptance/       M20 runner output (README.md, SHA256SUMS, binary-artifacts.json, evidence/case-ledger.json ...)
+  m19-regression/ m18-regression/ m17-regression/ m16-regression/ m15-regression/ m14-regression/ m13-regression/
+                    regression runner outputs (README.md, SHA256SUMS, binary-artifacts.json, evidence/)
+  git-ignored: frontend/tests/offscreen/artifacts/m20-acceptance/gate/ (full gate logs),
+               frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/ (screenshots, paint frames, services logs,
+               regressions/m1X/, export-full/), .../attempt1-launch/runner.log (runner stdout, exit file)
+  QA roots (git-ignored runs/): runs/m20-acceptance-20261003-attempt1 and runs/m20-acceptance-20261003-attempt1-m1X-regression
+
+environment
+  OS: macOS 15.6, arm64; Python 3.11.11 (.venv); Node v24.3.0
+  backend capability (acceptance environment-capability row): methods.mutation_candidates available (reason_code null);
+    pocket capability available/ready, fpocket 4.2.3 (build hb88c64c_2)
+  reference set imported for the flow: setHash 999392929c374dfea125f46a4f8489a84bc71649f1e7e96e36cd7b163b489375
+
+attempt history
+  Before the gate: a Codex Stop hook pytest started by another ProtView session (not by T10) was running with live
+    qvina2/guardian/worker processes. T10 waited until it exited, re-checked HEAD = frozen source and a clean tree,
+    then started the gate. No overlap. (An unrelated project's pytest in another repository ran on the machine
+    meanwhile; it does not use this repo.)
+  gate: one run, all exit 0 (gate.txt).
+  M20 acceptance: attempt 1 (adopted, the only attempt), launched detached 14:30:01 UTC, finished 15:17:06 UTC
+    (about 47 min incl. regressions), runner exit 0, acceptance true, failedSteps []. --build auto built and stamped
+    (typecheck exit 0, build exit 0; the gate's earlier build was not runner-stamped). No failed attempt, no retry.
+  regressions: run once each by the M20 runner (--regressions), all exit 0 and acceptance true. No failed attempt.
+  (Folders t8-attempt1, t8-evidence, t8-m14-check under artifacts/m20-acceptance/ are T8 development runs on earlier
+  commits, not T10 attempts.)
+
+gate (gate.txt)
+  [1] backend pytest: exit 0, 1761 passed, 0 skipped, 1615 s (MW_KBASE_REF=<home>/Projects/kbase_kinase/ref)
+  [2] ruff: exit 0 (All checks passed!)
+  [3] scripts pytest (14 standards.md files + scripts/test_m20_offscreen_acceptance.py = 15 files): exit 0,
+      344 passed, 0 skipped
+  [4]-[12] node --check pocket/workflows/tabs/numbering/annotation/ligand/docking/docking-batch/mutation flows:
+      exit 0 (9 files)
+  [13] test:events: exit 0, 298 pass, 0 fail, 0 skipped
+  [14] typecheck: exit 0; [15] build: exit 0 (run after typecheck, not concurrently)
+
+M20 acceptance (acceptance/)
+  .venv/bin/python scripts/m20_offscreen_acceptance.py --root runs/m20-acceptance-20261003-attempt1 \
+      --artifacts frontend/tests/offscreen/artifacts/m20-acceptance/attempt1 \
+      --out docs/qa/m20-mutations-20261003/acceptance --regressions --kbase <home>/Projects/kbase_kinase
+  verdict pass, acceptance true; verdictParts steps/cases/environment/reference/leftoverProcesses all true.
+  24/24 judged cases pass: M-no-run, M-load-prepare, M-unprepared, M-ligand-explicit, M-not-checked, M-shell-oracle,
+    M-numbering-annotation, M-reread-on-entry, M-protect-release, M-allowed-shrink, M-same-handle, M-request-controls,
+    M-pocket, M-tab-state, M-filters-sort, M-paging, M-zero, M-refused, M-report, M-late-result, M-late-run,
+    M-wording (step mutation-main, 1 attempt, evidenceKind real_electron_offscreen, public_1mq4.cif real bytes,
+    fpocket run once), M-reproducible, S-no-egress.
+  Labeled QA fixtures on the renderer route (recorded in the row): a refusal fixture (request body altered in flight
+    so the real server refuses it; reply shown unchanged) and a held-response fixture (unchanged backend bytes
+    released late).
+  Not observed (recorded as such, not forged; covering tests named in the ledger):
+    M-map-conflict (only one numbering map per structure in this flow; frontend/tests/mutations.test.cjs
+      annotationMapConflict, backend annotation_map_mismatch in backend/tests/test_mutation_tool.py),
+    M-too-many-positions (1MQ4 has 261 protein residues < 400 cap;
+      test_mutation_tool.py::test_too_many_positions_is_429_and_nothing_is_stored),
+    M-nonstandard-disulfide (1MQ4 has no modified-name residue and no SG-SG pair within 2.5 A, T1 preflight;
+      synthetic fixture tests in backend/tests/test_mutation_candidates.py).
+  Non-loopback requests 0 (externalRequestsTotal 0, rowsWithUnknownExternalCount []); providerCallsZero true on the
+  flow row; leftover processes [].
+  Reproducibility: the flow's ligand-shell set (ADP A:2001, radius 5 A, all 20 allowed, metal 3 A; 342 candidates)
+  re-run in two fresh runs over the API (each run creating it twice: sameHandle true within the run) gave status
+  done and the same handle-normalized content SHA-256 5fc0f30e44f86ce789c0280ed45315cc6b9384e05641e3710a87b0d983293da5 as the flow.
+
+regressions (each with its own fresh --root runs/m20-acceptance-20261003-attempt1-m1X-regression and --artifacts
+  frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/regressions/m1X, serially, started by the M20 runner
+  with --code-root <repo>; M16/M15 with --kbase)
+  | runner | out              | exit | acceptance | cases  | not observed                                      | ext. req. |
+  | M19    | m19-regression/  | 0    | true       | 26/26  | B-dry-run-shortfall, B-null-result, B-time-limits | 0         |
+  | M18    | m18-regression/  | 0    | true       | 24/24  | D-zero-modes                                      | 0         |
+  | M17    | m17-regression/  | 0    | true       | 21/21  | -                                                 | 0         |
+  | M16    | m16-regression/  | 0    | true       | 19/19  | -                                                 | 0         |
+  | M15    | m15-regression/  | 0    | true       | 14/14  | -                                                 | 0         |
+  | M14    | m14-regression/  | 0    | true       | 15/15  | -                                                 | 0         |
+  | M8-M13 | m13-regression/  | 0    | true       | 28/28  | -                                                 | 0         |
+  M13 ran --phases workflows,unavailable,regressions,m11,m12,ledger: 17 rows all pass with external request count 0
+  (incl. m11-acceptance and m12-acceptance sub-runners).
+  Leftover processes [] in every ledger. Provider calls: every flow row that records providerCallsZero has it true
+  (some M13 sub-runner/regression rows do not record the field, same as in M18/M19).
+  Changed existing expectations: the M14 "protein engineering tab = unavailable" expectation in tabs-flow.cjs and
+  scripts/m14_offscreen_acceptance.py was changed in T8 (f33aacd) as spec section 12 intends; nothing changed in T10.
+
+evidence layout / decision 0020
+  Text files over 256 KiB (ledgers excepted) were moved to <artifacts>/regressions/m1X/export-full/:
+  m13-regression 51 files 331,879,749 bytes, m14-regression 1 file 1,191,726 bytes, m15-regression 1 file
+  590,107 bytes; acceptance and m16-m19 regressions had none. See each folder's ARCHIVED-EVIDENCE.sha256 and README
+  last section (verified shasum -a 256 -c, all OK). SHA256SUMS keeps the original lines; its README.md line was
+  refreshed after the README section was appended (all non-archived lines verify OK). Committed folder total ~9.3 MB.
+
+end state
+  After the regressions: no qvina2, docking_batch_worker, docking_worker, ligand_worker, chemical_worker, guardian,
+  fpocket, uvicorn, next or harness Electron process; 8000/3000 free. git status: only untracked
+  docs/qa/m20-mutations-20261003/ evidence (gate.txt, summary.txt, acceptance/, m1X-regression/); HEAD unchanged
+  (ea2913c7346bf2660853e6415a4dbb5b27e2d298).

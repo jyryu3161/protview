@@ -1,0 +1,135 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "S-no-egress": "pass",
+    "S-nl-unavailable": "pass",
+    "W-inspect-raw": "pass",
+    "S-prereq-ligand": "pass",
+    "S-stop-plan-approval": "pass",
+    "W-inspect-prepared": "pass",
+    "S-race-clicks": "pass",
+    "S-prereq-chains": "pass",
+    "S-stop-scientific-approval": "pass",
+    "W-cavities-main": "pass"
+  },
+  "runId": "run_1bff8bc8352b4cf6835d670729c92244",
+  "handles": {
+    "raw": "obj://run_1bff8bc8352b4cf6835d670729c92244/structure/860233de2a8b396c640ae308cb3b84b213aad55b95c8592c4ac900ff607715ee",
+    "stoppedBeforeApproval": "exec_c504aab7496b44b8bc255c5f24aa79ba",
+    "inspectRaw": {
+      "plan": "obj://run_1bff8bc8352b4cf6835d670729c92244/analysis_plan/e1c0a9eb972f917ba0a0c52908ef943d244623a785cf2f7a931465b124d92f76",
+      "execution": "exec_37bd34447c3b4395907d0a26a62076c8",
+      "summary": "obj://run_1bff8bc8352b4cf6835d670729c92244/workflow_summary/c685016c0386b85d679deaaa4177c2256efae073b2a7e3dd2481e88dc22c8471"
+    },
+    "prepared": "obj://run_1bff8bc8352b4cf6835d670729c92244/prepared_structure/e5f2a6e4de0255d94775c5cfc67c803e62774d4417befea40ef985750cb984ab",
+    "displayedPrepared": "obj://run_1bff8bc8352b4cf6835d670729c92244/prepared_structure/e5f2a6e4de0255d94775c5cfc67c803e62774d4417befea40ef985750cb984ab",
+    "inspectPrepared": {
+      "plan": "obj://run_1bff8bc8352b4cf6835d670729c92244/analysis_plan/28bb6d13a30da7458b1d24a6deee7ca13018ddff4dea97277aed929abe2bfe5c",
+      "execution": "exec_b144dbf7b3e24d71a4e521f0f64d2cbc",
+      "summary": "obj://run_1bff8bc8352b4cf6835d670729c92244/workflow_summary/820cbefd1acd8459c5e929db7a303ae677cbbced7c32b8747ef5dc69ec4d4875"
+    },
+    "cavitiesMain": {
+      "plan": "obj://run_1bff8bc8352b4cf6835d670729c92244/analysis_plan/b3982b5469630efb7af8d527c7147e299e25eb30cd1e6f8ae12a6e7f8f2f1e5a",
+      "execution": "exec_578abe78d4a7469b9469d486c0dcce10"
+    }
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "fixtureLabels": [],
+  "buildId": "vPeuYWb5CrtGZ__mURwva",
+  "harness": {
+    "workflows-flow.cjs": "8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+    "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 654,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/regressions/m13/main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 540,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 7,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m20-acceptance/attempt1/regressions/m13/main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_1bff8bc8352b4cf6835d670729c92244",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "workflows-main.jsonl",
+  "startedAt": "2026-10-03T14:41:21.507Z",
+  "finishedAt": "2026-10-03T14:42:02.053Z"
+}
