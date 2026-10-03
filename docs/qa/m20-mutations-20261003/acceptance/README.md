@@ -37,7 +37,7 @@
 | M-late-result | held detail / position responses of another result released after switching are not applied | pass | mutation-main:pass |
 | M-late-run | a held run A result-list response released after switching to run B is not applied | pass | mutation-main:pass |
 | M-wording | no rank/recommendation/effect wording in the panel outside the five fixed sentences | pass | mutation-main:pass |
-| M-reproducible | the flow's request without annotation made twice in each of two fresh runs: the same handle twice per run and the stored content (obj:// handles replaced) equal to the flow's set | pass | runner:pass |
+| M-reproducible | the flow's request without annotation made twice in each of two new runs on the same server process (not a cold restart): the same handle twice per run and the stored content (obj:// handles replaced) equal to the flow's set | pass | runner:pass |
 | S-no-egress | non-loopback requests 0 and zero provider calls on every flow row | pass |  |
 
 ## 관찰하지 않은 사례

@@ -72,7 +72,7 @@ M20 acceptance (acceptance/)
   Non-loopback requests 0 (externalRequestsTotal 0, rowsWithUnknownExternalCount []); providerCallsZero true on the
   flow row; leftover processes [].
   Reproducibility: the flow's ligand-shell set (ADP A:2001, radius 5 A, all 20 allowed, metal 3 A; 342 candidates)
-  re-run in two fresh runs over the API (each run creating it twice: sameHandle true within the run) gave status
+  re-run in two new runs (same server process, not a cold restart) over the API (each run creating it twice: sameHandle true within the run) gave status
   done and the same handle-normalized content SHA-256 5fc0f30e44f86ce789c0280ed45315cc6b9384e05641e3710a87b0d983293da5 as the flow.
 
 regressions (each with its own fresh --root runs/m20-acceptance-20261003-attempt1-m1X-regression and --artifacts
