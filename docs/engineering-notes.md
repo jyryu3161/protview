@@ -296,7 +296,7 @@
 - `GET /docking/batches`·`/detail`·`GET /jobs`(일괄 작업의 `batch` 필드)는 요약을 읽을 때마다 단일 게시, 일괄 선택 기록, 모든 행 결과(`validated_result`, 행마다 이벤트 로그 재파싱)를 다시 검증한다. 입장·시작 전 확인도 행마다 M18 입장 검사(수용체 바이트 gemmi 파싱 포함)를 한다. 51행 일괄이 여러 개인 run에서는 목록·폴링이 눈에 띄게 느려질 수 있다(정확성 문제는 아님, `docs/tracking/findings.md`).
 
 ### Stop 훅 그룹과 M11 handshake 수 테스트 (M19)
-- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`). 지금 pytest 그룹은 다섯이고(`test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 다섯 파일, M19 일괄 일곱 파일, 나머지), 그룹을 더하면 `scripts/test_codex_hooks.py`의 그룹 수·목록 기대도 함께 고친다. 실행기는 `ThreadPoolExecutor(max_workers=4)`라 다섯 그룹 중 넷만 동시에 돌고 다섯째는 먼저 끝난 그룹을 기다린다(`docs/tracking/findings.md`).
+- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`). 지금 pytest 그룹은 다섯이고(`test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 다섯 파일, M19 일괄 일곱 파일, 나머지), 그룹을 더하면 `scripts/test_codex_hooks.py`의 그룹 수·목록 기대도 함께 고친다. 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침, `8a327c8`).
 - `/capabilities`가 M17·M18·M19 작업 모듈 handshake까지 실행하므로, `test_m11_job_api.py`의 handshake 캐시 테스트를 그룹 단독으로 돌리면 다른 작업 모듈 실행도 셌다. 테스트가 화학 작업 모듈 argv만 세도록 좁혔다(`b2c6436`). capability에 handshake를 더하는 단계는 subprocess 수를 세는 기존 테스트를 확인한다.
 
 ## 동작 원리

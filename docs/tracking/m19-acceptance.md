@@ -2,7 +2,7 @@
 
 - 판정: **완료** (2026-10-03). main 병합: **〔미정 — 사용자가 통합을 승인한 뒤 병합 커밋 해시를 여기에 적는다〕**(push 없음).
 - 브랜치: `dryforge/m19-batch-docking` (`phase/m19-batch-docking` = main `2c04db4`에서 분기). M18은 시작 전에 main에 병합되어 있었다(`e0b84ea`, 기록 `2c04db4`).
-- 고정 소스: `858bd45`(`858bd45217e5bae3e87c4451261c1bc369a079c3`, 독립 코드 검토 수정의 마지막 커밋). 증거 커밋 `c11bfb4`(`c11bfb46ff318e9dcd3970a410e515cb91f4ce7a`). 고정 뒤 제품 소스 변경 없음. 고정 뒤 변경은 증거와 기록 문서뿐이다.
+- 고정 소스: `858bd45`(`858bd45217e5bae3e87c4451261c1bc369a079c3`, 독립 코드 검토 수정의 마지막 커밋). 증거 커밋 `c11bfb4`(`c11bfb46ff318e9dcd3970a410e515cb91f4ce7a`). 고정 뒤 제품 동작을 바꾸는 소스 변경은 없다. 고정 뒤 변경은 증거·기록 문서와 `8a327c8`(`backend/mw/api/app.py`의 주석 한 줄, Stop 훅 `.codex/hooks/stop.py`의 스레드 수를 그룹 수로 맞춤)이며, `8a327c8`은 고정 소스의 게이트(`858bd45`)에 포함되지 않는다.
 - 수락 증거: `docs/qa/m19-batch-20261003/`(`preflight.txt` 착수 확인, `gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M19 수락, `m18-regression/`, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 51개 331,871,173 B, m14-regression 1개 1,191,725 B, m15-regression 1개 590,108 B, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`).
 - 외부 요청 0건, OpenRouter 호출 0회(모든 흐름 행과 재현 검사).
 
