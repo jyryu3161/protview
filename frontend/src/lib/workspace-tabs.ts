@@ -28,12 +28,7 @@ export interface UnavailableNotice {
 }
 
 // Notices only: no numbers, placeholder values or controls. These tabs make no backend calls.
-// The knowledge tab has no notice since M15 (residue numbering screen and report library) and the ligand tab
-// none since M17 (ligand partial-replacement candidate screen).
-export const UNAVAILABLE_NOTICES: Record<"protein", UnavailableNotice> = {
-  protein: {
-    title: "단백질 공학",
-    reason: "아직 구현하지 않았습니다.",
-    opens: [{ stage: "M20", feature: "변이 후보 생성" }, { stage: "M21", feature: "변이 구조 모델링" }],
-  },
-};
+// No tab has a notice any more: the knowledge tab since M15 (residue numbering screen and report library), the ligand
+// tab since M17 (ligand partial-replacement candidate screen) and the protein tab since M20 (mutation candidate
+// screen). The type and the shared "사용할 수 없음" wording stay for a later tab without a feature.
+export const UNAVAILABLE_NOTICES: Record<never, UnavailableNotice> = {};
