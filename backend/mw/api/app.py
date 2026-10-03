@@ -107,7 +107,7 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
                    "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
-                   "annotate_reference_sites"}
+                   "annotate_reference_sites", "generate_mutation_candidates"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -625,6 +625,8 @@ def capabilities() -> dict[str, Any]:
     methods["residue_numbering"] = numbering_reads.capability()
     # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
+    # M20: reads only the run's own stored objects (no engine, reference folder or network): always available.
+    methods["mutation_candidates"] = {"available": True, "reason_code": None, "reason": None}
     # M17: pinned environment + RDKit version + PAINS A/B/C, checked by the worker handshake (no RDKit here).
     methods["ligand_candidates"] = ligand_bundle.capability()
     # M18: both locked environments, qvina2 hash = install record = pin, worker handshake versions (no RDKit/Meeko
