@@ -630,7 +630,7 @@ def capabilities() -> dict[str, Any]:
     # M18: both locked environments, qvina2 hash = install record = pin, worker handshake versions (no RDKit/Meeko
     # import and no qvina run here).
     methods["ligand_docking"] = docking_bundle.capability()
-    # M19: ligand_docking + the batch worker and constants (no handshake of its own; same environment and pins).
+    # M19: ligand_docking + the batch worker and constants (own worker handshake, same environment and pins).
     methods["ligand_docking_batch"] = docking_batch_jobs.capability(methods["ligand_docking"])
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",

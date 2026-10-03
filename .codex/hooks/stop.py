@@ -127,7 +127,7 @@ def run_checks(root: Path, checks) -> list[str]:
         first = one(CHECKS[0])
         if first is not None:
             return [first]
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=len(CHECKS) - 1) as executor:
             results = list(executor.map(one, CHECKS[1:]))
         return [result for result in results if result is not None]
     failures = []
