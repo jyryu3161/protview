@@ -29,7 +29,8 @@ CHECKS = [
       "backend/tests/test_docking_api.py", "backend/tests/test_docking_reports.py"], {0}),
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_docking_batch_inputs.py",
       "backend/tests/test_docking_batch_bundle.py", "backend/tests/test_docking_batch_worker.py",
-      "backend/tests/test_docking_batch_jobs.py", "backend/tests/test_docking_batch_budget.py"], {0}),
+      "backend/tests/test_docking_batch_jobs.py", "backend/tests/test_docking_batch_budget.py",
+      "backend/tests/test_docking_batch_api.py"], {0}),
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py",
       "scripts/test_codex_hooks.py", "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
       "scripts/test_m14_offscreen_acceptance.py", "scripts/test_import_reference_snapshots.py",
@@ -44,7 +45,7 @@ CHECKS = [
       "--ignore=backend/tests/test_docking_reports.py",
       "--ignore=backend/tests/test_docking_batch_inputs.py", "--ignore=backend/tests/test_docking_batch_bundle.py",
       "--ignore=backend/tests/test_docking_batch_worker.py", "--ignore=backend/tests/test_docking_batch_jobs.py",
-      "--ignore=backend/tests/test_docking_batch_budget.py"], {0}),
+      "--ignore=backend/tests/test_docking_batch_budget.py", "--ignore=backend/tests/test_docking_batch_api.py"], {0}),
 ]
 
 MAX_OUTPUT_CHARS = 1500

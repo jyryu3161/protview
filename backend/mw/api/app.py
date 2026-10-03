@@ -22,6 +22,7 @@ from .. import (
     analysis_executions,
     analysis_plans,
     docking_batch_jobs,
+    docking_batch_reads,
     docking_bundle,
     docking_reads,
     ligand_bundle,
@@ -1788,6 +1789,43 @@ async def docking_batch_limit_approval(rid: str, request: Request) -> Any:
         return await run_in_threadpool(lambda: docking_batch_jobs.limit_approval(_run(rid), args))
     except ToolFailure as error:
         return _tool_error(error)
+
+
+# ----------------------------------------------------------------- M19 batch reads (no event, job, tool or engine)
+@app.post("/runs/{rid}/docking/batches/preflight")
+async def docking_batch_preflight(rid: str, request: Request) -> dict[str, Any]:
+    """Spec 6.2: admission, reuse per row, N, need, remaining budget, shortfall, B1 and the M18 sentences for a batch
+    request (body = the batch job arguments). A read: no event, job, tool, reservation or limit change."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    run = _run(rid)
+    return await run_in_threadpool(lambda: docking_batch_reads.preflight(run, args))
+
+
+@app.get("/runs/{rid}/docking/batches")
+def docking_batches(rid: str, request: Request, offset: int = Query(0, ge=0),
+                    limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return docking_batch_reads.list_summaries(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid docking batch record"}) from exc
+
+
+@app.get("/runs/{rid}/docking/batches/detail")
+def docking_batch_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+    """One validated batch summary and its rows; per-row results open in the M18 /docking/results/* reads."""
+    _only_query(request, {"handle"})
+    run = _run(rid)
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (docking_batch_reads.SUMMARY, docking_batch_reads.SUMMARY_SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a docking_batch_result"})
+    try:
+        return {**docking_batch_reads.summary_detail(run, handle), "meta": meta}
+    except docking_batch_jobs.DockingBatchEvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid",
+                                         "message": "invalid docking batch evidence"}) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")
