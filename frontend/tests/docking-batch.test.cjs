@@ -295,6 +295,23 @@ test("preflight lines show server numbers: N, reuse, need, remaining, shortfall 
   assert.ok(lib.existingJobText({ job_id: "job_1", status: "done", summary_handle: null }).includes("job_1"));
 });
 
+test("a refused preflight keeps the receptor refusal items (seven fields, nulls kept, total) for the screen", () => {
+  const residue = { model_number: 1, chain_auth: "W", chain_label: null, seq_auth: 1, seq_label: null, icode: "",
+    resname: "HOH" };
+  const refused = preflight({ admission: { admitted: false, error: "input_invalid",
+    reason_code: "receptor_unsupported_residue", message: "m", detail: { reason_code: "receptor_unsupported_residue",
+      items: [{ residue, atom_names: ["O", "H1", "H2"] }], total: 2 } }, shortfall: null });
+  const list = lib.preflightRefusalList(refused);
+  assert.equal(list.reason_code, "receptor_unsupported_residue");
+  assert.equal(list.total, 2);
+  assert.equal(list.shown, 1);
+  assert.deepEqual(plain(list.lines), ['model_number=1, chain_auth="W", chain_label=null, seq_auth=1, seq_label=null, ' +
+    'icode="", resname="HOH" · 원자 O, H1, H2']);
+  assert.equal(lib.preflightRefusalList(preflight({})), null);
+  assert.equal(lib.preflightRefusalList(preflight({ admission: { admitted: false, error: "input_invalid",
+    reason_code: "batch_empty", message: "x", detail: { reason_code: "batch_empty" } } })), null);
+});
+
 test("start is blocked until a current admitted preflight without shortfall exists (dry-run plans only)", () => {
   const capability = { available: true, reason: null, reason_code: null };
   const check = lib.batchArgs(form({}));

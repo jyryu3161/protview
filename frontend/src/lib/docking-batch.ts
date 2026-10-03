@@ -11,8 +11,8 @@
 import type { DockingBatchArgs, DockingBatchPreflight, DockingBatchProgress, DockingBatchRowState,
   DockingBatchStatus, DockingBatchStopReason, DockingMode } from "./contracts";
 import { type ArgsCheck, DOCKING_LIMITATIONS, dockingArgs, dockingCapabilityText, dockingFailureText,
-  dockingForbiddenWords, dockingJobPhase, dockingReasonText, type DockingForm, initialDockingForm, patchDockingForm,
-  SCORE_COLUMN_LABEL, scoreText } from "./docking";
+  dockingForbiddenWords, dockingJobPhase, dockingReasonText, dockingRefusalList, type DockingForm,
+  type DockingRefusalList, initialDockingForm, patchDockingForm, SCORE_COLUMN_LABEL, scoreText } from "./docking";
 import { decimalHalfUp } from "./site-annotation";
 
 export { SCORE_COLUMN_LABEL };
@@ -275,6 +275,12 @@ export function preflightRefusalText(preflight: DockingBatchPreflight): string {
   const admission = preflight.admission;
   const head = admission.reason_code ? batchReasonText(admission.reason_code) : admission.error ?? "거절";
   return `${head}${admission.message ? ` · ${admission.message}` : ""}`;
+}
+
+/** Receptor leftovers of a refused preflight (M18 rule: items with seven residue fields and the total), else null. */
+export function preflightRefusalList(preflight: DockingBatchPreflight): DockingRefusalList | null {
+  if (preflight.admission.admitted) return null;
+  return dockingRefusalList(preflight.admission.reason_code, preflight.admission.detail);
 }
 
 export function existingJobText(existing: { job_id: string; status: string }): string {

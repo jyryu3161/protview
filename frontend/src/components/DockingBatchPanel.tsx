@@ -15,14 +15,16 @@ import { ACKNOWLEDGEMENT_KEYS, ACKNOWLEDGEMENT_LABEL, BOX_FRAME_NOTE, BOX_SIDE_M
 import { ariaSort, BATCH_TOOL, batchActiveJob, batchApprovalRequired, batchArgs, batchArgsKey, batchJobText,
   batchListRowText, batchProgressText, batchReportMatches, batchStartBlockedReason, batchStatusText,
   candidateSelectable, existingJobText, LIMIT_RAISE_LABEL, limitApprovalOffered, limitApprovalText, MAX_CANDIDATES,
-  nextBatchSort, orderedCandidateIds, parentDisabledReason, patchBatchForm, preflightLines, preflightRefusalText,
-  reusedText, rowCandidateText, rowDetailAvailable, rowReasonText, rowScoreTargetText, rowScoreText, rowStateText,
+  nextBatchSort, orderedCandidateIds, parentDisabledReason, patchBatchForm, preflightLines, preflightRefusalList,
+  preflightRefusalText, reusedText, rowCandidateText, rowDetailAvailable, rowReasonText, rowScoreTargetText,
+  rowScoreText, rowStateText,
   SCORE_COLUMN_LABEL, selectionCountText, sortBatchRows, toggleCandidate, initialBatchForm, type BatchForm,
   type BatchPreflightState, type BatchSort, type BatchSortKey } from "@/lib/docking-batch";
 import { CANDIDATE_PAGE_LIMIT, candidateCountText, candidateRowsQuery, checkFilterInput, emptyAppliedFilter,
   emptyFilterInput, LIGAND_APPROVAL_NOTICE, ligandNoticeAfterJob, ligandStartProgressed, passText,
   type AppliedFilter, type LigandFilterInput } from "@/lib/ligand";
 import { decimalHalfUp } from "@/lib/site-annotation";
+import { RefusalList } from "./DockingPanel";
 import { FilterForm } from "./LigandPanel";
 import { Button } from "./primitives";
 
@@ -673,8 +675,14 @@ function CandidateChecks({ page, selection, onToggle, onPage }: { page: LigandCa
 }
 
 function PreflightView({ preflight }: { preflight: DockingBatchPreflight }) {
-  if (!preflight.admission.admitted) return <p className="mw-ligand-error" role="alert" data-testid="docking-batch-preflight-refused"
-    data-reason-code={preflight.admission.reason_code ?? undefined}>시작할 수 없습니다: {preflightRefusalText(preflight)}</p>;
+  if (!preflight.admission.admitted) {
+    const refusal = preflightRefusalList(preflight);
+    return <>
+      <p className="mw-ligand-error" role="alert" data-testid="docking-batch-preflight-refused"
+        data-reason-code={preflight.admission.reason_code ?? undefined}>시작할 수 없습니다: {preflightRefusalText(preflight)}</p>
+      {refusal && <RefusalList list={refusal} source="admission" />}
+    </>;
+  }
   return <div className="mw-docking-result" data-testid="docking-batch-preflight-view" data-new-dockings={preflight.new_dockings ?? undefined}
     data-reused-rows={preflight.reused_rows ?? undefined} data-shortfall-calls={preflight.shortfall?.expensive_calls}
     data-shortfall-wall={preflight.shortfall?.wall_clock_s} data-may-be-partial={preflight.full_batch_may_be_partial ?? undefined}>

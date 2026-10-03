@@ -737,7 +737,7 @@ function DockingWorkspace({ run, capability, onReportCreated, openRequest }: { r
 }
 
 /** Listed receptor leftovers of a refusal (spec 3.2): seven residue fields (nulls kept), atom names, altloc. */
-function RefusalList({ list, source }: { list: DockingRefusalList; source: "admission" | "job" }) {
+export function RefusalList({ list, source }: { list: DockingRefusalList; source: "admission" | "job" }) {
   return <div className="mw-ligand-error" data-testid="docking-refusal-list" data-docking-refusal-source={source}
     data-reason-code={list.reason_code} data-total={list.total ?? undefined} data-shown={list.shown}>
     <span>{list.heading} · {dockingReasonText(list.reason_code)}</span>
