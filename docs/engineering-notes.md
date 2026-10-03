@@ -299,6 +299,35 @@
 - 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`). 지금 pytest 그룹은 다섯이고(`test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 다섯 파일, M19 일괄 일곱 파일, 나머지), 그룹을 더하면 `scripts/test_codex_hooks.py`의 그룹 수·목록 기대도 함께 고친다. 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침, `8a327c8`).
 - `/capabilities`가 M17·M18·M19 작업 모듈 handshake까지 실행하므로, `test_m11_job_api.py`의 handshake 캐시 테스트를 그룹 단독으로 돌리면 다른 작업 모듈 실행도 셌다. 테스트가 화학 작업 모듈 argv만 세도록 좁혔다(`b2c6436`). capability에 handshake를 더하는 단계는 subprocess 수를 세는 기존 테스트를 확인한다.
 
+### 사전 검사 훅의 store로도 게시 확인 읽기를 할 수 있다 (M20)
+- **증상**: 명세 초안은 "사전 검사 훅에는 run·이벤트가 없으니 `validated_pocket_set` 대신 내용만 검사한다"고 했다. 내용만 보면 취소·오래된 시도가 store에 남긴 미게시 `pocket_set`(`pocket_bundle.publish`의 `store.put` 뒤 `job_terminal` 전)이나 원본 출력과 어긋난 객체도 통과한다.
+- **원인**: 훅은 `precheck(self.store, args, bound)`로 store를 받는데, `ObjectStore`는 `events`와 `run_id`를 가진다(`runtime/orchestrator.py`, `core/handles.py`).
+- **대응**: `type("RunView", (), {"store": store, "events": store.events, "run_id": store.run_id})()`로 만든 보기를 게시 확인 읽기에 넘긴다(`tools/comparison.py`가 선례, M20 `tools/mutations._pocket_set`). 다른 도구가 저장된 작업 결과를 입력으로 받을 때도 내용 검사가 아니라 그 결과의 검증 읽기를 쓴다(착수 확인 M1, 결정 0028).
+
+### fpocket 결과는 실행마다 다를 수 있다 (M20)
+- 포켓 결과의 `method.fresh_execution_deterministic`은 false다(fpocket 시계 seed). 같은 구조로 다시 검출하면 포켓 수·순번·안쪽 잔기가 바뀔 수 있다. 포켓 출처 테스트·QA는 그 실행에서 저장된 `pocket_set`을 읽어 기대값을 만들고 고정 숫자를 쓰지 않는다. `lining_residues`의 순서도 파일 순서가 아니므로(1HSG 포켓 1: PRO A81 다음 ARG A8) 위치 순서는 구조 파일 순서로 다시 정한다.
+
+### "리간드"는 물·금속이 아닌 모든 HETATM 잔기다 (M20)
+- `structure_residues`의 `ligands`(그리고 `_selected_ligand`)는 `het_flag == "H"`, 물 아님, `METALS` 아님인 잔기 전부다. HETATM으로 적힌 MSE·CD·PO4 등도 리간드 후보가 되어 "리간드가 여럿"이 흔하다(1MQ4: ADP·PO4, 합성 mmCIF: 4개). 같은 MSE도 ATOM이면 폴리머(위치가 되고 `non_standard_residue`로 제외), HETATM이면 리간드다. 그래서 리간드는 7필드 선택자로만 받고 화면도 자동으로 고르지 않는다. 금속 판정은 이름(`METALS`)이며 CD·FE2 같은 이름은 금속이 아니다.
+
+### 수소는 전처리에서 `hydrogens: keep`일 때만 남는다 (M20)
+- 전처리 기본은 수소 제거이고 공개 1MQ4·1HSG에는 수소가 없다. 수소만 있는 잔기·리간드(중원자 거리 null, `ligand_invalid`) 경로는 오프스크린 흐름에서 닿지 않으며 `hydrogens: keep`으로 전처리한 합성 입력의 백엔드 테스트로만 확인한다. 거리 계산은 원소 H·D를 늘 빼므로 수소를 남겨도 값은 같다(착수 확인).
+
+### 저장은 되었는데 읽을 수 없는 결과를 만들면 안 된다 (M20)
+- **증상**: 독립 코드 검토에서, 리간드를 준 요청의 수소만 남은 위치는 구현이 거리 null을 만들지만 `validated_set`은 숫자만 받아, 객체는 저장되고 읽기·보고서는 검증 실패(422)로 읽을 수 없는 결과가 생길 수 있었다(막는 지적).
+- **원인**: 결과를 만드는 코드와 결과를 검증하는 코드가 따로 있고, 저장 전에 검증하지 않았다.
+- **대응**: 검증 규칙을 고치고(거리 null 허용, 0이 아님), 구현이 `ObjectStore.put` 전에 `validated_set`을 돌려 통과하지 못하면 저장하지 않고 `candidate_set_invalid`로 실패한다(`ea2913c`). 불변 객체는 고칠 수 없으므로, 읽을 때 검증하는 새 결과 종류는 저장 전에 같은 검증을 한다.
+
+### 보고서 금지어 검사는 식별자가 아니라 템플릿 문장에 한다 (M20)
+- **증상**: 렌더된 Markdown 전체에 금지어 정규식을 돌리면 체인 이름 `BEST`, 리간드·CCD 코드, handle 같은 식별자가 우연히 금지어와 맞아 정상 보고서가 거부될 수 있다.
+- **대응**: `render_mutation_report`는 값·식별자를 자리(`\x00n\x00`)로 둔 고정 템플릿에 금지어 검사를 한 뒤 자리를 채운다(`test_identifiers_containing_forbidden_words_do_not_fail_a_report`). 고정 한계 문장 5줄은 문자 그대로 같을 때만 건너뛴다. M20 보고서는 필수 문장 때문에 "촉매"를 금지어에 넣지 않았다(M16 보고서는 금지).
+
+### 경로에 handle을 넣는 라우트는 하위 경로를 먼저 등록한다 (M20)
+- handle(`obj://<run>/<kind>/<sha>`)은 슬래시를 담으므로 `/mutation_candidate_sets/{handle:path}`로 받는다. Starlette는 등록 순서대로 맞추므로 상세 라우트를 먼저 두면 `…/{handle}/positions`도 상세가 handle `…/positions`로 삼킨다(없는 handle로 거절됨). `/positions`·`/candidates`를 상세보다 먼저 등록했다(`app.py` M20 읽기 구역 주석). 프런트 `api.ts`는 handle을 `encodeURIComponent`로 붙이지만 서버가 경로를 디코드한 뒤 맞추므로 등록 순서가 여전히 필요하다. M18·M19 읽기는 `?handle=`를 쓰므로 둘의 방식이 다르다.
+
+### 탭 흐름의 단백질 공학 탭은 이제 GET 요청을 낸다 (M20)
+- M14 `tabs-flow.cjs`의 단백질 공학 탭 사례는 "안내가 보이는 동안 새 요청 없음"을 단언했다. M20부터 그 탭은 변이 후보 화면이 들어올 때 이벤트·포켓·번호 대응·주석·결과 목록을 GET으로 읽으므로, 리간드 탭 선례처럼 "GET 읽기만"으로 바꿨다(`f33aacd`, M14 실행기의 `T-unavailable` 설명도). 탭에 화면을 붙이는 단계는 이 단언과 `workspace-tabs.test.cjs`의 안내 기대를 함께 고친다.
+
 ## 동작 원리
 
 ### handle과 복구

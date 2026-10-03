@@ -455,6 +455,84 @@ M17 후보 집합 하나의 후보 여러 개(+ 선택 사항 부모 기준 행)
 ### 의미하지 않는 것
 M18의 "의미하지 않는 것" 전부. 그에 더해 표의 정렬·첫 행 점수는 후보의 순위·우열이 아니고, 부모 행과의 점수 차이는 개선·악화가 아니며, `partial` 일괄의 빈 칸은 0이 아니라 계산하지 않음이다.
 
+## 변이 후보 (M20, `generate_mutation_candidates`)
+
+한 전처리 구조에서 위치(단백질 잔기)를 모으고, 근거 있는 보호 잔기를 기본으로 뺀 뒤, 남은 위치마다 단일 아미노산 치환 후보를 만든다(결정 0028). 후보는 위치와 바꿀 잔기의 조합일 뿐이다. 구조 모델링·에너지·점수·순위는 만들지 않는다(구조 모델링은 M21). 모든 거리는 저장된 전처리 좌표에서, 번호·KLIFS 부위는 저장된 번호 대응·주석 객체에서, 포켓 안쪽 잔기는 저장된 포켓 결과에서 온다. 닫힌 집합·상한·문장은 `backend/mw/mutation_constants.py`에 있고 바꾸려면 사용자 결정이 필요하다.
+
+### 입력
+- 도구 인자(알 수 없는 키는 최상위·`sources`·`pocket`·`ligand_shell`에서 거부): `structure`(같은 run의 `prepared_structure`, 필수), `sources{pocket, ligand_shell, residues}`(필수), `ligand`(null | 리간드 선택자), `allowed_residues`(한 글자 코드 문자열 또는 목록, 기본 표준 20종 전부), `protected_residues`, `released_residues`, `metal_contact_A`(기본 3.0, 1.0–5.0, 양끝 포함), `numbering_map`(null | 같은 run의 `residue_numbering_map`), `annotation`(null | 같은 run의 `reference_site_annotation`).
+- `pocket` = null | `{pocket_set, ranks}`(순번 1개 이상), `ligand_shell` = null | `{radius_A}`(기본 5.0, 1.0–12.0, 양끝 포함), `residues` = 잔기 참조 목록(비어 있어도 됨). 세 출처 중 하나 이상이 실제로 위치를 요청해야 한다.
+- **잔기 참조** = `{model_number, chain_auth, seq_auth, icode, resname}` 필수 + `chain_label`·`seq_label` 선택(주면 일치해야 하고 null도 값이다, 타입까지 비교). 구조 첫(유일) 모델의 단백질 잔기(`category == "polymer"`, ATOM 레코드) 정확히 하나로 해석되어야 하고 결과에는 해석한 7필드를 저장한다. 이름·표시 문자열로 잔기를 찾지 않는다.
+- **리간드 선택자**는 같은 모양이며 물·`METALS`가 아닌 HETATM 잔기(`structure_residues`의 `ligands`, MSE HETATM 포함) 정확히 하나로 해석되어야 한다. 그 인스턴스에 중원자가 없으면(수소만) `ligand_invalid`다. 리간드가 여럿이어도 첫 번째를 고르지 않는다.
+- 목록(직접·보호·해제)과 포켓 순번은 각각 최대 400개이며 한 목록 안의 같은 잔기는 거부한다. 같은 잔기를 보호와 해제에 모두 넣으면 거부한다.
+- 호출 키 = 정규화한 인자: 목록은 구조 파일 순서·7필드 전체, `ranks` 오름차순, `allowed_residues`는 `ACDEFGHIKLMNPQRSTVWY` 순서의 문자열, 기본값 채움. 같은 집합이면 순서·표기와 상관없이 같은 호출·같은 handle이다.
+
+### 입장 검사 (사전 검사 훅, 모든 호출 경로에서 도구 구현보다 먼저, 이 순서)
+`unknown_field` → `structure_invalid` → `no_position_source` → `argument_invalid`(형식·범위, NaN·Infinity·bool, 400 초과 목록, 빈 `ranks`) → `allowed_residues_invalid`(비었음·20종 밖·중복) → `residue_invalid`(없음·둘 이상·비폴리머) → `duplicate_residue` → `protect_release_conflict` → `ligand_required`(`ligand_shell`이 켜졌는데 `ligand`가 null, 리간드 수와 무관, 자동 선택 없음) → `ligand_invalid` → `pocket_set_invalid`(handle 아님·다른 run·다른 종류, 게시되지 않은 결과, 포켓 없음 결과) → `numbering_map_invalid`·`annotation_invalid`(handle·run·종류) → `structure_mismatch`(포켓 결과의 `source_handle`, 번호 대응·주석의 `structure.handle`이 요청 구조와 다름) → `pocket_rank_invalid`(결과에 없는 순번·중복) → `pocket_residue_mismatch`(안쪽 잔기 7필드가 구조 단백질 잔기와 다름) → `annotation_map_mismatch`(둘 다 줬는데 주석이 기록한 `numbering_map`이 다름). 모두 `input_invalid`(422)이고 구현을 부르지 않는다. 포켓 결과는 훅이 받은 store(이벤트 로그·run ID 있음)로 만든 RunView에서 `pocket_bundle.validated_pocket_set`을 불러 게시가 끝난 결과인지까지 확인한다. fpocket을 다시 돌리지 않는다.
+
+### 위치
+- 위치 = 구조 첫 모델의 단백질 잔기 하나. 체인마다 따로이며 같은 서열의 체인도 합치지 않는다. 세 출처의 합집합이고, 여러 출처에 있는 잔기는 위치 행 하나에 출처 목록(`pocket`은 순번마다, 오름차순 → `ligand_shell` → `user`)으로 남는다.
+  - `pocket`: 고른 순번마다 저장된 `lining_residues`.
+  - `ligand_shell`: 리간드 중원자와 잔기 중원자 사이 최소 거리 ≤ `radius_A`(경계 포함)인 모든 단백질 잔기(모든 체인).
+  - `user`: `residues` 목록.
+- 위치 순서는 구조 파일 순서이고 `index`는 0부터다. 순서는 순위가 아니다.
+- 위치가 400개를 넘으면 `resource_exceeded`(429) `too_many_positions`(`detail.positions`, `detail.limit`)이고 아무것도 저장하지 않는다(잘라 저장하지 않음).
+- `ligand_min_distance_A`: `ligand`를 줬으면 출처와 무관하게 모든 위치에 계산한다(잔기 중원자 전부와 리간드 중원자 전부의 최소 거리, float64, 저장 좌표 그대로, 원소 H·D 제외). `ligand`가 null이면 모든 위치에서 null, 리간드를 줬어도 중원자가 없는 잔기는 null이다(0이 아님).
+- `numbering`: `numbering_map`이 null이면 null. 주었으면 같은 7필드 행의 `status`·`uniprot_accession`·`uniprot_position`·`uniprot_residue`·`klifs_index`·`klifs_label`을 그대로 복사하고(참조값, 계산 아님), 지도에 없는 잔기는 `status: "not_in_map"`과 나머지 null.
+
+### 표준 이름
+표준 20종 이름이거나 M12 이름 대응 10개(`HID`·`HIE`·`HIP`·`HSD`·`HSE`·`HSP`→`HIS`, `CYX`→`CYS`, `ASH`→`ASP`, `GLH`→`GLU`, `LYN`→`LYS`)면 `standard_resname`·`one_letter`가 정해진다. 그 밖(MSE·SEP 등)은 둘 다 null이고 제외 사유 `non_standard_residue`다. 원래 `resname`은 식별자에 그대로 남는다.
+
+### 보호, 해제, 제외
+- 보호 사유(닫힌 집합, 이 순서): `user_protected`(보호 목록에 있음), `klifs_key_site`(주석의 `status == "annotated"` 부위 잔기와 7필드가 같음. 해당 부위의 `klifs_label`을 KLIFS 번호 순으로 `klifs_sites`에), `metal_contact`(금속 잔기 = `het_flag == "H"`, 물 아님, 이름이 `METALS`(ZN MG CA MN FE CU CO NI NA K)의 원자와 이 잔기 중원자의 최소 거리 ≤ `metal_contact_A`. 가장 가까운 금속 잔기 7필드와 거리를 `metal`에), `disulfide_cys`(CYS·CYX이고 다른 CYS·CYX의 `SG`와 SG–SG ≤ 2.5 Å, 모든 체인. 가장 가까운 짝을 `disulfide_partner`에, 동점이면 파일 순서 먼저).
+- 주석을 주지 않으면 KLIFS 보호를 검사하지 않는다: 위치의 `klifs_sites`는 null(검사했는데 해당 없으면 `[]`). 주석의 `absent` 부위는 보호하지 않는다.
+- 해제: `released_residues`의 잔기에 보호 사유가 하나라도 있으면 모든 보호 사유가 한꺼번에 풀리고 `protection.released: true`다(사유별 해제 없음, 사유 목록은 그대로 남음). 사유가 없는 잔기의 해제는 오류가 아니라 `released_residues[].effect: "none"`이다(위치가 아닌 잔기도 `none`). 해제는 `non_standard_residue`·`no_allowed_alternative`에 영향이 없다.
+- 제외 사유(닫힌 집합, 저장 순서): `non_standard_residue`, `user_protected`, `klifs_key_site`, `metal_contact`, `disulfide_cys`, `no_allowed_alternative`. 위치의 제외 사유 = 해제되지 않은 보호 사유 + 비표준이면 `non_standard_residue` + 표준이고 허용 목록에서 원래 잔기를 뺀 것이 비면 `no_allowed_alternative`. 하나라도 있으면 `status: "excluded"`(후보 없음, 이유와 함께 남음), 없으면 `"candidate"`.
+- 촉매 잔기는 판정하지 않는다(데이터베이스 없음, M26).
+
+### 보호 검사 상태 `protection_checks` (결과에 항상)
+- `user_list {status: "checked", protected, released}`(목록 길이), `klifs_key_sites {status: "checked"|"not_checked", reason: null|"annotation_not_given", annotation, annotated_sites, absent_sites}`(검사하지 않았으면 handle·개수 null), `metal_contact {status: "checked", threshold_A, metal_residues, metal_names}`, `disulfide {status: "checked", threshold_A: 2.5, pairs}`, `catalytic_residue_database {status: "not_available", reason: "not_implemented"}`.
+- 하지 않은 검사를 한 것처럼 보이지 않는다: `not_checked`·`not_available`은 0이나 "없음"과 다르며 화면·보고서 어디서도 숫자로 보이지 않는다.
+
+### 후보
+제외되지 않은 위치마다 허용 목록에서 원래 `one_letter`를 뺀 코드를 `ACDEFGHIKLMNPQRSTVWY` 순서로 하나씩 후보 `{index, position_index, from, to}`로 만든다(단일 변이, 위치당 최대 19개). 번호는 위치 순서, 그 안에서 코드 순서다. 후보 0개(모든 위치 제외 등)는 실패가 아니라 `null_result: true`인 유효한 빈 결과다.
+
+### 결과 객체 `mutation_candidate_set@1`
+- 최상위 키: `schema`, `method_version`(`mw.mutation_candidates/v1`), `structure{handle, model_number, structure_kind: "prepared_structure"}`, `parameters`(정규화한 요청 + `disulfide_sg_A: 2.5`), `ligand`(null | `{residue, heavy_atom_count}`), `pockets`(null | `{pocket_set, ranks, lining_residue_count}`), `protection_checks`, `released_residues[{residue, effect}]`, `positions`, `candidates`, `counts{positions, candidate_positions, excluded_positions, released_positions, candidates, exclusion_reason_counts(여섯 사유 전부), source_counts{pocket, ligand_shell, user}}`, `null_result`, `limitations`.
+- 위치 필드: `index`, `residue`(7필드), `standard_resname`, `one_letter`, `sources`, `ligand_min_distance_A`, `numbering`, `protection{reasons, released, klifs_sites, metal, disulfide_partner}`, `exclusion_reasons`, `status`, `candidate_count`.
+- 객체 내용에 시각·호출 ID가 없어 같은 입력은 같은 handle이다. 이벤트가 전체 payload를 담아 events-only로 다시 열린다(위치 400 × 후보 19 결과 내용 약 0.90 MiB, 이벤트 한 줄 약 1.20 MiB).
+- `validated_set`(순수 함수): 스키마, 닫힌 집합, 개수와 목록 일치, 후보↔위치 일관성, 제외 사유와 상태 일치, 해제 효과, `null_result`, 고정 문장 5개, 7필드 모양을 검사한다. 도구는 저장 전에 이것을 돌려 통과하지 못하면 저장하지 않고 `input_invalid` `candidate_set_invalid`로 실패한다. 읽기·보고서는 저장 객체를 매번 이것으로 다시 검증한다.
+
+### 실행 경로
+값싼 도구(`Run.call`, `cost_class: cheap`)다. 작업 큐·승인·예산 단위를 쓰지 않고 외부 엔진·네트워크·참조 폴더를 쓰지 않는다. 입력은 이 run의 저장 객체(구조 바이트, 포켓 결과, 번호 대응, 주석)만이다. dry-run run에서도 실행해 결과를 저장한다(다른 값싼 도구와 같음). capability `methods.mutation_candidates`는 항상 사용 가능이다. M13 분석 흐름은 이 도구를 부르지 않는다.
+
+### 고정 한계 문장 (결과 `limitations`, 보고서, 화면에 문자 그대로, 순서 고정)
+  1. "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+  2. "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+  3. "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 촉매 잔기 데이터베이스는 사용하지 않았다(없음)."
+  4. "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+  5. "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+
+### 상한과 기본값 (`mutation_constants.py`)
+위치 400, 목록·순번 각 400(넘으면 거절, 자르지 않음). 껍질 반경 기본 5.0 Å(1.0–12.0), 금속 거리 기본 3.0 Å(1.0–5.0), 이황화 SG–SG 2.5 Å(요청 필드가 아닌 상수). 읽기 페이지: 목록 1–100(기본 50), 위치 1–100(기본 50), 후보 1–200(기본 100).
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "mutation_candidates"`, 렌더 `mutation_candidates_markdown@1`. 입력은 후보 집합 handle 하나. 만들기·다시 열기·다운로드는 후보를 다시 만들지 않는다.
+- **계산값**(`computed`, 저장 행을 다시 셈): 위치 수, 상태별 위치 수, 해제된 위치 수, 후보 수, 제외 사유별 위치 수(여섯 개), 출처별 위치 수(셋), 번호 상태별 위치 수(번호 대응을 줬을 때만), 리간드까지 최소 거리의 최솟값(리간드가 있고 거리가 있는 위치가 있을 때만, Å, 그 최솟값을 가진 첫 위치 인용, `Decimal(str(v))` 0.01 `ROUND_HALF_UP`), 보호 검사 다섯 개의 상태, 검사한 항목의 개수(보호·해제 목록 길이, 주석된·없는 부위, 금속 잔기, SG–SG 쌍). 검사하지 않은 KLIFS 항목은 "검사하지 않음" 상태 주장만 있고 숫자가 없다. 촉매 잔기 데이터베이스는 "사용할 수 없음"이며 숫자가 없다.
+- **참조값**(`reference_value`, "참조 스냅샷 값, 계산 아님" + 참조 객체 handle): 위치들의 서로 다른 UniProt accession(번호 대응 행에서 복사), 보호된 위치의 서로 다른 KLIFS 부위 이름표(주석에서 복사). 계산값 주장이 참조 필드를 인용하면 거부한다.
+- 위치 행 전체 목록은 보고서에 넣지 않는다(저장 객체에 있음). 리간드를 주지 않았거나 거리가 있는 위치가 없으면 거리 절에 "계산하지 않음"과 이유를 쓰고 숫자를 쓰지 않는다.
+- 만들고 다시 열 때 저장된 집합을 검증하고, 그것이 이름 붙인 번호 대응·주석·포켓 결과가 같은 구조인지, 복사한 번호 값과 KLIFS 부위 개수·이름표가 저장 객체와 같은지 대조하고, manifest·주장·Markdown 바이트를 다시 만든 것과 비교한다. 틀린 개수·반올림, 검사하지 않은 항목을 검사했다거나 0으로 쓰는 주장, 섞인 증거 종류, 다른 구조·다른 run의 증거는 `report_evidence_invalid`다.
+- 해석 금지어: M15 목록에 안정성·ΔΔG·순위·추천·최적·개선·활성·예측·유망·좋은·나쁜·안전·점수·에너지·수소결합(영문 rank·best·recommend·optimal·improve·predict·promising·good·safe·active·score·energy·hydrogen bond·H-bond 포함)을 더해, 고정 한계 문장 5개와 문자 그대로 같은 줄을 빼고 모든 줄을 검사한다. 검사는 식별자·값을 빈 자리로 둔 고정 템플릿 문장에 하므로 체인·리간드 이름 같은 식별자는 보고서를 깨지 않는다. "촉매"는 금지어가 아니다(필수 문장 "촉매 잔기 데이터베이스: 사용할 수 없음" 때문, M16 보고서와 다름). 촉매 역할 주장은 쓰지 않는다.
+
+### 화면 규칙
+- 단백질 공학 탭(선택된 동안에만 렌더링, 페이지가 run마다 `key`로 새로 만들고 탭에 들어올 때마다 이벤트·포켓·번호 대응·주석·결과 목록을 다시 읽음, GET만). 패널 안에 변이 구조 모델링이 아직 없다는 한 줄(숫자 없음).
+- run이 없거나 전처리 구조가 없으면 숫자·컨트롤 없이 "사용할 수 없음"과 이유만. 전처리 구조·포켓 결과·리간드는 자동으로 고르지 않는다(리간드가 하나뿐이어도). 예외로 구조를 고르면 같은 구조의 가장 최근 주석과 그 주석이 기록한 번호 대응을 미리 고른다. 번호 대응을 따로 골라 주석의 지도와 다르면 충돌을 알리고 요청을 막는다. 주석을 고르지 않으면 요청 영역에 "KLIFS 주요 부위 보호를 검사하지 않음"을 눈에 띄게 알린다. 포켓·번호 대응·주석 목록은 같은 구조 것만(포켓은 포켓 있는 결과만).
+- 값은 서버 응답만 보이고 브라우저에서 계산하지 않는다. 거리는 소수 둘째 자리 `decimalHalfUp`, null은 "—"와 이유(예: "— (리간드를 고르지 않아 계산하지 않음)", "— (중원자 없음)", "— (검사하지 않음)"). 보호 판정을 "안전", 후보를 "추천·좋은·유망", 목록 순서를 순위로 부르지 않는다. 점수·순위 열·막대 그래픽 없음. 이유 코드는 "한국어 (code)".
+- 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음). 후보 0개는 저장된 제외 사유별 개수와 함께 빈 결과다. 늦은 응답은 run + 결과 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 보고서 생성이 늦게 끝나도 run이 같으면 보고서 목록을 다시 읽게 한다.
+
+### 의미하지 않는 것
+변이의 효과(안정성·결합·활성·특이성), ΔΔG·친화도·에너지, 순위·추천·우선순위, 보호 판정의 "안전", 촉매 잔기 여부, 변이 구조의 형태·양성자 상태. 리간드·금속까지 거리는 기하 사실이며 결합·상호작용을 뜻하지 않는다. KLIFS 부위 이름표·UniProt 번호는 참조값이다.
+
 ## PyRosetta와 에너지 표시
 
 - `relax_structure`, `estimate_stability`(Cartesian ddG), `score_interface`, `residue_energies`는 현재 사용할 수 없다. 이유를 담은 unavailable/precondition 응답을 돌려주고, 숫자 자리표시자나 순위는 만들지 않는다.
