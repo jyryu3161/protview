@@ -295,7 +295,7 @@ class Runner(m18.Runner):
                 entry["resultSha256"] = content_sha(self.stored(run, handle))
                 entry["posesSha256"] = m13.sha_bytes(poses) if status == 200 and isinstance(poses, bytes) else None
             rows.append(entry)
-        return {"run": run, "summary": summary, "summarySha256": content_sha(content), "status": content["status"],
+        return {"run": run, "summary": summary, "summarySha256": content_sha(content), "batchStatus": content["status"],
                 "rows": rows}
 
     def job(self, run: str, protocol: str, args: dict, timeout_s: int) -> dict:

@@ -138,6 +138,12 @@ def test_reproducibility_must_match_the_flow_batch(repro):
     assert judged["passed"] is False
 
 
+def test_the_batch_digest_never_overwrites_the_job_status():
+    # a re-run entry carries the job status ("done"); the summary status lives under its own key
+    source = Path(m19.__file__).read_text()
+    assert '"batchStatus": content["status"]' in source and '"status": content["status"]' not in source
+
+
 def test_normalization_hides_only_run_scoped_handles_and_input_hashes():
     one = {"input_sha256": "1" * 64, "batch_input_sha256": "2" * 64, "receptor": {"handle": "obj://run_a/x/1"},
            "rows": [{"result_handle": "obj://run_a/docking_result/3", "score_kcal_mol": -12.1}]}
