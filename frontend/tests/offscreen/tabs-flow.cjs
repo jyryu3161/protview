@@ -20,12 +20,9 @@ const CHEM = path.join(FIXTURES, "chemical");
 const MODES = ["main", "chemical"];
 const TAB_LABELS = ["구조 분석", "단백질 공학", "리간드 설계·탐색", "지식·보고서"];
 const TAB_IDS = ["structure", "protein", "ligand", "knowledge"];
-// Spec §6: what each unavailable part must name (reason + opening stages).
-const UNAVAILABLE = {
-  protein: { tab: "단백질 공학", title: "단백질 공학", stages: ["M20", "M21"], extra: [] },
-};
 // M15 replaced the knowledge tab's "사용할 수 없음" notice with the residue numbering screen (NumberingPanel);
-// M17 replaced the ligand tab's notice with the ligand candidate screen (LigandPanel).
+// M17 replaced the ligand tab's notice with the ligand candidate screen (LigandPanel);
+// M20 replaced the protein tab's notice with the mutation candidate screen (MutationPanel). No tab keeps the notice.
 const NO_RUN_TEXT = "구조 분석 탭에서 run을 먼저 선택하세요";
 const LIST_NAMES = { reports: "저장된 보고서", figures: "저장된 그림", summaries: "분석 흐름 요약" };
 const FAULT_LABEL = "QA fault fixture (labeled renderer route, not a scientific value): reports list read failure";
@@ -241,25 +238,15 @@ async function budgetReadAfter(page, log, run, since) {
 }
 const apiPaths = (log, from, to = Infinity) => log.filter(row => row.api && row.at >= from && row.at < to);
 
-/** Spec §6: notice + reason + opening stage, no numbers besides stage ids, no controls. */
-async function unavailableNotice(page, key) {
-  const spec = UNAVAILABLE[key];
-  const panel = page.getByRole("tabpanel", { name: spec.tab, exact: true });
+/** M20: the protein tab shows the mutation candidate screen for the global run, no unavailable notice. */
+async function proteinScreen(page) {
+  const panel = page.getByRole("tabpanel", { name: "단백질 공학", exact: true });
   await panel.waitFor({ timeout: 10000 });
-  const section = panel.locator("section.mw-unavailable");
-  await section.waitFor({ timeout: 10000 });
-  const text = (await section.innerText()).replace(/\s+/g, " ").trim();
-  const controls = await section.locator("button, input, select, textarea, a, [role=button], [tabindex]").count();
-  const panelControls = await panel.locator("button, input, select, textarea, a, [role=button], [tabindex], img, canvas").count();
-  assert.ok(text.includes("사용할 수 없음"), `${key}: 사용할 수 없음 missing: ${text}`);
-  assert.ok(text.includes(spec.title), `${key}: title missing`);
-  assert.ok(/구현하지 않/.test(text), `${key}: reason missing: ${text}`);
-  for (const stage of spec.stages) assert.ok(text.includes(stage), `${key}: opening stage ${stage} missing`);
-  for (const extra of spec.extra) assert.ok(text.includes(extra), `${key}: ${extra} missing`);
-  assert.ok(!/\d/.test(text.replace(/M\d+/g, "")), `${key}: a number besides the stage ids is shown: ${text}`);
-  assert.equal(controls, 0, `${key}: the notice holds controls`);
-  assert.equal(panelControls, 0, `${key}: the tab holds controls/placeholders`);
-  return { key, text, controls, panelControls };
+  const screen = panel.locator('[data-testid="mutation-panel"]');
+  await screen.waitFor({ timeout: 10000 });
+  const notices = await panel.locator("section.mw-unavailable").count();
+  assert.equal(notices, 0, "protein: the M14 unavailable notice is still shown");
+  return { key: "protein", mutationScreen: true, state: await screen.getAttribute("data-mutation-state"), unavailableNotices: notices };
 }
 /** M17: the ligand tab shows the ligand candidate screen for the global run, no unavailable notice. */
 async function ligandScreen(page) {
@@ -817,12 +804,12 @@ async function modeMain(session, input, rec_, evidence, log) {
       trip.push(await rec_.step(`S02-${key}`, cases, key === "knowledge"
         ? `Click ${label}: numbering screen + report library (M15), no unavailable notice`
         : key === "ligand" ? `Click ${label}: ligand candidate screen (M17), no unavailable notice; read requests only`
-          : `Click ${label}: 사용할 수 없음 notice; requests while shown`, async () => {
+          : `Click ${label}: mutation candidate screen (M20), no unavailable notice; read requests only`, async () => {
         const baseline = new Set(apiPaths(log, 0).map(row => `${row.method} ${row.path}`));
         const started = Date.now();
         await selectTab(page, label);
         const notice = key === "knowledge" ? await knowledgeScreen(page)
-          : key === "ligand" ? await ligandScreen(page) : await unavailableNotice(page, key);
+          : key === "ligand" ? await ligandScreen(page) : await proteinScreen(page);
         await page.waitForTimeout(3000);
         const during = apiPaths(log, started);
         return { notice, during, baseline: [...baseline], line: await globalLine(page),
@@ -830,11 +817,8 @@ async function modeMain(session, input, rec_, evidence, log) {
       }, async value => {
         assert.equal(value.line.run, runA);
         if (key !== "knowledge") {
-          const baseline = new Set(value.baseline);
-          const fresh = value.during.filter(row => !baseline.has(`${row.method} ${row.path}`));
           const writes = value.during.filter(row => row.method !== "GET");
-          // M17: the ligand screen reads its own lists (GET only) while shown; the unavailable tab sends none.
-          if (key !== "ligand") assert.deepEqual(fresh, [], `the ${label} tab caused requests outside the pre-switch polling paths`);
+          // M17/M20: the ligand and protein screens read their own lists (GET only) while shown; no writes.
           assert.deepEqual(writes, []);
         }
         return { notice: value.notice, requestsWhileShown: value.during.map(row => `${row.method} ${row.path}`),
