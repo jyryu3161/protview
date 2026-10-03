@@ -1,0 +1,371 @@
+{
+  "schema": "m15_case_ledger@1",
+  "generatedAt": "2026-10-03T02:46:44.736700+00:00",
+  "build": {
+    "buildId": "HZVIvlS1pgVkSE0gAkqD6",
+    "gitHead": "858bd45217e5bae3e87c4451261c1bc369a079c3",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "df0c7679b164cd655f7f5e259e862f67aeb3d24671b7bdf1fc844295164fe12b",
+    "dirtyFiles": [
+      "?? docs/qa/m19-batch-20261003/acceptance/",
+      "?? docs/qa/m19-batch-20261003/gate.txt",
+      "?? docs/qa/m19-batch-20261003/m16-regression/",
+      "?? docs/qa/m19-batch-20261003/m17-regression/",
+      "?? docs/qa/m19-batch-20261003/m18-regression/"
+    ],
+    "recordedAt": "2026-10-03T02:46:13.865160+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "numbering-flow.cjs": "8996b7fc22495aeeca03600e7f97a4988dc2955ffb05d0b21deeb0e5c9944b8f",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "fbf063db5d81af19dc14213a1f5b67d7c9b2308beb774f062e2248ce0dcb5a90"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "reference": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "N-no-snapshot": {
+      "text": "no snapshot: 사용할 수 없음 and reason, import command; no numbers, no run control",
+      "modes": {
+        "numbering-empty": "pass"
+      },
+      "status": "pass"
+    },
+    "N-confirmed-sifts": {
+      "text": "1MQ4 uploaded, PDB ID suggestion confirmed → SIFTS accession prefilled → run → chain A cross-checked, rows table equals the stored rows",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-klifs-oracle": {
+      "text": "KLIFS numbers on screen equal the KLIFS match_residues table of 1MQ4:A (author number → KLIFS position; GK.45/hinge/xDFG residues required)",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-status-filter": {
+      "text": "status filter (충돌/대응됨/대응 없음/전체) changes the count text; total kept",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-conflict-row": {
+      "text": "S388 row shows 충돌 (one_method_only) with both answers",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-alignment-only": {
+      "text": "accession picked without confirming the PDB ID → 교차 확인 없음 marker; S388 대응 없음",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-below-identity": {
+      "text": "another kinase accession → chain unmapped below identity; 대응된 잔기 없음 (scientific_null)",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-prepared": {
+      "text": "prepared structure (structure-tab 전처리) → map with mapped rows",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-report": {
+      "text": "보고서 만들기 → 잔기 번호 대응 보고서 in the report list; download SHA-256 equal the backend bytes",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-read-retry": {
+      "text": "labeled read failure (snapshots, map list) → failure state with 다시 시도 → recovers",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-run-switch": {
+      "text": "after a run switch the numbering panel shows only the new run's maps",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-late-response": {
+      "text": "a held map-list response of the previous run released after the switch is not applied",
+      "modes": {
+        "numbering-main": "pass"
+      },
+      "status": "pass"
+    },
+    "N-stale": {
+      "text": "after a different (marked fixture) set is activated, earlier maps show 이전 스냅샷 기준",
+      "modes": {
+        "numbering-stale": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "numbering-empty": {
+      "status": "pass",
+      "latest": "numbering-empty",
+      "problems": [],
+      "attempts": 1
+    },
+    "numbering-main": {
+      "status": "pass",
+      "latest": "numbering-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "numbering-stale": {
+      "status": "pass",
+      "latest": "numbering-stale",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "reference": {
+    "kbase": "<home>/Projects/kbase_kinase",
+    "folder": "<repo>/runs/m19-acceptance-20261003-attempt1-m15-regression/reference",
+    "emptyAtStart": {
+      "available": false,
+      "reason_code": "not_installed",
+      "reason": "참조 스냅샷 세트가 설치되어 있지 않습니다(가져오기 명령 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+    },
+    "changes": {
+      "reference-import": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "<repo>/scripts/import_reference_snapshots.py",
+          "--from",
+          "<home>/Projects/kbase_kinase",
+          "--dest",
+          "<repo>/runs/m19-acceptance-20261003-attempt1-m15-regression/reference"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m19-acceptance/attempt1/regressions/m15/services/reference-import.log",
+        "setHash": "8449abf86267bc0648b86bc8c48e4db2af490bdab61fb9050a98daf90dc2fa92",
+        "served": {
+          "available": true,
+          "set_hash": "8449abf86267bc0648b86bc8c48e4db2af490bdab61fb9050a98daf90dc2fa92",
+          "imported_at": "2026-10-03T02:46:20.810772Z",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      },
+      "reference-reimport": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "-c",
+          "import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); from reference_fixture_set import build_fixture_set; print(build_fixture_set(Path(sys.argv[2]), tag=sys.argv[3]))",
+          "<repo>/backend/tests",
+          "<repo>/runs/m19-acceptance-20261003-attempt1-m15-regression/reference",
+          "m15-qa-marked-fixture-20261003T024640"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m19-acceptance/attempt1/regressions/m15/services/reference-reimport.log",
+        "setHash": "d6af1b5fb55e2d26b8d8899084ccbea4e0219f10f362062b0f8803642b9bcc65",
+        "served": {
+          "available": true,
+          "set_hash": "d6af1b5fb55e2d26b8d8899084ccbea4e0219f10f362062b0f8803642b9bcc65",
+          "imported_at": "2026-09-30T00:00:00Z m15-qa-marked-fixture-20261003T024640",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      }
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "numbering-empty",
+      "mode": "empty",
+      "status": "pass",
+      "cases": {
+        "N-no-snapshot": "pass"
+      },
+      "runs": {
+        "A": "run_bc0b2253ed3c472d86c33065f2b77f6e"
+      },
+      "runId": "run_bc0b2253ed3c472d86c33065f2b77f6e",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "maps": {}
+      },
+      "inputs": [
+        {
+          "name": "public_1mq4.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+          "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain)"
+        }
+      ],
+      "fixtureLabels": [],
+      "setHash": null,
+      "previousSetHash": null,
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-03T02:46:20.723Z"
+    },
+    {
+      "step": "numbering-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "N-confirmed-sifts": "pass",
+        "N-klifs-oracle": "pass",
+        "N-status-filter": "pass",
+        "N-conflict-row": "pass",
+        "N-alignment-only": "pass",
+        "N-below-identity": "pass",
+        "N-report": "pass",
+        "N-prepared": "pass",
+        "N-read-retry": "pass",
+        "N-run-switch": "pass",
+        "N-late-response": "pass"
+      },
+      "runs": {
+        "A": "run_51851c960d564ad6b4f936f3301a6bf5",
+        "B": "run_44a488abaab54a24865da64c96eef064"
+      },
+      "runId": "run_51851c960d564ad6b4f936f3301a6bf5",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "maps": {
+          "confirmed": "obj://run_51851c960d564ad6b4f936f3301a6bf5/residue_numbering_map/76689b7076926483dda877242c09d9978f9a136a90c69d86156477a03eb2ee26",
+          "alignmentOnly": "obj://run_51851c960d564ad6b4f936f3301a6bf5/residue_numbering_map/0f174e86d9d41bb0d294cdd7541931837b4407501cb99a4bbb79354a71212cf6",
+          "belowIdentity": "obj://run_51851c960d564ad6b4f936f3301a6bf5/residue_numbering_map/8e4de20a576ce0f80b40546b5b4c019654651c088d2a1cdfe846bfd6774c9ee5",
+          "report": "obj://run_51851c960d564ad6b4f936f3301a6bf5/method_report_manifest/f597919037adf31dfb81c99132aa78174d3af282b98a58b9fb31c93f58e99f3c",
+          "prepared": "obj://run_51851c960d564ad6b4f936f3301a6bf5/residue_numbering_map/986a23d68f8ff127c6b372f963f35914404c9941468e0c87e2d60de58a232b02",
+          "runB": "obj://run_44a488abaab54a24865da64c96eef064/residue_numbering_map/02a8fa5faff7d847657f754746d4c0e800965fce88b1b17efc700cab4419ef17"
+        },
+        "structure": "obj://run_51851c960d564ad6b4f936f3301a6bf5/structure/5640f13b6d2c598eff888d5fa60ffbd51083bbe7eaa09ecdc255191ba8d9341d",
+        "prepared": "obj://run_51851c960d564ad6b4f936f3301a6bf5/prepared_structure/e3ea1204b53a55ceef0c559781ecfc8cfd2856d38620819f1d953e1abfdadeb6"
+      },
+      "inputs": [
+        {
+          "name": "public_1mq4.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+          "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain)"
+        }
+      ],
+      "fixtureLabels": [
+        "QA fault fixture (labeled renderer route, not a scientific value): numbering read failure",
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+      ],
+      "setHash": "8449abf86267bc0648b86bc8c48e4db2af490bdab61fb9050a98daf90dc2fa92",
+      "previousSetHash": null,
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-03T02:46:40.329Z"
+    },
+    {
+      "step": "numbering-stale",
+      "mode": "stale",
+      "status": "pass",
+      "cases": {
+        "N-stale": "pass"
+      },
+      "runs": {
+        "A": "run_51851c960d564ad6b4f936f3301a6bf5",
+        "B": "run_44a488abaab54a24865da64c96eef064"
+      },
+      "runId": "run_51851c960d564ad6b4f936f3301a6bf5",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "maps": {}
+      },
+      "inputs": [],
+      "fixtureLabels": [],
+      "setHash": "d6af1b5fb55e2d26b8d8899084ccbea4e0219f10f362062b0f8803642b9bcc65",
+      "previousSetHash": "8449abf86267bc0648b86bc8c48e4db2af490bdab61fb9050a98daf90dc2fa92",
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-03T02:46:44.350Z"
+    }
+  ]
+}

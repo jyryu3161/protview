@@ -1,0 +1,106 @@
+M19 T12 summary: source freeze, full gate, M19 acceptance QA, regressions (2026-10-03)
+
+frozen source: 858bd45217e5bae3e87c4451261c1bc369a079c3
+  = M19 T11 commit "a batch stopped at the job deadline shows its summary outcome" (last of the T11 review fixes).
+  No source change after the freeze. Working tree clean at start (git status --porcelain empty). Every run below used
+  this HEAD and the same frontend build HZVIvlS1pgVkSE0gAkqD6 (stamped by the M19 runner from the current frontend
+  source, .next/protview-source-sha256 2f1036f6...38dd; the M19 acceptance and all six regressions reused it,
+  buildCurrentWithSource true in every ledger).
+
+environment
+  OS: macOS 15.6 (24G84), arm64; Python 3.11.11 (.venv); Node v24.3.0
+  qvina: QuickVina 2.1 (24 Dec, 2017), conda-forge qvina-2.1.0-h4a521e9_8, qvina2 SHA-256
+         caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c (.deps/qvina/env)
+  docking worker (.deps/docking/venv-locked): CPython 3.11.11, RDKit 2026.03.6, Meeko 0.8.0, gemmi 0.7.5,
+         MDAnalysis 2.10.0
+  worker modules: docking_worker.py SHA-256 07868fd2a52e40907bfce1bb46f80a406f37f211bfb1196b1bd3c55f5e7f7bd9,
+         docking_batch_worker.py SHA-256 e41fb4403413d2ff7ea50ae20a7dff8c9b3bf5dc2b49b45ac5315384ebeae58e
+  backend capability (acceptance environment-capability row): methods.ligand_docking_batch available/ready
+         (batch_constants_sha256 81cdcdf2...d53d), ligand_docking and ligand_candidates available/ready;
+         full pins in acceptance/evidence/case-ledger.json "environment"
+  M17 worker (.deps/prolif/venv-locked): present, RDKit 2026.03.6 (same as M18)
+
+attempt history
+  Before the gate: a Codex Stop hook pytest started by another session (not by T12) was running (incl. docking and
+    docking-batch test groups with live qvina2/guardian processes). T12 waited until it exited (02:11 UTC), then
+    re-checked HEAD = frozen source and a clean tree before starting the gate. No overlap.
+  gate: one run, all exit 0 (gate.txt).
+  M19 acceptance:
+    aborted launch (not an acceptance attempt): 02:37:28 UTC, --root runs/m19-acceptance-20261003
+      --artifacts .../m19-acceptance/final. Stopped by T12 (SIGTERM, exit 143) about 17 s in, right after its
+      typecheck+build (both exit 0; this build is the stamped build used below) and before any flow step, because the
+      tool's 2-hour background limit could have killed the regression chain mid-run. No run, job or flow was created;
+      the services it had started (uvicorn 8000, next 3000) were stopped by T12 and the empty root was removed. Its
+      log stays in the git-ignored frontend/tests/offscreen/artifacts/m19-acceptance/final/.
+    attempt 1 (adopted, the only acceptance attempt): relaunched detached, 02:38:10-03:23:28 UTC (2718 s incl.
+      regressions), --build auto reused the stamped build. acceptance true. No failed attempt, no retry.
+  regressions: run once each by the M19 runner (--regressions), all acceptance true. No failed attempt.
+
+gate (gate.txt)
+  [1] backend pytest: exit 0, 1613 passed, 0 skipped, 1515 s (MW_KBASE_REF=<home>/Projects/kbase_kinase/ref)
+  [2] ruff: exit 0 (All checks passed!)
+  [3] scripts pytest (14 files = .codex/hooks/stop.py catch-all scripts list: the 13 M18 gate files +
+      test_m19_offscreen_acceptance.py): exit 0, 310 passed, 0 skipped
+  [4]-[11] node --check pocket/workflows/tabs/numbering/annotation/ligand/docking/docking-batch flows: exit 0 (8 files)
+  [12] test:events: exit 0, 277 pass, 0 fail, 0 skipped
+  [13] typecheck: exit 0; [14] build: exit 0 (run after typecheck, not concurrently)
+
+M19 acceptance (acceptance/)
+  .venv/bin/python scripts/m19_offscreen_acceptance.py --root runs/m19-acceptance-20261003-attempt1 \
+      --artifacts frontend/tests/offscreen/artifacts/m19-acceptance/attempt1 \
+      --out docs/qa/m19-batch-20261003/acceptance --regressions --kbase <home>/Projects/kbase_kinase
+  verdict pass, acceptance true; 26/26 judged cases pass (22 batch-main cases B-run-panel ... B-wording,
+  B-no-run + B-unavailable from batch-unavailable, B-reproducible, S-no-egress); steps batch-main and
+  batch-unavailable pass; environment, environment-capability, layout-capability (worker_missing), leftover-processes
+  and export-evidence (leaked []) rows pass.
+  Not observed (recorded as such, not forged; covering tests named in the ledger):
+    B-dry-run-shortfall (a dry-run run cannot hold a candidate set; dry-run note and absent approval control observed),
+    B-null-result (qvina returned modes for every valid input),
+    B-time-limits (candidate_timeout / time_exhausted / worker_failed / 128 MiB output cap need hours or a killed
+    worker).
+  Non-loopback requests 0 on every row (externalRequestsTotal 0, no row with unknown count); providerCallsZero true on
+  every flow row and on both reproducibility re-runs (provider calls 0); leftover processes: none (no batch worker,
+  docking worker, M17 worker, guardian, qvina2, 8000 or 3000 listener).
+  Reproducibility: the flow's free batch (parent + c_1afb7cd3e603456c, c_2c7a25e0cc0ad3f2, c_21d6c6f0d07e3759; seed 42,
+  exhaustiveness 1, num_modes 3, energy_range 3, ligand_range margin 8) re-run in two fresh runs over the API gave
+  status done / complete and the same handle-normalized summary SHA-256
+  c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475 as the flow (rows and pose SDF compared by the
+  runner). Stored first-row qvina scores (kcal/mol, Vina-family scoring function value, not an affinity):
+  parent -12.9, c_1afb7cd3e603456c -9.6, c_2c7a25e0cc0ad3f2 -11.8, c_21d6c6f0d07e3759 -11.6. The parent score equals
+  the M18 free-docking first-mode score with the same inputs and values (-12.9).
+  Note: the flow's free batch uses exhaustiveness 1 (slow cancel batch uses 8), so batch-main finished in about 2 min.
+
+regressions (each with its own fresh --root runs/m19-acceptance-20261003-attempt1-m1X-regression and --artifacts
+  frontend/tests/offscreen/artifacts/m19-acceptance/attempt1/regressions/m1X, serially, started by the M19 runner with
+  --code-root <repo>; ports free before and after)
+  | runner | out                    | exit | acceptance | cases          | not observed | ext. requests |
+  | M18    | m18-regression/        | 0    | true       | 24/24          | D-zero-modes | 0             |
+  | M17    | m17-regression/        | 0    | true       | 21/21          | -            | 0             |
+  | M16    | m16-regression/ (kbase)| 0    | true       | 19/19          | -            | 0             |
+  | M15    | m15-regression/ (kbase)| 0    | true       | 14/14          | -            | 0             |
+  | M14    | m14-regression/        | 0    | true       | 15/15          | -            | 0             |
+  | M8-M13 | m13-regression/        | 0    | true       | 28/28, 17 req. | -            | 0             |
+  M13 ran --phases workflows,unavailable,regressions,m11,m12,ledger; its M11 and M12 sub-runners pass.
+  Leftover processes [] in every ledger. Provider calls: every flow row that records providerCallsZero has it true
+  (the M13 sub-runner/regression rows do not record the field, same as in M18).
+  Changed existing expectations: none. The M18 docking flow, M17 ligand flow and M14 tab flow passed unchanged with the
+  batch docking area mounted in the ligand tab.
+
+evidence layout
+  Committed here: small text/JSON only (gate.txt, summary.txt, acceptance/, m1X-regression/ with SHA256SUMS and
+  binary-artifacts.json hashes). Screenshots, paint frames, browser profiles and downloads stay in the git-ignored
+  artifacts folders above.
+  Decision 0020: text files over 256 KiB (ledgers excepted) were moved to <artifacts>/regressions/m1X/export-full/
+  (m13-regression 51 files 331,871,173 bytes, m14-regression 1 file 1,191,725 bytes, m15-regression 1 file 590,108
+  bytes; acceptance, m16-m18 regressions had none); see each folder's ARCHIVED-EVIDENCE.sha256 and README last section
+  (verified shasum -a 256 -c, all OK). SHA256SUMS keeps the original lines; its README.md line was refreshed after
+  the README section was appended (all non-archived lines verify OK).
+  Full gate logs: frontend/tests/offscreen/artifacts/m19-acceptance/gate/.
+
+end state
+  After the regressions: no qvina2, docking_batch_worker, docking_worker, ligand_worker, chemical_worker, guardian,
+  uvicorn, next or Electron process; 8000/3000 free. git status: only untracked docs/qa/m19-batch-20261003/ evidence;
+  HEAD unchanged (858bd45217e5bae3e87c4451261c1bc369a079c3).
+
+note
+  preflight.txt (T1, committed earlier, not edited here) uses <repo>/<scratch>; later evidence uses <repo>/<home>.

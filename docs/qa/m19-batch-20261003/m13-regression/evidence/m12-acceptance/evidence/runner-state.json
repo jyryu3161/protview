@@ -1,0 +1,108 @@
+{
+  "build": {
+    "buildId": "HZVIvlS1pgVkSE0gAkqD6",
+    "gitHead": "858bd45217e5bae3e87c4451261c1bc369a079c3",
+    "gitStatusPorcelainSha256": "778f30c3b9e326589c49d0fa213eb6ff3e41737c23376bfdd0210c4f970196dd",
+    "dirtyFiles": [
+      "?? docs/qa/m19-batch-20261003/acceptance/",
+      "?? docs/qa/m19-batch-20261003/gate.txt",
+      "?? docs/qa/m19-batch-20261003/m14-regression/",
+      "?? docs/qa/m19-batch-20261003/m15-regression/",
+      "?? docs/qa/m19-batch-20261003/m16-regression/",
+      "?? docs/qa/m19-batch-20261003/m17-regression/",
+      "?? docs/qa/m19-batch-20261003/m18-regression/"
+    ],
+    "recordedAt": "2026-10-03T03:15:45.494228+00:00",
+    "harnessSha256": {
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+    },
+    "inputSha256": {
+      "public_1hsg.cif": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "derived_1hsg_first10_fixture.cif": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+      "prolif-vina-rec.pdb": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "prolif-vina-output.sdf": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    },
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d",
+    "qaInputsSha256": "f65692c4983bf9eaca6fb4d9b4bbed1792ba0d03ce3447403c8597d89ff5994f"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-03T03:15:48.972489+00:00"
+    },
+    {
+      "name": "backend-replay-engine-missing",
+      "runs": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/replay-runs",
+      "code": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-03T03:23:10.702477+00:00"
+    },
+    {
+      "name": "backend-unavailable-missing",
+      "runs": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/unavailable-missing-runs",
+      "code": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-03T03:23:18.073661+00:00"
+    },
+    {
+      "name": "backend-unavailable-hash",
+      "runs": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/unavailable-hash-runs",
+      "code": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/layout-engine-tampered",
+      "mw": "<repo>/runs/m19-acceptance-20261003-attempt1-m13-regression/m12-acceptance/layout-engine-tampered/backend/mw/__init__.py",
+      "startedAt": "2026-10-03T03:23:22.200727+00:00"
+    }
+  ],
+  "positive": {
+    "run": "run_d0d97c6690574a11ab6daf3fe00b5f64",
+    "set": "obj://run_d0d97c6690574a11ab6daf3fe00b5f64/pocket_set/6f7ca46ef8b6929e90688089ac2dce431017e7afe74900fa6c129512671ecb93",
+    "prepared": "obj://run_d0d97c6690574a11ab6daf3fe00b5f64/prepared_structure/5eeafc7809b51949c7cf78d18926ee8373e5444d994edb967112a39d5808969c",
+    "original": "obj://run_d0d97c6690574a11ab6daf3fe00b5f64/structure/6d29e173939e0ea3d80aaff8c4fa313e1930d537c952fedbf210d69a2457dc2d",
+    "report": "obj://run_d0d97c6690574a11ab6daf3fe00b5f64/method_report_manifest/801539dca62ffc3f9ed99697060634a31f707370affa2c09395b1443f64aabf6",
+    "md": "3844759da1cedbd08689c7dcb99d5308f7bc16d4953a34937585df21168f2b23",
+    "json": "fc173d2765794d27b057f6c59addf63ac8fa26a08a6d187015081fce422599dc"
+  },
+  "empty": {
+    "run": "run_7e68341907734966b177d33c08c425b2",
+    "set": "obj://run_7e68341907734966b177d33c08c425b2/pocket_set/37bdc5b13dd17812da8f2c74e341c449fdeb16de7226d39771d797fdca3face7",
+    "report": "obj://run_7e68341907734966b177d33c08c425b2/method_report_manifest/06aae729fd09bd46983c75e2c22955c3c796e1a5da8a40c7924d9078697cbc57",
+    "md": "4e3aa8e132159de82a82c9638e4a31eea4cb3e05952452a1fab2e105736c81fd",
+    "json": "608e3d16420c415ba4ef5ff95dcdb1f232d972df8fb3f6aa094577a3b82bae02"
+  },
+  "chemical": {
+    "run": "run_90bca53b9756463bad4609ad25dfff50",
+    "result": "obj://run_90bca53b9756463bad4609ad25dfff50/chemical_interaction_set/09860c7b84f6a8cc6d438dd315e3966354088cc7c49f160a4743c33b36b37a82"
+  },
+  "scenesRun": "run_eca109eab3ce41dcb8a4efba8de3dfc4",
+  "m11Prepared": {
+    "run": "run_e097c703f1df413b9198be6fcb6000be",
+    "graph": "obj://run_e097c703f1df413b9198be6fcb6000be/chemical_graph/80bfe95e6b2bd7c10b46de7e94841de53add58d8af9e396902af1dfc50302c7c"
+  },
+  "layouts": {
+    "layout-engine-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent",
+      "files": 98,
+      "treeSha256": "a11a83a25d40624b8bc41d7408984b3935f4a7abeaa09ef06fd9cf3c69175eed",
+      "engine": null
+    },
+    "layout-engine-tampered": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; real install record with a labeled placeholder bin/fpocket (SHA-256 42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822, not the reviewed build)",
+      "files": 98,
+      "treeSha256": "a11a83a25d40624b8bc41d7408984b3935f4a7abeaa09ef06fd9cf3c69175eed",
+      "engine": {
+        "path": ".deps/fpocket/env/bin/fpocket",
+        "sha256": "42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822"
+      }
+    }
+  }
+}

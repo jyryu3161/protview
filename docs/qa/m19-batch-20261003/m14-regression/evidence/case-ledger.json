@@ -1,0 +1,296 @@
+{
+  "schema": "m14_case_ledger@1",
+  "generatedAt": "2026-10-03T02:48:29.762935+00:00",
+  "build": {
+    "buildId": "HZVIvlS1pgVkSE0gAkqD6",
+    "gitHead": "858bd45217e5bae3e87c4451261c1bc369a079c3",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "a1452c56b807db2cb838082f307b625251556975dec2b363c582aa6552357ad6",
+    "dirtyFiles": [
+      "?? docs/qa/m19-batch-20261003/acceptance/",
+      "?? docs/qa/m19-batch-20261003/gate.txt",
+      "?? docs/qa/m19-batch-20261003/m15-regression/",
+      "?? docs/qa/m19-batch-20261003/m16-regression/",
+      "?? docs/qa/m19-batch-20261003/m17-regression/",
+      "?? docs/qa/m19-batch-20261003/m18-regression/"
+    ],
+    "recordedAt": "2026-10-03T02:46:45.065928+00:00",
+    "codeRoot": "<repo>",
+    "deps": {
+      "present": true,
+      "symlink": false,
+      "resolved": "<repo>/.deps"
+    },
+    "harnessSha256": {
+      "tabs-flow.cjs": "b404797c1228eb2027c99d83a6d9637052e139d44d89ea53c464877d8a75c828",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "0d31abfa50fe8b3cdb49afe28da034f97a08f2a5642bd853fb45fed298688b72"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "acceptancePhases": [
+    "tabs"
+  ],
+  "phases": [
+    "tabs",
+    "ledger"
+  ],
+  "scope": {
+    "partial": false,
+    "only": [],
+    "requiredSteps": [
+      "tabs-main",
+      "tabs-chemical"
+    ]
+  },
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "T-tabs": {
+      "text": "four tabs in order with their labels; \uad6c\uc870 \ubd84\uc11d selected by default; switching keeps the address",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-structure-state": {
+      "text": "source handle, representation, residue selection, camera identical after visiting the other three tabs; non-empty paint after return",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-running-job": {
+      "text": "a running OpenMM job keeps progressing (polling) while another tab is shown",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-chemical-preserved": {
+      "text": "chemical workspace kept across a tab round trip; tab bar visible there",
+      "modes": {
+        "tabs-chemical": "pass"
+      },
+      "status": "pass"
+    },
+    "T-unavailable": {
+      "text": "unavailable tab (\ub2e8\ubc31\uc9c8 \uacf5\ud559): \uc0ac\uc6a9\ud560 \uc218 \uc5c6\uc74c, reason, opening stage; no numbers/controls; no requests of its own. \uc9c0\uc2dd\u00b7\ubcf4\uace0\uc11c shows the M15 numbering screen and \ub9ac\uac04\ub4dc \uc124\uacc4\u00b7\ud0d0\uc0c9 the M17 candidate screen (GET reads only) instead of their former notices",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-reports-list": {
+      "text": "interaction + method report, saved figure, completed summary listed; non-complete execution absent",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-reports-content": {
+      "text": "content shown; download bytes SHA-256 equal the backend bytes of the same format",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-reports-fault": {
+      "text": "reports-list fault (labeled fixture) affects only that list; retry; structure screen intact",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-no-run": {
+      "text": "no run: guidance shown and no list request",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-run-switch": {
+      "text": "after a run switch in \uad6c\uc870 \ubd84\uc11d the reports tab shows only the new run's lists",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-late-response": {
+      "text": "held list responses of the previous run released after the switch are dropped",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-global-run": {
+      "text": "global run id equals the structure (and chemical) screen's",
+      "modes": {
+        "tabs-main": "pass",
+        "tabs-chemical": "pass"
+      },
+      "status": "pass"
+    },
+    "T-budget-main": {
+      "text": "global budget equals backend /budget after an expensive computation at tab switch (main screen)",
+      "modes": {
+        "tabs-main": "pass"
+      },
+      "status": "pass"
+    },
+    "T-budget-chemical": {
+      "text": "global budget equals backend /budget after expensive jobs at tab switch (chemical screen)",
+      "modes": {
+        "tabs-chemical": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "tabs-main": {
+      "status": "pass",
+      "latest": "tabs-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "tabs-chemical": {
+      "status": "pass",
+      "latest": "tabs-chemical",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "tabs-chemical",
+      "mode": "chemical",
+      "status": "pass",
+      "cases": {
+        "T-global-run": "pass",
+        "T-chemical-preserved": "pass",
+        "T-budget-chemical": "pass"
+      },
+      "runs": {
+        "C": "run_a1e6ffe826634fa6997f82dd7d93157c"
+      },
+      "runId": "run_a1e6ffe826634fa6997f82dd7d93157c",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "chemical": {
+          "execution": "exec_93f9c4efbfcd41adbb96779161b26601",
+          "result": "obj://run_a1e6ffe826634fa6997f82dd7d93157c/chemical_interaction_set/8d48d8587fec3a3d661baf5a4778e4e479a59537e542c276ef021f905c2fe04e"
+        }
+      },
+      "inputs": [
+        {
+          "name": "prolif-vina-rec.pdb",
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+          "bytes": 504575,
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+          "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+          "handle": "obj://run_a1e6ffe826634fa6997f82dd7d93157c/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+        },
+        {
+          "name": "prolif-vina-output.sdf",
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+          "bytes": 60682,
+          "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+          "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+          "handle": "obj://run_a1e6ffe826634fa6997f82dd7d93157c/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+        }
+      ],
+      "fixtureLabels": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-03T02:48:29.293Z"
+    },
+    {
+      "step": "tabs-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "T-no-run": "pass",
+        "T-tabs": "pass",
+        "T-global-run": "pass",
+        "T-structure-state": "pass",
+        "T-unavailable": "pass",
+        "T-reports-list": "pass",
+        "T-reports-content": "pass",
+        "T-reports-fault": "pass",
+        "T-running-job": "pass",
+        "T-budget-main": "pass",
+        "T-run-switch": "pass",
+        "T-late-response": "pass"
+      },
+      "runs": {
+        "A": "run_fbe55cc919814184a89f3e1d0b268718",
+        "B": "run_07ee6e9e4d6e4cacbab8cbb7b34b3730"
+      },
+      "runId": "run_fbe55cc919814184a89f3e1d0b268718",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "prepared": "obj://run_fbe55cc919814184a89f3e1d0b268718/prepared_structure/4adba28b6ddbb9bff17632d2d10347867604dabe98ad9b796816ad4f8e26632c",
+        "workflow": {
+          "plan": "obj://run_fbe55cc919814184a89f3e1d0b268718/analysis_plan/3f4e6992f199dca1e1d654beb5409b64fa75b8f63b5d227b3632983199bae85d",
+          "stopped": "exec_ef9d278b769041709a0b6dd676d9f605",
+          "complete": "exec_56a96d242a584e86ba3309eb849dfa7b",
+          "summary": "obj://run_fbe55cc919814184a89f3e1d0b268718/workflow_summary/acb637a5799fa2f377e20d8cb1beb32893ccc0d4ede600eafa120462bf96f79f",
+          "reports": [
+            "obj://run_fbe55cc919814184a89f3e1d0b268718/report_manifest/a22444c675968abbb92b0ea8ebb9733c11217bafad613459c9537f9f25def25b",
+            "obj://run_fbe55cc919814184a89f3e1d0b268718/method_report_manifest/ef7b4f7a3dfe1849db2033618a41b3d83ea93d6ad90f5cd04a308d5bc068faee"
+          ]
+        },
+        "figure": {
+          "scene": "obj://run_fbe55cc919814184a89f3e1d0b268718/viewer_scene/f266dd2988da8b0055e1c2509dd4574dd97958a216c55edc1e7dfb4bcc7bc257",
+          "figure": "obj://run_fbe55cc919814184a89f3e1d0b268718/viewer_figure/d3899a86df8521d52e5e94d5bfdbb85cc278cb71a802967b5e58f3fa51c86d5b"
+        },
+        "openmm": {
+          "jobId": "job_5cdbe3598f5e4d20a12ba5b9a7efe8b2",
+          "prepared": "obj://run_07ee6e9e4d6e4cacbab8cbb7b34b3730/prepared_structure/ea7a0f61e07a75c10607815a3c52c221262e3cc3def38f39a0948bd7171d27bf"
+        }
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+          "bytes": 212124,
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture)"
+        },
+        {
+          "name": "public_1ubq.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+          "bytes": 103220,
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture; OpenMM input)"
+        }
+      ],
+      "fixtureLabels": [
+        "QA fault fixture (labeled renderer route, not a scientific value): reports list read failure",
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-03T02:47:36.840Z"
+    }
+  ]
+}

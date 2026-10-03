@@ -1,0 +1,115 @@
+M19 T12 full gate (docs/standards.md 검증 게이트 + docking-batch-flow.cjs + test_m19_offscreen_acceptance.py)
+frozen source: 858bd45217e5bae3e87c4451261c1bc369a079c3
+working tree clean at start: yes (git status --porcelain empty; HEAD = frozen source)
+env (backend pytest only): MW_KBASE_REF=<home>/Projects/kbase_kinase/ref
+started: 2026-10-03T02:11:48Z
+note: [1] ran in the background; [2]-[14] ran sequentially meanwhile (typecheck before build, never concurrently).
+      A Codex Stop hook pytest (another session, not started by this run) was running when T12 began; the gate
+      started only after it had exited (no overlapping pytest).
+      [3] uses the scripts list of the .codex/hooks/stop.py catch-all group (13 M18 gate files +
+      scripts/test_m19_offscreen_acceptance.py = 14 files).
+full logs (git-ignored): frontend/tests/offscreen/artifacts/m19-acceptance/gate/
+
+## [1] .venv/bin/python -m pytest backend/tests -q -rs -p no:cacheprovider
+exit: 0 duration_s: 1515
+skipped: 0 (no SKIPPED lines in -rs output)
+summary:
+  .venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+    <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+      from starlette.testclient import TestClient as TestClient  # noqa
+  
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  1613 passed, 1 warning in 1514.62s (0:25:14)
+
+## [2] .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
+exit: 0  duration_s: 0
+summary:
+  All checks passed!
+
+## [3] .venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py -q -rs -p no:cacheprovider
+exit: 0  duration_s: 6
+summary:
+  310 passed in 5.79s
+
+## [4] node --check frontend/tests/offscreen/pocket-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [5] node --check frontend/tests/offscreen/workflows-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [6] node --check frontend/tests/offscreen/tabs-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [7] node --check frontend/tests/offscreen/numbering-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [8] node --check frontend/tests/offscreen/annotation-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [9] node --check frontend/tests/offscreen/ligand-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [10] node --check frontend/tests/offscreen/docking-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [11] node --check frontend/tests/offscreen/docking-batch-flow.cjs
+exit: 0  duration_s: 0
+summary:
+  (no output)
+
+## [12] npm --prefix frontend run test:events
+exit: 0  duration_s: 1
+summary:
+  ✔ tab id guard accepts only the four ids (0.080416ms)
+  ✔ unavailable notices cover protein only; structure, ligand (M17 screen) and knowledge (M15 numbering) have none (0.141666ms)
+  ✔ notices name the stage that opens each feature (0.092041ms)
+  ✔ notice text carries no measured-looking numbers beyond stage names (0.132292ms)
+  ℹ tests 277
+  ℹ suites 0
+  ℹ pass 277
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 401.162167
+
+## [13] npm --prefix frontend run typecheck
+exit: 0  duration_s: 3
+summary:
+  
+  > molecular-workspace-web@0.1.0 typecheck
+  > tsc --noEmit
+
+## [14] npm --prefix frontend run build
+exit: 0  duration_s: 12
+summary:
+  ┌ ○ /                                     126 kB         274 kB
+  ├ ○ /_not-found                            999 B         104 kB
+  └ ○ /gallery                             4.45 kB         153 kB
+  + First Load JS shared by all             103 kB
+    ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB
+    ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB
+    └ other shared chunks (total)          2.42 kB
+  
+  
+  ƒ Middleware                               34 kB
+  
+  ○  (Static)  prerendered as static content
+
+finished: 2026-10-03T02:37:17Z
+tree status after gate: clean; HEAD unchanged (858bd45217e5bae3e87c4451261c1bc369a079c3)
+processes after gate: no qvina2, guardian, docking/batch/ligand worker, uvicorn or next process; 8000/3000 free
