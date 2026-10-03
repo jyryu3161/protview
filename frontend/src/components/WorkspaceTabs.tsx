@@ -1,7 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import type { BudgetSnapshot } from "@/lib/contracts";
-import { UNAVAILABLE_NOTICES, UNAVAILABLE_STATUS, WORKSPACE_TABS, type UnavailableNotice, type WorkspaceTabId } from "@/lib/workspace-tabs";
+import { WORKSPACE_TABS, type WorkspaceTabId } from "@/lib/workspace-tabs";
 
 export interface WorkspaceTabsProps {
   active: WorkspaceTabId;
@@ -12,20 +12,7 @@ export interface WorkspaceTabsProps {
   reports?: ReactNode;            // 지식·보고서 tab report body (rendered only while that tab is shown)
   numbering?: ReactNode;          // 지식·보고서 tab residue numbering screen (rendered only while that tab is shown)
   ligand?: ReactNode;             // 리간드 설계·탐색 tab body (M17; rendered only while that tab is shown)
-}
-
-function UnavailableSection({ notice }: { notice: UnavailableNotice }) {
-  return (
-    <section className="mw-unavailable" aria-label={`${notice.title} ${UNAVAILABLE_STATUS}`}>
-      <h2 className="mw-unavailable__title">{notice.title}</h2>
-      <p className="mw-unavailable__status">{UNAVAILABLE_STATUS}</p>
-      <p>{notice.reason}</p>
-      <ul className="mw-unavailable__opens">
-        {notice.opens.map(item => <li key={item.stage}>{item.feature}: {item.stage}에서 열립니다.</li>)}
-      </ul>
-      {notice.note && <p className="mw-unavailable__note">{notice.note}</p>}
-    </section>
-  );
+  protein?: ReactNode;            // 단백질 공학 tab body (M20; rendered only while that tab is shown)
 }
 
 export function WorkspaceTabs(p: WorkspaceTabsProps) {
@@ -53,7 +40,7 @@ export function WorkspaceTabs(p: WorkspaceTabsProps) {
           {p.structure}
         </div>
         {p.active === "protein" && <div role="tabpanel" id="mw-app-panel-protein" aria-labelledby="mw-app-tab-protein" className="mw-app-panel">
-          <UnavailableSection notice={UNAVAILABLE_NOTICES.protein} />
+          {p.protein != null && <div className="mw-app-protein">{p.protein}</div>}
         </div>}
         {p.active === "ligand" && <div role="tabpanel" id="mw-app-panel-ligand" aria-labelledby="mw-app-tab-ligand" className="mw-app-panel">
           {p.ligand != null && <div className="mw-app-ligand">{p.ligand}</div>}

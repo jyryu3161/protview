@@ -480,3 +480,36 @@
 .mw-docking-row--selected td { background: var(--brand-soft); }
 .mw-docking-sort { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
 .mw-docking-sort:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* M20 mutation candidate panel (MutationPanel, protein engineering tab). Tables only: no bars, scores or rank marks. */
+.mw-app-protein { margin: var(--space-3); }
+.mw-mutation { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); min-width: 0; font-size: 12px; color: var(--ink); }
+.mw-mutation p { margin: 0; overflow-wrap: anywhere; }
+.mw-mutation-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mw-mutation-heading { margin: 0; font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.mw-mutation-section { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-000); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-mutation-title { margin: 0; font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.mw-mutation-group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.mw-mutation-sub { margin-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.mw-mutation-note { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+.mw-mutation-notice { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-precondition); background: var(--surface-200); font-size: 12px; font-weight: 600; color: var(--ink); }
+.mw-mutation-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
+.mw-mutation-errors { margin: 0; padding-left: var(--space-4); font-size: 12px; color: var(--fail-input); }
+.mw-mutation-unavailable { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-mutation-null { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-precondition); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-mutation-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-mutation-check { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--ink); }
+.mw-mutation-check select.mw-select { max-width: 100%; }
+.mw-mutation-input { width: 84px; height: var(--control-sm); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-200); color: var(--ink); font: 400 12px/16px var(--font-mono); padding: 0 var(--space-2); }
+.mw-mutation-choices { margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-height: 320px; overflow: auto; }
+.mw-mutation-choices legend { padding: 0 var(--space-1); color: var(--ink-muted); }
+.mw-mutation-choices label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.mw-mutation-choices .mw-mono { overflow-wrap: anywhere; word-break: break-all; }
+.mw-mutation-allowed { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--space-1); }
+.mw-mutation-picker { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.mw-mutation-list { margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-wrap: anywhere; }
+.mw-mutation-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-mutation-table-wrap { overflow: auto; max-height: 480px; min-width: 0; max-width: 100%; }
+.mw-mutation-table { border-collapse: collapse; font-size: 12px; color: var(--ink); }
+.mw-mutation-table th, .mw-mutation-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
+.mw-mutation-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
