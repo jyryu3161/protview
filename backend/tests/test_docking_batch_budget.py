@@ -209,6 +209,58 @@ def test_the_raise_never_grants_the_first_expensive_approval(base, tmp_path, mon
     assert caught.value.gate == "expensive_first_call"
 
 
+def _hooked_run(base, tmp_path, monkeypatch, goal: str):
+    """A fresh API run whose batch selection is the real one from the world (labeled internal hooks, N = 1)."""
+    world, _root = _world(base, tmp_path, "world")
+    args = _args(base, IDS[:1])
+    selection = BJ.submission(world, args)
+    root = tmp_path / "runs"
+    monkeypatch.setattr(api_module, "RUNS_DIR", root)
+    api_module.RUNS.clear()
+    client = TestClient(api_module.app, base_url="http://127.0.0.1")
+    rid = client.post("/runs", json={"goal": goal, "dry_run": False}).json()["run_id"]
+    monkeypatch.setattr(BJ, "submission", lambda _run, _args: selection)
+    monkeypatch.setattr(BJ, "reuse_plan", lambda _run, selected, _pins: [None] * len(selected["rows"]))
+    return client, rid, args, root / rid / "events.jsonl"
+
+
+def test_the_decision_and_the_raise_use_the_same_budget_snapshot(base, tmp_path, monkeypatch):
+    """The need is decided on the snapshot the raise plans with (taken under the run owner, without the in-flight
+    active time of an attempt that has not been charged yet): no shortfall there, nothing changes and the answer
+    agrees with itself."""
+    _client, rid, args, events_path = _hooked_run(base, tmp_path, monkeypatch, "M19 snapshot")
+    run = api_module._run(rid)
+    run.update_limits(BudgetLimits(expensive_calls=8, wall_clock_s=400), by="test")   # N = 1 needs 600 s
+    run._refresh()
+    left = 400 - run.budget.snapshot()["wall_clock_s"]["used"]
+    run.update_limits(BudgetLimits(expensive_calls=8, wall_clock_s=400 + (600 - left) + 30), by="test")
+    run._refresh()
+    raw = events_path.read_bytes()
+    run._active_started = run.monotonic() - 120   # labeled fault: 120 s of uncharged active time in flight
+    try:
+        assert run.budget_snapshot()["wall_clock_s"]["used"] > run.budget.snapshot()["wall_clock_s"]["used"] + 100
+        body = BJ.limit_approval(run, args)
+    finally:
+        run._active_started = None
+    assert body["raised"] is False and body["event_seq"] is None
+    assert body["shortfall_before"] == body["shortfall_after"] == {"expensive_calls": 0, "wall_clock_s": 0}
+    assert body["increase"] == {"expensive_calls": 0, "wall_clock_s": 0}
+    assert events_path.read_bytes() == raw
+
+
+def test_a_cancelled_run_refuses_the_raise_and_writes_nothing(base, tmp_path, monkeypatch):
+    client, rid, args, events_path = _hooked_run(base, tmp_path, monkeypatch, "M19 cancelled")
+    run = api_module._run(rid)
+    run.update_limits(BudgetLimits(expensive_calls=0, wall_clock_s=100), by="test")   # short on both axes
+    run.cancel()
+    raw = events_path.read_bytes()
+    refused = client.post(ROUTE.format(rid=rid), json=args)
+    assert refused.status_code == 409, refused.text
+    assert refused.json() == {"ok": False, "error": "cancelled", "message": "run cancelled"}
+    assert not [e for e in run.events.read() if e["type"] == "budget_limit_updated" and e.get("by") == "human"]
+    assert events_path.read_bytes() == raw
+
+
 def _limits(run) -> dict:
     snapshot = run.budget_snapshot()
     return {axis: snapshot[axis]["limit"] for axis in BI.AXES}

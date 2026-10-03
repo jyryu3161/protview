@@ -49,6 +49,7 @@ from .docking_batch_bundle import (
     check_summary,
     complete_duplicate,
 )
+from .runtime.orchestrator import RunCancelled
 
 ROOT = Path(__file__).resolve().parents[2]
 BATCH_WORKER = ROOT / "backend/mw/jobs/docking_batch_worker.py"
@@ -140,36 +141,46 @@ def require_budget(run: Any, selected: dict[str, Any], pins: dict[str, Any]) -> 
     return new
 
 
+def _refuse_cancelled(run: Any) -> None:
+    if run._cancel_path.exists() or run.cancelled:
+        raise RunCancelled("run cancelled")
+
+
 def limit_approval(run: Any, args: Any) -> dict[str, Any]:
     """Spec 6.3: the human-approved limit raise for one batch, called only by its HTTP route (a UI action; never a
     tool, plan or workflow step, model command or loop action). Dry-run runs plan only and refuse it (412 ``dry_run``,
     nothing written). The need is recomputed from the stored results and the current budget (under the run owner),
     and only the shortfall is raised (``docking_batch_inputs.limit_increase``) with one ``budget_limit_updated``
     (by ``human``) carrying the batch context. Nothing short: nothing changes and no event is written. It never
-    approves the first expensive call, reserves, charges or refunds anything."""
+    approves the first expensive call, reserves, charges or refunds anything. A cancelled run refuses it
+    (``RunCancelled``, nothing written). Every decision uses the snapshot ``Run.raise_limits`` plans with
+    (``run.budget.snapshot()``: charged usage only), so the answer never disagrees with the raise."""
     if run.dry_run:
         raise ToolFailure(FailureClass.precondition, "dry-run runs plan only; there is no limit to raise",
                           detail={"reason_code": "dry_run"})
+    run._refresh()
+    _refuse_cancelled(run)
     selected, _normalized, _handles = submission(run, args)
     pins, _batch_pins = require_ready()
     new = sum(handle is None for handle in reuse_plan(run, selected, pins))
     needed = docking_batch_inputs.needed_budget(new)
 
     def plan(snapshot: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        _refuse_cancelled(run)   # again under the run owner, right before the limit event
         return docking_batch_inputs.limit_increase(needed, snapshot), {
             "purpose": "docking_batch_limit_raise", "batch_input_sha256": selected["batch_input_sha256"],
             "new_dockings": new, "needed": needed, "shortfall": docking_batch_inputs.shortfall(needed, snapshot)}
 
     run._refresh()
-    increase, context = plan(run.budget_snapshot())
+    increase, context = plan(run.budget.snapshot())
     event = run.raise_limits(plan, by="human") if any(increase.values()) else None
     if event is not None:
         context = event["context"]
     else:
-        limits = {axis: run.budget_snapshot()[axis]["limit"] for axis in docking_batch_inputs.AXES}
+        limits = {axis: run.budget.snapshot()[axis]["limit"] for axis in docking_batch_inputs.AXES}
         context = {**context, "increase": dict.fromkeys(docking_batch_inputs.AXES, 0), "limits_before": limits,
                    "limits_after": limits}
-    budget = run.budget_snapshot()
+    budget = run.budget.snapshot()
     return {"raised": event is not None, "batch_input_sha256": context["batch_input_sha256"], "new_dockings": new,
             "needed": needed, "shortfall_before": context["shortfall"], "increase": context["increase"],
             "limits_before": context["limits_before"], "limits_after": context["limits_after"],

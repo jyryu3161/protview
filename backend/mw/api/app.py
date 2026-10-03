@@ -1797,6 +1797,8 @@ async def docking_batch_limit_approval(rid: str, request: Request) -> Any:
         return await run_in_threadpool(lambda: docking_batch_jobs.limit_approval(_run(rid), args))
     except ToolFailure as error:
         return _tool_error(error)
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
 
 
 # ----------------------------------------------------------------- M19 batch reads (no event, job, tool or engine)
