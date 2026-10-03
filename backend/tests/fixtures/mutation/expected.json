@@ -1,0 +1,6619 @@
+{
+ "schema": "m20_mutation_fixture_expectations@1",
+ "label": "SYNTHETIC FIXTURE EXPECTATIONS. Independent brute-force oracle (this script: parse the written bytes by column/whitespace, math.dist over all heavy-atom pairs, simulated preparation). No gemmi, no mw code. Not experimental.",
+ "how": {
+  "distances": "float64 math.dist over every heavy-atom pair (element not H/D) of the prepared residue and the other residue; minimum",
+  "prepare": "H/D removed; altloc highest_occupancy = highest mean occupancy, tie by letter; first = first letter met; waters kept (prepare_structure config defaults)",
+  "polymer": "residue whose every record is ATOM (spec 2: category polymer)",
+  "metal": "HETATM residue named in Zn Mg Ca Mn Fe Cu Co Ni Na K (CD is not; HOH is water)",
+  "ligand_candidates": "HETATM, not water, not in the metal list (spec 2 ligand selector)",
+  "disulfide": "SG of CYS/CYX polymer residues, SG-SG <= 2.5 A; partner = nearest, tie -> first in file order",
+  "standard": "20 standard names + 10 mapped names (HID HIE HIP HSD HSE HSP CYX ASH GLH LYN)"
+ },
+ "files": {
+  "synthetic-mutation-fixture.cif": {
+   "sha256": "fc4e6d899a498419d51beaa8172da0cc8117021cfe2097c668d6bac85aeb3a20",
+   "atom_records": 365,
+   "altloc_records": 2,
+   "hydrogen_records": 3,
+   "residues": [
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 1,
+      "seq_label": 1,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 4
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 2,
+      "seq_label": 2,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 3,
+      "seq_label": 3,
+      "icode": "",
+      "resname": "SER"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 6,
+      "seq_label": 6,
+      "icode": "",
+      "resname": "HID"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 7,
+      "seq_label": 7,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 9,
+      "seq_label": 9,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 10,
+      "seq_label": 10,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 10,
+      "seq_label": 11,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 11,
+      "seq_label": 12,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 12,
+      "seq_label": 13,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 13,
+      "seq_label": 14,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 14,
+      "seq_label": 15,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 15,
+      "seq_label": 16,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 16,
+      "seq_label": 17,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 17,
+      "seq_label": 18,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 18,
+      "seq_label": 19,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 19,
+      "seq_label": 20,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 20,
+      "seq_label": 21,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 21,
+      "seq_label": 22,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 23,
+      "seq_label": 24,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 24,
+      "seq_label": 25,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 25,
+      "seq_label": 26,
+      "icode": "",
+      "resname": "MET"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 26,
+      "seq_label": 27,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 27,
+      "seq_label": 28,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "D",
+      "seq_auth": 101,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LIG"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 3
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "F",
+      "seq_auth": 201,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ZN"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "G",
+      "seq_auth": 202,
+      "seq_label": null,
+      "icode": "",
+      "resname": "NA"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "H",
+      "seq_auth": 203,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CD"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "I",
+      "seq_auth": 301,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HOH"
+     },
+     "record": "HETATM",
+     "category": "water",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 1,
+      "seq_label": 1,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 4
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 2,
+      "seq_label": 2,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 3,
+      "seq_label": 3,
+      "icode": "",
+      "resname": "SER"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 6,
+      "seq_label": 6,
+      "icode": "",
+      "resname": "HID"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 7,
+      "seq_label": 7,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 9,
+      "seq_label": 9,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 10,
+      "seq_label": 10,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 10,
+      "seq_label": 11,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 11,
+      "seq_label": 12,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 12,
+      "seq_label": 13,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 13,
+      "seq_label": 14,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 14,
+      "seq_label": 15,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 15,
+      "seq_label": 16,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 16,
+      "seq_label": 17,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 17,
+      "seq_label": 18,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 18,
+      "seq_label": 19,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 19,
+      "seq_label": 20,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 20,
+      "seq_label": 21,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 21,
+      "seq_label": 22,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 23,
+      "seq_label": 24,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 24,
+      "seq_label": 25,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 25,
+      "seq_label": 26,
+      "icode": "",
+      "resname": "MET"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 26,
+      "seq_label": 27,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 27,
+      "seq_label": 28,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "E",
+      "seq_auth": 101,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LIG"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 3
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 1,
+      "seq_label": 1,
+      "icode": "",
+      "resname": "HIE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 2,
+      "seq_label": 2,
+      "icode": "",
+      "resname": "HIP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 3,
+      "seq_label": 3,
+      "icode": "",
+      "resname": "HSD"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "HSE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "HSP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 6,
+      "seq_label": 6,
+      "icode": "",
+      "resname": "ASH"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 7,
+      "seq_label": 7,
+      "icode": "",
+      "resname": "GLH"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "LYN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 9,
+      "seq_label": 9,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 10,
+      "seq_label": 10,
+      "icode": "",
+      "resname": "SEP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 11,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    }
+   ],
+   "ligand_candidates": [
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": "D",
+     "seq_auth": 101,
+     "seq_label": null,
+     "icode": "",
+     "resname": "LIG"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": "H",
+     "seq_auth": 203,
+     "seq_label": null,
+     "icode": "",
+     "resname": "CD"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "B",
+     "chain_label": "E",
+     "seq_auth": 101,
+     "seq_label": null,
+     "icode": "",
+     "resname": "LIG"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "CC",
+     "chain_label": "C",
+     "seq_auth": 9,
+     "seq_label": 9,
+     "icode": "",
+     "resname": "MSE"
+    }
+   ],
+   "metal_residues": [
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": "F",
+     "seq_auth": 201,
+     "seq_label": null,
+     "icode": "",
+     "resname": "ZN"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": "G",
+     "seq_auth": 202,
+     "seq_label": null,
+     "icode": "",
+     "resname": "NA"
+    }
+   ],
+   "polymer_residues": [
+    {
+     "file_index": 0,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 1,
+      "seq_label": 1,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "standard_resname": "GLY",
+     "one_letter": "G",
+     "ligand_min_distance_A": {
+      "LIG A101": 285.6728898583133,
+      "CD A203": 290.17236257093816,
+      "LIG B101": 255.1646527244712,
+      "MSE CC9": 288.18613776516037
+     },
+     "nearest_metal": {
+      "min_distance_A": 309.3541659651604,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 1,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 2,
+      "seq_label": 2,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "standard_resname": "ALA",
+     "one_letter": "A",
+     "ligand_min_distance_A": {
+      "LIG A101": 91.1,
+      "CD A203": 100.0420411627032,
+      "LIG B101": 103.91924749535092,
+      "MSE CC9": 92.64858336747518
+     },
+     "nearest_metal": {
+      "min_distance_A": 2.9000000000000004,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 2,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 3,
+      "seq_label": 3,
+      "icode": "",
+      "resname": "SER"
+     },
+     "standard_resname": "SER",
+     "one_letter": "S",
+     "ligand_min_distance_A": {
+      "LIG A101": 100.04498987955368,
+      "CD A203": 100.04498987955368,
+      "LIG B101": 111.8436408563312,
+      "MSE CC9": 101.58863125369885
+     },
+     "nearest_metal": {
+      "min_distance_A": 3.0,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 3,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 100.04803846153106,
+      "CD A203": 90.9,
+      "LIG B101": 108.04077933817398,
+      "MSE CC9": 101.68313527817678
+     },
+     "nearest_metal": {
+      "min_distance_A": 3.0999999999999996,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 4,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 50.0,
+      "CD A203": 108.65656906050366,
+      "LIG B101": 70.71067811865476,
+      "MSE CC9": 51.58730463980455
+     },
+     "nearest_metal": {
+      "min_distance_A": 42.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "A",
+       "seq_auth": 8,
+       "seq_label": 8,
+       "icode": "",
+       "resname": "CYX"
+      },
+      "sg_sg_A": 2.049999999999997
+     }
+    },
+    {
+     "file_index": 5,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 6,
+      "seq_label": 6,
+      "icode": "",
+      "resname": "HID"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 5.0,
+      "CD A203": 133.86933928274988,
+      "LIG B101": 39.0,
+      "MSE CC9": 8.139410298049853
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.12492197250393,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 6,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 7,
+      "seq_label": 7,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "standard_resname": "VAL",
+     "one_letter": "V",
+     "ligand_min_distance_A": {
+      "LIG A101": 5.001,
+      "CD A203": 145.0007241395711,
+      "LIG B101": 55.001,
+      "MSE CC9": 1.5814553423982607
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.12497191510218,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 7,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 40.45,
+      "CD A203": 112.7350987935878,
+      "LIG B101": 64.31331510659359,
+      "MSE CC9": 42.05713375873349
+     },
+     "nearest_metal": {
+      "min_distance_A": 52.05,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "A",
+       "seq_auth": 5,
+       "seq_label": 5,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.049999999999997
+     }
+    },
+    {
+     "file_index": 8,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 9,
+      "seq_label": 9,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "standard_resname": null,
+     "one_letter": null,
+     "ligand_min_distance_A": {
+      "LIG A101": 3.5,
+      "CD A203": 146.08986960087273,
+      "LIG B101": 50.12235030403104,
+      "MSE CC9": 5.830951894845301
+     },
+     "nearest_metal": {
+      "min_distance_A": 106.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 9,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 10,
+      "seq_label": 10,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "standard_resname": "LEU",
+     "one_letter": "L",
+     "ligand_min_distance_A": {
+      "LIG A101": 4.0,
+      "CD A203": 142.54209904445773,
+      "LIG B101": 50.15974481593781,
+      "MSE CC9": 5.0
+     },
+     "nearest_metal": {
+      "min_distance_A": 101.57878715558677,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 10,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 10,
+      "seq_label": 11,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "standard_resname": "ILE",
+     "one_letter": "I",
+     "ligand_min_distance_A": {
+      "LIG A101": 6.0,
+      "CD A203": 133.2066064427737,
+      "LIG B101": 50.35871324805669,
+      "MSE CC9": 8.077747210701755
+     },
+     "nearest_metal": {
+      "min_distance_A": 88.0,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 11,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 11,
+      "seq_label": 12,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "standard_resname": "LYS",
+     "one_letter": "K",
+     "ligand_min_distance_A": {
+      "LIG A101": 103.5,
+      "CD A203": 100.06123125366787,
+      "LIG B101": 114.94455185001158,
+      "MSE CC9": 105.04284840006957
+     },
+     "nearest_metal": {
+      "min_distance_A": 3.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 12,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 12,
+      "seq_label": 13,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "standard_resname": "GLU",
+     "one_letter": "E",
+     "ligand_min_distance_A": {
+      "LIG A101": 102.95630140987001,
+      "CD A203": 50.15974481593781,
+      "LIG B101": 90.0,
+      "MSE CC9": 105.741429912783
+     },
+     "nearest_metal": {
+      "min_distance_A": 4.0,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 13,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 13,
+      "seq_label": 14,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "standard_resname": "ASN",
+     "one_letter": "N",
+     "ligand_min_distance_A": {
+      "LIG A101": 135.88230201170424,
+      "CD A203": 2.0,
+      "LIG B101": 104.70912090166739,
+      "MSE CC9": 139.10877039209282
+     },
+     "nearest_metal": {
+      "min_distance_A": 50.039984012787215,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 14,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 14,
+      "seq_label": 15,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "standard_resname": "GLN",
+     "one_letter": "Q",
+     "ligand_min_distance_A": {
+      "LIG A101": 175.70500846589434,
+      "CD A203": 50.06246098625196,
+      "LIG B101": 135.54427320989996,
+      "MSE CC9": 179.0474797365213
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.03124511871279,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 15,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 15,
+      "seq_label": 16,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "standard_resname": "PHE",
+     "one_letter": "F",
+     "ligand_min_distance_A": {
+      "LIG A101": 4.5,
+      "CD A203": 143.62886200203636,
+      "LIG B101": 50.202091589892945,
+      "MSE CC9": 5.612486080160912
+     },
+     "nearest_metal": {
+      "min_distance_A": 103.098254107429,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 16,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 16,
+      "seq_label": 17,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 5.5,
+      "CD A203": 141.52826572808698,
+      "LIG B101": 50.30159043211258,
+      "MSE CC9": 6.442049363362563
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.15113578986511,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 17,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 17,
+      "seq_label": 18,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "standard_resname": "TRP",
+     "one_letter": "W",
+     "ligand_min_distance_A": {
+      "LIG A101": 378.79941921813975,
+      "CD A203": 425.55845661906426,
+      "LIG B101": 356.35515991774275,
+      "MSE CC9": 381.36760481194517
+     },
+     "nearest_metal": {
+      "min_distance_A": 438.8621651498338,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 18,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 18,
+      "seq_label": 19,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "standard_resname": "TYR",
+     "one_letter": "Y",
+     "ligand_min_distance_A": {
+      "LIG A101": 385.91320267645676,
+      "CD A203": 434.2810150121693,
+      "LIG B101": 363.90795539531695,
+      "MSE CC9": 388.47297203280436
+     },
+     "nearest_metal": {
+      "min_distance_A": 447.3253849269008,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 19,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 19,
+      "seq_label": 20,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "standard_resname": "PRO",
+     "one_letter": "P",
+     "ligand_min_distance_A": {
+      "LIG A101": 393.15264211244977,
+      "CD A203": 443.0575583375144,
+      "LIG B101": 371.57637169228076,
+      "MSE CC9": 395.7034874751548
+     },
+     "nearest_metal": {
+      "min_distance_A": 455.85085280165924,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 20,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 20,
+      "seq_label": 21,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 70.71067811865476,
+      "CD A203": 65.62202374203343,
+      "LIG B101": 50.0,
+      "MSE CC9": 73.90027063549903
+     },
+     "nearest_metal": {
+      "min_distance_A": 42.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "B",
+       "chain_label": "B",
+       "seq_auth": 20,
+       "seq_label": 21,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.5
+     }
+    },
+    {
+     "file_index": 21,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 21,
+      "seq_label": 22,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 111.80339887498948,
+      "CD A203": 42.5,
+      "LIG B101": 70.71067811865476,
+      "MSE CC9": 115.15750084123917
+     },
+     "nearest_metal": {
+      "min_distance_A": 65.62202374203343,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 22,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 158.88914374493936,
+      "CD A203": 64.09375944661072,
+      "LIG B101": 112.89712130962418,
+      "MSE CC9": 162.2165527928639
+     },
+     "nearest_metal": {
+      "min_distance_A": 107.74047521706966,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "B",
+       "chain_label": "B",
+       "seq_auth": 22,
+       "seq_label": 23,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.3999999999999986
+     }
+    },
+    {
+     "file_index": 23,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 23,
+      "seq_label": 24,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 423.2363405947084,
+      "CD A203": 478.6439177509728,
+      "LIG B101": 403.27286048034523,
+      "MSE CC9": 425.7478713980846
+     },
+     "nearest_metal": {
+      "min_distance_A": 490.5099387372289,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 24,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 24,
+      "seq_label": 25,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "standard_resname": "ARG",
+     "one_letter": "R",
+     "ligand_min_distance_A": {
+      "LIG A101": 431.0092806425402,
+      "CD A203": 487.64741360946437,
+      "LIG B101": 411.4231398450991,
+      "MSE CC9": 433.51038049855276
+     },
+     "nearest_metal": {
+      "min_distance_A": 499.29950931279717,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 25,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 25,
+      "seq_label": 26,
+      "icode": "",
+      "resname": "MET"
+     },
+     "standard_resname": "MET",
+     "one_letter": "M",
+     "ligand_min_distance_A": {
+      "LIG A101": 438.8724188189547,
+      "CD A203": 496.6890375275057,
+      "LIG B101": 419.65342843827693,
+      "MSE CC9": 441.36294588467666
+     },
+     "nearest_metal": {
+      "min_distance_A": 508.1338406365,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 26,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 26,
+      "seq_label": 27,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "standard_resname": "ASP",
+     "one_letter": "D",
+     "ligand_min_distance_A": {
+      "LIG A101": 446.82099324002223,
+      "CD A203": 505.7667446560717,
+      "LIG B101": 427.95911019628966,
+      "MSE CC9": 449.3008457592752
+     },
+     "nearest_metal": {
+      "min_distance_A": 517.0106381884226,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 27,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 27,
+      "seq_label": 28,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 454.85052489801524,
+      "CD A203": 514.87862647424,
+      "LIG B101": 436.3358797990374,
+      "MSE CC9": 457.3196365781815
+     },
+     "nearest_metal": {
+      "min_distance_A": 525.9277516921883,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 28,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 1,
+      "seq_label": 1,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "standard_resname": "GLY",
+     "one_letter": "G",
+     "ligand_min_distance_A": {
+      "LIG A101": 111.82504191816787,
+      "CD A203": 50.04837659704858,
+      "LIG B101": 100.02419707250841,
+      "MSE CC9": 114.52549934403255
+     },
+     "nearest_metal": {
+      "min_distance_A": 2.1999999999999993,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 29,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 2,
+      "seq_label": 2,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "standard_resname": "ALA",
+     "one_letter": "A",
+     "ligand_min_distance_A": {
+      "LIG A101": 471.1358615091829,
+      "CD A203": 533.1978994707313,
+      "LIG B101": 453.2868848753513,
+      "MSE CC9": 473.58341398321795
+     },
+     "nearest_metal": {
+      "min_distance_A": 543.8749856354859,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 30,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 3,
+      "seq_label": 3,
+      "icode": "",
+      "resname": "SER"
+     },
+     "standard_resname": "SER",
+     "one_letter": "S",
+     "ligand_min_distance_A": {
+      "LIG A101": 479.3839797072906,
+      "CD A203": 542.4020648928247,
+      "LIG B101": 461.85387299447865,
+      "MSE CC9": 481.8207654304658
+     },
+     "nearest_metal": {
+      "min_distance_A": 552.9014378711635,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 31,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 487.6976522395817,
+      "CD A203": 551.6339365920121,
+      "LIG B101": 470.4774170988444,
+      "MSE CC9": 490.12370887358634
+     },
+     "nearest_metal": {
+      "min_distance_A": 561.9608527290846,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 32,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 496.0735832515172,
+      "CD A203": 560.8921464952064,
+      "LIG B101": 479.1544636127269,
+      "MSE CC9": 498.4889667786038
+     },
+     "nearest_metal": {
+      "min_distance_A": 571.0516614107694,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 33,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 6,
+      "seq_label": 6,
+      "icode": "",
+      "resname": "HID"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 504.5086718778975,
+      "CD A203": 570.1754116059373,
+      "LIG B101": 487.88215790290997,
+      "MSE CC9": 506.91345415169246
+     },
+     "nearest_metal": {
+      "min_distance_A": 580.1723881744115,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 34,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 7,
+      "seq_label": 7,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "standard_resname": "VAL",
+     "one_letter": "V",
+     "ligand_min_distance_A": {
+      "LIG A101": 513.0,
+      "CD A203": 579.4825277780168,
+      "LIG B101": 496.65782989901606,
+      "MSE CC9": 515.3942665571669
+     },
+     "nearest_metal": {
+      "min_distance_A": 589.3216439263027,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 35,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 521.5448207009633,
+      "CD A203": 588.8123640006212,
+      "LIG B101": 505.47898076972496,
+      "MSE CC9": 523.9286688090278
+     },
+     "nearest_metal": {
+      "min_distance_A": 598.4981202978001,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 36,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 9,
+      "seq_label": 9,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "standard_resname": null,
+     "one_letter": null,
+     "ligand_min_distance_A": {
+      "LIG A101": 530.1405474022903,
+      "CD A203": 598.1638571495272,
+      "LIG B101": 514.343270588816,
+      "MSE CC9": 532.5140843207811
+     },
+     "nearest_metal": {
+      "min_distance_A": 607.7005841695399,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 37,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 10,
+      "seq_label": 10,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "standard_resname": "LEU",
+     "one_letter": "L",
+     "ligand_min_distance_A": {
+      "LIG A101": 50.08991914547278,
+      "CD A203": 113.18679251573481,
+      "LIG B101": 3.0,
+      "MSE CC9": 53.08483775994799
+     },
+     "nearest_metal": {
+      "min_distance_A": 101.54432529688698,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 38,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 10,
+      "seq_label": 11,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "standard_resname": "ILE",
+     "one_letter": "I",
+     "ligand_min_distance_A": {
+      "LIG A101": 547.4751135896498,
+      "CD A203": 616.9278726074872,
+      "LIG B101": 532.1926342970185,
+      "MSE CC9": 549.8283823157914
+     },
+     "nearest_metal": {
+      "min_distance_A": 626.1788881781308,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 39,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 11,
+      "seq_label": 12,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "standard_resname": "LYS",
+     "one_letter": "K",
+     "ligand_min_distance_A": {
+      "LIG A101": 556.209492907124,
+      "CD A203": 626.3385665915839,
+      "LIG B101": 541.1737244175848,
+      "MSE CC9": 558.5528175562272
+     },
+     "nearest_metal": {
+      "min_distance_A": 635.4525946126902,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 40,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 12,
+      "seq_label": 13,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "standard_resname": "GLU",
+     "one_letter": "E",
+     "ligand_min_distance_A": {
+      "LIG A101": 564.9858405305393,
+      "CD A203": 635.7672530100933,
+      "LIG B101": 550.1899671931504,
+      "MSE CC9": 567.3193545085519
+     },
+     "nearest_metal": {
+      "min_distance_A": 644.7480127925949,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 41,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 13,
+      "seq_label": 14,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "standard_resname": "ASN",
+     "one_letter": "N",
+     "ligand_min_distance_A": {
+      "LIG A101": 39.1,
+      "CD A203": 114.07896388028776,
+      "LIG B101": 4.899999999999999,
+      "MSE CC9": 42.126713614997314
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.11997802636594,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 42,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 14,
+      "seq_label": 15,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "standard_resname": "GLN",
+     "one_letter": "Q",
+     "ligand_min_distance_A": {
+      "LIG A101": 582.6568458363807,
+      "CD A203": 654.6754921333164,
+      "LIG B101": 568.3212119919509,
+      "MSE CC9": 584.9711531349217
+     },
+     "nearest_metal": {
+      "min_distance_A": 663.4003316248794,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 43,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 15,
+      "seq_label": 16,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "standard_resname": "PHE",
+     "one_letter": "F",
+     "ligand_min_distance_A": {
+      "LIG A101": 591.5479693144082,
+      "CD A203": 664.1535966928133,
+      "LIG B101": 577.4331130096368,
+      "MSE CC9": 593.8528858227431
+     },
+     "nearest_metal": {
+      "min_distance_A": 672.7555276621664,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 44,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 16,
+      "seq_label": 17,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 600.4739794528986,
+      "CD A203": 673.6467917239717,
+      "LIG B101": 586.5739510070321,
+      "MSE CC9": 602.7696492027447
+     },
+     "nearest_metal": {
+      "min_distance_A": 682.1290200541243,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 45,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 17,
+      "seq_label": 18,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "standard_resname": "TRP",
+     "one_letter": "W",
+     "ligand_min_distance_A": {
+      "LIG A101": 609.4333433608634,
+      "CD A203": 683.1544481301428,
+      "LIG B101": 595.7423939925712,
+      "MSE CC9": 611.719911397365
+     },
+     "nearest_metal": {
+      "min_distance_A": 691.5200647848188,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 46,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 18,
+      "seq_label": 19,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "standard_resname": "TYR",
+     "one_letter": "Y",
+     "ligand_min_distance_A": {
+      "LIG A101": 618.4246114119327,
+      "CD A203": 692.6759704219571,
+      "LIG B101": 604.9371868219047,
+      "MSE CC9": 620.7022232922966
+     },
+     "nearest_metal": {
+      "min_distance_A": 700.9279563550023,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 47,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 19,
+      "seq_label": 20,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "standard_resname": "PRO",
+     "one_letter": "P",
+     "ligand_min_distance_A": {
+      "LIG A101": 627.4464120544479,
+      "CD A203": 702.2107945624305,
+      "LIG B101": 614.1571460139497,
+      "MSE CC9": 629.7152134099986
+     },
+     "nearest_metal": {
+      "min_distance_A": 710.3520254071217,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 48,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 20,
+      "seq_label": 21,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 64.03124237432849,
+      "CD A203": 72.5,
+      "LIG B101": 40.0,
+      "MSE CC9": 67.3145600891813
+     },
+     "nearest_metal": {
+      "min_distance_A": 52.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "A",
+       "seq_auth": 20,
+       "seq_label": 21,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.5
+     }
+    },
+    {
+     "file_index": 49,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 21,
+      "seq_label": 22,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 107.66619710939919,
+      "CD A203": 52.6,
+      "LIG B101": 63.96882053000509,
+      "MSE CC9": 111.00882847773866
+     },
+     "nearest_metal": {
+      "min_distance_A": 72.57244656203896,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 50,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 158.11388300841898,
+      "CD A203": 70.71067811865476,
+      "LIG B101": 111.80339887498948,
+      "MSE CC9": 161.43497142812643
+     },
+     "nearest_metal": {
+      "min_distance_A": 111.80339887498948,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "A",
+       "seq_auth": 22,
+       "seq_label": 23,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.3999999999999986
+     }
+    },
+    {
+     "file_index": 51,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 23,
+      "seq_label": 24,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 155.26754329221546,
+      "CD A203": 72.42761904135742,
+      "LIG B101": 107.74047521706964,
+      "MSE CC9": 158.5545962752263
+     },
+     "nearest_metal": {
+      "min_distance_A": 112.89712130962418,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "B",
+       "chain_label": "B",
+       "seq_auth": 22,
+       "seq_label": 23,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.3999999999999986
+     }
+    },
+    {
+     "file_index": 52,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 24,
+      "seq_label": 25,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "standard_resname": "ARG",
+     "one_letter": "R",
+     "ligand_min_distance_A": {
+      "LIG A101": 672.9702816618279,
+      "CD A203": 750.066663703967,
+      "LIG B101": 660.5974568525071,
+      "MSE CC9": 675.1971934183376
+     },
+     "nearest_metal": {
+      "min_distance_A": 757.6938695805846,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 53,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 25,
+      "seq_label": 26,
+      "icode": "",
+      "resname": "MET"
+     },
+     "standard_resname": "MET",
+     "one_letter": "M",
+     "ligand_min_distance_A": {
+      "LIG A101": 682.1502766986172,
+      "CD A203": 759.670981412348,
+      "LIG B101": 669.9470128301193,
+      "MSE CC9": 684.369235135537
+     },
+     "nearest_metal": {
+      "min_distance_A": 767.2027111526653,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 54,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 26,
+      "seq_label": 27,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "standard_resname": "ASP",
+     "one_letter": "D",
+     "ligand_min_distance_A": {
+      "LIG A101": 691.3530212561452,
+      "CD A203": 769.2853826766761,
+      "LIG B101": 679.3150962550442,
+      "MSE CC9": 693.5641642991657
+     },
+     "nearest_metal": {
+      "min_distance_A": 776.7238891652554,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 55,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 27,
+      "seq_label": 28,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 700.5776188260655,
+      "CD A203": 778.9094941005662,
+      "LIG B101": 688.7009510665714,
+      "MSE CC9": 702.781082557008
+     },
+     "nearest_metal": {
+      "min_distance_A": 786.2569554541315,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 56,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 1,
+      "seq_label": 1,
+      "icode": "",
+      "resname": "HIE"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 709.8232174281143,
+      "CD A203": 788.5429601486529,
+      "LIG B101": 698.1038604677674,
+      "MSE CC9": 712.0191359788022
+     },
+     "nearest_metal": {
+      "min_distance_A": 795.8014827832378,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 57,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 2,
+      "seq_label": 2,
+      "icode": "",
+      "resname": "HIP"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 719.0890070081728,
+      "CD A203": 798.185442112295,
+      "LIG B101": 707.5231444977613,
+      "MSE CC9": 721.2775124735277
+     },
+     "nearest_metal": {
+      "min_distance_A": 805.3570636680354,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 58,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 3,
+      "seq_label": 3,
+      "icode": "",
+      "resname": "HSD"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 728.3742170066154,
+      "CD A203": 807.8366171448283,
+      "LIG B101": 716.9581577749151,
+      "MSE CC9": 730.5554393747267
+     },
+     "nearest_metal": {
+      "min_distance_A": 814.9233092751734,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 59,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 4,
+      "seq_label": 4,
+      "icode": "",
+      "resname": "HSE"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 737.6781140849985,
+      "CD A203": 817.4961773610933,
+      "LIG B101": 726.408287397659,
+      "MSE CC9": 739.8521811821602
+     },
+     "nearest_metal": {
+      "min_distance_A": 824.4998483929515,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 60,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "HSP"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 747.0,
+      "CD A203": 827.1638289964087,
+      "LIG B101": 735.8729509908623,
+      "MSE CC9": 749.1670374489257
+     },
+     "nearest_metal": {
+      "min_distance_A": 834.0863264674706,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 61,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 6,
+      "seq_label": 6,
+      "icode": "",
+      "resname": "ASH"
+     },
+     "standard_resname": "ASP",
+     "one_letter": "D",
+     "ligand_min_distance_A": {
+      "LIG A101": 756.3392096143106,
+      "CD A203": 836.8392916205596,
+      "LIG B101": 745.3515948866011,
+      "MSE CC9": 758.4993408039325
+     },
+     "nearest_metal": {
+      "min_distance_A": 843.682404699778,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 62,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 7,
+      "seq_label": 7,
+      "icode": "",
+      "resname": "GLH"
+     },
+     "standard_resname": "GLU",
+     "one_letter": "E",
+     "ligand_min_distance_A": {
+      "LIG A101": 765.6951090349213,
+      "CD A203": 846.5222974027323,
+      "LIG B101": 754.8436924291016,
+      "MSE CC9": 767.8484551003538
+     },
+     "nearest_metal": {
+      "min_distance_A": 853.2877591996735,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 63,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "LYN"
+     },
+     "standard_resname": "LYS",
+     "one_letter": "K",
+     "ligand_min_distance_A": {
+      "LIG A101": 775.0670938699436,
+      "CD A203": 856.2125904236634,
+      "LIG B101": 764.3487423944648,
+      "MSE CC9": 777.213773681347
+     },
+     "nearest_metal": {
+      "min_distance_A": 862.9020801921849,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 64,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 10,
+      "seq_label": 10,
+      "icode": "",
+      "resname": "SEP"
+     },
+     "standard_resname": null,
+     "one_letter": null,
+     "ligand_min_distance_A": {
+      "LIG A101": 4.199999999999999,
+      "CD A203": 134.53304426794185,
+      "LIG B101": 38.3,
+      "MSE CC9": 7.199999999999999
+     },
+     "nearest_metal": {
+      "min_distance_A": 101.58685938643836,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "F",
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 65,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "CC",
+      "chain_label": "C",
+      "seq_auth": 11,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "standard_resname": "ALA",
+     "one_letter": "A",
+     "ligand_min_distance_A": {
+      "LIG A101": 803.2739258808293,
+      "CD A203": 885.3247991556545,
+      "LIG B101": 792.9369457907735,
+      "MSE CC9": 805.4012974908843
+     },
+     "nearest_metal": {
+      "min_distance_A": 891.7959407846618,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "G",
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    }
+   ],
+   "disulfide_pairs_le_2.5A": [
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 5,
+      "seq_label": 5,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 8,
+      "seq_label": 8,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "sg_sg_A": 2.049999999999997
+    },
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 20,
+      "seq_label": 21,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 20,
+      "seq_label": 21,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "sg_sg_A": 2.5
+    },
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": "A",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "sg_sg_A": 2.3999999999999986
+    },
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 22,
+      "seq_label": 23,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": "B",
+      "seq_auth": 23,
+      "seq_label": 24,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "sg_sg_A": 2.3999999999999986
+    }
+   ],
+   "derived": {
+    "polymer_count": 66,
+    "shell": {
+     "LIG A101": {
+      "1.0": [],
+      "4.0": [
+       "MSE A9",
+       "LEU A10"
+      ],
+      "5.0": [
+       "HID A6",
+       "MSE A9",
+       "LEU A10",
+       "PHE A15",
+       "SEP CC10"
+      ],
+      "12.0": [
+       "HID A6",
+       "VAL A7",
+       "MSE A9",
+       "LEU A10",
+       "ILE A10A",
+       "PHE A15",
+       "THR A16",
+       "SEP CC10"
+      ]
+     },
+     "LIG B101": {
+      "1.0": [],
+      "4.0": [
+       "LEU B10"
+      ],
+      "5.0": [
+       "LEU B10",
+       "ASN B13"
+      ],
+      "12.0": [
+       "LEU B10",
+       "ASN B13"
+      ]
+     }
+    },
+    "metal_contact": {
+     "1.0": [],
+     "2.0": [],
+     "3.0": [
+      "ALA A2",
+      "SER A3",
+      "GLY B1"
+     ],
+     "5.0": [
+      "ALA A2",
+      "SER A3",
+      "THR A4",
+      "LYS A11",
+      "GLU A12",
+      "GLY B1"
+     ]
+    },
+    "altloc_first_rule_changes": [
+     {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": "A",
+       "seq_auth": 11,
+       "seq_label": 12,
+       "icode": "",
+       "resname": "LYS"
+      },
+      "first_rule": {
+       "ligand_min_distance_A": {
+        "LIG A101": 102.5,
+        "CD A203": 100.03124511871279,
+        "LIG B101": 114.04494727957044,
+        "MSE CC9": 104.04326023342406
+       },
+       "nearest_metal": {
+        "min_distance_A": 2.5,
+        "metal_residue": {
+         "model_number": 1,
+         "chain_auth": "A",
+         "chain_label": "F",
+         "seq_auth": 201,
+         "seq_label": null,
+         "icode": "",
+         "resname": "ZN"
+        }
+       }
+      },
+      "highest_occupancy": {
+       "ligand_min_distance_A": {
+        "LIG A101": 103.5,
+        "CD A203": 100.06123125366787,
+        "LIG B101": 114.94455185001158,
+        "MSE CC9": 105.04284840006957
+       },
+       "nearest_metal": {
+        "min_distance_A": 3.5,
+        "metal_residue": {
+         "model_number": 1,
+         "chain_auth": "A",
+         "chain_label": "F",
+         "seq_auth": 201,
+         "seq_label": null,
+         "icode": "",
+         "resname": "ZN"
+        }
+       }
+      }
+     }
+    ],
+    "metal_contact_first_rule_3.0": [
+     "ALA A2",
+     "SER A3",
+     "LYS A11",
+     "GLY B1"
+    ],
+    "disulfide_cys_residues": [
+     "CYS A20",
+     "CYS A22",
+     "CYS A5",
+     "CYS B20",
+     "CYS B22",
+     "CYS B23",
+     "CYX A8"
+    ],
+    "non_standard_polymer": [
+     "MSE A9",
+     "MSE B9",
+     "SEP CC10"
+    ]
+   }
+  },
+  "synthetic-mutation-fixture-nolabel.pdb": {
+   "sha256": "c8c57b276aab9fa78fd3939b723676088effee0947252a4cab5d93f4d7154d6b",
+   "atom_records": 308,
+   "altloc_records": 2,
+   "hydrogen_records": 3,
+   "residues": [
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 1,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 4
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 2,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 3,
+      "seq_label": null,
+      "icode": "",
+      "resname": "SER"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 4,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 5,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 6,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HID"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 7,
+      "seq_label": null,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 8,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 9,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 11,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 12,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 13,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 14,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 15,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 16,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 17,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 18,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 19,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 20,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 21,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 23,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 24,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 25,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MET"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 26,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 27,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 101,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LIG"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 3
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 201,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ZN"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 202,
+      "seq_label": null,
+      "icode": "",
+      "resname": "NA"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 203,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CD"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 301,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HOH"
+     },
+     "record": "HETATM",
+     "category": "water",
+     "heavy_atoms_after_prepare": 1
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 1,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 4
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 2,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 3,
+      "seq_label": null,
+      "icode": "",
+      "resname": "SER"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 4,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 5,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 6,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HID"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 7,
+      "seq_label": null,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 8,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 9,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 11,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 12,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 13,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 14,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 15,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 16,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 17,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 18,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 19,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 20,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 21,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 23,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 6
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 24,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 25,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MET"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 26,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 27,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "record": "ATOM",
+     "category": "polymer",
+     "heavy_atoms_after_prepare": 5
+    },
+    {
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 101,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LIG"
+     },
+     "record": "HETATM",
+     "category": "nonpolymer",
+     "heavy_atoms_after_prepare": 3
+    }
+   ],
+   "ligand_candidates": [
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": null,
+     "seq_auth": 101,
+     "seq_label": null,
+     "icode": "",
+     "resname": "LIG"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": null,
+     "seq_auth": 203,
+     "seq_label": null,
+     "icode": "",
+     "resname": "CD"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "B",
+     "chain_label": null,
+     "seq_auth": 101,
+     "seq_label": null,
+     "icode": "",
+     "resname": "LIG"
+    }
+   ],
+   "metal_residues": [
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": null,
+     "seq_auth": 201,
+     "seq_label": null,
+     "icode": "",
+     "resname": "ZN"
+    },
+    {
+     "model_number": 1,
+     "chain_auth": "A",
+     "chain_label": null,
+     "seq_auth": 202,
+     "seq_label": null,
+     "icode": "",
+     "resname": "NA"
+    }
+   ],
+   "polymer_residues": [
+    {
+     "file_index": 0,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 1,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "standard_resname": "GLY",
+     "one_letter": "G",
+     "ligand_min_distance_A": {
+      "LIG A101": 285.6728898583133,
+      "CD A203": 290.17236257093816,
+      "LIG B101": 255.1646527244712
+     },
+     "nearest_metal": {
+      "min_distance_A": 309.3541659651604,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 1,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 2,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "standard_resname": "ALA",
+     "one_letter": "A",
+     "ligand_min_distance_A": {
+      "LIG A101": 91.1,
+      "CD A203": 100.0420411627032,
+      "LIG B101": 103.91924749535092
+     },
+     "nearest_metal": {
+      "min_distance_A": 2.9000000000000004,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 2,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 3,
+      "seq_label": null,
+      "icode": "",
+      "resname": "SER"
+     },
+     "standard_resname": "SER",
+     "one_letter": "S",
+     "ligand_min_distance_A": {
+      "LIG A101": 100.04498987955368,
+      "CD A203": 100.04498987955368,
+      "LIG B101": 111.8436408563312
+     },
+     "nearest_metal": {
+      "min_distance_A": 3.0,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 3,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 4,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 100.04803846153106,
+      "CD A203": 90.9,
+      "LIG B101": 108.04077933817398
+     },
+     "nearest_metal": {
+      "min_distance_A": 3.0999999999999996,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 4,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 5,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 50.0,
+      "CD A203": 108.65656906050366,
+      "LIG B101": 70.71067811865476
+     },
+     "nearest_metal": {
+      "min_distance_A": 42.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 8,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYX"
+      },
+      "sg_sg_A": 2.049999999999997
+     }
+    },
+    {
+     "file_index": 5,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 6,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HID"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 5.0,
+      "CD A203": 133.86933928274988,
+      "LIG B101": 39.0
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.12492197250393,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 6,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 7,
+      "seq_label": null,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "standard_resname": "VAL",
+     "one_letter": "V",
+     "ligand_min_distance_A": {
+      "LIG A101": 5.001,
+      "CD A203": 145.0007241395711,
+      "LIG B101": 55.001
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.12497191510218,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 7,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 8,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 40.45,
+      "CD A203": 112.7350987935878,
+      "LIG B101": 64.31331510659359
+     },
+     "nearest_metal": {
+      "min_distance_A": 52.05,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 5,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.049999999999997
+     }
+    },
+    {
+     "file_index": 8,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 9,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "standard_resname": null,
+     "one_letter": null,
+     "ligand_min_distance_A": {
+      "LIG A101": 3.5,
+      "CD A203": 146.08986960087273,
+      "LIG B101": 50.12235030403104
+     },
+     "nearest_metal": {
+      "min_distance_A": 106.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 9,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "standard_resname": "LEU",
+     "one_letter": "L",
+     "ligand_min_distance_A": {
+      "LIG A101": 4.0,
+      "CD A203": 142.54209904445773,
+      "LIG B101": 50.15974481593781
+     },
+     "nearest_metal": {
+      "min_distance_A": 101.57878715558677,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 10,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "standard_resname": "ILE",
+     "one_letter": "I",
+     "ligand_min_distance_A": {
+      "LIG A101": 6.0,
+      "CD A203": 133.2066064427737,
+      "LIG B101": 50.35871324805669
+     },
+     "nearest_metal": {
+      "min_distance_A": 88.0,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 11,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 11,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "standard_resname": "LYS",
+     "one_letter": "K",
+     "ligand_min_distance_A": {
+      "LIG A101": 103.5,
+      "CD A203": 100.06123125366787,
+      "LIG B101": 114.94455185001158
+     },
+     "nearest_metal": {
+      "min_distance_A": 3.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 12,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 12,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "standard_resname": "GLU",
+     "one_letter": "E",
+     "ligand_min_distance_A": {
+      "LIG A101": 102.95630140987001,
+      "CD A203": 50.15974481593781,
+      "LIG B101": 90.0
+     },
+     "nearest_metal": {
+      "min_distance_A": 4.0,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 13,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 13,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "standard_resname": "ASN",
+     "one_letter": "N",
+     "ligand_min_distance_A": {
+      "LIG A101": 135.88230201170424,
+      "CD A203": 2.0,
+      "LIG B101": 104.70912090166739
+     },
+     "nearest_metal": {
+      "min_distance_A": 50.039984012787215,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 14,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 14,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "standard_resname": "GLN",
+     "one_letter": "Q",
+     "ligand_min_distance_A": {
+      "LIG A101": 175.70500846589434,
+      "CD A203": 50.06246098625196,
+      "LIG B101": 135.54427320989996
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.03124511871279,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 15,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 15,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "standard_resname": "PHE",
+     "one_letter": "F",
+     "ligand_min_distance_A": {
+      "LIG A101": 4.5,
+      "CD A203": 143.62886200203636,
+      "LIG B101": 50.202091589892945
+     },
+     "nearest_metal": {
+      "min_distance_A": 103.098254107429,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 16,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 16,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 5.5,
+      "CD A203": 141.52826572808698,
+      "LIG B101": 50.30159043211258
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.15113578986511,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 201,
+       "seq_label": null,
+       "icode": "",
+       "resname": "ZN"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 17,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 17,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "standard_resname": "TRP",
+     "one_letter": "W",
+     "ligand_min_distance_A": {
+      "LIG A101": 378.79941921813975,
+      "CD A203": 425.55845661906426,
+      "LIG B101": 356.35515991774275
+     },
+     "nearest_metal": {
+      "min_distance_A": 438.8621651498338,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 18,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 18,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "standard_resname": "TYR",
+     "one_letter": "Y",
+     "ligand_min_distance_A": {
+      "LIG A101": 385.91320267645676,
+      "CD A203": 434.2810150121693,
+      "LIG B101": 363.90795539531695
+     },
+     "nearest_metal": {
+      "min_distance_A": 447.3253849269008,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 19,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 19,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "standard_resname": "PRO",
+     "one_letter": "P",
+     "ligand_min_distance_A": {
+      "LIG A101": 393.15264211244977,
+      "CD A203": 443.0575583375144,
+      "LIG B101": 371.57637169228076
+     },
+     "nearest_metal": {
+      "min_distance_A": 455.85085280165924,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 20,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 20,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 70.71067811865476,
+      "CD A203": 65.62202374203343,
+      "LIG B101": 50.0
+     },
+     "nearest_metal": {
+      "min_distance_A": 42.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "B",
+       "chain_label": null,
+       "seq_auth": 20,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.5
+     }
+    },
+    {
+     "file_index": 21,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 21,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 111.80339887498948,
+      "CD A203": 42.5,
+      "LIG B101": 70.71067811865476
+     },
+     "nearest_metal": {
+      "min_distance_A": 65.62202374203343,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 22,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 158.88914374493936,
+      "CD A203": 64.09375944661072,
+      "LIG B101": 112.89712130962418
+     },
+     "nearest_metal": {
+      "min_distance_A": 107.74047521706966,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "B",
+       "chain_label": null,
+       "seq_auth": 22,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.3999999999999986
+     }
+    },
+    {
+     "file_index": 23,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 23,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 423.2363405947084,
+      "CD A203": 478.6439177509728,
+      "LIG B101": 403.27286048034523
+     },
+     "nearest_metal": {
+      "min_distance_A": 490.5099387372289,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 24,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 24,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "standard_resname": "ARG",
+     "one_letter": "R",
+     "ligand_min_distance_A": {
+      "LIG A101": 431.0092806425402,
+      "CD A203": 487.64741360946437,
+      "LIG B101": 411.4231398450991
+     },
+     "nearest_metal": {
+      "min_distance_A": 499.29950931279717,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 25,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 25,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MET"
+     },
+     "standard_resname": "MET",
+     "one_letter": "M",
+     "ligand_min_distance_A": {
+      "LIG A101": 438.8724188189547,
+      "CD A203": 496.6890375275057,
+      "LIG B101": 419.65342843827693
+     },
+     "nearest_metal": {
+      "min_distance_A": 508.1338406365,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 26,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 26,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "standard_resname": "ASP",
+     "one_letter": "D",
+     "ligand_min_distance_A": {
+      "LIG A101": 446.82099324002223,
+      "CD A203": 505.7667446560717,
+      "LIG B101": 427.95911019628966
+     },
+     "nearest_metal": {
+      "min_distance_A": 517.0106381884226,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 27,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 27,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 454.85052489801524,
+      "CD A203": 514.87862647424,
+      "LIG B101": 436.3358797990374
+     },
+     "nearest_metal": {
+      "min_distance_A": 525.9277516921883,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 28,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 1,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "standard_resname": "GLY",
+     "one_letter": "G",
+     "ligand_min_distance_A": {
+      "LIG A101": 111.82504191816787,
+      "CD A203": 50.04837659704858,
+      "LIG B101": 100.02419707250841
+     },
+     "nearest_metal": {
+      "min_distance_A": 2.1999999999999993,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 29,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 2,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ALA"
+     },
+     "standard_resname": "ALA",
+     "one_letter": "A",
+     "ligand_min_distance_A": {
+      "LIG A101": 471.1358615091829,
+      "CD A203": 533.1978994707313,
+      "LIG B101": 453.2868848753513
+     },
+     "nearest_metal": {
+      "min_distance_A": 543.8749856354859,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 30,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 3,
+      "seq_label": null,
+      "icode": "",
+      "resname": "SER"
+     },
+     "standard_resname": "SER",
+     "one_letter": "S",
+     "ligand_min_distance_A": {
+      "LIG A101": 479.3839797072906,
+      "CD A203": 542.4020648928247,
+      "LIG B101": 461.85387299447865
+     },
+     "nearest_metal": {
+      "min_distance_A": 552.9014378711635,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 31,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 4,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 487.6976522395817,
+      "CD A203": 551.6339365920121,
+      "LIG B101": 470.4774170988444
+     },
+     "nearest_metal": {
+      "min_distance_A": 561.9608527290846,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 32,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 5,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 496.0735832515172,
+      "CD A203": 560.8921464952064,
+      "LIG B101": 479.1544636127269
+     },
+     "nearest_metal": {
+      "min_distance_A": 571.0516614107694,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 33,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 6,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HID"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 504.5086718778975,
+      "CD A203": 570.1754116059373,
+      "LIG B101": 487.88215790290997
+     },
+     "nearest_metal": {
+      "min_distance_A": 580.1723881744115,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 34,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 7,
+      "seq_label": null,
+      "icode": "",
+      "resname": "VAL"
+     },
+     "standard_resname": "VAL",
+     "one_letter": "V",
+     "ligand_min_distance_A": {
+      "LIG A101": 513.0,
+      "CD A203": 579.4825277780168,
+      "LIG B101": 496.65782989901606
+     },
+     "nearest_metal": {
+      "min_distance_A": 589.3216439263027,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 35,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 8,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 521.5448207009633,
+      "CD A203": 588.8123640006212,
+      "LIG B101": 505.47898076972496
+     },
+     "nearest_metal": {
+      "min_distance_A": 598.4981202978001,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 36,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 9,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MSE"
+     },
+     "standard_resname": null,
+     "one_letter": null,
+     "ligand_min_distance_A": {
+      "LIG A101": 530.1405474022903,
+      "CD A203": 598.1638571495272,
+      "LIG B101": 514.343270588816
+     },
+     "nearest_metal": {
+      "min_distance_A": 607.7005841695399,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 37,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LEU"
+     },
+     "standard_resname": "LEU",
+     "one_letter": "L",
+     "ligand_min_distance_A": {
+      "LIG A101": 50.08991914547278,
+      "CD A203": 113.18679251573481,
+      "LIG B101": 3.0
+     },
+     "nearest_metal": {
+      "min_distance_A": 101.54432529688698,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 38,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 10,
+      "seq_label": null,
+      "icode": "A",
+      "resname": "ILE"
+     },
+     "standard_resname": "ILE",
+     "one_letter": "I",
+     "ligand_min_distance_A": {
+      "LIG A101": 547.4751135896498,
+      "CD A203": 616.9278726074872,
+      "LIG B101": 532.1926342970185
+     },
+     "nearest_metal": {
+      "min_distance_A": 626.1788881781308,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 39,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 11,
+      "seq_label": null,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "standard_resname": "LYS",
+     "one_letter": "K",
+     "ligand_min_distance_A": {
+      "LIG A101": 556.209492907124,
+      "CD A203": 626.3385665915839,
+      "LIG B101": 541.1737244175848
+     },
+     "nearest_metal": {
+      "min_distance_A": 635.4525946126902,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 40,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 12,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "standard_resname": "GLU",
+     "one_letter": "E",
+     "ligand_min_distance_A": {
+      "LIG A101": 564.9858405305393,
+      "CD A203": 635.7672530100933,
+      "LIG B101": 550.1899671931504
+     },
+     "nearest_metal": {
+      "min_distance_A": 644.7480127925949,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 41,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 13,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASN"
+     },
+     "standard_resname": "ASN",
+     "one_letter": "N",
+     "ligand_min_distance_A": {
+      "LIG A101": 39.1,
+      "CD A203": 114.07896388028776,
+      "LIG B101": 4.899999999999999
+     },
+     "nearest_metal": {
+      "min_distance_A": 100.11997802636594,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 42,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 14,
+      "seq_label": null,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "standard_resname": "GLN",
+     "one_letter": "Q",
+     "ligand_min_distance_A": {
+      "LIG A101": 582.6568458363807,
+      "CD A203": 654.6754921333164,
+      "LIG B101": 568.3212119919509
+     },
+     "nearest_metal": {
+      "min_distance_A": 663.4003316248794,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 43,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 15,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PHE"
+     },
+     "standard_resname": "PHE",
+     "one_letter": "F",
+     "ligand_min_distance_A": {
+      "LIG A101": 591.5479693144082,
+      "CD A203": 664.1535966928133,
+      "LIG B101": 577.4331130096368
+     },
+     "nearest_metal": {
+      "min_distance_A": 672.7555276621664,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 44,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 16,
+      "seq_label": null,
+      "icode": "",
+      "resname": "THR"
+     },
+     "standard_resname": "THR",
+     "one_letter": "T",
+     "ligand_min_distance_A": {
+      "LIG A101": 600.4739794528986,
+      "CD A203": 673.6467917239717,
+      "LIG B101": 586.5739510070321
+     },
+     "nearest_metal": {
+      "min_distance_A": 682.1290200541243,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 45,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 17,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TRP"
+     },
+     "standard_resname": "TRP",
+     "one_letter": "W",
+     "ligand_min_distance_A": {
+      "LIG A101": 609.4333433608634,
+      "CD A203": 683.1544481301428,
+      "LIG B101": 595.7423939925712
+     },
+     "nearest_metal": {
+      "min_distance_A": 691.5200647848188,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 46,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 18,
+      "seq_label": null,
+      "icode": "",
+      "resname": "TYR"
+     },
+     "standard_resname": "TYR",
+     "one_letter": "Y",
+     "ligand_min_distance_A": {
+      "LIG A101": 618.4246114119327,
+      "CD A203": 692.6759704219571,
+      "LIG B101": 604.9371868219047
+     },
+     "nearest_metal": {
+      "min_distance_A": 700.9279563550023,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 47,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 19,
+      "seq_label": null,
+      "icode": "",
+      "resname": "PRO"
+     },
+     "standard_resname": "PRO",
+     "one_letter": "P",
+     "ligand_min_distance_A": {
+      "LIG A101": 627.4464120544479,
+      "CD A203": 702.2107945624305,
+      "LIG B101": 614.1571460139497
+     },
+     "nearest_metal": {
+      "min_distance_A": 710.3520254071217,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 48,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 20,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 64.03124237432849,
+      "CD A203": 72.5,
+      "LIG B101": 40.0
+     },
+     "nearest_metal": {
+      "min_distance_A": 52.5,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 20,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.5
+     }
+    },
+    {
+     "file_index": 49,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 21,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 107.66619710939919,
+      "CD A203": 52.6,
+      "LIG B101": 63.96882053000509
+     },
+     "nearest_metal": {
+      "min_distance_A": 72.57244656203896,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 50,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 158.11388300841898,
+      "CD A203": 70.71067811865476,
+      "LIG B101": 111.80339887498948
+     },
+     "nearest_metal": {
+      "min_distance_A": 111.80339887498948,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 22,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.3999999999999986
+     }
+    },
+    {
+     "file_index": 51,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 23,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "standard_resname": "CYS",
+     "one_letter": "C",
+     "ligand_min_distance_A": {
+      "LIG A101": 155.26754329221546,
+      "CD A203": 72.42761904135742,
+      "LIG B101": 107.74047521706964
+     },
+     "nearest_metal": {
+      "min_distance_A": 112.89712130962418,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "B",
+       "chain_label": null,
+       "seq_auth": 22,
+       "seq_label": null,
+       "icode": "",
+       "resname": "CYS"
+      },
+      "sg_sg_A": 2.3999999999999986
+     }
+    },
+    {
+     "file_index": 52,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 24,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "standard_resname": "ARG",
+     "one_letter": "R",
+     "ligand_min_distance_A": {
+      "LIG A101": 672.9702816618279,
+      "CD A203": 750.066663703967,
+      "LIG B101": 660.5974568525071
+     },
+     "nearest_metal": {
+      "min_distance_A": 757.6938695805846,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 53,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 25,
+      "seq_label": null,
+      "icode": "",
+      "resname": "MET"
+     },
+     "standard_resname": "MET",
+     "one_letter": "M",
+     "ligand_min_distance_A": {
+      "LIG A101": 682.1502766986172,
+      "CD A203": 759.670981412348,
+      "LIG B101": 669.9470128301193
+     },
+     "nearest_metal": {
+      "min_distance_A": 767.2027111526653,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 54,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 26,
+      "seq_label": null,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "standard_resname": "ASP",
+     "one_letter": "D",
+     "ligand_min_distance_A": {
+      "LIG A101": 691.3530212561452,
+      "CD A203": 769.2853826766761,
+      "LIG B101": 679.3150962550442
+     },
+     "nearest_metal": {
+      "min_distance_A": 776.7238891652554,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    },
+    {
+     "file_index": 55,
+     "residue": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 27,
+      "seq_label": null,
+      "icode": "",
+      "resname": "HIS"
+     },
+     "standard_resname": "HIS",
+     "one_letter": "H",
+     "ligand_min_distance_A": {
+      "LIG A101": 700.5776188260655,
+      "CD A203": 778.9094941005662,
+      "LIG B101": 688.7009510665714
+     },
+     "nearest_metal": {
+      "min_distance_A": 786.2569554541315,
+      "metal_residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 202,
+       "seq_label": null,
+       "icode": "",
+       "resname": "NA"
+      }
+     },
+     "disulfide_partner": null
+    }
+   ],
+   "disulfide_pairs_le_2.5A": [
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 5,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 8,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYX"
+     },
+     "sg_sg_A": 2.049999999999997
+    },
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 20,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 20,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "sg_sg_A": 2.5
+    },
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "A",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "sg_sg_A": 2.3999999999999986
+    },
+    {
+     "a": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 22,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "b": {
+      "model_number": 1,
+      "chain_auth": "B",
+      "chain_label": null,
+      "seq_auth": 23,
+      "seq_label": null,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "sg_sg_A": 2.3999999999999986
+    }
+   ],
+   "derived": {
+    "polymer_count": 56,
+    "shell": {
+     "LIG A101": {
+      "1.0": [],
+      "4.0": [
+       "MSE A9",
+       "LEU A10"
+      ],
+      "5.0": [
+       "HID A6",
+       "MSE A9",
+       "LEU A10",
+       "PHE A15"
+      ],
+      "12.0": [
+       "HID A6",
+       "VAL A7",
+       "MSE A9",
+       "LEU A10",
+       "ILE A10A",
+       "PHE A15",
+       "THR A16"
+      ]
+     },
+     "LIG B101": {
+      "1.0": [],
+      "4.0": [
+       "LEU B10"
+      ],
+      "5.0": [
+       "LEU B10",
+       "ASN B13"
+      ],
+      "12.0": [
+       "LEU B10",
+       "ASN B13"
+      ]
+     }
+    },
+    "metal_contact": {
+     "1.0": [],
+     "2.0": [],
+     "3.0": [
+      "ALA A2",
+      "SER A3",
+      "GLY B1"
+     ],
+     "5.0": [
+      "ALA A2",
+      "SER A3",
+      "THR A4",
+      "LYS A11",
+      "GLU A12",
+      "GLY B1"
+     ]
+    },
+    "altloc_first_rule_changes": [
+     {
+      "residue": {
+       "model_number": 1,
+       "chain_auth": "A",
+       "chain_label": null,
+       "seq_auth": 11,
+       "seq_label": null,
+       "icode": "",
+       "resname": "LYS"
+      },
+      "first_rule": {
+       "ligand_min_distance_A": {
+        "LIG A101": 102.5,
+        "CD A203": 100.03124511871279,
+        "LIG B101": 114.04494727957044
+       },
+       "nearest_metal": {
+        "min_distance_A": 2.5,
+        "metal_residue": {
+         "model_number": 1,
+         "chain_auth": "A",
+         "chain_label": null,
+         "seq_auth": 201,
+         "seq_label": null,
+         "icode": "",
+         "resname": "ZN"
+        }
+       }
+      },
+      "highest_occupancy": {
+       "ligand_min_distance_A": {
+        "LIG A101": 103.5,
+        "CD A203": 100.06123125366787,
+        "LIG B101": 114.94455185001158
+       },
+       "nearest_metal": {
+        "min_distance_A": 3.5,
+        "metal_residue": {
+         "model_number": 1,
+         "chain_auth": "A",
+         "chain_label": null,
+         "seq_auth": 201,
+         "seq_label": null,
+         "icode": "",
+         "resname": "ZN"
+        }
+       }
+      }
+     }
+    ],
+    "metal_contact_first_rule_3.0": [
+     "ALA A2",
+     "SER A3",
+     "LYS A11",
+     "GLY B1"
+    ],
+    "disulfide_cys_residues": [
+     "CYS A20",
+     "CYS A22",
+     "CYS A5",
+     "CYS B20",
+     "CYS B22",
+     "CYS B23",
+     "CYX A8"
+    ],
+    "non_standard_polymer": [
+     "MSE A9",
+     "MSE B9"
+    ]
+   }
+  }
+ },
+ "placement_notes": {
+  "A2": "ZN at 2.9 A (inside 3.0)",
+  "A3": "ZN at exactly 3.0 A (boundary, inclusive)",
+  "A4": "ZN at 3.1 A (just outside 3.0)",
+  "A11": "LYS NZ altloc A 2.5 A (occ 0.30) / B 3.5 A (occ 0.70) from ZN",
+  "A12": "NA at 4.0 A (outside 3.0, inside 5.0)",
+  "B1": "NA at 2.2 A (other chain near a metal)",
+  "A13": "CD at 2.0 A (CD is not in the metal list)",
+  "A14": "water O at 2.5 A (water is neither metal nor ligand)",
+  "A5": "SG-SG 2.05 A with CYX A8 (intra-chain)",
+  "A8": "SG-SG 2.05 A with CYS A5 (variant name CYX)",
+  "A20": "SG-SG exactly 2.5 A with CYS B20 (inter-chain boundary)",
+  "B20": "SG-SG exactly 2.5 A with CYS A20",
+  "A21": "SG-SG 2.6 A with CYS B21 (just over 2.5)",
+  "B21": "SG-SG 2.6 A with CYS A21",
+  "B22": "SG-SG 2.4 A tie with CYS A22 and CYS B23",
+  "A22": "SG-SG 2.4 A with CYS B22",
+  "B23": "SG-SG 2.4 A with CYS B22",
+  "A6": "LIG A101 C1 at exactly 5.0 A (shell boundary, inclusive)",
+  "A7": "LIG A101 C1 at 5.001 A (just outside 5.0)",
+  "A9": "LIG A101 O3 at 3.5 A (MSE as ATOM, non-standard)",
+  "A10": "LIG A101 C2 at 4.0 A",
+  "A10A": "LIG A101 C1 at 6.0 A (insertion code A)",
+  "A15": "LIG A101 O3 at 4.5 A heavy; its H atom HX at 2.0 A from O3",
+  "A16": "LIG A101 C1 at 5.5 A heavy; LIG H4 at 4.4 A (H not counted)",
+  "CC10": "LIG A101 C2 at 4.2 A (SEP, ATOM, non-standard)",
+  "CC9": "LIG A101 C2 at 3.0 A (MSE as HETATM: not a polymer)",
+  "B10": "LIG B101 C2 at 3.0 A",
+  "B13": "LIG B101 C1 at 4.9 A"
+ }
+}
