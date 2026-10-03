@@ -255,6 +255,50 @@
 ### 도킹 작업의 입력 스테이징도 일반 작업 한도를 넘는다 (M18)
 - 수용체·사이드카·SDF(각 최대 10 MiB)를 base64로 넘기면 일반 작업 입력 한도 4,000,000 B에 걸린다. `qvina_dock_v1`은 스테이징 한도 48 MiB(`docking_bundle.STAGED_LIMIT`, 작업 모듈 읽기 한도와 같음), 결과 한도 4 MiB를 쓴다. M17처럼 입력 바이트는 작업 기록에 넣지 않고 스테이징 때 불변 가져오기 객체에서 다시 읽어 SHA-256을 대조한다.
 
+### 작업이 도는 동안에는 행 결과를 게시할 수 없다 (M19)
+- **증상**: 명세는 "행이 끝날 때마다 게시"를 원했지만, 착수 확인에서 M18과 같은 게시 검증으로는 실행 중 게시가 불가능했다.
+- **원인**: 게시 증거 순서는 예약(`budget_reserved`) → 정리 확인(`job_cleanup_verified`) → 결과 후보 → 종료이고, 정리 확인은 작업 프로세스 그룹이 비었음을 확인한 뒤에만 기록된다. guardian 메시지도 STARTED·RESULT 둘뿐이고 RESULT는 작업 프로세스가 끝난 뒤에 온다. `_terminal`은 `cancelled`·`interrupted`·`failed`에서 `output_handles`를 비운다. 게다가 감독 루프는 0.05초마다 이벤트 로그 전체를 다시 접으므로 실행 중 수백 KB 객체 이벤트를 쓰면 폴링이 점점 무거워진다.
+- **대응**: 작업 모듈이 `rows/<n>.started`·`<n>.result.json`·`<n>.status.json`과 `prepared.json`을 원자적으로(임시 파일 + fsync + `os.replace` + 디렉터리 fsync, 쓰는 동안 SIGALRM·SIGTERM 막음) 쓰고, 서버(`docking_batch_jobs.finish`)가 정리 확인 뒤 어떤 종료 상태에서든 그 파일로 행을 게시(`docking_batch_row_published`)하고 요약을 마지막에 게시한다(결정 0027). `done` 작업의 `output_handles`에는 요약 하나만 둔다(작업 읽기가 목록의 모든 handle을 읽으므로 51개를 넣지 않음). 진행 표시는 이벤트가 아니라 시도 디렉터리의 `rows/*.status.json` 개수다.
+- **검증**: `pytest backend/tests/test_docking_batch_jobs.py -q`(취소·시간 소진·작업 프로세스 중단·서버 재시작 복구 뒤 행 결과와 요약).
+
+### 수용체 PDBQT를 한 번만 준비해도 행 결과는 바이트 동일하다 (M19)
+- `docking_result@1` 내용에는 수용체 PDBQT 텍스트가 들어가지 않고, 같은 수용체 바이트에서 준비한 PDBQT는 같다. 그래서 일괄은 `docking_worker.receptor_inputs`·`receptor_prepared`를 한 번 부르고 행마다 `dock_row(…, prepared)`를 부른다. 착수 확인에서 7행 모두 단독 M18 작업과 출력 바이트·handle·`input_sha256`이 같았고, 같은 프로세스에서 행을 이어 돌려도(RDKit·Meeko 상태 공유) 바뀌지 않았다(`docs/qa/m19-batch-20261003/preflight.txt` (a)). 행 계산을 일괄 작업 모듈에 복제하지 않고 M18 모듈의 함수를 파일 경로로 불러 쓰는 것이 이 동등성을 구조적으로 지킨다. M18 `dock()`은 `dock_row(…, None)`이며 동작·바이트가 같다(M18 테스트 전부 통과).
+- 수용체 준비 결과를 행 사이에 공유하는 다른 최적화(예: Meeko 상태 재사용 범위 확대)를 더하면 단독 M18 결과와의 바이트 비교를 다시 한다(`test_docking_batch_worker.py`).
+
+### M18 호출 키에 작업 모듈 해시가 들어가 추출만 해도 재사용이 끊긴다 (M19)
+- **증상**: M19 전에 만든 M18 도킹 결과가 같은 입력의 일괄 행에서 재사용되지 않고 새로 계산된다(handle은 같다).
+- **원인**: 재사용 키는 M18 호출 키 전체이고 pin에 `docking_worker.py` SHA-256이 들어간다. M19가 행 계산 함수를 동작 변경 없이 추출해 파일 해시가 바뀌었다.
+- **대응**: 설계대로다(결정 0027, 같은 호출 키 = 같은 계산 규칙 유지). `docking_worker.py`를 고치면 그 전 결과의 재사용이 모두 끊긴다는 점을 변경 때 기록한다.
+
+### 숨은 900초 상한이 두 군데 있다 (M19)
+- **증상**: 프로토콜 상수만 7800초로 두면 일괄 제출이 `invalid job timeout` 또는 422로 거절된다.
+- **원인**: `JobQueue.submit`의 프로토콜별 상한(OpenMM·화학·포켓·리간드 후보 120, 그 밖 900)과 API 모델 `JobSubmit.timeout_s`(`le=900`)가 따로 있다. `docking_constants.TIMEOUT_MAX_S = 900`은 M18 capability 표시용이다.
+- **대응**: 두 곳 모두 이 프로토콜만 7800을 허용한다(API는 `le=7800`, 큐가 다른 프로토콜을 각자 상한으로 거절). 긴 작업을 새로 만들면 두 곳과 마감 계산(min(남은 활동 시간, `timeout_s`))을 함께 본다. guardian의 `MAX_GO_WAIT_S` 3600은 GO 대기 상한일 뿐이고 실행 시간 상한이 아니다. psutil 신원 기록에는 나이·만료 개념이 없다.
+
+### 증액 직후 런타임 오버헤드 과금으로 다시 부족해진다 (M19)
+- **증상**: 활동 시간 부족분만큼 정확히 올리면, 증액 요청 자체의 `_mutation`이 끝날 때 `runtime_overhead`를 몇 ms 청구해 잔여가 필요량보다 작아지고 일괄 제출이 다시 `batch_limit_raise_required`가 된다.
+- **대응**: 활동 시간 증가분에 `RAISE_MARGIN_S` 60초를 더한다(조정 가능, 결정 0027). 증액 판단·계획·응답은 모두 `Run.raise_limits`가 실행 잠금 안에서 쓰는 `run.budget.snapshot()`(과금된 사용량)으로 한다. 활동 중 경과를 더한 `budget_snapshot()`으로 판단하면 승인 응답과 실제 증액이 어긋난다(T11 검토 수정 `4aa9fc2`). 시작 전 확인은 `budget_snapshot()`을 보여 주므로 두 값이 활동 중에는 조금 다를 수 있다.
+- 사용량이 이미 한도를 60초 넘게 넘은 run은 한 번의 증액으로 부족분이 0이 되지 않는다(증가분이 필요량 + 60초로 묶임). 다시 명시적으로 승인한다.
+
+### `Run.update_limits`에는 HTTP 경로가 없다 (M19)
+- `update_limits`는 테스트에서만 불린다. 사람의 증액은 형제 함수 `Run.raise_limits(plan, by="human")`(실행 잠금 안에서 스냅숏으로 증가분을 계획, 증가분이 모두 0이면 이벤트 없음, `budget_limit_updated`에 `context` 추가)이고, 이것을 부르는 곳은 `docking_batch_jobs.limit_approval` 하나, 그것을 부르는 곳은 HTTP 라우트 하나다(`test_docking_batch_budget.py`가 AST로 확인). 다른 경로(도구·흐름·뷰어)에서 한도를 올리는 코드를 더하면 이 테스트가 실패해야 한다. `budget_limit_updated`의 재생(`_refresh`)은 `limits`만 읽으므로 맥락 필드를 더해도 events-only 복구가 같다.
+
+### 재사용 색인은 일괄로 게시된 행도 넣어야 한다 (M19)
+- **증상**: 단독 M18 작업만 색인하면, 일괄로 계산한 후보를 같은 설정의 두 번째 일괄이 다시 계산한다.
+- **원인**: 일괄 행 결과는 `job_terminal`의 `output_handles`가 아니라 `docking_batch_row_published`로만 게시된다.
+- **대응**: `docking_batch_inputs.published_m18_results`가 단독 작업의 완료 기록과 일괄 행 게시를 모두 넣는다(행의 M18 호출 키는 일괄 작업 기록의 행 선택 기록과 일괄의 M18 pin으로 다시 만든다). 재사용 전에 `docking_bundle.validated_result`로 다시 검증하고 `input_sha256`도 대조한다.
+
+### 같은 handle을 게시한 작업이 둘이면 `producer()`는 가장 먼저 게시한 쪽을 돌려준다 (M19)
+- 같은 입력이면 같은 handle이므로 단독 M18 작업과 일괄 행이 같은 `docking_result`를 각각 게시할 수 있다. `docking_bundle.producer()`는 두 증거 중 게시 순번이 이른 쪽을 고른다(일괄 행은 요약 게시가 있으면 그 순번, 없으면 행 게시 순번). 그래서 나중 게시가 이미 만든 읽기·보고서의 대조 기준을 바꾸지 않는다. 일괄 행 증거의 `job`은 그 행의 선택 기록을 끼운 보기(`{**job, "selected": rows[i]["selected"]}`)라 M18 검사가 그대로 적용된다.
+- 행 증거는 요약 게시를 요구하지 않는다(T11 검토 수정 `f3cc8c6`). 요약을 만들 수 없어 작업이 실패해도 검증된 행은 읽히고 재사용된다.
+
+### 일괄 읽기는 행마다 다시 검증해 느리다 (M19)
+- `GET /docking/batches`·`/detail`·`GET /jobs`(일괄 작업의 `batch` 필드)는 요약을 읽을 때마다 단일 게시, 일괄 선택 기록, 모든 행 결과(`validated_result`, 행마다 이벤트 로그 재파싱)를 다시 검증한다. 입장·시작 전 확인도 행마다 M18 입장 검사(수용체 바이트 gemmi 파싱 포함)를 한다. 51행 일괄이 여러 개인 run에서는 목록·폴링이 눈에 띄게 느려질 수 있다(정확성 문제는 아님, `docs/tracking/findings.md`).
+
+### Stop 훅 그룹과 M11 handshake 수 테스트 (M19)
+- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`). 지금 pytest 그룹은 다섯이고(`test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 다섯 파일, M19 일괄 일곱 파일, 나머지), 그룹을 더하면 `scripts/test_codex_hooks.py`의 그룹 수·목록 기대도 함께 고친다. 실행기는 `ThreadPoolExecutor(max_workers=4)`라 다섯 그룹 중 넷만 동시에 돌고 다섯째는 먼저 끝난 그룹을 기다린다(`docs/tracking/findings.md`).
+- `/capabilities`가 M17·M18·M19 작업 모듈 handshake까지 실행하므로, `test_m11_job_api.py`의 handshake 캐시 테스트를 그룹 단독으로 돌리면 다른 작업 모듈 실행도 셌다. 테스트가 화학 작업 모듈 argv만 세도록 좁혔다(`b2c6436`). capability에 handshake를 더하는 단계는 subprocess 수를 세는 기존 테스트를 확인한다.
+
 ## 동작 원리
 
 ### handle과 복구
@@ -284,6 +328,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 ### 도킹 작업 경로 (M18)
 `POST /jobs`의 `qvina_dock_v1`은 `docking_bundle.submission`이 RDKit·Meeko 없이 입장을 검사한다(작업 인자 모양·범위는 `docking_inputs.validate_arguments`, 같은 run 가져오기 handle과 종류, M17 후보 집합 검증 읽기와 후보 id·부모 해시, 수용체 가져오기 바이트의 M11 규칙 검사와 인스턴스 일치를 gemmi로). 통과하면 capability로 얻은 고정 pin(`qvina2` 해시·패키지, Meeko·RDKit·MDAnalysis·gemmi 버전, 작업 모듈·상수·두 잠금 파일 SHA-256)을 호출 키와 작업 기록에 넣고, 시작 때 pin이 바뀌었으면 `precondition`으로 막는다. capability는 `qvina2` 파일 해시를 설치 기록·고정값과 비교하고 작업 모듈 `--handshake`만 실행한다(qvina는 실행하지 않음). 구조가 맞는 handshake만 서버 프로세스 안에 캐시하며 키는 인터프리터·`qvina2` 파일 정보와 qvina 설치 기록·작업 환경 잠금 파일·작업 모듈·상수의 SHA-256이다(환경을 제자리에서 바꾸면 백엔드를 다시 시작한다). guardian은 고정 진입점 `mw/jobs/docking_worker.py`를 `.deps/docking/venv-locked` 인터프리터로 띄우고, 작업 모듈이 `qvina2`를 같은 프로세스 그룹의 자식으로 실행하므로 정리·빈 그룹 확인이 엔진까지 덮는다. 게시(`_publish_docking`)는 현재 시도·취소를 확인하고, 스테이징한 선택·닫힌 집합으로 출력을 검증하고, 접촉마다 수용체 원자 식별자와 거리를 수용체 가져오기 바이트로 다시 대조한 뒤에만 객체를 저장한다. 서버는 작업 시작 요청을 작업이 끝날 때까지 붙잡으므로, 화면은 제출 응답의 job id로 폴링·취소한다.
 
+### 일괄 도킹 작업 경로 (M19)
+`POST /jobs`의 `qvina_batch_dock_v1`은 `docking_batch_inputs.submission`이 입장을 검사한다: 공유 필드는 M18 `docking_inputs.validate_arguments`로, 후보 집합은 M17 검증 읽기로, 행마다 `docking_bundle.submission`(M18 입장 그대로)을 불러 행별 `docking_selection@1`을 만들고 일괄 선택 기록 `docking_batch_selection@1`(행 선택 기록 목록 + `batch_input_sha256`)로 묶는다. 호출 키는 `batch_input_sha256`이며 같은 키의 진행 중 작업이나 검증된 `complete` 요약의 작업만 돌려준다. 새 작업이면 그 자리에서 재사용 계획으로 N을 세고 예산 부족을 429로 거절한다. 작업 기록에는 `method`(행의 M18 pin)와 `batch_method`(일괄 작업 모듈·상수 해시)를 넣고, 시작 때 둘 다 다시 맞춘다. 시작 때 run 실행 잠금 안에서 재사용 계획을 한 번 정하고(`job_dispatch_intent.batch_reused`) `reserve_attempt(units=N)`으로 예약한다. N = 0이면 작업 프로세스 없이 정리 확인 이벤트를 쓰고 요약만 게시한다. 스테이징은 첫 행의 M18 스테이징(수용체·부모 SDF 바이트를 불변 가져오기에서 다시 읽고 해시 대조)에 행 목록(재사용 표시, 후보 SMILES·코어·입체 표시)을 더한 `docking_batch_worker_input@1`이다. guardian은 고정 진입점 `mw/jobs/docking_batch_worker.py`를 `.deps/docking/venv-locked`로 띄우고(감시 대상, 종료 기록 한도 64 KiB), 작업 모듈은 `docking_worker.py`를 파일 경로로 불러 수용체를 한 번 준비한 뒤 행을 차례로 `dock_row`로 계산한다. 행당 300초·전체 7200초 시계와 SIGTERM은 `BaseException`인 `_Stop`을 던져 M18의 `except Exception`이 삼키지 않게 하고, `subprocess.run`이 그 행의 `qvina2`를 정리한다(진행 중인 RDKit·Meeko 네이티브 호출은 끝난 뒤에 멈춘다). 서버는 그룹 정리 확인 뒤 `_finish_batch`에서 종료 원인(사용자 취소·작업 마감·크래시·서버 재시작)을 정하고 `finish`가 스테이징을 크기 제한·`O_NOFOLLOW`·canonical JSON으로 읽어 행을 M18과 같은 검사(`result_content` → `store_result`, 수용체 원자 재대조)로 게시한 뒤 요약을 만들고 검증해 게시한다. 그 다음 작업 종료를 기록한다(`done`이면 요약 handle 하나). 서버 재시작 때는 `reconcile_run`이 그룹 정리를 확인한 뒤 같은 `_finish_batch(recovered=True)`로 게시하고 `interrupted`로 닫는다. capability는 M18 capability + 일괄 파일 해시 + 일괄 작업 모듈 `--handshake`(구조가 맞는 것만, 파일 해시 키로 캐시)다.
+
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
 
@@ -299,6 +346,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 7. 검증: 전체 게이트 명령과, UI가 있으면 오프스크린 컨트롤 검증까지 실행한다.
 8. 참조 데이터를 읽는 도구(M15 번호 대응 등)는 호출 시작 때 참조 세트를 고정하고, 그 세트 해시를 호출 키에 넣고(사전 검사 훅의 `key_fields`), 결과 객체에 세트 해시와 계산에 쓴 참조 행을 담아 참조 폴더 없이 다시 열리게 한다. 참조 값과 계산 값은 보고서에서 다른 증거 종류로 둔다.
 9. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
+10. 기존 결과를 여러 개 묶는 작업(M19 일괄 등)은 행 계산을 복제하지 않고 기존 작업 모듈 함수를 불러 쓰며, 행 결과가 단독 실행과 같은 handle인지 실제 엔진으로 바이트 비교한다. 900초보다 긴 작업 시간 한도가 필요하면 `JobQueue.submit`과 API `JobSubmit.timeout_s` 두 곳을 그 프로토콜에만 넓힌다. 작업 하나가 결과 여러 개를 내면 게시 증거 이벤트·재사용 색인·`producer()`·보고서 입력 검사가 그 결과를 받아들이는지, 시도 1회·예약 단위·환불 없음이 재생과 맞는지 확인한다. 검증: 실제 엔진 테스트, events-only 복구, 기존 프로토콜 테스트 전부.
 
 ### UI 컨트롤 변경
 1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.
