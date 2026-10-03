@@ -22,6 +22,8 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   │     ├─ RDKit 리간드 작업 프로세스 (M17 ligand_worker.py, 같은 venv-locked 인터프리터)
   │     ├─ qvina 도킹 작업 프로세스 (M18 docking_worker.py, .deps/docking/venv-locked 별도 인터프리터,
   │     │    자식으로 .deps/qvina/env/bin/qvina2 고정 실행 파일)
+  │     ├─ qvina 일괄 도킹 작업 프로세스 (M19 docking_batch_worker.py, 같은 인터프리터, docking_worker.py를
+  │     │    파일 경로로 불러 행마다 같은 계산, 자식 qvina2)
   │     └─ fpocket 작업 프로세스 (프로젝트 .venv, .deps/fpocket/env/bin/fpocket 고정 실행 파일)
   └─ EgressGate (egress/) ─ 유일한 외부 HTTP 출구
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
@@ -66,6 +68,10 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/docking_bundle.py`, `jobs/docking_worker.py` | M18 도킹 작업 경로: capability(`qvina2` 해시 + 작업 모듈 `--handshake`만, qvina 실행 없음), 입장 검사·호출 키·스테이징(48 MiB), 게시 검증(접촉의 수용체 원자·거리 재대조), `docking_result@1` 검증 읽기. 작업 모듈은 `.deps/docking/venv-locked`에서 수용체 검사·M11 화학 추론(MDAnalysis)·Meeko PDBQT·리간드 검사·RDKit 형태 생성·`qvina2` 실행(자유 검색 또는 `--score_only`)·포즈 복원·기하 접촉을 한다 | 서버: core, docking 순수 모듈, `ligand_bundle`(후보 집합 검증 읽기). 작업 모듈: gemmi, MDAnalysis, Meeko, RDKit, `docking_constants`, `qvina2` |
 | `backend/mw/docking_reads.py`, `docking_reports.py` | M18 읽기 API(준비 상태·수용체 인스턴스·결과 목록·상세·접촉 페이지·포즈 SDF, 이벤트 없음)와 계산값 증거 보고서(`count_where`, 점수 최솟값·최댓값) | docking_bundle, docking 순수 모듈, `ligand_reports`·`numbering_reports`·`pocket_reports`(공용 검사·한도), reports, core |
 | `frontend/src/components/DockingPanel.tsx` | M18 리간드 설계·탐색 탭의 도킹 영역(후보 영역 다음): 수용체·사이드카·SDF 가져오기, 인스턴스 선택, 리간드 출처·방식·상자·값·확인 세 항목, 작업(승인·예산·취소), 요약·모드 표·접촉 표·SDF 내려받기·거부 목록, 보고서 만들기 | `src/lib/docking.ts`, `api.ts` |
+| `backend/mw/docking_batch_constants.py`, `docking_batch_inputs.py`, `docking_batch_bundle.py` | M19 서버 쪽 순수 모듈(RDKit·Meeko 없음): 상한·상태·이유 집합·고정 문장 B1–B3(의존성 없음, 작업 모듈도 파일 경로로 읽음), 일괄 인자 입장 검사·행별 M18 인자·`batch_input_sha256`·재사용 색인·예산 필요량·부족분·증액량, 스테이징 관찰에서 요약 행·상태를 만들고 요약을 검증 | `docking_inputs`·`docking_bundle`(행 입장·호출 키), `ligand_bundle`(후보 집합 검증 읽기), core |
+| `backend/mw/docking_batch_jobs.py`, `jobs/docking_batch_worker.py` | M19 일괄 작업 경로: capability(M18 capability + 일괄 작업 모듈 `--handshake`), 입장·재사용 계획·예산 부족 거절, 스테이징, 종료 상태마다 행 게시와 요약 게시(`finish`), 사람 증액(`limit_approval`), 진행 표시, 요약 검증 읽기. 작업 모듈은 `.deps/docking/venv-locked`에서 수용체를 한 번 준비하고 행마다 M18 `dock_row`를 부르며 행별 스테이징 파일·행·전체 시계·출력 총량을 맡는다 | 서버: core, docking·docking_batch 순수 모듈, jobs, runtime(`raise_limits`). 작업 모듈: `docking_worker.py`(파일 경로), `docking_batch_constants` |
+| `backend/mw/docking_batch_reads.py`, `docking_batch_reports.py` | M19 읽기 API(시작 전 확인·요약 목록·상세, 이벤트 없음)와 계산값 증거 보고서(요약 행 점수 + 행 결과 첫 행 점수) | docking_batch_jobs, `docking_reports`·`pocket_reports`(공용 검사), reports, core |
+| `frontend/src/components/DockingBatchPanel.tsx` | M19 리간드 설계·탐색 탭의 일괄 도킹 영역(도킹 영역 다음): 가져온 수용체·사이드카·부모 SDF·후보 집합 고르기, M17 필터(`FilterForm` 공용) + 체크박스, 방식·부모 기준 행·상자·값·확인, 시작 전 확인·증액 승인, 작업(승인·폴링·취소), 결과표·정렬, 행 상세는 도킹 영역(`openRequest`)으로, 보고서 만들기 | `src/lib/docking-batch.ts`, `src/lib/docking.ts`, `api.ts`, `LigandPanel`·`DockingPanel`의 공용 구성 요소 |
 | `frontend/src/components/SiteAnnotationPanel.tsx` | M16 구조 분석 탭 메인 화면의 참조 주석 패널: 같은 구조의 대응·접촉 결과 선택, 주석 만들기·켜기, 범례, 부위 표, 보고서 만들기. Mol* 그리기는 MolstarViewer 브리지의 `siteAnnotation` | `src/lib/site-annotation.ts`, `api.ts`, MolstarViewer 브리지 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
@@ -73,7 +79,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `frontend/src/components/AnalysisWorkflowPanel.tsx` | M13 분석 흐름 패널(메인 화면과 화학 작업 화면 공용): 화면 선택 가져오기, 계획 미리보기, 두 승인, 단계 목록, 결과 열기, 요약 | `src/lib/analysis.ts`, `api.ts`, PocketPanel·페이지의 결과 열기 콜백 |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
-의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈만 자식 프로세스로 실행한다.
+의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈(의 함수)만 자식 프로세스로 실행한다. M19 일괄 작업 모듈은 같은 인터프리터에서 `docking_worker.py`와 의존성 없는 `docking_batch_constants.py`만 파일 경로로 불러 쓴다.
 
 ## 대표 흐름: 업로드부터 보고서까지
 
@@ -87,7 +93,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 
 ## 비싼 계산의 작업 경로
 
-OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간드 점검·생성, M18 qvina 도킹은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
+OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간드 점검·생성, M18 qvina 도킹, M19 일괄 도킹은 `Run.call`로 실행하지 않는다. `/jobs`(제출, queued) → `/jobs/{id}/start`를 부르면, run의 첫 비싼 계산일 때 409로 승인 요청을 기록한다 → 사용자가 `/jobs/approve`로 승인을 명시적으로 기록한다 → 다시 `/start`를 부른다. OpenMM은 제출 전에 `/jobs/preflight`로 입력 적합성을 먼저 확인한다. 시작하면 run 실행 소유권을 얻은 뒤 비싼 계산 1단위를 예약하고, 새 프로세스 세션에서 고정된 모듈 진입점을 띄운다. 작업 프로세스는 개인 입력 파일로 제한된 JSON을 받는다. 결과는 스키마와 작업·시도 ID를 검증한 뒤에만 객체로 저장한다. 시간 초과나 취소가 나면 프로세스 그룹에 SIGTERM, 유예 후 SIGKILL을 보내고, 그룹이 비었음을 확인한 다음에 종료 상태를 기록한다.
 
 ## 분석 흐름 (M13)
 
@@ -108,6 +114,10 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간�
 ## 리간드 도킹 (M18)
 
 리간드 탭 도킹 영역에서 사용자가 수용체(+결합 사이드카)와 리간드 SDF를 `/chemical/imports`로 가져오고(M11 종류 그대로), 수용체에 비표준 잔기가 있으면 `GET /docking/receptor_instances`(gemmi, 이벤트 없음)에서 뺄 인스턴스 하나를 고른다. 리간드 출처(3D SDF 또는 M17 후보 + 부모 SDF)·방식·상자·값·확인 세 항목을 정하면 화면이 `POST /jobs`로 `qvina_dock_v1`을 제출·승인·시작한다. 서버는 RDKit·Meeko 없이 입장을 검사하고(작업 인자, 같은 run handle, 후보 집합·부모 해시, 수용체 M11 규칙·인스턴스 일치를 gemmi로), 가져오기 바이트를 스테이징하며, guardian이 `.deps/docking/venv-locked`의 `docking_worker.py`를 띄운다. 작업 모듈은 수용체를 다시 검사한 뒤 M11 화학 추론 그래프 → Meeko로 수용체 PDBQT를, Meeko로 리간드 PDBQT를 만들고, `.deps/qvina/env/bin/qvina2`를 자식으로 실행한다(자유: 검색, 코어 고정: RDKit 구속 형태마다 `--score_only`). 포즈를 입력 원자 순서로 되돌려 포즈 SDF·상자 밖 원자·최소 거리·기하 접촉을 만들고, 서버가 이를 검증해(접촉의 수용체 원자·거리를 수용체 가져오기로 재대조) `docking_result@1`로 저장한다. 읽기는 `/docking/*`가 매번 완료된 게시에 대조해 돌려주고, 보고서는 기존 `method_reports` 경로로 만든다. 결과는 이벤트만으로 다시 열린다(qvina·Meeko 없이). 작업 모듈은 화학 패키지 import 전에 Python socket을 막고, 제품 실행 중 네트워크는 쓰지 않는다.
+
+## 리간드 일괄 도킹 (M19)
+
+리간드 탭 일괄 영역에서 사용자가 M18 도킹 영역으로 가져온 수용체·부모 SDF와 M17 후보 집합을 고르고, M17 필터 결과(`/ligand/candidate_sets/rows`) 위에서 후보를 체크하고, 방식·부모 기준 행·상자·값·확인을 정한다. 화면은 `POST /docking/batches/preflight`(이벤트 없는 읽기)로 행별 재사용·새 계산 수 N·필요 예산·부족분을 받는다. 부족하면 사람이 `POST /docking/batches/limit_approval`을 눌러 run 한도를 부족분만큼 올린다(`budget_limit_updated`, `by: "human"`). 그다음 `POST /jobs`로 `qvina_batch_dock_v1`을 제출·승인·시작한다. 서버는 RDKit·Meeko 없이 행마다 M18 입장 검사를 하고, 시작 때 run 실행 잠금 안에서 재사용 행을 정해 N단위를 예약한 뒤 수용체·부모 SDF와 행 목록을 스테이징한다. guardian이 `docking_batch_worker.py`를 띄우면 작업 모듈이 수용체를 한 번 준비하고 행마다 M18 `dock_row`로 `qvina2`를 돌리며, 행마다 `rows/` 아래 시작·결과·상태 파일을 내구적으로 쓴다. 작업이 어떻게 끝나든(완료, 취소, 시간 소진, 크래시, 서버 재시작 복구) 서버는 그룹 정리를 확인한 뒤 검증 가능한 행 결과를 `docking_result@1`로 게시하고(`docking_batch_row_published`), 스테이징 관찰과 종료 원인으로 요약 `docking_batch_result@1`을 만들어 마지막에 게시한다(`docking_batch_published`). 화면은 작업 기록의 `batch` 진행(상태 파일 수, 요약 handle·상태)을 폴링하고, 요약 상세(`/docking/batches/detail`)로 표를 그리며, 행의 "상세 열기"는 M18 도킹 영역의 `/docking/results/*` 상세로 넘긴다. 보고서는 기존 `method_reports` 경로다. 일괄이 도는 동안 run 실행 잠금과 전역 작업 슬롯을 쥐므로 같은 run의 다른 계산과 다른 run의 비싼 작업이 기다린다. 네트워크는 쓰지 않는다.
 
 ## 외부 경계
 

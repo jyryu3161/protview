@@ -28,6 +28,7 @@ EventType = Literal[
     "job_result_candidate", "job_terminal", "job_cleanup_pending",
     "job_worker_started", "job_retry_queued",
     "job_cleanup_verified", "job_observed",
+    "docking_batch_row_published", "docking_batch_published",
     "execution_call_admitted", "execution_call_stopped",
     "workflow_started", "workflow_step_completed", "workflow_outcome", "report_created",
     "viewer_consent_changed", "viewer_session_created", "viewer_scene_updated",

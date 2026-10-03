@@ -1,0 +1,484 @@
+{
+  "mode": "job-controls",
+  "ledgerMode": "job-controls",
+  "status": "observed_unreviewed",
+  "harnessSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+  "ledgerHelperSha256": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+  "fixtureFiles": {
+    "receptor": {
+      "name": "prolif-vina-rec.pdb",
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+    },
+    "sdf": {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    }
+  },
+  "variantsManifest": null,
+  "expectCapability": null,
+  "fixtureLabel": null,
+  "buildId": "HZVIvlS1pgVkSE0gAkqD6",
+  "startedAt": "2026-10-03T02:58:23.207Z",
+  "run": "run_c2299d93e409409bacdadfe636784e69",
+  "oldJobsSnapshot": {
+    "status": 200,
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "jobs": []
+  },
+  "supersededUpload": {
+    "status": 201,
+    "sha256": "2567098297c91cf03c2c88796705ea7956edefcdada70b30f4c46bcbe57501bc"
+  },
+  "files": {
+    "receptor": {
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+      "bytes": 504575,
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "handle": "obj://run_c2299d93e409409bacdadfe636784e69/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)"
+    },
+    "sdf": {
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+      "bytes": 60682,
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "handle": "obj://run_c2299d93e409409bacdadfe636784e69/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    }
+  },
+  "heldSubmission": {
+    "status": 200,
+    "sha256": "93917d2f45dad4d57f4b0cb9852df6f550812928c9a542f62fab342f43c56a13",
+    "response": {
+      "job_id": "job_58b9092d80984c7e89526d833083a37f",
+      "run_id": "run_c2299d93e409409bacdadfe636784e69",
+      "root_call_id": "job_58b9092d80984c7e89526d833083a37f",
+      "call_key": "851e6ced5542a11c392e0feeca05de7e74318e43ab53d21dbfb5bce71766614b",
+      "protocol_id": "prolif_prepare_v1",
+      "tool_id": "prepare_chemical_structure",
+      "status": "queued",
+      "created": 1790996305.796795,
+      "finished": null,
+      "timeout_s": 120,
+      "attempt_id": null,
+      "attempt_ordinal": 0,
+      "blocked_reason": null,
+      "cancel_requested": false,
+      "cleanup_status": null,
+      "failure": null,
+      "input_handles": [
+        "obj://run_c2299d93e409409bacdadfe636784e69/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+        "obj://run_c2299d93e409409bacdadfe636784e69/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+      ],
+      "output_handles": [],
+      "preparation_handle": null,
+      "preparation_attempt_id": null,
+      "started": null,
+      "remaining_wall_s_at_dispatch": null,
+      "artifacts": {}
+    }
+  },
+  "jobControl": {
+    "heldJobs": 1,
+    "jobId": "job_58b9092d80984c7e89526d833083a37f",
+    "afterOldHydration": {
+      "runId": "run_c2299d93e409409bacdadfe636784e69",
+      "mode": "create_new",
+      "generation": null,
+      "sourceHandle": null,
+      "graphHandle": null,
+      "catalogReady": false,
+      "resultHandle": "",
+      "resultTotal": null,
+      "selectedRowId": null,
+      "prepareJobId": "job_58b9092d80984c7e89526d833083a37f",
+      "detectJobId": null,
+      "native": null
+    },
+    "durable": {
+      "job_id": "job_58b9092d80984c7e89526d833083a37f",
+      "run_id": "run_c2299d93e409409bacdadfe636784e69",
+      "root_call_id": "job_58b9092d80984c7e89526d833083a37f",
+      "call_key": "851e6ced5542a11c392e0feeca05de7e74318e43ab53d21dbfb5bce71766614b",
+      "protocol_id": "prolif_prepare_v1",
+      "tool_id": "prepare_chemical_structure",
+      "status": "cancelled",
+      "created": 1790996305.796795,
+      "finished": 1790996305.96986,
+      "timeout_s": 120,
+      "attempt_id": null,
+      "attempt_ordinal": 0,
+      "blocked_reason": null,
+      "cancel_requested": true,
+      "cleanup_status": "verified",
+      "failure": null,
+      "input_handles": [
+        "obj://run_c2299d93e409409bacdadfe636784e69/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+        "obj://run_c2299d93e409409bacdadfe636784e69/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+      ],
+      "output_handles": [],
+      "preparation_handle": null,
+      "preparation_attempt_id": null,
+      "started": null,
+      "remaining_wall_s_at_dispatch": null,
+      "artifacts": {}
+    },
+    "note": "Queued cancellation is terminal and deliberately not retryable; failed/interrupted retry has a separate mode"
+  },
+  "finalImage": {
+    "width": 1440,
+    "height": 960,
+    "low": 11,
+    "high": 255,
+    "sha256": "31b145e77decadca425f5773b6bc3d64a3f14ddd1b9685beaa5760ce265fce27"
+  },
+  "finalNative": {
+    "runId": "run_c2299d93e409409bacdadfe636784e69",
+    "mode": "create_new",
+    "generation": null,
+    "sourceHandle": null,
+    "graphHandle": null,
+    "catalogReady": false,
+    "resultHandle": "",
+    "resultTotal": null,
+    "selectedRowId": null,
+    "prepareJobId": "job_58b9092d80984c7e89526d833083a37f",
+    "detectJobId": null,
+    "native": null
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 43,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m19-acceptance/attempt1/regressions/m13/m11-acceptance/evidence/job-controls/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 129,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/events?after=0&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/analysis/executions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/viewer/intents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/analysis/plans",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/pockets?offset=0&limit=100",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/viewer/online",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/viewer/figures?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/numbering_maps?offset=0&limit=100",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_862bd200433b4b48bd3d88413653fea0/analysis/templates",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/events?after=0&limit=500",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/viewer/online",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/viewer/intents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/analysis/plans",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/analysis/executions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/pockets?offset=0&limit=100",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/viewer/figures?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/numbering_maps?offset=0&limit=100",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/analysis/templates",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/analysis/plans",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/pockets?offset=0&limit=100",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/analysis/executions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/budget",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/viewer/scenes?offset=0&limit=50",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/reports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/analysis/templates",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports?kind=receptor&filename=prolif-vina-rec.pdb",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports?kind=receptor&filename=prolif-vina-rec.pdb",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/inspect?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/atoms?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=0&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/atoms?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=1000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports?kind=ligand_sdf&filename=prolif-vina-output.sdf",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/atoms?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=2000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/inspect?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/atoms?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=3000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/imports/atoms?handle=obj%3A%2F%2Frun_c2299d93e409409bacdadfe636784e69%2Fchemical_raw_input%2F8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633&model_number=1&offset=4000&limit=1000",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/preview",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/preview",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/chemical/preview",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/jobs",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/jobs",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/runs/run_c2299d93e409409bacdadfe636784e69/jobs/job_58b9092d80984c7e89526d833083a37f/cancel",
+      "status": 200,
+      "method": "POST"
+    }
+  ],
+  "finishedAt": "2026-10-03T02:58:26.209Z"
+}

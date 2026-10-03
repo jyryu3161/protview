@@ -54,6 +54,8 @@ POCKET_PROTOCOL = "fpocket_detect_v1"
 POCKET_STAGED_LIMIT = 48 * 1024 * 1024
 LIGAND_PROTOCOLS = frozenset({"rdkit_inspect_v1", "rdkit_enumerate_v1"})
 DOCKING_PROTOCOL = "qvina_dock_v1"  # M18; job timeout bound 900 s (the generic bound below)
+BATCH_PROTOCOL = "qvina_batch_dock_v1"  # M19; its own job timeout bound and one attempt (no automatic retry)
+BATCH_TIMEOUT_MAX_S = 7800  # = docking_batch_constants.TIMEOUT_MAX_S (in-job clock 7200 s + finishing margin)
 CHEMICAL_DERIVED_KINDS = frozenset({"chemical_preparation_manifest", "chemical_structure",
                                     "chemical_graph", "chemical_interaction_set"})
 CHEMICAL_INPUT_REASONS = frozenset({"ligand_disconnected", "stereo_unsupported", "stereo_conflict",
@@ -547,6 +549,8 @@ class JobQueue:
                 item.update(preparation_handle=handles["manifest"], preparation_attempt_id=attempt_id)
             elif kind == "job_cleanup_pending":
                 jobs[event["job_id"]].update(cleanup_status="pending", blocked_reason=event["reason"])
+            elif kind == "docking_batch_published":
+                jobs[event["job_id"]]["batch_summary_handle"] = event["summary_handle"]
             elif kind == "job_terminal":
                 item = jobs[event["job_id"]]
                 if event["status"] not in TERMINAL:
@@ -616,7 +620,8 @@ class JobQueue:
         if not isinstance(args, dict) or any(key in args for key in
                                               ("argv", "executable", "module", "env", "path", "cwd", "fixture")):
             raise ToolFailure(FailureClass.input_invalid, "unsafe job arguments")
-        bound = (120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS or
+        bound = (BATCH_TIMEOUT_MAX_S if protocol == BATCH_PROTOCOL else
+                 120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS or
                  protocol in LIGAND_PROTOCOLS else 900)
         if not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or not 0 < timeout_s <= bound:
             raise ToolFailure(FailureClass.input_invalid, "invalid job timeout")
@@ -647,6 +652,10 @@ class JobQueue:
             from ..docking_bundle import submission as docking_submission
 
             selected, normalized, input_handles = docking_submission(self.run, args)
+        elif protocol == BATCH_PROTOCOL:
+            from ..docking_batch_jobs import submission as batch_submission
+
+            selected, normalized, input_handles = batch_submission(self.run, args)
         else:
             normalized = check_args(spec, args, self.run.store.kind_of)
             for name in spec.accepts:
@@ -657,7 +666,7 @@ class JobQueue:
             return {"plan_only": True, "protocol_id": protocol, "reason_code": "dry_run",
                     "available": False, "output_handles": [], "normalized_parameters": normalized}
         if (protocol not in CHEMICAL_PROTOCOLS and protocol not in LIGAND_PROTOCOLS and
-                protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, DOCKING_PROTOCOL}):
+                protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, DOCKING_PROTOCOL, BATCH_PROTOCOL}):
             require_protocol(protocol)
             raise AssertionError("unreachable")
         if protocol == OPENMM_PROTOCOL:
@@ -684,6 +693,15 @@ class JobQueue:
 
             docking_pins = docking_ready()
             implementation = DOCKING_IMPLEMENTATION
+        elif protocol == BATCH_PROTOCOL:
+            from ..docking_batch_bundle import batch_call_key
+            from ..docking_batch_jobs import IMPLEMENTATION as BATCH_IMPLEMENTATION
+            from ..docking_batch_jobs import complete_job
+            from ..docking_batch_jobs import require_budget as batch_budget
+            from ..docking_batch_jobs import require_ready as batch_ready
+
+            docking_pins, batch_pins = batch_ready()
+            implementation = BATCH_IMPLEMENTATION
         else:
             capability = chemical_capability()
             if not capability["available"]:
@@ -698,13 +716,17 @@ class JobQueue:
         key = (call_key(selected, pocket_pins) if protocol == POCKET_PROTOCOL else
                ligand_call_key(protocol, selected, ligand_pins) if protocol in LIGAND_PROTOCOLS else
                docking_call_key(normalized, docking_pins) if protocol == DOCKING_PROTOCOL else
+               batch_call_key(selected) if protocol == BATCH_PROTOCOL else
                idempotency_key(protocol, implementation,
                                {"selected": selected, "parameters": normalized,
                                 **({"worker_sha256": capability["worker_sha256"],
                                     "dependency_manifest_sha256": capability["dependency_manifest_sha256"]}
                                    if protocol in CHEMICAL_PROTOCOLS else {})}))
         with self.run._transition():
-            existing = next((job for job in self._rebuild().values() if job["call_key"] == key), None)
+            state = self._rebuild()
+            # M19: only an active or a complete batch with this key is returned; a partial one never blocks.
+            existing = (complete_job(self.run, state, key) if protocol == BATCH_PROTOCOL else
+                        next((job for job in state.values() if job["call_key"] == key), None))
             if link is not None:
                 if link.admit is not None:
                     link.admit({"lane": "job", "protocol": protocol, "key": key, "parameters": normalized,
@@ -714,6 +736,9 @@ class JobQueue:
                     return self._linked_existing(existing, link)
             if existing is not None:
                 return existing
+            if protocol == BATCH_PROTOCOL:
+                self.run._refresh()
+                batch_budget(self.run, selected, docking_pins)  # 429 batch_limit_raise_required, nothing charged
             job_id = "job_" + uuid.uuid4().hex
             job = {"job_id": job_id, "run_id": self.run.run_id, "root_call_id": job_id,
                    "protocol_id": protocol, "tool_id": JOB_PROTOCOLS[protocol][0], "call_key": key,
@@ -731,6 +756,9 @@ class JobQueue:
                 job["method"] = ligand_pins
             elif protocol == DOCKING_PROTOCOL:
                 job["method"] = docking_pins
+            elif protocol == BATCH_PROTOCOL:
+                job["method"] = docking_pins  # the rows' M18 pins (row call keys and result checks)
+                job["batch_method"] = batch_pins
             self.run.events.append("job_submitted", job=job, **link_fields(link))
             created = self._rebuild()[job_id]
             return created if link is None else {**created, "execution_ownership": "owned"}
@@ -1173,7 +1201,8 @@ class JobQueue:
                 if self._fixture_mode is None:
                     raise ToolFailure(FailureClass.precondition, "internal fixture adapter unavailable")
             elif (job["protocol_id"] not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, *CHEMICAL_PROTOCOLS,
-                                             *LIGAND_PROTOCOLS, DOCKING_PROTOCOL} or self._fixture_mode is not None):
+                                             *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL} or
+                  self._fixture_mode is not None):
                 raise ToolFailure(FailureClass.precondition, "production adapter unavailable")
             if job["protocol_id"] in CHEMICAL_PROTOCOLS:
                 capability = chemical_capability()
@@ -1215,11 +1244,17 @@ class JobQueue:
                 if capability["pins"] != job.get("method"):
                     raise ToolFailure(FailureClass.precondition, "pinned qvina docking worker or engine changed",
                                       detail={"reason_code": "worker_version_invalid"})
+            if job["protocol_id"] == BATCH_PROTOCOL:
+                from ..docking_batch_jobs import require_ready as batch_ready
+
+                if batch_ready() != (job.get("method"), job.get("batch_method")):
+                    raise ToolFailure(FailureClass.precondition, "pinned qvina batch worker or engine changed",
+                                      detail={"reason_code": "worker_version_invalid"})
             if job["cancel_requested"] or self.run._cancel_path.exists():
                 return self._terminal(job_id, None, "cancelled")
             if self.run.dry_run:
                 raise ToolFailure(FailureClass.precondition, "fixture execution disabled in dry_run")
-            if job["attempt_ordinal"] >= 4:
+            if job["attempt_ordinal"] >= (1 if job["protocol_id"] == BATCH_PROTOCOL else 4):
                 raise ToolFailure(FailureClass.resource_exceeded, "root recovery allowance exhausted")
             try:
                 supported()
@@ -1244,9 +1279,19 @@ class JobQueue:
                                              "protocol": job["protocol_id"],
                                              "attempt_ordinal": job["attempt_ordinal"],
                                              "execution_link": link.record()})
+            batch_reused = units = None
+            if job["protocol_id"] == BATCH_PROTOCOL:
+                from ..docking_batch_jobs import reuse_plan
+
+                # Reuse is decided here, once, under the run owner: the reservation is the new rows (no refund).
+                plan = reuse_plan(self.run, job["selected"], job["method"])
+                batch_reused = [{"row_index": index, "handle": handle} for index, handle in enumerate(plan)
+                                if handle is not None]
+                units = len(plan) - len(batch_reused)
             try:
                 self.run.reserve_attempt(attempt_id, job["root_call_id"], job["tool_id"], {},
-                                         job_id=job_id, before_reserve=gate)
+                                         job_id=job_id, before_reserve=gate,
+                                         **({} if units is None else {"units": units}))
             except ToolFailure as exc:
                 if (exc.cls == FailureClass.precondition and
                         exc.detail.get("reason_code") == "job_cleanup_pending"):
@@ -1264,7 +1309,7 @@ class JobQueue:
                 raise
             started = self.run.monotonic()
             try:
-                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd, link)
+                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd, link, batch_reused)
             finally:
                 elapsed = max(0.0, self.run.monotonic() - started)
                 self.run.events.append("wall_charged", seconds=elapsed, reason="job_attempt", call_id=attempt_id)
@@ -1276,7 +1321,8 @@ class JobQueue:
 
     def _execute_reserved(self, job_id: str, attempt_id: str, nonce: str,
                           started: float, global_fd: int,
-                          link: ExecutionLink | None = None) -> dict[str, Any]:
+                          link: ExecutionLink | None = None,
+                          batch_reused: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         remaining = self.run._time_left()
         cancelled_after_reservation = False
         with self.run._transition():
@@ -1287,10 +1333,16 @@ class JobQueue:
                 self.run.events.append("job_dispatch_intent", job_id=job_id, attempt_id=attempt_id,
                                        launch_nonce=nonce, ordinal=job["attempt_ordinal"],
                                        remaining_wall_s=remaining, timeout_s=job["timeout_s"],
+                                       **({} if batch_reused is None else {"batch_reused": batch_reused}),
                                        **link_fields(link if link is not None else job.get("execution_link")))
                 self._rebuild()
         if cancelled_after_reservation:
             return self._terminal(job_id, None, "cancelled")
+        if batch_reused is not None and len(batch_reused) == len(job["selected"]["rows"]):
+            # M19 N = 0: every row is a stored result; no worker or qvina is launched, only the summary is published.
+            self.run.events.append("job_cleanup_verified", job_id=job_id, attempt_id=attempt_id, group_empty=True,
+                                   source="no_go_or_no_launch", guardian_clean=None)
+            return self._finish_batch(self.get(job_id), attempt_id, None, None, None)
         attempt_dir = None
         result = None
         identity = None
@@ -1319,6 +1371,12 @@ class JobQueue:
 
                     raw = docking_stage(self.run, job, attempt_id)
                     limit = DOCKING_STAGED_LIMIT  # own bound: base64 receptor + sidecar + one SDF (~40 MiB)
+                elif job["protocol_id"] == BATCH_PROTOCOL:
+                    from ..docking_batch_jobs import STAGED_LIMIT as BATCH_STAGED_LIMIT
+                    from ..docking_batch_jobs import stage as batch_stage
+
+                    raw = batch_stage(self.run, job, attempt_id, {item["row_index"] for item in batch_reused or []})
+                    limit = BATCH_STAGED_LIMIT  # the M18 bound: one receptor (+ sidecar) and one parent SDF + rows
                 else:
                     raw = canonical_json(job["selected"])
                     limit = 32 * 1024 * 1024 if job["protocol_id"] in CHEMICAL_PROTOCOLS else 4_000_000
@@ -1326,7 +1384,8 @@ class JobQueue:
                     raise ToolFailure(FailureClass.resource_exceeded, "staged scientific input exceeds limit")
                 data = {"nonce": nonce, "job_id": job_id, "attempt_id": attempt_id,
                         "adapter": (job["protocol_id"] if job["protocol_id"] in {*CHEMICAL_PROTOCOLS, POCKET_PROTOCOL,
-                                                                                 *LIGAND_PROTOCOLS, DOCKING_PROTOCOL}
+                                                                                 *LIGAND_PROTOCOLS, DOCKING_PROTOCOL,
+                                                                                 BATCH_PROTOCOL}
                                     else "openmm_protein_minimize_v1"),
                         "input_sha256": hashlib.sha256(raw).hexdigest()}
                 input_fd = os.open(attempt_dir / "structure.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -1384,8 +1443,10 @@ class JobQueue:
                                source="parent_group_check" if identity else "no_go_or_no_launch",
                                guardian_clean=result.get("clean") if result else None)
         preparation_handles = None if job["fixture_only"] or attempt_dir is None or job["protocol_id"] in {
-            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL} else \
+            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL} else \
             self._record_preparation(job, attempt_id)
+        if job["protocol_id"] == BATCH_PROTOCOL:
+            return self._finish_batch(self.get(job_id), attempt_id, attempt_dir, result, error)
         if error is None:
             if result is None:
                 error = {"error": "fatal", "message": "missing guardian result"}
@@ -1755,6 +1816,65 @@ class JobQueue:
         except DockingJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
 
+    def _existing_attempt_dir(self, job_id: str, attempt_id: str) -> Path | None:
+        path = self.run.run_dir / "jobs" / job_id / attempt_id
+        if not _safe_id(job_id) or not _safe_id(attempt_id) or path.is_symlink() or not path.is_dir():
+            return None
+        return path
+
+    def _finish_batch(self, job: dict[str, Any], attempt_id: str, attempt_dir: Path | None,
+                      result: dict[str, Any] | None, error: dict[str, Any] | None, *,
+                      recovered: bool = False) -> dict[str, Any]:
+        """M19, after verified group cleanup in every end state: publish the staged rows, then the summary, then
+        the terminal (``done`` carries the summary handle only). A batch that never started a row has no summary."""
+        from ..docking_batch_jobs import finish
+
+        job_id = job["job_id"]
+        with self.run._transition():
+            current = self.get(job_id)
+            stale = current["status"] in TERMINAL or current["attempt_id"] != attempt_id
+        if stale:
+            return self._terminal(job_id, attempt_id, "failed", {"error": "fatal", "message": "stale attempt completion"})
+        reason = None if result is None else result.get("reason")
+        if recovered:   # a cancel the user asked for before the owner was lost stays the first stop
+            cause = "cancelled" if current["cancel_requested"] else "worker_failed"
+            failure = {"error": "interrupted", "message": "owner lost; group verified stopped"}
+        elif result is None and error is None and attempt_dir is None:
+            cause, failure = None, None   # N = 0: nothing was launched
+        elif error is not None or result is None:
+            cause, failure = "worker_failed", error or {"error": "fatal", "message": "missing guardian result"}
+        elif reason == "cancelled":
+            cause, failure = "cancelled", None
+        elif reason == "timeout":
+            cause, failure = "time_exhausted", {"error": "resource_exceeded", "message": "job timeout"}
+        elif reason == "resource_exceeded":
+            cause, failure = "worker_failed", {"error": "resource_exceeded",
+                                               "message": "worker memory or output limit exceeded"}
+        elif not result.get("clean", False) or result.get("unexpected_members"):
+            cause, failure = "worker_failed", {"error": "fatal", "message": "worker exit or abandoned helper"}
+        elif result.get("returncode") != 0:
+            cause, failure = "worker_failed", self._docking_worker_error(attempt_dir)
+        elif reason == "completed":
+            cause, failure = None, None
+        else:
+            cause, failure = "worker_failed", {"error": "fatal", "message": "worker resource monitoring unavailable"}
+        try:
+            handle = finish(self.run, current, attempt_id, attempt_dir, cause)
+        except Exception as exc:  # noqa: BLE001 - untrusted staged output: a typed failure, never a running job
+            return self._terminal(job_id, attempt_id, "failed",
+                                  {"error": "fatal", "message": "invalid scientific output",
+                                   "diagnostic": type(exc).__name__})
+        if recovered:
+            return self._terminal(job_id, attempt_id, "interrupted", failure)
+        if cause == "cancelled":
+            return self._terminal(job_id, attempt_id, "cancelled")
+        if handle is None or failure is not None:
+            return self._terminal(job_id, attempt_id, "failed",
+                                  failure or {"error": "fatal", "message": "batch worker stopped before its first row"})
+        self.run.events.append("job_result_candidate", job_id=job_id, attempt_id=attempt_id, output_handles=[handle])
+        self._barrier("before_terminal")
+        return self._terminal(job_id, attempt_id, "done", handles=[handle])
+
     def retry(self, job_id: str, *, execution_link: ExecutionLink | None = None,
               owner_active: Callable[[str], bool] | None = None) -> dict[str, Any]:
         link = checked_link(execution_link)
@@ -1766,7 +1886,8 @@ class JobQueue:
                 self._require_owner(job, link)
             else:
                 self._refuse_unlinked_owned(job, owner_active)
-            if job["status"] not in {"failed", "interrupted"} or job["attempt_ordinal"] >= 4:
+            if (job["status"] not in {"failed", "interrupted"} or
+                    job["attempt_ordinal"] >= (1 if job["protocol_id"] == BATCH_PROTOCOL else 4)):
                 raise ToolFailure(FailureClass.precondition, "job recovery allowance exhausted or not eligible")
             if self.run._cancel_path.exists() or job["cancel_requested"]:
                 raise RunCancelled("run cancelled")
@@ -1858,6 +1979,12 @@ class JobQueue:
                                            source="orphan_reconciliation")
                     if not job["fixture_only"] and job["protocol_id"] == OPENMM_PROTOCOL:
                         self._record_preparation(job, job["attempt_id"])
+                    if job["protocol_id"] == BATCH_PROTOCOL:
+                        # Close as worker_failed and still publish what the attempt durably staged (spec 7.2).
+                        self._finish_batch(self.get(job["job_id"]), job["attempt_id"],
+                                           self._existing_attempt_dir(job["job_id"], job["attempt_id"]), None, None,
+                                           recovered=True)
+                        continue
                     self._terminal(job["job_id"], job["attempt_id"], "interrupted",
                                    {"error": "interrupted", "message": "owner lost; group verified stopped"})
                 except (OSError, psutil.Error, IdentityUnavailable):

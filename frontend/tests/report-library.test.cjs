@@ -40,6 +40,8 @@ test("report rows keep every kind, expose target handle, and order by created_se
   assert.equal(reportKindLabel({ kind: "reference_site_annotation", handle: "h", target_handle: "a", created_seq: 2 }), "참조 주석 보고서");
   assert.equal(reportKindLabel({ kind: "ligand_candidates", handle: "h", target_handle: "c", created_seq: 3 }), "리간드 후보 보고서");
   assert.equal(reportKindLabel({ kind: "ligand_docking", handle: "h", target_handle: "d", created_seq: 4 }), "리간드 도킹 보고서");
+  assert.equal(reportKindLabel({ kind: "ligand_docking_batch", handle: "h", target_handle: "b", created_seq: 5 }),
+    "리간드 도킹 일괄 보고서");
   assert.deepEqual(plain(buildReportRows([])), []);
 });
 

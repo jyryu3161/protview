@@ -23,7 +23,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 413 | 본문 크기 초과(`resource_exceeded`) |
 | 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문 |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
-| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과) |
+| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`) |
 | 503 | 도구의 `transient` 또는 `fatal` |
 
 - **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다.
@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, ligand_candidates}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, ligand_candidates, ligand_docking, ligand_docking_batch}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -72,7 +72,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 순서(실제 UI 흐름):
 1. (OpenMM만) `GET /jobs/preflight?structure=<handle>`: 입력 적합성, 제외 항목, 필요한 확인.
-2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하, 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
+2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
 3. `POST /jobs/{job_id}/start`: run에서 첫 비싼 계산이면 409 `{"ok": false, "approval": {gate: "expensive_first_call", tool, reason}}`를 돌려주고 승인 요청을 기록한다.
 4. `POST /jobs/approve`: 대기 중인 승인 요청이 있고 해당 도구의 queued 작업이 있을 때만 승인을 기록한다. 없으면 412다.
 5. `POST /jobs/{job_id}/start`를 다시 부른다. 전역 heavy-worker 게이트에 걸리면 409와 reason_code를 돌려준다.
@@ -302,6 +302,61 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - `POST /runs/{id}/method_reports` `{result_handle: <docking_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_docking"`, `render_version: "ligand_docking_markdown@1"`, `result_schema: "docking_result@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
 - 주장은 모두 `evidence_kind: "computed"`. statement ID: `mode_count`, `sample_count`, `score`, `score_minimum`, `score_maximum`, `contact_count`, `contact_kind_count`, `atoms_outside_box`, `min_heavy_atom_distance`, `core_max_deviation`, `box`, `parameter`, `engine`, `preparation`, `receptor_input`, `removed_instance`, `ligand_input`. 주장 필드는 M17과 같다. 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 필수 필드(후보 출처·`core_max_deviation_A`) 누락, 완료되지 않았거나 변조된 결과는 422 `report_evidence_invalid`.
 - 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`(`available`, `status`, `reason_code`, `pins`), `budget`.
+
+## M19 리간드 일괄 도킹
+
+규칙은 `docs/business-rules.md` "리간드 일괄 도킹 (M19, `qvina_batch_dock_v1`)". 읽기 호출(시작 전 확인 POST 포함)은 run 객체와 가져오기 바이트(수용체 M11 검사, gemmi)만 읽고 도구·작업·이벤트·예약·한도 변경·RDKit·Meeko·qvina·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 새 가져오기 종류는 없다(M11·M17 가져오기 그대로). 후보별 결과는 M18 `/docking/results/*`로 읽는다.
+
+### 일괄 인자 (`args`, 시작 전 확인·증액 승인·작업 제출이 같은 본문)
+```json
+{"receptor_handle": "obj://…", "receptor_model_number": 1,
+ "connectivity": {"kind": "pdb_conect" | "sidecar", "sidecar_handle": null | "obj://…"},
+ "receptor_instance": null | {<잔기 7필드>},
+ "candidate_set_handle": "obj://…/ligand_candidate_set/…", "parent_sdf_handle": "obj://…/chemical_raw_input/…",
+ "candidate_ids": ["c_…", …], "include_parent": false,
+ "mode": "free" | "core_fixed", "box": <M18 상자>, "parameters": <M18 값>,
+ "acknowledgement": {"keep_input_protonation": true, "tool_assigned_types_charges": true, "rigid_no_optimization": true}}
+```
+`candidate_ids`는 1–50개, 중복 금지, 순서는 서버가 후보 집합 순서로 바꾼다. 나머지 필드의 기본값·정수 규칙·자유 도킹의 `conformers` 거절은 M18과 같다. `ligand` 키는 없다(있으면 `invalid_job_arguments`).
+
+### 입장 거절 (작업을 만들지 않음, 예산 없음, 도구 실패 본문 `detail.reason_code`)
+- 422 `input_invalid`: `invalid_job_arguments`(모양·범위·종류·다른 run handle, 검증되지 않는 후보 집합, 중복 id), `batch_empty`, `batch_too_large`, `batch_parent_not_allowed`, `candidate_unknown`, `parent_mismatch`, `mode_source_mismatch`, `acknowledgement_missing`, `box_invalid`, `box_too_large`, 수용체 이유 7개(`detail`의 거부 목록 모양은 M18과 같음).
+- 412 `precondition`: 환경을 쓸 수 없음(`detail.reason_code`는 capability 이유).
+- 429 `resource_exceeded`: `batch_limit_raise_required`, `detail: {reason_code, needed{expensive_calls, wall_clock_s}, shortfall{expensive_calls, wall_clock_s}}`. 작업 제출에서만 난다(시작 전 확인은 부족분을 숫자로 돌려주고 증액 승인은 부족분을 올린다).
+
+### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
+- `{protocol_id: "qvina_batch_dock_v1", args, timeout_s}`. `timeout_s`는 0 초과 7800 이하(이 프로토콜만. API 모델은 7800까지 받고 다른 프로토콜은 `JobQueue`가 각자 상한(120 또는 900)으로 거절한다). 화면은 7800을 보낸다. 호출 키에 들어가지 않는다.
+- 같은 일괄 호출 키의 작업이 `queued`·`claimed`·`running`이거나 그 키의 검증된 `complete` 요약을 게시한 작업이 있으면 200으로 그 작업을 돌려준다(새 작업 없음). `partial` 요약만 있으면 새 작업을 만든다. dry-run run은 계획만 돌려준다.
+- 첫 비싼 계산이면 `/start`가 409 `approval`(`tool: "qvina_dock_batch"`)을 돌려주고 `/jobs/approve`가 기록한다(작업 승인 허용 목록에 `qvina_dock_batch`). `/start`는 작업이 끝날 때까지 응답하지 않는다. 화면은 제출 응답의 job id로 `GET /jobs/{id}`를 폴링하고 `POST /jobs/{id}/cancel`로 취소한다.
+- 시도는 1회다. `POST /jobs/{id}/retry`는 412 `precondition`이다. 시작 때 고정 pin(M18 pin + 일괄 작업 모듈·상수 해시)이 바뀌었으면 412 `precondition`(`worker_version_invalid`).
+- 작업 기록 상태: 정상 종료·작업 프로세스 자체 전체 시계·출력 총량 정지는 `done`(`artifacts.docking_batch_result` = 요약 handle, `output_handles`는 요약 하나), 사용자 취소는 `cancelled`, 작업 마감은 `failed`(`failure.error: "resource_exceeded"`, "job timeout"), 크래시·자원 한도·출력 오류는 `failed`, 서버 재시작 복구는 `interrupted`. `done`이 아니어도 요약이 게시되었을 수 있다(아래 `batch.summary_handle`). 첫 행 전에 멈춘 작업(수용체 준비 실패 등)은 `failed`이고 요약이 없다. 요약을 만들 수 없으면 `failed`(`fatal`, "invalid scientific output")이고 이미 게시된 행 결과는 남는다.
+- 일괄 작업의 `GET /jobs`·`GET /jobs/{id}`·`/start` 응답에는 `batch: {rows, reused_rows: [행 번호], finished_rows, summary_handle, summary_status, summary_stop_reason}`가 붙는다. `finished_rows`는 이 시도의 `rows/*.status.json` 수(재사용 행은 세지 않음), `summary_handle`은 어떤 종료 상태든 요약이 게시되면 채워지고, `summary_status`·`summary_stop_reason`은 그 요약을 검증해 읽은 값(검증 실패면 null)이다. 작업 기록 상태와 요약 상태는 따로 본다(작업 마감 정지는 작업 `failed` + 요약 `partial`/`time_exhausted`).
+
+### 읽기와 증액 승인
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `POST /runs/{id}/docking/batches/preflight` | 일괄 인자(본문 최대 512 KiB, 중복 키 거부) | 200 `docking_batch_preflight@1`: `{starts_job: false, capability, score_label, budget{expensive_calls, wall_clock_s}, remaining{…}, admission{admitted, error, reason_code, message, detail}, batch_input_sha256, mode, include_parent, candidate_ids, rows:[{row_index, kind, candidate_id, reuse, reused_handle, new_docking}], new_dockings, reused_rows, needed{expensive_calls, wall_clock_s}, shortfall{…}, full_batch_may_be_partial, statements{batch:[{id, text}], m18:[{number, text}]}, existing_job: {job_id, status, summary_handle} | null}`. 입장 거절과 환경 없음도 200이며 `admission.admitted: false`, 거절 이유·`detail`(수용체 거부 목록 포함)만 있고 행·필요량 필드는 null. `budget`·`remaining`은 활동 중 경과를 포함한 run 예산 | 413(본문), 422(JSON·쿼리), 404 없는 run |
+| `GET /runs/{id}/docking/batches?offset&limit` | limit 1–100(기본 50) | `docking_batch_list@1`: `{total, offset, limit, rows:[{handle, published_seq, valid, reason_code, job_id, attempt_id, reused_rows, method, mode, status, stop_reason, batch_input_sha256, include_parent, candidate_set_handle, counts}]}`. 요약 handle의 첫 게시 순서. 행마다 다시 검증하고 실패한 행은 `valid: false`, `reason_code: "evidence_invalid"`, 나머지 null | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/docking/batches/detail?handle=` | 요약 handle | `docking_batch_detail@1`: `{handle, job_id, attempt_id, published_seq, reused_rows, score_label, score_column_label, statements{batch, m18}, summary(저장 요약 그대로), rows:[요약 행 + reused, detail_available], meta}`. `reused`는 게시 기록에서, `detail_available`은 행 결과 handle이 있을 때 true | 404 없는 handle, 422 다른 종류, 422 `method_evidence_invalid` |
+| `POST /runs/{id}/docking/batches/limit_approval` | 일괄 인자(본문 최대 512 KiB) | 200 `{raised, batch_input_sha256, new_dockings, needed, shortfall_before, increase{expensive_calls, wall_clock_s}, limits_before, limits_after, shortfall_after, event_seq, budget}`. 부족분이 없으면 `raised: false`, `increase` 0, `event_seq: null`, 이벤트 없음(멱등) | 422 입장 거절(위와 같은 이유), 412 `precondition`(dry-run run `dry_run`, 환경 없음), 409 `{"ok": false, "error": "cancelled", "message": "run cancelled"}`(취소된 run, 아무것도 쓰지 않음), 503 `transient`(run 실행 잠금이 잡혀 있음, 예: 일괄 실행 중), 413 |
+
+- 증액 승인은 사람이 화면에서 누르는 경로 하나뿐이다. 도구·분석 흐름 단계·뷰어 명령·작업 인자로 부를 수 없고, 첫 비싼 계산 승인을 기록하지 않으며 예약·과금·환불하지 않는다. 부족분은 호출 시점의 run 실행 잠금 안에서 과금된 사용량 기준으로 다시 계산한다.
+- 일반 `GET /runs/{id}/objects`·`/objects/meta`도 `docking_batch_result`를 읽을 수 있지만 검증을 거치지 않는다(M12·M17·M18과 같은 관례). 화면은 위 읽기와 `/docking/results/*`만 쓴다.
+
+### 이벤트
+- `docking_batch_row_published {job_id, attempt_id, row_index, handle}`: 작업 프로세스 그룹 정리 확인 뒤 행 결과 하나를 게시할 때. 이 이벤트가 그 행 결과의 게시 증거이며(요약 게시가 없어도) M18 읽기·보고서·재사용이 받아들인다.
+- `docking_batch_published {job_id, attempt_id, summary_handle, reused_rows: [행 번호]}`: 모든 행 게시 뒤 요약을 게시할 때(마지막).
+- `job_dispatch_intent`에 `batch_reused: [{row_index, handle}]`가 붙고, `budget_reserved.expensive_calls`는 새로 계산하는 행 수(0 가능)다. N = 0이면 작업 프로세스 없이 `job_cleanup_verified`(`source: "no_go_or_no_launch"`)를 쓰고 요약만 게시한다.
+- `budget_limit_updated {limits, by: "human", context{purpose: "docking_batch_limit_raise", batch_input_sha256, new_dockings, needed, shortfall, increase, limits_before, limits_after}}`: 증액 승인. 재생은 `limits`만 읽는다.
+
+### capability
+- `/capabilities`의 `methods.ligand_docking_batch`(`docking_batch_capability@1`): `{protocol_id: "qvina_batch_dock_v1", tool_id: "qvina_dock_batch", engine: "qvina", execution_lane: "durable_job", available, status, reason_code, reason, pins, batch_pins{batch_worker_sha256, batch_constants_sha256}, methods{free, core_fixed}, timeout_s{max: 7800}, limits{max_candidates, per_candidate_s, total_s, output_bytes, summary_bytes}, score_label, batch_statements{B1, B2, B3}}`. `ligand_docking`이 사용 가능하고, 일괄 작업 모듈·상수 파일이 있고, 일괄 작업 모듈 `--handshake`(같은 고정 인터프리터, 프로토콜·두 작업 모듈 해시 확인, 파일 해시 키로 캐시)가 맞을 때만 사용 가능. 아니면 `available: false`, `reason_code`는 M18 집합(`ligand_docking`의 이유를 그대로, 일괄 파일 없음은 `worker_missing`, 일괄 handshake 실패는 `handshake_failed`), `pins`·`batch_pins`는 null이고 `methods`·`timeout_s`·`limits`는 없다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <docking_batch_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_docking_batch"`, `render_version: "ligand_docking_batch_markdown@1"`, `result_schema: "docking_batch_result@1"`, 요약에서 복사한 `method, batch_input_sha256, inputs, box, parameters, engine, preparation, limits, stop_reason, counts, rows`, `batch_status`, `mode`, `score_label`, `score_column_label`, `score_row_label`, `limitation_ids`, `limitations`, `claims`, `snapshot`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 종류 이름 "리간드 도킹 일괄 보고서").
+- 주장은 모두 `evidence_kind: "computed"`. statement ID: `receptor_input`, `removed_instance`, `candidate_set_input`, `box`, `parameter`, `engine`, `preparation`, `row_count`(`count(rows)`·`count_where(state == …; rows)`), `row_score`(요약 `rows[i].score_kcal_mol`), `row_result_score`(행 결과 `modes[0].score_kcal_mol`, `source_kind: "docking_result"`). 점수 주장은 `scored` 행만, `row_selector: {row_index}`. 주장 필드는 M18과 같다. 점수 없는 행의 점수 주장, 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 방식이 섞인 결과, 요약 점수와 행 결과 첫 행 점수의 불일치, 변조·미완료 요약은 422 `report_evidence_invalid`.
+- 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`(`available`, `status`, `reason_code`, `pins`, `batch_pins`), `budget`(올라간 한도 포함).
 
 ## 과거 단계 실행기 (CLI)
 

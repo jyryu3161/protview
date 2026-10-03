@@ -124,7 +124,7 @@ class TestStop:
     def test_measured_check_budgets_fit_outer_hook_deadline(self):
         stop = _load("stop")
         assert stop.check_timeout(stop.CHECKS[0][0]) == 45
-        assert len(stop.CHECKS) == 5
+        assert len(stop.CHECKS) == 6
         assert all(stop.check_timeout(command) == 480 for command, _ in stop.CHECKS[1:])
         assert 45 + max(stop.check_timeout(command) for command, _ in stop.CHECKS[1:]) + 4 < 600
 
@@ -137,7 +137,14 @@ class TestStop:
         assert groups[2][4:] == ["backend/tests/test_docking_inputs.py", "backend/tests/test_docking_worker.py",
                                  "backend/tests/test_docking_jobs.py", "backend/tests/test_docking_api.py",
                                  "backend/tests/test_docking_reports.py"]
-        assert groups[3][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
+        assert groups[3][4:] == ["backend/tests/test_docking_batch_inputs.py",
+                                 "backend/tests/test_docking_batch_bundle.py",
+                                 "backend/tests/test_docking_batch_worker.py",
+                                 "backend/tests/test_docking_batch_jobs.py",
+                                 "backend/tests/test_docking_batch_budget.py",
+                                 "backend/tests/test_docking_batch_api.py",
+                                 "backend/tests/test_docking_batch_reports.py"]
+        assert groups[4][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
                                  "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
                                  "scripts/test_m14_offscreen_acceptance.py",
                                  "scripts/test_import_reference_snapshots.py",
@@ -145,7 +152,8 @@ class TestStop:
                                  "scripts/test_measure_klifs_numbering.py",
                                  "scripts/test_m16_offscreen_acceptance.py",
                                  "scripts/test_m17_offscreen_acceptance.py",
-                                 "scripts/test_m18_offscreen_acceptance.py", "scripts/test_setup_qvina.py",
+                                 "scripts/test_m18_offscreen_acceptance.py",
+                                 "scripts/test_m19_offscreen_acceptance.py", "scripts/test_setup_qvina.py",
                                  "scripts/test_setup_docking_worker.py",
                                  "--ignore=backend/tests/test_chemical_interactions.py",
                                  "--ignore=backend/tests/test_m11_job_api.py",
@@ -153,7 +161,14 @@ class TestStop:
                                  "--ignore=backend/tests/test_docking_worker.py",
                                  "--ignore=backend/tests/test_docking_jobs.py",
                                  "--ignore=backend/tests/test_docking_api.py",
-                                 "--ignore=backend/tests/test_docking_reports.py"]
+                                 "--ignore=backend/tests/test_docking_reports.py",
+                                 "--ignore=backend/tests/test_docking_batch_inputs.py",
+                                 "--ignore=backend/tests/test_docking_batch_bundle.py",
+                                 "--ignore=backend/tests/test_docking_batch_worker.py",
+                                 "--ignore=backend/tests/test_docking_batch_jobs.py",
+                                 "--ignore=backend/tests/test_docking_batch_budget.py",
+                                 "--ignore=backend/tests/test_docking_batch_api.py",
+                                 "--ignore=backend/tests/test_docking_batch_reports.py"]
 
     def test_default_groups_really_run_concurrently_and_all_must_pass(self, tmp_path, monkeypatch):
         stop = _load("stop")

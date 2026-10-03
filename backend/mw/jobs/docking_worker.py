@@ -1055,16 +1055,40 @@ def _validate_payload(p: Any) -> None:
 
 
 # ------------------------------------------------------------------ job
-def dock(p: dict[str, Any], workdir: Path) -> dict[str, Any]:
-    _validate_payload(p)
-    rec, lig, mode, box_req, params = p["receptor"], p["ligand"], p["mode"], p["box"], p["parameters"]
+def receptor_inputs(rec: dict[str, Any]) -> dict[str, Any]:
+    """The staged receptor block decoded and checked (spec 3.2); M19 batches share one per batch."""
     rec_raw = _entry(rec["bytes"])
     sidecar_raw = None if rec["connectivity"]["sidecar"] is None else _entry(rec["connectivity"]["sidecar"])
     receptor = check_receptor(rec_raw, rec["format"], rec["handle"], rec["model_number"], rec["connectivity"],
                               rec["instance"], sidecar_raw)
-    rows, kept = receptor["rows"], receptor["kept"]
-    receptor_heavy = [{"ref": _public_ref(row), "xyz": row["coordinate_A"]} for row in kept
+    receptor_heavy = [{"ref": _public_ref(row), "xyz": row["coordinate_A"]} for row in receptor["kept"]
                       if row["element"].upper() != "H"]
+    return {"raw": rec_raw, "sidecar_raw": sidecar_raw, "checked": receptor, "heavy": receptor_heavy}
+
+
+def receptor_prepared(receptor: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    """Receptor PDBQT text and the engine identity (receptor_prep_failed / engine_failed refusals)."""
+    kept = receptor["checked"]["kept"]
+    receptor_text = receptor_pdbqt(kept, receptor_graph(kept, receptor["checked"]["kept_bonds"]))
+    return receptor_text, engine_identity()
+
+
+def dock(p: dict[str, Any], workdir: Path) -> dict[str, Any]:
+    _validate_payload(p)
+    return dock_row(p, workdir, receptor_inputs(p["receptor"]), None)
+
+
+def dock_row(p: dict[str, Any], workdir: Path, shared: dict[str, Any],
+             prepared: tuple[str, dict[str, Any]] | None) -> dict[str, Any]:
+    """One docking of a validated payload whose receptor block ``shared`` was decoded by ``receptor_inputs``.
+
+    ``prepared`` (``receptor_prepared`` of the same receptor) is None for M18, which prepares the receptor at
+    this point of the row; an M19 batch prepares it once before its rows and passes it in (same bytes, T1 (a)).
+    """
+    rec, lig, mode, box_req, params = p["receptor"], p["ligand"], p["mode"], p["box"], p["parameters"]
+    rec_raw, sidecar_raw, receptor = shared["raw"], shared["sidecar_raw"], shared["checked"]
+    rows = receptor["rows"]
+    receptor_heavy = shared["heavy"]
 
     # ligand inputs and the box reference points (cheap checks before any chemistry inference)
     parent = mol = heavy = None
@@ -1098,8 +1122,7 @@ def dock(p: dict[str, Any], workdir: Path) -> dict[str, Any]:
     check_box(box, [atom["xyz"] for atom in receptor_heavy])
     mapping = core_match(parent, heavy, candidate["retained_parent_atoms"]) if mode == "core_fixed" else None
 
-    receptor_text = receptor_pdbqt(kept, receptor_graph(kept, receptor["kept_bonds"]))
-    engine = engine_identity()
+    receptor_text, engine = receptor_prepared(shared) if prepared is None else prepared
     _write_private(workdir / "receptor.pdbqt", receptor_text)
 
     if mode == "free":

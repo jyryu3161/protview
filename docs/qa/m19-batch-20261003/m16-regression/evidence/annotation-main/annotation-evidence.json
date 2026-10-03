@@ -1,0 +1,130 @@
+{
+  "schema": "m16_annotation_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_1481fa5600a5490d9ec7d7824ab92a36",
+    "B": "run_b877850d96114cdf85d6558d04608444"
+  },
+  "inputs": [
+    {
+      "name": "preflight.txt",
+      "path": "<repo>/docs/qa/m16-annotations-20261001/preflight.txt",
+      "bytes": 10404,
+      "sha256": "c9b2a2a84d1164d7e30e87777e220f972b626eefb4e6f3982efe165529cdb033",
+      "provenance": "M16 T1 independent numpy oracle (committed QA text)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP)"
+    }
+  ],
+  "handles": {
+    "structure": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/structure/7f72a5ef3bc047733b9014a9022eed43a28e2a537d2c525d939ea2358c890e79",
+    "prepared": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/prepared_structure/ceede477133e9da08a2653d912b69f78396c82ceee625bbe920b4405abbd7567",
+    "contacts": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/interaction_set/d9fc4b532d9457f8776ff2b08a7a3372ae3395c1145666e418b4fcee88f8d7a3",
+    "map": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/residue_numbering_map/a131667ea611f933a6a5464b7071e9ba25c1ddec1a07eccf23f2b3542d52d5d0",
+    "annotation": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/reference_site_annotation/47ae2e15bc3078344067e18ebe6e7656b46ffc12e9d107718d9bc9c046e9b2c0",
+    "report": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/method_report_manifest/12ed86546e8843a5bbceb763dc86ae32a5abe90b7231698b8c83b4c07fa64f3f",
+    "noContacts": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/reference_site_annotation/8ff2b334bcf1fd93adbfd551be8bf4bf52916a33310e2a802e5cb454447a909a",
+    "runBStructure": "obj://run_b877850d96114cdf85d6558d04608444/structure/4353d1181f122f3ea4cb2144391038e6404791c1e8f35e14120bab4dae78e2cb"
+  },
+  "fixtureLabels": [
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)",
+    "QA fault fixture (labeled renderer route, not a scientific value): site annotation read failure"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_1481fa5600a5490d9ec7d7824ab92a36",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_b877850d96114cdf85d6558d04608444",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "site-annotation-maps": [
+      {
+        "checked": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/residue_numbering_map/a131667ea611f933a6a5464b7071e9ba25c1ddec1a07eccf23f2b3542d52d5d0"
+      }
+    ],
+    "site-annotation-contacts:set": [
+      {
+        "checked": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/interaction_set/d9fc4b532d9457f8776ff2b08a7a3372ae3395c1145666e418b4fcee88f8d7a3"
+      }
+    ],
+    "site-annotation-create": [
+      {
+        "created": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/reference_site_annotation/47ae2e15bc3078344067e18ebe6e7656b46ffc12e9d107718d9bc9c046e9b2c0",
+        "listed": 1
+      }
+    ],
+    "site-annotation-toggle:show": [
+      {
+        "data": "applied",
+        "lines": "10"
+      }
+    ],
+    "site-annotation-legend": [
+      {
+        "checked": false,
+        "readbackLegend": false,
+        "lines": 10
+      },
+      {
+        "checked": true,
+        "shown": false
+      }
+    ],
+    "site-annotation-toggle:off": [
+      {
+        "data": "none"
+      }
+    ],
+    "site-annotation-report": [
+      {
+        "handle": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/method_report_manifest/12ed86546e8843a5bbceb763dc86ae32a5abe90b7231698b8c83b4c07fa64f3f",
+        "text": "보고서를 저장했습니다 · 12ed86546e88. 지식·보고서 탭의 보고서 목록에서 열고 받을 수 있습니다."
+      }
+    ],
+    "site-annotation-contacts:none": [
+      {
+        "checked": "none"
+      }
+    ],
+    "site-annotation-maps-retry": [
+      {
+        "maps": 1
+      }
+    ],
+    "site-annotation-list-retry": [
+      {
+        "rows": 2
+      }
+    ],
+    "site-annotation-list": [
+      {
+        "checked": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/reference_site_annotation/47ae2e15bc3078344067e18ebe6e7656b46ffc12e9d107718d9bc9c046e9b2c0"
+      }
+    ],
+    "site-annotation-detail-retry": [
+      {
+        "table": "obj://run_1481fa5600a5490d9ec7d7824ab92a36/reference_site_annotation/47ae2e15bc3078344067e18ebe6e7656b46ffc12e9d107718d9bc9c046e9b2c0"
+      }
+    ]
+  },
+  "startedAt": "2026-10-03T02:45:19.777Z",
+  "finishedAt": "2026-10-03T02:45:55.566Z",
+  "error": null,
+  "requestCount": 413
+}

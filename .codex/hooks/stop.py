@@ -27,22 +27,31 @@ CHECKS = [
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_docking_inputs.py",
       "backend/tests/test_docking_worker.py", "backend/tests/test_docking_jobs.py",
       "backend/tests/test_docking_api.py", "backend/tests/test_docking_reports.py"], {0}),
+    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_docking_batch_inputs.py",
+      "backend/tests/test_docking_batch_bundle.py", "backend/tests/test_docking_batch_worker.py",
+      "backend/tests/test_docking_batch_jobs.py", "backend/tests/test_docking_batch_budget.py",
+      "backend/tests/test_docking_batch_api.py", "backend/tests/test_docking_batch_reports.py"], {0}),
     ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py",
       "scripts/test_codex_hooks.py", "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
       "scripts/test_m14_offscreen_acceptance.py", "scripts/test_import_reference_snapshots.py",
       "scripts/test_m15_offscreen_acceptance.py", "scripts/test_measure_klifs_numbering.py",
       "scripts/test_m16_offscreen_acceptance.py",
       "scripts/test_m17_offscreen_acceptance.py", "scripts/test_m18_offscreen_acceptance.py",
+      "scripts/test_m19_offscreen_acceptance.py",
       "scripts/test_setup_qvina.py", "scripts/test_setup_docking_worker.py",
       "--ignore=backend/tests/test_chemical_interactions.py",
       "--ignore=backend/tests/test_m11_job_api.py",
       "--ignore=backend/tests/test_docking_inputs.py", "--ignore=backend/tests/test_docking_worker.py",
       "--ignore=backend/tests/test_docking_jobs.py", "--ignore=backend/tests/test_docking_api.py",
-      "--ignore=backend/tests/test_docking_reports.py"], {0}),
+      "--ignore=backend/tests/test_docking_reports.py",
+      "--ignore=backend/tests/test_docking_batch_inputs.py", "--ignore=backend/tests/test_docking_batch_bundle.py",
+      "--ignore=backend/tests/test_docking_batch_worker.py", "--ignore=backend/tests/test_docking_batch_jobs.py",
+      "--ignore=backend/tests/test_docking_batch_budget.py", "--ignore=backend/tests/test_docking_batch_api.py",
+      "--ignore=backend/tests/test_docking_batch_reports.py"], {0}),
 ]
 
 MAX_OUTPUT_CHARS = 1500
-# Ruff runs first; the four disjoint pytest groups then run concurrently.
+# Ruff runs first; the five disjoint pytest groups then run concurrently.
 # Their exact collection union is the former sequential suite. Even one group
 # reaching its bound leaves process-group cleanup below the trusted 600 s hook.
 RUFF_TIMEOUT = 45
@@ -118,7 +127,7 @@ def run_checks(root: Path, checks) -> list[str]:
         first = one(CHECKS[0])
         if first is not None:
             return [first]
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=len(CHECKS) - 1) as executor:
             results = list(executor.map(one, CHECKS[1:]))
         return [result for result in results if result is not None]
     failures = []

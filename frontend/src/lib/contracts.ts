@@ -446,3 +446,92 @@ export type DockingSubmission = DockingJob | DockingPlanOnly;
 export interface DockingReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "ligand_docking"; result_handle: string; null_result: boolean;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M19 batch docking (backend/mw/docking_batch_inputs.py, docking_batch_jobs.py, docking_batch_reads.py) ----
+export type DockingBatchRowKind = "parent" | "candidate";
+export type DockingBatchRowState = "scored" | "null_result" | "failed" | "cancelled" | "not_run";
+export type DockingBatchStatus = "complete" | "partial";
+export type DockingBatchStopReason = "cancelled" | "time_exhausted" | "worker_failed" | "resource_exceeded";
+type BudgetPair = { expensive_calls: number; wall_clock_s: number };
+
+/**
+ * `qvina_batch_dock_v1` job arguments (fixed shape; unknown keys refused). The M18 receptor, box, parameter and
+ * acknowledgement fields plus the candidate set, its parent SDF, the chosen ids and the parent row; no `ligand` key.
+ */
+export interface DockingBatchArgs extends Omit<DockingArgs, "ligand"> {
+  candidate_set_handle: string;
+  parent_sdf_handle: string;
+  /** 1–50 distinct ids, in candidate-set order. */
+  candidate_ids: string[];
+  include_parent: boolean;
+}
+
+/** `methods.ligand_docking_batch` of `/capabilities` (and the preflight's `capability`). */
+export interface DockingBatchCapability { schema: "docking_batch_capability@1"; protocol_id: "qvina_batch_dock_v1";
+  tool_id: "qvina_dock_batch"; engine: "qvina"; execution_lane: string; available: boolean; status: string;
+  reason_code: string | null; reason: string | null; pins: Record<string, unknown> | null;
+  batch_pins: Record<string, string> | null; methods?: Record<DockingMode, DockingMethod>; timeout_s?: { max: number };
+  limits?: { max_candidates: number; per_candidate_s: number; total_s: number; output_bytes: number;
+    summary_bytes: number }; score_label?: string; batch_statements?: Record<string, string> }
+
+export interface DockingBatchStatements { batch: { id: string; text: string }[]; m18: { number: number; text: string }[] }
+
+/** `POST /runs/{id}/docking/batches/preflight` (a read). A refused request has null numbers and rows. */
+export interface DockingBatchPreflight { schema: "docking_batch_preflight@1"; starts_job: false;
+  capability: DockingBatchCapability; score_label: string; budget: Record<"expensive_calls" | "wall_clock_s", BudgetAxis>;
+  admission: { admitted: boolean; error: string | null; reason_code: string | null; message: string | null;
+    detail: Record<string, unknown> | null };
+  batch_input_sha256: string | null; mode: DockingMode | null; include_parent: boolean | null;
+  candidate_ids: string[] | null;
+  rows: { row_index: number; kind: DockingBatchRowKind; candidate_id: string | null; reuse: boolean;
+    reused_handle: string | null; new_docking: boolean }[] | null;
+  new_dockings: number | null; reused_rows: number | null; needed: BudgetPair | null; remaining: BudgetPair;
+  shortfall: BudgetPair | null; full_batch_may_be_partial: boolean | null; statements: DockingBatchStatements | null;
+  existing_job: { job_id: string; status: string; summary_handle: string | null } | null }
+
+/** `POST /runs/{id}/docking/batches/limit_approval` (the person's explicit approval; idempotent). */
+export interface DockingBatchLimitApproval { raised: boolean; batch_input_sha256: string; new_dockings: number;
+  needed: BudgetPair; shortfall_before: BudgetPair; increase: BudgetPair; limits_before: BudgetPair;
+  limits_after: BudgetPair; shortfall_after: BudgetPair; event_seq: number | null; budget: BudgetSnapshot }
+
+/** One stored summary row (spec 5.2): score only for `scored`, reason only for failed / cancelled / not_run. */
+export interface DockingBatchRow { row_index: number; kind: DockingBatchRowKind; candidate_id: string | null;
+  state: DockingBatchRowState; reason_code: string | null; result_handle: string | null;
+  score_kcal_mol: number | null; score_row_label: string | null }
+export interface DockingBatchResult { schema: "docking_batch_result@1"; protocol: "qvina_batch_dock_v1";
+  method: DockingMethod; batch_input_sha256: string;
+  inputs: { receptor: DockingResult["inputs"]["receptor"];
+    candidate_set: { handle: string; parent_sdf_handle: string; parent_sdf_sha256: string };
+    candidate_ids: string[]; include_parent: boolean; mode: DockingMode };
+  box: DockingResult["box"]; parameters: DockingResult["parameters"]; engine: DockingResult["engine"];
+  preparation: DockingResult["preparation"]; limits: { max_candidates: number; per_candidate_s: number; total_s: number };
+  status: DockingBatchStatus; stop_reason: DockingBatchStopReason | null; rows: DockingBatchRow[];
+  counts: Record<"rows" | DockingBatchRowState, number>;
+  limitations: { batch_statements: string[]; m18_sentences: number[] } }
+/** Detail read: the validated summary, each row with `reused` (publication record) and `detail_available`. */
+export interface DockingBatchDetail { schema: "docking_batch_detail@1"; handle: string; job_id: string;
+  attempt_id: string; published_seq: number; reused_rows: number[]; score_label: string; score_column_label: string;
+  statements: DockingBatchStatements; summary: DockingBatchResult;
+  rows: (DockingBatchRow & { reused: boolean; detail_available: boolean })[]; meta: Record<string, unknown> }
+/** Publication order. A summary that does not validate has `valid: false` and null fields. */
+export interface DockingBatchListRow { handle: string; published_seq: number; valid: boolean; reason_code: string | null;
+  job_id: string | null; attempt_id: string | null; reused_rows: number[] | null; method: DockingMethod | null;
+  mode: DockingMode | null; status: DockingBatchStatus | null; stop_reason: DockingBatchStopReason | null;
+  batch_input_sha256: string | null; include_parent: boolean | null; candidate_set_handle: string | null;
+  counts: DockingBatchResult["counts"] | null }
+export interface DockingBatchList { schema: "docking_batch_list@1"; total: number; offset: number; limit: number;
+  rows: DockingBatchListRow[] }
+
+/** Job progress (`batch` of the job record): finished = rows with a status file; reused rows are not run. Once a
+ * summary is published, its validated `status`/`stop_reason` (null when it does not validate). */
+export interface DockingBatchProgress { rows: number; reused_rows: number[]; finished_rows: number;
+  summary_handle: string | null; summary_status: DockingBatchStatus | null;
+  summary_stop_reason: DockingBatchStopReason | null }
+export interface DockingBatchJob extends Omit<DockingJob, "protocol_id" | "artifacts"> {
+  protocol_id: "qvina_batch_dock_v1"; artifacts: { docking_batch_result?: string }; batch: DockingBatchProgress }
+export interface DockingBatchPlanOnly { plan_only: true; protocol_id: "qvina_batch_dock_v1"; reason_code: "dry_run";
+  available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
+export type DockingBatchSubmission = DockingBatchJob | DockingBatchPlanOnly;
+export interface DockingBatchReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "ligand_docking_batch"; result_handle: string;
+  batch_status: DockingBatchStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
