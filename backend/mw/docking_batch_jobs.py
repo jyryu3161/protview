@@ -15,6 +15,7 @@ The server never imports RDKit, Meeko or MDAnalysis and never executes qvina2. `
   staged row (``rows/<n>.result.json``, converted and checked exactly like an M18 result, then
   ``docking_batch_row_published``) and then the summary ``docking_batch_result@1`` (``docking_batch_published``,
   last). The summary rows come from the staging files and the server's stop cause only (T2 ``build_summary``).
+- ``limit_approval``: the human-approved limit raise (spec 6.3), reached only from its HTTP route.
 - ``validated_summary`` / ``summary_producer`` / ``complete_job``: reads that re-check the summary, its single
   publication and every per-row result; ``progress``: the job's row counts for polling (no object is loaded).
 
@@ -135,6 +136,43 @@ def require_budget(run: Any, selected: dict[str, Any], pins: dict[str, Any]) -> 
     new = sum(handle is None for handle in reuse_plan(run, selected, pins))
     docking_batch_inputs.require_budget(docking_batch_inputs.needed_budget(new), run.budget_snapshot())
     return new
+
+
+def limit_approval(run: Any, args: Any) -> dict[str, Any]:
+    """Spec 6.3: the human-approved limit raise for one batch, called only by its HTTP route (a UI action; never a
+    tool, plan or workflow step, model command or loop action). Dry-run runs plan only and refuse it (412 ``dry_run``,
+    nothing written). The need is recomputed from the stored results and the current budget (under the run owner),
+    and only the shortfall is raised (``docking_batch_inputs.limit_increase``) with one ``budget_limit_updated``
+    (by ``human``) carrying the batch context. Nothing short: nothing changes and no event is written. It never
+    approves the first expensive call, reserves, charges or refunds anything."""
+    if run.dry_run:
+        raise ToolFailure(FailureClass.precondition, "dry-run runs plan only; there is no limit to raise",
+                          detail={"reason_code": "dry_run"})
+    selected, _normalized, _handles = submission(run, args)
+    pins, _batch_pins = require_ready()
+    new = sum(handle is None for handle in reuse_plan(run, selected, pins))
+    needed = docking_batch_inputs.needed_budget(new)
+
+    def plan(snapshot: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        return docking_batch_inputs.limit_increase(needed, snapshot), {
+            "purpose": "docking_batch_limit_raise", "batch_input_sha256": selected["batch_input_sha256"],
+            "new_dockings": new, "needed": needed, "shortfall": docking_batch_inputs.shortfall(needed, snapshot)}
+
+    run._refresh()
+    increase, context = plan(run.budget_snapshot())
+    event = run.raise_limits(plan, by="human") if any(increase.values()) else None
+    if event is not None:
+        context = event["context"]
+    else:
+        limits = {axis: run.budget_snapshot()[axis]["limit"] for axis in docking_batch_inputs.AXES}
+        context = {**context, "increase": dict.fromkeys(docking_batch_inputs.AXES, 0), "limits_before": limits,
+                   "limits_after": limits}
+    budget = run.budget_snapshot()
+    return {"raised": event is not None, "batch_input_sha256": context["batch_input_sha256"], "new_dockings": new,
+            "needed": needed, "shortfall_before": context["shortfall"], "increase": context["increase"],
+            "limits_before": context["limits_before"], "limits_after": context["limits_after"],
+            "shortfall_after": docking_batch_inputs.shortfall(needed, budget),
+            "event_seq": None if event is None else event["seq"], "budget": budget}
 
 
 def complete_job(run: Any, jobs: Mapping[str, dict[str, Any]], key: str) -> dict[str, Any] | None:

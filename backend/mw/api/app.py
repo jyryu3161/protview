@@ -1777,6 +1777,19 @@ def docking_poses_sdf(rid: str, request: Request, handle: str) -> Response:
         raise _docking_mode_unknown(exc) from exc
 
 
+# ----------------------------------------------------------------- M19 batch limit raise (human UI action only)
+@app.post("/runs/{rid}/docking/batches/limit_approval")
+async def docking_batch_limit_approval(rid: str, request: Request) -> Any:
+    """Spec 6.3: the person's explicit approval to raise the run limits by this batch's shortfall (body = the batch
+    request). Not a tool, plan or workflow step, model command or loop action; no other path calls it."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    try:
+        return await run_in_threadpool(lambda: docking_batch_jobs.limit_approval(_run(rid), args))
+    except ToolFailure as error:
+        return _tool_error(error)
+
+
 @app.get("/runs/{rid}/interface_sasa")
 def interface_sasa(rid: str, handle: str) -> dict[str, Any]:
     run = _run(rid)

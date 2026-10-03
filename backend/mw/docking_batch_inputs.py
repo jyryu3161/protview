@@ -220,12 +220,18 @@ def full_batch_may_be_partial(new_dockings: int) -> bool:
 
 
 def limit_increase(needed: Mapping[str, Any], snapshot: Mapping[str, Any]) -> dict[str, Any]:
-    """How much to raise each limit for this batch: the shortfall only (a wall shortfall gets the 60 s margin),
-    never more than one full batch's need (51 units, 7800 s); zero when nothing is short (idempotent)."""
+    """How much one approval raises each limit for this batch (spec 6.3, 12); zero when nothing is short (idempotent).
+
+    calls = min(shortfall, need); wall = 0 if the wall shortfall is 0, else min(shortfall, need) + RAISE_MARGIN_S.
+    Clamping the shortfall at the need is clamping a negative remaining (usage above the limit) at zero, so an
+    approval never raises an axis by more than this batch's need (<= 51 units) plus the wall margin (<= 7860 s). The
+    margin is kept even when the need is capped at 7800 s, so the runtime overhead charged right after the raise
+    cannot make the batch short again; it also absorbs a wall overrun of up to 60 s (a larger overrun stays short
+    until another explicit approval)."""
     short = shortfall(needed, snapshot)
-    wall = short["wall_clock_s"]
-    return {"expensive_calls": min(short["expensive_calls"], BC.MAX_RAISE_EXPENSIVE_CALLS),
-            "wall_clock_s": min(wall + BC.RAISE_MARGIN_S, BC.MAX_RAISE_WALL_CLOCK_S) if wall > 0 else 0}
+    calls = min(short["expensive_calls"], needed["expensive_calls"], BC.MAX_RAISE_EXPENSIVE_CALLS)
+    wall = min(short["wall_clock_s"], needed["wall_clock_s"], BC.MAX_RAISE_WALL_CLOCK_S)
+    return {"expensive_calls": calls, "wall_clock_s": wall + BC.RAISE_MARGIN_S if wall > 0 else 0}
 
 
 def require_budget(needed: Mapping[str, Any], snapshot: Mapping[str, Any]) -> None:

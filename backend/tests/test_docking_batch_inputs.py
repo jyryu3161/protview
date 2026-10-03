@@ -352,10 +352,11 @@ def test_limit_increase_is_idempotent_and_zero_when_enough():
 
 
 def test_limit_increase_never_exceeds_one_batch_need():
-    # A run that already used everything: the shortfall is the whole need; the increment stays <= 51 / 7800 s.
+    # A run that already used everything: the shortfall is the whole need; the increment stays <= 51 units and
+    # 7800 s + the 60 s wall margin (T5: the margin is kept when the need is capped, spec 6.3).
     snapshot = _budget(8, 1800)
     increase = BI.limit_increase(BI.needed_budget(51), snapshot)
-    assert increase == {"expensive_calls": 51, "wall_clock_s": 7800}
+    assert increase == {"expensive_calls": 51, "wall_clock_s": 7860}
     # Usage far above the defaults: no absolute cap, the limit still goes up by the need only.
     snapshot = _budget(300, 50_000, 300, 50_000)
     assert BI.limit_increase(BI.needed_budget(10), snapshot) == {"expensive_calls": 10, "wall_clock_s": 3360}

@@ -548,6 +548,27 @@ class Run:
             self.events.append("budget_limit_updated", limits=limits.model_dump(), by=by)
             self._refresh()
 
+    def raise_limits(self, plan: Callable[[dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]], *,
+                     by: str = "human") -> dict[str, Any] | None:
+        """Raise limits by ``plan(snapshot)`` = (non-negative increments by axis, context), the snapshot taken under
+        the run owner. One ``budget_limit_updated`` with the full new ``limits`` (all replay reads) and ``context``
+        (the plan's, plus the touched axes' limits before and after and the increments); None and no limit event when
+        every increment is zero. Never approves, reserves or refunds anything."""
+        with self._mutation():
+            increase, context = plan(self.budget.snapshot())
+            if any(type(amount) not in (int, float) or amount < 0 for amount in increase.values()):
+                raise ValueError("limit increments must be non-negative numbers")
+            if not any(increase.values()):
+                return None
+            before = self.budget.limits.model_dump()
+            limits = BudgetLimits(**{**before, **{axis: before[axis] + amount for axis, amount in increase.items()}})
+            after = limits.model_dump()
+            event = self.events.append("budget_limit_updated", limits=after, by=by, context={
+                **context, "increase": dict(increase), "limits_before": {axis: before[axis] for axis in increase},
+                "limits_after": {axis: after[axis] for axis in increase}})
+            self._refresh()
+            return event
+
     def budget_snapshot(self) -> dict[str, Any]:
         """Expose current active elapsed time without charging idle/offline time."""
         snapshot = self.budget.snapshot()
