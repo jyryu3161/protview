@@ -1,6 +1,6 @@
 # M20 변이 후보 생성 완료 기록
 
-- 판정: **완료** (2026-10-04). 사용자의 통합(main 병합) 승인을 기다린다. main에는 아직 병합하지 않았고 push하지 않았다.
+- 판정: **완료** (2026-10-04). main 병합: `5ed9835`(push 없음). 사용자가 병합을 승인했다.
 - 브랜치: `dryforge/m20-mutation-candidates` (`phase/m20-mutation-candidates` = main `356b268`에서 분기). M19는 시작 전에 main에 병합되어 있었다(`20e652c`, 기록 `356b268`).
 - 고정 소스: `ea2913c`(`ea2913c7346bf2660853e6415a4dbb5b27e2d298`, 독립 코드 검토 수정 커밋). 증거 커밋 `c32e9fb`, 증거 문구 커밋 `0133360`(증거 검토 권고: 재현 검사 문구). 고정 뒤 소스 변경은 없다. 고정 뒤 커밋은 증거·기록 문서뿐이다.
 - 수락 증거: `docs/qa/m20-mutations-20261003/`(`preflight.txt` 착수 확인, `gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M20 수락, `m19-regression/`, `m18-regression/`, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 51개 331,879,749 B, m14-regression 1개 1,191,726 B, m15-regression 1개 590,107 B, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`).
@@ -106,5 +106,5 @@
 - 이 소스 기준의 현재 검증은 전체 백엔드 pytest(1761개, skip 0)와 M19·M18·M17·M16·M15·M14 수락 실행기, M13 수락 실행기 전체(M8–M12 포함)로 대체한다(모두 고정 `ea2913c`). M13 수락 실행기가 돌리지 않는 과거 범위는 M13 완료 기록의 "대체한 과거 검증 범위"와 같다.
 
 ## 남은 일
-- main 병합(방법은 사용자에게 묻는다)과 병합 해시 기록. push하지 않았다.
+- main 병합 완료(`5ed9835`). push하지 않았다.
 - 새 미해결 문제(`docs/tracking/findings.md`): 관찰하지 못한 사례, 오프스크린에서 닿지 않는 검토 수정, `candidate_set_invalid`가 상수 모듈·화면 이유 이름표에 없음, Stop 훅 나머지 그룹에 M20 실행기 단위 테스트가 없음, 화면의 리간드 자동 선택 없음(명세 문구와의 편차, 사용자 확인 대상).
