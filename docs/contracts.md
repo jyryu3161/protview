@@ -23,7 +23,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 413 | 본문 크기 초과(`resource_exceeded`) |
 | 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문 |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
-| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`) |
+| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M20 변이 후보의 `too_many_positions`) |
 | 503 | 도구의 `transient` 또는 `fatal` |
 
 - **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다.
@@ -37,7 +37,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | `POST /runs` | `{goal?, context?, dry_run?: bool, egress?: "local_only"}`. egress에는 `local_only`만 넣을 수 있다 | 201, run 요약 | 422 |
 | `GET /runs`, `GET /runs/{id}` | — | run 요약 목록/단건 | 400, 404 |
 | `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, …모델·체인 요약}` | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
-| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
+| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16), `generate_mutation_candidates`(M20) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
 | `POST /runs/{id}/inspect_complex` | 업로드 ID 또는 같은 run의 구조 handle, 모델, 전처리 정책, 선택적 리간드, cutoff | 완료된 handle 목록 또는 `needs_selection`/`no_ligand` | 412, 422, 409 |
 
 `load_structure`의 `source`는 이 run의 업로드 ID여야 한다. 파일 경로나 URL은 받지 않는다. `decided_by`는 기록용 출처 정보일 뿐이며, 승인 권한을 주지 않는다.
@@ -46,7 +46,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, ligand_candidates, ligand_docking, ligand_docking_batch}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·변이 후보 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -357,6 +357,51 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - `POST /runs/{id}/method_reports` `{result_handle: <docking_batch_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_docking_batch"`, `render_version: "ligand_docking_batch_markdown@1"`, `result_schema: "docking_batch_result@1"`, 요약에서 복사한 `method, batch_input_sha256, inputs, box, parameters, engine, preparation, limits, stop_reason, counts, rows`, `batch_status`, `mode`, `score_label`, `score_column_label`, `score_row_label`, `limitation_ids`, `limitations`, `claims`, `snapshot`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 종류 이름 "리간드 도킹 일괄 보고서").
 - 주장은 모두 `evidence_kind: "computed"`. statement ID: `receptor_input`, `removed_instance`, `candidate_set_input`, `box`, `parameter`, `engine`, `preparation`, `row_count`(`count(rows)`·`count_where(state == …; rows)`), `row_score`(요약 `rows[i].score_kcal_mol`), `row_result_score`(행 결과 `modes[0].score_kcal_mol`, `source_kind: "docking_result"`). 점수 주장은 `scored` 행만, `row_selector: {row_index}`. 주장 필드는 M18과 같다. 점수 없는 행의 점수 주장, 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 방식이 섞인 결과, 요약 점수와 행 결과 첫 행 점수의 불일치, 변조·미완료 요약은 422 `report_evidence_invalid`.
 - 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`(`available`, `status`, `reason_code`, `pins`, `batch_pins`), `budget`(올라간 한도 포함).
+
+## M20 변이 후보
+
+규칙은 `docs/business-rules.md` "변이 후보 (M20, `generate_mutation_candidates`)". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 읽기 라우트의 handle은 쿼리(`?handle=`)가 아니라 **URL 경로**에 그대로 넣는다(`obj://…`의 슬래시 포함, `{handle:path}`). 새 쓰기 라우트는 없다.
+
+### 계산: `POST /runs/{id}/commands` `{tool: "generate_mutation_candidates", args}`
+```json
+{"structure": "obj://…/prepared_structure/…",
+ "sources": {"pocket": null | {"pocket_set": "obj://…/pocket_set/…", "ranks": [1, 3]},
+             "ligand_shell": null | {"radius_A": 5.0},
+             "residues": [{"model_number": 1, "chain_auth": "A", "seq_auth": 139, "icode": "", "resname": "LEU",
+                           "chain_label": "A", "seq_label": 139}]},
+ "ligand": null | {<잔기 참조>},
+ "allowed_residues": "ACDEFGHIKLMNPQRSTVWY" | ["A", "G", "W"],
+ "protected_residues": [<잔기 참조>], "released_residues": [<잔기 참조>],
+ "metal_contact_A": 3.0, "numbering_map": null | "obj://…", "annotation": null | "obj://…"}
+```
+- 잔기 참조·리간드 선택자: `model_number`·`chain_auth`·`seq_auth`·`icode`·`resname` 필수, `chain_label`·`seq_label` 선택(null도 값). 기본값: `ligand` null, `allowed_residues` 20종 전부, 목록 `[]`, `metal_contact_A` 3.0(1.0–5.0), `radius_A` 5.0(1.0–12.0). 목록·`ranks`는 각 최대 400.
+- 성공: 200 `{ok: true, handle: <envelope>}`, kind `mutation_candidate_set`, schema `mutation_candidate_set@1`, summary `{structure, positions, candidate_positions, excluded_positions, released_positions, candidates, exclusion_reason_counts, source_counts, null_result}`. 후보 0개면 `null_result: true`. 같은 정규화 인자면 같은 handle(훅이 `bound`를 돌려주지 않음). dry-run run에서도 실행해 저장한다.
+- 실패(도구 실패 본문, `detail.reason_code`):
+  - 422 `input_invalid`, 사전 검사 훅(도구 구현을 부르지 않음), 이 순서: `unknown_field`, `structure_invalid`, `no_position_source`, `argument_invalid`, `allowed_residues_invalid`, `residue_invalid`, `duplicate_residue`, `protect_release_conflict`, `ligand_required`, `ligand_invalid`, `pocket_set_invalid`, (`numbering_map_invalid`, `annotation_invalid`), `structure_mismatch`, `pocket_rank_invalid`, `pocket_residue_mismatch`, `annotation_map_mismatch`. handle 세 개의 종류·run 검사(`pocket_set_invalid`·`numbering_map_invalid`·`annotation_invalid`)를 모두 한 뒤 구조 일치(`structure_mismatch`)를 본다.
+  - 429 `resource_exceeded` `too_many_positions`: `detail: {reason_code, positions, limit: 400}`. 아무것도 저장하지 않는다.
+  - 422 `input_invalid` `candidate_set_invalid`: 구현이 만든 결과가 `validated_set`을 통과하지 못함(저장하지 않음. 정상 입력에서는 나지 않아야 하는 내부 일관성 실패).
+- 결과 객체의 필드는 business-rules "결과 객체"와 같다.
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/mutation_candidate_sets?offset&limit` | limit 1–100(기본 50) | `mutation_candidate_set_list@1`: `{total, offset, limit, rows:[{handle, created_seq, valid, structure, model_number, ligand, sources_used{pocket, ligand_shell, user}, klifs_status, numbering_map, annotation, counts, null_result}]}`. 최신 순, `created_seq`는 객체를 만든 이벤트 순번. 행마다 다시 검증하고 실패한 행은 `valid: false`, 나머지 필드 null(옛 숫자를 보이지 않음). `klifs_status` = `protection_checks.klifs_key_sites.status` | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/mutation_candidate_sets/{handle}` | — (쿼리 없음) | `{schema: "mutation_candidate_set_detail@1", handle, result, total_positions, total_candidates, meta}`. `result`는 저장 객체에서 `positions`·`candidates`를 뺀 것(`structure`, `parameters`, `ligand`, `pockets`, `protection_checks`, `released_residues`, `counts`, `null_result`, `limitations` 등), `meta`는 객체 메타(`handle, kind, schema, fmt, size, produced_by, summary, null_result`) | 404 없는 handle, 422 `input_invalid`(다른 종류·형식), 422 `method_evidence_invalid`(검증 실패) |
+| `GET /runs/{id}/mutation_candidate_sets/{handle}/positions?status&source&exclusion_reason&chain_auth&sort&offset&limit` | `status` ∈ `candidate`·`excluded`, `source` ∈ `pocket`·`ligand_shell`·`user`, `exclusion_reason` ∈ 여섯 사유, `chain_auth`(정확히 같음), `sort` ∈ `order`(기본)·`ligand_distance`(오름차순, 값 없는 행은 늘 끝, 동점은 `order`), limit 1–100(기본 50) | `mutation_position_page@1`: `{handle, filters{status, source, exclusion_reason, chain_auth}, sort, total, offset, limit, rows}`. 행은 저장된 위치 행 그대로, `total`은 필터 뒤 개수 | 404, 422(닫힌 값 밖, 모르는 파라미터, 다른 종류), 422 `method_evidence_invalid` |
+| `GET /runs/{id}/mutation_candidate_sets/{handle}/candidates?position_index&to&offset&limit` | `position_index` ≥ 0, `to` ∈ 20종 한 글자, limit 1–200(기본 100) | `mutation_candidate_page@1`: `{handle, filters{position_index, to}, total, offset, limit, rows:[{index, position_index, residue, standard_resname, from, to}]}`. 잔기·표준 이름은 위치 행에서 복사, `total`은 필터 뒤 개수 | 404, 422, 422 `method_evidence_invalid` |
+
+- 하위 경로 라우트(`/positions`, `/candidates`)가 상세 라우트보다 먼저 등록되어 있다(경로 handle이 슬래시를 담으므로).
+- 일반 `GET /runs/{id}/objects`·`/objects/meta`도 이 종류를 읽을 수 있지만 `validated_set`을 거치지 않는다(M12·M17–M19와 같은 관례). 화면은 위 네 읽기만 쓴다.
+
+### capability와 도구 목록
+- `/capabilities`의 `methods.mutation_candidates`: 항상 `{available: true, reason_code: null, reason: null}`(run 객체만 읽음, M16 `reference_site_annotation`과 같음).
+- `GET /tools`(기본 `levels=L2,L4`)에 `generate_mutation_candidates`(L2, `accepts: {structure: [prepared_structure]}`, `emits: mutation_candidate_set`, `cost_class: cheap`)가 나온다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <mutation_candidate_set>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "mutation_candidates"`, `render_version: "mutation_candidates_markdown@1"`, `status: "complete"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "mutation_candidate_set@1"`, `result_sha256`, 결과에서 복사한 `method_version, structure, parameters, ligand, pockets, protection_checks, released_residues, counts, null_result, limitations`, `claims`, `provenance{call_id, tool, tool_version, created_event_seq, completed_event_seq}`, `evidence_statement`, `snapshot`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 종류 이름 "변이 후보 보고서").
+- 주장 statement ID: `computed` — `position_count`, `position_status_count`, `released_position_count`, `candidate_count`, `exclusion_reason_count`, `source_position_count`, `numbering_status_count`(번호 대응이 있을 때), `ligand_min_distance_A`(`positions[i].ligand_min_distance_A` 인용, 단위 `angstrom`, 0.01 `ROUND_HALF_UP`), `protection_check_status`(다섯 검사), `protection_check_count`(`checked`인 검사만). `reference_value` — `reference_uniprot_accession`, `reference_klifs_site_label`(`reference: {note: "참조 스냅샷 값, 계산 아님", reference_object}`). 주장 필드는 M15 보고서와 같다. 다른 statement의 필드 경로, 계산값으로 참조 필드 인용, 틀린 개수·반올림, 검사하지 않은 항목의 숫자 주장, 해석 문장, 다른 run·다른 종류의 결과, 변조된 집합·보고서는 422 `report_evidence_invalid`.
+- 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `budget`.
 
 ## 과거 단계 실행기 (CLI)
 

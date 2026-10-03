@@ -8,7 +8,8 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   InteractionRow, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
   LigandEnumerateArgs, LigandFilterSpec, LigandImport, LigandImportKind, LigandInspectArgs, LigandInspectionDetail,
   LigandInspectionList, LigandJob, LigandPrerequisites, LigandReportArtifact, LigandSitePreview, LigandSubmission,
-  ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
+  MutationCandidatePage, MutationCandidateSetDetail, MutationCandidateSetList, MutationPositionPage,
+  MutationReportArtifact, MutationRequestArgs, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
   ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
@@ -47,7 +48,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null };
     reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null };
     ligand_candidates?: LigandCapability; ligand_docking?: DockingCapability;
-    ligand_docking_batch?: DockingBatchCapability } }
+    ligand_docking_batch?: DockingBatchCapability;
+    mutation_candidates?: { available: boolean; reason_code: string | null; reason: string | null } } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -68,7 +70,8 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
-    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking" | "ligand_docking_batch";
+    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking" | "ligand_docking_batch"
+    | "mutation_candidates";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -236,7 +239,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -358,6 +361,26 @@ export const api = {
   /** Report `analysis_type: "ligand_docking_batch"` of one stored batch summary (nothing is docked again). */
   createDockingBatchReport: (id: string, summaryHandle: string, signal?: AbortSignal) =>
     request<DockingBatchReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: summaryHandle }, signal)),
+  // ---- M20 mutation candidates (reads write no event and run no tool; the handle goes in the path) ----
+  /** Runs `generate_mutation_candidates` through the ordinary Run.call command route (no job, approval or budget). */
+  generateMutationCandidates: (id: string, args: MutationRequestArgs, signal?: AbortSignal) =>
+    api.command(id, "generate_mutation_candidates", args as unknown as Record<string, unknown>, signal),
+  /** Newest first; `limit` 1–100. */
+  mutationCandidateSets: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<MutationCandidateSetList>(runPath(id, `/mutation_candidate_sets?offset=${offset}&limit=${limit}`), { signal }),
+  mutationCandidateSet: (id: string, handle: string, signal?: AbortSignal) =>
+    request<MutationCandidateSetDetail>(runPath(id, `/mutation_candidate_sets/${encodeURIComponent(handle)}`), { signal }),
+  /** `query` comes from `positionQuery` (mutations.ts); the server filters and sorts the stored rows. */
+  mutationPositions: (id: string, handle: string, query: string, signal?: AbortSignal) =>
+    request<MutationPositionPage>(runPath(id, `/mutation_candidate_sets/${encodeURIComponent(handle)}/positions?${query}`),
+      { signal }),
+  /** `query` comes from `candidateQuery` (mutations.ts). */
+  mutationCandidates: (id: string, handle: string, query: string, signal?: AbortSignal) =>
+    request<MutationCandidatePage>(runPath(id, `/mutation_candidate_sets/${encodeURIComponent(handle)}/candidates?${query}`),
+      { signal }),
+  /** Report `analysis_type: "mutation_candidates"` of one stored set (nothing is generated again). */
+  createMutationReport: (id: string, setHandle: string, signal?: AbortSignal) =>
+    request<MutationReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: setHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

@@ -1,0 +1,125 @@
+{
+  "freeArgs": {
+    "receptor": "prolif-vina-rec.pdb",
+    "ligand": "public-derived-parent-record0.sdf",
+    "mode": "free",
+    "box": {
+      "source": "ligand_range",
+      "margin_A": 8
+    },
+    "parameters": {
+      "seed": 42,
+      "exhaustiveness": 1,
+      "num_modes": 3,
+      "energy_range": 3
+    }
+  },
+  "reference": {
+    "run": "run_c6c923de324648329dd47372136cc151",
+    "handle": "obj://run_c6c923de324648329dd47372136cc151/docking_result/9ab8b04df0177b421021f4451cd180c95508de851cfea9890ca5c6eee0b1d6ef",
+    "scores": [
+      -12.9,
+      -10.9,
+      -10.7
+    ],
+    "contactCounts": [
+      76,
+      61,
+      72
+    ],
+    "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94",
+    "posesBytes": 20247
+  },
+  "reruns": [
+    {
+      "run": "run_c7608d17431d486f8d8bda154b1b17a4",
+      "jobId": "job_08d004d1605948a0b7322a834307b871",
+      "status": "done",
+      "failure": null,
+      "approvalStatus": 200,
+      "args": {
+        "receptor_handle": "obj://run_c7608d17431d486f8d8bda154b1b17a4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+        "receptor_model_number": 1,
+        "connectivity": {
+          "kind": "pdb_conect",
+          "sidecar_handle": null
+        },
+        "receptor_instance": null,
+        "ligand": {
+          "source": "sdf",
+          "sdf_handle": "obj://run_c7608d17431d486f8d8bda154b1b17a4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+        },
+        "mode": "free",
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 42,
+          "exhaustiveness": 1,
+          "num_modes": 3,
+          "energy_range": 3
+        }
+      },
+      "handle": "obj://run_c7608d17431d486f8d8bda154b1b17a4/docking_result/57cb46e73ccb658178a58d9256ec347c226656f4da7223a8860722d6ba6014a2",
+      "scores": [
+        -12.9,
+        -10.9,
+        -10.7
+      ],
+      "contactCounts": [
+        76,
+        61,
+        72
+      ],
+      "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94",
+      "posesBytes": 20247,
+      "providerCallsZero": true
+    },
+    {
+      "run": "run_7b178f8869e94f049ffbbc337626cefe",
+      "jobId": "job_c58837878d93470ebd552295a777f167",
+      "status": "done",
+      "failure": null,
+      "approvalStatus": 200,
+      "args": {
+        "receptor_handle": "obj://run_7b178f8869e94f049ffbbc337626cefe/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+        "receptor_model_number": 1,
+        "connectivity": {
+          "kind": "pdb_conect",
+          "sidecar_handle": null
+        },
+        "receptor_instance": null,
+        "ligand": {
+          "source": "sdf",
+          "sdf_handle": "obj://run_7b178f8869e94f049ffbbc337626cefe/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+        },
+        "mode": "free",
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 42,
+          "exhaustiveness": 1,
+          "num_modes": 3,
+          "energy_range": 3
+        }
+      },
+      "handle": "obj://run_7b178f8869e94f049ffbbc337626cefe/docking_result/cb1ded4d278d317345ff012c4deb5cce2a6b1364be57fa7b3ff1e79321c50635",
+      "scores": [
+        -12.9,
+        -10.9,
+        -10.7
+      ],
+      "contactCounts": [
+        76,
+        61,
+        72
+      ],
+      "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94",
+      "posesBytes": 20247,
+      "providerCallsZero": true
+    }
+  ]
+}

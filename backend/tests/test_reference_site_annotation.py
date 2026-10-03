@@ -690,7 +690,8 @@ def test_duplicate_site_residue_through_run_call(tmp_path, ref):
 
 
 def test_only_the_new_tool_and_m15_have_prechecks():
-    assert set(build_registry().prechecks) == {"map_residue_numbering", TOOL}
+    # M20 generate_mutation_candidates adds its own pre-check (no key fields); no other tool gains one.
+    assert set(build_registry().prechecks) == {"map_residue_numbering", TOOL, "generate_mutation_candidates"}
 
 
 # --- recovery, dry run, API ---------------------------------------------------------------------------------------

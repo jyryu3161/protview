@@ -101,7 +101,7 @@ npm --prefix frontend run start -- -p 3000
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
 node --check frontend/tests/offscreen/tabs-flow.cjs
@@ -110,6 +110,7 @@ node --check frontend/tests/offscreen/annotation-flow.cjs
 node --check frontend/tests/offscreen/ligand-flow.cjs
 node --check frontend/tests/offscreen/docking-flow.cjs
 node --check frontend/tests/offscreen/docking-batch-flow.cjs
+node --check frontend/tests/offscreen/mutation-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
@@ -118,6 +119,7 @@ npm --prefix frontend run build
 - `scripts/test_import_reference_snapshots.py`(가져오기: 해시 불일치 시 무변경, 원자적 교체, 매니페스트 필드, 네트워크 없음), `scripts/test_m15_offscreen_acceptance.py`(M15 실행기 판정), `scripts/test_measure_klifs_numbering.py`(측정 분류), `scripts/test_m16_offscreen_acceptance.py`(M16 실행기 판정), `scripts/test_m17_offscreen_acceptance.py`(M17 실행기 판정)는 서비스를 띄우지 않으며 Stop 훅 네 번째 그룹(나머지 백엔드·실행기)에 들어 있다. 백엔드 M15 테스트는 대부분 커밋된 fixture 세트(`backend/tests/reference_fixture_set.py`)를 임시 참조 폴더에 만들어 쓰므로 `.deps/reference`가 없어도 돈다. 예외로 `backend/tests/test_klifs_numbering.py`의 실제 스냅샷 테스트 2개는 kbase 스냅샷을 직접 읽는다. 경로는 `<저장소>/../kbase_kinase/ref`이고 환경변수 `MW_KBASE_REF`로 바꿀 수 있다(git worktree나 다른 위치의 체크아웃). 경로가 없으면 skip하므로 게이트의 "skip 0"을 맞추려면 kbase 체크아웃을 옆에 두거나 `MW_KBASE_REF`를 준다.
 - `scripts/test_m14_offscreen_acceptance.py`는 M14 실행기의 사례 판정·`acceptance` 판정을 보는 단위 테스트다(서비스를 띄우지 않음, Stop 훅 네 번째 그룹).
 - `scripts/test_m19_offscreen_acceptance.py`(M19 실행기 판정, 서비스 없음)는 게이트 명령과 Stop 훅 나머지 그룹에 있다.
+- `scripts/test_m20_offscreen_acceptance.py`(M20 실행기 판정, 서비스 없음)는 게이트 명령에 있지만 Stop 훅 나머지 그룹의 파일 목록에는 아직 없다(`docs/tracking/findings.md`). 백엔드 M20 테스트 네 파일(`test_mutation_*.py`)은 실제 엔진이 필요 없고 나머지 그룹에서 돈다.
 - `scripts/test_m18_offscreen_acceptance.py`(M18 실행기 판정), `scripts/test_setup_qvina.py`·`scripts/test_setup_docking_worker.py`(잠금·플랫폼 불일치 거부, 실패 때 만든 것 삭제, 설치 기록 내용. 실제 설치는 하지 않음)는 서비스를 띄우지 않는다. 이 세 파일은 게이트 명령과 Stop 훅 네 번째 그룹에 있다.
 - `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정, `acceptance` 판정, 빌드 출처 확인을 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 네 번째 pytest 그룹에 들어 있다.
 - git worktree에서 백엔드 테스트나 서비스를 돌릴 때는 `PYTHONPATH=<worktree>/backend`를 준다. `.venv`의 editable 설치가 주 체크아웃의 `backend/`를 가리키므로, 주지 않으면 worktree의 `mw`가 아니라 주 체크아웃의 `mw`를 import한다.
@@ -277,6 +279,23 @@ npm --prefix frontend run test:offscreen:chemical
 - `--root`는 새 폴더여야 하고 `/tmp` 아래면 거부한다. `--artifacts`는 Git 제외 폴더여야 한다. 다시 돌릴 때는 새 `--root`·`--artifacts`·`--out`을 쓰고 실패한 시도의 폴더를 지우지 않는다. `--code-root`로 서비스·하네스를 띄울 코드 루트를 바꿀 수 있다. `--kbase`는 git worktree에서 기본값이 틀리므로 절대 경로를 준다.
 - 흐름만 따로 돌리려면 서비스를 띄운 뒤 `npm --prefix frontend run test:offscreen:docking-batch -- --mode <main|unavailable> --artifacts <디렉터리>`(`main`은 `--runs-dir <백엔드 MW_RUNS_DIR>`도 필요, `--url` 기본 `http://127.0.0.1:3000`, `--fixture-label`은 선택. `unavailable`은 새 runs 루트와 작업 환경 없는 백엔드가 필요). 전체 순서는 실행기에 있다.
 - 2026-10-03 증거: `docs/qa/m19-batch-20261003/`(`preflight.txt`, `gate.txt`, `summary.txt`, `acceptance/`, 회귀 6개). 수락은 `--root runs/m19-acceptance-20261003-attempt1 --artifacts frontend/tests/offscreen/artifacts/m19-acceptance/attempt1 --regressions --kbase <home>/Projects/kbase_kinase`로 한 번 돌렸다. 전체 게이트 로그는 `frontend/tests/offscreen/artifacts/m19-acceptance/gate/`(Git 제외). 큰 텍스트 증거는 결정 0020대로 `<artifacts>/regressions/m1X/export-full/`로 옮겼다.
+
+### M20 변이 후보 수락 QA
+
+8000·3000 포트가 비어 있는 상태에서 실행한다. 실행기가 loopback 서비스(`PYTHONPATH=<code root>/backend`, `MW_RUNS_DIR=<root>/runs`, `MW_REFERENCE_DIR=<root>/reference`)를 직접 띄우고 끝나면 정리하며, `--build auto`(기본, `always`·`never`도 있음)는 현재 프런트엔드 소스로 도장 찍은 빌드만 재사용한다. 백엔드가 `mutation_candidates`와 `pocket_detection`(코드 루트의 `.deps/fpocket/env`, 실제 fpocket 한 번)을 사용 가능으로 보고해야 한다. 아니면 "사용할 수 없음"이 아니라 수락 실패다. 번호 대응·주석 흐름에 참조 스냅샷이 필요하므로 `--kbase`로 가져온다(격리 폴더 `<root>/reference`, 실제 `.deps/reference`는 건드리지 않음). M13·M15·M16·M18 실행기의 함수(빌드 도장·환경·경로 가리기·포트, 서비스·빌드·가져오기·증거 내보내기, loopback API 도우미)를 그대로 쓴다.
+
+```bash
+.venv/bin/python scripts/m20_offscreen_acceptance.py --root runs/m20-acceptance-<날짜> \
+    --artifacts frontend/tests/offscreen/artifacts/m20-acceptance/<이름> \
+    --out docs/qa/m20-mutations-<YYYYMMDD>/acceptance --regressions --kbase <절대 경로>/kbase_kinase
+```
+
+- 순서: 환경 확인 → `reference-import`(가져오기 명령을 하위 프로세스로 `--dest <root>/reference`) → `mutation-main`(run 없음 → 1MQ4 불러오기, 전처리 전 "사용할 수 없음" → 전처리 → 주석 없는 리간드 껍질 요청(ADP 직접 선택, KLIFS 검사하지 않음, 위치·거리·MG 제외를 착수 확인 oracle과 대조) → 번호 대응·주석 → 직접 + 껍질, 보호·충돌·해제 → 허용 잔기 줄이기 → 같은 요청 같은 handle → 실제 fpocket → 포켓 출처 + 껍질 12 Å → 필터·정렬·페이지 → 후보 0개(빈 결과) → 표시된 요청 변조로 서버 거절 → 보고서·지식 탭 목록·다운로드 → 표시된 보류 응답으로 늦은 응답(결과 바꿈·run 바꿈) → 탭 상태 → 문구) → 재현 검사(흐름의 주석 없는 요청을 같은 서버 프로세스의 새 run 두 개에서 API로 run마다 두 번: run 안 같은 handle, obj:// handle을 자리표시로 바꾼 저장 내용이 흐름과 같음. 콜드 재시작이 아님) → `--regressions`면 M19·M18·M17·M16·M15·M14 실행기와 M13 실행기 모든 phase를 하나씩, 각자 새 `--root`(`<root>-m1X-regression`)·`--artifacts`(`<artifacts>/regressions/m1X`)와 `--out <out>/../m1X-regression`으로(M16·M15는 `--kbase`를 넘김). 대장의 `acceptance`는 환경 확인·가져오기 통과, 모든 단계가 이번 실행에서 돌고 모든 사례 통과, 모든 흐름 행의 외부 요청 0건·제공자 호출 0회, 소스 도장 빌드, 남은 작업 프로세스·fpocket·8000/3000 리스너 없음일 때만 true다(회귀 실행기의 판정은 각자 대장이 하고 이 대장은 종료 코드만 기록).
+- 1MQ4로 만들 수 없는 사례(번호 대응·주석 지도 충돌 화면, 위치 400 초과, 변형 이름·이황화 쌍)는 위조하지 않고 "관찰하지 않음"과 그것을 덮는 테스트 이름으로 기록한다. "사용할 수 없음" 모드는 없다(capability가 항상 사용 가능이고, run 없음·전처리 전은 `mutation-main`이 관찰).
+- `--root`는 새 폴더여야 하고 `/tmp` 아래면 거부한다. `--artifacts`는 Git 제외 폴더여야 한다. 다시 돌릴 때는 새 `--root`·`--artifacts`·`--out`을 쓰고 실패한 시도의 폴더를 지우지 않는다. `--code-root`로 서비스·하네스를 띄울 코드 루트를 바꿀 수 있다. `--kbase` 기본값은 git worktree에서 틀리므로 절대 경로를 준다.
+- 흐름만 따로 돌리려면 서비스를 띄운 뒤 `npm --prefix frontend run test:offscreen:mutations -- --mode main --artifacts <디렉터리> --set-hash <사용 중 참조 세트 해시>`(`--url` 기본 `http://127.0.0.1:3000`, 새 runs 루트가 필요). 전체 순서와 참조 폴더 준비는 실행기에 있다.
+- 2026-10-03 수락 한 번은 회귀 포함 약 47분 걸렸다(분리 실행).
+- 2026-10-03 증거: `docs/qa/m20-mutations-20261003/`(`preflight.txt`, `gate.txt`, `summary.txt`, `acceptance/`, 회귀 7개). 수락은 `--root runs/m20-acceptance-20261003-attempt1 --artifacts frontend/tests/offscreen/artifacts/m20-acceptance/attempt1 --regressions --kbase <home>/Projects/kbase_kinase`로 한 번 돌렸다. 전체 게이트 로그는 `frontend/tests/offscreen/artifacts/m20-acceptance/gate/`(Git 제외). 큰 텍스트 증거는 결정 0020대로 `<artifacts>/regressions/m1X/export-full/`로 옮겼다.
 
 ### M15 KLIFS 번호 측정
 

@@ -535,3 +535,103 @@ export type DockingBatchSubmission = DockingBatchJob | DockingBatchPlanOnly;
 export interface DockingBatchReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "ligand_docking_batch"; result_handle: string;
   batch_status: DockingBatchStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M20 mutation candidates (backend/mw/mutation_constants.py, mutation_candidates.py, mutation_reads.py) ----
+export type MutationSourceKind = "pocket" | "ligand_shell" | "user";
+export type MutationProtectionReason = "user_protected" | "klifs_key_site" | "metal_contact" | "disulfide_cys";
+export type MutationExclusionReason = "non_standard_residue" | MutationProtectionReason | "no_allowed_alternative";
+export type MutationPositionStatus = "candidate" | "excluded";
+export type MutationNumberingStatus = "mapped" | "unmapped" | "conflict" | "not_in_map";
+export type MutationCheckStatus = "checked" | "not_checked" | "not_available";
+export type MutationPositionSort = "order" | "ligand_distance";
+
+/**
+ * `generate_mutation_candidates` arguments (spec 2). Residue references and the ligand selector carry all 7 identity
+ * fields as listed by the structure (null kept); the server resolves them again and refuses unknown keys.
+ */
+export interface MutationRequestArgs {
+  structure: string;
+  sources: { pocket: { pocket_set: string; ranks: number[] } | null; ligand_shell: { radius_A: number } | null;
+    residues: ExactResidueRef[] };
+  ligand: ExactResidueRef | null;
+  /** One-letter codes in "ACDEFGHIKLMNPQRSTVWY" order. */
+  allowed_residues: string;
+  protected_residues: ExactResidueRef[];
+  released_residues: ExactResidueRef[];
+  metal_contact_A: number;
+  numbering_map: string | null;
+  annotation: string | null;
+}
+
+export type MutationPositionSource = { kind: "pocket"; pocket_rank: number } | { kind: "ligand_shell"; radius_A: number } |
+  { kind: "user" };
+/** Stored numbering map row values (reference values, not computed); null when no map was given. */
+export interface MutationNumbering { status: MutationNumberingStatus; uniprot_accession: string | null;
+  uniprot_position: number | null; uniprot_residue: string | null; klifs_index: number | null; klifs_label: string | null }
+export interface MutationPosition {
+  index: number; residue: ExactResidueRef; standard_resname: string | null; one_letter: string | null;
+  sources: MutationPositionSource[];
+  /** null when no ligand was given (never 0). */
+  ligand_min_distance_A: number | null;
+  numbering: MutationNumbering | null;
+  protection: { reasons: MutationProtectionReason[]; released: boolean;
+    /** null = KLIFS key sites not checked (no annotation); [] = checked, none. */
+    klifs_sites: string[] | null;
+    metal: { min_distance_A: number; metal_residue: ExactResidueRef } | null;
+    disulfide_partner: ExactResidueRef | null };
+  exclusion_reasons: MutationExclusionReason[]; status: MutationPositionStatus; candidate_count: number;
+}
+export interface MutationCandidate { index: number; position_index: number; from: string; to: string }
+export interface MutationProtectionChecks {
+  user_list: { status: "checked"; protected: number; released: number };
+  klifs_key_sites: { status: "checked" | "not_checked"; reason: "annotation_not_given" | null; annotation: string | null;
+    annotated_sites: number | null; absent_sites: number | null };
+  metal_contact: { status: "checked"; threshold_A: number; metal_residues: number; metal_names: string[] };
+  disulfide: { status: "checked"; threshold_A: number; pairs: number };
+  catalytic_residue_database: { status: "not_available"; reason: "not_implemented" };
+}
+export interface MutationCounts { positions: number; candidate_positions: number; excluded_positions: number;
+  released_positions: number; candidates: number; exclusion_reason_counts: Record<MutationExclusionReason, number>;
+  source_counts: Record<MutationSourceKind, number> }
+/** `mutation_candidate_set@1` (spec 6). */
+export interface MutationCandidateSet {
+  schema: "mutation_candidate_set@1"; method_version: string;
+  structure: { handle: string; model_number: number; structure_kind: "prepared_structure" };
+  parameters: { sources: { pocket: { pocket_set: string; ranks: number[] } | null; ligand_shell: { radius_A: number } | null;
+      residues: ExactResidueRef[] };
+    ligand: ExactResidueRef | null; allowed_residues: string; protected_residues: ExactResidueRef[];
+    released_residues: ExactResidueRef[]; metal_contact_A: number; disulfide_sg_A: number;
+    numbering_map: string | null; annotation: string | null };
+  ligand: { residue: ExactResidueRef; heavy_atom_count: number } | null;
+  pockets: { pocket_set: string; ranks: number[]; lining_residue_count: number } | null;
+  protection_checks: MutationProtectionChecks;
+  released_residues: { residue: ExactResidueRef; effect: "released" | "none" }[];
+  positions: MutationPosition[];
+  candidates: MutationCandidate[];
+  counts: MutationCounts;
+  null_result: boolean;
+  limitations: string[];
+}
+/** `GET /runs/{id}/mutation_candidate_sets` row, newest first. A row that does not validate: `valid: false`, nulls. */
+export interface MutationCandidateSetListRow { handle: string; created_seq: number; valid: boolean;
+  structure: string | null; model_number: number | null; ligand: MutationCandidateSet["ligand"];
+  sources_used: Record<MutationSourceKind, boolean> | null; klifs_status: "checked" | "not_checked" | null;
+  numbering_map: string | null; annotation: string | null; counts: MutationCounts | null; null_result: boolean | null }
+export interface MutationCandidateSetList { schema: "mutation_candidate_set_list@1"; total: number; offset: number;
+  limit: number; rows: MutationCandidateSetListRow[] }
+/** `GET /runs/{id}/mutation_candidate_sets/{handle}`: the validated set without positions and candidates. */
+export interface MutationCandidateSetDetail { schema: "mutation_candidate_set_detail@1"; handle: string;
+  result: Omit<MutationCandidateSet, "positions" | "candidates">; total_positions: number; total_candidates: number;
+  meta: Record<string, unknown> }
+export interface MutationPositionPage { schema: "mutation_position_page@1"; handle: string;
+  filters: { status: MutationPositionStatus | null; source: MutationSourceKind | null;
+    exclusion_reason: MutationExclusionReason | null; chain_auth: string | null };
+  sort: MutationPositionSort; total: number; offset: number; limit: number; rows: MutationPosition[] }
+export interface MutationCandidateRow { index: number; position_index: number; residue: ExactResidueRef;
+  standard_resname: string | null; from: string; to: string }
+export interface MutationCandidatePage { schema: "mutation_candidate_page@1"; handle: string;
+  filters: { position_index: number | null; to: string | null }; total: number; offset: number; limit: number;
+  rows: MutationCandidateRow[] }
+export interface MutationReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "mutation_candidates"; result_handle: string;
+  snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }

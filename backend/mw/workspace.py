@@ -9,7 +9,7 @@ import yaml
 
 from .runtime.guards import Budget, BudgetLimits, LoopGuard
 from .runtime.orchestrator import Run
-from .tools import comparison, energetic, numbering, sasa, site_annotation, structural
+from .tools import comparison, energetic, mutations, numbering, sasa, site_annotation, structural
 from .tools.registry import ToolRegistry
 
 ROOT = Path(__file__).resolve().parents[2]          # repo root
@@ -28,6 +28,7 @@ def build_registry(tools_yaml: Path | None = None) -> ToolRegistry:
     energetic.register(reg)
     numbering.register(reg)
     site_annotation.register(reg)
+    mutations.register(reg)
     return reg
 
 

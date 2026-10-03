@@ -1,0 +1,228 @@
+M20 T1 착수 확인 (preflight) — 2026-10-03, 브랜치 dryforge/m20-mutation-candidates, 기준 커밋 356b268
+명세: .dryforge/spec.md 2–4·6·7·12절, 계획 T1 (a)–(e). 제품 코드·tools.yaml은 바꾸지 않았다.
+모든 값은 아래 스크립트를 실제로 실행한 출력에서 옮겼다. 스크립트는 세션 scratchpad에 두고 저장소에 넣지 않았다:
+  t1_real.py          (1MQ4·1HSG 실제 객체: HTTP 제품 경로, fpocket 실제 실행, 번호 대응·주석)
+  t1_oracle_public.py (전처리 좌표의 _atom_site 표만 gemmi.cif로 읽어 numpy 전수 계산; gemmi.Structure·mw 코드 없음)
+  t1_parse_check.py   (기존 읽기 경로 _parse·structure_residues·METALS·_selected_ligand 결과 ↔ 두 oracle 대조)
+  t1_size.py          (위치 400·후보 7,600 합성 결과 크기)
+실행: .venv/bin/python <script> (cwd 저장소 루트), 네 번 모두 exit 0. gemmi 0.7.5, numpy 2.4.6.
+네트워크 요청 없음(제품 경로는 TestClient base_url http://127.0.0.1, fpocket은 로컬 작업 프로세스).
+참조 세트: backend/tests/reference_fixture_set.build_fixture_set → scratchpad, MW_REFERENCE_DIR로 지정 (FIXTURE 세트).
+
+==================================================================================================
+판정 요약
+==================================================================================================
+- (a) 기존 읽기 경로는 명세 3·4절에 필요한 값을 모두 준다. 멈출 이유 없음.
+- (b) pocket_set·번호 대응·주석의 필드 이름·위치는 명세 2·3·6절과 같다(source_handle, pockets[].rank, lining_residues
+  7필드, null_result / structure.handle, rows[] 필드 / numbering_map, structure.handle, groups[].sites[]).
+  단, 명세 3절의 전제 하나가 사실과 다르다 → 아래 "명세와 다른 점" M1. 포켓 출처 입장 검사(T2·T3의 해당 부분)는
+  사용자 결정 전까지 멈춘다.
+- (c) 1MQ4+ADP·1HSG+MK1 독립 oracle 값 기록. 1MQ4에는 MG 2개(금속 근접 실제 사례), 두 구조 모두 이황화 없음.
+- (d) 위치 400 × 후보 19 합성 결과: 내용 0.90 MiB, object_created 이벤트 한 줄 1.20 MiB. 코드에 이벤트 크기 상한 없음.
+- (e) 하드코딩 검사 목록 아래(백엔드 테스트 3곳, 프런트 테스트 2파일, M14 실행기 1파일).
+- 합성 fixture 만듦: backend/tests/fixtures/mutation/ (build_mutation_fixtures.py --check → OK 3개).
+
+==================================================================================================
+명세와 다른 점 (사용자 결정 필요; 관련 작업은 멈춤)
+==================================================================================================
+M1. 명세 3절(.dryforge/spec.md 73행) "사전 검사 훅에는 run·이벤트가 없으므로 이벤트 기반 validated_pocket_set은 부르지
+    않고 내용 수준 검사만 한다" — 사실과 다름.
+    현실: 훅은 store를 받고(backend/mw/runtime/orchestrator.py 600행 precheck(self.store, args, bound)),
+    store는 이벤트 로그와 run_id를 가진다(orchestrator.py 171행 ObjectStore(self.run_dir, self.run_id, self.events);
+    backend/mw/core/handles.py 68·72행). 선례: backend/mw/tools/comparison.py 59–60행이 훅·도구 안에서
+    type("RunView", (), {"store": store, "events": store.events, "run_id": store.run_id})()로 이벤트 기반 검증
+    (validated_minimized_structure)을 부른다.
+    실측: 같은 store-only RunView로 pocket_bundle.validated_pocket_set을 1MQ4(15개)·1HSG(8개) pocket_set에 불러
+    둘 다 통과(producer job_id 확인).
+    영향: 내용 수준 검사만 하면, 객체는 저장됐지만 게시되지 않은 pocket_set(취소·오래된 시도: pocket_bundle.publish
+    477행 store.put 뒤 job_terminal 전)이나 원본 출력과 어긋난 객체를 받아들일 수 있다. M12 읽기·보고서는 producer()
+    ·validated_pocket_set만 신뢰한다(backend/AGENTS.md "포켓 결과를 게시하기 전에…읽을 때마다…대조").
+    제안(명세 3절·2절 pocket_set_invalid 변경): "pocket_set은 사전 검사 훅에서 store 기반 RunView로
+    pocket_bundle.validated_pocket_set을 불러 검증한다(게시 증거·원본 출력 대조). 실패하면 pocket_set_invalid.
+    그다음 null_result·source_handle·rank·lining 7필드 검사." 순서·reason_code 집합은 그대로.
+A1. (모호함, 현실과 충돌 아님) 명세 2절 입장 표의 ligand_invalid(58행)와 ligand_required(59행): ligand null +
+    ligand_shell일 때 리간드가 여럿이면 ligand_invalid가 먼저 걸리고 하나면 ligand_required가 되는 듯 읽힌다.
+    30행은 "ligand_shell이면 필수"라 한다. 제안: "ligand_shell이 켜졌고 ligand가 null이면 리간드 수와 상관없이
+    ligand_required(자동 선택 없음). ligand_invalid는 null이 아닌 선택자가 리간드 하나로 해석되지 않을 때만." 그리고
+    표 순서를 ligand_required → ligand_invalid로.
+A2. (모호함) 명세 12절 "도구 등록 네 곳과 /capabilities 지원 목록": /capabilities에는 도구 목록이 없다(app.py
+    614–646행: methods·supported·unavailable). 노출 도구 목록은 GET /tools(app.py 856–860행, SUPPORTED_TOOLS로 거름).
+    M16 선례는 methods["reference_site_annotation"] = 항상 사용 가능(app.py 627행). 제안: "GET /tools에 나타남 +
+    /capabilities methods["mutation_candidates"] = {available: true, reason_code: null, reason: null}".
+
+==================================================================================================
+(a) 전처리 구조 읽기 경로 (backend/mw/tools/structural.py)
+==================================================================================================
+- METALS(13행) = {ZN MG CA MN FE CU CO NI NA K} — 명세 4절 목록과 같다. 잔기 이름 비교이며 CD·FE2 등은 금속이 아니다.
+- structure_residues(store, handle)(94–108행): 첫(유일) 모델의 모든 잔기를 파일 순서로, 7필드 + atom_count +
+  category(water | polymer(het_flag A) | nonpolymer)와 ligands(het_flag H, 물 아님, METALS 아님) 목록. 원소·좌표는
+  주지 않으므로 거리 계산은 _parse(ctx, handle)(24–53행)의 gemmi Structure를 쓴다(ToolContext(store=…) 하나면 됨,
+  structure_residues도 같은 방식). prepared_structure는 coordinates 바이트를 읽고 선택 모델 외는 지운다.
+- _res_ref(88–91행): icode는 strip, chain_label = subchain or None, seq_label = label_seq(None 가능). 원래 resname 그대로.
+- _selected_ligand(model, selector)(126–147행): 후보 = het_flag H·물 아님·METALS 아님(structure_residues.ligands와 같은
+  규칙). selector None + 여럿 → ToolFailure input_invalid "ligand ambiguous; select one ligand instance";
+  필수 5필드 + 선택 label 2필드가 모두 일치해야 함(불일치 → "ligand not found"). reason_code는 없으므로 새 도구가
+  ligand_invalid로 감싸야 한다.
+- altloc: prepare_structure는 항상 _select_altlocs를 거쳐 한 altloc만 남기고 altloc 표시를 지운다. 수소는 기본 strip.
+실측(t1_parse_check.py, 제품 경로 load_structure → prepare_structure → _parse/structure_residues):
+  합성 mmCIF(기본 전처리): manifest removed {altlocs 1, hydrogens 3, waters 0}; 남은 altloc 0·수소 0; 원소 집합
+    C CD N NA O P S SE ZN(atom.element.name.upper()); 잔기 7필드(타입 포함)·category·ligands·금속 잔기·폴리머 잔기
+    목록이 expected.json과 모두 같음(true×5). 거리 330쌍: bit-exact 326, 최대 |Δ| 2.8e-14 Å(먼 거리 4쌍의 마지막
+    비트: 100.04…, 155.27…, 107.74…). 경계값 5.0·3.0·2.5는 gemmi도 정확히 5.0·3.0·2.5. SG–SG ≤2.5 쌍 4개 동일.
+    het_flag: MSE(ATOM) A, MSE(HETATM) H, SEP A, HID A, CYX A, LIG/CD/ZN/NA/HOH H. 전처리 출력 형식 cif,
+    ALA CC11의 label_seq "." → seq_label null 유지.
+  합성 PDB: 출력 형식 pdb, chain_label·seq_label 모두 null, 위와 같은 비교 전부 true(224쌍, bit-exact 220).
+  altloc first 정책: LYS A11 NZ altloc A 선택(altloc_choices [{A, 11, selected A}]), 금속 2.5 Å — expected.json의
+    first 규칙 값과 같음. hydrogens keep: 수소 3개 남지만 중원자만 세면 값 동일.
+  _selected_ligand: selector None → "input_invalid: ligand ambiguous; select one ligand instance"(합성 4·3개 후보),
+    7필드 선택자 → LIG A101 하나, chain_label "Z" → "input_invalid: ligand not found".
+  1MQ4: _parse 금속 MG A2086·MG A2088. ADP·PO4 5.0 Å 껍질 집합이 numpy oracle과 같음(최대 |Δ| 8.9e-16).
+  1HSG: 금속 없음. MK1 5.0 Å 껍질 집합 동일(33개, 최대 |Δ| 8.9e-16).
+결론: 명세 3·4절의 위치(폴리머 7필드), 리간드 해석, 중원자 최소 거리, 금속 잔기 판정, SG 원자, 변형 이름 원래 resname
+  보존이 기존 경로로 모두 가능. 주의(구현 참고, 명세 위반 아님): MSE·CD처럼 HETATM 비금속 잔기는 모두 리간드 후보가
+  되므로 "리간드가 여럿"이 흔하다(합성 mmCIF 4개, 1MQ4 2개: PO4·ADP).
+
+==================================================================================================
+(b) 실제 M12·M15·M16 객체 (t1_real.py, HTTP 제품 경로, 새 run, dry_run false)
+==================================================================================================
+흐름: upload → load_structure(model_index 0) → prepare_structure({structure}만, config 기본값 highest_occupancy·
+  keep_all·strip) → POST /jobs fpocket_detect_v1 {structure: prepared} → approve → start(done) →
+  (1MQ4만) map_residue_numbering(prepared, pdb_id 1MQ4, chains [{chain_auth A}]) → annotate_reference_sites({numbering_map}).
+1MQ4 전처리: model 1, removed {altlocs 0, hydrogens 0, waters 0}, coordinates cif 166683 bytes(sha256 d4cbf1d2…),
+  원본 public_1mq4.cif와 좌표 동일. structure_residues: polymer 261, nonpolymer 4(ADP, PO4, MG×2), water 72.
+1HSG 전처리: polymer 198, nonpolymer 1(MK1), water 127, cif 121292 bytes(sha256 a228c5eb…), 원본과 좌표 동일.
+pocket_set (kind/schema pocket_set/pocket_set@1):
+  keys = completeness detector_input_handle limitations method model_number native_output_handle null_result pockets
+         preparation_handle raw_file_hashes schema source_handle source_kind total_count units
+  source_handle == 요청한 prepared_structure handle (두 구조 모두 true), source_kind "prepared_structure"
+  (다른 가능 값: chemical_structure, openmm_minimized_structure — pocket_input.py 47–51행; 이 경우 source_handle이
+  다르므로 명세의 structure_mismatch로 걸림).
+  pockets[] keys = descriptors display_center lining_atoms lining_residues native_fields rank spheres; rank = 1..N 연속.
+  lining_residues[] keys = chain_auth chain_label icode model_number resname seq_auth seq_label (7필드, comparison.py
+    146행 _res_ref 그대로). 모든 lining 잔기가 structure_residues의 polymer 잔기와 7필드(타입 포함) 일치: 두 구조 true.
+  lining_residues 순서는 파일 순서가 아님(1HSG rank 1: PRO A81 다음 ARG A8) → 위치 순서는 구현이 파일 순서로 정렬.
+  1MQ4: total_count 15, null_result false, lining 수 [8,9,7,9,7,6,12,5,7,10,8,10,5,6,42].
+  1HSG: total_count 8, selected_chains [A,B], lining 수 [33,7,7,11,4,9,7,7].
+  주의: method.fresh_execution_deterministic false(fpocket 시계 seed) → 새 실행마다 포켓 수·안쪽 잔기가 다를 수 있다.
+    포켓 출처 테스트·QA는 그 실행에서 저장된 pocket_set을 읽어 기대값을 만들고 고정 숫자를 쓰지 않는다.
+  validated_pocket_set(run, handle) 결과 == store 내용(true). producer keys attempt_id created_seq job job_id
+    published_seq. pocket_input 이름 대응 10개(pocket_input.py 31–32행)는 명세 4절 목록과 같다; MSE 같은 변형
+    아미노산이 ATOM이면 포켓 입력 자체가 modified_residue_unsupported로 거절되므로 lining에 비표준 이름은 없다.
+residue_numbering_map (1MQ4, residue_numbering_map@1):
+  keys = alignment_params chains limitations method_version null_result pdb_id reference_rows rows schema snapshot_set
+         structure
+  structure = {handle: <prepared> (true), model_number 1, structure_kind "prepared_structure"}
+  rows[] keys = alignment conflict_reason klifs_index klifs_label klifs_match residue residue_match sifts status
+                uniprot_accession uniprot_position uniprot_residue  → 명세 6절 numbering의 복사 필드 6개 모두 있음.
+  rows 261(= polymer 261, 전부 7필드 타입 일치), status 집합 {mapped, conflict}; conflict 1행 SER A388
+    (one_method_only, uniprot·klifs null). 예: ARG A126 mapped O14965 126 R, klifs null.
+reference_site_annotation (1MQ4, reference_site_annotation@1, contacts 없음):
+  keys = contacts groups limitations method_version null_result numbering_map other_contact_residues schema site_set
+         snapshot_set_hash structure
+  numbering_map == 위 지도 handle (true), structure = 지도의 structure 그대로(handle = prepared).
+  groups[] keys = accession chain_auth klifs_absent_reason klifs_applied sites
+  sites[] keys = absent_reason contact display_label klifs_index klifs_label klifs_match map_row_index residue
+                 residue_match status; status 집합 {annotated}(10개 모두), residue 7필드는 polymer 잔기와 타입까지 일치.
+  1MQ4 주석 부위(M16 preflight와 같음): III.17 LYS162, αC.24 GLU181, GK.45 LEU210, hinge.46 GLU211, hinge.47 TYR212,
+    hinge.48 ALA213, xDFG.80 ALA273, xDFG.81 ASP274, xDFG.82 PHE275, xDFG.83 GLY276 (모두 chain A, chain_label A).
+결론: 명세 2절 structure_mismatch의 세 경로(content["source_handle"], content["structure"]["handle"] ×2),
+  annotation_map_mismatch의 content["numbering_map"], 3절 pockets[].rank·lining_residues 7필드, 4절 status ==
+  "annotated" 부위 residue·klifs_label, 6절 numbering 필드가 실제 객체와 같다. 다른 점은 위 M1(검증 방법)뿐.
+
+==================================================================================================
+(c) 공개 구조 독립 oracle (t1_oracle_public.py; 전처리 좌표 _atom_site + numpy, heavy = type_symbol not H/D,
+    polymer = group_PDB ATOM, 금속 = HETATM이고 이름이 명세 목록)
+==================================================================================================
+1MQ4 (atom_site 2211행, altloc 0, 수소 0)
+ 리간드 ADP {1, A, E, 2001, null, "", ADP}, 중원자 27. 껍질 개수: ≤4.0 Å 17, ≤5.0 Å 20, ≤6.0 Å 25. 4.9–5.1 사이 없음.
+  ≤5.0 Å (chain A, 잔기, 최소 거리 Å):
+   LEU139 3.6335530820396684 | GLY140 3.4748130884984305 | LYS141 3.5587813925556007 | GLY142 3.05630381343217
+   LYS143 2.6283578523481124 | PHE144 4.43855528297215   | VAL147 3.5023984639101227 | ALA160 3.613476304059567
+   LYS162 2.6428630308814687 | GLU181 4.647095114154647  | LEU194 3.424981313817638  | LEU210 3.912459584455801
+   GLU211 2.695699723633924  | TYR212 4.1012362770267154 | ALA213 3.167315109047404  | THR217 3.297842476529162
+   GLU260 2.598733152903544  | ASN261 2.9617780132886407 | LEU263 3.4190263233850664 | ASP274 2.853779599058067
+  (KLIFS 주석 부위 중 껍질 안: LYS162 III.17, GLU181 αC.24, LEU210 GK.45, GLU211, TYR212, ALA213 hinge, ASP274 xDFG.81;
+   껍질 밖: ALA273, PHE275, GLY276.)
+ 리간드 PO4 {1, A, D, 1, null, "", PO4}, 중원자 5. ≤4.0 7, ≤5.0 10, ≤6.0 12.
+  ≤5.0 Å: HIS176 3.300065908432738 | GLN177 4.640395780534246 | ARG180 2.919927567594785 | ARG255 3.0167973084050517
+   TRP277 3.347921444717607 | VAL279 4.570159187599492 | SER283 4.047209038337415 | SER284 3.6276395906980614
+   ARG285 2.731992679345971 | THR288 2.5125429349565356
+ 금속 잔기: MG {1, A, B, 2086, null, "", MG}, MG {1, A, C, 2088, null, "", MG}.
+  폴리머 잔기 중원자–금속 최소 거리 ≤5.0 Å: ASP A274 1.916987219571373 (MG2088) | ASN A261 2.035529660800842 (MG2088)
+   LYS A162 3.898072600657919 (MG2086) | GLU A181 4.345684526055711 (MG2086) | GLU A260 4.581792880521771 (MG2088)
+   GLY A276 4.634232838345524 (MG2086) | ASP A256 4.898605822068154 (MG2088)
+  metal_contact 기본 3.0 Å: ASN A261, ASP A274 (ASP274 = xDFG.81 주석 부위 → klifs_key_site + metal_contact 동시 사유
+   실제 사례). 5.0 Å면 위 7개.
+ 이황화: CYS 3개(A247, A290, A319), SG–SG 최소 19.038640812831144 → ≤2.5 Å 쌍 0.
+1HSG (atom_site 1686행, altloc 0, 수소 0; 같은 서열 두 체인 A·B 실제 사례)
+ 리간드 MK1 {1, B, C, 902, null, "", MK1}, 중원자 45. ≤4.0 26, ≤5.0 33, ≤6.0 40. 4.9–5.1: THR B31 4.9255977302252365,
+  LEU B76 4.95573445616288.
+  ≤5.0 Å: A: ARG8 3.509653829083433 LEU23 3.850918851391182 ASP25 2.7725354821895407 GLY27 3.5758727605998506
+   ALA28 3.814587002546933 ASP29 4.366473863428016 ASP30 4.160849192172191 VAL32 3.7654888128900343
+   ILE47 3.7289841780302586 GLY48 3.1489072707845818 GLY49 3.5479883032501665 ILE50 4.21055032032631
+   PHE53 4.679039217617223 PRO81 3.917820439989561 VAL82 3.634973177342577 ILE84 3.9277345887928807
+  B: ARG8 3.4612600306824675 LEU23 4.414569061641239 ASP25 2.6264474104767457 GLY27 3.0256997537759758
+   ALA28 3.6552217442995167 ASP29 3.060997713164777 ASP30 3.3994808427170167 THR31 4.9255977302252365
+   VAL32 3.324938796429191 ILE47 3.8063119945690205 GLY48 3.535432222515373 GLY49 3.367740637281915
+   ILE50 3.6821072770901178 LEU76 4.95573445616288 PRO81 3.686316047221128 VAL82 3.9052613228822466
+   ILE84 3.711161273779409
+ 금속 없음 → metal_contact 검사 결과 metal_residues 0. 이황화: CYS 4개, SG–SG 최소 9.414463500380679(B67–B95) → 0쌍.
+교차 확인: 같은 값을 gemmi Structure(_parse) 경로로 다시 재어 집합 동일, 최대 |Δ| 8.9e-16 (위 (a)).
+
+==================================================================================================
+(d) 위치 400 · 후보 7,600 결과 크기 (t1_size.py; 크기 측정용 자리값, 결과 아님)
+==================================================================================================
+모양: 명세 6절 키 전부. 최악에 가깝게 위치마다 출처 3개·numbering 행·metal 기록, parameters에 잔기 참조 400×3,
+released_residues 400, chain "AA", 한계 문장 5×120자.
+  content canonical JSON 944516 bytes (0.901 MiB): positions 323091, candidates 422401, parameters 140000
+  object_created 이벤트 한 줄(payload_b64 포함) 1259768 bytes (1.201 MiB)
+  ObjectStore.put 0.017 s, events.read() 0.002 s, store.load 0.011 s, 왕복 동일 true
+  호출 인자(잔기 참조 5필드 × 400 × 3 목록) canonical 96042 bytes — /commands 본문 상한 없음(app.py 1142행 Command).
+코드의 상한: ObjectStore.put·EventLog에 크기 상한 없음(backend/mw/core/handles.py 106–149행). GET /runs/{id}/events는
+  payload_b64를 빼고 돌려준다(app.py 1341–1344행). 비교: M19 요약 1 MiB, M18 결과 4 MiB 상한. 결론: 한도 문제 없음.
+  참고: 읽기 라우트가 매번 events.read()로 전체 로그를 파싱하므로 이런 결과가 여러 개면 run 로그가 MB 단위로 커진다
+  (기존 M18·M19와 같은 성질).
+
+==================================================================================================
+(e) 도구 개수·집합·탭 안내를 하드코딩한 기존 검사 (grep으로 전수 확인)
+==================================================================================================
+새 도구로 깨지는 것(최소 수정 대상):
+  1. backend/tests/test_api.py 279–282행: GET /tools (L1–L5) 이름 집합 == {load_structure … map_residue_numbering,
+     annotate_reference_sites} (정확히 같음).
+  2. backend/tests/test_residue_numbering.py 749행: set(build_registry().prechecks) == {map_residue_numbering,
+     annotate_reference_sites}.
+  3. backend/tests/test_reference_site_annotation.py 693행: set(build_registry().prechecks) == {map_residue_numbering,
+     annotate_reference_sites}.
+단백질 공학 탭 안내가 바뀌어 깨지는 것:
+  4. frontend/tests/workspace-tabs.test.cjs 39–51행(UNAVAILABLE_NOTICES 키 == ["protein"]), 53–56행(protein 단계
+     [[M20, 변이 후보 생성], [M21, 변이 구조 모델링]]), 58–63행(안내 문구 숫자 없음 — 안내가 없어지면 빈 반복).
+  5. frontend/tests/offscreen/tabs-flow.cjs 23–26행(UNAVAILABLE.protein), 244–262행 unavailableNotice(protein),
+     815–840행 S02-protein 분기(안내 확인 + 837행 "보이는 동안 새 요청 없음" 단언 — 새 패널은 목록 GET을 한다;
+     리간드 탭 선례처럼 GET만 허용으로 바꿔야 함). 1034–1071행(J02)·1229–1245행(H08)은 단백질 공학 탭을 "다른 탭"으로만
+     쓰므로 안내 단언은 없음(패널 요청이 늘어도 단언 없음).
+  6. scripts/m14_offscreen_acceptance.py 12행(설명 문장), 67·78행(T-unavailable 사례 설명 "unavailable tab (단백질 공학)").
+     scripts/test_m14_offscreen_acceptance.py에는 T-unavailable 문구 단언 없음.
+멤버십만 보는 것(영향 없음): test_reference_site_annotation.py 736행(TOOL in /tools), test_pocket_jobs.py 71행,
+  test_ligand_jobs.py 114행, test_docking_jobs.py 198행, test_docking_batch_jobs.py 210행,
+  test_docking_batch_budget.py 129행, test_jobs.py 189행, test_openmm.py 431행.
+제품 쪽 목록(설계상 바꿀 곳, 테스트 아님): backend/mw/api/app.py 108–110행 SUPPORTED_TOOLS, 627행 근처 /capabilities
+  methods, frontend/src/lib/api.ts 239행 command 도구 유니언·71행 capability 메서드 유니언, frontend/src/lib/
+  workspace-tabs.ts 30–39행 UNAVAILABLE_NOTICES, frontend/src/components/WorkspaceTabs.tsx 55–56행 안내 마운트,
+  docs/standards.md 66행 도구 목록 문장(T12). 기존 define_mutations(config/tools.yaml 243–249행,
+  backend/mw/tools/energetic.py 78행, test_core.py 219·222행, test_jobs.py 952행)는 건드리지 않음.
+M13 분석 흐름·뷰어 의도에 도구 이름 목록 없음(grep backend/mw: 위 app.py 두 곳과 각 도구·보고서 모듈의 TOOL 상수뿐).
+
+==================================================================================================
+합성 fixture (backend/tests/fixtures/mutation/, 자세한 내용 SYNTHETIC-PROVENANCE.md)
+==================================================================================================
+  synthetic-mutation-fixture.cif         fc4e6d899a498419d51beaa8172da0cc8117021cfe2097c668d6bac85aeb3a20
+  synthetic-mutation-fixture-nolabel.pdb c8c57b276aab9fa78fd3939b723676088effee0947252a4cab5d93f4d7154d6b
+  expected.json                          2fc9c97a8ea43e189914e6f67bbb9dbbf49f0b5017d0703d0611c632f101e0d9
+  python3 backend/tests/fixtures/mutation/build_mutation_fixtures.py --check → OK ×3, exit 0
+  .venv/bin/python -m ruff check backend/tests/fixtures/mutation/ → All checks passed
+담은 경우: 금속 2.9(안)·정확히 3.0(안)·3.1(밖)·altloc으로 3.5/2.5·NA 4.0·다른 체인 2.2·CD 2.0(금속 아님)·물 2.5;
+  이황화 2.05(체인 안, CYX)·정확히 2.5(체인 사이)·2.6(밖)·2.4 동점(파일 순서), 짝 없는 CYX; 리간드 껍질 정확히 5.0(안)·
+  5.001(밖)·H 원자 무시 두 경우; 변형 이름 10개 전부(HID CYX는 A·B, 나머지 8개는 CC), MSE ATOM·HETATM, SEP; 삽입
+  코드 10A; null seq_label(mmCIF ALA CC11, PDB 전체); 여러 글자 체인 CC; 같은 서열 두 체인 A·B; 같은 이름 리간드
+  두 인스턴스(LIG A101·B101) + 리간드 후보 4개(선택자 필수). 기대값은 구현과 독립(빌더가 쓴 바이트를 다시 파싱,
+  math.dist 전수), gemmi 경로와 교차 확인((a)).

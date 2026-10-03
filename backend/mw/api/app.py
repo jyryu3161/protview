@@ -27,6 +27,7 @@ from .. import (
     docking_reads,
     ligand_bundle,
     ligand_reads,
+    mutation_reads,
     numbering_reads,
 )
 from .. import site_annotation as site_annotations
@@ -48,6 +49,7 @@ from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_reports import build_ligand_report, saved_ligand_report
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
+from ..mutation_reports import build_mutation_report, saved_mutation_report
 from ..numbering_reports import build_numbering_report, saved_numbering_report
 from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
 from ..pocket_bundle import PocketEvidenceError
@@ -107,7 +109,7 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
                    "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
-                   "annotate_reference_sites"}
+                   "annotate_reference_sites", "generate_mutation_candidates"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -625,6 +627,8 @@ def capabilities() -> dict[str, Any]:
     methods["residue_numbering"] = numbering_reads.capability()
     # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
+    # M20: reads only the run's own stored objects (no engine, reference folder or network): always available.
+    methods["mutation_candidates"] = {"available": True, "reason_code": None, "reason": None}
     # M17: pinned environment + RDKit version + PAINS A/B/C, checked by the worker handshake (no RDKit here).
     methods["ligand_candidates"] = ligand_bundle.capability()
     # M18: both locked environments, qvina2 hash = install record = pin, worker handshake versions (no RDKit/Meeko
@@ -1242,6 +1246,9 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # Reads the stored batch summary and its per-row results only; nothing is docked again and no per-row
             # docking report is made.
             return build_docking_batch_report(run, body.result_handle)
+        if kind == "mutation_candidate_set":
+            # Reads the stored candidate set only (re-validated); no candidate is generated again.
+            return build_mutation_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1268,7 +1275,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
-                                        "ligand_docking_batch"}
+                                        "ligand_docking_batch", "mutation_candidates"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1284,7 +1291,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
         report = (run.store.load_bounded_json(handle, 8 * 1024 * 1024)
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
                                                               "reference_site_annotation", "ligand_candidates",
-                                                              "ligand_docking", "ligand_docking_batch"}
+                                                              "ligand_docking", "ligand_docking_batch",
+                                                              "mutation_candidates"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1307,6 +1315,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_docking_report(run, handle)
         if report.get("analysis_type") == "ligand_docking_batch":
             return saved_docking_batch_report(run, handle)
+        if report.get("analysis_type") == "mutation_candidates":
+            return saved_mutation_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -1784,6 +1794,83 @@ def docking_poses_sdf(rid: str, request: Request, handle: str) -> Response:
         raise _docking_evidence_error(exc) from exc
     except docking_reads.ModeUnknown as exc:
         raise _docking_mode_unknown(exc) from exc
+
+
+# ----------------------------------------------------------------- M20 mutation candidate reads (no event, job or tool)
+def _mutation_set(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (mutation_reads.KIND, mutation_reads.SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a mutation_candidate_set"})
+    return meta
+
+
+def _mutation_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid mutation candidate set"})
+
+
+@app.get("/runs/{rid}/mutation_candidate_sets")
+def mutation_candidate_sets(rid: str, request: Request, offset: int = Query(0, ge=0),
+                            limit: int = Query(mutation_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                               le=mutation_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's mutation candidate sets, newest first; each row re-validated."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return mutation_reads.list_sets(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid mutation object record"}) from exc
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: the sub-resource routes are registered before the detail.
+@app.get("/runs/{rid}/mutation_candidate_sets/{handle:path}/positions")
+def mutation_candidate_positions(rid: str, handle: str, request: Request, status: str | None = None,
+                                 source: str | None = None, exclusion_reason: str | None = None,
+                                 chain_auth: str | None = None, sort: str = "order", offset: int = Query(0, ge=0),
+                                 limit: int = Query(mutation_reads.POSITION_LIMIT_DEFAULT, ge=1,
+                                                    le=mutation_reads.POSITION_LIMIT_MAX)) -> dict[str, Any]:
+    """Stored position rows, filtered and sorted on stored values (ligand_distance: ascending, nulls last)."""
+    _only_query(request, {"status", "source", "exclusion_reason", "chain_auth", "sort", "offset", "limit"})
+    run = _run(rid)
+    _mutation_set(run, handle)
+    try:
+        return mutation_reads.position_page(run, handle, status=status, source=source,
+                                            exclusion_reason=exclusion_reason, chain_auth=chain_auth, sort=sort,
+                                            offset=offset, limit=limit)
+    except mutation_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except mutation_reads.MutationEvidenceError as exc:
+        raise _mutation_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/mutation_candidate_sets/{handle:path}/candidates")
+def mutation_candidate_rows(rid: str, handle: str, request: Request,
+                            position_index: int | None = Query(None, ge=0), to: str | None = None,
+                            offset: int = Query(0, ge=0),
+                            limit: int = Query(mutation_reads.CANDIDATE_LIMIT_DEFAULT, ge=1,
+                                               le=mutation_reads.CANDIDATE_LIMIT_MAX)) -> dict[str, Any]:
+    """Stored candidate rows (residue copied from the position row), filtered on stored values."""
+    _only_query(request, {"position_index", "to", "offset", "limit"})
+    run = _run(rid)
+    _mutation_set(run, handle)
+    try:
+        return mutation_reads.candidate_page(run, handle, position_index=position_index, to=to, offset=offset,
+                                             limit=limit)
+    except mutation_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except mutation_reads.MutationEvidenceError as exc:
+        raise _mutation_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/mutation_candidate_sets/{handle:path}")
+def mutation_candidate_set_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One validated set without positions/candidates, with their totals."""
+    _only_query(request, set())
+    run = _run(rid)
+    meta = _mutation_set(run, handle)
+    try:
+        return {**mutation_reads.set_detail(run, handle), "meta": meta}
+    except mutation_reads.MutationEvidenceError as exc:
+        raise _mutation_evidence_error(exc) from exc
 
 
 # ----------------------------------------------------------------- M19 batch limit raise (human UI action only)

@@ -21,6 +21,7 @@ import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/An
 import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
 import { LigandPanel } from "@/components/LigandPanel";
+import { MutationPanel } from "@/components/MutationPanel";
 import { DockingPanel } from "@/components/DockingPanel";
 import { DockingBatchPanel } from "@/components/DockingBatchPanel";
 import { SiteAnnotationPanel } from "@/components/SiteAnnotationPanel";
@@ -2038,6 +2039,11 @@ export default function WorkspacePage() {
     reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} reloadToken={reportsReloadToken} />}
     numbering={<NumberingPanel key={run?.run_id ?? "none"} runId={run?.run_id ?? null}
       onReportCreated={() => setReportsReloadToken(token => token + 1)} />}
+    protein={<MutationPanel key={`mutation-${run?.run_id ?? "none"}`} run={run}
+      capability={capabilities ? capabilities.methods?.mutation_candidates ?? null : undefined}
+      onObjectsChanged={refreshEventsFromAnalysis}
+      onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+        setReportsReloadToken(token => token + 1); }} />}
     ligand={<>
       <LigandPanel key={run?.run_id ?? "none"} run={run}
         capability={capabilities ? capabilities.methods?.ligand_candidates ?? null : undefined}
