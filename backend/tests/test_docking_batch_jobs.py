@@ -352,7 +352,8 @@ def test_free_batch_product_path_reuse_n0_duplicates_identity_and_events_only(ba
     assert done["status"] == "done", done
     summary = done["artifacts"]["docking_batch_result"]
     assert done["output_handles"] == [summary]   # the summary only; rows are reached through it
-    assert done["batch"] == {"rows": 3, "reused_rows": [], "finished_rows": 3, "summary_handle": summary}
+    assert done["batch"] == {"rows": 3, "reused_rows": [], "finished_rows": 3, "summary_handle": summary,
+                             "summary_status": "complete", "summary_stop_reason": None}
     run = api_module._run(RID)
     record = JobQueue(run).get(job["job_id"])
     assert [row["selected"]["schema"] for row in record["selected"]["rows"]] == ["docking_selection@1"] * 3
@@ -489,6 +490,9 @@ def test_job_deadline_is_time_exhausted_with_a_partial_summary(base, tmp_path):
     assert content["status"] == "partial" and content["stop_reason"] == "time_exhausted"
     assert _states(content) == [["cancelled", "time_exhausted"], ["not_run", "time_exhausted"]]
     assert _reserved(run, failed["job_id"]) == [2]
+    # The job record stays failed; its read view carries the validated summary outcome for the screen.
+    progress = BJ.progress(run, JobQueue(run).get(failed["job_id"]))
+    assert (progress["summary_status"], progress["summary_stop_reason"]) == ("partial", "time_exhausted")
     _no_strays(run)
 
 
@@ -549,6 +553,8 @@ def test_a_summary_build_failure_fails_the_job_and_keeps_the_verified_rows(base,
                                  "diagnostic": "DockingBatchEvidenceError"}
     assert not _of(run, failed["job_id"], "docking_batch_published")
     assert JobQueue(run).get(failed["job_id"]).get("batch_summary_handle") is None
+    progress = BJ.progress(run, JobQueue(run).get(failed["job_id"]))
+    assert (progress["summary_handle"], progress["summary_status"], progress["summary_stop_reason"]) == (None,) * 3
     rows = _of(run, failed["job_id"], "docking_batch_row_published")
     assert [row["row_index"] for row in rows] == [0, 1]
     for row in rows:

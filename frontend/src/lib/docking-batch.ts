@@ -86,9 +86,12 @@ export function batchStatusText(summary: { status: DockingBatchStatus; stop_reas
   return `부분 완료 (partial) · 멈춘 이유: ${summary.stop_reason ? batchReasonText(summary.stop_reason) : "기록 없음"}`;
 }
 
-/** B2 above the table of a partial batch; null otherwise. */
-export function partialStatement(summary: { status: DockingBatchStatus }): string | null {
-  return summary.status === "partial" ? BATCH_STATEMENTS.B2 : null;
+/** B2 above the table of a partial batch (the server's text when a detail is loaded, else the local copy); null
+ * otherwise. */
+export function partialStatement(summary: { status: DockingBatchStatus },
+  statements?: { batch: { id: string; text: string }[] } | null): string | null {
+  if (summary.status !== "partial") return null;
+  return statements?.batch.find(item => item.id === "B2")?.text ?? BATCH_STATEMENTS.B2;
 }
 
 // ---- table rows (display only; stored values) ----
@@ -318,7 +321,12 @@ export function batchStartBlockedReason(input: { capability: { available: boolea
   return null;
 }
 
-export function batchJobText(job: { status: string; cancel_requested: boolean; failure: Parameters<typeof dockingFailureText>[0] } | null,
+/**
+ * A failed or interrupted job that still published a summary (e.g. stopped at the job deadline) shows the job record
+ * status with the summary's own outcome (server values), never a bare failure message.
+ */
+export function batchJobText(job: { status: string; cancel_requested: boolean; failure: Parameters<typeof dockingFailureText>[0];
+  batch?: Pick<DockingBatchProgress, "summary_handle" | "summary_status" | "summary_stop_reason"> | null } | null,
   approvalPending: boolean): string {
   switch (dockingJobPhase(job, approvalPending)) {
     case "none": return "일괄 작업 없음";
@@ -328,6 +336,9 @@ export function batchJobText(job: { status: string; cancel_requested: boolean; f
     case "done": return "일괄 작업 끝남";
     case "cancelled": return "일괄 작업 취소됨 (끝낸 행은 보관, 요약이 있으면 아래 목록에 나옴)";
     default:
+      if (job && ["failed", "interrupted"].includes(job.status) && job.batch?.summary_handle && job.batch.summary_status)
+        return `일괄 작업 끝남 · 작업 기록 ${job.status} · 일괄 요약 ${batchStatusText({ status: job.batch.summary_status,
+          stop_reason: job.batch.summary_stop_reason })}`;
       return job && ["failed", "interrupted"].includes(job.status) ? `일괄 작업 실패: ${dockingFailureText(job.failure)}`
         : `일괄 작업 실패: 알 수 없는 작업 상태 (${job?.status})`;
   }

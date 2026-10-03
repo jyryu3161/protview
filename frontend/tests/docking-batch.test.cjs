@@ -171,7 +171,39 @@ test("batch status and stop reason wording; B2 only when partial", () => {
     assert.ok(text.startsWith("부분 완료 (partial)") && text.includes(lib.batchReasonText(reason)), reason);
   }
   assert.equal(lib.partialStatement({ status: "complete" }), null);
-  assert.equal(lib.partialStatement({ status: "partial" }), lib.BATCH_STATEMENTS.B2);
+  assert.equal(lib.partialStatement({ status: "partial" }), lib.BATCH_STATEMENTS.B2);   // local fallback
+  // A loaded detail's statements win (the server text, shown as given); complete stays null whatever they say.
+  const served = { batch: [{ id: "B1", text: "server B1" }, { id: "B2", text: "server B2" }] };
+  assert.equal(lib.partialStatement({ status: "partial" }, served), "server B2");
+  assert.equal(lib.partialStatement({ status: "complete" }, served), null);
+  assert.equal(lib.partialStatement({ status: "partial" }, { batch: [{ id: "B1", text: "server B1" }] }),
+    lib.BATCH_STATEMENTS.B2);
+  assert.equal(lib.partialStatement({ status: "partial" }, null), lib.BATCH_STATEMENTS.B2);
+});
+
+test("a job stopped at its deadline shows the stored summary outcome, not a bare failure", () => {
+  const timeout = { error: "resource_exceeded", message: "job timeout" };
+  const batch = { summary_handle: "obj://r/docking_batch_result/h", summary_status: "partial",
+    summary_stop_reason: "time_exhausted" };
+  const text = lib.batchJobText({ status: "failed", cancel_requested: false, failure: timeout, batch }, false);
+  assert.ok(!text.startsWith("일괄 작업 실패"), text);
+  assert.ok(!text.includes("job timeout"), text);
+  assert.ok(text.includes("작업 기록 failed"), text);   // the job record is not hidden
+  assert.ok(text.includes(lib.batchStatusText({ status: "partial", stop_reason: "time_exhausted" })), text);
+  assert.ok(text.includes("일괄 전체 시간 상한(7200초) 소진 (time_exhausted)"), text);
+  assert.deepEqual(plain(lib.batchForbiddenWords(text)), [], text);
+  const interrupted = lib.batchJobText({ status: "interrupted", cancel_requested: false, failure: timeout,
+    batch: { ...batch, summary_stop_reason: "worker_failed" } }, false);
+  assert.ok(interrupted.includes("작업 기록 interrupted") && interrupted.includes("(worker_failed)"), interrupted);
+  // No summary, or a summary that does not validate (null status): the failure text as before.
+  for (const without of [undefined, null, { summary_handle: null, summary_status: null, summary_stop_reason: null },
+    { ...batch, summary_status: null, summary_stop_reason: null }])
+    assert.ok(lib.batchJobText({ status: "failed", cancel_requested: false, failure: timeout, batch: without }, false)
+      .startsWith("일괄 작업 실패: "));
+  // Other phases are unchanged by a summary.
+  assert.equal(lib.batchJobText({ status: "done", cancel_requested: false, failure: null, batch }, false), "일괄 작업 끝남");
+  assert.ok(lib.batchJobText({ status: "cancelled", cancel_requested: false, failure: null, batch }, false)
+    .startsWith("일괄 작업 취소됨"));
 });
 
 // ---- inputs ----
@@ -333,7 +365,8 @@ test("start is blocked until a current admitted preflight without shortfall exis
 // ---- jobs ----
 
 test("job wording, progress from stored job state, approval gate and active-job re-attach", () => {
-  assert.equal(lib.batchProgressText({ rows: 5, reused_rows: [1], finished_rows: 2, summary_handle: null }),
+  assert.equal(lib.batchProgressText({ rows: 5, reused_rows: [1], finished_rows: 2, summary_handle: null,
+    summary_status: null, summary_stop_reason: null }),
     "새로 계산하는 행 4개 중 상태가 기록된 행 2개 · 저장된 결과 재사용 1행");
   assert.equal(lib.batchApprovalRequired(409, { gate: "expensive_first_call", tool: "qvina_dock_batch" }), true);
   assert.equal(lib.batchApprovalRequired(409, { gate: "expensive_first_call", tool: "qvina_dock_ligand" }), false);

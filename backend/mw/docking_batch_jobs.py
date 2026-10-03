@@ -341,7 +341,10 @@ def _interpret(status: dict[str, Any] | None, server_cause: str | None) -> dict[
 
 def progress(run: Any, job: dict[str, Any]) -> dict[str, Any]:
     """Polling view (spec 7.2, 9): rows, reused rows, finished rows (= readable ``rows/*.status.json`` of the attempt)
-    and the summary handle once published. Reads the attempt directory listing only; no object is loaded."""
+    and the summary handle once published, with that summary's ``status``/``stop_reason`` read through
+    ``validated_summary`` (null when it does not validate). The job record itself is unchanged: a batch stopped at
+    the job deadline stays ``failed`` while its summary says ``partial``/``time_exhausted``. Before a summary
+    exists only the attempt directory listing is read."""
     intent = job.get("dispatch_intent") or {}
     finished = 0
     attempt = job.get("attempt_id")
@@ -352,9 +355,18 @@ def progress(run: Any, job: dict[str, Any]) -> dict[str, Any]:
                                                   entry.is_file(follow_symlinks=False) for entry in os.scandir(rows))
         except OSError:
             finished = 0
+    handle = job.get("batch_summary_handle")
+    status = stop_reason = None
+    if handle is not None:
+        try:
+            content = validated_summary(run, handle)
+            status, stop_reason = content["status"], content["stop_reason"]
+        except DockingBatchEvidenceError:
+            pass
     return {"rows": len(job["selected"]["rows"]),
             "reused_rows": sorted(item["row_index"] for item in intent.get("batch_reused", [])),
-            "finished_rows": finished, "summary_handle": job.get("batch_summary_handle")}
+            "finished_rows": finished, "summary_handle": handle, "summary_status": status,
+            "summary_stop_reason": stop_reason}
 
 
 # ----------------------------------------------------------------- publication (after the group is verified empty)

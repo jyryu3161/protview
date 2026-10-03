@@ -522,9 +522,11 @@ export interface DockingBatchListRow { handle: string; published_seq: number; va
 export interface DockingBatchList { schema: "docking_batch_list@1"; total: number; offset: number; limit: number;
   rows: DockingBatchListRow[] }
 
-/** Job progress (`batch` of the job record): finished = rows with a status file; reused rows are not run. */
+/** Job progress (`batch` of the job record): finished = rows with a status file; reused rows are not run. Once a
+ * summary is published, its validated `status`/`stop_reason` (null when it does not validate). */
 export interface DockingBatchProgress { rows: number; reused_rows: number[]; finished_rows: number;
-  summary_handle: string | null }
+  summary_handle: string | null; summary_status: DockingBatchStatus | null;
+  summary_stop_reason: DockingBatchStopReason | null }
 export interface DockingBatchJob extends Omit<DockingJob, "protocol_id" | "artifacts"> {
   protocol_id: "qvina_batch_dock_v1"; artifacts: { docking_batch_result?: string }; batch: DockingBatchProgress }
 export interface DockingBatchPlanOnly { plan_only: true; protocol_id: "qvina_batch_dock_v1"; reason_code: "dry_run";
