@@ -486,6 +486,11 @@ export function mutationResponseCurrent(captured: MutationStamp, live: MutationS
     captured.seq === live.seq;
 }
 
+/** A created report was saved: announce it while the run is unchanged, even when the late inline display is dropped. */
+export function mutationReportSavedForRun(captured: MutationStamp, liveRunId: string | null): boolean {
+  return captured.runId !== null && captured.runId === liveRunId;
+}
+
 // ---- display (values as stored; null is "—" with a reason, never 0) ----
 
 export function nullableText(value: string | number | null | undefined): string {

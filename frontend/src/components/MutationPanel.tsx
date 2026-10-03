@@ -12,7 +12,7 @@ import { annotationMapConflict, annotationsForStructure, candidateQuery, candida
   EXCLUSION_REASONS, exactResidue, exclusionReasonsText, initialMutationDraft, klifsNotice, klifsSitesText,
   LIGAND_SHELL_RADIUS_RANGE_A, ligandDistanceText, ligandOptions, LIST_LIMIT_MAX, LIST_ORDER_NOTE, mapsForStructure,
   METAL_CONTACT_RANGE_A, metalText, MODELING_NOTE, mutationErrorText, mutationPanelState, mutationReasonText,
-  mutationReportMatches, mutationRequestArgs, mutationResponseCurrent, nextOffset, NULL_TEXT, numberingText,
+  mutationReportMatches, mutationReportSavedForRun, mutationRequestArgs, mutationResponseCurrent, nextOffset, NULL_TEXT, numberingText,
   ONE_LETTER_ORDER, ONE_LETTER_RESNAME, PANEL_TITLE, pageRangeText, pocketSetsForStructure, POSITION_SORT_LABEL,
   POSITION_SORTS, POSITION_STATUS_LABEL, POSITION_STATUSES, positionQuery, preparedStructures, previousOffset, protectionCheckRows,
   protectionText, proteinResidueOptions, releaseEffectText, residueKey, residueLabelText, residueText, setRowText,
@@ -135,8 +135,8 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated 
   // Late responses: keyed by run (page key), opened result handle and the area's request number.
   const mounted = useRef(true);
   const seqs = useRef<Record<Area, number>>(Object.fromEntries(AREAS.map(area => [area, 0])) as Record<Area, number>);
-  const live = useRef({ set: selectedSet });
-  live.current = { set: selectedSet };
+  const live = useRef({ set: selectedSet, run: runId });
+  live.current = { set: selectedSet, run: runId };
   useEffect(() => {
     mounted.current = true;
     const counters = seqs.current;
@@ -228,7 +228,7 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated 
 
   // ---- opened result: detail, position pages, excluded list, candidate pages ----
   function openSet(handle: string) {
-    setSelectedSet(handle); live.current = { set: handle };
+    setSelectedSet(handle); live.current = { set: handle, run: runId };
     setPosFilters(EMPTY_POSITION_FILTERS); setPosSort("order"); setPosOffset(0); setExcludedOffset(0);
     setCandFilters(EMPTY_CANDIDATE_FILTERS); setCandOffset(0);
     setPositions(null); setExcluded(null); setCandidates(null); setReport(null);
@@ -314,10 +314,10 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated 
     setReport({ handle, load: { status: "loading" } });
     try {
       const artifact = await api.createMutationReport(runId, handle, AbortSignal.timeout(60000));
+      if (mutationReportSavedForRun(captured, live.current.run)) onReportCreated(runId);
       if (!current("report", captured)) return;
       if (!mutationReportMatches(artifact, handle)) throw new Error("보고서가 고른 변이 후보 결과와 다릅니다.");
       setReport({ handle, load: { status: "ready", value: artifact } });
-      onReportCreated(runId);
     } catch (e) { if (current("report", captured)) setReport({ handle, load: { status: "error", message: `보고서 만들기 실패: ${errorText(e)}` } }); }
   }
 

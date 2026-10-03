@@ -18,12 +18,10 @@ ARG_KEYS = ("structure", "sources", "ligand", "allowed_residues", "protected_res
 SOURCES_KEYS = ("pocket", "ligand_shell", "residues")
 POCKET_KEYS = ("pocket_set", "ranks")
 LIGAND_SHELL_KEYS = ("radius_A",)
-RESIDUE_LIST_KEYS = ("protected_residues", "released_residues")
 
 # 2 residue reference / ligand selector: five required fields + two optional label fields (null is a value).
 IDENTITY_FIELDS = ("model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname")
 REFERENCE_REQUIRED = ("model_number", "chain_auth", "seq_auth", "icode", "resname")
-REFERENCE_OPTIONAL = ("chain_label", "seq_label")
 
 # 2 admission reason codes, in check order (the handle kind/run checks of pocket_set, numbering_map and annotation
 # all run before ``structure_mismatch``; see spec 2).

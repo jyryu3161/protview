@@ -309,6 +309,15 @@ test("late responses: applied only for the same run, result handle and request n
   assert.equal(lib.mutationResponseCurrent({ runId: "r1", handle: null, seq: 1 }, { runId: "r1", handle: null, seq: 1 }), true);
 });
 
+test("a saved report is announced for the same run even when the late inline display is dropped", () => {
+  const captured = { runId: "r1", handle: "H", seq: 4 };
+  // another set opened meanwhile: display dropped, report still announced
+  assert.equal(lib.mutationResponseCurrent(captured, { runId: "r1", handle: "H2", seq: 5 }), false);
+  assert.equal(lib.mutationReportSavedForRun(captured, "r1"), true);
+  assert.equal(lib.mutationReportSavedForRun(captured, "r2"), false);
+  assert.equal(lib.mutationReportSavedForRun({ ...captured, runId: null }, null), false);
+});
+
 test("display: null is \"—\" with a reason (never 0); distances are stored values with two decimals half-up", () => {
   assert.equal(lib.nullableText(null), "—");
   assert.equal(lib.nullableText(undefined), "—");

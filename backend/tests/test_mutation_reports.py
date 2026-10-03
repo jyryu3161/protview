@@ -401,3 +401,39 @@ def test_report_module_reads_only_stored_evidence():
     for forbidden in ("subprocess", "requests", "httpx", "urllib", "socket", "gemmi", "numpy", "build_candidate_set",
                       "position_sources", "normalize_request", "structure_residues", "_parse("):
         assert forbidden not in source
+
+
+def test_identifiers_containing_forbidden_words_do_not_fail_a_report(tmp_path):
+    """SYNTHETIC: chain "BEST" and ligand CCD-like code "SAFE" (identifiers, not claims) give a valid report; the
+    forbidden-word check covers the fixed template text only."""
+    import gemmi
+
+    lines, serial = [], 1
+    for seq in range(1, 4):
+        for name, dx, dy, element in (("N", -1.2, 0.0, "N"), ("CA", 0.0, 0.0, "C"), ("C", 1.2, 0.0, "C"),
+                                      ("O", 1.2, 1.2, "O"), ("CB", 0.0, -1.5, "C")):
+            lines.append(f"ATOM  {serial:5d} {name:<4} ALA A{seq:4d}    {seq * 10.0 + dx:8.3f}{dy:8.3f}{0.0:8.3f}"
+                         f"  1.00 20.00          {element:>2}")
+            serial += 1
+    lines.append(f"HETATM{serial:5d} C1   LIG A 501    {30.0:8.3f}{3.0:8.3f}{0.0:8.3f}  1.00 20.00           C")
+    st = gemmi.read_pdb_string("\n".join(lines) + "\nEND\n")
+    st.setup_entities()
+    for chain in st[0]:
+        chain.name = "BEST"
+        for residue in chain:
+            if residue.name == "LIG":
+                residue.name = "SAFE"
+    path = tmp_path / "synthetic_best_chain.cif"
+    path.write_text(st.make_mmcif_document().as_string())
+    run = new_run(tmp_path / "runs", run_id="run_mutreports_ident", dry_run=False)
+    prepared = _prepared(run, path)
+    ligand = {"model_number": 1, "chain_auth": "BEST", "seq_auth": 501, "icode": "", "resname": "SAFE"}
+    made = run.call(K.TOOL, _args(prepared, ligand_shell={"radius_A": 5.0}, ligand=ligand,
+                                  residues=[res("BEST", 1, "ALA")])).handle
+    with pytest.raises(EvidenceError, match="interpretive_statement"):
+        mr.check_no_interpretation("- 리간드: BEST/SAFE")   # the same words as template text are still refused
+    created = mr.build_mutation_report(run, made)
+    assert "BEST" in created["markdown"] and "SAFE" in created["markdown"]
+    with pytest.raises(EvidenceError, match="interpretive_statement"):
+        mr.check_no_interpretation(created["markdown"])   # a whole-line check would have refused this report
+    assert mr.saved_mutation_report(run, created["handle"])["markdown"] == created["markdown"]

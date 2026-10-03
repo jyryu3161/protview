@@ -12,6 +12,7 @@ from ``.deps/fpocket``; these tests FAIL, never skip, when it is missing. Fault 
 from __future__ import annotations
 
 import copy
+import math
 import shutil
 import subprocess
 import sys
@@ -602,3 +603,96 @@ def test_pocket_source_reads_only_published_pocket_sets_of_the_same_structure(cl
         assert rejected.status_code == 422 and rejected.json()["detail"]["reason_code"] == code
     assert len(client.calls) == 1
     assert [k for k in _kinds(rid) if k == K.KIND] == [K.KIND]
+
+
+# --- hydrogen-only residues (no heavy atom) ----------------------------------------------------------------------------
+
+def _hydrogen_only_pdb(ligand_hydrogen_only: bool) -> bytes:
+    """SYNTHETIC: ALA 1-3 on a line (10 A apart), GLY 4 with only an H atom, and LIG 501 (one carbon 3 A from ALA 3,
+    or only H atoms when ``ligand_hydrogen_only``)."""
+    lines, serial = [], 1
+    for seq in range(1, 4):
+        x = seq * 10.0
+        for name, dx, dy, element in (("N", -1.2, 0.0, "N"), ("CA", 0.0, 0.0, "C"), ("C", 1.2, 0.0, "C"),
+                                      ("O", 1.2, 1.2, "O"), ("CB", 0.0, -1.5, "C")):
+            lines.append(f"ATOM  {serial:5d} {name:<4} ALA A{seq:4d}    {x + dx:8.3f}{dy:8.3f}{0.0:8.3f}"
+                         f"  1.00 20.00          {element:>2}")
+            serial += 1
+    lines.append(f"ATOM  {serial:5d}  H   GLY A   4    {40.0:8.3f}{0.0:8.3f}{0.0:8.3f}  1.00 20.00           H")
+    serial += 1
+    ligand = (("H1", 30.0, 3.0, "H"), ("H2", 30.0, 4.0, "H")) if ligand_hydrogen_only else (("C1", 30.0, 3.0, "C"),)
+    for name, x, y, element in ligand:
+        lines.append(f"HETATM{serial:5d} {name:<4} LIG A 501    {x:8.3f}{y:8.3f}{0.0:8.3f}  1.00 20.00          "
+                     f"{element:>2}")
+        serial += 1
+    return ("\n".join(lines) + "\nEND\n").encode()
+
+
+LIG501 = {"model_number": 1, "chain_auth": "A", "seq_auth": 501, "icode": "", "resname": "LIG"}
+
+
+def _prepared_keeping_hydrogens(client, rid, raw: bytes) -> str:
+    upload = client.post(f"/runs/{rid}/uploads", params={"filename": "synthetic_h_only.pdb"}, content=raw,
+                         headers={"content-type": "application/octet-stream"})
+    assert upload.status_code == 201, upload.text
+    structure = _command(client, rid, "load_structure", {"source": upload.json()["upload_id"]})
+    assert structure.status_code == 200, structure.text
+    prepared = _command(client, rid, "prepare_structure", {"structure": structure.json()["handle"]["handle"],
+                                                           "hydrogens": "keep"})
+    assert prepared.status_code == 200, prepared.text
+    return prepared.json()["handle"]["handle"]
+
+
+def test_hydrogen_only_position_with_a_ligand_is_stored_with_a_null_distance(client):
+    rid = _http_run(client)
+    prepared = _prepared_keeping_hydrogens(client, rid, _hydrogen_only_pdb(False))
+    made = _command(client, rid, TOOL, _args(prepared, residues=[res(3, "ALA"), res(4, "GLY")], ligand=LIG501))
+    assert made.status_code == 200, made.text
+    handle = made.json()["handle"]["handle"]
+    stored = api_module._run(rid).store.load(handle)
+    by_seq = {p["residue"]["seq_auth"]: p for p in stored["positions"]}
+    assert by_seq[4]["ligand_min_distance_A"] is None   # no heavy atom: null, never 0
+    # independent oracle: the nearest ALA 3 heavy atom to LIG C1 (30, 3, 0)
+    oracle = min(math.dist((30.0 + dx, dy, 0.0), (30.0, 3.0, 0.0))
+                 for dx, dy in ((-1.2, 0.0), (0.0, 0.0), (1.2, 0.0), (1.2, 1.2), (0.0, -1.5)))
+    assert by_seq[3]["ligand_min_distance_A"] == pytest.approx(oracle, abs=1e-9)
+    base = f"/runs/{rid}/mutation_candidate_sets"
+    listed = client.get(base)
+    assert listed.status_code == 200 and [r["valid"] for r in listed.json()["rows"] if r["handle"] == handle] == [True]
+    for sub in ("", "/positions", "/candidates"):
+        read = client.get(f"{base}/{handle}{sub}")
+        assert read.status_code == 200, (sub, read.text)
+    report = client.post(f"/runs/{rid}/method_reports", json={"result_handle": handle})
+    assert report.status_code == 201, report.text
+    minimum = [c for c in report.json()["manifest"]["claims"] if c["statement_id"] == "ligand_min_distance_A"]
+    assert len(minimum) == 1 and minimum[0]["exact_value"] == by_seq[3]["ligand_min_distance_A"]
+
+
+def test_hydrogen_only_ligand_is_ligand_invalid_before_the_implementation(client):
+    rid = _http_run(client)
+    prepared = _prepared_keeping_hydrogens(client, rid, _hydrogen_only_pdb(True))
+    for args in (_args(prepared, residues=[res(3, "ALA")], ligand=LIG501),
+                 _args(prepared, ligand_shell={"radius_A": 5.0}, ligand=LIG501)):
+        rejected = _command(client, rid, TOOL, args)
+        assert rejected.status_code == 422, rejected.text
+        assert rejected.json()["detail"]["reason_code"] == "ligand_invalid"
+    assert client.calls == [] and K.KIND not in _kinds(rid)
+
+
+def test_a_built_set_that_does_not_validate_is_never_stored(client, monkeypatch):
+    """LABELED FAULT INJECTION: the builder returns content that fails ``validated_set``."""
+    rid = _http_run(client)
+    prepared = _prepared_keeping_hydrogens(client, rid, _hydrogen_only_pdb(False))
+    build = tool_module.mc.build_candidate_set
+
+    def broken(*args, **kwargs):
+        content = build(*args, **kwargs)
+        content["positions"][0]["ligand_min_distance_A"] = 0
+        return content
+
+    monkeypatch.setattr(tool_module.mc, "build_candidate_set", broken)
+    failed = _command(client, rid, TOOL, _args(prepared, residues=[res(3, "ALA")], ligand=LIG501))
+    assert failed.status_code == 422, failed.text
+    assert failed.json()["error"] == "input_invalid"
+    assert failed.json()["detail"]["reason_code"] == "candidate_set_invalid"
+    assert K.KIND not in _kinds(rid)

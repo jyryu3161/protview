@@ -393,36 +393,56 @@ def _expected(run: Any, handle: str) -> dict[str, Any]:
         raise EvidenceError("mutation_report_evidence_unresolved") from exc
 
 
-def render_mutation_report(manifest: dict[str, Any]) -> str:
-    """Markdown from the manifest only; every value is the rendered text of a bound claim."""
-    claims = manifest["claims"]
+_SLOT = re.compile("\x00(\\d+)\x00")
 
-    def value(statement: str, selector: dict[str, Any] | None = None, path: str | None = None) -> str:
+
+def render_mutation_report(manifest: dict[str, Any]) -> str:
+    """Markdown from the manifest only; every value is the rendered text of a bound claim.
+
+    Interpolated identifiers and values (handles, chain IDs, CCD codes, accessions, KLIFS labels, numbers) go into
+    slots; the forbidden-word check runs on the fixed template text with the slots left empty, then the slots are
+    filled. A chain "BEST" or a CCD code therefore cannot fail a report, and the template can never say a forbidden
+    word.
+    """
+    claims = manifest["claims"]
+    slots: list[str] = []
+
+    def slot(text: str) -> str:
+        slots.append(text)
+        return f"\x00{len(slots) - 1}\x00"
+
+    def md(item: Any) -> str:
+        return slot(_md(item))
+
+    def rendered(statement: str, selector: dict[str, Any] | None = None, path: str | None = None) -> str:
         found = [c["rendered_value"] for c in claims if c["statement_id"] == statement and
                  (selector is None or c["row_selector"] == selector) and (path is None or c["field_path"] == path)]
         if len(found) != 1:
             raise EvidenceError("mutation_report_claim_missing")
         return found[0]
 
+    def value(statement: str, selector: dict[str, Any] | None = None, path: str | None = None) -> str:
+        return slot(rendered(statement, selector, path))
+
     structure, parameters = manifest["structure"], manifest["parameters"]
     sources, ligand, checks = parameters["sources"], manifest["ligand"], manifest["protection_checks"]
     pocket, shell = sources["pocket"], sources["ligand_shell"]
     lines = ["# 변이 후보 보고서 (mutation candidates)", "", "Status: complete", "",
-             f"Result: {_md(manifest['result_handle'])}",
-             (f"Structure: {_md(structure['handle'])} ({_md(structure['structure_kind'])}, "
-              f"model {_md(structure['model_number'])})"),
-             f"Method: {_md(manifest['method_version'])}", "", f"**{_md(manifest['evidence_statement'])}**", "",
+             f"Result: {md(manifest['result_handle'])}",
+             (f"Structure: {md(structure['handle'])} ({md(structure['structure_kind'])}, "
+              f"model {md(structure['model_number'])})"),
+             f"Method: {md(manifest['method_version'])}", "", f"**{_md(manifest['evidence_statement'])}**", "",
              "## 요청 (입력 값, 계산 아님)", "",
-             (f"- 포켓 출처: {_md(pocket['pocket_set'])}, 순번 {_md(', '.join(str(r) for r in pocket['ranks']))}"
+             (f"- 포켓 출처: {md(pocket['pocket_set'])}, 순번 {md(', '.join(str(r) for r in pocket['ranks']))}"
               if pocket is not None else f"- 포켓 출처: {NOT_GIVEN}"),
-             (f"- 리간드 껍질 반경: {_md(shell['radius_A'])} Å" if shell is not None else
+             (f"- 리간드 껍질 반경: {md(shell['radius_A'])} Å" if shell is not None else
               f"- 리간드 껍질 출처: {NOT_GIVEN}"),
-             f"- 리간드: {_md(_ref(ligand['residue'])) if ligand is not None else NOT_GIVEN}",
-             f"- 허용 잔기: {_md(parameters['allowed_residues'])}",
-             f"- 금속 근접 기준: {_md(parameters['metal_contact_A'])} Å",
-             f"- 이황화 Cys SG–SG 기준: {_md(parameters['disulfide_sg_A'])} Å",
-             f"- 번호 대응: {_md(parameters['numbering_map']) if parameters['numbering_map'] else NOT_GIVEN}",
-             f"- 주석: {_md(parameters['annotation']) if parameters['annotation'] else NOT_GIVEN}",
+             f"- 리간드: {md(_ref(ligand['residue'])) if ligand is not None else NOT_GIVEN}",
+             f"- 허용 잔기: {md(parameters['allowed_residues'])}",
+             f"- 금속 근접 기준: {md(parameters['metal_contact_A'])} Å",
+             f"- 이황화 Cys SG–SG 기준: {md(parameters['disulfide_sg_A'])} Å",
+             f"- 번호 대응: {md(parameters['numbering_map']) if parameters['numbering_map'] else NOT_GIVEN}",
+             f"- 주석: {md(parameters['annotation']) if parameters['annotation'] else NOT_GIVEN}",
              "", "## 위치와 후보 수 (ProtView 계산: 저장된 행의 개수)", "",
              f"- 위치 (positions): {value('position_count')}"]
     for status in POSITION_STATUSES:
@@ -434,11 +454,11 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
                      "아래와 같다.")
     lines.extend(["", "## 제외 사유별 위치 수", ""])
     for reason in EXCLUSION_REASONS:
-        lines.append(f"- {REASON_KO[reason]} ({_md(reason)}): "
+        lines.append(f"- {REASON_KO[reason]} ({md(reason)}): "
                      f"{value('exclusion_reason_count', {'exclusion_reason': reason})}")
     lines.extend(["", "## 출처별 위치 수", ""])
     for kind in SOURCE_KINDS:
-        lines.append(f"- {SOURCE_KO[kind]} ({_md(kind)}): {value('source_position_count', {'source': kind})}")
+        lines.append(f"- {SOURCE_KO[kind]} ({md(kind)}): {value('source_position_count', {'source': kind})}")
     lines.extend(["", "## 리간드까지 최소 거리", ""])
     distance = [c for c in claims if c["statement_id"] == "ligand_min_distance_A"]
     if ligand is None:
@@ -448,11 +468,11 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
     else:
         claim = distance[0]
         lines.append(f"- 모든 위치의 ligand\\_min\\_distance\\_A 최솟값: {value('ligand_min_distance_A')} Å "
-                     f"({_md(_ref(claim['subject']['residue']))})")
+                     f"({md(_ref(claim['subject']['residue']))})")
     lines.extend(["", "## 보호 검사", "", "| 검사 | 상태 | 세부 |", "| --- | --- | --- |"])
     for key in PROTECTION_CHECK_KEYS:
         check = checks[key]
-        status = value("protection_check_status", {"check": key})
+        status = rendered("protection_check_status", {"check": key})
 
         def number(field: str, key: str = key) -> str:
             return value("protection_check_count", {"check": key}, f"protection_checks.{key}.{field}")
@@ -460,38 +480,40 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
         if key == "user_list":
             detail = f"보호 목록 {number('protected')}, 해제 목록 {number('released')}"
         elif key == "klifs_key_sites":
-            detail = (f"주석 {_md(check['annotation'])}, 주석된 부위 {number('annotated_sites')}, "
+            detail = (f"주석 {md(check['annotation'])}, 주석된 부위 {number('annotated_sites')}, "
                       f"없는 부위 {number('absent_sites')}" if check["status"] == CHECKED else
-                      f"이유: {CHECK_REASON_KO[check['reason']]} ({_md(check['reason'])}). 보호 여부를 판정하지 않았다.")
+                      f"이유: {CHECK_REASON_KO[check['reason']]} ({md(check['reason'])}). 보호 여부를 판정하지 않았다.")
         elif key == "metal_contact":
             names = ", ".join(check["metal_names"]) if check["metal_names"] else "none"
-            detail = (f"기준 {_md(check['threshold_A'])} Å, 금속 잔기 {number('metal_residues')} "
-                      f"({_md(names)})")
+            detail = (f"기준 {md(check['threshold_A'])} Å, 금속 잔기 {number('metal_residues')} "
+                      f"({md(names)})")
         elif key == "disulfide":
-            detail = f"기준 {_md(check['threshold_A'])} Å, SG–SG 쌍 {number('pairs')}"
+            detail = f"기준 {md(check['threshold_A'])} Å, SG–SG 쌍 {number('pairs')}"
         else:
-            detail = f"이유: {CHECK_REASON_KO[check['reason']]} ({_md(check['reason'])}). 촉매 잔기를 판정하지 않았다."
-        lines.append(f"| {CHECK_KO[key]} ({_md(key)}) | {_md(status)} | {detail} |")
+            detail = f"이유: {CHECK_REASON_KO[check['reason']]} ({md(check['reason'])}). 촉매 잔기를 판정하지 않았다."
+        lines.append(f"| {CHECK_KO[key]} ({md(key)}) | {md(status)} | {detail} |")
     lines.extend(["", "## 번호 대응 (참조 스냅샷 값, 계산 아님)", ""])
     if parameters["numbering_map"] is None:
         lines.append(f"- 번호 대응: {NOT_GIVEN}. 위치별 UniProt·KLIFS 번호가 없다.")
     else:
         for status in NUMBERING_STATUSES:
-            lines.append(f"- {NUMBERING_KO[status]} ({_md(status)}) 위치 (ProtView 계산): "
+            lines.append(f"- {NUMBERING_KO[status]} ({md(status)}) 위치 (ProtView 계산): "
                          f"{value('numbering_status_count', {'numbering_status': status})}")
         accessions = [c["rendered_value"] for c in claims if c["statement_id"] == "reference_uniprot_accession"]
         lines.append(f"- UniProt accession ({REFERENCE_NOTE}): "
-                     f"{_md(', '.join(accessions)) if accessions else 'none (null)'}")
+                     f"{md(', '.join(accessions)) if accessions else 'none (null)'}")
     if parameters["annotation"] is not None:
         labels = [c["rendered_value"] for c in claims if c["statement_id"] == "reference_klifs_site_label"]
         lines.append(f"- 보호된 위치의 KLIFS 주요 부위 이름표 ({REFERENCE_NOTE}): "
-                     f"{_md(', '.join(labels)) if labels else 'none'}")
+                     f"{md(', '.join(labels)) if labels else 'none'}")
     lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
     lines.extend([("Exact values, evidence kinds and field paths are in the JSON download "
                    f"({len(claims)} claims). Position and candidate rows are in the stored result."), ""])
-    return check_no_interpretation("\n".join(lines))
+    template = "\n".join(lines)
+    check_no_interpretation(_SLOT.sub("", template))
+    return _SLOT.sub(lambda match: slots[int(match.group(1))], template)
 
 
 def build_mutation_report(run: Any, result_handle: str) -> dict[str, Any]:

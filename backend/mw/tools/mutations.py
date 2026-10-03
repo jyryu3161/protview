@@ -20,7 +20,7 @@ from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import Handle
 from ..mutation_constants import KIND, SCHEMA, STRUCTURE_KIND, TOO_MANY_POSITIONS, TOOL
 from ..pocket_bundle import PocketEvidenceError, validated_pocket_set
-from .registry import ToolRegistry
+from .registry import ToolContext, ToolRegistry
 from .structural import _parse, structure_residues
 
 STRUCTURE_TYPE = (STRUCTURE_KIND, f"{STRUCTURE_KIND}@1")
@@ -61,6 +61,8 @@ def _admit(store: Any, args: dict[str, Any]) -> dict[str, Any]:
     _same_run(store, structure, STRUCTURE_TYPE, "structure_invalid")
     listing = structure_residues(store, structure)
     params = mc.normalize_request(args, listing["residues"], listing["ligands"])
+    if params["ligand"] is not None:
+        mc.check_ligand_heavy_atoms(_parse(ToolContext(store=store, call_id="metadata"), structure), params["ligand"])
     pocket = params["sources"]["pocket"]
     pocket_content = _pocket_set(store, pocket["pocket_set"]) if pocket is not None else None
     map_content = (_same_run(store, params["numbering_map"], MAP_TYPE, "numbering_map_invalid")
@@ -109,6 +111,11 @@ def register(reg: ToolRegistry) -> None:
             cls = (FailureClass.resource_exceeded if exc.reason_code == TOO_MANY_POSITIONS
                    else FailureClass.input_invalid)
             raise ToolFailure(cls, exc.message, detail=exc.detail) from exc
+        try:   # a build/validate mismatch is never stored
+            mc.validated_set(content)
+        except mc.MutationSetInvalid as exc:
+            raise ToolFailure(FailureClass.input_invalid, f"the built candidate set does not validate: {exc}",
+                              detail={"reason_code": "candidate_set_invalid"}) from exc
         summary = {"structure": structure, **content["counts"], "null_result": content["null_result"]}
         return ctx.store.put(KIND, SCHEMA, content, produced_by=ctx.call_id, summary=summary,
                              null_result=content["null_result"])

@@ -258,6 +258,18 @@ def normalize_request(args: dict[str, Any], residues: list[dict[str, Any]],
     }
 
 
+def check_ligand_heavy_atoms(st: Any, ligand: dict[str, Any]) -> None:
+    """``ligand_invalid`` when the selected ligand instance (7 fields) has no heavy atom (element H/D only)."""
+    model = st[0]
+    for chain in model:
+        for res in chain:
+            if identity(_res_ref(chain, res, model.num)) == identity(ligand):
+                if not any(atom.element.name.upper() not in HYDROGEN_ELEMENTS for atom in res):
+                    raise MutationInvalid("ligand_invalid", "ligand has no heavy atoms (hydrogen only)")
+                return
+    raise MutationInvalid("ligand_invalid", "ligand not found")
+
+
 def pocket_lining(pocket_content: dict[str, Any], ranks: list[int],
                   residues: list[dict[str, Any]]) -> dict[int, list[dict[str, Any]]]:
     """``{rank: lining residues (7 fields)}``; ``pocket_rank_invalid`` / ``pocket_residue_mismatch`` (spec 2)."""
@@ -628,8 +640,9 @@ def _validate_position(position: Any, index: int, parameters: dict[str, Any]) ->
     distance = position["ligand_min_distance_A"]
     if parameters["ligand"] is None:
         _require(distance is None, "ligand distance without ligand")
-    else:
-        _require(type(distance) is float and math.isfinite(distance) and distance >= 0, "ligand distance")
+    else:   # null = the residue has no heavy atom (never 0); a ligand_shell source above requires a number
+        _require(distance is None or (type(distance) is float and math.isfinite(distance) and distance >= 0),
+                 "ligand distance")
     numbering = position["numbering"]
     if parameters["numbering_map"] is None:
         _require(numbering is None, "numbering without map")
