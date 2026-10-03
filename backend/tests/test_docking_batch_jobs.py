@@ -34,6 +34,7 @@ from mw import docking_bundle, docking_reads
 from mw import docking_constants as C
 from mw.api import app as api_module
 from mw.core.errors import ToolFailure
+from mw.core.handles import canonical_json
 from mw.docking_reports import build_docking_report, saved_docking_report
 from mw.jobs import guardian as guardian_module
 from mw.jobs import process_identity
@@ -481,6 +482,47 @@ def test_a_refusal_before_the_first_row_fails_the_job_without_a_summary(base, tm
     assert not (_attempt_dir(run, failed) / "rows/0.started").exists()
     assert _reserved(run, failed["job_id"]) == [2]   # charged at start, never refunded (spec 6.1)
     _no_strays(run)
+
+
+def test_a_summary_build_failure_fails_the_job_and_keeps_the_verified_rows(base, tmp_path, monkeypatch):
+    """Rows are published before the summary (spec 7.2). A summary that cannot be built (here a staged prepared.json
+    whose box disagrees with the rows, a labeled fault) fails the job with its reason and never hides the verified
+    rows: they read as M18 results without a summary publication and a later batch reuses them (0 units)."""
+    run, _root = _world(base, tmp_path)
+    _raise(run)
+    args = _args(base, IDS[:2])
+    original = BJ.finish
+
+    def corrupted(run_, job, attempt_id, attempt_dir, cause):
+        path = attempt_dir / "prepared.json"
+        data = json.loads(path.read_bytes())
+        data["box"]["center_A"] = [value + 1.0 for value in data["box"]["center_A"]]
+        path.write_bytes(canonical_json(data))
+        return original(run_, job, attempt_id, attempt_dir, cause)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(BJ, "finish", corrupted)
+        failed = _batch(run, args)
+    assert failed["status"] == "failed" and failed["output_handles"] == [], failed
+    assert failed["failure"] == {"error": "fatal", "message": "invalid scientific output",
+                                 "diagnostic": "DockingBatchEvidenceError"}
+    assert not _of(run, failed["job_id"], "docking_batch_published")
+    assert JobQueue(run).get(failed["job_id"]).get("batch_summary_handle") is None
+    rows = _of(run, failed["job_id"], "docking_batch_row_published")
+    assert [row["row_index"] for row in rows] == [0, 1]
+    for row in rows:
+        result = docking_bundle.validated_result(run, row["handle"])
+        assert result["inputs"]["ligand"]["candidate_id"] == IDS[row["row_index"]]
+        source = docking_bundle.producer(run, row["handle"])
+        assert (source["job_id"], source["row_index"], source["published_seq"]) == (failed["job_id"],
+                                                                                     row["row_index"], row["seq"])
+    assert _reserved(run, failed["job_id"]) == [2]
+    _no_strays(run)
+    rerun = _batch(run, args)
+    assert rerun["status"] == "done" and _reserved(run, rerun["job_id"]) == [0]
+    _, content = _summary(run, rerun)
+    assert content["status"] == "complete"
+    assert [row["result_handle"] for row in content["rows"]] == [row["handle"] for row in rows]
 
 
 DRIVER = r'''

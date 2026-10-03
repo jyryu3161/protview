@@ -15,6 +15,8 @@ The server never imports RDKit, Meeko or MDAnalysis and never executes qvina2. `
   staged row (``rows/<n>.result.json``, converted and checked exactly like an M18 result, then
   ``docking_batch_row_published``) and then the summary ``docking_batch_result@1`` (``docking_batch_published``,
   last). The summary rows come from the staging files and the server's stop cause only (T2 ``build_summary``).
+  A summary that cannot be built raises (the queue fails the job with that reason); the rows already published stay
+  readable and reusable on their own evidence (``docking_bundle.producer``).
 - ``limit_approval``: the human-approved limit raise (spec 6.3), reached only from its HTTP route.
 - ``validated_summary`` / ``summary_producer`` / ``complete_job``: reads that re-check the summary, its single
   publication and every per-row result; ``progress``: the job's row counts for polling (no object is loaded).

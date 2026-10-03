@@ -13,8 +13,8 @@ staged selection and the closed sets, cross-checks every contact's receptor atom
 import, and stores one ``docking_result@1`` object whose content never includes time, job or attempt identities (same
 input -> same handle). Every read re-validates the stored object against its single completed publication and its
 inputs; the object recovers from ``events.jsonl`` alone (``object_created`` payloads), without any engine. An M19
-batch row's publication (``docking_batch_row_published`` + the batch summary publication) is accepted as the same
-evidence, checked against that row's own selection.
+batch row's publication (``docking_batch_row_published`` after the attempt's verified cleanup, with or without a
+later batch summary publication) is accepted as the same evidence, checked against that row's own selection.
 """
 from __future__ import annotations
 
@@ -731,8 +731,10 @@ def producer(run: Any, handle: str) -> dict[str, Any]:
 def _batch_row_producer(events: list[dict[str, Any]], jobs: dict[str, Any], created: list[dict[str, Any]],
                         handle: str) -> dict[str, Any] | None:
     """M19: a row of a ``qvina_batch_dock_v1`` attempt published this M18 result (reservation < verified cleanup <
-    row publication, then the batch summary publication). ``job`` is the row's view: the batch job with that row's
-    own ``docking_selection@1`` and the batch's M18 pins, so the M18 checks apply unchanged."""
+    row publication). ``job`` is the row's view: the batch job with that row's own ``docking_selection@1`` and the
+    batch's M18 pins, so the M18 checks apply unchanged. The batch summary publication is not required: a summary
+    that could not be built (the job then fails with its reason) never hides a verified row (spec 7.2). The
+    completion point is the summary publication when there is one, else the row publication."""
     from . import docking_batch_constants as BC
 
     for row in events:
@@ -752,11 +754,12 @@ def _batch_row_producer(events: list[dict[str, Any]], jobs: dict[str, Any], crea
                    event["seq"] > row["seq"]]
         rows = job.get("selected", {}).get("rows", [])
         index = row.get("row_index")
-        if (len(reserved) == 1 and cleaned and summary and created and type(index) is int and
+        if (len(reserved) == 1 and cleaned and created and type(index) is int and
                 0 <= index < len(rows) and reserved[0]["seq"] < cleaned[0]["seq"] < row["seq"] and
                 created[0]["seq"] < row["seq"]):
             return {"job_id": job["job_id"], "attempt_id": attempt, "job": {**job, "selected": rows[index]["selected"]},
-                    "created_seq": created[0]["seq"], "published_seq": summary[0]["seq"], "row_index": index}
+                    "created_seq": created[0]["seq"], "published_seq": (summary[0] if summary else row)["seq"],
+                    "row_index": index}
     return None
 
 
