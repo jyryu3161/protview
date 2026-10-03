@@ -33,6 +33,8 @@ export interface DockingPanelProps {
   capability: DockingCapability | null | undefined;
   /** After a report was created: the page re-reads the knowledge-tab report list (it drops another run's call). */
   onReportCreated: (runId: string) => void;
+  /** M19: "상세 열기" of a batch row opens that stored result here (a new `seq` per click; same run only). */
+  openRequest?: { runId: string; handle: string; seq: number } | null;
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
@@ -92,11 +94,13 @@ export function DockingPanel(p: DockingPanelProps) {
         : <p className="mw-ligand-note" aria-busy="true">기능 상태를 확인하는 중</p>}
     </section>;
   }
-  return <DockingWorkspace run={p.run} capability={p.capability} onReportCreated={p.onReportCreated} />;
+  return <DockingWorkspace run={p.run} capability={p.capability} onReportCreated={p.onReportCreated}
+    openRequest={p.openRequest ?? null} />;
 }
 
-function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummary; capability: DockingCapability;
-  onReportCreated: (runId: string) => void }) {
+function DockingWorkspace({ run, capability, onReportCreated, openRequest }: { run: RunSummary;
+  capability: DockingCapability; onReportCreated: (runId: string) => void;
+  openRequest: DockingPanelProps["openRequest"] }) {
   const runId = run.run_id;
   const [form, setForm] = useState<DockingForm>(initialDockingForm);
   const [files, setFiles] = useState<Record<Slot, File | null>>({ receptor: null, bonds: null, ligand: null });
@@ -295,6 +299,19 @@ function DockingWorkspace({ run, capability, onReportCreated }: { run: RunSummar
       setDetail({ handle, load: { status: "error", message: `도킹 결과 읽기 실패: ${errorText(e)}` } }); });
   }
   const opened = detail && detail.handle === selectedResult && detail.load.status === "ready" ? detail.load.value : null;
+
+  // A batch row's "상세 열기": the same detail read as choosing the result here; the list is re-read so it shows.
+  // A request made before this mount (e.g. before the tab was left) is not replayed: nothing opens by itself.
+  const seenOpen = useRef(openRequest?.seq ?? 0);
+  useEffect(() => {
+    if (!openRequest || openRequest.seq === seenOpen.current || openRequest.runId !== runId) return;
+    seenOpen.current = openRequest.seq;
+    openResult(openRequest.handle);
+    setResultsReload(value => value + 1);
+    document.querySelector('[data-testid="docking-panel"] [data-docking-area="results"]')?.scrollIntoView({ block: "start" });
+  // Each click is a new seq; openResult reads live refs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRequest?.seq]);
 
   // ---- imports and jobs ----
   const chosenFiles = SLOTS.filter(slot => files[slot]);

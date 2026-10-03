@@ -749,30 +749,32 @@ function SetSummary({ detail }: { detail: LigandCandidateSetDetail }) {
   </div>;
 }
 
-function FilterForm({ input, errors, applied, onInput, onApply, onClear }: { input: LigandFilterInput; errors: string[];
-  applied: LigandFilterSpec; onInput: (next: LigandFilterInput) => void; onApply: () => void; onClear: () => void }) {
+/** Also used by the batch docking area with its own `idPrefix` (test ids must not collide in the same tab). */
+export function FilterForm({ input, errors, applied, onInput, onApply, onClear, idPrefix = "ligand" }: { input: LigandFilterInput;
+  errors: string[]; applied: LigandFilterSpec; onInput: (next: LigandFilterInput) => void; onApply: () => void;
+  onClear: () => void; idPrefix?: string }) {
   const setBound = (name: LigandPropertyName, side: "min" | "max", text: string) =>
     onInput({ ...input, ranges: { ...input.ranges, [name]: { ...input.ranges[name], [side]: text } } });
-  return <form className="mw-ligand-filters" data-testid="ligand-filters" aria-label="후보 필터"
+  return <form className="mw-ligand-filters" data-testid={`${idPrefix}-filters`} aria-label="후보 필터"
     onSubmit={event => { event.preventDefault(); onApply(); }}>
     <p className="mw-ligand-note">필터는 저장된 RDKit 추정값에 서버가 적용합니다(경계 포함, 비우면 범위 없음). 후보를 다시 생성하지 않습니다.</p>
     <div className="mw-ligand-filter-grid">
       {PROPERTY_NAMES.map(name => <div key={name} className="mw-ligand-filter" data-filter-property={name}>
         <span>{propertyHeader(name)}</span>
         <input className="mw-ligand-input" inputMode="decimal" aria-label={`${PROPERTY_LABEL[name]} 최솟값`} placeholder="최솟값"
-          data-testid={`ligand-filter-${name}-min`} value={input.ranges[name].min} onChange={event => setBound(name, "min", event.target.value)} />
+          data-testid={`${idPrefix}-filter-${name}-min`} value={input.ranges[name].min} onChange={event => setBound(name, "min", event.target.value)} />
         <input className="mw-ligand-input" inputMode="decimal" aria-label={`${PROPERTY_LABEL[name]} 최댓값`} placeholder="최댓값"
-          data-testid={`ligand-filter-${name}-max`} value={input.ranges[name].max} onChange={event => setBound(name, "max", event.target.value)} />
+          data-testid={`${idPrefix}-filter-${name}-max`} value={input.ranges[name].max} onChange={event => setBound(name, "max", event.target.value)} />
       </div>)}
     </div>
-    <label className="mw-ligand-check"><input type="checkbox" data-testid="ligand-filter-pains" checked={input.painsExclude}
+    <label className="mw-ligand-check"><input type="checkbox" data-testid={`${idPrefix}-filter-pains`} checked={input.painsExclude}
       onChange={event => onInput({ ...input, painsExclude: event.target.checked })} /> {PAINS_HEADER} 후보 제외</label>
     <div className="mw-ligand-inline">
-      <Button size="sm" type="submit" data-testid="ligand-filter-apply">필터 적용</Button>
-      <Button size="sm" type="button" data-testid="ligand-filter-clear" onClick={onClear}>필터 지우기</Button>
-      <span className="mw-ligand-note" data-testid="ligand-filter-applied" data-applied-count={appliedFilterCount(applied)}>{filterSummaryText(applied)}</span>
+      <Button size="sm" type="submit" data-testid={`${idPrefix}-filter-apply`}>필터 적용</Button>
+      <Button size="sm" type="button" data-testid={`${idPrefix}-filter-clear`} onClick={onClear}>필터 지우기</Button>
+      <span className="mw-ligand-note" data-testid={`${idPrefix}-filter-applied`} data-applied-count={appliedFilterCount(applied)}>{filterSummaryText(applied)}</span>
     </div>
-    {errors.length > 0 && <ul className="mw-ligand-errors" role="alert" data-testid="ligand-filter-errors">
+    {errors.length > 0 && <ul className="mw-ligand-errors" role="alert" data-testid={`${idPrefix}-filter-errors`}>
       {errors.map(error => <li key={error}>{error}</li>)}</ul>}
   </form>;
 }

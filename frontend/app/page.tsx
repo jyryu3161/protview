@@ -22,6 +22,7 @@ import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
 import { LigandPanel } from "@/components/LigandPanel";
 import { DockingPanel } from "@/components/DockingPanel";
+import { DockingBatchPanel } from "@/components/DockingBatchPanel";
 import { SiteAnnotationPanel } from "@/components/SiteAnnotationPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
@@ -124,6 +125,8 @@ export default function WorkspacePage() {
   const [chemicalActive, setChemicalActive] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTabId>(DEFAULT_WORKSPACE_TAB);
   const [reportsReloadToken, setReportsReloadToken] = useState(0);
+  /** M19: a batch row's "상세 열기" hands its per-row result handle to the M18 docking area (same run only). */
+  const [dockingOpenRequest, setDockingOpenRequest] = useState<{ runId: string; handle: string; seq: number } | null>(null);
   // M16: numbering maps are made in the 지식·보고서 tab while the structure screen stays mounted; entering the structure
   // tab re-reads the annotation panel's map list (a read only; no event or tool).
   const [structureTabEntries, setStructureTabEntries] = useState(0);
@@ -2043,7 +2046,14 @@ export default function WorkspacePage() {
       <DockingPanel key={`docking-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.ligand_docking ?? null : undefined}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
-          setReportsReloadToken(token => token + 1); }} />
+          setReportsReloadToken(token => token + 1); }}
+        openRequest={dockingOpenRequest} />
+      <DockingBatchPanel key={`docking-batch-${run?.run_id ?? "none"}`} run={run}
+        capability={capabilities ? capabilities.methods?.ligand_docking_batch ?? null : undefined}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }}
+        onOpenResult={(openRunId, handle) => { if (hostRequestAccepted({ runId: openRunId }, analysisHostRef.current))
+          setDockingOpenRequest(previous => ({ runId: openRunId, handle, seq: (previous?.seq ?? 0) + 1 })); }} />
     </>}
     onSelect={tab => { setWorkspaceTab(tab); if (tab === "structure") setStructureTabEntries(value => value + 1);
       if (runId) refreshGlobalBudget(runId); }} />;
