@@ -1,6 +1,8 @@
 /** Loopback-only M1 API client. See docs/M1_API.md. */
 import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecutionList, AnalysisGoal, AnalysisPlanList,
   AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, DockingArgs,
+  DockingBatchArgs, DockingBatchCapability, DockingBatchDetail, DockingBatchJob, DockingBatchLimitApproval,
+  DockingBatchList, DockingBatchPreflight, DockingBatchReportArtifact, DockingBatchSubmission,
   DockingCapability, DockingContactPage, DockingJob, DockingPrerequisites, DockingReceptorInstances,
   DockingReportArtifact, DockingResultDetail, DockingResultList, DockingSubmission, EgressMode, Handle,
   InteractionRow, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
@@ -22,6 +24,8 @@ import type { NumberingMapList, NumberingRow, PdbIdHint, ReferenceSnapshots, Sif
 
 /** Fixed `POST /jobs` time limit of a docking job (spec 4.1/5.1: not a job argument, not shown on screen). */
 export const DOCKING_TIMEOUT_S = 600;
+/** Fixed `POST /jobs` time limit of a batch docking job (the protocol's own maximum, spec 4.2/7.1; not shown). */
+export const DOCKING_BATCH_TIMEOUT_S = 7800;
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -42,7 +46,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     analysis_workflows?: AnalysisWorkflowsCapability;
     residue_numbering?: { available: boolean; reason_code: string | null; reason: string | null; set_hash: string | null };
     reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null };
-    ligand_candidates?: LigandCapability; ligand_docking?: DockingCapability } }
+    ligand_candidates?: LigandCapability; ligand_docking?: DockingCapability;
+    ligand_docking_batch?: DockingBatchCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -63,7 +68,7 @@ export interface SasaResult { schema: "interface_sasa@1"; structure: string; lig
 export interface MethodReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
-    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking";
+    | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking" | "ligand_docking_batch";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -332,6 +337,27 @@ export const api = {
   /** Report `analysis_type: "ligand_docking"` of one stored docking result (nothing is docked again). */
   createDockingReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
     request<DockingReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
+  // ---- M19 batch docking (preflight and list/detail are reads; start, approval and cancel use the job routes) ----
+  /** Admission, reuse per row, N, need, remaining budget and shortfall for exactly these arguments (no event). */
+  dockingBatchPreflight: (id: string, args: DockingBatchArgs, signal?: AbortSignal) =>
+    request<DockingBatchPreflight>(runPath(id, "/docking/batches/preflight"), jsonPost(args, signal)),
+  /** The person's explicit approval: the server raises each limit by this batch's current shortfall only. */
+  dockingBatchLimitApproval: (id: string, args: DockingBatchArgs) =>
+    request<DockingBatchLimitApproval>(runPath(id, "/docking/batches/limit_approval"), jsonPost(args)),
+  submitDockingBatch: (id: string, args: DockingBatchArgs) =>
+    request<DockingBatchSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "qvina_batch_dock_v1", args,
+      timeout_s: DOCKING_BATCH_TIMEOUT_S })),
+  /** Stored job record with `batch` progress (rows, reused rows, finished rows, summary handle). */
+  dockingBatchJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<DockingBatchJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  dockingBatchJobs: (id: string, signal?: AbortSignal) => request<DockingBatchJob[]>(runPath(id, "/jobs"), { signal }),
+  dockingBatches: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<DockingBatchList>(runPath(id, `/docking/batches?offset=${offset}&limit=${limit}`), { signal }),
+  dockingBatch: (id: string, handle: string, signal?: AbortSignal) =>
+    request<DockingBatchDetail>(runPath(id, `/docking/batches/detail?${handleParam(handle)}`), { signal }),
+  /** Report `analysis_type: "ligand_docking_batch"` of one stored batch summary (nothing is docked again). */
+  createDockingBatchReport: (id: string, summaryHandle: string, signal?: AbortSignal) =>
+    request<DockingBatchReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: summaryHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>
