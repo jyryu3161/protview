@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-10-05, 브랜치 `dryforge/m22-ga-design`(`phase/m22-ga-design` = main `849acb7`에서 분기). M21까지 main에 병합됨(M21 병합 `61d5c03`, 기록 `849acb7`). M22 완료·main 병합 `4161dc6`(고정 `a71b2e6`, 증거 커밋 `9e63b41`, 수락 증거 `docs/qa/m22-ga-20261005/`, 착수 확인 `docs/qa/m22-ga-20261004/`). M22는 아직 main에 병합하지 않았다(사용자 통합 승인 대기).
+기준: 2026-10-05, 브랜치 `dryforge/m22-ga-design`(`phase/m22-ga-design` = main `849acb7`에서 분기). M21까지 main에 병합됨(M21 병합 `61d5c03`, 기록 `849acb7`). M22 완료·main 병합 `4161dc6`(고정 `a71b2e6`, 증거 커밋 `9e63b41`, 수락 증거 `docs/qa/m22-ga-20261005/`, 착수 확인 `docs/qa/m22-ga-20261004/`). M22는 main에 병합되었다(`4161dc6`, 사용자 승인, push 없음).
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 
