@@ -26,6 +26,7 @@ from .. import (
     docking_bundle,
     docking_reads,
     ligand_bundle,
+    ligand_ga_jobs,
     ligand_reads,
     mutation_model_bundle,
     mutation_model_reads,
@@ -49,6 +50,7 @@ from ..docking_batch_reports import build_docking_batch_report, saved_docking_ba
 from ..docking_reports import build_docking_report, saved_docking_report
 from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
+from ..ligand_ga_constants import PROTOCOL as GA_PROTOCOL
 from ..ligand_reports import build_ligand_report, saved_ligand_report
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..mutation_model_constants import PROTOCOL as MUTATION_MODEL_PROTOCOL
@@ -179,8 +181,9 @@ class Command(BaseModel):
 class JobSubmit(BaseModel):
     protocol_id: str
     args: dict[str, Any] = Field(default_factory=dict)
-    # 7800 s only for qvina_batch_dock_v1; JobQueue.submit keeps every other protocol's own bound (<= 900 s).
-    timeout_s: float = Field(default=60, gt=0, le=7800, allow_inf_nan=False)
+    # 15000 s only for qvina_ga_dock_v1 and 7800 s for qvina_batch_dock_v1; JobQueue.submit keeps every other
+    # protocol's own bound (<= 900 s) and refuses a longer timeout there ("invalid job timeout", 422).
+    timeout_s: float = Field(default=60, gt=0, le=15000, allow_inf_nan=False)
     model_config = {"extra": "forbid"}
 
 
@@ -367,6 +370,8 @@ def _public_job(job: dict[str, Any], run: Run | None = None) -> dict[str, Any]:
         result["artifacts"] = {"docking_result": job["output_handles"][0]}
     elif job.get("protocol_id") == "qvina_batch_dock_v1" and job.get("status") == "done":
         result["artifacts"] = {"docking_batch_result": job["output_handles"][0]}
+    elif job.get("protocol_id") == GA_PROTOCOL and job.get("status") == "done":
+        result["artifacts"] = {"ligand_ga_result": job["output_handles"][0]}
     elif job.get("protocol_id") == "openmm_mutation_model_v1" and job.get("status") == "done":
         result["artifacts"] = {"mutation_model": job["output_handles"][0]}
     else:
@@ -374,6 +379,9 @@ def _public_job(job: dict[str, Any], run: Run | None = None) -> dict[str, Any]:
     if job.get("protocol_id") == "qvina_batch_dock_v1" and run is not None:
         # Progress = readable rows/*.status.json of the attempt; the summary handle once published (any end state).
         result["batch"] = docking_batch_jobs.progress(run, job)
+    if job.get("protocol_id") == GA_PROTOCOL and run is not None:
+        # Progress = staged individual/generation file counts; the summary handle once published (any end state).
+        result["ga"] = ligand_ga_jobs.progress(run, job)
     return result
 
 
@@ -642,6 +650,8 @@ def capabilities() -> dict[str, Any]:
     methods["ligand_docking"] = docking_bundle.capability()
     # M19: ligand_docking + the batch worker and constants (own worker handshake, same environment and pins).
     methods["ligand_docking_batch"] = docking_batch_jobs.capability(methods["ligand_docking"])
+    # M22: ligand_docking + the GA worker and constants (own worker handshake, same environment and pins).
+    methods["ligand_ga_design"] = ligand_ga_jobs.capability(methods["ligand_docking"])
     # M21: fixed OpenMM 8.6.0 (M7 dependencies()) + PDBFixer 1.12.0 (metadata only) + process-identity adapter.
     methods["mutation_model"] = mutation_model_bundle.capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
@@ -1399,7 +1409,7 @@ def approve_job(rid: str) -> dict[str, Any]:
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
                       "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand",
-                      "qvina_dock_batch", "openmm_mutation_model"}
+                      "qvina_dock_batch", "openmm_mutation_model", "qvina_ga_design"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1435,9 +1445,14 @@ async def submit_job(rid: str, request: Request) -> Any:
                 error["loc"] and error["loc"][0] in {"timeout_s", "args"} for error in exc.errors()):
             return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid job timeout or arguments",
                                            detail={"reason_code": "argument_invalid"}))
+        # M22 keeps its closed admission reason too (no server timeout default; timeout_s <= 15000).
+        if data.get("protocol_id") == GA_PROTOCOL and all(
+                error["loc"] and error["loc"][0] in {"timeout_s", "args"} for error in exc.errors()):
+            return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid job timeout or arguments",
+                                           detail={"reason_code": "invalid_job_arguments"}))
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid job request"}) from exc
     try:
-        # An absent timeout_s is the protocol default (M21: 120 s; every other protocol: the former 60 s).
+        # An absent timeout_s is the protocol default (M21: 120 s; M22: none, refused; every other: the former 60 s).
         timeout_s = body.timeout_s if "timeout_s" in body.model_fields_set else None
         result = await run_in_threadpool(lambda: JobQueue(_run(rid)).submit(
             body.protocol_id, body.args, timeout_s=timeout_s))
@@ -1994,6 +2009,21 @@ async def docking_batch_limit_approval(rid: str, request: Request) -> Any:
     args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
     try:
         return await run_in_threadpool(lambda: docking_batch_jobs.limit_approval(_run(rid), args))
+    except ToolFailure as error:
+        return _tool_error(error)
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
+
+
+# ----------------------------------------------------------------- M22 GA limit raise (human UI action only)
+@app.post("/runs/{rid}/ligand/ga/limit_approval")
+async def ligand_ga_limit_approval(rid: str, request: Request) -> Any:
+    """Spec 6: the person's explicit approval to raise the run limits by this GA's shortfall (body = the GA job
+    arguments). Not a tool, plan or workflow step, model command or loop action; no other path calls it."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    try:
+        return await run_in_threadpool(lambda: ligand_ga_jobs.limit_approval(_run(rid), args))
     except ToolFailure as error:
         return _tool_error(error)
     except RunCancelled:

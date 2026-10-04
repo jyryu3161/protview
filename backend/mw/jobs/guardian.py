@@ -49,7 +49,12 @@ DOCKING_OUTPUT_LIMIT = 4 * 1024 * 1024  # docking_constants.MAX_RESULT_BYTES (th
 DOCKING_BATCH = Path(__file__).with_name("docking_batch_worker.py")
 DOCKING_BATCH_ADAPTER = "qvina_batch_dock_v1"
 DOCKING_BATCH_OUTPUT_LIMIT = 64 * 1024
-DOCKING_ADAPTERS = {DOCKING_ADAPTER, DOCKING_BATCH_ADAPTER}
+# M22: fixed GA design worker in the same pinned interpreter; result.json is the small end record (individual and
+# generation files are read and bounded by the server after the group is verified empty).
+LIGAND_GA = Path(__file__).with_name("ligand_ga_worker.py")
+LIGAND_GA_ADAPTER = "qvina_ga_dock_v1"
+LIGAND_GA_OUTPUT_LIMIT = 64 * 1024
+DOCKING_ADAPTERS = {DOCKING_ADAPTER, DOCKING_BATCH_ADAPTER, LIGAND_GA_ADAPTER}
 # M21: fixed OpenMM + PDBFixer mutation-model worker in this (project) interpreter, as the M7 worker.
 MUTATION_MODEL = Path(__file__).with_name("openmm_mutation_worker.py")
 MUTATION_MODEL_ADAPTER = "openmm_mutation_model_v1"
@@ -274,7 +279,7 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
     worker = (FIXTURE if adapter == "internal_lifecycle_fixture" else
               CHEMICAL if adapter in CHEMICAL_ADAPTERS else POCKET if adapter == POCKET_ADAPTER else
               LIGAND if adapter in LIGAND_ADAPTERS else DOCKING if adapter == DOCKING_ADAPTER else
-              DOCKING_BATCH if adapter == DOCKING_BATCH_ADAPTER else
+              DOCKING_BATCH if adapter == DOCKING_BATCH_ADAPTER else LIGAND_GA if adapter == LIGAND_GA_ADAPTER else
               MUTATION_MODEL if adapter == MUTATION_MODEL_ADAPTER else OPENMM)
     interpreter = (str(CHEMICAL_PYTHON) if adapter in PINNED_PYTHON_ADAPTERS else
                    str(DOCKING_PYTHON) if adapter in DOCKING_ADAPTERS else sys.executable)
@@ -355,6 +360,7 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
                             LIGAND_OUTPUT_LIMIT if adapter in LIGAND_ADAPTERS else
                             DOCKING_OUTPUT_LIMIT if adapter == DOCKING_ADAPTER else
                             DOCKING_BATCH_OUTPUT_LIMIT if adapter == DOCKING_BATCH_ADAPTER else
+                            LIGAND_GA_OUTPUT_LIMIT if adapter == LIGAND_GA_ADAPTER else
                             MUTATION_MODEL_OUTPUT_LIMIT if adapter == MUTATION_MODEL_ADAPTER else 64_000_000)
             if path.is_symlink() or not path.is_file() or path.stat().st_size > output_limit:
                 raise ValueError("invalid scientific output")
