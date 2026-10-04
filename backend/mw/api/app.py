@@ -27,6 +27,7 @@ from .. import (
     docking_reads,
     ligand_bundle,
     ligand_ga_jobs,
+    ligand_ga_reads,
     ligand_reads,
     mutation_model_bundle,
     mutation_model_reads,
@@ -51,6 +52,7 @@ from ..docking_reports import build_docking_report, saved_docking_report
 from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_ga_constants import PROTOCOL as GA_PROTOCOL
+from ..ligand_ga_reports import build_ligand_ga_report, saved_ligand_ga_report
 from ..ligand_reports import build_ligand_report, saved_ligand_report
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
 from ..mutation_model_constants import PROTOCOL as MUTATION_MODEL_PROTOCOL
@@ -1267,6 +1269,9 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # Reads the stored batch summary and its per-row results only; nothing is docked again and no per-row
             # docking report is made.
             return build_docking_batch_report(run, body.result_handle)
+        if kind == ligand_ga_reads.SUMMARY:
+            # Reads the stored GA summary and its individuals' results only; nothing is docked again.
+            return build_ligand_ga_report(run, body.result_handle)
         if kind == "mutation_candidate_set":
             # Reads the stored candidate set only (re-validated); no candidate is generated again.
             return build_mutation_report(run, body.result_handle)
@@ -1299,7 +1304,8 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
-                                        "ligand_docking_batch", "mutation_candidates", "mutation_model"}
+                                        "ligand_docking_batch", "mutation_candidates", "mutation_model",
+                                        "ligand_ga"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1316,7 +1322,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
-                                                              "mutation_candidates", "mutation_model"}
+                                                              "mutation_candidates", "mutation_model", "ligand_ga"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1339,6 +1345,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_docking_report(run, handle)
         if report.get("analysis_type") == "ligand_docking_batch":
             return saved_docking_batch_report(run, handle)
+        if report.get("analysis_type") == "ligand_ga":
+            return saved_ligand_ga_report(run, handle)
         if report.get("analysis_type") == "mutation_candidates":
             return saved_mutation_report(run, handle)
         if report.get("analysis_type") == "mutation_model":
@@ -2065,6 +2073,69 @@ def docking_batch_detail(rid: str, request: Request, handle: str) -> dict[str, A
     except docking_batch_jobs.DockingBatchEvidenceError as exc:
         raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                          "message": "invalid docking batch evidence"}) from exc
+
+
+# ----------------------------------------------------------------- M22 GA reads (no event, job, tool or engine)
+@app.post("/runs/{rid}/ligand/ga/preflight")
+async def ligand_ga_preflight(rid: str, request: Request) -> dict[str, Any]:
+    """Spec 6, 8: admission, pool counts, reusable candidates, reserved_units, need, remaining budget, shortfall,
+    full_run_may_be_partial and G1 for a GA request (body = the GA job arguments). A read: no event, job, tool,
+    reservation or limit change."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    run = _run(rid)
+    return await run_in_threadpool(lambda: ligand_ga_reads.preflight(run, args))
+
+
+@app.get("/runs/{rid}/ligand/ga/results")
+def ligand_ga_results(rid: str, request: Request, offset: int = Query(0, ge=0),
+                      limit: int = Query(ligand_ga_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                         le=ligand_ga_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's GA summaries, newest first; each row re-validated."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return ligand_ga_reads.list_summaries(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid ligand GA record"}) from exc
+
+
+def _ligand_ga_summary(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (ligand_ga_reads.SUMMARY, ligand_ga_reads.SUMMARY_SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a ligand_ga_result"})
+    return meta
+
+
+def _ligand_ga_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid ligand GA evidence"})
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: the sub-resource route is registered before the detail.
+@app.get("/runs/{rid}/ligand/ga/results/{handle:path}/individual")
+def ligand_ga_individual(rid: str, handle: str, request: Request, candidate_id: str | None = None) -> dict[str, Any]:
+    """One individual (by candidate id) and the M18 detail read of its standalone result."""
+    _only_query(request, {"candidate_id"})
+    run = _run(rid)
+    _ligand_ga_summary(run, handle)
+    try:
+        return ligand_ga_reads.individual(run, handle, candidate_id)
+    except ligand_ga_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except (ligand_ga_reads.LigandGaEvidenceError, docking_bundle.DockingEvidenceError) as exc:
+        raise _ligand_ga_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/ligand/ga/results/{handle:path}")
+def ligand_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One validated GA summary with its generations; individual results open in the M18 /docking/results/* reads."""
+    _only_query(request, set())
+    run = _run(rid)
+    meta = _ligand_ga_summary(run, handle)
+    try:
+        return {**ligand_ga_reads.summary_detail(run, handle), "meta": meta}
+    except ligand_ga_reads.LigandGaEvidenceError as exc:
+        raise _ligand_ga_evidence_error(exc) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")
