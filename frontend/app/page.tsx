@@ -25,6 +25,7 @@ import { MutationPanel } from "@/components/MutationPanel";
 import { MutationModelPanel, type ModelStartRequest } from "@/components/MutationModelPanel";
 import { DockingPanel } from "@/components/DockingPanel";
 import { DockingBatchPanel } from "@/components/DockingBatchPanel";
+import { LigandGaPanel } from "@/components/LigandGaPanel";
 import { SiteAnnotationPanel } from "@/components/SiteAnnotationPanel";
 import { hostRequestAccepted, importedPocketChains, newerEventLog, type ScreenSelections } from "@/lib/analysis";
 import { featureGates, overlayContextDecision, pocketRequestAccepted, type PocketOverlayReadback, type PocketOverlayRequest,
@@ -2069,6 +2070,12 @@ export default function WorkspacePage() {
         openRequest={dockingOpenRequest} />
       <DockingBatchPanel key={`docking-batch-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.ligand_docking_batch ?? null : undefined}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }}
+        onOpenResult={(openRunId, handle) => { if (hostRequestAccepted({ runId: openRunId }, analysisHostRef.current))
+          setDockingOpenRequest(previous => ({ runId: openRunId, handle, seq: (previous?.seq ?? 0) + 1 })); }} />
+      <LigandGaPanel key={`ligand-ga-${run?.run_id ?? "none"}`} run={run}
+        capability={capabilities ? capabilities.methods?.ligand_ga_design ?? null : undefined}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }}
         onOpenResult={(openRunId, handle) => { if (hostRequestAccepted({ runId: openRunId }, analysisHostRef.current))

@@ -476,3 +476,32 @@ test("forbidden words: every string this module exports passes; the check catche
   assert.deepEqual(plain(lib.gaForbiddenWords(`${G.G1}\n${G.G2}`)), []);
   assert.ok(lib.gaForbiddenWords(`${G.G1} 추가`).length > 0);
 });
+
+// ---- the GA area component (source checks; the real behavior is the offscreen flow) ----
+
+test("panel source: forbidden words, one limit-approval call site, M17 filter and M18 reuse, no HTML strings", () => {
+  const panel = path.join(__dirname, "../src/components/LigandGaPanel.tsx");
+  const source = fs.readFileSync(panel, "utf8");
+  assert.deepEqual(plain(lib.gaForbiddenWords(source)), []);
+  assert.ok(!/dangerouslySetInnerHTML|innerHTML/.test(source));
+  // The GA limit approval route is called in exactly one place, behind the offer check (a person's click).
+  assert.equal([...source.matchAll(/api\.ligandGaLimitApproval\(/g)].length, 1);
+  assert.ok(/gaLimitApprovalOffered\(shownPreflight, run\.dry_run\)\) return;/.test(source));
+  assert.ok(!/dockingBatchLimitApproval/.test(source));
+  assert.ok(/<FilterForm idPrefix="ligand-ga"/.test(source));
+  assert.ok(/import \{ RefusalList \} from "\.\/DockingPanel"/.test(source));
+  assert.ok(/import \{ FilterForm \} from "\.\/LigandPanel"/.test(source));
+  // Every test id carries the GA prefix (no collision with the M17, M18 and M19 areas in the same tab).
+  const ids = [...source.matchAll(/data-testid=(?:"([^"]+)"|\{`([^`]+)`\}|\{!p\.run \? "([^"]+)" : "([^"]+)"\})/g)];
+  // Every literal id is checked; the only other form is the ErrorLine prop pass-through.
+  assert.equal(ids.length, [...source.matchAll(/data-testid=/g)].length - 1);
+  for (const match of ids) for (const id of match.slice(1).filter(Boolean)) assert.ok(id.startsWith("ligand-ga-"), id);
+  // Scores are shown through the view model only (no arithmetic on scores in the component).
+  assert.ok(/individualScoreText\(row\)/.test(source));
+  assert.ok(!/\.score\s*[-+*/<>]/.test(source));
+  // The page mounts the area after the batch docking area and routes "상세 열기" to the M18 detail.
+  const page = fs.readFileSync(path.join(__dirname, "../../frontend/app/page.tsx"), "utf8");
+  const batchAt = page.indexOf("<DockingBatchPanel "), gaAt = page.indexOf("<LigandGaPanel ");
+  assert.ok(batchAt > 0 && gaAt > batchAt);
+  assert.ok(/capabilities\.methods\?\.ligand_ga_design/.test(page));
+});
