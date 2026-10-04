@@ -429,6 +429,9 @@ test("cells: origin labels, reuse flag, stored score only for scored, lineage, M
   assert.equal(lib.lineageText(GEN.individuals[1]), "부모 c_e · 지문 Tanimoto 0.523457");
   assert.equal(lib.lineageText(GEN.individuals[2]), "부모 c_e · 지문 Tanimoto 1.000000");
   assert.equal(lib.lineageText(GEN.individuals[4]), "");
+  // the stored form: a 6-decimal ROUND_HALF_UP string (ligand_ga_bundle.SIMILARITY_RE), shown as stored
+  assert.equal(lib.lineageText({ origin: "similar", parent_candidate_id: "c_e", similarity: "0.882979" }),
+    "부모 c_e · 지문 Tanimoto 0.882979");
   assert.equal(lib.individualDetailHandle(GEN.individuals[0]), "obj://r/docking_result/c_e");
   assert.equal(lib.individualDetailHandle(GEN.individuals[1]), null);
   assert.equal(lib.generationRangeText(GEN), "점수 최솟값 -8.3 · 점수 최댓값 0.0 (kcal/mol)");

@@ -616,7 +616,7 @@ export interface LigandGaLimitApproval { raised: boolean; selection_sha256: stri
 
 /** One individual of a generation (stored values; `carried` cites its first evaluation). */
 export interface LigandGaIndividual { candidate_id: string; origin: LigandGaOrigin; parent_candidate_id: string | null;
-  similarity: number | null; evaluation: LigandGaEvaluation | null; eval_index: number | null; state: LigandGaState;
+  similarity: string | number | null; evaluation: LigandGaEvaluation | null; eval_index: number | null; state: LigandGaState;
   reason_code: string | null; score: number | null; result_handle: string | null }
 export interface LigandGaGeneration { index: number; complete: boolean; individuals: LigandGaIndividual[];
   min_score: number | null; max_score: number | null }

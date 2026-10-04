@@ -490,10 +490,12 @@ export function individualReasonText(row: Pick<LigandGaIndividual, "reason_code"
   return row.reason_code ? gaReasonText(row.reason_code) : "";
 }
 
-/** Parent and Morgan Tanimoto of a similar slot (worker record, six decimals as stored); empty otherwise. */
+/** Parent and Morgan Tanimoto of a similar slot (worker record, six decimals as stored); empty otherwise. The server
+ * stores the similarity as a 6-decimal ROUND_HALF_UP string (`ligand_ga_bundle.SIMILARITY_RE`), shown as stored. */
 export function lineageText(row: Pick<LigandGaIndividual, "origin" | "parent_candidate_id" | "similarity">): string {
   if (row.origin !== "similar" || row.parent_candidate_id === null) return "";
-  const similarity = typeof row.similarity === "number" ? ` · 지문 Tanimoto ${decimalHalfUp(row.similarity, 6)}` : "";
+  const similarity = typeof row.similarity === "string" ? ` · 지문 Tanimoto ${row.similarity}`
+    : typeof row.similarity === "number" ? ` · 지문 Tanimoto ${decimalHalfUp(row.similarity, 6)}` : "";
   return `부모 ${row.parent_candidate_id}${similarity}`;
 }
 
