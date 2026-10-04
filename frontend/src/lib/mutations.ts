@@ -69,7 +69,8 @@ export const MUTATION_LIMITATIONS: readonly string[] = [
 // ---- fixed screen text ----
 
 export const PANEL_TITLE = "변이 후보";
-export const MODELING_NOTE = "변이 구조 모델링은 아직 구현하지 않았습니다. 이 화면은 위치와 바꿀 잔기의 조합 목록만 보여 줍니다.";
+export const MODELING_NOTE = "변이 구조 모델링은 후보 표의 후보 행에서 따로 시작합니다(아래 변이 구조 모델링 영역). " +
+  "이 화면은 위치와 바꿀 잔기의 조합 목록만 보여 줍니다.";
 export const NO_RUN_REASON = "run이 없습니다. 구조 분석 탭에서 run을 먼저 고르세요.";
 export const NO_PREPARED_REASON = "이 run에 전처리 구조가 없습니다. 구조 분석 탭에서 구조를 먼저 전처리하세요.";
 export const CAPABILITY_REASON = "변이 후보 기능을 사용할 수 없습니다.";

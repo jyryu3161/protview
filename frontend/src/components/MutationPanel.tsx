@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, type ResidueList, type RunSummary } from "@/lib/api";
-import type { ExactResidueRef, MutationCandidatePage, MutationCandidateSetDetail, MutationCandidateSetList,
+import type { ExactResidueRef, MutationCandidatePage, MutationCandidateRow, MutationCandidateSetDetail, MutationCandidateSetList,
   MutationExclusionReason, MutationPosition, MutationPositionPage, MutationPositionSort, MutationPositionStatus,
   MutationReportArtifact, MutationSourceKind, RunEvent, SiteAnnotationListRow } from "@/lib/contracts";
 import type { NumberingMapListRow } from "@/lib/numbering";
@@ -35,6 +35,8 @@ export interface MutationPanelProps {
   onObjectsChanged: (runId: string) => void;
   /** After a report was created: the page re-reads the knowledge-tab report list (it drops another run's call). */
   onReportCreated: (runId: string) => void;
+  /** M21: "변이 구조 모델링" of a candidate row hands that candidate (by its integer index) to the model area. */
+  onModelCandidate?: (pick: { runId: string; candidateSet: string; candidate: MutationCandidateRow }) => void;
 }
 
 const STATE_TEXT = { loading: "불러오는 중", ready: "준비", scientific_null: "빈 결과 (후보 0개)", failed: "실패",
@@ -94,12 +96,12 @@ export function MutationPanel(p: MutationPanelProps) {
     </section>;
   }
   return <MutationWorkspace run={p.run} capability={p.capability} onObjectsChanged={p.onObjectsChanged}
-    onReportCreated={p.onReportCreated} />;
+    onReportCreated={p.onReportCreated} onModelCandidate={p.onModelCandidate} />;
 }
 
-function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated }: { run: RunSummary;
+function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated, onModelCandidate }: { run: RunSummary;
   capability: { available: boolean; reason: string | null }; onObjectsChanged: (runId: string) => void;
-  onReportCreated: (runId: string) => void }) {
+  onReportCreated: (runId: string) => void; onModelCandidate?: MutationPanelProps["onModelCandidate"] }) {
   const runId = run.run_id;
   const [events, setEvents] = useState<Load<RunEvent[]>>({ status: "idle" });
   const [eventsReload, setEventsReload] = useState(0);
@@ -577,11 +579,15 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated 
           ? <p className="mw-mutation-note" data-testid="mutation-candidates-empty">{opened.result.null_result
             ? "후보 0개 (빈 결과): 모든 위치가 제외되었거나 위치가 없습니다." : "이 조건에 맞는 후보 없음"}</p>
           : <div className="mw-mutation-table-wrap"><table className="mw-mutation-table" data-testid="mutation-candidates">
-            <thead><tr><th>후보 번호 (생성 순서)</th><th>위치 (파일 순서 번호)</th><th>잔기</th><th>치환</th></tr></thead>
+            <thead><tr><th>후보 번호 (생성 순서)</th><th>위치 (파일 순서 번호)</th><th>잔기</th><th>치환</th>
+              {onModelCandidate && <th>구조 모델</th>}</tr></thead>
             <tbody>{candidatesLoad.value.rows.map(row => <tr key={row.index} data-mutation-candidate={row.index}
               data-position-index={row.position_index} data-from={row.from} data-to={row.to}>
               <td className="mw-mono">{row.index}</td><td className="mw-mono">{row.position_index}</td>
               <td className="mw-mono">{residueText(row.residue)}</td><td className="mw-mono">{candidateText(row)}</td>
+              {onModelCandidate && <td><Button size="sm" data-testid="mutation-candidate-model" data-candidate-index={row.index}
+                aria-label={`후보 ${row.index} 변이 구조 모델링`}
+                onClick={() => onModelCandidate({ runId, candidateSet: opened.handle, candidate: row })}>변이 구조 모델링</Button></td>}
             </tr>)}</tbody></table></div>)}
         {candidatesLoad?.status === "ready" && <Pager testId="mutation-candidates" page={candidatesLoad.value} onPage={setCandOffset} />}
       </div>
