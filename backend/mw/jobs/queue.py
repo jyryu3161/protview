@@ -795,7 +795,7 @@ class JobQueue:
                 job["method"] = docking_pins  # the rows' M18 pins (row call keys and result checks)
                 job["batch_method"] = batch_pins
             elif protocol == MUTATION_MODEL_PROTOCOL:
-                job["method"] = mutation_pins  # worker SHA-256 + fixed method record (rechecked at start)
+                job["method"] = mutation_pins  # worker + dependency SHA-256 + fixed method record (rechecked at start)
             self.run.events.append("job_submitted", job=job, **link_fields(link))
             created = self._rebuild()[job_id]
             return created if link is None else {**created, "execution_ownership": "owned"}

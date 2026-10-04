@@ -37,6 +37,7 @@ PARAMS = {"seed": SEED, "exhaustiveness": 4, "num_modes": 5}
 TWELFTH = ("수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다"
            "(리간드 좌표는 사용자가 준 SDF 그대로).")
 LEGACY_KEYS = ("receptor_handle", "receptor_model_number", "connectivity", "receptor_instance")
+CANDIDATE_LIGAND = {"source": "candidate", "candidate_set_handle": "cs", "candidate_id": "c1", "parent_sdf_handle": "p"}
 
 
 # ----------------------------------------------------------------- helpers
@@ -169,6 +170,10 @@ def test_receptor_source_replaces_the_four_receptor_keys():
     ({"receptor_source": _source(7, "mutant")}, "mutation_model_invalid"),
     ({"box": {"source": "instance_range", "margin_A": 8}}, "box_invalid"),
     ({"acknowledgement": {**ACK, "rigid_no_optimization": False}}, "acknowledgement_missing"),
+    # SDF ligands only for the mutation_model source (user decision; the twelfth sentence names the user's SDF)
+    ({"ligand": CANDIDATE_LIGAND}, "mode_source_mismatch"),
+    ({"ligand": CANDIDATE_LIGAND, "mode": "core_fixed"}, "mode_source_mismatch"),
+    ({"mode": "core_fixed"}, "mode_source_mismatch"),
 ])
 def test_receptor_source_argument_refusals(change, reason):
     args = {**_args(_source("h", "mutant"), "sdf"), **change}
@@ -283,6 +288,9 @@ def test_admission_refusals_start_nothing(docked, world, client):
          "mutation_model_invalid"),
         (_args(_source(docked["jobs"]["mutant"]["output_handles"][0], "mutant"), docked["sdf"]),
          "mutation_model_invalid"),
+        # SDF ligands only: the M17 candidate source is refused before any job (existing admission reason)
+        (_args(_source(world["model"], "mutant"), docked["sdf"],
+               ligand={**CANDIDATE_LIGAND, "parent_sdf_handle": docked["sdf"]}), "mode_source_mismatch"),
     ]
     for args, reason in cases:
         assert _reason(_submit(client, rid, args)) == reason, args

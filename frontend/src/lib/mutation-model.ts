@@ -103,6 +103,12 @@ export const NO_PAIRS_TEXT = "이 모델로 제출한 같은 조건 도킹이 �
 export const PAIR_MODE_ONLY = "같은 조건 도킹은 자유 도킹만 씁니다.";
 export const PAIR_INSTANCE_RANGE_REASON = "변이 구조 모델은 단백질만 담고 있어 뺄 리간드 인스턴스가 없으므로 수용체 안 인스턴스 " +
   "범위 상자를 쓸 수 없습니다.";
+/** SDF ligands only (user decision): the twelfth M18 limitation says the ligand coordinates are the user's SDF. */
+export const PAIR_SDF_ONLY_REASON = "같은 조건 도킹은 가져온 3D SDF 리간드만 씁니다. 결과 한계 문장의 \"리간드 좌표는 사용자가 준 SDF " +
+  "그대로\"가 M17 후보(RDKit이 만든 좌표)에는 맞지 않기 때문입니다.";
+/** Opening another model resets the pair area, so it waits while the two-job action is mid-way. */
+export const MODEL_SWITCH_PAIR_BUSY_REASON = "같은 조건 도킹 요청(제출·승인·시작)을 처리하는 중에는 다른 모델을 열 수 없습니다. " +
+  "처리가 끝난 뒤 여세요.";
 
 /** Korean names of every code the area can show (admission, precondition, failure, job queue and read codes). */
 export const MODEL_REASON_LABEL: Record<string, string> = {
@@ -536,7 +542,7 @@ export function modelReportMatches(artifact: Pick<MutationModelReportArtifact, "
 
 // ---- same-condition docking requests (two M18 jobs differing only in receptor_source.side) ----
 
-/** Ligand, box, values and acknowledgements of the M18 form; the mode is always free docking. */
+/** Ligand, box, values and acknowledgements of the M18 form; the mode is always free docking, the ligand a 3D SDF. */
 export type PairDockingForm = DockingConditionForm;
 export const PAIR_BOX_SOURCES = ["ligand_range", "manual"] as const;
 
@@ -550,15 +556,13 @@ export function initialPairDockingForm(): PairDockingForm {
 }
 
 /**
- * Applies an edit and clears what it invalidates (a new candidate set clears the candidate and its parent SDF); the
- * mode stays free docking and an instance-range box is dropped (a protein-only model has no instance to remove).
+ * Applies an edit; the mode stays free docking, the ligand source stays the 3D SDF (an M17 candidate is dropped and
+ * its fields stay empty) and an instance-range box is dropped (a protein-only model has no instance to remove).
  */
 export function patchPairDockingForm(form: PairDockingForm, patch: Partial<PairDockingForm>): PairDockingForm {
-  const next: PairDockingForm = { ...form, ...patch, mode: "free" };
-  if (next.candidateSetHandle !== form.candidateSetHandle) {
-    if (!("candidateId" in patch)) next.candidateId = null;
-    if (!("parentSdfHandle" in patch)) next.parentSdfHandle = null;
-  }
+  const next: PairDockingForm = { ...form, ...patch, mode: "free", candidateSetHandle: null, candidateId: null,
+    parentSdfHandle: null };
+  if (next.ligandSource !== null && next.ligandSource !== "sdf") next.ligandSource = null;
   if (next.boxSource === "instance_range") next.boxSource = null;
   return next;
 }
@@ -568,10 +572,20 @@ export function pairBoxSourceDisabledReason(source: string): string | null {
   return source === "instance_range" ? PAIR_INSTANCE_RANGE_REASON : null;
 }
 
+/** Why a ligand source cannot be chosen for a mutation-model receptor (null = usable; only the 3D SDF is). */
+export function pairLigandSourceDisabledReason(source: string): string | null {
+  return source === "sdf" ? null : PAIR_SDF_ONLY_REASON;
+}
+
+/** Why another model cannot be opened now (null = it can): not while the two-job action is mid-way. */
+export function modelSwitchBlockedReason(pairBusy: boolean): string | null {
+  return pairBusy ? MODEL_SWITCH_PAIR_BUSY_REASON : null;
+}
+
 /**
  * The two `qvina_dock_v1` requests of one same-condition action, keyed by side. They are identical except
- * `receptor_source.side`; the ligand, box, values and acknowledgements follow the M18 rules (`dockingConditionArgs`)
- * and no imported-receptor key (`receptor_handle`, `receptor_model_number`, `connectivity`, `receptor_instance`) is
+ * `receptor_source.side`; the ligand (3D SDF only), box, values and acknowledgements follow the M18 rules
+ * (`dockingConditionArgs`) and no imported-receptor key (`receptor_handle`, `receptor_model_number`, `connectivity`, `receptor_instance`) is
  * present.
  */
 export function pairDockingRequests(form: PairDockingForm, modelHandle: string | null):
@@ -579,6 +593,7 @@ export function pairDockingRequests(form: PairDockingForm, modelHandle: string |
   const errors: string[] = [];
   if (!modelHandle) errors.push("변이 구조 모델을 먼저 여세요.");
   if (form.mode !== "free") errors.push(PAIR_MODE_ONLY);
+  if (form.ligandSource !== null && form.ligandSource !== "sdf") errors.push(`${PAIR_SDF_ONLY_REASON} (mode_source_mismatch)`);
   const condition = dockingConditionArgs({ ...form, mode: "free" },
     form.boxSource === null ? null : pairBoxSourceDisabledReason(form.boxSource));
   if (!condition.ok) errors.push(...condition.errors);

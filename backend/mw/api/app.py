@@ -51,6 +51,7 @@ from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_reports import build_ligand_report, saved_ligand_report
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
+from ..mutation_model_constants import PROTOCOL as MUTATION_MODEL_PROTOCOL
 from ..mutation_model_reports import build_mutation_model_report, saved_mutation_model_report
 from ..mutation_reports import build_mutation_report, saved_mutation_report
 from ..numbering_reports import build_numbering_report, saved_numbering_report
@@ -1425,9 +1426,15 @@ def job_detail(rid: str, job_id: str) -> dict[str, Any]:
 @app.post("/runs/{rid}/jobs")
 async def submit_job(rid: str, request: Request) -> Any:
     raw = await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT)
+    data = _chemical_json(raw)
     try:
-        body = JobSubmit.model_validate(_chemical_json(raw))
+        body = JobSubmit.model_validate(data)
     except PydanticValidationError as exc:
+        # M21 keeps its closed admission reason for the request model's own timeout_s / args refusals.
+        if data.get("protocol_id") == MUTATION_MODEL_PROTOCOL and all(
+                error["loc"] and error["loc"][0] in {"timeout_s", "args"} for error in exc.errors()):
+            return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid job timeout or arguments",
+                                           detail={"reason_code": "argument_invalid"}))
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid job request"}) from exc
     try:
         # An absent timeout_s is the protocol default (M21: 120 s; every other protocol: the former 60 s).

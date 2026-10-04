@@ -19,7 +19,8 @@ Argument rules (spec 5.1):
   mutation_model: <handle>, side: "wild_type_reference" | "mutant"}`` replaces the four receptor keys
   (``receptor_handle``, ``receptor_model_number``, ``connectivity``, ``receptor_instance``), which must then all be
   absent; mixing or a malformed object is ``invalid_job_arguments``, a non-string/empty handle or an unknown side is
-  ``mutation_model_invalid`` (admission only). Without ``receptor_source`` the four keys stay required as before and
+  ``mutation_model_invalid`` (admission only). With ``receptor_source`` the ligand must be the ``sdf`` source; the
+  M17 ``candidate`` source is the existing ``mode_source_mismatch`` (user decision). Without ``receptor_source`` the four keys stay required as before and
   the normalized arguments (hence ``input_sha256`` and the call key) are unchanged. With it, the normalized arguments
   hold ``receptor_source`` instead of the four keys, so the source joins the call key.
 
@@ -218,6 +219,10 @@ def validate_arguments(args: Any) -> dict[str, Any]:
         raise _args_error("mode must be free or core_fixed")
     if mode == "core_fixed" and ligand["source"] != "candidate":
         raise _fail("mode_source_mismatch", "core_fixed needs the candidate ligand source")
+    if source and ligand["source"] != "sdf":
+        # M21 (user decision): the mutation_model receptor takes the user's SDF ligand only (the twelfth limitation
+        # states the ligand coordinates are the user's SDF, which is not true of a generated candidate).
+        raise _fail("mode_source_mismatch", "receptor_source mutation_model needs the sdf ligand source")
     box = _box(args["box"], instance is not None)
     parameters = _parameters(args["parameters"], mode)
     ack = args.get("acknowledgement")

@@ -8,7 +8,8 @@ worker ``mw/jobs/openmm_mutation_worker.py`` (project interpreter, as M7).
 Submission order (``JobQueue.submit``): ``admission`` (pure checks 1--7 of ``mutation_model_inputs`` plus the
 ``JobSubmit.timeout_s`` field, 422) -> dry-run plan (as M7, before any engine) -> ``selection`` (unavailability 412:
 process identity, OpenMM, PDBFixer; then the M7 preflight, whose failures are 422 ``openmm_preflight_failed``) ->
-``call_key`` (normalized arguments + worker SHA-256 + fixed method record; never the timeout). Nothing is reserved or
+``call_key`` (normalized arguments + worker SHA-256 + dependency SHA-256 map + fixed method record; never the
+timeout). Nothing is reserved or
 charged before a job starts.
 
 Publication (``publish``) re-validates the worker output against the job's selection and the pinned method, checks
@@ -43,6 +44,11 @@ from .tools.structural import structure_residues
 ROOT = Path(__file__).resolve().parents[2]
 # Deployment-fixed path; a request can never name an interpreter, module, path, env or argv.
 WORKER = ROOT / "backend/mw/jobs/openmm_mutation_worker.py"
+# The project modules the worker imports (its results and the validated content depend on them), hashed into the
+# call key and the start-time recheck like the worker itself (as M18 pins its constants file).
+DEPENDENCIES = {name: ROOT / "backend" / name for name in (
+    "mw/mutation_model_math.py", "mw/mutation_model_constants.py", "mw/jobs/openmm_worker.py",
+    "mw/tools/openmm_method.py", "mw/mutation_candidates.py")}
 PROTOCOL = K.PROTOCOL
 TOOL = K.TOOL
 IMPLEMENTATION = "openmm_mutation_model_v1@1"
@@ -144,8 +150,11 @@ def capability() -> dict[str, Any]:
 
 
 def require_ready() -> dict[str, Any]:
-    """The pins a job records at submission and rechecks at start: worker SHA-256 and the fixed method record."""
-    return {"worker_sha256": _sha(WORKER.read_bytes()), "method": _ready_method()}
+    """The pins a job records at submission and rechecks at start: worker SHA-256, the SHA-256 of each worker
+    dependency module and the fixed method record."""
+    return {"worker_sha256": _sha(WORKER.read_bytes()),
+            "dependency_sha256": {name: _sha(path.read_bytes()) for name, path in sorted(DEPENDENCIES.items())},
+            "method": _ready_method()}
 
 
 # ----------------------------------------------------------------- admission (no job, no engine, no event)
@@ -212,8 +221,10 @@ def input_handles(selected: dict[str, Any]) -> list[str]:
 
 
 def call_key(normalized: dict[str, Any], pins: dict[str, Any]) -> str:
-    """Spec 2: normalized arguments + worker module SHA-256 + the fixed method record (the timeout is not in it)."""
+    """Spec 2: normalized arguments + worker module SHA-256 + its dependency SHA-256 map + the fixed method record
+    (the timeout is not in it)."""
     return idempotency_key(PROTOCOL, IMPLEMENTATION, {"arguments": normalized, "worker_sha256": pins["worker_sha256"],
+                                                      "dependency_sha256": pins["dependency_sha256"],
                                                       "method": pins["method"]})
 
 

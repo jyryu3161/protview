@@ -3,25 +3,25 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, type RunSummary, type SavedReportRef } from "@/lib/api";
 import type { DockingAcknowledgementKey, DockingBoxSource, DockingCapability, DockingJob, DockingLigandSource,
-  DockingPrerequisites, LigandCandidatePage, MutationCandidateRow, MutationModelCapability,
+  DockingPrerequisites, MutationCandidateRow, MutationModelCapability,
   MutationModelContactPage, MutationModelDetail, MutationModelDockingPairs, MutationModelJob, MutationModelList,
   MutationModelReportArtifact, MutationModelSide } from "@/lib/contracts";
 import { ACKNOWLEDGEMENT_KEYS, ACKNOWLEDGEMENT_LABEL, BOX_FRAME_NOTE, BOX_SIDE_MAX_A, BOX_SIDE_MIN_A, BOX_SOURCES,
-  boxSourceLabel, CANDIDATE_SOURCE_NOTES, dockingCancelEnabled, dockingJobActive, dockingRequestErrorText,
+  boxSourceLabel, dockingCancelEnabled, dockingJobActive, dockingRequestErrorText,
   dockingResponseCurrent, ENERGY_RANGE_MAX, ENERGY_RANGE_MIN, EXHAUSTIVENESS_MAX, EXHAUSTIVENESS_MIN, importsOfKind,
-  LIGAND_SOURCES, MARGIN_MAX_A, MARGIN_MIN_A, NUM_MODES_MAX, NUM_MODES_MIN, parentSdfMissingReason, SEED_MAX, SEED_MIN,
-  stereoFlagText, type DockingStamp } from "@/lib/docking";
-import { CANDIDATE_PAGE_LIMIT, candidateRowsQuery, emptyAppliedFilter, ligandStartProgressed } from "@/lib/ligand";
+  LIGAND_SOURCES, MARGIN_MAX_A, MARGIN_MIN_A, NUM_MODES_MAX, NUM_MODES_MIN, SEED_MAX, SEED_MIN,
+  type DockingStamp } from "@/lib/docking";
+import { ligandStartProgressed } from "@/lib/ligand";
 import { AREA_TITLE, CONFIRMATION_LABEL, CONTACT_CUTOFF_RANGE_A, CONTACT_PAGE_SIZE_DEFAULT, CONTACT_TABLE_HEADERS,
   contactPageCount, contactPageText, contactRowCells, disulfideText, initialModelCounters, initialModelForm,
   initialPairDockingForm, initialPairSubmission, LIST_LIMIT_MAX, MODEL_BUDGET_NOTE, MODEL_METHOD_NOTE,
   MODEL_REPORT_TYPE, MODEL_STATE_TEXT, modelActiveJob, modelApprovalRequired, modelAreaState, modelCapabilityText,
   modelContactQuery, modelFormForCandidate, modelJobResult, modelJobText, modelLimitations, modelListRowText,
   modelReasonText, modelReportMatches, modelReportSavedForRun, modelRequest, modelRequestErrorText, modelResponseCurrent,
-  modelSubmitBlockedReason, modelSubmitText, mutationSummaryText, nextModelRequest, nextPairStartSide,
+  modelSubmitBlockedReason, modelSwitchBlockedReason, modelSubmitText, mutationSummaryText, nextModelRequest, nextPairStartSide,
   nextPairSubmitSide, NULL_TEXT, PAIR_AREA_TITLE, PAIR_BOX_SOURCES, PAIR_CONDITION_NOTE, PAIR_MODE_ONLY,
   PAIR_SCORE_NOTE, PAIR_UNITS_NOTICE, pairApprovalRequired, pairAreaState, pairBoxSourceDisabledReason,
-  pairDockingRequests, pairJobText, pairRows, pairSubmitAnswered, pairSubmitBlockedReason, pairSubmitStarted,
+  pairDockingRequests, pairLigandSourceDisabledReason, pairJobText, pairRows, pairSubmitAnswered, pairSubmitBlockedReason, pairSubmitStarted,
   pairSubmitText, pairTableHeaders, patchPairDockingForm, protonationRows, residueFieldsText, residueShortText,
   sideBySideRows, SIDE_BY_SIDE_NOTE, SIDE_LABEL, STRUCTURE_SIDES, structureDownloadLabel, TIMEOUT_MAX_S,
   unknownLimitations, type ModelArea, type ModelForm, type ModelRequestCounters, type ModelStamp, type PairDockingForm,
@@ -54,8 +54,8 @@ export interface MutationModelPanelProps {
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
-type Extra = "prereq" | "ligand_rows" | "report_list" | "model_cancel" | "pair_cancel";
-const EXTRAS: readonly Extra[] = ["prereq", "ligand_rows", "report_list", "model_cancel", "pair_cancel"];
+type Extra = "prereq" | "report_list" | "model_cancel" | "pair_cancel";
+const EXTRAS: readonly Extra[] = ["prereq", "report_list", "model_cancel", "pair_cancel"];
 const MODEL_AREAS: readonly ModelArea[] = ["list", "detail", "contacts", "pairs", "report", "model_job", "pair_jobs"];
 const TIMEOUT_MS = 30000;
 const AXES = ["x", "y", "z"] as const;
@@ -139,8 +139,6 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   const [unitsConfirmed, setUnitsConfirmed] = useState(false);
   const [prereq, setPrereq] = useState<Load<DockingPrerequisites>>({ status: "idle" });
   const [prereqReload, setPrereqReload] = useState(0);
-  const [ligandOffset, setLigandOffset] = useState(0);
-  const [ligandRows, setLigandRows] = useState<{ key: string; load: Load<LigandCandidatePage> } | null>(null);
   const [submission, setSubmission] = useState<PairSubmission>(initialPairSubmission);
   const [pairJobs, setPairJobs] = useState<PairJobs>(NO_PAIR_JOBS);
   const [pairApproval, setPairApproval] = useState(false);
@@ -155,8 +153,8 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   const mounted = useRef(true);
   const counters = useRef<ModelRequestCounters>(initialModelCounters());
   const extras = useRef<Record<Extra, number>>(Object.fromEntries(EXTRAS.map(area => [area, 0])) as Record<Extra, number>);
-  const live = useRef({ handle: selected, ligandSet: pairForm.candidateSetHandle });
-  live.current = { handle: selected, ligandSet: pairForm.candidateSetHandle };
+  const live = useRef({ handle: selected });
+  live.current = { handle: selected };
   useEffect(() => {
     mounted.current = true;
     const model = counters.current, extra = extras.current;
@@ -174,8 +172,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   };
   const current = (area: ModelArea, captured: ModelStamp) => mounted.current &&
     modelResponseCurrent(captured, { runId, handle: handleOf(area), area, seq: counters.current[area] });
-  const keyOf = (area: Extra): string | null => area === "ligand_rows" ? live.current.ligandSet
-    : area === "report_list" || area === "pair_cancel" ? live.current.handle : null;
+  const keyOf = (area: Extra): string | null => area === "report_list" || area === "pair_cancel" ? live.current.handle : null;
   const stampExtra = (area: Extra): DockingStamp => ({ runId, key: keyOf(area), seq: ++extras.current[area] });
   const currentExtra = (area: Extra, captured: DockingStamp) => mounted.current &&
     dockingResponseCurrent(captured, { runId, key: keyOf(area), seq: extras.current[area] });
@@ -251,7 +248,10 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   }, [startRequest?.seq]);
 
   // ---- opened model: detail, contact pages, reports, docking pairs ----
+  // Not while the same-condition action is mid-way: opening a model resets the pair area (the controls say why).
+  const switchBlocked = modelSwitchBlockedReason(pairBusy);
   function openModel(handle: string) {
+    if (switchBlocked) return;
     setSelected(handle); live.current = { ...live.current, handle };
     setContactSide("wild_type_reference"); setContactPage(1); setContacts(null); setReport(null);
     setSubmission(initialPairSubmission()); setPairJobs(NO_PAIR_JOBS); setPairApproval(false); setPairStartError({});
@@ -321,7 +321,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   }, [openedHandle, pairsReload]);
   const pairsLoad = pairs && pairs.handle === openedHandle ? pairs.load : null;
 
-  // Docking inputs (ligand SDF imports and M17 candidate sets), read once a model is open.
+  // Docking inputs (ligand SDF imports; SDF ligands only), read once a model is open.
   const wantsPrereq = openedHandle !== null;
   useEffect(() => {
     if (!wantsPrereq) return;
@@ -335,23 +335,6 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
       setPrereq({ status: "error", message: `도킹 입력 목록 읽기 실패: ${dockingErrorText(e)}` }); });
     return () => controller.abort();
   }, [runId, wantsPrereq, prereqReload]);
-
-  const ligandSet = pairForm.ligandSource === "candidate" ? pairForm.candidateSetHandle : null;
-  const ligandKey = ligandSet ? candidateRowsQuery(ligandSet, emptyAppliedFilter(), { sort: "generation_order",
-    direction: "asc", offset: ligandOffset, limit: CANDIDATE_PAGE_LIMIT, passesOnly: false }) : null;
-  useEffect(() => {
-    if (!ligandSet || ligandKey === null) return;
-    const key = ligandKey, handle = ligandSet, captured = stampExtra("ligand_rows"), controller = new AbortController();
-    setLigandRows({ key, load: { status: "loading" } });
-    api.ligandCandidateRows(runId, key, AbortSignal.any([controller.signal, AbortSignal.timeout(TIMEOUT_MS)])).then(value => {
-      if (!currentExtra("ligand_rows", captured)) return;
-      if (value.schema !== "ligand_candidate_page@1" || value.handle !== handle) throw new Error("후보 행이 고른 후보 집합과 다릅니다.");
-      setLigandRows({ key, load: { status: "ready", value } });
-    }).catch(e => { if (currentExtra("ligand_rows", captured) && !controller.signal.aborted)
-      setLigandRows({ key, load: { status: "error", message: `후보 행 읽기 실패: ${dockingErrorText(e)}` } }); });
-    return () => controller.abort();
-  }, [ligandKey]);
-  const ligandLoad = ligandRows && ligandRows.key === ligandKey ? ligandRows.load : null;
 
   // Polling reads of the two docking jobs while either is queued, claimed or running.
   const pairJobKey = STRUCTURE_SIDES.map(side => `${pairJobs[side]?.job_id ?? ""}:${pairJobs[side]?.status ?? ""}`).join("|");
@@ -475,11 +458,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   const pairActive = STRUCTURE_SIDES.flatMap(side => pairJobs[side] ? [pairJobs[side]!] : []);
   const pairBlocked = pairSubmitBlockedReason({ capability: dockingCapability, busy: pairBusy, unitsConfirmed,
     activeJobs: pairActive, check: pairCheck });
-  const updatePair = (patch: Partial<PairDockingForm>) => setPairForm(previous => {
-    const next = patchPairDockingForm(previous, patch);
-    live.current = { ...live.current, ligandSet: next.candidateSetHandle };
-    return next;
-  });
+  const updatePair = (patch: Partial<PairDockingForm>) => setPairForm(previous => patchPairDockingForm(previous, patch));
 
   /** Starts the saved sides in order; stops at an approval answer or while a side still runs (the person continues). */
   async function startPairJobs(initial: PairJobs, captured: ModelStamp) {
@@ -590,9 +569,6 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   const awaitingApproval = !!job && approvalPending && job.status === "queued";
   const prereqValue = prereq.status === "ready" ? prereq.value : null;
   const ligandSdfs = prereqValue ? importsOfKind(prereqValue.imports, "ligand_sdf") : [];
-  const ligandSets = prereqValue?.candidate_sets ?? [];
-  const chosenLigandSet = ligandSets.find(set => set.handle === pairForm.candidateSetHandle) ?? null;
-  const parentReason = parentSdfMissingReason(chosenLigandSet);
   const pairQueued = STRUCTURE_SIDES.some(side => pairJobs[side]?.status === "queued");
   const pairRunning = STRUCTURE_SIDES.some(side => ["claimed", "running"].includes(pairJobs[side]?.status ?? ""));
   const pairSubmitted = STRUCTURE_SIDES.some(side => submission[side].status !== "pending");
@@ -671,7 +647,8 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
         {jobError && <ErrorLine message={jobError.message} testId="mutation-model-job-error" reasonCode={jobError.reasonCode} />}
         {newModel && <div className="mw-mutation-inline" data-testid="mutation-model-new" data-model-handle={newModel}>
           <span className="mw-mutation-note" role="status">변이 구조 모델을 저장했습니다 · {shortHandle(newModel)}</span>
-          <Button size="sm" data-testid="mutation-model-open-new" onClick={() => openModel(newModel)}>이 모델 열기</Button>
+          <Button size="sm" data-testid="mutation-model-open-new" disabled={!!switchBlocked} title={switchBlocked ?? undefined}
+            onClick={() => openModel(newModel)}>이 모델 열기</Button>
         </div>}
       </div>}
     </Section>
@@ -684,16 +661,19 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
         : <fieldset className="mw-mutation-choices" data-testid="mutation-model-list">
           <legend>모델 선택 (최신 순, 자동으로 고르지 않음)</legend>
           {models.value.map(row => <label key={row.handle} data-mutation-model={row.handle} data-valid={row.valid}>
-            <input type="radio" name={`mutation-model-${runId}`} checked={selected === row.handle} disabled={!row.valid}
+            <input type="radio" name={`mutation-model-${runId}`} checked={selected === row.handle}
+              disabled={!row.valid || !!switchBlocked}
               aria-label={`모델 ${shortHandle(row.handle)}`} onChange={() => openModel(row.handle)} />
             <span className="mw-mono">{modelListRowText(row)} · {shortHandle(row.handle)}</span>
           </label>)}
         </fieldset>)}
+      {switchBlocked && <p className="mw-mutation-note" role="status" data-testid="mutation-model-switch-blocked">
+        {switchBlocked}</p>}
       {models.status !== "loading" && <Button size="sm" data-testid="mutation-model-list-refresh"
         onClick={() => setModelsReload(value => value + 1)}>모델 목록 다시 읽기</Button>}
       {detail?.handle === selected && detail.load.status === "loading" && <p className="mw-mutation-note" aria-busy="true">모델을 읽는 중</p>}
       {detail?.handle === selected && detail.load.status === "error" &&
-        <ErrorLine message={detail.load.message} onRetry={() => selected && openModel(selected)} />}
+        <ErrorLine message={detail.load.message} onRetry={switchBlocked ? undefined : () => selected && openModel(selected)} />}
     </Section>
 
     {opened && <Section area="detail" title="③ 결과">
@@ -766,8 +746,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
         <p className="mw-mutation-note">{PAIR_CONDITION_NOTE}</p>
         <p className="mw-mutation-note">{PAIR_MODE_ONLY}</p>
         <PairInputs form={pairForm} update={updatePair} runId={runId} prereq={prereq} ligandSdfs={ligandSdfs}
-          ligandSets={ligandSets} parentReason={parentReason} chosenSetValid={!!chosenLigandSet}
-          ligandLoad={ligandLoad} onLigandPage={setLigandOffset} onReloadPrereq={() => setPrereqReload(value => value + 1)} />
+          onReloadPrereq={() => setPrereqReload(value => value + 1)} />
         <p className="mw-mutation-notice" data-testid="mutation-model-pair-units-notice">{PAIR_UNITS_NOTICE}</p>
         <label className="mw-mutation-check"><input type="checkbox" data-testid="mutation-model-pair-units"
           checked={unitsConfirmed} onChange={event => setUnitsConfirmed(event.target.checked)} />
@@ -890,12 +869,9 @@ function ContactTable({ page, onPage }: { page: MutationModelContactPage; onPage
   </div>;
 }
 
-function PairInputs({ form, update, runId, prereq, ligandSdfs, ligandSets, parentReason, chosenSetValid, ligandLoad,
-  onLigandPage, onReloadPrereq }: { form: PairDockingForm; update: (patch: Partial<PairDockingForm>) => void;
-  runId: string; prereq: Load<DockingPrerequisites>; ligandSdfs: DockingPrerequisites["imports"];
-  ligandSets: DockingPrerequisites["candidate_sets"]; parentReason: string | null; chosenSetValid: boolean;
-  ligandLoad: Load<LigandCandidatePage> | null; onLigandPage: (offset: number) => void; onReloadPrereq: () => void }) {
-  const chosenSet = ligandSets.find(set => set.handle === form.candidateSetHandle) ?? null;
+function PairInputs({ form, update, runId, prereq, ligandSdfs, onReloadPrereq }: { form: PairDockingForm;
+  update: (patch: Partial<PairDockingForm>) => void; runId: string; prereq: Load<DockingPrerequisites>;
+  ligandSdfs: DockingPrerequisites["imports"]; onReloadPrereq: () => void }) {
   return <div className="mw-mutation-group" data-testid="mutation-model-pair-form">
     <span className="mw-eyebrow">리간드 출처</span>
     {prereq.status === "loading" && <p className="mw-mutation-note" aria-busy="true">도킹 입력 목록을 읽는 중</p>}
@@ -903,13 +879,17 @@ function PairInputs({ form, update, runId, prereq, ligandSdfs, ligandSets, paren
     <div className="mw-mutation-inline">
       <Button size="sm" data-testid="mutation-model-pair-prereq-refresh" disabled={prereq.status === "loading"}
         onClick={onReloadPrereq}>도킹 입력 목록 다시 읽기</Button>
-      <span className="mw-mutation-note">리간드 3D SDF 가져오기와 M17 후보 집합은 리간드 설계·탐색 탭에서 만듭니다.</span>
+      <span className="mw-mutation-note">리간드 3D SDF 가져오기는 리간드 설계·탐색 탭에서 만듭니다.</span>
     </div>
     <fieldset className="mw-mutation-choices" data-testid="mutation-model-pair-ligand-source">
       <legend>출처 (한 번에 하나, 자동으로 고르지 않음)</legend>
-      {LIGAND_SOURCES.map(source => <label key={source} data-pair-ligand-source={source}>
-        <input type="radio" name={`mutation-model-pair-source-${runId}`} checked={form.ligandSource === source}
-          onChange={() => update({ ligandSource: source })} /> {LIGAND_SOURCE_LABEL[source]}</label>)}
+      {LIGAND_SOURCES.map(source => {
+        const reason = pairLigandSourceDisabledReason(source);
+        return <label key={source} data-pair-ligand-source={source} data-disabled-reason={reason ?? undefined}>
+          <input type="radio" name={`mutation-model-pair-source-${runId}`} checked={form.ligandSource === source}
+            disabled={!!reason} onChange={() => update({ ligandSource: source })} /> {LIGAND_SOURCE_LABEL[source]}
+          {reason && <span className="mw-mutation-note">{reason}</span>}</label>;
+      })}
     </fieldset>
     {form.ligandSource === "sdf" && <label className="mw-mutation-check">리간드 SDF 가져오기
       <select className="mw-select" data-testid="mutation-model-pair-sdf" value={form.sdfHandle ?? ""}
@@ -920,43 +900,6 @@ function PairInputs({ form, update, runId, prereq, ligandSdfs, ligandSets, paren
       </select></label>}
     {form.ligandSource === "sdf" && prereq.status === "ready" && !ligandSdfs.length &&
       <p className="mw-mutation-note">가져온 리간드 SDF가 없습니다.</p>}
-    {form.ligandSource === "candidate" && <>
-      <ul className="mw-mutation-list" data-testid="mutation-model-pair-candidate-notes" aria-label="후보 출처 안내 (제출 전)">
-        {CANDIDATE_SOURCE_NOTES.map(sentence => <li key={sentence}>{sentence}</li>)}</ul>
-      <label className="mw-mutation-check">후보 집합
-        <select className="mw-select" data-testid="mutation-model-pair-candidate-set" value={form.candidateSetHandle ?? ""}
-          onChange={event => { onLigandPage(0); update({ candidateSetHandle: event.target.value || null }); }}>
-          <option value="">선택</option>
-          {ligandSets.map(set => <option key={set.handle} value={set.handle} disabled={!set.valid}>
-            {set.valid ? `${shortHandle(set.handle)} · 후보 ${set.candidates}개` : `${shortHandle(set.handle)} · 읽을 수 없음`}</option>)}
-        </select></label>
-      {prereq.status === "ready" && !ligandSets.length && <p className="mw-mutation-note">이 run에 후보 집합이 없습니다.</p>}
-      {ligandLoad?.status === "loading" && <p className="mw-mutation-note" aria-busy="true">후보 행을 읽는 중</p>}
-      {ligandLoad?.status === "error" && <ErrorLine message={ligandLoad.message} testId="mutation-model-pair-candidates-error" />}
-      {ligandLoad?.status === "ready" && <fieldset className="mw-mutation-choices" data-testid="mutation-model-pair-candidates">
-        <legend>후보 선택 (자동으로 고르지 않음) · 전체 {ligandLoad.value.total}개 중{" "}
-          {ligandLoad.value.rows.length ? `${ligandLoad.value.offset + 1}–${ligandLoad.value.offset + ligandLoad.value.rows.length}` : "0"}</legend>
-        {ligandLoad.value.rows.map(row => <label key={row.candidate.id} data-pair-candidate={row.candidate.id}>
-          <input type="radio" name={`mutation-model-pair-candidate-${runId}`} checked={form.candidateId === row.candidate.id}
-            onChange={() => update({ candidateId: row.candidate.id })} />
-          <span className="mw-mono">{row.candidate.id} · {row.candidate.smiles} · {stereoFlagText(row.candidate.stereo_flag)}</span>
-        </label>)}
-        <div className="mw-mutation-inline">
-          <Button size="sm" disabled={ligandLoad.value.offset === 0}
-            onClick={() => onLigandPage(Math.max(0, ligandLoad.value.offset - ligandLoad.value.limit))}>이전</Button>
-          <Button size="sm" disabled={ligandLoad.value.offset + ligandLoad.value.rows.length >= ligandLoad.value.total}
-            onClick={() => onLigandPage(ligandLoad.value.offset + ligandLoad.value.rows.length)}>다음</Button>
-        </div>
-      </fieldset>}
-      {chosenSetValid && chosenSet && (parentReason
-        ? <p className="mw-mutation-unavailable" data-testid="mutation-model-pair-parent-missing">{parentReason}</p>
-        : <label className="mw-mutation-check">부모 3D SDF 가져오기 (SHA-256이 후보 집합의 부모와 같은 것만)
-          <select className="mw-select" data-testid="mutation-model-pair-parent-sdf" value={form.parentSdfHandle ?? ""}
-            onChange={event => update({ parentSdfHandle: event.target.value || null })}>
-            <option value="">선택</option>
-            {(chosenSet.parent_sdf_handles ?? []).map(handle => <option key={handle} value={handle}>{shortHandle(handle)}</option>)}
-          </select></label>)}
-    </>}
 
     <span className="mw-eyebrow">상자</span>
     <p className="mw-mutation-note" data-testid="mutation-model-pair-frame-note">{BOX_FRAME_NOTE}</p>

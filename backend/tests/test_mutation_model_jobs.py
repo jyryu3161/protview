@@ -292,6 +292,8 @@ def test_product_path_approval_budget_result_and_reads(real, monkeypatch):
         "approval_requested", "approval_resolved"]
     assert len([e for e in events if e["type"] == "budget_reserved"]) == 1
     assert job["method"] == {"worker_sha256": hashlib.sha256(bundle.WORKER.read_bytes()).hexdigest(),
+                             "dependency_sha256": {name: hashlib.sha256((MW.parent / name).read_bytes()).hexdigest()
+                                                   for name in bundle.DEPENDENCIES},
                              "method": content["method"]}
     _workers_gone(root, rid)
     # Reads never write events.
@@ -327,6 +329,10 @@ def test_same_input_same_job_and_handle_other_seed_new_key(real, monkeypatch):
     job = JobQueue(run).get(done["job_id"])
     assert bundle.call_key(job["parameters"], job["method"]) == done["call_key"]
     assert bundle.call_key(job["parameters"], {**job["method"], "worker_sha256": "0" * 64}) != done["call_key"]
+    # Each hashed dependency of the worker / published content joins the call key.
+    for name in bundle.DEPENDENCIES:
+        changed = {**job["method"], "dependency_sha256": {**job["method"]["dependency_sha256"], name: "0" * 64}}
+        assert bundle.call_key(job["parameters"], changed) != done["call_key"], name
     assert job["parameters"] == {"candidate_set": world["candidate_set"], "candidate_index": TRP, "seed": SEED,
                                  "contact_cutoff_A": 4.0, "selection_policy": "protein_only",
                                  "hydrogen_policy": "rebuild_pH7"}
@@ -462,6 +468,38 @@ def test_unavailable_engine_pdbfixer_or_identity_is_412_without_reservation(tmp_
     assert bundle.capability()["available"] is True
 
 
+def test_changed_dependency_changes_the_key_and_refuses_the_pinned_start(tmp_path, monkeypatch):
+    """R1: the hashed worker / content dependencies join both the call key and the start-time recheck."""
+    root = tmp_path / "runs"
+    client = _client(root, monkeypatch)
+    world = _world(client, "M21 dependency pin")
+    rid = world["rid"]
+    assert set(bundle.DEPENDENCIES) == {"mw/mutation_model_math.py", "mw/mutation_model_constants.py",
+                                        "mw/jobs/openmm_worker.py", "mw/tools/openmm_method.py",
+                                        "mw/mutation_candidates.py"}
+    for name, path in bundle.DEPENDENCIES.items():
+        assert path == MW.parent / name and path.is_file()
+    queued = _submit(client, rid, _args(world["candidate_set"])).json()
+    assert queued["status"] == "queued"
+    same = _submit(client, rid, _args(world["candidate_set"])).json()
+    assert same["job_id"] == queued["job_id"] and same["call_key"] == queued["call_key"]
+    for ordinal, name in enumerate(sorted(bundle.DEPENDENCIES)):
+        changed = tmp_path / f"changed_{ordinal}.py"     # labeled: a stand-in for an edited dependency file
+        changed.write_bytes(bundle.DEPENDENCIES[name].read_bytes() + b"\n# changed\n")
+        with monkeypatch.context() as patch:
+            patch.setitem(bundle.DEPENDENCIES, name, changed)
+            patch.setattr(JobQueue, "_supervise", _forbid)
+            other = _submit(client, rid, _args(world["candidate_set"]))
+            assert other.status_code == 200 and other.json()["call_key"] != queued["call_key"], name
+            blocked = _approve_start(client, rid, queued["job_id"]) if ordinal == 0 else None
+            if blocked is not None:
+                assert blocked.status_code == 412, blocked.text
+                assert blocked.json()["detail"]["reason_code"] == "worker_version_invalid"
+    events = _events(root, rid)
+    assert _used(client, rid) == 0
+    assert not any(e["type"] in {"budget_reserved", "job_dispatch_intent"} for e in events)
+
+
 def test_every_admission_reason_reaches_the_api_as_422_without_a_job(tmp_path, monkeypatch):
     root = tmp_path / "runs"
     client = _client(root, monkeypatch)
@@ -492,6 +530,18 @@ def test_every_admission_reason_reaches_the_api_as_422_without_a_job(tmp_path, m
         with pytest.raises(queue_module.ToolFailure) as caught:
             JobQueue(api_module._run(rid)).submit(K.PROTOCOL, _args(cset), timeout_s=timeout_s)
         assert caught.value.detail["reason_code"] == "argument_invalid"
+    # N1: the API request model's own refusals (timeout outside (0, 7800], args not an object) are argument_invalid
+    # for this protocol; other protocols keep the generic API refusal.
+    for timeout_s in (0, -1, 7801, "x"):
+        refused(_args(cset), "argument_invalid", timeout_s=timeout_s)
+    for args in ([], "x", 7, None):
+        refused(args, "argument_invalid")
+    generic = client.post(f"/runs/{rid}/jobs", json={"protocol_id": "qvina_dock_v1", "args": [],
+                                                     "timeout_s": 0})
+    assert generic.status_code == 422 and generic.json() == {
+        "detail": {"error": "input_invalid", "message": "invalid job request"}}
+    other_field = client.post(f"/runs/{rid}/jobs", json={"protocol_id": K.PROTOCOL, "args": _args(cset), "x": 1})
+    assert other_field.status_code == 422 and "reason_code" not in other_field.json()["detail"]
     for wrong in (world["structure"], other["candidate_set"], "obj://nope", f"obj://{rid}/mutation_candidate_set/"
                   + "0" * 64):
         refused(_args(wrong), "candidate_set_invalid")

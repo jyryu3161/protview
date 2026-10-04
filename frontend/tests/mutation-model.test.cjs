@@ -424,13 +424,36 @@ test("two requests that differ only in receptor_source.side, with no imported-re
     receptorModelNumber: 1, connectivity: "pdb_conect", instance: { kind: "none" } });
   for (const key of ["ligand", "mode", "box", "parameters", "acknowledgement"])
     assert.deepEqual(wild[key], plain(m18.args[key]), key);
-  // Manual box and candidate ligand pass through unchanged.
-  const manual = lib.pairDockingRequests(pairForm({ boxSource: "manual", center: ["1", "2", "3"], size: ["20", "20", "20"],
-    ligandSource: "candidate", sdfHandle: null, candidateSetHandle: "obj://r/ligand_candidate_set/s", candidateId: "c_1",
-    parentSdfHandle: "obj://r/chemical_raw_input/p" }), MODEL);
+  // A manual box passes through unchanged.
+  const manual = lib.pairDockingRequests(pairForm({ boxSource: "manual", center: ["1", "2", "3"], size: ["20", "20", "20"] }),
+    MODEL);
   assert.equal(manual.ok, true);
   assert.deepEqual(plain(manual.args.mutant.box), { source: "manual", center_A: [1, 2, 3], size_A: [20, 20, 20] });
-  assert.equal(manual.args.mutant.ligand.candidate_id, "c_1");
+});
+
+test("SDF ligands only: the M17 candidate source is never offered, kept or sent (user decision)", () => {
+  assert.equal(lib.pairLigandSourceDisabledReason("sdf"), null);
+  assert.equal(lib.pairLigandSourceDisabledReason("candidate"), lib.PAIR_SDF_ONLY_REASON);
+  assert.match(lib.PAIR_SDF_ONLY_REASON, /3D SDF 리간드만/);
+  // Choosing the candidate source through the form patch drops it and keeps no candidate field.
+  const patched = lib.patchPairDockingForm(pairForm(), { ligandSource: "candidate",
+    candidateSetHandle: "obj://r/ligand_candidate_set/s", candidateId: "c_1", parentSdfHandle: "obj://r/chemical_raw_input/p" });
+  assert.equal(patched.ligandSource, null);
+  assert.equal(patched.candidateSetHandle, null);
+  assert.equal(patched.candidateId, null);
+  assert.equal(patched.parentSdfHandle, null);
+  // A form that still names it (not through the patch) builds no request, with the backend's admission reason.
+  const forced = lib.pairDockingRequests({ ...pairForm(), ligandSource: "candidate", sdfHandle: null,
+    candidateSetHandle: "obj://r/ligand_candidate_set/s", candidateId: "c_1", parentSdfHandle: "obj://r/chemical_raw_input/p" },
+    MODEL);
+  assert.equal(forced.ok, false);
+  assert.ok(plain(forced.errors).includes(`${lib.PAIR_SDF_ONLY_REASON} (mode_source_mismatch)`), forced.errors);
+});
+
+test("another model cannot be opened while the same-condition action is mid-way (visible reason)", () => {
+  assert.equal(lib.modelSwitchBlockedReason(false), null);
+  assert.equal(lib.modelSwitchBlockedReason(true), lib.MODEL_SWITCH_PAIR_BUSY_REASON);
+  assert.match(lib.MODEL_SWITCH_PAIR_BUSY_REASON, /다른 모델을 열 수 없습니다/);
 });
 
 test("pair requests: model required, free docking only, no instance-range box, M18 value and acknowledgement rules", () => {
@@ -454,9 +477,10 @@ test("pair requests: model required, free docking only, no instance-range box, M
   assert.equal(initial.seed, "");
   assert.deepEqual(plain(initial.acknowledgement), { keep_input_protonation: false, tool_assigned_types_charges: false,
     rigid_no_optimization: false });
-  // A new candidate set clears the candidate and its parent SDF; nothing is chosen in their place.
+  // No candidate field survives a patch; nothing is chosen in their place.
   const set = lib.patchPairDockingForm(pairForm({ candidateSetHandle: "s1", candidateId: "c", parentSdfHandle: "p" }),
     { candidateSetHandle: "s2" });
+  assert.equal(set.candidateSetHandle, null);
   assert.equal(set.candidateId, null);
   assert.equal(set.parentSdfHandle, null);
 });
@@ -606,6 +630,7 @@ test("every fixed screen string of this module passes the wording check", () => 
     ...docking.ACKNOWLEDGEMENT_KEYS.map(key => docking.ACKNOWLEDGEMENT_LABEL[key]),
     lib.contactPageText({ structure: "mutant", cutoff_A: 4, total: 0, page: 1, page_size: 100, rows: [] }),
     ...["not_submitted", "queued", "running", "done", "failed", "cancelled", "interrupted"].map(lib.pairJobStatusText),
+    lib.PAIR_SDF_ONLY_REASON, lib.MODEL_SWITCH_PAIR_BUSY_REASON,
   ];
   for (const text of texts) assert.deepEqual(plain(lib.modelForbiddenWords(text)), [], text);
 });
