@@ -11,7 +11,7 @@
  */
 import type { DockingAcknowledgementKey, DockingArgs, DockingBoxSource, DockingCapability, DockingContact,
   DockingJob, DockingLigandSource, DockingMode, DockingModeSummary, DockingReceptorAtom, DockingReceptorInstance,
-  DockingResult, ExactResidueRef, GeometricContactType } from "./contracts";
+  DockingResult, ExactResidueRef, GeometricContactType, MutationModelSide } from "./contracts";
 import { CONTACT_TYPE_LABEL, decimalHalfUp } from "./site-annotation";
 
 // ---- closed sets (same values and order as backend/mw/docking_constants.py; tests compare them) ----
@@ -27,7 +27,8 @@ export const CANDIDATE_REASONS = ["candidate_unknown", "parent_mismatch", "paren
   "core_match_ambiguous", "embed_failed"] as const;
 export const BOX_REASONS = ["box_invalid", "box_too_large", "box_no_receptor_atoms"] as const;
 export const ENGINE_REASONS = ["engine_failed", "engine_output_invalid", "resource_exceeded"] as const;
-export const ADMISSION_ONLY_REASONS = ["invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing"] as const;
+export const ADMISSION_ONLY_REASONS = ["invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing",
+  "mutation_model_invalid"] as const;
 export const CAPABILITY_REASONS = ["worker_missing", "engine_missing", "engine_hash_mismatch", "handshake_failed",
   "version_mismatch"] as const;
 export const MODES: readonly DockingMode[] = ["free", "core_fixed"];
@@ -52,7 +53,10 @@ export const CONTACT_PAGE_LIMIT = 100;
 // ---- fixed wording ----
 export const SCORE_LABEL = "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)";
 export const SCORE_COLUMN_LABEL = "qvina 점수(kcal/mol)";
-/** spec 5.4, verbatim and in order (index i is sentence i + 1). The screen shows the stored `limitations`. */
+/**
+ * spec 5.4, verbatim and in order (index i is sentence i + 1). The screen shows the stored `limitations`. Sentence 12
+ * (M21) is appended last only when the receptor source is a mutation model; sentences 1–11 are unchanged.
+ */
 export const DOCKING_LIMITATIONS: readonly string[] = [
   "점수는 qvina 2.1(Vina 계열 스코어링 함수)이 낸 값(kcal/mol)이며 결합 친화도·결합 자유 에너지가 아니다.",
   "같은 수용체·상자·seed·방식(자유/코어 고정)·값에서 나온 점수끼리만 나란히 볼 수 있다.",
@@ -66,6 +70,7 @@ export const DOCKING_LIMITATIONS: readonly string[] = [
   "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다.",
   "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다.",
   "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다.",
+  "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로).",
 ];
 /** Shown before submission when the candidate source is chosen: spec 5.4 sentences 7, 10 and 11, verbatim. */
 export const CANDIDATE_SOURCE_NOTES: readonly string[] = [DOCKING_LIMITATIONS[6], DOCKING_LIMITATIONS[9],
@@ -122,6 +127,7 @@ export const DOCKING_REASON_LABEL: Record<string, string> = {
   invalid_job_arguments: "작업 인자 형식·값 범위 오류",
   mode_source_mismatch: "코어 고정은 후보 출처에서만 쓸 수 있음",
   acknowledgement_missing: "확인 세 항목이 모두 체크되지 않음",
+  mutation_model_invalid: "이 run의 게시된 변이 구조 모델이 아니거나 구조 선택(side)이 올바르지 않음",
   worker_missing: "도킹 작업 환경이 없음",
   engine_missing: "qvina 엔진 환경이 없음",
   engine_hash_mismatch: "qvina 실행 파일 해시가 설치 기록과 다름",
@@ -376,20 +382,19 @@ export type ArgsCheck<T> = { ok: true; args: T } | { ok: false; errors: string[]
 
 const AXES = ["x", "y", "z"] as const;
 
+/** The ligand, mode, box, value and acknowledgement fields of a docking form (the docking condition). */
+export type DockingConditionForm = Pick<DockingForm, "ligandSource" | "sdfHandle" | "candidateSetHandle" | "candidateId" |
+  "parentSdfHandle" | "mode" | "boxSource" | "margin" | "center" | "size" | "seed" | "exhaustiveness" | "numModes" |
+  "energyRange" | "conformers" | "acknowledgement">;
+export type DockingConditionArgs = Pick<DockingArgs, "ligand" | "mode" | "box" | "parameters" | "acknowledgement">;
+
 /**
- * The `qvina_dock_v1` job arguments exactly as `docking_inputs.validate_arguments` accepts them: every top-level key,
- * all values explicit, `conformers` only for `core_fixed` (left out for free docking), a range box `{source,
- * margin_A}` or a manual box `{source, center_A, size_A}`, and all three acknowledgements true. The server checks
- * everything again; these checks only keep an impossible request from being sent.
+ * The receptor-independent part of the `qvina_dock_v1` arguments (ligand, mode, box, parameters, acknowledgement),
+ * with the same checks and error order as `dockingArgs`. `boxReason` is the caller's reason the chosen box source
+ * cannot be used with its receptor (null = usable); it is reported as `box_invalid`.
  */
-export function dockingArgs(form: DockingForm): ArgsCheck<DockingArgs> {
+export function dockingConditionArgs(form: DockingConditionForm, boxReason: string | null): ArgsCheck<DockingConditionArgs> {
   const errors: string[] = [];
-  if (!form.receptorHandle) errors.push("수용체 가져오기를 고르세요.");
-  if (form.receptorModelNumber === null || !Number.isSafeInteger(form.receptorModelNumber) ||
-      form.receptorModelNumber < 1) errors.push("수용체 모델 번호를 고르세요.");
-  if (form.connectivity === null) errors.push("연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요.");
-  if (form.connectivity === "sidecar" && !form.sidecarHandle) errors.push("결합 사이드카 가져오기를 고르세요.");
-  if (form.instance.kind === "unset") errors.push("뺄 리간드 인스턴스를 고르거나 \"없음(단백질만)\"을 고르세요.");
   if (form.ligandSource === null) errors.push("리간드 출처를 고르세요.");
   if (form.ligandSource === "sdf" && !form.sdfHandle) errors.push("리간드 3D SDF 가져오기를 고르세요.");
   if (form.ligandSource === "candidate") {
@@ -403,10 +408,7 @@ export function dockingArgs(form: DockingForm): ArgsCheck<DockingArgs> {
     if (reason) errors.push(reason);
   }
   if (form.boxSource === null) errors.push("상자 출처를 고르세요.");
-  else {
-    const reason = boxSourceDisabledReason(form.boxSource, form.instance);
-    if (reason) errors.push(`${reason} (box_invalid)`);
-  }
+  else if (boxReason) errors.push(`${boxReason} (box_invalid)`);
   let box: DockingArgs["box"] | null = null;
   if (form.boxSource === "manual") {
     const center = form.center.map(text => numberIn(text, -MAX_BOX_CENTER_ABS_A, MAX_BOX_CENTER_ABS_A));
@@ -442,23 +444,44 @@ export function dockingArgs(form: DockingForm): ArgsCheck<DockingArgs> {
     errors.push(`conformers: ${CONFORMERS_MIN}–${CONFORMERS_MAX} 사이의 정수를 입력하세요.`);
   if (!acknowledgementComplete(form.acknowledgement))
     errors.push(`확인 세 항목을 모두 체크하세요 (acknowledgement_missing).`);
-  if (errors.length || !form.receptorHandle || form.receptorModelNumber === null || form.instance.kind === "unset" ||
-      form.ligandSource === null || form.mode === null || box === null || seed === null || exhaustiveness === null ||
-      numModes === null || energyRange === null) return { ok: false, errors };
+  if (errors.length || form.ligandSource === null || form.mode === null || box === null || seed === null ||
+      exhaustiveness === null || numModes === null || energyRange === null) return { ok: false, errors };
   const ligand: DockingArgs["ligand"] = form.ligandSource === "sdf"
     ? { source: "sdf", sdf_handle: form.sdfHandle as string }
     : { source: "candidate", candidate_set_handle: form.candidateSetHandle as string,
       candidate_id: form.candidateId as string, parent_sdf_handle: form.parentSdfHandle as string };
   const parameters: DockingArgs["parameters"] = { seed, exhaustiveness, num_modes: numModes, energy_range: energyRange };
   if (form.mode === "core_fixed") parameters.conformers = conformers as number;
+  return { ok: true, args: { ligand, mode: form.mode, box, parameters,
+    acknowledgement: { keep_input_protonation: true, tool_assigned_types_charges: true, rigid_no_optimization: true } } };
+}
+
+/**
+ * The `qvina_dock_v1` job arguments exactly as `docking_inputs.validate_arguments` accepts them: every top-level key,
+ * all values explicit, `conformers` only for `core_fixed` (left out for free docking), a range box `{source,
+ * margin_A}` or a manual box `{source, center_A, size_A}`, and all three acknowledgements true. The server checks
+ * everything again; these checks only keep an impossible request from being sent.
+ */
+export function dockingArgs(form: DockingForm): ArgsCheck<DockingArgs> {
+  const errors: string[] = [];
+  if (!form.receptorHandle) errors.push("수용체 가져오기를 고르세요.");
+  if (form.receptorModelNumber === null || !Number.isSafeInteger(form.receptorModelNumber) ||
+      form.receptorModelNumber < 1) errors.push("수용체 모델 번호를 고르세요.");
+  if (form.connectivity === null) errors.push("연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요.");
+  if (form.connectivity === "sidecar" && !form.sidecarHandle) errors.push("결합 사이드카 가져오기를 고르세요.");
+  if (form.instance.kind === "unset") errors.push("뺄 리간드 인스턴스를 고르거나 \"없음(단백질만)\"을 고르세요.");
+  const condition = dockingConditionArgs(form,
+    form.boxSource === null ? null : boxSourceDisabledReason(form.boxSource, form.instance));
+  if (!condition.ok) errors.push(...condition.errors);
+  if (errors.length || !condition.ok || !form.receptorHandle || form.receptorModelNumber === null ||
+      form.instance.kind === "unset") return { ok: false, errors };
   return { ok: true, args: {
     receptor_handle: form.receptorHandle,
     receptor_model_number: form.receptorModelNumber,
     connectivity: form.connectivity === "sidecar" ? { kind: "sidecar", sidecar_handle: form.sidecarHandle as string }
       : { kind: "pdb_conect", sidecar_handle: null },
     receptor_instance: form.instance.kind === "instance" ? exactResidue(form.instance.residue) : null,
-    ligand, mode: form.mode, box, parameters,
-    acknowledgement: { keep_input_protonation: true, tool_assigned_types_charges: true, rigid_no_optimization: true },
+    ...condition.args,
   } };
 }
 
@@ -675,6 +698,24 @@ export function stereoFlagText(flag: string | null): string {
   return STEREO_FLAG_LABEL[flag] ? `${STEREO_FLAG_LABEL[flag]} (${flag})` : flag;
 }
 
+/** Display name of a mutation-model side (M21 receptor source). */
+export const RECEPTOR_SIDE_LABEL: Record<MutationModelSide, string> = { wild_type_reference: "야생형 기준 구조",
+  mutant: "변이 구조" };
+
+/**
+ * The stored receptor: an import (handle, SHA-256, model, PDB CONECT or sidecar) or, for the M21 source, the mutation
+ * model handle and side with bonds from its stored OpenMM topology (no import handle exists).
+ */
+export function receptorText(receptor: DockingResult["inputs"]["receptor"]): string {
+  if ("source" in receptor)
+    return `변이 구조 모델 ${receptor.source.mutation_model} · ${RECEPTOR_SIDE_LABEL[receptor.source.side]} ` +
+      `(${receptor.source.side}) · SHA-256 ${receptor.sha256} · 모델 ${receptor.model_number} · 연결 정보 변이 모델의 ` +
+      "OpenMM 위상 결합(mutation_model_topology)";
+  return `${receptor.handle} · SHA-256 ${receptor.sha256} · 모델 ${receptor.model_number} · ` +
+    `연결 정보 ${receptor.connectivity.kind === "sidecar" ? `결합 사이드카 ${receptor.connectivity.sidecar_handle}`
+      : "PDB CONECT"}`;
+}
+
 type SummaryResult = Pick<DockingResult, "method" | "inputs" | "box" | "parameters" | "engine" | "preparation" | "counts">;
 
 /**
@@ -695,9 +736,7 @@ export function dockingSummaryRows(result: SummaryResult): [string, string][] {
       `${decimalHalfUp(values.energy_range, 2)} kcal/mol · cpu ${values.cpu}` +
       (values.conformers === null ? "" : ` · conformers ${values.conformers}`)],
     ["상자", boxText(result.box)],
-    ["수용체", `${inputs.receptor.handle} · SHA-256 ${inputs.receptor.sha256} · 모델 ${inputs.receptor.model_number} · ` +
-      `연결 정보 ${inputs.receptor.connectivity.kind === "sidecar" ? `결합 사이드카 ${inputs.receptor.connectivity.sidecar_handle}`
-        : "PDB CONECT"}`],
+    ["수용체", receptorText(inputs.receptor)],
     ["뺀 인스턴스", removedInstanceText(inputs.receptor.removed_instance)],
     ["리간드 출처", ligand.source === "sdf" ? `3D SDF ${ligand.sdf_handle} · SHA-256 ${ligand.sdf_sha256}`
       : `M17 후보 ${ligand.candidate_id} · 후보 집합 ${ligand.candidate_set_handle} · 부모 SDF ${ligand.parent_sdf_handle} · ` +
