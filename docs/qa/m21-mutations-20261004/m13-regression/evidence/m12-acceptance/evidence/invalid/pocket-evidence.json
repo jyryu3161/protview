@@ -1,0 +1,1049 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "invalid",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "AP8FpT2CpFyqfPjUEREAR",
+  "startedAt": "2026-10-04T04:49:42.510Z",
+  "run": "run_a936f84770014a15bc8ceaa49055d244,run_8d346103023a4632a58fd4cd359f4b23",
+  "handles": {},
+  "inputs": [
+    {
+      "name": "m12-invalid-cases.json",
+      "path": "<repo>/runs/m21-acceptance-20261004-attempt1-m13-regression/m12-acceptance/inputs/m12-invalid/m12-invalid-cases.json",
+      "bytes": 1009,
+      "sha256": "4926d18be107400b4b6a0e76de16507908e8e175276bfa7a2795d7025e58e50d",
+      "provenance": "manifest of labeled synthetic M12 invalid-input controls (scripts/m12_qa_inputs.py)"
+    },
+    {
+      "name": "m12-synthetic-modified-residue.pdb",
+      "path": "<repo>/runs/m21-acceptance-20261004-attempt1-m13-regression/m12-acceptance/inputs/m12-invalid/m12-synthetic-modified-residue.pdb",
+      "bytes": 1867,
+      "sha256": "c3a91360c70438428335b292b89ae3d02dbe510172ea6c10add7118999185874",
+      "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+    },
+    {
+      "name": "m12-synthetic-degenerate-collinear.pdb",
+      "path": "<repo>/runs/m21-acceptance-20261004-attempt1-m13-regression/m12-acceptance/inputs/m12-invalid/m12-synthetic-degenerate-collinear.pdb",
+      "bytes": 490,
+      "sha256": "a25a960c543218056279e9da1cc00451a9706b9134d056ec225109643ed57f91",
+      "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+    }
+  ],
+  "fixtureLabels": [],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 7,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m21-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/invalid/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 82,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "cases": [
+    {
+      "file": "m12-synthetic-modified-residue.pdb",
+      "run": "run_a936f84770014a15bc8ceaa49055d244",
+      "prepared": "obj://run_a936f84770014a15bc8ceaa49055d244/prepared_structure/1bb4b883a3bc63deff71f56922ad7bc20994340fd2920f551a52aaf35fc93192",
+      "before": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/structure_source/c3ca2d2d3dd18ac2f18543b0bb74def8aec6ad6c827fb46927fa5a8e35c80425",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/structure/6d2a180f7ac4fba5a19ae6cbf2818839dbe0ba510411384c8b3c04b4f5e6694f",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/preparation_manifest/2b086492bf2c83c5552151d2479390ae9c6bdde1936691ed74020ca430f90dc7",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/prepared_coordinates/4312b73f38b51706f74f3fa3ce645a9940c101613f3957d8d62aae4d82d8c3d3",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/prepared_structure/1bb4b883a3bc63deff71f56922ad7bc20994340fd2920f551a52aaf35fc93192",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ],
+      "posts": [],
+      "forced": "clicked",
+      "after": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/structure_source/c3ca2d2d3dd18ac2f18543b0bb74def8aec6ad6c827fb46927fa5a8e35c80425",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/structure/6d2a180f7ac4fba5a19ae6cbf2818839dbe0ba510411384c8b3c04b4f5e6694f",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/preparation_manifest/2b086492bf2c83c5552151d2479390ae9c6bdde1936691ed74020ca430f90dc7",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/prepared_coordinates/4312b73f38b51706f74f3fa3ce645a9940c101613f3957d8d62aae4d82d8c3d3",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_a936f84770014a15bc8ceaa49055d244/prepared_structure/1bb4b883a3bc63deff71f56922ad7bc20994340fd2920f551a52aaf35fc93192",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ]
+    },
+    {
+      "file": "m12-synthetic-degenerate-collinear.pdb",
+      "run": "run_8d346103023a4632a58fd4cd359f4b23",
+      "prepared": "obj://run_8d346103023a4632a58fd4cd359f4b23/prepared_structure/73ad487b494d9ad6db3ff469517f5713f9f4eac3d1efade7d8009ac9440a6d1e",
+      "before": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/structure_source/ad62f140e96ca8499f67a38672e19fe705e7ed80bc88a477d97cb9172b2ec030",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/structure/82437a7d8a1b04031d5bbbfd4919934fa76529e65744804a88608b896b09c773",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/preparation_manifest/f7461356ef104b8e7b5f0ae1d6c72340d1cb943f187d492ac95da8783b5f39ce",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/prepared_coordinates/de7efdeea6216dee76d72e55e30af3ac074338ed4dde2a8d28c9f703e8f263fd",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/prepared_structure/73ad487b494d9ad6db3ff469517f5713f9f4eac3d1efade7d8009ac9440a6d1e",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ],
+      "posts": [],
+      "forced": "clicked",
+      "after": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/structure_source/ad62f140e96ca8499f67a38672e19fe705e7ed80bc88a477d97cb9172b2ec030",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/structure/82437a7d8a1b04031d5bbbfd4919934fa76529e65744804a88608b896b09c773",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/preparation_manifest/f7461356ef104b8e7b5f0ae1d6c72340d1cb943f187d492ac95da8783b5f39ce",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/prepared_coordinates/de7efdeea6216dee76d72e55e30af3ac074338ed4dde2a8d28c9f703e8f263fd",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_8d346103023a4632a58fd4cd359f4b23/prepared_structure/73ad487b494d9ad6db3ff469517f5713f9f4eac3d1efade7d8009ac9440a6d1e",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ]
+    }
+  ],
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 87,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m21-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/invalid/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 243,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_61a0325d390647e996d4eb7c000c541e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8d346103023a4632a58fd4cd359f4b23/viewer/sessions",
+      "status": 201
+    }
+  ],
+  "finishedAt": "2026-10-04T04:49:46.633Z",
+  "externalRequestCount": 0
+}

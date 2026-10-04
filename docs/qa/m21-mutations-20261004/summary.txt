@@ -1,0 +1,142 @@
+M21 T12 summary: source freeze, full gate, M21 acceptance QA, regressions (2026-10-04 UTC)
+
+frozen source: 4a3dabe51af0ef8b6328bf7f09fa7f719e4ef7e1
+  = M21 T11 commit "code-review fixes (dependency pins, SDF-only pair ligand, model switch guard, timeout reason)".
+  No source change after the freeze. Working tree clean at start (git status --porcelain empty). Every run below used
+  this HEAD and the same frontend build AP8FpT2CpFyqfPjUEREAR, stamped by the M21 runner from the current frontend
+  source (gitHead = frozen source, buildCurrentWithSource true, acceptance dirtyFiles []). The M20, M19, M18, M17, M16,
+  M15, M14 and M13 regression ledgers record the same buildId and gitHead with buildCurrentWithSource true; their
+  dirtyFiles list only the untracked evidence folders of this QA (docs/qa/m21-mutations-20261004/gate.txt,
+  acceptance/, earlier m2X/m1X-regression/), no source file.
+
+index (this folder; small text/JSON only, decision 0020)
+  preflight.txt          T1 착수 확인 (committed earlier, not edited here)
+  offscreen-acceptance/  T10 development run on 1f56dc4 (committed earlier, not edited here; not a T12 attempt)
+  gate.txt               full gate: commands, exit codes, counts
+  summary.txt            this file
+  acceptance/            M21 runner output (README.md, SHA256SUMS, binary-artifacts.json, evidence/case-ledger.json ...)
+  m20-regression/ m19-regression/ m18-regression/ m17-regression/ m16-regression/ m15-regression/ m14-regression/
+  m13-regression/        regression runner outputs (README.md, SHA256SUMS, binary-artifacts.json, evidence/)
+  git-ignored: frontend/tests/offscreen/artifacts/m21-acceptance/gate/ (full gate logs, NN.log + NN.meta),
+               frontend/tests/offscreen/artifacts/m21-acceptance/attempt1/ (screenshots, paint frames, services logs,
+               regressions/m2X|m1X/, export-full/), .../attempt1-launch/ (runner.log = runner stdout, exit, started)
+  QA roots (git-ignored runs/): runs/m21-acceptance-20261004-attempt1 and
+               runs/m21-acceptance-20261004-attempt1-m2X|m1X-regression (all new; no earlier root reused)
+
+environment
+  OS: macOS 15.6 (Darwin 24.6.0), arm64; Python 3.11.11 (.venv); Node v24.3.0
+  backend capability (acceptance environment row): methods.mutation_model available (reason_code null; OpenMM 8.6.0,
+    engine build 8.6.0.dev-c6173db, PDBFixer 1.12.0; protocol openmm_mutation_model_v1; timeout 120/240 s; cutoff
+    4.0 (2.5-6.0) A; limits 6000 protein heavy atoms, 2000 contact rows per structure, 64,000,000 output bytes);
+    methods.mutation_candidates available; methods.ligand_docking available/ready.
+  kbase_kinase: <home>/Projects/kbase_kinase (read only; passed as --kbase; MW_KBASE_REF=<home>/Projects/kbase_kinase/ref
+    for backend pytest). Reference set imported by the M20 regression: setHash
+    8c608e2bbf62108e2f70e3f5d8a2554260ee4ef51cedcb2c72568e1ddb764334 (M20 T10 recorded 999392929c37...; the kbase
+    checkout is not part of this repository and was not modified here).
+
+attempt history
+  Before the gate: a Stop hook pytest (five groups, live qvina2/guardian/chemical/docking workers) started by another
+    ProtView session (not by T12) was running. T12 waited until every such process had exited (03:49:09Z), re-checked
+    HEAD = frozen source and a clean tree, then started the gate. No overlap.
+  gate: one run, every command exit 0 (gate.txt). No failed attempt, no retry.
+  M21 acceptance: attempt 1 (adopted, the only attempt), launched detached 04:09:09Z, finished 04:57:11Z (about 48 min
+    incl. regressions), runner exit 0, acceptance true, failedSteps []. --build auto ran typecheck (exit 0) then build
+    (exit 0) and stamped it (the gate's earlier build [20] was not runner-stamped). Ports 8000/3000 were free before
+    the launch (lsof, no listener).
+  regressions: run once each by the M21 runner (--regressions), serially, all exit 0 and acceptance true.
+  Failed attempts: none. (Folders t10a-t10d, t10*-out under artifacts/m21-acceptance/ and runs/m21-acceptance-20261004-
+    t10a..d are T10 development runs on earlier commits, not T12 attempts; left untouched.)
+  Fixes after the freeze: none. No regression check needed changing for an intentional M21 change (the M18 regression
+    uses the imported receptor source, whose 11 limitation sentences are unchanged; every regression runs on a fresh
+    root, so the M18/M19 call-key change that ends reuse of older results does not affect them).
+
+gate (gate.txt; backend pytest as the Stop hook's five groups, separate invocations, no 480 s limit)
+  [1] chemical interactions group: exit 0, 24 passed, 0 skipped, 323 s
+  [2] m11 job API group: exit 0, 25 passed, 0 skipped, 264 s
+  [3] M18 docking group (5 files): exit 0, 198 passed, 0 skipped, 216 s
+  [4] M19 batch group (7 files): exit 0, 209 passed, 0 skipped, 345 s
+  [5] rest group (backend/tests minus groups 1-4 + 14 script files): exit 0, 1833 passed, 0 skipped, 602 s
+  [0] backend collect-only: 1979 backend tests. Backend total = 24+25+198+209+(1833-310) = 1979 passed,
+      0 failed, 0 skipped (the 14 script files of group 5 collect 310). No SKIPPED line in any -rs output, so the
+      engine-backed tests (OpenMM, PDBFixer, qvina, fpocket, ProLIF/RDKit workers, kbase snapshot) all ran.
+  [6] ruff (backend/mw backend/tests scripts .codex/hooks design/build_tokens.py): exit 0, All checks passed!
+  [7] scripts pytest (14 operations.md files + test_m20 + test_m21 = 16 files): exit 0, 384 passed, 0 skipped
+      (scripts/test_m21_offscreen_acceptance.py: 40 tests)
+  [8]-[17] node --check pocket/workflows/tabs/numbering/annotation/ligand/docking/docking-batch/mutation/
+      mutation-model flows: exit 0 (10 files)
+  [18] test:events: exit 0, 328 pass, 0 fail, 0 skipped
+  [19] typecheck: exit 0; [20] build: exit 0 (after typecheck, never concurrently)
+
+M21 acceptance (acceptance/)
+  .venv/bin/python scripts/m21_offscreen_acceptance.py --root runs/m21-acceptance-20261004-attempt1 \
+      --artifacts frontend/tests/offscreen/artifacts/m21-acceptance/attempt1 \
+      --out docs/qa/m21-mutations-20261004/acceptance --regressions --kbase <home>/Projects/kbase_kinase
+  verdict pass, acceptance true; verdictParts steps/cases/environment/leftoverProcesses all true.
+  23/23 judged cases pass: MM-no-run, MM-load-prepare, MM-candidate-set, MM-handoff, MM-validation, MM-job,
+    MM-side-by-side, MM-limitations, MM-negative, MM-contacts, MM-downloads, MM-report, MM-same-handle,
+    MM-late-contacts, MM-tab-state, MM-pair-submit, MM-pair-scores, MM-pair-partial, MM-cancel, MM-late-run
+    (step model-main, evidenceKind real_electron_offscreen, public 1UBQ + synthetic phenol SDF, candidate I44W),
+    MM-reproducible, MM-budget, S-no-egress.
+  Not observed (recorded as such in the ledger, not forged; covering tests named there):
+    MM-unavailable (capability depends on the project .venv + identity adapter; test_mutation_model_jobs.py
+      ::test_unavailable_engine_pdbfixer_or_identity_is_412_without_reservation, frontend mutation-model.test.cjs),
+    MM-pair-approval (per-run approval already taken by the model job; mutation-model.test.cjs pairApprovalRequired,
+      M18 D-free-job),
+    MM-failed-job (every valid 1UBQ input models; test_mutation_model_worker.py / test_mutation_model_jobs.py),
+    MM-zero-contacts (I44W has contacts; mutation-model.test.cjs zero contact page),
+    MM-conditional-limitations (L5/L6 need a His/Cys state difference or a new disulfide, 1UBQ I44W has neither; the
+      flow asserts the stored conditions; worker tests test_removed_disulfide_records_the_partner_difference_and_l5
+      and test_new_disulfide_is_recorded_with_l5_and_l6 on derived synthetic fixtures).
+  Budget (real expensive units, counted from the backend budget): run A 5 of limit 8 = model job 1, same submission
+    again 0, same-condition docking pair 2, partial pair 1 (queued side cancelled before it started), running
+    modeling job cancelled 1 (reservation kept). Reproducibility runs: 1 unit each (2 runs, the repeated request 0).
+    Total 7 units across the three acceptance runs.
+  External requests: non-loopback 0 (externalRequestsTotal 0, rowsWithUnknownExternalCount []); OpenRouter/provider
+    calls 0 (providerCallsZero true on the flow row and on both reproducibility reruns); leftover processes [].
+  Reproducibility: in two new runs (same server process, not a cold restart) the flow's load, prepare, candidate and
+    model requests (seed 20261004, cutoff 6.0 A, timeout 240 s) gave status done, the same job and model handle twice
+    per run, no new unit for the repeat, and the same handle-normalized model content SHA-256
+    b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c as the flow, with identical structure SHA-256s
+    (wild_type_reference e877b974...df65f, mutant 334ad777...923cb). Not a cross-version bit-identity claim.
+
+regressions (each with its own fresh --root runs/m21-acceptance-20261004-attempt1-mXX-regression and --artifacts
+  frontend/tests/offscreen/artifacts/m21-acceptance/attempt1/regressions/mXX, serially, started by the M21 runner with
+  --code-root <repo>; M20/M16/M15 with --kbase)
+  | runner | out              | exit | acceptance | cases  | not observed                                           | ext. req. |
+  | M20    | m20-regression/  | 0    | true       | 24/24  | M-map-conflict, M-too-many-positions,                  | 0         |
+  |        |                  |      |            |        | M-nonstandard-disulfide                                |           |
+  | M19    | m19-regression/  | 0    | true       | 26/26  | B-dry-run-shortfall, B-null-result, B-time-limits      | 0         |
+  | M18    | m18-regression/  | 0    | true       | 24/24  | D-zero-modes                                           | 0         |
+  | M17    | m17-regression/  | 0    | true       | 21/21  | -                                                      | 0         |
+  | M16    | m16-regression/  | 0    | true       | 19/19  | -                                                      | 0         |
+  | M15    | m15-regression/  | 0    | true       | 14/14  | -                                                      | 0         |
+  | M14    | m14-regression/  | 0    | true       | 15/15  | -                                                      | 0         |
+  | M8-M13 | m13-regression/  | 0    | true       | 28/28  | -                                                      | 0         |
+  The not-observed sets are the same as in the M20 T10 regressions. M13 ran --phases
+  workflows,unavailable,regressions,m11,m12,ledger: 17 rows all pass with external request count 0 (incl.
+  m11-acceptance and m12-acceptance sub-runners). Leftover processes [] in every ledger. Provider calls: every flow
+  row that records providerCallsZero has it true (7 M13 sub-runner/regression rows do not record the field, same as
+  in M18/M19/M20).
+  Changed existing expectations: none in T12. (The M18 docking request screen expectations kept passing; no
+  regression script was edited.)
+
+evidence layout / decision 0020
+  Text files over 256 KiB were moved to <artifacts>/regressions/m1X/export-full/ (relative paths kept):
+  m13-regression 51 files 331,886,193 bytes, m14-regression 1 file 1,191,725 bytes, m15-regression 1 file 590,108
+  bytes; acceptance and m16-m20 regressions had none. See each folder's ARCHIVED-EVIDENCE.sha256 and the README's
+  last section (verified shasum -a 256 -c, all OK). SHA256SUMS keeps the original lines; its README.md line was
+  refreshed after the README section was appended (every non-archived line verifies OK). Committed folder ~9.8 MB.
+
+caveats
+  - The engine-unavailable state (MM-unavailable) cannot be produced honestly in this environment; covered by tests.
+  - L5/L6 limitation sentences and failed modeling jobs are not exercised by the 1UBQ I44W offscreen flow; they are
+    covered by the worker/job tests (real OpenMM + PDBFixer) on derived synthetic fixtures.
+  - The docking pair uses 1UBQ + a synthetic-labelled phenol SDF (no local public structure with a ligand passes the
+    M7 preflight, T1). It verifies the same-condition docking mechanics with real qvina, not a biological pose.
+  - The gate ran three lanes at once (group 5 / groups 1-4 / quick checks); durations reflect that contention.
+
+end state
+  After the runner: no qvina2, docking/batch/ligand/chemical/mutation worker, guardian, fpocket, uvicorn, next or
+  harness Electron process; 8000/3000 free. git status before the evidence commit: only untracked
+  docs/qa/m21-mutations-20261004/ evidence (gate.txt, summary.txt, acceptance/, m2X|m1X-regression/); HEAD unchanged
+  (4a3dabe51af0ef8b6328bf7f09fa7f719e4ef7e1).

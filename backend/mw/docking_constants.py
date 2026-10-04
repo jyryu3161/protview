@@ -23,8 +23,11 @@ CANDIDATE_REASONS = ("candidate_unknown", "parent_mismatch", "parent_not_3d", "c
 BOX_REASONS = ("box_invalid", "box_too_large", "box_no_receptor_atoms")
 ENGINE_REASONS = ("engine_failed", "engine_output_invalid", "resource_exceeded")
 REASONS = RECEPTOR_REASONS + LIGAND_REASONS + CANDIDATE_REASONS + BOX_REASONS + ENGINE_REASONS
-# Server admission may also refuse with these (spec 5.3 last bullet); never produced by the worker.
-ADMISSION_ONLY_REASONS = ("invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing")
+# Server admission may also refuse with these (spec 5.3 last bullet); never produced by the worker. M21 (user
+# approved, .dryforge/spec.md 7) adds ``mutation_model_invalid``: the ``receptor_source`` handle is not a published
+# same-run ``mutation_model@1`` or its side is unknown.
+ADMISSION_ONLY_REASONS = ("invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing",
+                          "mutation_model_invalid")
 # 5.5 capability reasons (no numbers, no controls when unavailable).
 CAPABILITY_REASONS = ("worker_missing", "engine_missing", "engine_hash_mismatch", "handshake_failed",
                       "version_mismatch")
@@ -37,6 +40,11 @@ CONNECTIVITY_KINDS = ("pdb_conect", "sidecar")
 CONTACT_KINDS = ("polar_contact", "hydrophobic_contact", "contact")
 ACKNOWLEDGEMENT_KEYS = ("keep_input_protonation", "tool_assigned_types_charges", "rigid_no_optimization")
 METHODS = {"free": "qvina_free_v1", "core_fixed": "qvina_core_fixed_score_only_v1"}
+# M21 optional receptor source (single M18 only; M19 refuses the key): the stored mmCIF of one side of a published
+# ``mutation_model@1``, bonds from its stored OpenMM topology (``final_bonds`` + ``atom_mapping``).
+RECEPTOR_SOURCE_KINDS = ("mutation_model",)
+MUTATION_MODEL_SIDES = ("wild_type_reference", "mutant")
+MUTATION_MODEL_CONNECTIVITY = "mutation_model_topology"
 
 # 4.1 / 4.3 / 3.4 value ranges (inclusive) and defaults.
 SEED_MIN, SEED_MAX = 0, 2147483647                      # required, no default
@@ -87,18 +95,25 @@ LIMITATIONS = (
     "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다.",
     "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다.",
     "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다.",
+    # 12 (M21, user approved; only when the receptor source is a mutation model, always last)
+    "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로).",
 )
 
 
 def applicable_limitations(*, mode: str, source: str, removed_instance: bool,
-                           unspecified_stereo_centers: int | None) -> tuple[str, ...]:
+                           unspecified_stereo_centers: int | None,
+                           receptor_source: str | None = None) -> tuple[str, ...]:
     """Limitation sentences for one result, in the fixed order (spec 5.4 conditions).
 
     ``unspecified_stereo_centers`` is the ``inputs.ligand`` value: null for the ``sdf`` source, a count >= 0 for
-    ``candidate``. Impossible combinations raise ValueError instead of guessing.
+    ``candidate``. ``receptor_source`` is null for an imported receptor (sentences 1--11 only, unchanged) or
+    ``mutation_model`` (M21: sentence 12 appended last; no instance is ever removed from a protein-only model).
+    Impossible combinations raise ValueError instead of guessing.
     """
     if mode not in MODES or source not in LIGAND_SOURCES or type(removed_instance) is not bool:
         raise ValueError("unknown docking mode, ligand source or removed-instance flag")
+    if receptor_source is not None and (receptor_source not in RECEPTOR_SOURCE_KINDS or removed_instance):
+        raise ValueError("unknown receptor source, or an instance removed from a mutation-model receptor")
     if mode == "core_fixed" and source != "candidate":
         raise ValueError("core_fixed requires the candidate source")
     if unspecified_stereo_centers is not None and (type(unspecified_stereo_centers) is not int or
@@ -110,5 +125,6 @@ def applicable_limitations(*, mode: str, source: str, removed_instance: bool,
                mode == "core_fixed",
                removed_instance,
                source == "candidate" and mode == "free",
-               (unspecified_stereo_centers or 0) > 0)
+               (unspecified_stereo_centers or 0) > 0,
+               receptor_source == "mutation_model")
     return tuple(sentence for sentence, used in zip(LIMITATIONS, applies, strict=True) if used)

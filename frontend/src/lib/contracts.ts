@@ -361,6 +361,19 @@ export interface DockingArgs {
   acknowledgement: Record<DockingAcknowledgementKey, true>;
 }
 
+/**
+ * M21 `qvina_dock_v1` arguments with `receptor_source` instead of the four imported receptor keys (spec 7). No
+ * receptor instance exists in a protein-only model, so an `instance_range` box is refused (`box_invalid`).
+ */
+export interface DockingSourceArgs {
+  receptor_source: DockingReceptorSource;
+  ligand: DockingArgs["ligand"];
+  mode: DockingMode;
+  box: { source: "ligand_range"; margin_A: number } | { source: "manual"; center_A: DockingTriple; size_A: DockingTriple };
+  parameters: DockingArgs["parameters"];
+  acknowledgement: Record<DockingAcknowledgementKey, true>;
+}
+
 /** `methods.ligand_docking` of `/capabilities` and `capability` of the prerequisites read. */
 export interface DockingCapability { schema: "docking_capability@1"; protocol_id: "qvina_dock_v1";
   tool_id: "qvina_dock_ligand"; engine: "qvina"; execution_lane: string; methods: Record<DockingMode, DockingMethod>;
@@ -400,12 +413,23 @@ interface DockingModeFields { mode: number; score_kcal_mol: number; engine_rmsd_
 export interface DockingModeRow extends DockingModeFields { pose_sdf: string; contacts: DockingContact[] }
 /** Mode row of the detail read: no pose SDF and no contact rows, the stored contact count instead. */
 export interface DockingModeSummary extends DockingModeFields { contact_count: number }
+/** `inputs.receptor` of an imported receptor (M18; the only kind an M19 batch takes). */
+export interface DockingImportedReceptor { handle: string; sha256: string; model_number: number;
+  connectivity: { kind: "pdb_conect" | "sidecar"; sidecar_handle: string | null };
+  removed_instance: DockingReceptorInstance | null; acknowledgement: Record<DockingAcknowledgementKey, true> }
+/**
+ * M21 `receptor_source` (single M18 only): one side of a published same-run `mutation_model@1`. The four imported
+ * receptor keys (`receptor_handle`, `receptor_model_number`, `connectivity`, `receptor_instance`) are then absent.
+ */
+export interface DockingReceptorSource { kind: "mutation_model"; mutation_model: string; side: MutationModelSide }
+/** M21 `inputs.receptor` of a mutation-model receptor: no import handle, bonds from the stored OpenMM topology. */
+export interface DockingMutationModelReceptor { source: DockingReceptorSource; sha256: string; model_number: number;
+  connectivity: { kind: "mutation_model_topology" }; removed_instance: null;
+  acknowledgement: Record<DockingAcknowledgementKey, true> }
 export interface DockingResult { schema: "docking_result@1"; protocol: "qvina_dock_v1"; method: DockingMethod;
   input_sha256: string;
   inputs: {
-    receptor: { handle: string; sha256: string; model_number: number;
-      connectivity: { kind: "pdb_conect" | "sidecar"; sidecar_handle: string | null };
-      removed_instance: DockingReceptorInstance | null; acknowledgement: Record<DockingAcknowledgementKey, true> };
+    receptor: DockingImportedReceptor | DockingMutationModelReceptor;
     ligand: { source: DockingLigandSource; sdf_handle: string | null; sdf_sha256: string | null;
       candidate_set_handle: string | null; candidate_id: string | null; parent_sdf_handle: string | null;
       parent_sdf_sha256: string | null; generated: { hydrogens: boolean; coordinates: boolean };
@@ -500,7 +524,7 @@ export interface DockingBatchRow { row_index: number; kind: DockingBatchRowKind;
   score_kcal_mol: number | null; score_row_label: string | null }
 export interface DockingBatchResult { schema: "docking_batch_result@1"; protocol: "qvina_batch_dock_v1";
   method: DockingMethod; batch_input_sha256: string;
-  inputs: { receptor: DockingResult["inputs"]["receptor"];
+  inputs: { receptor: DockingImportedReceptor;
     candidate_set: { handle: string; parent_sdf_handle: string; parent_sdf_sha256: string };
     candidate_ids: string[]; include_parent: boolean; mode: DockingMode };
   box: DockingResult["box"]; parameters: DockingResult["parameters"]; engine: DockingResult["engine"];
@@ -634,4 +658,102 @@ export interface MutationCandidatePage { schema: "mutation_candidate_page@1"; ha
   rows: MutationCandidateRow[] }
 export interface MutationReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "mutation_candidates"; result_handle: string;
+  snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M21 mutation structure model (backend/mw/mutation_model_constants.py, mutation_model_bundle.py,
+// mutation_model_reads.py, mutation_model_reports.py; `.dryforge/spec.md` 2, 4, 6, 7, 8) ----
+export type MutationModelSide = "wild_type_reference" | "mutant";
+
+/** `openmm_mutation_model_v1` job arguments (spec 2; unknown keys refused). `timeout_s` is a top-level job field. */
+export interface MutationModelArgs {
+  candidate_set: string;
+  /** `candidates[].index` of the M20 set (never found by from/to letters). */
+  candidate_index: number;
+  seed: number;
+  selection_policy: "protein_only";
+  hydrogen_policy: "rebuild_pH7";
+  contact_cutoff_A: number;
+}
+
+/** `methods.mutation_model` of `/capabilities`: unavailable carries the closed reason and no versions. */
+export interface MutationModelCapability { schema: "mutation_model_capability@1"; protocol_id: "openmm_mutation_model_v1";
+  tool_id: "openmm_mutation_model"; execution_lane: string; result_schema: "mutation_model@1"; method_version: string;
+  timeout_s: { default: number; max: number }; contact_cutoff_A: { default: number; min: number; max: number };
+  limits: { protein_heavy_atoms: number; contact_rows_per_structure: number; output_bytes: number };
+  available: boolean; reason_code: string | null; reason: string | null;
+  versions: { openmm: string; openmm_engine_build: string; pdbfixer: string } | null }
+
+/** The M20 candidate a model was built from: original 7 fields of the position residue, letters, mutant name. */
+export interface MutationModelCandidate { candidate_set: string; candidate_index: number; position_index: number;
+  from: string; to: string; residue: ExactResidueRef; mutant_resname: string }
+export interface MutationModelParameters { seed: number; contact_cutoff_A: number; selection_policy: "protein_only";
+  hydrogen_policy: "rebuild_pH7" }
+/** Stored OpenMM potential of one structure (kJ/mol, engine values; no change or difference is stored). */
+export interface MutationModelEnergy { before_kJ_mol: number; after_kJ_mol: number; unit: "kJ/mol"; engine: "OpenMM";
+  force_field: "amber14-all + implicit/gbn2"; convergence: "convergence_not_claimed" }
+/** One structure entry of the detail read (no contact rows, `final_bonds` or `atom_mapping`). */
+export interface MutationModelStructureSummary { structure_object: string; structure_sha256: string;
+  system_xml_sha256: string; topology_sha256: string; heavy_atoms: number; added_hydrogens: number;
+  added_heavy_atoms: { atom_name: string; element: string }[];
+  protonation_variants: { residue: ExactResidueRef; variant: string | null }[];
+  disulfide_bonds: [ExactResidueRef, ExactResidueRef][];
+  energy: MutationModelEnergy;
+  sasa: { residue: ExactResidueRef; engine: "FreeSASA"; value_A2: number; parameters: Record<string, unknown> };
+  contacts: { cutoff_A: number; excluded_bond_distance: number; count: number; residue_count: number } }
+export interface MutationModelComparison { mutated_residue: ExactResidueRef;
+  resnames: Record<MutationModelSide, string>; new_disulfide_in_mutant: boolean; protonation_difference_count: number }
+/** `mutation_model@1` as the detail read returns it (validated; rows left out). */
+export interface MutationModelResult { schema: "mutation_model@1"; method_version: string;
+  candidate: MutationModelCandidate;
+  structure: { handle: string; model_number: number; structure_kind: "prepared_structure" };
+  parameters: MutationModelParameters; method: Record<string, unknown>;
+  excluded_components: { reason: string; residue_count: number; atom_count: number }[];
+  structures: Record<MutationModelSide, MutationModelStructureSummary>;
+  comparison: MutationModelComparison;
+  protonation_differences: { residue: ExactResidueRef; wild_type_reference: string | null; mutant: string | null }[];
+  limitations: string[] }
+export interface MutationModelDetail { schema: "mutation_model_detail@1"; handle: string; result: MutationModelResult;
+  meta: Record<string, unknown> }
+/** `GET /runs/{id}/mutation_models` row, newest first; a row that does not validate: `valid: false`, nulls. */
+export interface MutationModelListRow { handle: string; created_seq: number; valid: boolean;
+  candidate: Omit<MutationModelCandidate, "position_index"> | null;
+  structure: MutationModelResult["structure"] | null; parameters: MutationModelParameters | null }
+export interface MutationModelList { schema: "mutation_model_list@1"; total: number; offset: number; limit: number;
+  rows: MutationModelListRow[] }
+/** One stored contact row (heavy atoms, distance in Å, float64 as stored; not a hydrogen bond). */
+export interface MutationModelContactRow { index: number; atom_name: string; element: string;
+  partner_residue: ExactResidueRef; partner_atom_name: string; partner_element: string; distance_A: number }
+export interface MutationModelContactPage { schema: "mutation_model_contact_page@1"; handle: string;
+  structure: MutationModelSide; mutated_residue: ExactResidueRef; cutoff_A: number; excluded_bond_distance: number;
+  total: number; page: number; page_size: number; rows: MutationModelContactRow[] }
+
+/** Closed reason set of a docking pair side that shows no score (mutation_model_reads.PAIR_REASONS). */
+export type MutationModelPairReason = "not_submitted" | "job_not_finished" | "job_failed" | "job_cancelled" |
+  "job_interrupted" | "result_invalid" | "other_side_missing" | "no_modes";
+export interface MutationModelPairSide { side: MutationModelSide; job_id: string | null; job_status: string;
+  submitted_seq: number | null; result_handle: string | null;
+  /** Stored first mode row score; non-null only when both sides are published, validated results. */
+  score_kcal_mol: number | null; score_mode: number | null;
+  reason_code: MutationModelPairReason | null; reason: string | null }
+export interface MutationModelPairCondition { ligand: DockingArgs["ligand"]; mode: DockingMode;
+  box: DockingSourceArgs["box"] | { source: "instance_range"; margin_A: number };
+  parameters: { seed: number; exhaustiveness: number; num_modes: number; energy_range: number; conformers: number | null };
+  method_pins_sha256: string }
+export interface MutationModelPair { index: number; first_submitted_seq: number; condition: MutationModelPairCondition;
+  both_published: boolean; sides: Record<MutationModelSide, MutationModelPairSide> }
+/** `GET /runs/{id}/mutation_models/{handle}/docking_pairs` (spec 7): every condition group, none picked. */
+export interface MutationModelDockingPairs { schema: "mutation_model_docking_pairs@1"; handle: string;
+  score_label: string; total: number; pairs: MutationModelPair[]; starts_job: false }
+
+export interface MutationModelJob { job_id: string; run_id: string; protocol_id: "openmm_mutation_model_v1";
+  tool_id: string; status: string; blocked_reason: string | null;
+  failure: { error: string; message: string; reason_code?: string; detail?: Record<string, unknown> } | null;
+  input_handles: string[]; output_handles: string[]; attempt_ordinal: number; cancel_requested: boolean;
+  timeout_s: number; artifacts?: { mutation_model?: string } }
+/** Dry-run submission: a plan only, no job and no result object. */
+export interface MutationModelPlanOnly { plan_only: true; protocol_id: "openmm_mutation_model_v1"; reason_code: "dry_run";
+  available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
+export type MutationModelSubmission = MutationModelJob | MutationModelPlanOnly;
+export interface MutationModelReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "mutation_model"; result_handle: string;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }

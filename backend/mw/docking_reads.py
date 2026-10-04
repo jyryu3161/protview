@@ -129,9 +129,10 @@ def list_results(run: Any, offset: int, limit: int) -> dict[str, Any]:
         try:
             content = result(run, handle)
             ligand = content["inputs"]["ligand"]
+            receptor = content["inputs"]["receptor"]   # M21 mutation-model source: no import handle (null)
             row.update(valid=True, reason_code=None, job_id=docking_bundle.producer(run, handle)["job_id"],
                        method=content["method"], mode=content["inputs"]["mode"], ligand_source=ligand["source"],
-                       candidate_id=ligand["candidate_id"], receptor_handle=content["inputs"]["receptor"]["handle"],
+                       candidate_id=ligand["candidate_id"], receptor_handle=receptor.get("handle"),
                        seed=content["parameters"]["seed"], box_source=content["box"]["source"],
                        modes=content["counts"]["modes"], null_result=content["counts"]["null_result"])
         except docking_bundle.DockingEvidenceError:

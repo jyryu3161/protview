@@ -15,6 +15,10 @@ mixed. Every value statement is ``computed`` evidence bound to that handle and o
   in the claim's ``row_selector``);
 - derived values: only the ``minimum`` and ``maximum`` of the stored scores ("점수 최솟값", "점수 최댓값").
 
+M21: a result whose receptor came from a mutation model (``inputs.receptor.source``) has no import handle; its
+receptor section shows the source (mutation model handle and side, copied from the validated stored result) instead
+of the import line, and the other receptor statements are unchanged. Imported-receptor reports are byte-identical.
+
 A field the result did not compute (null) is never a statement, so it can never be written as 0; a result without
 mode rows has no row statistics. Candidate results must carry their candidate provenance and core-fixed results their
 ``core_max_deviation_A`` on every row, else no report is made.
@@ -191,8 +195,9 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
         _required(content)
         mode = content["inputs"]["mode"]
         receptor, ligand = content["inputs"]["receptor"], content["inputs"]["ligand"]
-        claims = [_claim("receptor_input", handle, "inputs.receptor.handle", None, "receptor_import", "handle",
-                         receptor["handle"], "identifier"),
+        claims = [*([] if "source" in receptor else [   # M21 mutation-model source: no import handle
+                      _claim("receptor_input", handle, "inputs.receptor.handle", None, "receptor_import", "handle",
+                             receptor["handle"], "identifier")]),
                   _claim("receptor_input", handle, "inputs.receptor.sha256", None, "receptor_sha256", "sha256",
                          receptor["sha256"], "identifier"),
                   _claim("receptor_input", handle, "inputs.receptor.model_number", None, "receptor_model_number",
@@ -399,7 +404,9 @@ def render_docking_report(manifest: dict[str, Any]) -> str:
              "", f"**{_md(manifest['evidence_statement'])}**", "",
              f"- 점수 이름: {SCORE_LABEL}", "",
              "## 수용체", "",
-             f"- 가져오기: {_md(value('receptor_input', 'inputs.receptor.handle'))}",
+             (f"- 가져오기: {_md(value('receptor_input', 'inputs.receptor.handle'))}" if "source" not in receptor else
+              f"- 출처: 변이 모델링 구조 ({_md(receptor['source']['kind'])}) {_md(receptor['source']['mutation_model'])}"
+              f", 쪽 {_md(receptor['source']['side'])}"),
              f"- SHA-256: {_md(value('receptor_input', 'inputs.receptor.sha256'))}",
              f"- 모델 번호: {value('receptor_input', 'inputs.receptor.model_number')}",
              f"- 연결 정보: {_md(receptor['connectivity']['kind'])}",

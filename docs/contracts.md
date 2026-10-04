@@ -61,7 +61,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·변이 후보 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·변이 후보·변이 구조 모델 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -72,7 +72,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 순서(실제 UI 흐름):
 1. (OpenMM만) `GET /jobs/preflight?structure=<handle>`: 입력 적합성, 제외 항목, 필요한 확인.
-2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
+2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하, M21 `openmm_mutation_model_v1`은 기본 120·240 이하이고 범위 밖이면 422 `argument_invalid`), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
 3. `POST /jobs/{job_id}/start`: run에서 첫 비싼 계산이면 409 `{"ok": false, "approval": {gate: "expensive_first_call", tool, reason}}`를 돌려주고 승인 요청을 기록한다.
 4. `POST /jobs/approve`: 대기 중인 승인 요청이 있고 해당 도구의 queued 작업이 있을 때만 승인을 기록한다. 없으면 412다.
 5. `POST /jobs/{job_id}/start`를 다시 부른다. 전역 heavy-worker 게이트에 걸리면 409와 reason_code를 돌려준다.
@@ -275,10 +275,12 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
  "acknowledgement": {"keep_input_protonation": true, "tool_assigned_types_charges": true,
                      "rigid_no_optimization": true}}
 ```
+  M21 수용체 출처(단독 M18만): 네 수용체 키(`receptor_handle`·`receptor_model_number`·`connectivity`·`receptor_instance`) 대신 `"receptor_source": {"kind": "mutation_model", "mutation_model": "obj://…/mutation_model/…", "side": "wild_type_reference" | "mutant"}`를 준다. 둘을 섞거나 네 키 중 하나라도 같이 주면 `invalid_job_arguments`, `receptor_source` 모양이 틀리면(`kind` 포함) `invalid_job_arguments`, handle이 빈 문자열·문자열 아님이거나 `side`가 둘 밖이면 `mutation_model_invalid`. 이 출처의 리간드는 `sdf`만이다(`candidate`는 `mode_source_mismatch`). 정규화 인자는 네 키 대신 `receptor_source`를 담아 출처가 호출 키에 들어간다. `receptor_source`가 없으면 모양·정규화·호출 키가 M21 전과 같다.
   `seed`는 필수, `exhaustiveness`·`num_modes`·`energy_range`·`margin_A`와 코어 고정의 `conformers`는 빼면 기본값으로 채운다. 자유 도킹에 `conformers` 키가 있으면(null 포함) 거절하고 정규화 때 null로 둔다. 정수는 bool·float가 아니어야 한다. 호출 키에는 `acknowledgement`를 뺀 정규화 인자와 고정 환경 pin이 들어간다.
-- 입장 거절(작업을 만들지 않음, 예산 없음, 422 `input_invalid`, `detail.reason_code`): `invalid_job_arguments`(모양·범위·종류·다른 run handle), `mode_source_mismatch`, `acknowledgement_missing`, `box_invalid`, `box_too_large`(직접 입력 한 변 > 40 Å), `candidate_unknown`, `parent_mismatch`, 수용체 이유(`receptor_invalid`, `receptor_hydrogens_missing`, `receptor_unsupported_residue`, `receptor_altloc_present`, `receptor_instance_unknown`, `receptor_instance_ambiguous`, `receptor_instance_covalent`). `receptor_unsupported_residue`·`receptor_altloc_present`의 `detail`은 `items`(최대 20개: `{residue(7필드), atom_names}` 또는 `{residue, atom_name, altloc}`)와 `total`, `receptor_instance_covalent`의 `detail`은 `bonds`(최대 20쌍의 원자 식별자)와 `total`이다. 환경을 쓸 수 없으면 412 `precondition`(`detail.reason_code`는 capability 이유).
+- 입장 거절(작업을 만들지 않음, 예산 없음, 422 `input_invalid`, `detail.reason_code`): `invalid_job_arguments`(모양·범위·종류·다른 run handle), `mode_source_mismatch`, `acknowledgement_missing`, `mutation_model_invalid`(M21 `receptor_source`: 같은 run의 게시·검증된 `mutation_model@1`이 아님, 없는 side, 저장 mmCIF 원자가 모델 `atom_mapping`과 다름, 저장 결합이 원자를 가리키지 않음), `box_invalid`, `box_too_large`(직접 입력 한 변 > 40 Å), `candidate_unknown`, `parent_mismatch`, 수용체 이유(`receptor_invalid`, `receptor_hydrogens_missing`, `receptor_unsupported_residue`, `receptor_altloc_present`, `receptor_instance_unknown`, `receptor_instance_ambiguous`, `receptor_instance_covalent`). `receptor_unsupported_residue`·`receptor_altloc_present`의 `detail`은 `items`(최대 20개: `{residue(7필드), atom_names}` 또는 `{residue, atom_name, altloc}`)와 `total`, `receptor_instance_covalent`의 `detail`은 `bonds`(최대 20쌍의 원자 식별자)와 `total`이다. 환경을 쓸 수 없으면 412 `precondition`(`detail.reason_code`는 capability 이유).
 - 작업 실패(과금됨, 결과 객체 없음, `failure{error, reason_code, message, detail}`): `input_invalid` — 수용체·리간드·후보·코어·상자 이유(작업 프로세스가 같은 검사를 다시 함), `resource_exceeded` — 모드당 접촉 500행 초과·결과 4 MiB 초과, `fatal` — `engine_failed`, `engine_output_invalid`, 잘못된 오류 봉투. 시작 때 고정 pin이 바뀌었으면 `precondition`(`worker_version_invalid`). 시간 초과·취소는 결과 없음. dry-run run은 계획만.
 - `POST /jobs/{id}/start`는 작업이 끝날 때까지 응답하지 않는다. 화면은 제출 응답의 job id로 `GET /jobs/{id}`·`POST /jobs/{id}/cancel`을 따로 부른다. 도구 `qvina_dock_ligand`는 작업 전용이라 `/commands`로 실행되지 않는다.
+- M21 출처 결과: `inputs.receptor` = `{source: {kind, mutation_model, side}, sha256, model_number, connectivity: {kind: "mutation_model_topology"}, removed_instance: null, acknowledgement}`(`handle` 없음), `limitations`는 맨 뒤에 열두째 문장이 붙는다. 결과 목록 행의 `receptor_handle`은 null이다. 이 결과를 읽을 때마다(상세·접촉·포즈·보고서) 출처 모델을 다시 검증하고 저장 mmCIF·사이드카가 제출 때와 같은지 대조하므로, 모델이 검증되지 않으면 이 결과도 검증 실패로 읽히지 않는다. M18 수용체 규칙(원자 수 10,000 등)은 그대로 `receptor_invalid` 등이다. M19 `qvina_batch_dock_v1`은 `receptor_source`를 알 수 없는 키로 거절한다(M19 이유 집합 그대로).
 
 ### 읽기
 
@@ -296,7 +298,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - 모든 결과 읽기는 `docking_bundle.validated_result`(크기 제한 읽기, 완료된 게시 한 건, 입력·닫힌 집합 대조)를 거친다. 일반 `GET /runs/{id}/objects`·`/objects/meta`도 `docking_result`를 읽을 수 있지만 이 검증을 거치지 않는다(M12·M17과 같은 관례). 화면은 위 `/docking/*`만 쓴다.
 
 ### capability
-- `/capabilities`의 `methods.ligand_docking`(`docking_capability@1`): `{available, status, reason_code, reason, protocol_id, tool_id, engine: "qvina", execution_lane: "durable_job", methods{free, core_fixed}, timeout_s{default: 600, max: 900}, limits{input_bytes_per_file, receptor_atoms, ligand_heavy_atoms, active_torsions, box_side_A, result_bytes, contacts_per_mode}, score_label, limitations, pins, versions}`. 사용할 수 없으면 `available: false`, `reason_code`는 `worker_missing | engine_missing | engine_hash_mismatch | handshake_failed | version_mismatch`, `pins`·`versions`는 null. 서버는 `qvina2` 파일 해시를 재고 작업 모듈 `--handshake`만 실행하며(qvina를 실행하지 않음), 구조가 맞는 handshake만 캐시한다(판정은 매번 다시 함).
+- `/capabilities`의 `methods.ligand_docking`(`docking_capability@1`): `{available, status, reason_code, reason, protocol_id, tool_id, engine: "qvina", execution_lane: "durable_job", methods{free, core_fixed}, timeout_s{default: 600, max: 900}, limits{input_bytes_per_file, receptor_atoms, ligand_heavy_atoms, active_torsions, box_side_A, result_bytes, contacts_per_mode}, score_label, limitations, pins, versions}`. 사용할 수 없으면 `available: false`, `reason_code`는 `worker_missing | engine_missing | engine_hash_mismatch | handshake_failed | version_mismatch`, `pins`·`versions`는 null. 서버는 `qvina2` 파일 해시를 재고 작업 모듈 `--handshake`만 실행하며(qvina를 실행하지 않음), 구조가 맞는 handshake만 캐시한다(판정은 매번 다시 함). `limitations`는 고정 문장 전부이며 M21부터 열두째 문장(변이 모델 수용체 출처일 때만 결과에 붙음)까지 12개다.
 
 ### 보고서
 - `POST /runs/{id}/method_reports` `{result_handle: <docking_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_docking"`, `render_version: "ligand_docking_markdown@1"`, `result_schema: "docking_result@1"`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다.
@@ -401,6 +403,49 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 ### 보고서
 - `POST /runs/{id}/method_reports` `{result_handle: <mutation_candidate_set>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "mutation_candidates"`, `render_version: "mutation_candidates_markdown@1"`, `status: "complete"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "mutation_candidate_set@1"`, `result_sha256`, 결과에서 복사한 `method_version, structure, parameters, ligand, pockets, protection_checks, released_residues, counts, null_result, limitations`, `claims`, `provenance{call_id, tool, tool_version, created_event_seq, completed_event_seq}`, `evidence_statement`, `snapshot`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 종류 이름 "변이 후보 보고서").
 - 주장 statement ID: `computed` — `position_count`, `position_status_count`, `released_position_count`, `candidate_count`, `exclusion_reason_count`, `source_position_count`, `numbering_status_count`(번호 대응이 있을 때), `ligand_min_distance_A`(`positions[i].ligand_min_distance_A` 인용, 단위 `angstrom`, 0.01 `ROUND_HALF_UP`), `protection_check_status`(다섯 검사), `protection_check_count`(`checked`인 검사만). `reference_value` — `reference_uniprot_accession`, `reference_klifs_site_label`(`reference: {note: "참조 스냅샷 값, 계산 아님", reference_object}`). 주장 필드는 M15 보고서와 같다. 다른 statement의 필드 경로, 계산값으로 참조 필드 인용, 틀린 개수·반올림, 검사하지 않은 항목의 숫자 주장, 해석 문장, 다른 run·다른 종류의 결과, 변조된 집합·보고서는 422 `report_evidence_invalid`.
+- 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `budget`.
+
+## M21 변이 구조 모델링
+
+규칙은 `docs/business-rules.md` "변이 구조 모델링 (M21, `openmm_mutation_model_v1`)". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·OpenMM·PDBFixer·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. handle은 URL **경로**에 그대로 넣는다(`{handle:path}`, M20과 같음). 새 쓰기 라우트는 없다(같은 조건 도킹은 기존 `POST /jobs`로 M18 작업 둘).
+
+### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
+```json
+{"protocol_id": "openmm_mutation_model_v1",
+ "args": {"candidate_set": "obj://…/mutation_candidate_set/…", "candidate_index": 0, "seed": 20261004,
+          "selection_policy": "protein_only", "hydrogen_policy": "rebuild_pH7", "contact_cutoff_A": 4.0},
+ "timeout_s": 120}
+```
+- `contact_cutoff_A`는 빼면 4.0(2.5–6.0). `timeout_s`는 빼면 120, 0 초과 240 이하(호출 키에 들어가지 않음). 완료 작업의 `artifacts.mutation_model`. 같은 정규화 인자·같은 고정 pin이면 기존 작업을 돌려준다(새 작업·과금 없음). 작업 기록의 `method`는 `{worker_sha256, dependency_sha256{파일 다섯 개}, method}`이고 시작 때 다시 맞춘다(다르면 412 `worker_version_invalid`).
+- 입장 거절(작업을 만들지 않음, 예산 없음, 도구 실패 본문 `detail.reason_code`), 이 순서:
+  - 422 `input_invalid`: `unknown_field`, `confirmation_missing`, `argument_invalid`(인자·`timeout_s`. 큐가 막는 `argv`·`executable`·`module`·`env`·`path`·`cwd`·`fixture` 키는 `unknown_field`, 객체가 아닌 `args`는 `argument_invalid`), `candidate_set_invalid`, `candidate_unknown`, `structure_invalid`, `residue_mismatch`.
+  - (dry-run run은 여기서 계획만 돌려준다.)
+  - 412 `precondition`: `process_identity_unavailable`, `openmm_unavailable`, `pdbfixer_unavailable`(예약·과금 전).
+  - 422 `input_invalid` `openmm_preflight_failed`: `detail{reason_code, m7_reason(M7 코드 또는 null), m7_message}`. 사전 검사 투영과 후보가 맞지 않으면 `residue_mismatch`·`structure_invalid`.
+  - 429 `resource_exceeded`: 스테이징 입력 4,000,000 B 초과(`detail.limit: "staged_input_bytes"`).
+- 작업 실패(과금됨, 결과 객체 없음, `failure{error, reason_code, message, detail}`): `input_invalid` — `mutation_modeling_failed`, `unexpected_atoms_added`, `coordinates_changed`, `topology_unsupported`. `fatal` — `energy_invalid`, `engine_failed`, 잘못된 오류 봉투. `resource_exceeded` — `too_many_contacts`(구조당 2,000행 초과), 작업 출력·결과 64,000,000 B 초과. 시간 초과·취소는 결과 없음. 게시 직전에 취소가 들어오면 아무것도 저장하지 않는다.
+- 성공하면 객체 셋을 저장한다: `mutation_model_structure@1`(fmt `cif`) 둘과 `mutation_model@1` 하나(summary `{candidate_set, candidate_index, from, to, structure, seed}`). 도구 `openmm_mutation_model`은 작업 전용이라 `/commands`로 실행되지 않는다.
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/mutation_models?offset&limit` | limit 1–100(기본 50) | `mutation_model_list@1`: `{total, offset, limit, rows:[{handle, created_seq, valid, candidate{candidate_set, candidate_index, residue, from, to, mutant_resname}, structure, parameters}]}`. 최신 순. 행마다 다시 검증하고 실패한 행은 `valid: false`, 나머지 null | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/mutation_models/{handle}` | — (쿼리 없음) | `{schema: "mutation_model_detail@1", handle, result, meta}`. `result`는 저장 객체에서 구조 항목마다 `final_bonds`·`atom_mapping`·접촉 `rows`를 뺀 것(접촉은 `cutoff_A`·`excluded_bond_distance`·`count`·`residue_count`만) | 404 없는 handle, 422 `input_invalid`(다른 종류), 422 `method_evidence_invalid` |
+| `GET /runs/{id}/mutation_models/{handle}/contacts?structure=&page&page_size` | `structure` ∈ `wild_type_reference`·`mutant`(필수), `page` ≥ 1(기본 1), `page_size` 1–200(기본 100) | `mutation_model_contact_page@1`: `{handle, structure, mutated_residue, cutoff_A, excluded_bond_distance, total, page, page_size, rows:[{index, atom_name, element, partner_residue(7필드), partner_atom_name, partner_element, distance_A}]}`. 저장 순서 그대로 | 404, 422, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/mutation_models/{handle}/structure?side=` | `side` ∈ `wild_type_reference`·`mutant`(필수) | 저장 mmCIF 바이트 그대로(모델의 `structure_sha256`과 대조), `chemical/x-mmcif`, 첨부 이름 `protview-mutation-model-<handle 해시 앞 12>-<side>.cif`, `Cache-Control: private, no-store` | 404, 422, 422 `method_evidence_invalid` |
+| `GET /runs/{id}/mutation_models/{handle}/docking_pairs` | — (쿼리 없음) | `mutation_model_docking_pairs@1`: `{handle, score_label(M18 점수 문구), total, pairs:[{index, first_submitted_seq, condition{ligand, mode, box, parameters, method_pins_sha256}, both_published, sides{wild_type_reference, mutant: {side, job_id, job_status, submitted_seq, result_handle, score_kcal_mol, score_mode, reason_code, reason}}}], starts_job: false}`. 조건 묶음은 첫 제출 순서. `both_published`일 때만 두 쪽에 결과 handle과 저장된 첫 모드 행 점수(모드 0개면 `no_modes`), 아니면 쪽마다 작업 상태와 점수 null + 닫힌 이유(`not_submitted`, `job_not_finished`, `job_failed`, `job_cancelled`, `job_interrupted`, `result_invalid`, `other_side_missing`). `job_status`는 작업이 없으면 `not_submitted` | 404, 422, 422 `method_evidence_invalid`(모델), 409 `run_corrupt`(도킹 작업 기록) |
+
+- 하위 경로 라우트(`/contacts`, `/structure`, `/docking_pairs`)가 상세 라우트보다 먼저 등록되어 있다(경로 handle이 슬래시를 담으므로).
+- 일반 `GET /runs/{id}/objects`·`/objects/meta`도 이 종류를 읽을 수 있지만 `validated_result`를 거치지 않는다(M12·M17–M20과 같은 관례). 화면은 위 다섯 읽기만 쓴다.
+
+### capability와 도구 목록
+- `/capabilities`의 `methods.mutation_model`(`mutation_model_capability@1`): `{available, reason_code, reason, versions{openmm, openmm_engine_build, pdbfixer} | null, protocol_id, tool_id, execution_lane: "durable_job", result_schema, method_version, timeout_s{default: 120, max: 240}, contact_cutoff_A{default: 4.0, min: 2.5, max: 6.0}, limits{protein_heavy_atoms: 6000, contact_rows_per_structure: 2000, output_bytes: 64000000}}`. 사용할 수 없으면 `reason_code`는 `openmm_unavailable | pdbfixer_unavailable | process_identity_unavailable`이고 `versions`는 null. PDBFixer는 `importlib.metadata`로만 확인한다.
+- `GET /tools?levels=…L3…`에 `openmm_mutation_model`(L3, `emits: mutation_model`, `cost_class: expensive`, `execution_lane: "durable_job"`, `submit_protocol_id: "openmm_mutation_model_v1"`)이 나온다(기본 `levels=L2,L4`에는 없음).
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <mutation_model>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "mutation_model"`, `render_version: "mutation_model_markdown@1"`, `status: "complete"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "mutation_model@1"`, `result_sha256`, 결과에서 복사한 `method_version, candidate, structure, parameters, method, excluded_components, comparison, protonation_differences, limitations`, `structures`(행을 뺀 요약), `claims`, `provenance`, `evidence_statement`, `snapshot`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 이름 "변이 구조 모델 보고서").
+- 주장은 모두 `computed`. statement ID: `candidate`, `openmm_potential`, `mutated_residue_sasa`, `contact_cutoff`, `contact_count`, `contact_residue_count`, `disulfide_pair_count`, `protonation_difference_count`, `added_heavy_atom_count`. 다른 statement의 필드 경로, 틀린 값·반올림·개수, 차이·변화 주장, 도킹 점수 주장, 해석 문장, 다른 run·다른 종류의 결과, 변조된 모델·보고서는 422 `report_evidence_invalid`.
 - 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `budget`.
 
 ## 과거 단계 실행기 (CLI)

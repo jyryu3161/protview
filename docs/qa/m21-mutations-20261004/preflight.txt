@@ -1,0 +1,349 @@
+M21 T1 착수 확인 (preflight) — 2026-10-04, 브랜치 dryforge/m21-mutation-model, 기준 커밋 a6334a6
+명세: .dryforge/spec.md 2·3·5·7·11절, 계획 T1 (a)–(f). 제품 코드는 바꾸지 않았다(backend/pyproject.toml 고정 한 줄과
+fixture·증거만). 모든 수치는 아래 스크립트를 실제로 실행한 출력에서 옮겼다. 스크립트는 세션 scratchpad에 두고 저장소에
+넣지 않았다(M20 T1과 같은 방식):
+  t1_common.py         M7 작업 모듈의 위상 구성(openmm_worker.run 108–136행과 같은 방식) + PDBFixer 공개 API 호출 +
+                       M7 설정의 수소·최소화 + 접촉(numpy 전수, 결합 그래프 1–3 제외) + FreeSASA 잔기 SASA
+  t1_scan_inputs.py    로컬 구조 fixture의 M7 사전 검사 통과 여부 (e)
+  t1_matrix.py         1UBQ 변이 행렬, 변형 A·B (b)
+  t1_cys.py            합성 파생 Cys fixture의 이황화 경우 (b)
+  t1_repro.py          작업 하나에 해당하는 계산(야생형 기준 + 변이형) 두 번 실행·시간·크기 (c)
+  t1_m18_prepare.py    최소화 구조를 표준 이름 mmCIF + final_bonds로 쓰기 (d, 프로젝트 .venv)
+  t1_m18_dock.py       기존 M18 작업 모듈 함수로 수용체 구성·qvina (d, .deps/docking/venv-locked)
+  t1_m18_oxt_probe.py  C 말단 O/OXT 순서 탐침 (d, 정보용)
+  t1_oracle_check.py   손 계산 oracle 교차 확인 (f)
+실행: .venv/bin/python <script> (작업 디렉터리 scratchpad), M18 쪽은 .deps/docking/venv-locked/bin/python. 모두 exit 0.
+네트워크: 스크립트마다 socket connect/getaddrinfo/bind 차단 audit hook을 걸었고 기록된 시도 0건(network_attempts: []).
+M18 작업 모듈은 자체 _deny_network를 쓴다. 외부 요청은 (a)의 PyPI 내려받기 두 번뿐이다.
+
+==================================================================================================
+판정 요약
+==================================================================================================
+- (a) PDBFixer 1.12.0 설치·고정 완료. OpenMM 8.6.0 포스필드 지문 6개 그대로, 기존 M7 테스트 26개 통과. 멈출 이유 없음.
+- (b) 변이 잔기 밖에 원자가 더해지거나 좌표가 바뀌는 경우 없음(1UBQ 37경우 × 변형 2 + 합성 Cys 8경우 × 2 = 90회 전부).
+      PDBFixer가 원자를 추가하겠다고 표시한 잔기(missingAtoms·missingTerminals)는 언제나 변이 잔기 하나뿐.
+      모든 조합이 끝까지 모델링됨(mutation_modeling_failed 0건). 명세 기대와 같다. 단, 설계 선택 두 가지가 남는다(B1·B2).
+- (c) 같은 입력·seed 두 번: 전위·좌표·System·결과 JSON 바이트 동일. 1UBQ 작업 하나 ≈ 23 s(기본 120 s 안).
+      결과 JSON ≈ 0.6 MB(1UBQ). 64 MB·이벤트 한도에 여유 큼. 멈출 이유 없음.
+- (d) **명세 기대와 다름 → 멈춤.** M7 규칙상 모든 사슬 끝 잔기에 OXT가 있어야 하는데, 그 C 말단 카복실레이트를 M18
+      작업 모듈의 M11 화학 추론(MDAnalysisInferrer)이 C=OXT 이중결합·O 음전하로 추론하고, M18 `_protein_chemistry`가
+      "backbone inferred bond order invalid"(receptor_prep_failed, m11_check receptor_graph_invalid, 잔기 GLY A76)로
+      거부한다. 측정한 수용체 5개(1UBQ 야생형·I44W·K6H, 합성 F4C/T66C 야생형·C4A) 모두 같은 이유로 거부, qvina 실행 0회.
+      → 아래 "명세와 다른 점" D1과 선택지. 관련 작업(T6·T7과 도킹 화면)은 사용자 결정 전까지 멈춘다.
+      HIS(HID)·CYX(이황화)·자유 CYS를 표준 이름 HIS·CYS로 쓰는 것 자체는 문제가 아니다(O/OXT 순서만 바꾼 탐침에서 5개 모두
+      통과, qvina 두 번 실행 결과 바이트 동일). 변형 이름(HID·CYX)으로 쓰면 오히려 거부된다(아래 (d)).
+- (e) 로컬 fixture 중 M7 사전 검사를 통과하는 공개 구조는 1UBQ 하나뿐(리간드 없음). → 1UBQ + 합성 표시 리간드
+      (synthetic-phenol-ligand.sdf) 방안. 이황화 경우는 1UBQ에서 만든 합성 파생 구조 두 개로 측정했다.
+- (f) 접촉·1–3결합 제외·SASA 손 계산 oracle을 fixture에 고정(expected.json)하고 별도 계산으로 교차 확인: 접촉 행은 float
+      비트 단위로 같음, SASA는 고립 구 1.4e-13 Å², 두 구 겹침 상대 8.4e-5(허용 0.5%).
+
+==================================================================================================
+명세와 다른 점 (사용자 결정 필요)
+==================================================================================================
+D1. 명세 7절 "새 출처에서 수용체 바이트는 저장된 구조 mmCIF의 좌표·수소·표준 잔기 이름이고, 공유 결합은 저장된
+    final_bonds·atom_mapping에서 M18이 쓰는 결합 입력 규칙의 형태로 구성한다"와 handoff 위험 (2)
+    "OpenMM 위상으로 만든 수용체가 M11 화학 추론·Meeko를 통과" — 현재 M18 작업 모듈로는 통과하지 못한다.
+    현실: M7 사전 검사는 사슬마다 말단 OXT를 요구한다(backend/mw/tools/openmm_method.py 196–203행). 그래서 모든 변이
+    모델에는 자유 C 말단 카복실레이트(C, O, OXT, H 없음)가 있다. M18 작업 모듈 receptor_graph(docking_worker.py 399–450행)는
+    MDAnalysisInferrer로 결합 차수를 정하는데, 원자 순서가 ... C, O, OXT 이면 C–OXT DOUBLE, C–O SINGLE, O 전하 −1로
+    정한다(dbg_term.py 출력: "76 C ... ('O','SINGLE'), ('OXT','DOUBLE')", "76 O charge -1"). 이어서 _protein_chemistry
+    (같은 파일 475–478행)가 모든 잔기에 order(C, O) == DOUBLE을 요구하므로 거부한다. N 말단(NH3+, N 전하 +1)은 통과했다.
+    기존 M18 입력은 말단 캡이 있는 공개 예제(prolif-vina-rec, ACE/NME 합침)라서 이 경우가 드러나지 않았다. 즉 이 거부는
+    M21 전부터 있던 M18 규칙이며, 수소가 있는 자유 C 말단 수용체는 가져오기 출처로도 지금 거부된다.
+    실측(같은 입력, O와 OXT의 파일 순서만 바꿈 → 추론이 C=O DOUBLE을 고름): 1UBQ 야생형 746줄, I44W 753줄, K6H 745줄,
+    F4C/T66C 야생형 739줄(CYX 쌍을 CYS로 씀), C4A 739줄 PDBQT 모두 생성(0.10–0.16 s). 1UBQ 야생형·I44W에서 qvina 자유
+    도킹(합성 페놀, ligand_range margin 8, seed 20261004, exhaustiveness 8, num_modes 9) 각각 1.9–2.1 s, 9개 모드, 같은
+    입력 두 번 결과 JSON SHA-256 동일(07207b2b…, 69d3caae…), 결과 63,010 B·79,657 B(M18 한도 4 MiB 안), 한계 문장 6개.
+    선택지(명세를 바꾸지 않고 기록만 함):
+      (1) M18 _protein_chemistry를 넓힌다: OXT가 있는 잔기에서는 C–O·C–OXT 중 하나가 DOUBLE이고 다른 하나가 SINGLE(전하
+          −1)이면 받는다(카복실레이트 공명). 영향: M18 화학 검사 변경 = 명세 7절 "M18 확장은 최소(문장 하나·이유 하나)"
+          밖. 지금 거부되는 기존 가져오기 수용체(수소 있는 자유 C 말단)도 받아들여지게 되어 기존 M18 동작이 바뀐다. 결과
+          바이트는 기존에 성공하던 입력에서는 그대로일 것(그 입력에는 OXT가 없음) — 기존 M18 테스트로 확인 필요.
+      (2) 변이 모델의 저장 mmCIF(또는 M18에 넘기는 수용체 바이트만)에서 C 말단 잔기의 OXT를 O보다 앞에 쓴다. M18 코드의
+          화학 규칙은 그대로. 영향: 추론기의 원자 순서 의존(고정 버전 MDAnalysis 2.10.0에서 측정, 암묵적 동작에 기댐),
+          명세 3절 9 "M7 _coordinates와 같은 방식"의 원자 순서와 다름(저장 mmCIF에 적용하면 내려받기 파일 순서도 다름).
+          수용체 바이트만 바꾸면 명세 7절 "수용체 바이트 = 저장 mmCIF"와 다름.
+      (3) M18 새 출처에서만 OpenMM 위상의 결합 차수 정보를 쓰는 경로를 만든다(추론 대신). 영향: M18 작업 모듈 변경이
+          (1)보다 크다.
+      (4) 이번 단계에서 같은 조건 도킹(명세 7절, T6·T7, 도킹 화면)을 빼고 모델링·비교·보고서만 만든다.
+    추천: 판단은 사용자에게 맡긴다. 기술적으로는 (1)이 가장 명시적이고 순서에 기대지 않으나 M18 범위를 넓힌다.
+
+==================================================================================================
+설계 선택 (명세와 충돌은 아니나 T3 전에 정해야 함; 조율 세션 판단 요청)
+==================================================================================================
+B1. PDBFixer applyMutations는 새 잔기 템플릿에 같은 이름이 있는 원래 곁사슬 원자를 그대로 둔다(변형 A). 예: ILE→TRP·
+    PHE·TYR에서 ILE CD1, ILE→LEU에서 CD1, ILE→THR에서 CG2, ILE→VAL에서 CG1·CG2, MET→PRO·TRP에서 CG, HIS→TYR에서
+    CG·CD2·CE1, LYS→HIS에서 CG. 이 원자는 화학적으로 다른 자리인데도 템플릿 맞춤(N CA C O CB + 같은 이름 원자)에 들어간다.
+    명세 3절 3은 "PDBFixer가 유지하는 원자의 좌표는 입력 그대로"라서 A가 문자 그대로의 해석이다. 변형 B(변이 잔기를
+    N CA C O CB OXT만 남겨 넘긴 뒤 같은 applyMutations 호출 = "같은 효과의 잔기 교체")는 곁사슬 전체를 템플릿으로 놓는다.
+    측정: 둘 다 37경우 모두 성공·전위 감소. 최소화 전 전위가 A에서 크게 높았던 경우 P38W A 209,742,676 kJ/mol(B 58,014),
+    I44Y A −4,681(B −7,973), M1P A −7,939(B −9,844). 반대로 I44W A −8,046(B 30,744), M1W A 77,061(B 48,168).
+    이름이 겹치지 않는 경우 A와 B는 비트 단위로 같은 결과. 어느 쪽이 "좋은" 모델인지는 주장하지 않는다.
+    T3가 둘 중 하나를 고정해야 한다(재현성·호출 키 고정 방법 설정에 들어감).
+B2. 좌표 보존 방식. PDBFixer는 입력 좌표를 nm 목록으로 옮겨 담아(Å×0.1) 돌려주므로, 변이 잔기 밖 원자 좌표는 값으로는
+    같지만 비트로는 다르다: 1UBQ 594개 중 409개가 마지막 비트 다름, 최대 |Δ| 7.1e-15 Å(모든 경우 같은 값). 측정에서는
+    "이식(graft)"을 썼다: PDBFixer 출력에서 (i) 잔기·원자 이름·순서가 입력과 같은지 (ii) 좌표 차이가 매우 작은지 확인하고,
+    유지된 원자는 입력 좌표를, 새 원자만 PDBFixer 좌표를 쓴다. 그러면 변이 잔기 밖 좌표는 최소화 전에 입력과 비트 동일이다.
+    T3는 (ii)의 허용값(예: 1e-9 Å)을 상수로 정하고 넘으면 coordinates_changed로 실패시키면 된다.
+    C 말단 잔기 변이에서 PDBFixer는 OXT를 지웠다가(템플릿에 OXT 없음) missingTerminals로 다시 놓는다: 새 OXT 좌표는
+    원래와 0.35–0.69 Å 다르다(G76A 0.347, G76P 0.653, G76W 0.694). 이식하면 원래 OXT 좌표를 쓴다(측정은 이렇게 함).
+    이것을 "변이 잔기 안에서 PDBFixer가 새로 놓은 원자"로 볼지 "유지 원자"로 볼지 T3에서 정한다(명세는 둘 다 허용 범위 안).
+
+==================================================================================================
+참고 (명세가 이미 정한 대로이나 알아 둘 것)
+==================================================================================================
+N1. 이황화 해제·형성은 상대 Cys의 변형 이름을 바꾼다: F4C/T66C에서 C4A·C4S·C4G → 66번 CYX→CYS(OpenMM 값 null),
+    C66A → 4번. 단일 Cys 구조에서 T66C가 새 이황화를 만들면 4번 CYS(null)→CYX. 그래서 이 경우는 언제나 L5 조건
+    (protonation_difference_count > 0)이 참이 되고, 새 이황화면 L6도 붙는다. 명세 3절 5대로면 맞는 동작이다(상대 잔기는
+    변이 잔기가 아님). L5 문장이 "변이 하나만이 아니다"라고 말하는 것이 이 경우에 맞는지 사용자가 볼 만하다.
+N2. Modeller.addHydrogens가 돌려주는 변형 이름: HIS는 HID/HIE/HIP 중 하나, 이황화 CYS는 CYX, 자유 CYS는 None(기본
+    템플릿). 1UBQ H68은 모든 경우 HID. HIS를 넣은 변이(I44H, K6H, T66H)도 HID. 변이 잔기 밖 HIS 상태가 두 구조에서 달라진
+    경우는 1UBQ 행렬 74회 중 0회. T3는 None을 그대로 기록할지 표준 이름으로 바꿔 기록할지 정해야 한다(바꾸면 "CYS").
+N3. M18 원자 수 한도 10,000(수소 포함): 1UBQ 수소/중원자 = 629/602 = 1.045. 같은 비율이면 중원자 약 4,890개를 넘는
+    단백질의 모델은 M18이 receptor_invalid로 거부한다. M7 한도는 중원자 6,000(≈ 12,270원자)이므로 M7을 통과해도 도킹이
+    안 되는 구간이 있다. 명세대로 M18 한도를 그대로 두면 이 거부가 나온다는 사실만 기록한다.
+N4. 시간은 1UBQ(602 중원자)에서만 쟀다. NoCutoff GBn2라 원자 수에 비례 이상으로 늘 수 있다. M7 단일 구조 기본 60 s·최대
+    120 s, 이 작업은 두 구조라 기본 120 s·최대 240 s. 큰 구조의 시간은 측정하지 못했다(M7을 통과하는 큰 공개 fixture 없음).
+N5. seed는 결과를 바꾼다(M7과 같음): seed 7과 20261004에서 1UBQ 야생형 최소화 결과가 다름(M7 worker가 random·numpy를
+    시드하고 수소 배치가 그 영향을 받음). 같은 seed는 바이트 동일.
+
+==================================================================================================
+(a) PDBFixer 설치·고정
+==================================================================================================
+명령:
+  curl -sS https://pypi.org/pypi/pdbfixer/1.12.0/json            # 배포 파일 목록·해시 확인
+  curl -sS -O https://files.pythonhosted.org/packages/da/bd/394c3185e4b9fbacf803651a374e99e597d3411d316784f8ea6d8fc17af5/pdbfixer-1.12.0.tar.gz
+  shasum -a 256 pdbfixer-1.12.0.tar.gz
+  printf 'pdbfixer==1.12.0 --hash=sha256:82e5…4143\n' > pdbfixer-req.txt
+  uv pip install --python .venv/bin/python --no-deps --require-hashes --reinstall -r pdbfixer-req.txt
+  uv pip check --python .venv/bin/python
+출력:
+  PyPI 1.12.0 배포 파일은 sdist 하나: pdbfixer-1.12.0.tar.gz, 665,893 B,
+  SHA-256 82e54074b33eb00270e9a439c8633fcf82cd3ab7a36561b01425a260c0fc4143 (PyPI 기록과 내려받은 파일 일치).
+  requires_dist: numpy, openmm>=8.2, legacy-cgi(Python ≥ 3.13만). --no-deps로 설치해 numpy 2.4.6·openmm 8.6.0을 건드리지
+  않음(uv pip freeze 전후 차이는 pdbfixer 한 줄). 빌드는 uv의 격리 빌드 환경(setuptools 내려받기 포함, 환경 준비)에서.
+  "Installed 1 package", EXIT=0; uv pip check: "All installed packages are compatible", EXIT=0.
+  설치 결과: .venv/lib/python3.11/site-packages/pdbfixer 2,792 KiB, 파일 70개, pdbfixer/pdbfixer.py SHA-256
+  a52e39125e3e0e2d1b58b83841fb05b8669e0bcdd73461e1b0ed1d5a8e8261b9, importlib.metadata.version("pdbfixer") = 1.12.0.
+  backend/pyproject.toml: "openmm==8.6.0" 다음 줄에 "pdbfixer==1.12.0".
+포스필드 지문(mw.tools.openmm_method.dependencies() == mw.openmm_bundle.FORCEFIELD_SHA256 → True), OpenMM 8.6.0 /
+8.6.0.dev-c6173db:
+  amber14-all.xml 96d635545c36ce248e37d23ea82fa05ce4d2e1a6a42cd6d0ec5db3cfe30ca44c
+  amber14/DNA.OL15.xml 200e7cd116481fb47ed50bfd29deefb84a1e488d73d262c3f3f278b36b80ffa5
+  amber14/RNA.OL3.xml 61b793a49ded3c9c3bd9fbab328bc1b20b2b4ce7bc2358d537892ca64b085127
+  amber14/lipid17.xml f974506df14202973637cf5e1d094af5e6098eb04afd2b68c523589ffcf2e780
+  amber14/protein.ff14SB.xml d9f9779c09d67cd5f8bc657692f174ffab14c469dfd06d560ac1899fa7e976b8
+  implicit/gbn2.xml 172fe56b43343e26f5483f55a276dbcf351b759f3abca2a12891778bf08e560b
+기존 검사:
+  .venv/bin/python -m pytest backend/tests/test_openmm.py -q      → 26 passed, 1 warning in 89.15s, EXIT=0
+  .venv/bin/python -m pytest backend/tests/test_sasa.py -q        → 11 passed, 1 warning, EXIT=0
+  .venv/bin/python -m ruff check backend/mw backend/tests         → All checks passed!, EXIT=0
+PDBFixer 네트워크 경로(코드 읽기): applyMutations는 대상 이름의 템플릿이 없을 때만 downloadTemplate(PDB 내려받기)을
+부른다. 표준 20개는 패키지 templates/에 있어 호출되지 않는다. addMissingAtoms는 soft.xml(water=False)만 써서
+_downloadFormalCharges를 부르지 않는다. 측정 중 네트워크 시도 0건.
+
+==================================================================================================
+(b) 호출 경로와 변이 행렬
+==================================================================================================
+호출 경로(공개 API만, t1_common.pdbfixer_mutate):
+  1. M7 투영(preflight의 protein)으로 M7 작업 모듈과 같은 Topology를 만든다(체인 id str(chain_index), 잔기 id
+     str(전역 순번+1), 좌표 Å). createStandardBonds + createDisulfideBonds.
+  2. app.PDBxFile.writeFile(topology, positions, buf, keepIds=True) → PDBFixer(pdbxfile=StringIO(text),
+     platform=CPU Threads 1). (생성자는 파일만 받는다. 위상 객체를 직접 넘기는 공개 경로가 없다.)
+  3. fixer.findMissingResidues()  (SEQRES 없음 → missingResidues = {})
+  4. fixer.applyMutations([f"{old}-{전역 순번+1}-{NEW}"], str(chain_index))  — 잔기 이름 일치 검사를 PDBFixer가 한다.
+  5. fixer.findMissingAtoms() → 여기서 missingAtoms·missingTerminals의 키가 변이 잔기 하나뿐인지 검사할 수 있다
+     (unexpected_atoms_added 판정 지점, addMissingAtoms 전).
+  6. fixer.addMissingAtoms(seed=seed) — 새 원자만 soft.xml로 최소화(기존 원자 질량 0으로 고정), 기존 원자 좌표는 복사.
+  7. 출력 비교 → 이식(B2) → M7과 같은 절차(새 Topology, 결합, addHydrogens pH 7, System, 최대 50회 최소화).
+판정 항목: (i) 변이 잔기 밖 잔기·원자 이름·순서 동일 (ii) 밖 좌표 |Δ| (iii) 변이 잔기 중원자 = M7
+_template_heavy(to, 말단 여부)(포스필드 XML, HIS는 HID 템플릿, 말단은 C 접두 템플릿) (iv) 수소·최소화 완료와 after ≤ before.
+1UBQ (M7 통과, 중원자 602, 1UBQ 야생형 기준 seed 20261004: before −10184.213905790195, after −12792.052911304538 kJ/mol,
+1231 원자, H68 HID, I44 SASA 29.35 Å², I44 접촉 4 Å 27행). 74회 모두 status ok:
+  (i) 74/74 동일. missingAtoms 키는 언제나 변이 잔기(또는 빈 목록), missingTerminals는 C 말단 변이에서만 {76: OXT}.
+  (ii) 최대 |Δ| 7.105427357601002e-15 Å, 비트 다름 405–415개(B2). 이식 뒤 비트 동일.
+  (iii) 74/74 템플릿 일치. (iv) 74/74 최소화 완료, 모두 전위 감소.
+  mutation_modeling_failed에 해당하는 조합 0건(Gly→X, X→Pro(I44P, T7P, G35P, M1P 말단, G76P 말단), Pro→X, 말단, HIS 포함).
+  PDBFixer 시간 0.03–0.21 s, 구조 하나 절차(수소+System+최소화) 9.6–19.1 s(병행 실행 중 측정; 단독은 (c)).
+합성 파생 Cys(아래 fixture): 두 구조 모두 M7 사전 검사 통과(중원자 596·597). 16회 모두 ok, (i)–(iv) 같은 결과.
+  F4C/T66C 야생형: 이황화 [66,4], SG–SG 최소화 뒤 2.033 Å, 4·66 CYX. C4A·C4S·C4G·C66A → 이황화 없음, 상대 Cys CYX→null(N1).
+  단일 Cys(Cys4 chi1 66°) T66C → PDBFixer SG가 Cys4 SG와 1.997 Å(최소화 전), 이황화 [66,4] 생성, 최소화 뒤 2.057 Å,
+  4번 null→CYX(protonation_differences ['4']). K63C·M1C·S65C는 이황화 없음.
+표(v = 변형 A/B, 추가 원자 = PDBFixer가 새로 놓은 원자, 유지 = 이름이 같아 남은 곁사슬 원자, 최소 거리 = 최소화 전 새 원자와
+다른 잔기 중원자의 최소 거리 Å, before/after = OpenMM Amber14-all + GBn2 전위 kJ/mol(각 구조 값, 차이 아님), SASA Å² =
+변이 잔기, c4/c6 = 4.0/6.0 Å 접촉 행 수(1–3결합 제외), 끝 = 변형 이름·protonation_differences·이황화):
+  case                      v from>to     추가 원자(PDBFixer)                       유지(동명 곁사슬)      최소 거리        before       after    SASA  c4   c6 HIS/CYS 변형
+  mid I44                   A ILE44>ALA   -                                     -                   -      -10261.7    -12790.2   25.22  15  174 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>ALA   -                                     -                   -      -10261.7    -12790.2   25.22  15  174 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>ARG   CG,CD,NE,CZ,NH1,NH2                   -                2.46      -10478.7    -13532.6  104.05  21  251 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>ARG   CG,CD,NE,CZ,NH1,NH2                   -                2.46      -10478.7    -13532.6  104.05  21  251 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>ASN   CG,OD1,ND2                            -                3.31      -10556.7    -13102.1   28.29  26  265 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>ASN   CG,OD1,ND2                            -                3.31      -10556.7    -13102.1   28.29  26  265 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>ASP   CG,OD1,OD2                            -                1.65       -6083.0    -13039.9   36.87  17  258 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>ASP   CG,OD1,OD2                            -                1.65       -6083.0    -13039.9   36.87  17  258 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>CYS   SG                                    -                3.79      -10214.7    -12774.2   24.55  17  202 {'44': None, '68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>CYS   SG                                    -                3.79      -10214.7    -12774.2   24.55  17  202 {'44': None, '68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>GLN   CG,CD,OE1,NE2                         -                2.69       -9757.0    -12901.1   49.68  26  265 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>GLN   CG,CD,OE1,NE2                         -                2.69       -9757.0    -12901.1   49.68  26  265 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>GLU   CG,CD,OE1,OE2                         -                3.42      -10562.5    -13077.6   57.80  18  252 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>GLU   CG,CD,OE1,OE2                         -                3.42      -10562.5    -13077.6   57.80  18  252 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>GLY   -                                     -                   -      -10249.3    -12809.1   20.18  15  142 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>GLY   -                                     -                   -      -10249.3    -12809.1   20.18  15  142 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>HIS   CG,ND1,CE1,NE2,CD2                    -                2.56       -9909.2    -12751.8   35.92  36  315 {'44': 'HID', '68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>HIS   CG,ND1,CE1,NE2,CD2                    -                2.56       -9909.2    -12751.8   35.92  36  315 {'44': 'HID', '68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>LEU   CG,CD2                                CD1              3.20      -10157.2    -12884.5   34.81  25  263 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>LEU   CG,CD1,CD2                            -                2.86      -10132.8    -12856.7   40.42  21  254 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>LYS   CG,CD,CE,NZ                           -                2.51       -9977.0    -12875.2   67.79  19  237 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>LYS   CG,CD,CE,NZ                           -                2.51       -9977.0    -12875.2   67.79  19  237 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>MET   CG,SD,CE                              -                2.93      -10304.2    -12794.9   47.73  19  242 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>MET   CG,SD,CE                              -                2.93      -10304.2    -12794.9   47.73  19  242 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>PHE   CG,CE1,CZ,CE2,CD2                     CD1              2.23       -9665.4    -12753.4   60.73  29  310 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>PHE   CG,CD1,CE1,CZ,CE2,CD2                 -                2.47       -9825.5    -12756.6   80.37  20  280 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>PRO   CD,CG                                 -                1.79       -7838.4    -12541.7   24.73  13  238 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>PRO   CD,CG                                 -                1.79       -7838.4    -12541.7   24.73  13  238 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>SER   OG                                    -                3.72      -10281.8    -12813.2   23.31  17  211 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>SER   OG                                    -                3.72      -10281.8    -12813.2   23.31  17  211 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>THR   OG1                                   CG2              3.58      -10370.5    -12886.9   27.79  18  237 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>THR   CG2,OG1                               -                3.61      -10224.5    -12876.5   30.41  18  232 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>TRP   CG,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2        CD1              3.18       -8046.0    -12717.5   88.13  21  350 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>TRP   CG,CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2    -                1.55       30743.5    -12572.6   93.72  39  334 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>TYR   CG,CE1,CZ,OH,CE2,CD2                  CD1              1.82       -4681.0    -12812.4   48.70  36  344 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>TYR   CG,CD1,CE1,CZ,OH,CE2,CD2              -                2.06       -7973.0    -12796.9   41.82  42  353 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   A ILE44>VAL   -                                     CG1,CG2             -      -10398.0    -12866.0   27.57  18  229 {'68': 'HID'} pd=[] ss=[]
+  mid I44                   B ILE44>VAL   CG1,CG2                               -                3.41      -10283.1    -12853.5   30.31  17  228 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 A MET1>ALA    -                                     -                   -      -10269.8    -12739.3   57.61  16  122 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 B MET1>ALA    -                                     -                   -      -10269.8    -12739.3   57.61  16  122 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 A MET1>GLY    -                                     -                   -      -10382.7    -12848.5   54.43  14   96 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 B MET1>GLY    -                                     -                   -      -10382.7    -12848.5   54.43  14   96 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 A MET1>PRO    CD                                    CG               2.16       -7939.2    -12382.9   51.89  21  173 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 B MET1>PRO    CD,CG                                 -                3.72       -9843.8    -12446.0   74.64  20  154 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 A MET1>TRP    CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2       CG               1.40       77060.5    -12493.2   59.42  62  409 {'68': 'HID'} pd=[] ss=[]
+  N-term M1                 B MET1>TRP    CG,CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2    -                1.50       48168.1    -12468.9   67.14  78  418 {'68': 'HID'} pd=[] ss=[]
+  C-term G76                A GLY76>ALA   CB                                    -                3.08       -9890.9    -12682.1  167.86   2   19 {'68': 'HID'} pd=[] ss=[]
+  C-term G76                B GLY76>ALA   CB                                    -                3.08       -9890.9    -12682.1  167.86   2   19 {'68': 'HID'} pd=[] ss=[]
+  C-term G76                A GLY76>PRO   CD,CG,CB                              -                1.42       -8497.8    -12652.0  201.56   4   24 {'68': 'HID'} pd=[] ss=[]
+  C-term G76                B GLY76>PRO   CD,CG,CB                              -                1.42       -8497.8    -12652.0  201.56   4   24 {'68': 'HID'} pd=[] ss=[]
+  C-term G76                A GLY76>TRP   CB,CG,CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2 -                3.11      -10081.3    -12704.3  307.83   1   22 {'68': 'HID'} pd=[] ss=[]
+  C-term G76                B GLY76>TRP   CB,CG,CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2 -                3.11      -10081.3    -12704.3  307.83   1   22 {'68': 'HID'} pd=[] ss=[]
+  Gly->X                    A GLY10>ALA   CB                                    -                2.73      -10248.0    -12754.6   92.40  11   79 {'68': 'HID'} pd=[] ss=[]
+  Gly->X                    B GLY10>ALA   CB                                    -                2.73      -10248.0    -12754.6   92.40  11   79 {'68': 'HID'} pd=[] ss=[]
+  Gly->X                    A GLY47>VAL   CB,CG1,CG2                            -                2.94      -10157.4    -12848.5  134.13  13   97 {'68': 'HID'} pd=[] ss=[]
+  Gly->X                    B GLY47>VAL   CB,CG1,CG2                            -                2.94      -10157.4    -12848.5  134.13  13   97 {'68': 'HID'} pd=[] ss=[]
+  Gly->X                    A GLY35>PRO   CD,CG,CB                              -                1.54        9724.1    -12502.9   82.74  21  159 {'68': 'HID'} pd=[] ss=[]
+  Gly->X                    B GLY35>PRO   CD,CG,CB                              -                1.54        9724.1    -12502.9   82.74  21  159 {'68': 'HID'} pd=[] ss=[]
+  X->Pro                    A THR7>PRO    CD,CG                                 -                2.09       -7386.1    -12313.9   27.47  21  213 {'68': 'HID'} pd=[] ss=[]
+  X->Pro                    B THR7>PRO    CD,CG                                 -                2.09       -7386.1    -12313.9   27.47  21  213 {'68': 'HID'} pd=[] ss=[]
+  Pro->X                    A PRO19>ALA   -                                     -                   -      -10339.7    -12847.7   37.25  17  143 {'68': 'HID'} pd=[] ss=[]
+  Pro->X                    B PRO19>ALA   -                                     -                   -      -10339.7    -12847.7   37.25  17  143 {'68': 'HID'} pd=[] ss=[]
+  Pro->X                    A PRO37>GLY   -                                     -                   -      -10262.7    -12833.5   21.21  21  127 {'68': 'HID'} pd=[] ss=[]
+  Pro->X                    B PRO37>GLY   -                                     -                   -      -10262.7    -12833.5   21.21  21  127 {'68': 'HID'} pd=[] ss=[]
+  Pro->X                    A PRO38>TRP   CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2       CG               2.98   209742676.3    -12241.0   70.11  37  350 {'68': 'HID'} pd=[] ss=[]
+  Pro->X                    B PRO38>TRP   CG,CD1,NE1,CE2,CZ2,CH2,CZ3,CE3,CD2    -                1.36       58014.9    -12676.7  104.01  31  296 {'68': 'HID'} pd=[] ss=[]
+  HIS                       A HIS68>ALA   -                                     -                   -      -10230.1    -12767.6   41.30  16  158 {} pd=[] ss=[]
+  HIS                       B HIS68>ALA   -                                     -                   -      -10230.1    -12767.6   41.30  16  158 {} pd=[] ss=[]
+  HIS                       A HIS68>TYR   CD1,CZ,OH,CE2                         CG,CD2,CE1       4.24       -9855.5    -12894.3  117.50  19  258 {} pd=[] ss=[]
+  HIS                       B HIS68>TYR   CG,CD1,CE1,CZ,OH,CE2,CD2              -                3.21      -10338.5    -12907.9  115.33  18  254 {} pd=[] ss=[]
+  X->HIS                    A LYS6>HIS    ND1,CE1,NE2,CD2                       CG               2.70       -9109.3    -12623.2   77.65  25  257 {'6': 'HID', '68': 'HID'} pd=[] ss=[]
+  X->HIS                    B LYS6>HIS    CG,ND1,CE1,NE2,CD2                    -                2.10       -9196.5    -12652.8   76.15  25  256 {'6': 'HID', '68': 'HID'} pd=[] ss=[]
+  X->HIS                    A THR66>HIS   CG,ND1,CE1,NE2,CD2                    -                2.33       -8987.9    -12613.9   89.01  12  229 {'66': 'HID', '68': 'HID'} pd=[] ss=[]
+  X->HIS                    B THR66>HIS   CG,ND1,CE1,NE2,CD2                    -                2.33       -8987.9    -12613.9   89.01  12  229 {'66': 'HID', '68': 'HID'} pd=[] ss=[]
+  SS Cys->X                 A CYS4>ALA    -                                     -                   -      -10168.4    -12647.5   22.15  21  174 {'66': None, '68': 'HID'} pd=['66'] ss=[]
+  SS Cys->X                 B CYS4>ALA    -                                     -                   -      -10168.4    -12647.5   22.15  21  174 {'66': None, '68': 'HID'} pd=['66'] ss=[]
+  SS Cys->X                 A CYS4>SER    OG                                    -                3.76      -10183.2    -12697.3   30.66  23  197 {'66': None, '68': 'HID'} pd=['66'] ss=[]
+  SS Cys->X                 B CYS4>SER    OG                                    -                3.76      -10183.2    -12697.3   30.66  23  197 {'66': None, '68': 'HID'} pd=['66'] ss=[]
+  SS Cys->X                 A CYS66>ALA   -                                     -                   -      -10154.6    -12638.6   46.71   9  126 {'4': None, '68': 'HID'} pd=['4'] ss=[]
+  SS Cys->X                 B CYS66>ALA   -                                     -                   -      -10154.6    -12638.6   46.71   9  126 {'4': None, '68': 'HID'} pd=['4'] ss=[]
+  SS Cys->Cys partner kept  A CYS4>GLY    -                                     -                   -      -10218.0    -12677.9   13.00  19  144 {'66': None, '68': 'HID'} pd=['66'] ss=[]
+  SS Cys->Cys partner kept  B CYS4>GLY    -                                     -                   -      -10218.0    -12677.9   13.00  19  144 {'66': None, '68': 'HID'} pd=['66'] ss=[]
+  X->Cys next to free Cys4  A THR66>CYS   SG                                    -                2.00       -9820.5    -12618.8   64.02  12  138 {'4': 'CYX', '66': 'CYX', '68': 'HID'} pd=['4'] ss=[['66', '4']]
+  X->Cys next to free Cys4  B THR66>CYS   SG                                    -                2.00       -9820.5    -12618.8   64.02  12  138 {'4': 'CYX', '66': 'CYX', '68': 'HID'} pd=['4'] ss=[['66', '4']]
+  X->Cys next to free Cys4  A LYS63>CYS   SG                                    -                3.96       -6309.1    -12617.2   79.33  16  135 {'4': None, '63': None, '68': 'HID'} pd=[] ss=[]
+  X->Cys next to free Cys4  B LYS63>CYS   SG                                    -                3.96       -6309.1    -12617.2   79.33  16  135 {'4': None, '63': None, '68': 'HID'} pd=[] ss=[]
+  X->Cys next to free Cys4  A MET1>CYS    SG                                    -                3.98       -6458.1    -12648.0   69.35  18  141 {'1': None, '4': None, '68': 'HID'} pd=[] ss=[]
+  X->Cys next to free Cys4  B MET1>CYS    SG                                    -                3.98       -6458.1    -12648.0   69.35  18  141 {'1': None, '4': None, '68': 'HID'} pd=[] ss=[]
+  X->Cys next to free Cys4  A SER65>CYS   SG                                    -                1.96       -4705.4    -12714.1   21.41  24  175 {'4': None, '65': None, '68': 'HID'} pd=[] ss=[]
+  X->Cys next to free Cys4  B SER65>CYS   SG                                    -                1.96       -4705.4    -12714.1   21.41  24  175 {'4': None, '65': None, '68': 'HID'} pd=[] ss=[]
+  (위 16행 중 "SS Cys->X"·"SS Cys->Cys partner kept"는 F4C/T66C 이황화 fixture, "X->Cys next to free Cys4"는 단일 Cys fixture.)
+
+==================================================================================================
+(c) 재현성·시간·크기
+==================================================================================================
+명령: .venv/bin/python t1_repro.py . 44 TRP 20261004 (두 번, 새 프로세스), 같은 것을 seed 7로 한 번, 1 TRP 20261004 한 번.
+작업 하나에 해당하는 계산 = 야생형 기준 절차 + PDBFixer(변형 B) + 변이형 절차 + SASA 2 + 접촉 2 + mmCIF 2. 단독 실행.
+재현: 두 번의 기록(시간 제외)이 완전히 같음 → True. 야생형 before/after −10184.213905790195/−12792.052911304538,
+  최종 좌표 SHA-256 40624ec01717a03f…, System XML SHA-256 41b72abdb1b578f8…; I44W 변이형 before/after
+  30743.5176281646/−12572.642792222035, 좌표 19c714ea2d3e0a34…, PDBFixer 추가 원자 좌표 59fd9e64ab817016…,
+  결과 JSON SHA-256 6efef0712abd2b7e… — 두 번 모두 같은 값.
+  seed 7: 야생형 before −10323.040564773723 등 모두 다름(N5). System SHA는 같음(위상 동일).
+시간(s, 단독): run1 야생형 11.41(수소 2.28, System+최소화 9.07), PDBFixer 0.11, 변이형 11.07, SASA·접촉·mmCIF 0.18,
+  합계 22.77 / run2 22.96 / seed7 23.03 / M1W 22.60. 사전 검사·스테이징·guardian 오버헤드는 빠짐. 기본 120 s 안.
+크기(1UBQ, canonical JSON B; atom_mapping은 원자마다 잔기 7필드·이름·원소·최종 좌표로 근사):
+  구조 항목 하나 ≈ 298–312 kB(4 Å) / 343–389 kB(6 Å): atom_mapping 278,893–280,523, final_bonds 12,609–12,710,
+  접촉 4 Å 27–78행 6,139–17,715, 6 Å 223–418행 50,446–94,793.
+  두 구조 결과 JSON(4 Å) 598,105–610,059 B. 구조 mmCIF 94,326–94,855 B, 이벤트 안 base64 125,768–126,476 B.
+  최대 접촉 행: 행렬 전체에서 6 Å 418행(M1W), 4 Å 78행 → 구조당 상한 2,000에 여유.
+  작업 출력 한도 64,000,000 B(guardian 기본, queue.py 1602·1670행) 대비 1% 미만. 중원자 6,000 구조로 원자 수에
+  비례해 키우면 결과 ≈ 6 MB, 이벤트 한 줄도 같은 크기(전역 스캔 한 줄 상한 256 MiB, queue.py 76행). 객체·이벤트에
+  별도 상한 없음(core/handles.py는 읽기 때 호출자가 주는 상한만).
+
+==================================================================================================
+(d) M18 수용체 위험
+==================================================================================================
+명령: .venv/bin/python t1_m18_prepare.py . m18_prepared.json  (EXIT 0)
+      .deps/docking/venv-locked/bin/python t1_m18_dock.py m18_prepared.json <fixture>/synthetic-phenol-ligand.sdf m18work
+      .deps/docking/venv-locked/bin/python t1_m18_oxt_probe.py (같은 인자)
+구성: 최소화 구조를 M7 _coordinates 방식(gemmi, 모델 1, 잔기 7필드, het_flag A)으로 쓰되 잔기 이름은 OpenMM 위상 이름
+  (HIS·CYS 표준). 결합은 final_bonds를 M18 sidecar(receptor_bonds@1, 원자 ref = receptor_rows가 만든 ref)로 바꿈.
+  M18 함수 receptor_rows → check_receptor(connectivity sidecar, instance null) → receptor_graph → receptor_pdbqt → dock.
+결과:
+  원자 수: 1231 / 1236 / 1226 / 1217 / 1218 (한도 10,000). receptor_rows 순서 = OpenMM 위상 순서(5/5 True).
+  기본 순서(O 다음 OXT): 5/5 receptor_prep_failed "backbone inferred bond order invalid", 원자 GLY A76 N·CA·C → D1.
+  변형 이름으로 쓴 경우(정보): HID로 쓰면 같은 C 말단 이유로 거부, CYX로 쓰면 receptor_unsupported_residue(CYX는 AMINO
+  밖 = 비표준). 즉 표준 이름 HIS·CYS가 맞는 선택이다.
+  OXT를 O 앞에 쓴 탐침: 5/5 수용체 PDBQT 생성, 히스티딘(HID, ND1에 H) 고리 검사·CYX 쌍(SG–SG 결합만, HG 없음)·자유
+  CYS(HG) 통과. qvina 자유 도킹 1UBQ 야생형·I44W 각 두 번: 2.0 s 안팎, 9모드, 결과 바이트 동일(D1).
+  (점수 값은 기록하지 않는다. 이 탐침의 목적은 엔진이 도는지와 재현성뿐이다.)
+
+==================================================================================================
+(e) 도킹 짝 흐름 입력 구조
+==================================================================================================
+명령: .venv/bin/python t1_scan_inputs.py <work> (load_structure → prepare_structure(waters strip_all, hydrogens strip)
+      → openmm_method.preflight)
+  PASS public_1ubq.cif: 중원자 602, 잔기 76, CYS 0, HIS 1, 비단백질 없음
+  FAIL public_1hsg.cif: missing_terminal_oxt (A:PHE99)
+  FAIL public_1mq4.cif: heavy_template_mismatch (A:ARG126)
+  FAIL derived_1hsg_first10_fixture.cif: missing_terminal_oxt (A:LEU10)
+  FAIL mini_complex.pdb: peptide_geometry (A:LEU101)
+  FAIL chemical/prolif-vina-rec.pdb, docking/synthetic-complex-receptor-lig.pdb, docking/synthetic-receptor-water-zinc.pdb:
+       modified or unsupported polymer residue (A:HSE81, reason_code 없음)
+  FAIL structures_m15/derived_1mq4_a200_285_fixture.pdb, derived_1mq4_two_chain_fixture.pdb: missing_terminal_oxt (A:ARG285)
+  FAIL structures_m15/derived_1mq4_a288_360_mse_fixture.cif: modified polymer (A:MSE300)
+결론: 리간드가 있고 M7을 통과하는 공개 구조는 로컬에 없다. 도킹 짝 흐름은 1UBQ + 합성 표시 리간드
+  backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf(I44 CB에서 CA→CB 방향 6.5 Å, 1UBQ 중원자와 최소 3.60 Å)
+  로 기계적으로 검증한다(명세 11절 마지막 항). M7 규칙은 완화하지 않는다. 단 D1이 풀려야 이 흐름이 돈다.
+
+==================================================================================================
+(f) 손 계산 oracle (구현 전 고정)
+==================================================================================================
+backend/tests/fixtures/mutation_model/expected.json (build_mutation_model_fixtures.py가 닫힌 식으로 씀, 엔진·구현 호출 없음):
+  접촉: 원자 12개(잔기 4개, 변이 잔기 = 순번 2, H 2개), 결합 9개. 그래프 거리 ≤ 3 제외, 경계 포함.
+    4.0 Å: 5행 [N–CB(잔기3) 3.0, N–SD(잔기4) 3.0, CA–SD √11.25, CB–CA(잔기1) 4.0(4결합, 경계), CB–CB(잔기3) √13.5],
+           상대 잔기 3개. 3.0 Å: 2행, 잔기 2개. 2.5 Å: 0행(유효한 0).
+    4 Å 안이지만 ≤ 3결합이라 빠지는 쌍 9개도 기록.
+  SASA(Lee–Richards 100 slices, probe 1.4, gemmi float32 반지름 C 1.7000000476837158, O 1.5199999809265137):
+    고립 C 4πR² = 120.76282531910138 Å²(허용 1e-6), C와 4 Å 떨어진 O가 있을 때 C의 노출 2πR1(R1 + (d²+R1²−R2²)/2d)
+    = 101.97544128942066 Å²(상대 허용 0.005).
+교차 확인(t1_oracle_check.py, numpy 전수 + BFS, FreeSASA calcCoord 직접):
+  contacts 2.5/3.0/4.0 → 0/2/5행, 잔기 0/2/3, 손 값과 float 비트 동일: True. 제외 쌍 9개 거리·결합 수 일치: True.
+  FreeSASA 고립 120.76282531910152(|Δ| 1.4e-13), 두 구 101.98401095336611(상대 8.4e-5) → 둘 다 허용 안.
+  주의: gemmi 반지름은 float32라 1.7을 그대로 쓰면 고립 구 값이 3.7e-6 Å² 달라져 1e-6 허용을 넘는다. 그래서 oracle은
+  float32 값을 쓴다.
+
+==================================================================================================
+새 fixture (backend/tests/fixtures/mutation_model/, SYNTHETIC-PROVENANCE.md)
+==================================================================================================
+  python3 backend/tests/fixtures/mutation_model/build_mutation_model_fixtures.py --check → OK 4개, EXIT=0
+  derived_1ubq_f4c_t66c_disulfide_fixture.cif 08ae0063e5f3ba4d18edf5ca2058349cf626c993ba7be7ded97d0a04681ff5dd 45,543 B
+  derived_1ubq_f4c_single_cys_fixture.cif     f1c1d87f45670987593ac8bb5818f4daa54bcd3b4716387dc55c6b8013f498ea 45,617 B
+  synthetic-phenol-ligand.sdf                 997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3 1,240 B
+  expected.json                               446111ad2310307263c6f190708235340a2d3852508c8df0f739681a2abbe3a5 5,167 B

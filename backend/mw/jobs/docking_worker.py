@@ -16,7 +16,8 @@ other control keys are ignored. ``structure.json`` is the canonical staged paylo
      "receptor": {"handle": str,                       # receptor import handle (sidecar refs must name it)
                   "format": "pdb" | "cif", "bytes": entry, "model_number": int >= 1,
                   "connectivity": {"kind": "pdb_conect", "sidecar": null} | {"kind": "sidecar", "sidecar": entry},
-                  "instance": null | {model_number, chain_auth, chain_label, seq_auth, seq_label, icode, resname}},
+                  "instance": null | {model_number, chain_auth, chain_label, seq_auth, seq_label, icode, resname},
+                  "source": "mutation_model"},           # optional (M21): absent for an imported receptor
      "ligand": {"source": "sdf", "sdf": entry} |
                {"source": "candidate", "parent_sdf": entry,
                 "candidate_set_parent_sha256": hex,     # ligand_candidate_set@1 parent_sha256
@@ -67,6 +68,12 @@ Science rules (spec 3--4), all here:
   seven fields removed (hydrogens included), leftovers refused, no hydrogens refused; PDBQT = M11 MDAnalysis
   inference (``chemical_worker._receptor`` arguments) -> Meeko ``MoleculePreparation`` AD4 types/Gasteiger charges per
   covalent fragment -> ATOM lines in input order, nonpolar H merged by Meeko, input coordinates.
+- M21 receptor source ``mutation_model`` (user approved, .dryforge/spec.md 7): the staged receptor is the stored
+  mmCIF of one side of a mutation model (``cif``, sidecar built by the server from the stored OpenMM topology, no
+  instance). Only for this source, a residue with ``OXT`` passes the backbone carbonyl check when exactly one of
+  C-O / C-OXT is inferred DOUBLE and the other SINGLE with formal charge -1 (a free C-terminal carboxylate; the
+  inference may put the double bond on either oxygen). Atom order is never changed. Imported receptors keep the
+  C=O check unchanged. Sentence 12 is appended to the limitations for this source.
 - Free docking: qvina2 search with fixed arguments; modes in engine output order. Core-fixed: core subgraph match,
   coordMap ETKDG samples aligned on the core and the core heavy atoms overwritten with the parent coordinates,
   ``qvina2 --score_only`` per sample (the score does not depend on the box: measured, see tests), listed by score
@@ -396,8 +403,11 @@ def _prep_failed(message: str, rows: list[dict[str, Any]] | None = None, sites: 
     return _refuse("receptor_prep_failed", message, m11_check=code, atoms=atoms)
 
 
-def receptor_graph(kept: list[dict[str, Any]], bonds: list[tuple[int, int]]) -> Chem.Mol:
-    """RDKit graph by the M11 inference (``chemical_worker._receptor`` arguments and graph checks)."""
+def receptor_graph(kept: list[dict[str, Any]], bonds: list[tuple[int, int]],
+                   terminal_carboxylate_either: bool = False) -> Chem.Mol:
+    """RDKit graph by the M11 inference (``chemical_worker._receptor`` arguments and graph checks).
+
+    ``terminal_carboxylate_either`` is True only for the M21 ``mutation_model`` receptor source."""
     neighbors: list[set[int]] = [set() for _ in kept]
     for first, second in bonds:
         neighbors[first].add(second)
@@ -446,12 +456,15 @@ def receptor_graph(kept: list[dict[str, Any]], bonds: list[tuple[int, int]]) -> 
                 atom.GetIsotope() != 0 or atom.GetDegree() == 0):
             raise _prep_failed("unsupported radical, implicit H, isotope or isolated atom", kept, [atom.GetIdx()],
                                "receptor_graph_invalid")
-    _protein_chemistry(kept, mol)
+    _protein_chemistry(kept, mol, terminal_carboxylate_either)
     return mol
 
 
-def _protein_chemistry(rows: list[dict[str, Any]], mol: Chem.Mol) -> None:
-    """M11 ``chemical_worker._protein_chemistry`` assertions on the inferred graph (refusal only, no output)."""
+def _protein_chemistry(rows: list[dict[str, Any]], mol: Chem.Mol, terminal_carboxylate_either: bool = False) -> None:
+    """M11 ``chemical_worker._protein_chemistry`` assertions on the inferred graph (refusal only, no output).
+
+    ``terminal_carboxylate_either`` (M21 ``mutation_model`` source only): in a residue with ``OXT`` the C-O / C-OXT
+    pair must be one DOUBLE and one SINGLE whose oxygen has formal charge -1, on either oxygen."""
     residues: dict[str, tuple[dict[str, Any], dict[str, int]]] = {}
     for index, row in enumerate(rows):
         key = json.dumps(row["ref"]["residue"], sort_keys=True)
@@ -472,8 +485,13 @@ def _protein_chemistry(rows: list[dict[str, Any]], mol: Chem.Mol) -> None:
         if not {"N", "CA", "C", "O"} <= names.keys():
             raise _prep_failed("protein backbone atom inventory incomplete", rows, list(names.values()),
                                "receptor_graph_invalid")
-        if (order(names["N"], names["CA"]) != single or order(names["CA"], names["C"]) != single or
-                order(names["C"], names["O"]) != double):
+        if terminal_carboxylate_either and "OXT" in names:
+            invalid = (order(names["N"], names["CA"]) != single or order(names["CA"], names["C"]) != single or
+                       not _free_carboxylate(mol, names, order))
+        else:
+            invalid = (order(names["N"], names["CA"]) != single or order(names["CA"], names["C"]) != single or
+                       order(names["C"], names["O"]) != double)
+        if invalid:
             raise _prep_failed("backbone inferred bond order invalid", rows, [names["N"], names["CA"], names["C"]],
                                "receptor_graph_invalid")
         if set(names) & {"CAY", "CY", "OY"}:
@@ -537,6 +555,14 @@ def _protein_chemistry(rows: list[dict[str, Any]], mol: Chem.Mol) -> None:
                     (protonated != ["ND1", "NE2"] and any(n_charges))):
                 raise _prep_failed("histidine inferred ring charge contradicts supplied ring-H state", rows,
                                    [names["ND1"], names["NE2"]], "histidine_charge_state")
+
+
+def _free_carboxylate(mol: Chem.Mol, names: dict[str, int], order: Any) -> bool:
+    """One of C-O / C-OXT DOUBLE, the other SINGLE on an oxygen with formal charge -1 (M21 source only)."""
+    single, double = Chem.BondType.SINGLE, Chem.BondType.DOUBLE
+    pair = (order(names["C"], names["O"]), order(names["C"], names["OXT"]))
+    charged = {(double, single): "OXT", (single, double): "O"}.get(pair)
+    return charged is not None and mol.GetAtomWithIdx(names[charged]).GetFormalCharge() == -1
 
 
 def _fit(text: str, width: int) -> str:
@@ -1011,8 +1037,12 @@ def _validate_payload(p: Any) -> None:
     ok = (type(p) is dict and set(p) == {"schema", "receptor", "ligand", "mode", "box", "parameters"} and
           p["schema"] == "docking_worker_input@1" and p["mode"] in K.MODES)
     receptor = p.get("receptor") if ok else None
-    ok = ok and type(receptor) is dict and set(receptor) == {"handle", "format", "bytes", "model_number",
-                                                             "connectivity", "instance"}
+    ok = ok and type(receptor) is dict and set(receptor) - {"source"} == {"handle", "format", "bytes",
+                                                                          "model_number", "connectivity", "instance"}
+    # M21: the optional receptor source marker; a mutation-model receptor is an mmCIF with a sidecar, no instance.
+    ok = ok and ("source" not in receptor or (
+        receptor["source"] == "mutation_model" and receptor["format"] == "cif" and receptor["instance"] is None and
+        type(receptor["connectivity"]) is dict and receptor["connectivity"].get("kind") == "sidecar"))
     ok = ok and type(receptor["handle"]) is str and receptor["format"] in ("pdb", "cif") and \
         type(receptor["model_number"]) is int and receptor["model_number"] >= 1 and \
         (receptor["instance"] is None or _residue_fields_ok(receptor["instance"]))
@@ -1063,13 +1093,15 @@ def receptor_inputs(rec: dict[str, Any]) -> dict[str, Any]:
                               rec["instance"], sidecar_raw)
     receptor_heavy = [{"ref": _public_ref(row), "xyz": row["coordinate_A"]} for row in receptor["kept"]
                       if row["element"].upper() != "H"]
-    return {"raw": rec_raw, "sidecar_raw": sidecar_raw, "checked": receptor, "heavy": receptor_heavy}
+    return {"raw": rec_raw, "sidecar_raw": sidecar_raw, "checked": receptor, "heavy": receptor_heavy,
+            "mutation_model": rec.get("source") == "mutation_model"}
 
 
 def receptor_prepared(receptor: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     """Receptor PDBQT text and the engine identity (receptor_prep_failed / engine_failed refusals)."""
     kept = receptor["checked"]["kept"]
-    receptor_text = receptor_pdbqt(kept, receptor_graph(kept, receptor["checked"]["kept_bonds"]))
+    receptor_text = receptor_pdbqt(kept, receptor_graph(kept, receptor["checked"]["kept_bonds"],
+                                                        receptor.get("mutation_model", False)))
     return receptor_text, engine_identity()
 
 
@@ -1218,7 +1250,8 @@ def dock_row(p: dict[str, Any], workdir: Path, shared: dict[str, Any],
                    "null_result": not modes, "samples_generated": samples[0], "samples_scored": samples[1]},
         "limitations": list(K.applicable_limitations(mode=mode, source=lig["source"],
                                                      removed_instance=removed is not None,
-                                                     unspecified_stereo_centers=unspecified)),
+                                                     unspecified_stereo_centers=unspecified,
+                                                     receptor_source=rec.get("source"))),
     }
 
 

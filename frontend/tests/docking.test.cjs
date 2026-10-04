@@ -54,8 +54,8 @@ const REASON_CODES = [
   "ligand_too_many_atoms", "ligand_too_many_torsions", "ligand_not_3d", "ligand_hydrogens_missing", "ligand_prep_failed",
   "candidate_unknown", "parent_mismatch", "parent_not_3d", "core_match_failed", "core_match_ambiguous", "embed_failed",
   "box_invalid", "box_too_large", "box_no_receptor_atoms", "engine_failed", "engine_output_invalid", "resource_exceeded",
-  // admission-only and capability (5.3, 5.5)
-  "invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing",
+  // admission-only and capability (5.3, 5.5); M21 adds the admission-only mutation_model_invalid (receptor_source)
+  "invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing", "mutation_model_invalid",
   "worker_missing", "engine_missing", "engine_hash_mismatch", "handshake_failed", "version_mismatch",
   // job queue reasons a docking submission or start can return, dry-run plan, list read
   "worker_version_invalid", "process_identity_unavailable", "global_concurrency_busy", "global_job_cleanup_pending",
@@ -88,7 +88,8 @@ test("closed sets, ranges and fixed wording equal the backend constants", () => 
   assert.equal(lib.SCORE_LABEL, "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)");
   assert.equal(lib.SCORE_COLUMN_LABEL, "qvina 점수(kcal/mol)");
   const limitations = backendLimitations();
-  assert.equal(limitations.length, 11);
+  // M21 appended sentence 12 (mutation-model receptor source only, always last); sentences 1-11 are unchanged.
+  assert.equal(limitations.length, 12);
   assert.deepEqual(plain(lib.DOCKING_LIMITATIONS), limitations);
 });
 
@@ -729,4 +730,36 @@ test("candidate source note before submission reuses spec 5.4 sentences 7, 10 an
   assert.ok(/CANDIDATE_SOURCE_NOTES\.map/.test(source));
   assert.ok(/data-testid="docking-candidate-notes"/.test(source));
   assert.ok(/data-testid="docking-refusal-list"/.test(source));
+});
+
+// ---- M21: shared condition arguments and the mutation-model receptor (spec .dryforge/spec.md 7) ----
+
+test("dockingConditionArgs is the receptor-independent part of dockingArgs (same values, same errors)", () => {
+  const full = lib.dockingArgs(form());
+  const condition = lib.dockingConditionArgs(form(), null);
+  assert.equal(condition.ok, true);
+  assert.deepEqual(Object.keys(condition.args), ["ligand", "mode", "box", "parameters", "acknowledgement"]);
+  for (const key of Object.keys(condition.args)) assert.deepEqual(plain(condition.args[key]), plain(full.args[key]), key);
+  // The caller's box reason is reported as box_invalid; without it the same box passes.
+  const blocked = lib.dockingConditionArgs(form({ boxSource: "instance_range" }), "막힘");
+  assert.match(errorsOf(blocked), /막힘 \(box_invalid\)/);
+  // dockingArgs keeps its receptor errors first, then the condition errors in the old order.
+  const errors = lib.dockingArgs(lib.initialDockingForm()).errors;
+  assert.equal(errors[0], "수용체 가져오기를 고르세요.");
+  assert.deepEqual(errors.slice(4), lib.dockingConditionArgs(lib.initialDockingForm(), null).errors);
+});
+
+test("receptor text: imported receptors unchanged, a mutation-model receptor names the model and side", () => {
+  const imported = { handle: "obj://r/chemical_raw_input/rec", sha256: "a".repeat(64), model_number: 1,
+    connectivity: { kind: "pdb_conect", sidecar_handle: null }, removed_instance: null, acknowledgement: ACK_ALL };
+  assert.equal(lib.receptorText(imported),
+    `obj://r/chemical_raw_input/rec · SHA-256 ${"a".repeat(64)} · 모델 1 · 연결 정보 PDB CONECT`);
+  const model = { source: { kind: "mutation_model", mutation_model: "obj://r/mutation_model/m", side: "mutant" },
+    sha256: "b".repeat(64), model_number: 1, connectivity: { kind: "mutation_model_topology" }, removed_instance: null,
+    acknowledgement: ACK_ALL };
+  const text = lib.receptorText(model);
+  assert.match(text, /obj:\/\/r\/mutation_model\/m · 변이 구조 \(mutant\)/);
+  assert.match(text, /mutation_model_topology/);
+  assert.ok(!text.includes("undefined") && !text.includes("PDB CONECT"));
+  assert.deepEqual(plain(lib.dockingForbiddenWords(text)), []);
 });

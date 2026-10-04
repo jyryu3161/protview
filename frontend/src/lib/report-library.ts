@@ -91,6 +91,7 @@ export function reportKindLabel(row: ReportLibraryRow): string {
   if (row.kind === "ligand_docking") return "리간드 도킹 보고서";
   if (row.kind === "ligand_docking_batch") return "리간드 도킹 일괄 보고서";
   if (row.kind === "mutation_candidates") return "변이 후보 보고서";
+  if (row.kind === "mutation_model") return "변이 구조 모델 보고서";
   return row.kind === "reference_site_annotation" ? "참조 주석 보고서" : row.kind;
 }
 

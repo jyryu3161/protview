@@ -1,0 +1,352 @@
+{
+ "contacts": {
+  "atoms": [
+   {
+    "atom_name": "CA",
+    "element": "C",
+    "index": 0,
+    "residue_ordinal": 1,
+    "resname": "ALA",
+    "xyz_A": [
+     1.5,
+     1.5,
+     4.0
+    ]
+   },
+   {
+    "atom_name": "C",
+    "element": "C",
+    "index": 1,
+    "residue_ordinal": 1,
+    "resname": "ALA",
+    "xyz_A": [
+     -1.5,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "N",
+    "element": "N",
+    "index": 2,
+    "residue_ordinal": 2,
+    "resname": "MUT",
+    "xyz_A": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "CA",
+    "element": "C",
+    "index": 3,
+    "residue_ordinal": 2,
+    "resname": "MUT",
+    "xyz_A": [
+     1.5,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "CB",
+    "element": "C",
+    "index": 4,
+    "residue_ordinal": 2,
+    "resname": "MUT",
+    "xyz_A": [
+     1.5,
+     1.5,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "N",
+    "element": "N",
+    "index": 5,
+    "residue_ordinal": 3,
+    "resname": "GLY",
+    "xyz_A": [
+     3.0,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "CA",
+    "element": "C",
+    "index": 6,
+    "residue_ordinal": 3,
+    "resname": "GLY",
+    "xyz_A": [
+     4.5,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "CB",
+    "element": "C",
+    "index": 7,
+    "residue_ordinal": 3,
+    "resname": "GLY",
+    "xyz_A": [
+     0.0,
+     0.0,
+     3.0
+    ]
+   },
+   {
+    "atom_name": "O",
+    "element": "O",
+    "index": 8,
+    "residue_ordinal": 4,
+    "resname": "SOL",
+    "xyz_A": [
+     1.5,
+     1.5,
+     -4.25
+    ]
+   },
+   {
+    "atom_name": "SD",
+    "element": "S",
+    "index": 9,
+    "residue_ordinal": 4,
+    "resname": "SOL",
+    "xyz_A": [
+     0.0,
+     -3.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "H1",
+    "element": "H",
+    "index": 10,
+    "residue_ordinal": 4,
+    "resname": "SOL",
+    "xyz_A": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   {
+    "atom_name": "H",
+    "element": "H",
+    "index": 11,
+    "residue_ordinal": 2,
+    "resname": "MUT",
+    "xyz_A": [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   }
+  ],
+  "bonds": [
+   [
+    0,
+    1
+   ],
+   [
+    1,
+    2
+   ],
+   [
+    2,
+    3
+   ],
+   [
+    3,
+    4
+   ],
+   [
+    3,
+    5
+   ],
+   [
+    5,
+    6
+   ],
+   [
+    6,
+    7
+   ],
+   [
+    2,
+    11
+   ],
+   [
+    9,
+    10
+   ]
+  ],
+  "excluded_bond_distance": 3,
+  "excluded_close_pairs_4A": [
+   {
+    "bonds": 1,
+    "distance_A": 1.5,
+    "mutated_atom": 2,
+    "partner_atom": 1
+   },
+   {
+    "bonds": 2,
+    "distance_A": 3.0,
+    "mutated_atom": 2,
+    "partner_atom": 5
+   },
+   {
+    "bonds": 2,
+    "distance_A": 3.0,
+    "mutated_atom": 3,
+    "partner_atom": 1
+   },
+   {
+    "bonds": 1,
+    "distance_A": 1.5,
+    "mutated_atom": 3,
+    "partner_atom": 5
+   },
+   {
+    "bonds": 2,
+    "distance_A": 3.0,
+    "mutated_atom": 3,
+    "partner_atom": 6
+   },
+   {
+    "bonds": 3,
+    "distance_A": 3.3541019662496847,
+    "mutated_atom": 3,
+    "partner_atom": 7
+   },
+   {
+    "bonds": 3,
+    "distance_A": 3.3541019662496847,
+    "mutated_atom": 4,
+    "partner_atom": 1
+   },
+   {
+    "bonds": 2,
+    "distance_A": 2.1213203435596424,
+    "mutated_atom": 4,
+    "partner_atom": 5
+   },
+   {
+    "bonds": 3,
+    "distance_A": 3.3541019662496847,
+    "mutated_atom": 4,
+    "partner_atom": 6
+   }
+  ],
+  "expected": {
+   "2.5": {
+    "count": 0,
+    "residue_count": 0,
+    "rows": []
+   },
+   "3.0": {
+    "count": 2,
+    "residue_count": 2,
+    "rows": [
+     {
+      "distance_A": 3.0,
+      "mutated_atom": 2,
+      "partner_atom": 7
+     },
+     {
+      "distance_A": 3.0,
+      "mutated_atom": 2,
+      "partner_atom": 9
+     }
+    ]
+   },
+   "4.0": {
+    "count": 5,
+    "residue_count": 3,
+    "rows": [
+     {
+      "distance_A": 3.0,
+      "mutated_atom": 2,
+      "partner_atom": 7
+     },
+     {
+      "distance_A": 3.0,
+      "mutated_atom": 2,
+      "partner_atom": 9
+     },
+     {
+      "distance_A": 3.3541019662496847,
+      "mutated_atom": 3,
+      "partner_atom": 9
+     },
+     {
+      "distance_A": 4.0,
+      "mutated_atom": 4,
+      "partner_atom": 0
+     },
+     {
+      "distance_A": 3.6742346141747673,
+      "mutated_atom": 4,
+      "partner_atom": 7
+     }
+    ]
+   }
+  },
+  "mutated_residue_ordinal": 2,
+  "notes": "H atoms 10 and 11 are never contacts (heavy atoms only); atom 8 is 4.25 A from CB (outside)."
+ },
+ "provenance": "SYNTHETIC hand-derived values; see SYNTHETIC-PROVENANCE.md",
+ "sasa": {
+  "algorithm": "LeeRichards",
+  "carbon_with_oxygen_at_4A": {
+   "elements": [
+    "C",
+    "O"
+   ],
+   "expected_A2": 101.97544128942066,
+   "formula": "2*pi*R1*(R1 + (d^2 + R1^2 - R2^2)/(2d))",
+   "residue_of_interest": 0,
+   "tolerance_relative": 0.005,
+   "xyz_A": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     4.0,
+     0.0,
+     0.0
+    ]
+   ]
+  },
+  "isolated_carbon": {
+   "elements": [
+    "C"
+   ],
+   "expected_A2": 120.76282531910138,
+   "tolerance_A2": 1e-06,
+   "xyz_A": [
+    [
+     0.0,
+     0.0,
+     0.0
+    ]
+   ]
+  },
+  "n_slices": 100,
+  "probe_A": 1.4,
+  "radii_A": {
+   "C": 1.7000000476837158,
+   "O": 1.5199999809265137
+  },
+  "radii_decimal_A": {
+   "C": 1.7,
+   "O": 1.52
+  }
+ },
+ "schema": "m21_mutation_model_fixture_oracle@1"
+}

@@ -22,6 +22,7 @@ import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
 import { LigandPanel } from "@/components/LigandPanel";
 import { MutationPanel } from "@/components/MutationPanel";
+import { MutationModelPanel, type ModelStartRequest } from "@/components/MutationModelPanel";
 import { DockingPanel } from "@/components/DockingPanel";
 import { DockingBatchPanel } from "@/components/DockingBatchPanel";
 import { SiteAnnotationPanel } from "@/components/SiteAnnotationPanel";
@@ -128,6 +129,7 @@ export default function WorkspacePage() {
   const [reportsReloadToken, setReportsReloadToken] = useState(0);
   /** M19: a batch row's "상세 열기" hands its per-row result handle to the M18 docking area (same run only). */
   const [dockingOpenRequest, setDockingOpenRequest] = useState<{ runId: string; handle: string; seq: number } | null>(null);
+  const [modelStartRequest, setModelStartRequest] = useState<ModelStartRequest | null>(null);
   // M16: numbering maps are made in the 지식·보고서 tab while the structure screen stays mounted; entering the structure
   // tab re-reads the annotation panel's map list (a read only; no event or tool).
   const [structureTabEntries, setStructureTabEntries] = useState(0);
@@ -2039,11 +2041,22 @@ export default function WorkspacePage() {
     reports={<ReportLibraryPanel run={run} active={workspaceTab === "knowledge"} reloadToken={reportsReloadToken} />}
     numbering={<NumberingPanel key={run?.run_id ?? "none"} runId={run?.run_id ?? null}
       onReportCreated={() => setReportsReloadToken(token => token + 1)} />}
-    protein={<MutationPanel key={`mutation-${run?.run_id ?? "none"}`} run={run}
-      capability={capabilities ? capabilities.methods?.mutation_candidates ?? null : undefined}
-      onObjectsChanged={refreshEventsFromAnalysis}
-      onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
-        setReportsReloadToken(token => token + 1); }} />}
+    protein={<>
+      <MutationPanel key={`mutation-${run?.run_id ?? "none"}`} run={run}
+        capability={capabilities ? capabilities.methods?.mutation_candidates ?? null : undefined}
+        onObjectsChanged={refreshEventsFromAnalysis}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }}
+        onModelCandidate={pick => { if (hostRequestAccepted({ runId: pick.runId }, analysisHostRef.current))
+          setModelStartRequest(previous => ({ ...pick, seq: (previous?.seq ?? 0) + 1 })); }} />
+      <MutationModelPanel key={`mutation-model-${run?.run_id ?? "none"}`} run={run}
+        capability={capabilities ? capabilities.methods?.mutation_model ?? null : undefined}
+        dockingCapability={capabilities ? capabilities.methods?.ligand_docking ?? null : undefined}
+        startRequest={modelStartRequest}
+        onObjectsChanged={refreshEventsFromAnalysis}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }} />
+    </>}
     ligand={<>
       <LigandPanel key={run?.run_id ?? "none"} run={run}
         capability={capabilities ? capabilities.methods?.ligand_candidates ?? null : undefined}

@@ -1,0 +1,502 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "cancel",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "AP8FpT2CpFyqfPjUEREAR",
+  "startedAt": "2026-10-04T04:49:46.832Z",
+  "run": "run_c9a020a646254576b649559048edc65e",
+  "handles": {
+    "set": "obj://run_c9a020a646254576b649559048edc65e/pocket_set/79a0609679188d1ce9c0538c1b59fdecddd809f77d135f9f7e9beb5f00a841fe",
+    "cancelledJob": "job_45f5dce6d5294fbca80736e2b940ca45"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+    }
+  ],
+  "fixtureLabels": [],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 10,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m21-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/cancel/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 100,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 100,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m21-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/cancel/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 206,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_a936f84770014a15bc8ceaa49055d244/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/job_45f5dce6d5294fbca80736e2b940ca45/start",
+      "status": 409
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/job_45f5dce6d5294fbca80736e2b940ca45",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/job_45f5dce6d5294fbca80736e2b940ca45/cancel",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/pockets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/job_b815ffd6f9f340d3bdf6fc6722fc2bdd/start",
+      "status": 409
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/job_b815ffd6f9f340d3bdf6fc6722fc2bdd",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/approve",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/jobs/job_b815ffd6f9f340d3bdf6fc6722fc2bdd/start",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9a020a646254576b649559048edc65e/pockets/result",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-10-04T04:49:51.062Z",
+  "externalRequestCount": 0
+}

@@ -92,10 +92,13 @@ def test_reason_sets_match_spec_verbatim():
                                    "core_match_ambiguous", "embed_failed")
     assert C.BOX_REASONS == ("box_invalid", "box_too_large", "box_no_receptor_atoms")
     assert C.ENGINE_REASONS == ("engine_failed", "engine_output_invalid", "resource_exceeded")
-    assert C.ADMISSION_ONLY_REASONS == ("invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing")
+    # M21 (user approved, spec 7): one admission-only reason added; the worker reason set is unchanged.
+    assert C.ADMISSION_ONLY_REASONS == ("invalid_job_arguments", "mode_source_mismatch", "acknowledgement_missing",
+                                        "mutation_model_invalid")
+    assert "mutation_model_invalid" not in C.REASONS
     assert C.REASONS == (C.RECEPTOR_REASONS + C.LIGAND_REASONS + C.CANDIDATE_REASONS + C.BOX_REASONS +
                          C.ENGINE_REASONS)
-    assert len(set(C.REASONS + C.ADMISSION_ONLY_REASONS)) == 32
+    assert len(set(C.REASONS + C.ADMISSION_ONLY_REASONS)) == 33
     assert C.CAPABILITY_REASONS == ("worker_missing", "engine_missing", "engine_hash_mismatch", "handshake_failed",
                                     "version_mismatch")
 
@@ -113,6 +116,8 @@ SPEC_LIMITATIONS = (
     "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다.",
     "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다.",
     "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다.",
+    # 12: M21, user approved, only for the mutation_model receptor source (appended last)
+    "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로).",
 )
 
 

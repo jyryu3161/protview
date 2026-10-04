@@ -15,6 +15,16 @@ input -> same handle). Every read re-validates the stored object against its sin
 inputs; the object recovers from ``events.jsonl`` alone (``object_created`` payloads), without any engine. An M19
 batch row's publication (``docking_batch_row_published`` after the attempt's verified cleanup, with or without a
 later batch summary publication) is accepted as the same evidence, checked against that row's own selection.
+
+M21 receptor source (spec .dryforge/spec.md 7, single M18 only): with ``receptor_source`` the receptor bytes are the
+stored mmCIF of one side of a published same-run ``mutation_model@1`` (re-validated by
+``mutation_model_bundle.validated_result`` at admission, staging, publication and every read; any failure is the
+admission-only ``mutation_model_invalid``), and the bonds are its stored ``final_bonds`` over ``atom_mapping`` built
+into a ``receptor_bonds@1`` sidecar (``docking_inputs.mutation_model_sidecar``; never stored, re-built at staging).
+The selection then carries ``receptor_source`` (with the structure object handle, model number and sidecar hash) and
+``sidecar`` null; the result's ``inputs.receptor`` is ``{source, sha256, model_number, connectivity: {kind:
+"mutation_model_topology"}, removed_instance: null, acknowledgement}``. Imported receptors are unchanged (no
+``source`` key anywhere).
 """
 from __future__ import annotations
 
@@ -261,20 +271,49 @@ def _receptor_format(meta: dict[str, Any]) -> str:
     return fmt
 
 
+def _mutation_receptor(run: Any, source: dict[str, Any]) -> dict[str, Any]:
+    """M21: the receptor of a ``receptor_source``: the validated model's stored mmCIF of ``side`` and the sidecar
+    built from its stored topology. ``mutation_model_invalid`` for anything but a published same-run model whose
+    stored atoms match its ``atom_mapping``; the M18 receptor rules (atom cap included) are ``receptor_invalid``."""
+    from . import mutation_model_bundle as mmb
+
+    try:
+        content = mmb.validated_result(run, source["mutation_model"])
+        entry = content["structures"][source["side"]]
+        raw = run.store.load_bounded_bytes(entry["structure_object"], mmb.MAX_STRUCTURE_BYTES)
+        if _sha(raw) != entry["structure_sha256"]:
+            raise mmb.MutationEvidenceError("structure bytes")
+    except (mmb.MutationEvidenceError, KeyError, TypeError, ValueError, OSError) as exc:
+        raise _invalid("receptor_source.mutation_model is not a published mutation_model@1 of this run",
+                       "mutation_model_invalid") from exc
+    handle, model_number = entry["structure_object"], content["structure"]["model_number"]
+    rows = docking_inputs.receptor_rows(raw, "cif", handle, model_number)
+    sidecar_raw = docking_inputs.mutation_model_sidecar(rows, entry["atom_mapping"], entry["final_bonds"], handle)
+    return {"handle": handle, "raw": raw, "sha256": entry["structure_sha256"], "model_number": model_number,
+            "sidecar_raw": sidecar_raw}
+
+
 def submission(run: Any, args: Any) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     """(selected, normalized arguments, input handles); every refusal is input_invalid with a closed reason code."""
     from .ligand_bundle import LigandEvidenceError, validated_candidate_set
 
     normalized = docking_inputs.validate_arguments(args)
-    receptor = _import_meta(run, normalized["receptor_handle"], "receptor")
-    connectivity = normalized["connectivity"]
-    sidecar = (None if connectivity["kind"] == "pdb_conect" else
-               _import_meta(run, connectivity["sidecar_handle"], "receptor_bonds"))
+    source = normalized.get("receptor_source")
+    if source is None:
+        receptor = _import_meta(run, normalized["receptor_handle"], "receptor")
+        connectivity = normalized["connectivity"]
+        sidecar = (None if connectivity["kind"] == "pdb_conect" else
+                   _import_meta(run, connectivity["sidecar_handle"], "receptor_bonds"))
+        receptor_handles = [receptor["handle"], *([sidecar["handle"]] if sidecar else [])]
+    else:
+        mutation = _mutation_receptor(run, source)
+        sidecar = None
+        receptor_handles = [source["mutation_model"]]
     ligand = normalized["ligand"]
     if ligand["source"] == "sdf":
         sdf = _import_meta(run, ligand["sdf_handle"], "ligand_sdf")
         selected_ligand = {"source": "sdf", "sdf": _entry(sdf)}
-        input_handles = [receptor["handle"], *([sidecar["handle"]] if sidecar else []), sdf["handle"]]
+        input_handles = [*receptor_handles, sdf["handle"]]
     else:
         parent = _import_meta(run, ligand["parent_sdf_handle"], "ligand_sdf")
         try:
@@ -292,22 +331,33 @@ def submission(run: Any, args: Any) -> tuple[dict[str, Any], dict[str, Any], lis
                            "parent_sdf": _entry(parent),
                            "candidate": {key: copy.deepcopy(row[key]) for key in
                                          ("id", "smiles", "retained_parent_atoms", "stereo_flag")}}
-        input_handles = [receptor["handle"], *([sidecar["handle"]] if sidecar else []),
-                         ligand["candidate_set_handle"], parent["handle"]]
-    fmt = _receptor_format(receptor)
-    raw = run.store.load_bounded_bytes(receptor["handle"], MAX_INPUT_BYTES)
-    sidecar_raw = None if sidecar is None else run.store.load_bounded_bytes(sidecar["handle"], MAX_INPUT_BYTES)
-    checked = docking_inputs.check_receptor(raw, fmt, receptor["handle"], normalized["receptor_model_number"],
-                                            connectivity, normalized["receptor_instance"], sidecar_raw)
+        input_handles = [*receptor_handles, ligand["candidate_set_handle"], parent["handle"]]
+    if source is None:
+        fmt = _receptor_format(receptor)
+        raw = run.store.load_bounded_bytes(receptor["handle"], MAX_INPUT_BYTES)
+        sidecar_raw = None if sidecar is None else run.store.load_bounded_bytes(sidecar["handle"], MAX_INPUT_BYTES)
+        checked = docking_inputs.check_receptor(raw, fmt, receptor["handle"], normalized["receptor_model_number"],
+                                                connectivity, normalized["receptor_instance"], sidecar_raw)
+        receptor_entry = _entry(receptor)
+    else:
+        fmt = "cif"
+        checked = docking_inputs.check_receptor(mutation["raw"], fmt, mutation["handle"], mutation["model_number"],
+                                                {"kind": "sidecar", "sidecar_handle": None}, None,
+                                                mutation["sidecar_raw"])
+        receptor_entry = {"handle": mutation["handle"], "sha256": mutation["sha256"]}
     removed = set(checked["instance_sites"])
     if not any(row["element"].upper() == "H" for row in checked["rows"] if row["ref"]["site_index"] not in removed):
         raise _invalid("receptor has no explicit hydrogen atoms", "receptor_hydrogens_missing")
     selected = {"schema": "docking_selection@1", "arguments": normalized,
                 "input_sha256": docking_inputs.input_sha256(normalized),
-                "receptor": {**_entry(receptor), "format": fmt, "atom_count": len(checked["rows"]),
+                "receptor": {**receptor_entry, "format": fmt, "atom_count": len(checked["rows"]),
                              "instance_sites": checked["instance_sites"],
                              "removed_instance": checked["removed_instance"]},
                 "sidecar": None if sidecar is None else _entry(sidecar), "ligand": selected_ligand}
+    if source is not None:
+        selected["receptor_source"] = {**source, "structure_object": mutation["handle"],
+                                       "model_number": mutation["model_number"],
+                                       "sidecar_sha256": _sha(mutation["sidecar_raw"])}
     return selected, normalized, input_handles
 
 
@@ -328,14 +378,17 @@ def stage(run: Any, job: dict[str, Any], attempt_id: str) -> bytes:
     args = selected["arguments"]
     receptor = selected["receptor"]
     sidecar = selected["sidecar"]
-    payload_receptor = {
-        "handle": receptor["handle"], "format": receptor["format"],
-        "bytes": _b64(_import_bytes(run, receptor["handle"], "receptor", receptor["sha256"])),
-        "model_number": args["receptor_model_number"],
-        "connectivity": {"kind": args["connectivity"]["kind"],
-                         "sidecar": None if sidecar is None else
-                         _b64(_import_bytes(run, sidecar["handle"], "receptor_bonds", sidecar["sha256"]))},
-        "instance": args["receptor_instance"]}
+    if selected.get("receptor_source") is not None:
+        payload_receptor = _staged_mutation_receptor(run, selected)
+    else:
+        payload_receptor = {
+            "handle": receptor["handle"], "format": receptor["format"],
+            "bytes": _b64(_import_bytes(run, receptor["handle"], "receptor", receptor["sha256"])),
+            "model_number": args["receptor_model_number"],
+            "connectivity": {"kind": args["connectivity"]["kind"],
+                             "sidecar": None if sidecar is None else
+                             _b64(_import_bytes(run, sidecar["handle"], "receptor_bonds", sidecar["sha256"]))},
+            "instance": args["receptor_instance"]}
     ligand = selected["ligand"]
     if ligand["source"] == "sdf":
         payload_ligand = {"source": "sdf", "sdf": _b64(_import_bytes(run, ligand["sdf"]["handle"], "ligand_sdf",
@@ -349,6 +402,28 @@ def stage(run: Any, job: dict[str, Any], attempt_id: str) -> bytes:
     return canonical_json({"schema": "docking_worker_input@1", "receptor": payload_receptor,
                            "ligand": payload_ligand, "mode": args["mode"], "box": args["box"],
                            "parameters": args["parameters"]})
+
+
+def _current_mutation_receptor(run: Any, selected: dict[str, Any]) -> dict[str, Any]:
+    """The M21 receptor re-derived now; it must equal the one admitted (structure bytes, model, sidecar)."""
+    recorded = selected["receptor_source"]
+    try:
+        mutation = _mutation_receptor(run, {key: recorded[key] for key in ("kind", "mutation_model", "side")})
+    except ToolFailure as exc:
+        raise ValueError("mutation-model receptor no longer validates") from exc
+    if (mutation["handle"], mutation["sha256"], mutation["model_number"], _sha(mutation["sidecar_raw"])) != (
+            recorded["structure_object"], selected["receptor"]["sha256"], recorded["model_number"],
+            recorded["sidecar_sha256"]) or selected["receptor"]["handle"] != mutation["handle"]:
+        raise ValueError("mutation-model receptor changed since submission")
+    return mutation
+
+
+def _staged_mutation_receptor(run: Any, selected: dict[str, Any]) -> dict[str, Any]:
+    mutation = _current_mutation_receptor(run, selected)
+    return {"handle": mutation["handle"], "format": "cif", "bytes": _b64(mutation["raw"]),
+            "model_number": mutation["model_number"],
+            "connectivity": {"kind": "sidecar", "sidecar": _b64(mutation["sidecar_raw"])}, "instance": None,
+            "source": "mutation_model"}
 
 
 def worker_error(attempt_dir: Path) -> dict[str, Any]:
@@ -487,27 +562,42 @@ def check_result(run: Any, content: Any, job: dict[str, Any]) -> list[tuple]:
     _pins(job.get("method"))
     args = selected["arguments"]
     mode, source = args["mode"], args["ligand"]["source"]
+    receptor_source = args.get("receptor_source")
     _require(type(content) is dict and set(content) == RESULT_KEYS and content["schema"] == C.RESULT_SCHEMA and
              content["protocol"] == PROTOCOL and content["method"] == C.METHODS[mode], "result keys")
     _require(content["input_sha256"] == selected["input_sha256"] == docking_inputs.input_sha256(args),
              "input_sha256 of the normalized arguments")
     try:
-        _import_meta(run, selected["receptor"]["handle"], "receptor")
-        if selected["sidecar"] is not None:
-            _import_meta(run, selected["sidecar"]["handle"], "receptor_bonds")
+        if receptor_source is None:
+            _import_meta(run, selected["receptor"]["handle"], "receptor")
+            if selected["sidecar"] is not None:
+                _import_meta(run, selected["sidecar"]["handle"], "receptor_bonds")
         for entry in ([selected["ligand"]["sdf"]] if source == "sdf" else [selected["ligand"]["parent_sdf"]]):
             _require(_import_meta(run, entry["handle"], "ligand_sdf")["summary"]["sha256"] == entry["sha256"],
                      "ligand import hash")
     except ToolFailure as exc:
         raise DockingEvidenceError("import evidence") from exc
-    _require(run.store.meta(selected["receptor"]["handle"])["summary"]["sha256"] == selected["receptor"]["sha256"],
-             "receptor import hash")
     removed = selected["receptor"]["removed_instance"]
-    _require(content["inputs"] == {"receptor": {
-        "handle": args["receptor_handle"], "sha256": selected["receptor"]["sha256"],
-        "model_number": args["receptor_model_number"], "connectivity": args["connectivity"],
-        "removed_instance": removed, "acknowledgement": args["acknowledgement"]},
-        "ligand": content["inputs"]["ligand"], "mode": mode} and
+    if receptor_source is None:
+        _require(run.store.meta(selected["receptor"]["handle"])["summary"]["sha256"] ==
+                 selected["receptor"]["sha256"], "receptor import hash")
+        expected_receptor = {
+            "handle": args["receptor_handle"], "sha256": selected["receptor"]["sha256"],
+            "model_number": args["receptor_model_number"], "connectivity": args["connectivity"],
+            "removed_instance": removed, "acknowledgement": args["acknowledgement"]}
+    else:
+        try:
+            _current_mutation_receptor(run, selected)
+        except ValueError as exc:
+            raise DockingEvidenceError("mutation-model receptor evidence") from exc
+        _require(selected["receptor_source"]["kind"] == receptor_source["kind"] and
+                 selected["receptor_source"]["mutation_model"] == receptor_source["mutation_model"] and
+                 selected["receptor_source"]["side"] == receptor_source["side"] and
+                 selected["sidecar"] is None and removed is None and not selected["receptor"]["instance_sites"],
+                 "mutation-model receptor selection")
+        expected_receptor = _mutation_inputs(selected)
+    _require(content["inputs"] == {"receptor": expected_receptor,
+                                   "ligand": content["inputs"]["ligand"], "mode": mode} and
         args["acknowledgement"] == {key: True for key in C.ACKNOWLEDGEMENT_KEYS}, "receptor inputs")
     ligand = content["inputs"]["ligand"]
     candidate = source == "candidate"
@@ -570,10 +660,19 @@ def check_result(run: Any, content: Any, job: dict[str, Any]) -> list[tuple]:
         _require(order == sorted(order) and len({row["conformer_index"] for row in modes}) == len(modes),
                  "core-fixed samples listed by score then sample index")
     _require(content["limitations"] == list(C.applicable_limitations(
-        mode=mode, source=source, removed_instance=removed is not None, unspecified_stereo_centers=unspecified)),
-        "limitations")
+        mode=mode, source=source, removed_instance=removed is not None, unspecified_stereo_centers=unspecified,
+        receptor_source=None if receptor_source is None else receptor_source["kind"])), "limitations")
     _require(len(canonical_json(content)) <= MAX_RESULT_BYTES, "result size")
     return contacts
+
+
+def _mutation_inputs(selected: dict[str, Any]) -> dict[str, Any]:
+    """M21: ``inputs.receptor`` of a result whose receptor came from a mutation model (spec 7)."""
+    args, recorded = selected["arguments"], selected["receptor_source"]
+    return {"source": {key: recorded[key] for key in ("kind", "mutation_model", "side")},
+            "sha256": selected["receptor"]["sha256"], "model_number": recorded["model_number"],
+            "connectivity": {"kind": C.MUTATION_MODEL_CONNECTIVITY}, "removed_instance": None,
+            "acknowledgement": args["acknowledgement"]}
 
 
 def _check_receptor_atoms(run: Any, job: dict[str, Any], contacts: list[tuple]) -> None:
@@ -581,10 +680,14 @@ def _check_receptor_atoms(run: Any, job: dict[str, Any], contacts: list[tuple]) 
     and its distance re-measures from the stored pose coordinates and that atom's coordinates."""
     selected = job["selected"]
     receptor = selected["receptor"]
-    raw = _import_bytes(run, receptor["handle"], "receptor", receptor["sha256"])
+    if selected.get("receptor_source") is not None:
+        raw = _current_mutation_receptor(run, selected)["raw"]
+        model_number = selected["receptor_source"]["model_number"]
+    else:
+        raw = _import_bytes(run, receptor["handle"], "receptor", receptor["sha256"])
+        model_number = selected["arguments"]["receptor_model_number"]
     try:
-        rows = docking_inputs.receptor_rows(raw, receptor["format"], receptor["handle"],
-                                            selected["arguments"]["receptor_model_number"])
+        rows = docking_inputs.receptor_rows(raw, receptor["format"], receptor["handle"], model_number)
     except ToolFailure as exc:
         raise DockingEvidenceError("receptor import no longer reads") from exc
     _require(len(rows) == receptor["atom_count"], "receptor atom count")
@@ -628,11 +731,14 @@ def result_content(job: dict[str, Any], data: dict[str, Any]) -> dict[str, Any]:
              "worker inputs")
     receptor = inputs["receptor"]
     sidecar = selected["sidecar"]
+    recorded = selected.get("receptor_source")
     _require(type(receptor) is dict and receptor == {
         "sha256": selected["receptor"]["sha256"], "format": selected["receptor"]["format"],
-        "model_number": args["receptor_model_number"], "atom_count": selected["receptor"]["atom_count"],
-        "connectivity": {"kind": args["connectivity"]["kind"],
-                         "sidecar_sha256": None if sidecar is None else sidecar["sha256"]},
+        "model_number": args["receptor_model_number"] if recorded is None else recorded["model_number"],
+        "atom_count": selected["receptor"]["atom_count"],
+        "connectivity": ({"kind": args["connectivity"]["kind"],
+                          "sidecar_sha256": None if sidecar is None else sidecar["sha256"]} if recorded is None else
+                         {"kind": "sidecar", "sidecar_sha256": recorded["sidecar_sha256"]}),
         "removed_instance": selected["receptor"]["removed_instance"]}, "worker receptor echo")
     ligand = inputs["ligand"]
     sel_ligand = selected["ligand"]
@@ -649,7 +755,8 @@ def result_content(job: dict[str, Any], data: dict[str, Any]) -> dict[str, Any]:
                                     "model_number": args["receptor_model_number"],
                                     "connectivity": args["connectivity"],
                                     "removed_instance": receptor["removed_instance"],
-                                    "acknowledgement": args["acknowledgement"]},
+                                    "acknowledgement": args["acknowledgement"]} if recorded is None else
+                       _mutation_inputs(selected),
                        "ligand": {"source": ligand["source"],
                                   "sdf_handle": None if candidate else sel_ligand["sdf"]["handle"],
                                   "sdf_sha256": ligand["sdf_sha256"],
@@ -685,7 +792,7 @@ def store_result(run: Any, job: dict[str, Any], attempt_id: str, content: dict[s
                         null_result=counts["null_result"],
                         summary={"method": content["method"], "mode": content["inputs"]["mode"],
                                  "ligand_source": content["inputs"]["ligand"]["source"],
-                                 "receptor_handle": content["inputs"]["receptor"]["handle"],
+                                 "receptor_handle": content["inputs"]["receptor"].get("handle"),
                                  "input_sha256": content["input_sha256"], "modes": counts["modes"],
                                  "null_result": counts["null_result"]})
     return out.handle

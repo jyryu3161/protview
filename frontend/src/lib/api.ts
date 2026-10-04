@@ -9,7 +9,9 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   LigandEnumerateArgs, LigandFilterSpec, LigandImport, LigandImportKind, LigandInspectArgs, LigandInspectionDetail,
   LigandInspectionList, LigandJob, LigandPrerequisites, LigandReportArtifact, LigandSitePreview, LigandSubmission,
   MutationCandidatePage, MutationCandidateSetDetail, MutationCandidateSetList, MutationPositionPage,
-  MutationReportArtifact, MutationRequestArgs, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
+  MutationModelArgs, MutationModelCapability, MutationModelContactPage, MutationModelDetail, MutationModelDockingPairs,
+  MutationModelJob, MutationModelList, MutationModelReportArtifact, MutationModelSide, MutationModelSubmission,
+  DockingSourceArgs, MutationReportArtifact, MutationRequestArgs, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
   ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
@@ -49,7 +51,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null };
     ligand_candidates?: LigandCapability; ligand_docking?: DockingCapability;
     ligand_docking_batch?: DockingBatchCapability;
-    mutation_candidates?: { available: boolean; reason_code: string | null; reason: string | null } } }
+    mutation_candidates?: { available: boolean; reason_code: string | null; reason: string | null };
+    mutation_model?: MutationModelCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -317,7 +320,8 @@ export const api = {
     request<DockingReceptorInstances>(runPath(id, `/docking/receptor_instances?${handleParam(receptorHandle)}`),
       { signal }),
   /** Start, approval (`approveOpenmm`), retry and cancel use the shared job routes. `timeout_s` is fixed (not shown). */
-  submitDocking: (id: string, args: DockingArgs) =>
+  /** M21: also takes `receptor_source` arguments (same-condition docking on one side of a mutation model). */
+  submitDocking: (id: string, args: DockingArgs | DockingSourceArgs) =>
     request<DockingSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "qvina_dock_v1", args,
       timeout_s: DOCKING_TIMEOUT_S })),
   dockingJob: (id: string, jobId: string, signal?: AbortSignal) =>
@@ -381,6 +385,34 @@ export const api = {
   /** Report `analysis_type: "mutation_candidates"` of one stored set (nothing is generated again). */
   createMutationReport: (id: string, setHandle: string, signal?: AbortSignal) =>
     request<MutationReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: setHandle }, signal)),
+  // ---- M21 mutation structure model (reads write no event and start no job; the handle goes in the path) ----
+  /** Start, approval (`approveOpenmm`), retry and cancel use the shared job routes; `timeoutS` is the top-level
+   * `POST /jobs` field (not an argument, not in the call key). */
+  submitMutationModel: (id: string, args: MutationModelArgs, timeoutS: number) =>
+    request<MutationModelSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "openmm_mutation_model_v1", args,
+      timeout_s: timeoutS })),
+  mutationModelJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<MutationModelJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  /** Every job of the run (read only); the model area re-attaches to its own queued or running job. */
+  mutationModelJobs: (id: string, signal?: AbortSignal) => request<MutationModelJob[]>(runPath(id, "/jobs"), { signal }),
+  /** Newest first; `limit` 1–100. */
+  mutationModels: (id: string, offset = 0, limit = 50, signal?: AbortSignal) =>
+    request<MutationModelList>(runPath(id, `/mutation_models?offset=${offset}&limit=${limit}`), { signal }),
+  mutationModel: (id: string, handle: string, signal?: AbortSignal) =>
+    request<MutationModelDetail>(runPath(id, `/mutation_models/${encodeURIComponent(handle)}`), { signal }),
+  /** `query` comes from `modelContactQuery` (mutation-model.ts): structure, page (1-based), page_size 1–200. */
+  mutationModelContacts: (id: string, handle: string, query: string, signal?: AbortSignal) =>
+    request<MutationModelContactPage>(runPath(id, `/mutation_models/${encodeURIComponent(handle)}/contacts?${query}`),
+      { signal }),
+  /** Stored mmCIF of one side, byte for byte (a link the person clicks; never fetched automatically). */
+  mutationModelStructureUrl: (id: string, handle: string, side: MutationModelSide) =>
+    `/api${runPath(id, `/mutation_models/${encodeURIComponent(handle)}/structure?side=${side}`)}`,
+  mutationModelDockingPairs: (id: string, handle: string, signal?: AbortSignal) =>
+    request<MutationModelDockingPairs>(runPath(id, `/mutation_models/${encodeURIComponent(handle)}/docking_pairs`),
+      { signal }),
+  /** Report `analysis_type: "mutation_model"` of one stored model (nothing is modelled again; no docking score). */
+  createMutationModelReport: (id: string, modelHandle: string, signal?: AbortSignal) =>
+    request<MutationModelReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: modelHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

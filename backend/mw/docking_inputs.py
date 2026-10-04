@@ -15,6 +15,14 @@ Argument rules (spec 5.1):
   box value errors are ``box_invalid`` except a manual side above 40 A, which is ``box_too_large``.
 - Check order: top-level keys, receptor fields, connectivity, receptor instance, ligand, mode/source, box,
   parameters, acknowledgement; the first failure is reported.
+- M21 (spec .dryforge/spec.md 7): the optional top-level ``receptor_source`` = ``{kind: "mutation_model",
+  mutation_model: <handle>, side: "wild_type_reference" | "mutant"}`` replaces the four receptor keys
+  (``receptor_handle``, ``receptor_model_number``, ``connectivity``, ``receptor_instance``), which must then all be
+  absent; mixing or a malformed object is ``invalid_job_arguments``, a non-string/empty handle or an unknown side is
+  ``mutation_model_invalid`` (admission only). With ``receptor_source`` the ligand must be the ``sdf`` source; the
+  M17 ``candidate`` source is the existing ``mode_source_mismatch`` (user decision). Without ``receptor_source`` the four keys stay required as before and
+  the normalized arguments (hence ``input_sha256`` and the call key) are unchanged. With it, the normalized arguments
+  hold ``receptor_source`` instead of the four keys, so the source joins the call key.
 
 Call key (``call_key_input``/``input_sha256``): the normalized arguments without ``acknowledgement`` (confirmation
 does not change the input's meaning), hashed as canonical JSON (keys sorted at every level, separators ``,``/``:``,
@@ -47,6 +55,8 @@ RESIDUE_KEYS = ("model_number", "chain_auth", "chain_label", "seq_auth", "seq_la
 ATOM_REF_KEYS = {"structure_handle", "residue", "atom_name", "altloc", "element", "site_index"}
 TOP_KEYS = {"receptor_handle", "receptor_model_number", "connectivity", "receptor_instance", "ligand", "mode",
             "box", "parameters", "acknowledgement"}
+LEGACY_RECEPTOR_KEYS = {"receptor_handle", "receptor_model_number", "connectivity", "receptor_instance"}
+SOURCE_TOP_KEYS = (TOP_KEYS - LEGACY_RECEPTOR_KEYS) | {"receptor_source"}
 LIGAND_KEYS = {"sdf": {"source", "sdf_handle"},
                "candidate": {"source", "candidate_set_handle", "candidate_id", "parent_sdf_handle"}}
 
@@ -171,23 +181,48 @@ def _parameters(value: Any, mode: str) -> dict[str, Any]:
     return out
 
 
+def _receptor_source(value: Any) -> dict[str, Any]:
+    if type(value) is not dict or set(value) != {"kind", "mutation_model", "side"} or \
+            value["kind"] not in C.RECEPTOR_SOURCE_KINDS:
+        raise _args_error("receptor_source is {kind: mutation_model, mutation_model, side}")
+    if type(value["mutation_model"]) is not str or not value["mutation_model"]:
+        raise _fail("mutation_model_invalid", "receptor_source.mutation_model must be a mutation_model handle")
+    if value["side"] not in C.MUTATION_MODEL_SIDES:
+        raise _fail("mutation_model_invalid", "receptor_source.side must be wild_type_reference or mutant")
+    return {"kind": value["kind"], "mutation_model": value["mutation_model"], "side": value["side"]}
+
+
 def validate_arguments(args: Any) -> dict[str, Any]:
     """Validate ``qvina_dock_v1`` job arguments (shape and values only) and return the normalized copy."""
     if type(args) is not dict:
         raise _args_error("job arguments must be an object")
-    if not set(args) <= TOP_KEYS or not TOP_KEYS - {"acknowledgement"} <= set(args):
-        raise _args_error("job arguments have unknown or missing keys")
-    if not _is_int(args["receptor_model_number"], 1):
-        raise _args_error("receptor_model_number must be a positive integer")
-    receptor_handle = _handle(args["receptor_handle"])
-    connectivity = _connectivity(args["connectivity"])
-    instance = None if args["receptor_instance"] is None else _residue(args["receptor_instance"])
+    source = "receptor_source" in args
+    keys = SOURCE_TOP_KEYS if source else TOP_KEYS
+    if not set(args) <= keys or not keys - {"acknowledgement"} <= set(args):
+        raise _args_error("job arguments have unknown or missing keys" +
+                          (" (receptor_source replaces receptor_handle, receptor_model_number, connectivity and "
+                           "receptor_instance)" if source else ""))
+    if source:
+        receptor = {"receptor_source": _receptor_source(args["receptor_source"])}
+        instance = None
+    else:
+        if not _is_int(args["receptor_model_number"], 1):
+            raise _args_error("receptor_model_number must be a positive integer")
+        receptor_handle = _handle(args["receptor_handle"])
+        connectivity = _connectivity(args["connectivity"])
+        instance = None if args["receptor_instance"] is None else _residue(args["receptor_instance"])
+        receptor = {"receptor_handle": receptor_handle, "receptor_model_number": args["receptor_model_number"],
+                    "connectivity": connectivity, "receptor_instance": instance}
     ligand = _ligand(args["ligand"])
     mode = args["mode"]
     if mode not in C.MODES:
         raise _args_error("mode must be free or core_fixed")
     if mode == "core_fixed" and ligand["source"] != "candidate":
         raise _fail("mode_source_mismatch", "core_fixed needs the candidate ligand source")
+    if source and ligand["source"] != "sdf":
+        # M21 (user decision): the mutation_model receptor takes the user's SDF ligand only (the twelfth limitation
+        # states the ligand coordinates are the user's SDF, which is not true of a generated candidate).
+        raise _fail("mode_source_mismatch", "receptor_source mutation_model needs the sdf ligand source")
     box = _box(args["box"], instance is not None)
     parameters = _parameters(args["parameters"], mode)
     ack = args.get("acknowledgement")
@@ -195,9 +230,7 @@ def validate_arguments(args: Any) -> dict[str, Any]:
         raise _args_error("acknowledgement has unknown keys")
     if type(ack) is not dict or any(ack.get(key) is not True for key in C.ACKNOWLEDGEMENT_KEYS):
         raise _fail("acknowledgement_missing", "all three acknowledgements must be true")
-    return {"receptor_handle": receptor_handle, "receptor_model_number": args["receptor_model_number"],
-            "connectivity": connectivity, "receptor_instance": instance, "ligand": ligand, "mode": mode,
-            "box": box, "parameters": parameters,
+    return {**receptor, "ligand": ligand, "mode": mode, "box": box, "parameters": parameters,
             "acknowledgement": {key: True for key in C.ACKNOWLEDGEMENT_KEYS}}
 
 
@@ -371,6 +404,27 @@ def receptor_bonds(rows: list[dict[str, Any]], connectivity: dict[str, Any], raw
     if not 1 <= len(pairs) <= MAX_BONDS:
         raise _fail("receptor_invalid", "empty or oversized receptor connectivity")
     return [list(pair) for pair in sorted(pairs)]
+
+
+def mutation_model_sidecar(rows: list[dict[str, Any]], atoms: Any, bonds: Any, source: str) -> bytes:
+    """M21: the ``receptor_bonds@1`` sidecar bytes (the form the worker consumes for ``sidecar`` connectivity) of a
+    mutation-model receptor, from its stored OpenMM topology: ``final_bonds`` index pairs into ``atom_mapping``, which
+    must name the mmCIF atoms in order (seven residue fields, atom name, element). No distance inference. A mismatch is
+    ``mutation_model_invalid``; the ``receptor_bonds@1`` rules themselves are checked again by ``receptor_bonds``."""
+    def same(row: dict[str, Any], atom: Any) -> bool:
+        return (type(atom) is dict and row["ref"]["residue"] == atom.get("residue") and
+                row["ref"]["atom_name"] == atom.get("atom_name") and row["element"] == atom.get("element"))
+
+    if (type(atoms) is not list or len(atoms) != len(rows) or not all(map(same, rows, atoms)) or
+            type(bonds) is not list):
+        raise _fail("mutation_model_invalid", "the stored mmCIF atoms differ from the model's atom_mapping")
+    out = []
+    for bond in bonds:
+        if (type(bond) is not list or len(bond) != 2 or not all(_is_int(x, 0, len(rows) - 1) for x in bond) or
+                bond[0] == bond[1]):
+            raise _fail("mutation_model_invalid", "a stored final bond does not name two model atoms")
+        out.append({"first": rows[bond[0]]["ref"], "second": rows[bond[1]]["ref"]})
+    return canonical_json({"schema": "receptor_bonds@1", "complete": True, "source_handle": source, "bonds": out})
 
 
 # ---------------------------------------------------------------- receptor admission
