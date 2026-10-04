@@ -1,6 +1,6 @@
 # M21 변이 구조 모델링 완료 기록
 
-- 판정: **완료** (2026-10-04). main 병합: **하지 않음**(사용자 통합 승인 대기, push 없음).
+- 판정: **완료** (2026-10-04). main 병합: `61d5c03`(push 없음). 사용자가 `--no-ff` 병합을 승인했다.
 - 브랜치: `dryforge/m21-mutation-model` (`phase/m21-mutation-model` = main `a6334a6`에서 분기). M20은 시작 전에 main에 병합되어 있었다(`5ed9835`, 기록 `a6334a6`).
 - 고정 소스: `4a3dabe`(`4a3dabe51af0ef8b6328bf7f09fa7f719e4ef7e1`, 독립 코드 검토 수정 커밋). 증거 커밋 `c12b70d`. 고정 뒤 소스 변경은 없다. 고정 뒤 커밋은 증거·기록 문서뿐이다.
 - 수락 증거: `docs/qa/m21-mutations-20261004/`(`preflight.txt` 착수 확인, `offscreen-acceptance/` T10 개발 실행(`1f56dc4`, 수락 시도 아님), `gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M21 수락, `m20-regression/`, `m19-regression/`, `m18-regression/`, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 51개 331,886,193 B, m14-regression 1개 1,191,725 B, m15-regression 1개 590,108 B, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`).
@@ -116,5 +116,5 @@
 - 이 소스 기준의 현재 검증은 전체 백엔드 pytest(1979개, skip 0)와 M20·M19·M18·M17·M16·M15·M14 수락 실행기, M13 수락 실행기 전체(M8–M12 포함)로 대체한다(모두 고정 `4a3dabe`). M13 수락 실행기가 돌리지 않는 과거 범위는 M13 완료 기록의 "대체한 과거 검증 범위"와 같다.
 
 ## 남은 일
-- main 병합은 사용자 승인을 기다린다. push하지 않았다.
+- main 병합 `61d5c03`(사용자 승인, `--no-ff`). push하지 않았다.
 - 새 미해결 문제(`docs/tracking/findings.md`): Stop 훅 나머지 그룹의 시간 초과와 M21 실행기 단위 테스트 누락, 관찰하지 못한 사례, 리간드가 있는 M7 통과 공개 구조 없음, 큰 구조의 시간·크기 미측정, 출처 모델 재검증 비용, 해시하지 않는 의존 파일.
