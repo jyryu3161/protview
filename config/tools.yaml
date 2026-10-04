@@ -83,6 +83,17 @@ tools:
     typical_runtime_s: 1800
     description: 한 수용체·상자·seed·방식으로 M17 후보 여러 개(+선택 부모 행)를 차례로 고정 QuickVina 2.1 도킹하고 후보별 결과와 일괄 요약을 남긴다(qvina 점수, 친화도·순위 아님); durable_job lane
 
+  # Fixed asynchronous M21 lane (protocol openmm_mutation_model_v1); execution is JobQueue, not Run.call. One job = one
+  # M20 candidate: the wild-type reference and the PDBFixer 1.12.0 mutant through the M7 OpenMM procedure. The worker
+  # module and interpreter are fixed by code; arguments are validated on admission (mutation_model_bundle).
+  - name: openmm_mutation_model
+    level: L3
+    version: '1'
+    emits: mutation_model
+    cost_class: expensive
+    typical_runtime_s: 30
+    description: M20 변이 후보 하나의 변이 구조를 PDBFixer 1.12.0으로 만들고 같은 절차의 야생형 기준 구조와 함께 OpenMM Amber14-all + GBn2로 최대 50회 최소화해 각 구조의 전위(kJ/mol)·변이 위치 SASA·주변 중원자 접촉을 남긴다(구조 간 차이·ΔΔG·안정성 아님); durable_job lane
+
   - name: compute_interactions
     level: L2
     accepts: { structure: [prepared_structure, relaxed_structure] }

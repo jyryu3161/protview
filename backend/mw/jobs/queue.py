@@ -1,6 +1,7 @@
 """Event-authoritative local queue and fixed POSIX guardian supervision.
 
-Only fixed OpenMM/ProLIF/fpocket/RDKit-ligand/qvina-docking workers and internal lifecycle fixtures can dispatch.
+Only fixed OpenMM/ProLIF/fpocket/RDKit-ligand/qvina-docking/OpenMM-mutation-model workers and internal lifecycle
+fixtures can dispatch.
 Fixtures are injected by Python tests, never selected by an API field.
 """
 from __future__ import annotations
@@ -34,6 +35,9 @@ from ..core.contracts import check_args
 from ..core.errors import FailureClass, ToolFailure
 from ..core.events import idempotency_key
 from ..core.handles import RUN_ID_RE, canonical_json
+from ..mutation_model_constants import PROTOCOL as MUTATION_MODEL_PROTOCOL
+from ..mutation_model_constants import TIMEOUT_DEFAULT_S as MUTATION_TIMEOUT_DEFAULT_S
+from ..mutation_model_constants import TIMEOUT_MAX_S as MUTATION_TIMEOUT_MAX_S
 from ..runtime.orchestrator import (
     ApprovalRequired,
     ExecutionLink,
@@ -56,6 +60,9 @@ LIGAND_PROTOCOLS = frozenset({"rdkit_inspect_v1", "rdkit_enumerate_v1"})
 DOCKING_PROTOCOL = "qvina_dock_v1"  # M18; job timeout bound 900 s (the generic bound below)
 BATCH_PROTOCOL = "qvina_batch_dock_v1"  # M19; its own job timeout bound and one attempt (no automatic retry)
 BATCH_TIMEOUT_MAX_S = 7800  # = docking_batch_constants.TIMEOUT_MAX_S (in-job clock 7200 s + finishing margin)
+# M21 openmm_mutation_model_v1: its own job timeout bound 240 s (default 120 s), checked with its arguments
+# (argument_invalid) by mutation_model_bundle.admission; MUTATION_TIMEOUT_MAX_S/DEFAULT_S are imported above.
+DEFAULT_TIMEOUT_S = 60      # every other protocol's default when the JobSubmit field is absent
 CHEMICAL_DERIVED_KINDS = frozenset({"chemical_preparation_manifest", "chemical_structure",
                                     "chemical_graph", "chemical_interaction_set"})
 CHEMICAL_INPUT_REASONS = frozenset({"ligand_disconnected", "stereo_unsupported", "stereo_conflict",
@@ -612,19 +619,30 @@ class JobQueue:
         state = self._state()
         return sorted(state.values(), key=lambda item: item["created"], reverse=True)
 
-    def submit(self, protocol: str, args: dict[str, Any], *, timeout_s: float = 60,
+    def submit(self, protocol: str, args: dict[str, Any], *, timeout_s: float | None = None,
                execution_link: ExecutionLink | None = None) -> dict[str, Any]:
+        """``timeout_s`` None is the protocol default (M21: 120 s, every other protocol: 60 s)."""
         link = checked_link(execution_link)
         if not isinstance(protocol, str) or protocol not in JOB_PROTOCOLS:
             raise ToolFailure(FailureClass.input_invalid, "unknown energy protocol")
         if not isinstance(args, dict) or any(key in args for key in
                                               ("argv", "executable", "module", "env", "path", "cwd", "fixture")):
-            raise ToolFailure(FailureClass.input_invalid, "unsafe job arguments")
+            # M21 keeps its closed admission reasons (a non-object is argument_invalid, these keys are unknown).
+            raise ToolFailure(FailureClass.input_invalid, "unsafe job arguments", detail=(
+                {"reason_code": "argument_invalid" if not isinstance(args, dict) else "unknown_field"}
+                if protocol == MUTATION_MODEL_PROTOCOL else None))
         bound = (BATCH_TIMEOUT_MAX_S if protocol == BATCH_PROTOCOL else
+                 MUTATION_TIMEOUT_MAX_S if protocol == MUTATION_MODEL_PROTOCOL else
                  120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS or
                  protocol in LIGAND_PROTOCOLS else 900)
-        if not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or not 0 < timeout_s <= bound:
-            raise ToolFailure(FailureClass.input_invalid, "invalid job timeout")
+        if protocol == MUTATION_MODEL_PROTOCOL:
+            # Range (0, bound] checked in the admission order (argument_invalid) by mutation_model_bundle.admission.
+            timeout_s = MUTATION_TIMEOUT_DEFAULT_S if timeout_s is None else timeout_s
+        else:
+            timeout_s = DEFAULT_TIMEOUT_S if timeout_s is None else timeout_s
+            if (not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or
+                    not 0 < timeout_s <= bound):
+                raise ToolFailure(FailureClass.input_invalid, "invalid job timeout")
         spec = self.run.registry.specs[JOB_PROTOCOLS[protocol][0]]
         if protocol in CHEMICAL_PROTOCOLS:
             from ..chemical_bundle import detect_selected, prepare_selected
@@ -656,6 +674,11 @@ class JobQueue:
             from ..docking_batch_jobs import submission as batch_submission
 
             selected, normalized, input_handles = batch_submission(self.run, args)
+        elif protocol == MUTATION_MODEL_PROTOCOL:
+            from ..mutation_model_bundle import admission as mutation_admission
+
+            mutation_admitted, timeout_s = mutation_admission(self.run, args, timeout_s)
+            normalized = mutation_admitted["arguments"]
         else:
             normalized = check_args(spec, args, self.run.store.kind_of)
             for name in spec.accepts:
@@ -666,7 +689,8 @@ class JobQueue:
             return {"plan_only": True, "protocol_id": protocol, "reason_code": "dry_run",
                     "available": False, "output_handles": [], "normalized_parameters": normalized}
         if (protocol not in CHEMICAL_PROTOCOLS and protocol not in LIGAND_PROTOCOLS and
-                protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, DOCKING_PROTOCOL, BATCH_PROTOCOL}):
+                protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, DOCKING_PROTOCOL, BATCH_PROTOCOL,
+                                 MUTATION_MODEL_PROTOCOL}):
             require_protocol(protocol)
             raise AssertionError("unreachable")
         if protocol == OPENMM_PROTOCOL:
@@ -702,6 +726,16 @@ class JobQueue:
 
             docking_pins, batch_pins = batch_ready()
             implementation = BATCH_IMPLEMENTATION
+        elif protocol == MUTATION_MODEL_PROTOCOL:
+            from ..mutation_model_bundle import IMPLEMENTATION as MUTATION_IMPLEMENTATION
+            from ..mutation_model_bundle import call_key as mutation_call_key
+            from ..mutation_model_bundle import input_handles as mutation_inputs
+            from ..mutation_model_bundle import selection as mutation_selection
+
+            # 412 unavailability, then the M7 preflight (422 openmm_preflight_failed); nothing reserved.
+            selected, mutation_pins = mutation_selection(self.run, mutation_admitted)
+            implementation = MUTATION_IMPLEMENTATION
+            input_handles = mutation_inputs(selected)
         else:
             capability = chemical_capability()
             if not capability["available"]:
@@ -717,6 +751,7 @@ class JobQueue:
                ligand_call_key(protocol, selected, ligand_pins) if protocol in LIGAND_PROTOCOLS else
                docking_call_key(normalized, docking_pins) if protocol == DOCKING_PROTOCOL else
                batch_call_key(selected) if protocol == BATCH_PROTOCOL else
+               mutation_call_key(normalized, mutation_pins) if protocol == MUTATION_MODEL_PROTOCOL else
                idempotency_key(protocol, implementation,
                                {"selected": selected, "parameters": normalized,
                                 **({"worker_sha256": capability["worker_sha256"],
@@ -759,6 +794,8 @@ class JobQueue:
             elif protocol == BATCH_PROTOCOL:
                 job["method"] = docking_pins  # the rows' M18 pins (row call keys and result checks)
                 job["batch_method"] = batch_pins
+            elif protocol == MUTATION_MODEL_PROTOCOL:
+                job["method"] = mutation_pins  # worker SHA-256 + fixed method record (rechecked at start)
             self.run.events.append("job_submitted", job=job, **link_fields(link))
             created = self._rebuild()[job_id]
             return created if link is None else {**created, "execution_ownership": "owned"}
@@ -1201,7 +1238,8 @@ class JobQueue:
                 if self._fixture_mode is None:
                     raise ToolFailure(FailureClass.precondition, "internal fixture adapter unavailable")
             elif (job["protocol_id"] not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, *CHEMICAL_PROTOCOLS,
-                                             *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL} or
+                                             *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL,
+                                             MUTATION_MODEL_PROTOCOL} or
                   self._fixture_mode is not None):
                 raise ToolFailure(FailureClass.precondition, "production adapter unavailable")
             if job["protocol_id"] in CHEMICAL_PROTOCOLS:
@@ -1249,6 +1287,14 @@ class JobQueue:
 
                 if batch_ready() != (job.get("method"), job.get("batch_method")):
                     raise ToolFailure(FailureClass.precondition, "pinned qvina batch worker or engine changed",
+                                      detail={"reason_code": "worker_version_invalid"})
+            if job["protocol_id"] == MUTATION_MODEL_PROTOCOL:
+                from ..mutation_model_bundle import require_ready as mutation_ready
+
+                # 412 openmm_unavailable / pdbfixer_unavailable / process_identity_unavailable before reservation.
+                if mutation_ready() != job.get("method"):
+                    raise ToolFailure(FailureClass.precondition,
+                                      "pinned OpenMM mutation-model worker or engine changed",
                                       detail={"reason_code": "worker_version_invalid"})
             if job["cancel_requested"] or self.run._cancel_path.exists():
                 return self._terminal(job_id, None, "cancelled")
@@ -1377,6 +1423,12 @@ class JobQueue:
 
                     raw = batch_stage(self.run, job, attempt_id, {item["row_index"] for item in batch_reused or []})
                     limit = BATCH_STAGED_LIMIT  # the M18 bound: one receptor (+ sidecar) and one parent SDF + rows
+                elif job["protocol_id"] == MUTATION_MODEL_PROTOCOL:
+                    from ..mutation_model_bundle import STAGED_LIMIT as MUTATION_STAGED_LIMIT
+                    from ..mutation_model_bundle import stage as mutation_stage
+
+                    raw = mutation_stage(job)
+                    limit = MUTATION_STAGED_LIMIT  # the M7 bound: the same staged M7 protein projection
                 else:
                     raw = canonical_json(job["selected"])
                     limit = 32 * 1024 * 1024 if job["protocol_id"] in CHEMICAL_PROTOCOLS else 4_000_000
@@ -1385,7 +1437,8 @@ class JobQueue:
                 data = {"nonce": nonce, "job_id": job_id, "attempt_id": attempt_id,
                         "adapter": (job["protocol_id"] if job["protocol_id"] in {*CHEMICAL_PROTOCOLS, POCKET_PROTOCOL,
                                                                                  *LIGAND_PROTOCOLS, DOCKING_PROTOCOL,
-                                                                                 BATCH_PROTOCOL}
+                                                                                 BATCH_PROTOCOL,
+                                                                                 MUTATION_MODEL_PROTOCOL}
                                     else "openmm_protein_minimize_v1"),
                         "input_sha256": hashlib.sha256(raw).hexdigest()}
                 input_fd = os.open(attempt_dir / "structure.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -1443,7 +1496,8 @@ class JobQueue:
                                source="parent_group_check" if identity else "no_go_or_no_launch",
                                guardian_clean=result.get("clean") if result else None)
         preparation_handles = None if job["fixture_only"] or attempt_dir is None or job["protocol_id"] in {
-            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL} else \
+            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL,
+            MUTATION_MODEL_PROTOCOL} else \
             self._record_preparation(job, attempt_id)
         if job["protocol_id"] == BATCH_PROTOCOL:
             return self._finish_batch(self.get(job_id), attempt_id, attempt_dir, result, error)
@@ -1470,6 +1524,9 @@ class JobQueue:
                          self._docking_worker_error(attempt_dir)
                          if job["protocol_id"] == DOCKING_PROTOCOL and attempt_dir is not None and
                          not result.get("unexpected_members") else
+                         self._mutation_worker_error(attempt_dir)
+                         if job["protocol_id"] == MUTATION_MODEL_PROTOCOL and attempt_dir is not None and
+                         not result.get("unexpected_members") else
                          {"error": "fatal", "message": "worker exit or abandoned helper"})
             else:
                 payload = result.get("payload")
@@ -1492,11 +1549,14 @@ class JobQueue:
             try:
                 if job["protocol_id"] in CHEMICAL_PROTOCOLS:
                     handles = self._publish_chemical(job, attempt_id, attempt_dir, result["payload"])
-                elif job["protocol_id"] in {POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL}:
+                elif job["protocol_id"] in {POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL,
+                                            MUTATION_MODEL_PROTOCOL}:
                     outcome = (self._publish_pocket(job, attempt_id, attempt_dir, result["payload"])
                                if job["protocol_id"] == POCKET_PROTOCOL else
                                self._publish_docking(job, attempt_id, attempt_dir, result["payload"])
                                if job["protocol_id"] == DOCKING_PROTOCOL else
+                               self._publish_mutation_model(job, attempt_id, attempt_dir, result["payload"])
+                               if job["protocol_id"] == MUTATION_MODEL_PROTOCOL else
                                self._publish_ligand(job, attempt_id, attempt_dir, result["payload"]))
                     if type(outcome) is dict:
                         return self._terminal(job_id, attempt_id, outcome["status"], outcome.get("failure"))
@@ -1584,6 +1644,12 @@ class JobQueue:
     @staticmethod
     def _docking_worker_error(attempt_dir: Path) -> dict[str, Any]:
         from ..docking_bundle import worker_error
+
+        return worker_error(attempt_dir)
+
+    @staticmethod
+    def _mutation_worker_error(attempt_dir: Path) -> dict[str, Any]:
+        from ..mutation_model_bundle import worker_error
 
         return worker_error(attempt_dir)
 
@@ -1814,6 +1880,23 @@ class JobQueue:
         try:
             return publish(self.run, job, attempt_id, attempt_dir, descriptor)
         except DockingJobFailure as failure:
+            return {"status": "failed", "failure": failure.to_error()}
+
+    def _publish_mutation_model(self, job: dict[str, Any], attempt_id: str, attempt_dir: Path,
+                                descriptor: dict[str, Any]) -> list[str] | dict[str, Any]:
+        """Same guard as fpocket, RDKit and qvina: stale or cancelled completions store nothing; the size bound is a
+        typed (charged) failure."""
+        from ..mutation_model_bundle import MutationJobFailure, publish
+
+        with self.run._transition():
+            current = self.get(job["job_id"])
+            if current["cancel_requested"] or self.run._cancel_path.exists():
+                return {"status": "cancelled"}
+            if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
+                return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
+        try:
+            return publish(self.run, job, attempt_id, attempt_dir, descriptor)
+        except MutationJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
 
     def _existing_attempt_dir(self, job_id: str, attempt_id: str) -> Path | None:
