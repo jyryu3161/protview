@@ -3622,7 +3622,7 @@
    }
   },
   "synthetic_ties_nulls": {
-   "how": "SYNTHETIC selection-logic input scores (not engine output) with ties (-5.0 x2, -7.5 x2, -6.0 x2) and two no-score candidates (one null_result, one failed); elite 2, tournament 3, neighbours 2, random_fraction 0.5",
+   "how": "SYNTHETIC selection-logic input scores (not engine output) with ties (-5.0 x2, -7.5 x2, -6.0 x2) and two no-score candidates (one null_result, one failed); elite 2, tournament 3, neighbours 3 (T2: was 2, below the spec range 3-30), random_fraction 0.5",
    "pool": "small",
    "scores": {
     "c_1afb7cd3e603456c": -5.0,
@@ -3645,7 +3645,7 @@
     "generations": 4,
     "elite_count": 2,
     "tournament_size": 3,
-    "neighbor_count": 2,
+    "neighbor_count": 3,
     "random_fraction": 0.5,
     "patience": 3,
     "max_new_dockings": 20,
@@ -3741,38 +3741,38 @@
         "state": "scored"
        },
        {
-        "candidate_id": "c_5d474f8db1578d8d",
+        "candidate_id": "c_f1f6983d23c3009f",
         "origin": "similar",
         "parent_candidate_id": "c_2c7a25e0cc0ad3f2",
-        "similarity": "0.842105",
+        "similarity": "0.833333",
         "evaluation": "docked",
         "eval_index": 5,
         "score": null,
-        "state": "failed"
+        "state": "null_result"
        },
        {
-        "candidate_id": "c_c42a53803595e440",
+        "candidate_id": "c_5d474f8db1578d8d",
         "origin": "random",
         "parent_candidate_id": null,
         "similarity": null,
         "evaluation": "docked",
         "eval_index": 6,
-        "score": -5.0,
-        "state": "scored"
+        "score": null,
+        "state": "failed"
        },
        {
-        "candidate_id": "c_1afb7cd3e603456c",
+        "candidate_id": "c_14271764afae517b",
         "origin": "random",
         "parent_candidate_id": null,
         "similarity": null,
         "evaluation": "docked",
         "eval_index": 7,
-        "score": -5.0,
+        "score": -7.5,
         "state": "scored"
        }
       ],
       "min_score": -9.0,
-      "max_score": -5.0
+      "max_score": -7.5
      },
      {
       "index": 3,
@@ -3799,28 +3799,28 @@
         "state": "scored"
        },
        {
-        "candidate_id": "c_f1f6983d23c3009f",
+        "candidate_id": "c_c42a53803595e440",
         "origin": "similar",
         "parent_candidate_id": "c_2c7a25e0cc0ad3f2",
-        "similarity": "0.833333",
+        "similarity": "0.824742",
         "evaluation": "docked",
         "eval_index": 8,
-        "score": null,
-        "state": "null_result"
+        "score": -5.0,
+        "state": "scored"
        },
        {
-        "candidate_id": "c_14271764afae517b",
+        "candidate_id": "c_1afb7cd3e603456c",
         "origin": "random",
         "parent_candidate_id": null,
         "similarity": null,
         "evaluation": "docked",
         "eval_index": 9,
-        "score": -7.5,
+        "score": -5.0,
         "state": "scored"
        }
       ],
       "min_score": -9.0,
-      "max_score": -7.5
+      "max_score": -5.0
      }
     ],
     "rng_calls": [
@@ -3939,6 +3939,17 @@
       "call": "choice",
       "population": [
        "c_1afb7cd3e603456c",
+       "c_5d474f8db1578d8d",
+       "c_f1f6983d23c3009f"
+      ],
+      "result": "c_f1f6983d23c3009f"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_14271764afae517b",
        "c_5d474f8db1578d8d"
       ],
       "result": "c_5d474f8db1578d8d"
@@ -3948,19 +3959,9 @@
       "population": [
        "c_1afb7cd3e603456c",
        "c_c42a53803595e440",
-       "c_f1f6983d23c3009f",
        "c_14271764afae517b"
       ],
-      "result": "c_c42a53803595e440"
-     },
-     {
-      "call": "choice",
-      "population": [
-       "c_1afb7cd3e603456c",
-       "c_f1f6983d23c3009f",
-       "c_14271764afae517b"
-      ],
-      "result": "c_1afb7cd3e603456c"
+      "result": "c_14271764afae517b"
      },
      {
       "call": "sample",
@@ -3986,45 +3987,25 @@
         "state": "scored"
        },
        {
-        "candidate_id": "c_c42a53803595e440",
-        "origin": "random",
-        "parent_candidate_id": null,
-        "similarity": null,
-        "evaluation": "docked",
-        "eval_index": 6,
-        "score": -5.0,
-        "state": "scored"
-       },
-       {
-        "candidate_id": "c_1afb7cd3e603456c",
+        "candidate_id": "c_14271764afae517b",
         "origin": "random",
         "parent_candidate_id": null,
         "similarity": null,
         "evaluation": "docked",
         "eval_index": 7,
-        "score": -5.0,
+        "score": -7.5,
         "state": "scored"
        }
       ],
       "k": 3,
       "result": [
        {
-        "candidate_id": "c_1afb7cd3e603456c",
+        "candidate_id": "c_14271764afae517b",
         "origin": "random",
         "parent_candidate_id": null,
         "similarity": null,
         "evaluation": "docked",
         "eval_index": 7,
-        "score": -5.0,
-        "state": "scored"
-       },
-       {
-        "candidate_id": "c_71188fcf0e6703c9",
-        "origin": "carried",
-        "parent_candidate_id": null,
-        "similarity": null,
-        "evaluation": null,
-        "eval_index": null,
         "score": -7.5,
         "state": "scored"
        },
@@ -4037,23 +4018,33 @@
         "eval_index": null,
         "score": -9.0,
         "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -7.5,
+        "state": "scored"
        }
       ]
      },
      {
       "call": "choice",
       "population": [
-       "c_f1f6983d23c3009f",
-       "c_14271764afae517b"
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440"
       ],
-      "result": "c_f1f6983d23c3009f"
+      "result": "c_c42a53803595e440"
      },
      {
       "call": "choice",
       "population": [
-       "c_14271764afae517b"
+       "c_1afb7cd3e603456c"
       ],
-      "result": "c_14271764afae517b"
+      "result": "c_1afb7cd3e603456c"
      }
     ]
    }
