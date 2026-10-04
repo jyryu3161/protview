@@ -398,7 +398,11 @@ def test_read_and_report_modules_import_no_engine():
         tree = ast.parse((MW / name).read_text())
         imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names}
         imported |= {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+        # The docking-pairs read (T7) needs job states, so only that module may import the queue (no engine).
+        allowed = {"mutation_model_reads.py": {"jobs"}}.get(name, set())
         for forbidden in ("openmm", "pdbfixer", "freesasa", "gemmi", "numpy", "subprocess", "socket", "httpx",
                           "requests", "urllib", "tools", "jobs"):
+            if forbidden in allowed:
+                continue
             assert not any(module == forbidden or module.startswith(forbidden + ".") or
                            module.endswith("." + forbidden) for module in imported), (name, forbidden)
