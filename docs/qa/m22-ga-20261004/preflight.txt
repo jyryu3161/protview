@@ -1,0 +1,297 @@
+M22 T1 착수 확인 (preflight) — 2026-10-04, 브랜치 dryforge/m22-ga-design, 기준 커밋 849acb7
+명세: .dryforge/spec.md 2·3·4·6·7·10절, 계획 T1 (a)(a2)(b)(c)(d)(e)(f).
+제품 코드(mw)는 바꾸지 않았다(docking_worker.py·docking_constants.py·M17–M21 코드 그대로). 서버 .venv에서 RDKit·Meeko·
+MDAnalysis를 import하지 않았다(작업 환경 인터프리터에서만). 외부 요청 0건(작업 모듈 socket 차단 유지 확인, OpenRouter 0회).
+경로 표기: <repo> = 저장소 루트, <S> = 세션 scratchpad/t1(저장소 밖). 프로브 스크립트(build_world.py, prep_payloads.py,
+dock_rows.py, fingerprints.py, measure_selection.py, queue_bounds.py, size_model.py, make_expected.py)는 커밋하지 않았다.
+측정 run: <S>/w1/m22_t1(측정용으로만 update_limits(calls 200, wall 20000) by="test"), <S>/wq/m22_t1_bounds.
+측정 기기: Apple M3 Ultra(28코어), Python 3.11.11(.venv·.deps/docking/venv-locked·.deps/prolif/venv-locked), RDKit 2026.03.6,
+qvina2 --cpu 1.
+새 fixture: backend/tests/fixtures/ligand_ga/(SYNTHETIC-PROVENANCE.md, build_ligand_ga_fixtures.py,
+synthetic-ga-small-blocks.smi, synthetic-ga-pool2000-blocks.smi, synthetic-ga-pool2000-rules.json,
+m17-candidate-set-small-pool.json, independent_ga_oracle.py, expected.json).
+
+판정 요약
+- 멈출 사유 없음. 명세 기대와 어긋나는 측정은 없다. 아래 C1–C5는 T2–T4 전에 조율 세션이 정할 점이다.
+- (a) 도킹 환경에서 RDKit Morgan(반지름 2, 2048비트, rdFingerprintGenerator)·Tanimoto 동작. docking_worker.py를 파일 경로로
+  불러온 같은 프로세스에서도 동작하고 socket 차단은 유지된다. RDKit Tanimoto = 온비트 집합의 정확 분수 |A∩B|/|A∪B|의 float와
+  전부 일치. 별도 RDKit 설치(ProLIF 환경)와 온비트 목록 전부 같음.
+- (a2) 적격 2,000개 행 선택: 후보마다 docking_bundle.submission이면 2,000개 ≈ 99 s, 수용체·부모 검증을 한 번만 하고 나머지를
+  구성하면 0.68 s이고 표본 40개에서 submission 결과와 canonical 바이트 동일. 행 선택 하나 ≈ 2.0 KB, 행 선택을 모두 실은
+  스테이징 5,178,143 B(48 MiB 안). producer()·published_m18_results 덧붙임은 새 이벤트 종류에만 걸려 기존 동작 불변(코드 읽기).
+- (b) 후보 집합 검증 읽기 0.031 s, 적격 평가 2,000행 0.012–0.015 s(최대 0.77 MB), M18 호출 키 2,000개 0.019 s, 재사용 색인
+  조회 0.005 s, producer 0.003 s, validated_result 0.008 s.
+- (c) 기본 값 자유 도킹 한 건 35.0–82.9 s(6건 평균 71.4 s). 새 도킹 100건 ≈ 7,140 s(최대 관찰값이면 ≈ 8,290 s): 기본 total_s
+  7200을 넘을 수 있고 최대 14400 안에는 든다. 기본 설정(예약 52) ≈ 3,710 s. 같은 seed 재현은 프로세스를 바꿔도 결과 바이트
+  동일하고 실제 JobQueue M18 작업 바이트와도 같다.
+- (d) 최악 요약(8세대 × 24 = 192개 항목) 74,646 B < 1 MiB. 개체 게시 이벤트 ≈ 376 B. 새 도킹 100건이면 작업 출력 ≈ 21–40 MB
+  (128 MiB 안), 이벤트 ≈ 28–54 MB 증가.
+- (e) 지금 15000 s는 두 곳에서 거절된다(API JobSubmit le=7800, queue.submit 프로토콜별 bound). 프로토콜 미등록. 그 밖의 실행
+  시간 상한은 없다(guardian MAX_GO_WAIT_S 3600은 GO 대기만). M19 선례대로 이 프로토콜 전용으로 넓히면 적용된다.
+- (f) 독립 oracle(표준 라이브러리, mw 미import)로 기대 경로 10개·산식 표를 expected.json에 기록.
+  `python3 backend/tests/fixtures/ligand_ga/independent_ga_oracle.py --check` 종료 코드 0.
+
+==================================================================================================
+(a) 도킹 환경 RDKit Morgan 지문·Tanimoto와 독립 계산
+==================================================================================================
+명령(저장소 루트):
+  .deps/docking/venv-locked/bin/python -I <S>/fingerprints.py <repo> <S>/w1 docking   → 종료 0
+  .deps/prolif/venv-locked/bin/python -I <S>/fingerprints.py <repo> <S>/w1 plain      → 종료 0
+  python3(RDKit 없음)로 저장한 온비트 목록을 Fraction(|A∩B|, |A∪B|)과 대조                → 종료 0
+방법: docking 모드는 수정하지 않은 backend/mw/jobs/docking_worker.py를 importlib 파일 경로로 먼저 불러(그 모듈이 socket을
+막고 RDLogger를 끈다) 같은 프로세스에서
+rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048).GetFingerprint(Chem.MolFromSmiles(저장 SMILES))를 계산했다.
+풀 = (a2)의 실제 M17 후보 집합 2,000개와 작은 oracle 풀 10개. Tanimoto = DataStructs.BulkTanimotoSimilarity.
+출력:
+  docking env: rdkit 2026.03.6, python 3.11.11, MolFromSmiles None 0/2000. 2,000개 파싱 0.187 s, 지문 0.059 s
+    (tracemalloc 최대 448 KB), 1 대 2,000 bulk Tanimoto 0.00025 s, 100 대 2,000 0.023 s.
+    레거시 AllChem.GetMorganFingerprintAsBitVect와 온비트 같음(앞 50개).
+  prolif env(plain): 같은 값(파싱 0.185 s, 지문 0.058 s).
+  socket.getaddrinfo('localhost', 80) → PermissionError "external network is disabled for the docking worker".
+  small_set: 두 환경 온비트 전부 같음, float(Fraction) == RDKit(10×10 전부), 온비트 수 87–91.
+  big_set: 두 환경 온비트 전부 같음, float(Fraction) == RDKit(행 0 대 2,000 전부), 온비트 수 89–103,
+    행 0 Tanimoto 0.7615–0.9355, 서로 다른 값 58개(동점 많음).
+  작은 풀 Tanimoto(ROUND_HALF_UP 6자리, 행·열 = 풀 순서 P0–P9. 전체 표는 expected.json pools.small):
+    P0: 1.000000 0.913043 0.842105 0.893617 0.851064 0.842105 0.912088 0.902174 0.842105 0.892473
+    P4: 0.851064 0.833333 0.842105 0.816327 1.000000 0.966292 0.851064 0.842105 0.842105 0.833333
+결론: 만족. RDKit Morgan은 도킹 환경 작업 모듈 프로세스에서 쓸 수 있고(새 환경 불필요) 값은 독립 계산과 같다.
+T3 주의: (1) 레거시 GetMorganFingerprintAsBitVect는 "DEPRECATION WARNING: please use MorganGenerator"를 낸다(ProLIF 환경
+stderr에서 관찰. 도킹 환경은 RDLogger를 꺼서 안 보임) → rdFingerprintGenerator를 쓴다. (2) 생성기 기본값
+(includeChirality False, 개수 아님, 기본 원자 불변량)을 코드에 적어 고정한다. (3) Tanimoto 동점이 흔하다(P0 행에 0.842105 셋)
+→ 풀 순서 동점 규칙이 실제로 쓰인다.
+
+==================================================================================================
+(a2) 적격 2,000개의 행 선택 생성 시간·스테이징 크기, producer 덧붙임 영향
+==================================================================================================
+명령:
+  python3 backend/tests/fixtures/ligand_ga/build_ligand_ga_fixtures.py; 이어서 --check          → 종료 0
+  .venv/bin/python <S>/build_world.py <S>/w1                                                     → 종료 0 (12.9 s)
+  .venv/bin/python <S>/measure_selection.py <S>/w1                                               → 종료 0
+후보 집합(실제 M17 작업, JobQueue·guardian·.deps/prolif 작업 환경):
+  2,000개 풀 = 부모 fixtures/docking/public-derived-parent-record0.sdf + 블록 synthetic-ga-pool2000-blocks.smi(1,000개)
+    + 규칙 synthetic-ga-pool2000-rules.json(user_1–3), site_atoms [22], use_fixed false.
+    rdkit_inspect_v1 0.42 s, rdkit_enumerate_v1 11.16 s, 후보 2,000개, stop_reason candidate_limit, raw_products 4,001,
+    outside_site 2,001, duplicate 0, 객체 1,158,781 B.
+  작은 풀 = 같은 부모 + synthetic-ga-small-blocks.smi, use_fixed true → 후보 10개(두 작업 합쳐 1.1 s).
+행 선택 측정(수용체 fixtures/chemical/prolif-vina-rec.pdb, pdb_conect, model 1, 인스턴스 없음. 자유, ligand_range 8 Å,
+seed 7, M18 기본 값):
+  후보마다 docking_bundle.submission: 표본 40개 평균 0.0497 s(0.0458–0.0654) → 2,000개 ≈ 99.4 s
+    (매번 M17 후보 집합 검증 읽기 + 수용체 gemmi 파싱·M11 규칙 검사를 다시 한다)
+  수용체 한 번: submission 1회 + 후보마다 docking_inputs.validate_arguments·input_sha256과 ligand.candidate 교체
+    → 2,000개 0.678 s, tracemalloc 최대 33.6 MB, 표본 40개(앞 20 + 무작위 20)에서 submission 결과와 canonical 바이트 동일.
+  행 선택 하나 2,004–2,011 B. M18 호출 키 2,000개 0.019 s(서로 다른 키 2,000개).
+스테이징 모양(명세 7절 필드, 크기만 측정):
+  수용체 블록 673,072 B + 부모 SDF 블록 9,174 B + pool 2,000행(row_selected 포함, reuse_result_bytes null)
+    = 5,178,143 B(조립 0.039 s). row_selected 대신 후보 4필드 + input_sha256만 실으면 1,958,143 B.
+  최악 수용체(수용체·사이드카·부모 각 10 MiB → base64 ≈ 40 MiB) + 행 선택 ≈ 5 MB → ≈ 45 MiB로 48 MiB 안.
+  명세 전용 한도 128 MiB(재사용 결과 스테이징 포함)에는 여유가 크다. 재사용 결과를 실어 보낸다면 결과 하나 207–403 KB
+  (최악 4 MiB)이므로 100건이면 ≈ 21–40 MB(최악 400 MiB > 128 MiB → 입장 ga_reuse_too_large가 실제로 필요하다).
+producer()·published_m18_results 덧붙임 영향(코드 읽기 docking_bundle.py 802–870, docking_batch_inputs.py 179–197):
+  - producer는 M18 단독 증거와 _batch_row_producer 결과 중 published_seq 최소를 고른다. GA 분기를 새 이벤트 종류
+    ligand_ga_individual_published에만 거는 함수로 더하면 그 이벤트가 없는 기존 run에서 후보 목록이 같아 반환값이 같다.
+    같은 handle을 M18·M19가 먼저 게시했으면 published_seq가 더 이르므로 GA 게시가 기존 대조 기준을 바꾸지 않는다.
+  - published_m18_results는 found.setdefault라 기존 키의 handle이 바뀌지 않는다(같은 호출 키 = 같은 입력 = 같은 handle).
+  - 새 이벤트 종류는 core/events.py의 EventType Literal에 더해야 append할 수 있다(지금 목록에 없다, T4).
+  - 비용: producer 0.003 s, 재사용 색인 0.005 s(이벤트 71개). 둘 다 이벤트 수에 비례하고 GA 하나가 ≤ 101개를 더한다.
+결론: 만족(시간·크기 모두 한도 안). 단 C1·C2 참조.
+
+==================================================================================================
+(b) 적격 평가·재사용 색인 조회 시간과 메모리 (2,000개)
+==================================================================================================
+명령: (a2)의 <S>/measure_selection.py.
+출력:
+  ligand_bundle.validated_candidate_set(2,000개) 0.0315 s. docking_bundle.require_ready(capability handshake) 0.51 s.
+  적격 평가 빈 사양 {}: 0.0124 s, 최대 518 KB, 적격 2,000, passes_all 전부 None(명세: 사양이 비면 전부 적격).
+  적격 평가 {heavy_atoms max 47, pains_exclude true}: 0.0155 s, 최대 769 KB, 적격 51 / 탈락 1,949, passes_all True·False.
+  재사용 색인 published_m18_results + 2,000개 조회: 0.0049 s, 최대 4.1 MB(이벤트 71개, events.jsonl 2,734,907 B).
+    실제 M18 작업 하나의 결과가 후보 0의 호출 키로 조회됨(적중 1개). producer 0.0034 s, validated_result 0.0079 s.
+가늠: 재사용 계획은 적중마다 validated_result(이벤트 로그 재파싱)를 부른다(M19 reuse_plan과 같다).
+  적중 수 × (≈ 8 ms + 로그 크기 비례) → 저장 결과가 수백 개인 run에서 수 초. 시작 단계(실행 잠금 안)라 허용 범위로 본다
+  (관찰이 아니라 가늠).
+결론: 만족.
+
+==================================================================================================
+(c) 실제 도킹 한 건 시간(dock_row), 100건 현실 시간, 같은 seed 재현
+==================================================================================================
+명령:
+  .venv/bin/python <S>/prep_payloads.py <S>/w1                                                      → 종료 0
+  .deps/docking/venv-locked/bin/python -I <S>/dock_rows.py <repo> <S>/w1 default once               → 종료 0
+  .deps/docking/venv-locked/bin/python -I <S>/dock_rows.py <repo> <S>/w1 small once                 → 종료 0
+  .deps/docking/venv-locked/bin/python -I <S>/dock_rows.py <repo> <S>/w1 small repeat               → 종료 0
+  .venv/bin/python <S>/measure_selection.py <S>/w1(실제 qvina_dock_v1 JobQueue 작업 1개)            → 종료 0
+방법: 수정하지 않은 서버 docking_bundle.submission·stage가 만든 M18 payload 바이트를, 작업 환경에서 docking_worker.py를
+파일 경로로 불러 receptor_inputs·receptor_prepared 한 번 + 후보마다 dock_row로 계산했다(M19·M22 작업 모듈 방식).
+시간은 dock_row 호출 앞뒤 monotonic.
+출력(기본 값: seed 7, exhaustiveness 8, num_modes 9, energy_range 3, ligand_range margin 8 Å. 2,000개 풀의 6개):
+  모듈 import 0.46 s, 수용체 준비 0.91 s
+  풀 번호  후보 id              시간 s  모드  모드1 점수  결과 바이트
+  0        c_c42a53803595e440    35.04   6     -13.0      206,838
+  400      c_058468cdf777213f    80.12   9     -10.8      357,264
+  800      c_5257b120cfe89a81    73.10   9     -10.2      402,730
+  1200     c_d25176517800105c    74.87   9     -12.0      385,533
+  1600     c_91f1866a57134d81    82.90   9     -10.8      382,417
+  1999     c_72cb388f3b03649d    82.54   9     -11.1      369,704
+  0(같은 프로세스 반복)          35.16   6     -13.0      결과 sha256 76c9521e… 동일
+  평균 71.4 s(6건), 최소 35.0, 최대 82.9. 400번 이후가 느린 이유는 user_2·user_3 규칙의 긴 사슬 생성물로 회전결합이 많기
+  때문이다(중원자·회전결합 수는 <S>/w1/payloads.json).
+  실제 JobQueue qvina_dock_v1 작업(후보 0, 같은 값): 37.46 s(guardian·인터프리터 시작·import·수용체 준비 포함).
+    작업 result.json 바이트 = 직접 dock_row 출력(job_id·attempt_id만 그 작업 값)의 canonical 바이트(동일).
+  작은 풀(manual 12 Å 상자, exhaustiveness 1, num_modes 2, seed 1): 10건 6.9–11.8 s, 다른 프로세스 두 번의 결과 sha256 10/10 동일.
+  점수(관찰값. qvina 점수 kcal/mol, Vina 계열 스코어링 함수 값이며 친화도가 아니다. 결합에 대해 아무것도 말하지 않는다):
+    P0 -8.5, P1 -10.1, P2 -6.4, P3 -9.9, P4 -4.9, P5 -5.8, P6 -2.7, P7 -5.0, P8 2.3, P9 -4.3
+    (expected.json t1_observations.small_pool_docking).
+가늠(화면 안내문 근거): 새 도킹 100건 × 평균 71.4 s ≈ 7,140 s(+ 시작·수용체 준비 수 초), 최대 관찰값이면 ≈ 8,290 s.
+  기본 설정(예약 52건) ≈ 3,710 s(최대 ≈ 4,310 s)로 기본 total_s 7200 안.
+  명세 식 full_run_may_be_partial = reserved_units × 300 > total_s는 상한 기준 경고로 맞다(기본 설정 52 × 300 = 15,600 > 7,200
+  → true인데 실제로는 대개 끝난다. 화면 문구는 "끝까지 못 갈 수 있음"이어야 하고 "부분 완료됨"이 아니다).
+  시간은 exhaustiveness·회전결합·상자 크기에 비례해 늘어나므로(exhaustiveness 32면 대략 4배) 4시간 상한에서도 100건이
+  다 안 될 수 있다. 개체당 300 s 상한까지 기본 값에서 여유 3.6배.
+결론: 만족. 같은 seed·같은 입력이면 dock_row 결과는 프로세스·반복과 무관하게 바이트 동일하고 단독 M18 작업과 같다.
+
+==================================================================================================
+(d) 개체 100 + 세대 8 요약·이벤트 크기
+==================================================================================================
+명령: .venv/bin/python <S>/size_model.py <S>/w1 → 종료 0
+  (명세 4절 요약 필드를 최대 폭 자리값으로 채운 크기 모델이다. 제품 출력도 과학 값도 아니다.)
+출력:
+  개체 항목 192개(8세대 × 24, 이어받음 포함, 모든 필드 채움) + G1–G3 + pins + 필터 사양 포함 요약 74,646 B
+    (1 MiB 한도의 7.1%). 개체 항목 하나 365 B.
+  ligand_ga_individual_published 이벤트 한 줄 ≈ 376 B.
+  docking_result 객체 이벤트(실측): 결과 내용 207,323 B → object_created 줄 277,061 B(base64 ≈ 1.33배).
+    기본 값 결과 내용 207–403 KB.
+가늠: 새 도킹 100건 → 작업 출력 ≈ 21–40 MB(출력 128 MiB의 16–31%), 이벤트 ≈ 28–54 MB 증가(M19 51행 ≈ 21 MB와 같은 차수).
+  최악(결과마다 4 MiB × 100 = 400 MiB)은 출력 128 MiB에 먼저 닿으므로 작업 모듈이 총량을 세고 resource_exceeded로 멈춰야
+  한다(M19와 같다). 단일 이벤트 줄 상한 MAX_GLOBAL_EVENT_LINE 256 MiB에는 걸리지 않는다.
+  진행 폴링·_unclosed_jobs(전역 20 s 스캔)의 로그 재파싱 비용이 run 이벤트 바이트에 비례하는 점은 M19와 같다
+  (findings의 이벤트 로그 재파싱 항목).
+  job_submitted 이벤트: 행 선택 2,000개를 작업 기록 selected에 담으면 한 줄 ≈ 4.0 MB가 된다(C2).
+결론: 만족.
+
+==================================================================================================
+(e) 큐가 15000 s 시간 상한과 스테이징을 받는가 (M19 7800 경로 대조)
+==================================================================================================
+명령: MW_RUNS_DIR=<S>/wq .venv/bin/python <S>/queue_bounds.py <S>/wq → 종료 0(작업 시작·과금 없음).
+  코드 읽기: queue.py 58–64, 622–645, 1285–1304, 1328–1340, 1368–1460, 1499–1502, 1973; app.py 179–183, 1426–1446;
+  guardian.py 39–71, 277–358, 379–384; runtime/orchestrator.py 254–269, 675–676; runtime/guards.py 26–31.
+출력:
+  JobSubmit.timeout_s = Field(gt=0, le=7800, allow_inf_nan=False). JobSubmit(7800) 통과, 7801·15000 less_than_equal.
+  queue.submit: qvina_batch_dock_v1 7800 → 인자 검사로 진행(invalid_job_arguments), 7801·15000 → "invalid job timeout",
+    qvina_dock_v1 901 → "invalid job timeout", qvina_ga_dock_v1 15000 → "unknown energy protocol"(미등록).
+  POST /jobs qvina_batch_dock_v1 7801 → 422 {"detail":{"error":"input_invalid","message":"invalid job request"}}(요청 모델)
+  POST /jobs qvina_dock_v1 7800 → 422 {"ok":false,"error":"input_invalid","message":"invalid job timeout",...}(큐)
+  queue.DEFAULT_TIMEOUT_S 60, queue.BATCH_TIMEOUT_MAX_S 7800, guardian.MAX_GO_WAIT_S 3600.0.
+관찰:
+  - 고쳐야 할 곳(명세 2절의 세 곳 + 부속 분기): API le(7800), queue.submit bound 연쇄(BATCH 7800 / M21 240 /
+    화학·포켓·리간드·OpenMM 120 / 그 밖 900), 그리고 BATCH_PROTOCOL 분기들 — 시작 시도 한도(1303: attempt_ordinal ≥ 1 거절),
+    retry 거절(1973), 예약 units(1328–1340), 스테이징 한도(1420–1425), adapter 이름(1438–1441), 종료 게시(1499–1502, 2065).
+    GA도 같은 자리에 GA 분기가 필요하다.
+  - 마감 = started + min(run 남은 활동 시간, timeout_s)(1460). 기본 BudgetLimits는 wall 1800 s·expensive_calls 8이므로
+    기본 GA(예약 52, 필요 7,800 s)는 입장에서 429가 나고 사람 증액이 먼저다(명세 6절과 같음).
+    reserve_attempt(units=N)은 N이 음이 아닌 정수면 되고 상한이 없다.
+  - guardian: MAX_GO_WAIT_S 3600은 GO 대기 상한(go_wait = min(3600, 남은 시간 + 5))이고 GO 뒤 실행 시간 상한은 없다.
+    RSS 2 GiB(자식 포함)·stdout/stderr 1 MiB만 감시한다. 진입점·인터프리터 분기·MONITORED_ADAPTERS·종료 기록 한도
+    (BATCH 64 KiB)에 GA 항목이 필요하다. psutil 신원 기록에는 나이·만료가 없다(M19 확인 그대로).
+  - 15000 s 동안 run 실행 잠금과 전역 작업 슬롯을 쥔다(M19 2시간과 같은 구조, 최대 4시간 10분). 그동안 같은 run의 쓰기와
+    다른 run의 비싼 작업이 막힌다.
+  - 스테이징: 큐가 프로토콜별 한도로 structure.json 크기를 거절한다(1435). GA 분기와 작업 모듈 읽기 한도를 같은 값으로 둔다.
+결론: 15000 s는 적용할 수 있다(위 두 상한을 이 프로토콜 전용으로 넓히고 분기를 더하면 된다. M19 선례). 큐가 시간 상한을
+  적용하지 못하는 경로는 없다. API le를 15000으로 올리면 다른 프로토콜의 7800 < t ≤ 15000 요청은 상태 코드 422는 그대로지만
+  본문이 요청 모델 오류("invalid job request")에서 큐 오류("invalid job timeout")로 바뀐다(C3).
+  이 본문을 고정한 기존 테스트는 찾지 못했다(test_docking_batch_jobs.py 251–253은 상태 코드만 본다. M21
+  test_mutation_model_jobs.py 535의 7801은 그 프로토콜 전용 argument_invalid 경로라 영향이 없을 것으로 읽힌다 →
+  T4에서 실제 실행으로 확인한다).
+
+==================================================================================================
+(f) 손 oracle: 이어받음·자리 수 산식과 명세 3절 난수 호출 순서의 독립 구현
+==================================================================================================
+명령:
+  python3 <S>/make_expected.py <repo> <S>/w1                                        → 종료 0(expected.json 생성)
+  python3 backend/tests/fixtures/ligand_ga/independent_ga_oracle.py --check         → 종료 0
+  .venv/bin/python -m ruff check backend/tests/fixtures/ligand_ga/                  → 종료 0
+독립성: backend/tests/fixtures/ligand_ga/independent_ga_oracle.py는 표준 라이브러리만 쓰고 mw를 import하지 않으며, 제품 GA
+  코드가 생기기 전에 명세 3절만 읽고 썼다. 유사도는 저장 온비트 집합의 정확 분수이고 정렬은 그 float(= RDKit double, (a)).
+  난수는 random.Random(ga.seed)이고 호출은 sample·choice뿐이며, 모든 호출의 모집단과 결과를 expected.json의 rng_calls에
+  적어 두었다(T3가 호출 단위로 대조할 수 있다).
+산식(손 계산, expected.json arithmetic):
+  reserved_units = min(max_new, P + (G-1)(P-E)), wall_clock_s = min(total_s + 600, units × 300 + 300),
+  full_run_may_be_partial = units × 300 > total_s
+    기본 P12 G5 E2 max60 total7200: min(60, 12 + 4×10 = 52) = 52, min(7800, 15900) = 7800, 15600 > 7200 → true
+    최대 P24 G8 E0 max100 total14400: min(100, 24 + 7×24 = 192) = 100, min(15000, 30300) = 15000 → true
+    최소 P4 G1 E2 max4 total600: min(4, 4) = 4, min(1200, 1500) = 1200, 1200 > 600 → true
+    P12 G1 max100 total7200: 12, min(7800, 3900) = 3900, 3600 > 7200 → false
+    P6 G8 E4 max100 total14400: 6 + 7×2 = 20, min(15000, 6300) = 6300 → false
+    P12 G5 E2 max60 total600: 52, min(1200, 15900) = 1200 → true
+  무작위 자리 r = floor(random_fraction × slots + 0.5): (0.2,10) = 2, (0.2,24) = 5, (0.25,2) = 1, (0.25,3) = 1,
+    (0.25,10) = 3, (0.15,3) = 0, (0.35,5) = 2 등 64행. random_fraction 0.00–0.50(0.01 간격) × slots 2–24의 552쌍에서
+    float 계산과 정확 십진 계산이 다른 경우 0건(T2가 부동소수 반올림을 따로 다룰 필요는 없다).
+기대 경로 10개(expected.json ga_vectors. 모두 작은 풀 P0–P9 = M17 후보 저장 순서):
+  small_observed_seed7(관찰 점수, P4 G3 E1 토너먼트 2 이웃 3 r 0.25 patience 2 max 10, seed 7) — 손 추적:
+    세대 1 sample(P0..P9, 4) → P5, P2, P6, P9(점수 -5.8, -6.4, -2.7, -4.3), 평가 순서 0–3 docked.
+    세대 2 이어받음 = 최저 P2(-6.4). slots 3, r = floor(0.75 + 0.5) = 1, 유사 2.
+      유사 1: sample([P5,P2,P6,P9], 2) → [P5,P9], 부모 P5(-5.8 < -4.3). 미선택 적격의 P5 Tanimoto는
+        P4 .966292 > P0 .842105 > P7 .833333 = P8 .833333(동점은 풀 순서 → P7) > P1 .824742 > P3 .808081
+        → 이웃 [P4,P0,P7], choice → P7.
+      유사 2: sample → [P5,P2], 부모 P2. P0 .842105 = P4 .842105(동점 → P0 먼저) > P8 .833333 → [P0,P4,P8], choice → P8.
+      무작위: choice([P0,P1,P3,P4]) → P0. 세대 2 = P2(carried), P7, P8, P0. 최솟값 -8.5 < -6.4라 연속 카운터 0.
+    세대 3 이어받음 P0(-8.5). 유사 1: sample([P2,P7,P8,P0], 2) → [P7,P2], 부모 P2, 이웃 [P4,P1,P3] → P4.
+      유사 2: → [P0,P7], 부모 P0, 이웃 [P1 .913043, P3 .893617] → P1. 무작위 [P3] → P3.
+      G = 3이므로 generations_complete. new_dockings 10, reused 0.
+    손 추적과 oracle 출력이 같다.
+  small_observed_seed7_reuse_two: 같은 설정 + P7·P8 재사용 가능 → 같은 경로, 그 둘은 reused, new 8, reused 2.
+  small_observed_seed8: GA seed만 8 → 다른 경로(도킹 점수는 같다).
+  small_observed_limit5: max_new 5 → 세대 2의 둘째 새 개체에서 docking_limit, partial, generations_done 1.
+  small_observed_limit5_reuse_two: max_new 5 + P7·P8 재사용 → 세대 2 완료, 세대 3에서 docking_limit, generations_done 2
+    (저장된 결과 집합이 다르면 같은 GA seed도 다른 경로를 낸다 = 고정 문장 G3의 근거).
+  synthetic_ties_nulls(합성 점수. 동점 세 쌍, 점수 없음 둘(null_result 하나·failed 하나), P5 G4 E2 T3 K2 r0.5) →
+    pool_exhausted, 완료 세대 3. 점수 없는 개체는 부모 후보에서 빠지고 표 끝에 남는다.
+  synthetic_no_scored_parent: 세대 1 전부 점수 없음 → 세대 2는 이어받음 0, 토너먼트 호출 없이 전부 무작위.
+  synthetic_pool_exhausted: P4 E0 G8, 적격 10개 → 4 + 4 + 2개 뒤 채울 자리 없음 → pool_exhausted(세대 3은 개체 2개).
+  synthetic_no_change: 모든 점수 -6.0, patience 1 → 세대 2 뒤 no_change.
+  synthetic_filter_excluded: P1·P4·P8을 적격에서 뺌 → 한 번도 뽑히지 않고 도킹도 되지 않는다.
+명세가 비워 둔 해석은 oracle의 ASSUMPTIONS A1–A7로 적어 두었다(expected.json assumptions에도 있다):
+  A1 세대 개체 순서 = 이어받음(점수 오름차순, 동점 풀 순서) 다음 새 개체의 평가 순서.
+  A2 "아직 뽑히지 않은" = 이 실행에서 한 번도 뽑히지 않은(만들고 있는 세대의 앞 자리 포함).
+  A3 중간에 멈춘 세대는 이어받음 + 평가를 끝낸 개체만 적는다(뽑혔지만 평가 전인 개체는 적지 않는다).
+  A4 마지막 세대에서 patience 조건이 동시에 차면 종료 이유는 generations_complete.
+  A5 최솟값 비교에서 None → 숫자는 "내려감", None → None과 x → y(y ≥ x)는 "내려가지 않음".
+  A6 뽑을 후보가 없으면 그 자리에서는 난수를 부르지 않는다(결과는 바뀌지 않는다).
+  A7 새 자리를 하나도 못 채운 세대는 기록하지 않고 pool_exhausted로 끝낸다.
+결론: 만족. T2·T3는 A1–A7을 확정하고(필요하면 조율 세션이 명세를 고친 뒤) oracle·expected.json을 함께 갱신해야 한다.
+
+==================================================================================================
+(g) 착수 전에 정할 점 (멈출 사유는 아님)
+==================================================================================================
+C1. 스테이징에 무엇을 싣는가. 행 선택 2,000개를 모두 실으면 5.18 MB(이 fixture)이고 48 MiB·128 MiB 안이지만, 작업 모듈이
+  행 선택을 쓰지는 않는다(M19 작업 모듈처럼 후보 4필드와 공통 블록만 쓴다). 후보 4필드 + input_sha256만 실으면 1.96 MB다.
+  명세 7절 표현("row_selected(M18 행 선택, 적격만)")을 그대로 지킬지, 작업 모듈이 쓰는 최소 필드로 할지 T2·T3가 정한다.
+  어느 쪽이든 서버는 점수·상태를 결과 파일에서 다시 만들고 행 선택을 자기 기록으로 들고 있어야 한다(M19와 같음).
+C2. 행 선택 2,000개를 작업 기록(job["selected"])에 담으면 job_submitted 이벤트가 한 줄 ≈ 4.0 MB가 되고, 작업 상태 읽기가
+  이벤트 로그를 다시 접을 때마다 그만큼 읽는다(M19 51행 읽기 비용의 40배 규모). 게시·재사용·보고서에 필요한 것은
+  평가된 개체(≤ 101개)의 행 선택뿐이므로, 선택 기록을 요약·게시 경로에서 어떻게 보관할지 T2·T4가 정해야 한다
+  (예: 적격 풀 전체 대신 요약에 담긴 개체의 행 선택만).
+C3. API JobSubmit.timeout_s의 le를 7800 → 15000으로 올리면 다른 프로토콜에서 7800 < t ≤ 15000 요청의 422 본문이 바뀐다((e)).
+  상태 코드는 그대로이고 M21 전용 argument_invalid 경로도 그대로로 읽히지만, T4에서 기존 테스트 실행으로 확인한다.
+C4. 기본 설정에서도 full_run_may_be_partial이 true다(52 × 300 = 15,600 > 7,200). 실제로는 기본 설정이 ≈ 3,710 s로 끝난다
+  ((c)). 화면 문구가 "끝까지 못 갈 수 있음"이어야 하고 "부분 완료"로 읽히면 안 된다.
+C5. 100건 상한을 다 쓰면 기본 total_s 7200으로는 모자랄 수 있다(측정 평균으로 ≈ 7,140 s, 느린 후보 기준 ≈ 8,290 s).
+  명세 범위(total_s 최대 14400, 작업 15000)는 이를 담을 수 있으므로 명세 수정은 필요 없지만, 화면이 total_s를 기본값으로
+  두고 max_new_dockings를 100으로 올리는 조합에서 time_exhausted가 흔할 것이라는 점을 안내해야 한다.
+
+==================================================================================================
+제외·미측정
+==================================================================================================
+- 작업 큐를 통한 GA 작업은 프로토콜이 없어 돌리지 못했다((e)에서 unknown energy protocol 확인). 실제 GA 작업의 시작·취소·
+  시간 소진·부분 게시는 T3·T4의 실제 엔진 테스트에서 처음 관찰된다.
+- 100건을 실제로 연속 도킹하지 않았다(6건을 재고 외삽했다). 4시간 실행의 전역 잠금·폴링 거동은 T8 오프스크린에서 본다.
+- 재사용 색인 비용은 결과 1개 run에서만 쟀다. 결과가 수백 개인 run은 가늠이다.
+- 코어 고정·부모 기준 행·여러 부위는 명세 범위 밖이라 재지 않았다.
+- fixture의 2,000개 풀은 합성 블록(일부는 화학적으로 특이한 사슬)이다. 시간·크기 측정용이며 화합물 제안이 아니다.
+
+==================================================================================================
+(추가 확인) 작은 oracle 풀의 재현
+==================================================================================================
+명령: PYTHONPATH=backend:backend/tests .venv/bin/python -c "...(새 run m22_t1_repeat에서 실제 rdkit_inspect_v1 →
+  rdkit_enumerate_v1 재실행)..." → 종료 0
+출력: 후보 id·순서 동일(True), candidates 블록 canonical 바이트 동일(True). 다른 필드는 run마다 바뀌는 입력 handle 셋
+  (block_handles, inspection_handle, parent_handle)뿐이다.
+결론: 작은 풀은 테스트가 자기 run에서 실제 M17 작업으로 다시 만들 수 있다(fixture는 id·SMILES·속성·순서의 기준으로만 쓴다).

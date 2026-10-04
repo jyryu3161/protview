@@ -60,6 +60,11 @@ LIGAND_PROTOCOLS = frozenset({"rdkit_inspect_v1", "rdkit_enumerate_v1"})
 DOCKING_PROTOCOL = "qvina_dock_v1"  # M18; job timeout bound 900 s (the generic bound below)
 BATCH_PROTOCOL = "qvina_batch_dock_v1"  # M19; its own job timeout bound and one attempt (no automatic retry)
 BATCH_TIMEOUT_MAX_S = 7800  # = docking_batch_constants.TIMEOUT_MAX_S (in-job clock 7200 s + finishing margin)
+# M22 qvina_ga_dock_v1: its own job timeout bound 15000 s (= ga total_s max 14400 + 600) and no server default; the
+# range [ga.total_s + 600, 15000] is checked with its arguments (invalid_job_arguments) by ligand_ga_inputs. One attempt.
+GA_PROTOCOL = "qvina_ga_dock_v1"
+GA_TIMEOUT_MAX_S = 15000    # = ligand_ga_constants.TIMEOUT_MAX_S
+SUMMARY_PROTOCOLS = frozenset({BATCH_PROTOCOL, GA_PROTOCOL})   # one attempt; staged results + summary after cleanup
 # M21 openmm_mutation_model_v1: its own job timeout bound 240 s (default 120 s), checked with its arguments
 # (argument_invalid) by mutation_model_bundle.admission; MUTATION_TIMEOUT_MAX_S/DEFAULT_S are imported above.
 DEFAULT_TIMEOUT_S = 60      # every other protocol's default when the JobSubmit field is absent
@@ -558,6 +563,8 @@ class JobQueue:
                 jobs[event["job_id"]].update(cleanup_status="pending", blocked_reason=event["reason"])
             elif kind == "docking_batch_published":
                 jobs[event["job_id"]]["batch_summary_handle"] = event["summary_handle"]
+            elif kind == "ligand_ga_published":
+                jobs[event["job_id"]]["ga_summary_handle"] = event["summary_handle"]
             elif kind == "job_terminal":
                 item = jobs[event["job_id"]]
                 if event["status"] not in TERMINAL:
@@ -632,12 +639,17 @@ class JobQueue:
                 {"reason_code": "argument_invalid" if not isinstance(args, dict) else "unknown_field"}
                 if protocol == MUTATION_MODEL_PROTOCOL else None))
         bound = (BATCH_TIMEOUT_MAX_S if protocol == BATCH_PROTOCOL else
+                 GA_TIMEOUT_MAX_S if protocol == GA_PROTOCOL else
                  MUTATION_TIMEOUT_MAX_S if protocol == MUTATION_MODEL_PROTOCOL else
                  120 if protocol in {OPENMM_PROTOCOL, POCKET_PROTOCOL} or protocol in CHEMICAL_PROTOCOLS or
                  protocol in LIGAND_PROTOCOLS else 900)
         if protocol == MUTATION_MODEL_PROTOCOL:
             # Range (0, bound] checked in the admission order (argument_invalid) by mutation_model_bundle.admission.
             timeout_s = MUTATION_TIMEOUT_DEFAULT_S if timeout_s is None else timeout_s
+        elif protocol == GA_PROTOCOL:
+            # No default (spec 2); (0, bound] and >= ga.total_s + 600 are checked with the arguments
+            # (invalid_job_arguments) by ligand_ga_inputs.validate_arguments, whose ceiling is this bound.
+            pass
         else:
             timeout_s = DEFAULT_TIMEOUT_S if timeout_s is None else timeout_s
             if (not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or
@@ -674,6 +686,10 @@ class JobQueue:
             from ..docking_batch_jobs import submission as batch_submission
 
             selected, normalized, input_handles = batch_submission(self.run, args)
+        elif protocol == GA_PROTOCOL:
+            from ..ligand_ga_jobs import submission as ga_submission
+
+            selected, normalized, input_handles = ga_submission(self.run, args, timeout_s)  # timeout <= bound
         elif protocol == MUTATION_MODEL_PROTOCOL:
             from ..mutation_model_bundle import admission as mutation_admission
 
@@ -690,7 +706,7 @@ class JobQueue:
                     "available": False, "output_handles": [], "normalized_parameters": normalized}
         if (protocol not in CHEMICAL_PROTOCOLS and protocol not in LIGAND_PROTOCOLS and
                 protocol not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, DOCKING_PROTOCOL, BATCH_PROTOCOL,
-                                 MUTATION_MODEL_PROTOCOL}):
+                                 GA_PROTOCOL, MUTATION_MODEL_PROTOCOL}):
             require_protocol(protocol)
             raise AssertionError("unreachable")
         if protocol == OPENMM_PROTOCOL:
@@ -726,6 +742,15 @@ class JobQueue:
 
             docking_pins, batch_pins = batch_ready()
             implementation = BATCH_IMPLEMENTATION
+        elif protocol == GA_PROTOCOL:
+            from ..ligand_ga_bundle import call_key as ga_call_key
+            from ..ligand_ga_jobs import IMPLEMENTATION as GA_IMPLEMENTATION
+            from ..ligand_ga_jobs import complete_job as ga_complete_job
+            from ..ligand_ga_jobs import require_admission as ga_admission
+            from ..ligand_ga_jobs import require_ready as ga_ready
+
+            docking_pins, ga_pins = ga_ready()
+            implementation = GA_IMPLEMENTATION
         elif protocol == MUTATION_MODEL_PROTOCOL:
             from ..mutation_model_bundle import IMPLEMENTATION as MUTATION_IMPLEMENTATION
             from ..mutation_model_bundle import call_key as mutation_call_key
@@ -751,6 +776,7 @@ class JobQueue:
                ligand_call_key(protocol, selected, ligand_pins) if protocol in LIGAND_PROTOCOLS else
                docking_call_key(normalized, docking_pins) if protocol == DOCKING_PROTOCOL else
                batch_call_key(selected) if protocol == BATCH_PROTOCOL else
+               ga_call_key(selected, docking_pins, ga_pins) if protocol == GA_PROTOCOL else
                mutation_call_key(normalized, mutation_pins) if protocol == MUTATION_MODEL_PROTOCOL else
                idempotency_key(protocol, implementation,
                                {"selected": selected, "parameters": normalized,
@@ -761,6 +787,7 @@ class JobQueue:
             state = self._rebuild()
             # M19: only an active or a complete batch with this key is returned; a partial one never blocks.
             existing = (complete_job(self.run, state, key) if protocol == BATCH_PROTOCOL else
+                        ga_complete_job(self.run, state, key) if protocol == GA_PROTOCOL else
                         next((job for job in state.values() if job["call_key"] == key), None))
             if link is not None:
                 if link.admit is not None:
@@ -774,6 +801,9 @@ class JobQueue:
             if protocol == BATCH_PROTOCOL:
                 self.run._refresh()
                 batch_budget(self.run, selected, docking_pins)  # 429 batch_limit_raise_required, nothing charged
+            elif protocol == GA_PROTOCOL:
+                self.run._refresh()
+                ga_admission(self.run, selected, docking_pins)  # 422 ga_reuse_too_large, 429 ga_limit_raise_required
             job_id = "job_" + uuid.uuid4().hex
             job = {"job_id": job_id, "run_id": self.run.run_id, "root_call_id": job_id,
                    "protocol_id": protocol, "tool_id": JOB_PROTOCOLS[protocol][0], "call_key": key,
@@ -794,6 +824,9 @@ class JobQueue:
             elif protocol == BATCH_PROTOCOL:
                 job["method"] = docking_pins  # the rows' M18 pins (row call keys and result checks)
                 job["batch_method"] = batch_pins
+            elif protocol == GA_PROTOCOL:
+                job["method"] = docking_pins  # the individuals' M18 pins (call keys and result checks)
+                job["ga_method"] = ga_pins
             elif protocol == MUTATION_MODEL_PROTOCOL:
                 job["method"] = mutation_pins  # worker + dependency SHA-256 + fixed method record (rechecked at start)
             self.run.events.append("job_submitted", job=job, **link_fields(link))
@@ -1238,7 +1271,7 @@ class JobQueue:
                 if self._fixture_mode is None:
                     raise ToolFailure(FailureClass.precondition, "internal fixture adapter unavailable")
             elif (job["protocol_id"] not in {OPENMM_PROTOCOL, POCKET_PROTOCOL, *CHEMICAL_PROTOCOLS,
-                                             *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL,
+                                             *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL, GA_PROTOCOL,
                                              MUTATION_MODEL_PROTOCOL} or
                   self._fixture_mode is not None):
                 raise ToolFailure(FailureClass.precondition, "production adapter unavailable")
@@ -1288,6 +1321,12 @@ class JobQueue:
                 if batch_ready() != (job.get("method"), job.get("batch_method")):
                     raise ToolFailure(FailureClass.precondition, "pinned qvina batch worker or engine changed",
                                       detail={"reason_code": "worker_version_invalid"})
+            if job["protocol_id"] == GA_PROTOCOL:
+                from ..ligand_ga_jobs import require_ready as ga_ready
+
+                if ga_ready() != (job.get("method"), job.get("ga_method")):
+                    raise ToolFailure(FailureClass.precondition, "pinned qvina GA worker or engine changed",
+                                      detail={"reason_code": "worker_version_invalid"})
             if job["protocol_id"] == MUTATION_MODEL_PROTOCOL:
                 from ..mutation_model_bundle import require_ready as mutation_ready
 
@@ -1300,7 +1339,7 @@ class JobQueue:
                 return self._terminal(job_id, None, "cancelled")
             if self.run.dry_run:
                 raise ToolFailure(FailureClass.precondition, "fixture execution disabled in dry_run")
-            if job["attempt_ordinal"] >= (1 if job["protocol_id"] == BATCH_PROTOCOL else 4):
+            if job["attempt_ordinal"] >= (1 if job["protocol_id"] in SUMMARY_PROTOCOLS else 4):
                 raise ToolFailure(FailureClass.resource_exceeded, "root recovery allowance exhausted")
             try:
                 supported()
@@ -1334,6 +1373,17 @@ class JobQueue:
                 batch_reused = [{"row_index": index, "handle": handle} for index, handle in enumerate(plan)
                                 if handle is not None]
                 units = len(plan) - len(batch_reused)
+            ga_reused = None
+            if job["protocol_id"] == GA_PROTOCOL:
+                from ..ligand_ga_inputs import require_reuse_size, reserved_units
+                from ..ligand_ga_jobs import reuse_plan as ga_reuse_plan
+
+                # Reuse is decided here, once, under the run owner; the reservation is reserved_units (no refund).
+                ga_reused = [{"candidate_id": cid, "handle": handle}
+                             for cid, handle in ga_reuse_plan(self.run, job["selected"], job["method"]).items()]
+                # The reuse set can have grown since admission: 422 ga_reuse_too_large before anything is charged.
+                require_reuse_size(sum(self.run.store.meta(item["handle"])["size"] for item in ga_reused))
+                units = reserved_units(job["selected"]["arguments"]["ga"])
             try:
                 self.run.reserve_attempt(attempt_id, job["root_call_id"], job["tool_id"], {},
                                          job_id=job_id, before_reserve=gate,
@@ -1355,7 +1405,8 @@ class JobQueue:
                 raise
             started = self.run.monotonic()
             try:
-                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd, link, batch_reused)
+                return self._execute_reserved(job_id, attempt_id, nonce, started, global_fd, link, batch_reused,
+                                              ga_reused)
             finally:
                 elapsed = max(0.0, self.run.monotonic() - started)
                 self.run.events.append("wall_charged", seconds=elapsed, reason="job_attempt", call_id=attempt_id)
@@ -1368,7 +1419,8 @@ class JobQueue:
     def _execute_reserved(self, job_id: str, attempt_id: str, nonce: str,
                           started: float, global_fd: int,
                           link: ExecutionLink | None = None,
-                          batch_reused: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+                          batch_reused: list[dict[str, Any]] | None = None,
+                          ga_reused: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         remaining = self.run._time_left()
         cancelled_after_reservation = False
         with self.run._transition():
@@ -1380,6 +1432,7 @@ class JobQueue:
                                        launch_nonce=nonce, ordinal=job["attempt_ordinal"],
                                        remaining_wall_s=remaining, timeout_s=job["timeout_s"],
                                        **({} if batch_reused is None else {"batch_reused": batch_reused}),
+                                       **({} if ga_reused is None else {"ga_reused": ga_reused}),
                                        **link_fields(link if link is not None else job.get("execution_link")))
                 self._rebuild()
         if cancelled_after_reservation:
@@ -1423,6 +1476,13 @@ class JobQueue:
 
                     raw = batch_stage(self.run, job, attempt_id, {item["row_index"] for item in batch_reused or []})
                     limit = BATCH_STAGED_LIMIT  # the M18 bound: one receptor (+ sidecar) and one parent SDF + rows
+                elif job["protocol_id"] == GA_PROTOCOL:
+                    from ..ligand_ga_jobs import STAGED_LIMIT as GA_STAGED_LIMIT
+                    from ..ligand_ga_jobs import stage as ga_stage
+
+                    raw = ga_stage(self.run, job, attempt_id,
+                                   {item["candidate_id"]: item["handle"] for item in ga_reused or []})
+                    limit = GA_STAGED_LIMIT  # the M18 bound for the blocks and pool + base64 of 128 MiB reused bytes
                 elif job["protocol_id"] == MUTATION_MODEL_PROTOCOL:
                     from ..mutation_model_bundle import STAGED_LIMIT as MUTATION_STAGED_LIMIT
                     from ..mutation_model_bundle import stage as mutation_stage
@@ -1437,7 +1497,7 @@ class JobQueue:
                 data = {"nonce": nonce, "job_id": job_id, "attempt_id": attempt_id,
                         "adapter": (job["protocol_id"] if job["protocol_id"] in {*CHEMICAL_PROTOCOLS, POCKET_PROTOCOL,
                                                                                  *LIGAND_PROTOCOLS, DOCKING_PROTOCOL,
-                                                                                 BATCH_PROTOCOL,
+                                                                                 BATCH_PROTOCOL, GA_PROTOCOL,
                                                                                  MUTATION_MODEL_PROTOCOL}
                                     else "openmm_protein_minimize_v1"),
                         "input_sha256": hashlib.sha256(raw).hexdigest()}
@@ -1496,10 +1556,10 @@ class JobQueue:
                                source="parent_group_check" if identity else "no_go_or_no_launch",
                                guardian_clean=result.get("clean") if result else None)
         preparation_handles = None if job["fixture_only"] or attempt_dir is None or job["protocol_id"] in {
-            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL,
+            *CHEMICAL_PROTOCOLS, POCKET_PROTOCOL, *LIGAND_PROTOCOLS, DOCKING_PROTOCOL, BATCH_PROTOCOL, GA_PROTOCOL,
             MUTATION_MODEL_PROTOCOL} else \
             self._record_preparation(job, attempt_id)
-        if job["protocol_id"] == BATCH_PROTOCOL:
+        if job["protocol_id"] in SUMMARY_PROTOCOLS:
             return self._finish_batch(self.get(job_id), attempt_id, attempt_dir, result, error)
         if error is None:
             if result is None:
@@ -1908,9 +1968,15 @@ class JobQueue:
     def _finish_batch(self, job: dict[str, Any], attempt_id: str, attempt_dir: Path | None,
                       result: dict[str, Any] | None, error: dict[str, Any] | None, *,
                       recovered: bool = False) -> dict[str, Any]:
-        """M19, after verified group cleanup in every end state: publish the staged rows, then the summary, then
-        the terminal (``done`` carries the summary handle only). A batch that never started a row has no summary."""
-        from ..docking_batch_jobs import finish
+        """M19 (and M22 GA), after verified group cleanup in every end state: publish the staged rows (GA: newly
+        docked individuals), then the summary, then the terminal (``done`` carries the summary handle only). A batch
+        that never started a row (a GA that never reached its first individual) has no summary."""
+        if job["protocol_id"] == GA_PROTOCOL:
+            from ..ligand_ga_jobs import finish
+            before_first = "GA worker stopped before its first individual"
+        else:
+            from ..docking_batch_jobs import finish
+            before_first = "batch worker stopped before its first row"
 
         job_id = job["job_id"]
         with self.run._transition():
@@ -1953,7 +2019,7 @@ class JobQueue:
             return self._terminal(job_id, attempt_id, "cancelled")
         if handle is None or failure is not None:
             return self._terminal(job_id, attempt_id, "failed",
-                                  failure or {"error": "fatal", "message": "batch worker stopped before its first row"})
+                                  failure or {"error": "fatal", "message": before_first})
         self.run.events.append("job_result_candidate", job_id=job_id, attempt_id=attempt_id, output_handles=[handle])
         self._barrier("before_terminal")
         return self._terminal(job_id, attempt_id, "done", handles=[handle])
@@ -1970,7 +2036,7 @@ class JobQueue:
             else:
                 self._refuse_unlinked_owned(job, owner_active)
             if (job["status"] not in {"failed", "interrupted"} or
-                    job["attempt_ordinal"] >= (1 if job["protocol_id"] == BATCH_PROTOCOL else 4)):
+                    job["attempt_ordinal"] >= (1 if job["protocol_id"] in SUMMARY_PROTOCOLS else 4)):
                 raise ToolFailure(FailureClass.precondition, "job recovery allowance exhausted or not eligible")
             if self.run._cancel_path.exists() or job["cancel_requested"]:
                 raise RunCancelled("run cancelled")
@@ -2062,7 +2128,7 @@ class JobQueue:
                                            source="orphan_reconciliation")
                     if not job["fixture_only"] and job["protocol_id"] == OPENMM_PROTOCOL:
                         self._record_preparation(job, job["attempt_id"])
-                    if job["protocol_id"] == BATCH_PROTOCOL:
+                    if job["protocol_id"] in SUMMARY_PROTOCOLS:
                         # Close as worker_failed and still publish what the attempt durably staged (spec 7.2).
                         self._finish_batch(self.get(job["job_id"]), job["attempt_id"],
                                            self._existing_attempt_dir(job["job_id"], job["attempt_id"]), None, None,

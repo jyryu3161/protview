@@ -829,9 +829,15 @@ def producer(run: Any, handle: str) -> dict[str, Any]:
             break
     # The earliest completed publication is the producer, so later ones (an M18 job and an M19 batch row can
     # publish the same handle) never change what an existing read or report was checked against.
-    found = [item for item in (m18, _batch_row_producer(events, jobs, created, handle)) if item is not None]
+    ga = _ga_individual_producer(events, jobs, created, handle)   # M22 (spec 7): a GA individual, additive only
+    found = [item for item in (m18, _batch_row_producer(events, jobs, created, handle), ga) if item is not None]
     if found:
-        return min(found, key=lambda item: item["published_seq"])
+        first = min(found, key=lambda item: item["published_seq"])
+        if first is ga:
+            from .ligand_ga_jobs import individual_view
+
+            return individual_view(run, ga)
+        return first
     raise DockingEvidenceError("object has no completed qvina_dock_v1 publication")
 
 
@@ -867,6 +873,41 @@ def _batch_row_producer(events: list[dict[str, Any]], jobs: dict[str, Any], crea
             return {"job_id": job["job_id"], "attempt_id": attempt, "job": {**job, "selected": rows[index]["selected"]},
                     "created_seq": created[0]["seq"], "published_seq": (summary[0] if summary else row)["seq"],
                     "row_index": index}
+    return None
+
+
+def _ga_individual_producer(events: list[dict[str, Any]], jobs: dict[str, Any], created: list[dict[str, Any]],
+                            handle: str) -> dict[str, Any] | None:
+    """M22: an individual of a ``qvina_ga_dock_v1`` attempt published this M18 result (reservation < verified cleanup
+    < ``ligand_ga_individual_published``), its candidate an eligible pool candidate of that GA job. The completion
+    point is the GA summary publication when there is one, else the individual publication. ``job`` is the GA job
+    here; the caller swaps in the individual's rebuilt M18 view (``ligand_ga_jobs.individual_view``) only when this
+    is the earliest publication."""
+    from . import ligand_ga_constants as GC
+
+    for item in events:
+        if item["type"] != GC.INDIVIDUAL_EVENT or item.get("handle") != handle:
+            continue
+        job = jobs.get(item.get("job_id"))
+        attempt = item.get("attempt_id")
+        if job is None or job.get("protocol_id") != GC.PROTOCOL or job.get("tool_id") != GC.TOOL:
+            continue
+        reserved = [event for event in events if event["type"] == "budget_reserved" and
+                    event.get("attempt_id") == attempt and event.get("tool") == GC.TOOL]
+        cleaned = [event for event in events if event["type"] == "job_cleanup_verified" and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event.get("group_empty") is True]
+        summary = [event for event in events if event["type"] == "ligand_ga_published" and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event["seq"] > item["seq"]]
+        pool = job.get("selected", {}).get("pool", [])
+        cid = item.get("candidate_id")
+        if (len(reserved) == 1 and cleaned and created and type(cid) is str and
+                any(entry.get("candidate_id") == cid and entry.get("eligible") is True for entry in pool) and
+                reserved[0]["seq"] < cleaned[0]["seq"] < item["seq"] and created[0]["seq"] < item["seq"]):
+            return {"job_id": job["job_id"], "attempt_id": attempt, "job": job, "created_seq": created[0]["seq"],
+                    "published_seq": (summary[0] if summary else item)["seq"], "eval_index": item.get("eval_index"),
+                    "candidate_id": cid}
     return None
 
 

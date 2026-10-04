@@ -1,0 +1,87 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H03",
+    "H05",
+    "H08",
+    "H14"
+  ],
+  "mode": "attach-map_existing",
+  "harnessMode": "attach",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "CHa6nmR7ciWcO8tOTTcKV",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced"
+  },
+  "fixtures": [
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)"
+    },
+    {
+      "name": "m11-attach-bonds-run.json",
+      "sha256": "b091222471af4263795d0c30571aee499157c226a3e67e3552f202c53428f4f5",
+      "provenance": "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog"
+    },
+    {
+      "name": "m11-attach-mapping-run.json",
+      "sha256": "064c6ef87b2eaa230682e826ca9591cd1903daf5933a6796f73d218e97a60278",
+      "provenance": "run-bound labeled map_existing SDF→AtomRef mapping from the QA run's source catalog"
+    },
+    {
+      "name": "m11-attach-ligand-instance-run.json",
+      "sha256": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95",
+      "provenance": "run-bound exact selected ligand instance from the QA run's source catalog"
+    }
+  ],
+  "provenanceLabels": [
+    "public ProLIF tutorial docking-pose SDF (prepared docking example; not experimental validation)",
+    "run-bound receptor_bonds@1 sidecar generated from the QA run's own source catalog",
+    "run-bound labeled map_existing SDF→AtomRef mapping from the QA run's source catalog",
+    "run-bound exact selected ligand instance from the QA run's source catalog"
+  ],
+  "fixtureLabels": [],
+  "runId": "run_da17b129b17f4e8da155287394d27fbd",
+  "handles": {
+    "result": "obj://run_da17b129b17f4e8da155287394d27fbd/chemical_interaction_set/15200b308e2e1ada6f34d9608bbd195e4e5d9a05259ec271dd8e67a7eb337252",
+    "report": "obj://run_da17b129b17f4e8da155287394d27fbd/method_report_manifest/207dc933ab218b06858ebec72de9f412c53d4044ae9650c8b95903f71520b9f5",
+    "source": "obj://run_da17b129b17f4e8da155287394d27fbd/chemical_structure/e1a9ba015cd52d7d9efc9b765ccb1882eb859cc9fb65763801de5a3b1cbb7623",
+    "graph": "obj://run_da17b129b17f4e8da155287394d27fbd/chemical_graph/0b928ebf5f686974d130c5858afcb953ed8a193f961fd25a66a005d66ace2836",
+    "prepareJob": "job_2a25d0f678864a9bad93c74367b3e412",
+    "detectJob": "job_21912e863fbb4132b85f7a10449d2d77"
+  },
+  "expectCapability": null,
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 154,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/m13/m11-acceptance/evidence/attach-map/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/m13/m11-acceptance/evidence/attach-map",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-10-04T18:00:20.710Z",
+  "finishedAt": "2026-10-04T18:01:33.375Z"
+}

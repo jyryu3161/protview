@@ -83,6 +83,16 @@ tools:
     typical_runtime_s: 1800
     description: 한 수용체·상자·seed·방식으로 M17 후보 여러 개(+선택 부모 행)를 차례로 고정 QuickVina 2.1 도킹하고 후보별 결과와 일괄 요약을 남긴다(qvina 점수, 친화도·순위 아님); durable_job lane
 
+  # Fixed asynchronous M22 GA design lane (protocol qvina_ga_dock_v1): one job = one GA run over a published M17
+  # candidate set; every evaluated individual is the M18 qvina_dock_v1 free computation; execution is JobQueue.
+  - name: qvina_ga_design
+    level: L3
+    version: '1'
+    emits: ligand_ga_result
+    cost_class: expensive
+    typical_runtime_s: 3600
+    description: 게시된 M17 후보 집합 안에서 유전 알고리즘이 세대마다 도킹할 후보를 고르고 각 개체를 고정 QuickVina 2.1로 자유 도킹해 세대별 개체 표와 요약을 남긴다(qvina 점수, 친화도·순위·추천 아님); durable_job lane
+
   # Fixed asynchronous M21 lane (protocol openmm_mutation_model_v1); execution is JobQueue, not Run.call. One job = one
   # M20 candidate: the wild-type reference and the PDBFixer 1.12.0 mutant through the M7 OpenMM procedure. The worker
   # module and interpreter are fixed by code; arguments are validated on admission (mutation_model_bundle).

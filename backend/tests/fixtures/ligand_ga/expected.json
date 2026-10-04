@@ -1,0 +1,6574 @@
+{
+ "_fixture": "SYNTHETIC-FIXTURE / T1 observations for ProtView M22 GA. Oracle paths come from independent_ga_oracle.py (standard library, no mw import); SYNTHETIC scores are selection-logic inputs, never engine output; observed scores are real qvina2 outputs recorded as observations. See SYNTHETIC-PROVENANCE.md and docs/qa/m22-ga-20261004/preflight.txt.",
+ "assumptions": {
+  "A1": "Generation g's individual order is carried first (elite order: score ascending, ties pool order), then the new individuals in evaluation order (= selection order: similar slots, then random slots).",
+  "A2": "'Not yet picked' means not picked anywhere in this run so far, including earlier slots of the generation being built; carried individuals were picked when first chosen.",
+  "A3": "A generation stopped midway lists its carried individuals and the individuals evaluated before the stop; selected-but-not-evaluated individuals are not listed.",
+  "A4": "When the patience counter reaches 'patience' at the last generation (g == generations), the stop reason is generations_complete (nothing was stopped early). Confirmed by spec 3 step 4 (amended in T2).",
+  "A5": "Running minimum: None (no score yet) -> a number counts as decreased; None -> None and x -> y with y >= x count as not decreased. Confirmed by spec 3 step 4 (amended in T2).",
+  "A6": "When no unpicked eligible candidate is left, no further rng call is made (the remaining slots stay empty); this cannot change the outcome because nothing can be picked afterwards.",
+  "A7": "A generation whose new slots are all unfilled is not recorded; the run ends with pool_exhausted and generations_done = the last recorded generation."
+ },
+ "small_pool_source": {
+  "m17_candidate_set": "m17-candidate-set-small-pool.json",
+  "blocks": "synthetic-ga-small-blocks.smi",
+  "site_atoms": [
+   22
+  ],
+  "use_fixed": true
+ },
+ "pools": {
+  "small": {
+   "candidates": [
+    {
+     "pool_index": 0,
+     "candidate_id": "c_1afb7cd3e603456c",
+     "smiles": "CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+     "block_name": "ethyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      109,
+      110,
+      119,
+      202,
+      231,
+      252,
+      255,
+      294,
+      314,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      545,
+      551,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      949,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1456,
+      1462,
+      1480,
+      1510,
+      1511,
+      1575,
+      1657,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1914,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2013
+     ],
+     "tanimoto_round6": [
+      "1.000000",
+      "0.913043",
+      "0.842105",
+      "0.893617",
+      "0.851064",
+      "0.842105",
+      "0.912088",
+      "0.902174",
+      "0.842105",
+      "0.892473"
+     ],
+     "rdkit_tanimoto_double": [
+      1.0,
+      0.9130434782608695,
+      0.8421052631578947,
+      0.8936170212765957,
+      0.851063829787234,
+      0.8421052631578947,
+      0.9120879120879121,
+      0.9021739130434783,
+      0.8421052631578947,
+      0.8924731182795699
+     ]
+    },
+    {
+     "pool_index": 1,
+     "candidate_id": "c_c42a53803595e440",
+     "smiles": "CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+     "block_name": "propyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      202,
+      231,
+      252,
+      255,
+      294,
+      314,
+      323,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      545,
+      551,
+      634,
+      650,
+      656,
+      658,
+      684,
+      689,
+      701,
+      779,
+      794,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1456,
+      1462,
+      1480,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1840,
+      1859,
+      1860,
+      1873,
+      1879,
+      1914,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2010,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.913043",
+      "1.000000",
+      "0.824742",
+      "0.935484",
+      "0.833333",
+      "0.824742",
+      "0.892473",
+      "0.882979",
+      "0.824742",
+      "0.913978"
+     ],
+     "rdkit_tanimoto_double": [
+      0.9130434782608695,
+      1.0,
+      0.8247422680412371,
+      0.9354838709677419,
+      0.8333333333333334,
+      0.8247422680412371,
+      0.8924731182795699,
+      0.8829787234042553,
+      0.8247422680412371,
+      0.9139784946236559
+     ]
+    },
+    {
+     "pool_index": 2,
+     "candidate_id": "c_f1f6983d23c3009f",
+     "smiles": "CC(C)[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+     "block_name": "isopropyl",
+     "morgan_r2_2048_on_bits": [
+      1,
+      5,
+      38,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      202,
+      231,
+      252,
+      255,
+      283,
+      314,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      540,
+      551,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1001,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1456,
+      1479,
+      1480,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1741,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2012,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.842105",
+      "0.824742",
+      "1.000000",
+      "0.808081",
+      "0.842105",
+      "0.833333",
+      "0.842105",
+      "0.833333",
+      "0.833333",
+      "0.824742"
+     ],
+     "rdkit_tanimoto_double": [
+      0.8421052631578947,
+      0.8247422680412371,
+      1.0,
+      0.8080808080808081,
+      0.8421052631578947,
+      0.8333333333333334,
+      0.8421052631578947,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8247422680412371
+     ]
+    },
+    {
+     "pool_index": 3,
+     "candidate_id": "c_71188fcf0e6703c9",
+     "smiles": "CCCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+     "block_name": "butyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      202,
+      231,
+      252,
+      255,
+      294,
+      314,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      545,
+      551,
+      573,
+      591,
+      634,
+      650,
+      656,
+      658,
+      684,
+      689,
+      701,
+      779,
+      794,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1456,
+      1462,
+      1480,
+      1510,
+      1511,
+      1575,
+      1640,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1911,
+      1914,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2010,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.893617",
+      "0.935484",
+      "0.808081",
+      "1.000000",
+      "0.816327",
+      "0.808081",
+      "0.873684",
+      "0.864583",
+      "0.808081",
+      "0.894737"
+     ],
+     "rdkit_tanimoto_double": [
+      0.8936170212765957,
+      0.9354838709677419,
+      0.8080808080808081,
+      1.0,
+      0.8163265306122449,
+      0.8080808080808081,
+      0.8736842105263158,
+      0.8645833333333334,
+      0.8080808080808081,
+      0.8947368421052632
+     ]
+    },
+    {
+     "pool_index": 4,
+     "candidate_id": "c_21d6c6f0d07e3759",
+     "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+     "block_name": "cyclopropyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      161,
+      202,
+      231,
+      252,
+      255,
+      314,
+      344,
+      352,
+      385,
+      389,
+      424,
+      433,
+      446,
+      458,
+      551,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1078,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1170,
+      1173,
+      1199,
+      1236,
+      1250,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1396,
+      1456,
+      1480,
+      1503,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.851064",
+      "0.833333",
+      "0.842105",
+      "0.816327",
+      "1.000000",
+      "0.966292",
+      "0.851064",
+      "0.842105",
+      "0.842105",
+      "0.833333"
+     ],
+     "rdkit_tanimoto_double": [
+      0.851063829787234,
+      0.8333333333333334,
+      0.8421052631578947,
+      0.8163265306122449,
+      1.0,
+      0.9662921348314607,
+      0.851063829787234,
+      0.8421052631578947,
+      0.8421052631578947,
+      0.8333333333333334
+     ]
+    },
+    {
+     "pool_index": 5,
+     "candidate_id": "c_14271764afae517b",
+     "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CCC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+     "block_name": "cyclobutyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      161,
+      202,
+      231,
+      237,
+      252,
+      255,
+      314,
+      344,
+      352,
+      385,
+      389,
+      424,
+      433,
+      446,
+      458,
+      551,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1063,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1170,
+      1173,
+      1199,
+      1236,
+      1250,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1396,
+      1456,
+      1480,
+      1503,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.842105",
+      "0.824742",
+      "0.833333",
+      "0.808081",
+      "0.966292",
+      "1.000000",
+      "0.842105",
+      "0.833333",
+      "0.833333",
+      "0.824742"
+     ],
+     "rdkit_tanimoto_double": [
+      0.8421052631578947,
+      0.8247422680412371,
+      0.8333333333333334,
+      0.8080808080808081,
+      0.9662921348314607,
+      1.0,
+      0.8421052631578947,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8247422680412371
+     ]
+    },
+    {
+     "pool_index": 6,
+     "candidate_id": "c_5d474f8db1578d8d",
+     "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CO)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+     "block_name": "hydroxymethyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      202,
+      222,
+      231,
+      252,
+      255,
+      314,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      523,
+      545,
+      551,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      789,
+      806,
+      807,
+      820,
+      863,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1380,
+      1456,
+      1462,
+      1480,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1914,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.912088",
+      "0.892473",
+      "0.842105",
+      "0.873684",
+      "0.851064",
+      "0.842105",
+      "1.000000",
+      "0.902174",
+      "0.842105",
+      "0.913043"
+     ],
+     "rdkit_tanimoto_double": [
+      0.9120879120879121,
+      0.8924731182795699,
+      0.8421052631578947,
+      0.8736842105263158,
+      0.851063829787234,
+      0.8421052631578947,
+      1.0,
+      0.9021739130434783,
+      0.8421052631578947,
+      0.9130434782608695
+     ]
+    },
+    {
+     "pool_index": 7,
+     "candidate_id": "c_da033b82807ffbe7",
+     "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CF)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+     "block_name": "fluoromethyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      202,
+      231,
+      252,
+      255,
+      314,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      545,
+      551,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1053,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1239,
+      1274,
+      1281,
+      1293,
+      1325,
+      1351,
+      1377,
+      1379,
+      1380,
+      1456,
+      1462,
+      1480,
+      1510,
+      1511,
+      1575,
+      1613,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1914,
+      1917,
+      1928,
+      1937,
+      1984,
+      1995,
+      1996,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.902174",
+      "0.882979",
+      "0.833333",
+      "0.864583",
+      "0.842105",
+      "0.833333",
+      "0.902174",
+      "1.000000",
+      "0.852632",
+      "0.882979"
+     ],
+     "rdkit_tanimoto_double": [
+      0.9021739130434783,
+      0.8829787234042553,
+      0.8333333333333334,
+      0.8645833333333334,
+      0.8421052631578947,
+      0.8333333333333334,
+      0.9021739130434783,
+      1.0,
+      0.8526315789473684,
+      0.8829787234042553
+     ]
+    },
+    {
+     "pool_index": 8,
+     "candidate_id": "c_2c7a25e0cc0ad3f2",
+     "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C(F)(F)F)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+     "block_name": "trifluoromethyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      64,
+      80,
+      84,
+      94,
+      108,
+      110,
+      114,
+      119,
+      202,
+      231,
+      252,
+      255,
+      314,
+      344,
+      352,
+      389,
+      424,
+      433,
+      446,
+      458,
+      551,
+      611,
+      634,
+      650,
+      656,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      814,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1325,
+      1347,
+      1351,
+      1377,
+      1380,
+      1453,
+      1456,
+      1480,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1872,
+      1873,
+      1879,
+      1917,
+      1928,
+      1937,
+      1984,
+      1995,
+      1996,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.842105",
+      "0.824742",
+      "0.833333",
+      "0.808081",
+      "0.842105",
+      "0.833333",
+      "0.842105",
+      "0.852632",
+      "1.000000",
+      "0.824742"
+     ],
+     "rdkit_tanimoto_double": [
+      0.8421052631578947,
+      0.8247422680412371,
+      0.8333333333333334,
+      0.8080808080808081,
+      0.8421052631578947,
+      0.8333333333333334,
+      0.8421052631578947,
+      0.8526315789473684,
+      1.0,
+      0.8247422680412371
+     ]
+    },
+    {
+     "pool_index": 9,
+     "candidate_id": "c_9d4897ac9ecdb2d4",
+     "smiles": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CCO)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+     "block_name": "hydroxyethyl",
+     "morgan_r2_2048_on_bits": [
+      5,
+      80,
+      84,
+      94,
+      108,
+      110,
+      119,
+      202,
+      222,
+      231,
+      252,
+      255,
+      314,
+      344,
+      352,
+      386,
+      389,
+      424,
+      433,
+      446,
+      458,
+      473,
+      545,
+      551,
+      634,
+      650,
+      656,
+      658,
+      684,
+      689,
+      701,
+      779,
+      806,
+      807,
+      820,
+      918,
+      926,
+      935,
+      984,
+      1019,
+      1021,
+      1028,
+      1039,
+      1057,
+      1060,
+      1066,
+      1074,
+      1088,
+      1105,
+      1114,
+      1118,
+      1152,
+      1154,
+      1173,
+      1199,
+      1236,
+      1274,
+      1281,
+      1293,
+      1324,
+      1325,
+      1351,
+      1377,
+      1380,
+      1456,
+      1462,
+      1480,
+      1510,
+      1511,
+      1575,
+      1690,
+      1730,
+      1750,
+      1751,
+      1754,
+      1760,
+      1783,
+      1859,
+      1860,
+      1873,
+      1879,
+      1914,
+      1917,
+      1937,
+      1984,
+      1995,
+      1996,
+      2010,
+      2013
+     ],
+     "tanimoto_round6": [
+      "0.892473",
+      "0.913978",
+      "0.824742",
+      "0.894737",
+      "0.833333",
+      "0.824742",
+      "0.913043",
+      "0.882979",
+      "0.824742",
+      "1.000000"
+     ],
+     "rdkit_tanimoto_double": [
+      0.8924731182795699,
+      0.9139784946236559,
+      0.8247422680412371,
+      0.8947368421052632,
+      0.8333333333333334,
+      0.8247422680412371,
+      0.9130434782608695,
+      0.8829787234042553,
+      0.8247422680412371,
+      1.0
+     ]
+    }
+   ]
+  }
+ },
+ "ga_vectors": {
+  "small_observed_seed7": {
+   "how": "small pool, observed fast-docking first-mode scores (t1_observations.small_pool_docking), no reuse",
+   "pool": "small",
+   "ga": {
+    "seed": 7,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 2,
+    "max_new_dockings": 10,
+    "total_s": 600
+   },
+   "scores": {
+    "c_1afb7cd3e603456c": -8.5,
+    "c_c42a53803595e440": -10.1,
+    "c_f1f6983d23c3009f": -6.4,
+    "c_71188fcf0e6703c9": -9.9,
+    "c_21d6c6f0d07e3759": -4.9,
+    "c_14271764afae517b": -5.8,
+    "c_5d474f8db1578d8d": -2.7,
+    "c_da033b82807ffbe7": -5.0,
+    "c_2c7a25e0cc0ad3f2": 2.3,
+    "c_9d4897ac9ecdb2d4": -4.3
+   },
+   "expected": {
+    "stop_reason": "generations_complete",
+    "status": "complete",
+    "generations_done": 3,
+    "new_dockings_used": 10,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.4,
+      "max_score": -2.7
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -8.5,
+      "max_score": 2.3
+     },
+     {
+      "index": 3,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -8.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -4.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "similar",
+        "parent_candidate_id": "c_1afb7cd3e603456c",
+        "similarity": "0.913043",
+        "evaluation": "docked",
+        "eval_index": 8,
+        "score": -10.1,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 9,
+        "score": -9.9,
+        "state": "scored"
+       }
+      ],
+      "min_score": -10.1,
+      "max_score": -4.9
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_14271764afae517b",
+       "c_f1f6983d23c3009f",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_da033b82807ffbe7"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_21d6c6f0d07e3759",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_2c7a25e0cc0ad3f2"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_21d6c6f0d07e3759"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_c42a53803595e440"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_71188fcf0e6703c9"
+     }
+    ]
+   }
+  },
+  "small_observed_seed7_reuse_two": {
+   "how": "same as small_observed_seed7 with two candidates reusable: same path (same scores), the two are 'reused' and do not count toward max_new_dockings",
+   "pool": "small",
+   "ga": {
+    "seed": 7,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 2,
+    "max_new_dockings": 10,
+    "total_s": 600
+   },
+   "scores": {
+    "c_1afb7cd3e603456c": -8.5,
+    "c_c42a53803595e440": -10.1,
+    "c_f1f6983d23c3009f": -6.4,
+    "c_71188fcf0e6703c9": -9.9,
+    "c_21d6c6f0d07e3759": -4.9,
+    "c_14271764afae517b": -5.8,
+    "c_5d474f8db1578d8d": -2.7,
+    "c_da033b82807ffbe7": -5.0,
+    "c_2c7a25e0cc0ad3f2": 2.3,
+    "c_9d4897ac9ecdb2d4": -4.3
+   },
+   "reusable": [
+    "c_da033b82807ffbe7",
+    "c_2c7a25e0cc0ad3f2"
+   ],
+   "expected": {
+    "stop_reason": "generations_complete",
+    "status": "complete",
+    "generations_done": 3,
+    "new_dockings_used": 8,
+    "reused_count": 2,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.4,
+      "max_score": -2.7
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -8.5,
+      "max_score": 2.3
+     },
+     {
+      "index": 3,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -8.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -4.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "similar",
+        "parent_candidate_id": "c_1afb7cd3e603456c",
+        "similarity": "0.913043",
+        "evaluation": "docked",
+        "eval_index": 8,
+        "score": -10.1,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 9,
+        "score": -9.9,
+        "state": "scored"
+       }
+      ],
+      "min_score": -10.1,
+      "max_score": -4.9
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_14271764afae517b",
+       "c_f1f6983d23c3009f",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_da033b82807ffbe7"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_21d6c6f0d07e3759",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_2c7a25e0cc0ad3f2"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_21d6c6f0d07e3759"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_c42a53803595e440"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_71188fcf0e6703c9"
+     }
+    ]
+   }
+  },
+  "small_observed_seed8": {
+   "how": "same as small_observed_seed7 with ga.seed 8 (different GA seed, same docking scores)",
+   "pool": "small",
+   "ga": {
+    "seed": 8,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 2,
+    "max_new_dockings": 10,
+    "total_s": 600
+   },
+   "scores": {
+    "c_1afb7cd3e603456c": -8.5,
+    "c_c42a53803595e440": -10.1,
+    "c_f1f6983d23c3009f": -6.4,
+    "c_71188fcf0e6703c9": -9.9,
+    "c_21d6c6f0d07e3759": -4.9,
+    "c_14271764afae517b": -5.8,
+    "c_5d474f8db1578d8d": -2.7,
+    "c_da033b82807ffbe7": -5.0,
+    "c_2c7a25e0cc0ad3f2": 2.3,
+    "c_9d4897ac9ecdb2d4": -4.3
+   },
+   "expected": {
+    "stop_reason": "generations_complete",
+    "status": "complete",
+    "generations_done": 3,
+    "new_dockings_used": 10,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -9.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -10.1,
+        "state": "scored"
+       }
+      ],
+      "min_score": -10.1,
+      "max_score": -2.7
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -10.1,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.966292",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -4.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "similar",
+        "parent_candidate_id": "c_c42a53803595e440",
+        "similarity": "0.913978",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -4.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ],
+      "min_score": -10.1,
+      "max_score": -4.3
+     },
+     {
+      "index": 3,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -10.1,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -8.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 8,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 9,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -10.1,
+      "max_score": 2.3
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_71188fcf0e6703c9",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_c42a53803595e440"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -9.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -10.1,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_1afb7cd3e603456c",
+       "c_f1f6983d23c3009f"
+      ],
+      "result": "c_21d6c6f0d07e3759"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -9.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -10.1,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -9.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -10.1,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_9d4897ac9ecdb2d4",
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_9d4897ac9ecdb2d4"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_f1f6983d23c3009f",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_f1f6983d23c3009f"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -10.1,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.966292",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -4.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "similar",
+        "parent_candidate_id": "c_c42a53803595e440",
+        "similarity": "0.913978",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -4.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "similar",
+        "parent_candidate_id": "c_c42a53803595e440",
+        "similarity": "0.913978",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -10.1,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.966292",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -4.9,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "similar",
+        "parent_candidate_id": "c_c42a53803595e440",
+        "similarity": "0.913978",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -4.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.966292",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -4.9,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_2c7a25e0cc0ad3f2"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_da033b82807ffbe7"
+     }
+    ]
+   }
+  },
+  "small_observed_limit5": {
+   "how": "max_new_dockings 5 (= population 4 + 1): docking_limit inside generation 2, partial",
+   "pool": "small",
+   "ga": {
+    "seed": 7,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 2,
+    "max_new_dockings": 5,
+    "total_s": 600
+   },
+   "scores": {
+    "c_1afb7cd3e603456c": -8.5,
+    "c_c42a53803595e440": -10.1,
+    "c_f1f6983d23c3009f": -6.4,
+    "c_71188fcf0e6703c9": -9.9,
+    "c_21d6c6f0d07e3759": -4.9,
+    "c_14271764afae517b": -5.8,
+    "c_5d474f8db1578d8d": -2.7,
+    "c_da033b82807ffbe7": -5.0,
+    "c_2c7a25e0cc0ad3f2": 2.3,
+    "c_9d4897ac9ecdb2d4": -4.3
+   },
+   "expected": {
+    "stop_reason": "docking_limit",
+    "status": "partial",
+    "generations_done": 1,
+    "new_dockings_used": 5,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.4,
+      "max_score": -2.7
+     },
+     {
+      "index": 2,
+      "complete": false,
+      "individuals": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.4,
+      "max_score": -5.0
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_14271764afae517b",
+       "c_f1f6983d23c3009f",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_da033b82807ffbe7"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_21d6c6f0d07e3759",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_2c7a25e0cc0ad3f2"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     }
+    ]
+   }
+  },
+  "small_observed_limit5_reuse_two": {
+   "how": "max_new_dockings 5 with two reusable candidates: the limit binds later, so the same GA seed takes a longer path (G3: a different reusable set can change the path)",
+   "pool": "small",
+   "ga": {
+    "seed": 7,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 2,
+    "max_new_dockings": 5,
+    "total_s": 600
+   },
+   "scores": {
+    "c_1afb7cd3e603456c": -8.5,
+    "c_c42a53803595e440": -10.1,
+    "c_f1f6983d23c3009f": -6.4,
+    "c_71188fcf0e6703c9": -9.9,
+    "c_21d6c6f0d07e3759": -4.9,
+    "c_14271764afae517b": -5.8,
+    "c_5d474f8db1578d8d": -2.7,
+    "c_da033b82807ffbe7": -5.0,
+    "c_2c7a25e0cc0ad3f2": 2.3,
+    "c_9d4897ac9ecdb2d4": -4.3
+   },
+   "reusable": [
+    "c_da033b82807ffbe7",
+    "c_2c7a25e0cc0ad3f2"
+   ],
+   "expected": {
+    "stop_reason": "docking_limit",
+    "status": "partial",
+    "generations_done": 2,
+    "new_dockings_used": 5,
+    "reused_count": 2,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.4,
+      "max_score": -2.7
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -8.5,
+      "max_score": 2.3
+     },
+     {
+      "index": 3,
+      "complete": false,
+      "individuals": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -8.5,
+      "max_score": -8.5
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_14271764afae517b",
+       "c_f1f6983d23c3009f",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_da033b82807ffbe7"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -2.7,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -4.3,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -5.8,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_21d6c6f0d07e3759",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_2c7a25e0cc0ad3f2"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_21d6c6f0d07e3759",
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_21d6c6f0d07e3759"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.4,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_f1f6983d23c3009f",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 5,
+        "score": 2.3,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -8.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "reused",
+        "eval_index": 4,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_c42a53803595e440"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_71188fcf0e6703c9"
+     }
+    ]
+   }
+  },
+  "synthetic_ties_nulls": {
+   "how": "SYNTHETIC selection-logic input scores (not engine output) with ties (-5.0 x2, -7.5 x2, -6.0 x2) and two no-score candidates (one null_result, one failed); elite 2, tournament 3, neighbours 3 (T2: was 2, below the spec range 3-30), random_fraction 0.5",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": -5.0,
+    "c_c42a53803595e440": -5.0,
+    "c_f1f6983d23c3009f": null,
+    "c_71188fcf0e6703c9": -7.5,
+    "c_21d6c6f0d07e3759": -6.0,
+    "c_14271764afae517b": -7.5,
+    "c_5d474f8db1578d8d": null,
+    "c_da033b82807ffbe7": -4.0,
+    "c_2c7a25e0cc0ad3f2": -9.0,
+    "c_9d4897ac9ecdb2d4": -6.0
+   },
+   "unscored": {
+    "c_5d474f8db1578d8d": "failed"
+   },
+   "ga": {
+    "seed": 11,
+    "population_size": 5,
+    "generations": 4,
+    "elite_count": 2,
+    "tournament_size": 3,
+    "neighbor_count": 3,
+    "random_fraction": 0.5,
+    "patience": 3,
+    "max_new_dockings": 20,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "pool_exhausted",
+    "status": "complete",
+    "generations_done": 3,
+    "new_dockings_used": 10,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -9.0,
+      "max_score": -4.0
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "similar",
+        "parent_candidate_id": "c_2c7a25e0cc0ad3f2",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": null,
+        "state": "failed"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -9.0,
+      "max_score": -7.5
+     },
+     {
+      "index": 3,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "similar",
+        "parent_candidate_id": "c_2c7a25e0cc0ad3f2",
+        "similarity": "0.824742",
+        "evaluation": "docked",
+        "eval_index": 8,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 9,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -9.0,
+      "max_score": -5.0
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 5,
+      "result": [
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ],
+      "k": 3,
+      "result": [
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -4.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_5d474f8db1578d8d",
+       "c_f1f6983d23c3009f"
+      ],
+      "result": "c_f1f6983d23c3009f"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d"
+      ],
+      "result": "c_5d474f8db1578d8d"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_14271764afae517b"
+      ],
+      "result": "c_14271764afae517b"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "k": 3,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440"
+      ],
+      "result": "c_c42a53803595e440"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     }
+    ]
+   }
+  },
+  "synthetic_no_scored_parent": {
+   "how": "SYNTHETIC: every generation-1 pick has no score, so generation 2 opens every slot at random (no carried individual, no tournament call); its 4 open slots exceed P - E = 2 and new dockings stop at reserved_units = min(20, 4 + 1 x 2) = 6 (docking_limit) after two generation-2 evaluations",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": null,
+    "c_c42a53803595e440": null,
+    "c_f1f6983d23c3009f": null,
+    "c_71188fcf0e6703c9": null,
+    "c_21d6c6f0d07e3759": null,
+    "c_14271764afae517b": null,
+    "c_5d474f8db1578d8d": null,
+    "c_da033b82807ffbe7": null,
+    "c_2c7a25e0cc0ad3f2": null,
+    "c_9d4897ac9ecdb2d4": null
+   },
+   "ga": {
+    "seed": 3,
+    "population_size": 4,
+    "generations": 2,
+    "elite_count": 2,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.0,
+    "patience": 1,
+    "max_new_dockings": 20,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "docking_limit",
+    "status": "partial",
+    "generations_done": 1,
+    "new_dockings_used": 6,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": null,
+        "state": "null_result"
+       }
+      ],
+      "min_score": null,
+      "max_score": null
+     },
+     {
+      "index": 2,
+      "complete": false,
+      "individuals": [
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": null,
+        "state": "null_result"
+       }
+      ],
+      "min_score": null,
+      "max_score": null
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_71188fcf0e6703c9",
+       "c_2c7a25e0cc0ad3f2",
+       "c_f1f6983d23c3009f",
+       "c_da033b82807ffbe7"
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_5d474f8db1578d8d"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_14271764afae517b"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_9d4897ac9ecdb2d4"
+     }
+    ]
+   }
+  },
+  "synthetic_pool_exhausted": {
+   "how": "SYNTHETIC: population 4, elite 0, 8 generations on 10 eligible: 4 + 4 + 2 picks, then no slot can be filled -> pool_exhausted after generation 3 (generation 3 has 2 individuals)",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": -5.0,
+    "c_c42a53803595e440": -5.0,
+    "c_f1f6983d23c3009f": null,
+    "c_71188fcf0e6703c9": -7.5,
+    "c_21d6c6f0d07e3759": -6.0,
+    "c_14271764afae517b": -7.5,
+    "c_5d474f8db1578d8d": null,
+    "c_da033b82807ffbe7": -4.0,
+    "c_2c7a25e0cc0ad3f2": -9.0,
+    "c_9d4897ac9ecdb2d4": -6.0
+   },
+   "unscored": {
+    "c_5d474f8db1578d8d": "failed"
+   },
+   "ga": {
+    "seed": 5,
+    "population_size": 4,
+    "generations": 8,
+    "elite_count": 0,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 8,
+    "max_new_dockings": 40,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "pool_exhausted",
+    "status": "complete",
+    "generations_done": 3,
+    "new_dockings_used": 10,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": null,
+        "state": "failed"
+       }
+      ],
+      "min_score": -7.5,
+      "max_score": -6.0
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.833333",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_21d6c6f0d07e3759",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -9.0,
+      "max_score": -5.0
+     },
+     {
+      "index": 3,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "similar",
+        "parent_candidate_id": "c_2c7a25e0cc0ad3f2",
+        "similarity": "0.852632",
+        "evaluation": "docked",
+        "eval_index": 8,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "similar",
+        "parent_candidate_id": "c_1afb7cd3e603456c",
+        "similarity": "0.893617",
+        "evaluation": "docked",
+        "eval_index": 9,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -7.5,
+      "max_score": -4.0
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_9d4897ac9ecdb2d4",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_f1f6983d23c3009f",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_f1f6983d23c3009f"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_c42a53803595e440"
+      ],
+      "result": "c_2c7a25e0cc0ad3f2"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_71188fcf0e6703c9",
+       "c_da033b82807ffbe7"
+      ],
+      "result": "c_c42a53803595e440"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_21d6c6f0d07e3759",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_21d6c6f0d07e3759",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_da033b82807ffbe7",
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_da033b82807ffbe7"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "similar",
+        "parent_candidate_id": "c_21d6c6f0d07e3759",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -5.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_71188fcf0e6703c9"
+      ],
+      "result": "c_71188fcf0e6703c9"
+     }
+    ]
+   }
+  },
+  "synthetic_no_change": {
+   "how": "SYNTHETIC: every score equal (-6.0), patience 1: generation 2 does not lower the running minimum -> no_change after generation 2",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": -6.0,
+    "c_c42a53803595e440": -6.0,
+    "c_f1f6983d23c3009f": -6.0,
+    "c_71188fcf0e6703c9": -6.0,
+    "c_21d6c6f0d07e3759": -6.0,
+    "c_14271764afae517b": -6.0,
+    "c_5d474f8db1578d8d": -6.0,
+    "c_da033b82807ffbe7": -6.0,
+    "c_2c7a25e0cc0ad3f2": -6.0,
+    "c_9d4897ac9ecdb2d4": -6.0
+   },
+   "ga": {
+    "seed": 9,
+    "population_size": 4,
+    "generations": 5,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 1,
+    "max_new_dockings": 20,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "no_change",
+    "status": "complete",
+    "generations_done": 2,
+    "new_dockings_used": 7,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.0,
+      "max_score": -6.0
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "similar",
+        "parent_candidate_id": "c_21d6c6f0d07e3759",
+        "similarity": "0.851064",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "similar",
+        "parent_candidate_id": "c_c42a53803595e440",
+        "similarity": "0.913978",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -6.0,
+      "max_score": -6.0
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_da033b82807ffbe7",
+       "c_14271764afae517b",
+       "c_21d6c6f0d07e3759",
+       "c_c42a53803595e440"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_5d474f8db1578d8d",
+       "c_f1f6983d23c3009f"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -6.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_71188fcf0e6703c9",
+       "c_9d4897ac9ecdb2d4",
+       "c_5d474f8db1578d8d"
+      ],
+      "result": "c_9d4897ac9ecdb2d4"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_5d474f8db1578d8d",
+       "c_2c7a25e0cc0ad3f2"
+      ],
+      "result": "c_f1f6983d23c3009f"
+     }
+    ]
+   }
+  },
+  "synthetic_filter_excluded": {
+   "how": "SYNTHETIC: pool candidates 1, 4 and 8 are filter-excluded (not eligible): never picked, never docked",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": -5.0,
+    "c_c42a53803595e440": -5.0,
+    "c_f1f6983d23c3009f": null,
+    "c_71188fcf0e6703c9": -7.5,
+    "c_21d6c6f0d07e3759": -6.0,
+    "c_14271764afae517b": -7.5,
+    "c_5d474f8db1578d8d": null,
+    "c_da033b82807ffbe7": -4.0,
+    "c_2c7a25e0cc0ad3f2": -9.0,
+    "c_9d4897ac9ecdb2d4": -6.0
+   },
+   "unscored": {
+    "c_5d474f8db1578d8d": "failed"
+   },
+   "eligible": [
+    true,
+    false,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true,
+    false,
+    true
+   ],
+   "ga": {
+    "seed": 21,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 1,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.25,
+    "patience": 3,
+    "max_new_dockings": 20,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "pool_exhausted",
+    "status": "complete",
+    "generations_done": 2,
+    "new_dockings_used": 7,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -7.5,
+      "max_score": -4.0
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "carried",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": null,
+        "eval_index": null,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "similar",
+        "parent_candidate_id": "c_14271764afae517b",
+        "similarity": "0.842105",
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": null,
+        "state": "failed"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "similar",
+        "parent_candidate_id": "c_71188fcf0e6703c9",
+        "similarity": "0.894737",
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -6.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -5.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -7.5,
+      "max_score": -5.0
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_f1f6983d23c3009f",
+       "c_14271764afae517b",
+       "c_da033b82807ffbe7",
+       "c_71188fcf0e6703c9"
+      ]
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_5d474f8db1578d8d"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": -4.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_9d4897ac9ecdb2d4",
+       "c_1afb7cd3e603456c"
+      ],
+      "result": "c_9d4897ac9ecdb2d4"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     }
+    ]
+   }
+  },
+  "synthetic_null_null_no_change": {
+   "how": "SYNTHETIC: no candidate has a score; the running minimum stays null (null -> null is not a decrease, spec 3 step 4), so patience 1 ends the run with no_change after generation 2",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": null,
+    "c_c42a53803595e440": null,
+    "c_f1f6983d23c3009f": null,
+    "c_71188fcf0e6703c9": null,
+    "c_21d6c6f0d07e3759": null,
+    "c_14271764afae517b": null,
+    "c_5d474f8db1578d8d": null,
+    "c_da033b82807ffbe7": null,
+    "c_2c7a25e0cc0ad3f2": null,
+    "c_9d4897ac9ecdb2d4": null
+   },
+   "ga": {
+    "seed": 3,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 0,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.0,
+    "patience": 1,
+    "max_new_dockings": 20,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "no_change",
+    "status": "complete",
+    "generations_done": 2,
+    "new_dockings_used": 8,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": null,
+        "state": "null_result"
+       }
+      ],
+      "min_score": null,
+      "max_score": null
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": null,
+        "state": "null_result"
+       }
+      ],
+      "min_score": null,
+      "max_score": null
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_71188fcf0e6703c9",
+       "c_2c7a25e0cc0ad3f2",
+       "c_f1f6983d23c3009f",
+       "c_da033b82807ffbe7"
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_5d474f8db1578d8d"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_14271764afae517b"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_9d4897ac9ecdb2d4"
+     }
+    ]
+   }
+  },
+  "synthetic_null_then_score": {
+   "how": "SYNTHETIC: generation-1 picks have no score and the others have SYNTHETIC selection-logic scores; the running minimum goes null -> a number at generation 2, which counts as a decrease (spec 3 step 4), so patience 1 does not stop the run there",
+   "pool": "small",
+   "scores": {
+    "c_1afb7cd3e603456c": -7.0,
+    "c_c42a53803595e440": -8.0,
+    "c_f1f6983d23c3009f": null,
+    "c_71188fcf0e6703c9": null,
+    "c_21d6c6f0d07e3759": -6.5,
+    "c_14271764afae517b": -7.5,
+    "c_5d474f8db1578d8d": -9.0,
+    "c_da033b82807ffbe7": null,
+    "c_2c7a25e0cc0ad3f2": null,
+    "c_9d4897ac9ecdb2d4": -8.5
+   },
+   "ga": {
+    "seed": 3,
+    "population_size": 4,
+    "generations": 3,
+    "elite_count": 0,
+    "tournament_size": 2,
+    "neighbor_count": 3,
+    "random_fraction": 0.0,
+    "patience": 1,
+    "max_new_dockings": 20,
+    "total_s": 600
+   },
+   "expected": {
+    "stop_reason": "generations_complete",
+    "status": "complete",
+    "generations_done": 3,
+    "new_dockings_used": 10,
+    "reused_count": 0,
+    "generations": [
+     {
+      "index": 1,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_71188fcf0e6703c9",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 0,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 1,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_f1f6983d23c3009f",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 2,
+        "score": null,
+        "state": "null_result"
+       },
+       {
+        "candidate_id": "c_da033b82807ffbe7",
+        "origin": "initial",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 3,
+        "score": null,
+        "state": "null_result"
+       }
+      ],
+      "min_score": null,
+      "max_score": null
+     },
+     {
+      "index": 2,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -7.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "min_score": -9.0,
+      "max_score": -7.0
+     },
+     {
+      "index": 3,
+      "complete": true,
+      "individuals": [
+       {
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "origin": "similar",
+        "parent_candidate_id": "c_5d474f8db1578d8d",
+        "similarity": "0.851064",
+        "evaluation": "docked",
+        "eval_index": 8,
+        "score": -6.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_c42a53803595e440",
+        "origin": "similar",
+        "parent_candidate_id": "c_5d474f8db1578d8d",
+        "similarity": "0.892473",
+        "evaluation": "docked",
+        "eval_index": 9,
+        "score": -8.0,
+        "state": "scored"
+       }
+      ],
+      "min_score": -8.0,
+      "max_score": -6.5
+     }
+    ],
+    "rng_calls": [
+     {
+      "call": "sample",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_f1f6983d23c3009f",
+       "c_71188fcf0e6703c9",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_da033b82807ffbe7",
+       "c_2c7a25e0cc0ad3f2",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "k": 4,
+      "result": [
+       "c_71188fcf0e6703c9",
+       "c_2c7a25e0cc0ad3f2",
+       "c_f1f6983d23c3009f",
+       "c_da033b82807ffbe7"
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_5d474f8db1578d8d",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_5d474f8db1578d8d"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_14271764afae517b",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_14271764afae517b"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_1afb7cd3e603456c",
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_1afb7cd3e603456c"
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759",
+       "c_9d4897ac9ecdb2d4"
+      ],
+      "result": "c_9d4897ac9ecdb2d4"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -7.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -7.5,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440",
+       "c_21d6c6f0d07e3759"
+      ],
+      "result": "c_21d6c6f0d07e3759"
+     },
+     {
+      "call": "sample",
+      "population": [
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -9.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_1afb7cd3e603456c",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 6,
+        "score": -7.0,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_9d4897ac9ecdb2d4",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 7,
+        "score": -8.5,
+        "state": "scored"
+       }
+      ],
+      "k": 2,
+      "result": [
+       {
+        "candidate_id": "c_14271764afae517b",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 5,
+        "score": -7.5,
+        "state": "scored"
+       },
+       {
+        "candidate_id": "c_5d474f8db1578d8d",
+        "origin": "random",
+        "parent_candidate_id": null,
+        "similarity": null,
+        "evaluation": "docked",
+        "eval_index": 4,
+        "score": -9.0,
+        "state": "scored"
+       }
+      ]
+     },
+     {
+      "call": "choice",
+      "population": [
+       "c_c42a53803595e440"
+      ],
+      "result": "c_c42a53803595e440"
+     }
+    ]
+   }
+  }
+ },
+ "arithmetic": {
+  "random_slots": [
+   {
+    "random_fraction": 0.0,
+    "slots": 2,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 3,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 4,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 5,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 10,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 12,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 22,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.0,
+    "slots": 24,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 2,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 3,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 4,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 5,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 10,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 12,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 22,
+    "r": 4,
+    "exact_decimal_r": 4
+   },
+   {
+    "random_fraction": 0.2,
+    "slots": 24,
+    "r": 5,
+    "exact_decimal_r": 5
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 2,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 3,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 4,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 5,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 10,
+    "r": 3,
+    "exact_decimal_r": 3
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 12,
+    "r": 3,
+    "exact_decimal_r": 3
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 22,
+    "r": 6,
+    "exact_decimal_r": 6
+   },
+   {
+    "random_fraction": 0.25,
+    "slots": 24,
+    "r": 6,
+    "exact_decimal_r": 6
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 2,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 3,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 4,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 5,
+    "r": 3,
+    "exact_decimal_r": 3
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 10,
+    "r": 5,
+    "exact_decimal_r": 5
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 12,
+    "r": 6,
+    "exact_decimal_r": 6
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 22,
+    "r": 11,
+    "exact_decimal_r": 11
+   },
+   {
+    "random_fraction": 0.5,
+    "slots": 24,
+    "r": 12,
+    "exact_decimal_r": 12
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 2,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 3,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 4,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 5,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 10,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 12,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 22,
+    "r": 3,
+    "exact_decimal_r": 3
+   },
+   {
+    "random_fraction": 0.15,
+    "slots": 24,
+    "r": 4,
+    "exact_decimal_r": 4
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 2,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 3,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 4,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 5,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 10,
+    "r": 4,
+    "exact_decimal_r": 4
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 12,
+    "r": 4,
+    "exact_decimal_r": 4
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 22,
+    "r": 8,
+    "exact_decimal_r": 8
+   },
+   {
+    "random_fraction": 0.35,
+    "slots": 24,
+    "r": 8,
+    "exact_decimal_r": 8
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 2,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 3,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 4,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 5,
+    "r": 2,
+    "exact_decimal_r": 2
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 10,
+    "r": 5,
+    "exact_decimal_r": 5
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 12,
+    "r": 5,
+    "exact_decimal_r": 5
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 22,
+    "r": 10,
+    "exact_decimal_r": 10
+   },
+   {
+    "random_fraction": 0.45,
+    "slots": 24,
+    "r": 11,
+    "exact_decimal_r": 11
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 2,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 3,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 4,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 5,
+    "r": 0,
+    "exact_decimal_r": 0
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 10,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 12,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 22,
+    "r": 1,
+    "exact_decimal_r": 1
+   },
+   {
+    "random_fraction": 0.05,
+    "slots": 24,
+    "r": 1,
+    "exact_decimal_r": 1
+   }
+  ],
+  "random_slots_float_vs_exact_decimal_mismatches_0_to_0.50_step_0.01": [],
+  "reservation": [
+   {
+    "name": "defaults",
+    "ga": {
+     "seed": 0,
+     "population_size": 12,
+     "generations": 5,
+     "elite_count": 2,
+     "tournament_size": 2,
+     "neighbor_count": 10,
+     "random_fraction": 0.2,
+     "patience": 3,
+     "max_new_dockings": 60,
+     "total_s": 7200
+    },
+    "reserved_units": 52,
+    "wall_clock_s": 7800,
+    "full_run_may_be_partial": true
+   },
+   {
+    "name": "max_scale",
+    "ga": {
+     "seed": 0,
+     "population_size": 24,
+     "generations": 8,
+     "elite_count": 0,
+     "tournament_size": 2,
+     "neighbor_count": 10,
+     "random_fraction": 0.2,
+     "patience": 3,
+     "max_new_dockings": 100,
+     "total_s": 14400
+    },
+    "reserved_units": 100,
+    "wall_clock_s": 15000,
+    "full_run_may_be_partial": true
+   },
+   {
+    "name": "min_scale",
+    "ga": {
+     "seed": 0,
+     "population_size": 4,
+     "generations": 1,
+     "elite_count": 2,
+     "tournament_size": 2,
+     "neighbor_count": 10,
+     "random_fraction": 0.2,
+     "patience": 3,
+     "max_new_dockings": 4,
+     "total_s": 600
+    },
+    "reserved_units": 4,
+    "wall_clock_s": 1200,
+    "full_run_may_be_partial": true
+   },
+   {
+    "name": "one_generation_cap_by_formula",
+    "ga": {
+     "seed": 0,
+     "population_size": 12,
+     "generations": 1,
+     "elite_count": 2,
+     "tournament_size": 2,
+     "neighbor_count": 10,
+     "random_fraction": 0.2,
+     "patience": 3,
+     "max_new_dockings": 100,
+     "total_s": 7200
+    },
+    "reserved_units": 12,
+    "wall_clock_s": 3900,
+    "full_run_may_be_partial": false
+   },
+   {
+    "name": "elite_4_pop_6",
+    "ga": {
+     "seed": 0,
+     "population_size": 6,
+     "generations": 8,
+     "elite_count": 4,
+     "tournament_size": 2,
+     "neighbor_count": 10,
+     "random_fraction": 0.2,
+     "patience": 3,
+     "max_new_dockings": 100,
+     "total_s": 14400
+    },
+    "reserved_units": 20,
+    "wall_clock_s": 6300,
+    "full_run_may_be_partial": false
+   },
+   {
+    "name": "total_600_wall_cap",
+    "ga": {
+     "seed": 0,
+     "population_size": 12,
+     "generations": 5,
+     "elite_count": 2,
+     "tournament_size": 2,
+     "neighbor_count": 10,
+     "random_fraction": 0.2,
+     "patience": 3,
+     "max_new_dockings": 60,
+     "total_s": 600
+    },
+    "reserved_units": 52,
+    "wall_clock_s": 1200,
+    "full_run_may_be_partial": true
+   }
+  ]
+ },
+ "t1_observations": {
+  "small_pool_docking": {
+   "how": "real qvina2 through unmodified docking_worker.dock_row (receptor prepared once), docking env, two separate processes; first-mode qvina score (kcal/mol, Vina-family scoring function value, not an affinity); observations, not oracle values",
+   "receptor": "fixtures/chemical/prolif-vina-rec.pdb (pdb_conect, model 1, no instance removed)",
+   "parent": "fixtures/docking/public-derived-parent-record0.sdf",
+   "box": {
+    "source": "manual",
+    "center_A": [
+     3.4095,
+     0.7175,
+     11.314
+    ],
+    "size_A": [
+     12.0,
+     12.0,
+     12.0
+    ]
+   },
+   "parameters": {
+    "seed": 1,
+    "exhaustiveness": 1,
+    "num_modes": 2
+   },
+   "rows": [
+    {
+     "candidate_id": "c_1afb7cd3e603456c",
+     "input_sha256": "680b22fc1940877c5ee98362df8d2809c97e100173fefbdcf703793169093a81",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -8.5,
+     "result_sha256": "849e740fb62a50708b316e8cde825cf8d5cf62b955f12b0458ace6b1774a17c9",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_c42a53803595e440",
+     "input_sha256": "44ad6ccd66977ecbac12d2d2698d35135ac7bbab79c7856dd0587cc179fe0581",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -10.1,
+     "result_sha256": "17f2bc655d50e92ca3eca4c1fe15ac068bce4ea78d7ed7a2abc186c2a310cedd",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_f1f6983d23c3009f",
+     "input_sha256": "c916d70607a2d5858fe5c14d55983bf047c17f100a8559273c84098f7ed5fc98",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -6.4,
+     "result_sha256": "eab7faa856a20785e19265d5f8493809ef15affcf6b6d997744da2e8e06f1dd1",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_71188fcf0e6703c9",
+     "input_sha256": "ed22062ca85c367d28585ba6bb755c86abc351b9d7703fdec8a37085f49730d9",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -9.9,
+     "result_sha256": "232a427a612347cd6af17f977dd950eac56a61ff431991def98d1b64342aced9",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_21d6c6f0d07e3759",
+     "input_sha256": "6524acc498a6888d01090e0283d35647be349cd1d3a33df3ea03b4d200dce4a2",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -4.9,
+     "result_sha256": "cea7e46a376d5a089a4ed0e22603a3307bd7649d6afb65522d20456f7d825787",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_14271764afae517b",
+     "input_sha256": "9ad218c3413e7b5c507ff03c5dfd04250648bac69212d2aa25ffc9c67493e0b4",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -5.8,
+     "result_sha256": "49bcf647ee7c86a40549134bf91a8b118ae74fc3d381dee7b94bbd093f9449b5",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_5d474f8db1578d8d",
+     "input_sha256": "614eb7138a2df867d65720a0cb78ff95dec7b9981eeb9f446fdaf6151a952b9c",
+     "modes": 2,
+     "first_mode_score_kcal_mol": -2.7,
+     "result_sha256": "510890c170512511c8cf55e05d03732ccdc8078860b0034003c6795c4ecab439",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_da033b82807ffbe7",
+     "input_sha256": "e63397bb2c01e99f664f6124d53d8b5e41d59feedbc9230314602ab1083c034b",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -5.0,
+     "result_sha256": "78e6041a4c8dae4dea80be7db9bc7b1cd53d4013d85535e2660688adb689a18e",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_2c7a25e0cc0ad3f2",
+     "input_sha256": "5402c64bb1f0ecd289f0049ea9f382d738c06c05b53ddf8d78f5b89eecd6988a",
+     "modes": 1,
+     "first_mode_score_kcal_mol": 2.3,
+     "result_sha256": "0127a95639dbd79b06f5f1f4e1b43dee25002d17f4d8bd50002127f457dce221",
+     "repeat_process_result_sha256_equal": true
+    },
+    {
+     "candidate_id": "c_9d4897ac9ecdb2d4",
+     "input_sha256": "39d2a00148a517f0739c81eb9741fcb8b12e06c742c40fa317b1611da70f907d",
+     "modes": 1,
+     "first_mode_score_kcal_mol": -4.3,
+     "result_sha256": "9e7170face8303c118a0269eb8be4716d2e1ce34290ef68916e6779aae6462cd",
+     "repeat_process_result_sha256_equal": true
+    }
+   ]
+  }
+ }
+}

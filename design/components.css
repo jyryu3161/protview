@@ -481,6 +481,19 @@
 .mw-docking-sort { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
 .mw-docking-sort:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
+/* M22 GA design area (LigandGaPanel, ligand tab, below the batch docking area). Tables only: no bars or rank marks. */
+.mw-ga-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-2) var(--space-3); }
+.mw-ga-param { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-width: 0; font-size: 12px; color: var(--ink); }
+.mw-ga-param__label { flex-basis: 100%; color: var(--ink); }
+.mw-ga-param__range { color: var(--ink-muted); }
+.mw-ga-param__error { flex-basis: 100%; color: var(--fail-input); overflow-wrap: anywhere; }
+.mw-ga-param[data-invalid] .mw-ligand-input { border-color: var(--fail-input); }
+.mw-ga-tabs { display: flex; flex-wrap: wrap; gap: var(--space-1); border-bottom: 1px solid var(--line); }
+.mw-ga-tabs button { border: 0; background: transparent; color: var(--ink-muted); font: 600 12px/16px var(--font-sans); padding: var(--space-2) var(--space-2) calc(var(--space-2) - 2px); border-bottom: 2px solid transparent; cursor: pointer; }
+.mw-ga-tabs button:hover { color: var(--ink); }
+.mw-ga-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brand); }
+.mw-ga-tabs button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
 /* M20 mutation candidate panel (MutationPanel, protein engineering tab). Tables only: no bars, scores or rank marks. */
 .mw-app-protein { margin: var(--space-3); }
 .mw-mutation { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); min-width: 0; font-size: 12px; color: var(--ink); }

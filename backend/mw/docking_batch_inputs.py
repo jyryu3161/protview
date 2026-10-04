@@ -194,6 +194,19 @@ def published_m18_results(events: Iterable[dict[str, Any]]) -> dict[str, str]:
             key = docking_bundle.call_key(job["selected"]["rows"][event["row_index"]]["selected"]["arguments"],
                                           job["method"])
             found.setdefault(key, event["handle"])
+    # M22 (spec 7, additive): every individual a GA published, its M18 call key rebuilt from the GA job record (the
+    # individual's arguments under the GA's shared settings) and the GA job's M18 pins.
+    gas = {event["job"]["job_id"]: event["job"] for event in events
+           if event["type"] == "job_submitted" and event["job"].get("protocol_id") == "qvina_ga_dock_v1"}
+    if gas:
+        from .ligand_ga_inputs import row_arguments
+
+        for event in events:
+            job = gas.get(event.get("job_id")) if event["type"] == "ligand_ga_individual_published" else None
+            if job is not None and type(event.get("candidate_id")) is str:
+                key = docking_bundle.call_key(row_arguments(job["selected"]["arguments"], event["candidate_id"]),
+                                              job["method"])
+                found.setdefault(key, event["handle"])
     return found
 
 

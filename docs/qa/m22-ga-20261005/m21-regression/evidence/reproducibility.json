@@ -1,0 +1,142 @@
+{
+  "flowRequests": {
+    "loadArgs": {
+      "model_index": 0
+    },
+    "prepareArgs": {
+      "structure": "<loaded structure>",
+      "altloc": "highest_occupancy",
+      "waters": "strip_all",
+      "hydrogens": "strip",
+      "missing_residues": "leave_gaps",
+      "symmetry_mates": "ignore"
+    },
+    "candidateArgs": {
+      "structure": "<prepared structure>",
+      "sources": {
+        "pocket": null,
+        "ligand_shell": null,
+        "residues": [
+          {
+            "model_number": 1,
+            "chain_auth": "A",
+            "chain_label": "A",
+            "seq_auth": 44,
+            "seq_label": 44,
+            "icode": "",
+            "resname": "ILE"
+          }
+        ]
+      },
+      "ligand": null,
+      "allowed_residues": "W",
+      "protected_residues": [],
+      "released_residues": [],
+      "metal_contact_A": 3,
+      "numbering_map": null,
+      "annotation": null
+    },
+    "modelArgs": {
+      "candidate_set": "<candidate set>",
+      "candidate_index": 0,
+      "seed": 20261004,
+      "selection_policy": "protein_only",
+      "hydrogen_policy": "rebuild_pH7",
+      "contact_cutoff_A": 6
+    },
+    "timeoutS": 240
+  },
+  "reference": {
+    "run": "run_f95283d03f2c4f49bc13497e182d8a70",
+    "handle": "obj://run_f95283d03f2c4f49bc13497e182d8a70/mutation_model/6eb6eff972029ab0af5a232de4a46b147c74d26cbec02b4c2f33d477cb2e7c20",
+    "contentSha256": "b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c",
+    "structureSha256": {
+      "wild_type_reference": "e877b9745e42a05a9721cbc00cc8315fd39eb6d03101d802abbb2edbca2df65f",
+      "mutant": "334ad777a0f4c3354787474d2c767ee83e1186beb4cc836fd0ea7ca8943923cb"
+    }
+  },
+  "reruns": [
+    {
+      "run": "run_d5f58783285a4069bb4a9fe576f05e5b",
+      "status": "done",
+      "jobs": [
+        "job_cb6b0661fb554e1299a7c52f5487652a",
+        "job_cb6b0661fb554e1299a7c52f5487652a"
+      ],
+      "handles": [
+        "obj://run_d5f58783285a4069bb4a9fe576f05e5b/mutation_model/83f7f5f5bffbb67d4998c9d7787b364433c27aa2452b94a6ac64fa3a2dd8135e",
+        "obj://run_d5f58783285a4069bb4a9fe576f05e5b/mutation_model/83f7f5f5bffbb67d4998c9d7787b364433c27aa2452b94a6ac64fa3a2dd8135e"
+      ],
+      "sameHandle": true,
+      "sameJob": true,
+      "approvalStatus": 200,
+      "unitsAfterFirst": 1,
+      "unitsAfterSecond": 1,
+      "contentSha256": "b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c",
+      "structureSha256": {
+        "wild_type_reference": "e877b9745e42a05a9721cbc00cc8315fd39eb6d03101d802abbb2edbca2df65f",
+        "mutant": "334ad777a0f4c3354787474d2c767ee83e1186beb4cc836fd0ea7ca8943923cb"
+      },
+      "energies": {
+        "wild_type_reference": {
+          "after_kJ_mol": -12792.052911304538,
+          "before_kJ_mol": -10184.213905790195,
+          "convergence": "convergence_not_claimed",
+          "engine": "OpenMM",
+          "force_field": "amber14-all + implicit/gbn2",
+          "unit": "kJ/mol"
+        },
+        "mutant": {
+          "after_kJ_mol": -12717.486975922548,
+          "before_kJ_mol": -8045.996542151248,
+          "convergence": "convergence_not_claimed",
+          "engine": "OpenMM",
+          "force_field": "amber14-all + implicit/gbn2",
+          "unit": "kJ/mol"
+        }
+      },
+      "providerCallsZero": true
+    },
+    {
+      "run": "run_ce12c116285846f7b63b9ac851fa7338",
+      "status": "done",
+      "jobs": [
+        "job_c5286fd1927649e4bf3d80988205a4d1",
+        "job_c5286fd1927649e4bf3d80988205a4d1"
+      ],
+      "handles": [
+        "obj://run_ce12c116285846f7b63b9ac851fa7338/mutation_model/398c0315c06830f9f956b6fb6113b77b7b3a72e8e26052312fe48f138dcf2f98",
+        "obj://run_ce12c116285846f7b63b9ac851fa7338/mutation_model/398c0315c06830f9f956b6fb6113b77b7b3a72e8e26052312fe48f138dcf2f98"
+      ],
+      "sameHandle": true,
+      "sameJob": true,
+      "approvalStatus": 200,
+      "unitsAfterFirst": 1,
+      "unitsAfterSecond": 1,
+      "contentSha256": "b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c",
+      "structureSha256": {
+        "wild_type_reference": "e877b9745e42a05a9721cbc00cc8315fd39eb6d03101d802abbb2edbca2df65f",
+        "mutant": "334ad777a0f4c3354787474d2c767ee83e1186beb4cc836fd0ea7ca8943923cb"
+      },
+      "energies": {
+        "wild_type_reference": {
+          "after_kJ_mol": -12792.052911304538,
+          "before_kJ_mol": -10184.213905790195,
+          "convergence": "convergence_not_claimed",
+          "engine": "OpenMM",
+          "force_field": "amber14-all + implicit/gbn2",
+          "unit": "kJ/mol"
+        },
+        "mutant": {
+          "after_kJ_mol": -12717.486975922548,
+          "before_kJ_mol": -8045.996542151248,
+          "convergence": "convergence_not_claimed",
+          "engine": "OpenMM",
+          "force_field": "amber14-all + implicit/gbn2",
+          "unit": "kJ/mol"
+        }
+      },
+      "providerCallsZero": true
+    }
+  ]
+}

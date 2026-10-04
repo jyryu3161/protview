@@ -560,6 +560,110 @@ export interface DockingBatchReportArtifact { handle: string; markdown_handle: s
   schema: "method_report_manifest@1"; analysis_type: "ligand_docking_batch"; result_handle: string;
   batch_status: DockingBatchStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
 
+// ---- M22 ligand GA design (backend/mw/ligand_ga_constants.py, ligand_ga_inputs.py, ligand_ga_jobs.py,
+// ligand_ga_reads.py) ----
+export type LigandGaKey = "seed" | "population_size" | "generations" | "elite_count" | "tournament_size" |
+  "neighbor_count" | "random_fraction" | "patience" | "max_new_dockings" | "total_s";
+export type LigandGaParameters = Record<LigandGaKey, number>;
+export type LigandGaStatus = "complete" | "partial";
+export type LigandGaStopReason = "generations_complete" | "no_change" | "pool_exhausted" | "docking_limit" |
+  "time_exhausted" | "cancelled" | "worker_failed" | "resource_exceeded";
+export type LigandGaOrigin = "initial" | "carried" | "similar" | "random";
+export type LigandGaEvaluation = "reused" | "docked";
+export type LigandGaState = "scored" | "null_result" | "failed";
+
+/**
+ * `qvina_ga_dock_v1` job arguments (fixed shape; unknown keys refused). The M18 receptor, box, parameter and
+ * acknowledgement fields, the candidate set, its parent SDF, the M17 filter spec and every GA parameter. No `mode`
+ * key (free docking is fixed) and no `ligand` key. `parameters.seed` is the docking seed; `ga.seed` the GA seed.
+ */
+export interface LigandGaArgs extends Omit<DockingArgs, "ligand" | "mode"> {
+  candidate_set_handle: string;
+  parent_sdf_handle: string;
+  filter: LigandFilterSpec;
+  ga: LigandGaParameters;
+}
+
+/** `methods.ligand_ga_design` of `/capabilities` (and the preflight's `capability`). */
+export interface LigandGaCapability { schema: "ligand_ga_capability@1"; protocol_id: "qvina_ga_dock_v1";
+  tool_id: "qvina_ga_design"; engine: "qvina"; execution_lane: string; available: boolean; status: string;
+  reason_code: string | null; reason: string | null; pins: Record<string, unknown> | null;
+  ga_pins: Record<string, string> | null; method?: DockingMethod;
+  ga_ranges?: Record<LigandGaKey, { min: number; max: number; default: number | null }>;
+  timeout_s?: { max: number; finish_margin: number };
+  limits?: { max_pool: number; per_candidate_s: number; max_new_dockings: number; total_s_max: number;
+    output_bytes: number; summary_bytes: number; reuse_staging_bytes: number };
+  score_label?: string; score_row_label?: string; statements?: Record<string, string> }
+
+export interface LigandGaStatement { id: string; text: string }
+export interface LigandGaPoolCounts { size: number; eligible_count: number; filter_excluded_count: number }
+
+/** `POST /runs/{id}/ligand/ga/preflight` (a read). A refused request has null numbers. */
+export interface LigandGaPreflight { schema: "ligand_ga_preflight@1"; starts_job: false;
+  capability: LigandGaCapability; score_label: string; budget: Record<"expensive_calls" | "wall_clock_s", BudgetAxis>;
+  admission: { admitted: boolean; error: string | null; reason_code: string | null; message: string | null;
+    detail: Record<string, unknown> | null };
+  selection_sha256: string | null; pool: LigandGaPoolCounts | null; reusable_count: number | null;
+  reserved_units: number | null; max_new_dockings_expected: number | null; needed: BudgetPair | null;
+  remaining: BudgetPair; shortfall: BudgetPair | null; full_run_may_be_partial: boolean | null;
+  ga: LigandGaParameters | null; statements: LigandGaStatement[] | null;
+  existing_job: { job_id: string; status: string; summary_handle: string | null } | null }
+
+/** `POST /runs/{id}/ligand/ga/limit_approval` (the person's explicit approval; idempotent). */
+export interface LigandGaLimitApproval { raised: boolean; selection_sha256: string; reserved_units: number;
+  needed: BudgetPair; shortfall_before: BudgetPair; increase: BudgetPair; limits_before: BudgetPair;
+  limits_after: BudgetPair; shortfall_after: BudgetPair; event_seq: number | null; budget: BudgetSnapshot }
+
+/** One individual of a generation (stored values; `carried` cites its first evaluation). */
+export interface LigandGaIndividual { candidate_id: string; origin: LigandGaOrigin; parent_candidate_id: string | null;
+  similarity: string | number | null; evaluation: LigandGaEvaluation | null; eval_index: number | null; state: LigandGaState;
+  reason_code: string | null; score: number | null; result_handle: string | null }
+export interface LigandGaGeneration { index: number; complete: boolean; individuals: LigandGaIndividual[];
+  min_score: number | null; max_score: number | null }
+export interface LigandGaResult { schema: "ligand_ga_result@1"; protocol: "qvina_ga_dock_v1"; engine: "qvina";
+  candidate_set_handle: string; parent_sdf_handle: string; receptor: Record<string, unknown>;
+  pins: Record<string, unknown>; call_key: string; selection_sha256: string; box: DockingResult["box"];
+  parameters: DockingResult["parameters"]; filter: LigandFilterSpec; ga: LigandGaParameters;
+  pool: LigandGaPoolCounts; status: LigandGaStatus; stop_reason: LigandGaStopReason; generations_done: number;
+  new_dockings_used: number; reused_count: number; reserved_units: number; generations: LigandGaGeneration[];
+  limitations: string[] }
+/** Detail read: the validated summary; each individual carries `detail_available` (an M18 result handle). */
+export interface LigandGaDetail { schema: "ligand_ga_detail@1"; handle: string; job_id: string; attempt_id: string;
+  published_seq: number; score_label: string; score_column_label: string; score_row_label: string;
+  statements: LigandGaStatement[]; summary: LigandGaResult;
+  generations: (Omit<LigandGaGeneration, "individuals"> & {
+    individuals: (LigandGaIndividual & { detail_available: boolean })[] })[];
+  meta: Record<string, unknown> }
+/** Newest first. A summary that does not validate has `valid: false` and null fields. */
+export interface LigandGaListRow { handle: string; published_seq: number; valid: boolean; reason_code: string | null;
+  job_id: string | null; attempt_id: string | null; status: LigandGaStatus | null;
+  stop_reason: LigandGaStopReason | null; generations_done: number | null; new_dockings_used: number | null;
+  reused_count: number | null; reserved_units: number | null; pool: LigandGaPoolCounts | null;
+  candidate_set_handle: string | null; selection_sha256: string | null; ga: LigandGaParameters | null }
+export interface LigandGaList { schema: "ligand_ga_list@1"; total: number; offset: number; limit: number;
+  rows: LigandGaListRow[] }
+/** `GET /runs/{id}/ligand/ga/results/{handle}/individual?candidate_id=…`: one individual and its M18 detail read. */
+export interface LigandGaIndividualRead { schema: "ligand_ga_individual@1"; summary_handle: string;
+  candidate_id: string; evaluation: LigandGaEvaluation | null; eval_index: number | null; state: LigandGaState;
+  reason_code: string | null; score: number | null; result_handle: string | null;
+  appearances: { generation: number; position: number; origin: LigandGaOrigin }[]; score_label: string;
+  score_row_label: string; m18_detail: DockingResultDetail | null }
+
+/** Job progress (`ga` of the job record): staged file counts only; the summary handle once published, with its
+ * validated `status`/`stop_reason` (null when it does not validate). */
+export interface LigandGaProgress { pool: LigandGaPoolCounts; reserved_units: number; reused_planned: number;
+  individuals_started: number; individuals_result_files: number; individuals_finished: number; generation_records: number;
+  generations_complete: number; summary_handle: string | null; summary_status: LigandGaStatus | null;
+  summary_stop_reason: LigandGaStopReason | null }
+export interface LigandGaJob extends Omit<DockingJob, "protocol_id" | "artifacts"> {
+  protocol_id: "qvina_ga_dock_v1"; artifacts: { ligand_ga_result?: string }; ga: LigandGaProgress }
+export interface LigandGaPlanOnly { plan_only: true; protocol_id: "qvina_ga_dock_v1"; reason_code: "dry_run";
+  available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
+export type LigandGaSubmission = LigandGaJob | LigandGaPlanOnly;
+export interface LigandGaReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "ligand_ga"; result_handle: string;
+  ga_status: LigandGaStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
 // ---- M20 mutation candidates (backend/mw/mutation_constants.py, mutation_candidates.py, mutation_reads.py) ----
 export type MutationSourceKind = "pocket" | "ligand_shell" | "user";
 export type MutationProtectionReason = "user_protected" | "klifs_key_site" | "metal_contact" | "disulfide_cys";

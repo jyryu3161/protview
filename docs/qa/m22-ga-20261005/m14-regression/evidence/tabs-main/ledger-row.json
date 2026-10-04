@@ -1,0 +1,158 @@
+{
+  "schema": "m14_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "T-no-run": "pass",
+    "T-tabs": "pass",
+    "T-global-run": "pass",
+    "T-structure-state": "pass",
+    "T-unavailable": "pass",
+    "T-reports-list": "pass",
+    "T-reports-content": "pass",
+    "T-reports-fault": "pass",
+    "T-running-job": "pass",
+    "T-budget-main": "pass",
+    "T-run-switch": "pass",
+    "T-late-response": "pass"
+  },
+  "runId": "run_a2a99e646ebd47acb34f5fd943fd99dd",
+  "runs": {
+    "A": "run_a2a99e646ebd47acb34f5fd943fd99dd",
+    "B": "run_0e59124c68374807b22cba51d7dbc9d1"
+  },
+  "handles": {
+    "prepared": "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/prepared_structure/5dda4ecfdf97ff5ceeddab641715b9e68f17da9763bfd9b8f51f15f0a30b6a90",
+    "workflow": {
+      "plan": "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/analysis_plan/a2b879f65b6c839198200f7cb42f392be041fa918dc42af9d661597879b2bfe7",
+      "stopped": "exec_096f2c435c0448d5a9be5148d8d2a193",
+      "complete": "exec_cdd00559cc2443f18f1daebe838a85ce",
+      "summary": "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/workflow_summary/dcdcaaf8b1e363882c7674135c3b67d71040f6f4410e0c74c88f4842d642274f",
+      "reports": [
+        "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/report_manifest/aeef6bb1ed5473126c7095fc7bc22b6263e15768027ac494e179c319f1a9459c",
+        "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/method_report_manifest/92bbdeb6adb30849f27ac1b4e05b98776cae6b6b77846883c12178b933bcc635"
+      ]
+    },
+    "figure": {
+      "scene": "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/viewer_scene/56a1602dc745a42b523306f12467c3acb89912f30e8e535ee89bec9666b65f0b",
+      "figure": "obj://run_a2a99e646ebd47acb34f5fd943fd99dd/viewer_figure/34fd62fff266b7a223cf1699f90339920ab9566b0c1da24890f5a2d749b63202"
+    },
+    "openmm": {
+      "jobId": "job_bc4f3efefde341de9b87b1a5d6a50846",
+      "prepared": "obj://run_0e59124c68374807b22cba51d7dbc9d1/prepared_structure/4dac3f2e0061b50d1f23907be06d1b09d481bbe22ec0f25248e27b29f0504095"
+    }
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    },
+    {
+      "name": "public_1ubq.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "provenance": "public PDB entry 1UBQ (repository fixture; OpenMM input)"
+    }
+  ],
+  "fixtureLabels": [
+    "QA fault fixture (labeled renderer route, not a scientific value): reports list read failure",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "buildId": "CHa6nmR7ciWcO8tOTTcKV",
+  "harness": {
+    "tabs-flow.cjs": "6e064252afb217db8437ccf3a02c59a31779fa8b863f2a3d912b68b5780e4dba",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 459,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/m14/tabs-main/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 508,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/m14/tabs-main/paint-first.png",
+        "paintOrdinal": 2,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_a2a99e646ebd47acb34f5fd943fd99dd",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_0e59124c68374807b22cba51d7dbc9d1",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "tabs-main.jsonl",
+  "startedAt": "2026-10-04T17:47:37.289Z",
+  "finishedAt": "2026-10-04T17:48:25.435Z"
+}
