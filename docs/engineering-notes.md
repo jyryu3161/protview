@@ -273,7 +273,7 @@
 ### 숨은 900초 상한이 두 군데 있다 (M19)
 - **증상**: 프로토콜 상수만 7800초로 두면 일괄 제출이 `invalid job timeout` 또는 422로 거절된다.
 - **원인**: `JobQueue.submit`의 프로토콜별 상한(OpenMM·화학·포켓·리간드 후보 120, 그 밖 900)과 API 모델 `JobSubmit.timeout_s`(`le=900`)가 따로 있다. `docking_constants.TIMEOUT_MAX_S = 900`은 M18 capability 표시용이다.
-- **대응**: 두 곳 모두 이 프로토콜만 7800을 허용한다(API는 `le=7800`, 큐가 다른 프로토콜을 각자 상한으로 거절). 긴 작업을 새로 만들면 두 곳과 마감 계산(min(남은 활동 시간, `timeout_s`))을 함께 본다. guardian의 `MAX_GO_WAIT_S` 3600은 GO 대기 상한일 뿐이고 실행 시간 상한이 아니다. psutil 신원 기록에는 나이·만료 개념이 없다.
+- **대응**: 두 곳 모두 이 프로토콜만 7800을 허용한다(API는 `le=7800`, 큐가 다른 프로토콜을 각자 상한으로 거절. M22부터 API `le`는 GA 때문에 15000, 아래 M22 항목). 긴 작업을 새로 만들면 두 곳과 마감 계산(min(남은 활동 시간, `timeout_s`))을 함께 본다. guardian의 `MAX_GO_WAIT_S` 3600은 GO 대기 상한일 뿐이고 실행 시간 상한이 아니다. psutil 신원 기록에는 나이·만료 개념이 없다.
 
 ### 증액 직후 런타임 오버헤드 과금으로 다시 부족해진다 (M19)
 - **증상**: 활동 시간 부족분만큼 정확히 올리면, 증액 요청 자체의 `_mutation`이 끝날 때 `runtime_overhead`를 몇 ms 청구해 잔여가 필요량보다 작아지고 일괄 제출이 다시 `batch_limit_raise_required`가 된다.
@@ -281,7 +281,7 @@
 - 사용량이 이미 한도를 60초 넘게 넘은 run은 한 번의 증액으로 부족분이 0이 되지 않는다(증가분이 필요량 + 60초로 묶임). 다시 명시적으로 승인한다.
 
 ### `Run.update_limits`에는 HTTP 경로가 없다 (M19)
-- `update_limits`는 테스트에서만 불린다. 사람의 증액은 형제 함수 `Run.raise_limits(plan, by="human")`(실행 잠금 안에서 스냅숏으로 증가분을 계획, 증가분이 모두 0이면 이벤트 없음, `budget_limit_updated`에 `context` 추가)이고, 이것을 부르는 곳은 `docking_batch_jobs.limit_approval` 하나, 그것을 부르는 곳은 HTTP 라우트 하나다(`test_docking_batch_budget.py`가 AST로 확인). 다른 경로(도구·흐름·뷰어)에서 한도를 올리는 코드를 더하면 이 테스트가 실패해야 한다. `budget_limit_updated`의 재생(`_refresh`)은 `limits`만 읽으므로 맥락 필드를 더해도 events-only 복구가 같다.
+- `update_limits`는 테스트에서만 불린다. 사람의 증액은 형제 함수 `Run.raise_limits(plan, by="human")`(실행 잠금 안에서 스냅숏으로 증가분을 계획, 증가분이 모두 0이면 이벤트 없음, `budget_limit_updated`에 `context` 추가)이고, 이것을 부르는 곳은 `docking_batch_jobs.limit_approval`과 M22부터 `ligand_ga_jobs.limit_approval` 둘이고(서로 부르지 않음), 각자 자기 HTTP 라우트 하나(`POST /runs/{id}/docking/batches/limit_approval`, `POST /runs/{id}/ligand/ga/limit_approval`)에서만 불린다(`test_docking_batch_budget.py`·`test_ligand_ga_budget.py`가 AST로 확인). 다른 경로(도구·흐름·뷰어)에서 한도를 올리는 코드를 더하면 이 테스트가 실패해야 한다. `budget_limit_updated`의 재생(`_refresh`)은 `limits`만 읽으므로 맥락 필드를 더해도 events-only 복구가 같다.
 
 ### 재사용 색인은 일괄로 게시된 행도 넣어야 한다 (M19)
 - **증상**: 단독 M18 작업만 색인하면, 일괄로 계산한 후보를 같은 설정의 두 번째 일괄이 다시 계산한다.
@@ -373,6 +373,45 @@
 ### M20 회귀의 참조 세트 해시가 M20 기록과 다르다 (M21)
 - M21 수락의 M20 회귀가 가져온 세트(`8c608e2b…`)는 M20 기록(`99939292…`)과 해시가 다르지만 매니페스트의 파일 다섯 개 SHA-256은 같다. 위 "같은 스냅샷 파일을 다시 가져와도 세트 해시가 바뀐다"와 같은 원인(`imported_at`)이며 회귀 판정에는 영향이 없다.
 
+### GA `finish`는 개체를 먼저 모두 게시한 뒤에 실행의 끝을 판단한다 (M22)
+- **증상**: 첫 구현은 세대 기록 하나가 읽히지 않거나 종료 기록이 세대 기록과 맞지 않으면 예외로 요약 만들기를 멈춰, 이미 끝난 새 도킹 결과도 게시되지 않았다(M19와 다름).
+- **대응**(독립 코드 검토 수정 `a71b2e6`): `ligand_ga_jobs.finish`가 읽을 수 있는 세대 기록(처음 읽히지 않는 기록 앞까지, 풀 후보·쓰지 않은 `eval_index`·시작 때 재사용 계획과 같은 평가인 기록만)의 새 도킹 개체를 M18 검사로 모두 게시한 다음에 종료 이유를 정한다. 틈·이상한 파일·읽히지 않는 기록·종료 기록 불일치는 예외가 아니라 `worker_failed`다. 요약 자체를 만들 수 없을 때만 예외(작업 `failed` "invalid scientific output")이고, 그때도 게시한 개체는 자기 게시 증거로 읽히고 재사용된다.
+- **검증**: `pytest backend/tests/test_ligand_ga_jobs.py -k "unreadable_generation_record" -q`.
+
+### 새 도킹은 `max_new_dockings`가 아니라 `reserved_units`까지다 (M22)
+- **증상**: 첫 명세·oracle은 `max_new_dockings`에서 `docking_limit`을 냈다. 그런데 예약은 `reserved_units = min(max_new_dockings, P + (G − 1)(P − E))`이라, 점수 있는 개체가 `elite_count`보다 적어 새 자리가 늘면 예약하지 않은 단위를 쓰게 된다.
+- **대응**(T2 수정 `613a707`, 명세 3·6절 수정): 작업 모듈이 다음 개체가 새 도킹을 필요로 할 때 새 도킹 수가 `reserved_units`에 닿았으면 그 자리에서 `docking_limit`으로 멈춘다. 요약 검증은 `new_dockings_used ≤ reserved_units`와 `docking_limit`이면 `new_dockings_used = reserved_units`를 요구한다. 작업 모듈은 `reserved_units` 식을 자기 사본으로 계산한다(서버 `ligand_ga_inputs.reserved_units`와 같아야 함, `test_ligand_ga_worker.py`가 대조).
+
+### 도킹이 끝난 뒤의 늦은 신호가 결과를 잃게 하지 않는다 (M22)
+- **증상**: M19 일괄은 `dock_row`가 끝난 직후 개인 작업 폴더를 지우는 동안 늦은 타이머·SIGTERM이 오면 끝난 행을 잃거나 `qvina_work`를 남길 수 있었다(`docs/tracking/findings.md` M19 항목).
+- **대응**(`a71b2e6`): GA 작업 모듈의 `_dock`은 `dock_row`가 돌아오자마자 `_quiet()`(SIGALRM·SIGTERM 막기, 타이머 해제, 중단 구간 종료)를 부른 뒤에 폴더를 지운다. 막힌 신호는 다음 개체 시작 전 확인에서 `cancelled`·시계로 처리된다. 시작할 때 남아 있던 `qvina_work`는 먼저 지운다. M19 작업 모듈은 바꾸지 않았다.
+- **검증**: `test_ligand_ga_worker.py::test_a_finished_docking_survives_a_late_sigterm_and_a_stale_private_directory`.
+
+### 15000초 작업 한도는 세 곳에 반영해야 한다 (M22)
+- M19 "숨은 900초 상한" 함정과 같다. API `JobSubmit.timeout_s`의 `le`(7800 → 15000), `JobQueue.submit`의 프로토콜별 `bound` 연쇄(`GA_TIMEOUT_MAX_S`, 이 프로토콜은 기본값 없이 인자 검사에서 `[total_s + 600, 15000]`), 그리고 M19 `BATCH_PROTOCOL` 분기를 본뜬 GA 분기(`SUMMARY_PROTOCOLS`: 시도 1회·재시도 거절·정리 뒤 `_finish_batch` 게시·복구, 예약 단위, 스테이징 한도, adapter 이름)다. guardian에는 진입점·도킹 인터프리터·감시 대상·종료 기록 한도(64 KiB) 항목을 더했다.
+- API `le`를 올린 결과 다른 프로토콜의 7800 < `timeout_s` ≤ 15000 요청은 422 상태는 같고 본문만 요청 모델 오류에서 큐의 "invalid job timeout"으로 바뀌었다(결정 0030, `test_ligand_ga_jobs.py::test_registration_capability_and_protocol_timeout_bound`). 긴 작업을 또 만들면 이 세 곳과 마감 계산(min(남은 활동 시간, `timeout_s`))을 함께 본다.
+
+### `producer()`의 GA 개체 증거 순번은 요약 게시가 있으면 그 순번이다 (M22)
+- `docking_bundle._ga_individual_producer`는 예약 < 정리 확인 < `ligand_ga_individual_published`이고 후보가 그 GA의 적격 풀 후보일 때 증거로 인정하며, 비교에 쓰는 `published_seq`는 같은 시도의 요약 게시(`ligand_ga_published`)가 있으면 그 순번, 없으면 개체 게시 순번이다(M19 일괄 행과 같은 규칙). 가장 먼저 게시한 쪽이 이기므로 같은 handle을 M18·M19가 먼저 게시했으면 GA 게시가 기존 대조 기준을 바꾸지 않는다. GA가 이기면 `job`을 그 개체의 다시 만든 M18 보기(`ligand_ga_jobs.individual_view`, 후보 행은 검증된 후보 집합에서 다시 읽음)로 바꿔 돌려준다. GA 이벤트가 없는 run에서는 반환값이 그대로다(착수 확인 (a2)).
+
+### 재사용 크기는 시작 때 다시 본다 (M22)
+- 입장의 `ga_reuse_too_large` 검사는 제출 때의 재사용 계획으로 한다. 대기 중에 같은 run에 저장 결과가 늘면 시작 때의 계획이 더 커질 수 있다. 큐는 시작 때 run 실행 잠금 안에서 재사용 계획을 다시 정한 뒤 `reserve_attempt` 전에 128 MiB를 다시 검사한다(`a71b2e6`, 넘으면 422 `ga_reuse_too_large`, 예약·dispatch 없음, `test_ligand_ga_jobs.py::test_admission_refusals_record_and_charge_nothing`).
+
+### 유사도는 문자열로 저장된다 (M22)
+- 요약의 `similarity`는 숫자가 아니라 정확 분수를 6자리 `ROUND_HALF_UP`한 문자열(`"0.913043"`, `ligand_ga_bundle.SIMILARITY_RE`)이다. float 반올림 오차 없이 독립 oracle과 바이트로 맞추기 위해서다. 화면의 `lineageText`가 처음에는 숫자만 보여 오프스크린 흐름에서 Tanimoto가 표에 나오지 않았다(T8에서 찾아 고침, `448e912`). 저장 문자열을 그대로 보이고 화면에서 다시 반올림하지 않는다. 이웃 정렬은 저장 문자열이 아니라 전체 정밀도 값이므로, 6자리에서 같아 보이는 두 후보의 순서가 풀 순서와 다를 수 있다.
+
+### 동점은 어디서나 풀 순서다 (M22)
+- 이어받음(점수 오름차순), 토너먼트 부모(점수가 가장 낮은 개체), 이웃(Tanimoto 내림차순) 모두 동점이면 후보 집합 저장 순서(`pool` index)가 이긴다. Morgan Tanimoto 동점은 흔하다(착수 확인 (a): 작은 풀 P0 행에 0.842105 셋). 서버 요약 검증도 이어받음을 같은 규칙으로 다시 계산하므로, 동점 규칙을 바꾸면 기존 요약이 검증을 통과하지 못한다.
+
+### GA 요약 읽기는 후보 집합을 한 번만 검증한다 (M22)
+- `validated_summary`는 단일 게시·GA 선택 기록·평가한 개체마다 다시 만든 M18 선택·모든 개체 결과(`docking_bundle.validated_result`, 이벤트 로그 재파싱)를 다시 검증한다. 개체 결과 검증이 `producer()` → `individual_view` → `pool_rows`를 다시 불러 후보 집합 검증 읽기가 개체 수만큼 반복되었다. 요약 읽기 하나 동안 `_one_pool_check`(contextvar 메모, 같은 run·후보 집합·GA 기록 값일 때만)로 한 번만 하게 했다(`a71b2e6`). 그래도 개체 결과 검증은 개체마다 하므로 개체 ≤ 101개 요약이 많은 run에서는 목록·폴링이 느려질 수 있다(M19 "일괄 읽기" 항목과 같은 원인).
+
+### GA 진행 개수는 새 도킹 파일만 센다 (M22)
+- 진행 `ga.individuals_started`·`individuals_result_files`·`individuals_finished`는 시도 디렉터리 `individuals/`의 파일 수이고 재사용 개체는 파일을 만들지 않는다. 그래서 화면은 "새 도킹 시작·끝"으로 이름 붙이고 재사용은 `reused_planned`(시작 때 계획)로 따로 보인다(`a71b2e6`). 실행 중에는 객체를 게시할 수 없으므로(M19 함정과 같음) 진행에는 점수가 없다.
+
+### Stop 훅 나머지 그룹은 M22 뒤 혼자 22분이다 (M22)
+- M22 고정 게이트에서 다섯 그룹을 따로 차례로 돌렸을 때 나머지 그룹은 2,063개 1324초였다(`docs/qa/m22-ga-20261005/gate.txt`). M22 백엔드 테스트 일곱 파일(실제 qvina·RDKit·M17 작업)이 모두 이 그룹에 들어 있다. 훅 제한(그룹 480초·전체 600초) 안에서는 시간 초과로 보고되며, 게이트는 그룹별 개별 실행으로 판단한다. `scripts/test_m22_offscreen_acceptance.py`도 훅 목록에 없다(`docs/tracking/findings.md`).
+
 ## 동작 원리
 
 ### handle과 복구
@@ -407,6 +446,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 
 ### 변이 구조 모델링 작업 경로 (M21)
 `POST /jobs`의 `openmm_mutation_model_v1`은 `mutation_model_bundle.admission`이 엔진 없이 인자·`timeout_s`·후보 집합(M20 `validated_set`)·후보 번호·구조·잔기 7필드를 검사하고, dry-run이면 계획만 돌려준다. 그 다음 `selection`이 신원 어댑터·OpenMM(M7 `dependencies()`)·PDBFixer(`importlib.metadata`)를 확인하고(412), M7 `preflight()`로 단백질 중원자 투영을 만들어(422 `openmm_preflight_failed`) 스테이징 payload(투영, seed, 원래 잔기 7필드, 변이 후 이름, cutoff, 고정 방법)를 작업 기록에 넣는다. 호출 키는 정규화 인자 + 작업 모듈·의존 파일 SHA-256 + 방법 기록이다. 시작 때 같은 pin을 다시 맞추고, guardian이 고정 진입점 `mw/jobs/openmm_mutation_worker.py`를 서버와 같은 프로젝트 인터프리터로 띄운다(감시 대상, 출력 64,000,000 B). 작업 모듈은 변이형만 PDBFixer에 넣어 이식하고, 두 구조를 같은 `_prepare` → `_minimize` → `_entry` 경로로 만든 뒤 `result.json` 또는 닫힌 `error.json`을 쓴다. 게시(`_publish_mutation_model`)는 현재 시도·취소를 확인하고 출력 크기·해시, 방법·선택 일치, mmCIF 원자 행, 야생형 중원자 = 스테이징 투영, 추가 원자 집합, `validated_model`을 통과해야 mmCIF 객체 둘과 결과를 저장한다. 같은 조건 도킹은 이 결과를 M18 `docking_bundle`이 `receptor_source`로 다시 검증해 저장 mmCIF와 `final_bonds`로 만든 사이드카를 스테이징하고, `docking_worker.py`는 이 출처 표시가 있을 때만 말단 카르복실 완화와 열두째 문장을 켠다.
+
+### GA 설계 작업 경로 (M22)
+`POST /jobs`의 `qvina_ga_dock_v1`은 `ligand_ga_inputs.submission`이 입장 1–3을 검사한다: `ga`·`timeout_s`·필터 정규화와 공유 필드의 M18 `docking_inputs.validate_arguments`(자리표시 후보 id), M17 후보 집합 검증 읽기와 필터 적격 평가, 첫 적격 후보 하나를 대표로 `docking_bundle.submission`(수용체·부모 검증 한 번), `ga_pool_too_small`. 결과는 GA 선택 기록 `ligand_ga_selection@1`(인자, 대표의 수용체·사이드카·부모 기록, 풀 id·적격 표시, `pool_sha256`, `selection_sha256`)이며 후보마다의 M18 선택은 없다. 호출 키는 `selection_sha256` + M18 pin + GA pin이고, 같은 키의 진행 중 작업이나 검증된 `complete` 요약의 작업만 돌려준다. 새 작업이면 그 자리에서 재사용 계획 크기(422)와 예산 부족(429)을 본다. 작업 기록에는 `method`(M18 pin)와 `ga_method`(GA 작업 모듈·상수 해시)를 넣고 시작 때 둘 다 다시 맞춘다. 시작 때 run 실행 잠금 안에서 재사용 계획을 한 번 정하고(`published_m18_results`로 적격 후보의 M18 호출 키 조회, 각 handle을 `validated_result`·`input_sha256`으로 재검증, `job_dispatch_intent.ga_reused`) 크기를 다시 본 뒤 `reserve_attempt(units=reserved_units)`로 예약한다. 스테이징 `ligand_ga_worker_input@1`은 첫 적격 후보의 M18 스테이징에서 가져온 수용체·부모 SDF 블록·상자·값, `ga`, 풀 행(id·SMILES·적격, 적격만 M18 후보 필드·`input_sha256`·재사용 결과 바이트)이며 한도는 48 MiB + 재사용 128 MiB의 base64(`MAX_STAGED_BYTES`)다. guardian은 고정 진입점 `mw/jobs/ligand_ga_worker.py`를 `.deps/docking/venv-locked`로 띄우고(감시 대상), 작업 모듈은 `docking_worker.py`(먼저 불러 socket을 막음)와 의존성 없는 `ligand_ga_constants.py`를 파일 경로로 불러 쓰고 RDKit은 Morgan 지문에만 쓴다. 적격 후보의 지문을 만든 뒤 수용체를 한 번 준비하고(`prepared.json`), 세대마다 개체를 뽑아 차례로 재사용하거나 `dock_row`로 도킹하며 `individuals/<k>.*`와 `generations/<g>.json`을 원자적으로 쓴다(쓰는 동안 SIGALRM·SIGTERM 막음, 개체 시계 300초와 전체 시계·SIGTERM은 `BaseException`인 `_Stop`). 서버는 그룹 정리 확인 뒤 M19와 같은 `_finish_batch`에서 종료 원인을 정하고, `ligand_ga_jobs.finish`가 새 도킹 개체를 M18 검사로 게시한 뒤(`ligand_ga_individual_published`) 개체 선택을 다시 만들어 요약을 만들고 검증해 게시한다(`ligand_ga_published`). 서버 재시작 때는 `reconcile_run`이 같은 경로로 게시하고 `interrupted`로 닫는다. capability는 M18 capability + GA 파일 해시 + GA 작업 모듈 `--handshake`(파일 해시 키로 캐시)다. 사람 증액은 `POST /runs/{id}/ligand/ga/limit_approval` → `ligand_ga_jobs.limit_approval` → `Run.raise_limits`(GA 상수)뿐이다.
 
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.

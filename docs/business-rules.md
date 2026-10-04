@@ -459,6 +459,116 @@ M17 후보 집합 하나의 후보 여러 개(+ 선택 사항 부모 기준 행)
 ### 의미하지 않는 것
 M18의 "의미하지 않는 것" 전부. 그에 더해 표의 정렬·첫 행 점수는 후보의 순위·우열이 아니고, 부모 행과의 점수 차이는 개선·악화가 아니며, `partial` 일괄의 빈 칸은 0이 아니라 계산하지 않음이다.
 
+## 리간드 GA 설계 (M22, `qvina_ga_dock_v1`)
+
+같은 run에 게시된 M17 후보 집합 하나(최대 2,000개) 안에서 유전 알고리즘(GA)이 세대마다 어느 후보를 도킹할지 정한다(결정 0030). 개체 하나 = 풀의 후보 하나이고, 개체의 점수는 그 후보의 단독 M18 자유 도킹 결과의 첫 모드 qvina 점수(kcal/mol)뿐이다. 개체 도킹은 M18 "리간드 도킹" 규칙 그대로이며(수용체·상자·값·점수 표기·한계 문장·닫힌 이유) 여기서 바꾸지 않았다. GA는 "넓은 후보 풀에서 도킹 상한 안에 어디를 볼지 정하는 탐색 방법"이며 순위 도구가 아니다. 점수가 낮은 개체를 남기는 것은 탐색 규칙일 뿐 결합이 좋다·친화도가 높다·개선되었다는 뜻이 아니다.
+
+### 입력
+- 작업 인자(고정 모양, 알 수 없거나 빠진 키는 `invalid_job_arguments`): M18의 수용체·상자·값·확인 필드(`receptor_handle`, `receptor_model_number`, `connectivity`, `receptor_instance`, `box`, `parameters`, `acknowledgement`, 이름·규칙 M18 그대로, `parameters.seed`가 도킹 seed) + `candidate_set_handle`(같은 run의 게시된 `ligand_candidate_set@1`), `parent_sdf_handle`(그 후보 집합의 부모 SDF, M19와 같은 검증), `filter`(M17 필터 사양 `{ranges, pains_exclude}`, 선택, 기본 `{}`, `ligand_filters.normalize_filter_spec`로 정규화), `ga`(아래 키 전부, 필수). `mode`·`ligand` 키는 없다(자유 도킹 고정).
+- GA 파라미터 `ga`(`backend/mw/ligand_ga_constants.py` `GA_RANGES`, 바꾸려면 사용자 결정). 정수는 `bool`이 아니고 `random_fraction`은 유한 실수다.
+
+| 키 | 의미 | 범위 | 기본 |
+|---|---|---|---|
+| `seed` | GA 탐색 난수 seed(도킹 seed와 별개) | 0–2147483647 | 없음(필수) |
+| `population_size` | 세대당 개체 수 | 4–24 | 12 |
+| `generations` | 세대 수 상한(첫 세대 = 세대 1) | 1–8 | 5 |
+| `elite_count` | 다음 세대로 그대로 이어받는 개체 수 | 0–4, `population_size − elite_count ≥ 2` | 2 |
+| `tournament_size` | 부모 선택 토너먼트 크기 | 2–4 | 2 |
+| `neighbor_count` | 유사 후보를 뽑는 가장 가까운 미평가 후보 수 | 3–30 | 10 |
+| `random_fraction` | 새 자리 중 무작위 후보 비율 | 0–0.5 | 0.2 |
+| `patience` | 점수 최솟값이 이 세대 수 연속 작아지지 않으면 중단 | 1–8 | 3 |
+| `max_new_dockings` | 이 실행의 새 도킹 건수 상한 | `population_size`–100 | 60 |
+| `total_s` | GA 전체 시간 상한(초, 수용체 준비 포함) | 600–14400 | 7200 |
+
+- 작업 시간 한도(`POST /jobs`의 `timeout_s`)는 이 프로토콜만 `total_s + 600` 이상 15000 이하이고 서버가 기본값을 채우지 않는다(화면은 늘 `total_s + 600`). 범위 밖은 `invalid_job_arguments`다. 개체 도킹 한 건은 300초 고정(M19 `PER_CANDIDATE_S`).
+
+### 입장 검사 (작업을 만들기 전, 예산 없음, 이 순서)
+1. `invalid_job_arguments`(422): 키·형식·범위·교차 규칙(`elite_count`, `max_new_dockings < population_size`), `timeout_s`, 필터 사양 오류, 검증되지 않는 후보 집합(종류·run·게시).
+2. M18/M19 입장 이유 그대로(422): 공유 필드의 M18 검사, 그다음 **첫 적격 후보 하나를 대표로** `docking_batch_inputs.row_request` → `docking_bundle.submission`(수용체 M11 규칙·인스턴스 7필드·부모 해시 `parent_mismatch`·상자·확인 등). 적격 후보가 0개면 대표가 없으므로 3이 먼저 난다.
+3. `ga_pool_too_small`(422): 적격 후보 수 < `population_size`(`detail{eligible_count, population_size}`).
+4. `ga_reuse_too_large`(422): 재사용할 저장 결과의 크기 합 > 128 MiB.
+5. `ga_limit_raise_required`(429, 과금 없음): 예산 부족(아래).
+- 4·5는 저장 결과와 run 예산이 필요해 `JobQueue.submit` 안에서 호출 키를 만든 뒤 본다(`ligand_ga_jobs.require_admission`). 시작 때 재사용 계획을 다시 정하면서 4를 한 번 더 본다(예약 전).
+
+### 풀과 적격
+- 풀 = 후보 집합의 `candidates[]` 저장 순서. 필터를 저장값에 서버가 평가한다(`ligand_filters.evaluate_row`): 사양이 비면 전부, 아니면 `passes_all === true`만 **적격**이다. 필터 탈락 후보는 도킹하지 않고 요약의 `pool.filter_excluded_count`와 사양으로 남는다.
+- 유사도 = 저장 SMILES의 RDKit Morgan 지문(반지름 2, 2048비트, 생성기 기본값 고정) 온비트 집합의 Tanimoto(정확 분수 |A∩B|/|A∪B|). 계산은 작업 모듈만 한다. 저장 값은 그 분수를 소수 여섯째 자리 `ROUND_HALF_UP`한 **문자열**이고, 이웃 정렬은 전체 정밀도로 한다. 지문 수학 값이며 점수나 활성이 아니다.
+
+### 절차 (작업 모듈 `mw/jobs/ligand_ga_worker.py`, 결정적)
+- 난수는 `random.Random(ga.seed)` 하나이고 호출은 `rng.sample`·`rng.choice`뿐이다. 순서: 세대 1 `rng.sample(적격 후보(풀 순서), population_size)`. 그 뒤 세대마다 유사 자리를 자리 순서대로(자리마다 `rng.sample(직전 세대의 점수 있는 개체(이어받음 먼저, 그다음 평가 순서), min(tournament_size, 개수))` 다음 `rng.choice(이웃)`), 그다음 무작위 자리를 자리 순서대로(`rng.choice(아직 뽑히지 않은 적격 후보(풀 순서))`). 뽑을 후보가 없으면 그 자리에서는 난수를 부르지 않는다.
+- **이어받음**: 직전 세대의 점수 있는 개체 중 점수가 낮은 `elite_count`개(동점은 풀 순서)를 다시 도킹하지 않고 넣는다(점수 있는 개체가 모자라면 있는 만큼).
+- **새 자리** `slots = population_size − 이어받은 수`, 무작위 자리 `r = floor(random_fraction × slots + 0.5)`, 나머지는 유사 자리. 점수 있는 개체가 하나도 없으면 모든 새 자리가 무작위 자리다.
+- **유사 자리**: 토너먼트에서 점수가 가장 낮은 개체(동점 풀 순서)가 부모, 이 실행에서 아직 뽑히지 않은 적격 후보를 (Tanimoto 내림차순, 풀 순서)로 정렬한 앞 `neighbor_count`개 중 하나가 자식이다. "아직 뽑히지 않음" = 이 실행에서 한 번도 뽑히지 않음(만들고 있는 세대의 앞 자리 포함). 교차는 없다.
+- **평가**: 개체를 뽑힌 순서대로 하나씩(CPU 1) 평가한다. 같은 M18 호출 키의 저장 결과가 시작 때의 재사용 계획에 있으면 **재사용**(도킹·과금 없음, 새 도킹 수에 세지 않음), 아니면 **새 도킹** 1건. 도킹 실패·모드 0개도 평가한 것이며 새 도킹이면 1건을 쓰고 재시도하지 않는다. 한 실행 안에서 같은 후보를 두 번 평가하지 않는다.
+- 세대의 개체 순서 = 이어받음(점수 오름차순, 동점 풀 순서) 다음 새 개체의 평가 순서. `eval_index`는 이어받음을 뺀 평가 순서(0부터, 한 실행에서 유일)다.
+- **조기 중단**: 완료한 세대 g ≥ 2마다 그때까지 모든 평가의 점수 최솟값이 세대 g − 1 끝의 값보다 작아졌는지 본다(null → 숫자는 작아짐, null → null은 작아지지 않음). 연속 `patience` 세대 작아지지 않으면 `no_change`로 끝낸다. 마지막 세대(`generations`)에서는 `generations_complete`가 먼저이고 `no_change`를 보지 않는다.
+- **풀 소진**: 새 자리를 하나도 채우지 못한 세대는 기록하지 않고 `pool_exhausted`로 끝낸다. 일부만 채우면 채운 만큼만 한다.
+
+### 종료 이유와 상태 (닫힌 집합, `STOP_REASONS`·`STATUS_BY_STOP_REASON`)
+- `complete`: `generations_complete`, `no_change`, `pool_exhausted`. `partial`: `docking_limit`, `time_exhausted`, `cancelled`, `worker_failed`, `resource_exceeded`.
+- `docking_limit`: 다음 개체가 새 도킹을 필요로 하는데 새 도킹 수가 이미 `reserved_units`(≤ `max_new_dockings`)에 닿았을 때 그 시점에 난다. 예약하지 않은 단위는 쓰지 않는다. 그 전에 뽑힌 재사용 개체는 평가를 끝낸다.
+- 확인 순서: 개체마다 시작 전 취소(`cancelled`) → `docking_limit` → 전체 시계(`time_exhausted`). 도킹 중에는 개체 시계 300초(그 개체 `failed` `candidate_timeout`, 실행은 계속), 전체 시계(`time_exhausted`), SIGTERM(`cancelled`). 전체 시계는 작업 모듈 시작부터 min(`total_s`, 14400)초다. 출력 총량(새 도킹 결과 파일 합 128 MiB)을 넘을 결과는 저장하지 않고 `resource_exceeded`로 멈춘다.
+- 멈춘 세대는 이어받음 + 평가를 끝낸 개체만 담아 `complete: false`로 게시한다(버리지 않음). 도킹 중 멈춘 개체(`<k>.started`만 남음)와 출력 총량에 걸린 개체는 세대 기록에 없으므로 요약에 나오지 않는다.
+- 작업 기록 상태는 요약 상태와 따로다(M19와 같음): 작업 모듈이 스스로 끝나면(자기 전체 시계·출력 총량 포함) 작업 `done`, 사용자 취소는 `cancelled`, 작업 마감은 `failed`(`resource_exceeded`, "job timeout") + 요약 `time_exhausted`, 크래시·자원 한도는 `failed` + 요약 `worker_failed`, 서버 재시작 복구는 `interrupted` + 요약(사용자가 취소를 요청했으면 `cancelled`, 아니면 `worker_failed`). 작업 모듈이 사용자 취소 없이 `cancelled`를 쓰면 `worker_failed`로 다시 해석한다. 첫 개체 전(`prepared.json` 전)에 멈추면 요약이 없고 작업은 실패한다(사용자 취소면 `cancelled`).
+
+### 개체 = 단독 M18 도킹
+- 개체의 작업 인자·`input_sha256`·호출 키는 같은 입력의 단독 `qvina_dock_v1` 자유 요청과 같다(`docking_batch_inputs.row_arguments`). 그래서 새 도킹 결과 `docking_result@1`은 단독 M18과 같은 바이트·같은 handle이며 M18·M19·GA가 서로 재사용한다. 작업 모듈은 `docking_worker.py`를 파일 경로로 불러 `receptor_inputs`·`receptor_prepared`를 한 번, 개체마다 `dock_row`를 부른다(행 계산 복제 없음).
+- 서버는 정리 확인 뒤 새 도킹 개체마다 M18과 같은 검사(`docking_bundle.result_content` → `store_result`, 수용체 원자·거리 재대조)로 결과를 게시하고 `ligand_ga_individual_published`를 쓴다. 이 이벤트가 그 결과의 게시 증거이며 요약 게시가 없어도 M18 읽기·보고서·재사용이 받아들인다(`docking_bundle.producer()`는 단독·일괄 행·GA 개체 증거 중 가장 먼저 게시한 쪽).
+
+### 요약 개체를 만드는 규칙 (서버, `ligand_ga_bundle.build_summary`)
+- 세대·개체 목록은 작업 모듈의 세대 기록(`generations/<g>.json`: 후보 id, 출처, 부모, 유사도, 평가, `eval_index`)에서, 상태·점수는 서버가 읽은 파일과 저장 결과에서 만든다(작업 모듈 기록의 점수를 쓰지 않음).
+- 결과 handle이 있으면(새로 게시했거나 재사용) 결과의 모드 수로 `scored`(≥ 1)/`null_result`, 점수 = `modes[0].score_kcal_mol` 사본. 결과가 없고 상태 파일이 `failed`면 그 이유. 상태 파일이 `scored`/`null_result`인데 결과를 게시할 수 없으면 `failed` `engine_output_invalid`. 상태도 결과도 없으면 `failed` `worker_failed`.
+- `carried` 개체는 직전 세대의 같은 후보 항목(점수·결과 handle·상태)을 그대로 인용한다(`evaluation`·`eval_index`는 null).
+- 읽을 수 없거나 틈이 있는 세대 기록, 풀에 없는 후보·쓴 `eval_index`·재사용 계획과 다른 평가가 있는 기록, 세대 기록과 맞지 않는 종료 기록은 예외가 아니라 그 앞까지만 쓰고 종료 이유를 `worker_failed`로 한다. 이 판단 전에 읽을 수 있는 기록의 새 도킹 개체를 모두 먼저 게시한다.
+- 개체마다의 `docking_selection@1`은 서버가 평가한 개체(≤ 101개)에 대해서만 작업 기록과 저장 후보 행으로 다시 만든다(`ligand_ga_inputs.individual_selection`, 단독 `docking_bundle.submission`과 같은 값). 작업 기록에는 후보마다의 선택을 넣지 않는다.
+
+### 저장된 결과 재사용
+- 적격 후보의 M18 호출 키 전체(정규화 인자 + M18 pin, 작업 모듈 해시 포함)와 같은 결과가 이 run에 있고(단독 M18 작업·M19 일괄 행·GA 개체 게시 어느 쪽이든, `docking_batch_inputs.published_m18_results`) 지금 검증을 통과하며 `input_sha256`이 같으면 재사용한다. 재사용 계획은 작업 시작 때 run 실행 잠금 안에서 한 번 정한다(`job_dispatch_intent.ga_reused`). 재사용 결과 바이트는 스테이징에 실어 작업 모듈이 첫 모드 점수를 읽는다.
+- 재사용 여부는 개체마다 `evaluation: "reused" | "docked"`로 요약에 들어간다(M19와 다름). 그래서 저장 결과 집합이 다르면 같은 GA seed라도 다른 요약이 된다(G3).
+- 이어서 하기는 따로 없다. 같은 설정으로 새 GA를 만들면 끝난 개체의 결과가 재사용된다.
+
+### 같은 GA (호출 키)
+- GA 호출 키 = `idempotency_key(qvina_ga_dock_v1, qvina_ga_dock_v1@1, {input: selection_sha256, method: M18 pin, ga_method: GA pin})`. `selection_sha256`은 수용체(handle·SHA-256·모델·연결 정보·인스턴스), 후보 집합 handle, 부모 SDF handle·SHA-256, `pool_sha256`(풀 id 순서·적격 표시), 필터, 상자 요청, 값, `ga` 전체의 정규화 SHA-256이다. 확인 세 항목·`timeout_s`·재사용 집합·시간·작업 ID는 넣지 않는다. GA pin은 GA 작업 모듈·상수 파일 SHA-256이고, M18 pin은 개체 호출 키·결과 검사에 쓴다.
+- 같은 키의 작업이 대기·실행 중이거나 같은 키의 검증된 `complete` 요약이 있으면 `POST /jobs`가 그 작업을 돌려준다(새 작업·과금 없음). `partial` 요약은 새 GA를 막지 않는다.
+
+### 예산, 첫 계산 승인, 한도 증액
+- 과금: 시작 때(승인된 시작 뒤, 프로세스를 띄우기 직전) `reserved_units = min(max_new_dockings, P + (G − 1) × (P − E))`를 한 번 예약하고 환불하지 않는다(중간에 멈춤·재사용이 있어도). 재사용 개체·입장 거절·대기 중 취소·dry-run은 과금하지 않는다. 시도는 1회다(`/jobs/{id}/retry` 없음).
+- 필요량: 비싼 계산 `reserved_units`, 활동 시간 min(`total_s` + 600, `reserved_units` × 300 + 300)초. 부족분 = max(0, 필요량 − (한도 − 사용량)) 축마다. 기본 run 예산(1800초, 8회)은 기본 설정 GA(52단위, 7800초)에 모자라 입장이 429 `ga_limit_raise_required`가 되므로 화면이 부족분과 증액 승인을 먼저 보인다.
+- `full_run_may_be_partial` = `reserved_units × 300 > total_s`(상한 기준 경고). 기본 설정에서도 참이며 "끝까지 못 갈 수 있음"이라는 뜻이지 부분 완료가 아니다.
+- run의 첫 비싼 계산 승인(`expensive_first_call`, 도구 `qvina_ga_design`)은 M18과 같다. 증액은 이 승인을 만들지 않는다.
+- 증액 승인: 사람이 화면에서만 누른다(`POST /runs/{id}/ligand/ga/limit_approval`, 이 프로토콜 전용, M19 라우트와 따로). 서버는 run 실행 잠금 안에서 그 시점의 부족분을 다시 계산해 그만큼만 올린다: 비싼 계산 증가분 = min(부족분, 필요량, 100), 활동 시간 증가분 = 부족분이 0이면 0, 아니면 min(부족분, 필요량, 15000) + 60초. 부족하지 않으면 아무것도 바꾸지 않는다(멱등, 이벤트 없음). 기록은 `budget_limit_updated`(`by: "human"`, 맥락 `purpose: "ligand_ga_limit_raise"`, `selection_sha256`, `reserved_units`, `needed`, `shortfall`, `increase`, `limits_before`, `limits_after`). dry-run run과 취소된 run은 거절하고 아무것도 쓰지 않는다. 올라간 한도는 run 끝까지 유지된다.
+
+### 요약 객체 `ligand_ga_result@1` (서버만 만든다, 정리 확인 뒤, 모든 종료 상태, 개체 게시 다음 마지막, 1 MiB 한도)
+- 최상위 키: `schema`, `protocol`, `engine` (`qvina`), `candidate_set_handle`, `parent_sdf_handle`, `receptor{handle, sha256, model_number, connectivity, removed_instance, acknowledgement}`, `pins{ga_worker_sha256, ga_constants_sha256, worker_sha256, constants_sha256, qvina_sha256, qvina_package}`, `call_key`, `selection_sha256`, `box`, `parameters`(M18 값 + `cpu`), `filter`(정규화 사양), `ga`(유효 파라미터 전체), `pool{size, eligible_count, filter_excluded_count}`, `status`, `stop_reason`, `generations_done`(완료한 세대 수), `new_dockings_used`, `reused_count`, `reserved_units`, `generations`, `limitations`(G id 목록).
+- 세대: `index`, `complete`, `individuals`, `min_score`·`max_score`(그 세대에 평가되거나 이어받은 점수 있는 개체 기준, 값일 뿐 "최고"가 아님, 없으면 null).
+- 개체: `candidate_id`, `origin`(`initial` | `carried` | `similar` | `random`), `parent_candidate_id`·`similarity`(유사 자리만, 6자리 문자열), `evaluation`(`reused` | `docked`, 이어받음 null), `eval_index`(이어받음 null), `state`(`scored` | `null_result` | `failed`), `reason_code`(`failed`만: M18 이유 집합 + `candidate_timeout`·`worker_failed`), `score`(`scored`만, 결과 첫 모드 사본), `result_handle`(`failed` 아닌 개체).
+- 시각·작업·시도 ID를 넣지 않는다. 게시 때와 읽을 때마다(`validated_summary`) 정확한 키(순위·차이·best·improved 필드는 있을 수 없음), 모든 개체가 적격 풀 후보, 이어받음이 아닌 후보 id가 한 실행에서 유일, 세대 크기 ≤ `population_size`(완료한 세대 1 = `population_size`), 출처 순서(이어받음 → 유사 → 무작위, 세대 1은 초기만), 이어받음 = 직전 세대 점수 낮은 `elite_count`개(동점 풀 순서), `eval_index` 순서, 개체 점수 = 저장 결과 첫 모드, 결과 = 그 개체 자신의 M18 자유 입력, 최솟값·최댓값, 개수, `new_dockings_used ≤ reserved_units`, `reserved_units` 산식, 예약 이벤트 = `reserved_units`, 종료 이유와 상태·구조(`docking_limit`이면 새 도킹 = `reserved_units`, `no_change` 지점은 서버가 세대 최솟값으로 다시 계산), G 목록, pin, 해시, 크기를 다시 검증한다. 서버는 지문을 계산하지 않으므로 `parent_candidate_id`·`similarity`는 모양만 검사한다(G1).
+- 요약을 만들 수 없으면(증거 오류) 작업은 그 이유로 실패하지만 이미 게시한 개체 결과는 자기 게시 증거로 읽히고 재사용된다. events-only로 다시 열린다.
+
+### 고정 문장 (문자 그대로, 순서 고정, `ligand_ga_constants.STATEMENTS`, 바꾸려면 사용자 결정)
+  - G1 (항상) "GA는 후보 풀에서 어디를 도킹할지 정하는 탐색 방법이며, 개체의 점수 정렬·선택 표시는 순위나 추천이 아니다. 부모·유사 후보 연결은 작업 모듈 기록이며 서버가 다시 계산하지 않았다."
+  - G2 (`partial`) "이 실행은 시간·도킹 상한·취소 등으로 일부 세대만 계산되었다. 계산하지 않은 개체는 점수가 없으며 0이 아니고, 한도 도달로 멈춘 실행은 같은 설정으로 다시 해도 같은 경로를 보장하지 않는다."
+  - G3 (재사용이 있을 때) "재사용한 개체는 같은 수용체·상자·seed·방식·값으로 이전에 저장된 도킹 결과를 가져온 것이며, 저장된 결과 집합이 다르면 같은 GA seed도 다른 경로를 낼 수 있다."
+- 점수 이름·열 머리는 M18과 같고("qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)", 열 "qvina 점수(kcal/mol)"), 점수 대상은 M19 `SCORE_ROW_LABELS["free"]`와 같은 "모드 1(엔진 출력 순서)"이다. 조기 중단 표시 이름은 "점수 최솟값 변화 없음"이다.
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "ligand_ga"`, 렌더 `ligand_ga_markdown@1`. 입력은 요약 handle 하나. 개체별 M18 보고서를 만들지 않는다.
+- 증거는 모두 계산값(`computed`): 공유 설정(수용체 가져오기, 뺀 인스턴스 7필드·원자 수, 후보 집합·부모 SDF, 상자, 값, `ga` 값), 풀 개수, 실행 개수(`generations_done`·`new_dockings_used`·`reused_count`는 저장 세대·개체 위의 `count_where`로 검증할 때마다 다시 셈, `reserved_units`), 세대마다 개체 수(`count`·`count_where(state == …)`)와 저장 `min_score`·`max_score`(값만, 그 세대 저장 점수의 끝값과 같아야 함), `scored` 개체마다 점수 주장 둘(요약 `generations[g].individuals[p].score`와 개체 결과 `modes[0].score_kcal_mol`, 같은 `row_selector {generation, position}`, 같은 값). 점수는 `Decimal(str(v))`를 0.1 `ROUND_HALF_UP`.
+- 점수 없는 개체(`null_result`, `failed`)와 계산하지 않은 개체에는 점수 주장이 없고 표 칸은 비운다(0이 아님). 그런 개체의 점수 주장, 다른 statement의 필드, 틀린 반올림, 해석 문장은 거부한다. 점수 없는 개체는 그 세대의 점수 있는 개체 뒤에 둔다(표시 순서일 뿐).
+- 금지어 검사는 M18 목록에 승자·우승·평균·추천·우수·우월·상위·하위·향상·악화(와 영어 대응어)를 더하고, G1–G3과 문자 그대로 같은 줄은 건너뛰며(G1은 순위·추천을 부정하려고 그 낱말을 씀), 그 밖의 줄은 점수 이름(`SCORE_LABEL`)만 지운 뒤 검사한다. 출처 표시는 "초기·다음 세대로 이어받음·유사·무작위"다.
+- 만들기·다시 열기·다운로드는 도킹을 다시 하지 않는다. 다시 열 때 요약과 개체 결과를 검증하고 manifest·주장·Markdown 바이트를 저장 객체에서 다시 만든 것과 비교한다. 보고서 예산 스냅숏은 생성 시점 값(올라간 한도 포함)이다.
+
+### 화면 규칙
+- 리간드 설계·탐색 탭의 M19 일괄 도킹 영역 다음 "GA 설계" 영역. 가져오기는 M18 도킹 영역에서 하고 GA 영역은 이미 가져온 수용체·사이드카·부모 SDF와 후보 집합을 고른다. 입력: 수용체(+사이드카) → 뺄 인스턴스 → 후보 집합·부모 SDF → M17 필터(`FilterForm`) → 상자 → 도킹 값(도킹 seed)과 확인 세 항목 → GA 파라미터 → 시작 전 확인 → (부족하면 증액 승인) → GA 시작. 어떤 선택도 자동으로 하지 않는다. 자유 도킹 고정이며 그 사실을 보인다.
+- 파라미터 편집: `ga`의 모든 키를 입력란으로, 칸마다 범위·기본값을 보이고(GA seed는 비어 있음, 필수), 범위·형식·교차 규칙을 벗어나면 그 칸의 이유를 보이며 시작 전 확인·시작을 막는다(요청 없음). "기본값으로"는 GA seed를 남기고 나머지를 기본값으로 되돌린다. 유효 파라미터 전체와 작업 시간 한도(`total_s` + 600)를 요약하고, 새 도킹 상한 × 300초 > `total_s`이면 "끝까지 못 갈 수 있음" 안내를 보인다. GA seed와 도킹 seed가 다른 난수라는 안내를 둔다.
+- 시작은 지금 인자와 정확히 같은 인자로 받은 시작 전 확인이 입장 통과·부족분 0일 때만 열린다. 시작 전 확인은 풀·적격·필터 제외 수, 재사용 가능 후보 수, 예약 단위 = 예상 최대 새 도킹, 필요·잔여·부족분, "시작하면 n단위가 예약·소진되고 중간에 멈추거나 재사용이 있어도 돌려받지 않음", `full_run_may_be_partial`일 때 "끝까지 못 갈 수 있음", GA 중 이 run의 다른 계산·보고서와 다른 비싼 작업이 기다린다는 안내, G1을 서버 값 그대로 보인다. 같은 인자의 작업이 있으면 그 작업을 알린다.
+- 진행: 저장된 작업 기록의 `ga` 진행(완료한 세대·세대 기록 수, 새 도킹 시작·끝·결과 파일 수, 재사용 예정 수, 예약 단위)을 2초마다 읽어 보인다. 재사용 개체는 파일이 없으므로 새 도킹 수에 세지 않는다.
+- 결과: 세대 탭(멈춘 세대 표시), 개체 표(자리, 후보 id, 출처 "초기/이어받음/유사/무작위", 부모·지문 Tanimoto(저장 문자열), 평가 "새 도킹/저장된 결과 재사용/다시 도킹하지 않음(이전 세대 결과 인용)", 상태, qvina 점수(점수 대상 문구, `scored`만 숫자), 이유 "한국어 (code)", 상세 열기), 세대별 점수 최솟값·최댓값(값만), 상태·종료 이유·G 문장(서버가 준 저장 id 문장 그대로), 요약 줄. 자리·후보 id·점수 열은 오름·내림차순으로 정렬할 수 있고 점수 없는 개체는 어떤 정렬에서도 늘 끝(자리 순서)이다. 순위 열·최고 표시·강조·차이 열은 없다. "상세 열기"는 기존 M18 도킹 영역의 상세를 연다.
+- 화면은 점수·집계·부족분·유사도를 계산하지 않는다. 기능을 쓸 수 없을 때(엔진 없음, run 없음, 후보 집합 없음)는 이유만 보이고 숫자를 만들지 않는다. Mol* 표시는 없다.
+
+### 의미하지 않는 것
+M18의 "의미하지 않는 것" 전부. 그에 더해 이어받음·부모 선택·표의 정렬은 후보의 순위·우열·추천이 아니고, 세대별 최솟값이 작아진 것은 개선이 아니라 탐색 규칙의 관찰값이며, 유사도는 지문 수학 값일 뿐 점수·활성이 아니고, `partial` 실행의 빈 칸·나오지 않은 개체는 0이 아니라 계산하지 않음이다.
+
 ## 변이 후보 (M20, `generate_mutation_candidates`)
 
 한 전처리 구조에서 위치(단백질 잔기)를 모으고, 근거 있는 보호 잔기를 기본으로 뺀 뒤, 남은 위치마다 단일 아미노산 치환 후보를 만든다(결정 0028). 후보는 위치와 바꿀 잔기의 조합일 뿐이다. 구조 모델링·에너지·점수·순위는 만들지 않는다(구조 모델링은 M21). 모든 거리는 저장된 전처리 좌표에서, 번호·KLIFS 부위는 저장된 번호 대응·주석 객체에서, 포켓 안쪽 잔기는 저장된 포켓 결과에서 온다. 닫힌 집합·상한·문장은 `backend/mw/mutation_constants.py`에 있고 바꾸려면 사용자 결정이 필요하다.
@@ -657,8 +767,8 @@ M20 변이 후보 하나를 골라, 같은 작업 안에서 같은 절차로 야
 ## 예산과 승인
 
 - 기본 run 한도: 활동 시간 1800초, 비싼 계산 8회, 외부 토큰 120,000, USD 2.00. 소진되면 checkpoint를 남기고 사용자에게 묻는다.
-- 비싼 계산 1단위는 실제 프로세스를 띄우기 직전에 예약하고, 성공·실패·시간 초과·중단 모두 과금한다(환불 없음). 입력 거부, 캐시 적중, dry-run 계획, 승인 거부, 대기 중 취소는 과금하지 않는다. M19 일괄 작업만 시도 하나가 새로 계산하는 행 수만큼(0 가능) 한 번에 예약한다.
-- run에서 첫 비싼 계산에는 명시적으로 기록된 승인 이벤트가 필요하다. JSON 필드(`decided_by=human` 등), 재시도, 재시작으로 승인이 생기지 않는다. 승인은 소진된 예산을 채워 주지 않는다. 한도를 바꾸려면 따로 기록된 변경(`budget_limit_updated`)이 필요하다. HTTP로 한도를 올리는 길은 M19 일괄의 사람 증액 승인(그 일괄의 부족분만) 하나뿐이다.
+- 비싼 계산 1단위는 실제 프로세스를 띄우기 직전에 예약하고, 성공·실패·시간 초과·중단 모두 과금한다(환불 없음). 입력 거부, 캐시 적중, dry-run 계획, 승인 거부, 대기 중 취소는 과금하지 않는다. M19 일괄 작업은 시도 하나가 새로 계산하는 행 수만큼(0 가능), M22 GA 작업은 시도 하나가 `reserved_units`만큼(재사용과 무관) 한 번에 예약한다.
+- run에서 첫 비싼 계산에는 명시적으로 기록된 승인 이벤트가 필요하다. JSON 필드(`decided_by=human` 등), 재시도, 재시작으로 승인이 생기지 않는다. 승인은 소진된 예산을 채워 주지 않는다. 한도를 바꾸려면 따로 기록된 변경(`budget_limit_updated`)이 필요하다. HTTP로 한도를 올리는 길은 사람 증액 승인 둘뿐이다: M19 일괄(그 일괄의 부족분만)과 M22 GA(그 GA의 부족분만). 각자 자기 라우트 하나에서만 불린다.
 - 활동 시간에는 도구 실행, 작업 대기, 재시도 대기, 정리 시간이 들어간다. 승인·checkpoint 대기와 깔끔하게 종료된 뒤의 꺼진 시간은 제외한다. 비정상 종료로 닫히지 않은 구간은 기록된 마감 시각까지 보수적으로 과금하고 interrupted로 둔다.
 - 자율 분기 가드: 같은 호출 키 제안은 2번까지 허용하고 3번째에서 멈춘다. 새 handle이 나오지 않는 완료 제안이 4번 이어지면 멈춘다. 6개 창 안에서 A/B 반복이 진전 없이 계속되면 멈춘다. 사람이 반복해서 읽는 캐시 조회는 가드에 걸리지 않는다.
 - dry-run은 저렴한 로컬 구조 검사만 실제로 실행한다. 비싼 계산은 `planned_call@1` 계획만 만들고 실제 함수로 넘어가지 않는다. 계획은 실제 과학 객체의 입력이 될 수 없다.
