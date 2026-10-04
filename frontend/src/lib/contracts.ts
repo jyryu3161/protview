@@ -652,7 +652,7 @@ export interface LigandGaIndividualRead { schema: "ligand_ga_individual@1"; summ
 /** Job progress (`ga` of the job record): staged file counts only; the summary handle once published, with its
  * validated `status`/`stop_reason` (null when it does not validate). */
 export interface LigandGaProgress { pool: LigandGaPoolCounts; reserved_units: number; reused_planned: number;
-  individuals_started: number; individuals_finished: number; generation_records: number;
+  individuals_started: number; individuals_result_files: number; individuals_finished: number; generation_records: number;
   generations_complete: number; summary_handle: string | null; summary_status: LigandGaStatus | null;
   summary_stop_reason: LigandGaStopReason | null }
 export interface LigandGaJob extends Omit<DockingJob, "protocol_id" | "artifacts"> {

@@ -281,6 +281,9 @@ def test_job_progress_read_counts_staged_files_only(world, client):
         assert progress["reserved_units"] == stored["reserved_units"] and progress["pool"] == stored["pool"]
         assert progress["generations_complete"] == stored["generations_done"]
         assert progress["individuals_finished"] == sum(e["evaluation"] == "docked" for e in evaluated)
+        # Result files = new dockings with a stored result (scored or null_result); reused individuals have none.
+        assert progress["individuals_result_files"] == sum(e["evaluation"] == "docked" and e["state"] != "failed"
+                                                           for e in evaluated)
         assert progress["reused_planned"] >= stored["reused_count"]
 
 

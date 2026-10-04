@@ -163,16 +163,17 @@ function shortfallFor(needed, remaining) {
   return { expensive_calls: Math.max(0, needed.expensive_calls - remaining.expensive_calls),
     wall_clock_s: Math.max(0, needed.wall_clock_s - remaining.wall_clock_s) };
 }
-/** Display order rule (spec 9), written independently: rows without a score always last (slot order). */
+/** Display order rule (spec 9), written independently: rows without a score always last (slot order), every key. */
 function sortOracle(individuals, key, direction) {
   const rows = individuals.map((item, position) => ({ ...item, position }));
-  if (key === "slot") return direction === "asc" ? rows : [...rows].reverse();
-  const sign = direction === "asc" ? 1 : -1;
-  if (key === "candidate") return [...rows].sort((a, b) =>
-    sign * (a.candidate_id < b.candidate_id ? -1 : a.candidate_id > b.candidate_id ? 1 : 0) || a.position - b.position);
   const has = row => row.state === "scored" && typeof row.score === "number";
-  return [...rows.filter(has).sort((a, b) => sign * (a.score - b.score) || a.position - b.position),
-    ...rows.filter(row => !has(row))];
+  const scored = rows.filter(has), rest = rows.filter(row => !has(row));
+  if (key === "slot") return [...(direction === "asc" ? scored : [...scored].reverse()), ...rest];
+  const sign = direction === "asc" ? 1 : -1;
+  if (key === "candidate") return [...[...scored].sort((a, b) =>
+    sign * (a.candidate_id < b.candidate_id ? -1 : a.candidate_id > b.candidate_id ? 1 : 0) || a.position - b.position),
+  ...rest];
+  return [...[...scored].sort((a, b) => sign * (a.score - b.score) || a.position - b.position), ...rest];
 }
 
 // ------------------------------------------------------------------ read-only observation
@@ -696,8 +697,9 @@ async function jobPhase(page) {
 async function budgetUsed(page, run) { return (await readApi(page, `/runs/${run}/budget`)).expensive_calls; }
 /** The progress line written independently from the stored job record's `ga` counts. */
 function progressText(p) {
-  return `완료한 세대 ${p.generations_complete}개(세대 기록 ${p.generation_records}개) · 평가 시작 ${p.individuals_started}개 · ` +
-    `평가 끝 ${p.individuals_finished}개 · ${REUSED_LABEL} 예정 ${p.reused_planned}개 · 예약 ${p.reserved_units}단위`;
+  return `완료한 세대 ${p.generations_complete}개(세대 기록 ${p.generation_records}개) · 새 도킹 시작 ${p.individuals_started}건 · ` +
+    `새 도킹 끝 ${p.individuals_finished}건(결과 파일 ${p.individuals_result_files}개) · ${REUSED_LABEL} 예정 ` +
+    `${p.reused_planned}개(재사용 개체는 파일이 없어 새 도킹 수에 들지 않음) · 예약 ${p.reserved_units}단위`;
 }
 /**
  * Click GA 시작 (real input); approve through 비싼 계산 승인 when asked, then 작업 시작; while running, compare the

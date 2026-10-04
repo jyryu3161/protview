@@ -588,3 +588,28 @@ def test_sigterm_cancels_the_running_docking_and_keeps_the_evaluated_individuals
     assert out.files["1.result.json"] == seed7["results"][first[1]]
     assert not (root / "qvina_work").exists()
     assert not any(psutil.pid_exists(pid) and psutil.Process(pid).status() != psutil.STATUS_ZOMBIE for pid in engines)
+
+
+def test_a_finished_docking_survives_a_late_sigterm_and_a_stale_private_directory(seed7, tmp_path):
+    """Labeled faults in the worker's own process: a ``qvina_work`` left by an earlier interrupted removal, and a
+    SIGTERM sent to itself while the private directory of a finished docking is being removed. The finished docking
+    is kept (result, status, listed), the stop is the next check's ``cancelled`` and no private directory is left."""
+    ga = VECTORS["small_observed_seed7"]["ga"]
+    first = [e["candidate_id"] for e in VECTORS["small_observed_seed7"]["expected"]["generations"][0]["individuals"]]
+    patch = ("os.mkdir('qvina_work', 0o700)\n"            # stale directory before the first new docking
+             "real = m.shutil.rmtree\n"
+             "sent = []\n"
+             "def rmtree(path, ignore_errors=False):\n"
+             "    if not sent and os.path.isdir(path) and os.listdir(path):\n"   # a docking ran in it
+             "        sent.append(1); os.kill(os.getpid(), m.signal.SIGTERM); time.sleep(0.2)\n"
+             "    return real(path, ignore_errors=ignore_errors)\n"
+             "import types\n"
+             "m.shutil = types.SimpleNamespace(rmtree=rmtree)\n")
+    out = _ga_run(tmp_path / "late", _manifest(ga, reuse={first[0]: seed7["results"][first[0]]}), patch=patch)
+    assert out.code == 0 and out.error is None, out.error
+    assert out.result == _result("cancelled", 0)
+    assert sorted(out.files) == ["1.result.json", "1.started", "1.status.json"]
+    assert out.status(1) == ["scored", None]
+    assert out.files["1.result.json"] == seed7["results"][first[1]]
+    assert [(e["evaluation"], e["eval_index"]) for e in out.gens[1]["individuals"]] == [("reused", 0), ("docked", 1)]
+    assert out.gens[1]["complete"] is False

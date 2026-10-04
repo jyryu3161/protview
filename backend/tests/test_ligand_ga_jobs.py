@@ -343,7 +343,7 @@ def test_product_path_reuse_duplicates_identity_and_events_only(base, tmp_path, 
     assert intent["ga_reused"] == [{"candidate_id": IDS[5], "handle": m18_handle}]
     assert done["ga"] == {"pool": {"size": 10, "eligible_count": 10, "filter_excluded_count": 0},
                           "reserved_units": 6, "reused_planned": 1, "individuals_started": 5,
-                          "individuals_finished": 5, "generation_records": 2, "generations_complete": 2,
+                          "individuals_result_files": 5, "individuals_finished": 5, "generation_records": 2, "generations_complete": 2,
                           "summary_handle": handle, "summary_status": "complete",
                           "summary_stop_reason": "generations_complete"}
     # Publication order: reservation < verified cleanup < every individual < summary < candidate < terminal.
@@ -619,3 +619,56 @@ def test_admission_refusals_record_and_charge_nothing(base, tmp_path, monkeypatc
             queue.submit(PROTOCOL, ga_args(base), timeout_s=1200)
         assert refused.value.detail["reason_code"] == "ga_reuse_too_large"
     assert [e for e in events(run)[len(before):] if e["type"] in {"job_submitted", "budget_reserved"}] == []
+    # The reuse set is decided again at the start: grown past the limit there, the start refuses before reserving.
+    admitted = queue.submit(PROTOCOL, ga_args(base), timeout_s=1200)
+    used = run.budget.expensive_calls
+    with monkeypatch.context() as patch:   # labeled internal hook: the size limit reached at the start
+        patch.setattr(GC, "MAX_REUSE_STAGING_BYTES", -1)
+        with pytest.raises(ToolFailure) as refused:
+            queue.start(admitted["job_id"])
+        assert refused.value.detail["reason_code"] == "ga_reuse_too_large"
+    assert reserved(run, admitted["job_id"]) == [] and run.budget.expensive_calls == used
+    assert not of(run, admitted["job_id"], "job_dispatch_intent")
+    assert not [e for e in events(run) if e["type"] == "budget_reserved" and e.get("tool") == TOOL]
+    queue.request_cancel(admitted["job_id"])
+
+
+# ----------------------------------------------------------------- staged records the worker did not end as recorded
+def test_an_unreadable_generation_record_or_an_end_mismatch_publishes_then_is_worker_failed(base, tmp_path,
+                                                                                            monkeypatch):
+    run, _root = world(base, tmp_path)
+    raise_limits(run)
+    original = LJ.finish
+    expected = oracle_path({**GA, "seed": 3})
+    assert len(expected["generations"]) == 2
+
+    def torn(run_, job, attempt_id, attempt_dir, server_cause):
+        (attempt_dir / "generations" / "2.json").write_bytes(b"{torn")   # labeled fault: an unreadable record
+        return original(run_, job, attempt_id, attempt_dir, server_cause)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(LJ, "finish", torn)
+        broken = run_ga(run, ga_args(base, seed=3))
+    _, content = summary(run, broken)
+    assert (content["status"], content["stop_reason"], content["generations_done"]) == ("partial", "worker_failed", 1)
+    assert path(content) == path(expected)[:1]   # the readable record 1 is kept, record 2 is not part of it
+    check_individuals(run, broken, content)
+    assert len(of(run, broken["job_id"], "ligand_ga_individual_published")) == sum(
+        e["evaluation"] == "docked" for e in evaluated(content)) >= 1
+
+    end_record = LJ._end_record
+    seen = {e["candidate_id"] for e in evaluated(content)}
+
+    def disagreeing(attempt_dir, job, attempt_id):   # labeled fault: the end record miscounts its generations
+        end = end_record(attempt_dir, job, attempt_id)
+        return None if end is None else {**end, "generations_done": end["generations_done"] + 1}
+
+    with monkeypatch.context() as patch:
+        patch.setattr(LJ, "_end_record", disagreeing)
+        miscounted = run_ga(run, ga_args(base, seed=4))
+    other = oracle_path({**GA, "seed": 4}, reusable=seen)
+    _, content = summary(run, miscounted)
+    assert (content["status"], content["stop_reason"]) == ("partial", "worker_failed")
+    assert path(content) == path(other) and content["generations_done"] == other["generations_done"]
+    check_individuals(run, miscounted, content)
+    _no_strays(run)

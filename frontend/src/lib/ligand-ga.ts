@@ -395,11 +395,16 @@ export function gaStartBlockedReason(input: { capability: { available: boolean; 
   return null;
 }
 
-/** Progress from the stored job record (staged file counts only; no score). */
+/**
+ * Progress from the stored job record (staged file counts only; no score). Staged files exist for new dockings
+ * only (started, result and status files), so the counters say "새 도킹" and reused individuals are named apart
+ * (planned from the start's reuse plan), never counted as finished.
+ */
 export function gaProgressText(progress: LigandGaProgress): string {
-  return `완료한 세대 ${progress.generations_complete}개(세대 기록 ${progress.generation_records}개) · 평가 시작 ` +
-    `${progress.individuals_started}개 · 평가 끝 ${progress.individuals_finished}개 · ${REUSED_LABEL} 예정 ` +
-    `${progress.reused_planned}개 · 예약 ${progress.reserved_units}단위`;
+  return `완료한 세대 ${progress.generations_complete}개(세대 기록 ${progress.generation_records}개) · 새 도킹 시작 ` +
+    `${progress.individuals_started}건 · 새 도킹 끝 ${progress.individuals_finished}건(결과 파일 ` +
+    `${progress.individuals_result_files}개) · ${REUSED_LABEL} 예정 ${progress.reused_planned}개(재사용 개체는 ` +
+    `파일이 없어 새 도킹 수에 들지 않음) · 예약 ${progress.reserved_units}단위`;
 }
 
 /**
@@ -526,19 +531,20 @@ export type IndividualSortKey = "slot" | "candidate" | "score";
 export type IndividualSort = { key: IndividualSortKey; direction: "asc" | "desc" } | null;
 
 /**
- * Display order. null = stored slot order. Slot and candidate id sort both ways; the score sort orders `scored`
- * individuals by the stored score, and individuals without a score stay last in slot order whatever the direction,
- * never compared as 0. Ties keep slot order. Returns a new array; the rows themselves are not changed.
+ * Display order (spec 9: rows without a score always last). In every order, null (= stored slot order) included,
+ * the `scored` individuals come first, ordered by the key (slot, candidate id or stored score, both ways; ties keep
+ * slot order), then the individuals without a score in slot order whatever the key or direction, never compared
+ * as 0. Returns a new array; the rows themselves are not changed.
  */
 export function sortIndividuals<T extends IndividualRow>(rows: readonly T[], sort: IndividualSort): T[] {
   const bySlot = [...rows].sort((a, b) => a.position - b.position);
-  if (sort === null || (sort.key === "slot" && sort.direction === "asc")) return bySlot;
-  if (sort.key === "slot") return bySlot.reverse();
+  const head = bySlot.filter(row => hasScore(row)), tail = bySlot.filter(row => !hasScore(row));
+  if (sort === null || (sort.key === "slot" && sort.direction === "asc")) return [...head, ...tail];
+  if (sort.key === "slot") return [...head.reverse(), ...tail];
   const sign = sort.direction === "asc" ? 1 : -1;
   if (sort.key === "candidate")
-    return bySlot.sort((a, b) => sign * (a.candidate_id < b.candidate_id ? -1 : a.candidate_id > b.candidate_id ? 1 : 0)
-      || a.position - b.position);
-  const head = bySlot.filter(row => hasScore(row)), tail = bySlot.filter(row => !hasScore(row));
+    return [...head.sort((a, b) => sign * (a.candidate_id < b.candidate_id ? -1 : a.candidate_id > b.candidate_id ? 1
+      : 0) || a.position - b.position), ...tail];
   return [...head.sort((a, b) => sign * ((a.score as number) - (b.score as number)) || a.position - b.position),
     ...tail];
 }

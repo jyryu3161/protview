@@ -37,6 +37,8 @@ server's stop cause (cancel, job deadline, crash) always wins.
 from __future__ import annotations
 
 import base64
+import contextlib
+import contextvars
 import copy
 import hashlib
 import json
@@ -45,7 +47,7 @@ import re
 import stat
 import subprocess
 import threading
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -74,10 +76,6 @@ END_KEYS = frozenset({"schema", "protocol", "job_id", "attempt_id", "stop_reason
 
 _HANDSHAKE_CACHE: dict[tuple, dict[str, Any]] = {}
 _HANDSHAKE_LOCK = threading.Lock()
-
-
-class LigandGaJobError(ValueError):
-    """The staged GA output or the GA job record does not support a summary."""
 
 
 def _sha(raw: bytes) -> str:
@@ -177,11 +175,33 @@ def require_ready() -> tuple[dict[str, Any], dict[str, str]]:
 
 
 # ----------------------------------------------------------------- pool rows and per-individual views
+_POOL_ROWS: contextvars.ContextVar[dict[tuple, dict[str, dict[str, Any]]] | None] = contextvars.ContextVar(
+    "ligand_ga_pool_rows", default=None)
+
+
+@contextlib.contextmanager
+def _one_pool_check() -> Iterator[None]:
+    """Within one read, the same candidate set is checked against the same GA record once (the per-individual
+    ``docking_bundle.validated_result`` -> ``producer`` -> ``individual_view`` reach ``pool_rows`` again)."""
+    token = _POOL_ROWS.set({}) if _POOL_ROWS.get() is None else None
+    try:
+        yield
+    finally:
+        if token is not None:
+            _POOL_ROWS.reset(token)
+
+
 def pool_rows(run: Any, selected: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """candidate id -> stored candidate row, after re-checking the validated candidate set against the GA record
-    (same ids in stored order, same eligibility under the recorded filter, same pool hash)."""
+    (same ids in stored order, same eligibility under the recorded filter, same pool hash). Inside
+    ``_one_pool_check`` a passed check is remembered for the same run, candidate set and GA record values."""
     from .ligand_bundle import LigandEvidenceError, validated_candidate_set
 
+    memo = _POOL_ROWS.get()
+    key = (id(run), canonical_json([selected["candidate_set"], selected["arguments"]["filter"], selected["pool"],
+                                    selected["pool_sha256"]])) if memo is not None else None
+    if memo is not None and key in memo:
+        return dict(memo[key])
     try:
         candidate_set, _inspection = validated_candidate_set(run, selected["candidate_set"]["handle"])
     except LigandEvidenceError as exc:
@@ -191,7 +211,10 @@ def pool_rows(run: Any, selected: dict[str, Any]) -> dict[str, dict[str, Any]]:
     _evidence(pool == selected["pool"] and ligand_ga_inputs.pool_sha256(pool) == selected["pool_sha256"] and
               candidate_set["parent_sha256"] == selected["candidate_set"]["parent_sha256"],
               "the candidate set is the GA pool")
-    return {row["id"]: row for row in rows}
+    out = {row["id"]: row for row in rows}
+    if memo is not None:
+        memo[key] = out
+    return dict(out)
 
 
 def individual_job(job: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
@@ -407,23 +430,47 @@ def _prepared(attempt_dir: Path | None) -> dict[str, Any] | None:
     return data if type(data) is dict and set(data) == {"box", "engine"} else None
 
 
-def _records(attempt_dir: Path | None) -> list[Any]:
-    """The worker generation records 1, 2, ... in order (no gap; a present but unreadable record raises)."""
+def _records(attempt_dir: Path | None) -> tuple[list[Any], bool]:
+    """(the readable worker generation records 1, 2, ... in order, intact). The list stops before the first record
+    that is present but unreadable; ``intact`` is False then, and also when a gap or a stray file follows the
+    readable records (the worker did not end as it records: ``worker_failed``, never an exception here)."""
     directory = _subdir(attempt_dir, "generations")
     if directory is None:
-        return []
-    names = {entry.name for entry in os.scandir(directory) if entry.is_file(follow_symlinks=False)}
+        return [], True
+    try:
+        names = {entry.name for entry in os.scandir(directory) if entry.is_file(follow_symlinks=False)}
+    except OSError:
+        return [], False
     records = []
     for number in range(1, len(names) + 2):
         if f"{number}.json" not in names:
             break
         data = _canonical(_read(directory, f"{number}.json", MAX_GENERATION_BYTES))
         if type(data) is not dict or data.get("index") != number:
-            raise LigandGaJobError("unreadable generation record")
+            return records, False
         records.append(data)
-    if {f"{n}.json" for n in range(1, len(records) + 1)} != {name for name in names if not name.endswith(".tmp")}:
-        raise LigandGaJobError("generation records have a gap or a stray file")
-    return records
+    intact = {f"{n}.json" for n in range(1, len(records) + 1)} == {name for name in names if not name.endswith(".tmp")}
+    return records, intact
+
+
+def _entries_ok(record: Any, rows: Mapping[str, Any], reused: Mapping[str, str], seen: set[int]) -> bool:
+    """A generation record whose evaluated entries name pool candidates with unused integer eval indices and an
+    evaluation that agrees with the start's reuse plan (``seen`` collects the indices of an accepted record)."""
+    if type(record) is not dict or type(record.get("individuals")) is not list:
+        return False
+    indices = set()
+    for entry in record["individuals"]:
+        if type(entry) is not dict:
+            return False
+        if entry.get("origin") == "carried":
+            continue
+        cid, index, evaluation = entry.get("candidate_id"), entry.get("eval_index"), entry.get("evaluation")
+        if (type(cid) is not str or cid not in rows or type(index) is not int or index in seen or index in indices
+                or evaluation not in ("reused", "docked") or (evaluation == "reused") != (cid in reused)):
+            return False
+        indices.add(index)
+    seen |= indices
+    return True
 
 
 def _count(directory: Path | None, suffix: str) -> int:
@@ -436,17 +483,19 @@ def _count(directory: Path | None, suffix: str) -> int:
 
 def progress(run: Any, job: dict[str, Any]) -> dict[str, Any]:
     """Polling view (spec 8): pool counts and reserved units from the job record, then the attempt's staged file
-    counts (``individuals/*.started`` / ``*.status.json``, generation records and how many say ``complete``) and
+    counts (``individuals/*.started`` / ``*.result.json`` / ``*.status.json``: new dockings only, a reused individual
+    has no file; generation records and how many say ``complete``) and
     the summary handle once published, with that summary's ``status``/``stop_reason`` read through
     ``validated_summary`` (null when it does not validate). No object is loaded before a summary exists."""
     selected = job["selected"]
     intent = job.get("dispatch_intent") or {}
-    started = finished = generations = complete = 0
+    started = results = finished = generations = complete = 0
     attempt = job.get("attempt_id")
     if type(attempt) is str and ID_RE.fullmatch(attempt) and ID_RE.fullmatch(job["job_id"]):
         attempt_dir = run.run_dir / "jobs" / job["job_id"] / attempt
         individuals = _subdir(attempt_dir, "individuals")
-        started, finished = _count(individuals, ".started"), _count(individuals, ".status.json")
+        started, results = _count(individuals, ".started"), _count(individuals, ".result.json")
+        finished = _count(individuals, ".status.json")
         directory = _subdir(attempt_dir, "generations")
         generations = _count(directory, ".json")
         for number in range(1, generations + 1):
@@ -463,7 +512,7 @@ def progress(run: Any, job: dict[str, Any]) -> dict[str, Any]:
     return {"pool": ligand_ga_inputs.pool_counts(selected["pool"]),
             "reserved_units": ligand_ga_inputs.reserved_units(selected["arguments"]["ga"]),
             "reused_planned": len(intent.get("ga_reused", [])), "individuals_started": started,
-            "individuals_finished": finished, "generation_records": generations, "generations_complete": complete,
+            "individuals_result_files": results, "individuals_finished": finished, "generation_records": generations, "generations_complete": complete,
             "summary_handle": handle, "summary_status": status, "summary_stop_reason": stop_reason}
 
 
@@ -481,14 +530,15 @@ def _publish(run: Any, view: dict[str, Any], attempt_id: str, data: Any) -> tupl
 
 
 def _stop_reason(attempt_dir: Path | None, job: dict[str, Any], attempt_id: str, server_cause: str | None,
-                 records: list[Any]) -> str:
+                 records: list[Any], intact: bool) -> str:
+    """The server's stop cause first; else ``worker_failed`` when the worker's records are not intact, its end
+    record is missing or disagrees with its generation records, or it says ``cancelled`` without a user cancel."""
     if server_cause is not None:
         return server_cause
     end = _end_record(attempt_dir, job, attempt_id)
-    if end is None:
+    if (not intact or end is None or
+            end["generations_done"] != sum(type(r) is dict and r.get("complete") is True for r in records)):
         return "worker_failed"
-    if end["generations_done"] != sum(type(r) is dict and r.get("complete") is True for r in records):
-        raise LigandGaJobError("worker end record disagrees with its generation records")
     # A SIGTERM the server did not send for a user cancel is not the user's cancel.
     return "worker_failed" if end["stop_reason"] == "cancelled" else end["stop_reason"]
 
@@ -499,15 +549,24 @@ def finish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path | N
     never reached its first individual (no ``prepared.json``: no summary, as an M19 batch without a first row).
 
     ``server_cause``: None (the worker ended by itself), ``cancelled`` (user), ``time_exhausted`` (job deadline) or
-    ``worker_failed`` (crash, kill, limit, parent loss). Raises on summary evidence errors."""
+    ``worker_failed`` (crash, kill, limit, parent loss). As M19, every newly docked individual of the readable
+    generation records is published before anything about the run's end is decided: an unreadable, gapped or
+    malformed generation record (the readable records before it are kept) or an end record that disagrees with the
+    records is ``worker_failed``, never an exception. Raises only when the summary itself cannot be built."""
     selected = job["selected"]
     reused = {item["candidate_id"]: item["handle"] for item in job["dispatch_intent"]["ga_reused"]}
     prepared = _prepared(attempt_dir)
     if prepared is None:
         return None
-    records = _records(attempt_dir)
-    cause = _stop_reason(attempt_dir, job, attempt_id, server_cause, records)
     rows = pool_rows(run, selected)
+    readable, intact = _records(attempt_dir)
+    records: list[Any] = []
+    seen: set[int] = set()
+    for record in readable:
+        if not _entries_ok(record, rows, reused, seen):
+            intact = False
+            break
+        records.append(record)
     events = list(run.events.read())
     recorded = {event["eval_index"]: event["handle"] for event in events
                 if event["type"] == GC.INDIVIDUAL_EVENT and event.get("attempt_id") == attempt_id}
@@ -515,22 +574,17 @@ def finish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path | N
     results: dict[str, Any] = {}
     observations: dict[int, dict[str, Any]] = {}
     selections: dict[str, Any] = {}
+    reused_entries: list[tuple[str, int]] = []
     for record in records:
-        for entry in record.get("individuals", []) if type(record) is dict else []:
-            if type(entry) is not dict or entry.get("origin") == "carried":
+        for entry in record["individuals"]:
+            if entry.get("origin") == "carried":
                 continue
-            cid, index = entry.get("candidate_id"), entry.get("eval_index")
-            if type(cid) is not str or cid not in rows or type(index) is not int or index in observations:
-                raise LigandGaJobError("generation record entry")
+            cid, index = entry["candidate_id"], entry["eval_index"]
             view = individual_job(job, rows[cid])
             selections[cid] = view["selected"]
-            if entry.get("evaluation") == "reused":
-                _evidence(cid in reused, "a reused individual is in the start's reuse plan")
-                results[reused[cid]] = docking_bundle.validated_result(run, reused[cid])
-                observations[index] = {"status": None, "result_handle": reused[cid]}
+            if entry["evaluation"] == "reused":
+                reused_entries.append((cid, index))   # re-validated after every docked individual is published
                 continue
-            _evidence(entry.get("evaluation") == "docked" and cid not in reused,
-                      "a docked individual was not planned for reuse")
             status = _status(individuals, index)
             handle = None
             if status is None or status["state"] in ("scored", "null_result"):
@@ -542,6 +596,10 @@ def finish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path | N
                         run.events.append(GC.INDIVIDUAL_EVENT, job_id=job["job_id"], attempt_id=attempt_id,
                                           eval_index=index, candidate_id=cid, handle=handle)
             observations[index] = {"status": status, "result_handle": handle}
+    for cid, index in reused_entries:
+        results[reused[cid]] = docking_bundle.validated_result(run, reused[cid])
+        observations[index] = {"status": None, "result_handle": reused[cid]}
+    cause = _stop_reason(attempt_dir, job, attempt_id, server_cause, records, intact)
     content = build_summary(selected, records=records, observations=observations, results=results,
                             individual_selections=selections, stop_reason=cause, box=prepared["box"],
                             m18_pins=job["method"], ga_pins=job["ga_method"])
@@ -599,14 +657,15 @@ def validated_summary(run: Any, handle: Any) -> dict[str, Any]:
         content = run.store.load_bounded_json(handle, GC.MAX_SUMMARY_BYTES)
         source = summary_producer(run, handle)
         job = source["job"]
-        rows = pool_rows(run, job["selected"])
-        selections = {entry["candidate_id"]: ligand_ga_inputs.individual_selection(job["selected"],
-                                                                                   rows[entry["candidate_id"]])
-                      for generation in content["generations"] for entry in generation["individuals"]
-                      if entry["origin"] != "carried"}
-        results = {entry["result_handle"]: docking_bundle.validated_result(run, entry["result_handle"])
-                   for generation in content["generations"] for entry in generation["individuals"]
-                   if entry["result_handle"] is not None}
+        with _one_pool_check():   # the candidate set is validated once per read, not once per individual
+            rows = pool_rows(run, job["selected"])
+            selections = {entry["candidate_id"]: ligand_ga_inputs.individual_selection(job["selected"],
+                                                                                       rows[entry["candidate_id"]])
+                          for generation in content["generations"] for entry in generation["individuals"]
+                          if entry["origin"] != "carried"}
+            results = {entry["result_handle"]: docking_bundle.validated_result(run, entry["result_handle"])
+                       for generation in content["generations"] for entry in generation["individuals"]
+                       if entry["result_handle"] is not None}
         check_summary(content, job["selected"], selections, results, job["method"], job["ga_method"])
         _evidence(content["call_key"] == job["call_key"] == call_key(job["selected"], job["method"],
                                                                     job["ga_method"]), "GA call key")

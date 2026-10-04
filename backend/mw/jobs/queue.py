@@ -1375,12 +1375,14 @@ class JobQueue:
                 units = len(plan) - len(batch_reused)
             ga_reused = None
             if job["protocol_id"] == GA_PROTOCOL:
-                from ..ligand_ga_inputs import reserved_units
+                from ..ligand_ga_inputs import require_reuse_size, reserved_units
                 from ..ligand_ga_jobs import reuse_plan as ga_reuse_plan
 
                 # Reuse is decided here, once, under the run owner; the reservation is reserved_units (no refund).
                 ga_reused = [{"candidate_id": cid, "handle": handle}
                              for cid, handle in ga_reuse_plan(self.run, job["selected"], job["method"]).items()]
+                # The reuse set can have grown since admission: 422 ga_reuse_too_large before anything is charged.
+                require_reuse_size(sum(self.run.store.meta(item["handle"])["size"] for item in ga_reused))
                 units = reserved_units(job["selected"]["arguments"]["ga"])
             try:
                 self.run.reserve_attempt(attempt_id, job["root_call_id"], job["tool_id"], {},

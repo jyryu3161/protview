@@ -345,11 +345,17 @@ def run_box(p: dict[str, Any], shared: dict[str, Any]) -> dict[str, Any]:
 
 def _dock(payload: dict[str, Any], shared: dict[str, Any], prepared: tuple[str, dict[str, Any]],
           control: dict[str, Any]) -> tuple[str, str | None, bytes | None, float | None]:
-    """(state, reason, output bytes, first-mode score) of one docking; interrupted by ``_Stop``."""
+    """(state, reason, output bytes, first-mode score) of one docking; interrupted by ``_Stop`` only while
+    ``dock_row`` runs: the interruptions are stopped (``_quiet``) as soon as it returns and before the private
+    directory is removed, so a late timer tick or SIGTERM can neither drop a finished docking nor leave the
+    directory behind (it stays pending for the check before the next individual). A directory left by an earlier
+    interrupted removal is removed first."""
     workdir = Path("qvina_work")
+    shutil.rmtree(workdir, ignore_errors=True)
     os.mkdir(workdir, 0o700)
     try:
         output = dw.dock_row(payload, workdir, shared, prepared)
+        _quiet()
         raw = dw.canonical_json({**output, "job_id": control["job_id"], "attempt_id": control["attempt_id"]})
         if not 0 < len(raw) <= K.MAX_RESULT_BYTES:   # the M18 result cap: a failure, never truncated
             return "failed", "resource_exceeded", None, None
@@ -361,6 +367,7 @@ def _dock(payload: dict[str, Any], shared: dict[str, Any], prepared: tuple[str, 
     except (ValueError, TypeError, KeyError, IndexError, OSError, RuntimeError, MemoryError, RecursionError):
         return "failed", "engine_failed", None, None   # M18 internal-error mapping
     finally:
+        _quiet()
         shutil.rmtree(workdir, ignore_errors=True)
 
 

@@ -324,9 +324,14 @@ test("limit approval offer: admitted, short on an axis, not dry-run; start gatin
 
 test("progress shows staged counts only; job text keeps a published summary outcome", () => {
   const text = lib.gaProgressText({ pool: { size: 40, eligible_count: 31, filter_excluded_count: 9 },
-    reserved_units: 52, reused_planned: 3, individuals_started: 14, individuals_finished: 13, generation_records: 2,
-    generations_complete: 1, summary_handle: null, summary_status: null, summary_stop_reason: null });
-  assert.equal(text, "완료한 세대 1개(세대 기록 2개) · 평가 시작 14개 · 평가 끝 13개 · 저장된 결과 재사용 예정 3개 · 예약 52단위");
+    reserved_units: 52, reused_planned: 3, individuals_started: 14, individuals_result_files: 12,
+    individuals_finished: 13, generation_records: 2, generations_complete: 1, summary_handle: null,
+    summary_status: null, summary_stop_reason: null });
+  // Staged files exist for new dockings only: the counters say so, and reused individuals are not counted as done.
+  assert.equal(text, "완료한 세대 1개(세대 기록 2개) · 새 도킹 시작 14건 · 새 도킹 끝 13건(결과 파일 12개) · " +
+    "저장된 결과 재사용 예정 3개(재사용 개체는 파일이 없어 새 도킹 수에 들지 않음) · 예약 52단위");
+  assert.ok(!text.includes("평가 끝"), text);
+  assert.deepEqual(plain(lib.gaForbiddenWords(text)), [], text);
   const ga = { summary_handle: "obj://r/ligand_ga_result/h", summary_status: "partial",
     summary_stop_reason: "time_exhausted" };
   const failed = lib.gaJobText({ status: "failed", cancel_requested: false,
@@ -389,18 +394,23 @@ const GEN = { index: 2, complete: true, min_score: -8.25, max_score: 0, individu
 ] };
 const ids = rows => plain(rows.map(row => row.candidate_id));
 
-test("individuals table: stored slot order by default; score sort keeps score-less rows last, never as 0", () => {
+test("individuals table: score-less rows last in every order (slot order among them), never as 0", () => {
   const rows = lib.individualRows(GEN);
   assert.deepEqual(plain(rows.map(row => row.position)), [0, 1, 2, 3, 4, 5]);
-  assert.deepEqual(ids(lib.sortIndividuals(rows, null)), ["c_e", "c_a", "c_d", "c_b", "c_c", "c_f"]);
+  assert.deepEqual(ids(lib.sortIndividuals(rows, null)), ["c_e", "c_d", "c_c", "c_f", "c_a", "c_b"]);
+  assert.deepEqual(ids(lib.sortIndividuals(rows, { key: "slot", direction: "asc" })),
+    ["c_e", "c_d", "c_c", "c_f", "c_a", "c_b"]);
   assert.deepEqual(ids(lib.sortIndividuals(rows, { key: "score", direction: "asc" })),
     ["c_e", "c_c", "c_f", "c_d", "c_a", "c_b"]);
   assert.deepEqual(ids(lib.sortIndividuals(rows, { key: "score", direction: "desc" })),
     ["c_d", "c_c", "c_f", "c_e", "c_a", "c_b"]);
   assert.deepEqual(ids(lib.sortIndividuals(rows, { key: "slot", direction: "desc" })),
-    ["c_f", "c_c", "c_b", "c_d", "c_a", "c_e"]);
+    ["c_f", "c_c", "c_d", "c_e", "c_a", "c_b"]);
   assert.deepEqual(ids(lib.sortIndividuals(rows, { key: "candidate", direction: "asc" })),
-    ["c_a", "c_b", "c_c", "c_d", "c_e", "c_f"]);
+    ["c_c", "c_d", "c_e", "c_f", "c_a", "c_b"]);
+  assert.deepEqual(ids(lib.sortIndividuals(rows, { key: "candidate", direction: "desc" })),
+    ["c_f", "c_e", "c_d", "c_c", "c_a", "c_b"]);
+  assert.ok(lib.ORDER_NOTE.includes("늘 끝"), lib.ORDER_NOTE);
   // A non-scored state is score-less even if a number were present.
   const odd = lib.individualRows({ individuals: [ind("x", "initial", "failed", -99), ind("y", "initial", "scored", -1)] });
   assert.deepEqual(ids(lib.sortIndividuals(odd, { key: "score", direction: "asc" })), ["y", "x"]);
