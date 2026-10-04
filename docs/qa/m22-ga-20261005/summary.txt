@@ -1,0 +1,135 @@
+M22 T10 summary: source freeze, full gate, M22 acceptance QA, regressions (2026-10-04 UTC / 2026-10-05 KST)
+
+frozen source: a71b2e6ac4f82311f1c008f9cc3646a0d0e063be
+  = M22 T9 commit "fixes: GA publication robustness, worker signal guard, start-time reuse size, progress and order
+  honesty" (the last source change; the worker file changed there, so the freeze is this HEAD).
+  No source change after the freeze. Working tree clean at start (git status --porcelain empty). Every run below used
+  this HEAD and the same frontend build CHa6nmR7ciWcO8tOTTcKV, stamped by the M22 runner from the current frontend
+  source (gitHead = frozen source, buildCurrentWithSource true, acceptance dirtyFiles []). The M21, M20, M19, M18,
+  M17, M16, M15, M14 and M13 regression ledgers record the same buildId and gitHead with buildCurrentWithSource true;
+  their dirtyFiles list only the untracked evidence folder of this QA (?? docs/qa/m22-ga-20261005/), no source file.
+
+index (this folder; small text/JSON only, decision 0020)
+  gate.txt               full gate: commands, exit codes, counts
+  summary.txt            this file
+  acceptance/            M22 runner output (README.md, SHA256SUMS, binary-artifacts.json, evidence/case-ledger.json,
+                         evidence/reproducibility.json ...)
+  m21-regression/ m20-regression/ m19-regression/ m18-regression/ m17-regression/ m16-regression/ m15-regression/
+  m14-regression/ m13-regression/   regression runner outputs (README.md, SHA256SUMS, binary-artifacts.json, evidence/)
+  (docs/qa/m22-ga-20261004/preflight.txt is the T1 착수 확인, committed earlier, not edited here.)
+  git-ignored: frontend/tests/offscreen/artifacts/m22-acceptance/gate/ (full gate logs, NN.log + NN.meta, progress.txt),
+               frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/ (screenshots, paint frames, services logs,
+               regressions/m2X|m1X/, regressions/m13|m14|m15/export-full/),
+               .../attempt1-launch/ (runner.log = runner stdout, exit, started)
+  QA roots (git-ignored runs/): runs/m22-acceptance-20261005-attempt1 and
+               runs/m22-acceptance-20261005-attempt1-m2X|m1X-regression (all new; no earlier root reused; the
+               m22-dev* roots/artifacts are T8/T9 development runs on earlier commits, not T10 attempts; untouched)
+
+environment
+  OS: macOS 15.6 (Darwin 24.6.0), arm64; Python 3.11 (.venv); Node v24
+  backend capability (acceptance environment row): GA main capability available (status ready, reason_code null;
+    engine qvina, qvina-2.1.0-h4a521e9_8; meeko 0.8.0, rdkit 2026.03.6, MDAnalysis 2.10.0, gemmi 0.7.5;
+    ga_worker_sha256 0c001cae..., ga_constants_sha256 bdbbe8c9...); single docking and M17 candidates available;
+    layout backend without the locked environments reports worker_missing (GA-unavailable).
+  kbase_kinase: <home>/Projects/kbase_kinase (read only; passed as --kbase; MW_KBASE_REF=<home>/Projects/kbase_kinase/ref
+    for backend pytest). Not part of this repository and not modified here.
+
+attempt history
+  Before the gate: a Stop hook pytest (five groups, live qvina2/guardian/chemical/docking workers) started by another
+    ProtView session (not by T10) at 16:38:19Z was running. T10 waited until every such process had exited, re-checked
+    HEAD = frozen source and a clean tree, then started the gate (16:49:04Z). No overlap.
+  gate: one run, every command sequential, every exit 0 (gate.txt). No failed attempt, no retry.
+  M22 acceptance: attempt 1 (adopted, the only attempt), launched 17:30:36Z, runner exit 0 at 18:24:24Z (about 54 min
+    incl. regressions; M22 part 17:30:40Z-17:36:39Z), acceptance true, failedSteps []. --build auto ran typecheck
+    (exit 0) then build (exit 0) and stamped it. Ports 8000/3000 were free before the launch (lsof, no listener).
+  regressions: run once each by the M22 runner (--regressions), serially, all exit 0 and acceptance true.
+  Failed attempts: none. Fixes after the freeze: none. No existing check or regression script was edited.
+
+gate (gate.txt; backend pytest as the Stop hook's five groups, separate sequential invocations, no 480 s limit)
+  [1] chemical interactions group: exit 0, 24 passed, 0 skipped, 309 s
+  [2] m11 job API group: exit 0, 25 passed, 0 skipped, 256 s
+  [3] M18 docking group (5 files): exit 0, 198 passed, 0 skipped, 214 s
+  [4] M19 batch group (7 files): exit 0, 209 passed, 0 skipped, 345 s
+  [5] rest group (backend/tests minus groups 1-4 + 14 script files): exit 0, 2063 passed, 0 skipped, 1324 s
+  [0] backend collect-only: 2209 backend tests. Backend total = 24+25+198+209+(2063-310) = 2209 passed,
+      0 failed, 0 skipped. No SKIPPED line in any -rs output, so the engine-backed tests ran.
+  [6] ruff (backend/mw backend/tests scripts .codex/hooks design/build_tokens.py): exit 0, All checks passed!
+  [7] scripts pytest (14 operations.md files + test_m20 + test_m21 + test_m22 = 17 files): exit 0, 423 passed,
+      0 skipped (scripts/test_m22_offscreen_acceptance.py: 39 tests)
+  [8]-[18] node --check pocket/workflows/tabs/numbering/annotation/ligand/docking/docking-batch/mutation/
+      mutation-model/ligand-ga flows: exit 0 (11 files)
+  [19] test:events: exit 0, 345 pass, 0 fail, 0 skipped
+  [20] typecheck: exit 0; [21] build: exit 0 (after typecheck, never concurrently)
+
+M22 acceptance (acceptance/)
+  .venv/bin/python scripts/m22_offscreen_acceptance.py --root runs/m22-acceptance-20261005-attempt1 \
+      --artifacts frontend/tests/offscreen/artifacts/m22-acceptance/attempt1 \
+      --out docs/qa/m22-ga-20261005/acceptance --regressions --kbase <home>/Projects/kbase_kinase
+  verdict pass, acceptance true; verdictParts steps/cases/environment/leftoverProcesses all true.
+  25/25 judged cases pass: GA-run-panel, GA-no-candidate-set, GA-m17-set, GA-param-guards, GA-defaults,
+    GA-pool-too-small, GA-preflight, GA-run, GA-progress, GA-results, GA-sort, GA-detail, GA-limit-approval,
+    GA-dedupe, GA-reuse, GA-pool-exhausted, GA-partial, GA-cancel, GA-report, GA-processes, GA-wording
+    (step ga-main, evidenceKind real_electron_offscreen), GA-no-run, GA-unavailable (step ga-unavailable,
+    real_electron_offscreen), GA-reproducible (runner), S-no-egress.
+  Not observed (recorded as such in the ledger, not forged; covering tests named there):
+    GA-null-result (qvina scores every small-pool candidate; ligand-ga.test.cjs, test_ligand_ga_worker.py),
+    GA-no-change (depends on engine scores, no input forced; test_ligand_ga_worker.py),
+    GA-time-and-worker-limits (time_exhausted, candidate_timeout, worker_failed, resource_exceeded;
+      test_ligand_ga_worker.py and test_ligand_ga_jobs.py with test-only reduced constants).
+  Budget (run A, from the backend budget): expensive calls used 32 of limit 32 (M17 2; each GA reserved_units once
+    before start, no refund; same-argument resubmission 0; every limit raise by the screen button).
+  External requests: non-loopback 0 (externalRequestsTotal 0, rowsWithUnknownExternalCount []); provider calls 0
+    (providerCallsZero true on both flow rows and both reproducibility reruns); leftover processes [].
+  Reproducibility: the flow's GA 1 (GA seed 11, docking seed 1, cpu 1, population 4, generations 2, max new 6) was run
+    again in two fresh runs: status done, complete / generations_complete, normalized summary SHA-256
+    479ddc703b92a676fe858e22a1ecd064e258ef7ce71abfafe4eccbe8a219d63a in the flow and in both reruns, the same 8
+    individuals with equal normalized result contents and poses SDF bytes (run-scoped obj:// handles and hashes over
+    them replaced). Same server process, not a cold restart; not a cross-version bit-identity claim.
+
+regressions (each with its own fresh --root runs/m22-acceptance-20261005-attempt1-mXX-regression and --artifacts
+  frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/mXX, serially, started by the M22 runner
+  with --code-root <repo>; M20/M16/M15 with --kbase)
+  | runner | out              | exit | acceptance | cases  | not observed                                           | ext. req. |
+  | M21    | m21-regression/  | 0    | true       | 23/23  | MM-unavailable, MM-pair-approval, MM-failed-job,       | 0         |
+  |        |                  |      |            |        | MM-zero-contacts, MM-conditional-limitations           |           |
+  | M20    | m20-regression/  | 0    | true       | 24/24  | M-map-conflict, M-too-many-positions,                  | 0         |
+  |        |                  |      |            |        | M-nonstandard-disulfide                                |           |
+  | M19    | m19-regression/  | 0    | true       | 26/26  | B-dry-run-shortfall, B-null-result, B-time-limits      | 0         |
+  | M18    | m18-regression/  | 0    | true       | 24/24  | D-zero-modes                                           | 0         |
+  | M17    | m17-regression/  | 0    | true       | 21/21  | -                                                      | 0         |
+  | M16    | m16-regression/  | 0    | true       | 19/19  | -                                                      | 0         |
+  | M15    | m15-regression/  | 0    | true       | 14/14  | -                                                      | 0         |
+  | M14    | m14-regression/  | 0    | true       | 15/15  | -                                                      | 0         |
+  | M8-M13 | m13-regression/  | 0    | true       | 28/28  | -                                                      | 0         |
+  The not-observed sets are the same as in the M21 T12 regressions (and the M21 T12 acceptance). M13 ran --phases
+  workflows,unavailable,regressions,m11,m12,ledger: 17 rows, external request count 0 (incl. m11-acceptance and
+  m12-acceptance sub-runners). Leftover processes [] in every ledger. Provider calls: every flow row that records
+  providerCallsZero has it true (7 M13 sub-runner/regression rows do not record the field, same as in M18-M21).
+  Changed existing expectations: none.
+
+evidence layout / decision 0020
+  Text files over 256 KiB were moved to <artifacts>/regressions/m1X/export-full/ (relative paths kept):
+  m13-regression 51 files 331,512,196 bytes, m14-regression 1 file 1,191,726 bytes, m15-regression 1 file 590,108
+  bytes; acceptance and m16-m21 regressions had none. See each folder's ARCHIVED-EVIDENCE.sha256 and the README's
+  last section (verified shasum -a 256 -c, all OK). SHA256SUMS keeps the original lines; its README.md line was
+  refreshed after the README section was appended (every non-archived line verifies OK). Committed folder ~9.9 MB.
+
+caveats
+  - GA-null-result, GA-no-change and the time/worker/resource stop reasons are not produced by the offscreen flow;
+    they are covered by worker/job tests (real qvina where applicable, test-only reduced constants for limits).
+  - The GA input pool is a synthetic-labelled small building block set on the public ProLIF/Vina receptor fixture;
+    it verifies GA mechanics with real qvina scores, not a biological design.
+  - scripts/test_m20/m21/m22_offscreen_acceptance.py are in the gate command but not in the Stop hook rest group's
+    file list (same situation as M20/M21, docs/tracking/findings.md).
+  - The rest group took 1324 s alone, far above the Stop hook's 480 s per-group limit (known finding).
+
+pending for T12 (docs; none started on this branch)
+  decision 0030 (+ decisions/index.md), docs/tracking/m22-acceptance.md, status.md, roadmap.md, business-rules.md
+  (GA section), contracts.md (M22 API), operations.md (M22 runner, gate additions ligand-ga-flow.cjs and
+  test_m22_offscreen_acceptance.py), engineering-notes.md, backend/AGENTS.md, frontend/AGENTS.md (incl. the RDKit
+  Morgan fingerprint exception), CLAUDE.md. T11 independent evidence review comes first.
+
+end state
+  After the runner: no qvina2, docking/batch/GA/ligand/chemical/mutation worker, guardian, fpocket, uvicorn, next or
+  harness Electron process; 8000/3000 free. git status before the evidence commit: only untracked
+  docs/qa/m22-ga-20261005/; HEAD unchanged (a71b2e6ac4f82311f1c008f9cc3646a0d0e063be).

@@ -1,0 +1,116 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "replay",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "CHa6nmR7ciWcO8tOTTcKV",
+  "startedAt": "2026-10-04T18:24:10.310Z",
+  "run": "run_1d4aac23591b41a2a82a271d51d45441",
+  "handles": {
+    "set": "obj://run_1d4aac23591b41a2a82a271d51d45441/pocket_set/1599a09983c05b1c43b298c541352c15f964f1e2c09c483cc0758b548e776c09",
+    "report": "obj://run_1d4aac23591b41a2a82a271d51d45441/method_report_manifest/493932d96da080214a24f884b6aca6e35339acac641378a02c4dd22c706a028a"
+  },
+  "inputs": [],
+  "fixtureLabels": [
+    "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+  ],
+  "expectCapability": "not_installed",
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 10,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/replay-empty/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 104,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 40,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m22-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/replay-empty/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 129,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_1d4aac23591b41a2a82a271d51d45441/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_1d4aac23591b41a2a82a271d51d45441/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_1d4aac23591b41a2a82a271d51d45441/pockets/result",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_1d4aac23591b41a2a82a271d51d45441/reports/selected",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_1d4aac23591b41a2a82a271d51d45441/reports/download",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_1d4aac23591b41a2a82a271d51d45441/reports/download",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-10-04T18:24:12.084Z",
+  "externalRequestCount": 0
+}

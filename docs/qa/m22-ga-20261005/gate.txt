@@ -1,0 +1,164 @@
+M22 T10 full gate (docs/operations.md 검증 명령 + mutation-model-flow.cjs/ligand-ga-flow.cjs node --check + scripts/test_m20/m21/m22_offscreen_acceptance.py)
+frozen source: a71b2e6ac4f82311f1c008f9cc3646a0d0e063be (M22 T9 fixes)
+working tree clean at start: yes (git status --porcelain empty; HEAD = frozen source)
+env (backend pytest only): MW_KBASE_REF=<home>/Projects/kbase_kinase/ref
+started: 2026-10-04T16:49:04Z
+note: every command ran sequentially in one lane (no two commands at the same time), backend pytest as the Stop hook's
+      five disjoint groups (.codex/hooks/stop.py CHECKS[1:]) as separate invocations without the hook's 480 s limit,
+      plus -rs -p no:cacheprovider. Order: [0] [6] [7] [8]-[18] [19] [1]-[5] [20] [21] (typecheck before build).
+      Before the gate a Stop hook pytest started by another ProtView session (not by T10) was running
+      (started 2026-10-04T16:38:19Z); the gate started only after it and its workers had exited, so no other
+      ProtView pytest overlapped.
+      Groups 1-5 cover backend/tests exactly once: [0] collects 2209 backend tests; groups 1-4 = 456;
+      group 5 = 2063 = 1753 backend + 310 script tests (its 14 script files collect 310). Backend 456 + 1753 = 2209.
+full logs (git-ignored): frontend/tests/offscreen/artifacts/m22-acceptance/gate/
+
+## [1] .venv/bin/python -m pytest -q -rs -p no:cacheprovider backend/tests/test_chemical_interactions.py
+exit=0  duration_s=309
+skipped: 0 (SKIPPED lines in -rs output)
+summary:
+  ........................                                                 [100%]
+  24 passed in 309.33s (0:05:09)
+
+## [2] .venv/bin/python -m pytest -q -rs -p no:cacheprovider backend/tests/test_m11_job_api.py
+exit=0  duration_s=256
+skipped: 0 (SKIPPED lines in -rs output)
+summary:
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  25 passed, 1 warning in 255.32s (0:04:15)
+
+## [3] .venv/bin/python -m pytest -q -rs -p no:cacheprovider backend/tests/test_docking_inputs.py backend/tests/test_docking_worker.py backend/tests/test_docking_jobs.py backend/tests/test_docking_api.py backend/tests/test_docking_reports.py
+exit=0  duration_s=214
+skipped: 0 (SKIPPED lines in -rs output)
+summary:
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  198 passed, 1 warning in 213.91s (0:03:33)
+
+## [4] .venv/bin/python -m pytest -q -rs -p no:cacheprovider backend/tests/test_docking_batch_inputs.py backend/tests/test_docking_batch_bundle.py backend/tests/test_docking_batch_worker.py backend/tests/test_docking_batch_jobs.py backend/tests/test_docking_batch_budget.py backend/tests/test_docking_batch_api.py backend/tests/test_docking_batch_reports.py
+exit=0  duration_s=345
+skipped: 0 (SKIPPED lines in -rs output)
+summary:
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  209 passed, 1 warning in 344.11s (0:05:44)
+
+## [5] .venv/bin/python -m pytest -q -rs -p no:cacheprovider backend/tests scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py --ignore=backend/tests/test_chemical_interactions.py --ignore=backend/tests/test_m11_job_api.py --ignore=backend/tests/test_docking_inputs.py --ignore=backend/tests/test_docking_worker.py --ignore=backend/tests/test_docking_jobs.py --ignore=backend/tests/test_docking_api.py --ignore=backend/tests/test_docking_reports.py --ignore=backend/tests/test_docking_batch_inputs.py --ignore=backend/tests/test_docking_batch_bundle.py --ignore=backend/tests/test_docking_batch_worker.py --ignore=backend/tests/test_docking_batch_jobs.py --ignore=backend/tests/test_docking_batch_budget.py --ignore=backend/tests/test_docking_batch_api.py --ignore=backend/tests/test_docking_batch_reports.py
+exit=0  duration_s=1324
+skipped: 0 (SKIPPED lines in -rs output)
+summary:
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  2063 passed, 1 warning in 1323.31s (0:22:03)
+
+## [0] .venv/bin/python -m pytest --collect-only -q -p no:cacheprovider backend/tests
+exit=0  duration_s=1
+summary:
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  2209 tests collected in 0.49s
+
+## [6] .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
+exit=0  duration_s=0
+summary:
+  All checks passed!
+
+## [7] .venv/bin/python -m pytest -q -rs -p no:cacheprovider scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py
+exit=0  duration_s=6
+skipped: 0 (SKIPPED lines in -rs output)
+summary:
+  ...............................................................          [100%]
+  423 passed in 5.98s
+
+## [8] node --check frontend/tests/offscreen/pocket-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [9] node --check frontend/tests/offscreen/workflows-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [10] node --check frontend/tests/offscreen/tabs-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [11] node --check frontend/tests/offscreen/numbering-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [12] node --check frontend/tests/offscreen/annotation-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [13] node --check frontend/tests/offscreen/ligand-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [14] node --check frontend/tests/offscreen/docking-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [15] node --check frontend/tests/offscreen/docking-batch-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [16] node --check frontend/tests/offscreen/mutation-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [17] node --check frontend/tests/offscreen/mutation-model-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [18] node --check frontend/tests/offscreen/ligand-ga-flow.cjs
+exit=0  duration_s=0
+summary:
+  (no output)
+
+## [19] npm --prefix frontend run test:events
+exit=0  duration_s=1
+summary:
+  ℹ tests 345
+  ℹ suites 0
+  ℹ pass 345
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 0
+  ℹ todo 0
+  ℹ duration_ms 561.751083
+
+## [20] npm --prefix frontend run typecheck
+exit=0  duration_s=3
+summary:
+  > tsc --noEmit
+  
+
+## [21] npm --prefix frontend run build
+exit=0  duration_s=13
+summary:
+  Route (app)                                 Size  First Load JS
+  ┌ ○ /                                     168 kB         316 kB
+  ├ ○ /_not-found                            999 B         104 kB
+  └ ○ /gallery                             4.45 kB         152 kB
+  + First Load JS shared by all             103 kB
+    ├ chunks/255-6d6ff4e9d7c2804f.js       46.1 kB
+    ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB
+    └ other shared chunks (total)          2.42 kB
+  
+  
+  ƒ Middleware                               34 kB
+  
+  ○  (Static)  prerendered as static content
+  
+
+finished: 2026-10-04T17:30:16Z (single sequential lane)
+result: every command exit 0; backend 2209 passed / 0 failed / 0 skipped; script tests 423 passed / 0 skipped
+        (17 files; scripts/test_m22_offscreen_acceptance.py collects 39); frontend test:events 345 pass / 0 fail /
+        0 skipped; typecheck 0; build 0; ruff clean; 11 flows node --check 0
+tree status after gate: clean; HEAD unchanged (a71b2e6ac4f82311f1c008f9cc3646a0d0e063be)

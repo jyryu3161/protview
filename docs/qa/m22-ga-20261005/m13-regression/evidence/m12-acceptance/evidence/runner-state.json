@@ -1,0 +1,102 @@
+{
+  "build": {
+    "buildId": "CHa6nmR7ciWcO8tOTTcKV",
+    "gitHead": "a71b2e6ac4f82311f1c008f9cc3646a0d0e063be",
+    "gitStatusPorcelainSha256": "783ab98eb2b0a68a254945f55395ec053c0d2ecf0ceaf49bdbaf3a01b00bbd59",
+    "dirtyFiles": [
+      "?? docs/qa/m22-ga-20261005/"
+    ],
+    "recordedAt": "2026-10-04T18:17:02.777386+00:00",
+    "harnessSha256": {
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099"
+    },
+    "inputSha256": {
+      "public_1hsg.cif": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "derived_1hsg_first10_fixture.cif": "886e066bb52864d6e08432cf7aee485d029c07511c1f795c1fc9f4e224e40930",
+      "prolif-vina-rec.pdb": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "prolif-vina-output.sdf": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0"
+    },
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d",
+    "qaInputsSha256": "f65692c4983bf9eaca6fb4d9b4bbed1792ba0d03ce3447403c8597d89ff5994f"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-04T18:17:07.094110+00:00"
+    },
+    {
+      "name": "backend-replay-engine-missing",
+      "runs": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/replay-runs",
+      "code": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-04T18:24:06.066470+00:00"
+    },
+    {
+      "name": "backend-unavailable-missing",
+      "runs": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/unavailable-missing-runs",
+      "code": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/layout-engine-missing",
+      "mw": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/layout-engine-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-04T18:24:13.979929+00:00"
+    },
+    {
+      "name": "backend-unavailable-hash",
+      "runs": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/unavailable-hash-runs",
+      "code": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/layout-engine-tampered",
+      "mw": "<repo>/runs/m22-acceptance-20261005-attempt1-m13-regression/m12-acceptance/layout-engine-tampered/backend/mw/__init__.py",
+      "startedAt": "2026-10-04T18:24:18.798305+00:00"
+    }
+  ],
+  "positive": {
+    "run": "run_c638e5b69a1548dfb787088eda1335a8",
+    "set": "obj://run_c638e5b69a1548dfb787088eda1335a8/pocket_set/e60d396e23dd7a1f271c44567d9a9271dadbccd043df1a52794132c026e0c797",
+    "prepared": "obj://run_c638e5b69a1548dfb787088eda1335a8/prepared_structure/900c98072af9ac88ba3206cb0c5ae62f3afae2397a34365163bcdc37afccc242",
+    "original": "obj://run_c638e5b69a1548dfb787088eda1335a8/structure/71075ffd746d950255971cc0f378a194322def60054c08d4cfaa77ceaf1701e6",
+    "report": "obj://run_c638e5b69a1548dfb787088eda1335a8/method_report_manifest/336566b328462f63e93bd689170128f87881a536bbc7f634afd6fe5f5e257f2c",
+    "md": "3948cddce88c8ad65b3c0805a39a8936fedfaaff1c7dda9921abf294638018c7",
+    "json": "dfb6e94281d8822af5147f15b743971a82a03c8c82148a4675c7fdf29c0ce581"
+  },
+  "empty": {
+    "run": "run_1d4aac23591b41a2a82a271d51d45441",
+    "set": "obj://run_1d4aac23591b41a2a82a271d51d45441/pocket_set/1599a09983c05b1c43b298c541352c15f964f1e2c09c483cc0758b548e776c09",
+    "report": "obj://run_1d4aac23591b41a2a82a271d51d45441/method_report_manifest/493932d96da080214a24f884b6aca6e35339acac641378a02c4dd22c706a028a",
+    "md": "490d1fd33f62c8b63092039cb8610418e09545e66b8aff174b6aad7872bf4ad0",
+    "json": "a6839626caf7e4f72dc6977ce80b0e6244a14008fd71b5f18fc6de1f9a664d3e"
+  },
+  "chemical": {
+    "run": "run_a77029bfceeb402f98633649eebf13b1",
+    "result": "obj://run_a77029bfceeb402f98633649eebf13b1/chemical_interaction_set/34506e34135807df85e7c4a74bdce2afb43e744d34615a48c9a169f2e2638fee"
+  },
+  "scenesRun": "run_33a09f4d5a4e48acb3bc6ba012f9287a",
+  "m11Prepared": {
+    "run": "run_1a5c3e7f380d4b56ad10916ffe8330f8",
+    "graph": "obj://run_1a5c3e7f380d4b56ad10916ffe8330f8/chemical_graph/9fc728b4b2fc60f0266c99afd48dce3bc046ad397a60593c7115e7b6d83ab555"
+  },
+  "layouts": {
+    "layout-engine-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent",
+      "files": 117,
+      "treeSha256": "8b6d821060043ec3e9e22e19b4710ed9a335af697f6458142f69fb35a55a42a7",
+      "engine": null
+    },
+    "layout-engine-tampered": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; real install record with a labeled placeholder bin/fpocket (SHA-256 42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822, not the reviewed build)",
+      "files": 117,
+      "treeSha256": "8b6d821060043ec3e9e22e19b4710ed9a335af697f6458142f69fb35a55a42a7",
+      "engine": {
+        "path": ".deps/fpocket/env/bin/fpocket",
+        "sha256": "42cfbd07e5f886d00f498561191d6f8d28c9bba036fc15bd448d47854f77a822"
+      }
+    }
+  }
+}
