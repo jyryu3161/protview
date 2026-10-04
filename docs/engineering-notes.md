@@ -328,6 +328,51 @@
 ### 탭 흐름의 단백질 공학 탭은 이제 GET 요청을 낸다 (M20)
 - M14 `tabs-flow.cjs`의 단백질 공학 탭 사례는 "안내가 보이는 동안 새 요청 없음"을 단언했다. M20부터 그 탭은 변이 후보 화면이 들어올 때 이벤트·포켓·번호 대응·주석·결과 목록을 GET으로 읽으므로, 리간드 탭 선례처럼 "GET 읽기만"으로 바꿨다(`f33aacd`, M14 실행기의 `T-unavailable` 설명도). 탭에 화면을 붙이는 단계는 이 단언과 `workspace-tabs.test.cjs`의 안내 기대를 함께 고친다.
 
+### PDBFixer 생성자는 파일만 받는다 — 위상을 텍스트로 넘기고 좌표를 이식한다 (M21)
+- **증상**: M7 작업 모듈이 만든 OpenMM `Topology`를 PDBFixer에 바로 넘기는 공개 경로가 없다. PDBFixer는 좌표를 nm로 옮겨 담아 돌려주므로 변이 잔기 밖 좌표가 값은 같아도 마지막 비트가 다르다(1UBQ 594원자 중 약 410개, 최대 7.1e-15 Å).
+- **대응**: M7과 같은 위상(체인 id `str(chain_index)`, 잔기 id `str(전역 순번+1)`)을 `app.PDBxFile.writeFile(…, keepIds=True)`로 쓰고 `PDBFixer(pdbxfile=StringIO)` → `findMissingResidues` → `applyMutations([f"{old}-{순번}-{NEW}"], chain_id)` → `findMissingAtoms`(여기서 누락 표시가 변이 잔기 하나뿐인지 검사, `addMissingAtoms` 전) → `addMissingAtoms(seed)`. 출력은 이식(`_graft`)한다: 변이 잔기 밖은 이름·원소·순서가 같고 차이 ≤ 1e-9 Å일 때만 받아 입력 좌표를 쓰고, 입력에 있던 원자는 변이 잔기 안에서도 입력 좌표, 새 원자만 PDBFixer 좌표다. 그래야 "변이 잔기 밖 좌표는 최소화 전에 입력과 같다"가 비트 단위로 성립한다(`test_oracle1_*`).
+
+### `applyMutations`는 새 템플릿에 같은 이름이 있는 원래 곁사슬 원자를 남긴다 (M21)
+- ILE→TRP·PHE·TYR의 CD1, ILE→THR의 CG2, ILE→VAL의 CG1·CG2, MET→PRO·TRP의 CG, HIS→TYR의 CG·CD2·CE1, LYS→HIS의 CG처럼 화학적으로 다른 자리인데도 이름이 같아 남는다. 명세는 PDBFixer 공개 API를 그대로 쓰는 쪽(변형 A)을 골랐다. 그래서 최소화 전 전위가 매우 클 수 있다(T1: P38W는 변형 A 209,742,676 kJ/mol, 같은 이름 원자를 남기지 않는 변형 B 58,015 kJ/mol. 반대로 I44W는 A −8,046, B 30,744 kJ/mol). 최소화 뒤 `after ≤ before` 검사만 하고 값의 좋고 나쁨을 판정하지 않는다. `added_heavy_atoms`에는 PDBFixer가 새로 놓은 원자만 들어가므로 남은 원자는 거기 없다.
+
+### C 말단 변이에서 PDBFixer가 OXT를 지웠다 다시 놓는다 (M21)
+- 표준 템플릿에 OXT가 없어 `applyMutations`가 말단 잔기의 OXT를 지우고 `findMissingAtoms`가 `missingTerminals`로 다시 놓는다. 새 위치는 원래와 0.35–0.69 Å 다르다(G76A·G76P·G76W). 이식에서 OXT는 입력에 있던 원자이므로 입력 좌표를 쓴다. `missingTerminals`는 C 말단 변이에서만, 그것도 변이 잔기에만 나타나야 한다.
+
+### 자유 Cys의 변형 이름은 null이다 (M21)
+- `Modeller.addHydrogens`가 돌려주는 변형 목록은 HIS면 HID·HIE·HIP, 이황화 CYS면 CYX이고, 자유 CYS는 기본 템플릿이라 None이다. 결과 `protonation_variants`는 이 값을 그대로 저장한다(자유 Cys `variant: null`, "CYS"로 바꾸지 않음). 이황화가 끊기거나 생기면 상대 Cys가 CYX↔null로 바뀌어 `protonation_differences`와 L5가 생긴다(변이 잔기가 아니므로 명세대로의 동작, 착수 확인 N1).
+
+### OpenMM mmCIF 읽기는 결합표가 없으면 이황화를 찾지 않는다 (M21)
+- 저장 mmCIF에는 `struct_conn`이 없다. 독립 oracle이 내보낸 mmCIF를 `app.PDBxFile`로 다시 읽으면 표준 결합만 생기고 이황화 결합이 빠져 System이 달라진다. 독립 재계산은 `createDisulfideBonds(positions)`를 직접 부르거나 저장 `final_bonds`로 위상을 만든다(`test_mutation_model_worker.py`의 `_independent_system`). M18 수용체도 거리 추론이 아니라 `final_bonds`·`atom_mapping`으로 결합을 받는다.
+
+### M18 화학 추론이 OpenMM 구조의 C 말단 카르복실을 거부했다 (M21)
+- **증상**: 착수 확인에서 M7을 통과한 1UBQ·합성 파생 구조의 수용체 5개가 모두 M18 `receptor_prep_failed`(`receptor_graph_invalid`, "backbone inferred bond order invalid", GLY A76)였다. qvina는 한 번도 돌지 않았다.
+- **원인**: M7 규칙상 사슬 끝마다 OXT가 있고, MDAnalysis 추론은 원자 순서가 C, O, OXT이면 이중결합을 C–OXT에, 음전하를 O에 붙인다. M18 `_protein_chemistry`는 모든 잔기에 C=O 이중결합을 요구한다. 기존 M18 입력은 말단 캡이 있는 예제라 드러나지 않았다. 원자 순서만 바꾸면(OXT를 O 앞에) 통과한다.
+- **대응(사용자 승인)**: `receptor_source`가 `mutation_model`일 때만 `terminal_carboxylate_either`로 OXT 잔기의 C–O·C–OXT 중 하나가 이중결합이고 다른 쪽이 단일결합·전하 −1이면 받는다. 원자 순서에 기대는 길(OXT를 앞에 쓰기)은 쓰지 않았다. 수소가 있는 자유 C 말단을 **가져온** 수용체는 지금도 거부된다(`test_imported_free_c_terminus_receptor_is_still_refused`, 기존 M18 동작). HID·CYX 같은 변형 이름으로 쓴 수용체는 거부되므로(CYX는 비표준) 저장 mmCIF는 표준 이름 HIS·CYS로 쓴다.
+
+### 사용할 수 없음 412는 순수 입장 422 뒤, M7 사전 검사 422 앞이다 (M21)
+- 명세 표는 412 세 줄을 끝에 두지만 실제 순서는 순수 입장 검사 1–7(422) → dry-run 계획 → 412(`process_identity_unavailable` → `openmm_unavailable` → `pdbfixer_unavailable`) → M7 사전 검사(422 `openmm_preflight_failed`)다(독립 코드 검토 N2). 엔진이 없어도 잘못된 후보는 422로, 엔진이 없고 입력이 맞으면 412로 거절된다. 사전 검사가 OpenMM을 쓰므로 엔진 확인이 그 앞에 와야 한다. 둘 다 예약·과금 전이다.
+- `JobSubmit`의 `timeout_s`가 빠지면 예전에는 API가 모든 프로토콜에 60초를 넣었다. M21부터 빠진 값은 큐로 None이 가고 큐가 프로토콜 기본값(이 프로토콜 120, 나머지 60)을 채운다. API 본문 모델이 이 프로토콜의 `timeout_s`·`args`를 거절하면 닫힌 이유 `argument_invalid`로 바꾼다(독립 코드 검토 N1).
+
+### 변이 모델을 출처로 한 읽기는 모델을 매번 다시 검증한다 (M21)
+- `mutation_model_bundle.validated_result`는 저장 객체 전체를 `validated_model`로 다시 검사하고(저장 좌표에서 접촉을 다시 계산) 단일 게시·후보 집합·mmCIF 바이트를 대조한다. 이 출처의 M18 결과는 입장·스테이징·게시·모든 읽기에서 모델을 다시 검증하고 저장 mmCIF·사이드카 해시를 대조하며, `docking_pairs`는 모델과 짝마다 두 M18 결과를 다시 검증한다(독립 코드 검토 N6). 정확성을 위한 설계이고, 1UBQ 크기에서는 문제가 없었지만 큰 단백질·짝이 많은 run에서는 읽기가 느려진다(이벤트 로그 재파싱 항목과 같은 원인). 모델이 검증되지 않으면 그 모델을 출처로 한 M18 결과도 읽히지 않는다.
+
+### 호출 키의 의존 파일 해시와 그 밖의 파일 (M21)
+- 호출 키·작업 기록 `method`에 들어가는 것은 작업 모듈 `openmm_mutation_worker.py`와 `DEPENDENCIES` 다섯 개(`mutation_model_math.py`, `mutation_model_constants.py`, `jobs/openmm_worker.py`, `tools/openmm_method.py`, `mutation_candidates.py`)의 SHA-256과 고정 방법 기록이다(독립 코드 검토 R1, `4a3dabe`). 이 중 하나라도 바꾸면 그 전 결과가 자동 재사용되지 않고, 대기 중 작업은 시작 때 `worker_version_invalid`로 막힌다(`test_changed_dependency_changes_the_key_and_refuses_the_pinned_start`).
+- 작업 모듈이 import하지만 해시하지 않는 파일: `mutation_constants.py`(M20 상수), `openmm_bundle.py`, `core/handles.py`, `core/errors.py`, `tools/structural.py`, `tools/sasa.py`, `jobs/process_identity.py`. 이 파일의 동작을 바꾸면 같은 호출 키로 다른 결과가 나올 수 있으므로, 바꿀 때 `DEPENDENCIES`에 넣을지 함께 정한다.
+- M18 쪽도 같다: M21이 `docking_worker.py`·`docking_constants.py`를 바꿔 M21 전 M18·M19 결과의 자동 재사용이 끝났다(결정 0029, 저장 결과·읽기는 그대로).
+
+### Stop 훅 나머지 그룹은 혼자 10분이 걸려 480초 제한을 넘는다 (M21)
+- M21 고정 게이트에서 다섯 그룹을 따로(제한 없이) 돌렸을 때 나머지 그룹은 1,833개 602초였다(다른 두 줄과 동시 실행, `docs/qa/m21-mutations-20261004/gate.txt`). 훅의 그룹 제한 480초·전체 600초 안에서는 이 그룹이 시간 초과로 보고된다. M21 테스트(실제 OpenMM·PDBFixer 작업 모듈과 qvina 도킹)는 모두 나머지 그룹에 들어 있다. 게이트는 그룹별 개별 실행으로 대신했다. 그룹을 다시 나누는 일은 `docs/tracking/findings.md`.
+
+### 1UBQ 작업 하나는 약 20초, 큰 구조의 시간은 재지 않았다 (M21)
+- 착수 확인 단독 측정에서 1UBQ(중원자 602) 작업 하나(두 구조의 수소·System·최소화, PDBFixer, SASA·접촉·mmCIF)는 22.6–23.0초였다(구조 하나 약 11초). 사전 검사·스테이징·guardian 시간은 빠졌다. `NoCutoff` GBn2라 원자 수에 비례 이상으로 늘 수 있고, M7을 통과하는 큰 공개 fixture가 없어 큰 구조는 재지 못했다. 기본 120초·최대 240초에서 시간 초과가 나면 결과 없이 1단위가 청구된다.
+
+### M7을 통과해도 M18이 받지 않는 크기 구간이 있다 (M21)
+- M7 한도는 단백질 중원자 6,000개이고 M18 수용체 한도는 수소 포함 10,000원자다. 1UBQ의 수소/중원자 비율 1.045로 보면 중원자 약 4,890개를 넘는 모델은 모델링은 되지만 같은 조건 도킹이 입장에서 `receptor_invalid`로 거절된다(`test_receptor_atom_limit_is_a_clear_admission_refusal`). 한도는 바꾸지 않았다.
+
+### M20 회귀의 참조 세트 해시가 M20 기록과 다르다 (M21)
+- M21 수락의 M20 회귀가 가져온 세트(`8c608e2b…`)는 M20 기록(`99939292…`)과 해시가 다르지만 매니페스트의 파일 다섯 개 SHA-256은 같다. 위 "같은 스냅샷 파일을 다시 가져와도 세트 해시가 바뀐다"와 같은 원인(`imported_at`)이며 회귀 판정에는 영향이 없다.
+
 ## 동작 원리
 
 ### handle과 복구
@@ -359,6 +404,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 
 ### 일괄 도킹 작업 경로 (M19)
 `POST /jobs`의 `qvina_batch_dock_v1`은 `docking_batch_inputs.submission`이 입장을 검사한다: 공유 필드는 M18 `docking_inputs.validate_arguments`로, 후보 집합은 M17 검증 읽기로, 행마다 `docking_bundle.submission`(M18 입장 그대로)을 불러 행별 `docking_selection@1`을 만들고 일괄 선택 기록 `docking_batch_selection@1`(행 선택 기록 목록 + `batch_input_sha256`)로 묶는다. 호출 키는 `batch_input_sha256`이며 같은 키의 진행 중 작업이나 검증된 `complete` 요약의 작업만 돌려준다. 새 작업이면 그 자리에서 재사용 계획으로 N을 세고 예산 부족을 429로 거절한다. 작업 기록에는 `method`(행의 M18 pin)와 `batch_method`(일괄 작업 모듈·상수 해시)를 넣고, 시작 때 둘 다 다시 맞춘다. 시작 때 run 실행 잠금 안에서 재사용 계획을 한 번 정하고(`job_dispatch_intent.batch_reused`) `reserve_attempt(units=N)`으로 예약한다. N = 0이면 작업 프로세스 없이 정리 확인 이벤트를 쓰고 요약만 게시한다. 스테이징은 첫 행의 M18 스테이징(수용체·부모 SDF 바이트를 불변 가져오기에서 다시 읽고 해시 대조)에 행 목록(재사용 표시, 후보 SMILES·코어·입체 표시)을 더한 `docking_batch_worker_input@1`이다. guardian은 고정 진입점 `mw/jobs/docking_batch_worker.py`를 `.deps/docking/venv-locked`로 띄우고(감시 대상, 종료 기록 한도 64 KiB), 작업 모듈은 `docking_worker.py`를 파일 경로로 불러 수용체를 한 번 준비한 뒤 행을 차례로 `dock_row`로 계산한다. 행당 300초·전체 7200초 시계와 SIGTERM은 `BaseException`인 `_Stop`을 던져 M18의 `except Exception`이 삼키지 않게 하고, `subprocess.run`이 그 행의 `qvina2`를 정리한다(진행 중인 RDKit·Meeko 네이티브 호출은 끝난 뒤에 멈춘다). 서버는 그룹 정리 확인 뒤 `_finish_batch`에서 종료 원인(사용자 취소·작업 마감·크래시·서버 재시작)을 정하고 `finish`가 스테이징을 크기 제한·`O_NOFOLLOW`·canonical JSON으로 읽어 행을 M18과 같은 검사(`result_content` → `store_result`, 수용체 원자 재대조)로 게시한 뒤 요약을 만들고 검증해 게시한다. 그 다음 작업 종료를 기록한다(`done`이면 요약 handle 하나). 서버 재시작 때는 `reconcile_run`이 그룹 정리를 확인한 뒤 같은 `_finish_batch(recovered=True)`로 게시하고 `interrupted`로 닫는다. capability는 M18 capability + 일괄 파일 해시 + 일괄 작업 모듈 `--handshake`(구조가 맞는 것만, 파일 해시 키로 캐시)다.
+
+### 변이 구조 모델링 작업 경로 (M21)
+`POST /jobs`의 `openmm_mutation_model_v1`은 `mutation_model_bundle.admission`이 엔진 없이 인자·`timeout_s`·후보 집합(M20 `validated_set`)·후보 번호·구조·잔기 7필드를 검사하고, dry-run이면 계획만 돌려준다. 그 다음 `selection`이 신원 어댑터·OpenMM(M7 `dependencies()`)·PDBFixer(`importlib.metadata`)를 확인하고(412), M7 `preflight()`로 단백질 중원자 투영을 만들어(422 `openmm_preflight_failed`) 스테이징 payload(투영, seed, 원래 잔기 7필드, 변이 후 이름, cutoff, 고정 방법)를 작업 기록에 넣는다. 호출 키는 정규화 인자 + 작업 모듈·의존 파일 SHA-256 + 방법 기록이다. 시작 때 같은 pin을 다시 맞추고, guardian이 고정 진입점 `mw/jobs/openmm_mutation_worker.py`를 서버와 같은 프로젝트 인터프리터로 띄운다(감시 대상, 출력 64,000,000 B). 작업 모듈은 변이형만 PDBFixer에 넣어 이식하고, 두 구조를 같은 `_prepare` → `_minimize` → `_entry` 경로로 만든 뒤 `result.json` 또는 닫힌 `error.json`을 쓴다. 게시(`_publish_mutation_model`)는 현재 시도·취소를 확인하고 출력 크기·해시, 방법·선택 일치, mmCIF 원자 행, 야생형 중원자 = 스테이징 투영, 추가 원자 집합, `validated_model`을 통과해야 mmCIF 객체 둘과 결과를 저장한다. 같은 조건 도킹은 이 결과를 M18 `docking_bundle`이 `receptor_source`로 다시 검증해 저장 mmCIF와 `final_bonds`로 만든 사이드카를 스테이징하고, `docking_worker.py`는 이 출처 표시가 있을 때만 말단 카르복실 완화와 열두째 문장을 켠다.
 
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.

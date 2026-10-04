@@ -44,7 +44,7 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 | 방법 | 계산 | 단위 | 의미하지 않는 것 |
 |---|---|---|---|
 | FreeSASA (M6) | 단백질 + 선택 리간드 1개. Lee–Richards 100 slices, probe 1.4 Å, 스레드 1. 단백질 매몰, 리간드 매몰, 총 SASA 손실, 잔기별 값 | Å² | 친화도, 에너지, 결정 전체 환경. 다른 리간드·물·이온은 제외한다 |
-| OpenMM (M7) | 표준 단백질만. Amber14-all + GBn2, pH 7 수소 재구성, 제한된 최소화. `protein_only`와 `rebuild_pH7`를 명시적으로 확인해야 실행 | kJ/mol | 리간드 결합 에너지, ΔΔG, 안정성, Rosetta 점수 |
+| OpenMM (M7) | 표준 단백질만. Amber14-all + GBn2, pH 7 수소 재구성, 제한된 최소화. `protein_only`와 `rebuild_pH7`를 명시적으로 확인해야 실행. M21 변이 구조 모델링도 같은 설정으로 두 구조(야생형 기준, PDBFixer 변이형)를 각각 최소화한다(아래 "변이 구조 모델링 (M21)") | kJ/mol | 리간드 결합 에너지, ΔΔG, 안정성, Rosetta 점수. M21의 두 구조 값은 서로 빼거나 비교하지 않는다 |
 | 원자 거리 (M10) | 같은 소스의 정확한 원자 두 개 사이 원본 좌표 유클리드 거리 | Å | — 겹친 좌표의 0 Å은 정상 값이며 scientific_null이 아니다 |
 | 강체 정렬 (M10) | 사용자가 고른 단백질 CA 쌍 3–1000개로 float64 Kabsch 회전(반사 금지) | RMSD Å | 모델 품질, 결합, 안정성. 선택한 쌍에만 해당한다 |
 | ProLIF (M11) | 사용자가 준비한 수용체(명시적 수소, 완전한 연결 정보) + SDF 리간드 1개. 프로토콜 `prolif_prepared_explicit_h@1` | D···A 거리 Å, D–H···A 각도 ° | 실험적 수소결합 확인, 염다리 에너지, 친화도, 안정성 |
@@ -281,6 +281,7 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 - PDBQT 준비는 작업 환경 `.deps/docking/venv-locked`(Meeko 0.8.0, RDKit 2026.03.6, MDAnalysis 2.10.0, gemmi 0.7.5)의 `mw/jobs/docking_worker.py`가 한다. 원자 유형은 AutoDock4(`ad4`), 부분 전하는 Gasteiger이며 Meeko·RDKit 버전과 함께 결과 `preparation`에 기록한다.
 
 ### 입력
+- **M21 수용체 출처 `receptor_source`(단독 M18만, M19는 받지 않음)**: `{kind: "mutation_model", mutation_model: <같은 run의 게시된 mutation_model@1>, side: "wild_type_reference"|"mutant"}`를 주면 `receptor_handle`·`receptor_model_number`·`connectivity`·`receptor_instance`는 모두 없어야 한다(섞으면 `invalid_job_arguments`). 수용체 바이트는 그 쪽의 저장 mmCIF(최소화 좌표, 수소 포함, 표준 이름 HIS·CYS), 공유 결합은 저장된 `final_bonds`·`atom_mapping`(OpenMM 위상)을 `receptor_bonds@1` 사이드카 형태로 만든 것이다(거리 추론 없음, 저장하지 않고 스테이징 때 다시 만듦). 인스턴스는 없다(단백질만). 리간드는 `sdf` 출처만(후보 출처는 `mode_source_mismatch`). 모델이 검증되지 않거나 다른 run·종류·없는 side면 입장 전용 `mutation_model_invalid`. 원자 수 한도·제출 전 확인 세 항목·상자·값 규칙은 그대로다. 이 출처가 아니면 입력·결과·바이트는 M21 전과 같다(결정 0029).
 - 새 가져오기 종류는 없다. M11 `chemical_raw_input@1`의 `receptor`(pdb·cif·mmcif), `receptor_bonds`(`receptor_bonds@1`), `ligand_sdf`를 그대로 쓴다(파일당 최대 10 MiB). 후보 입력은 `ligand_candidate_set@1` handle, 후보 `id`, 그 후보 집합의 부모 SDF를 가져온 `ligand_sdf` handle이다. 다른 run·다른 종류의 handle은 작업을 만들기 전에 거절한다.
 - 화면 입력 순서: 수용체(+결합 사이드카) → 뺄 인스턴스 하나 또는 "없음(단백질만)" → 리간드 출처 → 방식 → 상자 출처 → 값(seed 필수)과 확인 세 항목 → 작업 시작. 어떤 선택도 자동으로 하지 않는다.
 
@@ -290,7 +291,7 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 - **인스턴스 하나 빼기**: `receptor_instance`(잔기 7필드, null 그대로)를 주면 7필드가 정확히 같은 비표준 잔기가 하나일 때만 그 원자(수소 포함)를 뺀다. 없으면 `receptor_instance_unknown`, 둘 이상이면 `receptor_instance_ambiguous`(첫 번째를 고르지 않음), 나머지 수용체와 공유 결합이 있으면 `receptor_instance_covalent`. 뺀 인스턴스(7필드, 원자 수, 원소별 개수)는 결과 `inputs.receptor.removed_instance`에 남는다. 주지 않으면(null) 수용체에 비표준 잔기가 없어야 한다.
 - 뺀 뒤에도 물·금속 이온·보조인자·다른 리간드·변형 잔기, H C N O S가 아닌 원소가 남으면 `receptor_unsupported_residue`, altloc이 있으면 `receptor_altloc_present`로 거부한다. 조용히 지우거나 고르지 않는다. 거부 상세는 항목 최대 20개(`items`: 잔기 7필드와 원자 이름, altloc이면 altloc)와 전체 개수(`total`)이며 화면이 그대로 보여 준다.
 - 명시적 수소가 하나도 없으면 `receptor_hydrogens_missing`. 일부만 없는 경우는 M11과 같이 거부하지 않는다(화학 추론 결과는 `receptor_prep_failed`로만 막힘).
-- 수용체 PDBQT: M11 화학 추론(MDAnalysis `MDAnalysisInferrer(max_iter=200, sanitize=True)`, M11 `chemical_worker._receptor`와 같은 인자와 단백질 그래프 검사)으로 만든 RDKit 그래프를 공유 결합 조각마다 Meeko `MoleculePreparation`에 넘겨 원자 유형·전하를 받고, 입력 순서·입력 좌표로 ATOM 줄을 쓴다(비극성 수소는 Meeko 규칙대로 병합). 수용체는 강체다. Meeko 수용체 준비(`Polymer`)는 쓰지 않는다. 실패는 `receptor_prep_failed`(M11 검사 이름은 `detail.m11_check`).
+- 수용체 PDBQT: M11 화학 추론(MDAnalysis `MDAnalysisInferrer(max_iter=200, sanitize=True)`, M11 `chemical_worker._receptor`와 같은 인자와 단백질 그래프 검사)으로 만든 RDKit 그래프를 공유 결합 조각마다 Meeko `MoleculePreparation`에 넘겨 원자 유형·전하를 받고, 입력 순서·입력 좌표로 ATOM 줄을 쓴다(비극성 수소는 Meeko 규칙대로 병합). 수용체는 강체다. Meeko 수용체 준비(`Polymer`)는 쓰지 않는다. 실패는 `receptor_prep_failed`(M11 검사 이름은 `detail.m11_check`). 단백질 그래프 검사는 모든 잔기에 C=O 이중결합을 요구하지만, `receptor_source`가 `mutation_model`일 때만 OXT가 있는 잔기(자유 C 말단 카르복실)는 C–O·C–OXT 중 하나가 이중결합이고 다른 쪽이 단일결합·형식 전하 −1이면 받는다(추론이 이중결합을 어느 산소에 붙이든, 사용자 승인). 가져온 수용체에는 이 완화가 없다.
 - 제출 전 확인 세 항목(M11 확인 방식, 모두 true여야 함, 아니면 `acknowledgement_missing`): `keep_input_protonation`(입력 양성자화·수소를 그대로 씀), `tool_assigned_types_charges`(AutoDock4 원자 유형·부분 전하는 Meeko가 정함), `rigid_no_optimization`(수용체는 강체, 양성자화·최적화 없음). 결과 입력에 기록하지만 호출 키에는 넣지 않는다.
 
 ### 리간드 (출처 하나)
@@ -327,6 +328,7 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 
 ### 결과 객체 `docking_result@1`
 - 최상위 키: `schema`, `protocol`, `method`, `input_sha256`(acknowledgement를 뺀 정규화 입력의 SHA-256), `inputs{receptor{handle, sha256, model_number, connectivity, removed_instance, acknowledgement}, ligand{source, sdf_handle, sdf_sha256, candidate_set_handle, candidate_id, parent_sdf_handle, parent_sdf_sha256, generated{hydrogens, coordinates}, stereo_flag, unspecified_stereo_centers}, mode}`, `box{center_A, size_A, source, margin_A}`, `parameters{seed, exhaustiveness, num_modes, energy_range, conformers, cpu}`, `engine{name, version, binary_sha256, package}`, `preparation{tool, version, rdkit_version, atom_typing, charges}`, `modes[]`, `counts{modes, contacts_by_mode, null_result, samples_generated, samples_scored}`, `limitations`.
+- M21 `receptor_source` 결과만 `inputs.receptor` = `{source{kind: "mutation_model", mutation_model, side}, sha256(저장 mmCIF), model_number, connectivity{kind: "mutation_model_topology"}, removed_instance: null, acknowledgement}`(가져오기 `handle` 없음). 정규화 인자가 네 수용체 키 대신 `receptor_source`를 담으므로 출처가 호출 키에 들어간다. 가져온 수용체 결과에는 `source` 키가 없다(기존 바이트 불변). 이 결과를 읽을 때마다 출처 모델도 다시 검증하고 저장 mmCIF·사이드카가 제출 때와 같은지 대조한다.
 - 모드 행: `mode`, `score_kcal_mol`, `engine_rmsd_lb_A`, `engine_rmsd_ub_A`, `conformer_index`, `core_max_deviation_A`, `atoms_outside_box`, `min_heavy_atom_distance_A`, `pose_sdf`, `contacts`.
 - 객체 전체 ≤ 4 MiB. 넘으면 자르지 않고 `resource_exceeded`. 게시 전에 현재 시도·취소·종료 상태, 스키마, 작업·시도 ID, 유한값, 닫힌 집합, 스테이징한 선택과의 일치를 검증하고, 읽을 때마다 완료된 게시 한 건(예약 → 정리 확인 → 결과 후보 → 종료 순서)과 입력에 대조한다. events-only로 다시 열린다(가져온 원본·qvina·Meeko 없이). 시간 초과·취소·크래시는 결과를 저장하지 않는다. dry-run run에서는 계획(`planned_call`)만 만든다.
 
@@ -335,7 +337,7 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 - 리간드: `ligand_unparseable`, `ligand_record_count`, `ligand_multiple_fragments`, `ligand_element_not_allowed`, `ligand_too_many_atoms`, `ligand_too_many_torsions`, `ligand_not_3d`, `ligand_hydrogens_missing`, `ligand_prep_failed`.
 - 후보·코어: `candidate_unknown`, `parent_mismatch`, `parent_not_3d`, `core_match_failed`, `core_match_ambiguous`, `embed_failed`.
 - 상자: `box_invalid`, `box_too_large`, `box_no_receptor_atoms`. 엔진·자원: `engine_failed`, `engine_output_invalid`, `resource_exceeded`.
-- 서버 입장에서만: `invalid_job_arguments`, `mode_source_mismatch`, `acknowledgement_missing`. 입장 검사는 작업을 만들기 전에 위 집합(수용체·상자·후보 일부 포함)으로 거절하고 예산을 쓰지 않는다. 작업 프로세스는 같은 검사를 다시 하고 위 집합으로만 실패한다. 스테이징 기록이 잘못된 경우처럼 사용자 입력이 아닌 결함은 가장 가까운 `engine_failed`와 짧은 설명이다.
+- 서버 입장에서만: `invalid_job_arguments`, `mode_source_mismatch`, `acknowledgement_missing`, `mutation_model_invalid`(M21 `receptor_source`만, 작업 이유가 아님). 입장 검사는 작업을 만들기 전에 위 집합(수용체·상자·후보 일부 포함)으로 거절하고 예산을 쓰지 않는다. 작업 프로세스는 같은 검사를 다시 하고 위 집합으로만 실패한다. 스테이징 기록이 잘못된 경우처럼 사용자 입력이 아닌 결함은 가장 가까운 `engine_failed`와 짧은 설명이다.
 - capability 이유: `worker_missing`, `engine_missing`, `engine_hash_mismatch`, `handshake_failed`, `version_mismatch`. 작업 시작 때 pin이 바뀌었으면 기존 큐 이유 `worker_version_invalid`.
 
 ### 고정 한계 문장 (문자 그대로, 순서 고정, 해당 조건일 때만)
@@ -350,7 +352,8 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
   9. (뺀 인스턴스가 있을 때) "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다."
   10. (`candidate` + `free`) "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다."
   11. (`unspecified_stereo_centers` > 0) "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다."
-- 결과·보고서·capability가 같은 문장을 쓴다. 화면은 후보 출처를 고르면 제출 전에 문장 7·10·11을 안내한다.
+  12. (수용체 출처가 `mutation_model`, M21, 늘 맨 뒤) "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로)."
+- 결과·보고서·capability가 같은 문장을 쓴다(capability `limitations`는 12문장 전부). 화면은 후보 출처를 고르면 제출 전에 문장 7·10·11을 안내한다.
 
 ### 작업과 예산
 - 기존 `JobQueue` 비싼 작업 경로(run 단위 첫 비싼 계산 승인, 예산, 취소, 재시도, guardian). 도킹 한 번(수용체 변환·샘플 생성·qvina 실행 전부)이 비싼 계산 1단위다. 한 번에 한 작업만 화면에서 진행한다.
@@ -359,6 +362,7 @@ kinase 주요 부위가 어디인지(M15 번호 대응의 KLIFS 번호, 참조�
 ### 보고서
 - `method_report_manifest@1`, `analysis_type: "ligand_docking"`, 렌더 `ligand_docking_markdown@1`. 입력은 도킹 결과 handle 하나(자유·코어 고정을 한 보고서에 섞지 않음). 만들기·다시 열기·다운로드는 도킹을 다시 하지 않고, 다시 열 때 결과 객체를 검증한 뒤 manifest·주장·Markdown 바이트를 저장 객체에서 다시 만든 것과 비교한다.
 - 증거는 모두 계산값(`computed`)이며 결과 handle·필드 경로에 묶인다: 모드 수, 모드별 `score_kcal_mol`, 접촉 수(`count`·종류별 `count_where`, 저장 접촉 행에 조건을 적용해 검증할 때마다 다시 셈, 조건은 `row_selector`), 상자 중심·크기·출처·여백, 파라미터, 엔진 이름·버전, Meeko·RDKit 버전, 수용체 입력, 뺀 인스턴스(7필드·원자 수), 리간드 출처 필드, 상자 밖 원자 수, 최소 거리, 코어 고정이면 샘플 수와 `core_max_deviation_A`. 파생값은 저장 점수의 최솟값·최댓값만("점수 최솟값", "점수 최댓값", "최고·최적"이라 쓰지 않음). 모드가 0개면 행 통계가 없다. null 필드는 주장이 되지 않으므로 0으로 쓰이지 않는다.
+- M21 `receptor_source` 결과의 보고서는 수용체 절에 가져오기 줄 대신 출처(변이 모델 handle과 쪽)를 쓰고 가져오기 handle 주장이 없다. 나머지 수용체 주장은 같고, 가져온 수용체 보고서는 바이트 그대로다.
 - 후보 출처 결과는 후보 출처·생성된 수소·좌표 표시·부모 해시를, 코어 고정 결과는 모든 행의 `core_max_deviation_A`를 반드시 싣는다(없으면 보고서를 만들지 않음). 코어 고정 행은 "샘플"이라 부른다.
 - 점수는 `Decimal(str(v))`를 0.1 `ROUND_HALF_UP`, 거리·상자는 0.01, 개수는 정확히 일치. 틀린 반올림, 다른 statement의 필드 인용, 계산하지 않은 값을 0으로 쓰기는 거부한다.
 - 해석 금지어: M17 목록(M15·M16 포함)에 순위·최고·개선·결합 강도·rank·best·improve·stronger를 더해 모든 줄을 검사한다. 고정 한계 문장과 문자 그대로 같은 줄은 건너뛰고, 그 밖의 줄은 고정 점수 문구(`SCORE_LABEL`, 금지어 "친화"를 포함)만 지운 뒤 나머지를 검사한다(명세의 "한계 문장 줄만 제외"보다 한 가지 넓음, 결정 0026).
@@ -525,13 +529,91 @@ M18의 "의미하지 않는 것" 전부. 그에 더해 표의 정렬·첫 행 �
 - 해석 금지어: M15 목록에 안정성·ΔΔG·순위·추천·최적·개선·활성·예측·유망·좋은·나쁜·안전·점수·에너지·수소결합(영문 rank·best·recommend·optimal·improve·predict·promising·good·safe·active·score·energy·hydrogen bond·H-bond 포함)을 더해, 고정 한계 문장 5개와 문자 그대로 같은 줄을 빼고 모든 줄을 검사한다. 검사는 식별자·값을 빈 자리로 둔 고정 템플릿 문장에 하므로 체인·리간드 이름 같은 식별자는 보고서를 깨지 않는다. "촉매"는 금지어가 아니다(필수 문장 "촉매 잔기 데이터베이스: 사용할 수 없음" 때문, M16 보고서와 다름). 촉매 역할 주장은 쓰지 않는다.
 
 ### 화면 규칙
-- 단백질 공학 탭(선택된 동안에만 렌더링, 페이지가 run마다 `key`로 새로 만들고 탭에 들어올 때마다 이벤트·포켓·번호 대응·주석·결과 목록을 다시 읽음, GET만). 패널 안에 변이 구조 모델링이 아직 없다는 한 줄(숫자 없음).
+- 단백질 공학 탭(선택된 동안에만 렌더링, 페이지가 run마다 `key`로 새로 만들고 탭에 들어올 때마다 이벤트·포켓·번호 대응·주석·결과 목록을 다시 읽음, GET만). 패널 안에 변이 구조 모델링은 후보 행에서 따로 시작한다는 한 줄(숫자 없음, M21부터. M21 전에는 아직 없다는 문장이었다). 후보 행마다 "변이 구조 모델링" 동작이 있고, 누르면 그 후보 집합과 후보 번호만 아래 M21 영역의 요청 칸에 넘긴다(아무것도 보내지 않음).
 - run이 없거나 전처리 구조가 없으면 숫자·컨트롤 없이 "사용할 수 없음"과 이유만. 전처리 구조·포켓 결과·리간드는 자동으로 고르지 않는다(리간드가 하나뿐이어도). 예외로 구조를 고르면 같은 구조의 가장 최근 주석과 그 주석이 기록한 번호 대응을 미리 고른다. 번호 대응을 따로 골라 주석의 지도와 다르면 충돌을 알리고 요청을 막는다. 주석을 고르지 않으면 요청 영역에 "KLIFS 주요 부위 보호를 검사하지 않음"을 눈에 띄게 알린다. 포켓·번호 대응·주석 목록은 같은 구조 것만(포켓은 포켓 있는 결과만).
 - 값은 서버 응답만 보이고 브라우저에서 계산하지 않는다. 거리는 소수 둘째 자리 `decimalHalfUp`, null은 "—"와 이유(예: "— (리간드를 고르지 않아 계산하지 않음)", "— (중원자 없음)", "— (검사하지 않음)"). 보호 판정을 "안전", 후보를 "추천·좋은·유망", 목록 순서를 순위로 부르지 않는다. 점수·순위 열·막대 그래픽 없음. 이유 코드는 "한국어 (code)".
 - 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음). 후보 0개는 저장된 제외 사유별 개수와 함께 빈 결과다. 늦은 응답은 run + 결과 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 보고서 생성이 늦게 끝나도 run이 같으면 보고서 목록을 다시 읽게 한다.
 
 ### 의미하지 않는 것
 변이의 효과(안정성·결합·활성·특이성), ΔΔG·친화도·에너지, 순위·추천·우선순위, 보호 판정의 "안전", 촉매 잔기 여부, 변이 구조의 형태·양성자 상태. 리간드·금속까지 거리는 기하 사실이며 결합·상호작용을 뜻하지 않는다. KLIFS 부위 이름표·UniProt 번호는 참조값이다.
+
+## 변이 구조 모델링 (M21, `openmm_mutation_model_v1`)
+
+M20 변이 후보 하나를 골라, 같은 작업 안에서 같은 절차로 야생형 기준 구조와 변이 구조를 만들고(PDBFixer 1.12.0 곁사슬 + M7과 같은 OpenMM 최소화), 두 구조 각각의 OpenMM 전위·변이 위치 잔기 SASA·변이 잔기 주변 중원자 접촉을 나란히 남긴다(결정 0029). 모든 값은 실제 OpenMM·FreeSASA 실행 결과이고, 두 구조의 값을 서로 빼거나 구조 안 최소화 전후 변화량을 만들지 않는다. 같은 조건 도킹은 단독 M18에 이 모델을 수용체 출처로 넘겨 두 구조에 각각 돌린다. 닫힌 집합·상한·문장은 `backend/mw/mutation_model_constants.py`에 있고 바꾸려면 사용자 결정이 필요하다.
+
+### 입력
+- 작업 전용 도구 `openmm_mutation_model`, 프로토콜 `openmm_mutation_model_v1`(`JOB_PROTOCOLS`·`JOB_ONLY_TOOLS`·작업 승인 허용 목록, `SUPPORTED_TOOLS` 아님). 제출·시작·승인·상태·취소·재시도는 기존 작업 API다.
+- 인자(알 수 없는 키 거부): `candidate_set`(같은 run의 게시된 `mutation_candidate_set@1`, 필수), `candidate_index`(정수 ≥ 0, 후보 집합 `candidates[].index`, 필수. `from`·`to` 문자로 찾지 않음), `seed`(정수 0–2147483647, 필수), `selection_policy`(리터럴 `"protein_only"`), `hydrogen_policy`(리터럴 `"rebuild_pH7"`), `contact_cutoff_A`(유한수 2.5–6.0 양끝 포함, 기본 4.0). 구조 handle은 요청에 없고 후보 집합의 `prepared_structure`에서 온다.
+- 작업 시간은 인자가 아니라 `JobSubmit` 최상위 `timeout_s`다: 이 프로토콜 기본 120초(빼면 120, 화면은 항상 보냄), 0 초과 240 이하. 호출 키에 들어가지 않는다.
+- 호출 키 = 정규화 인자(기본값 채움) + 작업 모듈 SHA-256 + 작업 모듈이 쓰는 프로젝트 모듈 다섯 개(`mutation_model_math.py`, `mutation_model_constants.py`, `jobs/openmm_worker.py`, `tools/openmm_method.py`, `mutation_candidates.py`)의 SHA-256 + 고정 방법 기록. 같은 입력은 같은 작업·같은 handle이고 새 단위를 쓰지 않는다. seed나 cutoff가 다르면 새 호출 키다.
+
+### 입장 검사 (작업을 만들기 전, 예산 없음, 이 순서, 첫 실패만)
+1. 422 `input_invalid`, `detail.reason_code`: `unknown_field` → `confirmation_missing`(두 리터럴 중 하나라도 다름) → `argument_invalid`(형식·범위, bool·NaN·Infinity, cutoff null, `timeout_s` 범위 밖. API 본문 모델이 `timeout_s`·`args`를 거절해도 이 코드) → `candidate_set_invalid`(handle 아님·다른 run·다른 종류·미게시, 저장 집합이 M20 `validated_set`을 통과하지 못함. 제출 때마다 다시 검증) → `candidate_unknown`(그 번호의 후보 없음, 후보 0개 집합 포함) → `structure_invalid`(집합의 구조가 이 run의 `prepared_structure@1`이 아님) → `residue_mismatch`(위치 7필드가 구조에서 정확히 하나로 풀리지 않거나 후보 `from`이 그 잔기의 표준 한 글자와 다름).
+2. dry-run run이면 여기서 계획만 돌려준다(엔진 확인 없음).
+3. 412 `precondition`(예약·과금 전): `process_identity_unavailable` → `openmm_unavailable` → `pdbfixer_unavailable`(고정 OpenMM 8.6.0 포스필드 지문·PDBFixer 1.12.0·psutil 신원 어댑터).
+4. 422 `openmm_preflight_failed`: M7 사전 검사 실패 전부(완전한 표준 중원자 템플릿, 사슬 끝 OXT, 잔기 간격 없음, 펩티드 C–N 1.1–1.7 Å, 단백질만, 중원자 6,000 등). M7이 precondition·resource_exceeded로 낸 것도 이 422로 바꾸고 `detail.m7_reason`(M7 코드 또는 null)·`detail.m7_message`를 붙인다. 입력을 복구하지 않는다. 사전 검사 투영에서 후보 잔기가 하나로 풀리지 않으면 `residue_mismatch`, 모델 번호가 다르면 `structure_invalid`.
+5. 429 `resource_exceeded`(`limit: "staged_input_bytes"`): 스테이징 입력이 4,000,000 B 초과.
+
+### 모델링 절차 (작업 모듈 `mw/jobs/openmm_mutation_worker.py`, 두 구조가 같은 코드 경로)
+- 입력은 M7 사전 검사의 단백질 중원자 투영(체인·잔기·원자 순서, 잔기 7필드)이다. 야생형 기준과 변이형이 같은 투영에서 시작한다.
+- **변이형만** PDBFixer를 거친다: M7과 같은 위상을 PDBx 텍스트로 써서 `PDBFixer(pdbxfile=…)` → `findMissingResidues`(하나라도 있으면 `unexpected_atoms_added`) → `applyMutations([<원래 이름>-<순번>-<새 이름>])` → `findMissingAtoms`(변이 잔기가 아닌 잔기에 누락 원자·말단이 표시되면 `unexpected_atoms_added`) → `addMissingAtoms(seed)`. PDBFixer 예외는 `mutation_modeling_failed`다.
+- **이식**: 변이 잔기 밖은 잔기·원자 이름·원소·순서가 같아야 하고(더해진 원자 `unexpected_atoms_added`, 그 밖의 변경 `mutation_modeling_failed`) 좌표 차이가 1e-9 Å 이하여야 한다(넘으면 `coordinates_changed`). 그러면 입력 좌표를 그대로 쓴다. 변이 잔기 안에서도 입력에 있던 이름의 원자(뼈대, 새 템플릿에도 있는 같은 이름 곁사슬 원자, C 말단 OXT)는 입력 좌표를 쓰고, PDBFixer가 새로 놓은 원자만 PDBFixer 좌표다(`added_heavy_atoms`). 변이 잔기 중원자 이름 집합은 포스필드 템플릿(말단이면 말단 템플릿)과 같아야 한다(아니면 `mutation_modeling_failed`). 곁사슬은 한 가지 형태다.
+- 두 구조 각각: Python·NumPy 난수를 `seed`로 시드 → 위상(`createStandardBonds` + 거리 기반 `createDisulfideBonds`) → `Modeller.addHydrogens(pH 7.0, CPU 1스레드)` → Amber14-all + GBn2 System(XML은 해시만) → 전위 `before` → 최대 50회 최소화(허용 오차 10 kJ/mol/nm) → 전위 `after`. `after > before + 1e-4`이거나 비유한이면 `energy_invalid`. 수렴은 주장하지 않는다. 포스필드 XML 지문은 M7 `FORCEFIELD_SHA256`으로 다시 확인한다.
+- 양성자 상태: 두 구조의 모든 HIS·CYS 행 `{residue(7필드), variant}`. `variant`는 OpenMM이 돌려준 이름(HID·HIE·HIP·CYX) 그대로이며 기본 템플릿(자유 Cys 등)은 null이다. 변이 잔기를 뺀 잔기 중 두 구조에서 값이 다른 잔기가 `protonation_differences`(`{residue, wild_type_reference, mutant}`)다. 이황화가 끊기거나 새로 생기면 상대 Cys의 상태가 바뀌므로 이 목록이 생긴다.
+- 이황화: 각 구조 `final_bonds`의 SG–SG 결합 잔기 쌍. 변이 잔기는 원래 7필드로 짝지어 변이형에만 있는 쌍이 있으면 `new_disulfide_in_mutant: true`.
+- SASA: FreeSASA 2.2.1, Lee–Richards 100 slices, probe 1.4 Å, 스레드 1, gemmi 원소 반지름. 최소화한 모델의 단백질 중원자 전체로 계산하고 **변이 위치 잔기 하나**의 값(Å², float)만 저장한다. 리간드는 없다. 주변 잔기 SASA는 만들지 않는다.
+- 접촉: 변이 잔기 중원자와 다른 모든 잔기(모든 체인) 중원자의 유클리드 거리 ≤ cutoff(경계 포함, float64, 반올림 없이 저장). 최종 결합 위상에서 그래프 거리 1–3결합 이내 쌍은 뺀다. 행 `{atom_name, element, partner_residue(7필드), partner_atom_name, partner_element, distance_A}`, 순서는 (변이 잔기 원자의 구조 내 순서, 상대 잔기 구조 순서, 상대 원자 순서). 0개는 계산한 0이며 null과 다르다. 구조당 2,000행을 넘으면 자르지 않고 `resource_exceeded`(`too_many_contacts`). "수소결합"이라 부르지 않는다.
+- 구조 파일: 구조마다 최소화 최종 좌표(수소 포함)의 mmCIF(M7 `_coordinates`와 같은 쓰기, 표준 이름 HIS·CYS, 변이 잔기 `resname`은 변이 후 표준 이름). 변이 잔기의 행은 원래 7필드로 짝짓는다.
+
+### 결과 객체 `mutation_model@1`
+- 최상위 키: `schema`, `method_version`(`mw.mutation_model/v1`), `candidate{candidate_set, candidate_index, position_index, from, to, residue(원래 7필드), mutant_resname}`, `structure{handle, model_number, structure_kind: "prepared_structure"}`, `parameters{seed, contact_cutoff_A, selection_policy, hydrogen_policy}`, `method`(M7 방법 기록 + `engine_build`·`forcefield_files_sha256` + `pdbfixer_version`), `excluded_components`(M7 범주 셋, 개수 0 포함), `structures{wild_type_reference, mutant}`, `comparison`, `protonation_differences`, `limitations`.
+- 구조 항목(두 쪽 같은 모양): `structure_object`(mmCIF 객체 `mutation_model_structure@1` handle), `structure_sha256`, `system_xml_sha256`, `topology_sha256`, `heavy_atoms`, `added_hydrogens`, `added_heavy_atoms`(야생형 기준은 `[]`), `protonation_variants`, `disulfide_bonds`, `final_bonds`, `atom_mapping`(원자마다 잔기 7필드·원자 이름·원소·최종 좌표, mmCIF 원자 순서), `energy{before_kJ_mol, after_kJ_mol, unit: "kJ/mol", engine: "OpenMM", force_field: "amber14-all + implicit/gbn2", convergence: "convergence_not_claimed"}`, `sasa{residue, engine: "FreeSASA", value_A2, parameters}`, `contacts{cutoff_A, excluded_bond_distance: 3, rows, count, residue_count}`.
+- `comparison{mutated_residue, resnames{wild_type_reference, mutant}, new_disulfide_in_mutant, protonation_difference_count}`. 에너지·SASA·접촉 수의 차이 필드는 없다(있으면 검증 실패).
+- 게시 전에 순수 검증기 `mutation_model_math.validated_model`(엔진 import 없음: 모양·닫힌 집합, 저장 좌표에서 접촉 다시 계산, 위상 해시·이황화 쌍·비교·양성자 차이·한계 문장 다시 만들기, 차이 필드 부재)과 작업 선택 기록 대조(야생형 중원자 = 스테이징한 M7 투영, 변이형 추가 원자 = 변이 잔기에서 새로 생긴 이름, mmCIF 바이트 해시·원자 행)를 통과해야 mmCIF 객체 둘과 결과 하나를 저장한다. 객체 내용에 시각·작업·시도 ID가 없어 같은 입력은 같은 handle이고, 이벤트가 전체 payload를 담아 events-only로 다시 열린다(엔진 없이). 결과 64,000,000 B를 넘으면 자르지 않고 `resource_exceeded`. 1UBQ 결과는 약 0.6 MB다(착수 확인).
+
+### 고정 한계 문장 (결과 `limitations`, 보고서, 화면에 문자 그대로, 이 순서, 해당 조건일 때만)
+  1. (L1, 항상) "변이 구조는 PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 모델이며 회전이성질체 탐색과 수렴을 주장하지 않는다."
+  2. (L2, 항상) "OpenMM 전위는 각 구조의 Amber14-all + GBn2 암시 용매 값(kJ/mol)이며 서열이 다른 두 구조의 값은 서로 비교할 수 없고 ΔΔG·안정성·친화도가 아니다."
+  3. (L3, 항상) "모델은 단백질만 포함하며 리간드·금속 이온·물·보조인자는 제외했다."
+  4. (L4, 항상) "SASA는 리간드가 없는 단백질 모델의 변이 위치 잔기 값이다."
+  5. (L7, 항상) "접촉은 중원자 사이 거리(Å)이며 수소결합이나 상호작용의 종류를 뜻하지 않는다."
+  6. (L5, `protonation_difference_count > 0`) "변이한 잔기 밖에서 히스티딘·시스테인 양성자 상태가 두 구조에서 다르게 지정되었으므로 두 구조의 차이는 변이 하나만이 아니다."
+  7. (L6, 변이형에만 이황화 결합이 있음) "변이형에는 야생형 기준에 없는 이황화 결합이 거리 기준으로 만들어졌다."
+- L1–L7은 상수 이름이며 화면에 번호를 보이지 않는다.
+
+### 닫힌 집합
+- 입장 422 8개(위 순서), 사용할 수 없음 412 3개(위).
+- 작업 실패 `detail.reason_code` 7개와 실패 분류: `mutation_modeling_failed`·`unexpected_atoms_added`·`coordinates_changed`·`topology_unsupported`(`input_invalid`), `energy_invalid`·`engine_failed`(`fatal`), `resource_exceeded`(`too_many_contacts`, 출력·결과 크기). 그 밖의 작업 모듈 예외는 `engine_failed`, 잘못된 오류 봉투는 `fatal`. 시간 초과·취소·재시도는 기존 작업 상태다. 실패·취소·시간 초과 작업은 결과를 남기지 않고 예약한 1단위는 환불하지 않는다. 시작 때 고정 pin(작업 모듈·의존 파일 해시·방법 기록)이 바뀌었으면 `worker_version_invalid`(412).
+- 같은 조건 도킹 짝의 점수 없음 이유 8개: `not_submitted`, `job_not_finished`, `job_failed`, `job_cancelled`, `job_interrupted`, `result_invalid`, `other_side_missing`, `no_modes`(`mutation_model_reads.PAIR_REASONS`, 고정 한국어 문장).
+
+### 작업과 예산
+- 작업 하나 = 비싼 계산 1단위(두 구조를 만들어도). run의 첫 비싼 계산이면 `expensive_first_call` 승인이 필요하다(M7과 같음). dry-run run은 계획만 만든다.
+- guardian이 고정 작업 모듈을 프로젝트 인터프리터로 띄우고(감시 대상, 출력 64,000,000 B) M7과 같은 프로세스 신원·정리 규칙을 쓴다. 서버 프로세스는 PDBFixer를 import하지 않고(버전은 `importlib.metadata`만), OpenMM은 기존 M7 `openmm_method.dependencies()`·`preflight()`로만 서버에서 import된다.
+- capability `methods.mutation_model`: 고정 OpenMM 8.6.0 포스필드·PDBFixer 1.12.0·프로세스 신원 어댑터가 모두 있을 때만 사용 가능. 아니면 이유와 함께 사용할 수 없음이고 버전·숫자가 없다.
+
+### 읽기
+모두 이벤트·작업·도구를 만들지 않고 매번 저장 객체를 `validated_result`(단일 완료 게시, 작업 선택 기록, 후보 집합 행, 구조 종류, 저장 mmCIF 바이트, `validated_model`)로 다시 검증한다. 목록(최신 순, 검증 실패 행은 숫자 없이 `valid: false`), 요약 상세(접촉 행·`final_bonds`·`atom_mapping` 제외), 쪽별 접촉 행 페이지, 쪽별 mmCIF 내려받기(저장 바이트 그대로, 해시 대조), 같은 조건 도킹 짝. handle은 URL 경로다.
+
+### 같은 조건 도킹
+- 화면 동작 하나가 같은 조건(같은 SDF 리간드·상자·seed·값, 자유 도킹)의 M18 작업 둘을 `receptor_source.side`만 다르게(야생형 기준 먼저) 기존 작업 API로 제출하고 하나씩 시작한다. 작업마다 1단위, 합쳐서 2단위이며 화면이 먼저 2단위를 확인받는다. 새 쓰기 라우트는 없다. 한쪽이 거절·실패·취소되어도 다른 쪽은 그대로다. 규칙·점수 문구·접촉 표·보고서는 M18 그대로다("리간드 도킹 (M18)"의 `receptor_source`).
+- 짝 읽기 `docking_pairs`: 이 run에서 `receptor_source.mutation_model`이 이 모델인 단독 M18 작업을 조건(정규화한 `ligand`·`mode`·`box`·`parameters` 전부와 고정 M18 환경 pin 해시)으로 묶고, 조건 묶음마다 첫 제출 순서로 모두 나열한다(하나를 고르지 않음). 두 쪽 모두 게시·검증된 결과일 때만 쪽마다 결과 handle과 저장된 첫 모드 행 점수(`modes[0]`, 바꾸지 않음)를 보이고, 아니면 쪽마다 작업 상태와 점수 null + 닫힌 이유다(빠진 쪽 점수는 0이 아님). 차이·순위·"개선"이 없다. 야생형 도킹은 후보 간 재사용하지 않는다(후보마다 야생형 구조가 따로).
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "mutation_model"`, 렌더 `mutation_model_markdown@1`. 입력은 `mutation_model@1` handle 하나. 만들기·다시 열기·다운로드는 모델을 다시 만들거나 최소화하지 않는다.
+- 주장은 모두 `computed`이고 statement ID는 `candidate`(위치 7필드, `from`, `to`, 변이 후 이름, 후보 집합, 후보 번호), `openmm_potential`(두 구조 각각 `before`·`after`, kJ/mol), `mutated_residue_sasa`(Å²), `contact_cutoff`, `contact_count`, `contact_residue_count`(상대 잔기 `count_distinct`), `disulfide_pair_count`(두 구조), `protonation_difference_count`, `added_heavy_atom_count`(변이형 PDBFixer 추가 원자)다. 전위·SASA는 `Decimal(str(v))` 0.01 `ROUND_HALF_UP`, 개수는 정확히 일치. 템플릿은 "에너지"가 아니라 "OpenMM 전위"라 쓴다.
+- 구조 간 차이·구조 안 변화(차이·변화·증가·감소·delta 등)를 말하는 주장과 도킹 점수 주장(score·docking·qvina·kcal·점수·도킹)은 거부한다. 한계 문장은 결과에 저장된 것을 위 순서 그대로 쓴다.
+- 해석 금지어(M20 목록: M15 목록 + 안정성·ΔΔG·순위·추천·최적·개선·활성·예측·유망·좋은·나쁜·안전·점수·에너지·수소결합과 영문)는 값·식별자를 빈 자리로 둔 템플릿 줄마다 검사하고, 고정 한계 문장과 문자 그대로 같은 줄은 건너뛴다.
+- 만들고 다시 열 때 저장 모델을 검증하고 manifest·주장·Markdown 바이트를 다시 만든 것과 비교한다. 틀린 값·반올림·섞인 증거·다른 run의 증거는 `report_evidence_invalid`. 보고서 목록 이름은 "변이 구조 모델 보고서".
+
+### 화면 규칙
+- 단백질 공학 탭의 M20 변이 후보 화면 아래 별도 영역(구조 분석 탭은 숨긴 채 유지). 후보 행의 "변이 구조 모델링"이 그 후보 집합·번호를 요청 칸에 넣을 뿐이며 seed는 비어 있고 두 확인은 체크되지 않은 채다(cutoff 4.0 Å·시간 120초 기본). 자동 선택·자동 제출·기본 승인이 없다. 비싼 계산 1단위 안내와 명시적 "비싼 계산 승인" 동작은 M7 방식이다.
+- 결과: 변이 한 줄 요약(위치 7필드, from → to), 두 구조 저장값 나란히 표(OpenMM 전위 before·after, 변이 위치 SASA, 접촉·상대 잔기 수, PDBFixer 추가 원자, 이황화, 원자·수소 수), 이황화·양성자 상태 목록, 쪽을 고르는 접촉 행 표(페이지), 저장된 한계 문장, mmCIF 내려받기 둘, 보고서 만들기·목록·내려받기. 모델 목록은 아무것도 저절로 열지 않는다.
+- 값은 서버 응답만 보이고 브라우저가 계산하지 않는다. 전위·SASA·거리는 소수 둘째 자리 `decimalHalfUp`, 개수는 정수, null·없음은 "—"와 이유. 차이·증감·개선 표시, 구조 간 막대·색 비교, 순위 열이 없다(두 구조 칸은 같은 스타일).
+- 같은 조건 도킹 영역은 M18 순수 입력 로직(`lib/docking.ts`)으로 SDF 리간드·상자(리간드 범위 또는 직접 입력, 인스턴스 범위는 이유와 함께 막힘)·값·확인 세 항목을 받고 2단위 확인 뒤 한 번의 동작으로 작업 둘을 보낸다. 짝 표는 서버 `docking_pairs` 그대로이며 점수 이름은 M18 문구다. 짝 동작이 진행 중이면 다른 모델을 열 수 없다(이유 표시).
+- 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음). capability가 없으면 숫자·컨트롤 없이 이유만. 늦은 응답은 run + 모델 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 뷰어·저장된 보기·브리지는 건드리지 않는다.
+
+### 의미하지 않는 것
+안정성·ΔΔG·결합 친화도·효소 활성·변이 효과, 두 구조 값의 차이나 개선, 순위·추천·점수, 수렴한 구조나 실험 구조, 수소결합·상호작용 판정. OpenMM 전위는 각 구조의 값이며 서열이 다른 두 구조는 서로 비교할 수 없다. 같은 조건 도킹 점수는 M18 qvina 점수이며 짝은 두 값을 나란히 둘 뿐이다.
 
 ## PyRosetta와 에너지 표시
 
