@@ -49,6 +49,10 @@ TIMEOUT_MAX_S = 15000            # = TOTAL_S_MAX + FINISH_MARGIN_S
 MAX_OUTPUT_BYTES = 128 * 1024 * 1024
 MAX_SUMMARY_BYTES = 1024 * 1024
 MAX_REUSE_STAGING_BYTES = 128 * 1024 * 1024
+# 7 staging bound of ``ligand_ga_worker_input@1`` (queue and worker share it): the M18 staging bound for the receptor,
+# parent and pool blocks plus the base64 form of at most MAX_REUSE_STAGING_BYTES of reused result bytes.
+STAGED_BASE_BYTES = 48 * 1024 * 1024
+MAX_STAGED_BYTES = STAGED_BASE_BYTES + 4 * -(-MAX_REUSE_STAGING_BYTES // 3)
 
 # 6 budget: reserved_units = min(max_new_dockings, P + (G - 1) * (P - E)), reserved once, never refunded;
 # needed wall = min(total_s + FINISH_MARGIN_S, reserved_units * PER_CANDIDATE_S + NEED_MARGIN_S). A raise is the M19
