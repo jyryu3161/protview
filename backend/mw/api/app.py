@@ -28,6 +28,7 @@ from .. import (
     ligand_bundle,
     ligand_reads,
     mutation_model_bundle,
+    mutation_model_reads,
     mutation_reads,
     numbering_reads,
 )
@@ -50,6 +51,7 @@ from ..egress.gate import EgressGate
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_reports import build_ligand_report, saved_ligand_report
 from ..method_reports import build_method_report, saved_method_report, validated_sasa
+from ..mutation_model_reports import build_mutation_model_report, saved_mutation_model_report
 from ..mutation_reports import build_mutation_report, saved_mutation_report
 from ..numbering_reports import build_numbering_report, saved_numbering_report
 from ..openmm_reports import build_openmm_report, saved_openmm_report, validated_minimized_structure, validated_openmm
@@ -870,6 +872,9 @@ def tools(levels: str = "L2,L4") -> list[dict[str, Any]]:
     if "L3" in selected:
         records.append({**REGISTRY.specs["openmm_protein_minimize"].model_dump(),
                         "execution_lane": "durable_job", "submit_protocol_id": "openmm_protein_minimize"})
+        # M21: the job-only mutation model tool (JobQueue protocol, not Run.call).
+        records.append({**REGISTRY.specs["openmm_mutation_model"].model_dump(),
+                        "execution_lane": "durable_job", "submit_protocol_id": "openmm_mutation_model_v1"})
     return records
 
 
@@ -1254,6 +1259,9 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == "mutation_candidate_set":
             # Reads the stored candidate set only (re-validated); no candidate is generated again.
             return build_mutation_report(run, body.result_handle)
+        if kind == "mutation_model":
+            # Reads the stored mutation model only (re-validated); nothing is modelled or minimized again.
+            return build_mutation_model_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1280,7 +1288,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        if run.store.meta(e["report_handle"])["summary"].get("analysis_type") in
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
-                                        "ligand_docking_batch", "mutation_candidates"}
+                                        "ligand_docking_batch", "mutation_candidates", "mutation_model"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1297,7 +1305,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
-                                                              "mutation_candidates"}
+                                                              "mutation_candidates", "mutation_model"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1322,6 +1330,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_docking_batch_report(run, handle)
         if report.get("analysis_type") == "mutation_candidates":
             return saved_mutation_report(run, handle)
+        if report.get("analysis_type") == "mutation_model":
+            return saved_mutation_model_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -1878,6 +1888,79 @@ def mutation_candidate_set_detail(rid: str, handle: str, request: Request) -> di
         return {**mutation_reads.set_detail(run, handle), "meta": meta}
     except mutation_reads.MutationEvidenceError as exc:
         raise _mutation_evidence_error(exc) from exc
+
+
+# ----------------------------------------------------------------- M21 mutation model reads (no event, job or tool)
+def _mutation_model(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (mutation_model_reads.KIND, mutation_model_reads.SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a mutation_model"})
+    return meta
+
+
+def _mutation_model_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid mutation model"})
+
+
+@app.get("/runs/{rid}/mutation_models")
+def mutation_models(rid: str, request: Request, offset: int = Query(0, ge=0),
+                    limit: int = Query(mutation_model_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                       le=mutation_model_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's mutation models, newest first; each row re-validated."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return mutation_model_reads.list_models(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid mutation model record"}) from exc
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: every sub-resource route (/contacts, /structure, and the
+# M21 T7 /docking_pairs) is registered before the detail route.
+@app.get("/runs/{rid}/mutation_models/{handle:path}/contacts")
+def mutation_model_contacts(rid: str, handle: str, request: Request, structure: str,
+                            page: int = Query(1, ge=1),
+                            page_size: int = Query(mutation_model_reads.CONTACT_PAGE_SIZE_DEFAULT, ge=1,
+                                                   le=mutation_model_reads.CONTACT_PAGE_SIZE_MAX)) -> dict[str, Any]:
+    """One structure's stored contact rows (stored order), by page."""
+    _only_query(request, {"structure", "page", "page_size"})
+    run = _run(rid)
+    _mutation_model(run, handle)
+    try:
+        return mutation_model_reads.contact_page(run, handle, structure=structure, page=page, page_size=page_size)
+    except mutation_model_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except mutation_model_reads.MutationEvidenceError as exc:
+        raise _mutation_model_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/mutation_models/{handle:path}/structure")
+def mutation_model_structure(rid: str, handle: str, request: Request, side: str) -> Response:
+    """One structure's stored mmCIF bytes, byte for byte (SHA-256 checked against the model)."""
+    _only_query(request, {"side"})
+    run = _run(rid)
+    _mutation_model(run, handle)
+    try:
+        raw, filename = mutation_model_reads.structure_download(run, handle, side)
+    except mutation_model_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except mutation_model_reads.MutationEvidenceError as exc:
+        raise _mutation_model_evidence_error(exc) from exc
+    return Response(raw, media_type="chemical/x-mmcif", headers={
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/runs/{rid}/mutation_models/{handle:path}")
+def mutation_model_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One validated model without contact rows, final_bonds or atom_mapping."""
+    _only_query(request, set())
+    run = _run(rid)
+    meta = _mutation_model(run, handle)
+    try:
+        return {**mutation_model_reads.model_detail(run, handle), "meta": meta}
+    except mutation_model_reads.MutationEvidenceError as exc:
+        raise _mutation_model_evidence_error(exc) from exc
 
 
 # ----------------------------------------------------------------- M19 batch limit raise (human UI action only)
