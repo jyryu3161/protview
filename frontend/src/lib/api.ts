@@ -3,6 +3,8 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   AnalysisPlanRecord, AnalysisSummary, AnalysisTemplates, AnalysisWorkflowsCapability, BudgetSnapshot, DockingArgs,
   DockingBatchArgs, DockingBatchCapability, DockingBatchDetail, DockingBatchJob, DockingBatchLimitApproval,
   DockingBatchList, DockingBatchPreflight, DockingBatchReportArtifact, DockingBatchSubmission,
+  LigandGaArgs, LigandGaCapability, LigandGaDetail, LigandGaIndividualRead, LigandGaJob, LigandGaLimitApproval,
+  LigandGaList, LigandGaPreflight, LigandGaReportArtifact, LigandGaSubmission,
   DockingCapability, DockingContactPage, DockingJob, DockingPrerequisites, DockingReceptorInstances,
   DockingReportArtifact, DockingResultDetail, DockingResultList, DockingSubmission, EgressMode, Handle,
   InteractionRow, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
@@ -29,6 +31,8 @@ import type { NumberingMapList, NumberingRow, PdbIdHint, ReferenceSnapshots, Sif
 export const DOCKING_TIMEOUT_S = 600;
 /** Fixed `POST /jobs` time limit of a batch docking job (the protocol's own maximum, spec 4.2/7.1; not shown). */
 export const DOCKING_BATCH_TIMEOUT_S = 7800;
+/** `POST /jobs` time limit of a GA job = `ga.total_s` + this finishing margin (M22 spec 2; the screen always sends it). */
+export const LIGAND_GA_FINISH_MARGIN_S = 600;
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -51,6 +55,7 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     reference_site_annotation?: { available: boolean; reason_code: string | null; reason: string | null };
     ligand_candidates?: LigandCapability; ligand_docking?: DockingCapability;
     ligand_docking_batch?: DockingBatchCapability;
+    ligand_ga_design?: LigandGaCapability;
     mutation_candidates?: { available: boolean; reason_code: string | null; reason: string | null };
     mutation_model?: MutationModelCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
@@ -365,6 +370,31 @@ export const api = {
   /** Report `analysis_type: "ligand_docking_batch"` of one stored batch summary (nothing is docked again). */
   createDockingBatchReport: (id: string, summaryHandle: string, signal?: AbortSignal) =>
     request<DockingBatchReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: summaryHandle }, signal)),
+  // ---- M22 ligand GA design (preflight, list, detail and individual are reads; the handle goes in the path) ----
+  /** Admission, pool counts, reusable count, reserved units, need, remaining budget and shortfall (no event). */
+  ligandGaPreflight: (id: string, args: LigandGaArgs, signal?: AbortSignal) =>
+    request<LigandGaPreflight>(runPath(id, "/ligand/ga/preflight"), jsonPost(args, signal)),
+  /** The person's explicit approval: the server raises each limit by this GA's current shortfall only. */
+  ligandGaLimitApproval: (id: string, args: LigandGaArgs) =>
+    request<LigandGaLimitApproval>(runPath(id, "/ligand/ga/limit_approval"), jsonPost(args)),
+  submitLigandGa: (id: string, args: LigandGaArgs) =>
+    request<LigandGaSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "qvina_ga_dock_v1", args,
+      timeout_s: args.ga.total_s + LIGAND_GA_FINISH_MARGIN_S })),
+  /** Stored job record with `ga` progress (staged file counts, summary handle). */
+  ligandGaJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<LigandGaJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  ligandGaJobs: (id: string, signal?: AbortSignal) => request<LigandGaJob[]>(runPath(id, "/jobs"), { signal }),
+  /** Newest first; `limit` 1–100. */
+  ligandGaResults: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<LigandGaList>(runPath(id, `/ligand/ga/results?offset=${offset}&limit=${limit}`), { signal }),
+  ligandGaResult: (id: string, handle: string, signal?: AbortSignal) =>
+    request<LigandGaDetail>(runPath(id, `/ligand/ga/results/${encodeURIComponent(handle)}`), { signal }),
+  ligandGaIndividual: (id: string, handle: string, candidateId: string, signal?: AbortSignal) =>
+    request<LigandGaIndividualRead>(runPath(id, `/ligand/ga/results/${encodeURIComponent(handle)}/individual` +
+      `?candidate_id=${encodeURIComponent(candidateId)}`), { signal }),
+  /** Report `analysis_type: "ligand_ga"` of one stored GA summary (nothing is docked again). */
+  createLigandGaReport: (id: string, summaryHandle: string, signal?: AbortSignal) =>
+    request<LigandGaReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: summaryHandle }, signal)),
   // ---- M20 mutation candidates (reads write no event and run no tool; the handle goes in the path) ----
   /** Runs `generate_mutation_candidates` through the ordinary Run.call command route (no job, approval or budget). */
   generateMutationCandidates: (id: string, args: MutationRequestArgs, signal?: AbortSignal) =>
