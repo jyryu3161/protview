@@ -25,18 +25,20 @@ generation size <= ``population_size`` (a complete generation 1 = ``population_s
 random (generation 1: initial only), carried = the previous generation's ``elite_count`` lowest-score scored
 individuals (ties in pool order; fewer when fewer are scored), ``eval_index`` = 0, 1, ... in listing order,
 score = the stored result's first mode, result = the individual's own M18 input under the GA's shared settings,
-``min_score``/``max_score``, counts, ``new_dockings_used <= max_new_dockings``, ``reserved_units`` (spec 6), status
-= ``STATUS_BY_STOP_REASON`` and its structure (only the last generation of a partial run may be incomplete;
-``generations_complete`` = every generation; ``docking_limit`` = cap reached with a generation left; ``no_change``
-after at least ``patience`` generations past generation 1), G sentences, pins, hashes, size.
+``min_score``/``max_score``, counts, ``new_dockings_used <= reserved_units`` (spec 4, 6), ``reserved_units``
+(spec 6), status = ``STATUS_BY_STOP_REASON`` and its structure (only the last generation of a partial run may be
+incomplete; ``generations_complete`` = every generation; ``docking_limit`` = ``reserved_units`` reached with a
+generation left; patience (spec 3 step 4) from the complete generations' minimums: ``no_change`` exactly at the last
+listed generation where the counter reaches ``patience``, never at generation ``generations``; no generation after
+that point, and a complete or ``docking_limit`` stop there is refused), G sentences, pins, hashes, size.
 ``parent_candidate_id`` and ``similarity`` are worker records the server cannot recompute (no fingerprints here,
 G1): only their shape is checked.
 
 Readings of the spec that the summary rules rely on (confirmed against spec 3 and 4 in T2, oracle A1-A3):
 A1 generation order = carried (elite order) then new individuals in evaluation order (spec 3: tournament list
 "carried first, then evaluation order"); A2 non-carried ids unique in the whole run (spec 4); A3 a stopped
-generation lists its carried individuals and the evaluated ones only (spec 3). A4-A7 concern the worker's procedure
-and are not encoded here.
+generation lists its carried individuals and the evaluated ones only (spec 3); A4/A5 (spec 3 step 4, amended) the
+patience rule of ``_patience_stop``. A6/A7 concern the worker's procedure and are not encoded here.
 """
 from __future__ import annotations
 
@@ -323,6 +325,28 @@ def _check_generations(content: dict[str, Any], selected: dict[str, Any], result
     _require(set(individual_selections) == set(seen), "one selection per evaluated individual")
 
 
+OUTSIDE_STOPS = frozenset({"time_exhausted", "cancelled", "worker_failed", "resource_exceeded"})
+
+
+def _patience_stop(generations: list[dict[str, Any]], ga: dict[str, Any]) -> int | None:
+    """The generation after which spec 3 step 4 ends the run with ``no_change`` (None: never). The running minimum
+    is the minimum of the complete generations' ``min_score`` so far (carried scores are earlier evaluations);
+    null -> a number is a decrease, null -> null is not; generation 1 is not compared and the last generation
+    (``generations``) is ``generations_complete``, where ``no_change`` is not evaluated."""
+    best, still = None, 0
+    for gen in generations:
+        if not gen["complete"]:
+            break
+        low = gen["min_score"]
+        new = best if low is None else (low if best is None else min(best, low))
+        if gen["index"] >= 2:
+            still = 0 if new is not None and (best is None or new < best) else still + 1
+            if gen["index"] < ga["generations"] and still >= ga["patience"]:
+                return gen["index"]
+        best = new
+    return None
+
+
 def _check_stop(content: dict[str, Any], ga: dict[str, Any]) -> None:
     stop = content["stop_reason"]
     _require(stop in GC.STOP_REASONS and content["status"] == GC.STATUS_BY_STOP_REASON[stop], "status and stop")
@@ -332,10 +356,15 @@ def _check_stop(content: dict[str, Any], ga: dict[str, Any]) -> None:
     if stop == "generations_complete":
         _require(done == ga["generations"], "generations_complete ran every generation")
     if stop == "docking_limit":
-        _require(content["new_dockings_used"] == ga["max_new_dockings"] and done < ga["generations"],
-                 "docking_limit: the cap was reached with a generation left")
+        _require(content["new_dockings_used"] == content["reserved_units"] and done < ga["generations"],
+                 "docking_limit: reserved_units was reached with a generation left")
+    patience = _patience_stop(generations, ga)
     if stop == "no_change":
-        _require(done >= ga["patience"] + 1, "no_change needs patience generations after generation 1")
+        _require(patience is not None and patience == len(generations),
+                 "no_change: the patience counter reached patience at the last listed generation, before the last")
+    else:
+        _require(patience is None or (patience == len(generations) and stop in OUTSIDE_STOPS),
+                 "no generation after the no_change point; a worker stop there is no_change")
 
 
 def _check(content: Any, selected: dict[str, Any], individual_selections: Mapping[str, Any],
@@ -362,7 +391,7 @@ def _check(content: Any, selected: dict[str, Any], individual_selections: Mappin
     _check_generations(content, selected, results, individual_selections)
     counts = _counts(content["generations"])
     _require(all(content[key] == value and type(content[key]) is int for key, value in counts.items()), "counts")
-    _require(content["new_dockings_used"] <= ga["max_new_dockings"], "new dockings within max_new_dockings")
+    _require(content["new_dockings_used"] <= content["reserved_units"], "new dockings within reserved_units")
     _check_stop(content, ga)
     _require(content["limitations"] == _limitations(content["status"], content["reused_count"]), "limitations")
     _require(len(canonical_json(content)) <= GC.MAX_SUMMARY_BYTES, "summary size")

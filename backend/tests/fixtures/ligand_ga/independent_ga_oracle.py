@@ -31,9 +31,9 @@ ASSUMPTIONS = {
     "A3": "A generation stopped midway lists its carried individuals and the individuals evaluated before the stop; "
           "selected-but-not-evaluated individuals are not listed.",
     "A4": "When the patience counter reaches 'patience' at the last generation (g == generations), the stop reason "
-          "is generations_complete (nothing was stopped early).",
+          "is generations_complete (nothing was stopped early). Confirmed by spec 3 step 4 (amended in T2).",
     "A5": "Running minimum: None (no score yet) -> a number counts as decreased; None -> None and x -> y with y >= x "
-          "count as not decreased.",
+          "count as not decreased. Confirmed by spec 3 step 4 (amended in T2).",
     "A6": "When no unpicked eligible candidate is left, no further rng call is made (the remaining slots stay empty); "
           "this cannot change the outcome because nothing can be picked afterwards.",
     "A7": "A generation whose new slots are all unfilled is not recorded; the run ends with pool_exhausted and "
@@ -71,6 +71,7 @@ def wall_clock_s(p: dict) -> int:
 def run_ga(pool: list[str], eligible: list[bool], bits: dict[str, frozenset], scores: dict[str, float | None],
            reusable: set[str], ga: dict, unscored: dict[str, str] | None = None) -> dict:
     """The spec 3 path for one run. Time is not modelled (no time_exhausted / cancelled / worker_failed).
+    New dockings stop at ``reserved_units`` (spec 3 docking_limit, spec 6), which can be below ``max_new_dockings``.
     ``unscored`` names the state of a None score (default ``null_result``; ``failed`` for a failed docking)."""
     rng = random.Random(ga["seed"])
     calls: list[dict] = []
@@ -97,7 +98,7 @@ def run_ga(pool: list[str], eligible: list[bool], bits: dict[str, frozenset], sc
         if cid in reusable:
             entry["evaluation"] = "reused"
             state["reused"] += 1
-        elif state["new"] >= ga["max_new_dockings"]:
+        elif state["new"] >= reserved_units(ga):                  # spec 3/6: the reserved units, not more
             return "docking_limit"
         else:
             entry["evaluation"] = "docked"

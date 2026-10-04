@@ -61,8 +61,9 @@ def _result(sel: dict, scores: list[float]) -> dict:
             "counts": {"modes": len(modes), "null_result": not modes}, "limitations": []}
 
 
-def _world(name: str, **ga_changes) -> dict:
-    """Selection, worker records, observations and stored results that reproduce one oracle vector."""
+def _world(name: str, expected: dict | None = None, **ga_changes) -> dict:
+    """Selection, worker records, observations and stored results that reproduce one oracle vector (or the given
+    ``expected`` path over that vector's pool)."""
     vector = VECTORS[name]
     ga = {**vector["ga"], **ga_changes}
     normalized = _validate(_args(ga=ga))
@@ -71,7 +72,7 @@ def _world(name: str, **ga_changes) -> dict:
                                                                                                   strict=True))]
     first = next(p["candidate_id"] for p in pool if p["eligible"])
     selected = GI.ga_selection(normalized, pool, _representative(normalized, first))
-    expected = vector["expected"]
+    expected = vector["expected"] if expected is None else expected
     records, observations, results, selections = [], {}, {}, {}
     for gen in expected["generations"]:
         records.append({"index": gen["index"], "complete": gen["complete"],
@@ -182,7 +183,8 @@ def test_unscored_individuals_have_no_score_and_failed_keeps_its_reason():
 
 def test_carried_count_is_what_scored_individuals_allow():
     out = _build(_world("synthetic_no_scored_parent"))
-    assert [e["origin"] for e in out["generations"][1]["individuals"]] == ["random"] * 4
+    # nothing scored in generation 1: no carried individual, every slot random (stopped at reserved_units, below)
+    assert [e["origin"] for e in out["generations"][1]["individuals"]] == ["random"] * 2
     assert out["generations"][0]["min_score"] is None and out["generations"][0]["max_score"] is None
 
 
@@ -423,6 +425,95 @@ def test_more_new_dockings_than_the_cap_is_refused():
         _build(world)
 
 
+def test_new_dockings_are_capped_at_reserved_units():
+    # spec 3/6: no carried individual makes generation 2 open P slots (> P - E); new dockings stop at
+    # reserved_units = min(20, 4 + 1 * (4 - 2)) = 6, below max_new_dockings 20
+    exp = VECTORS["synthetic_no_scored_parent"]["expected"]
+    assert (exp["stop_reason"], exp["status"], exp["new_dockings_used"], exp["generations_done"]) == \
+        ("docking_limit", "partial", 6, 1)
+    assert [g["complete"] for g in exp["generations"]] == [True, False]
+    assert len(exp["generations"][1]["individuals"]) == 2
+    world = _world("synthetic_no_scored_parent")
+    out = _build(world)
+    assert out["reserved_units"] == 6 < out["ga"]["max_new_dockings"] and out["new_dockings_used"] == 6
+    # the pre-amendment path (all four generation-2 slots docked, 8 new) is not a valid summary
+    over = copy.deepcopy(exp)
+    over.update(stop_reason="generations_complete", status="complete", generations_done=2, new_dockings_used=8)
+    gen2 = over["generations"][1]
+    gen2["complete"] = True
+    for k, cid in enumerate(("c_1afb7cd3e603456c", "c_9d4897ac9ecdb2d4"), start=6):
+        gen2["individuals"].append({"candidate_id": cid, "origin": "random", "parent_candidate_id": None,
+                                    "similarity": None, "evaluation": "docked", "eval_index": k, "score": None,
+                                    "state": "null_result"})
+    with pytest.raises(GB.LigandGaEvidenceError):
+        _build(_world("synthetic_no_scored_parent", expected=over))
+
+
+def test_docking_limit_is_checked_against_reserved_units():
+    world = _world("synthetic_no_scored_parent")
+    out = _build(world)
+    _check(world, out)                                    # 6 new = reserved_units 6 < max_new_dockings 20
+    bad = copy.deepcopy(out)
+    bad["reserved_units"] = 20
+    _refused(world, bad)
+    with pytest.raises(GB.LigandGaEvidenceError):         # reserved 4 + 1 * (4 - 1) = 7: the cap was not reached
+        _build(_world("synthetic_no_scored_parent", elite_count=1))
+
+
+def test_no_change_is_not_evaluated_at_the_last_generation():
+    # synthetic_no_change stops at generation 2 with patience 1; with generations 2 the same path is
+    # generations_complete (spec 3 step 4: the last generation is generations_complete, no_change is not looked at)
+    world = _world("synthetic_no_change", generations=2)
+    _check(world, _build(world, stop_reason="generations_complete"))
+    with pytest.raises(GB.LigandGaEvidenceError):
+        _build(world, stop_reason="no_change")
+
+
+def _first_generations(name: str, count: int, **ga_changes) -> dict:
+    """The world of an oracle vector's first ``count`` generations (records, observations and selections cut)."""
+    expected = copy.deepcopy(VECTORS[name]["expected"])
+    expected["generations"] = expected["generations"][:count]
+    return _world(name, expected=expected, **ga_changes)
+
+
+def test_patience_must_agree_with_the_generation_minimums():
+    # seed 8: minimum -10.1 at every generation; with patience 1 the run ends after generation 2 with no_change
+    world = _world("small_observed_seed8", patience=1)
+    with pytest.raises(GB.LigandGaEvidenceError):
+        _build(world)                                     # a generation after the no_change point
+    two = _first_generations("small_observed_seed8", 2, patience=1)
+    _check(two, _build(two, stop_reason="no_change"))
+    with pytest.raises(GB.LigandGaEvidenceError):         # patience reached: a complete stop must be no_change
+        _build(two, stop_reason="pool_exhausted")
+    _check(two, _build(two, stop_reason="cancelled"))     # a stop from outside the worker at that point
+    # seed 7: the minimum decreases at generations 2 and 3, so patience 1 never stops it
+    seed7 = _world("small_observed_seed7", patience=1)
+    _check(seed7, _build(seed7))
+    seed7_two = _first_generations("small_observed_seed7", 2, patience=1)
+    _check(seed7_two, _build(seed7_two, stop_reason="cancelled"))
+    with pytest.raises(GB.LigandGaEvidenceError):
+        _build(seed7_two, stop_reason="no_change")
+
+
+def test_patience_null_minimum_comparison():
+    # null -> null is not a decrease: patience 1 stops after generation 2
+    nulls = VECTORS["synthetic_null_null_no_change"]["expected"]
+    assert (nulls["stop_reason"], nulls["generations_done"]) == ("no_change", 2)
+    assert [g["min_score"] for g in nulls["generations"]] == [None, None]
+    world = _world("synthetic_null_null_no_change")
+    _check(world, _build(world))
+    with pytest.raises(GB.LigandGaEvidenceError):
+        _build(world, stop_reason="pool_exhausted")
+    # null -> a number is a decrease: patience 1 does not stop after generation 2
+    first = VECTORS["synthetic_null_then_score"]["expected"]
+    assert first["generations"][0]["min_score"] is None and first["generations"][1]["min_score"] is not None
+    assert first["generations_done"] >= 3 and first["stop_reason"] != "no_change"
+    two = _first_generations("synthetic_null_then_score", 2)
+    _check(two, _build(two, stop_reason="cancelled"))
+    with pytest.raises(GB.LigandGaEvidenceError):
+        _build(two, stop_reason="no_change")
+
+
 def test_generation_size_cap():
     world = _world("small_observed_seed7")
     out = _build(world)
@@ -467,9 +558,10 @@ def test_stop_reason_structure():
     bad["generations"][0]["complete"] = False
     bad["generations_done"] = 2
     _refused(seed, bad)                                   # only the last generation can be incomplete
+    one = _first_generations("synthetic_no_change", 1)
+    _check(one, _build(one, stop_reason="cancelled"))
     with pytest.raises(GB.LigandGaEvidenceError):
-        _build(_world("synthetic_no_change"), stop_reason="no_change", records=_world("synthetic_no_change")[
-            "records"][:1])                               # no_change needs patience generations after generation 1
+        _build(one, stop_reason="no_change")              # no_change needs patience generations after generation 1
 
 
 def test_identity_hashes_and_pins_are_checked(seed7):
