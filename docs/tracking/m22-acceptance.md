@@ -1,6 +1,6 @@
 # M22 리간드 GA 설계 완료 기록
 
-- 판정: **완료** (2026-10-05). main에는 아직 병합하지 않았다(사용자 통합 승인 대기, push 없음).
+- 판정: **완료** (2026-10-05). main 병합: `4161dc6`(사용자 승인, `--no-ff`, push 없음).
 - 브랜치: `dryforge/m22-ga-design` (`phase/m22-ga-design` = main `849acb7`에서 분기). M21은 시작 전에 main에 병합되어 있었다(`61d5c03`, 기록 `849acb7`).
 - 고정 소스: `a71b2e6`(`a71b2e6ac4f82311f1c008f9cc3646a0d0e063be`, 독립 코드 검토 수정 커밋). 증거 커밋 `9e63b41`. 고정 뒤 소스 변경은 없다. 고정 뒤 커밋은 증거·기록 문서뿐이다.
 - 수락 증거: `docs/qa/m22-ga-20261004/preflight.txt`(착수 확인), `docs/qa/m22-ga-20261005/`(`gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M22 수락, `m21-regression/`, `m20-regression/`, `m19-regression/`, `m18-regression/`, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 51개 331,512,196 B, m14-regression 1개 1,191,726 B, m15-regression 1개 590,108 B, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`). 커밋한 폴더는 약 9.9 MB다.
@@ -115,5 +115,5 @@
 - 이 소스 기준의 현재 검증은 전체 백엔드 pytest(2209개, skip 0)와 M21·M20·M19·M18·M17·M16·M15·M14 수락 실행기, M13 수락 실행기 전체(M8–M12 포함)로 대체한다(모두 고정 `a71b2e6`). M13 수락 실행기가 돌리지 않는 과거 범위는 M13 완료 기록의 "대체한 과거 검증 범위"와 같다.
 
 ## 남은 일
-- main 병합(사용자 승인 대기). push하지 않았다.
+- main 병합 `4161dc6`(사용자 승인, `--no-ff`). push하지 않았다.
 - 새 미해결 문제(`docs/tracking/findings.md`): Stop 훅 나머지 그룹 시간 초과와 M22 실행기 단위 테스트 누락, 관찰하지 못한 사례, 100건·4시간 실행 미측정, GA 요약 읽기 재검증 비용.
