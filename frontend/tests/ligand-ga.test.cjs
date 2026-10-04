@@ -19,7 +19,7 @@ const siteAnnotation = load("site-annotation", { "./comparison": load("compariso
   "./event-model": load("event-model") });
 const docking = load("docking", { "./site-annotation": siteAnnotation });
 const batch = load("docking-batch", { "./docking": docking, "./site-annotation": siteAnnotation });
-const lib = load("ligandGa", { "./docking": docking, "./site-annotation": siteAnnotation });
+const lib = load("ligand-ga", { "./docking": docking, "./site-annotation": siteAnnotation });
 const plain = value => JSON.parse(JSON.stringify(value));
 
 // ---- closed sets, ranges, limits and fixed wording are read from backend/mw/ligand_ga_constants.py itself ----
