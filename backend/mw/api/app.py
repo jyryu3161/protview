@@ -1915,8 +1915,8 @@ def mutation_models(rid: str, request: Request, offset: int = Query(0, ge=0),
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid mutation model record"}) from exc
 
 
-# The handle (obj://<run>/<kind>/<sha>) contains slashes: every sub-resource route (/contacts, /structure, and the
-# M21 T7 /docking_pairs) is registered before the detail route.
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: every sub-resource route (/contacts, /structure,
+# /docking_pairs) is registered before the detail route.
 @app.get("/runs/{rid}/mutation_models/{handle:path}/contacts")
 def mutation_model_contacts(rid: str, handle: str, request: Request, structure: str,
                             page: int = Query(1, ge=1),
@@ -1949,6 +1949,21 @@ def mutation_model_structure(rid: str, handle: str, request: Request, side: str)
     return Response(raw, media_type="chemical/x-mmcif", headers={
         "Content-Disposition": f'attachment; filename="{filename}"',
         "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/runs/{rid}/mutation_models/{handle:path}/docking_pairs")
+def mutation_model_docking_pairs(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """Same-condition M18 docking on the two structures, every condition group listed; scores only when both
+    sides are published results (spec 7)."""
+    _only_query(request, set())
+    run = _run(rid)
+    _mutation_model(run, handle)
+    try:
+        return mutation_model_reads.docking_pairs(run, handle)
+    except mutation_model_reads.MutationEvidenceError as exc:
+        raise _mutation_model_evidence_error(exc) from exc
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid docking job record"}) from exc
 
 
 @app.get("/runs/{rid}/mutation_models/{handle:path}")

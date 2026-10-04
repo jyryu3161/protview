@@ -10,18 +10,26 @@
 Every read goes through ``mutation_model_bundle.validated_result`` / ``structure_bytes`` (single completed
 publication, job selection, stored mmCIF bytes, pure ``validated_model``); any failure raises
 ``MutationEvidenceError``. Nothing is recomputed: values are the stored engine values. The caller checks the handle's
-run, kind and schema first. Docking pairs (``docking_pairs``) are a separate read (spec 7).
+run, kind and schema first.
+
+* ``docking_pairs()`` (spec 7, same-condition docking): this run's single M18 jobs whose ``receptor_source`` is this
+  model, grouped by condition, every group listed (never one picked). See its docstring for the key and the rules.
 """
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
+from . import docking_bundle, docking_inputs
+from . import docking_constants as DC
 from . import mutation_model_bundle as bundle
+from .core.handles import canonical_json
+from .jobs.queue import JobQueue
 from .mutation_model_bundle import MutationEvidenceError
 from .mutation_model_constants import KIND, SCHEMA, STRUCTURE_SIDES
 
-__all__ = ["MutationEvidenceError", "ReadInvalid", "contact_page", "list_models", "model_detail",
-           "structure_download", "structure_summary"]
+__all__ = ["PAIR_REASONS", "MutationEvidenceError", "ReadInvalid", "contact_page", "docking_pairs", "list_models",
+           "model_detail", "structure_download", "structure_summary"]
 
 LIST_LIMIT_DEFAULT, LIST_LIMIT_MAX = 50, 100
 CONTACT_PAGE_SIZE_DEFAULT, CONTACT_PAGE_SIZE_MAX = 100, 200
@@ -101,3 +109,105 @@ def structure_download(run: Any, handle: str, side: Any) -> tuple[bytes, str]:
     side = _side(side, "side")
     raw = bundle.structure_bytes(run, handle, side)
     return raw, f"protview-mutation-model-{handle.rsplit('/', 1)[-1][:12]}-{side}.cif"
+
+
+# ----------------------------------------------------------------- same-condition docking pairs (spec 7)
+# Closed reason set of a side that shows no score (the score is then null, never 0). Fixed sentences, Korean.
+PAIR_REASONS = {
+    "not_submitted": "이 조건으로 이 구조의 도킹 작업이 제출되지 않았다.",
+    "job_not_finished": "도킹 작업이 아직 끝나지 않았다.",
+    "job_failed": "도킹 작업이 실패해 결과가 없다.",
+    "job_cancelled": "도킹 작업이 취소되어 결과가 없다.",
+    "job_interrupted": "도킹 작업이 중단되어 결과가 없다.",
+    "result_invalid": "게시된 도킹 결과가 검증을 통과하지 못했다.",
+    "other_side_missing": "다른 구조의 도킹 결과가 게시되지 않아 이 결과를 나란히 보이지 않는다.",
+    "no_modes": "qvina가 자세를 내지 않은 빈 결과다.",
+}
+_STATUS_REASON = {"queued": "job_not_finished", "claimed": "job_not_finished", "running": "job_not_finished",
+                  "failed": "job_failed", "cancelled": "job_cancelled", "interrupted": "job_interrupted"}
+_CONDITION_KEYS = ("ligand", "mode", "box", "parameters")
+
+
+def _condition(job: dict[str, Any]) -> dict[str, Any]:
+    """The docking condition of one M18 job: its normalized ``ligand``, ``mode``, requested ``box`` and every
+    ``parameters`` value (seed included), plus the SHA-256 of its pinned M18 environment (``job.method``)."""
+    arguments = job["parameters"]
+    return {**{key: arguments[key] for key in _CONDITION_KEYS},
+            "method_pins_sha256": hashlib.sha256(canonical_json(job["method"])).hexdigest()}
+
+
+def _published(run: Any, job: dict[str, Any], handle: str, side: str) -> dict[str, Any] | None:
+    """The validated M18 result of a done job (or None): re-validated by ``docking_bundle.validated_result``, its
+    receptor source is this model and side, and its ``input_sha256`` is the one of this job's arguments."""
+    if job["status"] != "done" or len(job["output_handles"]) != 1:
+        return None
+    try:
+        content = docking_bundle.validated_result(run, job["output_handles"][0])
+    except docking_bundle.DockingEvidenceError:
+        return None
+    if (content["inputs"]["receptor"].get("source") != {"kind": "mutation_model", "mutation_model": handle,
+                                                        "side": side} or
+            content["input_sha256"] != docking_inputs.input_sha256(job["parameters"])):
+        return None
+    return content
+
+
+def _side_entry(side: str, job: dict[str, Any] | None, seq: int | None) -> dict[str, Any]:
+    return {"side": side, "job_id": None if job is None else job["job_id"],
+            "job_status": "not_submitted" if job is None else job["status"], "submitted_seq": seq,
+            "result_handle": None, "score_kcal_mol": None, "score_mode": None}
+
+
+def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
+    """Spec 7 ``docking_pairs``: same-condition M18 docking on the two structures of one model.
+
+    Members: this run's ``qvina_dock_v1`` jobs whose ``parameters.receptor_source.mutation_model`` is ``handle``
+    (M19 never takes this source). Group key: ``_condition`` (ligand, mode, box, parameters, pinned environment);
+    a published result of a member is checked to carry these same values (its ``input_sha256`` equals the job's).
+    One call key per side and condition means at most one job per side in a group (two would raise, never pick).
+    A side shows its result handle and the stored first mode row score (``modes[0].score_kcal_mol``, unchanged)
+    only when BOTH sides are published, validated results; otherwise every side shows its job status, null score
+    and a ``PAIR_REASONS`` code. Groups are ordered by the earliest submission event of their jobs. Nothing is
+    subtracted, ranked or chosen."""
+    bundle.validated_result(run, handle)
+    jobs = [job for job in JobQueue(run).list()
+            if job["protocol_id"] == DC.PROTOCOL and job["tool_id"] == DC.TOOL and
+            type(job["parameters"]) is dict and type(job["parameters"].get("receptor_source")) is dict and
+            job["parameters"]["receptor_source"].get("mutation_model") == handle]
+    submitted = {event["job"]["job_id"]: event["seq"] for event in run.events.read()
+                 if event["type"] == "job_submitted"}
+    groups: dict[bytes, dict[str, Any]] = {}
+    for job in sorted(jobs, key=lambda item: submitted[item["job_id"]]):
+        side = job["parameters"]["receptor_source"]["side"]
+        if side not in STRUCTURE_SIDES:
+            raise ValueError("docking job with an unknown receptor side")
+        condition = _condition(job)
+        group = groups.setdefault(canonical_json(condition), {"condition": condition, "jobs": {}})
+        if side in group["jobs"]:
+            raise ValueError("two docking jobs for one side and one condition")
+        group["jobs"][side] = job
+    pairs = []
+    for index, group in enumerate(groups.values()):
+        found = {side: group["jobs"].get(side) for side in STRUCTURE_SIDES}
+        results = {side: None if job is None else _published(run, job, handle, side) for side, job in found.items()}
+        both = all(content is not None for content in results.values())
+        sides = {}
+        for side, job in found.items():
+            entry = _side_entry(side, job, None if job is None else submitted[job["job_id"]])
+            content = results[side]
+            if both and content["modes"]:
+                entry.update(result_handle=job["output_handles"][0], score_mode=content["modes"][0]["mode"],
+                             score_kcal_mol=content["modes"][0]["score_kcal_mol"], reason_code=None)
+            elif both:
+                entry.update(result_handle=job["output_handles"][0], reason_code="no_modes")
+            else:
+                entry["reason_code"] = ("not_submitted" if job is None else
+                                        "other_side_missing" if content is not None else
+                                        "result_invalid" if job["status"] == "done" else _STATUS_REASON[job["status"]])
+            entry["reason"] = None if entry["reason_code"] is None else PAIR_REASONS[entry["reason_code"]]
+            sides[side] = entry
+        pairs.append({"index": index,
+                      "first_submitted_seq": min(submitted[job["job_id"]] for job in group["jobs"].values()),
+                      "condition": group["condition"], "both_published": both, "sides": sides})
+    return {"schema": "mutation_model_docking_pairs@1", "handle": handle, "score_label": DC.SCORE_LABEL,
+            "total": len(pairs), "pairs": pairs, "starts_job": False}
