@@ -779,19 +779,26 @@ class Job:
                "TMPDIR": str(work), "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"}
         streams = (work / "child.stdout", work / "child.stderr")
         deadline = time.monotonic() + MODEL_LIMIT_S
+        # A signal mask survives fork and exec: unblock around the launch so the child starts with the default mask
+        # and a guardian SIGTERM to the group reaches it (the handlers only set flags outside a docking step).
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, SIGNALS)
         try:
             with streams[0].open("xb") as out, streams[1].open("xb") as err:
                 child = subprocess.Popen([self.p["project_python"], "-I", str(MODEL_PROGRAM)], cwd=work, env=env,
                                          stdin=subprocess.DEVNULL, stdout=out, stderr=err, close_fds=True)
         except OSError:
             return "failed", "worker_failed"
+        finally:
+            signal.pthread_sigmask(signal.SIG_BLOCK, SIGNALS)
         outcome: tuple[str, str] | str | None = None
         try:
-            while child.poll() is None:
+            while True:     # a stop wins over the child's exit (a group SIGTERM also ends the child)
                 if self.cancelled():
                     outcome = "cancelled"
                 elif self.time_up():
                     outcome = "time_exhausted"
+                elif child.poll() is not None:
+                    break
                 elif time.monotonic() >= deadline:
                     outcome = "failed", "model_timeout"
                 elif any(path.stat().st_size > CHILD_STREAM_LIMIT for path in streams):
