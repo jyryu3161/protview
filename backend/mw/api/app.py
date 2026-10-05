@@ -84,6 +84,7 @@ from ..saved_scenes import (
     scene_detail,
 )
 from ..sequence_ga_constants import PROTOCOL as SEQUENCE_GA_PROTOCOL
+from ..sequence_ga_reports import build_sequence_ga_report, saved_sequence_ga_report
 from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
@@ -1283,6 +1284,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == ligand_ga_reads.SUMMARY:
             # Reads the stored GA summary and its individuals' results only; nothing is docked again.
             return build_ligand_ga_report(run, body.result_handle)
+        if kind == sequence_ga_reads.SUMMARY:
+            # M23: reads the stored sequence GA summary, its rows' models and results only; nothing is modelled or
+            # docked again.
+            return build_sequence_ga_report(run, body.result_handle)
         if kind == "mutation_candidate_set":
             # Reads the stored candidate set only (re-validated); no candidate is generated again.
             return build_mutation_report(run, body.result_handle)
@@ -1316,7 +1321,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga"}
+                                        "ligand_ga", "sequence_ga"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1333,7 +1338,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
-                                                              "mutation_candidates", "mutation_model", "ligand_ga"}
+                                                              "mutation_candidates", "mutation_model", "ligand_ga",
+                                                              "sequence_ga"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1358,6 +1364,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_docking_batch_report(run, handle)
         if report.get("analysis_type") == "ligand_ga":
             return saved_ligand_ga_report(run, handle)
+        if report.get("analysis_type") == "sequence_ga":
+            return saved_sequence_ga_report(run, handle)
         if report.get("analysis_type") == "mutation_candidates":
             return saved_mutation_report(run, handle)
         if report.get("analysis_type") == "mutation_model":
