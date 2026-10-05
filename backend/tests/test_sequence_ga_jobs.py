@@ -225,7 +225,11 @@ def test_registration_capability_and_protocol_timeout_bound(tmp_path, monkeypatc
         imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names}
         imported |= {node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.module}
         assert not any(m == top or m.startswith(top + ".") for m in imported for top in FORBIDDEN_MODULES), name
-    assert not any(name in sys.modules for name in ("rdkit", "meeko", "MDAnalysis", "pdbfixer"))
+    script = ("import sys, mw.api.app, mw.sequence_ga_jobs, mw.jobs.queue; "
+              "print([m for m in ('rdkit', 'meeko', 'MDAnalysis', 'pdbfixer') if m in sys.modules])")
+    probe = subprocess.run([sys.executable, "-c", script], cwd=MW.parent, capture_output=True, text=True,
+                           check=True, timeout=120)
+    assert probe.stdout.strip() == "[]"   # a fresh server process (this test process may hold oracle imports)
     capability = SJ.capability()
     assert capability["available"] is True, capability["reason"]
     assert capability["pins"]["docking"] == docking_bundle.capability()["pins"]
@@ -784,6 +788,24 @@ def test_contradicting_staged_files_fail_fatal_or_worker_failed(base, tmp_path, 
         fatal = run_ga(run, ga_args(base, total_s=900, **small))   # same rows: every one reused, nothing modeled
     assert fatal["status"] == "failed" and fatal["failure"]["diagnostic"] == "SequenceGaFatal", fatal
     assert not of(run, fatal["job_id"], SC.SUMMARY_EVENT)
+
+    def other_receptor(run_, job, attempt_id, attempt_dir_, server_cause):   # labeled fault: another docked receptor
+        result = json.loads((attempt_dir_ / "reference.result.json").read_bytes())
+        result["inputs"]["receptor"]["sha256"] = "0" * 64
+        (attempt_dir_ / "reference.result.json").write_bytes(canonical_json(result))
+        return original(run_, job, attempt_id, attempt_dir_, server_cause)
+
+    # Other docking values (new conditions: the reference row is computed); the worker is killed after the reference
+    # row (a cancel would make the terminal cancelled whatever finish reports).
+    args = {**ga_args(base, **small), "parameters": {**DOCK, "seed": DOCK["seed"] + 1}}
+    with monkeypatch.context() as patch:
+        patch.setattr(SJ, "finish", other_receptor)
+        patch.setattr(JobQueue, "_record_control", when_started(
+            "reference.status.json", lambda _queue, _job_id, pid: os.kill(pid, signal.SIGKILL)))
+        receptor = run_ga(run, args)
+    assert receptor["status"] == "failed" and receptor["failure"]["diagnostic"] == "SequenceGaFatal", receptor
+    assert not of(run, receptor["job_id"], SC.SUMMARY_EVENT)
+    assert not of(run, receptor["job_id"], SC.INDIVIDUAL_EVENT)   # the reference model is never announced
     no_strays(run)
 
 
