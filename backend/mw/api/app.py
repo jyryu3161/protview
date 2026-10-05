@@ -34,6 +34,7 @@ from .. import (
     mutation_reads,
     numbering_reads,
     sequence_ga_jobs,
+    sequence_ga_reads,
 )
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
@@ -2161,6 +2162,97 @@ def ligand_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
         return {**ligand_ga_reads.summary_detail(run, handle), "meta": meta}
     except ligand_ga_reads.LigandGaEvidenceError as exc:
         raise _ligand_ga_evidence_error(exc) from exc
+
+
+# ----------------------------------------------------------------- M23 sequence GA reads (no event, job, tool or engine)
+@app.post("/runs/{rid}/sequence_ga/preflight")
+async def sequence_ga_preflight(rid: str, request: Request) -> dict[str, Any]:
+    """Spec 9: admission (steps 1-8, refusals answered 200), space, projected heavy atoms, reuse, reserved figures,
+    need, remaining budget, shortfall, full_run_may_be_partial and S1/S4-S6 for a sequence GA request (body = the GA
+    job arguments). A read: no event, job, tool, reservation or limit change."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    run = _run(rid)
+    return await run_in_threadpool(lambda: sequence_ga_reads.preflight(run, args))
+
+
+@app.get("/runs/{rid}/sequence_ga/results")
+def sequence_ga_results(rid: str, request: Request, offset: int = Query(0, ge=0),
+                        limit: int = Query(sequence_ga_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                           le=sequence_ga_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's sequence GA summaries, newest first; each row re-validated (one event-log read)."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return sequence_ga_reads.list_summaries(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid sequence GA record"}) from exc
+
+
+def _sequence_ga_summary(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (sequence_ga_reads.SUMMARY, sequence_ga_reads.SUMMARY_SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a sequence_ga_result"})
+    return meta
+
+
+def _sequence_ga_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid sequence GA evidence"})
+
+
+def _sequence_ga_row_unknown(exc: Exception) -> HTTPException:
+    return HTTPException(404, detail={"error": "not_found", "message": str(exc)})
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: the sub-resource routes (/individual, /structure) are
+# registered before the detail route.
+@app.get("/runs/{rid}/sequence_ga/results/{handle:path}/individual")
+def sequence_ga_individual(rid: str, handle: str, request: Request, key: str | None = None) -> dict[str, Any]:
+    """One individual (key ``12-57-203``) or the wild-type reference row (``wild_type``): stored row, stored model
+    without atom and bond rows, appearances and the M18 detail read of its result."""
+    _only_query(request, {"key"})
+    run = _run(rid)
+    _sequence_ga_summary(run, handle)
+    try:
+        return sequence_ga_reads.individual(run, handle, key)
+    except sequence_ga_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except sequence_ga_reads.RowUnknown as exc:
+        raise _sequence_ga_row_unknown(exc) from exc
+    except (sequence_ga_reads.SequenceGaEvidenceError, docking_bundle.DockingEvidenceError) as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/sequence_ga/results/{handle:path}/structure")
+def sequence_ga_structure(rid: str, handle: str, request: Request, key: str | None = None) -> Response:
+    """The stored mmCIF bytes of one row's model, byte for byte (SHA-256 and handle checked)."""
+    _only_query(request, {"key"})
+    run = _run(rid)
+    _sequence_ga_summary(run, handle)
+    try:
+        raw, filename = sequence_ga_reads.structure_download(run, handle, key)
+    except sequence_ga_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except sequence_ga_reads.RowUnknown as exc:
+        raise _sequence_ga_row_unknown(exc) from exc
+    except sequence_ga_reads.SequenceGaEvidenceError as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
+    return Response(raw, media_type="chemical/x-mmcif", headers={
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/runs/{rid}/sequence_ga/results/{handle:path}")
+def sequence_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One validated sequence GA summary with its generations and its reference row; individual results open in the
+    M18 /docking/results/* reads."""
+    _only_query(request, set())
+    run = _run(rid)
+    meta = _sequence_ga_summary(run, handle)
+    try:
+        return {**sequence_ga_reads.summary_detail(run, handle), "meta": meta}
+    except sequence_ga_reads.SequenceGaEvidenceError as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")
