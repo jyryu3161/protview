@@ -2172,7 +2172,7 @@ def ligand_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
         raise _ligand_ga_evidence_error(exc) from exc
 
 
-# ----------------------------------------------------------------- M23 sequence GA reads (no event, job, tool or engine)
+# ---------------------------------------------------------------- M23 sequence GA reads (no event, job, tool or engine)
 @app.post("/runs/{rid}/sequence_ga/preflight")
 async def sequence_ga_preflight(rid: str, request: Request) -> dict[str, Any]:
     """Spec 9: admission (steps 1-8, refusals answered 200), space, projected heavy atoms, reuse, reserved figures,

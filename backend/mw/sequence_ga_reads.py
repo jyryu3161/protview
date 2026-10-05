@@ -198,7 +198,8 @@ def individual(run: Any, handle: str, key: Any) -> dict[str, Any]:
             "mutations": [] if reference else row["mutations"], "is_reference": reference,
             "eval_index": None if reference else row["eval_index"],
             "pick_index": None if reference else row["pick_index"],
-            **{field: row[field] for field in ROW_FIELDS}, "appearances": appearances, "model": None if model is None else _model_view(model),
+            **{field: row[field] for field in ROW_FIELDS}, "appearances": appearances,
+            "model": None if model is None else _model_view(model),
             "statements": statements(MODEL_STATEMENTS), "score_label": SC.SCORE_LABEL,
             "score_row_label": SC.SCORE_ROW_LABEL,
             "m18_detail": None if result is None else docking_reads.result_detail(view, result)}

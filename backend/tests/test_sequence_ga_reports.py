@@ -348,7 +348,8 @@ def test_failed_rows_have_no_score_claim_and_their_score_claims_are_refused(clie
         assert f"\n{_table_row(manifest, slot, individuals[slot])}\n" in markdown
     # provenance: the model-only row is cited with its model, the row with neither object is not cited
     rows = {row["key"]: row for row in manifest["provenance"]["rows"]}
-    assert rows[failed["key"]]["model_handle"] == failed["model_handle"] and rows[failed["key"]]["result_handle"] is None
+    assert rows[failed["key"]]["model_handle"] == failed["model_handle"]
+    assert rows[failed["key"]]["result_handle"] is None
     assert individuals[other]["key"] not in rows
     # scored rows come first in the table (display order), the failed row last
     table = [line for line in markdown.split("\n") if line.startswith(f"| {position} |")]

@@ -506,8 +506,9 @@ def render_sequence_ga_report(manifest: dict[str, Any]) -> str:
                   "- 이 행은 개체가 아니며 선택·이어받음·종료 판단과 세대 점수 최솟값·최댓값에 쓰지 않았다."])
     for index, gen in enumerate(manifest["generations"]):
         number = gen["index"]
-        counts = ", ".join(f"{md(state)} {value('generation_count', None, generation=number, where=f'state == {state}')}"
-                           for state in SC.STATES)
+        counts = ", ".join(
+            f"{md(state)} {value('generation_count', None, generation=number, where=f'state == {state}')}"
+            for state in SC.STATES)
         lines.extend(["", f"## 세대 {md(number)} ({'완료' if gen['complete'] else '중간에 멈춤'})", "",
                       f"- 개체 수: {value('generation_count', None, generation=number, where=None)}; {counts}"])
         if gen["min_score"] is None:
@@ -517,12 +518,14 @@ def render_sequence_ga_report(manifest: dict[str, Any]) -> str:
                          f"최댓값 {value('generation_score_range', f'generations[{index}].max_score')} (값만)")
         lines.extend(["", (f"| 자리 | 개체 키 | 변이 | 출처 | 부모 키 | 편집 | 평가 | 선택 순서 | 평가 순서 | 상태 | "
                            f"{SCORE_COLUMN_LABEL} | 점수 대상 | 이유 | 모델 | 개체별 결과 |"),
-                      "| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | --- | --- | --- |"])
+                      ("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | --- | --- "
+                       "| --- |")])
         ordered = sorted(enumerate(gen["individuals"]), key=lambda item: item[1]["state"] != "scored")
         for position, entry in ordered:
             scored = entry["state"] == "scored"
             cells = [str(position), md(entry["key"]), md(", ".join(mutation_label(row) for row in entry["mutations"])),
-                     ORIGIN_LABELS[entry["origin"]], "" if entry["parents"] is None else md(", ".join(entry["parents"])),
+                     ORIGIN_LABELS[entry["origin"]],
+                     "" if entry["parents"] is None else md(", ".join(entry["parents"])),
                      "" if entry["edit_op"] is None else EDIT_LABELS[entry["edit_op"]],
                      "" if entry["evaluation"] is None else EVALUATION_LABELS[entry["evaluation"]],
                      str(entry["pick_index"]), "" if entry["eval_index"] is None else str(entry["eval_index"]),
