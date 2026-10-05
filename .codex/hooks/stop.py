@@ -19,41 +19,93 @@ def project_python(root: Path) -> str:
     return str(venv_python) if venv_python.exists() else sys.executable
 
 
+PYTHON = project_python(ROOT)
+T = "backend/tests/"
+
+# The gate's script tests (docs/standards.md), all in the last group.
+SCRIPT_TESTS = [
+    "scripts/test_execute.py", "scripts/test_codex_hooks.py", "scripts/test_setup_fpocket.py",
+    "scripts/test_m13_offscreen_acceptance.py", "scripts/test_m14_offscreen_acceptance.py",
+    "scripts/test_import_reference_snapshots.py", "scripts/test_m15_offscreen_acceptance.py",
+    "scripts/test_measure_klifs_numbering.py", "scripts/test_m16_offscreen_acceptance.py",
+    "scripts/test_m17_offscreen_acceptance.py", "scripts/test_m18_offscreen_acceptance.py",
+    "scripts/test_m19_offscreen_acceptance.py", "scripts/test_setup_qvina.py", "scripts/test_setup_docking_worker.py",
+    "scripts/test_m20_offscreen_acceptance.py", "scripts/test_m21_offscreen_acceptance.py",
+    "scripts/test_m22_offscreen_acceptance.py", "scripts/test_m23_offscreen_acceptance.py",
+]
+
+# test_sequence_ga_jobs.py alone takes about 540 s, more than one group's bound, so its tests are split by node id.
+SEQUENCE_GA_JOBS = T + "test_sequence_ga_jobs.py"
+SEQUENCE_GA_JOBS_LONG = [
+    "test_product_path_publication_m18_identity_reuse_duplicates_and_events_only",
+    "test_golden_m18_m19_m21_call_keys_results_and_hashed_files_are_unchanged",
+]
+SEQUENCE_GA_JOBS_OTHER = [
+    "test_registration_capability_and_protocol_timeout_bound",
+    "test_admission_order_refusals_record_and_charge_nothing",
+    "test_dry_run_plans_only",
+    "test_set_model_receptor_source_needs_publication_evidence",
+    "test_a_failed_reference_row_ends_the_run_before_any_individual_with_a_summary",
+    "test_cancel_mid_run_keeps_published_rows_and_a_partial_summary",
+    "test_a_cancel_before_the_reference_row_is_recorded_has_no_summary",
+    "test_run_budget_deadline_is_time_exhausted_with_a_partial_summary",
+    "test_hard_kill_of_the_worker_is_worker_failed_and_has_no_retry",
+    "test_server_death_recovery_publishes_staged_rows_and_a_worker_failed_summary",
+    "test_contradicting_staged_files_fail_fatal_or_worker_failed",
+    "test_a_prepared_box_that_is_not_the_servers_is_fatal_before_any_object_is_published",
+]
+
+# Disjoint pytest groups balanced on measured per-file time (docs/operations.md). A file is named in one group only;
+# a split file names each of its tests in exactly one group. The last group is backend/tests without every file
+# named here, plus the script tests, so a new backend test file lands there.
+PYTEST_GROUPS = [
+    [T + "test_chemical_interactions.py"],
+    [T + "test_m11_job_api.py"],
+    [T + "test_docking_inputs.py", T + "test_docking_worker.py", T + "test_docking_jobs.py",
+     T + "test_docking_api.py", T + "test_docking_reports.py", T + "test_pocket_jobs.py"],
+    [T + "test_docking_batch_worker.py", T + "test_docking_batch_jobs.py",
+     T + "test_pockets.py", T + "test_pocket_reports.py", T + "test_pocket_output.py"],
+    [T + "test_docking_batch_inputs.py", T + "test_docking_batch_bundle.py", T + "test_docking_batch_budget.py",
+     T + "test_docking_batch_api.py", T + "test_docking_batch_reports.py",
+     T + "test_ligand_ga_bundle.py", T + "test_ligand_ga_inputs.py", T + "test_ligand_ga_budget.py",
+     T + "test_ligand_ga_api.py", T + "test_ligand_ga_reports.py"],
+    [T + "test_ligand_ga_jobs.py"],
+    [T + "test_ligand_ga_worker.py"],
+    [f"{SEQUENCE_GA_JOBS}::{name}" for name in SEQUENCE_GA_JOBS_LONG],
+    [f"{SEQUENCE_GA_JOBS}::{name}" for name in SEQUENCE_GA_JOBS_OTHER],
+    [T + "test_sequence_ga_api.py"],
+    [T + "test_sequence_ga_reports.py"],
+    [T + "test_sequence_ga_worker.py", T + "test_sequence_model_worker.py", T + "test_sequence_ga_inputs.py",
+     T + "test_sequence_ga_budget.py", T + "test_sequence_ga_bundle.py", T + "test_sequence_model_bundle.py"],
+    [T + "test_mutation_model_worker.py", T + "test_mutation_model_jobs.py", T + "test_mutation_model_inputs.py",
+     T + "test_mutation_model_api.py", T + "test_mutation_model_pairs.py", T + "test_mutation_model_docking.py",
+     T + "test_mutation_model_reports.py", T + "test_openmm.py"],
+]
+
+
+def named_files(groups) -> list[str]:
+    files = []
+    for args in groups:
+        for arg in args:
+            path = arg.split("::", 1)[0]
+            if path not in files:
+                files.append(path)
+    return files
+
+
+REST_GROUP = ["backend/tests", *SCRIPT_TESTS, *(f"--ignore={path}" for path in named_files(PYTEST_GROUPS))]
+
 # Only check product and harness code; references/ is source material.
 CHECKS = [
-    ([project_python(ROOT), "-m", "ruff", "check", "backend/mw", "backend/tests", "scripts", ".codex/hooks", "design/build_tokens.py"], {0}),
-    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_chemical_interactions.py"], {0}),
-    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_m11_job_api.py"], {0}),
-    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_docking_inputs.py",
-      "backend/tests/test_docking_worker.py", "backend/tests/test_docking_jobs.py",
-      "backend/tests/test_docking_api.py", "backend/tests/test_docking_reports.py"], {0}),
-    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests/test_docking_batch_inputs.py",
-      "backend/tests/test_docking_batch_bundle.py", "backend/tests/test_docking_batch_worker.py",
-      "backend/tests/test_docking_batch_jobs.py", "backend/tests/test_docking_batch_budget.py",
-      "backend/tests/test_docking_batch_api.py", "backend/tests/test_docking_batch_reports.py"], {0}),
-    ([project_python(ROOT), "-m", "pytest", "-q", "backend/tests", "scripts/test_execute.py",
-      "scripts/test_codex_hooks.py", "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
-      "scripts/test_m14_offscreen_acceptance.py", "scripts/test_import_reference_snapshots.py",
-      "scripts/test_m15_offscreen_acceptance.py", "scripts/test_measure_klifs_numbering.py",
-      "scripts/test_m16_offscreen_acceptance.py",
-      "scripts/test_m17_offscreen_acceptance.py", "scripts/test_m18_offscreen_acceptance.py",
-      "scripts/test_m19_offscreen_acceptance.py",
-      "scripts/test_setup_qvina.py", "scripts/test_setup_docking_worker.py",
-      "--ignore=backend/tests/test_chemical_interactions.py",
-      "--ignore=backend/tests/test_m11_job_api.py",
-      "--ignore=backend/tests/test_docking_inputs.py", "--ignore=backend/tests/test_docking_worker.py",
-      "--ignore=backend/tests/test_docking_jobs.py", "--ignore=backend/tests/test_docking_api.py",
-      "--ignore=backend/tests/test_docking_reports.py",
-      "--ignore=backend/tests/test_docking_batch_inputs.py", "--ignore=backend/tests/test_docking_batch_bundle.py",
-      "--ignore=backend/tests/test_docking_batch_worker.py", "--ignore=backend/tests/test_docking_batch_jobs.py",
-      "--ignore=backend/tests/test_docking_batch_budget.py", "--ignore=backend/tests/test_docking_batch_api.py",
-      "--ignore=backend/tests/test_docking_batch_reports.py"], {0}),
+    ([PYTHON, "-m", "ruff", "check", "backend/mw", "backend/tests", "scripts", ".codex/hooks", "design/build_tokens.py"], {0}),
+    *(([PYTHON, "-m", "pytest", "-q", *args], {0}) for args in [*PYTEST_GROUPS, REST_GROUP]),
 ]
 
 MAX_OUTPUT_CHARS = 1500
-# Ruff runs first; the five disjoint pytest groups then run concurrently.
-# Their exact collection union is the former sequential suite. Even one group
-# reaching its bound leaves process-group cleanup below the trusted 600 s hook.
+MAX_LABEL_CHARS = 600
+# Ruff runs first; the disjoint pytest groups then all run concurrently.
+# Their exact collection union is the gate's backend and script tests. Even one
+# group reaching its bound leaves process-group cleanup below the trusted 600 s hook.
 RUFF_TIMEOUT = 45
 CHECK_TIMEOUT = 480
 
@@ -111,6 +163,8 @@ def run_checks(root: Path, checks) -> list[str]:
     def one(item):
         cmd, ok_codes = item
         label = "$ " + " ".join(cmd)
+        if len(label) > MAX_LABEL_CHARS:  # the last group lists every --ignore; its first arguments name it
+            label = label[:MAX_LABEL_CHARS] + " …"
         try:
             r = run_check(cmd, root)
         except FileNotFoundError:

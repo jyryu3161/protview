@@ -296,7 +296,7 @@
 - `GET /docking/batches`·`/detail`·`GET /jobs`(일괄 작업의 `batch` 필드)는 요약을 읽을 때마다 단일 게시, 일괄 선택 기록, 모든 행 결과(`validated_result`, 행마다 이벤트 로그 재파싱)를 다시 검증한다. 입장·시작 전 확인도 행마다 M18 입장 검사(수용체 바이트 gemmi 파싱 포함)를 한다. 51행 일괄이 여러 개인 run에서는 목록·폴링이 눈에 띄게 느려질 수 있다(정확성 문제는 아님, `docs/tracking/findings.md`).
 
 ### Stop 훅 그룹과 M11 handshake 수 테스트 (M19)
-- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`). 지금 pytest 그룹은 다섯이고(`test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 다섯 파일, M19 일괄 일곱 파일, 나머지), 그룹을 더하면 `scripts/test_codex_hooks.py`의 그룹 수·목록 기대도 함께 고친다. 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침, `8a327c8`).
+- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`, 그때 다섯 그룹). M23 뒤 그룹을 열넷으로 다시 나눴다(아래 "Stop 훅 그룹 시간과 그룹 나눔"). 지금 그룹 목록은 `.codex/hooks/stop.py`의 `PYTEST_GROUPS`(열셋)이고, 마지막 나머지 그룹은 `backend/tests`에서 거기 적힌 파일을 `--ignore`로 뺀 것(목록은 자동으로 만듦)과 실행기 테스트 `SCRIPT_TESTS`다. `scripts/test_codex_hooks.py`는 `--collect-only` 없이 모든 `backend/tests/test_*.py`·`scripts/test_*.py`가 정확히 한 그룹에 들어 있는지, 테스트 단위로 나눈 파일은 모듈 수준 테스트 이름이 정확히 한 번씩 적혔는지 검사한다. 그래서 새 실행기 테스트 파일을 `SCRIPT_TESTS`에 넣지 않거나 나눈 파일에 테스트를 더하고 적지 않으면 이 테스트가 실패한다. 그룹 수를 바꾸면 같은 파일의 그룹 수 기대도 고친다. 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침, `8a327c8`).
 - `/capabilities`가 M17·M18·M19 작업 모듈 handshake까지 실행하므로, `test_m11_job_api.py`의 handshake 캐시 테스트를 그룹 단독으로 돌리면 다른 작업 모듈 실행도 셌다. 테스트가 화학 작업 모듈 argv만 세도록 좁혔다(`b2c6436`). capability에 handshake를 더하는 단계는 subprocess 수를 세는 기존 테스트를 확인한다.
 
 ### 사전 검사 훅의 store로도 게시 확인 읽기를 할 수 있다 (M20)
@@ -361,9 +361,6 @@
 - 작업 모듈이 import하지만 해시하지 않는 파일: `mutation_constants.py`(M20 상수), `openmm_bundle.py`, `core/handles.py`, `core/errors.py`, `tools/structural.py`, `tools/sasa.py`, `jobs/process_identity.py`. 이 파일의 동작을 바꾸면 같은 호출 키로 다른 결과가 나올 수 있으므로, 바꿀 때 `DEPENDENCIES`에 넣을지 함께 정한다.
 - M18 쪽도 같다: M21이 `docking_worker.py`·`docking_constants.py`를 바꿔 M21 전 M18·M19 결과의 자동 재사용이 끝났다(결정 0029, 저장 결과·읽기는 그대로).
 
-### Stop 훅 나머지 그룹은 혼자 10분이 걸려 480초 제한을 넘는다 (M21)
-- M21 고정 게이트에서 다섯 그룹을 따로(제한 없이) 돌렸을 때 나머지 그룹은 1,833개 602초였다(다른 두 줄과 동시 실행, `docs/qa/m21-mutations-20261004/gate.txt`). 훅의 그룹 제한 480초·전체 600초 안에서는 이 그룹이 시간 초과로 보고된다. M21 테스트(실제 OpenMM·PDBFixer 작업 모듈과 qvina 도킹)는 모두 나머지 그룹에 들어 있다. 게이트는 그룹별 개별 실행으로 대신했다. 그룹을 다시 나누는 일은 `docs/tracking/findings.md`.
-
 ### 1UBQ 작업 하나는 약 20초, 큰 구조의 시간은 재지 않았다 (M21)
 - 착수 확인 단독 측정에서 1UBQ(중원자 602) 작업 하나(두 구조의 수소·System·최소화, PDBFixer, SASA·접촉·mmCIF)는 22.6–23.0초였다(구조 하나 약 11초). 사전 검사·스테이징·guardian 시간은 빠졌다. `NoCutoff` GBn2라 원자 수에 비례 이상으로 늘 수 있고, M7을 통과하는 큰 공개 fixture가 없어 큰 구조는 재지 못했다. 기본 120초·최대 240초에서 시간 초과가 나면 결과 없이 1단위가 청구된다.
 
@@ -409,9 +406,6 @@
 ### GA 진행 개수는 새 도킹 파일만 센다 (M22)
 - 진행 `ga.individuals_started`·`individuals_result_files`·`individuals_finished`는 시도 디렉터리 `individuals/`의 파일 수이고 재사용 개체는 파일을 만들지 않는다. 그래서 화면은 "새 도킹 시작·끝"으로 이름 붙이고 재사용은 `reused_planned`(시작 때 계획)로 따로 보인다(`a71b2e6`). 실행 중에는 객체를 게시할 수 없으므로(M19 함정과 같음) 진행에는 점수가 없다.
 
-### Stop 훅 나머지 그룹은 M22 뒤 혼자 22분이다 (M22)
-- M22 고정 게이트에서 다섯 그룹을 따로 차례로 돌렸을 때 나머지 그룹은 2,063개 1324초였다(`docs/qa/m22-ga-20261005/gate.txt`). M22 백엔드 테스트 일곱 파일(실제 qvina·RDKit·M17 작업)이 모두 이 그룹에 들어 있다. 훅 제한(그룹 480초·전체 600초) 안에서는 시간 초과로 보고되며, 게이트는 그룹별 개별 실행으로 판단한다. `scripts/test_m22_offscreen_acceptance.py`도 훅 목록에 없다(`docs/tracking/findings.md`).
-
 ### 여러 곳 변이를 M21 함수로 이어서 적용하면 둘째 단계가 `coordinates_changed`로 실패한다 (M23)
 - **증상**: 1UBQ에서 I44W 다음 K6H처럼 두 곳을 `mutant_projection`으로 차례로 적용하면 둘째 단계에서 `coordinates_changed`(최대 이동 4.29e-05–4.98e-05 Å)가 났다. 인접 위치도 같았다(착수 확인 8조합 모두).
 - **원인**: M21 `_pdbfixer`가 PDBx 텍스트로 위상을 넘기는데 `PDBxFile.writeFile`이 좌표를 소수 4자리로 쓴다. 앞 단계에서 PDBFixer가 새로 놓은 원자는 전체 정밀도 좌표라 다음 단계 입력에서 반올림된 값과 어긋나고, `_graft`의 `GRAFT_TOLERANCE_A` 1e-9 Å 검사가 이를 변이 잔기 밖 좌표 변경으로 본다.
@@ -449,8 +443,12 @@
 ### 같은 인자 재제출은 예산 부족이면 화면이 막지만 서버는 기존 작업을 돌려준다 (M23, M22와 같음)
 - 서버는 같은 호출 키의 기존 작업을 예산 검사 전에 돌려주지만 화면은 `preflight.existing_job`이 있어도 부족분이 있으면 시작을 막는다. 하네스는 이미 끝난 GA를 다시 보이려고 화면의 증액을 한 번 눌렀다(되돌리지 않는 증액). 의도한 동작이면 이 노트가 설명이다.
 
-### Stop 훅 나머지 그룹은 M23 뒤 혼자 40분이다 (M23)
-- M23 고정 게이트에서 다섯 그룹을 따로 차례로 돌렸을 때 나머지 그룹은 2,538개 2432초였다(`docs/qa/m23-sequence-ga-20261005/gate.txt`, M22 때 1324초). M23 백엔드 테스트(실제 OpenMM·PDBFixer·qvina·RDKit)가 모두 이 그룹에 들어 있다. 훅 제한(그룹 480초·전체 600초) 안에서는 시간 초과로 보고되며 게이트는 그룹별 개별 실행으로 판단한다. `scripts/test_m23_offscreen_acceptance.py`도 훅 목록에 없다(`docs/tracking/findings.md`).
+### Stop 훅 그룹 시간과 그룹 나눔 (M21–M23, M23 병합 뒤 해결)
+- **증상**: Stop 훅이 매 턴 나머지 pytest 그룹을 "480초 시간 초과"로 보고했다(테스트 실패가 아님). 다섯 그룹을 제한 없이 따로 돌렸을 때 나머지 그룹은 M21 고정 게이트 1,833개 602초(`docs/qa/m21-mutations-20261004/gate.txt`), M22 2,063개 1324초(`docs/qa/m22-ga-20261005/gate.txt`), M23 2,538개 2432초(`docs/qa/m23-sequence-ga-20261005/gate.txt`)였다. M20–M23 실행기 단위 테스트 넷은 훅 목록에 없었다.
+- **원인**: M21–M23 백엔드 테스트(실제 OpenMM·PDBFixer·qvina·RDKit 작업 모듈)가 모두 `backend/tests` 전체로 나머지 그룹에 들어갔고, 실행기 테스트는 파일 이름으로만 들어가 새 파일이 저절로 들어가지 않았다.
+- **대응**: 다른 pytest 없이 파일별로 8개씩 병렬로 시간을 재고(백엔드 80개 파일과 실행기 18개 파일 한 묶음, 벽시계 합 4,245초·CPU 합 6,095초) 그룹을 열넷으로 나눴다(목록은 `docs/operations.md`의 Stop 훅 문단). 혼자 536초인 `test_sequence_ga_jobs.py`는 테스트 단위로 나눴다(가장 긴 두 테스트 약 290초, 나머지 열두 테스트 약 250초. 모듈 범위 `base` 준비는 0.2초). 같은 세션 world(실제 GA 작업 넷, 약 230초)를 공유하는 `test_sequence_ga_api.py`·`test_sequence_ga_reports.py`는 한 그룹이면 약 390초로 가늠되어 따로 두고 world를 그룹마다 만든다. M21 읽기·보고서 네 파일은 world를 공유하므로 M21 다른 세 파일, `test_openmm.py`와 한 그룹에 둔다. 테스트 본문·제품 코드는 바꾸지 않았고 그룹 합집합은 이전 다섯 그룹 + 실행기 테스트 넷(3,158개)과 같다.
+- **실측**: 훅 진입점(`echo '{}' | python3 .codex/hooks/stop.py`)을 끝까지 두 번 돌려 둘 다 통과, 총 342.1초·341.5초, 그룹 약 256–340초(가장 긴 그룹 `test_chemical_interactions.py`). 많은 파일이 자식 프로세스·스레드를 써서 CPU가 벽시계보다 크다(예: 파일별 측정에서 `test_mutation_model_worker.py` 64초에 CPU 300초, `test_sequence_ga_worker.py` 203초에 CPU 501초). 그래서 그룹은 벽시계와 CPU를 함께 보고 맞췄고, 같은 열네 그룹을 동시에 돌렸을 때 그룹 CPU는 295–725초였다.
+- **새 테스트를 더할 때**: 새 백엔드 테스트 파일은 저절로 나머지 그룹(약 290초)에 들어가므로 실제 엔진을 돌리는 파일이면 다른 그룹에 넣거나 새 그룹을 만든다. 파일 하나가 그룹 제한에 가까워지면 테스트 단위로 나누되 모듈 범위·세션 fixture가 그룹마다 다시 만들어지는 비용을 잰다.
 
 ## 동작 원리
 

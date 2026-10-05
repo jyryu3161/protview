@@ -3,17 +3,20 @@
 Codex는 hook에 stdin JSON을 넘기고, exit 2(stderr 사유) 또는 stdout JSON으로 결정을 받는다.
 """
 
+import ast
 import importlib.util
 import json
 import os
 import subprocess
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 
 import pytest
 
-HOOKS_DIR = Path(__file__).resolve().parent.parent / ".codex" / "hooks"
+REPO = Path(__file__).resolve().parent.parent
+HOOKS_DIR = REPO / ".codex" / "hooks"
 
 
 def _load(name):
@@ -64,6 +67,14 @@ class TestPreToolUse:
 # ---------------------------------------------------------------------------
 # Stop: ruff + pytest. 실패하면 한 번만 계속 진행시킨다.
 # ---------------------------------------------------------------------------
+
+def _module_tests(path):
+    """Names pytest collects at module level: test functions and Test classes. A test a split file gets by import or
+    assignment is not seen here, so a split file keeps its tests as plain module-level definitions."""
+    return [node.name for node in ast.parse(path.read_text()).body
+            if (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"))
+            or (isinstance(node, ast.ClassDef) and node.name.startswith("Test"))]
+
 
 PASS = [sys.executable, "-c", "raise SystemExit(0)"]
 FAIL = [sys.executable, "-c", "print('E501 boom'); raise SystemExit(1)"]
@@ -121,54 +132,53 @@ class TestStop:
         result = stop.decide({}, tmp_path, [(noisy, {0})])
         assert len(result["reason"]) < 5000
 
+    def test_label_of_a_long_command_is_capped(self, tmp_path):
+        stop = _load("stop")
+        long_command = [sys.executable, "-c", "raise SystemExit(1)", *(f"--ignore=backend/tests/file_{n}.py" for n in range(200))]
+        reason = stop.decide({}, tmp_path, [(long_command, {0})])["reason"]
+        assert len(reason) < stop.MAX_LABEL_CHARS + 200
+        assert reason.splitlines()[2].endswith(" … (exit 1)")
+
     def test_measured_check_budgets_fit_outer_hook_deadline(self):
         stop = _load("stop")
         assert stop.check_timeout(stop.CHECKS[0][0]) == 45
-        assert len(stop.CHECKS) == 6
+        assert len(stop.CHECKS) == 15
         assert all(stop.check_timeout(command) == 480 for command, _ in stop.CHECKS[1:])
         assert 45 + max(stop.check_timeout(command) for command, _ in stop.CHECKS[1:]) + 4 < 600
+        for config in (REPO / ".claude" / "settings.json", REPO / ".codex" / "hooks.json"):
+            stop_hooks = json.loads(config.read_text())["hooks"]["Stop"]
+            assert [hook["timeout"] for entry in stop_hooks for hook in entry["hooks"]] == [600]
 
-    def test_parallel_pytest_groups_have_exact_disjoint_file_union(self):
+    def test_parallel_pytest_groups_run_every_test_file_exactly_once(self):
+        # Without --collect-only: every backend and script test file is in exactly one group, and a file split
+        # by node id names each of its tests exactly once. The last group is backend/tests minus the named files.
         stop = _load("stop")
-        groups = [command for command, _ in stop.CHECKS[1:]]
-        assert all(command[1:4] == ["-m", "pytest", "-q"] for command in groups)
-        assert groups[0][4:] == ["backend/tests/test_chemical_interactions.py"]
-        assert groups[1][4:] == ["backend/tests/test_m11_job_api.py"]
-        assert groups[2][4:] == ["backend/tests/test_docking_inputs.py", "backend/tests/test_docking_worker.py",
-                                 "backend/tests/test_docking_jobs.py", "backend/tests/test_docking_api.py",
-                                 "backend/tests/test_docking_reports.py"]
-        assert groups[3][4:] == ["backend/tests/test_docking_batch_inputs.py",
-                                 "backend/tests/test_docking_batch_bundle.py",
-                                 "backend/tests/test_docking_batch_worker.py",
-                                 "backend/tests/test_docking_batch_jobs.py",
-                                 "backend/tests/test_docking_batch_budget.py",
-                                 "backend/tests/test_docking_batch_api.py",
-                                 "backend/tests/test_docking_batch_reports.py"]
-        assert groups[4][4:] == ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py",
-                                 "scripts/test_setup_fpocket.py", "scripts/test_m13_offscreen_acceptance.py",
-                                 "scripts/test_m14_offscreen_acceptance.py",
-                                 "scripts/test_import_reference_snapshots.py",
-                                 "scripts/test_m15_offscreen_acceptance.py",
-                                 "scripts/test_measure_klifs_numbering.py",
-                                 "scripts/test_m16_offscreen_acceptance.py",
-                                 "scripts/test_m17_offscreen_acceptance.py",
-                                 "scripts/test_m18_offscreen_acceptance.py",
-                                 "scripts/test_m19_offscreen_acceptance.py", "scripts/test_setup_qvina.py",
-                                 "scripts/test_setup_docking_worker.py",
-                                 "--ignore=backend/tests/test_chemical_interactions.py",
-                                 "--ignore=backend/tests/test_m11_job_api.py",
-                                 "--ignore=backend/tests/test_docking_inputs.py",
-                                 "--ignore=backend/tests/test_docking_worker.py",
-                                 "--ignore=backend/tests/test_docking_jobs.py",
-                                 "--ignore=backend/tests/test_docking_api.py",
-                                 "--ignore=backend/tests/test_docking_reports.py",
-                                 "--ignore=backend/tests/test_docking_batch_inputs.py",
-                                 "--ignore=backend/tests/test_docking_batch_bundle.py",
-                                 "--ignore=backend/tests/test_docking_batch_worker.py",
-                                 "--ignore=backend/tests/test_docking_batch_jobs.py",
-                                 "--ignore=backend/tests/test_docking_batch_budget.py",
-                                 "--ignore=backend/tests/test_docking_batch_api.py",
-                                 "--ignore=backend/tests/test_docking_batch_reports.py"]
+        commands = [command for command, _ in stop.CHECKS[1:]]
+        assert all(command[:4] == [stop.PYTHON, "-m", "pytest", "-q"] for command in commands)
+        *named, rest = [command[4:] for command in commands]
+        whole, split = Counter(), {}
+        for args in named:
+            assert args
+            for arg in args:
+                path, _, test = arg.partition("::")
+                assert path.startswith("backend/tests/test_") and (REPO / path).is_file(), arg
+                if test:
+                    split.setdefault(path, []).append(test)
+                else:
+                    whole[path] += 1
+        assert set(whole.values()) == {1}
+        assert not set(whole) & set(split)
+        for path, tests in split.items():
+            assert sorted(tests) == sorted(_module_tests(REPO / path)), path
+        assert rest[0] == "backend/tests"
+        scripts = [arg for arg in rest[1:] if not arg.startswith("-")]
+        ignored = [arg.removeprefix("--ignore=") for arg in rest[1:] if arg.startswith("--ignore=")]
+        assert len(scripts) + len(ignored) == len(rest) - 1
+        assert sorted(scripts) == sorted(p.relative_to(REPO).as_posix() for p in (REPO / "scripts").glob("test_*.py"))
+        assert sorted(ignored) == sorted({*whole, *split})
+        assert len(set(scripts)) == len(scripts) and len(set(ignored)) == len(ignored)
+        backend = {p.relative_to(REPO).as_posix() for p in (REPO / "backend" / "tests").rglob("test_*.py")}
+        assert {*whole, *split} <= backend
 
     def test_default_groups_really_run_concurrently_and_all_must_pass(self, tmp_path, monkeypatch):
         stop = _load("stop")
