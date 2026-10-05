@@ -526,3 +526,15 @@
 .mw-mutation-table { border-collapse: collapse; font-size: 12px; color: var(--ink); }
 .mw-mutation-table th, .mw-mutation-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
 .mw-mutation-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
+
+/* M23 sequence GA design area (SequenceGaPanel, protein engineering tab, below the M21 modeling area). Stored values
+   in tables and lists only: no bars, rank marks, arrows or colour comparisons; the wild-type reference block is a
+   neutral frame apart from the individuals table. */
+.mw-seqga { border-top: 1px solid var(--line-strong); }
+.mw-seqga .mw-ga-param .mw-mutation-input { width: 112px; }
+.mw-ga-param[data-invalid] .mw-mutation-input { border-color: var(--fail-input); }
+.mw-seqga-reference { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px dashed var(--line-strong); border-radius: var(--radius-xs); }
+.mw-seqga-detail { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-seqga-mutations summary { cursor: pointer; overflow-wrap: anywhere; }
+.mw-seqga-mutations summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.mw-seqga-mutations ul { margin-top: var(--space-1); }

@@ -824,3 +824,278 @@ test("forbidden words: every string this module exports or builds passes; the ch
   const outside = LIB_SOURCE.slice(0, LIB_SOURCE.indexOf("// ---- wording check"));
   assert.ok(!/\b(rank|best|improv|winner|delta)\w*/i.test(outside.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, "")), "source");
 });
+
+// ---- T8: the "서열 GA 설계" area (the pure logic it added, a server render of the component, source checks) ----
+
+test("area state: five states; no run, no usable capability or no readable candidate set is a reason only", () => {
+  const capability = { available: true, reason: null, reason_code: null };
+  const state = input => plain(lib.gaAreaState({ runId: "r", capability, candidateSets: [{ valid: true }],
+    summaries: [], ...input }));
+  assert.deepEqual(state({ runId: null }), { state: "unavailable", reason: lib.NO_RUN_REASON });
+  assert.deepEqual(state({ capability: undefined }), { state: "loading" });
+  assert.deepEqual(state({ capability: null }), { state: "unavailable", reason: lib.CAPABILITY_REASON });
+  const off = state({ capability: { available: false, reason: "PDBFixer가 없음", reason_code: "pdbfixer_unavailable" } });
+  assert.equal(off.state, "unavailable");
+  assert.ok(off.reason.includes("(pdbfixer_unavailable)"), off.reason);
+  for (const candidateSets of [[], [{ valid: false }]])
+    assert.deepEqual(state({ candidateSets }), { state: "unavailable", reason: lib.NO_CANDIDATE_SET_REASON });
+  assert.deepEqual(state({ candidateSets: undefined }), { state: "loading" });
+  assert.deepEqual(state({ summaries: undefined }), { state: "loading" });
+  assert.deepEqual(state({ loading: true }), { state: "loading" });
+  assert.deepEqual(state({ error: "읽기 실패" }), { state: "failed", message: "읽기 실패" });
+  assert.deepEqual(state({}), { state: "empty", message: lib.NO_SUMMARIES_TEXT });
+  assert.deepEqual(state({ detailOpen: true }), { state: "ready" });
+  assert.deepEqual(state({ summaries: [{}] }), { state: "ready" });
+  const job = (status, summaryHandle = null) => ({ status, cancel_requested: false,
+    failure: { error: "fatal", message: "boom", reason_code: "worker_failed" },
+    sequence_ga: { summary_handle: summaryHandle, summary_status: summaryHandle ? "partial" : null,
+      summary_stop_reason: summaryHandle ? "worker_failed" : null } });
+  for (const status of ["queued", "claimed", "running"])
+    assert.deepEqual(state({ job: job(status), summaries: [{}] }), { state: "loading" }, status);
+  const failed = state({ job: job("failed") });
+  assert.equal(failed.state, "failed");
+  assert.ok(failed.message.includes("(worker_failed)"), failed.message);
+  assert.equal(state({ job: job("cancelled") }).state, "failed");
+  // A job that ended but published a summary is not an area failure: the summary carries its own outcome.
+  assert.deepEqual(state({ job: job("failed", "obj://r/sequence_ga_result/h"), summaries: [{}] }), { state: "ready" });
+  assert.deepEqual(Object.keys(lib.GA_STATE_TEXT), ["loading", "ready", "empty", "failed", "unavailable"]);
+});
+
+test("one GA at a time: another summary cannot be opened while a GA request is in flight or a GA job runs", () => {
+  assert.equal(lib.gaSwitchBlockedReason({ busy: false, job: null }), null);
+  assert.equal(lib.gaSwitchBlockedReason({ busy: true, job: null }), lib.SUMMARY_SWITCH_BLOCKED_REASON);
+  for (const status of ["queued", "claimed", "running"])
+    assert.equal(lib.gaSwitchBlockedReason({ busy: false, job: { status } }), lib.SUMMARY_SWITCH_BLOCKED_REASON, status);
+  for (const status of ["done", "failed", "cancelled", "interrupted"])
+    assert.equal(lib.gaSwitchBlockedReason({ busy: false, job: { status } }), null, status);
+});
+
+test("late-response areas: summary areas carry the opened summary handle, run-wide areas carry none", () => {
+  for (const area of ["candidate_sets", "prereq", "preflight", "limit", "job", "cancel", "list", "detail", "individual",
+    "report", "report_list"]) assert.ok(lib.GA_AREAS.includes(area), area);
+  assert.deepEqual(plain(lib.SUMMARY_AREAS), ["detail", "individual", "report", "report_list"]);
+  for (const area of lib.GA_AREAS)
+    assert.equal(lib.gaStampHandle(area, "h1"), lib.SUMMARY_AREAS.includes(area) ? "h1" : null, area);
+  // A row's detail answer for summary h1 is stale once h2 is opened; the candidate-set list is not tied to it.
+  const row = lib.nextGaRequest(lib.initialGaCounters(), "individual", "r", lib.gaStampHandle("individual", "h1"));
+  assert.equal(lib.gaResponseCurrent(row.stamp, { ...row.stamp, handle: lib.gaStampHandle("individual", "h2") }), false);
+  const sets = lib.nextGaRequest(row.counters, "candidate_sets", "r", lib.gaStampHandle("candidate_sets", "h1"));
+  assert.equal(lib.gaResponseCurrent(sets.stamp, { ...sets.stamp, handle: lib.gaStampHandle("candidate_sets", "h2") }),
+    true);
+});
+
+test("space lines and score cells: the server's space numbers only; a row without a score shows — (never 0)", () => {
+  assert.deepEqual(plain(lib.gaSpaceLines(preflight())), plain(lib.gaPreflightLines(preflight()).slice(0, 2)));
+  assert.deepEqual(plain(lib.gaSpaceLines(preflight()).map(([label]) => label)), ["조합 공간", "유효 동시 변이 수 상한"]);
+  assert.deepEqual(plain(lib.gaSpaceLines(null)), []);
+  assert.deepEqual(plain(lib.gaSpaceLines(refusal("input_invalid", "ga_space_too_small", "m", {}))), []);
+  assert.ok(lib.SPACE_PENDING_TEXT.includes("서버"));
+  assert.equal(lib.scoreCellText({ state: "scored", score: -7.25 }), "-7.3");
+  assert.equal(lib.scoreCellText({ state: "scored", score: 0 }), "0.0");   // a real stored 0 is a number
+  for (const state of ["null_result", "failed"]) assert.equal(lib.scoreCellText({ state, score: null }), "—", state);
+  assert.equal(lib.scoreCellText({ state: "failed", score: -99 }), "—");
+  for (const text of [lib.SPACE_PENDING_TEXT, lib.NO_SUMMARIES_TEXT, lib.SUMMARY_SWITCH_BLOCKED_REASON,
+    ...Object.values(lib.GA_STATE_TEXT)]) assert.deepEqual(plain(lib.gaForbiddenWords(text)), [], text);
+});
+
+// The real components, compiled from source and rendered on the server (effects do not run: no request is made).
+const React = require("react");
+const { renderToStaticMarkup } = require("react-dom/server");
+function compileTsx(relativePath, dependencies) {
+  const source = fs.readFileSync(path.join(__dirname, relativePath), "utf8");
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  const moduleObject = { exports: {} };
+  vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports,
+    require: name => dependencies[name] ?? require(name) });
+  return moduleObject.exports;
+}
+const ligandLib = load("ligand", { "./site-annotation": siteAnnotation });
+const primitives = compileTsx("../src/components/primitives.tsx", { "@/lib/contracts": load("contracts") });
+const noRequest = () => { throw new Error("a server render makes no request"); };
+const apiStub = { api: new Proxy({}, { get: () => noRequest }), ApiError: class ApiError extends Error {} };
+const modelPanel = compileTsx("../src/components/MutationModelPanel.tsx", { "@/lib/api": apiStub,
+  "@/lib/docking": docking, "@/lib/ligand": ligandLib, "@/lib/mutation-model": mutationModel,
+  "./primitives": primitives });
+const gaPanel = compileTsx("../src/components/SequenceGaPanel.tsx", { "@/lib/api": apiStub, "@/lib/docking": docking,
+  "@/lib/ligand": ligandLib, "@/lib/sequence-ga": lib, "@/lib/site-annotation": siteAnnotation,
+  "./MutationModelPanel": modelPanel, "./primitives": primitives });
+const RUN = { run_id: "fixture-run", goal: "", context: [], dry_run: false, egress: "local_only", last_seq: 1 };
+const CAPABILITY = { schema: "sequence_ga_capability@1", protocol_id: "sequence_ga_dock_v1", tool_id: "sequence_ga_design",
+  engine: "qvina", execution_lane: "expensive", result_schema: "sequence_ga_result@1", model_schema: "mutation_set_model@1",
+  available: true, status: "available", reason_code: null, reason: null, pins: null, versions: null };
+const renderPanel = props => renderToStaticMarkup(React.createElement(gaPanel.SequenceGaPanel,
+  { run: RUN, capability: CAPABILITY, onReportCreated: () => undefined, ...props }));
+const decode = text => text.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&amp;/g, "&");
+/** Visible text, one text node per line (tags and React's text separators split lines). */
+const textLines = html => decode(html.replace(/<[^>]+>/g, "\n")).split("\n").map(line => line.trim()).filter(Boolean);
+const tagOf = (html, testId) => new RegExp(`<[a-z]+ [^>]*data-testid="${testId}"[^>]*>`).exec(html)?.[0] ?? "";
+const innerOf = (html, tag, testId) =>
+  new RegExp(`<${tag}[^>]*data-testid="${testId}"[^>]*>([\\s\\S]*?)</${tag}>`).exec(html)?.[1] ?? null;
+const selectedOptions = inner => [...inner.matchAll(/<option[^>]*selected=""[^>]*>([^<]*)</g)].map(match => match[1]);
+
+test("initial render: nothing chosen, submitted or approved; preflight and start are blocked with the reasons", () => {
+  const html = renderPanel({});
+  assert.match(tagOf(html, "sequence-ga-panel"), /data-ga-state="loading"/);
+  // No M20 candidate set and no ligand SDF is chosen ("선택" only).
+  assert.deepEqual(selectedOptions(innerOf(html, "select", "sequence-ga-candidate-set")), ["선택"]);
+  assert.deepEqual(selectedOptions(innerOf(html, "select", "sequence-ga-sdf")), ["선택"]);
+  // The two literals and the three M18 acknowledgements are unchecked; no box source is chosen.
+  for (const id of ["sequence-ga-confirm-selection", "sequence-ga-confirm-hydrogen"])
+    assert.ok(tagOf(html, id) && !/checked/.test(tagOf(html, id)), id);
+  assert.ok(!/checked/.test(innerOf(html, "fieldset", "sequence-ga-acknowledgement")));
+  assert.equal((innerOf(html, "fieldset", "sequence-ga-acknowledgement").match(/type="checkbox"/g) ?? []).length, 3);
+  const box = innerOf(html, "fieldset", "sequence-ga-box-source");
+  assert.ok(!/checked/.test(box));
+  assert.match(box, /data-pair-box="instance_range" data-disabled-reason="[^"]+"/);
+  // The ligand is a 3D SDF only: the M17 candidate source is disabled with the reason (the SDF itself is not chosen).
+  const ligand = innerOf(html, "fieldset", "sequence-ga-ligand-source");
+  assert.ok(ligand.includes(`data-disabled-reason="${lib.SDF_ONLY_REASON.replace(/"/g, "&quot;")}"`));
+  assert.match(ligand, /name="sequence-ga-source-fixture-run" checked=""/);
+  // GA parameters: every default prefilled, the GA seed and the evaluation seed empty (required, no default).
+  assert.match(tagOf(html, "sequence-ga-param-seed"), /value=""/);
+  for (const key of lib.GA_KEYS.filter(key => key !== "seed"))
+    assert.match(tagOf(html, `sequence-ga-param-${key}`), new RegExp(`value="${lib.GA_RANGES[key][2]}"`), key);
+  assert.match(tagOf(html, "sequence-ga-seed"), /value=""/);
+  // Preflight and start are disabled and say why; no approval, limit raise, job or result control exists.
+  assert.match(tagOf(html, "sequence-ga-preflight"), /disabled=""/);
+  assert.match(tagOf(html, "sequence-ga-start"), /disabled=""/);
+  const blocked = textLines(innerOf(html, "span", "sequence-ga-start-blocked") ?? "").join(" ");
+  assert.ok(blocked.includes("confirmation_missing") && blocked.includes("acknowledgement_missing"), blocked);
+  for (const id of ["sequence-ga-limit-approve", "sequence-ga-job-approve", "sequence-ga-job-start", "sequence-ga-job",
+    "sequence-ga-job-cancel", "sequence-ga-result", "sequence-ga-individual", "sequence-ga-preflight-view"])
+    assert.ok(!html.includes(`data-testid="${id}"`), id);
+  // The combination space is the server's: nothing is shown for it before a preflight answers.
+  assert.ok(textLines(html).includes(lib.SPACE_PENDING_TEXT));
+  assert.equal(tagOf(html, "sequence-ga-space").includes("data-space-size"), false);
+  // Wording, test-id prefix (the reused M21 inputs included), no viewer markup.
+  assert.deepEqual(plain(lib.gaForbiddenWords(textLines(html).join("\n"))), []);
+  const ids = [...html.matchAll(/data-testid="([^"]+)"/g)].map(match => match[1]);
+  assert.ok(ids.length > 40, String(ids.length));
+  for (const id of ids) assert.ok(id.startsWith("sequence-ga-"), id);
+  assert.ok(!/molstar|<canvas/i.test(html));
+});
+
+test("gate renders: no run, capability absent or unavailable, capabilities not read: reason only, no controls", () => {
+  const unavailable = { ...CAPABILITY, available: false, status: "unavailable", reason: "PDBFixer가 없음",
+    reason_code: "pdbfixer_unavailable" };
+  for (const [props, id, state] of [[{ run: null }, "sequence-ga-no-run", "unavailable"],
+    [{ capability: null }, "sequence-ga-unavailable", "unavailable"],
+    [{ capability: unavailable }, "sequence-ga-unavailable", "unavailable"], [{ capability: undefined }, null, "loading"]]) {
+    const html = renderPanel(props);
+    assert.match(tagOf(html, "sequence-ga-panel"), new RegExp(`data-ga-state="${state}"`), id);
+    if (id) assert.ok(html.includes(`data-testid="${id}"`), id);
+    assert.ok(!/<(input|select|button|table|a) /.test(html), html);
+    const text = textLines(html).join("\n");
+    assert.ok(!/\d/.test(text), text);
+    assert.deepEqual(plain(lib.gaForbiddenWords(text)), [], text);
+  }
+  assert.ok(renderPanel({ capability: unavailable }).includes("(pdbfixer_unavailable)"));
+  assert.ok(textLines(renderPanel({ run: null })).join(" ").includes(lib.NO_RUN_REASON));
+});
+
+test("M21 PairInputs: the defaults keep the M21 markup; the GA passes its own prefix, names, reason and labels", () => {
+  const props = { form: { ...mutationModel.initialPairDockingForm(), ligandSource: "sdf", boxSource: "manual" },
+    update: () => undefined, runId: "r", prereq: { status: "idle" }, onReloadPrereq: () => undefined,
+    ligandSdfs: [{ handle: "obj://r/chemical_raw_input/s", input_kind: "ligand_sdf", input_format: "sdf", size: 10,
+      sha256: null, created_seq: 3 }] };
+  const m21 = renderToStaticMarkup(React.createElement(modelPanel.PairInputs, props));
+  const ga = renderToStaticMarkup(React.createElement(modelPanel.PairInputs, { ...props, idPrefix: "sequence-ga",
+    ligandSourceReason: lib.ligandSourceDisabledReason, seedLabel: "평가 seed", acknowledgementLegend: "확인 세 항목" }));
+  const idsOf = html => [...html.matchAll(/data-testid="([^"]+)"/g)].map(match => match[1]);
+  const m21Ids = idsOf(m21);
+  assert.deepEqual(m21Ids.slice(0, 4), ["mutation-model-pair-form", "mutation-model-pair-prereq-refresh",
+    "mutation-model-pair-ligand-source", "mutation-model-pair-sdf"]);
+  for (const id of m21Ids) assert.ok(id.startsWith("mutation-model-pair-"), id);
+  assert.deepEqual(idsOf(ga), m21Ids.map(id => id.replace("mutation-model-pair-", "sequence-ga-")));
+  assert.ok(m21.includes('name="mutation-model-pair-source-r"') && m21.includes('name="mutation-model-pair-box-r"'));
+  assert.ok(ga.includes('name="sequence-ga-source-r"') && ga.includes('name="sequence-ga-box-r"') &&
+    !ga.includes("mutation-model-pair"));
+  assert.ok(textLines(m21).includes("제출 전 확인 (세 항목 모두, 두 작업에 같이 적용)"));
+  assert.ok(textLines(m21).join("").includes("seed (필수, 0–2147483647)"));
+  assert.ok(decode(m21).includes(mutationModel.PAIR_SDF_ONLY_REASON) && decode(ga).includes(lib.SDF_ONLY_REASON));
+  assert.ok(textLines(ga).includes("확인 세 항목") && textLines(ga).includes("평가 seed"));
+});
+
+test("panel source: rendered literals pass the wording check; test ids prefixed; requests only on a person's action", () => {
+  const file = path.join(__dirname, "../src/components/SequenceGaPanel.tsx");
+  const source = fs.readFileSync(file, "utf8");
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
+  const texts = [], effects = [], ids = [];
+  const visit = node => {
+    if (ts.isJsxText(node) && node.text.trim()) texts.push(node.text.trim());
+    else if (ts.isStringLiteral(node) && !ts.isImportDeclaration(node.parent)) texts.push(node.text);
+    else if (ts.isNoSubstitutionTemplateLiteral(node)) texts.push(node.text);
+    else if (ts.isTemplateExpression(node)) texts.push(node.head.text, ...node.templateSpans.map(span => span.literal.text));
+    if (ts.isCallExpression(node) && node.expression.getText(sourceFile) === "useEffect")
+      effects.push(node.arguments[0].getText(sourceFile));
+    if (ts.isJsxAttribute(node) && ["data-testid", "testId", "idPrefix"].includes(node.name.getText(sourceFile))) {
+      const value = node.initializer;
+      if (value && ts.isStringLiteral(value)) ids.push(value.text);
+      else if (value && ts.isJsxExpression(value) && value.expression) {
+        const expression = value.expression;
+        if (ts.isTemplateExpression(expression)) ids.push(expression.head.text);
+        else if (ts.isConditionalExpression(expression)) ids.push(expression.whenTrue.text, expression.whenFalse.text);
+        else ids.push(`<${expression.getText(sourceFile)}>`);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  // Every literal the component can render (text, attributes, templates) passes the M23 wording check.
+  assert.ok(texts.length > 150, String(texts.length));
+  for (const text of texts) assert.deepEqual(plain(lib.gaForbiddenWords(text)), [], text);
+  assert.ok(!/dangerouslySetInnerHTML|innerHTML/.test(source));
+  // Every test id carries the area prefix; the only other form is the ErrorLine / Facts pass-through.
+  for (const id of ids) assert.ok(id === "<testId>" || id === "sequence-ga" || id.startsWith("sequence-ga-"), id);
+  assert.ok(ids.length > 60, String(ids.length));
+  // Effects (mount = entering the tab, polling, a finished job) only read: no submit, start, approval, preflight,
+  // limit raise, report or cancel, and nothing is opened or chosen by itself.
+  assert.ok(effects.length >= 8, String(effects.length));
+  const reads = new Set(["mutationCandidateSets", "dockingPrerequisites", "sequenceGaResults", "sequenceGaJobs",
+    "sequenceGaJob", "reports"]);
+  for (const body of effects) {
+    for (const match of body.matchAll(/api\.(\w+)\(/g)) assert.ok(reads.has(match[1]), match[1]);
+    assert.ok(!/\b(submit|start|approveLimits|approveFirstCall|cancelJob|makeReport|runPreflight|openSummary|openIndividual|setSelected|update)\(/
+      .test(body), body);
+    assert.ok(!/candidateSet:|sdfHandle:|boxSource:|acknowledgement:/.test(body), body);
+  }
+  // Each writing request has one call site, reached from a person's click (start also right after that click's submit).
+  for (const name of ["submitSequenceGa", "sequenceGaLimitApproval", "approveOpenmm", "createSequenceGaReport",
+    "cancelJob", "startJob", "sequenceGaPreflight"])
+    assert.equal([...source.matchAll(new RegExp(`api\\.${name}\\(`, "g"))].length, 1, name);
+  assert.ok(source.includes("if (!check.ok || !gaLimitApprovalOffered(shownPreflight, run.dry_run)) return;"));
+  for (const name of ["submit", "approveLimits", "approveFirstCall", "cancelJob", "makeReport"])
+    assert.equal([...source.matchAll(new RegExp(`onClick=\\{\\(\\) => void ${name}\\(\\)\\}`, "g"))].length, 1, name);
+  assert.ok(/<Button size="sm" data-testid="sequence-ga-limit-approve"/.test(source));
+  // Values are shown through the view models only: no arithmetic on scores, potentials or counts here.
+  assert.ok(!/\.score\s*[-+*/<>]|Math\./.test(source));
+  assert.ok(/scoreCellText\(row\)/.test(source) && /individualDetailView\(read\)/.test(source));
+  // No viewer, saved view or bridge.
+  assert.ok(!/MolstarViewer|molstar|viewer-agent|saved-scene|captureScene/.test(source));
+  // The area reuses the M21 inputs with its own prefix and the 3D-SDF-only reason.
+  assert.ok(/<PairInputs form=\{form\} update=\{update\}/.test(source) && /idPrefix="sequence-ga"/.test(source) &&
+    /ligandSourceReason=\{ligandSourceDisabledReason\}/.test(source));
+});
+
+test("page and existing areas: mounted after the M21 area in the protein tab; tabs and other areas unchanged", () => {
+  const page = fs.readFileSync(path.join(__dirname, "../app/page.tsx"), "utf8");
+  const protein = page.indexOf("protein={<>"), ligand = page.indexOf("ligand={<>");
+  const m20 = page.indexOf("<MutationPanel "), m21 = page.indexOf("<MutationModelPanel "), m23 = page.indexOf("<SequenceGaPanel ");
+  assert.ok(protein > 0 && protein < m20 && m20 < m21 && m21 < m23 && m23 < ligand, [protein, m20, m21, m23, ligand].join());
+  assert.ok(page.includes("<SequenceGaPanel key={`sequence-ga-${run?.run_id ?? \"none\"}`} run={run}"));
+  assert.ok(/capability=\{capabilities \? capabilities\.methods\?\.sequence_ga_design \?\? null : undefined\}/.test(page));
+  assert.ok(page.includes('import { SequenceGaPanel } from "@/components/SequenceGaPanel";'));
+  // The tab shell and the shared component surface do not change; panels are imported by path as before.
+  const tabs = fs.readFileSync(path.join(__dirname, "../src/components/WorkspaceTabs.tsx"), "utf8");
+  assert.ok(!/sequence/i.test(tabs));
+  const index = fs.readFileSync(path.join(__dirname, "../src/components/index.ts"), "utf8");
+  assert.ok(!/Panel/.test(index));
+  // The M21 area keeps its exports and still renders its inputs with the defaults (same markup as before).
+  const model = fs.readFileSync(path.join(__dirname, "../src/components/MutationModelPanel.tsx"), "utf8");
+  assert.ok(/export function MutationModelPanel\(/.test(model) && /export interface ModelStartRequest /.test(model) &&
+    /export interface MutationModelPanelProps /.test(model));
+  assert.ok(/<PairInputs form=\{pairForm\} update=\{updatePair\} runId=\{runId\} prereq=\{prereq\} ligandSdfs=\{ligandSdfs\}\n\s+onReloadPrereq=\{\(\) => setPrereqReload\(value => value \+ 1\)\} \/>/
+    .test(model));
+});

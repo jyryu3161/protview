@@ -20,9 +20,9 @@ import type { ExactResidueRef, MutationCandidateSetListRow, MutationModelSide, S
   SequenceGaStopReason } from "./contracts";
 import { type ArgsCheck, DOCKING_LIMITATIONS, DOCKING_REASON_LABEL, RECEPTOR_SIDE_LABEL, SCORE_COLUMN_LABEL, SCORE_LABEL,
   dockingCapabilityText, dockingConditionArgs, dockingJobPhase, scoreText } from "./docking";
-import { CONFIRMATION_LABEL, ENERGY_LABEL, MODEL_REASON_LABEL, type PairDockingForm, disulfideText, energyText,
-  initialPairDockingForm, pairBoxSourceDisabledReason, patchPairDockingForm, residueFieldsText, residueShortText,
-  variantText } from "./mutation-model";
+import { CONFIRMATION_LABEL, ENERGY_LABEL, MODEL_REASON_LABEL, NULL_TEXT, type PairDockingForm, disulfideText,
+  energyText, initialPairDockingForm, pairBoxSourceDisabledReason, patchPairDockingForm, residueFieldsText,
+  residueShortText, variantText } from "./mutation-model";
 import { decimalHalfUp } from "./site-annotation";
 
 export { CONFIRMATION_LABEL, SCORE_COLUMN_LABEL, SCORE_LABEL };
@@ -451,6 +451,24 @@ export function gaLimitApprovalOffered(preflight: SequenceGaPreflight | null, dr
   return !!preflight && !dryRun && preflight.admission.admitted && hasShortfall(preflight);
 }
 
+/** Shown in the parameter area until a preflight of exactly these arguments has answered. */
+export const SPACE_PENDING_TEXT = "조합 공간 크기와 유효 동시 변이 수 상한은 서버가 후보 집합에서 계산합니다. 지금 입력으로 " +
+  "\"시작 전 확인 보기\"를 누르면 서버 값이 여기에 보입니다.";
+
+/**
+ * The combination space and the effective `max_mutations` of an admitted preflight (server values, never computed
+ * here); empty for a refused preflight or none.
+ */
+export function gaSpaceLines(preflight: SequenceGaPreflight | null): [string, string][] {
+  if (!preflight || !preflight.admission.admitted || !preflight.space || !preflight.ga) return [];
+  const space = preflight.space;
+  return [
+    ["조합 공간", `위치 ${countText(space.positions)}개 · 후보 ${countText(space.candidates)}개 · 조합 ` +
+      `${countText(space.size)}개 (서버 계산)`],
+    ["유효 동시 변이 수 상한", `${space.effective_max_mutations}개 (입력 ${preflight.ga.max_mutations}개, 서버 값)`],
+  ];
+}
+
 /**
  * [label, value] lines of an admitted preflight (empty for a refused one). Every number is the server's: the
  * combination-space size and the effective `max_mutations` are never computed here.
@@ -462,9 +480,7 @@ export function gaPreflightLines(preflight: SequenceGaPreflight): [string, strin
       preflight.reusable_count === null || preflight.reference_reusable === null) return [];
   const units = preflight.reserved_units;
   const lines: [string, string][] = [
-    ["조합 공간", `위치 ${countText(space.positions)}개 · 후보 ${countText(space.candidates)}개 · 조합 ` +
-      `${countText(space.size)}개 (서버 계산)`],
-    ["유효 동시 변이 수 상한", `${space.effective_max_mutations}개 (입력 ${ga.max_mutations}개, 서버 값)`],
+    ...gaSpaceLines(preflight),
     ["투영 단백질 중원자", `${countText(preflight.projection_heavy_atoms)}개`],
     ["재사용 가능 개체", `${preflight.reusable_count}개 (모델링·도킹 없이 저장된 결과를 가져옴, 과금하지 않음, 새 평가 ` +
       "상한에 세지 않음)"],
@@ -647,11 +663,65 @@ export function gaSummaryLines(summary: { status: SequenceGaStatus; stop_reason:
   ];
 }
 
+// ---- five area states and one GA at a time ----
+
+export type GaAreaState =
+  | { state: "loading" } | { state: "ready" } | { state: "empty"; message: string }
+  | { state: "failed"; message: string } | { state: "unavailable"; reason: string };
+
+export const GA_STATE_TEXT: Record<GaAreaState["state"], string> = { loading: "불러오는 중", ready: "준비",
+  empty: "빈 결과", failed: "실패", unavailable: "사용할 수 없음" };
+export const NO_SUMMARIES_TEXT = "이 run에 서열 GA 결과가 없습니다. 입력과 파라미터를 정하고 시작 전 확인을 본 뒤 " +
+  "시작하세요.";
+
+type JobStateLike = { status: string; cancel_requested: boolean; failure: FailureLike;
+  sequence_ga?: Pick<SequenceGaProgress, "summary_handle" | "summary_status" | "summary_stop_reason"> | null };
+
+/**
+ * The area's state. `capability` undefined = not read yet, null = absent; `candidateSets` / `summaries` undefined =
+ * not read yet. No run, no usable capability or no readable candidate set: unavailable (reason only, no numbers).
+ * A failed, interrupted or cancelled job that published no summary is a failure (never an empty result); a job
+ * that published one shows that summary's own outcome in the list. No stored summary is the empty result.
+ */
+export function gaAreaState(input: { runId: string | null; capability: { available: boolean; reason: string | null;
+  reason_code: string | null } | null | undefined; candidateSets?: readonly { valid: boolean }[];
+  summaries?: readonly unknown[]; loading?: boolean; error?: string | null; job?: JobStateLike | null;
+  detailOpen?: boolean }): GaAreaState {
+  if (input.runId === null) return { state: "unavailable", reason: NO_RUN_REASON };
+  if (input.capability === undefined) return { state: "loading" };
+  const reason = gaUnavailableReason({ runId: input.runId, capability: input.capability,
+    candidateSets: input.candidateSets });
+  if (reason) return { state: "unavailable", reason };
+  if (input.error) return { state: "failed", message: input.error };
+  const job = input.job ?? null;
+  if (job && ["failed", "interrupted", "cancelled"].includes(job.status) && !job.sequence_ga?.summary_handle)
+    return { state: "failed", message: gaJobText(job, false) };
+  if (input.loading || input.candidateSets === undefined || input.summaries === undefined ||
+      (job && ACTIVE_STATUSES.includes(job.status))) return { state: "loading" };
+  if (!input.summaries.length && !input.detailOpen) return { state: "empty", message: NO_SUMMARIES_TEXT };
+  return { state: "ready" };
+}
+
+export const SUMMARY_SWITCH_BLOCKED_REASON = "서열 GA 작업을 제출·시작하는 중이거나 작업이 진행 중이라 다른 요약을 열 수 " +
+  "없습니다(한 번에 한 서열 GA). 작업이 끝난 뒤 목록에서 고르세요.";
+
+/** Why another summary cannot be opened now (null = it can): not while a GA request is in flight or a GA job runs. */
+export function gaSwitchBlockedReason(input: { busy: boolean; job: { status: string } | null }): string | null {
+  return input.busy || (input.job !== null && ACTIVE_STATUSES.includes(input.job.status))
+    ? SUMMARY_SWITCH_BLOCKED_REASON : null;
+}
+
 // ---- late responses (run + summary handle + per-area request number) ----
 
-export const GA_AREAS = ["candidate_sets", "preflight", "limit", "job", "list", "detail", "individual",
-  "report"] as const;
+export const GA_AREAS = ["candidate_sets", "prereq", "preflight", "limit", "job", "cancel", "list", "detail",
+  "individual", "report", "report_list"] as const;
 export type GaArea = typeof GA_AREAS[number];
+/** Areas whose answers belong to the opened summary: their stamps carry its handle (the others carry null). */
+export const SUMMARY_AREAS: readonly GaArea[] = ["detail", "individual", "report", "report_list"];
+
+export function gaStampHandle(area: GaArea, summaryHandle: string | null): string | null {
+  return SUMMARY_AREAS.includes(area) ? summaryHandle : null;
+}
 export interface GaStamp { runId: string | null; handle: string | null; area: GaArea; seq: number }
 export type GaRequestCounters = Record<GaArea, number>;
 
@@ -730,6 +800,11 @@ function hasScore(row: { state: SequenceGaState; score: number | null }): boolea
 /** Stored score with one decimal for `scored` rows; empty for every other state (never "0"). */
 export function individualScoreText(row: { state: SequenceGaState; score: number | null }): string {
   return hasScore(row) ? scoreText(row.score as number) : "";
+}
+
+/** Score cell: the stored score for `scored` rows, "—" for every other state (its reason has its own cell; never 0). */
+export function scoreCellText(row: { state: SequenceGaState; score: number | null }): string {
+  return individualScoreText(row) || NULL_TEXT;
 }
 
 export function individualReasonText(row: { reason_code: string | null }): string {

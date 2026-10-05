@@ -23,6 +23,7 @@ import { NumberingPanel } from "@/components/NumberingPanel";
 import { LigandPanel } from "@/components/LigandPanel";
 import { MutationPanel } from "@/components/MutationPanel";
 import { MutationModelPanel, type ModelStartRequest } from "@/components/MutationModelPanel";
+import { SequenceGaPanel } from "@/components/SequenceGaPanel";
 import { DockingPanel } from "@/components/DockingPanel";
 import { DockingBatchPanel } from "@/components/DockingBatchPanel";
 import { LigandGaPanel } from "@/components/LigandGaPanel";
@@ -2055,6 +2056,10 @@ export default function WorkspacePage() {
         dockingCapability={capabilities ? capabilities.methods?.ligand_docking ?? null : undefined}
         startRequest={modelStartRequest}
         onObjectsChanged={refreshEventsFromAnalysis}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }} />
+      <SequenceGaPanel key={`sequence-ga-${run?.run_id ?? "none"}`} run={run}
+        capability={capabilities ? capabilities.methods?.sequence_ga_design ?? null : undefined}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }} />
     </>}
