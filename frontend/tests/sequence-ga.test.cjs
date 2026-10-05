@@ -461,14 +461,42 @@ test("limit approval offer and start guard: admitted, short, not dry-run; same a
 
 // ---- progress, job, status ----
 
+test("job phase: a claimed job blocked on a reason the queue's start accepts again waits for 작업 시작", () => {
+  // The queue's `start` set (backend/mw/jobs/queue.py: a claimed job with one of these blocked reasons starts again).
+  const queueSource = fs.readFileSync(path.join(__dirname, "../../backend/mw/jobs/queue.py"), "utf8");
+  const match = /job\["status"\] == "claimed" and job\.get\("blocked_reason"\) in \{([^}]*)\}/.exec(queueSource);
+  assert.ok(match, "queue start restart set not found");
+  const restartable = [...match[1].matchAll(/"([^"]+)"/g)].map(item => item[1]);
+  assert.deepEqual(restartable, ["approval_or_cancel", "global_concurrency_busy", "global_job_cleanup_pending",
+    "global_job_ledger_unavailable"]);
+  assert.deepEqual(plain(lib.GA_RESTARTABLE_BLOCKS), restartable);
+  const job = (status, blocked_reason = null) => ({ status, blocked_reason });
+  for (const reason of restartable) {
+    assert.equal(lib.gaJobPhase(job("claimed", reason), false), "saved", reason);
+    // while the run's first expensive-call approval is pending, the approval comes first
+    assert.equal(lib.gaJobPhase(job("claimed", reason), true), "awaiting_approval", reason);
+  }
+  assert.equal(lib.gaJobPhase(job("claimed"), false), "running");                     // claimed and starting
+  assert.equal(lib.gaJobPhase(job("claimed", "job_cleanup_pending"), false), "running");   // not restartable
+  assert.equal(lib.gaJobPhase(null, false), "none");
+  assert.equal(lib.gaJobPhase(job("queued"), false), "saved");
+  assert.equal(lib.gaJobPhase(job("queued"), true), "awaiting_approval");
+  assert.equal(lib.gaJobPhase(job("running"), false), "running");
+  assert.equal(lib.gaJobPhase(job("running", "approval_or_cancel"), false), "running");
+  for (const status of ["done", "cancelled", "failed", "interrupted"])
+    assert.equal(lib.gaJobPhase(job(status, "approval_or_cancel"), false), docking.dockingJobPhase(job(status), false));
+  assert.equal(lib.gaJobPhase({ status: "claimed" }, false), "running");                 // no blocked_reason field
+});
+
 test("progress shows the reference row state and staged counts only; job text keeps a published summary outcome", () => {
   const progress = { space: { positions: 3, candidates: 6, effective_max_mutations: 3, size: 26 },
     reserved_evaluations: 7, reserved_units: 16, reused_planned: 2, reference_reuse_planned: true,
     reference_recorded: true, individuals_started: 5, individuals_finished: 4, generation_records: 2,
     generations_complete: 1, summary_handle: null, summary_status: null, summary_stop_reason: null };
   const text = lib.gaProgressText(progress);
+  // `reused_planned` is the size of the start's reuse index: individuals that can be reused, not ones that will be
   assert.equal(text, "야생형 기준 행 기록됨(재사용 예정) · 완료한 세대 1개(세대 기록 2개) · 새 평가 시작 5건 · " +
-    "새 평가 끝 4건 · 재사용 예정 개체 2개(파일이 없어 새 평가 수에 들지 않음) · 예약 16단위");
+    "새 평가 끝 4건 · 재사용 가능 개체 2개(파일이 없어 새 평가 수에 들지 않음) · 예약 16단위");
   assert.ok(lib.gaProgressText({ ...progress, reference_recorded: false, reference_reuse_planned: false })
     .startsWith("야생형 기준 행 아직 기록 없음(새 평가)"));
   assert.deepEqual(plain(lib.gaForbiddenWords(text)), [], text);
@@ -483,6 +511,8 @@ test("progress shows the reference row state and staged counts only; job text ke
   assert.equal(lib.gaJobText(null, false), "서열 GA 작업 없음");
   assert.ok(lib.gaJobText({ status: "queued", cancel_requested: false, failure: null }, true).includes("승인"));
   assert.ok(lib.gaJobText({ status: "running", cancel_requested: true, failure: null }, false).includes("취소 요청됨"));
+  assert.equal(lib.gaJobText({ status: "claimed", blocked_reason: "global_concurrency_busy", cancel_requested: false,
+    failure: null }, false), lib.gaJobText({ status: "queued", cancel_requested: false, failure: null }, false));
   assert.equal(lib.gaApprovalRequired(409, { gate: "expensive_first_call", tool: "sequence_ga_design" }), true);
   assert.equal(lib.gaApprovalRequired(409, { gate: "expensive_first_call", tool: "qvina_ga_design" }), false);
   assert.equal(lib.gaApprovalRequired(412, { gate: "expensive_first_call", tool: "sequence_ga_design" }), false);

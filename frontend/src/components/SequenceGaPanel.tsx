@@ -5,12 +5,12 @@ import { api, ApiError, type RunSummary, type SavedReportRef } from "@/lib/api";
 import type { DockingPrerequisites, DockingResultDetail, MutationCandidateSetListRow, SequenceGaArgs,
   SequenceGaCapability, SequenceGaDetail, SequenceGaIndividualRead, SequenceGaJob, SequenceGaKey,
   SequenceGaLimitApproval, SequenceGaListRow, SequenceGaPreflight, SequenceGaReportArtifact } from "@/lib/contracts";
-import { boxText, dockingCancelEnabled, dockingJobActive, dockingJobPhase, dockingSummaryRows, importsOfKind,
-  modeTableCells, modeTableHeaders, nullResultText, SEED_MAX, SEED_MIN } from "@/lib/docking";
+import { boxText, dockingCancelEnabled, dockingJobActive, dockingSummaryRows, importsOfKind, modeTableCells,
+  modeTableHeaders, nullResultText, SEED_MAX, SEED_MIN } from "@/lib/docking";
 import { LIGAND_APPROVAL_NOTICE, ligandNoticeAfterJob, ligandStartProgressed } from "@/lib/ligand";
 import { AREA_TITLE, BUDGET_NOTE, candidateSetOptions, checkGaInput, CONFIRMATION_LABEL, evaluationText, GA_AREAS,
   GA_PARAMETERS, GA_PROTOCOL, GA_STATE_TEXT, GA_TOOL, gaActiveJob, gaApprovalRequired, gaArgs, gaArgsKey, gaAreaState,
-  gaExistingJobText, gaJobResult, gaJobText, gaLimitApprovalOffered, gaLimitApprovalText, gaListRowText,
+  gaExistingJobText, gaJobPhase, gaJobResult, gaJobText, gaLimitApprovalOffered, gaLimitApprovalText, gaListRowText,
   gaParameterLines, gaPreflightLines, gaPreflightRefusalText, gaProgressText, gaRangeText, gaReasonText,
   gaReportMatches, gaReportSavedForRun, gaRequestErrorText, gaResponseCurrent, gaSpaceLines, gaStampHandle,
   gaStartBlockedReason, gaStatusText, gaSummaryLines, gaSwitchBlockedReason, generationRangeText, generationTabText,
@@ -31,9 +31,11 @@ import { Button } from "./primitives";
  * the job record, the stored `sequence_ga_result@1`, its rows' `mutation_set_model@1` and their M18 result detail);
  * request checks, wording and rounding come from `lib/sequence-ga.ts` (the docking inputs from the M21 area's
  * `PairInputs`, the M18 rules from `lib/docking.ts`). The page mounts it only while the tab is shown and keys it by
- * run, so every list is read again on entering the tab. Late responses are dropped on two layers: abort on unmount,
- * and run + opened summary handle + per-area request number (`gaResponseCurrent`). Nothing is chosen, submitted or
- * approved automatically; there is no viewer display.
+ * run, so every list is read again on entering the tab. Late responses are dropped on two layers: the reads made by
+ * effects (candidate sets, ligand imports, summary list, job list, a summary's report list) are aborted on unmount or
+ * re-read; every response, clicked requests included (those only time out), is applied only while the panel is
+ * mounted and run + opened summary handle + per-area request number still match (`gaResponseCurrent`). Nothing is
+ * chosen, submitted or approved automatically; there is no viewer display.
  */
 export interface SequenceGaPanelProps {
   /** Current run of the structure analysis screen (run selection lives only there); null when none. */
@@ -127,9 +129,12 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
   const [reportList, setReportList] = useState<{ handle: string; load: Load<SavedReportRef[]> } | null>(null);
   const [reportListReload, setReportListReload] = useState(0);
 
-  // Late responses: run (page key) + opened summary handle + per-area request number (lib), and abort on unmount.
+  // Late responses: mounted + run (page key) + opened summary handle + per-area request number (lib); the effect
+  // reads are also aborted on unmount.
   const mounted = useRef(true);
   const counters = useRef<GaRequestCounters>(initialGaCounters());
+  // The existing job identical arguments returned (and its status then): its notice outlives the job-end notice.
+  const redisplayed = useRef<{ jobId: string; status: string } | null>(null);
   const live = useRef({ summary: selected });
   live.current = { summary: selected };
   useEffect(() => {
@@ -232,14 +237,17 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
     return () => { active = false; window.clearInterval(timer); };
   }, [runId, job?.job_id, job?.status]);
 
-  // A finished job (any end state) refreshes the summary list; no summary is opened automatically.
+  // A finished job (any end state) refreshes the summary list; no summary is opened automatically. An existing job
+  // shown again for identical arguments keeps its own notice while it has the status it had then.
   useEffect(() => {
     if (!job) return;
     setNotice(previous => ligandNoticeAfterJob(previous, job.status));
     if (!dockingJobActive(job)) {
       setResultsReload(value => value + 1);
       const handle = job.sequence_ga?.summary_handle ?? gaJobResult(job);
-      if (handle) setNotice(`서열 GA 요약이 저장되었습니다 (${shortHandle(handle)}). 아래 서열 GA 결과 목록에서 직접 고르세요.`);
+      const shownAgain = redisplayed.current?.jobId === job.job_id && redisplayed.current.status === job.status;
+      if (handle && !shownAgain)
+        setNotice(`서열 GA 요약이 저장되었습니다 (${shortHandle(handle)}). 아래 서열 GA 결과 목록에서 직접 고르세요.`);
     }
   }, [job?.job_id, job?.status]);
   /* eslint-enable react-hooks/exhaustive-deps */
@@ -370,6 +378,7 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
       if (result.run_id !== runId || result.protocol_id !== GA_PROTOCOL) throw new Error("제출 응답이 요청과 다릅니다.");
       setJob(result);
       if (result.status !== "queued") {
+        redisplayed.current = { jobId: result.job_id, status: result.status };
         setNotice(`같은 입력의 기존 서열 GA 작업을 다시 표시합니다 · ${result.job_id} · ${result.status} (새 작업을 만들지 않았습니다)`);
         return;
       }
@@ -432,12 +441,9 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
   const prereqValue = prereq.status === "ready" ? prereq.value : null;
   const ligandSdfs = prereqValue ? importsOfKind(prereqValue.imports, "ligand_sdf") : [];
   const options = setRows ? candidateSetOptions(setRows) : [];
-  // A start that met the run's first expensive-call approval leaves the job `claimed` with blocked_reason
-  // `approval_or_cancel`, and the queue starts it from there (jobs/queue.py `start`). Once no approval is pending it
-  // waits for 작업 시작 like a saved job; the shared phase helper would call it running and hide the button.
-  const waitsForStart = !!job && job.status === "claimed" && job.blocked_reason === "approval_or_cancel" &&
-    !approvalPending;
-  const phase = waitsForStart ? "saved" : dockingJobPhase(job, approvalPending);
+  // A `claimed` job blocked on a reason the queue's `start` accepts again (the first expensive-call approval, the
+  // global concurrency / cleanup / ledger waits) waits for 작업 시작 like a saved job (lib `gaJobPhase`).
+  const phase = gaJobPhase(job, approvalPending);
   const approvalLoad = approval && approval.key === argsKey ? approval.load : null;
   const preflightLoad = preflight && preflight.key === argsKey ? preflight.load : null;
   const spaceLines = gaSpaceLines(shownPreflight);
@@ -576,8 +582,7 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
           data-generations-complete={job.sequence_ga?.generations_complete}
           data-individuals-finished={job.sequence_ga?.individuals_finished}
           data-summary-handle={job.sequence_ga?.summary_handle ?? undefined}>
-          <p className="mw-mutation-note" role="status">{gaJobText(waitsForStart ? { ...job, status: "queued" } : job,
-            approvalPending)}</p>
+          <p className="mw-mutation-note" role="status">{gaJobText(job, approvalPending)}</p>
           <p className="mw-mutation-note mw-mono">{GA_TOOL} · 작업 {job.status} · {job.job_id}</p>
           {job.sequence_ga && <p className="mw-mutation-note" data-testid="sequence-ga-progress">{gaProgressText(job.sequence_ga)}</p>}
           {job.blocked_reason && <p className="mw-mutation-note">시작 대기 이유: {gaReasonText(job.blocked_reason)}</p>}

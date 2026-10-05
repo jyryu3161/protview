@@ -993,8 +993,9 @@ export interface SequenceGaProgress { space: SequenceGaSpace; reserved_evaluatio
   individuals_finished: number; generation_records: number; generations_complete: number;
   summary_handle: string | null; summary_status: SequenceGaStatus | null;
   summary_stop_reason: SequenceGaStopReason | null }
+/** `sequence_ga` is in the job list, job read and start responses; submit, retry and cancel responses have none. */
 export interface SequenceGaJob extends Omit<DockingJob, "protocol_id" | "artifacts"> {
-  protocol_id: "sequence_ga_dock_v1"; artifacts: { sequence_ga_result?: string }; sequence_ga: SequenceGaProgress }
+  protocol_id: "sequence_ga_dock_v1"; artifacts: { sequence_ga_result?: string }; sequence_ga?: SequenceGaProgress }
 export interface SequenceGaPlanOnly { plan_only: true; protocol_id: "sequence_ga_dock_v1"; reason_code: "dry_run";
   available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
 export type SequenceGaSubmission = SequenceGaJob | SequenceGaPlanOnly;

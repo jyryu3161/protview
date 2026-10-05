@@ -18,8 +18,9 @@ import type { ExactResidueRef, MutationCandidateSetListRow, MutationModelSide, S
   SequenceGaLimitApproval, SequenceGaMutation, SequenceGaOrigin, SequenceGaParameters, SequenceGaPreflight,
   SequenceGaProgress, SequenceGaReference, SequenceGaSpace, SequenceGaState, SequenceGaStatement, SequenceGaStatus,
   SequenceGaStopReason } from "./contracts";
-import { type ArgsCheck, DOCKING_LIMITATIONS, DOCKING_REASON_LABEL, RECEPTOR_SIDE_LABEL, SCORE_COLUMN_LABEL, SCORE_LABEL,
-  dockingCapabilityText, dockingConditionArgs, dockingJobPhase, scoreText } from "./docking";
+import { type ArgsCheck, DOCKING_LIMITATIONS, DOCKING_REASON_LABEL, type DockingJobPhase, RECEPTOR_SIDE_LABEL,
+  SCORE_COLUMN_LABEL, SCORE_LABEL, dockingCapabilityText, dockingConditionArgs, dockingJobPhase,
+  scoreText } from "./docking";
 import { CONFIRMATION_LABEL, ENERGY_LABEL, MODEL_REASON_LABEL, NULL_TEXT, type PairDockingForm, disulfideText,
   energyText, initialPairDockingForm, pairBoxSourceDisabledReason, patchPairDockingForm, residueFieldsText,
   residueShortText, variantText } from "./mutation-model";
@@ -577,24 +578,45 @@ export function gaStartBlockedReason(input: { capability: { available: boolean; 
 
 /**
  * Progress from the stored job record (staged file counts only; no score): the reference row's status file, then
- * new evaluations (started / status files); reused individuals have no file and are named apart.
+ * new evaluations (started / status files); the individuals that can be reused (`reused_planned` = the size of the
+ * start's reuse index, not a count of reused ones) have no file and are named apart.
  */
 export function gaProgressText(progress: SequenceGaProgress): string {
   return `야생형 기준 행 ${progress.reference_recorded ? "기록됨" : "아직 기록 없음"}` +
     `(${progress.reference_reuse_planned ? "재사용 예정" : "새 평가"}) · 완료한 세대 ${progress.generations_complete}개` +
     `(세대 기록 ${progress.generation_records}개) · 새 평가 시작 ${progress.individuals_started}건 · 새 평가 끝 ` +
-    `${progress.individuals_finished}건 · 재사용 예정 개체 ${progress.reused_planned}개(파일이 없어 새 평가 수에 들지 ` +
+    `${progress.individuals_finished}건 · 재사용 가능 개체 ${progress.reused_planned}개(파일이 없어 새 평가 수에 들지 ` +
     `않음) · 예약 ${progress.reserved_units}단위`;
+}
+
+/**
+ * Blocked reasons from which the queue's `start` starts a `claimed` job again (backend/mw/jobs/queue.py `start`; tests
+ * compare): the run's first expensive-call approval and the global concurrency / cleanup / ledger waits.
+ */
+export const GA_RESTARTABLE_BLOCKS: readonly string[] = ["approval_or_cancel", "global_concurrency_busy",
+  "global_job_cleanup_pending", "global_job_ledger_unavailable"];
+
+/**
+ * The job area's phase: `dockingJobPhase`, except that a `claimed` job blocked on one of `GA_RESTARTABLE_BLOCKS`
+ * waits for 작업 시작 like a saved job once no approval is pending (the shared helper would call it running and hide
+ * the button, leaving only cancel).
+ */
+export function gaJobPhase(job: { status: string; blocked_reason?: string | null } | null,
+  approvalPending: boolean): DockingJobPhase {
+  if (job && job.status === "claimed" && !approvalPending && typeof job.blocked_reason === "string" &&
+      GA_RESTARTABLE_BLOCKS.includes(job.blocked_reason)) return "saved";
+  return dockingJobPhase(job, approvalPending);
 }
 
 /**
  * A failed or interrupted job that still published a summary shows the job record status with the summary's own
  * outcome (server values), never a bare failure message.
  */
-export function gaJobText(job: { status: string; cancel_requested: boolean; failure: FailureLike;
+export function gaJobText(job: { status: string; blocked_reason?: string | null; cancel_requested: boolean;
+  failure: FailureLike;
   sequence_ga?: Pick<SequenceGaProgress, "summary_handle" | "summary_status" | "summary_stop_reason"> | null } | null,
   approvalPending: boolean): string {
-  switch (dockingJobPhase(job, approvalPending)) {
+  switch (gaJobPhase(job, approvalPending)) {
     case "none": return "서열 GA 작업 없음";
     case "saved": return "서열 GA 작업이 저장되었습니다. 시작을 누르면 실제 계산이 실행됩니다.";
     case "awaiting_approval": return "비용이 드는 실제 계산 승인이 필요합니다(run의 첫 비싼 계산). 승인한 뒤 시작을 다시 " +

@@ -216,6 +216,8 @@ def test_t1_conditions_need_the_phenol_box_values_and_space():
     assert m23.t1_conditions(content, phenol, space) is True
     for changed in ({"ligand": {"sdf_sha256": "0" * 64}}, {"box": {"source": "manual"}},
                     {"box": {"source": "ligand_range", "margin_A": 6}},
+                    {"box": {"source": "ligand_range", "center_A": [0, 0, 0]}},       # T10: no margin is not 8 Å
+                    {"box": {"source": "ligand_range", "margin_A": None}}, {"box": None},
                     {"parameters": {**m23.T1_PARAMETERS, "seed": 7, "cpu": 1}},
                     {"parameters": {**m23.T1_PARAMETERS, "cpu": 2}}, {"space": {**space, "size": 6}}):
         assert m23.t1_conditions({**content, **changed}, phenol, space) is False, changed

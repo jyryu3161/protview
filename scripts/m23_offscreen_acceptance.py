@@ -285,7 +285,7 @@ def t1_conditions(content: dict, phenol_sha256: str, space: dict) -> bool:
     box with 8 Å margin, the T1 evaluation seed and docking values on one CPU, and the tiny set's space."""
     box = content.get("box") or {}
     return (content.get("ligand", {}).get("sdf_sha256") == phenol_sha256
-            and box.get("source") == T1_BOX["source"] and box.get("margin_A", T1_BOX["margin_A"]) == T1_BOX["margin_A"]
+            and box.get("source") == T1_BOX["source"] and box.get("margin_A") == T1_BOX["margin_A"]
             and content.get("parameters", {}).get("cpu") == 1
             and {key: content.get("parameters", {}).get(key) for key in T1_PARAMETERS} == T1_PARAMETERS
             and content.get("space") == space)

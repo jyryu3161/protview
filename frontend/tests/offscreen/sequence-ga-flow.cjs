@@ -889,7 +889,7 @@ async function jobPhase(page) {
 function progressText(p) {
   return `야생형 기준 행 ${p.reference_recorded ? "기록됨" : "아직 기록 없음"}(${p.reference_reuse_planned ? "재사용 예정" : "새 평가"})` +
     ` · 완료한 세대 ${p.generations_complete}개(세대 기록 ${p.generation_records}개) · 새 평가 시작 ${p.individuals_started}건` +
-    ` · 새 평가 끝 ${p.individuals_finished}건 · 재사용 예정 개체 ${p.reused_planned}개(파일이 없어 새 평가 수에 들지 않음)` +
+    ` · 새 평가 끝 ${p.individuals_finished}건 · 재사용 가능 개체 ${p.reused_planned}개(파일이 없어 새 평가 수에 들지 않음)` +
     ` · 예약 ${p.reserved_units}단위`;
 }
 /**
