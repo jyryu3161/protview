@@ -9,6 +9,9 @@ Readings the spec text leaves open are the ``ASSUMPTIONS`` below (also in ``expe
 ambiguity" section of ``docs/qa/m23-sequence-ga-20261005/preflight.txt``). T2-T4 confirm or change them with the
 coordinator and then update this file and ``expected.json`` together.
 
+T4 change: generation 1 individuals are labeled ``initial`` (spec 3 step 2; T1 had labeled them ``random``). Only the
+origin label changed: every rng call, key, state, score and stop of ``expected.json`` stayed the same.
+
     python3 backend/tests/fixtures/sequence_ga/independent_sequence_ga_oracle.py --check
 """
 from __future__ import annotations
@@ -249,7 +252,8 @@ class Run:
         return tuple(sorted(child)), {"origin": "edit", "parents": [key_text(parent["key"])], "edit_op": operation}
 
     def select(self, kind: str, pool: list[dict]) -> dict | None:
-        """One slot. ``None`` when no unseen key could be selected (A4)."""
+        """One slot. ``None`` when no unseen key could be selected (A4). A generation 1 slot (``initial``) is a
+        ``draw()`` like a random slot; only its origin differs (spec 3 step 2)."""
         if len(self.seen) >= self.size:
             return None
         if kind in ("crossover", "edit") and pool:
@@ -265,7 +269,8 @@ class Run:
         key = self.draw()
         if key is None:
             return None
-        return self._entry(key, {"origin": "random", "parents": None, "edit_op": None})
+        return self._entry(key, {"origin": "initial" if kind == "initial" else "random", "parents": None,
+                                 "edit_op": None})
 
     def _entry(self, key: tuple[int, ...], info: dict) -> dict:
         self.seen.add(key)
@@ -314,7 +319,7 @@ class Run:
         for generation in range(1, self.ga["generations"] + 1):
             carried: list[dict] = []
             if generation == 1:
-                kinds = ["random"] * self.ga["population_size"]
+                kinds = ["initial"] * self.ga["population_size"]
                 pool: list[dict] = []
             else:
                 previous = self.generations[-1]
