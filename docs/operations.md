@@ -115,7 +115,7 @@ npm --prefix frontend run start -- -p 3000
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py scripts/test_m23_offscreen_acceptance.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
 node --check frontend/tests/offscreen/tabs-flow.cjs
@@ -127,6 +127,7 @@ node --check frontend/tests/offscreen/docking-batch-flow.cjs
 node --check frontend/tests/offscreen/mutation-flow.cjs
 node --check frontend/tests/offscreen/mutation-model-flow.cjs
 node --check frontend/tests/offscreen/ligand-ga-flow.cjs
+node --check frontend/tests/offscreen/sequence-ga-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
@@ -138,10 +139,11 @@ npm --prefix frontend run build
 - `scripts/test_m20_offscreen_acceptance.py`(M20 실행기 판정, 서비스 없음)는 게이트 명령에 있지만 Stop 훅 나머지 그룹의 파일 목록에는 아직 없다(`docs/tracking/findings.md`). 백엔드 M20 테스트 네 파일(`test_mutation_*.py`)은 실제 엔진이 필요 없고 나머지 그룹에서 돈다.
 - `scripts/test_m21_offscreen_acceptance.py`(M21 실행기 판정, 서비스 없음)도 게이트 명령에 있지만 Stop 훅 나머지 그룹의 파일 목록에는 없다(M20 실행기 테스트와 같은 처지, `docs/tracking/findings.md`). 백엔드 M21 테스트 일곱 파일(`test_mutation_model_*.py`)은 실제 OpenMM·PDBFixer 작업 모듈과 qvina 도킹을 돌리며 나머지 그룹에서 돈다(프로젝트 `.venv`의 PDBFixer, `.deps/docking`·`.deps/qvina`가 없으면 skip이 아니라 실패).
 - `scripts/test_m22_offscreen_acceptance.py`(M22 실행기 판정, 서비스 없음, 39개)도 게이트 명령에 있지만 Stop 훅 나머지 그룹의 파일 목록에는 없다(M20·M21 실행기 테스트와 같은 처지, `docs/tracking/findings.md`). 백엔드 M22 테스트 일곱 파일(`test_ligand_ga_*.py`)은 실제 qvina·RDKit 작업 모듈과 실제 M17 작업으로 만든 후보 집합을 쓰며 나머지 그룹에서 돈다(`.deps/docking`·`.deps/qvina`·`.deps/prolif`가 없으면 skip이 아니라 실패).
+- `scripts/test_m23_offscreen_acceptance.py`(M23 실행기 판정, 서비스 없음, 51개)도 게이트 명령에 있지만 Stop 훅 나머지 그룹의 파일 목록에는 없다(M20·M21·M22 실행기 테스트와 같은 처지, `docs/tracking/findings.md`). 백엔드 M23 테스트(`test_sequence_ga_*.py`·`test_sequence_model_*.py`, 실제 OpenMM·PDBFixer·qvina·RDKit 작업 모듈과 실제 M20 후보 집합)는 나머지 그룹에서 돌며 이 그룹을 단독 2432초로 늘렸다(M22 때 1324초).
 - `scripts/test_m18_offscreen_acceptance.py`(M18 실행기 판정), `scripts/test_setup_qvina.py`·`scripts/test_setup_docking_worker.py`(잠금·플랫폼 불일치 거부, 실패 때 만든 것 삭제, 설치 기록 내용. 실제 설치는 하지 않음)는 서비스를 띄우지 않는다. 이 세 파일은 게이트 명령과 Stop 훅 네 번째 그룹에 있다.
 - `scripts/test_m13_offscreen_acceptance.py`는 M13 실행기의 하위 대장 판정, `acceptance` 판정, 빌드 출처 확인을 보는 단위 테스트다(서비스를 띄우지 않음). Stop 훅의 네 번째 pytest 그룹에 들어 있다.
 - git worktree에서 백엔드 테스트나 서비스를 돌릴 때는 `PYTHONPATH=<worktree>/backend`를 준다. `.venv`의 editable 설치가 주 체크아웃의 `backend/`를 가리키므로, 주지 않으면 worktree의 `mw`가 아니라 주 체크아웃의 `mw`를 import한다.
-- 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket, M17 RDKit 리간드 작업, M18 qvina 도킹 작업, M19 일괄 도킹 작업, M22 GA 작업)는 해당 엔진이 설치되어 있어야 의미가 있다. M11·M17 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`, M18·M19·M22 테스트는 `.deps/docking/venv-locked`와 `.deps/qvina/env`가 필요하며(M19 일괄·M22 GA 테스트 일부는 M17 작업 환경도 씀), 없으면 skip이 아니라 실패한다.
+- 과학 네이티브 테스트(FreeSASA, OpenMM, M11 ProLIF, M12 fpocket, M17 RDKit 리간드 작업, M18 qvina 도킹 작업, M19 일괄 도킹 작업, M22 GA 작업, M23 서열 GA 작업과 모델링 프로그램)는 해당 엔진이 설치되어 있어야 의미가 있다. M11·M17 테스트는 `.deps/prolif/venv-locked`, M12 테스트는 `.deps/fpocket/env`, M18·M19·M22·M23 테스트는 `.deps/docking/venv-locked`와 `.deps/qvina/env`(M23은 프로젝트 `.venv`의 OpenMM·PDBFixer도)가 필요하며(M19 일괄·M22 GA 테스트 일부는 M17 작업 환경도 씀), 없으면 skip이 아니라 실패한다.
 - Claude Code와 Codex의 Stop 훅(`.codex/hooks/stop.py`)은 대화 턴이 끝날 때 ruff(45초 제한)를 돌린 뒤, pytest 다섯 그룹을 실행한다: `test_chemical_interactions.py`, `test_m11_job_api.py`, M18 도킹 테스트 다섯 파일(`test_docking_inputs.py`·`test_docking_worker.py`·`test_docking_jobs.py`·`test_docking_api.py`·`test_docking_reports.py`), M19 일괄 테스트 일곱 파일(`test_docking_batch_inputs.py`·`_bundle`·`_worker`·`_jobs`·`_budget`·`_api`·`_reports`), 나머지 백엔드와 실행기 테스트(M19 실행기 단위 테스트 포함). 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침). 그룹마다 480초 제한이 있고, 전체 제한은 600초다. 나머지 그룹(다섯 번째, 나머지 백엔드·실행기·fpocket 설치·M13·M14·M15·M16·M17 수락 실행기·가져오기·측정 단위 테스트)은 M13 테스트가 들어간 뒤 2026-09-29 단독 실행에서 382초(634개)였다(M14 실행기 테스트 8개는 서비스를 띄우지 않아 몇 초 이내, 다시 재지 않음. M15에서 백엔드 테스트가 815개로 늘었고 전체 백엔드 pytest 단독 실행이 977초였다(최종 고정 게이트, 두 화학 그룹 포함). 세 번째 그룹만 다시 재지는 않았다. M16 첫 고정 게이트는 886개, 969초. M17 고정 게이트는 1206개, 1016초. M18 고정 게이트는 1404개, 1214초). 그룹 제한 480초에 여유가 크지 않으므로, 테스트가 더 늘면 그룹을 나눈다. M18 작업 중 한 그룹이 480초 제한에 걸려 시간 초과로 보고되어, 도킹 테스트를 별도 네 번째 그룹으로 나눴다(고정 뒤 변경, 커밋 `306971b`). M19에서 일괄 작업 모듈 테스트(실제 qvina)가 나머지 그룹을 480초 넘게 만들어 일괄 테스트를 다섯 번째 그룹으로 나눴다(`b8fafd5`). M19 고정 게이트의 전체 백엔드 pytest는 1613개, 1515초였다. M21 고정 게이트(백엔드 1979개)는 다섯 그룹을 따로 제한 없이 돌렸고 나머지 그룹이 1,833개(실행기 테스트 310개 포함) 602초로 그룹 제한 480초를 넘는다. M22 고정 게이트(백엔드 2209개)도 다섯 그룹을 따로 차례로 돌렸고 나머지 그룹이 2,063개(실행기 310개 포함) 1324초였다(`docs/qa/m22-ga-20261005/gate.txt`). 그래서 지금 Stop 훅에서는 나머지 그룹이 시간 초과로 보고될 수 있고, 게이트는 그룹별 개별 실행 결과로 판단한다(`docs/tracking/findings.md`). ruff가 실패하면 pytest는 돌리지 않는다. 실패하면 턴 종료를 한 번 막고 오류를 돌려준다. 그 뒤 다시 종료할 때(`stop_hook_active`)는 무한 반복을 막으려고 통과시키므로, 훅을 지나갔다고 게이트를 통과한 것은 아니다.
 
 ## 오프스크린 UI 검증
@@ -350,6 +352,24 @@ npm --prefix frontend run test:offscreen:chemical
 - 2026-10-05(KST) 수락 한 번은 회귀 포함 약 54분 걸렸다(M22 부분 약 6분, 분리 실행).
 - 2026-10-05 증거: `docs/qa/m22-ga-20261005/`(`gate.txt`, `summary.txt`, `acceptance/`, 회귀 9개), 착수 확인 `docs/qa/m22-ga-20261004/preflight.txt`. 수락은 `--root runs/m22-acceptance-20261005-attempt1 --artifacts frontend/tests/offscreen/artifacts/m22-acceptance/attempt1 --regressions --kbase <home>/Projects/kbase_kinase`로 한 번 돌렸다. 전체 게이트 로그는 `frontend/tests/offscreen/artifacts/m22-acceptance/gate/`(Git 제외). 큰 텍스트 증거는 결정 0020대로 `<artifacts>/regressions/m1X/export-full/`로 옮겼다.
 - 게이트 항목은 위 "검증 명령"에 `node --check frontend/tests/offscreen/ligand-ga-flow.cjs`와 `scripts/test_m22_offscreen_acceptance.py`가 더해진 것이다. M22 고정 게이트는 백엔드 pytest를 Stop 훅의 다섯 그룹으로 나눠 제한 없이 한 줄로 차례로 돌렸다(`MW_KBASE_REF` 지정, `gate.txt`).
+
+### M23 서열 GA 설계 수락 QA
+
+8000·3000 포트가 비어 있는 상태에서 실행한다. 실행기가 loopback 서비스(`PYTHONPATH=<code root>/backend`, `MW_RUNS_DIR=<root>/runs`)를 직접 띄우고 끝나면 정리하며, `--build auto`는 현재 프런트엔드 소스로 도장 찍은 빌드만 재사용한다(필요하면 typecheck 뒤 build, 동시에 돌리지 않음). 코드 루트의 프로젝트 `.venv`(OpenMM 8.6.0·PDBFixer 1.12.0), `.deps/docking/venv-locked`, `.deps/qvina/env/bin/qvina2`가 있어야 하고 백엔드가 `sequence_ga_design`·`mutation_model`·`mutation_candidates`·`ligand_docking`을 사용 가능으로 보고해야 한다(아니면 "사용할 수 없음"이 아니라 수락 실패, `.deps` 없는 layout 백엔드는 `worker_missing`). 참조 스냅샷은 회귀(M20·M16·M15)에만 필요하다.
+
+```bash
+.venv/bin/python scripts/m23_offscreen_acceptance.py --root runs/m23-acceptance-<날짜> \
+    --artifacts frontend/tests/offscreen/artifacts/m23-acceptance/<이름> \
+    --out docs/qa/m23-sequence-ga-<YYYYMMDD>/acceptance --regressions --kbase <절대 경로>/kbase_kinase
+```
+
+- 순서: 환경 확인 → `seqga-main`(run A: 1UBQ 전처리 + 직접 선택 M20 후보 집합 + 합성 표시 페놀 SDF 가져오기 → 파라미터 가드(열한 키)·교차 규칙·"기본값으로" → 확인 항목·입장 거절 표시 → 시작 전 확인(명세 산식) → 사람이 누르는 증액 → 첫 비싼 계산 승인 → 실제 GA 1(진행, 야생형 기준 행, 세대, 완료) → 결과 = 저장값(세대 탭, 개체 표, 출처, 재사용, 점수 없는 행은 끝, S1–S6) → oracle 경로 대조 → 정렬 → 개체 상세(모델 값, mmCIF 해시, M18 상세) → 같은 인자 재제출(기존 작업) → GA 2(다른 GA seed, 같은 평가 seed) 재사용 → 부분 완료(`evaluation_limit`) → 취소 → `reference_failed`(암시 수소 SDF) → 늦은 응답 → 보고서 → 탭·프로세스·문구) → `seqga-repro`(흐름의 GA 1을 같은 서버 프로세스의 새 run 둘에서 **화면**으로 다시: 모든 증액이 화면 클릭이라 실행기가 증액 라우트를 직접 부르지 않는다. 정규화한 요약 digest와 개체 13행(모델·M18 결과·포즈 SDF 해시)이 같고, 콜드 재시작이 아니다) → `seqga-unavailable`(`.deps` 없는 layout 백엔드) → 외부 요청·제공자 호출·남은 프로세스 → `--regressions`(M22 → M13 실행기 전체).
+- 실제 환경이 만들 수 없는 사례(점수 없는 개체, 4,890 경고, 그 밖의 종료 이유, SL5·L6, dry-run)는 위조하지 않고 "관찰하지 않음"과 그것을 덮는 테스트 이름으로 기록한다.
+- `--root`는 새 폴더여야 하고 `/tmp` 아래면 거부한다. `--artifacts`는 Git 제외 폴더여야 한다. 다시 돌릴 때는 새 `--root`·`--artifacts`·`--out`을 쓰고 실패한 시도의 폴더를 지우지 않는다. `--kbase`는 절대 경로를 준다.
+- 흐름만 따로 돌리려면 서비스를 띄운 뒤 `node frontend/tests/offscreen/sequence-ga-flow.cjs --mode <main|repro|unavailable> --artifacts <디렉터리> --runs-dir <백엔드 MW_RUNS_DIR>`(`package.json`에 `test:offscreen:sequence-ga` 스크립트는 아직 없다). 전체 순서는 실행기에 있다.
+- 2026-10-05(KST) 수락 한 번은 회귀 포함 약 66분 걸렸다(M23 부분 약 11분). 실제 엔진 GA 한 번(개체 4, 세대 2–4)이 평가 약 11초/건이다.
+- 2026-10-05 증거: `docs/qa/m23-sequence-ga-20261005/`(`preflight.txt`, `gate.txt`, `summary.txt`, `acceptance/`, 회귀 10개), 수락은 `--root runs/m23-acceptance-20261005-attempt1 --artifacts frontend/tests/offscreen/artifacts/m23-acceptance/attempt1 --regressions --kbase <home>/Projects/kbase_kinase`로 한 번 돌렸다. 전체 게이트 로그는 `frontend/tests/offscreen/artifacts/m23-acceptance/gate/`(Git 제외). 큰 텍스트 증거는 결정 0020대로 `<artifacts>/regressions/m1X/export-full/`로 옮겼다.
+- 게이트 항목은 위 "검증 명령"에 `node --check frontend/tests/offscreen/sequence-ga-flow.cjs`와 `scripts/test_m23_offscreen_acceptance.py`가 더해진 것이다. M23 고정 게이트는 백엔드 pytest를 Stop 훅의 다섯 그룹으로 나눠 제한 없이 한 줄로 차례로 돌렸다(`MW_KBASE_REF` 지정, `gate.txt`).
 
 ### M15 KLIFS 번호 측정
 
