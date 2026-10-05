@@ -245,5 +245,5 @@ def synthetic_result(normalized: dict[str, Any], model_handle_: str, model: dict
 def pins() -> dict[str, Any]:
     """SYNTHETIC pins in the checked shape (module hashes are placeholders, not the files' hashes)."""
     modules = {"ga_worker_sha256": "6" * 64, "ga_constants_sha256": "7" * 64, "model_worker_sha256": "8" * 64,
-               "m21_sha256": {name: "9" * 64 for name in GI.M21_MODULES}}
+               "model_bundle_sha256": "a" * 64, "m21_sha256": {name: "9" * 64 for name in GI.M21_MODULES}}
     return {"modules": modules, "model_method": model_method(), "docking": dict(DOCKING_PINS)}

@@ -53,10 +53,12 @@ from .mutation_constants import STANDARD_ONE_LETTER
 
 ROOT = Path(__file__).resolve().parents[2]
 # Module files whose SHA-256 joins the call key, ``conditions_sha256`` and the start-time recheck. The GA worker and
-# the modeling program are written in T3/T4; ``module_pins`` fails explicitly until they exist.
+# the modeling program are written in T3/T4; ``module_pins`` fails explicitly until they exist. The modeling program
+# builds its ``model.json`` with ``sequence_model_bundle.model_content``, so that file is pinned with it (T3).
 GA_MODULES = {"ga_worker_sha256": ROOT / "backend/mw/jobs/sequence_ga_worker.py",
               "ga_constants_sha256": ROOT / "backend/mw/sequence_ga_constants.py",
-              "model_worker_sha256": ROOT / "backend/mw/jobs/sequence_model_worker.py"}
+              "model_worker_sha256": ROOT / "backend/mw/jobs/sequence_model_worker.py",
+              "model_bundle_sha256": ROOT / "backend/mw/sequence_model_bundle.py"}
 # The M21 worker and the M21 modules it depends on (``mutation_model_bundle.DEPENDENCIES``: math, constants,
 # ``mutation_candidates.py``, the M7 worker and method), hashed for the same reason as the M21 call key: the modeling
 # program calls their private functions (spec 4 (1)).
