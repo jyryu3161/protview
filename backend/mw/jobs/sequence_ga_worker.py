@@ -55,12 +55,19 @@ payload ``{schema: "sequence_model_input@1", run_id, candidate_set, structure, m
 mutations: [{candidate_index, residue, from, to, mutant_resname}] (structure order, [] for the reference row),
 reference: null | the reference model summary}``. Child environment = the guardian worker environment (``PATH``,
 ``LANG``, ``PYTHONUTF8``, ``PYTHONUNBUFFERED``, ``OMP_NUM_THREADS``, ``OPENBLAS_NUM_THREADS``, ``TMPDIR`` = its own
-folder), stdin closed, stdout/stderr to files in its folder (each capped at 1 MiB while it runs), same process group.
-The step limit is ``MODEL_STEP_S`` (240 s): the child is killed and the individual is ``failed`` ``model_timeout``;
-the total clock and SIGTERM kill it too and stop the run (the individual is not recorded). Exit 1 with ``error.json``
-gives its closed M21 reason; any other contract break is ``worker_failed``. ``receptor_error.json`` (the model is not
-an M18 receptor) fails the docking step with its M18 reason and keeps the model. Docking (``DOCKING_STEP_S`` 300 s for
-``receptor_inputs`` + ``dock_row``; over it the individual is ``failed`` ``docking_timeout``) uses the M18 payload
+folder), stdin closed, stdout/stderr to files in its folder (over 1 MiB each while it runs: killed, ``failed``
+``resource_exceeded``), same process group, launched with SIGTERM/SIGALRM unblocked (a signal mask survives exec;
+the worker keeps them blocked outside a docking step), so a guardian SIGTERM to the group reaches it. The step limit
+is ``MODEL_STEP_S`` (240 s): the child is killed and the individual is ``failed`` ``model_timeout``; the total clock
+and SIGTERM kill it too and stop the run (the individual is not recorded; a pending stop wins over the child's exit).
+Exit 1 with ``error.json`` gives its closed M21 reason; any other contract break (exit code, missing or extra files,
+another schema or side, an mmCIF handle outside this run, mmCIF bytes that are not the entry's ``structure_sha256``)
+is ``worker_failed``. The worker reads nothing else of ``model.json`` but the reference row's ``structure_sha256``,
+``protonation_variants`` and ``disulfide_bonds``; the server validates every model. An evaluation whose model JSON +
+mmCIF + the M18 result cap would pass ``PER_INDIVIDUAL_OUTPUT_MAX`` is ``failed`` ``resource_exceeded`` at the model
+step and stores nothing (never truncated). ``receptor_error.json`` (the model is not an M18 receptor) fails the
+docking step with its M18 reason and keeps the model. Docking (``DOCKING_STEP_S`` 300 s for ``receptor_inputs`` +
+``dock_row``; over it the individual is ``failed`` ``docking_timeout``) uses the M18 payload
 ``{schema: "docking_worker_input@1", receptor: {handle: <the model's mmCIF object handle>, format: "cif", bytes,
 model_number, connectivity: {kind: "sidecar", sidecar}, instance: null, source: "mutation_model"}, ligand: {source:
 "sdf", sdf: ligand_sdf}, mode: "free", box, parameters}`` (``docking_bundle.stage`` for an M21-style receptor source).
@@ -80,14 +87,16 @@ Durable files (temporary file + fsync + ``os.replace`` + directory fsync; SIGALR
 ligand (the reference row then fails with the M18 reason)>, "engine": <qvina engine identity>, "model_method": <method
 + multi_mutation, as every model records it>}`` before the reference row; the reference row's
 ``reference.model.json`` / ``reference.model.cif`` (when modeled) / ``reference.result.json`` (scored and
-null_result) / ``reference.status.json`` (written last, also for a reused row); per new evaluation ``k`` (=
-``eval_index`` 0, 1, ...) ``individuals/<k>.started`` (empty) then ``<k>.model.json``, ``<k>.model.cif`` (the child's
-bytes), ``<k>.result.json`` (the M18 ``docking_worker_output@1`` bytes with this job's ``job_id``/``attempt_id``) and
-``<k>.status.json`` = canonical ``{"reason_code": str | null, "stage": "model" | "docking", "state": "scored" |
-"null_result" | "failed"}`` last; ``generations/<g>.json`` = canonical ``{"index", "complete", "individuals": [{key,
-origin, parents, edit_op, evaluation, pick_index, eval_index}]}`` (carried first, then new in selection order)
-rewritten with ``complete: false`` after each evaluated individual and at a stop, ``complete: true`` at the end of the
-generation. Scores and states are never in the generation records: the server reads them from the stored results.
+null_result) / ``reference.status.json`` (written last; a reused row writes only this file, stage ``docking``, with
+its reuse state); per new evaluation ``k`` (= ``eval_index`` 0, 1, ...) ``individuals/<k>.started`` (empty) then
+``<k>.model.json``, ``<k>.model.cif`` (the child's bytes), ``<k>.result.json`` (the M18 ``docking_worker_output@1``
+bytes with this job's ``job_id``/``attempt_id``) and ``<k>.status.json`` = canonical ``{"reason_code": str | null,
+"stage": "model" | "docking", "state": "scored" | "null_result" | "failed"}`` last (stage ``model``: the modeling step
+failed and no model file exists; ``docking``: the model files exist); ``generations/<g>.json`` = canonical ``{"index",
+"complete", "individuals": [{key, origin, parents, edit_op, evaluation, pick_index, eval_index}]}`` (carried first,
+then new in selection order) rewritten with ``complete: false`` after each evaluated individual and at a stop,
+``complete: true`` at the end of the generation. Scores and states are never in the generation records: the server
+reads them from the stored results.
 
 On every stop the worker writes canonical ``result.json`` ``{"attempt_id", "generations_done", "job_id", "protocol",
 "schema": "sequence_ga_worker_output@1", "stop_reason"}`` and exits 0 (a stop before ``reference.status.json`` is the
