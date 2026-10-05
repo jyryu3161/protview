@@ -1,0 +1,439 @@
+{
+ "also_hashed_files": {
+  "backend/mw/docking_batch_constants.py": "81cdcdf29d0e160799f05792258b595dd8e642917dd9e25f549c2bdfaa30d53d",
+  "backend/mw/jobs/docking_batch_worker.py": "e41fb4403413d2ff7ea50ae20a7dff8c9b3bf5dc2b49b45ac5315384ebeae58e",
+  "backend/mw/jobs/ligand_ga_worker.py": "0c001cae4866feb51e4ea13ddf657215336a8c486effcbf856b36620fd31a132",
+  "backend/mw/jobs/openmm_worker.py": "60f422315c20556d458c74a28fae90b7e5c41d5fc98490e69d1d29577e847671",
+  "backend/mw/ligand_ga_bundle.py": "d01dac6582a77425d9e1a65c99f8c1813a4000bedea118871fc15b4548654111",
+  "backend/mw/ligand_ga_constants.py": "bdbbe8c92865785e5a487771dc6f5c3ef70086443d6d0b6bcac1ba421ea9e812",
+  "backend/mw/ligand_ga_inputs.py": "af2a08d39405fe695c2103c1fdcc6cfd5694c6360e1caae850c46d0d8f47fd3b",
+  "backend/mw/ligand_ga_jobs.py": "d8b3b163a4908dca5d2602fc37175a37d80fdcf7eeffca738cbc815529b98135",
+  "backend/mw/ligand_ga_reads.py": "9e4e35d6a5ea8e9d6866ef1e4e58b425a9c5668db1fb1ab3c1e7f7fed801da02",
+  "backend/mw/ligand_ga_reports.py": "2f18e446f71324afcc4a62812f6debbc460aa6987a267e2171f2abaa64352e52",
+  "backend/mw/tools/openmm_method.py": "7ea8ba6f3f775c0304f04f5adb2fee28d66d415421f7cb8ef5de30343d6ab4c7"
+ },
+ "handles": {
+  "candidate_set": "obj://run_m23_golden_keys/mutation_candidate_set/47a93045475dca807ea70fea4612a62783514229cbd0e99417200d4ff96b19b8",
+  "ligand_candidate_set": "obj://run_m23_golden_keys/ligand_candidate_set/b06479bae224eb7302d3899ff7c30724b20d8081af824ba620d09cb2d9d17358",
+  "parent_sdf": "obj://run_m23_golden_keys/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+  "phenol_sdf": "obj://run_m23_golden_keys/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+  "receptor": "obj://run_m23_golden_keys/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+  "structure": "obj://run_m23_golden_keys/prepared_structure/5cdc93bbe8c2682757eb2773d292b85e25edd3e9b3d395b78a43f0c86aa3d9e4"
+ },
+ "hashed_files": {
+  "backend/mw/docking_constants.py": "5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf",
+  "backend/mw/jobs/docking_worker.py": "52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706",
+  "backend/mw/jobs/openmm_mutation_worker.py": "ce0e64d8c430f82386bb26802e5870de50e75dec25c614393176103db395075c",
+  "backend/mw/mutation_candidates.py": "d0f2b7a80f4923b7bf3ea7b7e1c98562b016942b3e01bb248a4d7e0cf188968f",
+  "backend/mw/mutation_model_constants.py": "e2cb3ec79cade5ae4b90c010a335861aa6ba45b617ac36ea9d74166d20897523",
+  "backend/mw/mutation_model_math.py": "828b28d6ec03395425bb29461af09f0d657b8539a7e3fdcb090b9b67cf720432"
+ },
+ "how": "Recorded in M23 T1 before any M23 server change by prototype_golden_call_keys.py (unmodified product paths, real engines). Values are call keys and SHA-256 of stored object bytes, not science values. Valid for the pinned environments of this machine (qvina2 / Meeko / RDKit / MDAnalysis / gemmi / OpenMM 8.6.0 / PDBFixer 1.12.0 pins are inside the keys).",
+ "inputs": {
+  "blocks_sha256": "966f7a8607d3011fc3570a39f64e05ab284281fe0602c1cb18f847352d6392ec",
+  "m20_allowed": "AFHWY",
+  "m20_positions": [
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "MET",
+    "seq_auth": 1
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "GLN",
+    "seq_auth": 2
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "ILE",
+    "seq_auth": 3
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LYS",
+    "seq_auth": 6
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "LEU",
+    "seq_auth": 8
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "ILE",
+    "seq_auth": 44
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "GLY",
+    "seq_auth": 75
+   },
+   {
+    "chain_auth": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "GLY",
+    "seq_auth": 76
+   }
+  ],
+  "parent_sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+  "public_1ubq_sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+  "receptor_sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+  "synthetic_phenol_sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3"
+ },
+ "pins": {
+  "m18": {
+   "constants_sha256": "5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf",
+   "engine": "qvina",
+   "lock_sha256": "ec38e8e80d5fc90c72324a45e36f60c47ca8a0e6381c2a25e146a537c8ea8c7f",
+   "qvina_lock_sha256": "f20e50c9240f53d4500ed1764d525b612c6e0603c11431283e7bb96bd7a32b53",
+   "qvina_package": "qvina-2.1.0-h4a521e9_8",
+   "qvina_sha256": "caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c",
+   "versions": {
+    "MDAnalysis": "2.10.0",
+    "gemmi": "0.7.5",
+    "meeko": "0.8.0",
+    "rdkit": "2026.03.6"
+   },
+   "worker_sha256": "52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706"
+  },
+  "m21": {
+   "dependency_sha256": {
+    "mw/jobs/openmm_worker.py": "60f422315c20556d458c74a28fae90b7e5c41d5fc98490e69d1d29577e847671",
+    "mw/mutation_candidates.py": "d0f2b7a80f4923b7bf3ea7b7e1c98562b016942b3e01bb248a4d7e0cf188968f",
+    "mw/mutation_model_constants.py": "e2cb3ec79cade5ae4b90c010a335861aa6ba45b617ac36ea9d74166d20897523",
+    "mw/mutation_model_math.py": "828b28d6ec03395425bb29461af09f0d657b8539a7e3fdcb090b9b67cf720432",
+    "mw/tools/openmm_method.py": "7ea8ba6f3f775c0304f04f5adb2fee28d66d415421f7cb8ef5de30343d6ab4c7"
+   },
+   "method": {
+    "constraints": null,
+    "distribution_version": "8.6.0",
+    "engine_build": "8.6.0.dev-c6173db",
+    "forcefield_files": [
+     "amber14-all.xml",
+     "implicit/gbn2.xml"
+    ],
+    "forcefield_files_sha256": {
+     "amber14-all.xml": "96d635545c36ce248e37d23ea82fa05ce4d2e1a6a42cd6d0ec5db3cfe30ca44c",
+     "amber14/DNA.OL15.xml": "200e7cd116481fb47ed50bfd29deefb84a1e488d73d262c3f3f278b36b80ffa5",
+     "amber14/RNA.OL3.xml": "61b793a49ded3c9c3bd9fbab328bc1b20b2b4ce7bc2358d537892ca64b085127",
+     "amber14/lipid17.xml": "f974506df14202973637cf5e1d094af5e6098eb04afd2b68c523589ffcf2e780",
+     "amber14/protein.ff14SB.xml": "d9f9779c09d67cd5f8bc657692f174ffab14c469dfd06d560ac1899fa7e976b8",
+     "implicit/gbn2.xml": "172fe56b43343e26f5483f55a276dbcf351b759f3abca2a12891778bf08e560b"
+    },
+    "hydrogen_platform": "CPU",
+    "hydrogen_platform_properties": {
+     "Threads": "1"
+    },
+    "hydrogen_policy": "rebuild_pH7",
+    "max_iterations": 50,
+    "method_id": "openmm_protein_minimize_v1",
+    "nonbonded_method": "NoCutoff",
+    "pH": 7.0,
+    "pdbfixer_version": "1.12.0",
+    "platform": "CPU",
+    "platform_properties": {
+     "Threads": "1"
+    },
+    "schema": "openmm_protein_minimization@1",
+    "selection_policy": "protein_only",
+    "tolerance_kJ_mol_nm": 10.0
+   },
+   "worker_sha256": "ce0e64d8c430f82386bb26802e5870de50e75dec25c614393176103db395075c"
+  }
+ },
+ "requests": {
+  "m18_imported_receptor": {
+   "call_key": "d23a2dbf130ad7310200a98440ac2ea371ebf4eec0a0fff3e3995d84fe52f341",
+   "output": {
+    "content_bytes": 33425,
+    "content_sha256": "8ff4f217d5c7e000645cd19760a53962b03c10ed45c09af79f3a040655132892",
+    "handle": "obj://run_m23_golden_keys/docking_result/6f9f28fa9e470707c49fd2b29cbba3403d8e61c47b5669c19b5571246916cf22"
+   },
+   "parameters": {
+    "acknowledgement": {
+     "keep_input_protonation": true,
+     "rigid_no_optimization": true,
+     "tool_assigned_types_charges": true
+    },
+    "box": {
+     "center_A": [
+      3.4095,
+      0.7175,
+      11.314
+     ],
+     "size_A": [
+      12.0,
+      12.0,
+      12.0
+     ],
+     "source": "manual"
+    },
+    "connectivity": {
+     "kind": "pdb_conect",
+     "sidecar_handle": null
+    },
+    "ligand": {
+     "sdf_handle": "obj://run_m23_golden_keys/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+     "source": "sdf"
+    },
+    "mode": "free",
+    "parameters": {
+     "conformers": null,
+     "energy_range": 3.0,
+     "exhaustiveness": 1,
+     "num_modes": 2,
+     "seed": 1
+    },
+    "receptor_handle": "obj://run_m23_golden_keys/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+    "receptor_instance": null,
+    "receptor_model_number": 1
+   },
+   "protocol_id": "qvina_dock_v1",
+   "request": {
+    "acknowledgement": {
+     "keep_input_protonation": true,
+     "rigid_no_optimization": true,
+     "tool_assigned_types_charges": true
+    },
+    "box": {
+     "center_A": [
+      3.4095,
+      0.7175,
+      11.314
+     ],
+     "size_A": [
+      12.0,
+      12.0,
+      12.0
+     ],
+     "source": "manual"
+    },
+    "connectivity": {
+     "kind": "pdb_conect",
+     "sidecar_handle": null
+    },
+    "ligand": {
+     "sdf_handle": "obj://run_m23_golden_keys/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+     "source": "sdf"
+    },
+    "mode": "free",
+    "parameters": {
+     "exhaustiveness": 1,
+     "num_modes": 2,
+     "seed": 1
+    },
+    "receptor_handle": "obj://run_m23_golden_keys/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+    "receptor_instance": null,
+    "receptor_model_number": 1
+   },
+   "timeout_s": 600
+  },
+  "m18_mutation_model_source": {
+   "call_key": "f0f14ebcfff2689834837a8b9e44a4f38647771f216befc37b1f7c2f72d26ab8",
+   "output": {
+    "content_bytes": 47554,
+    "content_sha256": "9a68f4a1b4a2007fab74a6fb70ecbe4bf6135fb313066e8e931709ba713de3b9",
+    "handle": "obj://run_m23_golden_keys/docking_result/34ae6cf886ed47bc631ecd381add216aeaa55982b5200143dbf7e2b8a6f704ab"
+   },
+   "parameters": {
+    "acknowledgement": {
+     "keep_input_protonation": true,
+     "rigid_no_optimization": true,
+     "tool_assigned_types_charges": true
+    },
+    "box": {
+     "margin_A": 8.0,
+     "source": "ligand_range"
+    },
+    "ligand": {
+     "sdf_handle": "obj://run_m23_golden_keys/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+     "source": "sdf"
+    },
+    "mode": "free",
+    "parameters": {
+     "conformers": null,
+     "energy_range": 3.0,
+     "exhaustiveness": 4,
+     "num_modes": 5,
+     "seed": 20261004
+    },
+    "receptor_source": {
+     "kind": "mutation_model",
+     "mutation_model": "obj://run_m23_golden_keys/mutation_model/5adf31d7f64c7b5dd2083e7467fae71d354cce5c8c53f41424c86624f2481c4d",
+     "side": "mutant"
+    }
+   },
+   "protocol_id": "qvina_dock_v1",
+   "request": {
+    "acknowledgement": {
+     "keep_input_protonation": true,
+     "rigid_no_optimization": true,
+     "tool_assigned_types_charges": true
+    },
+    "box": {
+     "margin_A": 8,
+     "source": "ligand_range"
+    },
+    "ligand": {
+     "sdf_handle": "obj://run_m23_golden_keys/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+     "source": "sdf"
+    },
+    "mode": "free",
+    "parameters": {
+     "exhaustiveness": 4,
+     "num_modes": 5,
+     "seed": 20261004
+    },
+    "receptor_source": {
+     "kind": "mutation_model",
+     "mutation_model": "obj://run_m23_golden_keys/mutation_model/5adf31d7f64c7b5dd2083e7467fae71d354cce5c8c53f41424c86624f2481c4d",
+     "side": "mutant"
+    }
+   },
+   "timeout_s": 600
+  },
+  "m19_batch_row": {
+   "batch_call_key": "ead9c6f73c4e9d2cbe8c396219f0d48959dd00961ecc3d2439185b602f8fbd2b",
+   "parameters": {
+    "acknowledgement": {
+     "keep_input_protonation": true,
+     "rigid_no_optimization": true,
+     "tool_assigned_types_charges": true
+    },
+    "box": {
+     "center_A": [
+      3.4095,
+      0.7175,
+      11.314
+     ],
+     "size_A": [
+      12.0,
+      12.0,
+      12.0
+     ],
+     "source": "manual"
+    },
+    "candidate_ids": [
+     "c_1afb7cd3e603456c"
+    ],
+    "candidate_set_handle": "obj://run_m23_golden_keys/ligand_candidate_set/b06479bae224eb7302d3899ff7c30724b20d8081af824ba620d09cb2d9d17358",
+    "connectivity": {
+     "kind": "pdb_conect",
+     "sidecar_handle": null
+    },
+    "include_parent": false,
+    "mode": "free",
+    "parameters": {
+     "conformers": null,
+     "energy_range": 3.0,
+     "exhaustiveness": 1,
+     "num_modes": 2,
+     "seed": 1
+    },
+    "parent_sdf_handle": "obj://run_m23_golden_keys/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+    "receptor_handle": "obj://run_m23_golden_keys/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+    "receptor_instance": null,
+    "receptor_model_number": 1
+   },
+   "protocol_id": "qvina_batch_dock_v1",
+   "request": {
+    "acknowledgement": {
+     "keep_input_protonation": true,
+     "rigid_no_optimization": true,
+     "tool_assigned_types_charges": true
+    },
+    "box": {
+     "center_A": [
+      3.4095,
+      0.7175,
+      11.314
+     ],
+     "size_A": [
+      12.0,
+      12.0,
+      12.0
+     ],
+     "source": "manual"
+    },
+    "candidate_ids": [
+     "c_1afb7cd3e603456c"
+    ],
+    "candidate_set_handle": "obj://run_m23_golden_keys/ligand_candidate_set/b06479bae224eb7302d3899ff7c30724b20d8081af824ba620d09cb2d9d17358",
+    "connectivity": {
+     "kind": "pdb_conect",
+     "sidecar_handle": null
+    },
+    "include_parent": false,
+    "mode": "free",
+    "parameters": {
+     "exhaustiveness": 1,
+     "num_modes": 2,
+     "seed": 1
+    },
+    "parent_sdf_handle": "obj://run_m23_golden_keys/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+    "receptor_handle": "obj://run_m23_golden_keys/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+    "receptor_instance": null,
+    "receptor_model_number": 1
+   },
+   "row_call_key": "8864dd04c58fd9713c47e95e17b230e30a261f1bb5eabeda8b195073f2aa8ca4",
+   "row_output": {
+    "content_bytes": 44521,
+    "content_sha256": "2f9aadb0bd06dd9b0a616ecdc91c61ab00c61d3b72b652f69576263989daf5d3",
+    "handle": "obj://run_m23_golden_keys/docking_result/dbf7f001d3aac8af42065848d1867356a4c8543348ed2d063921441f74e0c8cf"
+   },
+   "summary": {
+    "content_bytes": 2118,
+    "content_sha256": "d77a0019f4844864e2b3c87fecb3d71f687d6f70eaefb2ee74afae6c2b083461",
+    "handle": "obj://run_m23_golden_keys/docking_batch_result/4ec3f7df4aab0d4a1ea4bb6a2a7fb97830a85d321e918681695c820ad9466ef8"
+   },
+   "timeout_s": 1200
+  },
+  "m21_mutation_model": {
+   "call_key": "753b8c6c254dba3ca1da58357c1cf1c7418a2a405923d03f1e70f4ba0f386603",
+   "candidate_index": 28,
+   "output": {
+    "content_bytes": 601689,
+    "content_sha256": "de97242c27bf38678974d5fdd6c8002fad29348eb7f84053530695e3a2c2fc92",
+    "handle": "obj://run_m23_golden_keys/mutation_model/5adf31d7f64c7b5dd2083e7467fae71d354cce5c8c53f41424c86624f2481c4d"
+   },
+   "parameters": {
+    "candidate_index": 28,
+    "candidate_set": "obj://run_m23_golden_keys/mutation_candidate_set/47a93045475dca807ea70fea4612a62783514229cbd0e99417200d4ff96b19b8",
+    "contact_cutoff_A": 4.0,
+    "hydrogen_policy": "rebuild_pH7",
+    "seed": 20261004,
+    "selection_policy": "protein_only"
+   },
+   "protocol_id": "openmm_mutation_model_v1",
+   "request": {
+    "candidate_index": 28,
+    "candidate_set": "obj://run_m23_golden_keys/mutation_candidate_set/47a93045475dca807ea70fea4612a62783514229cbd0e99417200d4ff96b19b8",
+    "hydrogen_policy": "rebuild_pH7",
+    "seed": 20261004,
+    "selection_policy": "protein_only"
+   },
+   "structure_objects": {
+    "mutant": "obj://run_m23_golden_keys/mutation_model_structure/8b4c8b71178263a8602e1707bd2c7d5f5ba7f6760ee74f3f4d3cfca808684289",
+    "wild_type_reference": "obj://run_m23_golden_keys/mutation_model_structure/89749464853ece4a1f4e01e9dc3debf48b66d36dc03490aa09ddfe83a36eb407"
+   },
+   "timeout_s": 120.0
+  }
+ },
+ "run_id": "run_m23_golden_keys",
+ "schema": "m23_golden_call_keys@1"
+}

@@ -1,0 +1,760 @@
+{
+  "schema": "m21_case_ledger@1",
+  "generatedAt": "2026-10-05T12:13:41.634421+00:00",
+  "build": {
+    "buildId": "8UVqy3iRzm6o2VSKemMX3",
+    "gitHead": "7871e83ffafbee001eb0f849595b0a59c5615fef",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "c1f9aaf1f2dba3a6d82264cd70f80b64119d6e3ddda1258971e6223f02043e5f",
+    "dirtyFiles": [
+      "?? docs/qa/m23-sequence-ga-20261005/acceptance/",
+      "?? docs/qa/m23-sequence-ga-20261005/m22-regression/"
+    ],
+    "recordedAt": "2026-10-05T12:11:59.687018+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "mutation-model-flow.cjs": "3e3c4b7fff5d0e134b17ddceecc54a96e36bc6841d58c3bbd8c3a6dd75ac0112",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "8b4fe080cd28d4edbea1f3cd61a08fe68b543bd79ced8c41769caea2dda09268"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "MM-no-run": {
+      "text": "fresh root, no run: the model area shows 사용할 수 없음 + the no-run reason only (no numbers, no controls, no model reads)",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-load-prepare": {
+      "text": "public_1ubq.cif loaded and prepared through the structure screen",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-candidate-set": {
+      "text": "M20 direct-residue candidate set (ILE A:44, allowed W) through the candidate screen: one candidate I → W",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-handoff": {
+      "text": "변이 구조 모델링 on the M20 candidate row fills the request area with that set and index; seed empty, confirmations unchecked, defaults 4.0 Å / 120 s; nothing chosen or sent automatically",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-validation": {
+      "text": "submit blocked without seed and confirmations, with seed only, with one confirmation, with cutoff 7.0 (argument_invalid); enabled only when complete; no job request while blocked",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-job": {
+      "text": "모델링 작업 제출 → 비싼 계산 승인 → 작업 시작 → real openmm_mutation_model_v1 done; the six request arguments + timeout_s; one expensive unit; the model listed, not opened automatically",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-side-by-side": {
+      "text": "side-by-side table = API detail = stored event-log payload for both structures (OpenMM potential before/after, mutated-residue SASA, contact and residue counts, PDBFixer atoms, disulfides, atoms, hydrogens) with the harness ROUND_HALF_UP; no difference field stored",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-limitations": {
+      "text": "the limitation sentences shown = stored = spec §4 verbatim in order (L5/L6 only under their stored conditions)",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-negative": {
+      "text": "no difference/change/rank/best/recommendation/stability wording or arrow in the model panel (every check of the run); both structure cells of every side-by-side and pair row have the same style; no extra column",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-contacts": {
+      "text": "contact table pages (야생형 기준 1, 변이형 1 → 다음 → 이전) = API pages = stored rows (7 partner fields, atom names, distance ROUND_HALF_UP); more than one page with cutoff 6.0 Å",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-downloads": {
+      "text": "both mmCIF downloads: bytes SHA-256 = stored structure_sha256 = backend bytes",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-report": {
+      "text": "보고서 만들기 → saved and listed for the model (no new model); Markdown/JSON downloads = backend bytes; the Markdown carries the fixed sentences and no docking value",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-same-handle": {
+      "text": "the same model submission again returns the existing done job and the same model handle; no new job, no new model, no new unit",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-late-contacts": {
+      "text": "a held 변이형 contact page released after switching back to 야생형 기준 is not applied",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-tab-state": {
+      "text": "ligand SDF imported in the 리간드 설계·탐색 tab; back on 단백질 공학 the area remounts, re-reads its lists (GET only) and opens nothing by itself",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-pair-submit": {
+      "text": "same-condition docking: 2-unit notice, blocked until the 2-unit box is ticked; one click sends two qvina_dock_v1 jobs that differ only in receptor_source.side (no imported-receptor key); both real qvina jobs done through the screen's buttons; two expensive units",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-pair-scores": {
+      "text": "pair row: both scores side by side = docking_pairs = each M18 result's first mode score (receptor source recorded), header with the server's score name, four columns, no difference",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-pair-partial": {
+      "text": "second condition (seed 7) with the 변이형 job cancelled while queued: per-side job status, both cells '없음(server reason)' without a number; one unit for the started job; the first pair keeps its scores",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-cancel": {
+      "text": "a running modeling job (seed 7) cancelled from the screen: cancelled, no model, no worker/guardian process left, the area shows 실패 with the cancel sentence, one reserved unit kept",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-late-run": {
+      "text": "a held run A model-list response released after switching to run B is not applied",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-reproducible": {
+      "text": "the flow's load, prepare, candidate and model requests made in each of two fresh runs over the API: the same job and model handle twice per run and the stored model (obj:// handles replaced) equal to the flow's model",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "MM-budget": {
+      "text": "real expensive units of run A counted from the backend budget: model job 1, same submission 0, same-condition docking 2, partial pair 1 (the queued side cancelled before it started), cancelled modeling job 1; total within the run limit",
+      "modes": {
+        "model-main": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "model-main": {
+      "status": "pass",
+      "latest": "model-main",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "MM-unavailable": "methods.mutation_model depends on the project .venv (OpenMM 8.6.0, PDBFixer 1.12.0) and the process-identity adapter, not on .deps; the M18/M13 layout-without-.deps precedent cannot make it unavailable without forging an interpreter. Covered by backend/tests/test_mutation_model_jobs.py::test_unavailable_engine_pdbfixer_or_identity_is_412_without_reservation and frontend/tests/mutation-model.test.cjs ('five area states: unavailable, failed, loading, empty, ready', 'submit is blocked without capability…').",
+    "MM-pair-approval": "the expensive_first_call approval is per run and the model job (needed before any pair) already took it, so the docking pair's own approval button cannot be reached honestly. Covered by frontend/tests/mutation-model.test.cjs (pairApprovalRequired) and the M18 acceptance (D-free-job).",
+    "MM-failed-job": "no valid 1UBQ input makes the worker fail with a closed reason (all T1 combinations model). Covered by backend/tests/test_mutation_model_worker.py (test_energy_contact_and_output_limits_are_closed_failures, test_pdbfixer_errors_are_mutation_modeling_failed) and test_mutation_model_jobs.py (test_tampered_output_typed_errors_size_limit_and_late_cancel_publish_nothing).",
+    "MM-zero-contacts": "the I44W model has contacts on both structures; a zero contact page ('0개, 계산한 결과') is covered by frontend/tests/mutation-model.test.cjs ('contact pages: query, cells, and a zero count…').",
+    "MM-conditional-limitations": "L5/L6 need a histidine/cysteine state difference or a new disulfide; 1UBQ I44W has neither (the flow asserts the stored conditions). Covered by backend/tests/test_mutation_model_worker.py (test_removed_disulfide_records_the_partner_difference_and_l5, test_new_disulfide_is_recorded_with_l5_and_l6) on the derived synthetic fixtures."
+  },
+  "reproducibility": {
+    "flowRequests": {
+      "loadArgs": {
+        "model_index": 0
+      },
+      "prepareArgs": {
+        "structure": "<loaded structure>",
+        "altloc": "highest_occupancy",
+        "waters": "strip_all",
+        "hydrogens": "strip",
+        "missing_residues": "leave_gaps",
+        "symmetry_mates": "ignore"
+      },
+      "candidateArgs": {
+        "structure": "<prepared structure>",
+        "sources": {
+          "pocket": null,
+          "ligand_shell": null,
+          "residues": [
+            {
+              "model_number": 1,
+              "chain_auth": "A",
+              "chain_label": "A",
+              "seq_auth": 44,
+              "seq_label": 44,
+              "icode": "",
+              "resname": "ILE"
+            }
+          ]
+        },
+        "ligand": null,
+        "allowed_residues": "W",
+        "protected_residues": [],
+        "released_residues": [],
+        "metal_contact_A": 3,
+        "numbering_map": null,
+        "annotation": null
+      },
+      "modelArgs": {
+        "candidate_set": "<candidate set>",
+        "candidate_index": 0,
+        "seed": 20261004,
+        "selection_policy": "protein_only",
+        "hydrogen_policy": "rebuild_pH7",
+        "contact_cutoff_A": 6
+      },
+      "timeoutS": 240
+    },
+    "reference": {
+      "run": "run_31daaf7b3c1c4bf79353c4d634ba30e2",
+      "handle": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/mutation_model/7ef0dbd01a3f219e309ff760c37dc90fa450d546c00d7de29978a21461b30159",
+      "contentSha256": "b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c",
+      "structureSha256": {
+        "wild_type_reference": "e877b9745e42a05a9721cbc00cc8315fd39eb6d03101d802abbb2edbca2df65f",
+        "mutant": "334ad777a0f4c3354787474d2c767ee83e1186beb4cc836fd0ea7ca8943923cb"
+      }
+    },
+    "reruns": [
+      {
+        "run": "run_391798d346db487c99f87981179c46e6",
+        "status": "done",
+        "jobs": [
+          "job_ca60e654681544a3a1803d311167bcaf",
+          "job_ca60e654681544a3a1803d311167bcaf"
+        ],
+        "handles": [
+          "obj://run_391798d346db487c99f87981179c46e6/mutation_model/f6c37eb5f939c12a5fbacf3585dfb569904e6b46e166aec256e5f6551e1887bd",
+          "obj://run_391798d346db487c99f87981179c46e6/mutation_model/f6c37eb5f939c12a5fbacf3585dfb569904e6b46e166aec256e5f6551e1887bd"
+        ],
+        "sameHandle": true,
+        "sameJob": true,
+        "approvalStatus": 200,
+        "unitsAfterFirst": 1,
+        "unitsAfterSecond": 1,
+        "contentSha256": "b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c",
+        "structureSha256": {
+          "wild_type_reference": "e877b9745e42a05a9721cbc00cc8315fd39eb6d03101d802abbb2edbca2df65f",
+          "mutant": "334ad777a0f4c3354787474d2c767ee83e1186beb4cc836fd0ea7ca8943923cb"
+        },
+        "energies": {
+          "wild_type_reference": {
+            "after_kJ_mol": -12792.052911304538,
+            "before_kJ_mol": -10184.213905790195,
+            "convergence": "convergence_not_claimed",
+            "engine": "OpenMM",
+            "force_field": "amber14-all + implicit/gbn2",
+            "unit": "kJ/mol"
+          },
+          "mutant": {
+            "after_kJ_mol": -12717.486975922548,
+            "before_kJ_mol": -8045.996542151248,
+            "convergence": "convergence_not_claimed",
+            "engine": "OpenMM",
+            "force_field": "amber14-all + implicit/gbn2",
+            "unit": "kJ/mol"
+          }
+        },
+        "providerCallsZero": true
+      },
+      {
+        "run": "run_3546c2f26c844c6ba098c0a1f0cb80f5",
+        "status": "done",
+        "jobs": [
+          "job_24115ecc44d2491cb41474e2ab4588f4",
+          "job_24115ecc44d2491cb41474e2ab4588f4"
+        ],
+        "handles": [
+          "obj://run_3546c2f26c844c6ba098c0a1f0cb80f5/mutation_model/070137c082f86bc1b56ef94c55970a66e9abcee28fb0d29841ad86d99a9ac4ee",
+          "obj://run_3546c2f26c844c6ba098c0a1f0cb80f5/mutation_model/070137c082f86bc1b56ef94c55970a66e9abcee28fb0d29841ad86d99a9ac4ee"
+        ],
+        "sameHandle": true,
+        "sameJob": true,
+        "approvalStatus": 200,
+        "unitsAfterFirst": 1,
+        "unitsAfterSecond": 1,
+        "contentSha256": "b2ed1464604d1b1257fb1b4a9f0a8c93c32069bb71672b94b076de08bc85857c",
+        "structureSha256": {
+          "wild_type_reference": "e877b9745e42a05a9721cbc00cc8315fd39eb6d03101d802abbb2edbca2df65f",
+          "mutant": "334ad777a0f4c3354787474d2c767ee83e1186beb4cc836fd0ea7ca8943923cb"
+        },
+        "energies": {
+          "wild_type_reference": {
+            "after_kJ_mol": -12792.052911304538,
+            "before_kJ_mol": -10184.213905790195,
+            "convergence": "convergence_not_claimed",
+            "engine": "OpenMM",
+            "force_field": "amber14-all + implicit/gbn2",
+            "unit": "kJ/mol"
+          },
+          "mutant": {
+            "after_kJ_mol": -12717.486975922548,
+            "before_kJ_mol": -8045.996542151248,
+            "convergence": "convergence_not_claimed",
+            "engine": "OpenMM",
+            "force_field": "amber14-all + implicit/gbn2",
+            "unit": "kJ/mol"
+          }
+        },
+        "providerCallsZero": true
+      }
+    ]
+  },
+  "environment": {
+    "modelAvailable": true,
+    "candidatesAvailable": true,
+    "dockingAvailable": true,
+    "modelCapability": {
+      "available": true,
+      "reason_code": null,
+      "versions": {
+        "openmm": "8.6.0",
+        "openmm_engine_build": "8.6.0.dev-c6173db",
+        "pdbfixer": "1.12.0"
+      },
+      "protocol_id": "openmm_mutation_model_v1",
+      "timeout_s": {
+        "default": 120,
+        "max": 240
+      },
+      "contact_cutoff_A": {
+        "default": 4.0,
+        "min": 2.5,
+        "max": 6.0
+      },
+      "limits": {
+        "protein_heavy_atoms": 6000,
+        "contact_rows_per_structure": 2000,
+        "output_bytes": 64000000
+      }
+    },
+    "dockingCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "model-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "MM-no-run": "pass",
+        "MM-load-prepare": "pass",
+        "MM-candidate-set": "pass",
+        "MM-handoff": "pass",
+        "MM-validation": "pass",
+        "MM-job": "pass",
+        "MM-side-by-side": "pass",
+        "MM-limitations": "pass",
+        "MM-negative": "pass",
+        "MM-contacts": "pass",
+        "MM-downloads": "pass",
+        "MM-report": "pass",
+        "MM-same-handle": "pass",
+        "MM-late-contacts": "pass",
+        "MM-tab-state": "pass",
+        "MM-pair-submit": "pass",
+        "MM-pair-scores": "pass",
+        "MM-pair-partial": "pass",
+        "MM-cancel": "pass",
+        "MM-late-run": "pass"
+      },
+      "runs": {
+        "A": "run_31daaf7b3c1c4bf79353c4d634ba30e2",
+        "B": "run_3c4bdb24a1814b399acf76a96711d3bb"
+      },
+      "runId": "run_31daaf7b3c1c4bf79353c4d634ba30e2",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "structure": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/structure/35fd513af5a00446f1afbd1ffb2bec276139845faae68e567785962780c728bb",
+        "prepared": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/prepared_structure/307709b4d3558e549d2439cd9ad9ff7e52a166bdad37983b797e35cea7cf94c2",
+        "candidateSet": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/mutation_candidate_set/bbe76299d1de9369bdfb2d3d5a37ae67f1d52ce997014167e53ca93c7f2dc8a2",
+        "model": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/mutation_model/7ef0dbd01a3f219e309ff760c37dc90fa450d546c00d7de29978a21461b30159",
+        "modelJob": "job_ee3c8748860c41a38a5f4dd933af994f",
+        "report": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/method_report_manifest/8aea5ca314b05621a69cbfceac46cd1daeb583b7d84ab3da0db34f50c01fea9f",
+        "ligandSdf": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+        "pairResults": [
+          "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/docking_result/4ae6c02090fa842c152cac91b90a4f879cf9c11bdad514d1249b21b769a04dbb",
+          "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/docking_result/105c87b826bbbaed4d536cc4a88d0f001fcd92858a610f9a1b1d20575cb07f6d"
+        ]
+      },
+      "inputs": [
+        {
+          "name": "public_1ubq.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+          "bytes": 103220,
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture; public structure, not experimental validation)"
+        },
+        {
+          "name": "synthetic-phenol-ligand.sdf",
+          "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+          "bytes": 1240,
+          "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3",
+          "provenance": "SYNTHETIC-FIXTURE hand-built phenol (backend/tests/fixtures/mutation_model/SYNTHETIC-PROVENANCE.md)"
+        }
+      ],
+      "fixtureLabels": [
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+      ],
+      "controls": {
+        "mutation-structures": [
+          {
+            "checked": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/prepared_structure/307709b4d3558e549d2439cd9ad9ff7e52a166bdad37983b797e35cea7cf94c2"
+          }
+        ],
+        "mutation-source-user": [
+          {
+            "checked": true
+          }
+        ],
+        "mutation-pick-user": [
+          {
+            "picked": "ILE A:44 · label A:44"
+          }
+        ],
+        "mutation-allowed": [
+          {
+            "checked": "W"
+          }
+        ],
+        "mutation-create": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-candidate-model": [
+          {
+            "index": 0
+          },
+          {
+            "index": 0,
+            "again": true
+          }
+        ],
+        "mutation-model-seed": [
+          {
+            "value": "20261004"
+          },
+          {
+            "value": "7"
+          }
+        ],
+        "mutation-model-confirm-selection": [
+          {
+            "checked": true
+          }
+        ],
+        "mutation-model-confirm-hydrogen": [
+          {
+            "checked": true
+          }
+        ],
+        "mutation-model-cutoff": [
+          {
+            "value": "7.0"
+          }
+        ],
+        "mutation-model-timeout": [
+          {
+            "value": "240"
+          }
+        ],
+        "mutation-model-submit": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true,
+            "repeat": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-job-approve": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-job-start": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-open-new": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-contacts-side": [
+          {
+            "side": "mutant"
+          }
+        ],
+        "mutation-model-contacts-next": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-contacts-prev": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-download-wild_type_reference": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-download-mutant": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-report": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-report-markdown": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-report-json": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-file-ligand": [
+          {
+            "file": "synthetic-phenol-ligand.sdf"
+          }
+        ],
+        "docking-import": [
+          {
+            "files": [
+              "ligand"
+            ]
+          }
+        ],
+        "mutation-model-list": [
+          {
+            "checked": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/mutation_model/7ef0dbd01a3f219e309ff760c37dc90fa450d546c00d7de29978a21461b30159"
+          },
+          {
+            "checked": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/mutation_model/7ef0dbd01a3f219e309ff760c37dc90fa450d546c00d7de29978a21461b30159"
+          }
+        ],
+        "mutation-model-pair-prereq-refresh": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-pair-ligand-source": [
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          }
+        ],
+        "mutation-model-pair-sdf": [
+          {
+            "handle": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+          },
+          {
+            "handle": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+          }
+        ],
+        "mutation-model-pair-box-source": [
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          }
+        ],
+        "mutation-model-pair-margin": [
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          }
+        ],
+        "mutation-model-pair-seed": [
+          {
+            "value": "20261004"
+          },
+          {
+            "value": "7"
+          }
+        ],
+        "mutation-model-pair-exhaustiveness": [
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          }
+        ],
+        "mutation-model-pair-num-modes": [
+          {
+            "value": "9"
+          },
+          {
+            "value": "9"
+          }
+        ],
+        "mutation-model-pair-energy-range": [
+          {
+            "value": "3"
+          },
+          {
+            "value": "3"
+          }
+        ],
+        "mutation-model-pair-ack-keep_input_protonation": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-model-pair-ack-tool_assigned_types_charges": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-model-pair-ack-rigid_no_optimization": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-model-pair-units": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-model-pair-submit": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-model-pair-cancel-mutant": [
+          {
+            "clicked": true,
+            "statusBefore": "queued"
+          }
+        ],
+        "mutation-sets": [
+          {
+            "checked": "obj://run_31daaf7b3c1c4bf79353c4d634ba30e2/mutation_candidate_set/bbe76299d1de9369bdfb2d3d5a37ae67f1d52ce997014167e53ca93c7f2dc8a2"
+          }
+        ],
+        "mutation-model-job-cancel": [
+          {
+            "clicked": true
+          }
+        ]
+      },
+      "budget": {
+        "model": {
+          "before": 0,
+          "after": 1
+        },
+        "pair": {
+          "before": 1,
+          "after": 3,
+          "actions": []
+        },
+        "partial": {
+          "before": 3,
+          "after": 4,
+          "actions": [
+            {
+              "cancel": "mutant",
+              "at": 1791202366374
+            }
+          ]
+        },
+        "cancel": {
+          "note": "running modeling job cancelled (reservation kept)"
+        },
+        "totalRunA": 5,
+        "limitRunA": 8
+      },
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-05T12:12:58.544Z"
+    }
+  ]
+}

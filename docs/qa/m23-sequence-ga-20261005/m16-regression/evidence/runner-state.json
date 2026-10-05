@@ -1,0 +1,91 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "8UVqy3iRzm6o2VSKemMX3",
+    "gitHead": "7871e83ffafbee001eb0f849595b0a59c5615fef",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "aa91acd5c730ca07b00b240920bd5d76347d67c7a1bd1317265285aba29121f6",
+    "dirtyFiles": [
+      "?? docs/qa/m23-sequence-ga-20261005/acceptance/",
+      "?? docs/qa/m23-sequence-ga-20261005/m17-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m18-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m19-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m20-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m21-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m22-regression/"
+    ],
+    "recordedAt": "2026-10-05T12:21:29.983238+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "annotation-flow.cjs": "8f670b8262fa02ca11c29625fb3be563e305d475df43935f7f31f1cf61fd5d85",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "7172edb88a386383d8ba5e43e65ab7a427687aedb89469d5ee1ac6dedfd47394"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m16-regression/runs",
+      "reference": "<repo>/runs/m23-acceptance-20261005-attempt1-m16-regression/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:21:34.257332+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m23-acceptance-20261005-attempt1-m16-regression/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/m16/services/reference-import.log",
+      "setHash": "8f321bdd498bdbd174f429e147ae93fcc9ee65a9d86c31a1a7aac2c4ebff297d",
+      "served": {
+        "available": true,
+        "set_hash": "8f321bdd498bdbd174f429e147ae93fcc9ee65a9d86c31a1a7aac2c4ebff297d",
+        "imported_at": "2026-10-05T12:21:34.323178Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  }
+}

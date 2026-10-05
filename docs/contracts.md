@@ -23,7 +23,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 413 | 본문 크기 초과(`resource_exceeded`) |
 | 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문 |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
-| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M20 변이 후보의 `too_many_positions`) |
+| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`) |
 | 503 | 도구의 `transient` 또는 `fatal` |
 
 - **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다.
@@ -72,7 +72,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 순서(실제 UI 흐름):
 1. (OpenMM만) `GET /jobs/preflight?structure=<handle>`: 입력 적합성, 제외 항목, 필요한 확인.
-2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하, M22 `qvina_ga_dock_v1`은 기본값 없이 `ga.total_s + 600` 이상 15000 이하이고 범위 밖이면 422 `invalid_job_arguments`, M21 `openmm_mutation_model_v1`은 기본 120·240 이하이고 범위 밖이면 422 `argument_invalid`), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
+2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하, M22 `qvina_ga_dock_v1`과 M23 `sequence_ga_dock_v1`은 기본값 없이 `ga.total_s + 600` 이상 15000 이하이고 범위 밖이면 422 `invalid_job_arguments`, M21 `openmm_mutation_model_v1`은 기본 120·240 이하이고 범위 밖이면 422 `argument_invalid`), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
 3. `POST /jobs/{job_id}/start`: run에서 첫 비싼 계산이면 409 `{"ok": false, "approval": {gate: "expensive_first_call", tool, reason}}`를 돌려주고 승인 요청을 기록한다.
 4. `POST /jobs/approve`: 대기 중인 승인 요청이 있고 해당 도구의 queued 작업이 있을 때만 승인을 기록한다. 없으면 412다.
 5. `POST /jobs/{job_id}/start`를 다시 부른다. 전역 heavy-worker 게이트에 걸리면 409와 reason_code를 돌려준다.
@@ -472,7 +472,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - 429 `resource_exceeded`: `ga_limit_raise_required`, `detail: {reason_code, needed{expensive_calls, wall_clock_s}, shortfall{expensive_calls, wall_clock_s}}`. 작업 제출에서만 난다(시작 전 확인은 부족분을 숫자로 돌려주고 증액 승인은 부족분을 올린다).
 
 ### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
-- `{protocol_id: "qvina_ga_dock_v1", args, timeout_s}`. `timeout_s`는 이 프로토콜만 `ga.total_s + 600` 이상 15000 이하이고 기본값이 없다(빠지면 `invalid_job_arguments`). 화면은 늘 `total_s + 600`을 보낸다. 호출 키에 들어가지 않는다. API 모델 `JobSubmit.timeout_s`는 15000까지 받는다: 이 프로토콜의 모델 거절(`timeout_s` > 15000, `args` 모양)은 닫힌 이유 `invalid_job_arguments`(도구 실패 본문)로 바꾸고, 다른 프로토콜은 `JobQueue`가 각자 상한(120, 240, 900, 7800)으로 거절한다. 그래서 다른 프로토콜의 7800 < `timeout_s` ≤ 15000 요청은 M22부터 422 `{"ok": false, "error": "input_invalid", "message": "invalid job timeout", …}`이다(전에는 `{"detail": {"error": "input_invalid", "message": "invalid job request"}}`). 15000 초과는 전처럼 요청 모델 오류다.
+- `{protocol_id: "qvina_ga_dock_v1", args, timeout_s}`. `timeout_s`는 이 프로토콜(M23 서열 GA도 같음)만 `ga.total_s + 600` 이상 15000 이하이고 기본값이 없다(빠지면 `invalid_job_arguments`). 화면은 늘 `total_s + 600`을 보낸다. 호출 키에 들어가지 않는다. API 모델 `JobSubmit.timeout_s`는 15000까지 받는다: 이 프로토콜의 모델 거절(`timeout_s` > 15000, `args` 모양)은 닫힌 이유 `invalid_job_arguments`(도구 실패 본문)로 바꾸고, 다른 프로토콜은 `JobQueue`가 각자 상한(120, 240, 900, 7800)으로 거절한다. 그래서 다른 프로토콜의 7800 < `timeout_s` ≤ 15000 요청은 M22부터 422 `{"ok": false, "error": "input_invalid", "message": "invalid job timeout", …}`이다(전에는 `{"detail": {"error": "input_invalid", "message": "invalid job request"}}`). 15000 초과는 전처럼 요청 모델 오류다.
 - 같은 GA 호출 키의 작업이 `queued`·`claimed`·`running`이거나 그 키의 검증된 `complete` 요약을 게시한 작업이 있으면 200으로 그 작업을 돌려준다(새 작업 없음). `partial` 요약만 있으면 새 작업을 만든다. dry-run run은 계획만 돌려준다.
 - 첫 비싼 계산이면 `/start`가 409 `approval`(`tool: "qvina_ga_design"`)을 돌려주고 `/jobs/approve`가 기록한다(작업 승인 허용 목록에 `qvina_ga_design`). `/start`는 작업이 끝날 때까지 응답하지 않는다. 화면은 제출 응답의 job id로 `GET /jobs/{id}`를 폴링하고 `POST /jobs/{id}/cancel`로 취소한다.
 - 시도는 1회다. `POST /jobs/{id}/retry`는 412 `precondition`이다. 시작 때 고정 pin(M18 pin + GA 작업 모듈·상수 해시)이 바뀌었으면 412 `precondition`(`worker_version_invalid`). 시작 때 재사용 계획의 크기가 128 MiB를 넘으면 예약 전에 422 `ga_reuse_too_large`.
@@ -507,6 +507,64 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - `POST /runs/{id}/method_reports` `{result_handle: <ligand_ga_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "ligand_ga"`, `status: "complete"`, `render_version: "ligand_ga_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "ligand_ga_result@1"`, `result_sha256`, 요약에서 복사한 `protocol, engine, candidate_set_handle, parent_sdf_handle, receptor, pins, call_key, selection_sha256, box, parameters, filter, ga, pool, stop_reason, generations_done, new_dockings_used, reused_count, reserved_units, generations`, `ga_status`, `method`, `score_label`, `score_column_label`, `score_row_label`, `claims`, `provenance{ligand_ga{job_id, attempt_id, protocol_id, tool_id, created_event_seq, completed_event_seq}, individuals:[{result_handle, job_id, attempt_id, protocol_id}]}`, `evidence_statement`, `limitation_ids`, `limitations`, `snapshot`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 종류 이름 "리간드 GA 설계 보고서").
 - 주장은 모두 `evidence_kind: "computed"`. statement ID: `receptor_input`, `removed_instance`, `candidate_set_input`, `box`, `parameter`, `ga_parameter`, `pool_count`, `run_count`, `generation_count`, `generation_score_range`, `individual_score`(요약 `generations[g].individuals[p].score`), `individual_result_score`(개체 결과 `modes[0].score_kcal_mol`, `source_kind: "docking_result"`). 점수 주장은 `scored` 개체만, `row_selector: {generation, position}`. 주장 필드는 M18과 같다. 점수 없는 개체의 점수 주장, 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 요약 점수와 개체 결과 첫 모드 점수의 불일치, 변조·미완료 요약은 422 `report_evidence_invalid`.
 - 스냅숏 키: `event_seq`, `time_utc`, `run_egress_mode`, `capability`(`available`, `status`, `reason_code`, `pins`, `ga_pins`), `budget`(올라간 한도 포함).
+
+## M23 서열 GA 설계
+
+규칙은 `docs/business-rules.md` "서열 GA 설계 (M23, `sequence_ga_dock_v1`)". 읽기 호출(시작 전 확인 POST 포함)은 run 객체와 가져오기 바이트(리간드 SDF, 이 run의 M7 사전 검사 투영)만 읽고 도구·작업·이벤트·예약·한도 변경·PDBFixer·RDKit·Meeko·qvina·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 요약 handle은 URL **경로**에 그대로 넣는다(`{handle:path}`, 하위 경로 라우트가 상세보다 먼저 등록되어 있다). 새 가져오기 종류는 없다(리간드 SDF는 M11 `ligand_sdf` 가져오기). 개체 도킹 결과는 M18 `/docking/results/*`로 읽는다.
+
+### GA 인자 (`args`, 시작 전 확인·증액 승인·작업 제출이 같은 본문)
+```json
+{"candidate_set": "obj://…/mutation_candidate_set/…",
+ "ligand": {"source": "sdf", "sdf_handle": "obj://…/chemical_raw_input/…"},
+ "box": {"source": "ligand_range", "margin_A": 8.0} | {"source": "manual", "center_A": [0, 0, 0], "size_A": [20, 20, 20]},
+ "parameters": {"seed": 20261005, "exhaustiveness": 8, "num_modes": 9, "energy_range": 3},
+ "selection_policy": "protein_only", "hydrogen_policy": "rebuild_pH7",
+ "acknowledgement": {"keep_input_protonation": true, "tool_assigned_types_charges": true, "rigid_no_optimization": true},
+ "ga": {"seed": 21, "population_size": 8, "generations": 5, "elite_count": 2, "tournament_size": 2,
+        "crossover_fraction": 0.5, "random_fraction": 0.2, "max_mutations": 3, "patience": 3,
+        "max_new_evaluations": 32, "total_s": 7200}}
+```
+`acknowledgement`는 M18 규칙(M18 세 항목이 모두 true여야 하며 빼거나 하나라도 아니면 입장 2단계 `acknowledgement_missing`, 두 리터럴 `selection_policy`·`hydrogen_policy`가 정확히 같지 않으면 `confirmation_missing`)이고 `ga`의 키는 열한 개 모두 필수다. `mode`·수용체 키(`receptor_*`·`connectivity`·`receptor_instance`·`receptor_source`)·`contact_cutoff_A`·`filter`·그 밖의 키는 거부한다.
+
+### 입장 거절 (작업을 만들지 않음, 예산 없음, 도구 실패 본문 `detail.reason_code`), 이 순서
+- 422 `input_invalid`: `invalid_job_arguments`, `confirmation_missing`, `acknowledgement_missing`, `candidate_set_invalid`, `structure_invalid`, M18 리간드·상자 이유의 부분집합(`ligand_record_count`·`ligand_unparseable`·`ligand_multiple_fragments`·`ligand_element_not_allowed`·`ligand_too_many_atoms`·`ligand_not_3d`·`box_invalid`·`box_too_large`).
+- (dry-run run은 여기서 계획만 돌려준다.) 412 `precondition`: `process_identity_unavailable`, `openmm_unavailable`, `pdbfixer_unavailable`, 도킹 환경 이유(`worker_missing` 등).
+- 422 `input_invalid`: `openmm_preflight_failed`(`detail{reason_code, m7_reason, m7_message}`), `residue_mismatch`, `box_no_receptor_atoms`, `ga_space_too_small`(`detail{reason_code, space_size, population_size}`).
+- 429 `resource_exceeded`: `staged_input_bytes`(스테이징 16 MiB 초과), `ga_limit_raise_required`(`detail: {reason_code, needed{expensive_calls, wall_clock_s}, shortfall{…}}`, 과금 없음, 작업 제출에서만).
+
+### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
+- `{protocol_id: "sequence_ga_dock_v1", args, timeout_s}`. `timeout_s`는 `ga.total_s + 600` 이상 15000 이하이고 기본값이 없다(빠지면 `invalid_job_arguments`). 화면은 늘 `total_s + 600`을 보낸다. 호출 키에 들어가지 않는다.
+- 같은 GA 호출 키의 작업이 `queued`·`claimed`·`running`이거나 그 키의 검증된 `complete` 요약을 게시한 작업이 있으면 200으로 그 작업을 돌려준다(새 작업 없음). `partial` 요약만 있으면 새 작업을 만든다. 첫 비싼 계산이면 `/start`가 409 `approval`(`tool: "sequence_ga_design"`)을 돌려주고 `/jobs/approve`가 기록한다. 시도는 1회이고 `POST /jobs/{id}/retry`는 412다. 시작 때 고정 pin(M18 pin + 모델링 pin + GA·모델링·상수·번들 모듈 해시)이 바뀌었으면 412 `worker_version_invalid`.
+- 작업 기록 상태: 작업 모듈이 스스로 끝나면 `done`(`artifacts.sequence_ga_result` = 요약 handle), 사용자 취소는 `cancelled`, 마감·크래시·자원 한도·출력 오류는 `failed`, 서버 재시작 복구는 `interrupted`. 야생형 기준 행 상태가 기록되기 전에 멈춘 작업은 요약이 없다. 요약을 만들 수 없으면 `failed`(`fatal`)이고 이미 게시된 개체 결과는 남는다.
+- GA 작업의 `GET /jobs`·`GET /jobs/{id}`·`/start` 응답에는 `sequence_ga: {space{positions, candidates, effective_max_mutations, size}, reserved_evaluations, reserved_units, reused_planned, reference_reuse_planned, reference_recorded, individuals_started, individuals_finished, generation_records, generations_complete, summary_handle, summary_status, summary_stop_reason}`가 붙는다(제출·재시도·취소 응답에는 없을 수 있다). 개수는 이 시도 디렉터리의 스테이징 파일 수이고 요약 전에는 객체를 읽지 않는다.
+
+### 읽기와 증액 승인
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `POST /runs/{id}/sequence_ga/preflight` | GA 인자(본문 최대 512 KiB, 중복 키 거부) | 200 `sequence_ga_preflight@1`: `{starts_job: false, capability, score_label, budget, remaining, admission{admitted, error, reason_code, message, detail}, selection_sha256, conditions_sha256, space{positions, candidates, effective_max_mutations, size}, projection_heavy_atoms, heavy_atom_warning, reusable_count, reference_reusable, reserved_evaluations, reserved_units, needed{expensive_calls, wall_clock_s}, shortfall{…}, full_run_may_be_partial, ga(정규화 값), statements:[{id, text}], existing_job: {job_id, status, summary_handle} \| null}`. 입장 거절(1–8)과 환경 없음도 200이며 `admission.admitted: false`, 이유·`detail`만 있고 나머지 수치는 null. 예산 부족은 거절이 아니라 `shortfall` | 413(본문), 422(JSON·쿼리), 404 없는 run |
+| `GET /runs/{id}/sequence_ga/results?offset&limit` | limit 1–100(기본 50) | `sequence_ga_list@1`: `{total, offset, limit, rows:[{handle, published_seq, valid, reason_code, job_id, attempt_id, status, stop_reason, generations_done, new_evaluations_used, reused_count, reserved_units, space, candidate_set, selection_sha256, ga}]}`. 요약 handle의 첫 게시 순서로 최신 순, 행마다 다시 검증하고 실패한 행은 `valid: false`, `reason_code: "evidence_invalid"`, 나머지 null | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/sequence_ga/results/{handle}` | — | `sequence_ga_detail@1`: `{handle, job_id, attempt_id, published_seq, score_label, score_column_label, score_row_label, statements:[{id, text}](저장 문장 목록), summary(저장 요약 그대로), generations:[{index, complete, min_score, max_score, individuals:[저장 개체 + detail_available]}], reference(저장 기준 행 + detail_available), meta}`. `detail_available`은 M18 결과 handle이 있을 때 true | 404, 422 `input_invalid`(다른 종류), 422 `method_evidence_invalid` |
+| `GET /runs/{id}/sequence_ga/results/{handle}/individual?key=` | 개체 키 `12-57-203` 또는 `wild_type`(필수, 이름이 아니라 키로만) | `sequence_ga_individual@1`: `{summary_handle, key, mutations, is_reference, eval_index, pick_index, evaluation, state, reason_code, score, model_handle, result_handle, appearances:[{generation, position, origin}], model(저장 모델에서 `final_bonds`·`atom_mapping`을 뺀 값 또는 null), statements:[S5], score_label, score_row_label, m18_detail}`. `m18_detail`은 결과가 있으면 M18 결과 상세 읽기와 같은 값, 없으면 null | 404(없는 키), 422(키 없음·형식·다른 종류), 422 `method_evidence_invalid` |
+| `GET /runs/{id}/sequence_ga/results/{handle}/structure?key=` | 같은 키 | 저장 mmCIF 바이트 그대로(모델의 `structure_sha256`·handle 대조), `chemical/x-mmcif`, 첨부 이름 `protview-sequence-ga-<handle 해시 앞 12>-<key>.cif`, `Cache-Control: private, no-store` | 404(모델 없는 행 포함), 422, 422 `method_evidence_invalid` |
+| `POST /runs/{id}/sequence_ga/limit_approval` | GA 인자(본문 최대 512 KiB) | 200 `{raised, selection_sha256, reserved_units, needed, shortfall_before, increase{expensive_calls, wall_clock_s}, limits_before, limits_after, shortfall_after, event_seq, budget}`. 부족분이 없으면 `raised: false`, `increase` 0, `event_seq: null`, 이벤트 없음(멱등) | 422 입장 거절, 412 `precondition`(dry-run `dry_run`, 환경 없음), 409 `cancelled`(취소된 run), 503 `transient`(run 실행 잠금이 잡혀 있음, 예: GA 실행 중), 413 |
+
+- 한 읽기(목록·상세·개체·구조) 안에서 이벤트 로그는 한 번만 읽는다(스냅숏). 시작 전 확인은 입장·재사용 색인·같은 호출 키 확인을 한 호출에서 하므로 여러 번 읽는다.
+- 증액 승인은 사람이 화면에서 누르는 이 경로뿐이다(M19·M22 라우트와 따로). 도구·분석 흐름 단계·뷰어 명령·작업 인자로 부를 수 없고 첫 비싼 계산 승인을 기록하지 않으며 예약·과금·환불하지 않는다.
+- 일반 `GET /runs/{id}/objects`·`/objects/meta`도 새 객체 종류를 읽을 수 있지만 검증을 거치지 않는다(M12·M17–M22와 같은 관례). 화면은 위 읽기와 `/docking/results/*`만 쓴다.
+
+### 이벤트
+- `sequence_ga_individual_published {job_id, attempt_id, key, model_handle, result_handle | null, conditions_sha256}`: 작업 프로세스 그룹 정리 확인 뒤 새로 평가한 개체(또는 기준 행 `wild_type`)의 모델이 저장될 때마다. 이 이벤트가 그 결과의 게시 증거이며(요약 게시가 없어도) M18 읽기·보고서·M19·M22·GA 재사용이 받아들인다. 모델링 단계에서 실패한 개체는 쓰지 않는다.
+- `sequence_ga_published {job_id, attempt_id, summary_handle, reused_count}`: 모든 개체 게시 뒤 요약을 게시할 때(마지막).
+- `job_dispatch_intent`에 `sequence_reuse: {records, reference}`가 붙고 `budget_reserved.expensive_calls`는 `reserved_units`다. `budget_limit_updated`는 `by: "human"`과 GA 맥락을 담는다.
+
+### capability와 도구 목록
+- `/capabilities`의 `methods.sequence_ga_design`(`sequence_ga_capability@1`): `{protocol_id: "sequence_ga_dock_v1", tool_id: "sequence_ga_design", engine: "qvina", execution_lane: "durable_job", result_schema, model_schema, available, status, reason_code, reason, pins, versions{model, docking}, ga_ranges{키: {min, max, default}}, timeout_s{max: 15000, finish_margin: 600}, limits{positions, candidates, population, generations, new_evaluations, max_mutations, model_step_s, docking_step_s, total_s_max, model_object_bytes, output_bytes, summary_bytes, staged_bytes, m18_heavy_atom_estimate, consecutive_failures}, units_per_evaluation, score_label, score_row_label, statements{S1…S6}, model_limitations}`. OpenMM 8.6.0 포스필드·PDBFixer 1.12.0·프로세스 신원·도킹 환경 pin·GA 작업 모듈 handshake·프로젝트 인터프리터·모듈 파일이 모두 맞을 때만 사용 가능이고 아니면 `available: false`와 이유만이다(M21·M18 이유를 그대로).
+- `sequence_ga_design`은 `config/tools.yaml`의 L3 명세(`emits: sequence_ga_result`, `cost_class: expensive`)로 등록되고 작업 전용이며 `GET /tools`(L3 포함)에는 나오지 않는다. `/commands`로 실행되지 않는다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <sequence_ga_result>}` → 201. manifest는 `method_report_manifest@1`, `analysis_type: "sequence_ga"`, `status: "complete"`, `render_version: "sequence_ga_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_schema: "sequence_ga_result@1"`, `result_sha256`, 요약에서 복사한 핵심 키, `ga_status`, `docking_method`, `claims`, `provenance{sequence_ga, rows[]}`, `limitation_ids`, `evidence_statement`, 스냅숏 키(`event_seq`, `time_utc`, `run_egress_mode`, `capability`, `budget`). 제목 "서열 GA 설계 보고서".
+- 주장은 모두 `computed`. statement ID: `candidate_set_input`, `structure_input`, `ligand_input`, `box`, `parameter`, `ga_parameter`, `space_count`, `run_count`, `generation_count`, `generation_score_range`, `individual_score`, `individual_result_score`, `reference_score`, `reference_result_score`. 점수 주장은 `scored` 개체·기준 행만이다. 점수 없는 개체의 점수 주장, 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 요약 점수와 결과 첫 모드 점수의 불일치, OpenMM 전위·구조 간 비교 주장, 변조·미완료 요약, 다른 run의 증거는 422 `report_evidence_invalid`.
 
 ## 과거 단계 실행기 (CLI)
 

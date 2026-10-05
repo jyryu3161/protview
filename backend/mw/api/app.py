@@ -33,6 +33,8 @@ from .. import (
     mutation_model_reads,
     mutation_reads,
     numbering_reads,
+    sequence_ga_jobs,
+    sequence_ga_reads,
 )
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
@@ -81,6 +83,8 @@ from ..saved_scenes import (
     save_scene,
     scene_detail,
 )
+from ..sequence_ga_constants import PROTOCOL as SEQUENCE_GA_PROTOCOL
+from ..sequence_ga_reports import build_sequence_ga_report, saved_sequence_ga_report
 from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
@@ -183,8 +187,9 @@ class Command(BaseModel):
 class JobSubmit(BaseModel):
     protocol_id: str
     args: dict[str, Any] = Field(default_factory=dict)
-    # 15000 s only for qvina_ga_dock_v1 and 7800 s for qvina_batch_dock_v1; JobQueue.submit keeps every other
-    # protocol's own bound (<= 900 s) and refuses a longer timeout there ("invalid job timeout", 422).
+    # 15000 s only for qvina_ga_dock_v1 and sequence_ga_dock_v1 (M23) and 7800 s for qvina_batch_dock_v1;
+    # JobQueue.submit keeps every other protocol's own bound (<= 900 s) and refuses a longer timeout there
+    # ("invalid job timeout", 422).
     timeout_s: float = Field(default=60, gt=0, le=15000, allow_inf_nan=False)
     model_config = {"extra": "forbid"}
 
@@ -374,6 +379,8 @@ def _public_job(job: dict[str, Any], run: Run | None = None) -> dict[str, Any]:
         result["artifacts"] = {"docking_batch_result": job["output_handles"][0]}
     elif job.get("protocol_id") == GA_PROTOCOL and job.get("status") == "done":
         result["artifacts"] = {"ligand_ga_result": job["output_handles"][0]}
+    elif job.get("protocol_id") == SEQUENCE_GA_PROTOCOL and job.get("status") == "done":
+        result["artifacts"] = {"sequence_ga_result": job["output_handles"][0]}
     elif job.get("protocol_id") == "openmm_mutation_model_v1" and job.get("status") == "done":
         result["artifacts"] = {"mutation_model": job["output_handles"][0]}
     else:
@@ -384,6 +391,9 @@ def _public_job(job: dict[str, Any], run: Run | None = None) -> dict[str, Any]:
     if job.get("protocol_id") == GA_PROTOCOL and run is not None:
         # Progress = staged individual/generation file counts; the summary handle once published (any end state).
         result["ga"] = ligand_ga_jobs.progress(run, job)
+    if job.get("protocol_id") == SEQUENCE_GA_PROTOCOL and run is not None:
+        # M23: staged reference/individual/generation file counts; the summary handle once published (any end state).
+        result["sequence_ga"] = sequence_ga_jobs.progress(run, job)
     return result
 
 
@@ -656,6 +666,8 @@ def capabilities() -> dict[str, Any]:
     methods["ligand_ga_design"] = ligand_ga_jobs.capability(methods["ligand_docking"])
     # M21: fixed OpenMM 8.6.0 (M7 dependencies()) + PDBFixer 1.12.0 (metadata only) + process-identity adapter.
     methods["mutation_model"] = mutation_model_bundle.capability()
+    # M23: mutation_model + ligand_docking + the sequence GA modules, project interpreter and GA worker handshake.
+    methods["sequence_ga_design"] = sequence_ga_jobs.capability(methods["ligand_docking"], methods["mutation_model"])
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1272,6 +1284,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == ligand_ga_reads.SUMMARY:
             # Reads the stored GA summary and its individuals' results only; nothing is docked again.
             return build_ligand_ga_report(run, body.result_handle)
+        if kind == sequence_ga_reads.SUMMARY:
+            # M23: reads the stored sequence GA summary, its rows' models and results only; nothing is modelled or
+            # docked again.
+            return build_sequence_ga_report(run, body.result_handle)
         if kind == "mutation_candidate_set":
             # Reads the stored candidate set only (re-validated); no candidate is generated again.
             return build_mutation_report(run, body.result_handle)
@@ -1305,7 +1321,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga"}
+                                        "ligand_ga", "sequence_ga"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1322,7 +1338,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                   if meta["summary"].get("analysis_type") in {"chemical_interactions", "pocket_detection", "residue_numbering",
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
-                                                              "mutation_candidates", "mutation_model", "ligand_ga"}
+                                                              "mutation_candidates", "mutation_model", "ligand_ga",
+                                                              "sequence_ga"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1347,6 +1364,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_docking_batch_report(run, handle)
         if report.get("analysis_type") == "ligand_ga":
             return saved_ligand_ga_report(run, handle)
+        if report.get("analysis_type") == "sequence_ga":
+            return saved_sequence_ga_report(run, handle)
         if report.get("analysis_type") == "mutation_candidates":
             return saved_mutation_report(run, handle)
         if report.get("analysis_type") == "mutation_model":
@@ -1417,7 +1436,7 @@ def approve_job(rid: str) -> dict[str, Any]:
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
                       "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand",
-                      "qvina_dock_batch", "openmm_mutation_model", "qvina_ga_design"}
+                      "qvina_dock_batch", "openmm_mutation_model", "qvina_ga_design", "sequence_ga_design"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1453,14 +1472,14 @@ async def submit_job(rid: str, request: Request) -> Any:
                 error["loc"] and error["loc"][0] in {"timeout_s", "args"} for error in exc.errors()):
             return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid job timeout or arguments",
                                            detail={"reason_code": "argument_invalid"}))
-        # M22 keeps its closed admission reason too (no server timeout default; timeout_s <= 15000).
-        if data.get("protocol_id") == GA_PROTOCOL and all(
+        # M22 and M23 keep their closed admission reason too (no server timeout default; timeout_s <= 15000).
+        if data.get("protocol_id") in (GA_PROTOCOL, SEQUENCE_GA_PROTOCOL) and all(
                 error["loc"] and error["loc"][0] in {"timeout_s", "args"} for error in exc.errors()):
             return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid job timeout or arguments",
                                            detail={"reason_code": "invalid_job_arguments"}))
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid job request"}) from exc
     try:
-        # An absent timeout_s is the protocol default (M21: 120 s; M22: none, refused; every other: the former 60 s).
+        # An absent timeout_s is the protocol default (M21: 120 s; M22, M23: none, refused; every other: 60 s).
         timeout_s = body.timeout_s if "timeout_s" in body.model_fields_set else None
         result = await run_in_threadpool(lambda: JobQueue(_run(rid)).submit(
             body.protocol_id, body.args, timeout_s=timeout_s))
@@ -2038,6 +2057,21 @@ async def ligand_ga_limit_approval(rid: str, request: Request) -> Any:
         return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
 
 
+# ----------------------------------------------------------------- M23 sequence GA limit raise (human UI action only)
+@app.post("/runs/{rid}/sequence_ga/limit_approval")
+async def sequence_ga_limit_approval(rid: str, request: Request) -> Any:
+    """Spec 7: the person's explicit approval to raise the run limits by this sequence GA's shortfall (body = the GA
+    job arguments). Not a tool, plan or workflow step, model command or loop action; no other path calls it."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    try:
+        return await run_in_threadpool(lambda: sequence_ga_jobs.limit_approval(_run(rid), args))
+    except ToolFailure as error:
+        return _tool_error(error)
+    except RunCancelled:
+        return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled", "message": "run cancelled"})
+
+
 # ----------------------------------------------------------------- M19 batch reads (no event, job, tool or engine)
 @app.post("/runs/{rid}/docking/batches/preflight")
 async def docking_batch_preflight(rid: str, request: Request) -> dict[str, Any]:
@@ -2136,6 +2170,97 @@ def ligand_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
         return {**ligand_ga_reads.summary_detail(run, handle), "meta": meta}
     except ligand_ga_reads.LigandGaEvidenceError as exc:
         raise _ligand_ga_evidence_error(exc) from exc
+
+
+# ---------------------------------------------------------------- M23 sequence GA reads (no event, job, tool or engine)
+@app.post("/runs/{rid}/sequence_ga/preflight")
+async def sequence_ga_preflight(rid: str, request: Request) -> dict[str, Any]:
+    """Spec 9: admission (steps 1-8, refusals answered 200), space, projected heavy atoms, reuse, reserved figures,
+    need, remaining budget, shortfall, full_run_may_be_partial and S1/S4-S6 for a sequence GA request (body = the GA
+    job arguments). A read: no event, job, tool, reservation or limit change."""
+    _only_query(request, set())
+    args = _chemical_json(await _bounded_chemical_body(request, CHEMICAL_REQUEST_LIMIT))
+    run = _run(rid)
+    return await run_in_threadpool(lambda: sequence_ga_reads.preflight(run, args))
+
+
+@app.get("/runs/{rid}/sequence_ga/results")
+def sequence_ga_results(rid: str, request: Request, offset: int = Query(0, ge=0),
+                        limit: int = Query(sequence_ga_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                           le=sequence_ga_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's sequence GA summaries, newest first; each row re-validated (one event-log read)."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return sequence_ga_reads.list_summaries(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid sequence GA record"}) from exc
+
+
+def _sequence_ga_summary(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (sequence_ga_reads.SUMMARY, sequence_ga_reads.SUMMARY_SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a sequence_ga_result"})
+    return meta
+
+
+def _sequence_ga_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid sequence GA evidence"})
+
+
+def _sequence_ga_row_unknown(exc: Exception) -> HTTPException:
+    return HTTPException(404, detail={"error": "not_found", "message": str(exc)})
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: the sub-resource routes (/individual, /structure) are
+# registered before the detail route.
+@app.get("/runs/{rid}/sequence_ga/results/{handle:path}/individual")
+def sequence_ga_individual(rid: str, handle: str, request: Request, key: str | None = None) -> dict[str, Any]:
+    """One individual (key ``12-57-203``) or the wild-type reference row (``wild_type``): stored row, stored model
+    without atom and bond rows, appearances and the M18 detail read of its result."""
+    _only_query(request, {"key"})
+    run = _run(rid)
+    _sequence_ga_summary(run, handle)
+    try:
+        return sequence_ga_reads.individual(run, handle, key)
+    except sequence_ga_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except sequence_ga_reads.RowUnknown as exc:
+        raise _sequence_ga_row_unknown(exc) from exc
+    except (sequence_ga_reads.SequenceGaEvidenceError, docking_bundle.DockingEvidenceError) as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/sequence_ga/results/{handle:path}/structure")
+def sequence_ga_structure(rid: str, handle: str, request: Request, key: str | None = None) -> Response:
+    """The stored mmCIF bytes of one row's model, byte for byte (SHA-256 and handle checked)."""
+    _only_query(request, {"key"})
+    run = _run(rid)
+    _sequence_ga_summary(run, handle)
+    try:
+        raw, filename = sequence_ga_reads.structure_download(run, handle, key)
+    except sequence_ga_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except sequence_ga_reads.RowUnknown as exc:
+        raise _sequence_ga_row_unknown(exc) from exc
+    except sequence_ga_reads.SequenceGaEvidenceError as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
+    return Response(raw, media_type="chemical/x-mmcif", headers={
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/runs/{rid}/sequence_ga/results/{handle:path}")
+def sequence_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One validated sequence GA summary with its generations and its reference row; individual results open in the
+    M18 /docking/results/* reads."""
+    _only_query(request, set())
+    run = _run(rid)
+    meta = _sequence_ga_summary(run, handle)
+    try:
+        return {**sequence_ga_reads.summary_detail(run, handle), "meta": meta}
+    except sequence_ga_reads.SequenceGaEvidenceError as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")

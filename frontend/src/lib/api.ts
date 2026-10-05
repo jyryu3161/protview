@@ -14,6 +14,8 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   MutationModelArgs, MutationModelCapability, MutationModelContactPage, MutationModelDetail, MutationModelDockingPairs,
   MutationModelJob, MutationModelList, MutationModelReportArtifact, MutationModelSide, MutationModelSubmission,
   DockingSourceArgs, MutationReportArtifact, MutationRequestArgs, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
+  SequenceGaArgs, SequenceGaCapability, SequenceGaDetail, SequenceGaIndividualRead, SequenceGaJob,
+  SequenceGaLimitApproval, SequenceGaList, SequenceGaPreflight, SequenceGaReportArtifact, SequenceGaSubmission,
   ToolError } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
@@ -33,6 +35,8 @@ export const DOCKING_TIMEOUT_S = 600;
 export const DOCKING_BATCH_TIMEOUT_S = 7800;
 /** `POST /jobs` time limit of a GA job = `ga.total_s` + this finishing margin (M22 spec 2; the screen always sends it). */
 export const LIGAND_GA_FINISH_MARGIN_S = 600;
+/** `POST /jobs` time limit of a sequence GA job = `ga.total_s` + this finishing margin (M23 spec 2; always sent). */
+export const SEQUENCE_GA_FINISH_MARGIN_S = 600;
 
 export interface SceneBindingRequest { client_instance_id: string; viewer_session_id: string;
   scene_generation: number; action_revision: number; request_id: string }
@@ -57,7 +61,8 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     ligand_docking_batch?: DockingBatchCapability;
     ligand_ga_design?: LigandGaCapability;
     mutation_candidates?: { available: boolean; reason_code: string | null; reason: string | null };
-    mutation_model?: MutationModelCapability } }
+    mutation_model?: MutationModelCapability;
+    sequence_ga_design?: SequenceGaCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -443,6 +448,36 @@ export const api = {
   /** Report `analysis_type: "mutation_model"` of one stored model (nothing is modelled again; no docking score). */
   createMutationModelReport: (id: string, modelHandle: string, signal?: AbortSignal) =>
     request<MutationModelReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: modelHandle }, signal)),
+  // ---- M23 sequence GA design (preflight, list, detail, individual and structure are reads; the handle goes in the
+  // path; start, approval and cancel use the shared job routes) ----
+  /** Admission, space, heavy atoms, reuse, reserved figures, need, remaining budget and shortfall (no event). */
+  sequenceGaPreflight: (id: string, args: SequenceGaArgs, signal?: AbortSignal) =>
+    request<SequenceGaPreflight>(runPath(id, "/sequence_ga/preflight"), jsonPost(args, signal)),
+  /** The person's explicit approval: the server raises each limit by this GA's current shortfall only. */
+  sequenceGaLimitApproval: (id: string, args: SequenceGaArgs) =>
+    request<SequenceGaLimitApproval>(runPath(id, "/sequence_ga/limit_approval"), jsonPost(args)),
+  submitSequenceGa: (id: string, args: SequenceGaArgs) =>
+    request<SequenceGaSubmission>(runPath(id, "/jobs"), jsonPost({ protocol_id: "sequence_ga_dock_v1", args,
+      timeout_s: args.ga.total_s + SEQUENCE_GA_FINISH_MARGIN_S })),
+  /** Stored job record with `sequence_ga` progress (staged file counts, summary handle). */
+  sequenceGaJob: (id: string, jobId: string, signal?: AbortSignal) =>
+    request<SequenceGaJob>(runPath(id, `/jobs/${encodeURIComponent(jobId)}`), { signal }),
+  sequenceGaJobs: (id: string, signal?: AbortSignal) => request<SequenceGaJob[]>(runPath(id, "/jobs"), { signal }),
+  /** Newest first; `limit` 1–100. */
+  sequenceGaResults: (id: string, offset = 0, limit = 100, signal?: AbortSignal) =>
+    request<SequenceGaList>(runPath(id, `/sequence_ga/results?offset=${offset}&limit=${limit}`), { signal }),
+  sequenceGaResult: (id: string, handle: string, signal?: AbortSignal) =>
+    request<SequenceGaDetail>(runPath(id, `/sequence_ga/results/${encodeURIComponent(handle)}`), { signal }),
+  /** One individual (`key` "12-57-203") or the wild-type reference row (`key` "wild_type"); keys only, never names. */
+  sequenceGaIndividual: (id: string, handle: string, key: string, signal?: AbortSignal) =>
+    request<SequenceGaIndividualRead>(runPath(id, `/sequence_ga/results/${encodeURIComponent(handle)}/individual` +
+      `?key=${encodeURIComponent(key)}`), { signal }),
+  /** Stored mmCIF of one row's model, byte for byte (a link the person clicks; never fetched automatically). */
+  sequenceGaStructureUrl: (id: string, handle: string, key: string) =>
+    `/api${runPath(id, `/sequence_ga/results/${encodeURIComponent(handle)}/structure?key=${encodeURIComponent(key)}`)}`,
+  /** Report `analysis_type: "sequence_ga"` of one stored GA summary (nothing is modelled or docked again). */
+  createSequenceGaReport: (id: string, summaryHandle: string, signal?: AbortSignal) =>
+    request<SequenceGaReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: summaryHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

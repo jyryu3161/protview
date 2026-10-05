@@ -869,30 +869,38 @@ function ContactTable({ page, onPage }: { page: MutationModelContactPage; onPage
   </div>;
 }
 
-function PairInputs({ form, update, runId, prereq, ligandSdfs, onReloadPrereq }: { form: PairDockingForm;
+/**
+ * Ligand, box, value and acknowledgement inputs of a docking on a mutation-model receptor (3D SDF only, free docking,
+ * no instance-range box). Exported for the M23 sequence GA area, which passes its own test-id prefix, radio-group
+ * names, ligand-source reason and labels; with the defaults this area renders exactly as before.
+ */
+export function PairInputs({ form, update, runId, prereq, ligandSdfs, onReloadPrereq,
+  idPrefix = "mutation-model-pair", ligandSourceReason = pairLigandSourceDisabledReason, seedLabel,
+  acknowledgementLegend = "제출 전 확인 (세 항목 모두, 두 작업에 같이 적용)" }: { form: PairDockingForm;
   update: (patch: Partial<PairDockingForm>) => void; runId: string; prereq: Load<DockingPrerequisites>;
-  ligandSdfs: DockingPrerequisites["imports"]; onReloadPrereq: () => void }) {
-  return <div className="mw-mutation-group" data-testid="mutation-model-pair-form">
+  ligandSdfs: DockingPrerequisites["imports"]; onReloadPrereq: () => void; idPrefix?: string;
+  ligandSourceReason?: (source: string) => string | null; seedLabel?: string; acknowledgementLegend?: string }) {
+  return <div className="mw-mutation-group" data-testid={`${idPrefix}-form`}>
     <span className="mw-eyebrow">리간드 출처</span>
     {prereq.status === "loading" && <p className="mw-mutation-note" aria-busy="true">도킹 입력 목록을 읽는 중</p>}
     {prereq.status === "error" && <ErrorLine message={prereq.message} onRetry={onReloadPrereq} />}
     <div className="mw-mutation-inline">
-      <Button size="sm" data-testid="mutation-model-pair-prereq-refresh" disabled={prereq.status === "loading"}
+      <Button size="sm" data-testid={`${idPrefix}-prereq-refresh`} disabled={prereq.status === "loading"}
         onClick={onReloadPrereq}>도킹 입력 목록 다시 읽기</Button>
       <span className="mw-mutation-note">리간드 3D SDF 가져오기는 리간드 설계·탐색 탭에서 만듭니다.</span>
     </div>
-    <fieldset className="mw-mutation-choices" data-testid="mutation-model-pair-ligand-source">
+    <fieldset className="mw-mutation-choices" data-testid={`${idPrefix}-ligand-source`}>
       <legend>출처 (한 번에 하나, 자동으로 고르지 않음)</legend>
       {LIGAND_SOURCES.map(source => {
-        const reason = pairLigandSourceDisabledReason(source);
+        const reason = ligandSourceReason(source);
         return <label key={source} data-pair-ligand-source={source} data-disabled-reason={reason ?? undefined}>
-          <input type="radio" name={`mutation-model-pair-source-${runId}`} checked={form.ligandSource === source}
+          <input type="radio" name={`${idPrefix}-source-${runId}`} checked={form.ligandSource === source}
             disabled={!!reason} onChange={() => update({ ligandSource: source })} /> {LIGAND_SOURCE_LABEL[source]}
           {reason && <span className="mw-mutation-note">{reason}</span>}</label>;
       })}
     </fieldset>
     {form.ligandSource === "sdf" && <label className="mw-mutation-check">리간드 SDF 가져오기
-      <select className="mw-select" data-testid="mutation-model-pair-sdf" value={form.sdfHandle ?? ""}
+      <select className="mw-select" data-testid={`${idPrefix}-sdf`} value={form.sdfHandle ?? ""}
         onChange={event => update({ sdfHandle: event.target.value || null })}>
         <option value="">선택</option>
         {ligandSdfs.map(row => <option key={row.handle} value={row.handle}>
@@ -902,50 +910,50 @@ function PairInputs({ form, update, runId, prereq, ligandSdfs, onReloadPrereq }:
       <p className="mw-mutation-note">가져온 리간드 SDF가 없습니다.</p>}
 
     <span className="mw-eyebrow">상자</span>
-    <p className="mw-mutation-note" data-testid="mutation-model-pair-frame-note">{BOX_FRAME_NOTE}</p>
-    <fieldset className="mw-mutation-choices" data-testid="mutation-model-pair-box-source">
+    <p className="mw-mutation-note" data-testid={`${idPrefix}-frame-note`}>{BOX_FRAME_NOTE}</p>
+    <fieldset className="mw-mutation-choices" data-testid={`${idPrefix}-box-source`}>
       <legend>상자 출처 (자동으로 고르지 않음)</legend>
       {BOX_SOURCES.map((source: DockingBoxSource) => {
         const reason = pairBoxSourceDisabledReason(source);
         return <label key={source} data-pair-box={source} data-disabled-reason={reason ?? undefined}>
-          <input type="radio" name={`mutation-model-pair-box-${runId}`} checked={form.boxSource === source}
+          <input type="radio" name={`${idPrefix}-box-${runId}`} checked={form.boxSource === source}
             disabled={!!reason || !(PAIR_BOX_SOURCES as readonly string[]).includes(source)}
             onChange={() => update({ boxSource: source })} /> {boxSourceLabel(source)}
           {reason && <span className="mw-mutation-note">{reason}</span>}</label>;
       })}
     </fieldset>
     {form.boxSource === "ligand_range" && <label className="mw-mutation-check">여백 (Å, {MARGIN_MIN_A}–{MARGIN_MAX_A})
-      <input className="mw-mutation-input" data-testid="mutation-model-pair-margin" inputMode="decimal" value={form.margin}
+      <input className="mw-mutation-input" data-testid={`${idPrefix}-margin`} inputMode="decimal" value={form.margin}
         onChange={event => update({ margin: event.target.value })} /></label>}
-    {form.boxSource === "manual" && <div className="mw-mutation-inline" data-testid="mutation-model-pair-manual-box">
+    {form.boxSource === "manual" && <div className="mw-mutation-inline" data-testid={`${idPrefix}-manual-box`}>
       {AXES.map((axis, i) => <label key={`c${axis}`} className="mw-mutation-check">중심 {axis} (Å)
-        <input className="mw-mutation-input" data-testid={`mutation-model-pair-center-${axis}`} inputMode="decimal"
+        <input className="mw-mutation-input" data-testid={`${idPrefix}-center-${axis}`} inputMode="decimal"
           value={form.center[i]} onChange={event => update({ center: form.center.map((value, j) => j === i
             ? event.target.value : value) as PairDockingForm["center"] })} /></label>)}
       {AXES.map((axis, i) => <label key={`s${axis}`} className="mw-mutation-check">크기 {axis} (Å, {BOX_SIDE_MIN_A}–{BOX_SIDE_MAX_A})
-        <input className="mw-mutation-input" data-testid={`mutation-model-pair-size-${axis}`} inputMode="decimal"
+        <input className="mw-mutation-input" data-testid={`${idPrefix}-size-${axis}`} inputMode="decimal"
           value={form.size[i]} onChange={event => update({ size: form.size.map((value, j) => j === i
             ? event.target.value : value) as PairDockingForm["size"] })} /></label>)}
     </div>}
 
     <span className="mw-eyebrow">값과 확인</span>
     <div className="mw-mutation-inline">
-      <label className="mw-mutation-check">seed (필수, {SEED_MIN}–{SEED_MAX})
-        <input className="mw-mutation-input" data-testid="mutation-model-pair-seed" inputMode="numeric" value={form.seed}
+      <label className="mw-mutation-check">{seedLabel ?? <>seed (필수, {SEED_MIN}–{SEED_MAX})</>}
+        <input className="mw-mutation-input" data-testid={`${idPrefix}-seed`} inputMode="numeric" value={form.seed}
           onChange={event => update({ seed: event.target.value })} /></label>
       <label className="mw-mutation-check">exhaustiveness ({EXHAUSTIVENESS_MIN}–{EXHAUSTIVENESS_MAX})
-        <input className="mw-mutation-input" data-testid="mutation-model-pair-exhaustiveness" inputMode="numeric"
+        <input className="mw-mutation-input" data-testid={`${idPrefix}-exhaustiveness`} inputMode="numeric"
           value={form.exhaustiveness} onChange={event => update({ exhaustiveness: event.target.value })} /></label>
       <label className="mw-mutation-check">num_modes ({NUM_MODES_MIN}–{NUM_MODES_MAX})
-        <input className="mw-mutation-input" data-testid="mutation-model-pair-num-modes" inputMode="numeric"
+        <input className="mw-mutation-input" data-testid={`${idPrefix}-num-modes`} inputMode="numeric"
           value={form.numModes} onChange={event => update({ numModes: event.target.value })} /></label>
       <label className="mw-mutation-check">energy_range (kcal/mol, {ENERGY_RANGE_MIN}–{ENERGY_RANGE_MAX})
-        <input className="mw-mutation-input" data-testid="mutation-model-pair-energy-range" inputMode="decimal"
+        <input className="mw-mutation-input" data-testid={`${idPrefix}-energy-range`} inputMode="decimal"
           value={form.energyRange} onChange={event => update({ energyRange: event.target.value })} /></label>
     </div>
     <p className="mw-mutation-note">cpu는 1로 고정됩니다.</p>
-    <fieldset className="mw-mutation-choices" data-testid="mutation-model-pair-acknowledgement">
-      <legend>제출 전 확인 (세 항목 모두, 두 작업에 같이 적용)</legend>
+    <fieldset className="mw-mutation-choices" data-testid={`${idPrefix}-acknowledgement`}>
+      <legend>{acknowledgementLegend}</legend>
       {ACKNOWLEDGEMENT_KEYS.map((key: DockingAcknowledgementKey) => <label key={key} data-pair-ack={key}>
         <input type="checkbox" checked={form.acknowledgement[key]}
           onChange={event => update({ acknowledgement: { ...form.acknowledgement, [key]: event.target.checked } })} />

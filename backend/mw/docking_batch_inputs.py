@@ -207,6 +207,22 @@ def published_m18_results(events: Iterable[dict[str, Any]]) -> dict[str, str]:
                 key = docking_bundle.call_key(row_arguments(job["selected"]["arguments"], event["candidate_id"]),
                                               job["method"])
                 found.setdefault(key, event["handle"])
+    # M23 (spec 8 (a), additive): every docking result a sequence GA published for a model side (an individual or its
+    # wild-type reference row), its M18 call key rebuilt from the GA job record (the side's standalone M18 request
+    # under the GA's ligand, box and values) and the GA job's M18 pins.
+    sequences = {event["job"]["job_id"]: event["job"] for event in events
+                 if event["type"] == "job_submitted" and event["job"].get("protocol_id") == "sequence_ga_dock_v1"}
+    if sequences:
+        from .sequence_ga_inputs import individual_arguments
+
+        for event in events:
+            job = sequences.get(event.get("job_id")) if event["type"] == "sequence_ga_individual_published" else None
+            if (job is not None and type(event.get("result_handle")) is str and
+                    type(event.get("model_handle")) is str and type(event.get("key")) is str):
+                side = "wild_type_reference" if event["key"] == "wild_type" else "mutant"
+                key = docking_bundle.call_key(individual_arguments(job["selected"]["arguments"],
+                                                                   event["model_handle"], side), job["method"])
+                found.setdefault(key, event["result_handle"])
     return found
 
 

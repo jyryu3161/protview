@@ -1,0 +1,1314 @@
+{
+  "schema": "m19_case_ledger@1",
+  "generatedAt": "2026-10-05T12:17:20.681039+00:00",
+  "build": {
+    "buildId": "8UVqy3iRzm6o2VSKemMX3",
+    "gitHead": "7871e83ffafbee001eb0f849595b0a59c5615fef",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "6aba22113114284ce9e34098776f50f9628576321ea79e9afad19df6af2e5951",
+    "dirtyFiles": [
+      "?? docs/qa/m23-sequence-ga-20261005/acceptance/",
+      "?? docs/qa/m23-sequence-ga-20261005/m20-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m21-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m22-regression/"
+    ],
+    "recordedAt": "2026-10-05T12:14:19.530026+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "docking-batch-flow.cjs": "9598f058d5d6aa084416eba6c5a9c947eb39c80cca6ddee78c90b832f597497f",
+      "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "3c82786f51bbb090e64d773ac60b93b3c4c4c8ccbe83e18f9927cdb7c53d9452"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "B-run-panel": {
+      "text": "ligand tab batch area uses the global run (no run choice), capability line, no summaries, start blocked",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-m17-set": {
+      "text": "receptors imported in the docking area; real M17 inspection (approval) + enumeration at site 22 → the fixture candidate ids in set order",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-select": {
+      "text": "candidate set + parent SDF; M17 filter (heavy atoms ≤ 45, passes only) rows = the server's filtered page and the stored properties; checkboxes; 선택 n / 50; ids recorded in set order, not click order",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-refusal": {
+      "text": "water/zinc receptor → preflight refused receptor_unsupported_residue; the refusal list (seven residue fields, nulls kept, atom names) equals the fixture oracle; no job, no event",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-preflight": {
+      "text": "N 4 (parent + 3), needed 4 units / 1500 s = spec 6.3 arithmetic, remaining = budget, shortfall 0, no-refund note, wait note, rows new/reused, B1 verbatim; the view shows the server numbers",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-no-approval": {
+      "text": "no limit approval control while the shortfall is 0",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-run": {
+      "text": "real qvina_batch_dock_v1 to done without a second approval, exactly N units, summary listed not opened",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-table": {
+      "text": "status, B1/B3, every row (state, score = stored first row with ROUND_HALF_UP, score target, reason, reuse mark, detail) equals the stored summary and per-row results (no client recompute)",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-sort": {
+      "text": "row/candidate/score headers both ways follow the stored values; rows without a score always last; aria-sort; no rank column",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-detail": {
+      "text": "상세 열기 → the existing M18 detail of that row's stored result; pose SDF download = stored pose_sdf",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-dedupe": {
+      "text": "identical batch: preflight N 0 and the existing job; 일괄 시작 shows that job again (no new job, no unit)",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-reuse": {
+      "text": "subset batch: preflight N 0 / needed 60 s; a new job with no unit; every row marked 저장된 결과 재사용 with the stored handles",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-core-parent-disabled": {
+      "text": "코어 고정 clears and disables the parent row with batch_parent_not_allowed (no number)",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-limit-approval": {
+      "text": "core-fixed N 3 with 2 units left → shortfall 1, approval control shown, start blocked (batch_limit_raise_required); explicit approval raises the limit by the shortfall only (by human, batch context, no job/object), preflight re-read; the raised limit stays (global budget = backend)",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-core-fixed": {
+      "text": "core-fixed batch rows show 샘플 1(점수 오름차순 나열) scores equal to the stored results",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-report": {
+      "text": "보고서 만들기 → 리간드 도킹 일괄 보고서 in the knowledge-tab list (B1, B3, score name); Markdown/JSON downloads equal the backend",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-fail-row": {
+      "text": "planar parent fixture → the parent row fails ligand_not_3d (no score, detail disabled), the candidate rows are scored, the batch is complete, 4 units",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-cancel": {
+      "text": "slow batch cancelled after a finished row → partial / cancelled; finished row kept with its score, running row cancelled, the rest not_run with the reason and no number; no worker/qvina2 left; no refund",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-cap": {
+      "text": "labeled generated chain set (59): 50 selected, the 51st cannot be ticked; preflight N = 50 − reused finished rows, 7800 s, shortfall, may-be-partial note, approval offered (not used), start blocked",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-dry-run": {
+      "text": "labeled dry-run run record: dry-run note, no limit approval control, nothing computed",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-processes": {
+      "text": "no batch worker, docking worker, M17 worker, guardian or qvina2 process under the runs folder",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-wording": {
+      "text": "no rank/best/optimum/improvement/binding-strength/affinity word in the batch area outside the fixed sentences and the score names",
+      "modes": {
+        "batch-main": "pass"
+      },
+      "status": "pass"
+    },
+    "B-no-run": {
+      "text": "no run: the batch area shows only the no-run reason (no numbers, no controls)",
+      "modes": {
+        "batch-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "B-unavailable": {
+      "text": "backend without the locked environments: 사용할 수 없음 with the capability reason (worker_missing), no numbers, no controls, no batch requests",
+      "modes": {
+        "batch-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "B-reproducible": {
+      "text": "the flow's free batch run again in two fresh runs: the summary and every row result (contents with the run-scoped obj:// handles and input hashes replaced) and the poses SDF bytes equal the flow's (cpu 1, seed fixed)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "batch-main": {
+      "status": "pass",
+      "latest": "batch-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "batch-unavailable": {
+      "status": "pass",
+      "latest": "batch-unavailable",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "B-dry-run-shortfall": "a dry-run run cannot hold a candidate set (M17 jobs only plan there), so an admitted preflight with a shortfall cannot be reached in one; covered by frontend/tests/docking-batch.test.cjs and backend/tests/test_docking_batch_budget.py.",
+    "B-null-result": "qvina returns modes for every valid input here; no zero-mode row is forged. Covered by the backend batch tests and frontend/tests/docking-batch.test.cjs.",
+    "B-time-limits": "candidate_timeout, time_exhausted, worker_failed and the output cap need hours or a killed worker; covered by backend/tests/test_docking_batch_worker.py and test_docking_batch_jobs.py with test-only reduced constants."
+  },
+  "reproducibility": {
+    "flowArgs": {
+      "receptor_handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "receptor_model_number": 1,
+      "connectivity": {
+        "kind": "pdb_conect",
+        "sidecar_handle": null
+      },
+      "receptor_instance": null,
+      "mode": "free",
+      "box": {
+        "source": "ligand_range",
+        "margin_A": 8
+      },
+      "parameters": {
+        "seed": 42,
+        "exhaustiveness": 1,
+        "num_modes": 3,
+        "energy_range": 3
+      },
+      "candidate_set_handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/ligand_candidate_set/9db7aca382a20d6122f5b15e1f603eb4bad8613430ccf18e2fbc0d96b044f507",
+      "parent_sdf_handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+      "candidate_ids": [
+        "c_1afb7cd3e603456c",
+        "c_2c7a25e0cc0ad3f2",
+        "c_21d6c6f0d07e3759"
+      ],
+      "include_parent": true
+    },
+    "reference": {
+      "run": "run_5586b24fdaf94c14b4312c673ffa7e89",
+      "summary": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/4f26310d76e445742f0d334464284168a66bfd9ae02ccf4ca62d2ecdc2d20a3f",
+      "summarySha256": "c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475",
+      "batchStatus": "complete",
+      "rows": [
+        {
+          "row_index": 0,
+          "kind": "parent",
+          "candidate_id": null,
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -12.9,
+          "score_row_label": "모드 1(엔진 출력 순서)",
+          "resultSha256": "f330540b682f59a0ff97bdacb02bdc1eb97a3588fdf8de2e4fafb86a89037fbe",
+          "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+        },
+        {
+          "row_index": 1,
+          "kind": "candidate",
+          "candidate_id": "c_1afb7cd3e603456c",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -9.6,
+          "score_row_label": "모드 1(엔진 출력 순서)",
+          "resultSha256": "5dd4caf7f12ff5469c5948507dfdf9696f565d978c30bb759230752d4eb8f7a8",
+          "posesSha256": "ac79bf1bdc3b69ad66263a964ca214c47aec19ab42233c804a367c5ce2984eca"
+        },
+        {
+          "row_index": 2,
+          "kind": "candidate",
+          "candidate_id": "c_2c7a25e0cc0ad3f2",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -11.8,
+          "score_row_label": "모드 1(엔진 출력 순서)",
+          "resultSha256": "886347b63fd34d8483b943bcce322fc4bea62af06d13a2bda0bc2146404e7a92",
+          "posesSha256": "c44dc66f47f139a421fc9137b5b51de65cc5c7f4a80beb56f383996df0aade98"
+        },
+        {
+          "row_index": 3,
+          "kind": "candidate",
+          "candidate_id": "c_21d6c6f0d07e3759",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -11.6,
+          "score_row_label": "모드 1(엔진 출력 순서)",
+          "resultSha256": "96f13508394450830d9d991130055ff66231f0ac52b4a1426a8876af3ea6677f",
+          "posesSha256": "78257b48c964922a3675ea84e9be6ab71349b18bc18d6147f7572659cf91140f"
+        }
+      ]
+    },
+    "reruns": [
+      {
+        "run": "run_511b87afa7cc4f76b8ac767c17a5c16d",
+        "jobId": "job_7004cb86058f4354972780a7e089261e",
+        "status": "done",
+        "failure": null,
+        "args": {
+          "receptor_handle": "obj://run_511b87afa7cc4f76b8ac767c17a5c16d/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "receptor_model_number": 1,
+          "connectivity": {
+            "kind": "pdb_conect",
+            "sidecar_handle": null
+          },
+          "receptor_instance": null,
+          "mode": "free",
+          "box": {
+            "source": "ligand_range",
+            "margin_A": 8
+          },
+          "parameters": {
+            "seed": 42,
+            "exhaustiveness": 1,
+            "num_modes": 3,
+            "energy_range": 3
+          },
+          "candidate_set_handle": "obj://run_511b87afa7cc4f76b8ac767c17a5c16d/ligand_candidate_set/1ecf6421b232d0d2e3dcd825256e0b1c895b2b28ddc0430fee09b2609bf550c8",
+          "parent_sdf_handle": "obj://run_511b87afa7cc4f76b8ac767c17a5c16d/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+          "candidate_ids": [
+            "c_1afb7cd3e603456c",
+            "c_2c7a25e0cc0ad3f2",
+            "c_21d6c6f0d07e3759"
+          ],
+          "include_parent": true
+        },
+        "summary": "obj://run_511b87afa7cc4f76b8ac767c17a5c16d/docking_batch_result/aebd25d48833dad0b51fb7a6ebeff293e59e5cc61f2aeb9d96989472c3649f7c",
+        "summarySha256": "c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475",
+        "batchStatus": "complete",
+        "rows": [
+          {
+            "row_index": 0,
+            "kind": "parent",
+            "candidate_id": null,
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -12.9,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "f330540b682f59a0ff97bdacb02bdc1eb97a3588fdf8de2e4fafb86a89037fbe",
+            "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+          },
+          {
+            "row_index": 1,
+            "kind": "candidate",
+            "candidate_id": "c_1afb7cd3e603456c",
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -9.6,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "5dd4caf7f12ff5469c5948507dfdf9696f565d978c30bb759230752d4eb8f7a8",
+            "posesSha256": "ac79bf1bdc3b69ad66263a964ca214c47aec19ab42233c804a367c5ce2984eca"
+          },
+          {
+            "row_index": 2,
+            "kind": "candidate",
+            "candidate_id": "c_2c7a25e0cc0ad3f2",
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -11.8,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "886347b63fd34d8483b943bcce322fc4bea62af06d13a2bda0bc2146404e7a92",
+            "posesSha256": "c44dc66f47f139a421fc9137b5b51de65cc5c7f4a80beb56f383996df0aade98"
+          },
+          {
+            "row_index": 3,
+            "kind": "candidate",
+            "candidate_id": "c_21d6c6f0d07e3759",
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -11.6,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "96f13508394450830d9d991130055ff66231f0ac52b4a1426a8876af3ea6677f",
+            "posesSha256": "78257b48c964922a3675ea84e9be6ab71349b18bc18d6147f7572659cf91140f"
+          }
+        ],
+        "providerCallsZero": true
+      },
+      {
+        "run": "run_d050b53923604f749062a60bd6f6d62b",
+        "jobId": "job_9ea8acfe60844e8a84d76450dc5e30c0",
+        "status": "done",
+        "failure": null,
+        "args": {
+          "receptor_handle": "obj://run_d050b53923604f749062a60bd6f6d62b/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "receptor_model_number": 1,
+          "connectivity": {
+            "kind": "pdb_conect",
+            "sidecar_handle": null
+          },
+          "receptor_instance": null,
+          "mode": "free",
+          "box": {
+            "source": "ligand_range",
+            "margin_A": 8
+          },
+          "parameters": {
+            "seed": 42,
+            "exhaustiveness": 1,
+            "num_modes": 3,
+            "energy_range": 3
+          },
+          "candidate_set_handle": "obj://run_d050b53923604f749062a60bd6f6d62b/ligand_candidate_set/833fda028f6e7b8ec116cdd93e894b774c20d292f8d7e2957467f3895d14a1fe",
+          "parent_sdf_handle": "obj://run_d050b53923604f749062a60bd6f6d62b/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+          "candidate_ids": [
+            "c_1afb7cd3e603456c",
+            "c_2c7a25e0cc0ad3f2",
+            "c_21d6c6f0d07e3759"
+          ],
+          "include_parent": true
+        },
+        "summary": "obj://run_d050b53923604f749062a60bd6f6d62b/docking_batch_result/a535d86784cd6f83ed41084ebf3c9e33e6ddde67f8a9afb2585748eac7df9980",
+        "summarySha256": "c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475",
+        "batchStatus": "complete",
+        "rows": [
+          {
+            "row_index": 0,
+            "kind": "parent",
+            "candidate_id": null,
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -12.9,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "f330540b682f59a0ff97bdacb02bdc1eb97a3588fdf8de2e4fafb86a89037fbe",
+            "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+          },
+          {
+            "row_index": 1,
+            "kind": "candidate",
+            "candidate_id": "c_1afb7cd3e603456c",
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -9.6,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "5dd4caf7f12ff5469c5948507dfdf9696f565d978c30bb759230752d4eb8f7a8",
+            "posesSha256": "ac79bf1bdc3b69ad66263a964ca214c47aec19ab42233c804a367c5ce2984eca"
+          },
+          {
+            "row_index": 2,
+            "kind": "candidate",
+            "candidate_id": "c_2c7a25e0cc0ad3f2",
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -11.8,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "886347b63fd34d8483b943bcce322fc4bea62af06d13a2bda0bc2146404e7a92",
+            "posesSha256": "c44dc66f47f139a421fc9137b5b51de65cc5c7f4a80beb56f383996df0aade98"
+          },
+          {
+            "row_index": 3,
+            "kind": "candidate",
+            "candidate_id": "c_21d6c6f0d07e3759",
+            "state": "scored",
+            "reason_code": null,
+            "score_kcal_mol": -11.6,
+            "score_row_label": "모드 1(엔진 출력 순서)",
+            "resultSha256": "96f13508394450830d9d991130055ff66231f0ac52b4a1426a8876af3ea6677f",
+            "posesSha256": "78257b48c964922a3675ea84e9be6ab71349b18bc18d6147f7572659cf91140f"
+          }
+        ],
+        "providerCallsZero": true
+      }
+    ]
+  },
+  "environment": {
+    "dockingPython": true,
+    "dockingPythonPath": ".deps/docking/venv-locked/bin/python",
+    "qvina": true,
+    "qvinaPath": ".deps/qvina/env/bin/qvina2",
+    "ligandPython": true,
+    "ligandPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "singleAvailable": true,
+    "candidatesAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "qvina",
+        "qvina_sha256": "caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c",
+        "qvina_package": "qvina-2.1.0-h4a521e9_8",
+        "versions": {
+          "meeko": "0.8.0",
+          "rdkit": "2026.03.6",
+          "MDAnalysis": "2.10.0",
+          "gemmi": "0.7.5"
+        },
+        "worker_sha256": "52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706",
+        "constants_sha256": "5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf",
+        "lock_sha256": "ec38e8e80d5fc90c72324a45e36f60c47ca8a0e6381c2a25e146a537c8ea8c7f",
+        "qvina_lock_sha256": "f20e50c9240f53d4500ed1764d525b612c6e0603c11431283e7bb96bd7a32b53"
+      },
+      "batch_pins": {
+        "batch_worker_sha256": "e41fb4403413d2ff7ea50ae20a7dff8c9b3bf5dc2b49b45ac5315384ebeae58e",
+        "batch_constants_sha256": "81cdcdf29d0e160799f05792258b595dd8e642917dd9e25f549c2bdfaa30d53d"
+      }
+    },
+    "layoutReason": "worker_missing"
+  },
+  "layout": {
+    "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)",
+    "files": 126,
+    "treeSha256": "29778d9d7cce3a85ecba018e1a43bfd2706be2761080898c725c4e5c3f73933a"
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "batch-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "B-run-panel": "pass",
+        "B-m17-set": "pass",
+        "B-select": "pass",
+        "B-refusal": "pass",
+        "B-preflight": "pass",
+        "B-no-approval": "pass",
+        "B-run": "pass",
+        "B-table": "pass",
+        "B-sort": "pass",
+        "B-detail": "pass",
+        "B-dedupe": "pass",
+        "B-reuse": "pass",
+        "B-core-parent-disabled": "pass",
+        "B-limit-approval": "pass",
+        "B-core-fixed": "pass",
+        "B-report": "pass",
+        "B-fail-row": "pass",
+        "B-cancel": "pass",
+        "B-cap": "pass",
+        "B-dry-run": "pass",
+        "B-processes": "pass",
+        "B-wording": "pass"
+      },
+      "runs": {
+        "A": "run_5586b24fdaf94c14b4312c673ffa7e89",
+        "B": "run_86a390d99649489484af54e4e96cd1e0",
+        "D": "run_834a83ddb9834204b2c9b4d3850b344d",
+        "C": "run_9f8d3bf6f4c647c2ad9c553c82c950fa"
+      },
+      "runId": "run_5586b24fdaf94c14b4312c673ffa7e89",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "A": {
+          "receptor": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "waterZinc": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/895b09aae7fe3a9ad7b834f8fa0f6ae77e7566f858929398a5418b387b42028c",
+          "set": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/ligand_candidate_set/9db7aca382a20d6122f5b15e1f603eb4bad8613430ccf18e2fbc0d96b044f507",
+          "free": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/4f26310d76e445742f0d334464284168a66bfd9ae02ccf4ca62d2ecdc2d20a3f",
+          "subset": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/f9a8b7c98261ac3cdc7876f999dc9633d53e5842538176daf5aaf7a72a50f7a1",
+          "core": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/3fd3522a7dce6cc31f219122d1b8715130ae7ac968af065684878f3f296dfd19"
+        },
+        "B": {
+          "set": "obj://run_86a390d99649489484af54e4e96cd1e0/ligand_candidate_set/9e112d57a1698e8c37629cb6c0f768ed32d5df696a1bc20e90b5eb3914c525cf",
+          "summary": "obj://run_86a390d99649489484af54e4e96cd1e0/docking_batch_result/78f99a5dbb8f336c80238b909629f5d80e41b64fa3096927e20b4a2e81b2c903"
+        },
+        "C": {
+          "set": "obj://run_9f8d3bf6f4c647c2ad9c553c82c950fa/ligand_candidate_set/78d271360a8bdf218e7a0528d9e0401f9278f92fd472857f761fe5fc6abdf9f5",
+          "summary": "obj://run_9f8d3bf6f4c647c2ad9c553c82c950fa/docking_batch_result/19727bf5f0df2fa41637e2add3870b5ba0eaa71dbbc3ee1ac13995adb7003f5b"
+        }
+      },
+      "inputs": [
+        {
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+          "bytes": 504575,
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+          "bytes": 6816,
+          "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-planar-z0.sdf",
+          "bytes": 6829,
+          "sha256": "ad531eae2446c0baebf1f8d0ddb648677c0b1d6c4053d2224d404f7f1c7b4573"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-receptor-water-zinc.pdb",
+          "bytes": 504955,
+          "sha256": "affa0293ea815366c62fd576ce20090213ad3050e4e63e3877f2e4ac1e2e8f31"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-docking-blocks.smi",
+          "bytes": 160,
+          "sha256": "966f7a8607d3011fc3570a39f64e05ab284281fe0602c1cb18f847352d6392ec"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/expected.json",
+          "bytes": 9642,
+          "sha256": "a997053df1cf0e7c5314395b50cf4e5faeecc9f91531e4a7d51f27e054193df3"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/m19-batch-input.json",
+          "bytes": 7915,
+          "sha256": "4d5ab533c7a80825bfb17e440db25a4dbb96391f57df80edadb2be19aa7bc8ff"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/m17-enumerate-result-record0-nmethyl.json",
+          "bytes": 6328,
+          "sha256": "cfebdf81afb32fef2fb41af2a4e46268cc9261676f7b21882776fb651fbe3a60"
+        },
+        {
+          "path": "<repo>/frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/m19/batch-main/qa-generated-chain-blocks.smi",
+          "bytes": 2833,
+          "sha256": "2d528ed89de7de38e2213d63834ef2f42a2b55c0ac9c133ab2216ca78439cb1f"
+        }
+      ],
+      "fixtureLabels": [
+        "labeled loopback API fixture: dry-run run record (POST /runs dry_run true; the screen cannot create one)",
+        "QA-GENERATED SYNTHETIC building-block list (labeled; written by docking-batch-flow.cjs for the 50-candidate cap, not a scientific input): *C…C chains of 1–60 carbons"
+      ],
+      "controls": {
+        "docking-import": [
+          {
+            "file": "prolif-vina-rec.pdb"
+          },
+          {
+            "file": "synthetic-receptor-water-zinc.pdb"
+          },
+          {
+            "file": "prolif-vina-rec.pdb"
+          },
+          {
+            "file": "prolif-vina-rec.pdb"
+          }
+        ],
+        "m17-candidate-set": [
+          {
+            "parent": "public-derived-parent-record0.sdf",
+            "blocks": "synthetic-docking-blocks.smi"
+          },
+          {
+            "parent": "synthetic-ligand-planar-z0.sdf",
+            "blocks": "synthetic-docking-blocks.smi"
+          },
+          {
+            "parent": "public-derived-parent-record0.sdf",
+            "blocks": "qa-generated-chain-blocks.smi"
+          }
+        ],
+        "docking-batch-prereq-refresh": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-batch-receptor": [
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/895b09aae7fe3a9ad7b834f8fa0f6ae77e7566f858929398a5418b387b42028c"
+          },
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_86a390d99649489484af54e4e96cd1e0/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_9f8d3bf6f4c647c2ad9c553c82c950fa/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          }
+        ],
+        "docking-batch-model": [
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          }
+        ],
+        "docking-batch-instance-radio": [
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          }
+        ],
+        "docking-batch-connectivity-radio": [
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          }
+        ],
+        "docking-batch-candidate-set": [
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/ligand_candidate_set/9db7aca382a20d6122f5b15e1f603eb4bad8613430ccf18e2fbc0d96b044f507"
+          },
+          {
+            "handle": "obj://run_86a390d99649489484af54e4e96cd1e0/ligand_candidate_set/9e112d57a1698e8c37629cb6c0f768ed32d5df696a1bc20e90b5eb3914c525cf"
+          },
+          {
+            "handle": "obj://run_9f8d3bf6f4c647c2ad9c553c82c950fa/ligand_candidate_set/78d271360a8bdf218e7a0528d9e0401f9278f92fd472857f761fe5fc6abdf9f5"
+          }
+        ],
+        "docking-batch-parent-sdf": [
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_86a390d99649489484af54e4e96cd1e0/chemical_raw_input/58b79a6299f2917d0bba92fe08219adf6091daf8a9cc1bc934bfcd31242fb086"
+          },
+          {
+            "handle": "obj://run_9f8d3bf6f4c647c2ad9c553c82c950fa/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          }
+        ],
+        "docking-batch-filter-apply": [
+          {
+            "heavy_atoms_max": 45
+          }
+        ],
+        "docking-batch-passes-only": [
+          {
+            "checked": true
+          }
+        ],
+        "docking-batch-candidate": [
+          {
+            "id": "c_21d6c6f0d07e3759",
+            "checked": true
+          },
+          {
+            "id": "c_1afb7cd3e603456c",
+            "checked": true
+          },
+          {
+            "id": "c_2c7a25e0cc0ad3f2",
+            "checked": true
+          },
+          {
+            "id": "c_1afb7cd3e603456c",
+            "checked": true
+          },
+          {
+            "id": "c_2c7a25e0cc0ad3f2",
+            "checked": true
+          },
+          {
+            "id": "c_21d6c6f0d07e3759",
+            "checked": true
+          },
+          {
+            "id": "c_1afb7cd3e603456c",
+            "checked": true
+          },
+          {
+            "id": "c_c42a53803595e440",
+            "checked": true
+          },
+          {
+            "id": "c_71188fcf0e6703c9",
+            "checked": true
+          },
+          {
+            "id": "c_3299a8a0cfc5a46d",
+            "checked": true
+          },
+          {
+            "id": "c_7150d83081a0886d",
+            "checked": true
+          },
+          {
+            "id": "c_b2450af734c4ae34",
+            "checked": true
+          },
+          {
+            "id": "c_f567083d326698e8",
+            "checked": true
+          },
+          {
+            "id": "c_f6585d8e6f502158",
+            "checked": true
+          },
+          {
+            "id": "c_cfd726afb0d0e7cd",
+            "checked": true
+          },
+          {
+            "id": "c_17becb2f337433ca",
+            "checked": true
+          },
+          {
+            "id": "c_c8b704428f05778c",
+            "checked": true
+          },
+          {
+            "id": "c_c63adde400a92f80",
+            "checked": true
+          },
+          {
+            "id": "c_ee43636d497d151e",
+            "checked": true
+          },
+          {
+            "id": "c_94849dd726257970",
+            "checked": true
+          },
+          {
+            "id": "c_2fe13071c01e4c55",
+            "checked": true
+          },
+          {
+            "id": "c_4a05f8ac1082121b",
+            "checked": true
+          },
+          {
+            "id": "c_b50a90fbe3664629",
+            "checked": true
+          },
+          {
+            "id": "c_8a7c7f8ec7fce08d",
+            "checked": true
+          },
+          {
+            "id": "c_d9d0d21ce17db8a6",
+            "checked": true
+          },
+          {
+            "id": "c_25fa3fa3c76e2586",
+            "checked": true
+          },
+          {
+            "id": "c_9d8160361cd17fb9",
+            "checked": true
+          },
+          {
+            "id": "c_31862e3b59ab54fc",
+            "checked": true
+          },
+          {
+            "id": "c_295ff8fa517ba659",
+            "checked": true
+          },
+          {
+            "id": "c_f487223d425af26d",
+            "checked": true
+          },
+          {
+            "id": "c_797edfbe251a8813",
+            "checked": true
+          },
+          {
+            "id": "c_3c1afa004396b292",
+            "checked": true
+          },
+          {
+            "id": "c_835e82fa0060964a",
+            "checked": true
+          },
+          {
+            "id": "c_8cf277a5bc696494",
+            "checked": true
+          },
+          {
+            "id": "c_4bf893cffb7e3836",
+            "checked": true
+          },
+          {
+            "id": "c_1ef500fa40bf14f6",
+            "checked": true
+          },
+          {
+            "id": "c_97b14344a0608ff1",
+            "checked": true
+          },
+          {
+            "id": "c_f97e9928cc9f5202",
+            "checked": true
+          },
+          {
+            "id": "c_fd6c28f5ff390fb6",
+            "checked": true
+          },
+          {
+            "id": "c_93462b7a0e510d52",
+            "checked": true
+          },
+          {
+            "id": "c_9eaacd1a150fbd1a",
+            "checked": true
+          },
+          {
+            "id": "c_6e7a51409dc088b3",
+            "checked": true
+          },
+          {
+            "id": "c_fd43b6bfc8162041",
+            "checked": true
+          },
+          {
+            "id": "c_db41b63febc14df9",
+            "checked": true
+          },
+          {
+            "id": "c_cbeb22fcdfd3588f",
+            "checked": true
+          },
+          {
+            "id": "c_e85ba2e590a8a5e1",
+            "checked": true
+          },
+          {
+            "id": "c_0e28c060e2317520",
+            "checked": true
+          },
+          {
+            "id": "c_99cabee8411fddca",
+            "checked": true
+          },
+          {
+            "id": "c_09ab77fa67a47a18",
+            "checked": true
+          },
+          {
+            "id": "c_437b0c5200960ffe",
+            "checked": true
+          },
+          {
+            "id": "c_9d331f834856b6e0",
+            "checked": true
+          },
+          {
+            "id": "c_48a250e3d96edb36",
+            "checked": true
+          },
+          {
+            "id": "c_5a5ad734bbef9f56",
+            "checked": true
+          },
+          {
+            "id": "c_f2573b27ac4d1e01",
+            "checked": true
+          },
+          {
+            "id": "c_95b203a3020b4937",
+            "checked": true
+          },
+          {
+            "id": "c_ed0d589b0e0707d8",
+            "checked": true
+          }
+        ],
+        "docking-batch-filter-clear": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-batch-mode-radio": [
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "core_fixed"
+          },
+          {
+            "mode": "core_fixed"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          }
+        ],
+        "docking-batch-include-parent": [
+          {
+            "checked": true
+          },
+          {
+            "checked": false
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": false
+          }
+        ],
+        "docking-batch-box-radio": [
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "manual"
+          },
+          {
+            "source": "ligand_range"
+          }
+        ],
+        "docking-batch-margin": [
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          }
+        ],
+        "docking-batch-seed": [
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-batch-exhaustiveness": [
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-batch-num-modes": [
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-batch-energy-range": [
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-batch-ack-keep_input_protonation": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "docking-batch-ack-tool_assigned_types_charges": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "docking-batch-ack-rigid_no_optimization": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "docking-batch-preflight": [
+          {
+            "status": 200,
+            "admitted": false
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          }
+        ],
+        "docking-batch-start": [
+          {
+            "clicked": true
+          },
+          {
+            "identical": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "docking-batch-summary-radio": [
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/4f26310d76e445742f0d334464284168a66bfd9ae02ccf4ca62d2ecdc2d20a3f"
+          },
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/f9a8b7c98261ac3cdc7876f999dc9633d53e5842538176daf5aaf7a72a50f7a1"
+          },
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/3fd3522a7dce6cc31f219122d1b8715130ae7ac968af065684878f3f296dfd19"
+          },
+          {
+            "handle": "obj://run_5586b24fdaf94c14b4312c673ffa7e89/docking_batch_result/4f26310d76e445742f0d334464284168a66bfd9ae02ccf4ca62d2ecdc2d20a3f"
+          },
+          {
+            "handle": "obj://run_86a390d99649489484af54e4e96cd1e0/docking_batch_result/78f99a5dbb8f336c80238b909629f5d80e41b64fa3096927e20b4a2e81b2c903"
+          },
+          {
+            "handle": "obj://run_9f8d3bf6f4c647c2ad9c553c82c950fa/docking_batch_result/19727bf5f0df2fa41637e2add3870b5ba0eaa71dbbc3ee1ac13995adb7003f5b"
+          }
+        ],
+        "docking-batch-sort-score": [
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          },
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          }
+        ],
+        "docking-batch-sort-candidate": [
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          },
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          }
+        ],
+        "docking-batch-sort-row": [
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          },
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          }
+        ],
+        "docking-batch-open": [
+          {
+            "row": 1
+          }
+        ],
+        "docking-batch-conformers": [
+          {}
+        ],
+        "docking-batch-limit-approve": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-batch-report": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-batch-manual-box": [
+          {
+            "center": [
+              "3.41",
+              "0.72",
+              "11.31"
+            ],
+            "size": [
+              "22.32",
+              "27.51",
+              "27.60"
+            ]
+          }
+        ],
+        "docking-batch-job-cancel": [
+          {
+            "finishedBefore": 1
+          }
+        ]
+      },
+      "notObserved": [
+        {
+          "case": "B-dry-run-shortfall",
+          "reason": "a dry-run run cannot hold a candidate set (M17 jobs only plan there), so an admitted preflight with a shortfall cannot be reached in one; the dry-run note and the absent approval control are observed. Covered by frontend/tests/docking-batch.test.cjs (limitApprovalOffered, batchStartBlockedReason dry-run) and backend/tests/test_docking_batch_budget.py (dry-run permits no raise)."
+        },
+        {
+          "case": "B-null-result",
+          "reason": "qvina returns modes for every valid input here; no zero-mode row is forged. Covered by the backend batch tests and frontend/tests/docking-batch.test.cjs."
+        },
+        {
+          "case": "B-time-limits",
+          "reason": "candidate_timeout (300 s), time_exhausted (7200 s), worker_failed and the 128 MiB output cap need hours or a killed worker; covered by backend/tests/test_docking_batch_worker.py and test_docking_batch_jobs.py with test-only reduced constants."
+        }
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-05T12:16:25.399Z"
+    },
+    {
+      "step": "batch-unavailable",
+      "mode": "unavailable",
+      "status": "pass",
+      "cases": {
+        "B-no-run": "pass",
+        "B-unavailable": "pass"
+      },
+      "runs": {
+        "A": "run_e956ff589b18435a92b0214708f45708"
+      },
+      "runId": "run_e956ff589b18435a92b0214708f45708",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)"
+      ],
+      "controls": {},
+      "notObserved": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-05T12:17:20.120Z"
+    }
+  ]
+}

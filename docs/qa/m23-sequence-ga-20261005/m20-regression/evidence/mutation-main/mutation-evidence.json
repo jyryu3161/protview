@@ -1,0 +1,451 @@
+{
+  "schema": "m20_mutation_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_56fd81a960e741c180f7993db5c8bba3",
+    "B": "run_f1c04b2ef94d42a39f64e688fd8f572f"
+  },
+  "inputs": [
+    {
+      "name": "preflight.txt",
+      "path": "<repo>/docs/qa/m20-mutations-20261003/preflight.txt",
+      "bytes": 23816,
+      "sha256": "fd917d662155a751963c614a951d3b3769bff6b74ff2f6f3b097a55ee0e8703c",
+      "provenance": "M20 T1 independent numpy oracle (committed QA text)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP, PO4, 2 MG)"
+    }
+  ],
+  "handles": {
+    "structure": "obj://run_56fd81a960e741c180f7993db5c8bba3/structure/ef4a3b57d56834a8dc1c2d084fafaf12a58c9d5aeb205de5620ededb12bd7560",
+    "prepared": "obj://run_56fd81a960e741c180f7993db5c8bba3/prepared_structure/bb39e67af9e3a8dc93ced5db694853ae3be05322690688d6551a4a6a4429fcd1",
+    "s0": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/12173e684bc837398f18172073c54195919fb87e86fdd67997816db7530b7b7d",
+    "map": "obj://run_56fd81a960e741c180f7993db5c8bba3/residue_numbering_map/06ee3acaf96bdb07d6a2ca2aedcf30bfd4101103540d03ed20d0731d6a19f3a6",
+    "annotation": "obj://run_56fd81a960e741c180f7993db5c8bba3/reference_site_annotation/b93355c8222f36a794a84c5e3aeb863991fc3fbc9089d1f9ac319a2f319aaa91",
+    "s1": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/ffffafc6309e28ab58ec23bbbc309a3fbea5712526bc041ac2f532716f6d5f16",
+    "s3": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/9077b8d82da14e0db1507f6d4b8bdafce4efc59c480f4388300aa63d2ed46cb4",
+    "s5": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/103ed4df201192a2ae7a4cfa336e1f96dfd8cceef556f9fe3f7bd15f88af3013",
+    "pocketSet": "obj://run_56fd81a960e741c180f7993db5c8bba3/pocket_set/0e8ff13283bf5ed73e307cf87f37c78986f38de35442b82cc0b27fb57cd714d0",
+    "s2": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/4fd892902fc330b5b1c97139f1def7ff47592ef65f5cfe67f0853e63c06bbd4b",
+    "s4": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/13fed6c0e73f22fa2cc0468913357aa5cc5e474c298956c6c275fe2a989a86ca",
+    "report": "obj://run_56fd81a960e741c180f7993db5c8bba3/method_report_manifest/31f597b309129350eb82bcc881fa962789e233fa317c486b627cbc9c6fe54ab0"
+  },
+  "repro": {
+    "run": "run_56fd81a960e741c180f7993db5c8bba3",
+    "loadArgs": {
+      "model_index": 0
+    },
+    "prepareArgs": {
+      "structure": "<loaded structure>",
+      "altloc": "highest_occupancy",
+      "waters": "strip_all",
+      "hydrogens": "strip",
+      "missing_residues": "leave_gaps",
+      "symmetry_mates": "ignore"
+    },
+    "flowSet": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/12173e684bc837398f18172073c54195919fb87e86fdd67997816db7530b7b7d",
+    "args": {
+      "structure": "<prepared structure>",
+      "sources": {
+        "pocket": null,
+        "ligand_shell": {
+          "radius_A": 5
+        },
+        "residues": []
+      },
+      "ligand": {
+        "model_number": 1,
+        "chain_auth": "A",
+        "chain_label": "E",
+        "seq_auth": 2001,
+        "seq_label": null,
+        "icode": "",
+        "resname": "ADP"
+      },
+      "allowed_residues": "ACDEFGHIKLMNPQRSTVWY",
+      "protected_residues": [],
+      "released_residues": [],
+      "metal_contact_A": 3,
+      "numbering_map": null,
+      "annotation": null
+    }
+  },
+  "fixtureLabels": [
+    "QA refusal fixture (labeled renderer route): the generate_mutation_candidates request body is altered in flight so that the real server refuses it; the server reply is shown unchanged",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_56fd81a960e741c180f7993db5c8bba3",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_f1c04b2ef94d42a39f64e688fd8f572f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/prepared_structure/bb39e67af9e3a8dc93ced5db694853ae3be05322690688d6551a4a6a4429fcd1"
+      },
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/prepared_structure/bb39e67af9e3a8dc93ced5db694853ae3be05322690688d6551a4a6a4429fcd1"
+      },
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/prepared_structure/bb39e67af9e3a8dc93ced5db694853ae3be05322690688d6551a4a6a4429fcd1"
+      }
+    ],
+    "mutation-source-ligand-shell": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-ligand": [
+      {
+        "chosen": "ADP A:2001 · label E:—"
+      },
+      {
+        "chosen": "ADP A:2001 · label E:—"
+      },
+      {
+        "chosen": "ADP A:2001 · label E:—"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ARG A:126 · label A:7"
+      },
+      {
+        "picked": "ALA A:160 · label A:41"
+      }
+    ],
+    "mutation-add-user": [
+      {
+        "count": 1
+      },
+      {
+        "count": 1
+      }
+    ],
+    "mutation-pick-protect": [
+      {
+        "picked": "LEU A:139 · label A:20"
+      },
+      {
+        "picked": "LEU A:139 · label A:20"
+      }
+    ],
+    "mutation-add-protect": [
+      {
+        "count": 1
+      },
+      {
+        "count": 1
+      }
+    ],
+    "mutation-pick-release": [
+      {
+        "picked": "LEU A:139 · label A:20"
+      },
+      {
+        "picked": "ASN A:261 · label A:142"
+      },
+      {
+        "picked": "ARG A:126 · label A:7"
+      }
+    ],
+    "mutation-add-release": [
+      {
+        "count": 1
+      },
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      }
+    ],
+    "mutation-remove-release": [
+      {
+        "removed": "LEU A:139",
+        "count": 0
+      }
+    ],
+    "mutation-allowed-none": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-allowed": [
+      {
+        "checked": "WAG"
+      },
+      {
+        "checked": "A"
+      }
+    ],
+    "mutation-allowed-all": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-annotation": [
+      {
+        "value": ""
+      },
+      {
+        "value": "obj://run_56fd81a960e741c180f7993db5c8bba3/reference_site_annotation/b93355c8222f36a794a84c5e3aeb863991fc3fbc9089d1f9ac319a2f319aaa91"
+      }
+    ],
+    "mutation-numbering-map": [
+      {
+        "value": ""
+      },
+      {
+        "value": "obj://run_56fd81a960e741c180f7993db5c8bba3/residue_numbering_map/06ee3acaf96bdb07d6a2ca2aedcf30bfd4101103540d03ed20d0731d6a19f3a6"
+      }
+    ],
+    "mutation-metal": [
+      {
+        "value": "5.0"
+      }
+    ],
+    "mutation-remove-user": [
+      {
+        "removed": "ARG A:126",
+        "count": 0
+      }
+    ],
+    "mutation-remove-protect": [
+      {
+        "removed": "LEU A:139",
+        "count": 0
+      }
+    ],
+    "mutation-sets-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-source-pocket": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "mutation-pocket-sets": [
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/pocket_set/0e8ff13283bf5ed73e307cf87f37c78986f38de35442b82cc0b27fb57cd714d0"
+      }
+    ],
+    "mutation-pocket-numbers": [
+      {
+        "checked": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      }
+    ],
+    "mutation-radius": [
+      {
+        "value": "12.0"
+      },
+      {
+        "value": "5"
+      }
+    ],
+    "mutation-positions-next": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-positions-prev": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-filter-status": [
+      {
+        "value": "excluded"
+      },
+      {
+        "value": ""
+      }
+    ],
+    "mutation-filter-source": [
+      {
+        "value": "pocket"
+      },
+      {
+        "value": ""
+      }
+    ],
+    "mutation-filter-reason": [
+      {
+        "value": "klifs_key_site"
+      },
+      {
+        "value": ""
+      }
+    ],
+    "mutation-filter-chain": [
+      {
+        "value": "A"
+      },
+      {
+        "value": ""
+      }
+    ],
+    "mutation-sort": [
+      {
+        "value": "ligand_distance"
+      },
+      {
+        "value": "ligand_distance"
+      }
+    ],
+    "mutation-candidates-next": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-candidates-prev": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-position-candidates": [
+      {
+        "position": 100
+      }
+    ],
+    "mutation-candidate-to": [
+      {
+        "value": "W"
+      },
+      {
+        "value": ""
+      }
+    ],
+    "mutation-candidate-position-clear": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-sets": [
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/ffffafc6309e28ab58ec23bbbc309a3fbea5712526bc041ac2f532716f6d5f16"
+      },
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/ffffafc6309e28ab58ec23bbbc309a3fbea5712526bc041ac2f532716f6d5f16"
+      },
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/4fd892902fc330b5b1c97139f1def7ff47592ef65f5cfe67f0853e63c06bbd4b"
+      },
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/ffffafc6309e28ab58ec23bbbc309a3fbea5712526bc041ac2f532716f6d5f16"
+      },
+      {
+        "checked": "obj://run_56fd81a960e741c180f7993db5c8bba3/mutation_candidate_set/9077b8d82da14e0db1507f6d4b8bdafce4efc59c480f4388300aa63d2ed46cb4"
+      }
+    ],
+    "mutation-report": [
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "startedAt": "2026-10-05T12:13:46.816Z",
+  "finishedAt": "2026-10-05T12:14:18.383Z",
+  "error": null,
+  "requestCount": 509
+}

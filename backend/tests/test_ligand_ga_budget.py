@@ -116,7 +116,9 @@ def test_raise_limits_is_called_only_by_the_two_limit_approvals_from_their_route
         spec.get("protocol") for spec in analysis_plans.OPERATIONS.values()}
     mentions = {str(path.relative_to(MW)) for path in MW.rglob("*.py")
                 if any(name in path.read_text() for name in ("raise_limits", "limit_approval"))}
-    assert mentions == {"runtime/orchestrator.py", "docking_batch_jobs.py", "ligand_ga_jobs.py", "api/app.py"}
+    # M23 adds the sequence GA lane's own limit approval and route (test_sequence_ga_budget.py checks all three).
+    assert mentions == {"runtime/orchestrator.py", "docking_batch_jobs.py", "ligand_ga_jobs.py", "api/app.py",
+                        "sequence_ga_jobs.py"}
     # Run.raise_limits: exactly the M19 limit approval and the GA limit approval, and they never call each other.
     batch_tree = ast.parse((MW / "docking_batch_jobs.py").read_text())
     ga_tree = ast.parse((MW / "ligand_ga_jobs.py").read_text())
@@ -138,7 +140,8 @@ def test_raise_limits_is_called_only_by_the_two_limit_approvals_from_their_route
         assert other not in names and not any(module.endswith(other) for module in modules)
     # Each limit approval is reached from its own route only.
     app_tree = ast.parse((MW / "api/app.py").read_text())
-    assert _callers(app_tree, "limit_approval") == {"docking_batch_limit_approval", "ligand_ga_limit_approval"}
+    assert _callers(app_tree, "limit_approval") == {"docking_batch_limit_approval", "ligand_ga_limit_approval",
+                                                    "sequence_ga_limit_approval"}   # + M23
     for name, module in (("docking_batch_limit_approval", "docking_batch_jobs"),
                          ("ligand_ga_limit_approval", "ligand_ga_jobs")):
         route = next(node for node in ast.walk(app_tree) if isinstance(node, ast.AsyncFunctionDef) and
@@ -149,7 +152,8 @@ def test_raise_limits_is_called_only_by_the_two_limit_approvals_from_their_route
     assert _callers(app_tree, "raise_limits") == set()
     routes = sorted((route.path, sorted(route.methods)) for route in api_module.app.routes
                     if getattr(route, "path", "").endswith("limit_approval"))
-    assert routes == sorted([(M19_ROUTE, ["POST"]), (ROUTE, ["POST"])])
+    assert routes == sorted([(M19_ROUTE, ["POST"]), (ROUTE, ["POST"]),
+                             ("/runs/{rid}/sequence_ga/limit_approval", ["POST"])])   # + M23
 
 
 def test_dry_run_permits_no_raise_and_writes_nothing(tmp_path, monkeypatch):

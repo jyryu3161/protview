@@ -281,7 +281,7 @@
 - 사용량이 이미 한도를 60초 넘게 넘은 run은 한 번의 증액으로 부족분이 0이 되지 않는다(증가분이 필요량 + 60초로 묶임). 다시 명시적으로 승인한다.
 
 ### `Run.update_limits`에는 HTTP 경로가 없다 (M19)
-- `update_limits`는 테스트에서만 불린다. 사람의 증액은 형제 함수 `Run.raise_limits(plan, by="human")`(실행 잠금 안에서 스냅숏으로 증가분을 계획, 증가분이 모두 0이면 이벤트 없음, `budget_limit_updated`에 `context` 추가)이고, 이것을 부르는 곳은 `docking_batch_jobs.limit_approval`과 M22부터 `ligand_ga_jobs.limit_approval` 둘이고(서로 부르지 않음), 각자 자기 HTTP 라우트 하나(`POST /runs/{id}/docking/batches/limit_approval`, `POST /runs/{id}/ligand/ga/limit_approval`)에서만 불린다(`test_docking_batch_budget.py`·`test_ligand_ga_budget.py`가 AST로 확인). 다른 경로(도구·흐름·뷰어)에서 한도를 올리는 코드를 더하면 이 테스트가 실패해야 한다. `budget_limit_updated`의 재생(`_refresh`)은 `limits`만 읽으므로 맥락 필드를 더해도 events-only 복구가 같다.
+- `update_limits`는 테스트에서만 불린다. 사람의 증액은 형제 함수 `Run.raise_limits(plan, by="human")`(실행 잠금 안에서 스냅숏으로 증가분을 계획, 증가분이 모두 0이면 이벤트 없음, `budget_limit_updated`에 `context` 추가)이고, 이것을 부르는 곳은 `docking_batch_jobs.limit_approval`, M22부터 `ligand_ga_jobs.limit_approval`, M23부터 `sequence_ga_jobs.limit_approval` 셋이고(서로 부르지 않음), 각자 자기 HTTP 라우트 하나(`POST /runs/{id}/docking/batches/limit_approval`, `POST /runs/{id}/ligand/ga/limit_approval`, `POST /runs/{id}/sequence_ga/limit_approval`)에서만 불린다(`test_docking_batch_budget.py`·`test_ligand_ga_budget.py`·`test_sequence_ga_budget.py`가 AST로 확인). 다른 경로(도구·흐름·뷰어)에서 한도를 올리는 코드를 더하면 이 테스트가 실패해야 한다. `budget_limit_updated`의 재생(`_refresh`)은 `limits`만 읽으므로 맥락 필드를 더해도 events-only 복구가 같다.
 
 ### 재사용 색인은 일괄로 게시된 행도 넣어야 한다 (M19)
 - **증상**: 단독 M18 작업만 색인하면, 일괄로 계산한 후보를 같은 설정의 두 번째 일괄이 다시 계산한다.
@@ -412,6 +412,46 @@
 ### Stop 훅 나머지 그룹은 M22 뒤 혼자 22분이다 (M22)
 - M22 고정 게이트에서 다섯 그룹을 따로 차례로 돌렸을 때 나머지 그룹은 2,063개 1324초였다(`docs/qa/m22-ga-20261005/gate.txt`). M22 백엔드 테스트 일곱 파일(실제 qvina·RDKit·M17 작업)이 모두 이 그룹에 들어 있다. 훅 제한(그룹 480초·전체 600초) 안에서는 시간 초과로 보고되며, 게이트는 그룹별 개별 실행으로 판단한다. `scripts/test_m22_offscreen_acceptance.py`도 훅 목록에 없다(`docs/tracking/findings.md`).
 
+### 여러 곳 변이를 M21 함수로 이어서 적용하면 둘째 단계가 `coordinates_changed`로 실패한다 (M23)
+- **증상**: 1UBQ에서 I44W 다음 K6H처럼 두 곳을 `mutant_projection`으로 차례로 적용하면 둘째 단계에서 `coordinates_changed`(최대 이동 4.29e-05–4.98e-05 Å)가 났다. 인접 위치도 같았다(착수 확인 8조합 모두).
+- **원인**: M21 `_pdbfixer`가 PDBx 텍스트로 위상을 넘기는데 `PDBxFile.writeFile`이 좌표를 소수 4자리로 쓴다. 앞 단계에서 PDBFixer가 새로 놓은 원자는 전체 정밀도 좌표라 다음 단계 입력에서 반올림된 값과 어긋나고, `_graft`의 `GRAFT_TOLERANCE_A` 1e-9 Å 검사가 이를 변이 잔기 밖 좌표 변경으로 본다.
+- **대응**: 단계 사이에 앞 단계에서 새로 놓은 원자의 좌표만 소수 넷째 자리로 반올림한다(변경 ≤ 5e-5 Å, 입력에 있던 원자 불변, `method.multi_mutation: "sequential_structure_order_round4"`로 기록). M21 모듈은 바꾸지 않는다(허용오차를 키우면 M21 호출 키가 바뀐다). 적용 순서를 바꾸면 모델이 달라지므로(착수 확인에서 최대 6.2e-02 Å) 구조 순서로 고정하고 한계 문장 S6에 적는다.
+
+### 도킹 환경 작업 모듈이 띄우는 모델링 자식은 인터프리터 경로를 풀면 안 된다 (M23)
+- **증상**: GA 작업 모듈이 프로젝트 `.venv`의 python으로 모델링 프로그램을 띄울 때 `resolve()`한 경로를 쓰면 `mw`·OpenMM을 찾지 못한다.
+- **원인**: `.venv/bin/python`은 기본 인터프리터로 가는 심볼릭 링크이고, 링크를 푼 대상에는 이 프로젝트 가상환경의 site-packages가 없다. `-I`는 링크 경로 기준으로 가상환경을 찾는다.
+- **대응**: 서버·작업 모듈 모두 `<프로젝트 루트>/.venv/bin/python`을 작업 모듈 파일 위치에서 계산해 쓰고(guardian `DOCKING_PYTHON`과 같은 방식) 풀지 않는다. 스테이징의 `project_python`은 `sys.executable`이 아니라 이 고정 경로이고 다르면 `fatal`이다.
+
+### 자식 프로세스는 부모의 막힌 SIGTERM을 상속한다 (M23)
+- **증상**: GA 작업 모듈이 도킹 직후 신호를 막은 구간에서 모델링 자식을 띄우면 자식이 취소(SIGTERM)에 반응하지 않는다.
+- **원인**: 신호 마스크는 `fork` 뒤 `exec`로 이어진다. 자식을 띄우는 시점에 SIGTERM이 막혀 있으면 그대로 물려받는다.
+- **대응**: 자식을 띄울 때 신호 마스크를 풀고(실제 확인: 막힌 채로 띄운 자식은 SIGTERM을 받지 못함) 테스트가 자식의 신호 차단 상태를 확인한다.
+
+### 개체 도킹의 수용체 사이드카는 저장되기 전 mmCIF handle을 가리킨다 (M23)
+- 모델 mmCIF 객체는 작업이 끝난 뒤에야 저장되지만 handle은 내용 해시(`obj://<run_id>/<kind>/<sha256(kind \0 schema \0 raw)>`, `core/handles.py`)로 정해진다. 모델링 프로그램이 `run_id`와 같은 공식으로 handle을 미리 계산해 사이드카 `source_handle`로 쓰고, 서버가 게시 때 저장된 handle·사이드카 해시와 도킹 결과의 수용체 해시가 같은지 대조한다. 그래서 개체 도킹 결과가 단독 M18 작업 결과와 바이트·호출 키·handle이 같다. 사이드카는 서버와 같은 `docking_inputs` 함수로 만들어야 한다(다른 함수로 만들면 호출 키가 달라진다).
+
+### 한 읽기 안에서 이벤트 로그를 개체마다 다시 읽으면 수십 초가 걸린다 (M23)
+- 이벤트 로그 165 MB(이전 GA 개체 200개 규모) run에서 M19·M22식 "개체마다 `validated_result` → 이벤트 로그 재파싱"은 요약 상세 한 번에 28.6–44.3초, 재사용 색인 검증 44.4초였다. M23 읽기는 한 읽기마다 이벤트 스냅숏을 한 번만 만들어 모든 개체·기준 행 검증에 넘긴다(T1 측정: 상세 3.0초·재사용 색인 8.8초, 반환 바이트 동일. 구현 뒤 합성 패딩 로그로 다시 잰 값은 상세 0.84초·재사용 색인 1.10초이고 커밋한 증거는 없다). 시작 전 확인은 입장·재사용 색인·같은 호출 키 확인을 한 호출에서 하므로 로그를 여러 번 읽고(같은 규모에서 4.4초), 작업 목록 폴링(`GET /jobs`의 `progress`)은 요약이 있으면 매번 `validated_summary`를 다시 부른다(M22와 같은 구조).
+
+### 변이 모델 객체는 게시 증거가 생기기 전에도 검증되어야 한다 (M23)
+- 개체 도킹 결과의 선택 기록을 만들 때 모델 객체는 아직 `sequence_ga_individual_published` 이벤트가 없다(그 이벤트는 모델·도킹 결과를 모두 게시한 뒤에 쓴다). 서버 `finish`가 게시자로서 증거 없이 저장 바이트·내용으로 검증하는 경로와, 이후 읽기(증거 필요)를 구분한다. M18 수용체 읽기 경로는 기준 모델 비교 없이 `validated_model_alone`을 쓰고(수용체에는 `structure_object`·`structure_sha256`·`atom_mapping`·`final_bonds`·`model_number`만 필요) 요약 읽기가 기준 모델과의 관계(양성자 차이·새 이황화 재계산)를 전체 검증한다. mmCIF 원자 행 대조(`openmm_bundle._cif`)는 `validated_model`이 아니라 게시 때 돈다.
+
+### 첫 비싼 계산 승인 뒤 `claimed` 작업에서 "작업 시작"이 사라진다 (M23 화면, M17·M18·M19·M22 패널은 그대로)
+- **증상**: 첫 비싼 계산이면 `/start`가 409 `approval`을 돌려주고 작업은 `claimed` + `blocked_reason: approval_or_cancel`로 남는다. 큐 `start`는 이 상태에서 다시 시작을 받는데, 공유 `dockingJobPhase`는 `claimed`를 "실행 중"으로 보아 2초 폴링이 새 상태를 읽은 뒤 "작업 시작" 단추가 사라진다. 승인된 GA를 화면에서 시작할 수 없었다(M23 하네스 개발 실행에서 발견).
+- **대응**: M23 패널은 순수 함수 `gaJobPhase`(`lib/sequence-ga.ts`, 큐 `start`가 `claimed`에서 재시작을 받는 `blocked_reason` 집합 `approval_or_cancel`·`global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`를 테스트가 `queue.py`에서 읽어 대조)로 판단한다. M17·M18·M19·M22 패널은 같은 `dockingJobPhase`를 쓰며 같은 잠재 결함이 있다(해당 하네스는 1–2초 폴링 창 안에 클릭해 통과). 바꾸지 않았고 `docs/tracking/findings.md`에 기록했다.
+
+### 큰 구조에서는 출력 총량 256 MiB가 개체 수보다 먼저 닿을 수 있다 (M23)
+- 개체당 작업 출력은 1UBQ에서 약 1.6 MB(65개 ≈ 104 MB)지만 M18 수용체 한도 근처 구조(중원자 약 4,890개, 1UBQ의 약 8배)에서는 개체 하나가 약 11 MB(모델 객체 ≈ 2.4 MB, 그 이벤트 줄 ≈ 3.2 MB, mmCIF·결과 포함)라 65개 ≈ 700 MB가 된다. 작업 모듈은 평가가 끝나면 게시하지 않는 큰 중간 파일(`model_input.json`·`receptor_bonds.json`)을 지우고 새 평가를 시작하기 전에 출력 총량 + 개체당 최대(32 MiB)가 256 MiB를 넘으면 `resource_exceeded`로 멈춘다(조용히 자르지 않고 부분 완료). 이벤트 로그도 개체 65개에 약 39–210 MB 늘 수 있다.
+
+### 서버의 리간드·상자 부분 점검은 작업 모듈보다 엄격하면 안 된다 (M23)
+- 서버는 RDKit 없이 V2000 파싱·원소 집합·중원자 수·평면·연결성·상자 값만 점검한다(작업 모듈은 RDKit으로 한다). 같은 입력에서 서버가 더 엄격하면 유효한 입력을 막으므로 서버는 작업 모듈이 같은 이유로 거절할 입력만 거절하고 테스트가 도킹 환경 작업 모듈과 27가지 입력으로 이유를 대조한다. 결함이 둘 이상인 SDF에서는 두 이유가 다를 수 있고(둘 다 거절), M18 상자 값 규칙(수동 상자 한 변 8 Å 미만·margin 범위)은 단독 M18 서버처럼 `box_invalid`로 거절한다(작업 모듈은 5 Å도 통과시키고 margin 21은 `box_too_large`). `box_no_receptor_atoms`는 서버가 M7 투영(최소화 전)으로 보므로 상자 면에 걸친 원자에서 드물게 작업 모듈(최소화된 기준 모델)과 다를 수 있다.
+
+### 같은 인자 재제출은 예산 부족이면 화면이 막지만 서버는 기존 작업을 돌려준다 (M23, M22와 같음)
+- 서버는 같은 호출 키의 기존 작업을 예산 검사 전에 돌려주지만 화면은 `preflight.existing_job`이 있어도 부족분이 있으면 시작을 막는다. 하네스는 이미 끝난 GA를 다시 보이려고 화면의 증액을 한 번 눌렀다(되돌리지 않는 증액). 의도한 동작이면 이 노트가 설명이다.
+
+### Stop 훅 나머지 그룹은 M23 뒤 혼자 40분이다 (M23)
+- M23 고정 게이트에서 다섯 그룹을 따로 차례로 돌렸을 때 나머지 그룹은 2,538개 2432초였다(`docs/qa/m23-sequence-ga-20261005/gate.txt`, M22 때 1324초). M23 백엔드 테스트(실제 OpenMM·PDBFixer·qvina·RDKit)가 모두 이 그룹에 들어 있다. 훅 제한(그룹 480초·전체 600초) 안에서는 시간 초과로 보고되며 게이트는 그룹별 개별 실행으로 판단한다. `scripts/test_m23_offscreen_acceptance.py`도 훅 목록에 없다(`docs/tracking/findings.md`).
+
 ## 동작 원리
 
 ### handle과 복구
@@ -449,6 +489,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 
 ### GA 설계 작업 경로 (M22)
 `POST /jobs`의 `qvina_ga_dock_v1`은 `ligand_ga_inputs.submission`이 입장 1–3을 검사한다: `ga`·`timeout_s`·필터 정규화와 공유 필드의 M18 `docking_inputs.validate_arguments`(자리표시 후보 id), M17 후보 집합 검증 읽기와 필터 적격 평가, 첫 적격 후보 하나를 대표로 `docking_bundle.submission`(수용체·부모 검증 한 번), `ga_pool_too_small`. 결과는 GA 선택 기록 `ligand_ga_selection@1`(인자, 대표의 수용체·사이드카·부모 기록, 풀 id·적격 표시, `pool_sha256`, `selection_sha256`)이며 후보마다의 M18 선택은 없다. 호출 키는 `selection_sha256` + M18 pin + GA pin이고, 같은 키의 진행 중 작업이나 검증된 `complete` 요약의 작업만 돌려준다. 새 작업이면 그 자리에서 재사용 계획 크기(422)와 예산 부족(429)을 본다. 작업 기록에는 `method`(M18 pin)와 `ga_method`(GA 작업 모듈·상수 해시)를 넣고 시작 때 둘 다 다시 맞춘다. 시작 때 run 실행 잠금 안에서 재사용 계획을 한 번 정하고(`published_m18_results`로 적격 후보의 M18 호출 키 조회, 각 handle을 `validated_result`·`input_sha256`으로 재검증, `job_dispatch_intent.ga_reused`) 크기를 다시 본 뒤 `reserve_attempt(units=reserved_units)`로 예약한다. 스테이징 `ligand_ga_worker_input@1`은 첫 적격 후보의 M18 스테이징에서 가져온 수용체·부모 SDF 블록·상자·값, `ga`, 풀 행(id·SMILES·적격, 적격만 M18 후보 필드·`input_sha256`·재사용 결과 바이트)이며 한도는 48 MiB + 재사용 128 MiB의 base64(`MAX_STAGED_BYTES`)다. guardian은 고정 진입점 `mw/jobs/ligand_ga_worker.py`를 `.deps/docking/venv-locked`로 띄우고(감시 대상), 작업 모듈은 `docking_worker.py`(먼저 불러 socket을 막음)와 의존성 없는 `ligand_ga_constants.py`를 파일 경로로 불러 쓰고 RDKit은 Morgan 지문에만 쓴다. 적격 후보의 지문을 만든 뒤 수용체를 한 번 준비하고(`prepared.json`), 세대마다 개체를 뽑아 차례로 재사용하거나 `dock_row`로 도킹하며 `individuals/<k>.*`와 `generations/<g>.json`을 원자적으로 쓴다(쓰는 동안 SIGALRM·SIGTERM 막음, 개체 시계 300초와 전체 시계·SIGTERM은 `BaseException`인 `_Stop`). 서버는 그룹 정리 확인 뒤 M19와 같은 `_finish_batch`에서 종료 원인을 정하고, `ligand_ga_jobs.finish`가 새 도킹 개체를 M18 검사로 게시한 뒤(`ligand_ga_individual_published`) 개체 선택을 다시 만들어 요약을 만들고 검증해 게시한다(`ligand_ga_published`). 서버 재시작 때는 `reconcile_run`이 같은 경로로 게시하고 `interrupted`로 닫는다. capability는 M18 capability + GA 파일 해시 + GA 작업 모듈 `--handshake`(파일 해시 키로 캐시)다. 사람 증액은 `POST /runs/{id}/ligand/ga/limit_approval` → `ligand_ga_jobs.limit_approval` → `Run.raise_limits`(GA 상수)뿐이다.
+
+### 서열 GA 작업 경로 (M23)
+`POST /jobs`의 `sequence_ga_dock_v1`은 큐 `submit`에서 이 순서로 돈다: `sequence_ga_jobs.submission`이 입장 1–4(인자·`ga`·`timeout_s` 정규화 → 두 리터럴·M18 확인 → 후보 집합(M20 `validated_set`)·구조 → RDKit 없는 리간드 SDF·상자 부분 점검)를 검사하고, dry-run이면 여기서 계획만 돌려준다. 그다음 `selection`이 입장 5–8(환경 412 → M7 `preflight()` 투영과 `residue_mismatch`·`box_no_receptor_atoms` → `ga_space_too_small`(조합 공간 크기 `N` = 기본대칭다항식 합) → 스테이징 크기 429)을 하고, 호출 키를 만든 뒤 `complete_job`이 같은 호출 키의 진행 중·`complete` 작업이 있으면 **예산 검사 전에** 그 작업을 돌려준다. 새 작업이면 입장 9(예산 429 `ga_limit_raise_required`)를 한 다음 큐 시작 때 run 실행 잠금 안에서 이벤트 스냅숏으로 재사용 색인(같은 `conditions_sha256`의 `sequence_ga_individual_published`에서 모델·결과가 모두 저장·검증된 개체와 기준 행)을 정하고 `reserved_units`를 한 번 예약한 뒤 guardian이 GA 작업 모듈(도킹 환경)을 띄운다. 시작 전 확인(`admission_plan`)은 읽기 전용으로 1–8단계만 하고 예산은 `shortfall`로 돌려준다. 작업 모듈은 야생형 기준 행을 먼저 평가하고, 세대마다 슬롯을 모두 선택한 뒤 개체마다 모델링 자식 프로세스(프로젝트 `.venv`, 같은 프로세스 그룹) → 개체 수용체 준비 → `dock_row` 순으로 평가하며 개체·세대 파일을 원자적으로 쓴다. 작업이 끝나고 그룹이 비었는지 확인한 뒤 서버 `finish`가 파일을 읽어(`O_NOFOLLOW`·크기 상한·canonical JSON) 엔진·방법·상자를 서버 기록과 대조하고(불일치면 아무것도 게시하지 않고 `fatal`) 새 평가 개체마다 mmCIF → 모델 → 도킹 결과 객체를 게시하고 `sequence_ga_individual_published`를 쓴 다음 요약(`sequence_ga_result@1`)과 `sequence_ga_published`를 게시한다. 야생형 기준 행 상태가 기록되기 전에 멈추면 요약이 없다. 읽기는 한 번의 이벤트 스냅숏으로 요약·모델·도킹 결과를 다시 검증한다.
 
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.

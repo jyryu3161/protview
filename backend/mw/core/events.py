@@ -30,6 +30,7 @@ EventType = Literal[
     "job_cleanup_verified", "job_observed",
     "docking_batch_row_published", "docking_batch_published",
     "ligand_ga_individual_published", "ligand_ga_published",
+    "sequence_ga_individual_published", "sequence_ga_published",
     "execution_call_admitted", "execution_call_stopped",
     "workflow_started", "workflow_step_completed", "workflow_outcome", "report_created",
     "viewer_consent_changed", "viewer_session_created", "viewer_scene_updated",

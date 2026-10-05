@@ -1,0 +1,82 @@
+INFO:     Started server process [80311]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:58597 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58599 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/intents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/analysis/executions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/online HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/analysis/plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/pockets?offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/numbering_maps?offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/scenes?offset=0&limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/figures?offset=0&limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/analysis/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_4572c984ede64f8cbb700d256042c520/uploads?filename=public_1hsg.cif HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "POST /runs/run_4572c984ede64f8cbb700d256042c520/commands HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/objects/meta?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/objects/meta?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/site_annotations?structure=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87&offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/intents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/online HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/residues?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/bytes?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87&offset=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87&offset=500&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_4572c984ede64f8cbb700d256042c520/viewer/sessions HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87&offset=1000&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fstructure%2F6ff4ab1ff7ac3157769ff13458925bb96eab2758ee8a12a4af27d81d61596b87&offset=1500&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_4572c984ede64f8cbb700d256042c520/commands HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/budget HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/objects/meta?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/objects/meta?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/intents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/residues?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/site_annotations?structure=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df&offset=0&limit=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/objects/meta?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/online HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/intents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/viewer/online HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/bytes?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/residues?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/pockets/preflight?structure=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df&offset=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df&offset=500&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "POST /runs/run_4572c984ede64f8cbb700d256042c520/viewer/sessions HTTP/1.1" 201 Created
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df&offset=1000&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/structures/atoms?handle=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df&offset=1500&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/events?after=0&limit=500 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /capabilities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/pockets/preflight?structure=obj%3A%2F%2Frun_4572c984ede64f8cbb700d256042c520%2Fprepared_structure%2F214da143cc5ecdaf0237cd4d55053e0f00c569ddc690fd8a5c086b224244b8df HTTP/1.1" 200 OK
+INFO:     127.0.0.1:0 - "GET /runs/run_4572c984ede64f8cbb700d256042c520/jobs HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [80311]

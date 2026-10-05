@@ -132,11 +132,12 @@ def test_the_raise_is_reachable_only_from_its_human_route():
         assert name not in workflows._STEP_TO_TOOL.values()
     assert all(spec.get("tool") not in names for spec in analysis_plans.OPERATIONS.values())
     # Source scan: only the orchestrator (definition), the batch job lane (definition) and the HTTP route name them.
-    # M22 adds the GA lane's own limit approval and route (spec M22 6, test_ligand_ga_budget.py); the batch one below
-    # is still reached only from its route.
+    # M22 adds the GA lane's own limit approval and route (spec M22 6, test_ligand_ga_budget.py), M23 the sequence GA
+    # lane's (spec M23 7, test_sequence_ga_budget.py); the batch one below is still reached only from its route.
     mentions = {str(path.relative_to(MW)) for path in MW.rglob("*.py")
                 if any(name in path.read_text() for name in ("raise_limits", "limit_approval"))}
-    assert mentions == {"runtime/orchestrator.py", "docking_batch_jobs.py", "api/app.py", "ligand_ga_jobs.py"}
+    assert mentions == {"runtime/orchestrator.py", "docking_batch_jobs.py", "api/app.py", "ligand_ga_jobs.py",
+                        "sequence_ga_jobs.py"}
     tree = ast.parse((MW / "api/app.py").read_text())
     callers = {node.name for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                for call in ast.walk(node) if isinstance(call, ast.Attribute) and call.attr == "limit_approval" and
@@ -147,7 +148,8 @@ def test_the_raise_is_reachable_only_from_its_human_route():
                for call in ast.walk(node) if isinstance(call, ast.Attribute) and call.attr == "raise_limits"}
     assert callers == {"limit_approval"}
     routes = [(route.path, sorted(route.methods)) for route in api_module.app.routes
-              if getattr(route, "path", "").endswith("limit_approval") and "/ligand/ga/" not in route.path]  # M22
+              if getattr(route, "path", "").endswith("limit_approval") and "/ligand/ga/" not in route.path and
+              "/sequence_ga/" not in route.path]  # M22, M23
     assert routes == [(ROUTE, ["POST"])]
 
 
