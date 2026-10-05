@@ -1,0 +1,447 @@
+M23 T1 착수 확인 (preflight) — 2026-10-05, 브랜치 dryforge/m23-sequence-ga, 기준 커밋 ec75fd0
+명세: .dryforge/spec.md 2·3·4·6·7·8·9·11·12절, 계획 T1 (a)–(g).
+제품 코드는 한 줄도 바꾸지 않았다(아래 "해시 파일 불변" 절에 시작·끝 해시). 새로 만든 것은
+backend/tests/fixtures/sequence_ga/ 와 이 문서뿐이다. 서버 .venv에서 RDKit·Meeko·MDAnalysis를 import하지 않았고
+(도킹 환경 인터프리터에서만), 도킹 환경에서 OpenMM·PDBFixer를 import하지 않았다. 외부 요청 0건(아래 (b) 참조,
+OpenRouter 0회). 8000·3000 포트에 LISTEN 없음(서비스를 띄우지 않았다. 측정은 전부 in-process TestClient와 JobQueue).
+
+경로 표기: <repo> = 저장소 루트, <S> = 세션 scratchpad/m23t1(저장소 밖). <S>의 프로브 스크립트(a_measure.py,
+b_measure.py, d_measure.py, e_measure.py, e2_measure.py, e_dock_default.py, e5_summary_size.py, f_probe.py,
+g_observe.py, make_expected.py, net_probe.py)는 커밋하지 않았다. 커밋한 일회용 프로토타입은
+backend/tests/fixtures/sequence_ga/prototype_*.py 넷이며 제품에 들어가지 않는다(각 파일 첫 줄에 그렇게 적었다).
+측정 기기: Apple M3 Ultra(28코어), Python 3.11.11(.venv·.deps/docking/venv-locked), OpenMM 8.6.0(engine_build
+8.6.0.dev-c6173db), PDBFixer 1.12.0, FreeSASA 2.2.1, Meeko 0.8.0 · RDKit 2026.03.6 · MDAnalysis 2.10.0 · gemmi 0.7.5,
+qvina2 2.1.0(h4a521e9_8, --cpu 1).
+새 fixture: backend/tests/fixtures/sequence_ga/(SYNTHETIC-PROVENANCE.md, build_sequence_ga_fixtures.py,
+m20-candidate-set-1ubq-8pos.json, m20-candidate-set-1ubq-tiny.json, golden_call_keys.json,
+independent_sequence_ga_oracle.py, expected.json, prototype_sequence_model.py, prototype_child_launch.py,
+prototype_receptor_extension.py, prototype_golden_call_keys.py).
+
+==================================================================================================
+판정 요약
+==================================================================================================
+- 멈출 사유 없음. 명세 기대와 어긋나는 측정은 없다. 단 (e)의 읽기 시간 한 가지는 **구현 방식에 조건이 붙는다**:
+  M19·M22식 "개체마다 다시 검증(그때마다 이벤트 로그 재파싱)" 방식을 그대로 쓰면 이벤트 로그 165 MB(개체 265개
+  규모) run에서 요약 상세 읽기 한 번이 28.6–44.3초로 T1 기준 20초를 넘는다. 읽기 하나 안에서 이벤트 스냅숏을
+  한 번만 접는 방식(M22 `_one_pool_check`의 확장)이면 3.0초로 들어오고 결과는 바이트 동일하다(측정). 이 설계
+  조건을 T2·T6에 넣는 것을 조율 세션이 정해 주어야 한다(아래 C1). 그 밖의 한도는 모두 여유가 크다.
+- (a) 1UBQ에서 k = 1–4(인접 위치·사슬 양 끝 포함) 11조합을 M21 `mutant_projection` 연속 적용으로 만들 수 있다.
+  단계 사이 반올림이 없으면 둘째 단계가 `coordinates_changed`로 실패(11조합 중 k ≥ 2인 8조합 전부, 최대 이동
+  4.29e-05–4.98e-05 Å). 명세 4절의 "앞 단계에서 PDBFixer가 놓은 원자 좌표를 소수 넷째 자리로 반올림"을 적용하면
+  11조합 전부 성공하고 변이 잔기 밖 원자 추가 0·좌표 변경 0, 최소화 `energy_invalid` 0건, 같은 입력·seed 두 번의
+  투영·mmCIF·엔트리 바이트 동일. k=1 I44W의 mmCIF는 저장된 M21 `mutation_model@1`의 mutant 쪽과 SHA-256이 같고,
+  야생형 기준 경로(PDBFixer 없음)는 M21의 wild_type_reference와 SHA-256이 같다. 작업 하나 ≈ 9.4–10.4초.
+  적용 순서를 뒤집으면 모델이 달라진다(mmCIF 다름, 변이 잔기 원자 최대 8.3e-05–6.2e-02 Å) → 고정 문장 S6의 근거.
+- (b) 도킹 환경 인터프리터 프로세스가 `[<repo>/.venv/bin/python, "-I", 프로그램]`을 자식으로 띄울 수 있다.
+  guardian과 같은 환경(PATH=/usr/bin:/bin, LANG, PYTHONUTF8, PYTHONUNBUFFERED, TMPDIR, OMP_NUM_THREADS,
+  OPENBLAS_NUM_THREADS)에서 자식이 `mw`를 주 체크아웃에서 import하고 OpenMM 8.6·PDBFixer 1.12.0을 쓴다(자식에
+  RDKit·Meeko·MDAnalysis는 로드되지 않음, 부모에 OpenMM·PDBFixer는 로드되지 않음). 프로젝트 인터프리터 경로는
+  작업 모듈 파일 위치에서 계산하면 되고(`guardian.DOCKING_PYTHON`과 같은 방식) **resolve()하면 안 된다**(심볼릭
+  링크를 풀면 pyenv 기본 인터프리터가 되어 openmm·mw가 없다: 실측 ModuleNotFoundError). 취소(그룹 SIGTERM)에서
+  작업 모듈과 자식이 함께 죽고 `guardian.members`가 빈 그룹을 확인했다(clean=true). guardian RSS 식
+  (작업 모듈 + `children(recursive=True)`)이 자식을 합산한다(실측 자식이 트리에 보임, 최대 트리 RSS 380 MB <
+  2 GiB). 모델링 단계 시간 초과는 작업 모듈의 자식 타임아웃으로 처리된다(자식 kill, 남은 프로세스 0).
+- (c) 개체 모델링 mmCIF의 handle을 저장 전에 `core/handles.py` 공식으로 계산해 사이드카 `source_handle`로 쓸 수
+  있다. 그 수용체로 `docking_worker.dock_row`를 돌린 결과는 서버가 같은 모델을 게시한 뒤 제출한 **단독 M18 작업
+  결과와 바이트 동일**(job_id·attempt_id만 다름)이고, 서버 `result_content`로 만든 내용은 저장된 골든
+  `docking_result@1`과 canonical 바이트 동일. 개체마다 수용체 준비는 0.116–0.142초(`receptor_inputs` +
+  `receptor_prepared`).
+- (d) `docking_bundle._mutation_receptor`를 `mutation_set_model@1`도 받도록 **서버 쪽만** 확장해도 기존 호출 키·결과가
+  그대로다: 프로토타입 분기를 끼운 프로세스에서 M18(가져온 수용체)·M18(M21 출처)·M19 일괄·M19 행·M21의 호출 키
+  5개와 검증 읽기 4개가 모두 골든과 같았다(확장 전/후/새 모델 저장 후 세 번). 골든 기록은
+  `backend/tests/fixtures/sequence_ga/golden_call_keys.json`에 커밋했다. 새 모델 종류로 제출한 단독 M18 작업 3건도
+  정상 완료하고 작업 모듈 출력이 같은 모델의 직접 `dock_row` 출력과 바이트 동일했다(`docking_worker.py`·
+  `docking_constants.py`·`docking_inputs.py` 불변).
+- (e) 개체 하나(1UBQ, k=4)의 저장 크기: 모델 JSON 309,521 B, mmCIF 97,573 B, 도킹 결과 45,913 B(기본 값이면
+  62,565–73,086 B). 최악 요약(8세대 × 16 = 128개 항목, 모든 필드 최대 폭) 171,468 B < 1 MiB(16.4%). 개체 게시 이벤트
+  한 줄 592 B. 작업 출력 총량 개체 27개 실측 43 MB → 65개 ≈ 104 MB < 256 MiB. 이벤트 로그 증가 개체당 ≈ 0.60 MB
+  (base64 1.33배) → 개체 65개 ≈ 39 MB. 읽기 시간은 위 판정 요약과 C1 참조. M18 수용체 한도는 1UBQ 비율
+  (전체/중원자 = 1231/602 = 2.0449)로 중원자 4,890개이고 1UBQ 모델은 그 12.3%다.
+- (f) 큐·API는 15000초를 이미 받는다(M22 반영분: `JobSubmit.timeout_s` le=15000, `queue.GA_TIMEOUT_MAX_S` 15000,
+  `SUMMARY_PROTOCOLS`). M23 프로토콜은 아직 등록되지 않아 `unknown energy protocol`로 거절된다. M22와 같은 세 곳
+  (+ 분기들)에 M23 항목을 더하면 적용된다. 스테이징 16 MiB는 프로토콜 전용 한도 분기가 필요하다(일반 기본값
+  4,000,000 B). 코드를 바꾸지 않았고 이 프로브는 작업·이벤트·과금을 만들지 않았다(이벤트 증가 0).
+- (g) 독립 oracle(`independent_sequence_ga_oracle.py`, 표준 라이브러리만, `mw` 미import)로 기대 경로 16개와 산식
+  표를 `expected.json`에 기록했다. `python3 backend/tests/fixtures/sequence_ga/independent_sequence_ga_oracle.py
+  --check` 종료 코드 0(두 번 연속). 명세가 두 가지로 읽히는 11곳은 oracle의 ASSUMPTIONS A1–A11이며 아래 "명세
+  모호함" 절에 위치와 두 해석을 적었다.
+
+==================================================================================================
+(a) 1UBQ 다중 변이 연속 적용 (명세 3절 개체 정의, 4절 (1), 고정 문장 S6)
+==================================================================================================
+명령(저장소 루트):
+  .venv/bin/python backend/tests/fixtures/sequence_ga/prototype_golden_call_keys.py <S>/golden3/runs \
+      <S>/golden3/golden.json                                              → 종료 0 (44 s, (d)의 골든 run)
+  .venv/bin/python <S>/a_measure.py <S>/a/runs3 <S>/a/a1.json              → 종료 0 (201 s)
+  .venv/bin/python <S>/a_measure.py <S>/a/runs2 <S>/a/a2.json              → 종료 0 (재현용 2회차)
+방법: 골든 run의 저장된 `prepared_structure@1`에 M7 `openmm_method.preflight`(0.29 s)를 걸어 중원자 투영 602개·
+  잔기 76개를 얻고, 커밋한 프로토타입 `prototype_sequence_model.sequential_projection`이 변이를 **투영 잔기 순서
+  오름차순**으로 하나씩 수정하지 않은 M21 `mutant_projection`(PDBFixer + `_graft`)에 넘긴다. 단계 사이에는 그 단계에서
+  PDBFixer가 새로 놓은 원자의 좌표만 `round(x, 4)`한다. 최종 투영은 M21 `_prepare` → `_minimize`와 같은 코드 경로를
+  탄다(엔트리는 M21 구조 엔트리에서 `sasa`·`contacts`를 뺀 것). 불변 조건은 M21 함수가 아니라 측정 스크립트가
+  따로 검사한다(변이 잔기 밖 원자 이름·원소·순서·좌표를 비트 단위로, 변이 잔기는 amber14-all 템플릿 중원자 집합과).
+  `round(x, 4)` = `float("%10.4f" % x)`인지 난수 1,000,000개로 확인: 불일치 0건.
+출력(조합 이름은 fixture와 같은 표기, k = 동시 변이 수):
+  조합                             k  반올림 없음                 반올림 있음(밖 변경/밖 추가/반올림 원자/최대 이동 Å)
+  k1_I44W                          1  해당 없음(단계 1개)         0 / 0 / 0 / 0
+  k1_M1W_nterm                     1  해당 없음                   0 / 0 / 0 / 0
+  k1_G76W_cterm                    1  해당 없음                   0 / 0 / 0 / 0
+  k2_K6H_I44W                      2  coordinates_changed HIS6    0 / 0 / 4 / 4.290e-05
+                                      max_abs_shift_A 4.290e-05
+  k2_Q2Y_I3F_adjacent              2  coordinates_changed TYR2    0 / 0 / 6 / 4.984e-05
+  k2_G75F_G76W_adjacent_cterm      2  coordinates_changed PHE75   0 / 0 / 7 / 4.626e-05
+  k3_M1W_Q2Y_I3F_adjacent_nterm    3  coordinates_changed TRP1     0 / 0 / 14 / 4.862e-05
+  k3_K6H_L8W_I44W                  3  coordinates_changed HIS6     0 / 0 / 10 / 4.995e-05
+  k4_M1W_I44W_G75F_G76W_ends       4  coordinates_changed TRP1     0 / 0 / 23 / 4.744e-05
+  k4_Q2Y_I3F_K6H_L8W               4  coordinates_changed TYR2     0 / 0 / 15 / 4.984e-05
+  k4_M1F_Q2W_I3Y_G76H_ends         4  coordinates_changed PHE1     0 / 0 / 19 / 4.978e-05
+  최소화: 11조합 전부 `after ≤ before`, 유한값(`energy_invalid` 0건). 값은 구조마다의 OpenMM Amber14-all + GBn2
+    전위(kJ/mol)이며 서로 비교하지 않았고 이 문서에 적지 않는다.
+  시간: 조합 하나 9.44–10.33초(2회차 9.37–10.34초). 그중 PDBFixer 단계 하나 0.063–0.165초, `_prepare` 1.82–2.43초,
+    `_minimize` 7.31–7.94초. 야생형 기준(PDBFixer 없음) 9.78초(prepare 2.00 + minimize 7.77).
+  결정성: 두 번 실행의 투영·mmCIF·엔트리 SHA-256이 11조합 + 야생형 전부 동일.
+  M21과의 동일성: k1_I44W의 mmCIF SHA-256 = 저장된 M21 모델 `structures.mutant.structure_sha256`,
+    야생형 경로의 mmCIF SHA-256 = 같은 모델의 `structures.wild_type_reference.structure_sha256`.
+  크기: 원자 1,231–1,273개, 결합 1,240–1,286개, mmCIF 94,374–97,573 B, 엔트리(JSON) 294,229–307,415 B.
+  순서 의존(기록만): 같은 변이 집합을 역순으로 적용하면 8조합 모두 투영·mmCIF가 다르고, 변이 잔기 안 원자의 최대
+    차이는 8.327e-05(K6H·I44W) / 1.500e-03 / 4.152e-03 / 4.152e-03 / 1.830e-02 / 1.910e-02 / 2.445e-02 /
+    6.180e-02 Å(M1W·Q2Y·I3F)였다. 명세는 구조 순서로 고정하므로 결과는 결정적이다.
+  반올림이 0개인 조합도 있다(ALA 치환은 PDBFixer가 원자를 놓지 않거나 CB 하나만 놓는다. (g)의 tiny 집합에서 k=2·3인데
+    `rounded_atoms` 0인 키가 있다).
+결론: 만족. 명세 4절의 반올림 규칙이 실제로 필요하고, 그 규칙이 있으면 M21 규칙(변이 잔기 밖 불변)을 그대로 지킨다.
+
+==================================================================================================
+(b) 두 인터프리터, 한 프로세스 그룹 (명세 8절)
+==================================================================================================
+명령:
+  .venv/bin/python <S>/b_measure.py <S>/b/golden_copy <S>/b/work1                → 종료 0 (51 s)
+    (안에서: [.venv/bin/python, "-I", prototype_child_launch.py, standin, <attempt>, <mode>]를
+     `start_new_session=True`로 띄우고, 그 프로세스가 [.deps/docking/venv-locked/bin/python, "-I",
+     prototype_child_launch.py, worker]를 guardian과 같은 환경으로 띄우고, 작업 모듈이 개체마다
+     [<repo>/.venv/bin/python, "-I", prototype_sequence_model.py, child]를 같은 환경으로 띄운다)
+  .venv/bin/python <S>/net_probe.py <S>/b/work1/complete/individuals/k3_K6H_L8W_I44W → 종료 0
+출력(mode=complete, 개체 4개 = 야생형 + k1 + k3 + k4):
+  stand-in(그룹 리더 확인 leader=true): worker 종료 0, clean=true, `guardian.members` 정리 전/후 모두 빈 목록,
+    자식 PID 종료 확인, 샘플 851회, 최대 트리 RSS 264,060,928 B(자식 최대 116,178,944 B).
+  작업 모듈: `docking_worker.py` 파일 경로 import 0.45 s. 로드된 화학 패키지 = rdkit·meeko·MDAnalysis(OpenMM·
+    PDBFixer 없음). `project_python` = <repo>/.venv/bin/python(심볼릭 링크임, 풀지 않음).
+  자식(프로젝트 환경): prefix <repo>/.venv, `mw` = <repo>/backend/mw/__init__.py, openmm 8.6, pdbfixer 1.12.0,
+    `-I`(isolated) 적용, 환경 키 = LANG, LC_CTYPE, OMP_NUM_THREADS, OPENBLAS_NUM_THREADS, PATH, PYTHONUNBUFFERED,
+    PYTHONUTF8, TMPDIR, __CF_USER_TEXT_ENCODING. 로드된 화학 패키지 0개. 자식 stdout/stderr 0 B.
+    자식 벽시계 9.71–10.46초(내부 9.52–10.24초).
+  해석: 작업 모듈 import 0.45초 + 개체당 자식 시작·모델링 ≈ 10초 + 수용체 준비 0.13초 + 도킹(아래) 이므로
+    명세의 모델링 240초·도킹 300초 단계 상한에 1UBQ 크기에서는 여유가 크다.
+취소(mode=cancel_wait, 자식이 모델링하는 중에 stand-in이 그룹 정리):
+  worker 반환코드 -15(SIGTERM), 정리 전 그룹 멤버 [작업 모듈, 자식] 둘 다 보였고, `guardian.cleanup` 뒤 멤버 0개,
+  clean=true, 자식 종료 확인. 벽시계 3.55초.
+모델링 단계 시간 초과(mode=model_timeout, 작업 모듈이 자기 자식에 2.0초 상한):
+  자식 반환코드 -9, `child_timed_out` true, 남은 자식 0, 그룹 멤버 0, clean=true, worker 종료 0.
+RSS 감시: guardian `while child.poll() is None` 루프의 식 `process.memory_info().rss + sum(자식들 rss)`를 그대로
+  적용했다. 모델링 자식이 `children(recursive=True)`에 실제로 들어왔다(`child_in_recursive_children` true), 즉
+  guardian은 두 인터프리터를 합쳐서 2 GiB 한도를 적용한다. (g)의 27개 개체 실행에서 최대 트리 RSS 380,010,496 B.
+외부 요청: 모델링 한 건을 `sys.addaudithook`으로 감싸 socket.connect·bind·getaddrinfo·urllib.Request를 세었다 →
+  0건(그러면서 만든 mmCIF는 앞 실행과 바이트 동일). 도킹 환경 작업 모듈은 자기 `_deny_network`를 그대로 쓴다.
+프로젝트 인터프리터 경로 주의: `(<repo>/.venv/bin/python).resolve()` = <home>/.pyenv/versions/3.11.11/bin/python3.11
+  이고 그 인터프리터로는 `import openmm, mw`가 ModuleNotFoundError다(반환코드 1). 스테이징 값과 작업 모듈 계산값은
+  resolve하지 않은 경로로 비교해야 한다.
+결론: 만족. 명세 8절의 프로세스 구조가 감시 그룹·환경 규칙 안에서 가능하다.
+
+==================================================================================================
+(c) 저장 전 handle 선계산과 단독 M18 결과와의 바이트 동일성 (명세 4절 (2), 8절 스테이징)
+==================================================================================================
+명령: (b)의 b_measure.py와 (d)의 d_measure.py.
+방법: `core/handles.py`의 `object_sha(kind, schema, raw)`와 `obj://<run_id>/<kind>/<sha>` 공식을 프로토타입이
+  그대로 쓴다(M21이 `mutation_model_structure@1`을 저장할 때와 같은 방식: `fmt="cif"`, raw = mmCIF UTF-8 바이트,
+  schema = `<kind>@1`. `mutation_model_bundle._structure_handle`이 저장 전에 같은 계산을 한다). 사이드카는 서버와
+  같은 `docking_inputs.receptor_rows` + `docking_inputs.mutation_model_sidecar`로 만든다.
+출력(M21 종류 `mutation_model_structure`로 계산한 k=1 I44W 개체, 골든 run):
+  선계산 handle = 서버 `_mutation_receptor`가 돌려준 저장 구조 객체 handle(…8b4c8b71…) — 같음
+  mmCIF 바이트 동일, 사이드카 바이트 동일(SHA-256 922adbda…)
+  작업 모듈 `dock_row` 출력 = 단독 M18 작업의 result.json에서 job_id·attempt_id만 뺀 canonical 바이트 — 동일
+  서버 `docking_bundle.result_content`로 만든 내용 = 저장된 골든 `docking_result@1` canonical 바이트 — 동일
+출력(새 종류 `mutation_set_model_structure` + `mutation_set_model@1`로 저장한 개체 3개, 프로토타입 서버 분기):
+  개체                      선계산 handle = 저장 handle   작업 상태  작업 모듈 출력 = 작업 result.json(ID 제외)  사이드카 동일
+  wild_type                 True                          done       True                                      True
+  k3_K6H_L8W_I44W           True                          done       True                                      True
+  k4_M1W_I44W_G75F_G76W     True                          done       True                                      True
+  세 결과의 `inputs.receptor` = {source: {kind: mutation_model, mutation_model: <set model handle>, side}, sha256,
+    model_number 1, connectivity {kind: mutation_model_topology}, removed_instance null, acknowledgement},
+    한계 문장 7개(M18 여섯 + 열두째). 저장 결과 34,214 / 59,768 / 45,913 B.
+  개체마다 수용체 준비: `receptor_inputs` 0.025초 + `receptor_prepared` 0.094–0.107초(27개 개체에서 합계
+    0.116–0.142초, 평균 0.127초). 명세대로 개체마다 다시 해야 하며 M19의 "한 번 준비" 불변은 적용되지 않는다.
+  `docking_worker.dock_row` 시간(exhaustiveness 4, num_modes 5): 0.76–0.94초. M18 기본값(exhaustiveness 8,
+    num_modes 9)으로는 1.45–1.64초, 결과 62,565–73,086 B, 모드 9개, 접촉 146–178행.
+결론: 만족. 개체 도킹 결과는 단독 M18 결과와 바이트가 같고, 모델 객체가 저장되기 전에 handle을 확정할 수 있다.
+
+==================================================================================================
+(d) 서버 쪽 수용체 출처 확장이 기존 호출 키·결과를 바꾸지 않는가 + 골든 기록 (명세 8절 (b), 12절)
+==================================================================================================
+명령:
+  .venv/bin/python backend/tests/fixtures/sequence_ga/prototype_golden_call_keys.py <S>/goldenN/runs ...  → 종료 0
+    (네 번: golden1·golden2(요청 기록 전), golden3·golden4(요청 기록 포함). golden3 = golden4 바이트 동일,
+     golden1 = golden3에서 새로 더한 `request`·`timeout_s` 키만 차이)
+  .venv/bin/python <S>/d_measure.py <S>/d2/runs <S>/b/work1 <S>/d2/d_result.json                        → 종료 0
+방법: `prototype_receptor_extension.install(setattr)`이 측정 프로세스에서만 `docking_bundle._mutation_receptor`를
+  감싼다. 감싼 함수는 `receptor_source.mutation_model`의 저장 스키마가 `mutation_set_model@1`일 때만 프로토타입
+  판독기로 가고(그 모델의 `structures` 키 하나가 `side`, 저장 mmCIF 해시 대조, 같은 `docking_inputs` 함수로 사이드카),
+  그 밖의 handle은 원래 함수를 그대로 부른다. `docking_bundle.py`·`docking_inputs.py`·`docking_worker.py`·
+  `docking_constants.py` 파일은 측정 전·후 SHA-256이 같다(아래 해시 절).
+출력(확장 전 / 확장 후 / 새 set model 3개를 저장한 뒤, 세 번 모두 같음):
+  요청                       호출 키 골든과 같음  검증 읽기 바이트 골든과 같음
+  M18 가져온 수용체          True                 True
+  M18 M21 출처               True                 True
+  M19 일괄(요약 키)          True                 —
+  M19 행                     True                 True
+  M21 변이 모델              True                 True
+  `docking_batch_inputs.published_m18_results` 결과 canonical 바이트도 확장 전 = 확장 후.
+골든 기록(`backend/tests/fixtures/sequence_ga/golden_call_keys.json`, run_id `run_m23_golden_keys`):
+  m18_imported_receptor      call_key d23a2dbf13… 결과 obj://…/docking_result/6f9f28fa…  내용 SHA-256 8ff4f217…  33,425 B
+  m21_mutation_model         call_key 753b8c6c25… 결과 obj://…/mutation_model/5adf31d7…  내용 SHA-256 de97242c…  601,689 B
+  m18_mutation_model_source  call_key f0f14ebcff… 결과 obj://…/docking_result/34ae6cf8…  내용 SHA-256 9a68f4a1…  47,554 B
+  m19_batch_row              일괄 키 ead9c6f73c… 행 키 8864dd04c5… 행 결과 obj://…/dbf7f001…  내용 SHA-256 2f9aadb0…
+                             44,521 B, 요약 obj://…/docking_batch_result/4ec3f7df…  내용 SHA-256 d77a0019…  2,118 B
+  해시 파일 6개(명세 지정): docking_worker.py 52c3cad6…, docking_constants.py 5ab9e3da…,
+    openmm_mutation_worker.py ce0e64d8…, mutation_model_constants.py e2cb3ec7…, mutation_model_math.py 828b28d6…,
+    mutation_candidates.py d0f2b7a8…. 그 밖에 openmm_worker.py·tools/openmm_method.py·docking_batch_worker.py·
+    docking_batch_constants.py·ligand_ga_*(6개)도 `also_hashed_files`에 적었다.
+  입력 해시·M20 위치 목록·M18·M21 pin 전체도 같은 파일에 있다. 값은 식별자와 바이트 해시이며 과학 값이 아니다.
+M18 수용체 원자 수 한도: 1UBQ 야생형 모델은 원자 1,231개(중원자 602, 수소 629) → 전체/중원자 2.0449,
+  즉 수소 포함 10,000원자 한도는 중원자 약 4,890개에 해당한다(M21 결정 0029의 `M18_HEAVY_ATOM_ESTIMATE = 4890`과
+  같은 값). 1UBQ 모델은 한도의 12.3%다. M7 한도(중원자 6,000)와 이 값 사이 구간(중원자 4,890–6,000)은 모델링은
+  되지만 개체 도킹이 `receptor_invalid`로 거절되며 입장에서 걸러지지 않는다(명세 2절 주석과 같음).
+결론: 만족. 명세 8절 (b)의 덧붙임은 기존 M18·M19·M21 호출 키·결과·읽기를 바꾸지 않는다.
+
+==================================================================================================
+(e) 객체·이벤트 크기와 읽기 시간 (명세 4절 요약 한도, 8절 출력 한도, 9절 읽기)
+==================================================================================================
+명령:
+  .venv/bin/python <S>/e_measure.py <S>/e3/runs <S>/d2/d_result.json <S>/e3/e_result.json   → 종료 0
+  .venv/bin/python <S>/e2_measure.py <S>/e3/runs <S>/d2/d_result.json <S>/e3/e2_L265.json   → 종료 0
+  .venv/bin/python <S>/e2_measure.py <S>/e4/runs <S>/d2/d_result.json <S>/e4/e2_L65.json    → 종료 0
+  .deps/docking/venv-locked/bin/python -I <S>/e_dock_default.py <S>/b/work1 <S>/e/dock_default → 종료 0
+  python3 <S>/e5_summary_size.py backend/tests/fixtures/sequence_ga/golden_call_keys.json    → 종료 0
+크기(개체 하나, 1UBQ k=4, 실측 저장 객체와 그 `object_created` 이벤트 줄):
+  `mutation_set_model@1` JSON 309,521 B → 이벤트 줄 413,039 B
+  mmCIF 97,573 B → 이벤트 줄 130,473 B
+  `docking_result@1` 45,913 B → 이벤트 줄 61,797 B (M18 기본 값이면 62,565–73,086 B)
+  합계 개체당 ≈ 453 KB 저장 / ≈ 605 KB 이벤트. k=1–4에서 모델 JSON 294,729–309,521 B, mmCIF 94,326–97,573 B.
+  모델 JSON의 대부분은 `atom_mapping`(원자 1,231–1,273개)과 `final_bonds`(1,240–1,286개)다. 16 MiB 한도의 1.9%.
+작업 출력 총량: 개체 27개 실측 디렉터리 43,656 KB(개체당 ≈ 1.6 MB: model.json 0.30 + model.cif 0.095 +
+  receptor_bonds.json 0.83 + model_input.json 0.155 + result.json 0.047 MB) → 개체 64 + 기준 행 1 ≈ 104 MB,
+  명세 8절의 256 MiB 안(40%). 사이드카가 가장 크므로 개체 폴더를 평가 뒤에 지우지 않으면 이 값이 그대로 쌓인다.
+요약 크기(명세 4절 필드를 최대 폭 자리값으로 채운 크기 모델. 제품 출력도 과학 값도 아니다):
+  8세대 × 개체 16 = 항목 128개 + 기준 행 + pins + S1–S6 → 171,468 B = 1 MiB의 16.4%. 개체 항목 하나 1,274 B.
+  요약 객체 이벤트 줄 추정 ≈ 229 KB. `sequence_ga_individual_published` 이벤트 줄 592 B.
+  조합 공간 최대(위치 400 × 후보 19, max_mutations 4) N = 137,006,118,184,500 < 2^53이므로 JSON 정수로 안전하다.
+이벤트 로그 증가와 읽기 시간(같은 run을 표시된 합성 패딩 객체로 세 크기로 만들어 측정. 패딩은 종류
+  `t1_padding_*`이고 과학 값으로 읽지 않는다):
+  단계                     이벤트 로그           이벤트 1회 읽기  `validated_result`(개체 도킹 결과)  M21 모델 검증
+  L0  (개체 3개)           4,211,931 B / 149줄   0.0061 s         0.0199 s                            0.0355 s
+  L65 (GA 1회 규모)        43,586,234 B / 412줄  0.0549 s         0.0688 s                            0.0837 s
+  L265(이전 GA 200개 포함) 164,640,100 B /1,215줄 0.2098 s        0.2209 s                            0.2360 s
+  부품: 모델 JSON 읽기 0.0026 s, 사이드카 재생성(`receptor_rows` + `mutation_model_sidecar`) 0.0093 s,
+    M21 `validated_model` 내용 검증 0.0224 s(접촉 재계산 포함. M23 모델에는 접촉이 없어 상한값이다).
+  시간 모형 ① 요약 상세 읽기(개체 65 + 기준 행 1 = 66건):
+    개체마다 다시 검증(M19·M22 방식, 매번 이벤트 로그 재파싱): L265에서 66 × (0.2209 + 0.2098 + 0.0026) = 28.6 s
+      (측정 스크립트가 M21식 모델 검증까지 포함한 변형으로 재면 0.6718 s/개체 → 44.3 s). L65에서는 13.8 s.
+    읽기 하나 안에서 이벤트 스냅숏 한 번: L265에서 0.203 s + 66 × 0.043 = 3.0 s, L65에서 2.8 s.
+      두 방식의 `validated_result` 반환값은 바이트 동일(측정 스크립트가 대조).
+  시간 모형 ② 재사용 색인 검증(이전 GA 개체 200개):
+    개체마다 다시 검증: L265에서 0.21 + 200 × 0.2209 = 44.4 s(모델 검증까지 포함한 변형 89.6 s). L65에서 27.9 s.
+    이벤트 스냅숏 한 번: L265에서 8.8 s, L65에서 8.4 s.
+  판정: T1 기준(읽기 한 번 20초, 색인 검증 60초)을 **개체마다 재파싱하는 방식은 L265에서 넘고**(28.6–44.3 s),
+    스냅숏 방식은 두 기준 모두 크게 밑돈다. 색인 검증은 재파싱 방식으로도 44.4 s로 기준 안이지만(모델 검증까지
+    더한 변형 89.6 s는 넘는다) 여유가 작다. → C1(조율 세션 결정 사항).
+결론: 크기 한도는 모두 만족. 읽기 시간은 구현 방식에 조건이 붙는다(C1).
+
+==================================================================================================
+(f) 큐가 15000초 상한과 스테이징을 받는가 (M22 세 곳 대조)
+==================================================================================================
+명령: .venv/bin/python <S>/f_probe.py <S>/f/runs → 종료 0 (작업·이벤트·과금 0. 거절만 관찰)
+  코드 읽기: api/app.py 183–189; jobs/queue.py 55–70, 629–657, 1268–1276, 1318–1343, 1368–1390, 1419–1503,
+  1556–1563, 1968–1990, 2039–2043, 2131–2135; jobs/guardian.py 41–64, 234–302, 355–370.
+출력:
+  `JobSubmit(timeout_s=15000)` 통과, 15001 → `less_than_equal`(M22가 이미 le=15000으로 올려 둠)
+  `queue.submit("sequence_ga_dock_v1", {}, timeout_s=15000)` → input_invalid "unknown energy protocol"(미등록)
+  `queue.submit("qvina_ga_dock_v1", …, 15000 / 15001)` → 둘 다 인자 검사로 진행(invalid_job_arguments. 이 프로토콜은
+    기본값 없이 `[total_s + 600, 15000]`을 인자 검사에서 본다)
+  `queue.submit("qvina_dock_v1", …, 901)` → "invalid job timeout", `qvina_batch_dock_v1` 7801 → "invalid job timeout"
+  `queue.GA_TIMEOUT_MAX_S` 15000, `BATCH_TIMEOUT_MAX_S` 7800, `SUMMARY_PROTOCOLS` = {qvina_batch_dock_v1,
+    qvina_ga_dock_v1}, `JOB_PROTOCOLS` 14개(sequence_ga_dock_v1 없음)
+  guardian: `DOCKING_ADAPTERS` 3개(GA 포함), `MONITORED_ADAPTERS`에 GA 있음, RSS 한도 2,147,483,648 B,
+    `MAX_GO_WAIT_S` 3600.0(GO 대기 상한이고 실행 시간 상한이 아니다)
+  스테이징 한도: `ligand_ga_jobs.STAGED_LIMIT` 229,288,620 B, `docking_bundle.STAGED_LIMIT` 50,331,648 B,
+    분기가 없는 프로토콜의 기본값은 4,000,000 B(명세의 16 MiB는 전용 분기가 필요하다)
+M23가 M22와 같은 방식으로 넓혀야 하는 곳(코드 읽기 기준, 이번에 바꾸지 않았다):
+  1) API `JobSubmit.timeout_s`의 `le`는 이미 15000이므로 그대로 — 바꿀 필요 없음(주석만 M23 언급 추가)
+  2) `JobQueue.submit`의 프로토콜별 `bound` 연쇄에 M23 상수(15000)와 "서버 기본값 없음" 분기
+  3) `SUMMARY_PROTOCOLS`에 M23 추가(시도 1회 1342행, 재시도 거절 2039행, 정리 뒤 `_finish_batch` 1562행,
+     복구 2131행이 이 집합을 본다)
+  그 밖에 필요한 분기: 입장(submit 689–692 식), 호출 키(775–785), 중복 반환(789–791), 입장 예산(804–806),
+  작업 기록 pin(827–829), 시작 때 pin 재확인(1324–1329), 예약 단위(1376–1386), 스테이징 한도(1479–1485),
+  adapter 이름 집합(1498–1502)과 `claim_next`의 허용 집합(1272–1274), `_finish_batch`의 M23 분기(1974–1979),
+  guardian의 진입점·인터프리터(DOCKING_ADAPTERS)·`MONITORED_ADAPTERS`·출력 한도.
+결론: 큐가 시간 상한을 적용하지 못하는 경로는 없다. 15000초는 M22 경로를 그대로 쓰면 적용된다.
+
+==================================================================================================
+(g) 독립 oracle과 기대 경로 (명세 3절, 4절 재사용, 7절 예약)
+==================================================================================================
+명령:
+  .venv/bin/python <S>/g_observe.py <S>/g/runs <S>/g/work      → 종료 0 (294 s, 실제 엔진 27건)
+  python3 <S>/make_expected.py <S>/g/work/g_observe.json       → 종료 0 (expected.json 생성, 벡터 16개)
+  python3 backend/tests/fixtures/sequence_ga/independent_sequence_ga_oracle.py --check  → 종료 0 (두 번 연속, 0.12 s)
+  .venv/bin/python -m ruff check backend/tests/fixtures/sequence_ga/                    → 종료 0
+독립성: `independent_sequence_ga_oracle.py`는 표준 라이브러리만 쓰고 `mw`를 import하지 않으며, 제품 GA 코드가
+  생기기 전에 명세 3절만 보고 썼다. 난수는 `random.Random(ga.seed)`이고 호출은 `randint`·`random`·`sample`·`choice`
+  뿐이며, 모든 호출의 모집단과 결과를 `expected.json`의 `rng_calls`에 적어 두었다(T4가 호출 단위로 대조할 수 있다).
+  점수 표는 입력이다: `s4_tiny_observed*` 둘만 아래 실제 관찰값이고 나머지는 합성 선택 로직 입력이다.
+공간·산식(손 계산과 oracle 대조, `expected.json`의 `arithmetic`·`spaces`):
+  N = Σ_{k=1..M} e_k: 후보 수 (2,3,1,2) · max_mutations 3 → e1 8, e2 23, e3 28 → N 59(4면 +e4 12 = 71, 1이면 8)
+    후보 수 (2,2,2) · 1 → 6, · 3 → 26(실제 tiny 집합), 후보 수 (4) · 4 → 4(위치 1개라 M = 1)
+    상한(400위치 × 19) · 4 → 137,006,118,184,500
+  슬롯 수 r = floor(random_fraction × slots + 0.5), c = floor(crossover_fraction × (slots − r) + 0.5): 75행 표
+    (예: slots 4, 0.5/0.2 → 교차 2 편집 1 무작위 1; slots 12, 0.5/0.2 → 교차 5 편집 5 무작위 2)
+  예약: reserved_evaluations = min(max_new_evaluations, P + (G−1)(P−E)), reserved_units = 2 × (그 값 + 1),
+    wall_clock_s = min(total_s + 600, units × 270 + 300), full_run_may_be_partial = units × 270 > total_s
+      기본 P8 G5 E2 max32 total7200 → 32 / 66 / 7800 / true
+      최대 P16 G8 E0 max64 total14400 → 64 / 130 / 15000 / true
+      최소 P4 G1 E2 max4 total600 → 4 / 10 / 1200 / true
+      P12 G1 max64 total7200 → 12 / 26 / 7320 / false
+      P6 G8 E4 max64 total14400 → 20 / 42 / 11640 / false
+      P8 G5 E2 max32 total600 → 32 / 66 / 1200 / true
+기대 경로 16개(`expected.json` vectors. 각 벡터에 `how`가 있다):
+  이름                      종료 이유              상태     완료 세대  새 평가  재사용  난수 호출  N
+  s1_basic                  generations_complete   complete  3          10       0       50         59
+  s1_ties                   generations_complete   complete  3          10       0       58         59
+  s1_all_failed             repeated_failure       partial   0          5        0       39         59
+  s1_failures_mixed         no_change              complete  3          22       0       232        59
+  s1_one_scored             evaluation_limit        partial   2          10       0       60         59
+  s1_reference_failed       reference_failed       partial   0          0        0       0          59
+  s1_reference_null         generations_complete   complete  3          10       0       119        59
+  s1_no_scored              evaluation_limit        partial   2          10       0       65         59
+  s1_no_change              no_change              complete  2          7        0       32         59
+  s1_evaluation_limit       evaluation_limit        partial   1          6        0       40         59
+  s1_reuse                  evaluation_limit        partial   3          6        6       89         59
+  s2_degenerate             space_exhausted        complete  1          4        0       63         4
+  s3_single_mutation        space_exhausted        complete  2          6        0       144        6
+  s4_tiny_synthetic         generations_complete   complete  4          13       0       100        26
+  s4_tiny_observed          no_change              complete  3          10       0       82         26
+  s4_tiny_observed_reuse    no_change              complete  3          6        4       82         26
+  손 추적 대조(s1_basic, 위치 4개 후보 (2,3,1,2), GA seed 11, P4 G3 E1 토너먼트 2 교차 0.5 무작위 0.25 max 3,
+    합성 점수): 세대 1 무작위 4개(4-6, 6, 7, 0) → 최솟값 −7.5(키 7). 세대 2 이어받음 = 7, 슬롯 3 →
+    r = floor(0.25×3 + 0.5) = 1, s = 2, c = floor(0.5×2 + 0.5) = 1, e = 1 → 교차 1(부모 0과 7 → 0-7)·편집 1
+    (부모 7, add → 5-7)·무작위 1(0-3-5). 세대 3 이어받음 7, 교차 슬롯이 `add`로 1-7, 편집 슬롯이 `remove`로 5,
+    무작위 4. G = 3이라 generations_complete, 새 평가 10 = reserved_evaluations(min(32, 4 + 2×3)).
+    oracle 출력과 손 추적이 같다.
+실제 엔진 관찰값(`s4_tiny_observed`의 점수 표, tiny 집합 키 26개 + 야생형 기준 행 1개를 전부 한 번씩 모델링·도킹):
+  수치는 qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값이며 친화도가 아니다. 결합·변이 효과에 대해 아무것도
+  말하지 않는다. 개체마다 수용체가 다르므로 나란히 둔 것은 같은 수용체 안의 비교가 아니다).
+  27건 전부 `scored`(모드 5개), 서로 다른 값 6개(−3.6, −3.2, −3.0, −2.9, −2.8, −2.6)로 동점이 매우 흔하다
+  → 동점 규칙(변이 수 → pick_index)이 실제로 쓰인다.
+  시간: 자식 모델링 9.47–10.37초(평균 9.89), 수용체 준비 0.116–0.142초(평균 0.127), `dock_row` 0.76–0.91초
+    (평균 0.85). 27건 전체 294.1초 = 건당 10.9초. 반올림 원자 수 0–16개, 최대 이동 ≤ 4.99e-05 Å.
+  stand-in: clean=true, 남은 프로세스 0, 최대 트리 RSS 380 MB.
+  가늠: 개체 평가 한 건 ≈ 11초(1UBQ, exhaustiveness 4)이므로 기본 설정(예약 32건) ≈ 350초, 최대(예약 64건) ≈
+    700초로 기본 total_s 7200 안이다. 큰 단백질·높은 exhaustiveness에서는 모델링 쪽(`_minimize`)이 원자 수에
+    비례 이상으로 늘 수 있다(M21 함정 참조).
+결론: 만족. 단 ASSUMPTIONS A1–A11을 T2–T4 전에 확정해야 하고(아래), 확정 뒤 oracle과 expected.json을 함께 고친다.
+
+==================================================================================================
+명세 모호함 (T2–T4 전에 조율 세션이 정할 것. 임의로 정하지 않고 두 해석을 적었다)
+==================================================================================================
+S-1. 3절 `draw()` "이미 본 키면 같은 draw()를 최대 50번 더 시도" / 4절 (e) "최대 20번 다시 시도" / 4절 (c)
+  "B를 최대 3번 다시 뽑는다": (i) 첫 시도에 더해 50·20·3번(총 51·21·4) (ii) 총 50·20·3번. oracle은 (i)(A5).
+  난수 호출 수와 경로가 달라지므로 T4 대조 전에 확정해야 한다.
+S-2. 3절 "본 키 = 이 실행에서 한 번이라도 선택된 키 전부": 만들고 있는 세대의 앞 슬롯에서 선택한 키가 뒤 슬롯의
+  "본 키"에 (i) 즉시 들어간다 (ii) 세대가 끝난 뒤 들어간다. oracle은 (i)(A2). (ii)면 같은 세대에 중복 키가 생길 수
+  있어 요약 검증("`carried`가 아닌 개체의 키는 한 실행에서 유일")과 어긋난다 → (i)이 맞아 보이지만 명시가 필요하다.
+S-3. 3절 4절 (c) 자식 축소 "크기가 M을 넘으면 rng.sample(자식, M)": `rng.sample`에 넘기는 목록의 순서가 적혀 있지
+  않다. (i) 위치 저장 순서 (ii) 후보 번호 오름차순. 두 순서는 같은 집합이라도 `sample` 결과가 다르다. oracle은
+  (i)(A6). 위치 저장 순서와 후보 번호 순서가 어긋나는 후보 집합(M20은 위치 순서로 번호를 주므로 보통 같다)에서만
+  차이가 나지만, 테스트로 고정하려면 정해야 한다.
+S-4. 3절 4절 (c) "한 부모만 가진 위치는 rng.random() < 0.5이면 포함": 자식 크기가 이미 M인데도 (i) 호출한다
+  (ii) 호출하지 않는다. oracle은 (i)이고 넘친 뒤 S-3으로 줄인다(A7). (ii)면 난수 호출 수가 달라진다.
+S-5. 3절 4절 (g) "슬롯을 채울 보지 않은 키가 없으면 채운 만큼만": 남은 슬롯에서 (i) 난수를 아예 부르지 않는다
+  (ii) `draw()`를 51번 부르고 실패한다. 선택 결과는 같지만 난수 열이 달라져 **다음 세대가 달라진다**. oracle은
+  (i)(A4). 재현성 테스트에 직접 영향이 있으므로 꼭 정해야 한다.
+S-6. 3절 3항 "연속 실패 제동 … 이어받은 개체는 세지 않는다": (i) 건너뛴다(올리지도 0으로 되돌리지도 않는다)
+  (ii) `scored`인 이어받음이 0으로 되돌린다. oracle은 (i)(A8).
+S-7. 3절 4절 (g)·5항의 끝 처리: 공간이 소진된 다음 세대를 (i) 기록하지 않고 `space_exhausted`로 끝낸다(그래서
+  `generations_done`은 마지막으로 기록한 세대) (ii) 개체 0개인 세대를 `complete: false`로 기록한다. oracle은
+  (i)(A10). 요약 검증의 "세대 개체 수 ≤ population_size"는 둘 다 통과한다.
+S-8. 3절 5항 최솟값 비교: null → 숫자는 "작아짐", null → null과 x → y(y ≥ x)는 "작아지지 않음", 그리고 `patience`
+  카운터는 세대 2부터 센다. 명세가 괄호로 일부만 적었다. oracle은 A9으로 고정했다.
+S-9. 3절 2·3항의 시점: 세대의 (i) 모든 슬롯을 먼저 선택하고 그다음 순서대로 평가한다 (ii) 슬롯마다 선택·평가를
+  번갈아 한다. 부모는 직전 세대에서만 오므로 선택 결과는 같지만, 중간에 멈춘 세대에 "선택했지만 평가하지 않은"
+  개체가 생기는지가 달라진다(명세는 "평가를 끝낸 개체만 담아" → (i)과 맞는다). oracle은 (i)(A3).
+S-10. 3절 1항·7절: 야생형 기준 행이 재사용 가능할 때 (i) 새 평가 수에 세지 않고 `reserved_evaluations`도 쓰지 않는다
+  (ii) 예약 2단위를 소모한 것으로 센다. 명세 7절은 "재사용 가능 여부와 무관하게 늘 예약한다"고만 적었다. oracle은
+  (i)(A11). 요약의 `new_evaluations_used`가 기준 행을 포함하는지 명시가 필요하다.
+S-11. 3절 4절 (d) `move`의 조건: 명세는 "쓰지 않은 위치가 있음"만 요구하므로 크기 1인 부모도 `move`를 할 수 있고,
+  그 결과는 `change`가 아닌 "위치 하나만 다름"이다(요약 검증의 `move` 규칙과 맞는다). 크기 1 부모에서 `move`가
+  의도된 것인지 확인이 필요하다(oracle은 명세 문장 그대로 허용한다).
+
+==================================================================================================
+조율 세션이 정할 점 (멈출 사유는 아님)
+==================================================================================================
+C1. (e) 읽기 방식. 명세 9절은 "읽을 때마다 `validated_summary`로 재검증"만 정하고 방법을 정하지 않았다. M19·M22식
+  "개체마다 `validated_result` → 그때마다 이벤트 로그 재파싱"을 그대로 쓰면 이벤트 로그 165 MB(이전 GA 개체 200개
+  규모) run에서 요약 상세 읽기 한 번이 28.6–44.3초로 T1 기준 20초를 넘는다. 선택지:
+  (1) 읽기 하나 안에서 이벤트 스냅숏을 한 번만 접어 모든 개체 검증에 넘긴다(M22 `_one_pool_check`의 확장).
+      측정: 3.0초, 반환 바이트 동일. 기존 M18·M19·M22 읽기 경로는 건드리지 않고 M23 읽기에서만 쓸 수 있다.
+  (2) 요약 상세에 개체 수 페이지를 둔다(명세 9절에 페이지가 없으므로 사용자 결정 필요).
+  (3) 그대로 두고 느린 읽기를 findings에 적는다(M19·M21·M22 선례. 단 T1 기준을 넘는 것은 이번이 처음이다).
+  권고는 (1)이다. 재사용 색인도 같은 방식으로 44.4초 → 8.8초가 된다.
+C2. 모델 객체 크기의 대부분이 `atom_mapping` + `final_bonds`다(1UBQ 309 KB 중 약 290 KB). 명세 4절이 둘을 요구하고
+  사이드카·도킹에 필요하므로 줄일 수 없지만, 개체 65개면 이벤트 로그가 ≈ 39 MB 늘고 같은 run에서 GA를 몇 번 돌리면
+  (e)의 L265 구간에 들어간다. 개체 상세 읽기가 이미 행을 빼고 돌려주므로(명세 9절) 추가 조치는 필요 없어 보이지만,
+  큰 단백질(중원자 4,890 한도 근처, 1UBQ의 약 8배)에서는 모델 객체 하나가 ≈ 2.4 MB, 그 이벤트 줄이 ≈ 3.2 MB여서
+  개체 65개의 모델 이벤트만 ≈ 210 MB(mmCIF·결과까지 ≈ 290 MB)다. 작업 출력도 개체당 ≈ 11 MB(사이드카 포함)로
+  개체 65개면 ≈ 700 MB가 되어 256 MiB를 넘으므로 **작업 모듈이 개체 폴더의 큰 중간 파일
+  (`receptor_bonds.json`·`model_input.json`)을 평가 뒤에 지우거나 총량을 세어 `resource_exceeded`로 멈추는 규칙**이
+  필요하다. 1UBQ 규모(104 MB)에서는 문제가 없다.
+C3. 명세 8절은 모델링 자식에 `model_input.json`을 개체마다 쓴다. 실측 155 KB(M7 투영)이고 개체 65개면 10 MB다.
+  투영은 모든 개체에서 같으므로 작업 폴더 한 곳에 한 번 쓰고 개체 폴더에는 변이 목록만 두는 방법도 있다(명세
+  문장은 개체 폴더의 `model_input.json`이므로 바꾸려면 결정이 필요하다).
+C4. (a)의 역순 적용 차이(최대 6.2e-02 Å)는 고정 문장 S6이 말하는 그대로다. 다만 S6은 "적용 순서와 곁사슬 크기에
+  따라 모델이 달라질 수 있다"고만 말하고 제품은 구조 순서로 고정하므로 결과는 결정적이다. 화면·보고서에 "다른 순서면
+  달라진다"는 숫자를 보이지 않는 것이 맞는지(지금 명세대로면 보이지 않는다) 확인만 해 두었다.
+C5. `prototype_*.py` 네 개를 fixture 폴더에 커밋했다(계획 T1이 그 위치를 정했다). T3·T4가 제품 코드를 만든 뒤에도
+  남겨 둘지, 아니면 T11에서 지울지 정해야 한다. 남기면 `ruff`·테스트 수집 대상에 계속 들어간다(지금 ruff 통과,
+  pytest 수집 대상은 아니다).
+
+==================================================================================================
+해시 파일 불변 (시작·끝)
+==================================================================================================
+시작(측정 전)과 끝(측정 후) 모두 같았다. `git status --porcelain`은 처음엔 깨끗했고, 끝에는 새 폴더
+`?? backend/tests/fixtures/sequence_ga/` 하나뿐이다. `git diff --stat -- backend/mw config frontend`는 빈 출력이다.
+  backend/mw/jobs/docking_worker.py            52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706
+  backend/mw/docking_constants.py              5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf
+  backend/mw/jobs/openmm_mutation_worker.py    ce0e64d8c430f82386bb26802e5870de50e75dec25c614393176103db395075c
+  backend/mw/mutation_model_constants.py       e2cb3ec79cade5ae4b90c010a335861aa6ba45b617ac36ea9d74166d20897523
+  backend/mw/mutation_model_math.py            828b28d6ec03395425bb29461af09f0d657b8539a7e3fdcb090b9b67cf720432
+  backend/mw/mutation_candidates.py            d0f2b7a80f4923b7bf3ea7b7e1c98562b016942b3e01bb248a4d7e0cf188968f
+  backend/mw/docking_bundle.py                 441af291d9656b6b32cf41cd7531fb982cd41c7767c0f7363c3fe8e1b0064b49
+  backend/mw/docking_inputs.py                 d14359c490cb1bd6ab51f1d36f9704bfcbcd47653aa365acc0826a99f9ac38c7
+  backend/mw/jobs/queue.py                     816daec99224856f587c534dc4fded86ddbc476880338d2777ded1bcafd8bea5
+  backend/mw/api/app.py                        4e7cc9bf016245cb5886b2b444d1c0c9f7edc6cb07e60c12846ee3e91418ba69
+  backend/mw/jobs/guardian.py                  9345cf085140a63e18b7f09382e1b9ddabe7109d9ddfac8a54a68b6714fdba49
+ligand_ga_*(6개)·docking_batch_*(2개)·openmm_worker.py·tools/openmm_method.py의 해시는
+backend/tests/fixtures/sequence_ga/golden_call_keys.json의 `hashed_files`·`also_hashed_files`에 있다.
+
+==================================================================================================
+제외·미측정
+==================================================================================================
+- M23 작업 큐 경로는 프로토콜이 없어 돌리지 못했다((f)에서 `unknown energy protocol` 확인). 실제 GA 작업의 시작·취소·
+  시간 소진·부분 게시·events-only 복구는 T4·T5의 실제 엔진 테스트에서 처음 관찰된다.
+- 개체 64개를 실제로 연속 평가하지 않았다(27개를 재고 외삽했다). 4시간 실행의 전역 잠금·폴링 거동은 T9 오프스크린에서
+  본다.
+- (e)의 L65·L265는 표시된 합성 패딩 객체로 만든 이벤트 로그다(크기·줄 수만 실제와 같게 맞췄다). 실제 GA가 만든
+  이벤트 로그로는 재지 않았다.
+- 모델링 240초·도킹 300초 단계 상한에 실제로 닿는 입력은 측정하지 않았다(1UBQ는 10초·0.9초). 중원자 4,890 한도
+  근처의 큰 구조는 M7을 통과하는 로컬 fixture가 없어 재지 못했다(M21 T1과 같은 제약).
+- 서버 모듈의 `mutation_set_model@1` 검증(`validated_model` 대응)·요약 검증·보고서는 아직 없다. (d)의 프로토타입
+  판독기는 게시 증거를 확인하지 않는다(T5가 넣는다).
+- 리간드·금속·물이 있는 구조, 여러 사슬, 삽입 코드·null label 위치는 1UBQ에 없어 (a)–(c)에서 다루지 않았다
+  (M20 fixture `mutation/`와 T2·T3의 서버 테스트 대상).
+- 명세 9절 읽기 API·10절 화면·보고서는 이 작업의 범위가 아니다.
