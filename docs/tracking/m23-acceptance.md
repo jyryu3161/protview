@@ -1,6 +1,6 @@
 # M23 서열 GA 설계 완료 기록
 
-- 판정: **완료** (2026-10-05). main 병합: 사용자 승인 대기(`--no-ff`, push 없음).
+- 판정: **완료** (2026-10-05). main 병합: `5d8481f`(사용자 승인, `--no-ff`, push 없음).
 - 브랜치: `dryforge/m23-sequence-ga` (`phase/m23-sequence-ga` = main `ec75fd0`에서 분기). M22는 시작 전에 main에 병합되어 있었다(`4161dc6`, 기록 `ec75fd0`).
 - 고정 소스: `7871e83`(`7871e83ffafbee001eb0f849595b0a59c5615fef`, 독립 코드 검토 수정 커밋). 증거 커밋 `c4d1d8d`. 고정 뒤 소스 변경은 없다. 고정 뒤 커밋은 증거·기록 문서뿐이다.
 - 수락 증거: `docs/qa/m23-sequence-ga-20261005/`(`preflight.txt` 착수 확인, `gate.txt` 게이트, `summary.txt` 요약, `acceptance/` M23 수락, `m22-regression/`, `m21-regression/`, `m20-regression/`, `m19-regression/`, `m18-regression/`, `m17-regression/`, `m16-regression/`, `m15-regression/`, `m14-regression/`, `m13-regression/`). 256 KiB를 넘는 텍스트 증거는 결정 0020에 따라 Git 제외 artifacts로 옮겼다(m13-regression 51개 332,086,790 B, m14-regression 1개 1,191,726 B, m15-regression 1개 590,108 B, 각 폴더의 `ARCHIVED-EVIDENCE.sha256`). 커밋한 폴더는 약 10 MB다(추적 파일 합 9.5 MB).
@@ -121,5 +121,5 @@
 - 개체 쪽 `GA 4`는 도킹 단계 기준 행 실패(`ligand_hydrogens_missing`)만 관찰했다. 기준 행 모델링 실패는 `test_sequence_ga_worker.py`의 기준 행 모델링 실패 테스트가 덮는다.
 
 ## 남은 일
-- main 병합(사용자 승인 대기, `--no-ff`). push하지 않았다.
+- main 병합 `5d8481f`(사용자 승인, `--no-ff`). push하지 않았다.
 - 새 미해결 문제(`docs/tracking/findings.md`): Stop 훅 나머지 그룹 시간 초과와 M23 실행기 단위 테스트 누락, M17·M18·M19·M22 패널의 `claimed` 작업 "작업 시작" 잠재 결함, 관찰하지 못한 사례, 큰 구조·긴 실행 미측정, 읽기·검증 틈, M22 이월 경계.
