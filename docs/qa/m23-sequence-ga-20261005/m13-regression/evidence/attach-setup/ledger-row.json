@@ -1,0 +1,48 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "step": "attach-setup",
+  "buildId": "8UVqy3iRzm6o2VSKemMX3",
+  "harness": {
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "finishedAt": "2026-10-05T12:28:13.118728+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/m13/attach-setup",
+  "mode": "attach-setup",
+  "evidenceKind": "labeled_api_setup",
+  "status": "pass",
+  "cases": {},
+  "runId": "run_4258c5aa0c4b49248a2df192cc7de70e",
+  "externalRequestCount": 0,
+  "providerCallsZero": true,
+  "handles": {
+    "complex": "obj://run_4258c5aa0c4b49248a2df192cc7de70e/structure/2b469628c2da80251cbdc4484e6048e52050f93410b73ade17efca3346926e00",
+    "sdfImport": "obj://run_4258c5aa0c4b49248a2df192cc7de70e/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "inputs": [
+    {
+      "name": "m11-attach-complex.pdb",
+      "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03",
+      "provenance": "synthetic derivative attach complex; not experimental evidence"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF"
+    }
+  ],
+  "setupOutput": {
+    "out": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/inputs/attach-setup",
+    "ligand_sdf": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+    "files": {
+      "m11-attach-bonds-run.json": "8e0d150fbee0e7e61a02c51517b5e514273c589e0a503bb5fd3925b09da3b640",
+      "m11-attach-request-run.json": "7f89c8ec385d18287dc4111abb02673058e3535c4683e00bc7c97441a54abe18",
+      "m11-attach-mapping-run.json": "b4b76bc2d5a3c089284a7a1839c6a74169bbd74ef7612de8389d99c43147e0ba",
+      "m11-attach-mapping-replace-run.json": "042de8b5ea238ecd98edd6a2ff9059a5a8b9dc05b491fe1ec1cc83cb6ac65ff6",
+      "m11-attach-ligand-instance-run.json": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95"
+    },
+    "mapping_count": 79,
+    "replacement_heavy_mapping_count": 43,
+    "sidecar_handle_set": false
+  },
+  "note": "Setup only (loopback upload/load/import); covers no case."
+}

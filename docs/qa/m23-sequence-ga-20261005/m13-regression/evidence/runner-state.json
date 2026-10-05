@@ -1,0 +1,70 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "8UVqy3iRzm6o2VSKemMX3",
+    "gitHead": "7871e83ffafbee001eb0f849595b0a59c5615fef",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "5ec64afd84f4d3f5cef77e5b850c085d975822a5e22526ced364661d1302f292",
+    "dirtyFiles": [
+      "?? docs/qa/m23-sequence-ga-20261005/acceptance/",
+      "?? docs/qa/m23-sequence-ga-20261005/m14-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m15-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m16-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m17-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m18-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m19-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m20-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m21-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m22-regression/"
+    ],
+    "recordedAt": "2026-10-05T12:24:47.413579+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "workflows-flow.cjs": "8bd886baabc3d06b00f05d2dfaa196d8e458f2e6d57f081303168ad5240aaa70",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "comparison-flow.cjs": "5a9fe1bcdeadaddc5b7ffd051c65b672c75dd10adf8c181829d2c6d21dd30099",
+      "openmm-flow.cjs": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+      "scenes-flow.cjs": "043813eda1309726cfaa107dc333d3e8732817d6f42428257656f7598dbd0ad2",
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "pocket-flow.cjs": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da"
+    },
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:24:51.910851+00:00"
+    },
+    {
+      "name": "backend-unavailable",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/unavailable-runs",
+      "code": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/layout-engines-missing",
+      "mw": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/layout-engines-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:31:53.981194+00:00"
+    }
+  ],
+  "mainRun": "run_b196c0cd06e749fab48a52a0be4c4a8e",
+  "m10Run": "run_ddde7ca1febf41b4b47071b46652cf45",
+  "attach": {
+    "run": "run_4258c5aa0c4b49248a2df192cc7de70e",
+    "complex": "obj://run_4258c5aa0c4b49248a2df192cc7de70e/structure/2b469628c2da80251cbdc4484e6048e52050f93410b73ade17efca3346926e00",
+    "dir": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/inputs/attach-setup",
+    "sdfImport": "obj://run_4258c5aa0c4b49248a2df192cc7de70e/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "scenesRun": "run_573bf81e66584c2b90ea364213a255a5",
+  "layouts": {
+    "layout-engines-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; .deps absent (fpocket and the ProLIF worker environment not installed)",
+      "files": 126,
+      "treeSha256": "29778d9d7cce3a85ecba018e1a43bfd2706be2761080898c725c4e5c3f73933a"
+    }
+  }
+}

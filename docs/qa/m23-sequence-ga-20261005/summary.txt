@@ -1,0 +1,173 @@
+M23 T11 summary: source freeze, full gate, M23 sequence GA acceptance QA, M22-M13 regressions (2026-10-05 UTC / KST)
+
+frozen source: 7871e83ffafbee001eb0f849595b0a59c5615fef
+  = M23 T10 commit "fixes (backend): box check before publication, child stream and exit-1 contract, step-bound
+  reasons, int fields" (the last source change; HEAD at the start of T11).
+  No source change after the freeze. Working tree clean at start (git status --porcelain empty). Every run below used
+  this HEAD and the same frontend build 8UVqy3iRzm6o2VSKemMX3, stamped by the M23 runner from the current frontend
+  source (gitHead = frozen source, buildCurrentWithSource true, acceptance dirtyFiles []). The M22, M21, M20, M19,
+  M18, M17, M16, M15, M14 and M13 regression ledgers record the same buildId and gitHead with buildCurrentWithSource
+  true; their dirtyFiles list only untracked evidence folders of this QA (?? docs/qa/m23-sequence-ga-20261005/...),
+  no source file.
+
+index (this folder; small text/JSON only, decision 0020)
+  preflight.txt          T1 착수 확인 (committed earlier by T1, not edited here)
+  gate.txt               full gate: commands, exit codes, counts, durations
+  summary.txt            this file
+  acceptance/            M23 runner output (README.md, SHA256SUMS, binary-artifacts.json, evidence/case-ledger.json,
+                         evidence/reproducibility.json, evidence/oracle-paths.json, per-step rows and JSONL ...)
+  m22-regression/ m21-regression/ m20-regression/ m19-regression/ m18-regression/ m17-regression/ m16-regression/
+  m15-regression/ m14-regression/ m13-regression/   regression runner outputs (README.md, SHA256SUMS,
+                         binary-artifacts.json, evidence/)
+  git-ignored: frontend/tests/offscreen/artifacts/m23-acceptance/gate/ (full gate logs, NN.log + NN.meta, progress.txt),
+               frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/ (screenshots, paint frames, downloads,
+               services logs, regressions/m2X|m1X/, regressions/m13|m14|m15/export-full/),
+               .../attempt1-launch/ (runner.log = runner stdout, started, exit)
+  QA roots (git-ignored runs/): runs/m23-acceptance-20261005-attempt1 and
+               runs/m23-acceptance-20261005-attempt1-m22|m21|m20|m19|m18|m17|m16|m15|m14|m13-regression (all new; no
+               earlier root reused; the runs/m23-t9-dev-20261005-a..d roots are T9 development runs on earlier commits,
+               not T11 attempts; untouched)
+
+environment
+  OS: macOS 15.6 (Darwin 24.6.0), arm64; Python 3.11 (.venv); Node v24
+  backend capability (acceptance environment row): sequence_ga_design available (status ready, reason_code null;
+    model: openmm 8.6.0 (engine build 8.6.0.dev-c6173db), pdbfixer 1.12.0; docking: meeko 0.8.0, rdkit 2026.03.6,
+    MDAnalysis 2.10.0, gemmi 0.7.5); mutation_model, mutation_candidates and ligand_docking available; the layout
+    backend without the locked environments reports worker_missing (SG-unavailable).
+  kbase_kinase: <home>/Projects/kbase_kinase (read only; passed as --kbase; MW_KBASE_REF=<home>/Projects/kbase_kinase/ref
+    for backend pytest). Not part of this repository and not modified here.
+
+attempt history
+  Before the gate: a Stop hook pytest (five groups, live guardian/chemical/docking/batch workers and qvina2) started by
+    another ProtView session (not by T11) at 10:47:10Z was running. T11 waited until every such process had exited
+    (10:55:13Z), re-checked HEAD = frozen source, a clean tree and free 8000/3000, then started the gate (10:55:24Z).
+    No overlap.
+  gate: one run, every command sequential, every exit 0 (gate.txt). No failed attempt, no retry.
+  M23 acceptance: attempt 1 (adopted, the only attempt), launched 11:55:34Z, runner exit 0 at 13:01:48Z (about 66 min
+    incl. regressions; M23 part 11:55:35Z-12:06:16Z, about 11 min), acceptance true, failedSteps []. --build auto ran
+    typecheck (exit 0) then build (exit 0) and stamped it. Ports 8000/3000 were free before the launch (lsof, no
+    listener).
+  regressions: run once each by the M23 runner (--regressions), serially, all exit 0 and acceptance true.
+  Failed attempts: none. Fixes after the freeze: none. No existing check or regression script was edited.
+
+gate (gate.txt; backend pytest as the Stop hook's five groups, separate sequential invocations, no 480 s limit)
+  [1] chemical interactions group: exit 0, 24 passed, 0 skipped, 312 s
+  [2] m11 job API group: exit 0, 25 passed, 0 skipped, 257 s
+  [3] M18 docking group (5 files): exit 0, 198 passed, 0 skipped, 215 s
+  [4] M19 batch group (7 files): exit 0, 209 passed, 0 skipped, 346 s
+  [5] rest group (backend/tests minus groups 1-4 + 14 script files): exit 0, 2538 passed, 0 skipped, 2432 s
+  [0] backend collect-only: 2684 backend tests. Backend total = 24+25+198+209+(2538-310) = 2684 passed,
+      0 failed, 0 skipped. No SKIPPED line in any -rs output, so the engine-backed tests ran.
+  [6] ruff (backend/mw backend/tests scripts .codex/hooks design/build_tokens.py): exit 0, All checks passed!
+  [7] scripts pytest (14 standards.md/operations.md files + test_m20 + test_m21 + test_m22 + test_m23 = 18 files):
+      exit 0, 474 passed, 0 skipped (scripts/test_m23_offscreen_acceptance.py: 51 tests)
+  [8]-[19] node --check of the 12 gate flows pocket/workflows/tabs/numbering/annotation/ligand/docking/docking-batch/
+      mutation/mutation-model/ligand-ga/sequence-ga: exit 0; [20]-[34] node --check of the other 15 harness .cjs files
+      in frontend/tests/offscreen/ (chemical, comparison, driver, dry-run, history-keyboard, m11-case-ledger, m11-ledger,
+      main, normal, openmm-faults, openmm-flow, openmm-persistence, openmm-post-races, openmm-retry, scenes): exit 0
+      (27 of 27 files)
+  [35] test:events: exit 0, 379 pass, 0 fail, 0 skipped
+  [36] typecheck: exit 0; [37] build: exit 0 (after typecheck, never concurrently)
+
+M23 acceptance (acceptance/)
+  .venv/bin/python scripts/m23_offscreen_acceptance.py --root runs/m23-acceptance-20261005-attempt1 \
+      --artifacts frontend/tests/offscreen/artifacts/m23-acceptance/attempt1 \
+      --out docs/qa/m23-sequence-ga-20261005/acceptance --regressions --kbase <home>/Projects/kbase_kinase
+  verdict pass, acceptance true; verdictParts steps/cases/environment/leftoverProcesses all true.
+  steps seqga-main, seqga-repro, seqga-unavailable: pass, one attempt each, evidenceKind real_electron_offscreen.
+  35/35 judged cases pass:
+    seqga-main: SG-load-prepare, SG-no-candidate-set, SG-candidate-sets, SG-ligand-imports, SG-initial-state,
+      SG-param-guards, SG-cross-rules, SG-defaults, SG-confirmations, SG-refusals, SG-preflight, SG-limit-approval,
+      SG-run, SG-progress, SG-results, SG-oracle-path, SG-sort, SG-detail, SG-download, SG-dedupe, SG-reuse,
+      SG-partial, SG-cancel, SG-reference-failed, SG-late-response, SG-report, SG-tabs, SG-processes, SG-wording;
+    seqga-main + seqga-unavailable: SG-no-run; seqga-unavailable: SG-unavailable; seqga-repro: SG-repro-runs;
+    runner: SG-reproducible, SG-oracle-paths; all flow rows: S-no-egress.
+  Stored GA summaries of run A (read from the run's event log, values as stored):
+    GA 1 (GA seed 21, population 4, generations 4, elite 1, max_mutations 3, patience 2, max new 32; evaluation seed
+      20261004, exhaustiveness 4, num_modes 5, energy_range 3, cpu 1, ligand_range box margin 8 A): complete /
+      no_change, 3 generations, 10 new evaluations, reserved 13 evaluations / 28 units, reference row scored.
+    GA 2 (GA seed 13, max new 4): partial / evaluation_limit, 1 generation, 4 new, 2 reused, reserved 10 units.
+    GA 3: partial / cancelled (cancelled from the screen while running), reserved 10 units, no refund.
+    GA 4 (implicit-H SDF): partial / reference_failed, reference row failed (ligand_hydrogens_missing), 0 generations,
+      reserved 10 units.
+  Not observed (recorded as such in the ledger, not forged; covering tests named there and checked to exist):
+    SG-individual-without-score (every individual of the 1UBQ + phenol GAs is scored; the reference row without a
+      score is observed in SG-reference-failed; frontend/tests/sequence-ga.test.cjs,
+      backend/tests/test_sequence_ga_api.py::test_rows_without_a_score_are_null_never_zero),
+    SG-heavy-atom-warning (1UBQ projects 602 heavy atoms < 4,890; backend/tests/test_sequence_ga_inputs.py
+      heavy_atom_warning 4890/4891, frontend/tests/sequence-ga.test.cjs),
+    SG-other-stop-reasons (generations_complete, space_exhausted, time_exhausted, worker_failed, resource_exceeded,
+      repeated_failure; backend/tests/test_sequence_ga_worker.py and test_sequence_ga_jobs.py),
+    SG-model-conditional-sentences (SL5/L6 need a HIS/CYS state difference outside the mutated residues or a new
+      disulfide; 1UBQ has no Cys; backend/tests/test_sequence_model_bundle.py ..._adds_sl5 / ..._adds_both_rows_and_l6,
+      test_sequence_model_worker.py::test_protonation_and_disulfide_records_are_against_the_reference),
+    SG-dry-run (backend/tests/test_sequence_ga_jobs.py::test_dry_run_plans_only, frontend/tests/sequence-ga.test.cjs).
+  Budget (run A, from the backend budget): expensive calls used 58 of limit 58 (GA 1 28 + GA 2 10 + GA 3 10 + GA 4
+    10; each GA reserved_units once before start, no refund; same-argument resubmission 0; every limit raise by the
+    screen button). Each repro run: 28 of 28.
+  External requests: non-loopback 0 (externalRequestsTotal 0, rowsWithUnknownExternalCount []); provider calls 0
+    (providerCallsZero true on all three flow rows and both reproducibility reruns); leftover processes [].
+  Reproducibility: the flow's GA 1 was replayed through the screen in two fresh runs of the same backend process
+    (run_5f1b12ad..., run_528db754...): status done, argsEqual true, normalized summary SHA-256
+    63727c14a186affa8eed39207f79338f56599c1338700997edabe203ef7536f0 (complete / no_change) in the flow and in both
+    reruns; the same 13 rows (reference + 3 generations) with equal normalized model and M18 result contents and poses
+    SDF bytes (run-scoped obj:// handles and hashes over them replaced). Same server process, not a cold restart; not a
+    cross-version bit-identity claim.
+  Oracle paths: GA 1 and GA 2 stored paths equal the independent T1 oracle
+    (backend/tests/fixtures/sequence_ga/independent_sequence_ga_oracle.py) on the T1 first-mode table
+    (expected.json vectors.s4_tiny_observed; GA 2 with GA 1's stored rows as the reuse index): conditions true and
+    equal true for both.
+
+regressions (each with its own fresh --root runs/m23-acceptance-20261005-attempt1-mXX-regression and --artifacts
+  frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/mXX, serially, started by the M23 runner
+  with --code-root <repo>; M20/M16/M15 with --kbase)
+  | runner | out              | exit | acceptance | cases  | not observed                                           | ext. req. |
+  | M22    | m22-regression/  | 0    | true       | 25/25  | GA-null-result, GA-no-change, GA-time-and-worker-limits | 0         |
+  | M21    | m21-regression/  | 0    | true       | 23/23  | MM-unavailable, MM-pair-approval, MM-failed-job,       | 0         |
+  |        |                  |      |            |        | MM-zero-contacts, MM-conditional-limitations           |           |
+  | M20    | m20-regression/  | 0    | true       | 24/24  | M-map-conflict, M-too-many-positions,                  | 0         |
+  |        |                  |      |            |        | M-nonstandard-disulfide                                |           |
+  | M19    | m19-regression/  | 0    | true       | 26/26  | B-dry-run-shortfall, B-null-result, B-time-limits      | 0         |
+  | M18    | m18-regression/  | 0    | true       | 24/24  | D-zero-modes                                           | 0         |
+  | M17    | m17-regression/  | 0    | true       | 21/21  | -                                                      | 0         |
+  | M16    | m16-regression/  | 0    | true       | 19/19  | -                                                      | 0         |
+  | M15    | m15-regression/  | 0    | true       | 14/14  | -                                                      | 0         |
+  | M14    | m14-regression/  | 0    | true       | 15/15  | -                                                      | 0         |
+  | M8-M13 | m13-regression/  | 0    | true       | 28/28  | -                                                      | 0         |
+  The not-observed sets are the same as in the M22 T10 regressions (and the M22 T10 acceptance for M22). M13 ran
+  --phases workflows,unavailable,regressions,m11,m12,ledger (scope partial false): 17 rows, external request count 0
+  on every row (incl. m11-acceptance: M11 sub-ledger 17/17 pass, nonLoopbackRequestsTotal 0; m12-acceptance: M12
+  sub-ledger verdict pass, externalRequestsTotal 0). Leftover processes [] in every ledger. Provider calls: every flow
+  row that records providerCallsZero has it true (7 M13 sub-runner/regression rows do not record the field, same as in
+  M18-M22). Changed existing expectations: none.
+
+evidence layout / decision 0020
+  Text files over 256 KiB (case-ledger*.json and ledger-row.json excepted) were moved to
+  <artifacts>/regressions/m1X/export-full/ (relative paths kept): m13-regression 51 files 332,086,790 bytes,
+  m14-regression 1 file 1,191,726 bytes, m15-regression 1 file 590,108 bytes; acceptance and m16-m22 regressions had
+  none. See each folder's ARCHIVED-EVIDENCE.sha256 and the README's last section (verified shasum -a 256 -c, all OK).
+  SHA256SUMS keeps the original lines; its README.md line was refreshed after the README section was appended (every
+  non-archived line verifies OK: m13 422 + 51 archived = 473, m14 22 + 1, m15 24 + 1; the other folders all OK).
+  Exported evidence contains no absolute home path (grep /Users: 0 files) and no credential-like string. Committed
+  folder about 10 MB.
+
+caveats
+  - SG-individual-without-score, SG-heavy-atom-warning, the other stop reasons, the model-conditional sentences
+    (SL5/L6) and dry-run are not produced by the offscreen flow; they are covered by the named backend/frontend tests
+    (real OpenMM/PDBFixer/qvina where applicable).
+  - The QA input is public 1UBQ with a synthetic-labelled phenol SDF (M21 precedent: no local public structure with a
+    ligand passes M7); it verifies GA mechanics with real modeling and qvina scores, not a biological design.
+  - scripts/test_m20/m21/m22/m23_offscreen_acceptance.py are in the gate command but not in the Stop hook rest group's
+    file list (same situation as M20-M22, docs/tracking/findings.md).
+  - The rest group took 2432 s alone (M22: 1324 s), far above the Stop hook's 480 s per-group limit (known finding;
+    the M23 backend tests with real OpenMM/PDBFixer modeling and qvina all run in the rest group).
+  - docs/standards.md and docs/operations.md gate lists do not yet name sequence-ga-flow.cjs and
+    scripts/test_m23_offscreen_acceptance.py (T13 documentation).
+
+end state
+  After the runner: no qvina2, sequence GA/modeling/docking/batch/GA/ligand/chemical/mutation worker, guardian,
+  fpocket, uvicorn, next or harness Electron process (pgrep: none); 8000/3000 free (lsof: no listener). One unrelated
+  process remains: a `tail -f` of <repo>/.dryforge/worktrees/T6/.../m13-dev/r1.runner.log started 2026-09-29 by an
+  earlier session (not a server, worker or Electron process; not started by T11; left alone). git status before the
+  evidence commit: only untracked docs/qa/m23-sequence-ga-20261005/ files; HEAD unchanged
+  (7871e83ffafbee001eb0f849595b0a59c5615fef).

@@ -1,0 +1,96 @@
+{
+  "build": {
+    "buildId": "8UVqy3iRzm6o2VSKemMX3",
+    "gitHead": "7871e83ffafbee001eb0f849595b0a59c5615fef",
+    "gitStatusPorcelainSha256": "5ec64afd84f4d3f5cef77e5b850c085d975822a5e22526ced364661d1302f292",
+    "dirtyFiles": [
+      "?? docs/qa/m23-sequence-ga-20261005/acceptance/",
+      "?? docs/qa/m23-sequence-ga-20261005/m14-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m15-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m16-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m17-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m18-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m19-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m20-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m21-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m22-regression/"
+    ],
+    "recordedAt": "2026-10-05T12:31:57.260435+00:00",
+    "harnessSha256": {
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "m11-case-ledger.cjs": "445666ab975a4db5abcbec7f86be95bf33b09c94a051f83a87855d1464a86f43",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "runnerSha256": "476c41bf3b088fd5d1067717b145986a0b27c55bdbbb0f8cedf5e1a9dee54227"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:32:01.696446+00:00"
+    },
+    {
+      "name": "backend-replay-worker-missing",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/replay-runs",
+      "code": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/layout-worker-missing",
+      "mw": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:48:24.649877+00:00"
+    },
+    {
+      "name": "backend-worker-mismatch",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/capability-mismatch-runs",
+      "code": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/layout-worker-mismatch",
+      "mw": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/layout-worker-mismatch/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:53:45.589221+00:00"
+    }
+  ],
+  "create": {
+    "run": "run_af4fd218d7b54ce1802178f16282bda5",
+    "result": "obj://run_af4fd218d7b54ce1802178f16282bda5/chemical_interaction_set/0eb65d946107ac1280d948b121fb99b69b13897b2ea8d9a8b8090a661b825d22",
+    "report": "obj://run_af4fd218d7b54ce1802178f16282bda5/method_report_manifest/753f5c5410132ba5982b435bb1bc4945f2a5a7150eb416d3bfc920a9d046e0da",
+    "md": "69b105b5747b6ea96047e4e2a9f2d4adcb6776eafbfd9f55f6b097ad8b69e5e2",
+    "json": "63ae921fe9adf1a9863ebef1f72dcb768721991dc1d9ef6b284fbb31dfd4d0ac"
+  },
+  "empty": {
+    "run": "run_e1254681c7584d1583456c34e9e55e14",
+    "result": "obj://run_e1254681c7584d1583456c34e9e55e14/chemical_interaction_set/2fe123c00ff2ca042930608a861555a675f28e27d4364e153b0a9dc0826fa8d6",
+    "report": "obj://run_e1254681c7584d1583456c34e9e55e14/method_report_manifest/2a5a6452abdaebf7a3653130977a1641573c5c2e60826612f971f7b51d19a338",
+    "md": "34f049f576b913b3d3fed278a389d7e3d1e4402689130cbbfe81bd9a55c3c663",
+    "json": "7a8da0f3bdebe08bf5c965eaaa2990a033acbe916ae1241b45088078229d1210"
+  },
+  "prepared": {
+    "run": "run_3f01b0446ea742e290de2c4d66d16c07",
+    "graph": "obj://run_3f01b0446ea742e290de2c4d66d16c07/chemical_graph/2385d7d91cea4502b851880925b4f449f15aa429bf74e75441a4352585371b5c"
+  },
+  "attach": {
+    "run": "run_d5387443518f4714b9312948d62e3e64",
+    "complex": "obj://run_d5387443518f4714b9312948d62e3e64/structure/0c127447b04e3e83951bc2d9596f19ea773c9e21c940300af1f3bced316650d7",
+    "dir": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m11-acceptance/inputs/attach-setup",
+    "sdfImport": "obj://run_d5387443518f4714b9312948d62e3e64/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+    "mapResult": "obj://run_d5387443518f4714b9312948d62e3e64/chemical_interaction_set/52a298dee66fe504aedfe70366459d8086763a4414ab7e7c5e6e17c586c594ce",
+    "mapReport": "obj://run_d5387443518f4714b9312948d62e3e64/method_report_manifest/647fe8c22f8fd5466d64935c6bc7463a7352e1a9634bae92373ae2125320953d",
+    "mapMd": "ff5f8a5c322482f7fdbaa630cedfab9e42f9e660cd9b76a55f2b3ea6a346078b",
+    "mapJson": "99ec8a15ce39a12039e21cff34523a75d50511e7346765a6a6895793c5597b30",
+    "replaceResult": "obj://run_d5387443518f4714b9312948d62e3e64/chemical_interaction_set/5e07b8e2ff0621a7d7a8c616d68b618b2e499b5703c9cd2bb2e9dfd310b2148d",
+    "replaceReport": "obj://run_d5387443518f4714b9312948d62e3e64/method_report_manifest/0e36531accfc9f9f506f97069cb887a2fac843fd39ed4608f7d99a0b9fd7e0f8",
+    "replaceReport2": "obj://run_d5387443518f4714b9312948d62e3e64/method_report_manifest/6a6c7ed76bb3dae22eeb32be44d82828aa06146f17ec5b903d443b321842ddf8"
+  },
+  "normalRun": "run_606aac589eab4a4487bf877f1b8f451e",
+  "scenesRun": "run_46c9a0c540be4b27aaa545785fcc6583",
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent",
+      "files": 126,
+      "treeSha256": "29778d9d7cce3a85ecba018e1a43bfd2706be2761080898c725c4e5c3f73933a"
+    },
+    "layout-worker-mismatch": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path points at a non-pinned interpreter <repo>/.venv/bin/python",
+      "files": 126,
+      "treeSha256": "29778d9d7cce3a85ecba018e1a43bfd2706be2761080898c725c4e5c3f73933a"
+    }
+  }
+}

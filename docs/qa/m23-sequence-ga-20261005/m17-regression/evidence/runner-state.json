@@ -1,0 +1,72 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "8UVqy3iRzm6o2VSKemMX3",
+    "gitHead": "7871e83ffafbee001eb0f849595b0a59c5615fef",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "375b30c1bc6f25dcff7922b8208d5a6ceb0ba4a40a659de5d9112641061cf473",
+    "dirtyFiles": [
+      "?? docs/qa/m23-sequence-ga-20261005/acceptance/",
+      "?? docs/qa/m23-sequence-ga-20261005/m18-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m19-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m20-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m21-regression/",
+      "?? docs/qa/m23-sequence-ga-20261005/m22-regression/"
+    ],
+    "recordedAt": "2026-10-05T12:18:33.076142+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "ligand-flow.cjs": "61f6503a72b57d0255281afbda7b3c563edde0e6dbb5cc5d656adb27792c3000",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "7583d335fbd25f65b8cc97da0b28e1b9493e4395c8d238447eecb2f91eaedf65"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m17-regression/runs",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:18:37.388160+00:00"
+    },
+    {
+      "name": "backend-worker-missing",
+      "runs": "<repo>/runs/m23-acceptance-20261005-attempt1-m17-regression/unavailable-runs",
+      "code": "<repo>/runs/m23-acceptance-20261005-attempt1-m17-regression/layout-worker-missing",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/runs/m23-acceptance-20261005-attempt1-m17-regression/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-05T12:21:25.840594+00:00"
+    }
+  ],
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked RDKit environment absent: capability worker_missing)",
+      "files": 126,
+      "treeSha256": "29778d9d7cce3a85ecba018e1a43bfd2706be2761080898c725c4e5c3f73933a"
+    }
+  },
+  "environment": {
+    "workerPython": true,
+    "workerPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "rdkit",
+        "rdkit_version": "2026.03.6",
+        "worker_sha256": "24e2d9a27d48f70d322721b16d82a8d213f43a493ede84f5785544b60b6d22fb",
+        "constants_sha256": "dc195402de4598b879bcdc8813750c16b6d50397874ccd4498d184f0e18d72a3",
+        "lock_sha256": "be320702daba7ea9922e278c49d6c69efc6f3ce7962a7be47623421b2387999a"
+      }
+    },
+    "layoutReason": "worker_missing"
+  }
+}

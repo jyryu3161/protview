@@ -1,0 +1,219 @@
+{
+  "schema": "m17_ligand_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_78e813956c1b44dca126ac4aa32092d3",
+    "B": "run_de1214ba95c54f219af760d2f647d8e0"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-parent-methacetin-explicit-h.sdf",
+      "bytes": 2148,
+      "sha256": "2e4f5b395f92a12b6a3a15a898e18d744345f5203da76c2489ebb0e7ef463d8e"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.sdf",
+      "bytes": 3173,
+      "sha256": "0bfeb73474ede8b1f372b69072774fc9e2fd1398e8d0b24b31768e69fc9bda11"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.smi",
+      "bytes": 535,
+      "sha256": "fc603c4b9d2e3cf48ab0521963369a270f73a78b354977af6c4d4d452d85c976"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/expected.json",
+      "bytes": 35355,
+      "sha256": "5d6790aa0d2f9a4a91a1810fb766cd9c6e4e3fb63bdd3122a146ec0cea607606"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-reaction-rules.json",
+      "bytes": 8683,
+      "sha256": "cc27e69029c68d1481c1237cefaec5e6b6d8001dd6d0e08bcd0015ebca9bd66c"
+    },
+    {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/m17/ligand-main/qa-generated-chain-blocks.smi",
+      "bytes": 2812,
+      "sha256": "2bc043b8522bac86e871dd26dd722f2197bf4690bcf99298729b541ceffa4c9f",
+      "label": "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons"
+    }
+  ],
+  "handles": {
+    "structureA": "obj://run_78e813956c1b44dca126ac4aa32092d3/structure/532d3305f7c119cc7c897ed0a559a53d9ac086c7dd135ca196ee93a455515814",
+    "imports": {
+      "ligand_sdf": "obj://run_78e813956c1b44dca126ac4aa32092d3/chemical_raw_input/36ad998a130618e7065bfe1595bde32d4c0c516189cb96f2a7079725ce1d222f",
+      "building_blocks_sdf": "obj://run_78e813956c1b44dca126ac4aa32092d3/chemical_raw_input/fa1727f4bf554aeeb6a89a6a94dab53b0af8c366d5ae1007ec418a4c12ab24b7",
+      "building_blocks_smiles": "obj://run_78e813956c1b44dca126ac4aa32092d3/chemical_raw_input/18dfa16655b73a2115961fc1b338b3c50b1e1e6189fc233b50b972e10933b91c"
+    },
+    "inspection": "obj://run_78e813956c1b44dca126ac4aa32092d3/ligand_inspection/af6ada836cf9c99dcdc083ffccc64da1e7f6b6c7d7978ac8484cba1d3a194d03",
+    "candidateSet": "obj://run_78e813956c1b44dca126ac4aa32092d3/ligand_candidate_set/26674978de56b5a002b34d8d73009647ab7c726d96519e43005ef673b04846fc",
+    "report": "obj://run_78e813956c1b44dca126ac4aa32092d3/method_report_manifest/d0b4727f4e18971023b78e63b764ed2298ebf65cd0db38bdbbe4d64ec93e222a",
+    "zeroSet": "obj://run_78e813956c1b44dca126ac4aa32092d3/ligand_candidate_set/19725f475ea344c9ead750e5c9cbdcd20d3e9d3f1ada2bebd0019c00da819cdb",
+    "pagingSet": "obj://run_78e813956c1b44dca126ac4aa32092d3/ligand_candidate_set/0be88d21c9155133ec03cb8b6463b00bca26663f611172de94e7304c1df7c1e8"
+  },
+  "fixtureLabels": [
+    "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_78e813956c1b44dca126ac4aa32092d3",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_de1214ba95c54f219af760d2f647d8e0",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "ligand-import": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-file-parent": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-file-blockSdf": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-file-blockSmiles": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-rules": [
+      {
+        "lines": 6
+      }
+    ],
+    "ligand-inspect-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-job-approve": [
+      {
+        "phaseAfter": "saved",
+        "notice": "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다."
+      }
+    ],
+    "ligand-job-start": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-inspection-radio": [
+      {
+        "handle": "obj://run_78e813956c1b44dca126ac4aa32092d3/ligand_inspection/af6ada836cf9c99dcdc083ffccc64da1e7f6b6c7d7978ac8484cba1d3a194d03"
+      }
+    ],
+    "ligand-atom-checkbox": [
+      {
+        "serial": 19
+      }
+    ],
+    "ligand-rule-user_1": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-rule-user_2": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-rule-user_3": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-use-fixed": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "ligand-enumerate-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-candidate-set-radio": [
+      {
+        "handle": "obj://run_78e813956c1b44dca126ac4aa32092d3/ligand_candidate_set/26674978de56b5a002b34d8d73009647ab7c726d96519e43005ef673b04846fc"
+      }
+    ],
+    "ligand-filter-apply": [
+      {
+        "query": "?handle=obj%3A%2F%2Frun_78e813956c1b44dca126ac4aa32092d3%2Fligand_candidate_set%2F26674978de56b5a002b34d8d73009647ab7c726d96519e43005ef673b04846fc&heavy_atoms_min=12&heavy_atoms_max=14&sort=generation_order&direction=asc&offset=0&limit=50"
+      }
+    ],
+    "ligand-filter-pains": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-passes-only": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-sort": [
+      {
+        "value": "mol_weight"
+      }
+    ],
+    "ligand-direction": [
+      {
+        "value": "desc"
+      }
+    ],
+    "ligand-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-page-next": [
+      {
+        "offset": 50
+      }
+    ],
+    "ligand-page-prev": [
+      {
+        "offset": 0
+      }
+    ]
+  },
+  "startedAt": "2026-10-05T12:18:37.596Z",
+  "finishedAt": "2026-10-05T12:21:24.342Z",
+  "error": null,
+  "requestCount": 304
+}

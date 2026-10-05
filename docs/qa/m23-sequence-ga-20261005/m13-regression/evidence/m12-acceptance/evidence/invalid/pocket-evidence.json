@@ -1,0 +1,1064 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "invalid",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "8UVqy3iRzm6o2VSKemMX3",
+  "startedAt": "2026-10-05T12:54:16.826Z",
+  "run": "run_c9cb6c999b584f36965061ffc83d95de,run_8e6746c983b042388c208fd9f2b184c3",
+  "handles": {},
+  "inputs": [
+    {
+      "name": "m12-invalid-cases.json",
+      "path": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m12-acceptance/inputs/m12-invalid/m12-invalid-cases.json",
+      "bytes": 1009,
+      "sha256": "4926d18be107400b4b6a0e76de16507908e8e175276bfa7a2795d7025e58e50d",
+      "provenance": "manifest of labeled synthetic M12 invalid-input controls (scripts/m12_qa_inputs.py)"
+    },
+    {
+      "name": "m12-synthetic-modified-residue.pdb",
+      "path": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m12-acceptance/inputs/m12-invalid/m12-synthetic-modified-residue.pdb",
+      "bytes": 1867,
+      "sha256": "c3a91360c70438428335b292b89ae3d02dbe510172ea6c10add7118999185874",
+      "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+    },
+    {
+      "name": "m12-synthetic-degenerate-collinear.pdb",
+      "path": "<repo>/runs/m23-acceptance-20261005-attempt1-m13-regression/m12-acceptance/inputs/m12-invalid/m12-synthetic-degenerate-collinear.pdb",
+      "bytes": 490,
+      "sha256": "a25a960c543218056279e9da1cc00451a9706b9134d056ec225109643ed57f91",
+      "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+    }
+  ],
+  "fixtureLabels": [],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 8,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/invalid/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 59,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "cases": [
+    {
+      "file": "m12-synthetic-modified-residue.pdb",
+      "run": "run_c9cb6c999b584f36965061ffc83d95de",
+      "prepared": "obj://run_c9cb6c999b584f36965061ffc83d95de/prepared_structure/65ef04527ea986dbb17e4c7ab6e69ce0e5ebd6f1971b517a6196f2c00b763d1e",
+      "before": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/structure_source/c3ca2d2d3dd18ac2f18543b0bb74def8aec6ad6c827fb46927fa5a8e35c80425",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/structure/d101244309432c848511a55a880462e3fc88b69dba22e80262bedd8a842ae877",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/preparation_manifest/ddf582dcad502eba4fd21be502b67faea639ee94dcf4307924e2e223faa01486",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/prepared_coordinates/4312b73f38b51706f74f3fa3ce645a9940c101613f3957d8d62aae4d82d8c3d3",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/prepared_structure/65ef04527ea986dbb17e4c7ab6e69ce0e5ebd6f1971b517a6196f2c00b763d1e",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ],
+      "posts": [],
+      "forced": "clicked",
+      "after": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/structure_source/c3ca2d2d3dd18ac2f18543b0bb74def8aec6ad6c827fb46927fa5a8e35c80425",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/structure/d101244309432c848511a55a880462e3fc88b69dba22e80262bedd8a842ae877",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/preparation_manifest/ddf582dcad502eba4fd21be502b67faea639ee94dcf4307924e2e223faa01486",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/prepared_coordinates/4312b73f38b51706f74f3fa3ce645a9940c101613f3957d8d62aae4d82d8c3d3",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_c9cb6c999b584f36965061ffc83d95de/prepared_structure/65ef04527ea986dbb17e4c7ab6e69ce0e5ebd6f1971b517a6196f2c00b763d1e",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ]
+    },
+    {
+      "file": "m12-synthetic-degenerate-collinear.pdb",
+      "run": "run_8e6746c983b042388c208fd9f2b184c3",
+      "prepared": "obj://run_8e6746c983b042388c208fd9f2b184c3/prepared_structure/5eaa68b4a16546cff7dbed7adad053913db9cfe0403127c2a837874b1b688510",
+      "before": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/structure_source/ad62f140e96ca8499f67a38672e19fe705e7ed80bc88a477d97cb9172b2ec030",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/structure/c7b108ce9589b881bf8babb62f70beebfddfea426bd0f3b788c6c2713014be38",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/preparation_manifest/3af78f63b29e64bb7fd44851807e032087550a6d915efdc073dd31324af6413b",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/prepared_coordinates/de7efdeea6216dee76d72e55e30af3ac074338ed4dde2a8d28c9f703e8f263fd",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/prepared_structure/5eaa68b4a16546cff7dbed7adad053913db9cfe0403127c2a837874b1b688510",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ],
+      "posts": [],
+      "forced": "clicked",
+      "after": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/structure_source/ad62f140e96ca8499f67a38672e19fe705e7ed80bc88a477d97cb9172b2ec030",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/structure/c7b108ce9589b881bf8babb62f70beebfddfea426bd0f3b788c6c2713014be38",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/preparation_manifest/3af78f63b29e64bb7fd44851807e032087550a6d915efdc073dd31324af6413b",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/prepared_coordinates/de7efdeea6216dee76d72e55e30af3ac074338ed4dde2a8d28c9f703e8f263fd",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_8e6746c983b042388c208fd9f2b184c3/prepared_structure/5eaa68b4a16546cff7dbed7adad053913db9cfe0403127c2a837874b1b688510",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ]
+    }
+  ],
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 93,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m23-acceptance/attempt1/regressions/m13/m12-acceptance/evidence/invalid/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 241,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_bfebb596822f4770a469f9a4c264d065/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_c9cb6c999b584f36965061ffc83d95de/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8e6746c983b042388c208fd9f2b184c3/viewer/sessions",
+      "status": 201
+    }
+  ],
+  "finishedAt": "2026-10-05T12:54:20.984Z",
+  "externalRequestCount": 0
+}
