@@ -23,7 +23,9 @@ Checked on build and on every read (``validated_summary``): exact keys at every 
 improved field can exist), the selection record, pins, call key, ``conditions_sha256``, box, reserved figures
 (``reserved_units = 2 x (reserved_evaluations + 1)``), every individual a key of the combination space (distinct
 positions, at most the effective ``max_mutations``) with the candidate set's mutation rows, non-carried keys unique in
-the run, ``pick_index`` 0, 1, ... and ``eval_index`` 0, 1, ... (computed only) in listing order, generation 1 only
+the run, ``pick_index`` 0, 1, ... and ``eval_index`` 0, 1, ... (computed only) in listing order (integer fields are
+ints, never bools), a failure reason of one step only on its step (a modeling-only reason has no model, a docking-only
+reason has its model), generation 1 only
 ``initial``, carried entries first and equal to the previous generation's ``elite_count`` first scored individuals in
 score order (score, then fewer mutations, then ``pick_index``), crossover / edit / random counts within the slot
 counts, parents scored individuals of the previous generation, a crossover child non-empty inside its two distinct
@@ -97,6 +99,21 @@ def _handle(value: Any) -> bool:
     return type(value) is str and value != ""
 
 
+def _same(value: Any, expected: Any) -> bool:
+    """Equal and of the same type (``True == 1`` and ``False == 0.0`` in Python)."""
+    return type(value) is type(expected) and value == expected
+
+
+def _step_fits(reason: Any, model_handle: Any) -> bool:
+    """A modeling-only failure reason has no model, a docking-only one has its model; ``engine_failed``,
+    ``resource_exceeded`` and ``worker_failed`` fit either step."""
+    if reason in SC.MODEL_ONLY_FAILURE_REASONS:
+        return model_handle is None
+    if reason in SC.DOCKING_ONLY_FAILURE_REASONS:
+        return model_handle is not None
+    return True
+
+
 # ----------------------------------------------------------------- selection record (spec 7, 8)
 def selection_record(admitted: dict[str, Any]) -> dict[str, Any]:
     """The job's ``sequence_ga_selection@1`` from ``sequence_ga_inputs.admission``: normalized arguments, structure,
@@ -135,8 +152,10 @@ def resolve_observation(status: Any, model_handle: Any, result_handle: Any,
     """One individual's (or the reference row's) observation from the worker's ``status.json`` (``{state,
     reason_code, stage}`` or None) and the handles the server published. A published result gives its state (the
     status, when present, must agree); a model without a result is a docking-stage failure; a docked status whose
-    result could not be published is ``engine_output_invalid`` (the M18 reason for refused output); a missing status
-    or a docking-stage status without a published model is ``worker_failed``."""
+    result could not be published is ``engine_output_invalid`` (the M18 reason for refused output); a missing status,
+    a docking-stage status without a published model, or a failure reason of the other step (a docking-only reason
+    at the modeling stage, a modeling-only reason at the docking stage: a worker contract break) is
+    ``worker_failed``."""
     try:
         if status is not None:
             _require(type(status) is dict and set(status) == STATUS_KEYS and status["state"] in SC.STATES and
@@ -156,7 +175,7 @@ def resolve_observation(status: Any, model_handle: Any, result_handle: Any,
             reason = "engine_output_invalid" if model_handle is not None else "worker_failed"
         else:
             _require((model_handle is None) == (status["stage"] == "model"), "a modeling failure has no model")
-            reason = status["reason_code"]
+            reason = status["reason_code"] if _step_fits(status["reason_code"], model_handle) else "worker_failed"
         return {"state": "failed", "reason_code": reason, "model_handle": model_handle, "result_handle": None}
     except SequenceGaEvidenceError:
         raise
@@ -366,6 +385,8 @@ def _check_row(entry: dict[str, Any], rows: list[dict[str, Any]], content: dict[
         _check_model(models[model_handle], content, rows, reference_model)
     if state == "failed":
         _require(result_handle is None and entry["score"] is None, "score: a failed row has no result or score")
+        _require(_step_fits(entry["reason_code"], model_handle),
+                 "failure reason and step: a modeling-only reason has no model, a docking-only reason has its model")
         return
     _require(model_handle is not None and result_handle in results, "a scored or null row has a model and a result")
     result = results[result_handle]
@@ -398,7 +419,7 @@ def _check_generations(content: dict[str, Any], args: dict[str, Any], space: dic
     fifth: tuple[int, int] | None = None
     exhausted_at: int | None = None
     for number, gen in enumerate(generations, start=1):
-        _require(type(gen) is dict and set(gen) == GENERATION_KEYS and gen["index"] == number and
+        _require(type(gen) is dict and set(gen) == GENERATION_KEYS and _same(gen["index"], number) and
                  type(gen["complete"]) is bool and type(gen["individuals"]) is list, "generation keys")
         individuals = gen["individuals"]
         _require(len(individuals) <= ga["population_size"], "generation size")
@@ -413,7 +434,7 @@ def _check_generations(content: dict[str, Any], args: dict[str, Any], space: dic
         _require(len(carried) == len(elite) and all(c[k] == p[k] for c, p in zip(carried, elite, strict=False)
                                                     for k in CITED) and
                  all(c["parents"] is None and c["edit_op"] is None and c["evaluation"] is None and
-                     c["eval_index"] is None for c in carried),
+                     c["eval_index"] is None and type(c["pick_index"]) is int for c in carried),
                  "carried = the previous generation's elite_count first scored individuals in score order")
         new = individuals[len(carried):]
         origins = [e["origin"] for e in new]
@@ -426,7 +447,7 @@ def _check_generations(content: dict[str, Any], args: dict[str, Any], space: dic
                      origins.count("crossover") + origins.count("edit") <= slots["crossover"] + slots["edit"],
                      "origin: crossover, edit and random within their slot counts")
         for slot, entry in enumerate(new):
-            _require(entry["pick_index"] == next_pick, "pick_index is the run's selection order")
+            _require(_same(entry["pick_index"], next_pick), "pick_index is the run's selection order")
             next_pick += 1
             rows = GI.key_mutations(candidate_set, space, entry["key"])
             _require(entry["mutations"] == rows, "mutations are the candidate set's rows of the key")
@@ -450,7 +471,7 @@ def _check_generations(content: dict[str, Any], args: dict[str, Any], space: dic
             else:
                 _require(parents is None and operation is None, "initial / random: no parent, no edit operation")
             if entry["evaluation"] == "computed":
-                _require(entry["eval_index"] == next_eval, "eval_index is the run's new-evaluation order")
+                _require(_same(entry["eval_index"], next_eval), "eval_index is the run's new-evaluation order")
                 next_eval += 1
             else:
                 _require(entry["evaluation"] == "reused" and entry["eval_index"] is None and
@@ -463,8 +484,8 @@ def _check_generations(content: dict[str, Any], args: dict[str, Any], space: dic
                  (number > 1 and len(seen) == space["size"]),
                  "a complete generation is full unless every key of the space was seen")
         scores = [e["score"] for e in individuals if e["state"] == "scored"]
-        _require(gen["min_score"] == (min(scores) if scores else None) and
-                 gen["max_score"] == (max(scores) if scores else None), "min_score and max_score")
+        _require(_same(gen["min_score"], min(scores) if scores else None) and
+                 _same(gen["max_score"], max(scores) if scores else None), "min_score and max_score")
         if exhausted_at is None and len(seen) == space["size"]:
             exhausted_at = number
     return {"seen": seen, "fifth": fifth, "exhausted_at": exhausted_at}

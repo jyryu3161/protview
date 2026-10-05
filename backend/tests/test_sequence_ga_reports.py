@@ -192,8 +192,8 @@ def _forbid_work(monkeypatch) -> None:
         raise AssertionError("a sequence GA report must never model, dock, stage or start a job")
 
     for target, name in ((JobQueue, "_supervise"), (JobQueue, "submit"), (JobQueue, "start"),
-                         (docking_bundle, "stage"), (SJ, "stage"), (SJ, "finish"), (SJ, "start_plan"),
-                         (SJ, "manifest"), (openmm_method, "preflight")):
+                         (docking_bundle, "stage"), (SJ, "finish"), (SJ, "start_plan"), (SJ, "manifest"),
+                         (openmm_method, "preflight")):
         monkeypatch.setattr(target, name, forbidden)
 
 

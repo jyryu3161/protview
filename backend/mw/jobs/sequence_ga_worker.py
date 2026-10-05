@@ -56,13 +56,14 @@ mutations: [{candidate_index, residue, from, to, mutant_resname}] (structure ord
 reference: null | the reference model summary}``. Child environment = the guardian worker environment (``PATH``,
 ``LANG``, ``PYTHONUTF8``, ``PYTHONUNBUFFERED``, ``OMP_NUM_THREADS``, ``OPENBLAS_NUM_THREADS``, ``TMPDIR`` = its own
 folder), stdin closed, stdout/stderr to files in its folder (over 1 MiB each while it runs: killed, ``failed``
-``resource_exceeded``), same process group, launched with SIGTERM/SIGALRM unblocked (a signal mask survives exec;
-the worker keeps them blocked outside a docking step), so a guardian SIGTERM to the group reaches it. The step limit
-is ``MODEL_STEP_S`` (240 s): the child is killed and the individual is ``failed`` ``model_timeout``; the total clock
-and SIGTERM kill it too and stop the run (the individual is not recorded; a pending stop wins over the child's exit).
-Exit 1 with ``error.json`` gives its closed M21 reason; any other contract break (exit code, missing or extra files,
-another schema or side, an mmCIF handle outside this run, mmCIF bytes that are not the entry's ``structure_sha256``)
-is ``worker_failed``. The worker reads nothing else of ``model.json`` but the reference row's ``structure_sha256``,
+``resource_exceeded``; the same after it exits, for a child that passed the bound between two polls), same process
+group, launched with SIGTERM/SIGALRM unblocked (a signal mask survives exec; the worker keeps them blocked outside a
+docking step), so a guardian SIGTERM to the group reaches it. The step limit is ``MODEL_STEP_S`` (240 s): the child is
+killed and the individual is ``failed`` ``model_timeout``; the total clock and SIGTERM kill it too and stop the run
+(the individual is not recorded; a pending stop wins over the child's exit). Exit 1 with ``error.json`` and no other
+file of its own gives its closed M21 reason; any other contract break (exit code, missing or extra files, another
+schema or side, an mmCIF handle outside this run, mmCIF bytes that are not the entry's ``structure_sha256``) is
+``worker_failed``. The worker reads nothing else of ``model.json`` but the reference row's ``structure_sha256``,
 ``protonation_variants`` and ``disulfide_bonds``; the server validates every model. An evaluation whose model JSON +
 mmCIF + the M18 result cap would pass ``PER_INDIVIDUAL_OUTPUT_MAX`` is ``failed`` ``resource_exceeded`` at the model
 step and stores nothing (never truncated). ``receptor_error.json`` (the model is not an M18 receptor) fails the
@@ -824,11 +825,17 @@ class Job:
                 child.wait()
         if outcome is not None:
             return outcome
+        try:    # a child can pass the stream bound and exit between two polls: the bound holds after its exit too
+            if any(path.stat().st_size > CHILD_STREAM_LIMIT for path in streams):
+                return "failed", "resource_exceeded"
+        except OSError:
+            return "failed", "worker_failed"
         return self._model_outputs(work, child.returncode, reference)
 
     def _model_outputs(self, work: Path, code: int, reference: bool) -> tuple[Any, ...]:
         try:
             if code == 1:
+                _require(set(os.listdir(work)) - CHILD_OWN == {"error.json"}, "modeling child failure outputs")
                 error = _read_json(work / "error.json", CHILD_JSON_LIMIT)
                 reason = error.get("reason_code") if type(error) is dict else None
                 return "failed", reason if reason in GC.MODEL_FAILURE_REASONS else "worker_failed"

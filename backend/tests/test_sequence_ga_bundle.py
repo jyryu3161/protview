@@ -343,6 +343,27 @@ def test_resolve_observation_rules(synthetic):
             GB.resolve_observation(status, model, result, results)
 
 
+def test_resolve_observation_keeps_a_failure_reason_on_its_own_step(synthetic):
+    """T10: a worker status whose failure reason names the other step (a docking reason at the modeling step, a
+    modeling reason at the docking step) breaks the worker contract (``worker_failed``); the reasons either step can
+    give (``engine_failed``, ``resource_exceeded``, ``worker_failed``) are kept at both."""
+    model_handle, results = synthetic.handles["0"][0], synthetic.results
+
+    def failed(reason, stage):
+        return {"state": "failed", "reason_code": reason, "stage": stage}
+
+    for reason in ("receptor_prep_failed", "docking_timeout", "engine_output_invalid", "ligand_not_3d"):
+        assert GB.resolve_observation(failed(reason, "model"), None, None, results)["reason_code"] == "worker_failed"
+        assert GB.resolve_observation(failed(reason, "docking"), model_handle, None, results)["reason_code"] == reason
+    for reason in ("coordinates_changed", "model_timeout", "energy_invalid"):
+        assert GB.resolve_observation(failed(reason, "docking"), model_handle, None,
+                                      results)["reason_code"] == "worker_failed"
+        assert GB.resolve_observation(failed(reason, "model"), None, None, results)["reason_code"] == reason
+    for reason in ("engine_failed", "resource_exceeded", "worker_failed"):
+        assert GB.resolve_observation(failed(reason, "model"), None, None, results)["reason_code"] == reason
+        assert GB.resolve_observation(failed(reason, "docking"), model_handle, None, results)["reason_code"] == reason
+
+
 # ---------------------------------------------------------------- refusals (changed summaries)
 
 
@@ -399,6 +420,49 @@ def test_unique_keys_and_selection_order(synthetic):
     _refused(synthetic, lambda s: s["generations"][0]["individuals"].reverse())
     _refused(synthetic, lambda s: _entry(s, 1, 0).__setitem__("origin", "random"), "origin")
     _refused(synthetic, lambda s: _entry(s, 1, 0)["mutations"][0].__setitem__("from", "Q"), "mutations")
+
+
+def test_integer_fields_refuse_booleans(synthetic):
+    """T10: ``True == 1`` and ``False == 0`` in Python; an integer field of the summary is an int, never a bool."""
+    _refused(synthetic, lambda s: s["generations"][0].__setitem__("index", True), "generation keys")
+    _refused(synthetic, lambda s: _entry(s, 1, 0).__setitem__("pick_index", False), "pick_index")
+    _refused(synthetic, lambda s: _entry(s, 1, 1).__setitem__("pick_index", True), "pick_index")
+    _refused(synthetic, lambda s: _entry(s, 1, 0).__setitem__("eval_index", False), "eval_index")
+    _refused(synthetic, lambda s: _entry(s, 1, 1).__setitem__("eval_index", True), "eval_index")
+    ties = _oracle_world(*SCENARIOS["ties"])                       # gen 2 carries "4" (pick 0) and "2-4" (pick 1)
+    assert [(e["key"], e["pick_index"]) for e in ties.summary["generations"][1]["individuals"][:2]] == \
+        [("4", 0), ("2-4", 1)]
+    _refused(ties, lambda s: _entry(s, 2, 0).__setitem__("pick_index", False), "carried")
+    _refused(ties, lambda s: _entry(s, 2, 1).__setitem__("pick_index", True), "carried")
+    zero = _oracle_world({**SMALL, "generations": 2}, _table(lambda i, k: _scored(0.0)))   # SYNTHETIC 0.0 scores
+    assert zero.summary["generations"][0]["min_score"] == 0.0
+    _refused(zero, lambda s: s["generations"][0].__setitem__("min_score", False), "min_score")
+    _refused(zero, lambda s: s["generations"][0].__setitem__("max_score", False), "min_score")
+
+
+def test_a_failure_reason_belongs_to_its_step(synthetic):
+    """T10: a modeling-only reason (M21 modeling reasons, ``model_timeout``) has no model; a docking-only reason
+    (``docking_timeout`` and the M18 reasons that are not M21 modeling reasons) has its model; ``engine_failed``,
+    ``resource_exceeded`` and ``worker_failed`` can be either step's."""
+    failing = _oracle_world(*SCENARIOS["repeated_failure"])
+    # gen 1: "1-2-4" receptor_prep_failed with its model, "0-2" energy_invalid without a model
+    assert [(e["key"], e["reason_code"], e["model_handle"] is not None)
+            for e in failing.summary["generations"][0]["individuals"][::2]] == \
+        [("1-2-4", "receptor_prep_failed", True), ("0-2", "energy_invalid", False)]
+    for reason in ("coordinates_changed", "model_timeout", "topology_unsupported"):
+        _refused(failing, lambda s, r=reason: _entry(s, 1, 0).__setitem__("reason_code", r), "step")
+    for reason in ("receptor_prep_failed", "docking_timeout", "engine_output_invalid", "ligand_hydrogens_missing"):
+        _refused(failing, lambda s, r=reason: _entry(s, 1, 2).__setitem__("reason_code", r), "step")
+    for reason in ("engine_failed", "resource_exceeded", "worker_failed"):
+        for slot in (0, 2):
+            changed = copy.deepcopy(failing.summary)
+            _entry(changed, 1, slot)["reason_code"] = reason
+            failing.validate(changed)
+    scores = dict(VECTORS["s4_tiny_synthetic"]["scores"])
+    ga = VECTORS["s4_tiny_synthetic"]["ga"]
+    for reason, other in (("coordinates_changed", "receptor_prep_failed"), ("receptor_prep_failed", "energy_invalid")):
+        scores[SC.REFERENCE_KEY] = {"state": "failed", "reason_code": reason, "score": None}
+        _refused(_oracle_world(ga, scores), lambda s, r=other: s["reference"].__setitem__("reason_code", r), "step")
 
 
 def test_crossover_and_edit_relations(synthetic):

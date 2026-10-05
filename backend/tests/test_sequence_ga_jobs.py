@@ -809,6 +809,35 @@ def test_contradicting_staged_files_fail_fatal_or_worker_failed(base, tmp_path, 
     no_strays(run)
 
 
+def test_a_prepared_box_that_is_not_the_servers_is_fatal_before_any_object_is_published(base, tmp_path, monkeypatch):
+    """T10: the worker's box is compared with the server's before the reference row or any individual is published:
+    a computed reference row (new docking values) with another prepared box ends fatal with no object and no event
+    of the attempt (labeled fault: prepared.json rewritten after the worker stopped)."""
+    run, _root = world(base, tmp_path)
+    raise_limits(run)
+    original = SJ.finish
+
+    def moved_box(run_, job, attempt_id, attempt_dir_, server_cause):
+        prepared = json.loads((attempt_dir_ / "prepared.json").read_bytes())
+        prepared["box"]["center_A"][0] += 1.0
+        (attempt_dir_ / "prepared.json").write_bytes(canonical_json(prepared))
+        return original(run_, job, attempt_id, attempt_dir_, server_cause)
+
+    args = {**ga_args(base, generations=1, max_new_evaluations=4), "parameters": {**DOCK, "seed": DOCK["seed"] + 2}}
+    with monkeypatch.context() as patch:
+        patch.setattr(SJ, "finish", moved_box)
+        patch.setattr(JobQueue, "_record_control", when_started(
+            "reference.status.json", lambda _queue, _job_id, pid: os.kill(pid, signal.SIGKILL)))
+        fatal = run_ga(run, args)
+    assert fatal["status"] == "failed" and fatal["failure"]["diagnostic"] == "SequenceGaFatal", fatal
+    folder = attempt_dir(run, fatal)
+    assert (folder / "reference.status.json").is_file() and (folder / "reference.model.json").is_file()
+    attempt = JobQueue(run).get(fatal["job_id"])["attempt_id"]
+    assert [e for e in events(run) if e["type"] == "object_created" and e.get("produced_by") == attempt] == []
+    assert not of(run, fatal["job_id"], SC.INDIVIDUAL_EVENT) and not of(run, fatal["job_id"], SC.SUMMARY_EVENT)
+    no_strays(run)
+
+
 # ----------------------------------------------------------------- golden M18 / M19 / M21 keys (spec 8, 12)
 def test_golden_m18_m19_m21_call_keys_results_and_hashed_files_are_unchanged(tmp_path):
     """The T1 golden record (made before any M23 server change, ``fixtures/sequence_ga/golden_call_keys.json``) is

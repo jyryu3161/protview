@@ -814,6 +814,11 @@ if MODE == "silent_exit":
 if MODE == "bad_error":
     Path("error.json").write_text(json.dumps({{"reason_code": "not_a_closed_reason"}}))
     raise SystemExit(1)
+if MODE == "error_extra":    # a closed reason with exit 1, but a stray file next to error.json
+    Path("model.cif").write_text("SYNTHETIC stray file")
+    Path("error.json").write_text(json.dumps({{"reason_code": REASON, "message": "SYNTHETIC injected failure",
+                                               "detail": {{"reason_code": REASON}}}}))
+    raise SystemExit(1)
 if (MODE == "fail_mutants" and mutations) or (MODE == "fail_reference" and not mutations):
     Path("error.json").write_text(json.dumps({{"reason_code": REASON, "message": "SYNTHETIC injected failure",
                                                "detail": {{"reason_code": REASON}}}}))
@@ -828,6 +833,10 @@ if MODE == "refuse_first" and count == 0 and code == 0:
     os.remove("receptor_bonds.json")
     Path("receptor_error.json").write_text(json.dumps({{"reason_code": REASON, "message": "SYNTHETIC injected refusal",
                                                         "detail": {{"reason_code": REASON}}}}))
+if MODE == "flood_exit":     # a finished model, then past the stream limit and gone at once (between two polls)
+    sys.stdout.write("x" * 20000)
+    sys.stdout.flush()
+    os._exit(code or 0)
 raise SystemExit(code)
 '''
 NULL_DOCKINGS = '''
@@ -913,6 +922,9 @@ def batch(world, first, tmp_path_factory):
         "output_cap": (reused_ref, "m.MAX_TOTAL_OUTPUT_BYTES = m.PER_INDIVIDUAL_MAX + 600_000\n"),
         "late_sigterm": (reused_ref, LATE_SIGTERM),
         "reference_stream_bound": (base, _fake(root, "flood", "flood", "") + "m.CHILD_STREAM_LIMIT = 10_000\n"),
+        "reference_stream_after_exit": (base, _fake(root, "flood_exit", "flood_exit", "") +
+                                        "m.CHILD_STREAM_LIMIT = 10_000\n"),
+        "reference_error_extra_file": (base, _fake(root, "extra", "error_extra", "topology_unsupported")),
         "reference_silent_child": (base, _fake(root, "silent", "silent_exit", "")),
         "reference_bad_error": (base, _fake(root, "bad", "bad_error", "")),
         "reference_size_bound": (base, "m.PER_INDIVIDUAL_MAX = 4 * 1024 * 1024 + 100_000\n"),
@@ -961,6 +973,8 @@ def test_five_consecutive_failures_end_the_run(batch):
     ("reference_docking_timeout", ["failed", "docking_timeout", "docking"], True),
     ("reference_model_timeout", ["failed", "model_timeout", "model"], False),
     ("reference_stream_bound", ["failed", "resource_exceeded", "model"], False),
+    ("reference_stream_after_exit", ["failed", "resource_exceeded", "model"], False),   # T10: checked after exit too
+    ("reference_error_extra_file", ["failed", "worker_failed", "model"], False),        # T10: exit 1 + a stray file
     ("reference_silent_child", ["failed", "worker_failed", "model"], False),
     ("reference_bad_error", ["failed", "worker_failed", "model"], False),
     ("reference_size_bound", ["failed", "resource_exceeded", "model"], False)])

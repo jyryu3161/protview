@@ -13,8 +13,9 @@ the M7 ``openmm_method.dependencies()`` / ``preflight()``. ``JobQueue`` calls th
   M7 preflight, ``residue_mismatch``, ``box_no_receptor_atoms``, 7: ``ga_space_too_small``, 8: staged bytes 429) and
   ``require_budget`` (9: 429 ``ga_limit_raise_required``); nothing is charged. ``admission_plan`` runs 1-8 for reads.
 - ``start_plan``: at the start, once, under the run owner and before the reservation: the reuse index (``reuse_plan``)
-  and the staged manifest bytes (16 MiB, re-checked; 429 before anything is charged) and ``reserved_units``.
-- ``stage``: the worker manifest ``sequence_ga_worker_input@1`` (``sequence_ga_worker.py`` docstring).
+  and the staged manifest bytes (16 MiB, re-checked; 429 before anything is charged) and ``reserved_units``; the queue
+  stages these bytes (``manifest``: the worker manifest ``sequence_ga_worker_input@1``, ``sequence_ga_worker.py``
+  docstring).
 - ``finish``: after the attempt's process group is verified empty, in every end state, once ``reference.status.json``
   exists: the reference row and every newly evaluated individual are published (mmCIF ``mutation_set_model_structure@1``
   -> model ``mutation_set_model@1`` -> ``docking_result@1``, then ``sequence_ga_individual_published``), reused rows are
@@ -44,7 +45,8 @@ for that read only. The M18, M19, M21 and M22 read paths themselves are unchange
 Staged files are read with ``O_NOFOLLOW``, regular-file and size bounds, canonical JSON only. The worker's own
 ``cancelled`` stop is the user's cancel only when the server stopped the job for a cancel; the server's stop cause
 (cancel, job deadline, crash) always wins. A docked receptor that is not the stored model (mmCIF hash, sidecar hash,
-source) or a prepared box / engine / method that is not the server's ends the job fatal (``SequenceGaFatal``).
+source) or a prepared box / engine / method that is not the server's ends the job fatal (``SequenceGaFatal``); the
+prepared box, engine and method are compared before anything of the attempt is published.
 """
 from __future__ import annotations
 
@@ -758,11 +760,6 @@ def start_plan(run: Any, job: dict[str, Any]) -> dict[str, Any]:
     return {"reuse": reuse, "raw": raw, "units": GI.reserved_units(selected["arguments"]["ga"])}
 
 
-def stage(run: Any, job: dict[str, Any], reuse: dict[str, Any]) -> bytes:
-    """The staged manifest for the recorded reuse facts (the same bytes ``start_plan`` checked)."""
-    return manifest(run, job["selected"], job_pins(job), reuse)
-
-
 # ----------------------------------------------------------------- staged files (bounded, never followed)
 def _read(directory: Path | None, name: str, limit: int) -> bytes | None:
     if directory is None:
@@ -1033,18 +1030,23 @@ def _publish_row(run: Any, ctx: dict[str, Any], attempt_id: str, directory: Path
     return model_handle, result_handle
 
 
+def _same_box(ctx: dict[str, Any], prepared: dict[str, Any]) -> None:
+    """Spec 8: when the server and the worker both have a box, it is the same box. Checked before the reference row
+    or any individual is published: a mismatch ends the job fatal with nothing of the attempt stored."""
+    server, worker = ctx["box"], prepared["box"]
+    _fatal(server is None or worker is None or worker == server, "the worker's box is not the server's")
+
+
 def _summary_box(ctx: dict[str, Any], prepared: dict[str, Any], reference: dict[str, Any]) -> dict[str, Any] | None:
-    """Spec 8: the server's box, compared with the worker's; a null worker box only with a ligand / box refusal of
-    the reference row; the worker's box when the server could not read the ligand."""
+    """Spec 8: the server's box (``_same_box`` compared it with the worker's before publication); a null worker box
+    only with a ligand / box refusal of the reference row; the worker's box when the server could not read the
+    ligand."""
     server, worker = ctx["box"], prepared["box"]
     if worker is None:
         _fatal(reference["state"] == "failed" and reference["reason_code"] in SB.BOXLESS_REASONS,
                "the worker computed no box although the reference row was not refused for its ligand or box")
         return copy.deepcopy(server)
-    if server is None:
-        return copy.deepcopy(worker)
-    _fatal(worker == server, "the worker's box is not the server's")
-    return copy.deepcopy(server)
+    return copy.deepcopy(worker if server is None else server)
 
 
 def _stop_reason(attempt_dir: Path | None, job: dict[str, Any], attempt_id: str, server_cause: str | None,
@@ -1084,6 +1086,7 @@ def finish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path | N
     _fatal(prepared["model_method"] == pins["model_method"] and type(engine) is dict and
            engine.get("name") == C.ENGINE and engine.get("binary_sha256") == pins["docking"]["qvina_sha256"] and
            engine.get("package") == pins["docking"]["qvina_package"], "the worker's engine or model method")
+    _same_box(ctx, prepared)
     reuse = job["dispatch_intent"]["sequence_reuse"]
     reused = {record["key"]: record for record in reuse["records"]}
     readable, intact = _records(attempt_dir)

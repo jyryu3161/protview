@@ -147,6 +147,12 @@ DOCKING_FAILURE_REASONS = (
     "engine_failed", "engine_output_invalid", "resource_exceeded")
 FAILED_EXTRA_REASONS = ("model_timeout", "docking_timeout", "worker_failed")
 FAILURE_REASONS = tuple(dict.fromkeys(MODEL_FAILURE_REASONS + DOCKING_FAILURE_REASONS + FAILED_EXTRA_REASONS))
+# Reasons only one step gives (partitions of the sets above, no new reason): a modeling-only failure has no model, a
+# docking-only failure has its model. ``engine_failed``, ``resource_exceeded`` and ``worker_failed`` can be either's.
+MODEL_ONLY_FAILURE_REASONS = tuple(reason for reason in MODEL_FAILURE_REASONS + ("model_timeout",)
+                                   if reason not in DOCKING_FAILURE_REASONS)
+DOCKING_ONLY_FAILURE_REASONS = tuple(reason for reason in DOCKING_FAILURE_REASONS + ("docking_timeout",)
+                                     if reason not in MODEL_FAILURE_REASONS)
 
 # 4 score wording: copies of docking_constants.SCORE_LABEL and docking_batch_constants.SCORE_ROW_LABELS["free"]
 # (the first mode of each individual's M18 result).

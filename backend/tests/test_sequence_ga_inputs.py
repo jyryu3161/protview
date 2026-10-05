@@ -127,6 +127,17 @@ def test_copied_strings_equal_their_originals():
     assert set(SC.FAILURE_REASONS) == set(MK.FAILURE_REASON_CODES) | set(C.REASONS) | \
         {"model_timeout", "docking_timeout", "worker_failed"}
     assert len(SC.FAILURE_REASONS) == len(set(SC.FAILURE_REASONS))
+    # T10: the failure reasons of one step only, from the originals (both steps: engine_failed, resource_exceeded,
+    # worker_failed)
+    shared = set(MK.FAILURE_REASON_CODES) & set(C.REASONS)
+    assert shared == {"engine_failed", "resource_exceeded"}
+    assert set(SC.MODEL_ONLY_FAILURE_REASONS) == (set(MK.FAILURE_REASON_CODES) - shared) | {"model_timeout"} == {
+        "mutation_modeling_failed", "unexpected_atoms_added", "coordinates_changed", "topology_unsupported",
+        "energy_invalid", "model_timeout"}
+    assert set(SC.DOCKING_ONLY_FAILURE_REASONS) == (set(C.REASONS) - shared) | {"docking_timeout"}
+    assert not set(SC.MODEL_ONLY_FAILURE_REASONS) & set(SC.DOCKING_ONLY_FAILURE_REASONS)
+    assert set(SC.FAILURE_REASONS) - set(SC.MODEL_ONLY_FAILURE_REASONS) - set(SC.DOCKING_ONLY_FAILURE_REASONS) == \
+        shared | {"worker_failed"}
     assert SC.SCORE_LABEL == C.SCORE_LABEL and SC.SCORE_ROW_LABEL == BC.SCORE_ROW_LABELS["free"]
     assert (SC.L1, SC.L3, SC.L6) == (MK.L1, MK.L3, MK.L6)
     assert (SC.MUTANT_SIDE, SC.REFERENCE_SIDE) == ("mutant", "wild_type_reference")

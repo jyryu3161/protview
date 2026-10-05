@@ -102,7 +102,7 @@ def _no_work(monkeypatch) -> None:
         raise AssertionError("a sequence GA read must not run a job, an engine or a staging step")
 
     for target, name in ((JobQueue, "submit"), (JobQueue, "start"), (JobQueue, "_supervise"),
-                         (docking_bundle, "stage"), (SJ, "stage"), (SJ, "finish"), (SJ, "start_plan"),
+                         (docking_bundle, "stage"), (SJ, "manifest"), (SJ, "finish"), (SJ, "start_plan"),
                          (SJ, "limit_approval"), (openmm_method, "preflight")):
         monkeypatch.setattr(target, name, forbidden)
 
