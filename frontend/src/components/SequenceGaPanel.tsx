@@ -432,7 +432,12 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
   const prereqValue = prereq.status === "ready" ? prereq.value : null;
   const ligandSdfs = prereqValue ? importsOfKind(prereqValue.imports, "ligand_sdf") : [];
   const options = setRows ? candidateSetOptions(setRows) : [];
-  const phase = dockingJobPhase(job, approvalPending);
+  // A start that met the run's first expensive-call approval leaves the job `claimed` with blocked_reason
+  // `approval_or_cancel`, and the queue starts it from there (jobs/queue.py `start`). Once no approval is pending it
+  // waits for 작업 시작 like a saved job; the shared phase helper would call it running and hide the button.
+  const waitsForStart = !!job && job.status === "claimed" && job.blocked_reason === "approval_or_cancel" &&
+    !approvalPending;
+  const phase = waitsForStart ? "saved" : dockingJobPhase(job, approvalPending);
   const approvalLoad = approval && approval.key === argsKey ? approval.load : null;
   const preflightLoad = preflight && preflight.key === argsKey ? preflight.load : null;
   const spaceLines = gaSpaceLines(shownPreflight);
@@ -571,7 +576,8 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
           data-generations-complete={job.sequence_ga?.generations_complete}
           data-individuals-finished={job.sequence_ga?.individuals_finished}
           data-summary-handle={job.sequence_ga?.summary_handle ?? undefined}>
-          <p className="mw-mutation-note" role="status">{gaJobText(job, approvalPending)}</p>
+          <p className="mw-mutation-note" role="status">{gaJobText(waitsForStart ? { ...job, status: "queued" } : job,
+            approvalPending)}</p>
           <p className="mw-mutation-note mw-mono">{GA_TOOL} · 작업 {job.status} · {job.job_id}</p>
           {job.sequence_ga && <p className="mw-mutation-note" data-testid="sequence-ga-progress">{gaProgressText(job.sequence_ga)}</p>}
           {job.blocked_reason && <p className="mw-mutation-note">시작 대기 이유: {gaReasonText(job.blocked_reason)}</p>}
