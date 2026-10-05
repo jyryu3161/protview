@@ -861,3 +861,143 @@ export type MutationModelSubmission = MutationModelJob | MutationModelPlanOnly;
 export interface MutationModelReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "mutation_model"; result_handle: string;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M23 sequence GA design (backend/mw/sequence_ga_constants.py, sequence_ga_inputs.py, sequence_ga_jobs.py,
+// sequence_ga_reads.py, sequence_model_bundle.py; `.dryforge/spec.md` 2, 3, 4, 7, 9) ----
+export type SequenceGaKey = "seed" | "population_size" | "generations" | "elite_count" | "tournament_size" |
+  "crossover_fraction" | "random_fraction" | "max_mutations" | "patience" | "max_new_evaluations" | "total_s";
+export type SequenceGaParameters = Record<SequenceGaKey, number>;
+export type SequenceGaStatus = "complete" | "partial";
+export type SequenceGaStopReason = "generations_complete" | "no_change" | "space_exhausted" | "evaluation_limit" |
+  "time_exhausted" | "cancelled" | "worker_failed" | "resource_exceeded" | "reference_failed" | "repeated_failure";
+export type SequenceGaOrigin = "initial" | "carried" | "crossover" | "edit" | "random";
+export type SequenceGaEditOp = "add" | "change" | "move" | "remove";
+export type SequenceGaEvaluation = "reused" | "computed";
+export type SequenceGaState = "scored" | "null_result" | "failed";
+
+/**
+ * `sequence_ga_dock_v1` job arguments (fixed shape; unknown keys refused). No `mode` (free docking is fixed), no
+ * receptor key (each individual's receptor is its own model) and no candidate ligand source. `parameters.seed` is the
+ * evaluation seed (modeling and docking); `ga.seed` the GA seed. `timeout_s` (= `ga.total_s + 600`) is the top-level
+ * `POST /jobs` field.
+ */
+export interface SequenceGaArgs {
+  candidate_set: string;
+  ligand: { source: "sdf"; sdf_handle: string };
+  box: DockingSourceArgs["box"];
+  parameters: { seed: number; exhaustiveness: number; num_modes: number; energy_range: number };
+  selection_policy: "protein_only";
+  hydrogen_policy: "rebuild_pH7";
+  acknowledgement: Record<DockingAcknowledgementKey, true>;
+  ga: SequenceGaParameters;
+}
+
+/** `methods.sequence_ga_design` of `/capabilities` (and the preflight's `capability`); unavailable: reason only. */
+export interface SequenceGaCapability { schema: "sequence_ga_capability@1"; protocol_id: "sequence_ga_dock_v1";
+  tool_id: "sequence_ga_design"; engine: "qvina"; execution_lane: string; result_schema: "sequence_ga_result@1";
+  model_schema: "mutation_set_model@1"; available: boolean; status: string; reason_code: string | null;
+  reason: string | null; pins: Record<string, unknown> | null; versions: Record<string, unknown> | null;
+  ga_ranges?: Record<SequenceGaKey, { min: number; max: number; default: number | null }>;
+  timeout_s?: { max: number; finish_margin: number }; limits?: Record<string, number>; units_per_evaluation?: number;
+  score_label?: string; score_row_label?: string; statements?: Record<string, string>; model_limitations?: string[] }
+
+export interface SequenceGaStatement { id: string; text: string }
+/** The combination space (server values: `size` is the exact count N; `effective_max_mutations` = min(cap, P)). */
+export interface SequenceGaSpace { positions: number; candidates: number; effective_max_mutations: number; size: number }
+
+/** `POST /runs/{id}/sequence_ga/preflight` (a read). A refused request (steps 1-8) has null numbers. */
+export interface SequenceGaPreflight { schema: "sequence_ga_preflight@1"; starts_job: false;
+  capability: SequenceGaCapability; score_label: string; budget: Record<"expensive_calls" | "wall_clock_s", BudgetAxis>;
+  remaining: BudgetPair;
+  admission: { admitted: boolean; error: string | null; reason_code: string | null; message: string | null;
+    detail: Record<string, unknown> | null };
+  selection_sha256: string | null; conditions_sha256: string | null; space: SequenceGaSpace | null;
+  projection_heavy_atoms: number | null; heavy_atom_warning: boolean | null; reusable_count: number | null;
+  reference_reusable: boolean | null; reserved_evaluations: number | null; reserved_units: number | null;
+  needed: BudgetPair | null; shortfall: BudgetPair | null; full_run_may_be_partial: boolean | null;
+  ga: SequenceGaParameters | null; statements: SequenceGaStatement[] | null;
+  existing_job: { job_id: string; status: string; summary_handle: string | null } | null }
+
+/** `POST /runs/{id}/sequence_ga/limit_approval` (the person's explicit approval; idempotent). */
+export interface SequenceGaLimitApproval { raised: boolean; selection_sha256: string; reserved_evaluations: number;
+  reserved_units: number; needed: BudgetPair; shortfall_before: BudgetPair; increase: BudgetPair;
+  limits_before: BudgetPair; limits_after: BudgetPair; shortfall_after: BudgetPair; event_seq: number | null;
+  budget: BudgetSnapshot }
+
+/** One mutation of an individual (the server fills it from the M20 candidate set; 7 fields as stored). */
+export interface SequenceGaMutation { candidate_index: number; residue: ExactResidueRef; from: string; to: string }
+/** One individual of a generation (stored values; `carried` cites its first evaluation). Key = candidate indices. */
+export interface SequenceGaIndividual { key: string; mutations: SequenceGaMutation[]; origin: SequenceGaOrigin;
+  parents: string[] | null; edit_op: SequenceGaEditOp | null; evaluation: SequenceGaEvaluation | null;
+  pick_index: number; eval_index: number | null; state: SequenceGaState; reason_code: string | null;
+  score: number | null; model_handle: string | null; result_handle: string | null }
+/** The wild-type reference row (key `wild_type`): not an individual, never sorted with them. */
+export interface SequenceGaReference { evaluation: SequenceGaEvaluation; state: SequenceGaState;
+  reason_code: string | null; score: number | null; model_handle: string | null; result_handle: string | null }
+export interface SequenceGaGeneration { index: number; complete: boolean; individuals: SequenceGaIndividual[];
+  min_score: number | null; max_score: number | null }
+/** `sequence_ga_result@1` (validated on every read). `limitations` holds the S sentence ids. */
+export interface SequenceGaResult { schema: "sequence_ga_result@1"; protocol: "sequence_ga_dock_v1"; engine: "qvina";
+  candidate_set: string; structure: { handle: string; model_number: number };
+  ligand: { sdf_handle: string; sdf_sha256: string }; box: DockingResult["box"] | null;
+  parameters: { seed: number; exhaustiveness: number; num_modes: number; energy_range: number; cpu: 1 };
+  selection_policy: "protein_only"; hydrogen_policy: "rebuild_pH7";
+  method: { model: Record<string, unknown>; docking: Record<string, unknown> }; pins: Record<string, unknown>;
+  call_key: string; conditions_sha256: string; selection_sha256: string; ga: SequenceGaParameters;
+  space: SequenceGaSpace; status: SequenceGaStatus; stop_reason: SequenceGaStopReason; generations_done: number;
+  new_evaluations_used: number; reused_count: number; reserved_evaluations: number; reserved_units: number;
+  reference: SequenceGaReference; generations: SequenceGaGeneration[]; limitations: string[] }
+/** Detail read: the validated summary; each row carries `detail_available` (an M18 result handle exists). */
+export interface SequenceGaDetail { schema: "sequence_ga_detail@1"; handle: string; job_id: string; attempt_id: string;
+  published_seq: number; score_label: string; score_column_label: string; score_row_label: string;
+  statements: SequenceGaStatement[]; summary: SequenceGaResult;
+  generations: (Omit<SequenceGaGeneration, "individuals"> & {
+    individuals: (SequenceGaIndividual & { detail_available: boolean })[] })[];
+  reference: SequenceGaReference & { detail_available: boolean }; meta: Record<string, unknown> }
+/** Newest first. A summary that does not validate has `valid: false` and null fields. */
+export interface SequenceGaListRow { handle: string; published_seq: number; valid: boolean; reason_code: string | null;
+  job_id: string | null; attempt_id: string | null; status: SequenceGaStatus | null;
+  stop_reason: SequenceGaStopReason | null; generations_done: number | null; new_evaluations_used: number | null;
+  reused_count: number | null; reserved_units: number | null; space: SequenceGaSpace | null;
+  candidate_set: string | null; selection_sha256: string | null; ga: SequenceGaParameters | null }
+export interface SequenceGaList { schema: "sequence_ga_list@1"; total: number; offset: number; limit: number;
+  rows: SequenceGaListRow[] }
+
+/** One structure entry of `mutation_set_model@1` without its atom and bond rows (no SASA or contacts). */
+export interface SequenceGaModelStructure { structure_object: string; structure_sha256: string;
+  system_xml_sha256: string; topology_sha256: string; heavy_atoms: number; added_hydrogens: number;
+  /** Per mutated residue, the residue's 7 fields (mutant name) with each PDBFixer-placed heavy atom. */
+  added_heavy_atoms: { residue: ExactResidueRef; atom_name: string; element: string }[];
+  protonation_variants: { residue: ExactResidueRef; variant: string | null }[];
+  disulfide_bonds: [ExactResidueRef, ExactResidueRef][]; energy: MutationModelEnergy }
+/** `mutation_set_model@1` as the individual read returns it (validated; rows left out). One structure key. */
+export interface SequenceGaModel { schema: "mutation_set_model@1"; method_version: string; candidate_set: string;
+  structure: { handle: string; model_number: number; structure_kind: "prepared_structure" };
+  mutations: (SequenceGaMutation & { mutant_resname: string })[]; seed: number; method: Record<string, unknown>;
+  structures: Partial<Record<MutationModelSide, SequenceGaModelStructure>>;
+  protonation_differences: { residue: ExactResidueRef; wild_type_reference: string | null; mutant: string | null }[];
+  new_disulfide_in_mutant: boolean; reference_structure_sha256: string | null; limitations: string[] }
+/** `GET /runs/{id}/sequence_ga/results/{handle}/individual?key=…` (key `12-57-203` or `wild_type`). */
+export interface SequenceGaIndividualRead { schema: "sequence_ga_individual@1"; summary_handle: string; key: string;
+  mutations: SequenceGaMutation[]; is_reference: boolean; eval_index: number | null; pick_index: number | null;
+  evaluation: SequenceGaEvaluation | null; state: SequenceGaState; reason_code: string | null; score: number | null;
+  model_handle: string | null; result_handle: string | null;
+  appearances: { generation: number; position: number; origin: SequenceGaOrigin }[]; model: SequenceGaModel | null;
+  statements: SequenceGaStatement[]; score_label: string; score_row_label: string;
+  m18_detail: Omit<DockingResultDetail, "meta"> | null }
+
+/** Job progress (`sequence_ga` of the job record): staged file counts only; the summary handle once published, with
+ * its validated `status`/`stop_reason` (null when it does not validate). */
+export interface SequenceGaProgress { space: SequenceGaSpace; reserved_evaluations: number; reserved_units: number;
+  reused_planned: number; reference_reuse_planned: boolean; reference_recorded: boolean; individuals_started: number;
+  individuals_finished: number; generation_records: number; generations_complete: number;
+  summary_handle: string | null; summary_status: SequenceGaStatus | null;
+  summary_stop_reason: SequenceGaStopReason | null }
+export interface SequenceGaJob extends Omit<DockingJob, "protocol_id" | "artifacts"> {
+  protocol_id: "sequence_ga_dock_v1"; artifacts: { sequence_ga_result?: string }; sequence_ga: SequenceGaProgress }
+export interface SequenceGaPlanOnly { plan_only: true; protocol_id: "sequence_ga_dock_v1"; reason_code: "dry_run";
+  available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
+export type SequenceGaSubmission = SequenceGaJob | SequenceGaPlanOnly;
+export interface SequenceGaReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "sequence_ga"; result_handle: string;
+  ga_status: SequenceGaStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }

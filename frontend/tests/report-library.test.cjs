@@ -44,6 +44,8 @@ test("report rows keep every kind, expose target handle, and order by created_se
     "리간드 도킹 일괄 보고서");
   assert.equal(reportKindLabel({ kind: "ligand_ga", handle: "h", target_handle: "g", created_seq: 6 }),
     "리간드 GA 설계 보고서");
+  assert.equal(reportKindLabel({ kind: "sequence_ga", handle: "h", target_handle: "s", created_seq: 7 }),
+    "서열 GA 보고서");
   assert.deepEqual(plain(buildReportRows([])), []);
 });
 
