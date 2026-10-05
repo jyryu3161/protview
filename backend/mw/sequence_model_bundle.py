@@ -226,7 +226,24 @@ def validated_model(content: Any, *, run_id: str, candidate_set_handle: str, can
     ``ModelInvalid``. A model with mutations needs ``reference``: the (separately validated) wild-type reference
     model of the same run conditions; the reference itself takes none."""
     try:
-        return _validated(content, run_id, candidate_set_handle, candidate_set, structure_cif, reference)
+        return _validated(content, run_id, candidate_set_handle, candidate_set, structure_cif, reference, False)
+    except ModelInvalid:
+        raise
+    except (ValueError, TypeError, KeyError, AttributeError, IndexError) as exc:
+        raise ModelInvalid(f"malformed sequence model: {type(exc).__name__}") from exc
+
+
+def validated_model_alone(content: Any, *, run_id: str, candidate_set_handle: str, candidate_set: dict[str, Any],
+                          structure_cif: bytes) -> dict[str, Any]:
+    """``validated_model`` without the reference model (T5, the M18 receptor path: a receptor needs the structure
+    entry, its stored mmCIF and the model's own records, never the comparison with another structure). Every check of
+    ``validated_model`` except the ones relating a mutant to its wild-type reference model (residue order and heavy
+    atoms outside the mutated residues, ``added_heavy_atoms``, ``protonation_differences``,
+    ``new_disulfide_in_mutant`` and ``reference_structure_sha256`` recomputed); ``reference_structure_sha256`` must
+    still be a SHA-256 and the limitation sentences must follow the stored records. For a wild-type reference model
+    this is the full ``validated_model``."""
+    try:
+        return _validated(content, run_id, candidate_set_handle, candidate_set, structure_cif, None, True)
     except ModelInvalid:
         raise
     except (ValueError, TypeError, KeyError, AttributeError, IndexError) as exc:
@@ -234,7 +251,7 @@ def validated_model(content: Any, *, run_id: str, candidate_set_handle: str, can
 
 
 def _validated(content: Any, run_id: str, candidate_set_handle: str, candidate_set: dict[str, Any],
-               structure_cif: bytes, reference: dict[str, Any] | None) -> dict[str, Any]:
+               structure_cif: bytes, reference: dict[str, Any] | None, alone: bool) -> dict[str, Any]:
     _require(type(content) is dict and set(content) == TOP_KEYS, "top-level keys")
     _require(content["schema"] == SC.MODEL_SCHEMA and content["method_version"] == SC.MODEL_METHOD_VERSION,
              "schema")
@@ -269,6 +286,8 @@ def _validated(content: Any, run_id: str, candidate_set_handle: str, candidate_s
         _require(reference is None, "the wild-type reference model takes no reference")
         _require(entry["added_heavy_atoms"] == [] and differences == [] and disulfide is False and
                  content["reference_structure_sha256"] is None, "a wild-type model has no mutation records")
+    elif alone:
+        _require(_hex(content["reference_structure_sha256"]), "reference_structure_sha256")
     else:
         _require(reference is not None, "a mutant model is validated with its wild-type reference model")
         reference_entry = _check_reference(content, reference)

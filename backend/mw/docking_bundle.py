@@ -271,10 +271,26 @@ def _receptor_format(meta: dict[str, Any]) -> str:
     return fmt
 
 
+def _set_model(run: Any, handle: Any) -> bool:
+    """M23 (spec 8 (b)): the handle names a stored ``mutation_set_model@1`` of this run (anything else, unknown or
+    malformed handles included, keeps the M21 path below)."""
+    try:
+        meta = run.store.meta(handle)
+    except (KeyError, ValueError, TypeError):
+        return False
+    return (meta["kind"], meta["schema"]) == ("mutation_set_model", "mutation_set_model@1")
+
+
 def _mutation_receptor(run: Any, source: dict[str, Any]) -> dict[str, Any]:
     """M21: the receptor of a ``receptor_source``: the validated model's stored mmCIF of ``side`` and the sidecar
     built from its stored topology. ``mutation_model_invalid`` for anything but a published same-run model whose
-    stored atoms match its ``atom_mapping``; the M18 receptor rules (atom cap included) are ``receptor_invalid``."""
+    stored atoms match its ``atom_mapping``; the M18 receptor rules (atom cap included) are ``receptor_invalid``.
+    M23 (additive): a ``mutation_set_model@1`` handle gets the same shape from ``sequence_ga_jobs.set_model_receptor``
+    (its one ``structures`` key is ``side``); the ``receptor_source`` strings and this M21 path are unchanged."""
+    if _set_model(run, source["mutation_model"]):
+        from .sequence_ga_jobs import set_model_receptor
+
+        return set_model_receptor(run, source)
     from . import mutation_model_bundle as mmb
 
     try:
@@ -800,8 +816,8 @@ def store_result(run: Any, job: dict[str, Any], attempt_id: str, content: dict[s
 
 # ----------------------------------------------------------------- validated reads (never run anything)
 def producer(run: Any, handle: str) -> dict[str, Any]:
-    """The earliest completed publication of ``handle``: a ``qvina_dock_v1`` job or an M19 batch row (else an
-    evidence error)."""
+    """The earliest completed publication of ``handle``: a ``qvina_dock_v1`` job, an M19 batch row, an M22 GA
+    individual or an M23 sequence GA individual (else an evidence error)."""
     events = list(run.events.read())
     jobs = {event["job"]["job_id"]: event["job"] for event in events if event["type"] == "job_submitted"}
     created = [event for event in events if event["type"] == "object_created" and event.get("handle") == handle]
@@ -830,13 +846,19 @@ def producer(run: Any, handle: str) -> dict[str, Any]:
     # The earliest completed publication is the producer, so later ones (an M18 job and an M19 batch row can
     # publish the same handle) never change what an existing read or report was checked against.
     ga = _ga_individual_producer(events, jobs, created, handle)   # M22 (spec 7): a GA individual, additive only
-    found = [item for item in (m18, _batch_row_producer(events, jobs, created, handle), ga) if item is not None]
+    sequence = _sequence_individual_producer(events, jobs, created, handle)   # M23 (spec 8 (a)): additive only
+    found = [item for item in (m18, _batch_row_producer(events, jobs, created, handle), ga, sequence)
+             if item is not None]
     if found:
         first = min(found, key=lambda item: item["published_seq"])
         if first is ga:
             from .ligand_ga_jobs import individual_view
 
             return individual_view(run, ga)
+        if first is sequence:
+            from .sequence_ga_jobs import individual_view as sequence_individual_view
+
+            return sequence_individual_view(run, sequence)
         return first
     raise DockingEvidenceError("object has no completed qvina_dock_v1 publication")
 
@@ -908,6 +930,39 @@ def _ga_individual_producer(events: list[dict[str, Any]], jobs: dict[str, Any], 
             return {"job_id": job["job_id"], "attempt_id": attempt, "job": job, "created_seq": created[0]["seq"],
                     "published_seq": (summary[0] if summary else item)["seq"], "eval_index": item.get("eval_index"),
                     "candidate_id": cid}
+    return None
+
+
+def _sequence_individual_producer(events: list[dict[str, Any]], jobs: dict[str, Any], created: list[dict[str, Any]],
+                                  handle: str) -> dict[str, Any] | None:
+    """M23: an individual (or the wild-type reference row) of a ``sequence_ga_dock_v1`` attempt published this M18
+    result (reservation < verified cleanup < ``sequence_ga_individual_published`` naming it as ``result_handle``).
+    The completion point is the GA summary publication when there is one, else the individual publication. ``job`` is
+    the GA job here; the caller swaps in the individual's rebuilt M18 view (``sequence_ga_jobs.individual_view``,
+    which also checks the model's own publication) only when this is the earliest publication."""
+    from . import sequence_ga_constants as SC
+
+    for item in events:
+        if item["type"] != SC.INDIVIDUAL_EVENT or item.get("result_handle") != handle:
+            continue
+        job = jobs.get(item.get("job_id"))
+        attempt = item.get("attempt_id")
+        if job is None or job.get("protocol_id") != SC.PROTOCOL or job.get("tool_id") != SC.TOOL:
+            continue
+        reserved = [event for event in events if event["type"] == "budget_reserved" and
+                    event.get("attempt_id") == attempt and event.get("tool") == SC.TOOL]
+        cleaned = [event for event in events if event["type"] == "job_cleanup_verified" and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event.get("group_empty") is True]
+        summary = [event for event in events if event["type"] == SC.SUMMARY_EVENT and
+                   event.get("job_id") == job["job_id"] and event.get("attempt_id") == attempt and
+                   event["seq"] > item["seq"]]
+        if (len(reserved) == 1 and cleaned and created and type(item.get("key")) is str and
+                type(item.get("model_handle")) is str and reserved[0]["seq"] < cleaned[0]["seq"] < item["seq"] and
+                created[0]["seq"] < item["seq"]):
+            return {"job_id": job["job_id"], "attempt_id": attempt, "job": job, "created_seq": created[0]["seq"],
+                    "published_seq": (summary[0] if summary else item)["seq"], "key": item["key"],
+                    "model_handle": item["model_handle"]}
     return None
 
 

@@ -551,3 +551,22 @@ def test_validation_does_not_mutate(synthetic):
     before = copy.deepcopy(synthetic.summary)
     synthetic.validate()
     assert synthetic.summary == before
+
+
+def test_a_null_box_only_with_a_ligand_or_box_refusal_of_the_reference_row():
+    """T5: a range box over a ligand neither the server nor RDKit reads has no box; the summary keeps null only when
+    the reference row's docking refused the ligand or the box (the M18 ligand_* / box_* reasons)."""
+    scores = dict(VECTORS["s4_tiny_synthetic"]["scores"])
+    ga = VECTORS["s4_tiny_synthetic"]["ga"]
+    for reason, allowed in (("ligand_unparseable", True), ("box_invalid", True), ("receptor_prep_failed", False)):
+        scores[SC.REFERENCE_KEY] = {"state": "failed", "reason_code": reason, "score": None}
+        world = _oracle_world(ga, scores)
+        summary = {**copy.deepcopy(world.summary), "box": None}
+        if allowed:
+            assert world.validate(summary)["box"] is None
+        else:
+            with pytest.raises(GB.SequenceGaEvidenceError, match="box"):
+                world.validate(summary)
+    with pytest.raises(GB.SequenceGaEvidenceError, match="box"):   # a scored run always has its box
+        _oracle_world(ga, VECTORS["s4_tiny_synthetic"]["scores"]).validate(
+            {**copy.deepcopy(_oracle_world(ga, VECTORS["s4_tiny_synthetic"]["scores"]).summary), "box": None})

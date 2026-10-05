@@ -304,3 +304,34 @@ def test_validation_does_not_mutate_its_inputs(reference):
     before, ref_before = copy.deepcopy(content), copy.deepcopy(reference[0])
     _validated(content, cif, reference[0])
     assert content == before and reference[0] == ref_before
+
+
+# ---------------------------------------------------------------- T5: the check without the reference model (M18 path)
+def _alone(content, cif, **changes):
+    options = {"run_id": SF.RUN_ID, "candidate_set_handle": TINY_HANDLE, "candidate_set": TINY, "structure_cif": cif,
+               **changes}
+    return SM.validated_model_alone(content, **options)
+
+
+def test_validated_model_alone_checks_everything_but_the_reference_relations(reference):
+    content, cif = _mutant(reference, key="1", variants={68: "HID"})
+    assert _alone(content, cif) == content == _validated(content, cif, reference[0])
+    assert _alone(*reference) == reference[0]                           # a wild-type model: the full check
+    # The relations to the reference model are what the full check adds (labeled: a recorded difference changed).
+    changed = copy.deepcopy(content)
+    changed["protonation_differences"][0]["mutant"] = "HIP"
+    assert _alone(changed, cif) == changed
+    _refused(changed, cif, reference[0])
+    # Everything else is still refused without the reference.
+    for change in (lambda c: c.__setitem__("reference_structure_sha256", None),
+                   lambda c: c.__setitem__("limitations", [MK.L1, MK.L3]),
+                   lambda c: c["mutations"][0].__setitem__("to", "A"),
+                   lambda c: c["structures"]["mutant"].__setitem__("structure_sha256", "0" * 64),
+                   lambda c: c["structures"]["mutant"].__setitem__("sasa", 0.0),
+                   lambda c: c.__setitem__("score", 0.0)):
+        bad = copy.deepcopy(content)
+        change(bad)
+        with pytest.raises(SM.ModelInvalid):
+            _alone(bad, cif)
+    with pytest.raises(SM.ModelInvalid):
+        _alone(content, cif + b" ")

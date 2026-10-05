@@ -74,6 +74,9 @@ OBSERVATION_KEYS = frozenset({"state", "reason_code", "model_handle", "result_ha
 STATUS_KEYS = frozenset({"state", "reason_code", "stage"})
 CITED = ("key", "mutations", "pick_index", "state", "reason_code", "score", "model_handle", "result_handle")
 OUTSIDE_STOPS = frozenset({"time_exhausted", "cancelled", "worker_failed", "resource_exceeded"})
+# T5: a null summary box (a range box over a ligand neither the server nor RDKit reads) is only possible when the
+# reference row's docking refused the ligand or the box (the M18 ligand_* / box_* reasons).
+BOXLESS_REASONS = tuple(reason for reason in SC.DOCKING_FAILURE_REASONS if reason.startswith(("ligand_", "box_")))
 REASONS_BY_STATE = {"scored": (None,), "null_result": (None,), "failed": SC.FAILURE_REASONS}
 
 
@@ -285,7 +288,11 @@ def _slot_counts(ga: dict[str, Any], carried: int) -> dict[str, int]:
     return {"slots": slots, "crossover": c, "edit": slots - r - c, "random": r}
 
 
-def _check_box(box: Any, request: dict[str, Any]) -> None:
+def _check_box(box: Any, request: dict[str, Any], reference: Any) -> None:
+    if box is None:   # T5: no box exists only when neither the server nor RDKit read the ligand (a range box)
+        _require(request["source"] != "manual" and type(reference) is dict and reference.get("state") == "failed" and
+                 reference.get("reason_code") in BOXLESS_REASONS, "box: null only for a ligand or box refusal")
+        return
     _require(type(box) is dict and set(box) == {"center_A", "size_A", "source", "margin_A"} and
              box["source"] == request["source"] and
              all(type(box[key]) is list and len(box[key]) == 3 and all(_float(x) for x in box[key])
@@ -544,7 +551,7 @@ def _check(content: Any, selected: dict[str, Any], candidate_set: dict[str, Any]
              content["call_key"] == GI.call_key(selected, pins) and
              content["conditions_sha256"] == GI.conditions_sha256(selected, pins),
              "selection hash, call key and conditions")
-    _check_box(content["box"], args["box"])
+    _check_box(content["box"], args["box"], content["reference"])
     reserved = GI.reserved_evaluations(ga)
     _require(content["reserved_evaluations"] == reserved and
              content["reserved_units"] == GI.reserved_units(ga) == SC.UNITS_PER_EVALUATION * (reserved + 1),
