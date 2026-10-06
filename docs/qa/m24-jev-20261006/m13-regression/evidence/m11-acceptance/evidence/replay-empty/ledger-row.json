@@ -1,0 +1,57 @@
+{
+  "schema": "m11_case_ledger_row@1",
+  "cases": [
+    "H14",
+    "H16"
+  ],
+  "mode": "replay",
+  "harnessMode": "replay",
+  "evidenceType": "real_electron_offscreen",
+  "status": "pass",
+  "harnessStatus": "observed_unreviewed",
+  "error": null,
+  "buildId": "4GG2G1rPmVlN3v96FKAEK",
+  "harness": {
+    "chemicalFlowSha256": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+    "ledgerHelperSha256": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced"
+  },
+  "fixtures": [],
+  "provenanceLabels": [],
+  "fixtureLabels": [
+    "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent"
+  ],
+  "runId": "run_9003b9ff55d3456298f22465f1100a7d",
+  "handles": {
+    "result": "obj://run_9003b9ff55d3456298f22465f1100a7d/chemical_interaction_set/cd6794d88475d9111897e332b7ced3f2a26bd92371d85e1bf7fecd8f26c310cc",
+    "source": "obj://run_9003b9ff55d3456298f22465f1100a7d/chemical_structure/188a7c02a5f4803893d97c18c5e3f9d4434246443c1b5741aaf2351e4d68673b"
+  },
+  "expectCapability": "worker_missing",
+  "nonLoopbackRequests": 0,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 42,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/regressions/m13/m11-acceptance/evidence/replay-empty/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    }
+  },
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/regressions/m13/m11-acceptance/evidence/replay-empty",
+  "evidenceFile": "chemical-evidence.json",
+  "startedAt": "2026-10-06T15:37:16.634Z",
+  "finishedAt": "2026-10-06T15:37:32.210Z"
+}

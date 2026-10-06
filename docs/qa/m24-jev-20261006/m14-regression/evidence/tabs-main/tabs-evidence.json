@@ -1,0 +1,70 @@
+{
+  "schema": "m14_tabs_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_bafa588d9fbe4f0da236b0de9b678406",
+    "B": "run_b84ccea06b6e498faa92bf2db294ac5d"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    },
+    {
+      "name": "public_1ubq.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "provenance": "public PDB entry 1UBQ (repository fixture; OpenMM input)"
+    }
+  ],
+  "handles": {
+    "prepared": "obj://run_bafa588d9fbe4f0da236b0de9b678406/prepared_structure/449a3bf733d9f9cee661218611802e4ff8181d71fac80b296bb5f86aab18dcfc",
+    "workflow": {
+      "plan": "obj://run_bafa588d9fbe4f0da236b0de9b678406/analysis_plan/f1b620ace32c7e332c8f7ed43d7f2fa1087332031e0a54926b8a1cb32b703034",
+      "stopped": "exec_92bbf0acb293488698eb5bcff8c4df22",
+      "complete": "exec_18e5ae89e5c449938bb95f1f6b9eda30",
+      "summary": "obj://run_bafa588d9fbe4f0da236b0de9b678406/workflow_summary/fa6c9b292e5c0ac02c8cf616dd2afb731e2f490a0c09d341bb43115666fde603",
+      "reports": [
+        "obj://run_bafa588d9fbe4f0da236b0de9b678406/report_manifest/8b6f490f7b0cdfffef2a287aec470ddb3e5e5060a5fb5deda971b1d5822dcc0d",
+        "obj://run_bafa588d9fbe4f0da236b0de9b678406/method_report_manifest/57dd45d2c829f7b05c416de8cd630c5e5f7035c9d9b68cbd52cbd43381088c3a"
+      ]
+    },
+    "figure": {
+      "scene": "obj://run_bafa588d9fbe4f0da236b0de9b678406/viewer_scene/8781811a2b34faf3d0caa494826f4680ae5bfad17fa7e7e93f30c5aed12d39e2",
+      "figure": "obj://run_bafa588d9fbe4f0da236b0de9b678406/viewer_figure/dd47305acb74fbadeb8116cdf3688a8a2d4fc84a56c28a4fe62767ff37fe82a5"
+    },
+    "openmm": {
+      "jobId": "job_e0981d05e1094e2b8d0128ca1faab917",
+      "prepared": "obj://run_b84ccea06b6e498faa92bf2db294ac5d/prepared_structure/526cfac7c6668e6d9dc4f67ba9218a33328073f2fff06f567815947362de88fb"
+    }
+  },
+  "fixtureLabels": [
+    "QA fault fixture (labeled renderer route, not a scientific value): reports list read failure",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_bafa588d9fbe4f0da236b0de9b678406",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_b84ccea06b6e498faa92bf2db294ac5d",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-06T15:09:58.309Z",
+  "finishedAt": "2026-10-06T15:10:47.320Z",
+  "error": null,
+  "requestCount": 464
+}

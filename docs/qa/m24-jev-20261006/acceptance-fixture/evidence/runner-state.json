@@ -1,0 +1,53 @@
+{
+  "buildCommands": {
+    "typecheck": 0,
+    "build": 0,
+    "sourceSha256": "09eeffe571d04a2f6513b375d5e0fd8138f8157c1defb01d667dff871460054e"
+  },
+  "build": {
+    "buildId": "4GG2G1rPmVlN3v96FKAEK",
+    "gitHead": "81fa17583eb355d6d9b9d4b239f354e49568eba9",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-06T14:41:38.250160+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-flow.cjs": "9e68cfe2292b2f4d3ec7802d24c001c704d84e44eee77e8a96d85088ebbfeed1",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "03b316c610c567af6c1c13b8069577b4c264bd2c007c426d625fdc21b3a96455",
+    "runnerSha256": "9e839455a10619d2d770ead97501445b193c7aa8864c23f94d50ad33a31e0a38"
+  },
+  "services": [
+    {
+      "name": "fixture-backend",
+      "runs": "<repo>/runs/m24-acceptance-20261006/runs",
+      "control": "<repo>/runs/m24-acceptance-20261006/fixture-control",
+      "startedAt": "2026-10-06T14:41:42.542827+00:00"
+    }
+  ],
+  "environment": {
+    "workerPython": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m24_jev_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "scripts": [
+        "good",
+        "good_no_extras",
+        "alias_outside",
+        "http_500",
+        "no_usage",
+        "model_mismatch",
+        "slow"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "jevAvailable": true,
+    "setup": true
+  }
+}

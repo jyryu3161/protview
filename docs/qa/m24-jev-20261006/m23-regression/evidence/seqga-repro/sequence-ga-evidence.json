@@ -1,0 +1,558 @@
+{
+  "schema": "m23_sequence_ga_evidence@1",
+  "mode": "repro",
+  "runs": {
+    "R1": "run_9dd06cb23f784c95ad33311b237b5005",
+    "R2": "run_7fe17f24a481472a9ade2b98c3f07a28"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+      "bytes": 1240,
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/m20-candidate-set-1ubq-tiny.json",
+      "bytes": 4741,
+      "sha256": "e591b1b947a45983e681b4297b0b680964385497f7b296227e434ceee1c7aa78"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/expected.json",
+      "bytes": 331744,
+      "sha256": "6872587e87b784ace709d17f8ec4d09d71be945ef863209b0e84946ea0156d95"
+    }
+  ],
+  "handles": {},
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_9dd06cb23f784c95ad33311b237b5005",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_7fe17f24a481472a9ade2b98c3f07a28",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_9dd06cb23f784c95ad33311b237b5005/prepared_structure/1ef3022b9d53e9331ddeac9b402bea5dde108a687b452779aa7e9d511ef4d820"
+      },
+      {
+        "checked": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/prepared_structure/af7c1a31b7732989654f51e562c7d9c64b144aa665c57212a53b91e1641f3de1"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      },
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      }
+    ],
+    "mutation-add-user": [
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      },
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      }
+    ],
+    "mutation-pick-protect": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "ILE A:3 · label A:3"
+      }
+    ],
+    "mutation-add-protect": [
+      {
+        "count": 1
+      },
+      {
+        "count": 1
+      }
+    ],
+    "mutation-allowed-none": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-allowed": [
+      {
+        "checked": "AW"
+      },
+      {
+        "checked": "AW"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "docking-file-ligand": [
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      },
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      }
+    ],
+    "docking-import": [
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      },
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      }
+    ],
+    "sequence-ga-prereq-refresh": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "handle": "obj://run_9dd06cb23f784c95ad33311b237b5005/mutation_candidate_set/ab3e119edf42b50748f8baa7797fb0cad09fdb84689a0aaa872b4a58e2574568"
+      },
+      {
+        "handle": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/mutation_candidate_set/7f6c1eb3343aec17382c1221248e0e83d72e4546414f59534e9e0591a1ade17f"
+      }
+    ],
+    "sequence-ga-sdf": [
+      {
+        "handle": "obj://run_9dd06cb23f784c95ad33311b237b5005/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      }
+    ],
+    "sequence-ga-box-source": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-margin": [
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      }
+    ],
+    "sequence-ga-seed": [
+      {
+        "value": "20261004"
+      },
+      {
+        "value": "20261004"
+      }
+    ],
+    "sequence-ga-exhaustiveness": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-num-modes": [
+      {
+        "value": "5"
+      },
+      {
+        "value": "5"
+      }
+    ],
+    "sequence-ga-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "sequence-ga-confirm-selection": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-confirm-hydrogen": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-param-seed": [
+      {
+        "value": "21"
+      },
+      {
+        "value": "21"
+      }
+    ],
+    "sequence-ga-param-population_size": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-param-generations": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-param-elite_count": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "sequence-ga-param-tournament_size": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-crossover_fraction": [
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      }
+    ],
+    "sequence-ga-param-random_fraction": [
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.25"
+      }
+    ],
+    "sequence-ga-param-max_mutations": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "sequence-ga-param-patience": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-max_new_evaluations": [
+      {
+        "value": "32"
+      },
+      {
+        "value": "32"
+      }
+    ],
+    "sequence-ga-param-total_s": [
+      {
+        "value": "7200"
+      },
+      {
+        "value": "7200"
+      }
+    ],
+    "sequence-ga-preflight": [
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      }
+    ],
+    "sequence-ga-limit-approve": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-job-approve": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-job-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "startedAt": "2026-10-06T14:47:53.475Z",
+  "notObserved": [],
+  "repro": [
+    {
+      "label": "R1",
+      "run": "run_9dd06cb23f784c95ad33311b237b5005",
+      "set": "obj://run_9dd06cb23f784c95ad33311b237b5005/mutation_candidate_set/ab3e119edf42b50748f8baa7797fb0cad09fdb84689a0aaa872b4a58e2574568",
+      "sdf": "obj://run_9dd06cb23f784c95ad33311b237b5005/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+      "job": "job_b74df65e7f194003b7609140117fbac7",
+      "summary": "obj://run_9dd06cb23f784c95ad33311b237b5005/sequence_ga_result/75fd4fc8bc32d0b8fbce2fe9c70471998689746c9bac15baa4fa1341e499b3c1",
+      "args": {
+        "candidate_set": "obj://run_9dd06cb23f784c95ad33311b237b5005/mutation_candidate_set/ab3e119edf42b50748f8baa7797fb0cad09fdb84689a0aaa872b4a58e2574568",
+        "ligand": {
+          "source": "sdf",
+          "sdf_handle": "obj://run_9dd06cb23f784c95ad33311b237b5005/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+        },
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 20261004,
+          "exhaustiveness": 4,
+          "num_modes": 5,
+          "energy_range": 3
+        },
+        "selection_policy": "protein_only",
+        "hydrogen_policy": "rebuild_pH7",
+        "acknowledgement": {
+          "keep_input_protonation": true,
+          "tool_assigned_types_charges": true,
+          "rigid_no_optimization": true
+        },
+        "ga": {
+          "seed": 21,
+          "population_size": 4,
+          "generations": 4,
+          "elite_count": 1,
+          "tournament_size": 2,
+          "crossover_fraction": 0.5,
+          "random_fraction": 0.25,
+          "max_mutations": 3,
+          "patience": 2,
+          "max_new_evaluations": 32,
+          "total_s": 7200
+        }
+      },
+      "timeoutS": 7800,
+      "status": "done"
+    },
+    {
+      "label": "R2",
+      "run": "run_7fe17f24a481472a9ade2b98c3f07a28",
+      "set": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/mutation_candidate_set/7f6c1eb3343aec17382c1221248e0e83d72e4546414f59534e9e0591a1ade17f",
+      "sdf": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+      "job": "job_1cbcde9548994eb6add5caf91dcb23c7",
+      "summary": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/sequence_ga_result/5bb101561eda9ac74333dcf0c8c5da49457a1d9e908cf5a25b22f9c0ba9e8ebd",
+      "args": {
+        "candidate_set": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/mutation_candidate_set/7f6c1eb3343aec17382c1221248e0e83d72e4546414f59534e9e0591a1ade17f",
+        "ligand": {
+          "source": "sdf",
+          "sdf_handle": "obj://run_7fe17f24a481472a9ade2b98c3f07a28/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+        },
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 20261004,
+          "exhaustiveness": 4,
+          "num_modes": 5,
+          "energy_range": 3
+        },
+        "selection_policy": "protein_only",
+        "hydrogen_policy": "rebuild_pH7",
+        "acknowledgement": {
+          "keep_input_protonation": true,
+          "tool_assigned_types_charges": true,
+          "rigid_no_optimization": true
+        },
+        "ga": {
+          "seed": 21,
+          "population_size": 4,
+          "generations": 4,
+          "elite_count": 1,
+          "tournament_size": 2,
+          "crossover_fraction": 0.5,
+          "random_fraction": 0.25,
+          "max_mutations": 3,
+          "patience": 2,
+          "max_new_evaluations": 32,
+          "total_s": 7200
+        }
+      },
+      "timeoutS": 7800,
+      "status": "done"
+    }
+  ],
+  "budget": {
+    "run_9dd06cb23f784c95ad33311b237b5005": {
+      "wall_clock_s": {
+        "used": 127.27225204138085,
+        "limit": 7860.263545166235
+      },
+      "expensive_calls": {
+        "used": 28,
+        "limit": 28
+      },
+      "external_tokens": {
+        "used": 0,
+        "limit": 120000
+      },
+      "usd": {
+        "used": 0,
+        "limit": 2
+      }
+    },
+    "run_7fe17f24a481472a9ade2b98c3f07a28": {
+      "wall_clock_s": {
+        "used": 127.00445549981669,
+        "limit": 7860.046079583
+      },
+      "expensive_calls": {
+        "used": 28,
+        "limit": 28
+      },
+      "external_tokens": {
+        "used": 0,
+        "limit": 120000
+      },
+      "usd": {
+        "used": 0,
+        "limit": 2
+      }
+    }
+  },
+  "finishedAt": "2026-10-06T14:52:47.644Z",
+  "error": null,
+  "requestCount": 451
+}

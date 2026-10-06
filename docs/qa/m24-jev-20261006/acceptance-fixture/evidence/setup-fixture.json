@@ -1,0 +1,83 @@
+{
+  "schema": "m24_jev_setup@1",
+  "label": "fixture",
+  "runs": {
+    "A": {
+      "run": "run_d7a93fd16b5546838cee7f1dd1c1d74c",
+      "sets": {
+        "ligand": {
+          "handle": "obj://run_d7a93fd16b5546838cee7f1dd1c1d74c/ligand_candidate_set/57e7d20a3210ef6029b5cd4386d82338ac721ad812febb7914656b379d3b0307",
+          "candidates": 10,
+          "inspection": "obj://run_d7a93fd16b5546838cee7f1dd1c1d74c/ligand_inspection/a533d8b41e2ede86d279ecc57e419b83336d249ccbd6612d6c96cd087cbff128",
+          "inputs": {
+            "parent": "backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+            "blocks": "backend/tests/fixtures/ligand_ga/synthetic-ga-small-blocks.smi",
+            "site_atoms": [
+              22
+            ],
+            "use_fixed": true
+          }
+        },
+        "ubq": {
+          "handle": "obj://run_d7a93fd16b5546838cee7f1dd1c1d74c/mutation_candidate_set/66aa142f094d2587849ce421f7e2411a1de1776ce7cacd5dd3ae42bf9f91e1d7",
+          "candidates": 22,
+          "structure": "obj://run_d7a93fd16b5546838cee7f1dd1c1d74c/prepared_structure/9ffc49f33c0da657334a71e3f8502fb5972f0ae7323c184722281e3ed1395e6b",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1ubq.cif",
+            "positions": 22,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        },
+        "mq4": {
+          "handle": "obj://run_d7a93fd16b5546838cee7f1dd1c1d74c/mutation_candidate_set/fb78d0e3293b2ee4d0affdc09023c5285a73a7376493ff5077e56b50d94f1644",
+          "candidates": 24,
+          "structure": "obj://run_d7a93fd16b5546838cee7f1dd1c1d74c/prepared_structure/fe566347fd9a28035aa4fcdddcc14f189697153999643f6f96593d0fab110682",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1mq4.cif",
+            "positions": 24,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        }
+      }
+    },
+    "B": {
+      "run": "run_7e68ccea9c544ab68bf609f5348e87e4",
+      "sets": {
+        "ubq": {
+          "handle": "obj://run_7e68ccea9c544ab68bf609f5348e87e4/mutation_candidate_set/c2916a625f9e90f42c438d7f0d013f088e72d53a84d3c5138286a68b9976f1ee",
+          "candidates": 22,
+          "structure": "obj://run_7e68ccea9c544ab68bf609f5348e87e4/prepared_structure/c671b7bf20299708c09b9c0643b025e940d337ea311b6518ec4627bfea759866",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1ubq.cif",
+            "positions": 22,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        }
+      }
+    },
+    "C": {
+      "run": "run_915ce3e6493348cbb491855be966d32f",
+      "sets": {
+        "ubq": {
+          "handle": "obj://run_915ce3e6493348cbb491855be966d32f/mutation_candidate_set/0e2ec87894435652c7e7c7f64c910f78e8d1f86937ae3cf624bc96a905d25c7d",
+          "candidates": 22,
+          "structure": "obj://run_915ce3e6493348cbb491855be966d32f/prepared_structure/eed1f7b075f850da981ee0a5f361b8e9ebce344233424895e19e6ae4d1f7a799",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1ubq.cif",
+            "positions": 22,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "madeAt": "2026-10-06T14:41:43.832514+00:00"
+}
