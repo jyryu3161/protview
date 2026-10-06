@@ -1,6 +1,6 @@
 # M24 JEV 과학 데이터 전송 통로 완료 기록
 
-- 판정: **완료** (2026-10-06). main 병합: 사용자 결정 대기.
+- 판정: **완료** (2026-10-06). main 병합: `2e0f2b9`(사용자 승인, `--no-ff`, push 없음).
 - 브랜치: `dryforge/m24-jev-egress` (`phase/m24-jev-egress` = main `71ba769`에서 분기). M23은 시작 전에 main에 병합되어 있었다(`5d8481f`, 기록 `1451f24`, Stop 훅 그룹 열넷 `71ba769`).
 - 고정 소스: `5218130`(첫 실호출 보정 뒤 예약식·실행기 수정 커밋). 고정 뒤 소스 변경은 없다. 고정 뒤 커밋은 증거(`4f96697`·`17e183b`·`81fa175`·`36961cc`)와 기록 문서뿐이다.
 - 수락 증거: `docs/qa/m24-jev-20261006/`(`preflight.txt` 착수 확인, `gate-backend.txt` 백엔드 게이트, `acceptance-fixture/` 수락(fixture 단계), `acceptance-calibrate/` 첫 실호출, `acceptance-live/` 나머지 실호출, `m23-regression/`…`m13-regression/` 회귀, 개발 중 증거 `t8-*`·`t9-*`). 256 KiB를 넘는 텍스트 증거 53개(333,391,605 bytes)는 결정 0020에 따라 Git 제외 artifacts(`frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/export-full/`)로 옮겼다(`m13-regression` 51개, `m14-regression` 1개, `m15-regression` 1개, 해시는 각 폴더의 `ARCHIVED-EVIDENCE.sha256`).
@@ -108,5 +108,5 @@
 - **문서 검토: issues 5건 → 모두 반영**. 가리키는 절이 없던 "JSON 전용 POST" 함정(→ `docs/engineering-notes.md`에 절 추가), 예약 수치(현재 식 6,456 대 첫 식 5,866), 입장 사유 개수 표기(결정 0032: 9개 + `projection_invalid`), 6회 관찰을 현재형 법칙으로 쓴 findings 제목(→ 관찰로), `transport_failed` 뒤 정산이 없다는 이벤트 순서. 반영한 advisory: 결정 0032의 덧붙인 기존 코드·테스트 서술, 실행 잠금 예외 문장(`backend/AGENTS.md`), `missing_configuration` pin 범위, `budget` 표기, `audit_id` 거절 설명, 상태 문서의 API·테스트 수 표기, `docs/operations.md`의 낡은 그룹 합집합 수치, 결정의 "하지 않은 것"이 영구 금지로 읽히지 않게 M24 범위 밖 표기.
 
 ## 남은 일
-- main 병합은 사용자 결정 대기(`--no-ff`, push 안 함).
+- main 병합 `2e0f2b9`(사용자 승인, `--no-ff`). push하지 않았다.
 - 새 미해결 문제(`docs/tracking/findings.md`): 기준 없는 질문의 첫 후보 선택, 보내지 않음의 `delivery_unknown` 도출, `_finish`의 전이 잠금만 쓰는 예외와 읽기 경합, 서열 구간으로 단백질 정체 추정, HETATM 변형 잔기 제외, 화학 POST의 JSON 검사 없음, 수락 QA에서 만들 수 없는 사례, 실호출 대장의 root 의존, M24 밖의 낡은 문서 문장.
