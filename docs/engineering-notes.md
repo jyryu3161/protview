@@ -477,7 +477,7 @@
 - **대응**: 실제로 보냈는지는 감사로 판단한다: `prepared` 저장 실패는 게이트가 음수 정산 뒤 `dispatch_skipped`(`reason_code: "prepared_not_recorded"`, `transport_invoked=false`)를 쓰려 하고(디스크가 그것도 못 쓰면 미정산 예약이 남아 재시작 때 `usage_unknown` 멈춤), 승인 대조 실패는 감사가 없다. 두 경우 모두 `jev_science_dispatch_started`가 없어 전송 상한을 쓰지 않는다. 응답을 받은 뒤 `_finish`가 실패하면(`response_received`는 있음) `outcome_not_recorded`다. 닫힌 이유 집합을 넓히려면 사용자 결정이 필요하다.
 
 ### JEV POST는 `application/json`이 아니면 본문을 읽기 전에 415다 (M24)
-- **증상**: `Content-Type`이 없거나 `text/plain`·폼·multipart인 `POST /runs/{id}/jev/consent`·`/jev/preview`·`/jev/sends`가 415 `unsupported_media_type`을 받고 어떤 이벤트·상태도 바뀌지 않는다. 같은 본문을 FastAPI 본문 모델 라우트(예: `/viewer/online`)나 M11–M23 화학·도킹·GA 라우트에 보내면 받아 준다.
+- **증상**: `Content-Type`이 없거나 `text/plain`·폼·multipart인 `POST /runs/{id}/jev/consent`·`/jev/preview`·`/jev/sends`가 415 `unsupported_media_type`을 받고 어떤 이벤트·상태도 바뀌지 않는다. M11–M23 원시 본문 라우트(`_chemical_json(await _bounded_chemical_body(...))`: 화학·도킹·GA)는 같은 본문을 받아 주고, FastAPI 본문 모델 라우트(예: `/viewer/online`)는 415가 아니라 422로 거절한다(FastAPI `strict_content_type` 기본값).
 - **원인**: 다른 사이트 페이지의 단순 POST(사전 요청 없음)가 과학 데이터 전송 동의·전송 라우트를 막지 못하는 성질을 막으려고 `_jev_request`(`api/app.py`)가 쿼리 검사 다음, 본문을 읽기 전에 매개변수(`; charset=utf-8`)를 허용하는 대소문자 무시 `application/json`만 받는다.
 - **대응**: 테스트·하네스·스크립트 클라이언트는 `content-type: application/json`을 붙인다(프런트 `jsonPost`는 이미 붙인다). 원시 본문으로 JSON 형식·크기 거절(422·413)을 시험하는 테스트도 이 헤더가 있어야 거기까지 간다. 도구 호출(`POST /runs/{id}/commands`)은 이 검사를 받지 않는다. 다른 라우트도 같은 검사가 필요해지면 공통 요청 헬퍼로 합친다(`docs/tracking/findings.md`).
 
