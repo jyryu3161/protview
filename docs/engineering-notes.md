@@ -450,6 +450,54 @@
 - **실측**: 훅 진입점(`echo '{}' | python3 .codex/hooks/stop.py`)을 끝까지 두 번 돌려 둘 다 통과, 총 342.1초·341.5초, 그룹 약 256–340초(가장 긴 그룹 `test_chemical_interactions.py`). 많은 파일이 자식 프로세스·스레드를 써서 CPU가 벽시계보다 크다(예: 파일별 측정에서 `test_mutation_model_worker.py` 64초에 CPU 300초, `test_sequence_ga_worker.py` 203초에 CPU 501초). 그래서 그룹은 벽시계와 CPU를 함께 보고 맞췄고, 같은 열네 그룹을 동시에 돌렸을 때 그룹 CPU는 295–725초였다.
 - **새 테스트를 더할 때**: 새 백엔드 테스트 파일은 저절로 나머지 그룹(약 290초)에 들어가므로 실제 엔진을 돌리는 파일이면 다른 그룹에 넣거나 새 그룹을 만든다. 파일 하나가 그룹 제한에 가까워지면 테스트 단위로 나누되 모듈 범위·세션 fixture가 그룹마다 다시 만들어지는 비용을 잰다.
 
+### 과학 전송이 도는 동안 같은 run의 다른 변경 요청은 503 busy다 (M24)
+- **증상**: 전송이 응답을 기다리는 동안 같은 run의 `POST /commands`(`build_jev_projection` 포함)·작업 시작·보고서 만들기가 503 busy를 받는다.
+- **원인**: `request_science`는 `request_viewer`처럼 HTTP 동안 run 실행 잠금(`Run._mutation()`)을 쥔다(제한 시간 최대 15초).
+- **대응**: 전송 라우트는 잠금 전에 프로세스 메모리 집합 `ACTIVE_SENDS`를 보고 409 `send_in_progress`를 돌려준다(두 번째 전송이 503으로 새지 않음). 상태·미리보기·목록·상세 읽기는 잠금 없이 이벤트 로그를 한 번 읽고, 동의 라우트는 짧은 전이 잠금(`_transition()`)만 쓴다. 화면은 전송 중 "보낼 내용 만들기"를 막는다. 다른 요청이 잠금을 쥐고 있으면 전송은 503 `busy`이고 승인 이벤트도 쓰지 않는다(승인은 잠금 안의 콜백이 쓴다). 이벤트 추가가 매번 로그 전체를 다시 읽으므로 큰 로그에서 전송 한 번이 async 라우트의 이벤트 루프를 잠깐 막는다(착수 확인: 50 MB에서 약 1.5초, 뷰어와 같은 성질).
+
+### 전송 중 메모리의 `run.cancelled`는 갱신되지 않는다 (M24)
+- `Run.cancel()`은 취소 표시 파일과 `cancel_requested` 이벤트만 쓰고, 전송이 쥔 run 객체의 메모리 플래그 `cancelled`는 그대로였다(착수 확인 실측 False). 그래서 게이트의 `cancelled` 거절은 취소 이벤트 또는 표시 파일로(`jev_sends.cancel_seen`), 늦은 응답은 그 전송의 `jev_science_dispatch_started` 뒤에 오는 취소·동의 끄기 이벤트의 순서로만(`late_arrival`) 판정한다. 시계·메모리 플래그를 쓰지 않는다.
+
+### 과학 예약에는 외부 토큰과 USD가 둘 다 있어야 하고, 환불은 정산이 먼저다 (M24)
+- `budget_reserved`에 `expensive_calls` 없이 `external_tokens`·`usd`만 담아도 `_refresh`·`_settle_egress`·`_reconcile_egress`·`would_exceed`는 그대로 동작하지만 두 축 중 하나라도 빠지면 정산이 `KeyError`다(`reservation[axis]`).
+- 예약 뒤 보내지 못하면 음수 delta `egress_budget_settled`를 먼저 쓰고 `dispatch_skipped` 감사를 쓴다(`request_viewer`와 같은 순서). 감사를 먼저 쓰면 그 사이 충돌이 미정산 예약 = 재시작 때 `usage_unknown` 멈춤이 된다. 정산 뒤·감사 전 충돌은 재시작 때 `wall_charged`(egress) 하나가 더 붙을 뿐 멈추지 않는다. 비싼 계산 축이 없으므로 `_reconcile_egress`가 "보내지 않음"을 아는 표지는 `dispatch_skipped` 감사뿐이다.
+
+### 새 백엔드 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다 (M24)
+- 기존 증액 AST 테스트 셋(`test_docking_batch_budget.py`·`test_ligand_ga_budget.py`·`test_sequence_ga_budget.py`)은 `backend/mw` 아래 모든 파일 본문에서 이 두 문자열을 찾아 파일 집합을 고정한다. 주석·docstring에 써도 깨진다. M24 모듈은 쓰지 않고 `test_jev_ast.py`가 새 모듈마다 확인한다.
+
+### 게이트는 승인 콜백을 부른 뒤 로그에서 승인을 다시 대조한다 (M24)
+- `request_science(gate, run, projection, send_id, *, admit)`는 `admit`가 없거나 호출할 수 없으면 아무것도 쓰기 전에 `TypeError`다. run 실행 잠금과 전이 잠금 안에서 `admit(events)`를 부르고(`run_send`의 콜백이 `jev_send_approved`를 씀, 같은 `send_id`의 승인이 이미 있으면 기존 기록을 돌려주는 경로로 빠짐), 이어서 로그에서 그 `send_id`의 첫 승인이 이 본문 해시·질문·소스·후보 수·`approved_by: "human"`과 같은지 확인한다. 다르면 `PermissionError`이고 감사·예약·키 읽기·요청이 없다(라우트는 500 `internal_error`). 그래서 다른 호출자가 생겨도 기록된 사람 승인 없이는 보내지 못하며, 호출자 자체는 AST 테스트가 라우트 하나로 묶는다.
+
+### 결과 기록(`_finish`)은 실행 잠금을 다시 잡지 않는다 (M24)
+- `request_science`가 돌아오면 run 실행 잠금이 풀린 뒤다. `_finish`는 결과 판정·제안 객체 저장·`jev_send_outcome`을 짧은 전이 잠금(`_transition()`, 기다리는 잠금)만 잡고 한다. 실행 잠금(`_mutation()`)은 다른 요청이 쥐고 있으면 기다리지 않고 busy로 실패하므로, 실제로 보낸 뒤의 결과 기록이 그 때문에 빠지지 않게 한다. `ObjectStore.put`·`EventLog.append`는 취소를 보지 않으므로 취소된 run에서도 늦은 응답의 제안 객체와 결과 이벤트가 저장되고 events-only로 다시 열린다(착수 확인 (f)).
+
+### 보내지 않았는데 기록이 `delivery_unknown`으로 읽히는 경우가 있다 (M24)
+- **증상**: `prepared` 감사 저장이 실패하거나(디스크 오류) 승인 대조가 실패하면(`PermissionError`) 라우트는 500 `internal_error`이고, 전송 기록은 `failed`/`delivery_unknown`으로 도출된다.
+- **원인**: 기록은 이벤트만으로 만든다. 승인 이벤트는 있고 결과 이벤트·dispatch 이벤트가 없으며 진행 중도 아니면 닫힌 이유 집합에서 `delivery_unknown`밖에 없다.
+- **대응**: 실제로 보냈는지는 감사로 판단한다: `prepared` 저장 실패는 게이트가 음수 정산 뒤 `dispatch_skipped`(`reason_code: "prepared_not_recorded"`, `transport_invoked=false`)를 쓰려 하고(디스크가 그것도 못 쓰면 미정산 예약이 남아 재시작 때 `usage_unknown` 멈춤), 승인 대조 실패는 감사가 없다. 두 경우 모두 `jev_science_dispatch_started`가 없어 전송 상한을 쓰지 않는다. 응답을 받은 뒤 `_finish`가 실패하면(`response_received`는 있음) `outcome_not_recorded`다. 닫힌 이유 집합을 넓히려면 사용자 결정이 필요하다.
+
+### 서열 구간 한 글자는 M20 이름 규칙을 따르고, HETATM 변형 잔기는 구간에서 빠진다 (M24)
+- 구간 글자는 M20 위치의 `one_letter` 규칙(표준 20종 + 이름 대응 10개: HID·HIE·HIP·HSD·HSE·HSP → H, CYX → C, ASH → D, GLH → E, LYN → K)이고 그 밖의 이름은 `X`다. 대응 이름을 `X`로 두면 같은 잔기의 위치 `one_letter`와 구간 글자가 어긋난다.
+- 단백질 잔기는 M20 위치 정의와 같은 ATOM 레코드(`het_flag == "A"`, 물 아님)다. MSE처럼 HETATM으로 기록된 변형 잔기는 구간 글자·이웃에 들어가지 않고(`X`로도 나오지 않음), 그 자리를 지나는 구간은 `seq_auth`가 건너뛰어 `contiguous: false`다.
+- 대상 잔기에 중원자가 없으면 이웃은 `null`(계산하지 않음)이며 빈 목록 `[]`(계산했는데 없음)과 구분한다.
+- 이웃 거리 비교 테스트는 허용 오차로 한다: NumPy 최소 거리와 `math.dist`는 1UBQ·1MQ4 단백질 잔기 쌍의 약 19%에서 마지막 비트가 다르다(최대 7.1e-15 Å). 5.0 Å 포함 여부는 모두 같고 경계까지 최소 여유는 0.00126 Å이다.
+
+### 전역 "과학 전송 허용" 표시는 `.mw-app-run` 밖에 둔다 (M24)
+- 탭 흐름(`tabs-flow.cjs`)이 `.mw-app-run` 요소의 글자가 run id와 같다고 확인하므로 표시를 그 안에 넣으면 M14 회귀가 깨진다. 표시는 형제 요소 `.mw-app-science`(`data-science-consent="on"`)이고 현재 run의 동의가 켜졌을 때만 보인다. 페이지는 run이 바뀔 때 상태를 한 번 읽고(새 폴링 없음) 그 뒤로는 JEV 영역이 읽거나 바꾼 상태(`onStatus`)를 받아 요청 순서(`scienceMarkGate`)로 늦은 답을 버린다.
+
+### 오프스크린 fixture 서버는 모듈 전역 `SCIENCE_GATE`를 바꾼다 (M24)
+- `backend/tests/offscreen_jev_fixture/server.py`는 제품 앱(`mw.api.app`)을 import한 뒤 모듈 전역 `SCIENCE_GATE`를 스크립트된 `httpx.MockTransport` 게이트(placeholder 자격 증명)로, `VIEWER_GATE`를 거절하는 게이트로, `RUNS_DIR`를 격리 폴더로 바꿔 같은 프로세스에서 uvicorn으로 띄운다. 전송 라우트가 요청마다 모듈 전역을 읽으므로 치환이 듣는다(게이트를 import 때 붙잡는 코드로 바꾸면 fixture가 실제 네트워크로 나간다). 치환하지 않은 서버만 실제 OpenRouter로 나간다.
+- 응답은 control 폴더 `script.json`의 스크립트(`good`·`good_no_extras`·`alias_outside`·`http_500`·`no_usage`·`model_mismatch`·`slow`)가 정하고 `slow`는 `release` 파일이 생길 때까지 최대 12초 붙잡아(붙잡는 동안 `inflight.json`) 전송 중 동의 끄기로 늦은 응답을 만든다. 확률·사용량은 표시된 fixture 값이며 모델 판단이 아니다. `calls.jsonl`에는 본문 SHA-256·바이트·스크립트·불리언만 남고 본문·헤더·자격 증명은 없다. run 취소에 의한 늦은 응답은 HTTP 취소 경로가 없어 백엔드 테스트로 덮는다.
+
+### 실호출은 저장소 단위 대장으로 세고, 증거만 빠진 calibrate는 `--finalize`로 마무리한다 (M24)
+- **증상**: calibrate 단계의 첫 실호출이 끝난 직후 실행기가 증거를 쓰기 전에 멈췄다(전송 상세 dict를 기록 함수에 `**`로 펼쳐 그 안의 `status` 키가 인자와 겹친 `TypeError`). 같은 단계를 다시 돌리면 실호출을 또 쓴다.
+- **대응**: 기록 함수에는 상세를 키워드 하나(`detail`)로 넘긴다. 실호출 수는 root의 `jev_science_dispatch_started` 이벤트로 확정하고 저장소 단위 대장 `runs/m24-live-ledger.json`(주 체크아웃의 Git 제외 폴더, git common dir로 찾음)에 단계 시작을 먼저, 끝에 root의 run별 수를 적는다. 단계 시작 전에 대장 합계(기록된 root를 다시 셈) + 계획이 6을 넘거나 대장을 읽을 수 없으면 아무것도 시작하지 않는다. 증거만 빠진 calibrate root는 `--phase calibrate --finalize`가 저장 파일만 읽어 증거를 다시 만들고 호출·서비스·빌드·대장 쓰기를 하지 않는다(2026-10-06 첫 실호출 root에 쓴 경로). 실패한 실호출도 1회이며 다시 시도하지 않는다.
+
+### 과학 본문은 바이트당 토큰이 뷰어 본문보다 많다 (M24)
+- M24 실호출 6회(2026-10-06, 응답 모델 모두 `typesafe/jev-1.13-20260917`, 모두 `completed`)의 본문 바이트/입력 토큰: 리간드 1.63–1.70(5개 3,539 B → 2,087 토큰, 10개 5,607 B → 3,433 토큰), 변이 1.71–1.79(1UBQ 5개 7,030 B → 3,921, 1UBQ 20개 25,428 B → 14,619, 1MQ4 20개 29,151 B → 17,011 두 번). M8 뷰어형 JSON은 약 2.24였다. 출력 65–200 토큰, 비용 호출당 약 0.00009–0.00071 USD였다.
+- 예약식 `min(50000, 4096 + ceil(body_bytes × 2 / 3))`은 1.5 B/토큰을 가정해 모든 실측 사용량보다 컸다(예: 3,539 B 본문 예약 5,866 대 사용 2,152). 식은 조정 가능한 기본값이므로 바꿀 때는 이 실측과 대조한다. 예약이 사용량보다 작으면 기존 규칙대로 그 run의 모든 온라인 전송이 `budget_exhausted`로 멈춘다.
+- 여섯 응답 모두 `confidence`와 보낸 후보 수만큼의 `probabilities`를 담았고, 모두 첫 별칭(`c01`·`m01`)을 골랐다(같은 본문 재전송 포함, J4 참고).
+
 ## 동작 원리
 
 ### handle과 복구
@@ -491,6 +539,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 ### 서열 GA 작업 경로 (M23)
 `POST /jobs`의 `sequence_ga_dock_v1`은 큐 `submit`에서 이 순서로 돈다: `sequence_ga_jobs.submission`이 입장 1–4(인자·`ga`·`timeout_s` 정규화 → 두 리터럴·M18 확인 → 후보 집합(M20 `validated_set`)·구조 → RDKit 없는 리간드 SDF·상자 부분 점검)를 검사하고, dry-run이면 여기서 계획만 돌려준다. 그다음 `selection`이 입장 5–8(환경 412 → M7 `preflight()` 투영과 `residue_mismatch`·`box_no_receptor_atoms` → `ga_space_too_small`(조합 공간 크기 `N` = 기본대칭다항식 합) → 스테이징 크기 429)을 하고, 호출 키를 만든 뒤 `complete_job`이 같은 호출 키의 진행 중·`complete` 작업이 있으면 **예산 검사 전에** 그 작업을 돌려준다. 새 작업이면 입장 9(예산 429 `ga_limit_raise_required`)를 한 다음 큐 시작 때 run 실행 잠금 안에서 이벤트 스냅숏으로 재사용 색인(같은 `conditions_sha256`의 `sequence_ga_individual_published`에서 모델·결과가 모두 저장·검증된 개체와 기준 행)을 정하고 `reserved_units`를 한 번 예약한 뒤 guardian이 GA 작업 모듈(도킹 환경)을 띄운다. 시작 전 확인(`admission_plan`)은 읽기 전용으로 1–8단계만 하고 예산은 `shortfall`로 돌려준다. 작업 모듈은 야생형 기준 행을 먼저 평가하고, 세대마다 슬롯을 모두 선택한 뒤 개체마다 모델링 자식 프로세스(프로젝트 `.venv`, 같은 프로세스 그룹) → 개체 수용체 준비 → `dock_row` 순으로 평가하며 개체·세대 파일을 원자적으로 쓴다. 작업이 끝나고 그룹이 비었는지 확인한 뒤 서버 `finish`가 파일을 읽어(`O_NOFOLLOW`·크기 상한·canonical JSON) 엔진·방법·상자를 서버 기록과 대조하고(불일치면 아무것도 게시하지 않고 `fatal`) 새 평가 개체마다 mmCIF → 모델 → 도킹 결과 객체를 게시하고 `sequence_ga_individual_published`를 쓴 다음 요약(`sequence_ga_result@1`)과 `sequence_ga_published`를 게시한다. 야생형 기준 행 상태가 기록되기 전에 멈추면 요약이 없다. 읽기는 한 번의 이벤트 스냅숏으로 요약·모델·도킹 결과를 다시 검증한다.
 
+### JEV 과학 전송 경로 (M24)
+투영은 값싼 도구다: `POST /commands`의 `build_jev_projection`이 `Run.call`에서 사전 검사 훅(`tools/jev.precheck`)으로 입장 여덟 단계를 구현보다 먼저 하고 정규화 인자(저장 순서 후보, 정규화 필터)만 호출 키로 돌려준다. 구현은 같은 읽기를 반복해 순수 모듈 `jev_projection`(표준 라이브러리 + numpy, 저장 객체 내용과 파싱한 구조만 받음)으로 와이어를 만들고 `check_wire` → 본문 인코딩·64 KiB 확인 → 저장 형태 `validated_projection`을 통과할 때만 `jev_projection@1`을 저장한다. 미리보기(`jev_sends.preview_for`)는 저장 투영을 다시 검증하고 같은 `projection_body`로 본문 문자열·해시를 만든다(이벤트 없음). 전송 라우트는 요청·투영·해시·멱등·진행 중을 이벤트 없이 확인한 뒤 `ACTIVE_SENDS`에 넣고 `SCIENCE_GATE.request_science`(`egress/science.py`)를 부른다. 게이트는 run 실행 잠금 + 전이 잠금 안에서 승인 콜백 → 승인 대조 → 거절 검사 → 키 → 예약 → `prepared` → 재확인 → `dispatch_started`·`jev_science_dispatch_started`를 쓰고, 전이 잠금 밖에서 기존 `_http_request`로 한 번 보낸 뒤 기존 정산을 하고 `parse_choice`로 답을 검증한다. 결과는 `_finish`가 전이 잠금 안에서 쓴다(완료면 제안 객체를 `validated_choice` 통과 뒤 저장하고, 모든 경우 `jev_send_outcome`). 기록·늦음·상한은 모두 이벤트에서 다시 만든다(`list_sends`, `send_record`, `late_arrival`, `dispatch_count`). 보고서(`jev_reports.py`)는 제안·투영·소스 집합을 다시 검증하고 전송 이벤트 사슬과 대조하며 아무것도 보내지 않는다.
+
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
 
@@ -507,6 +558,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 8. 참조 데이터를 읽는 도구(M15 번호 대응 등)는 호출 시작 때 참조 세트를 고정하고, 그 세트 해시를 호출 키에 넣고(사전 검사 훅의 `key_fields`), 결과 객체에 세트 해시와 계산에 쓴 참조 행을 담아 참조 폴더 없이 다시 열리게 한다. 참조 값과 계산 값은 보고서에서 다른 증거 종류로 둔다.
 9. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
 10. 기존 결과를 여러 개 묶는 작업(M19 일괄 등)은 행 계산을 복제하지 않고 기존 작업 모듈 함수를 불러 쓰며, 행 결과가 단독 실행과 같은 handle인지 실제 엔진으로 바이트 비교한다. 900초보다 긴 작업 시간 한도가 필요하면 `JobQueue.submit`과 API `JobSubmit.timeout_s` 두 곳을 그 프로토콜에만 넓힌다. 작업 하나가 결과 여러 개를 내면 게시 증거 이벤트·재사용 색인·`producer()`·보고서 입력 검사가 그 결과를 받아들이는지, 시도 1회·예약 단위·환불 없음이 재생과 맞는지 확인한다. 검증: 실제 엔진 테스트, events-only 복구, 기존 프로토콜 테스트 전부.
+11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
 
 ### UI 컨트롤 변경
 1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.
@@ -516,7 +568,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 5. 실패한 실행은 지우지 말고 회귀 증거로 남긴다.
 
 ### 제품의 실제 OpenRouter 호출이 필요할 때
-1. 사용자에게 필요한 횟수와 이유를 말하고 한도를 받는다.
-2. 전용 QA run에서 온라인 모드와 뷰어 동의를 켠다.
-3. 호출마다 served model, 사용량, 발행한 명령, Mol* 확인을 기록한다. 키, 헤더, 원시 provider 오류는 기록하지 않는다.
-4. 한도를 다 쓰면 결과를 그대로 보고한다. 추가 호출을 하려고 새 run을 몰래 열지 않는다.
+1. 사용자에게 필요한 횟수와 이유를 말하고 한도를 받는다. M8 4회와 M24 6회 할당은 모두 썼다.
+2. 전용 QA run에서 뷰어 요청이면 온라인 모드와 뷰어 동의를, M24 과학 전송이면 과학 전송 동의를 켠다(서로 권한을 주지 않음). 과학 전송은 `scripts/m24_offscreen_acceptance.py`의 calibrate·live 단계로만 하고 저장소 대장(`runs/m24-live-ledger.json`)이 합계를 막는다. 먼저 키 존재를 불리언으로만 확인한다(`.env` 내용은 열지 않음).
+3. 호출마다 served model, 사용량(본문 바이트·예약값과 함께), 발행한 명령 또는 전송 기록, Mol* 확인을 기록한다. 키, 헤더, 원시 provider 오류는 기록하지 않고 증거에서 키 문자열을 검색한다.
+4. 한도를 다 쓰면 결과를 그대로 보고한다. 실패한 호출도 1회이며, 추가 호출을 하려고 다시 시도하거나 새 run을 몰래 열지 않는다.

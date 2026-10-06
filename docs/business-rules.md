@@ -10,6 +10,7 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - **geometric contact**: 원자 좌표 사이 거리만으로 정한 접촉. 두 원자가 모두 N/O이면 `polar_contact`, 모두 C이면 `hydrophobic_contact`, 나머지는 `contact`로 분류한다. 원소만 보고 나눈 것이며 수소결합·염다리 판정이 아니다.
 - **chemical interaction assignment**(M11): ProLIF가 사용자가 제공한 수소·연결 정보·화학 그래프로 판정한 상호작용 범주. geometric contact와는 다른 결과 종류이며, 둘 중 하나로 다른 하나를 덮어쓰지 않는다.
 - **참조 스냅샷 값**(M15): UniProt accession·위치·잔기 글자, KLIFS 포켓 번호처럼 참조 스냅샷에서 그대로 가져온 값. ProtView가 계산한 값이 아니며, 화면·보고서에서 계산값과 다른 종류로 표시한다("참조 스냅샷 값, 계산 아님").
+- **JEV 판정(모델 선택)**(M24): 외부 모델 JEV가 보낸 후보 목록에서 고른 하나와 모델이 보고한 확신도·확률. 계산 결과가 아닌 제안이며 과학 값 칸·점수·보고서 계산값에 넣지 않는다("JEV 과학 전송 (M24)").
 
 ## 식별자
 
@@ -787,6 +788,98 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 ### 의미하지 않는 것
 결합 친화도·ΔΔG·안정성·효소 활성·변이 효과, 점수 정렬·선택 표시의 순위·추천·개선·"더 잘 결합", 야생형 대비 차이, 서열이 다른 구조의 OpenMM 전위 비교, 수렴한 구조나 실험 구조, 수소결합·상호작용 판정. 개체 점수는 개체마다 다른 수용체의 qvina 값이며 같은 수용체 안의 비교가 아니다. 부모–자식 연결의 선택 이유는 서버가 재계산하지 않았다.
 
+## JEV 과학 전송 (M24, `build_jev_projection` / `request_science`)
+
+같은 run에 게시된 리간드 후보 집합(M17) 또는 변이 후보 집합(M20) 하나에서 사람이 고른 후보(최대 20개)를 정해진 허용 목록 모양(투영)으로 만들고, 정확한 요청 본문을 미리 보고 승인한 한 번만 JEV(OpenRouter decisions API)에 보내 "로컬 계산 대기열의 맨 앞에 둘 후보 하나"를 고르게 하는 통로다(결정 0015의 구현, 결정 0032). 답은 계산 결과가 아니라 **"JEV 판정(모델 선택)"**이라는 제안이며 별도 객체 `jev_choice@1`과 보고서로만 남는다. JEV는 판정 API라 새 SMILES·서열을 만들지 않고 후보는 로컬 엔진이 만든 것뿐이다. 선택은 작업·도구·폼을 일으키지 않으며(도킹·모델링 입력 채우기 없음) 반복 루프는 없다. 닫힌 집합·상한·질문 문구·고정 문장은 `backend/mw/jev_constants.py`(표준 라이브러리만)에 있고 바꾸려면 사용자 결정이 필요하다. 예약식과 USD 예약은 조정 가능한 기본값이다.
+
+### 투영 도구 `build_jev_projection`
+- 값싼 도구(`Run.call`, L2, version `'1'`, `cost_class: cheap`, `POST /runs/{id}/commands`). 작업·승인·예산 단위가 없고 dry-run run에서도 실행해 저장한다. 외부 요청·네트워크·참조 폴더·키를 쓰지 않고 이 run의 저장 객체(후보 집합, M17 점검 객체, 전처리 구조 바이트)만 읽는다. 서버 모듈은 gemmi·numpy·표준 라이브러리만 쓴다. M13 분석 흐름은 이 도구를 부르지 않는다.
+- 인자(그 밖의 키는 `unknown_field`): `source`(같은 run의 `ligand_candidate_set@1` 또는 `mutation_candidate_set@1` handle), `candidates`(리간드: 후보 id `c_` + 16 hex, 변이: 후보 `index` 정수, 1–20개, 중복 없음), `filter`(리간드만: M17 필터 명세 또는 null).
+- 호출 키 = 정규화 인자: 후보는 소스 집합의 저장 순서(요청 순서 무관), 필터는 M17 `normalize_filter_spec` 결과 또는 null. 같은 정규화 입력이면 같은 호출·같은 handle이다.
+- 입장 검사(사전 검사 훅, 모든 호출 경로에서 구현보다 먼저, 이 순서, 첫 실패만, 모두 422 `input_invalid` + `detail.reason_code`): `unknown_field` → `source_invalid`(handle이 아님·이 run의 객체가 아님·다른 종류, 검증 실패: M17은 `ligand_bundle.validated_candidate_set`(완료된 작업의 게시 + 저장 객체 검증), M20은 `mutation_candidates.validated_set`) → `selection_invalid`(목록 아님·0개·20개 초과·형식·중복) → `candidate_unknown` → `filter_invalid`(M17 정규화가 거절, 변이에 null이 아닌 필터) → `candidate_filtered_out`(고른 후보 중 저장값이 적용한 필터에서 `passes_all: false`인 것이 있음. 필터가 없으면 모두 통과) → `structure_unavailable`(변이: 집합의 구조가 이 run의 `prepared_structure@1`이 아니거나 읽을 수 없음, 첫 모델 번호가 집합의 `model_number`가 아님, 위치 7필드(타입까지)가 단백질 잔기 정확히 하나로 풀리지 않음) → `wire_field_invalid`(아래 와이어 규칙).
+- 구현은 같은 읽기를 반복해 투영을 만들고 저장 형태로 `validated_projection`을 통과할 때만 저장한다. 본문이 64 KiB를 넘으면 429 `resource_exceeded` `payload_too_large`, 검증 실패는 422 `projection_invalid`이고 둘 다 아무것도 저장하지 않는다(자르지 않음).
+
+### 투영 객체 `jev_projection@1`
+- 키: `schema`, `method_version`(`mw.jev_projection/v1`), `kind`(`ligand`|`mutation`), `source{handle, schema}`, `structure{handle, model_number}`(변이만, 리간드는 null), `question{id, key: "candidate_choice"}`, `filter`(리간드만, 변이는 null), `selection`(리간드 `[{alias, candidate_id}]`, 변이 `[{alias, candidate_index, position_index}]`. 로컬 전용이며 보내지 않음), `wire`(외부로 나가는 `state` 그대로), `wire_sha256`(와이어의 정규 JSON), `body_sha256`, `body_bytes`, `limitations`(J1–J4 + 리간드 J5 | 변이 J6).
+- 내용에 시각·호출 ID가 없어 같은 입력은 같은 handle이다. 이벤트가 전체 payload를 담아 events-only로 다시 열린다. 1 MiB 한도.
+- `validated_projection`(순수)은 읽을 때마다 키·스키마·닫힌 집합, 선택 ↔ 와이어 별칭 일치, 후보 ≤ 20, 와이어 규칙, 와이어 해시·본문 해시·길이 재계산, 64 KiB 이하, 한계 문장을 검사한다. 통과하지 못하면 `projection_invalid`.
+
+### 와이어 허용 규칙 (두 투영 공통)
+- 객체 메타데이터를 재귀 복사하지 않고 아래 이름의 필드만 지정해 만들며, `check_wire`가 쓰기 전마다 허용 목록 밖 필드·빠진 필드·값 형식을 다시 검사한다.
+- 별칭만 쓴다: 후보 `c01…`(리간드)·`m01…`(변이), 위치 `p01…`(후보가 처음 가리키는 순서). 후보 순서 = 소스 집합의 저장 순서이고 섞지 않는다(리간드: 후보 행의 배열 위치 = 생성 순서, id 문자열 순서가 아님. 변이: 후보 `index` 오름차순).
+- 보내지 않는 것: handle, run ID, 로컬 경로, 후보 id(해시), 원본 파일 이름, block 이름, 사용자 반응 SMARTS 텍스트, 이벤트 번호, 시각, API 키, 좌표, 구조 파일, 전체 서열, 번호 대응 값(UniProt 번호·accession), KLIFS 부위 이름표, 보호 사유 이름, 라이선스 표시. 키 이름 `handle`·`run_id`·`path`와 경로·URL(`obj://` 포함)·파일 이름 모양 문자열은 거부한다.
+- 원본 문자열 식별자(체인·잔기 이름·삽입 코드)는 `[A-Za-z0-9_-]{0,16}`일 때만 저장값 그대로 보낸다(빈 문자열은 빈 문자열, null은 null, 잔기 이름은 비면 안 됨). SMILES는 `[A-Za-z0-9@+\-\[\]()=#$/\\%.:*]{1,1024}`, PAINS 이름은 `[A-Za-z0-9_().\-]{1,64}`일 때만. 수는 저장값 그대로(반올림 없음)이고 유한해야 한다. 어기면 `wire_field_invalid`다(저장 SMILES가 1,024자를 넘는 후보 포함).
+- `values_note`는 상수 문자열과 정확히 같아야 한다. `property_methods`는 관측한 M17 저장 문자열 8개(`PROPERTY_METHODS`)와 정확히 같을 때만 보낸다.
+
+### 리간드 와이어 `jev_ligand_candidates@1`
+- `schema`, `task: "choose_one_candidate"`, `parent{smiles, properties}`, `property_methods`, `candidates[{alias, smiles, generation_kinds, stereo_flag, properties, pains_matches[{catalog, name}]}]`, `values_note`.
+- `parent`는 집합의 `parent_canonical_smiles`·`parent_properties`(없으면 점검 객체의 `parent.canonical_smiles`·`properties`, 그래도 없으면 `smiles`를 뺌. 유효한 집합에서는 늘 집합 값이다). `properties`는 `mol_weight`·`crippen_logp`·`hbd`·`hba`·`tpsa`·`rotatable_bonds`·`heavy_atoms`·`formal_charge`(RDKit 추정값). `smiles`는 후보 정규 SMILES, `stereo_flag`는 저장된 닫힌 값.
+- `generation_kinds`는 저장 필드가 아니라 후보 `origins[].rule_id`에서 만든다: `"fixed"` → `fixed_replace`, 그 밖(`user_<n>`) → `user_rule`, 서로 다른 종류만 오름차순.
+- 수용체·포켓 정보는 넣지 않는다(J5). `values_note`: "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included".
+
+### 변이 와이어 `jev_mutation_candidates@1`
+- `schema`, `task: "choose_one_candidate"`, `positions[{pos, residue, one_letter, sources, ligand_min_distance_A, protection_released, window, neighbors}]`, `candidates[{alias, pos, from, to}]`, `protection_checks`, `pockets`(집합이 포켓 출처를 썼을 때만), `values_note`.
+- `residue`는 7필드 그대로(null 포함), `ligand_min_distance_A`는 저장값(null 유지). `sources`는 저장 객체 목록(`{kind, pocket_rank | radius_A}`)의 `kind`에서 닫힌 이름 `pocket`·`ligand_shell`·`user`를 이 순서로 만든다(포켓 순위가 여럿이어도 `pocket` 하나, 순위·반경 값은 보내지 않음). `protection_released`는 `protection.released` 불리언뿐이다. `protection_checks`는 다섯 검사 `user_list`·`klifs_key_sites`·`metal_contact`·`disulfide`·`catalytic_residue_database`마다 저장된 `status` 문자열(`checked`·`not_checked`·`not_available`) 하나뿐이고(개수·handle·이름표 없음) 검사하지 않은 항목이 "보호 없음"으로 읽히지 않게 한다. `pockets`는 `{ranks, lining_residue_count}`(`pocket_set` handle 없음).
+- 기하는 값싼 도구 안에서 저장된 전처리 구조의 첫 모델 좌표로만 계산한다. 단백질 잔기 = 물이 아닌 ATOM 레코드 잔기(`het_flag == "A"`), 중원자 = 원소 H·D 제외.
+  - `window{chain_auth, first_seq_auth, residues, contiguous}`: 같은 `chain_auth`의 단백질 잔기를 구조 순서로 앞뒤 5개씩(`WINDOW_FLANK`, 대상 포함 최대 11개, 체인 끝에서 잘림). 한 글자는 M20 `one_letter` 규칙(표준 20종과 이름 대응 10개: HID → H, CYX → C …), 그 밖의 이름은 `X`. HETATM 변형 잔기(MSE 등)는 단백질 잔기가 아니므로 구간에서 빠진다. `contiguous`는 구간 잔기가 모두 삽입 코드 없음이고 `seq_auth`가 1씩 이어질 때만 true. `chain_auth`가 null이면 `window: null`.
+  - `neighbors[{chain_auth, seq_auth, icode, resname}]`: 대상과 중원자 최소 거리(float64) ≤ 5.0 Å(`NEIGHBOR_RADIUS_A`, 경계 포함)인 다른 단백질 잔기, 모든 체인, 구조 순서. 물·리간드·금속은 들어가지 않는다. 대상에 중원자가 없으면 `neighbors: null`(계산하지 않음, 빈 목록이 아님).
+- 번호 대응 지도·주석이 집합에 있어도 그 값은 와이어에 들어가지 않는다. **서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다**(U3).
+- `values_note`: "Distances and neighbor lists are geometry from stored coordinates, not interactions; protection_released=false means no performed check applied, not that a residue is unimportant; checks that are not_checked or not_available were not performed".
+
+### 질문과 본문
+- 질문은 닫힌 둘(`ligand_candidate_choice@1`, `mutation_candidate_choice@1`): 키 `candidate_choice`, 형식 `choice`, `criteria`는 별칭마다 `"Candidate c01."` 같은 고정 문자열(후보 설명은 `state`에만). 기준·목표 문구·자유 입력은 없다. `instructions`(문자 그대로):
+  - 리간드: "Choose exactly one candidate from the list to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Property values are RDKit estimates, not measurements or interactions. The order of the candidate list is the local stored order only and carries no meaning."
+  - 변이: 같은 첫 두 문장 + "Distances and neighbor lists are geometry from stored coordinates, not measurements or interactions. The order of the candidate list is the local stored order only and carries no meaning."
+- 본문 = `{"model": "typesafe/jev-1.13", "state": <와이어>, "questions": {"candidate_choice": {type, instructions, criteria}}, "provider": {"data_collection": "deny", "zdr": true, "allow_fallbacks": false}}`를 `json.dumps(sort_keys=True, separators=(",", ":"), allow_nan=False)` ASCII로 인코딩한 바이트다. 미리보기 문자열·감사 `prepared` 본문·transport가 받는 바이트는 같은 함수(`jev_projection.projection_body`)에서 나와 바이트까지 같고, 승인은 그 SHA-256에 묶인다. 64 KiB(65,536 B) 초과는 거절한다. 실측 1MQ4 변이 20개 본문은 29,151 B였다.
+
+### 동의
+- 과학 전송 동의(run 수준): 이벤트 `jev_science_consent_changed{enabled, policy: "jev_science@1", send_cap: 10, request_model, allowed_served_model, destination}`의 마지막 것이 상태를 정한다(새 run은 꺼짐). 쓰는 곳은 `POST /runs/{id}/jev/consent` 하나이고, dry-run run에서 켜기는 412 `dry_run`이다. 끄기는 언제나 된다.
+- 이 동의는 `egress_config["mode"]`(뷰어 모델 해석 모드 `local_only`·`online`)를 바꾸지 않고 뷰어 동의·`request_jev`·`request_viewer`에 권한을 주지 않으며, 뷰어 동의·온라인 모드도 과학 전송에 권한을 주지 않는다. 그래서 `local_only` run에서도 과학 전송 동의를 켜면 보낼 수 있다.
+- 동의를 꺼도 이미 `jev_science_dispatch_started`가 된 전송은 응답까지 기록한다(동의는 전송 전 검사에서만 본다).
+
+### 승인과 전송
+- 사람이 화면에서 투영을 만들고 → 미리보기(`POST /jev/preview`)로 정확한 본문을 보고 → 확인 체크 뒤 `POST /jev/sends {send_id(클라이언트 v4 UUID), projection, body_sha256, confirm: "send_to_jev"}`로 승인·전송한다. 이 라우트가 `jev_sends.run_send`의 유일한 호출자이고 `run_send`가 `EgressGate.request_science`의 유일한 호출자다(도구·작업·M13 흐름·뷰어·모델 응답·보고서·`Run.call`은 부를 수 없음). 라우트는 `app.py`의 모듈 전역 `SCIENCE_GATE`(`VIEWER_GATE`와 별개 인스턴스)만 쓴다.
+- 라우트 검사(이 순서, 모두 이벤트 없음): 요청 모양·`confirm`·v4 UUID → 투영(이 run에 없으면 404, 이 run의 유효한 `jev_projection@1`이 아니거나 소스·구조 handle이 다른 run이면 422 `projection_invalid`) → 본문을 다시 만들어 해시가 다르면 409 `preview_mismatch` → 같은 `send_id`의 승인이 이미 있으면 같은 투영·해시는 기존 기록을 그대로(멱등), 다르면 409 `send_id_conflict` → 프로세스 메모리 진행 중 집합 `ACTIVE_SENDS`에 이 run의 전송이 있으면 409 `send_in_progress`(run 실행 잠금보다 먼저 본다). 게이트가 run 실행 잠금을 잡지 못하면 503 `busy`이고 아무것도 쓰지 않는다.
+- 게이트 단계(`request_science`, run 실행 잠금 + 전이 잠금 안, 이 순서, 첫 실패만 `denied` 감사 하나 + `rejected`): 승인 콜백이 `jev_send_approved{send_id, projection_handle, body_sha256, question_id, source_handle, selection_count, approved_by: "human"}`를 먼저 쓰고 게이트가 그 `send_id`의 첫 승인이 이 본문의 사람 승인인지 대조한다(아니면 감사·예약·키 읽기·요청 없이 중단) → `dry_run` → `consent_off` → `cancelled`(취소 이벤트 또는 취소 표시 파일) → `egress_stopped`(`run.egress_stop_reason`: `usage_unknown`·`budget_exhausted`) → `send_cap_exhausted`(`jev_science_dispatch_started` ≥ 10) → 남은 활동 시간 없음(`budget_exhausted` + checkpoint) → 외부 토큰·USD 예약이 한도를 넘음(`budget_exhausted`) → `missing_configuration`(요청·응답 모델·provider pin이 게이트 값과 다름) → 키 해석(`missing_credential`. 여기까지 키를 읽지 않는다) → `budget_reserved{audit_id, send_id, external_tokens, usd}`(비싼 계산 축 없음) → 감사 `prepared`(저장 실패면 보내지 않음) → 취소·동의·시간 재확인(실패면 음수 `egress_budget_settled` → `dispatch_skipped` 감사, `rejected`) → `dispatch_started` 감사 + `jev_science_dispatch_started{send_id, audit_id}` → 전이 잠금 밖에서 HTTP 최대 1회(제한 시간 min(15초, 남은 활동 시간), 재시도·리다이렉트 없음, 환경 프록시 무시) → `response_received` 또는 `transport_failed` → 기존 정산(`Run._settle_egress`) → `settled`.
+- 응답 해석(`parse_choice`): HTTP 200이 아니면 해석 전에 `provider_http_error`, 64 KiB 초과는 `response_invalid`. `model`이 없으면 `missing_model`, 허용 스냅숏 `typesafe/jev-1.13-20260917`이 아니면 `model_mismatch`. `answers`가 키 `candidate_choice` 하나가 아니거나, 답이 `type: "choice"`가 아니거나, `choice`가 보낸 별칭이 아니거나, `confidence`(있으면)가 0–1 유한 수가 아니거나, `probabilities`(있으면)가 별칭 부분집합 키·0–1 값·항목 수 ≤ 별칭 수가 아니거나, 답에 다른 키가 있으면 `response_invalid`. 실패해도 사용량은 정산하고 제안 객체는 만들지 않는다.
+- 예약: 외부 토큰 `min(50000, 4096 + ceil(body_bytes × 2 / 3))`, USD 0.10. 토큰 식은 본문 1.5 B/토큰을 가정한다(64 KiB 본문에서 47,787). M24 실호출 6회의 본문 바이트/입력 토큰은 1.63–1.79였다.
+- 정산·멈춤은 기존 규칙이다: 사용량이 예약을 넘으면 `budget_exhausted`, 사용량을 모르거나 응답 없이 끝나면 "알 수 없음"과 `usage_unknown`으로 이 run의 모든 온라인 전송(뷰어 포함)이 멈춘다. 외부 토큰·USD 예산과 멈춤 상태는 뷰어 모델 명령과 함께 쓴다(U2). 비싼 계산 단위·활동 시간 한도를 늘리지 않고 외부 토큰·USD 한도(기본 120,000·2.00)도 그대로이며 한도 증액 경로는 없다(`Run.raise_limits` 호출자는 M19·M22·M23 셋 그대로). 큰 본문에서는 예약이 남은 양을 넘어 10회보다 먼저 `budget_exhausted`가 될 수 있다(미리보기가 남은 양을 보인다).
+
+### 전송 기록 `jev_send@1`
+- 저장 상태(닫힌 집합): `completed`(제안 객체 있음), `rejected`(전송 전 거절, `dispatch_started` 없음, 상한을 쓰지 않음), `failed`(보냈으나 제안 없음). 읽기 전용 파생 상태 `in_progress`(`ACTIVE_SENDS`에 있고 결과 이벤트가 없음)는 저장하지 않는다.
+- 이유(닫힌 집합): rejected = `dry_run`, `consent_off`, `cancelled`, `egress_stopped`, `send_cap_exhausted`, `budget_exhausted`, `missing_configuration`, `missing_credential`. failed = `external_timeout`, `transport_error`, `provider_http_error`, `response_invalid`, `missing_model`, `model_mismatch`, `delivery_unknown`, `outcome_not_recorded`.
+- 모든 전송은 끝날 때 `jev_send_outcome{send_id, status, reason_code, audit_id, requested_model, served_model, choice_handle, usage, late, late_reason}`을 쓴다(거절은 `denied` 감사 뒤). 기록은 이벤트만으로 만든다: 결과 이벤트가 없고 진행 중도 아니면, 그 전송의 감사 `response_received`가 없을 때 `failed`/`delivery_unknown`, 있을 때 `failed`/`outcome_not_recorded`(응답 모델·사용량은 그 감사에서)다. 자동 재전송은 없고, 재시작 때 예약 정리·`usage_unknown` 멈춤은 기존 `_reconcile_egress`가 한다.
+- 응답 모델은 허용 스냅숏일 때만 기록하고(아니면 null), 사용량은 응답이 보고한 값이다(없는 값은 null이며 0이 아님, `external_tokens` = 입력 + 출력).
+- 상한은 `jev_science_dispatch_started` 수로 센다(run당 10회, 실패한 전송도 1회, 거절·미리보기·승인만으로는 쓰지 않음).
+- 같은 투영·같은 후보 목록을 새 `send_id`로 다시 보내도 된다(새 전송, 상한 1회, 응답이 다를 수 있음). 제안은 전송마다 하나씩 시간순으로 따로 남고 합치기·다수결·"최신이 정답" 표시가 없다(U1). 미리보기는 같은 투영으로 이미 dispatch된 전송 수를 보인다. 재시도는 사람이 새 `send_id`로 다시 보내는 것뿐이고 전송 도중 취소 단추는 없다(run 취소·시간 한도는 기존대로).
+
+### 늦은 응답
+- 전송의 `jev_science_dispatch_started` 뒤에 이 run에 취소 이벤트(`cancel_requested`·`run_cancelled`)나 과학 전송 동의를 끈 이벤트가 하나라도 있으면(응답 때 다시 켜져 있어도) 늦은 응답이다. 이벤트 순서만으로 판정하고 시계·메모리 플래그를 쓰지 않는다.
+- 검증을 통과한 늦은 응답은 버리지 않고 제안을 저장하며 `completed` + `late: true`와 `late_reason`(`run_cancelled`·`consent_off`, 둘 다면 `run_cancelled`)과 J7을 객체·기록·화면·보고서에 보인다. 검증을 통과하지 못하면 늦었어도 평소처럼 `failed`이고 제안이 없다(전송 기록에는 `late`·`late_reason`이 함께 남는다. 거절된 전송은 늘 `late: false`). 늦은 응답도 어떤 로컬 작업도 일으키지 않는다.
+
+### 제안 객체 `jev_choice@1`
+- 서버(전송 결과 처리)만 만든다. 키: `schema`, `method_version`(`mw.jev_choice/v1`), `label: "JEV 판정(모델 선택)"`, `scientific_result: false`, `send{send_id, audit_id}`, `source{handle, schema}`, `projection{handle, wire_sha256, body_sha256, body_bytes}`, `question{id, key, instructions_sha256}`, `requested_model`, `served_model`, `selection`(투영에서 복사), `answer{choice_alias, local_ref, local_display, confidence | null, probabilities | null}`, `usage{input_tokens, output_tokens, external_tokens, cost} | null`, `arrival{late, late_reason}`, `limitations`(J1–J4 + J5 | J6, 늦으면 + J7).
+- 별칭·확신도·확률은 받은 그대로다(변환·정렬·반올림 없음). `local_ref`는 리간드 `{candidate_id}`, 변이 `{candidate_index, position_index}`이고, `local_display`(고른 후보 하나)는 저장 소스 집합에서 복사한 표기다(리간드 `{smiles}`, 변이 `{residue(7필드), from, to}`).
+- 내용에 시각이 없고 `send_id`·`audit_id`가 들어 있어 전송마다 하나다. 1 MiB 한도, events-only 복구.
+- `validated_choice`는 읽을 때마다 투영·소스 집합과 대조한다: 키 집합(순위·점수·best·recommended 같은 다른 키 거부), `scientific_result` false, 고른 별칭 ∈ 선택, `local_ref`·`local_display`가 선택·소스 집합에서 다시 만든 것과 같음, 확률 키 ⊂ 별칭·값 0–1, `arrival` 일관성, 투영 해시, 응답 모델, 한계 문장. 계산 객체가 아니며 도구 결과·과학 값 칸에 나오지 않는다.
+
+### 고정 문장 (문자 그대로, 순서 고정, `jev_constants.STATEMENTS`·`SCREEN_NOTES`, 바꾸려면 사용자 결정)
+J1 항상: "JEV 판정은 외부 모델이 보낸 후보 목록에서 고른 하나일 뿐이며 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니다." J2 항상: "고른 이유는 알 수 없다. 응답에는 선택과 모델이 보고한 확신도·확률만 있으며 과학 값이 아니다." J3 항상: "외부로 나간 내용은 승인한 미리보기 본문과 바이트가 같고(해시로 확인) 그 본문이 이 기록의 근거 전부이다." J4 항상: "모델 선택은 후보 목록의 순서(로컬 저장 순서)의 영향을 받을 수 있다." J5 리간드: "후보는 2D 그래프이고 속성값은 RDKit 추정값이며 결합·활성·합성 가능성을 계산하지 않았고 수용체 정보 없이 고른 것이다." J6 변이: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다." J7 늦은 응답: "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다." 화면 안내(제안이 아니라 화면 문구): U1 "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다." U2 "과학 전송은 뷰어 모델 명령과 같은 외부 토큰·USD 예산과 '사용량 모름' 중지 상태를 쓰며, 한쪽이 예산을 다 쓰거나 사용량을 모르면 이 run에서 다른 쪽도 멈춘다." U3 "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다."
+
+### 보고서
+- `method_report_manifest@1`, `analysis_type: "jev_choice"`, 렌더 `jev_choice_markdown@1`("JEV 판정 보고서"). 입력은 제안 handle 하나, `generation_mode: "local_rules_no_egress"`(저장 객체·이벤트만 읽고 보내지 않음), `external_response{kind: "jev_choice", scientific_evidence: false}`.
+- 증거 종류는 둘이고 섞지 않는다(근거는 모두 제안 객체의 필드). **계산값**(`computed`): 보낸 후보 수(`selection[*]`), 본문 바이트(`projection.body_bytes`), 입력·출력 토큰과 비용(`usage.*`, 보고된 값만. 없으면 "알 수 없음"이고 주장 없음). **모델 응답**(`model_response`, "외부 모델의 응답, 제안이며 과학 증거가 아니다" + 제안 handle): 고른 별칭, 모델 보고 확신도(없으면 "보고 없음"이고 주장 없음), 응답 모델, 늦은 응답 표시(`arrival.late`, 늦으면 `arrival.late_reason`). 고른 후보의 로컬 표기(`answer.local_display`)는 주장이 아닌 고정 템플릿의 식별 자리다. 후보별 확률은 보고서에 넣지 않고(저장 객체와 화면 접힌 상세에만), 고른 이유는 "알 수 없음"이다.
+- 만들고 다시 열 때 제안을 다시 검증하고(투영·소스 집합), 전송 이벤트 사슬(승인 → dispatch → 객체 → 그 제안을 가리키는 `completed` 결과 하나, 순번 순서, 이벤트 순서로 다시 판정한 늦음)과 대조하며, manifest·주장·Markdown 바이트를 다시 만든 것과 비교한다. 계산값 주장이 모델 응답 필드를 인용하거나 그 반대, 확률 필드, 틀린 개수·값, 변조는 `report_evidence_invalid`다.
+- 해석 금지어(M15 목록 + 순위·추천·최적·개선·예측·유망·좋은·나쁜·안전·점수·에너지·활성·친화도·안정성·ΔΔG·winner·best·rank·recommend 등)는 J1–J7과 같은 줄을 빼고, 식별자·값을 빈 자리로 둔 고정 템플릿 줄에 검사한다. 스냅숏에는 `run_egress_mode`와 따로 `science_consent`를 담는다.
+
+### 화면 규칙
+- 지식·보고서 탭에서 번호 대응 화면 아래·보고서 목록 위 "JEV 판정(외부 모델)" 영역(선택된 동안에만 렌더링, run마다 `key`로 새로, 마운트는 읽기만). 순서: 상태·동의(목적지 OpenRouter의 JEV 하나, 보낼 수 있는 내용, 전송마다 승인, run당 10회와 사용·남은 횟수, `data_collection=deny`·`zdr`를 알리는 고정 안내, U2·U3, 동의 스위치는 서버 상태 그대로이고 dry-run이면 켤 수 없음) → 후보 집합 종류와 이 run의 집합(자동 선택 없음) → 후보 고르기(리간드: M17 필터 폼·"필터 통과만 보기"·체크박스, 적용한 필터를 통과한 후보만. 변이: 후보 표·체크박스. n/20이고 21번째 체크는 막고 이유를 보임. 보내는 순서는 클릭 순서가 아니라 저장 순서) → "보낼 내용 만들기" → 미리보기(서버가 준 정확한 본문 문자열을 접은 `pre`에 그대로, 바이트 수·SHA-256, 질문 고정 문구, 별칭 ↔ 로컬 후보 대응표("전송하지 않음"), 예약값, 서버 차단 이유, 같은 투영으로 보낸 수) → 승인(본문 해시에 묶인 확인 체크 "이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다", 차단 이유가 있거나 전송 중이면 "이 내용을 JEV로 보냅니다" 비활성. `send_id`는 처음 누를 때 만들고 기록이 오거나 `send_id_conflict`가 날 때까지 같은 값을 다시 써 더블클릭·재시도가 한 전송이 됨) → 결과("JEV 판정(모델 선택)" 카드: 고른 별칭과 로컬 표기, 모델 보고 확신도, 응답 모델·사용량, 접힌 상세에 후보별 확률 값만 보낸 순서대로, 저장된 J 문장, 늦으면 "run 취소 뒤 도착"·"동의 끈 뒤 도착". 실패·거절은 이유만) → 전송 기록(시간순, 상태·후보 수·본문 해시 앞부분·늦은 응답·"결과 열기"·"보고서 만들기", U1).
+- 확신도·확률은 `decimalHalfUp` 소수 셋째 자리 표시 반올림만 하고 저장값은 바뀌지 않는다. 정렬·막대·색 비교·"최고"·"추천"·응답끼리의 비교·합치기가 없다. JEV 선택을 도킹·모델링 요청 칸으로 넘기는 단추는 없다. 늦은 응답은 run + 투영·전송 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 진행 중 전송이 기록에 있으면 2초마다 기록·상태를 다시 읽는다(읽기만). 사용할 수 없을 때는 숫자 없이 이유만.
+- 전역 줄의 `.mw-app-run` 바깥에 현재 run의 과학 전송 동의가 켜졌을 때만 "과학 전송 허용" 표시를 둔다(기존 `local_only`·`online`은 뷰어 모델 해석 모드이며 과학 전송 동의와 별개라는 설명을 함께). 구조 분석·리간드·단백질 공학 탭은 바뀌지 않는다.
+
+### 의미하지 않는 것
+JEV 판정은 후보의 순위·추천·예측·점수가 아니며 결합·활성·친화도·안정성·ΔΔG·합성 가능성·안전성·치환 효과에 대한 판단이 아니다. 고른 이유는 알 수 없다. 확신도·확률은 모델이 보고한 값이며 과학 값이 아니고 후보를 줄 세우지 않는다. 같은 목록을 다시 보낸 응답을 합치거나 다수결·최신을 정답으로 쓰지 않는다. 모델 선택은 목록 순서(로컬 저장 순서)의 영향을 받을 수 있다(J4). 와이어의 거리·구간·이웃은 저장 좌표의 기하이며 상호작용이 아니고, `protection_released: false`는 수행한 검사가 보호를 적용하지 않았다는 뜻일 뿐 잔기가 중요하지 않다는 뜻이 아니다.
+
 ## PyRosetta와 에너지 표시
 
 - `relax_structure`, `estimate_stability`(Cartesian ddG), `score_interface`, `residue_energies`는 현재 사용할 수 없다. 이유를 담은 unavailable/precondition 응답을 돌려주고, 숫자 자리표시자나 순위는 만들지 않는다.
@@ -829,6 +922,7 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 ## 예산과 승인
 
 - 기본 run 한도: 활동 시간 1800초, 비싼 계산 8회, 외부 토큰 120,000, USD 2.00. 소진되면 checkpoint를 남기고 사용자에게 묻는다.
+- 외부 토큰·USD는 M8 뷰어 모델 요청과 M24 과학 전송이 한 run 안에서 함께 쓰고, 어느 쪽이든 사용량을 모르거나 예약을 넘으면 그 run의 모든 온라인 전송이 멈춘다. 과학 전송은 비싼 계산 단위를 쓰지 않는다.
 - 비싼 계산 1단위는 실제 프로세스를 띄우기 직전에 예약하고, 성공·실패·시간 초과·중단 모두 과금한다(환불 없음). 입력 거부, 캐시 적중, dry-run 계획, 승인 거부, 대기 중 취소는 과금하지 않는다. M19 일괄 작업은 시도 하나가 새로 계산하는 행 수만큼(0 가능), M22 GA 작업은 시도 하나가 `reserved_units`만큼(재사용과 무관) 한 번에 예약한다.
 - run에서 첫 비싼 계산에는 명시적으로 기록된 승인 이벤트가 필요하다. JSON 필드(`decided_by=human` 등), 재시도, 재시작으로 승인이 생기지 않는다. 승인은 소진된 예산을 채워 주지 않는다. 한도를 바꾸려면 따로 기록된 변경(`budget_limit_updated`)이 필요하다. HTTP로 한도를 올리는 길은 사람 증액 승인 둘뿐이다: M19 일괄(그 일괄의 부족분만)과 M22 GA(그 GA의 부족분만). 각자 자기 라우트 하나에서만 불린다.
 - 활동 시간에는 도구 실행, 작업 대기, 재시도 대기, 정리 시간이 들어간다. 승인·checkpoint 대기와 깔끔하게 종료된 뒤의 꺼진 시간은 제외한다. 비정상 종료로 닫히지 않은 구간은 기록된 마감 시각까지 보수적으로 과금하고 interrupted로 둔다.
@@ -860,7 +954,7 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 - 호환성 지문(도구·프로토콜 버전, 보고서 schema·렌더 버전, 방법 capability 지문)을 담는다. 계획 승인과 각 단계 dispatch 때 다시 확인하고, 달라졌으면 실행은 `blocked`(`compatibility_changed`)이다.
 - 계획 JSON은 1 MiB 이하, run당 100개 이하다(결정 0019). 같은 입력은 `inputs`에 한 번만 저장하고 단계는 `{"input_ref": <이름>}`으로 가리킨다.
 - 계획 생성은 저장된 바이트·메타데이터·capability와 기존 읽기 전용 사전 검사만 쓴다. 과학 구현·작업 제출·보고서 생성·화학 추론·수치 미리보기를 하지 않는다. 비용 표시는 고정 한도와 현재 남은 예산뿐이다.
-- 자연어 계획과 모델 보조 실행은 사용할 수 없다. 과학 데이터 전송 통로(게이트 투영·전송 전 미리보기·예산, 로드맵 M24)와 새 실제 호출 할당이 없기 때문이다. M8 뷰어 동의는 흐름·모델·과학 권한을 주지 않는다.
+- 자연어 계획과 모델 보조 실행은 사용할 수 없다. M24 과학 전송 통로는 사람이 지식·보고서 탭에서 전송마다 승인하는 라우트 하나뿐이고 흐름은 그것을 부르지 않으며, 새 실제 호출 할당도 없다. M8 뷰어 동의와 M24 과학 전송 동의는 흐름·모델·과학 계산 권한을 주지 않는다.
 
 ### 실행과 승인
 - 실행 상태: `plan_only`, `awaiting_approval`, `ready`, `executing`, `waiting_job`, `awaiting_scientific_approval`, `blocked`, `failed`, `cancelled`, `complete`. 단계 상태: `pending`, `dispatched`, `waiting_job`, `completed`(`null_result` 포함), `failed`, `interrupted`, `cancelled`, `blocked`. 종료 상태는 `complete`, `cancelled`, `blocked`, `retryable_step=null`인 `failed`다. run당 실행 100개.
