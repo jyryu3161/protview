@@ -10,9 +10,10 @@
  },
  "assumptions": {
   "W1": "the window includes the target residue (5 before + target + 5 after, cut at chain ends)",
-  "W2": "one-letter codes over the 20 standard names only; any other name (incl. HID/MSE) is X",
+  "W2": "one-letter codes by the M20 one_letter rule: the 20 standard names plus the ten mapped names (HID/HIE/HIP/HSD/HSE/HSP H, CYX C, ASH D, GLH E, LYN K); any other name (incl. MSE) is X",
   "N1": "protein residue = gemmi het_flag 'A' (ATOM record), as M20 positions; first model only",
   "N2": "a protein residue without heavy atoms is never a neighbor (no distance)",
+  "N3": "a target residue without heavy atoms has neighbors null (not computed), never []",
   "D1": "distances are math.dist on gemmi float64 positions; <= 5.0 inclusive"
  },
  "structures": {

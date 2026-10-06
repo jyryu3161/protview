@@ -37,7 +37,8 @@ Public API (T3 / T4 / T5 use these signatures):
         must match one protein residue exactly, types included) else structure_unavailable.
     window_of(structure, residue) -> {chain_auth, first_seq_auth, residues, contiguous} | None
         Same model and chain_auth, structure order, 5 protein residues before and after (target included, cut at the
-        chain ends), one-letter codes over the 20 standard names, any other name "X"; None when chain_auth is None.
+        chain ends), one-letter codes by the M20 ``one_letter`` rule (the 20 standard names and the ten mapped names,
+        HID -> H, CYX -> C, ...), any other name "X"; None when chain_auth is None.
     check_wire(wire, kind) -> None                          WireFieldInvalid on any allow-list / string / number rule
     canonical_ascii(value) -> bytes                         the one encoder
     body_object(wire, question_id, aliases) -> dict         {"model", "state", "questions", "provider"}
@@ -87,6 +88,7 @@ from .jev_constants import (
     INSTRUCTIONS,
     KINDS,
     LIGAND_VALUES_NOTE,
+    MAPPED_RESNAMES,
     MAX_BODY_BYTES,
     MAX_CANDIDATES,
     MAX_OBJECT_BYTES,
@@ -136,6 +138,8 @@ _PATH_SHAPE = re.compile(
 _WINDOW_RE = re.compile(f"[{ONE_LETTER_CODES}{NON_STANDARD_LETTER}]{{1,{2 * WINDOW_FLANK + 1}}}")
 _HANDLE_RE = r"obj://[A-Za-z0-9][A-Za-z0-9_-]{0,79}/%s/[0-9a-f]{64}"
 _ANSWER_KEYS = frozenset({"type", "choice", "confidence", "probabilities"})
+# Window letters: the M20 position ``one_letter`` rule (``mutation_candidates.standard_name`` then the standard letter).
+_WINDOW_LETTER = {**ONE_LETTER, **{name: ONE_LETTER[standard] for name, standard in MAPPED_RESNAMES.items()}}
 
 
 # --- errors ----------------------------------------------------------------------------------------------------------
@@ -307,7 +311,7 @@ def _window(walk: list[dict[str, Any]], target: dict[str, Any]) -> dict[str, Any
     contiguous = (all(residue["icode"] == "" for residue in span)
                   and all(later == earlier + 1 for earlier, later in pairwise(numbers)))
     return {"chain_auth": chain_auth, "first_seq_auth": numbers[0],
-            "residues": "".join(ONE_LETTER.get(residue["resname"], NON_STANDARD_LETTER) for residue in span),
+            "residues": "".join(_WINDOW_LETTER.get(residue["resname"], NON_STANDARD_LETTER) for residue in span),
             "contiguous": contiguous}
 
 

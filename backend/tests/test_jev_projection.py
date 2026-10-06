@@ -417,8 +417,8 @@ def _synthetic_geometry_pdb() -> str:
     GLY A2 (exactly 5.0, inclusive), ALA B1 (4.0, other chain). Not neighbors: SER A3 (5.001), THR A4 (heavy 10.0;
     its H at 4.0 does not count), VAL A5 (heavy 10.0; its D at 4.0 does not count), LEU A6 (5.9 from CA; 4.9 only from
     A1's own H), HOH / ZN / LIG (HETATM, never neighbors), A1 itself. GLY E1 has only an H atom (no heavy atom).
-    Chain C (far away) tests windows: C1 ALA, C2 HID (X), C3 GLY, C3A GLY (insertion code), C4 MSE as ATOM (X),
-    C5 SER .. C12 GLU; chain D: 1, 2, 5 (a numbering gap).
+    Chain C (far away) tests windows: C1 ALA, C2 HID (H: one of the ten M20 mapped names), C3 GLY, C3A GLY (insertion
+    code), C4 MSE as ATOM (X: neither standard nor mapped), C5 SER .. C12 GLU; chain D: 1, 2, 5 (a numbering gap).
     """
     rows = [
         ("ATOM", "CA", "ALA", "A", 1, "", (0, 0, 0), "C"), ("ATOM", "H", "ALA", "A", 1, "", (0, -1, 0), "H"),
@@ -459,15 +459,44 @@ def test_neighbor_boundary_hydrogens_self_and_non_protein(geometry):
 
 
 def test_windows_letters_insertion_codes_gaps_and_chain_ends(geometry):
+    # the M20 letter rule: 20 standard names + the ten mapped names (HID -> H); any other name (MSE) -> X
     assert P.window_of(geometry, res(1, "ALA", "C")) == {"chain_auth": "C", "first_seq_auth": 1,
-                                                         "residues": "AXGGXS", "contiguous": False}
+                                                         "residues": "AHGGXS", "contiguous": False}
     assert P.window_of(geometry, res(4, "MSE", "C")) == {"chain_auth": "C", "first_seq_auth": 1,
-                                                         "residues": "AXGGXSTVWY", "contiguous": False}
+                                                         "residues": "AHGGXSTVWY", "contiguous": False}
     assert P.window_of(geometry, res(10, "LYS", "C")) == {"chain_auth": "C", "first_seq_auth": 5,
                                                           "residues": "STVWYKRE", "contiguous": True}
-    assert P.window_of(geometry, res(3, "GLY", "C", icode="A"))["residues"] == "AXGGXSTVW"
+    assert P.window_of(geometry, res(3, "GLY", "C", icode="A"))["residues"] == "AHGGXSTVW"
     assert P.window_of(geometry, res(2, "GLY", "D")) == {"chain_auth": "D", "first_seq_auth": 1, "residues": "GGG",
                                                          "contiguous": False}
+
+
+def test_window_letters_follow_the_m20_name_rule():
+    # every mapped name gets its standard letter, any other non-standard name X (same rule as M20 one_letter)
+    mapped = {"HID": "H", "HIE": "H", "HIP": "H", "HSD": "H", "HSE": "H", "HSP": "H", "CYX": "C", "ASH": "D",
+              "GLH": "E", "LYN": "K"}
+    names = [*J.ONE_LETTER, *mapped, "MSE", "SEP", "UNK"]
+    rows = [("ATOM", "CA", name, "A", seq, "", (4.0 * seq, 0, 0), "C") for seq, name in enumerate(names, 1)]
+    st = gemmi.read_pdb_string("\n".join([*(_atom(n, *row) for n, row in enumerate(rows, 1)), "END", ""]))
+    expected = {**J.ONE_LETTER, **mapped, "MSE": "X", "SEP": "X", "UNK": "X"}
+    for seq, name in enumerate(names, 1):   # SYNTHETIC: one CA per residue, 4 A apart
+        window = P.window_of(st, res(seq, name))
+        before = min(seq - 1, J.WINDOW_FLANK)
+        assert window["residues"][before] == expected[name], name
+
+
+def test_hand_geometry_agrees_with_the_independent_oracle(geometry):
+    # the oracle's W2 (window letters) and N3 (no heavy atom: neighbors null, never []) readings equal the module's
+    entries = ORACLE.residues(geometry)
+    for entry in entries:
+        if not entry["protein"]:
+            continue
+        target = ORACLE.ident(entry)
+        assert P.neighbors_of(geometry, target) == ORACLE.neighbors(entries, entry)[0], target
+        expected = ORACLE.window(entries, entry)
+        assert P.window_of(geometry, target) == {k: expected[k] for k in J.ALLOWED_WINDOW}, target
+    no_heavy = next(entry for entry in entries if entry["chain_auth"] == "E")
+    assert ORACLE.neighbors(entries, no_heavy) == (None, {"largest_included_A": None, "smallest_excluded_A": None})
 
 
 def test_unresolvable_residue_is_structure_unavailable(geometry):
@@ -570,7 +599,18 @@ def test_mutation_wire_keeps_null_labels_insertion_codes_and_multi_letter_chains
     windows = {(p["residue"]["chain_auth"], p["residue"]["seq_auth"], p["residue"]["icode"]): p["window"]
                for p in wire["positions"]}
     assert windows[("A", 10, "A")]["contiguous"] is False
-    assert "X" in windows[("A", 6, "")]["residues"]   # HID and MSE are not among the 20 standard names
+    # HID -> H and CYX -> C (M20 mapped names, the position's own one_letter rule), MSE -> X
+    assert windows[("A", 6, "")]["residues"] == "GASTCHVCXLI"
+    # chain CC: HSP/ASH/GLH/LYN mapped, CC9 MSE is HETATM (not a protein residue), SEP -> X
+    assert windows[("CC", 11, "")]["residues"] == "HDEKXA"
+    chains = {}
+    for residue in structure_residues(cif["run"].store, cif["prepared"])["residues"]:
+        if residue["category"] == "polymer":
+            chains.setdefault(residue["chain_auth"], []).append((residue["seq_auth"], residue["icode"]))
+    for position in wire["positions"]:   # the window letter at the target equals the stored one_letter
+        residue = position["residue"]
+        before = min(chains[residue["chain_auth"]].index((residue["seq_auth"], residue["icode"])), J.WINDOW_FLANK)
+        assert position["window"]["residues"][before] == position["one_letter"], residue
     pdb = synthetic_m20["pdb"]
     wire, _ = P.build_mutation_wire(pdb["content"], _first_candidates(pdb["content"]), pdb["structure"])
     assert wire["positions"] and all(p["residue"]["chain_label"] is None and p["residue"]["seq_label"] is None

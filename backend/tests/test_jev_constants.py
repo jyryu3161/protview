@@ -168,6 +168,7 @@ def test_copied_closed_sets_equal_their_originals():
     assert J.PROTECTION_CHECK_STATUSES == (MC.CHECKED, MC.NOT_CHECKED, MC.NOT_AVAILABLE)
     assert J.ALLOWED_RESIDUE == MC.IDENTITY_FIELDS
     assert J.ONE_LETTER == MC.STANDARD_ONE_LETTER and J.ONE_LETTER_CODES == MC.ONE_LETTER_ORDER
+    assert J.MAPPED_RESNAMES == MC.MAPPED_RESNAMES   # window letters use the M20 one_letter name rule
     assert J.HYDROGEN_ELEMENTS == MC.HYDROGEN_ELEMENTS
     assert J.CANDIDATE_ID_RE.pattern == ligand_bundle.CANDIDATE_ID_RE.pattern
 

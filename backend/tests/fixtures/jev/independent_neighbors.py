@@ -5,11 +5,14 @@ Reads a structure with gemmi only (no ``mw`` import, no numpy) and computes, per
 * neighbors: every OTHER protein residue (gemmi ``het_flag == "A"``, the M20 position definition; waters, ligands and
   metals are HETATM and therefore excluded) in any chain of the first model whose heavy-atom (element not H/D) minimum
   distance to the target residue's heavy atoms is <= 5.0 A, in structure (file) order, as
-  ``{chain_auth, seq_auth, icode, resname}``. Distances are ``math.dist`` on gemmi float64 positions.
+  ``{chain_auth, seq_auth, icode, resname}``. Distances are ``math.dist`` on gemmi float64 positions. A target without
+  any heavy atom has neighbors ``None`` (not computed, never ``[]``; RULE N3, fixed in M24 T3).
 * window: the protein residues of the same model and chain in structure order, 5 before and 5 after the target
-  (the target itself included, ASSUMPTION W1), ``residues`` as a string of one-letter codes over the 20 standard names
-  (anything else ``X``, ASSUMPTION W2), ``first_seq_auth`` of the first window residue and ``contiguous`` = every
-  window residue has an empty insertion code and ``seq_auth`` increases by exactly 1 along the window.
+  (the target itself included, ASSUMPTION W1), ``residues`` as a string of one-letter codes by the M20 position
+  ``one_letter`` rule: the 20 standard names plus the ten M12/M20 mapped names (HID/HIE/HIP/HSD/HSE/HSP -> H, CYX -> C,
+  ASH -> D, GLH -> E, LYN -> K), anything else ``X`` (RULE W2, fixed in M24 T3; written out here, not imported),
+  ``first_seq_auth`` of the first window residue and ``contiguous`` = every window residue has an empty insertion code
+  and ``seq_auth`` increases by exactly 1 along the window.
 * ligand_min_distance_A: heavy-atom minimum distance from the target to a named ligand residue (when given).
 
 ``python3 independent_neighbors.py --check`` recomputes every entry of ``expected.json`` and exits 0 only if all are
@@ -38,6 +41,8 @@ ONE_LETTER = {
     "LEU": "L", "MET": "M", "ASN": "N", "PRO": "P", "GLN": "Q", "ARG": "R", "SER": "S", "THR": "T", "VAL": "V",
     "TRP": "W", "TYR": "Y",
 }
+MAPPED = {"HID": "H", "HIE": "H", "HIP": "H", "HSD": "H", "HSE": "H", "HSP": "H", "CYX": "C", "ASH": "D", "GLH": "E",
+          "LYN": "K"}
 STRUCTURES = {"1UBQ": FIXTURES / "public_1ubq.cif", "1MQ4": FIXTURES / "public_1mq4.cif"}
 # (structure, chain_auth, seq_auth, icode): chain ends, a gap (1MQ4 285|288), ligand-shell residues, a core residue.
 SELECTED = {
@@ -83,8 +88,14 @@ def ident(entry: dict[str, Any]) -> dict[str, Any]:
     return {field: entry[field] for field in ("chain_auth", "seq_auth", "icode", "resname")}
 
 
-def neighbors(all_res: list[dict[str, Any]], target: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Neighbors in structure order plus the boundary margins (largest included, smallest excluded distance)."""
+def neighbors(all_res: list[dict[str, Any]],
+              target: dict[str, Any]) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
+    """Neighbors in structure order plus the boundary margins (largest included, smallest excluded distance).
+
+    RULE N3: a target without heavy atoms is not computed -> (None, both margins None).
+    """
+    if not target["heavy"]:
+        return None, {"largest_included_A": None, "smallest_excluded_A": None}
     found, inside, outside = [], [], []
     for other in all_res:
         if not other["protein"] or key(other) == key(target):
@@ -111,7 +122,8 @@ def window(all_res: list[dict[str, Any]], target: dict[str, Any]) -> dict[str, A
     contiguous = all(entry["icode"] == "" for entry in span) and all(
         later["seq_auth"] == earlier["seq_auth"] + 1 for earlier, later in pairwise(span))
     return {"chain_auth": target["chain_auth"], "first_seq_auth": span[0]["seq_auth"],
-            "residues": "".join(ONE_LETTER.get(entry["resname"], "X") for entry in span),
+            "residues": "".join(ONE_LETTER.get(entry["resname"], MAPPED.get(entry["resname"], "X"))
+                                for entry in span),
             "contiguous": contiguous, "members": [[entry["seq_auth"], entry["icode"]] for entry in span]}
 
 
@@ -128,15 +140,17 @@ def compute(name: str, st: gemmi.Structure) -> dict[str, Any]:
         target = by_key[(chain, seq, icode)]
         assert target["protein"]
         found, margins = neighbors(all_res, target)
-        positions.append({"residue": ident(target), "neighbors": found, "neighbor_count": len(found),
+        positions.append({"residue": ident(target), "neighbors": found,
+                          "neighbor_count": None if found is None else len(found),
                           "margins": margins, "window": window(all_res, target),
                           "ligand_min_distance_A": (min_distance(target["heavy"], ligand["heavy"])
                                                     if ligand is not None else None)})
     counts = []
     for entry in all_res:
         if entry["protein"]:
+            found = neighbors(all_res, entry)[0]
             counts.append([entry["chain_auth"], entry["seq_auth"], entry["icode"], entry["resname"],
-                           len(neighbors(all_res, entry)[0])])
+                           None if found is None else len(found)])
     return {"protein_residues": sum(entry["protein"] for entry in all_res),
             "ligand": None if ligand is None else ident(ligand),
             "positions": positions, "neighbor_counts": counts}
@@ -150,9 +164,11 @@ def build() -> dict[str, Any]:
                       "hydrogen_elements": list(HYDROGENS)},
         "assumptions": {
             "W1": "the window includes the target residue (5 before + target + 5 after, cut at chain ends)",
-            "W2": "one-letter codes over the 20 standard names only; any other name (incl. HID/MSE) is X",
+            "W2": ("one-letter codes by the M20 one_letter rule: the 20 standard names plus the ten mapped names "
+                   "(HID/HIE/HIP/HSD/HSE/HSP H, CYX C, ASH D, GLH E, LYN K); any other name (incl. MSE) is X"),
             "N1": "protein residue = gemmi het_flag 'A' (ATOM record), as M20 positions; first model only",
             "N2": "a protein residue without heavy atoms is never a neighbor (no distance)",
+            "N3": "a target residue without heavy atoms has neighbors null (not computed), never []",
             "D1": "distances are math.dist on gemmi float64 positions; <= 5.0 inclusive",
         },
         "structures": {name: compute(name, load_path(path)) for name, path in STRUCTURES.items()},

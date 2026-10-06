@@ -169,7 +169,9 @@ ONE_LETTER = {
     "LEU": "L", "MET": "M", "ASN": "N", "PRO": "P", "GLN": "Q", "ARG": "R", "SER": "S", "THR": "T", "VAL": "V",
     "TRP": "W", "TYR": "Y",
 }
-NON_STANDARD_LETTER = "X"          # window letter of any name outside the 20 standard names
+MAPPED_RESNAMES = {"HID": "HIS", "HIE": "HIS", "HIP": "HIS", "HSD": "HIS", "HSE": "HIS", "HSP": "HIS",
+                   "CYX": "CYS", "ASH": "ASP", "GLH": "GLU", "LYN": "LYS"}   # the ten M12/M20 mapped names
+NON_STANDARD_LETTER = "X"          # window letter of any name outside the 20 standard and ten mapped names
 HYDROGEN_ELEMENTS = ("H", "D")
 
 # Wire string patterns (spec 3); always used with ``fullmatch`` on ``str`` values.

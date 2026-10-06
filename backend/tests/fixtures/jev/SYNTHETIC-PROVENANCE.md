@@ -14,7 +14,7 @@ and the committed M8 live evidence `docs/qa/m8/raw/live-v1-events.json` / `live-
 
 | File | What it is |
 |---|---|
-| `independent_neighbors.py` | ORACLE. gemmi + standard library only (no `mw` import, no NumPy). Neighbor residues (heavy-atom minimum distance <= 5.0 A, protein = gemmi `het_flag "A"`, any chain, structure order), the +/- 5 residue sequence window (one-letter, non-standard `X`, `contiguous`) and the ligand heavy-atom minimum distance, per the spec 3 wording. Its readings of the open points are the `assumptions` W1, W2, N1, N2, D1 written into `expected.json`. `.venv/bin/python backend/tests/fixtures/jev/independent_neighbors.py --check` exits 0 only if `expected.json` equals a fresh run. |
+| `independent_neighbors.py` | ORACLE. gemmi + standard library only (no `mw` import, no NumPy). Neighbor residues (heavy-atom minimum distance <= 5.0 A, protein = gemmi `het_flag "A"`, any chain, structure order), the +/- 5 residue sequence window (one-letter by the M20 `one_letter` name rule, any other name `X`, `contiguous`) and the ligand heavy-atom minimum distance, per the spec 3 wording. Its readings of the open points are the `assumptions` W1, W2, N1, N2, N3, D1 written into `expected.json` (W2 and N3 fixed as rules in M24 T3, see the change log below). `.venv/bin/python backend/tests/fixtures/jev/independent_neighbors.py --check` exits 0 only if `expected.json` equals a fresh run. |
 | `expected.json` | ORACLE output: for 1UBQ (chain A 1, 2, 44, 48, 72, 76) and 1MQ4 (chain A 126, 143, 162, 211, 274, 283, 285, 288, 290, 388; ADP A2001) the neighbor lists, boundary margins, windows and ligand distances, plus the neighbor count of every protein residue. Not product output. |
 | `golden_egress_events.json` | GOLDEN. Event / audit shapes the EXISTING `EgressGate.request_jev` (M3) and `mw.egress.viewer.request_viewer` (M8, and once through the HTTP route) write with a scripted `httpx.MockTransport` and an inert sentinel credential: per event its type, field names in on-disk order with JSON value types, and the values of closed / constant fields only. Ids, times, hashes and elapsed seconds are reduced to their type. Later tasks show "existing behaviour unchanged" with `.venv/bin/python backend/tests/fixtures/jev/prototype_golden_egress.py --check`. Not provider output. |
 | `prototype_golden_egress.py` | Recorder for the golden file (`--write` checks that two fresh recordings are identical first; `--check` compares). Never product code. |
@@ -28,6 +28,18 @@ and the committed M8 live evidence `docs/qa/m8/raw/live-v1-events.json` / `live-
 | `prototype_token_ratio.py` | PROTOTYPE. Rebuilds (approximately; the M8-time bytes were not reproduced, see the report) the three real M8 request bodies from committed evidence and divides by the provider-reported input tokens, to calibrate the science reservation formula. No call is made. |
 
 Throw-away runs roots (`_work_*` next to the scripts) are deleted at the end of each script and never committed.
+
+## Change log
+
+- M24 T3 (2026-10-06): two oracle readings became fixed rules and `expected.json` was rewritten with `--write`, so its
+  SHA-256 changed from `113aecccb3691213b5124dec82138ed45e40a33a43d4c9fc80c4cb7d2cf94c06` (51,907 B, the value quoted
+  in `docs/qa/m24-jev-20261006/preflight.txt`) to `c1b3e61cdbb333e36f65ab6fd95c85f1d320eda6970d7841a0f10c4b52fa4127`
+  (52,095 B). W2: window letters follow the M20 position `one_letter` rule (the 20 standard names plus the ten mapped
+  names HID/HIE/HIP/HSD/HSE/HSP -> H, CYX -> C, ASH -> D, GLH -> E, LYN -> K; anything else X), so a window letter never
+  disagrees with the same position's `one_letter`; the mapping is written out in the oracle, not imported. N3 (new): a
+  target residue without heavy atoms has neighbors `null` (not computed), never `[]`. Only the `assumptions` block
+  changed: every `structures` value (neighbors, margins, windows, distances, neighbor counts) is identical, because
+  public 1UBQ and 1MQ4 contain no mapped residue name and no protein residue without heavy atoms.
 
 ## Not claimed
 

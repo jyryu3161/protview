@@ -280,7 +280,8 @@ def test_invalid_upload_command_handle_and_run(api, pdb_path, monkeypatch):
             "load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
             "openmm_protein_minimize", "measure_distance", "align_structures", "compile_state",
             "map_residue_numbering", "annotate_reference_sites", "generate_mutation_candidates",  # M20 adds one tool
-            "openmm_mutation_model"}  # M21 lists its job-only tool at L3 (durable_job lane, not SUPPORTED_TOOLS)
+            "openmm_mutation_model",  # M21 lists its job-only tool at L3 (durable_job lane, not SUPPORTED_TOOLS)
+            "build_jev_projection"}  # M24 adds one cheap L2 tool (local JEV projection, no egress)
 
 
 def test_upload_parent_symlink_never_reads_or_writes_outside(api, pdb_path, tmp_path):
