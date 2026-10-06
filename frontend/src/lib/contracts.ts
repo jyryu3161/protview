@@ -1002,3 +1002,78 @@ export type SequenceGaSubmission = SequenceGaJob | SequenceGaPlanOnly;
 export interface SequenceGaReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "sequence_ga"; result_handle: string;
   ga_status: SequenceGaStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M24 JEV science sends (backend/mw/jev_constants.py, jev_sends.py, jev_reports.py, tools/jev.py;
+// `.dryforge/spec.md` 3, 5-9). Every route is under `/runs/{id}/jev/...`; errors are `{"detail": {error, message, ...}}`.
+export type JevKind = "ligand" | "mutation";
+export type JevQuestionId = "ligand_candidate_choice@1" | "mutation_candidate_choice@1";
+/** `jev_preview@1.blocked_by` (closed, in this order). */
+export type JevPreviewBlockReason = "dry_run" | "consent_off" | "cancelled" | "egress_stopped" | "send_cap_exhausted" |
+  "budget_exhausted" | "send_in_progress";
+export type JevRejectedReason = "dry_run" | "consent_off" | "cancelled" | "egress_stopped" | "send_cap_exhausted" |
+  "budget_exhausted" | "missing_configuration" | "missing_credential";
+export type JevFailedReason = "external_timeout" | "transport_error" | "provider_http_error" | "response_invalid" |
+  "missing_model" | "model_mismatch" | "delivery_unknown" | "outcome_not_recorded";
+export type JevLateReason = "run_cancelled" | "consent_off";
+/** Stored statuses plus the read-only derived `in_progress` (never stored). */
+export type JevSendStatus = "completed" | "rejected" | "failed" | "in_progress";
+/** `build_jev_projection` admission reasons (`detail.reason_code`, in check order) and the read refusal. */
+export type JevProjectionReason = "unknown_field" | "source_invalid" | "selection_invalid" | "candidate_unknown" |
+  "filter_invalid" | "candidate_filtered_out" | "structure_unavailable" | "wire_field_invalid" | "payload_too_large" |
+  "projection_invalid";
+
+export interface JevBudgetAxis { used: number; limit: number; remaining: number }
+/** `GET /runs/{id}/jev/status` and the `POST .../jev/consent` answer (no key is read). */
+export interface JevStatusV1 { schema: "jev_status@1"; enabled: boolean; policy: "jev_science@1"; send_cap: number;
+  used: number; remaining: number; budget: { external_tokens: JevBudgetAxis; usd: JevBudgetAxis };
+  egress_stop_reason: string | null; dry_run: boolean; cancelled: boolean; question_ids: JevQuestionId[];
+  send_in_progress: boolean; request_model: string; allowed_served_model: string; destination: string }
+/** Alias of the sent list -> local reference (local only, never sent). */
+export type JevSelectionItem = { alias: string; candidate_id: string } |
+  { alias: string; candidate_index: number; position_index: number };
+/** `POST /runs/{id}/jev/preview {projection}`: the exact body string the approved send would carry. */
+export interface JevPreviewV1 { schema: "jev_preview@1"; projection_handle: string; kind: JevKind;
+  source: { handle: string; schema: string };
+  question: { id: JevQuestionId; key: "candidate_choice"; type: "choice"; instructions: string;
+    instructions_sha256: string };
+  body: string; body_sha256: string; body_bytes: number; selection: JevSelectionItem[]; selection_sent: false;
+  reservation: { external_tokens: number; usd: number }; send_cap: number; used: number; remaining: number;
+  budget_remaining: { external_tokens: number; usd: number }; blocked_by: JevPreviewBlockReason[];
+  previous_sends: number }
+/** Reported usage; every value null when the reply did not report it (never 0). */
+export interface JevUsage { input_tokens: number | null; output_tokens: number | null; external_tokens: number | null;
+  cost: number | null }
+/** `POST /runs/{id}/jev/sends` body (unknown keys refused, at most 4 KiB). */
+export interface JevSendRequest { send_id: string; projection: string; body_sha256: string; confirm: "send_to_jev" }
+/** One send record (`POST .../jev/sends` answer, list row, detail base); refusals and failures are HTTP 200 too. */
+export interface JevSendV1 { schema: "jev_send@1"; send_id: string; status: JevSendStatus;
+  reason_code: JevRejectedReason | JevFailedReason | null; projection_handle: string;
+  source: { handle: string; schema: string }; kind: JevKind; question_id: JevQuestionId; selection_count: number;
+  body_sha256: string; body_bytes: number | null; audit_id: string | null; requested_model: string | null;
+  served_model: string | null; usage: JevUsage | null; choice_handle: string | null; late: boolean;
+  late_reason: JevLateReason | null; approved_event_seq: number; outcome_event_seq: number | null }
+/** The 7 identity fields as stored (null kept; an empty insertion code stays ""). */
+export interface JevResidue { model_number: number; chain_auth: string | null; chain_label: string | null;
+  seq_auth: number; seq_label: number | null; icode: string | null; resname: string }
+export type JevLocalRef = { candidate_id: string } | { candidate_index: number; position_index: number };
+/** The chosen candidate's local notation copied from the stored candidate set. */
+export type JevLocalDisplay = { smiles: string } | { residue: JevResidue; from: string; to: string };
+/** `jev_choice@1`: a proposal, never a scientific result; the answer exactly as received (no reorder, no rounding). */
+export interface JevChoiceV1 { schema: "jev_choice@1"; method_version: "mw.jev_choice/v1"; label: string;
+  scientific_result: false; send: { send_id: string; audit_id: string }; source: { handle: string; schema: string };
+  projection: { handle: string; wire_sha256: string; body_sha256: string; body_bytes: number };
+  question: { id: JevQuestionId; key: "candidate_choice"; instructions_sha256: string };
+  requested_model: string; served_model: string; selection: JevSelectionItem[];
+  answer: { choice_alias: string; local_ref: JevLocalRef; local_display: JevLocalDisplay; confidence: number | null;
+    probabilities: Record<string, number> | null };
+  usage: JevUsage | null; arrival: { late: boolean; late_reason: JevLateReason | null }; limitations: string[] }
+/** `GET /runs/{id}/jev/sends/{send_id}`: the record plus the re-validated proposal (null unless completed). */
+export interface JevSendDetail extends JevSendV1 { choice: JevChoiceV1 | null; local_display: JevLocalDisplay | null }
+/** `build_jev_projection` arguments: ligand candidate ids "c_" + 16 hex | mutation candidate indices (1-20). */
+export interface JevProjectionArgs { source: string; candidates: string[] | number[]; filter: LigandFilterSpec | null }
+/** Summary of a stored `jev_projection@1` (the command envelope's `handle.summary`). */
+export interface JevProjectionSummary { kind: JevKind; source: string; selection_count: number; body_bytes: number;
+  body_sha256: string }
+export interface JevReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "jev_choice"; result_handle: string;
+  snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }

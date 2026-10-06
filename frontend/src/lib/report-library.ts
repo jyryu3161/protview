@@ -94,6 +94,7 @@ export function reportKindLabel(row: ReportLibraryRow): string {
   if (row.kind === "mutation_candidates") return "변이 후보 보고서";
   if (row.kind === "mutation_model") return "변이 구조 모델 보고서";
   if (row.kind === "sequence_ga") return "서열 GA 보고서";
+  if (row.kind === "jev_choice") return "JEV 판정 보고서";
   return row.kind === "reference_site_annotation" ? "참조 주석 보고서" : row.kind;
 }
 
