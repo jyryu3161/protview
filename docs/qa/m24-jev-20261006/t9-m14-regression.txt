@@ -1,0 +1,29 @@
+M24 T9 — M14 탭 수락 실행기 회귀 1회 (page.tsx 전역 표시 요청 순번·JevPanel 변경 뒤 공유 탭 동작 확인)
+
+명령(프로젝트 루트, 8000·3000 비움, OpenRouter 실호출 0):
+  .venv/bin/python scripts/m14_offscreen_acceptance.py --root runs/m24-t9-m14-regression \
+      --artifacts frontend/tests/offscreen/artifacts/m24-acceptance/t9-m14-regression \
+      --out frontend/tests/offscreen/artifacts/m24-acceptance/t9-m14-regression-out   (Git 제외)
+종료 코드 0, failedSteps [].
+
+verdict pass · acceptance true · 사례 15개 모두 pass
+빌드: gitHead a27979e4e7aaddf6f741f55771d170377f988651 · buildCurrentWithSource True · buildId L1WcPjrTR60b9VYSegZtb
+  (dirtyFiles는 아직 커밋하지 않은 이 증거 폴더 docs/qa/m24-jev-20261006/t9-fixture-acceptance/ 하나뿐이었다)
+브라우저 비-loopback 요청 합계 0 · 남은 프로세스 없음
+
+사례:
+  T-tabs: pass
+  T-structure-state: pass
+  T-running-job: pass
+  T-chemical-preserved: pass
+  T-unavailable: pass
+  T-reports-list: pass
+  T-reports-content: pass
+  T-reports-fault: pass
+  T-no-run: pass
+  T-run-switch: pass
+  T-late-response: pass
+  T-global-run: pass
+  T-budget-main: pass
+  T-budget-chemical: pass
+  S-no-egress: pass
