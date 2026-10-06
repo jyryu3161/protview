@@ -21,11 +21,13 @@ from mw import jev_projection as P
 from mw import jev_sends as S
 from mw.api import app as api_module
 from mw.core.handles import canonical_json
+from mw.egress import science as egress_science
 
 SEND_KEYS = {"schema", "send_id", "status", "reason_code", "projection_handle", "source", "kind", "question_id",
              "selection_count", "body_sha256", "body_bytes", "audit_id", "requested_model", "served_model", "usage",
              "choice_handle", "late", "late_reason", "approved_event_seq", "outcome_event_seq"}
 PROBABILITY_VALUES = (0.4321, 0.1234)   # fixture reply values, never a provider output
+JSON = {"content-type": "application/json"}   # raw-content posts name their media type (the routes take JSON only)
 
 
 @pytest.fixture(scope="module")
@@ -249,8 +251,8 @@ def test_consent_route_refusals(base, tmp_path, monkeypatch):
     for body in ({"enabled": "yes"}, {"enabled": 1}, {}, {"enabled": True, "policy": "x"}, [], {"enabled": None}):
         _refused(client.post(_url(world, "/consent"), json=body), 422, "input_invalid")
     for raw in (b"not json", b'{"enabled": true, "enabled": false}', b'{"enabled": NaN}'):
-        _refused(client.post(_url(world, "/consent"), content=raw), 422, "input_invalid")
-    _refused(client.post(_url(world, "/consent"), content=b'{"enabled": true' + b" " * 5000 + b"}"),
+        _refused(client.post(_url(world, "/consent"), content=raw, headers=JSON), 422, "input_invalid")
+    _refused(client.post(_url(world, "/consent"), content=b'{"enabled": true' + b" " * 5000 + b"}", headers=JSON),
              413, "resource_exceeded")
     _refused(client.post("/runs/run_jev_missing/jev/consent", json={"enabled": True}), 404, "not_found")
     assert _log(world) == before and fake.key_reads == 0
@@ -293,11 +295,48 @@ def test_send_request_shape_refusals_write_nothing(base, tmp_path, monkeypatch):
         {**good, "projection": [good["projection"]]}]
     for body in bad:
         _refused(client.post(_url(world, "/sends"), json=body), 422, "input_invalid")
-    _refused(client.post(_url(world, "/sends"), content=json.dumps({**good, "pad": "x" * 4096}).encode()),
-             413, "resource_exceeded")
-    _refused(client.post(_url(world, "/sends"), content=b"[]"), 422, "input_invalid")
+    _refused(client.post(_url(world, "/sends"), content=json.dumps({**good, "pad": "x" * 4096}).encode(),
+                         headers=JSON), 413, "resource_exceeded")
+    _refused(client.post(_url(world, "/sends"), content=b"[]", headers=JSON), 422, "input_invalid")
     assert _log(world) == before and fake.requests == [] and fake.key_reads == 0
     assert len(json.dumps(good).encode()) < J.MAX_SEND_REQUEST_BYTES
+
+
+@pytest.mark.parametrize("content_type", ["text/plain", "text/plain; charset=utf-8",
+                                          "application/x-www-form-urlencoded", "multipart/form-data; boundary=pv",
+                                          "application/jsonx", "application/vnd.api+json", None])
+def test_the_three_jev_posts_take_application_json_only_and_refuse_before_reading_the_body(
+        content_type, base, tmp_path, monkeypatch):
+    # A page of another site can send these media types (and no type) as a simple POST without a preflight.
+    world, fake, client, _ = _open(base, tmp_path, monkeypatch)
+    _consent(client, world)
+    request = _request(world)
+    status, before = client.get(_url(world, "/status")).json(), _log(world)
+    headers = {} if content_type is None else {"content-type": content_type}
+    bodies = {"/consent": {"enabled": False}, "/preview": {"projection": world["projection"]}, "/sends": request}
+    for tail, body in bodies.items():
+        raw = json.dumps(body).encode()
+        # The same 415 for a valid body, a non-JSON body and an over-limit body: the body is never read (no 422/413).
+        for content in (raw, b"not json", raw + b" " * (J.MAX_SEND_REQUEST_BYTES + 1)):
+            detail = _refused(client.post(_url(world, tail), content=content, headers=headers),
+                              415, "unsupported_media_type")
+            assert detail == {"error": "unsupported_media_type", "message": api_module.JEV_MEDIA_TYPE_MESSAGE}
+    assert _log(world) == before and fake.requests == [] and fake.key_reads == 0 and not S.ACTIVE_SENDS
+    assert client.get(_url(world, "/status")).json() == status and status["enabled"] is True
+    assert client.get(_url(world, "/sends")).json() == []
+
+
+def test_the_jev_posts_accept_application_json_with_parameters_in_any_case(base, tmp_path, monkeypatch):
+    world, fake, client, _ = _open(base, tmp_path, monkeypatch)
+    request = _request(world)
+    for content_type, tail, body in (
+            ("application/json; charset=utf-8", "/consent", {"enabled": True}),
+            ("Application/JSON", "/preview", {"projection": world["projection"]}),
+            ("APPLICATION/json ; charset=UTF-8", "/sends", request)):
+        response = client.post(_url(world, tail), content=json.dumps(body).encode(),
+                               headers={"content-type": content_type})
+        assert response.status_code == 200, (tail, response.text)
+    assert response.json()["status"] == "completed" and len(fake.requests) == 1
 
 
 def test_send_conflicts_are_409_and_write_nothing(base, tmp_path, monkeypatch):
@@ -333,6 +372,62 @@ def test_a_busy_run_lock_is_503_with_no_event(base, tmp_path, monkeypatch):
     detail = _refused(response, 503, "busy")
     assert detail["message"] == api_module.JEV_BUSY_MESSAGE
     assert _log(world) == before and fake.requests == [] and fake.key_reads == 0 and not S.ACTIVE_SENDS
+
+
+RAW_FAULT = "fault_m24_t9 /private/var/protview/fault.jsonl"   # injected exception text; never in an answer
+
+
+@pytest.mark.parametrize("fault, derived", [("prepared_audit", ("failed", "delivery_unknown")),
+                                            ("approval_check", ("failed", "delivery_unknown")),
+                                            ("choice_store", ("failed", "outcome_not_recorded"))])
+def test_an_unexpected_error_after_approval_answers_one_fixed_500_and_the_record_follows_the_replay_rules(
+        fault, derived, base, tmp_path, monkeypatch):
+    world, fake, client, _ = _open(base, tmp_path, monkeypatch)
+    _consent(client, world)
+    run = api_module.RUNS[world["run_id"]]
+    if fault == "prepared_audit":     # fault injection: writing the prepared audit fails (a disk error)
+        real_audit = fake.gate._audit
+
+        def failing_audit(run_, stage, audit_id, **fields):
+            if stage == "prepared":
+                raise OSError(f"{RAW_FAULT} {SENTINEL}")
+            return real_audit(run_, stage, audit_id, **fields)
+        monkeypatch.setattr(fake.gate, "_audit", failing_audit)
+    elif fault == "approval_check":   # fault injection: the gate's post-admit approval check fails (PermissionError)
+        monkeypatch.setattr(egress_science, "_approval_recorded", lambda *args, **kwargs: False)
+    else:                             # fault injection: storing the proposal fails after the reply was received
+        real_put = run.store.put
+
+        def failing_put(kind, *args, **kwargs):
+            if kind == J.CHOICE_KIND:
+                raise OSError(f"{RAW_FAULT} {SENTINEL}")
+            return real_put(kind, *args, **kwargs)
+        monkeypatch.setattr(run.store, "put", failing_put)
+    request = _request(world)
+    response = client.post(_url(world, "/sends"), json=request)
+    assert response.status_code == 500, response.text
+    assert response.json() == {"detail": {"error": "internal_error", "message": api_module.JEV_INTERNAL_MESSAGE}}
+    for text in (RAW_FAULT, SENTINEL, "no recorded approval", "Traceback", "OSError", "PermissionError"):
+        assert text not in response.text, text
+    # The record keeps the existing replay rule (spec 5): approved, no outcome -> delivery_unknown or
+    # outcome_not_recorded; the response shape is the only thing this route fixes.
+    record = client.get(_url(world, f"/sends/{request['send_id']}")).json()
+    assert (record["status"], record["reason_code"], record["outcome_event_seq"]) == (*derived, None)
+    assert [row["send_id"] for row in client.get(_url(world, "/sends")).json()] == [request["send_id"]]
+    events = _events(world)
+    assert not [e for e in events if e["type"] == J.EVENT_OUTCOME]
+    if fault == "prepared_audit":     # the reservation is refunded and nothing was sent
+        assert not [e for e in events if e.get("stage") == "prepared"]
+        skipped = [e for e in events if e.get("stage") == "dispatch_skipped"]
+        assert [e["reason_code"] for e in skipped] == ["prepared_not_recorded"]
+        assert fake.requests == [] and run.egress_stop_reason is None
+    elif fault == "approval_check":   # nothing past the approval: no audit, no key read, no request
+        assert not [e for e in events if e["type"] in {"egress", "budget_reserved"}
+                    and e.get("send_id") == request["send_id"]]
+        assert fake.requests == [] and fake.key_reads == 0
+    else:
+        assert len(fake.requests) == 1
+    assert SENTINEL.encode() not in run_bytes(run) and RAW_FAULT.encode() not in run_bytes(run)
 
 
 # ---------------------------------------------------------------- replays, re-sends, refusals and failures answer 200

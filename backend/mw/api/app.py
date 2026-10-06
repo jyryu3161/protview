@@ -2281,6 +2281,8 @@ def sequence_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any
 # ----------------------------------------------------------------- M24 JEV science sends (one human-approved send route)
 JEV_REQUEST_LIMIT = jev_constants.MAX_SEND_REQUEST_BYTES   # every /jev POST body; 4 KiB is the approval bound
 JEV_BUSY_MESSAGE = "the run is busy with another operation; nothing was approved or sent"
+JEV_MEDIA_TYPE_MESSAGE = "expected Content-Type application/json; the body was not read and nothing was recorded"
+JEV_INTERNAL_MESSAGE = "the science send stopped on an internal error; its record in GET /jev/sends shows what was kept"
 JEV_CAPABILITY_REASONS = {
     "tool_unavailable": "투영 도구 build_jev_projection이 등록·노출되어 있지 않다.",
     "missing_configuration": "과학 전송의 요청·응답 모델·provider pin이 게이트 값과 다르다.",
@@ -2319,8 +2321,11 @@ def _jev_choice_capability() -> dict[str, Any]:
 
 
 async def _jev_request(request: Request, model: type[BaseModel]) -> Any:
-    """No query parameter, a body of at most 4 KiB (413), one JSON object with exactly the model's typed keys (422)."""
+    """No query parameter, Content-Type application/json (415 before the body is read: a cross-site simple POST
+    cannot carry it), a body of at most 4 KiB (413), one JSON object with exactly the model's typed keys (422)."""
     _only_query(request, set())
+    if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json":
+        raise HTTPException(415, detail={"error": "unsupported_media_type", "message": JEV_MEDIA_TYPE_MESSAGE})
     raw = _chemical_json(await _bounded_chemical_body(request, JEV_REQUEST_LIMIT))
     try:
         return model.model_validate(raw)
@@ -2399,6 +2404,11 @@ async def jev_send_create(rid: str, request: Request) -> Any:
     except (KeyError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt",
                                          "message": "the science send could not be recorded"}) from exc
+    except OSError as exc:
+        # A disk error while recording, or the gate's post-approval check (PermissionError is an OSError): one fixed
+        # body, never the exception text. The send record keeps the replay rule (delivery_unknown /
+        # outcome_not_recorded).
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_INTERNAL_MESSAGE}) from exc
 
 
 @app.get("/runs/{rid}/jev/sends")
