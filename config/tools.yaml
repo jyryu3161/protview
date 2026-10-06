@@ -217,6 +217,19 @@ tools:
       annotation: { default: null }                      # reference_site_annotation handle of the same structure | null
     description: 전처리 구조의 포켓 안쪽·리간드 주변·직접 고른 위치에서 보호 잔기(사용자 지정·KLIFS 주요 부위·금속 근접·이황화 Cys)를 이유와 함께 빼고 남은 위치마다 단일 아미노산 치환 후보 목록을 만든다(위치와 바꿀 잔기의 조합 목록이며 구조 모델링을 하지 않음)
 
+  # M24: local projection only (no egress); the JEV send is a separate human-approved route.
+  - name: build_jev_projection
+    level: L2
+    version: '1'
+    accepts: { source: [ligand_candidate_set, mutation_candidate_set] }
+    emits: jev_projection
+    cost_class: cheap
+    typical_runtime_s: 1
+    params:
+      candidates: { type: list, required: true }        # ligand: candidate ids "c_" + 16 hex | mutation: candidate indices; 1-20, no repeats
+      filter: { default: null }                          # ligand only: M17 filter spec every chosen candidate passes | null
+    description: 같은 run의 게시된 리간드·변이 후보 집합에서 고른 후보(1–20개)를 외부 모델에 보낼 수 있는 허용 목록 모양(별칭, 식별자, 저장된 값, 부위 주변 기하)과 정확한 요청 본문의 바이트 수·SHA-256으로 만들어 저장한다(이 도구는 아무것도 보내지 않으며 좌표·handle·번호 대응 값을 넣지 않음)
+
   - name: align
     level: L2
     accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }

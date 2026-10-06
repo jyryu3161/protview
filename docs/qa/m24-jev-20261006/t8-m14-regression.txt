@@ -1,0 +1,40 @@
+M24 T8 — M14 탭 수락 실행기 회귀 1회 (JEV 화면 추가 뒤 공유 탭 동작 확인)
+
+명령(프로젝트 루트, 8000·3000 비움, OpenRouter 실호출 0):
+  .venv/bin/python scripts/m14_offscreen_acceptance.py --root runs/m24-t8-m14-regression \
+      --artifacts frontend/tests/offscreen/artifacts/m24-acceptance/t8-m14-regression \
+      --out <Git 제외로 옮김: frontend/tests/offscreen/artifacts/m24-acceptance/t8-m14-regression-out>
+종료 코드 0, failedSteps [].
+
+verdict pass · acceptance true · 사례 15개 모두 pass
+빌드: gitHead 7a24650b724f910211f8edd41162b4f72648635b · buildCurrentWithSource True · buildId AaREfxN6eHEtVrkUJ63qY
+  (9c0ce31은 이 뒤 scripts/m24_offscreen_acceptance.py README 문구만 바꿨다: 프런트엔드·백엔드·탭 흐름 동일)
+브라우저 비-loopback 요청 합계 0 · 남은 프로세스 없음
+
+사례:
+  T-tabs: pass
+  T-structure-state: pass
+  T-running-job: pass
+  T-chemical-preserved: pass
+  T-unavailable: pass
+  T-reports-list: pass
+  T-reports-content: pass
+  T-reports-fault: pass
+  T-no-run: pass
+  T-run-switch: pass
+  T-late-response: pass
+  T-global-run: pass
+  T-budget-main: pass
+  T-budget-chemical: pass
+  S-no-egress: pass
+
+단계:
+  tabs-main: pass
+  tabs-chemical: pass
+
+전체 내보낸 증거(README·SHA256SUMS·evidence/, 1.6 MB: 내려받은 보고서 JSON 1.19 MB 포함)는 Git 제외 폴더에 두고 해시만 적는다:
+  case-ledger.json  sha256 798f18ce7318b8ca664e2cda48a78b8fefc0da65cea0b6aa255e7fb7dd3308ff
+  out/README.md     sha256 4512705664e55f52a50da58ef46b7a9d6f23ce40478ce8ac1fa3b9d573bb2776
+  out/SHA256SUMS    sha256 1f288a9525d274cde0e406d639691b66dff5dd3c6421f48898825fc8f58ebbcd
+
+판단: 페이지가 run이 바뀔 때 GET /jev/status를 한 번 새로 읽는 변경과 지식·보고서 탭의 JEV 영역이 기존 탭 흐름 15사례를 깨지 않았다.

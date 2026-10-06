@@ -1,0 +1,48 @@
+{
+  "schema": "m13_case_ledger_row@1",
+  "step": "attach-setup",
+  "buildId": "4GG2G1rPmVlN3v96FKAEK",
+  "harness": {
+    "runnerSha256": "b16ccb9f6e4f6c49bf29ecbe203e474c758cc5811e204e3167c0e007098a54f5"
+  },
+  "finishedAt": "2026-10-06T15:15:15.162518+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/regressions/m13/attach-setup",
+  "mode": "attach-setup",
+  "evidenceKind": "labeled_api_setup",
+  "status": "pass",
+  "cases": {},
+  "runId": "run_d5af73f6a3b44ca39f3dd80e05b4869d",
+  "externalRequestCount": 0,
+  "providerCallsZero": true,
+  "handles": {
+    "complex": "obj://run_d5af73f6a3b44ca39f3dd80e05b4869d/structure/72ed596b802ed4dd9161227685cecff4230de7558e71d60cd38ced38a39cd04b",
+    "sdfImport": "obj://run_d5af73f6a3b44ca39f3dd80e05b4869d/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9"
+  },
+  "inputs": [
+    {
+      "name": "m11-attach-complex.pdb",
+      "sha256": "9c4426ae0c459e656040b11c10e51e36ff09b7a4adeb5c162d1b2dc32f96ee03",
+      "provenance": "synthetic derivative attach complex; not experimental evidence"
+    },
+    {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "provenance": "public ProLIF tutorial docking-pose SDF"
+    }
+  ],
+  "setupOutput": {
+    "out": "<repo>/runs/m24-acceptance-20261006-m13-regression/inputs/attach-setup",
+    "ligand_sdf": "<repo>/backend/tests/fixtures/chemical/prolif-vina-output.sdf",
+    "files": {
+      "m11-attach-bonds-run.json": "c3c1129ab44fe77b6d798cfb7d6536569dd57e9ff5bedc64a45d1c2787939618",
+      "m11-attach-request-run.json": "4c275de6c9df89af896bc888155f6f38f704b205d9d1bdf5306dfc3f852f70a8",
+      "m11-attach-mapping-run.json": "7d8ee178738f706b8c5bfec3e166d1fc1ae2ebc259745bbbc4dd9980f20d9f9a",
+      "m11-attach-mapping-replace-run.json": "844207ea51e6fe9bbce411933ab7ffa09fda47efeaf64ff7ac32665c4cce5480",
+      "m11-attach-ligand-instance-run.json": "0ba12f5c77943ca8bdd2ae3ee5f75545ad7b41dbbf8a5cbb4d3d99ac0b503c95"
+    },
+    "mapping_count": 79,
+    "replacement_heavy_mapping_count": 43,
+    "sidecar_handle_set": false
+  },
+  "note": "Setup only (loopback upload/load/import); covers no case."
+}

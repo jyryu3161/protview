@@ -1,0 +1,577 @@
+{
+  "schema": "m24_case_ledger_row@1",
+  "mode": "fixture",
+  "rehearsal": false,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "J-tab-entry": "pass",
+    "J-source-choice": "pass",
+    "J-consent-off-block": "pass",
+    "J-consent-toggle": "pass",
+    "J-candidate-limit": "pass",
+    "J-preview-match": "pass",
+    "J-confirm-required": "pass",
+    "J-send-good": "pass",
+    "J-bytes-equal": "pass",
+    "J-resend": "pass",
+    "J-report": "pass",
+    "J-ligand-filter": "pass",
+    "J-failed-alias": "pass",
+    "J-failed-model": "pass",
+    "J-late": "pass",
+    "J-send-cap": "pass",
+    "J-other-tabs": "pass",
+    "J-no-usage-stop": "pass",
+    "J-failed-http": "pass",
+    "J-wording": "pass",
+    "J-no-egress-browser": "pass"
+  },
+  "runs": {
+    "A": "run_74b903e76af7409194fa9b9a854f214a",
+    "B": "run_ffea648bfe9840e5a009a72279866d0f",
+    "C": "run_82b456338c1d4325a3dcb13e08d74242"
+  },
+  "sends": [],
+  "preChecks": null,
+  "plan": null,
+  "fixture": {
+    "calls": 12,
+    "scripts": [
+      "good",
+      "good_no_extras",
+      "alias_outside",
+      "model_mismatch",
+      "slow",
+      "good",
+      "good",
+      "good",
+      "good",
+      "good",
+      "no_usage",
+      "http_500"
+    ],
+    "statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      500
+    ],
+    "sentinelAuthorization": true,
+    "bodySha256": [
+      "137010fef9d27d31b0061d4629398ed976395b373ad0819f2079242ffb393a12",
+      "137010fef9d27d31b0061d4629398ed976395b373ad0819f2079242ffb393a12",
+      "be939434f5ff0f1bfd50445ff85fc9822a28934e594d6f754f566ffc4b23d5a0",
+      "be939434f5ff0f1bfd50445ff85fc9822a28934e594d6f754f566ffc4b23d5a0",
+      "be939434f5ff0f1bfd50445ff85fc9822a28934e594d6f754f566ffc4b23d5a0",
+      "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "bc05f625b598415cf03335a6de59a590b5411cd7063aec9e4c85400b08302307",
+      "a84dc35b383074e472a3369494ffd8aa81f0bd88d3fba538931100473913fa36"
+    ]
+  },
+  "dispatchCounts": {
+    "run_74b903e76af7409194fa9b9a854f214a": 10,
+    "run_82b456338c1d4325a3dcb13e08d74242": 1,
+    "run_af28b2cfede044f5aed056fa6b1a4907": 0,
+    "run_cfc09dc1378d40008c4d2a968bd5c0a1": 0,
+    "run_ffea648bfe9840e5a009a72279866d0f": 1
+  },
+  "fixtureLabels": [
+    "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_fixture/server.py)"
+  ],
+  "controls": {
+    "jev-source-mutation": [
+      {
+        "handle": "obj://run_74b903e76af7409194fa9b9a854f214a/mutation_candidate_set/3ba86df8d0377b39e2c15a5ac6061d9f965bcfe48e05b445956f03a6e0ddc28c"
+      },
+      {
+        "handle": "obj://run_74b903e76af7409194fa9b9a854f214a/mutation_candidate_set/496816ed253ce5d7d781428e2d8910e77090cb4cb7598d558438496c4e06d272"
+      },
+      {
+        "handle": "obj://run_ffea648bfe9840e5a009a72279866d0f/mutation_candidate_set/f6540d863d5559ba5d8dd9f59e9a716bc49f7e0ce5fa17e0724b5231a1c236a3"
+      },
+      {
+        "handle": "obj://run_82b456338c1d4325a3dcb13e08d74242/mutation_candidate_set/0f52847ce4ac8fc5522c97d3524553cecaa2600cb529dd9cb36730e589d1eeed"
+      }
+    ],
+    "jev-candidate": [
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_5d474f8db1578d8d"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      }
+    ],
+    "jev-build": [
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "projection": "obj://run_74b903e76af7409194fa9b9a854f214a/jev_projection/6715183282e3528f4044098b8b8e50f65e0e1389f6e7d77e8e23233b752cddee",
+        "count": 3
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "projection": "obj://run_74b903e76af7409194fa9b9a854f214a/jev_projection/895c78b6743ca92bec3f82c02db441809554169ccf2af613e11b23576d76ca72",
+        "count": 20
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "projection": "obj://run_74b903e76af7409194fa9b9a854f214a/jev_projection/87022df9f3ec4e3b1501bc02085ee7aa71ef081d79130b7c976e7bcc8454505f",
+        "count": 2
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "projection": "obj://run_74b903e76af7409194fa9b9a854f214a/jev_projection/e4a825956f277eb926f65b8b03450475cf27aafbe6a54957f0ad9eaf1b4de026",
+        "count": 20
+      },
+      {
+        "run": "run_ffea648bfe9840e5a009a72279866d0f",
+        "projection": "obj://run_ffea648bfe9840e5a009a72279866d0f/jev_projection/c35502e5f305ea598ef52a0762989c3464322f294ff9fbb583a0dc043cef0be3",
+        "count": 3
+      },
+      {
+        "run": "run_82b456338c1d4325a3dcb13e08d74242",
+        "projection": "obj://run_82b456338c1d4325a3dcb13e08d74242/jev_projection/cb53e0839a815e32b2a2c9185b50805bce98a64136ba809788d3d32dfdc6e4c3",
+        "count": 2
+      }
+    ],
+    "jev-consent": [
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "enabled": true
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "enabled": false
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "enabled": true
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "enabled": false
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "enabled": true
+      },
+      {
+        "run": "run_ffea648bfe9840e5a009a72279866d0f",
+        "enabled": true
+      },
+      {
+        "run": "run_82b456338c1d4325a3dcb13e08d74242",
+        "enabled": true
+      }
+    ],
+    "jev-candidate-21st": [
+      {
+        "key": "20"
+      }
+    ],
+    "jev-preview-body-details": [
+      {
+        "opened": true
+      }
+    ],
+    "jev-confirm": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-send": [
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good_no_extras"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "alias_outside"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "model_mismatch"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "slow"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good"
+      },
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "script": "good"
+      },
+      {
+        "run": "run_ffea648bfe9840e5a009a72279866d0f",
+        "script": "no_usage"
+      },
+      {
+        "run": "run_82b456338c1d4325a3dcb13e08d74242",
+        "script": "http_500"
+      }
+    ],
+    "jev-send-report": [
+      {
+        "run": "run_74b903e76af7409194fa9b9a854f214a",
+        "choice": "obj://run_74b903e76af7409194fa9b9a854f214a/jev_choice/a9fab69de31ebfcc901170d521c4e3ac3b85c43ac309d8c254032148e621082d"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_74b903e76af7409194fa9b9a854f214a/method_report_manifest/28623bc13ec4daf3f67ec2c99ae3bd27eedcfb9944feff4a60cd4a40787886fb"
+      }
+    ],
+    "jev-source-ligand": [
+      {
+        "handle": "obj://run_74b903e76af7409194fa9b9a854f214a/ligand_candidate_set/0265d6c2349f71775074fd9ee999753417994875946bed292d032a149c15f798"
+      }
+    ],
+    "jev-filter-apply": [
+      {
+        "heavy_atoms_max": 44
+      }
+    ],
+    "jev-passes-only": [
+      {
+        "checked": true
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "good card",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "same body again",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report markdown",
+      "kind": "report",
+      "found": 0
+    },
+    {
+      "label": "late card",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "no usage, egress stopped",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "HTTP 500 reason",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 1",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 2",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 3",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 4",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 5",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 6",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 7",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 8",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 9",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 10",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 11",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 12",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "end of fixture mode",
+      "kind": "screen",
+      "found": 0
+    }
+  ],
+  "buildId": "L1WcPjrTR60b9VYSegZtb",
+  "harness": {
+    "jev-flow.cjs": "9e68cfe2292b2f4d3ec7802d24c001c704d84e44eee77e8a96d85088ebbfeed1",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 338,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/t9-fixture/jev-fixture/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 440,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 9,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/t9-fixture/jev-fixture/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 101,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "jev-fixture.jsonl",
+  "startedAt": "2026-10-06T13:56:22.305Z",
+  "finishedAt": "2026-10-06T13:56:40.751Z"
+}

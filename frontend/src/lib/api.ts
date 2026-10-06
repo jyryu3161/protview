@@ -7,7 +7,8 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   LigandGaList, LigandGaPreflight, LigandGaReportArtifact, LigandGaSubmission,
   DockingCapability, DockingContactPage, DockingJob, DockingPrerequisites, DockingReceptorInstances,
   DockingReportArtifact, DockingResultDetail, DockingResultList, DockingSubmission, EgressMode, Handle,
-  InteractionRow, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
+  InteractionRow, JevPreviewV1, JevProjectionArgs, JevReportArtifact, JevSendDetail, JevSendRequest, JevSendV1,
+  JevStatusV1, LigandCandidatePage, LigandCandidateSetDetail, LigandCandidateSetList, LigandCapability,
   LigandEnumerateArgs, LigandFilterSpec, LigandImport, LigandImportKind, LigandInspectArgs, LigandInspectionDetail,
   LigandInspectionList, LigandJob, LigandPrerequisites, LigandReportArtifact, LigandSitePreview, LigandSubmission,
   MutationCandidatePage, MutationCandidateSetDetail, MutationCandidateSetList, MutationPositionPage,
@@ -62,7 +63,9 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     ligand_ga_design?: LigandGaCapability;
     mutation_candidates?: { available: boolean; reason_code: string | null; reason: string | null };
     mutation_model?: MutationModelCapability;
-    sequence_ga_design?: SequenceGaCapability } }
+    sequence_ga_design?: SequenceGaCapability;
+    /** M24: local conditions only (projection tool, model pins); no key and no run consent is read. */
+    jev_choice?: { available: boolean; reason_code: string | null; reason: string | null } } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -84,7 +87,7 @@ export interface MethodReportArtifact { handle: string; markdown_handle: string;
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
     | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking" | "ligand_docking_batch"
-    | "mutation_candidates";
+    | "mutation_candidates" | "jev_choice";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -252,7 +255,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -478,6 +481,27 @@ export const api = {
   /** Report `analysis_type: "sequence_ga"` of one stored GA summary (nothing is modelled or docked again). */
   createSequenceGaReport: (id: string, summaryHandle: string, signal?: AbortSignal) =>
     request<SequenceGaReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: summaryHandle }, signal)),
+  // ---- M24 JEV science sends (status, preview and the send list/detail write no event and send nothing; the one
+  // external send is `jevSend`, the person's approval of one exact preview body) ----
+  /** Runs `build_jev_projection` through the ordinary Run.call command route (no job, approval or budget). */
+  buildJevProjection: (id: string, args: JevProjectionArgs, signal?: AbortSignal) =>
+    api.command(id, "build_jev_projection", args as unknown as Record<string, unknown>, signal),
+  jevStatus: (id: string, signal?: AbortSignal) => request<JevStatusV1>(runPath(id, "/jev/status"), { signal }),
+  /** The run-level science consent (412 `dry_run` when turning it on in a dry-run run). */
+  jevSetConsent: (id: string, enabled: boolean, signal?: AbortSignal) =>
+    request<JevStatusV1>(runPath(id, "/jev/consent"), jsonPost({ enabled }, signal)),
+  jevPreview: (id: string, projection: string, signal?: AbortSignal) =>
+    request<JevPreviewV1>(runPath(id, "/jev/preview"), jsonPost({ projection }, signal)),
+  /** Approve and send one previewed body; refusals and failures also answer 200 with their `jev_send@1` record. */
+  jevSend: (id: string, body: JevSendRequest, signal?: AbortSignal) =>
+    request<JevSendV1>(runPath(id, "/jev/sends"), jsonPost(body, signal)),
+  /** This run's sends, oldest first. */
+  jevSends: (id: string, signal?: AbortSignal) => request<JevSendV1[]>(runPath(id, "/jev/sends"), { signal }),
+  jevSendDetail: (id: string, sendId: string, signal?: AbortSignal) =>
+    request<JevSendDetail>(runPath(id, `/jev/sends/${encodeURIComponent(sendId)}`), { signal }),
+  /** Report `analysis_type: "jev_choice"` of one stored proposal (nothing is sent or chosen again). */
+  createJevReport: (id: string, choiceHandle: string, signal?: AbortSignal) =>
+    request<JevReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: choiceHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

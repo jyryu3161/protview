@@ -1,0 +1,52 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "AaREfxN6eHEtVrkUJ63qY",
+    "gitHead": "9c0ce31258fe5e1e588538f980142e5aba33395f",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-06T13:04:45.125681+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-flow.cjs": "884b67ed66759539274f6d19f2425fce35f1ec702320cd95416df7f537453094",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "03b316c610c567af6c1c13b8069577b4c264bd2c007c426d625fdc21b3a96455",
+    "runnerSha256": "f8feea0fb16a1dd321783d0f5b8d8640523f00e9f3d93da49853f30999f78ce4"
+  },
+  "services": [
+    {
+      "name": "fixture-backend",
+      "runs": "<repo>/runs/m24-t8-fixture-20261006b/runs",
+      "control": "<repo>/runs/m24-t8-fixture-20261006b/fixture-control",
+      "startedAt": "2026-10-06T13:04:49.587304+00:00"
+    }
+  ],
+  "environment": {
+    "workerPython": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m24_jev_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "scripts": [
+        "good",
+        "good_no_extras",
+        "alias_outside",
+        "http_500",
+        "no_usage",
+        "model_mismatch",
+        "slow"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "jevAvailable": true,
+    "setup": true
+  }
+}

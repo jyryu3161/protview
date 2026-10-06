@@ -1,0 +1,609 @@
+{
+  "schema": "m24_jev_evidence@1",
+  "mode": "live",
+  "rehearsal": true,
+  "runs": {
+    "L1": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+    "L2": "run_17c71f59bc684ae9b9d21fe36365ed8b"
+  },
+  "sends": [
+    {
+      "entry": "L1-mutation-1ubq-5",
+      "run": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+      "kind": "mutation",
+      "aliases": 5,
+      "bodyBytes": 7030,
+      "bodySha256": "a556e5eb22baeb788d7a1b0de9a9a552b53dd63b2989b1b8e424bb087bd4f56b",
+      "reservation": {
+        "external_tokens": 8783,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 13,
+        "inRun": 1
+      },
+      "sendId": "04902b09-d2e4-4773-84c9-3c48d3b589de",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 190,
+        "input_tokens": 170,
+        "output_tokens": 20
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 2,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 345,
+          "limit": 120000,
+          "remaining": 119655
+        },
+        "usd": {
+          "used": 0.00020000000000000573,
+          "limit": 2,
+          "remaining": 1.9998
+        }
+      },
+      "preparedSha256": "a556e5eb22baeb788d7a1b0de9a9a552b53dd63b2989b1b8e424bb087bd4f56b",
+      "fixtureCall": 14,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "m02",
+        "confidence": "0.620",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "170",
+          "output_tokens": "20",
+          "external_tokens": "190",
+          "cost": "0.0001"
+        },
+        "foldedBefore": true
+      }
+    },
+    {
+      "entry": "L1-ligand-10",
+      "run": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+      "kind": "ligand",
+      "aliases": 10,
+      "bodyBytes": 5607,
+      "bodySha256": "147c185e41b927c23a5090214c97ff3c95ba39f22d4fbb1bf16121ae6f9f80bd",
+      "reservation": {
+        "external_tokens": 7834,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 14,
+        "inRun": 2
+      },
+      "sendId": "15c4f2a5-417c-4f14-99a9-ff2a6cb6f57c",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 176,
+        "input_tokens": 156,
+        "output_tokens": 20
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 3,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 521,
+          "limit": 120000,
+          "remaining": 119479
+        },
+        "usd": {
+          "used": 0.0003000000000000086,
+          "limit": 2,
+          "remaining": 1.9997
+        }
+      },
+      "preparedSha256": "147c185e41b927c23a5090214c97ff3c95ba39f22d4fbb1bf16121ae6f9f80bd",
+      "fixtureCall": 15,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 10
+      },
+      "card": {
+        "alias": "c02",
+        "confidence": "0.620",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "156",
+          "output_tokens": "20",
+          "external_tokens": "176",
+          "cost": "0.0001"
+        },
+        "foldedBefore": true
+      }
+    },
+    {
+      "entry": "L2-mutation-1mq4-20",
+      "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+      "kind": "mutation",
+      "aliases": 20,
+      "bodyBytes": 29151,
+      "bodySha256": "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "reservation": {
+        "external_tokens": 23530,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 15,
+        "inRun": 0
+      },
+      "sendId": "4d9797f6-2cf7-461f-9df8-49bb4894b3bb",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 411,
+        "input_tokens": 391,
+        "output_tokens": 20
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 1,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 411,
+          "limit": 120000,
+          "remaining": 119589
+        },
+        "usd": {
+          "used": 0.00010000000000000286,
+          "limit": 2,
+          "remaining": 1.9999
+        }
+      },
+      "preparedSha256": "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "fixtureCall": 16,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 20
+      },
+      "card": {
+        "alias": "m02",
+        "confidence": "0.620",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "391",
+          "output_tokens": "20",
+          "external_tokens": "411",
+          "cost": "0.0001"
+        },
+        "foldedBefore": true
+      }
+    },
+    {
+      "entry": "L2-mutation-1mq4-20-again",
+      "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+      "kind": "mutation",
+      "aliases": 20,
+      "bodyBytes": 29151,
+      "bodySha256": "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "reservation": {
+        "external_tokens": 23530,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 16,
+        "inRun": 1
+      },
+      "sendId": "651c0e55-337f-47a7-a400-363863267f97",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 411,
+        "input_tokens": 391,
+        "output_tokens": 20
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 2,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 822,
+          "limit": 120000,
+          "remaining": 119178
+        },
+        "usd": {
+          "used": 0.00020000000000000573,
+          "limit": 2,
+          "remaining": 1.9998
+        }
+      },
+      "preparedSha256": "7015ec49b59502923280e2f5f32df0b11493c1c1dceb38231bb0cea2f16441dc",
+      "fixtureCall": 17,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 20
+      },
+      "card": {
+        "alias": "m02",
+        "confidence": "0.620",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "391",
+          "output_tokens": "20",
+          "external_tokens": "411",
+          "cost": "0.0001"
+        },
+        "foldedBefore": true
+      }
+    },
+    {
+      "entry": "L2-mutation-1ubq-20",
+      "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+      "kind": "mutation",
+      "aliases": 20,
+      "bodyBytes": 25428,
+      "bodySha256": "137010fef9d27d31b0061d4629398ed976395b373ad0819f2079242ffb393a12",
+      "reservation": {
+        "external_tokens": 21048,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 17,
+        "inRun": 2
+      },
+      "sendId": "2567bea0-c46c-454b-81f2-016363345ce7",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 374,
+        "input_tokens": 354,
+        "output_tokens": 20
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 3,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 1196,
+          "limit": 120000,
+          "remaining": 118804
+        },
+        "usd": {
+          "used": 0.0003000000000000086,
+          "limit": 2,
+          "remaining": 1.9997
+        }
+      },
+      "preparedSha256": "137010fef9d27d31b0061d4629398ed976395b373ad0819f2079242ffb393a12",
+      "fixtureCall": 18,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 20
+      },
+      "card": {
+        "alias": "m02",
+        "confidence": "0.620",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "354",
+          "output_tokens": "20",
+          "external_tokens": "374",
+          "cost": "0.0001"
+        },
+        "foldedBefore": true
+      }
+    }
+  ],
+  "fixtureLabels": [
+    "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_fixture/server.py)"
+  ],
+  "partFailures": [],
+  "controls": {
+    "jev-source-mutation": [
+      {
+        "handle": "obj://run_8ecaa2b1e1b542bead7812f1ab4e453d/mutation_candidate_set/fd342d75dbe40ab75981c3f0e47369db6f5924519ded8e584e4a443568a5aee7"
+      },
+      {
+        "handle": "obj://run_17c71f59bc684ae9b9d21fe36365ed8b/mutation_candidate_set/fe4644026b7f9954bc0c9cd2bfed4901291ee86ae7ac7faa25cd51f5b962144d"
+      },
+      {
+        "handle": "obj://run_17c71f59bc684ae9b9d21fe36365ed8b/mutation_candidate_set/b104cfedc223f31bb8058af0307cc3ea41dbb371b3768f5e91d9f30c26d3bfc0"
+      }
+    ],
+    "jev-candidate": [
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_c42a53803595e440"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_71188fcf0e6703c9"
+      },
+      {
+        "key": "c_21d6c6f0d07e3759"
+      },
+      {
+        "key": "c_14271764afae517b"
+      },
+      {
+        "key": "c_5d474f8db1578d8d"
+      },
+      {
+        "key": "c_da033b82807ffbe7"
+      },
+      {
+        "key": "c_2c7a25e0cc0ad3f2"
+      },
+      {
+        "key": "c_9d4897ac9ecdb2d4"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      }
+    ],
+    "jev-build": [
+      {
+        "run": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+        "projection": "obj://run_8ecaa2b1e1b542bead7812f1ab4e453d/jev_projection/5fb27e7839868bc885ddc755444e87cfc4799b82e53339cfd6e940cc49a00b6b",
+        "count": 5
+      },
+      {
+        "run": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+        "projection": "obj://run_8ecaa2b1e1b542bead7812f1ab4e453d/jev_projection/c62ff196c153a057afde81ec6df55d94d5e490f9d00b3799009d68c4dd8277e6",
+        "count": 10
+      },
+      {
+        "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+        "projection": "obj://run_17c71f59bc684ae9b9d21fe36365ed8b/jev_projection/7763d8af2b6a1ebe5b28a1c63461300968ce278bbeb3ef54bf0cc0789360f2e9",
+        "count": 20
+      },
+      {
+        "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+        "projection": "obj://run_17c71f59bc684ae9b9d21fe36365ed8b/jev_projection/5294768fce2855075e17c03a57da0154986ff87aecd16f86e0792dc55da0f380",
+        "count": 20
+      }
+    ],
+    "jev-send": [
+      {
+        "run": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+        "script": "good"
+      },
+      {
+        "run": "run_8ecaa2b1e1b542bead7812f1ab4e453d",
+        "script": "good"
+      },
+      {
+        "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+        "script": "good"
+      },
+      {
+        "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+        "script": "good"
+      },
+      {
+        "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+        "script": "good"
+      }
+    ],
+    "jev-source-ligand": [
+      {
+        "handle": "obj://run_8ecaa2b1e1b542bead7812f1ab4e453d/ligand_candidate_set/8c27015522cec1f9b3cc5605345855e3cf92ef3db7c6576383356e90e0b78a22"
+      }
+    ],
+    "jev-consent": [
+      {
+        "run": "run_17c71f59bc684ae9b9d21fe36365ed8b",
+        "enabled": true
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "after L1-mutation-1ubq-5",
+      "kind": "screen",
+      "found": []
+    },
+    {
+      "label": "after L1-ligand-10",
+      "kind": "screen",
+      "found": []
+    },
+    {
+      "label": "after L2-mutation-1mq4-20",
+      "kind": "screen",
+      "found": []
+    },
+    {
+      "label": "after L2-mutation-1mq4-20-again",
+      "kind": "screen",
+      "found": []
+    },
+    {
+      "label": "after L2-mutation-1ubq-20",
+      "kind": "screen",
+      "found": []
+    }
+  ],
+  "startedAt": "2026-10-06T14:42:12.472Z",
+  "plan": {
+    "entries": [
+      "L1-mutation-1ubq-5",
+      "L1-ligand-10",
+      "L2-mutation-1mq4-20",
+      "L2-mutation-1mq4-20-again",
+      "L2-mutation-1ubq-20"
+    ],
+    "maxDispatch": 18,
+    "maxPerRun": 3,
+    "preChecks": null,
+    "rehearsal": true
+  },
+  "dispatchCounts": {
+    "run_17c71f59bc684ae9b9d21fe36365ed8b": 3,
+    "run_7e68ccea9c544ab68bf609f5348e87e4": 1,
+    "run_8ecaa2b1e1b542bead7812f1ab4e453d": 3,
+    "run_915ce3e6493348cbb491855be966d32f": 1,
+    "run_d7a93fd16b5546838cee7f1dd1c1d74c": 10
+  },
+  "fixture": {
+    "calls": 18
+  },
+  "finishedAt": "2026-10-06T14:42:28.869Z",
+  "error": null,
+  "requestCount": 367
+}

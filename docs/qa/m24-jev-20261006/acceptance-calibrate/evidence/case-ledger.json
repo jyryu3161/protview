@@ -1,0 +1,335 @@
+{
+  "schema": "m24_case_ledger@1",
+  "phase": "calibrate",
+  "acceptanceScope": "calibrate",
+  "liveCalls": 6,
+  "generatedAt": "2026-10-06T14:24:42.839804+00:00",
+  "build": {
+    "buildId": "L1WcPjrTR60b9VYSegZtb",
+    "gitHead": "30f37959beca6db34116d6f5b906fa907ac76415",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-06T14:04:09.773347+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-flow.cjs": "9e68cfe2292b2f4d3ec7802d24c001c704d84e44eee77e8a96d85088ebbfeed1",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "03b316c610c567af6c1c13b8069577b4c264bd2c007c426d625fdc21b3a96455",
+    "runnerSha256": "350ad5229d30cc06188b61b93c5d858c0c0f4f0bbe7b4f0130bdbf6f58600bc8"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "JL-calibrate-send": {
+      "text": "첫 실호출 클릭 전에 같은 화면에서 전송 없이(L1의 1UBQ 집합): 동의 끔 → 미리보기 consent_off·확인 체크해도 전송 단추 닫힘 → 다시 켬, 20개 체크 뒤 21번째 거절(체크되지 않고 이유 표시) → 5개로 줄임, 확인 체크 전 전송 단추 닫힘, 전송 요청·dispatch 이벤트 0; 이어서 첫 실호출 한 번(리간드 5개): 실제 JEV 결과 카드(후보별 값은 처음에 접힘)·고정 문장·보고서, 다른 탭 불변",
+      "modes": {
+        "jev-calibrate": "pass"
+      },
+      "status": "pass"
+    },
+    "S-browser-egress-zero": {
+      "text": "모든 흐름 행의 브라우저 비-loopback 요청 0건",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-key-absent": {
+      "text": "증거 폴더·QA 루트·내보낸 증거에서 API 키 문자열과 fixture placeholder 문자열 0건",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-wording-evidence": {
+      "text": "증거 텍스트에 금지 표현 0건(고정 문장 제외)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "JL-count": {
+      "text": "실호출 계수: 모든 QA run의 dispatch 이벤트와 response_received 감사가 --live-calls 이하, run당 3회 이하",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "JL-calibration": {
+      "text": "첫 실호출: completed, 사용량(입력·출력 토큰·비용)을 알고 예약값 이하, 외부 전송 멈춤 없음, calibrate 흐름 전체(사전 확인·결과 카드·보고서·다른 탭) 통과",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "JL-ledger": {
+      "text": "저장소 단위 실호출 대장(Git 제외 runs/m24-live-ledger.json, 모든 QA root의 dispatch 이벤트로 확정, 실패한 전송 포함): 단계 뒤 합계 6회 이하. 단계 시작 전에 대장 합계 + 이번 계획이 6을 넘거나 대장을 읽을 수 없으면 아무것도 시작하지 않고 거절",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "jev-calibrate": {
+      "status": "pass",
+      "latest": "jev-calibrate",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "J-late-run-cancelled": "run 취소 뒤 도착한 응답: HTTP 취소 경로가 없어 화면에서 만들 수 없다. backend/tests/test_jev_sends.py::test_a_valid_reply_after_cancel_or_consent_off_is_kept_and_marked_late 가 덮는다.",
+    "J-timeout-transport": "external_timeout·transport_error: backend/tests/test_jev_science_gate.py::test_transport_timeout_is_external_timeout_and_usage_unknown, test_other_transport_errors_are_transport_error 가 덮는다.",
+    "J-missing-credential": "키 없음(missing_credential): backend/tests/test_jev_science_gate.py::test_missing_or_unusable_key_is_missing_credential_after_one_read 가 덮는다.",
+    "J-restart-derivation": "재시작 뒤 delivery_unknown·outcome_not_recorded 도출: backend/tests/test_jev_sends.py::test_restart_without_an_outcome_derives_delivery_unknown_or_outcome_not_recorded 가 덮는다.",
+    "J-send-in-progress": "다른 전송 진행 중(send_in_progress): 화면이 한 번에 한 전송만 열어 두 번째 전송을 만들 수 없다. backend/tests/test_jev_sends.py::test_a_send_in_flight_blocks_other_sends_and_reads_as_in_progress 가 덮는다.",
+    "J-dry-run": "dry-run run: backend/tests/test_jev_sends.py::test_dry_run_cannot_enable_consent_and_rejects_sends 가 덮는다."
+  },
+  "environment": {
+    "workerPython": true,
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "jevAvailable": true,
+    "keyAvailable": true,
+    "setup": true
+  },
+  "checks": {
+    "events": {
+      "run_1b47383f84ce4286a686c21d1080a99d": {
+        "dispatch": 1,
+        "responseReceived": 1,
+        "scienceResponses": 1
+      },
+      "run_34c0b3fd12444b6fa261f34d241fa3a4": {
+        "dispatch": 0,
+        "responseReceived": 0,
+        "scienceResponses": 0
+      }
+    },
+    "liveCount": {
+      "ok": true,
+      "limit": 1,
+      "counts": {
+        "run_1b47383f84ce4286a686c21d1080a99d": {
+          "dispatch": 1,
+          "responseReceived": 1,
+          "scienceResponses": 1
+        },
+        "run_34c0b3fd12444b6fa261f34d241fa3a4": {
+          "dispatch": 0,
+          "responseReceived": 0,
+          "scienceResponses": 0
+        }
+      }
+    },
+    "calibration": {
+      "ok": true,
+      "flowPassed": true,
+      "entry": "L1-ligand-5",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "bodyBytes": 3539,
+      "usage": {
+        "cost": 8.7654e-05,
+        "external_tokens": 2152,
+        "input_tokens": 2087,
+        "output_tokens": 65
+      },
+      "reservation": {
+        "external_tokens": 5866,
+        "usd": 0.1
+      },
+      "egressStop": null,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "bodyBytesPerInputToken": 1.6957355055103018,
+      "reservedTokensOverUsed": 2.725836431226766
+    },
+    "liveLedger": {
+      "ok": true,
+      "path": "<repo>/runs/m24-live-ledger.json",
+      "before": 0,
+      "planned": 1,
+      "after": 1,
+      "rootDispatch": 1,
+      "readOnly": true
+    },
+    "keyScan": {
+      "ok": true,
+      "keyAvailable": true,
+      "files": 240,
+      "keyHits": [],
+      "sentinelHits": [],
+      "roots": [
+        "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/live-20261006",
+        "<repo>/runs/m24-live-20261006"
+      ]
+    },
+    "wordingScan": {}
+  },
+  "finalize": {
+    "at": "2026-10-06T14:24:42.453136+00:00",
+    "realCalls": 0,
+    "gitHead": "52181308dc7f7bc31b55173a9b6a283eb8f257ce",
+    "runnerSha256": "9e839455a10619d2d770ead97501445b193c7aa8864c23f94d50ad33a31e0a38",
+    "ledgerSha256": "82e76fec91abb09d81bd954844245df3296695c058b90955738b0fbf798b28e1",
+    "liveStateSha256": "301ecf149a5214a609662858662769d3589b9744763fd381093779c235073e91",
+    "note": "rebuilt from the stored files of a finished calibrate root; no call"
+  },
+  "dispatchCapExceeded": null,
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "jev-calibrate",
+      "mode": "live",
+      "rehearsal": false,
+      "status": "pass",
+      "cases": {
+        "JL-live": "pass"
+      },
+      "runs": {
+        "L1": "run_1b47383f84ce4286a686c21d1080a99d",
+        "L2": "run_34c0b3fd12444b6fa261f34d241fa3a4"
+      },
+      "sends": [
+        {
+          "entry": "L1-ligand-5",
+          "run": "run_1b47383f84ce4286a686c21d1080a99d",
+          "kind": "ligand",
+          "aliases": 5,
+          "bodyBytes": 3539,
+          "bodySha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+          "reservation": {
+            "external_tokens": 5866,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 0,
+            "inRun": 0
+          },
+          "sendId": "730bfc3b-3a64-4ee6-b0a2-610d6dde3a05",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 8.7654e-05,
+            "external_tokens": 2152,
+            "input_tokens": 2087,
+            "output_tokens": 65
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 1,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 2152,
+              "limit": 120000,
+              "remaining": 117848
+            },
+            "usd": {
+              "used": 8.765400000000645e-05,
+              "limit": 2,
+              "remaining": 1.999912346
+            }
+          },
+          "preparedSha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 5
+          },
+          "card": {
+            "alias": "c01",
+            "confidence": "0.780",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "2087",
+              "output_tokens": "65",
+              "external_tokens": "2152",
+              "cost": "0.000087654"
+            },
+            "foldedBefore": true
+          },
+          "report": {
+            "handle": "obj://run_1b47383f84ce4286a686c21d1080a99d/method_report_manifest/b8533f473e6f92d862eb19ccf7fc5a4bad7e3da17d5bd8d6d37dcb7268ab631e",
+            "markdownSha256": "001be316ced44821d01e572e79ac17e4b87b7cc0077b473b67d98627bd5ab772",
+            "kind": "JEV 판정 보고서"
+          }
+        }
+      ],
+      "plan": {
+        "entries": [
+          "L1-ligand-5"
+        ],
+        "maxDispatch": 1,
+        "maxPerRun": 3,
+        "preChecks": {
+          "run": "L1",
+          "kind": "mutation",
+          "set": "ubq",
+          "keep": 5
+        },
+        "rehearsal": false
+      },
+      "fixture": null,
+      "dispatchCounts": {
+        "run_1b47383f84ce4286a686c21d1080a99d": 1,
+        "run_34c0b3fd12444b6fa261f34d241fa3a4": 0
+      },
+      "evidenceKind": "real_electron_offscreen",
+      "fixtureLabels": [],
+      "controls": [
+        "jev-build",
+        "jev-candidate",
+        "jev-candidate-21st",
+        "jev-candidate-uncheck",
+        "jev-confirm",
+        "jev-consent",
+        "jev-send",
+        "jev-send-report",
+        "jev-source-ligand",
+        "jev-source-mutation",
+        "report-library-open"
+      ],
+      "wording": [
+        {
+          "label": "pre-checks",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "after L1-ligand-5",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "report markdown",
+          "kind": "report",
+          "found": 0
+        }
+      ],
+      "externalRequestCount": 0,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-06T14:04:24.339Z"
+    }
+  ]
+}

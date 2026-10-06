@@ -1,0 +1,29 @@
+{
+  "schema": "m12_case_ledger_row@1",
+  "step": "regression-m9-openmm",
+  "buildId": "4GG2G1rPmVlN3v96FKAEK",
+  "harness": {
+    "flowSha256": "1827d7501c836633bc83e0401bd2dc77ca2f74dc5cd3efce4976ea5ad340e420",
+    "runnerSha256": "f2a972a38d3a68d24cafef4c726e3ebedefd347fa78f6119128e7f11d39b7c4d"
+  },
+  "startedAt": "2026-10-06T15:43:43.837584+00:00",
+  "finishedAt": "2026-10-06T15:44:05.366214+00:00",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/regressions/m13/m12-acceptance/evidence/regression-m9-openmm",
+  "mode": "regression-m9-openmm",
+  "regression": "M9 prerequisite (OpenMM run)",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "exitCode": 0,
+  "runId": "run_5094f148654541a48a6b78dfbde43d67",
+  "evidenceFile": "openmm-full.jsonl",
+  "statusCounts": {
+    "pass": 17
+  },
+  "externalRequestCount": 0,
+  "externalRequestMeasurement": {
+    "rowsWithStatus": 17,
+    "rows": 17,
+    "rule": "max(len(row.after.blockedRequests))"
+  },
+  "note": "Non-loopback requests measured from the renderer status captured with every step row (cumulative blocked-request list)."
+}

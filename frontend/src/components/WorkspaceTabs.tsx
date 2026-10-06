@@ -11,8 +11,11 @@ export interface WorkspaceTabsProps {
   structure: ReactNode;           // existing structure screen; stays mounted while another tab is shown
   reports?: ReactNode;            // 지식·보고서 tab report body (rendered only while that tab is shown)
   numbering?: ReactNode;          // 지식·보고서 tab residue numbering screen (rendered only while that tab is shown)
+  jev?: ReactNode;                // 지식·보고서 tab JEV area (M24; between numbering and reports, only while shown)
   ligand?: ReactNode;             // 리간드 설계·탐색 tab body (M17; rendered only while that tab is shown)
   protein?: ReactNode;            // 단백질 공학 tab body (M20; rendered only while that tab is shown)
+  /** M24 global mark of the current run's science consent; outside `.mw-app-run` (whose text is the run id). */
+  scienceBadge?: { text: string; note: string } | null;
 }
 
 export function WorkspaceTabs(p: WorkspaceTabsProps) {
@@ -30,6 +33,8 @@ export function WorkspaceTabs(p: WorkspaceTabsProps) {
         </div>
         <span style={{ flex: 1 }} />
         <span className="mw-mono mw-app-run" aria-label="현재 run" data-global-run={p.runId ?? ""}>{p.runId ?? "run 없음"}</span>
+        {p.scienceBadge && <span className="mw-badge mw-app-science" data-science-consent="on" title={p.scienceBadge.note}>
+          {p.scienceBadge.text}</span>}
         {p.budget && <span className="mw-mono mw-muted mw-app-budget" aria-label="이 run의 예산">
           expensive {p.budget.expensive_calls.used}/{p.budget.expensive_calls.limit}</span>}
       </header>
@@ -47,6 +52,7 @@ export function WorkspaceTabs(p: WorkspaceTabsProps) {
         </div>}
         {p.active === "knowledge" && <div role="tabpanel" id="mw-app-panel-knowledge" aria-labelledby="mw-app-tab-knowledge" className="mw-app-panel">
           {p.numbering != null && <div className="mw-app-numbering">{p.numbering}</div>}
+          {p.jev != null && <div className="mw-app-jev">{p.jev}</div>}
           {p.reports != null && <div className="mw-app-reports">{p.reports}</div>}
         </div>}
       </div>

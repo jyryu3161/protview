@@ -1,0 +1,4116 @@
+{
+ "_fixture": "GOLDEN (M24 T1): event/audit shapes the existing M3 request_jev and M8 request_viewer write with a scripted MockTransport and an inert sentinel credential; ids, times, hashes and elapsed seconds reduced to their JSON type. Not provider output.",
+ "m3_request_jev": {
+  "local_only": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "local_only",
+    "action": null,
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 0,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "local_only",
+      "mode": "local_only",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "dry_run": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "dry_run",
+    "action": null,
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 0,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "dry_run",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "missing_configuration": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "missing_configuration",
+    "action": null,
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 0,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "missing_configuration",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "approval_required": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "approval_required",
+    "action": null,
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 0,
+   "events": [
+    {
+     "type": "approval_requested",
+     "fields": [
+      [
+       "args",
+       "dict"
+      ],
+      [
+       "gate",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "tool",
+       "str"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "args": []
+     },
+     "closed_values": {
+      "gate": "expensive_first_call",
+      "tool": "decide_inspection_view"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "approval_required",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "missing_credential": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "missing_credential",
+    "action": null,
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "missing_credential",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "accepted": {
+   "result": {
+    "status": "accepted",
+    "reason_code": "accepted",
+    "action": "summary",
+    "served_model": "typesafe/jev-1.13-20260917",
+    "usage": {
+     "input_tokens": 100,
+     "output_tokens": 2,
+     "external_tokens": 102,
+     "cost": 0.001
+    }
+   },
+   "transport_calls": 1,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "budget_reserved",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "expensive_calls": 1,
+      "external_tokens": 4096,
+      "usd": 0.05
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "body",
+       "dict"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "payload_sha256",
+       "str"
+      ],
+      [
+       "question_version",
+       "str"
+      ],
+      [
+       "requested_model",
+       "str"
+      ],
+      [
+       "reservation",
+       "dict"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "body": [
+       [
+        "model",
+        "str"
+       ],
+       [
+        "provider",
+        "dict"
+       ],
+       [
+        "questions",
+        "dict"
+       ],
+       [
+        "state",
+        "dict"
+       ]
+      ],
+      "reservation": [
+       [
+        "expensive_calls",
+        "int"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "prepared",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false,
+      "requested_model": "typesafe/jev-1.13",
+      "destination": "https://openrouter.ai/api/alpha/decisions",
+      "question_version": "inspection_view@1",
+      "reservation": {
+       "expensive_calls": 1,
+       "external_tokens": 4096,
+       "usd": 0.05
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "remaining_wall_s",
+       "float"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "dispatch_started",
+      "sent": "unknown",
+      "transport_invoked": true
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "http_status",
+       "int"
+      ],
+      [
+       "response_oversized",
+       "bool"
+      ],
+      [
+       "response_sha256",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "served_model",
+       "str"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usage",
+       "dict"
+      ]
+     ],
+     "nested_fields": {
+      "usage": [
+       [
+        "cost",
+        "float"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "input_tokens",
+        "int"
+       ],
+       [
+        "output_tokens",
+        "int"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "response_received",
+      "sent": true,
+      "transport_invoked": true,
+      "http_status": 200,
+      "response_oversized": false,
+      "served_model": "typesafe/jev-1.13-20260917",
+      "usage": {
+       "cost": 0.001,
+       "external_tokens": 102,
+       "input_tokens": 100,
+       "output_tokens": 2
+      }
+     }
+    },
+    {
+     "type": "egress_budget_settled",
+     "fields": [
+      [
+       "actual",
+       "dict"
+      ],
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "delta",
+       "dict"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {
+      "actual": [
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ],
+      "delta": [
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "unknown_axes": [],
+      "delta": {
+       "external_tokens": -3994,
+       "usd": -0.049
+      },
+      "actual": {
+       "external_tokens": 102,
+       "usd": 0.001
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "overrun",
+       "bool"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "settled",
+      "sent": true,
+      "transport_invoked": true,
+      "unknown_axes": [],
+      "overrun": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "provider_http_error": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "provider_http_error",
+    "action": null,
+    "served_model": null,
+    "usage": {
+     "input_tokens": null,
+     "output_tokens": null,
+     "external_tokens": null,
+     "cost": null
+    }
+   },
+   "transport_calls": 1,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "budget_reserved",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "expensive_calls": 1,
+      "external_tokens": 4096,
+      "usd": 0.05
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "body",
+       "dict"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "payload_sha256",
+       "str"
+      ],
+      [
+       "question_version",
+       "str"
+      ],
+      [
+       "requested_model",
+       "str"
+      ],
+      [
+       "reservation",
+       "dict"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "body": [
+       [
+        "model",
+        "str"
+       ],
+       [
+        "provider",
+        "dict"
+       ],
+       [
+        "questions",
+        "dict"
+       ],
+       [
+        "state",
+        "dict"
+       ]
+      ],
+      "reservation": [
+       [
+        "expensive_calls",
+        "int"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "prepared",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false,
+      "requested_model": "typesafe/jev-1.13",
+      "destination": "https://openrouter.ai/api/alpha/decisions",
+      "question_version": "inspection_view@1",
+      "reservation": {
+       "expensive_calls": 1,
+       "external_tokens": 4096,
+       "usd": 0.05
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "remaining_wall_s",
+       "float"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "dispatch_started",
+      "sent": "unknown",
+      "transport_invoked": true
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "http_status",
+       "int"
+      ],
+      [
+       "response_oversized",
+       "bool"
+      ],
+      [
+       "response_sha256",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "served_model",
+       "null"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usage",
+       "dict"
+      ]
+     ],
+     "nested_fields": {
+      "usage": [
+       [
+        "cost",
+        "null"
+       ],
+       [
+        "external_tokens",
+        "null"
+       ],
+       [
+        "input_tokens",
+        "null"
+       ],
+       [
+        "output_tokens",
+        "null"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "response_received",
+      "sent": true,
+      "transport_invoked": true,
+      "http_status": 503,
+      "response_oversized": false,
+      "served_model": null,
+      "usage": {
+       "cost": null,
+       "external_tokens": null,
+       "input_tokens": null,
+       "output_tokens": null
+      }
+     }
+    },
+    {
+     "type": "egress_budget_settled",
+     "fields": [
+      [
+       "actual",
+       "dict"
+      ],
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "delta",
+       "dict"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {
+      "actual": [
+       [
+        "external_tokens",
+        "null"
+       ],
+       [
+        "usd",
+        "null"
+       ]
+      ],
+      "delta": []
+     },
+     "closed_values": {
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "delta": {},
+      "actual": {
+       "external_tokens": null,
+       "usd": null
+      }
+     }
+    },
+    {
+     "type": "checkpoint",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "overrun",
+       "bool"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress_usage_unknown",
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "overrun": false
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "overrun",
+       "bool"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "settled",
+      "sent": true,
+      "transport_invoked": true,
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "overrun": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "transport_error": {
+   "result": {
+    "status": "fallback",
+    "reason_code": "transport_error",
+    "action": null,
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 1,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "budget_reserved",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "expensive_calls": 1,
+      "external_tokens": 4096,
+      "usd": 0.05
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "body",
+       "dict"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "payload_sha256",
+       "str"
+      ],
+      [
+       "question_version",
+       "str"
+      ],
+      [
+       "requested_model",
+       "str"
+      ],
+      [
+       "reservation",
+       "dict"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "body": [
+       [
+        "model",
+        "str"
+       ],
+       [
+        "provider",
+        "dict"
+       ],
+       [
+        "questions",
+        "dict"
+       ],
+       [
+        "state",
+        "dict"
+       ]
+      ],
+      "reservation": [
+       [
+        "expensive_calls",
+        "int"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "prepared",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false,
+      "requested_model": "typesafe/jev-1.13",
+      "destination": "https://openrouter.ai/api/alpha/decisions",
+      "question_version": "inspection_view@1",
+      "reservation": {
+       "expensive_calls": 1,
+       "external_tokens": 4096,
+       "usd": 0.05
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "remaining_wall_s",
+       "float"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "dispatch_started",
+      "sent": "unknown",
+      "transport_invoked": true
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "error_code",
+       "str"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "transport_failed",
+      "sent": "unknown",
+      "transport_invoked": true,
+      "error_code": "transport_error"
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "usage_missing": {
+   "result": {
+    "status": "accepted",
+    "reason_code": "accepted",
+    "action": "summary",
+    "served_model": "typesafe/jev-1.13-20260917",
+    "usage": {
+     "input_tokens": null,
+     "output_tokens": null,
+     "external_tokens": null,
+     "cost": null
+    }
+   },
+   "transport_calls": 1,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "budget_reserved",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "expensive_calls": 1,
+      "external_tokens": 4096,
+      "usd": 0.05
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "body",
+       "dict"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "mode",
+       "str"
+      ],
+      [
+       "payload_sha256",
+       "str"
+      ],
+      [
+       "question_version",
+       "str"
+      ],
+      [
+       "requested_model",
+       "str"
+      ],
+      [
+       "reservation",
+       "dict"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "body": [
+       [
+        "model",
+        "str"
+       ],
+       [
+        "provider",
+        "dict"
+       ],
+       [
+        "questions",
+        "dict"
+       ],
+       [
+        "state",
+        "dict"
+       ]
+      ],
+      "reservation": [
+       [
+        "expensive_calls",
+        "int"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "prepared",
+      "mode": "online",
+      "sent": false,
+      "transport_invoked": false,
+      "requested_model": "typesafe/jev-1.13",
+      "destination": "https://openrouter.ai/api/alpha/decisions",
+      "question_version": "inspection_view@1",
+      "reservation": {
+       "expensive_calls": 1,
+       "external_tokens": 4096,
+       "usd": 0.05
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "remaining_wall_s",
+       "float"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "dispatch_started",
+      "sent": "unknown",
+      "transport_invoked": true
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "http_status",
+       "int"
+      ],
+      [
+       "response_oversized",
+       "bool"
+      ],
+      [
+       "response_sha256",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "served_model",
+       "str"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usage",
+       "dict"
+      ]
+     ],
+     "nested_fields": {
+      "usage": [
+       [
+        "cost",
+        "null"
+       ],
+       [
+        "external_tokens",
+        "null"
+       ],
+       [
+        "input_tokens",
+        "null"
+       ],
+       [
+        "output_tokens",
+        "null"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "response_received",
+      "sent": true,
+      "transport_invoked": true,
+      "http_status": 200,
+      "response_oversized": false,
+      "served_model": "typesafe/jev-1.13-20260917",
+      "usage": {
+       "cost": null,
+       "external_tokens": null,
+       "input_tokens": null,
+       "output_tokens": null
+      }
+     }
+    },
+    {
+     "type": "egress_budget_settled",
+     "fields": [
+      [
+       "actual",
+       "dict"
+      ],
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "delta",
+       "dict"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {
+      "actual": [
+       [
+        "external_tokens",
+        "null"
+       ],
+       [
+        "usd",
+        "null"
+       ]
+      ],
+      "delta": []
+     },
+     "closed_values": {
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "delta": {},
+      "actual": {
+       "external_tokens": null,
+       "usd": null
+      }
+     }
+    },
+    {
+     "type": "checkpoint",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "overrun",
+       "bool"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress_usage_unknown",
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "overrun": false
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "overrun",
+       "bool"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "settled",
+      "sent": true,
+      "transport_invoked": true,
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "overrun": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  }
+ },
+ "m8_request_viewer": {
+  "local_only": {
+   "result": {
+    "status": "rejected",
+    "reason_code": "local_only",
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 0,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "local_only",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "dry_run": {
+   "result": {
+    "status": "rejected",
+    "reason_code": "dry_run",
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 0,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "dry_run",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "missing_credential": {
+   "result": {
+    "status": "rejected",
+    "reason_code": "missing_credential",
+    "served_model": null,
+    "usage": null
+   },
+   "transport_calls": 0,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason_code",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "denied",
+      "reason_code": "missing_credential",
+      "sent": false,
+      "transport_invoked": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "accepted": {
+   "result": {
+    "status": "accepted",
+    "reason_code": "accepted",
+    "served_model": "typesafe/jev-1.13-20260917",
+    "usage": {
+     "input_tokens": 100,
+     "output_tokens": 2,
+     "external_tokens": 102,
+     "cost": 0.001
+    }
+   },
+   "transport_calls": 1,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "budget_reserved",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usd",
+       "float"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "expensive_calls": 1,
+      "external_tokens": 16384,
+      "usd": 0.05
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "payload_sha256",
+       "str"
+      ],
+      [
+       "projection_sha256",
+       "str"
+      ],
+      [
+       "question_version",
+       "str"
+      ],
+      [
+       "requested_model",
+       "str"
+      ],
+      [
+       "reservation",
+       "dict"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "reservation": [
+       [
+        "expensive_calls",
+        "int"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "prepared",
+      "sent": false,
+      "transport_invoked": false,
+      "requested_model": "typesafe/jev-1.13",
+      "destination": "https://openrouter.ai/api/alpha/decisions",
+      "question_version": "viewer_questions@2",
+      "reservation": {
+       "expensive_calls": 1,
+       "external_tokens": 16384,
+       "usd": 0.05
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "remaining_wall_s",
+       "float"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "dispatch_started",
+      "sent": "unknown",
+      "transport_invoked": true,
+      "destination": "https://openrouter.ai/api/alpha/decisions"
+     }
+    },
+    {
+     "type": "viewer_dispatch_started",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "intent_id",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {}
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "http_status",
+       "int"
+      ],
+      [
+       "response_oversized",
+       "bool"
+      ],
+      [
+       "response_sha256",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "served_model",
+       "str"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usage",
+       "dict"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "usage": [
+       [
+        "cost",
+        "float"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "input_tokens",
+        "int"
+       ],
+       [
+        "output_tokens",
+        "int"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "response_received",
+      "sent": true,
+      "transport_invoked": true,
+      "http_status": 200,
+      "response_oversized": false,
+      "served_model": "typesafe/jev-1.13-20260917",
+      "usage": {
+       "cost": 0.001,
+       "external_tokens": 102,
+       "input_tokens": 100,
+       "output_tokens": 2
+      }
+     }
+    },
+    {
+     "type": "egress_budget_settled",
+     "fields": [
+      [
+       "actual",
+       "dict"
+      ],
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "delta",
+       "dict"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {
+      "actual": [
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ],
+      "delta": [
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "unknown_axes": [],
+      "delta": {
+       "external_tokens": -16282,
+       "usd": -0.049
+      },
+      "actual": {
+       "external_tokens": 102,
+       "usd": 0.001
+      }
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  },
+  "provider_http_error": {
+   "result": {
+    "status": "rejected",
+    "reason_code": "provider_http_error",
+    "served_model": null,
+    "usage": {
+     "input_tokens": null,
+     "output_tokens": null,
+     "external_tokens": null,
+     "cost": null
+    }
+   },
+   "transport_calls": 1,
+   "credential_reads": 1,
+   "events": [
+    {
+     "type": "budget_reserved",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usd",
+       "float"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "expensive_calls": 1,
+      "external_tokens": 16384,
+      "usd": 0.05
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "payload_sha256",
+       "str"
+      ],
+      [
+       "projection_sha256",
+       "str"
+      ],
+      [
+       "question_version",
+       "str"
+      ],
+      [
+       "requested_model",
+       "str"
+      ],
+      [
+       "reservation",
+       "dict"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "reservation": [
+       [
+        "expensive_calls",
+        "int"
+       ],
+       [
+        "external_tokens",
+        "int"
+       ],
+       [
+        "usd",
+        "float"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "prepared",
+      "sent": false,
+      "transport_invoked": false,
+      "requested_model": "typesafe/jev-1.13",
+      "destination": "https://openrouter.ai/api/alpha/decisions",
+      "question_version": "viewer_questions@2",
+      "reservation": {
+       "expensive_calls": 1,
+       "external_tokens": 16384,
+       "usd": 0.05
+      }
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "destination",
+       "str"
+      ],
+      [
+       "remaining_wall_s",
+       "float"
+      ],
+      [
+       "sent",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "stage": "dispatch_started",
+      "sent": "unknown",
+      "transport_invoked": true,
+      "destination": "https://openrouter.ai/api/alpha/decisions"
+     }
+    },
+    {
+     "type": "viewer_dispatch_started",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "intent_id",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {}
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress"
+     }
+    },
+    {
+     "type": "egress",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "http_status",
+       "int"
+      ],
+      [
+       "response_oversized",
+       "bool"
+      ],
+      [
+       "response_sha256",
+       "str"
+      ],
+      [
+       "sent",
+       "bool"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "served_model",
+       "null"
+      ],
+      [
+       "stage",
+       "str"
+      ],
+      [
+       "transport_invoked",
+       "bool"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "usage",
+       "dict"
+      ],
+      [
+       "viewer_intent_id",
+       "str"
+      ]
+     ],
+     "nested_fields": {
+      "usage": [
+       [
+        "cost",
+        "null"
+       ],
+       [
+        "external_tokens",
+        "null"
+       ],
+       [
+        "input_tokens",
+        "null"
+       ],
+       [
+        "output_tokens",
+        "null"
+       ]
+      ]
+     },
+     "closed_values": {
+      "stage": "response_received",
+      "sent": true,
+      "transport_invoked": true,
+      "http_status": 503,
+      "response_oversized": false,
+      "served_model": null,
+      "usage": {
+       "cost": null,
+       "external_tokens": null,
+       "input_tokens": null,
+       "output_tokens": null
+      }
+     }
+    },
+    {
+     "type": "egress_budget_settled",
+     "fields": [
+      [
+       "actual",
+       "dict"
+      ],
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "delta",
+       "dict"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {
+      "actual": [
+       [
+        "external_tokens",
+        "null"
+       ],
+       [
+        "usd",
+        "null"
+       ]
+      ],
+      "delta": []
+     },
+     "closed_values": {
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "delta": {},
+      "actual": {
+       "external_tokens": null,
+       "usd": null
+      }
+     }
+    },
+    {
+     "type": "checkpoint",
+     "fields": [
+      [
+       "audit_id",
+       "str"
+      ],
+      [
+       "overrun",
+       "bool"
+      ],
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ],
+      [
+       "unknown_axes",
+       "list"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "egress_usage_unknown",
+      "unknown_axes": [
+       "external_tokens",
+       "usd"
+      ],
+      "overrun": false
+     }
+    },
+    {
+     "type": "wall_charged",
+     "fields": [
+      [
+       "reason",
+       "str"
+      ],
+      [
+       "seconds",
+       "float"
+      ],
+      [
+       "seq",
+       "int"
+      ],
+      [
+       "ts",
+       "float"
+      ],
+      [
+       "type",
+       "str"
+      ]
+     ],
+     "nested_fields": {},
+     "closed_values": {
+      "reason": "runtime_overhead"
+     }
+    }
+   ]
+  }
+ },
+ "m8_viewer_route": {
+  "http_status": 201,
+  "intent_status": "planned",
+  "reason_code": "accepted",
+  "transport_calls": 1,
+  "events": [
+   {
+    "type": "viewer_intent_requested",
+    "fields": [
+     [
+      "action_revision",
+      "int"
+     ],
+     [
+      "catalog_hash",
+      "str"
+     ],
+     [
+      "client_instance_id",
+      "str"
+     ],
+     [
+      "consent_epoch",
+      "int"
+     ],
+     [
+      "intent_id",
+      "str"
+     ],
+     [
+      "payload_sha256",
+      "str"
+     ],
+     [
+      "prompt_sha256",
+      "str"
+     ],
+     [
+      "request_id",
+      "str"
+     ],
+     [
+      "scene_generation",
+      "int"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "source",
+      "str"
+     ],
+     [
+      "structure_handle",
+      "str"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "viewer_session_id",
+      "str"
+     ]
+    ],
+    "nested_fields": {},
+    "closed_values": {
+     "source": "jev"
+    }
+   },
+   {
+    "type": "budget_reserved",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "expensive_calls",
+      "int"
+     ],
+     [
+      "external_tokens",
+      "int"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "usd",
+      "float"
+     ],
+     [
+      "viewer_intent_id",
+      "str"
+     ]
+    ],
+    "nested_fields": {},
+    "closed_values": {
+     "expensive_calls": 1,
+     "external_tokens": 16384,
+     "usd": 0.05
+    }
+   },
+   {
+    "type": "egress",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "destination",
+      "str"
+     ],
+     [
+      "payload_sha256",
+      "str"
+     ],
+     [
+      "projection_sha256",
+      "str"
+     ],
+     [
+      "question_version",
+      "str"
+     ],
+     [
+      "requested_model",
+      "str"
+     ],
+     [
+      "reservation",
+      "dict"
+     ],
+     [
+      "sent",
+      "bool"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "stage",
+      "str"
+     ],
+     [
+      "transport_invoked",
+      "bool"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "viewer_intent_id",
+      "str"
+     ]
+    ],
+    "nested_fields": {
+     "reservation": [
+      [
+       "expensive_calls",
+       "int"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ]
+    },
+    "closed_values": {
+     "stage": "prepared",
+     "sent": false,
+     "transport_invoked": false,
+     "requested_model": "typesafe/jev-1.13",
+     "destination": "https://openrouter.ai/api/alpha/decisions",
+     "question_version": "viewer_questions@2",
+     "reservation": {
+      "expensive_calls": 1,
+      "external_tokens": 16384,
+      "usd": 0.05
+     }
+    }
+   },
+   {
+    "type": "egress",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "destination",
+      "str"
+     ],
+     [
+      "remaining_wall_s",
+      "float"
+     ],
+     [
+      "sent",
+      "str"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "stage",
+      "str"
+     ],
+     [
+      "transport_invoked",
+      "bool"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "viewer_intent_id",
+      "str"
+     ]
+    ],
+    "nested_fields": {},
+    "closed_values": {
+     "stage": "dispatch_started",
+     "sent": "unknown",
+     "transport_invoked": true,
+     "destination": "https://openrouter.ai/api/alpha/decisions"
+    }
+   },
+   {
+    "type": "viewer_dispatch_started",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "intent_id",
+      "str"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ]
+    ],
+    "nested_fields": {},
+    "closed_values": {}
+   },
+   {
+    "type": "wall_charged",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "reason",
+      "str"
+     ],
+     [
+      "seconds",
+      "float"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ]
+    ],
+    "nested_fields": {},
+    "closed_values": {
+     "reason": "egress"
+    }
+   },
+   {
+    "type": "egress",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "http_status",
+      "int"
+     ],
+     [
+      "response_oversized",
+      "bool"
+     ],
+     [
+      "response_sha256",
+      "str"
+     ],
+     [
+      "sent",
+      "bool"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "served_model",
+      "str"
+     ],
+     [
+      "stage",
+      "str"
+     ],
+     [
+      "transport_invoked",
+      "bool"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "usage",
+      "dict"
+     ],
+     [
+      "viewer_intent_id",
+      "str"
+     ]
+    ],
+    "nested_fields": {
+     "usage": [
+      [
+       "cost",
+       "float"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "input_tokens",
+       "int"
+      ],
+      [
+       "output_tokens",
+       "int"
+      ]
+     ]
+    },
+    "closed_values": {
+     "stage": "response_received",
+     "sent": true,
+     "transport_invoked": true,
+     "http_status": 200,
+     "response_oversized": false,
+     "served_model": "typesafe/jev-1.13-20260917",
+     "usage": {
+      "cost": 0.001,
+      "external_tokens": 102,
+      "input_tokens": 100,
+      "output_tokens": 2
+     }
+    }
+   },
+   {
+    "type": "egress_budget_settled",
+    "fields": [
+     [
+      "actual",
+      "dict"
+     ],
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "delta",
+      "dict"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "unknown_axes",
+      "list"
+     ]
+    ],
+    "nested_fields": {
+     "actual": [
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ],
+     "delta": [
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "usd",
+       "float"
+      ]
+     ]
+    },
+    "closed_values": {
+     "unknown_axes": [],
+     "delta": {
+      "external_tokens": -16282,
+      "usd": -0.049
+     },
+     "actual": {
+      "external_tokens": 102,
+      "usd": 0.001
+     }
+    }
+   },
+   {
+    "type": "wall_charged",
+    "fields": [
+     [
+      "reason",
+      "str"
+     ],
+     [
+      "seconds",
+      "float"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ]
+    ],
+    "nested_fields": {},
+    "closed_values": {
+     "reason": "runtime_overhead"
+    }
+   },
+   {
+    "type": "viewer_intent_outcome",
+    "fields": [
+     [
+      "audit_id",
+      "str"
+     ],
+     [
+      "commands",
+      "list"
+     ],
+     [
+      "intent_id",
+      "str"
+     ],
+     [
+      "projection_sha256",
+      "str"
+     ],
+     [
+      "question_version",
+      "str"
+     ],
+     [
+      "reason_code",
+      "str"
+     ],
+     [
+      "requested_model",
+      "str"
+     ],
+     [
+      "seq",
+      "int"
+     ],
+     [
+      "served_model",
+      "str"
+     ],
+     [
+      "status",
+      "str"
+     ],
+     [
+      "ts",
+      "float"
+     ],
+     [
+      "type",
+      "str"
+     ],
+     [
+      "usage",
+      "dict"
+     ]
+    ],
+    "nested_fields": {
+     "usage": [
+      [
+       "cost",
+       "float"
+      ],
+      [
+       "external_tokens",
+       "int"
+      ],
+      [
+       "input_tokens",
+       "int"
+      ],
+      [
+       "output_tokens",
+       "int"
+      ]
+     ]
+    },
+    "closed_values": {
+     "reason_code": "accepted",
+     "served_model": "typesafe/jev-1.13-20260917",
+     "requested_model": "typesafe/jev-1.13",
+     "question_version": "viewer_questions@2",
+     "status": "planned",
+     "commands": [
+      {
+       "action_revision": 0,
+       "axis": "representation",
+       "catalog_hash": "str",
+       "client_instance_id": "str",
+       "command_id": "str",
+       "intent_id": "str",
+       "scene_generation": 1,
+       "schema": "viewer_plan@1",
+       "structure_handle": "str",
+       "value": "surface",
+       "viewer_session_id": "str"
+      },
+      {
+       "action_revision": 0,
+       "axis": "camera",
+       "catalog_hash": "str",
+       "client_instance_id": "str",
+       "command_id": "str",
+       "intent_id": "str",
+       "scene_generation": 1,
+       "schema": "viewer_plan@1",
+       "structure_handle": "str",
+       "value": "reset",
+       "viewer_session_id": "str"
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "sentinel_key_in_any_artifact": false
+}

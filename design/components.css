@@ -538,3 +538,42 @@
 .mw-seqga-mutations summary { cursor: pointer; overflow-wrap: anywhere; }
 .mw-seqga-mutations summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .mw-seqga-mutations ul { margin-top: var(--space-1); }
+
+/* M24 JEV area (JevPanel, 지식·보고서 tab, between the numbering screen and the report library). A proposal shown as
+   stored: tables and lists only, no bars, rank marks or colour comparisons; probabilities only in a collapsed list in
+   the sent order. The consent notice and the global mark use the existing warning token; the proposal card is framed
+   with the JEV provenance token. */
+.mw-app-jev { margin: var(--space-3); }
+.mw-app-science { color: var(--fail-transient); font-size: 12px; }
+.mw-jev { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); min-width: 0; font-size: 12px; color: var(--ink); }
+.mw-jev p { margin: 0; overflow-wrap: anywhere; }
+.mw-jev code { font-family: var(--font-mono); overflow-wrap: anywhere; word-break: break-all; }
+.mw-jev-heading { margin: 0; font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.mw-jev-section { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-000); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-jev-title { margin: 0; font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.mw-jev-note { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+.mw-jev-notice { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); color: var(--ink); }
+.mw-jev-unavailable { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-jev-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
+.mw-jev-errors { margin: 0; padding-left: var(--space-4); font-size: 12px; color: var(--fail-input); }
+.mw-jev-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-jev-check { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--ink); }
+.mw-jev-choices { margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-height: 320px; overflow: auto; }
+.mw-jev-choices legend { padding: 0 var(--space-1); color: var(--ink-muted); }
+.mw-jev-choices label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.mw-jev-choices .mw-mono { overflow-wrap: anywhere; word-break: break-all; }
+.mw-jev-candidates, .mw-jev-preview { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-jev-facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0; }
+.mw-jev-facts dt { color: var(--ink-muted); }
+.mw-jev-facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.mw-jev-table-wrap { overflow: auto; max-height: 480px; min-width: 0; max-width: 100%; }
+.mw-jev-table { border-collapse: collapse; font-size: 12px; color: var(--ink); }
+.mw-jev-table th, .mw-jev-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
+.mw-jev-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
+.mw-jev-smiles { max-width: 360px; overflow-wrap: anywhere; word-break: break-all; }
+.mw-jev-body { margin: var(--space-1) 0 0; max-height: 360px; overflow: auto; padding: var(--space-2); background: var(--surface-200); border: 1px solid var(--line); border-radius: var(--radius-xs); font: 400 11px/14px var(--font-mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; }
+.mw-jev-quote { padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--surface-100); font: 400 12px/16px var(--font-mono); color: var(--ink); }
+.mw-jev details summary { cursor: pointer; overflow-wrap: anywhere; }
+.mw-jev details summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.mw-jev-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px solid var(--line); border-left: 3px solid var(--prov-jev); border-radius: var(--radius-xs); background: var(--surface-100); }
+.mw-jev-list { margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-wrap: anywhere; }

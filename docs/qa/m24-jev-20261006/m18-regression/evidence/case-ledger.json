@@ -1,0 +1,1147 @@
+{
+  "schema": "m18_case_ledger@1",
+  "generatedAt": "2026-10-06T15:05:23.112196+00:00",
+  "build": {
+    "buildId": "4GG2G1rPmVlN3v96FKAEK",
+    "gitHead": "81fa17583eb355d6d9b9d4b239f354e49568eba9",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "930f5eeff2dd9e97ca7d763ecec3f492cdd414d47300cded8b15308111a1ef18",
+    "dirtyFiles": [
+      "?? docs/qa/m24-jev-20261006/acceptance-fixture/",
+      "?? docs/qa/m24-jev-20261006/m19-regression/",
+      "?? docs/qa/m24-jev-20261006/m20-regression/",
+      "?? docs/qa/m24-jev-20261006/m21-regression/",
+      "?? docs/qa/m24-jev-20261006/m22-regression/",
+      "?? docs/qa/m24-jev-20261006/m23-regression/"
+    ],
+    "recordedAt": "2026-10-06T15:04:10.080090+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "a6b4a447d0898cf01009a28fbf1675bd6d68c1e2ba75f5aeba7ca452752576ba"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "D-run-create": {
+      "text": "structure tab: 새 run + public_1mq4.cif; the ligand tab's docking area uses the global run (no run choice there), capability line, empty result list, start disabled",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-imports": {
+      "text": "prolif-vina-rec.pdb and the public-derived 3D SDF chosen through the file chooser, 가져오기 → chemical_raw_input handles listed by the docking prerequisites; nothing chosen automatically",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-ack-missing": {
+      "text": "two of three acknowledgements: 도킹 작업 시작 disabled with acknowledgement_missing",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-mode-compat": {
+      "text": "core-fixed disabled for the SDF source (mode_source_mismatch); instance range disabled without an instance",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-free-job": {
+      "text": "도킹 작업 시작 → 비싼 계산 승인 → 작업 시작 → real qvina_dock_v1 done, one expensive unit, result not opened automatically",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-free-result": {
+      "text": "summary (full score name, engine, seed 42, values, box = hand oracle, receptor/ligand SHA-256), mode table = stored rows (모드 n(엔진 출력 순서), ROUND_HALF_UP), limitations = spec §5.4 selection",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-contacts": {
+      "text": "접촉 보기 모드 1: contact page = stored rows (pose SDF serial, receptor seven fields, site_index, distance, geometric kind), cutoff 4.0 Å, element-pair kinds, order",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-downloads": {
+      "text": "모드 1 and 전체 pose SDF downloads = stored pose_sdf (events.jsonl payload) = backend bytes; mode_<n> titles, $$$$ separators",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-report": {
+      "text": "보고서 만들기 → 리간드 도킹 보고서 in the knowledge-tab list; Markdown/JSON downloads equal the backend",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-instance": {
+      "text": "synthetic complex receptor: instance list (seven fields, 79 atoms, elements), instance range enabled only after choosing it; result records the removed instance, the box equals the hand oracle and the poses equal the plain-receptor poses byte for byte",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-m17-candidates": {
+      "text": "real M17 inspection + enumeration from the candidate area (site 22, fixed replacement) → the fixture candidate ids, no second approval",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-core-fixed": {
+      "text": "입력 목록 다시 읽기 → M17 candidate + parent SDF, 코어 고정, conformers 5 → 샘플 n(점수 오름차순 나열) rows, core deviation, generated H/coordinates, parent serials, limitations 1–5, 7, 8",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-structure-kept": {
+      "text": "structure tab stays mounted (hidden) while the ligand tab is shown; same Mol* session, source and generation on return; global budget equals the backend",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-run-switch-late": {
+      "text": "run B shows only its own list; a held run A docking-results response released after the switch is not applied",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-reject-planar": {
+      "text": "planar SDF → job failed ligand_not_3d, 실패 with the closed reason, no result stored",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-reject-implicit-h": {
+      "text": "implicit-H SDF → job failed ligand_hydrogens_missing, no result stored",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-reject-box": {
+      "text": "manual side 41 Å → start disabled (box_too_large, no job request); ligand range + margin 20 → worker box_too_large, no result stored",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-reject-receptor": {
+      "text": "receptor with water + zinc left (instance 없음) → submission refused receptor_unsupported_residue; receptor with an altloc atom → receptor_altloc_present; the on-screen refusal list shows each item's seven residue fields (nulls kept) and atom names (altloc) equal to the fixture oracle; no job, no budget, no result",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-cancel": {
+      "text": "exhaustiveness 32 job running with a qvina2 process → 작업 취소 → cancelled, no worker/guardian/qvina2 process left, no result stored",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-wording": {
+      "text": "no rank/best/optimum/improvement/binding-strength/affinity word on screen outside the fixed limitation sentences and the score names",
+      "modes": {
+        "docking-main": "pass"
+      },
+      "status": "pass"
+    },
+    "D-no-run": {
+      "text": "no run: the docking area shows only the no-run reason (no numbers, no controls)",
+      "modes": {
+        "docking-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "D-unavailable": {
+      "text": "backend without the locked environments: 사용할 수 없음 with the capability reason (worker_missing), no numbers, no controls, no docking requests",
+      "modes": {
+        "docking-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "D-reproducible": {
+      "text": "same receptor, ligand, box, values and seed docked again in two fresh runs: scores and all-modes pose SDF bytes equal the flow's stored free-docking result (cpu 1, seed fixed)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "docking-main": {
+      "status": "pass",
+      "latest": "docking-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "docking-unavailable": {
+      "status": "pass",
+      "latest": "docking-unavailable",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "D-zero-modes": "qvina returns modes for every valid input used here; no input is forged to produce a zero-mode result. Covered by frontend/tests/docking.test.cjs (dockingPanelState) and the backend docking tests."
+  },
+  "reproducibility": {
+    "freeArgs": {
+      "receptor": "prolif-vina-rec.pdb",
+      "ligand": "public-derived-parent-record0.sdf",
+      "mode": "free",
+      "box": {
+        "source": "ligand_range",
+        "margin_A": 8
+      },
+      "parameters": {
+        "seed": 42,
+        "exhaustiveness": 1,
+        "num_modes": 3,
+        "energy_range": 3
+      }
+    },
+    "reference": {
+      "run": "run_b738ec9070d14358a214f3ecf1296e3c",
+      "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/04b88c9afb77ba8ebaeb329ce9d42473c71579790b59af66a9aea11d2a7712dd",
+      "scores": [
+        -12.9,
+        -10.9,
+        -10.7
+      ],
+      "contactCounts": [
+        76,
+        61,
+        72
+      ],
+      "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94",
+      "posesBytes": 20247
+    },
+    "reruns": [
+      {
+        "run": "run_36df98714c4f45759ace0037b8b965ac",
+        "jobId": "job_a6da086a306d4fc8bacf4e58d5e28ba6",
+        "status": "done",
+        "failure": null,
+        "approvalStatus": 200,
+        "args": {
+          "receptor_handle": "obj://run_36df98714c4f45759ace0037b8b965ac/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "receptor_model_number": 1,
+          "connectivity": {
+            "kind": "pdb_conect",
+            "sidecar_handle": null
+          },
+          "receptor_instance": null,
+          "ligand": {
+            "source": "sdf",
+            "sdf_handle": "obj://run_36df98714c4f45759ace0037b8b965ac/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          "mode": "free",
+          "box": {
+            "source": "ligand_range",
+            "margin_A": 8
+          },
+          "parameters": {
+            "seed": 42,
+            "exhaustiveness": 1,
+            "num_modes": 3,
+            "energy_range": 3
+          }
+        },
+        "handle": "obj://run_36df98714c4f45759ace0037b8b965ac/docking_result/5ecfabbfba897e1b9ba513f6106d2fe0b3c0ef8c8b8b69aa855b690e2a960730",
+        "scores": [
+          -12.9,
+          -10.9,
+          -10.7
+        ],
+        "contactCounts": [
+          76,
+          61,
+          72
+        ],
+        "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94",
+        "posesBytes": 20247,
+        "providerCallsZero": true
+      },
+      {
+        "run": "run_818960d7444547bbaa72ce049644eff1",
+        "jobId": "job_ccc632ac504b4056844043d64e3c8bb1",
+        "status": "done",
+        "failure": null,
+        "approvalStatus": 200,
+        "args": {
+          "receptor_handle": "obj://run_818960d7444547bbaa72ce049644eff1/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "receptor_model_number": 1,
+          "connectivity": {
+            "kind": "pdb_conect",
+            "sidecar_handle": null
+          },
+          "receptor_instance": null,
+          "ligand": {
+            "source": "sdf",
+            "sdf_handle": "obj://run_818960d7444547bbaa72ce049644eff1/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          "mode": "free",
+          "box": {
+            "source": "ligand_range",
+            "margin_A": 8
+          },
+          "parameters": {
+            "seed": 42,
+            "exhaustiveness": 1,
+            "num_modes": 3,
+            "energy_range": 3
+          }
+        },
+        "handle": "obj://run_818960d7444547bbaa72ce049644eff1/docking_result/ddbc55c06c0c4277fc01845573c081bc3740fe6f3a7cacfd966a3a13ffd1f55f",
+        "scores": [
+          -12.9,
+          -10.9,
+          -10.7
+        ],
+        "contactCounts": [
+          76,
+          61,
+          72
+        ],
+        "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94",
+        "posesBytes": 20247,
+        "providerCallsZero": true
+      }
+    ]
+  },
+  "environment": {
+    "dockingPython": true,
+    "dockingPythonPath": ".deps/docking/venv-locked/bin/python",
+    "qvina": true,
+    "qvinaPath": ".deps/qvina/env/bin/qvina2",
+    "ligandPython": true,
+    "ligandPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "candidatesAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "qvina",
+        "qvina_sha256": "caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c",
+        "qvina_package": "qvina-2.1.0-h4a521e9_8",
+        "versions": {
+          "meeko": "0.8.0",
+          "rdkit": "2026.03.6",
+          "MDAnalysis": "2.10.0",
+          "gemmi": "0.7.5"
+        },
+        "worker_sha256": "52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706",
+        "constants_sha256": "5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf",
+        "lock_sha256": "ec38e8e80d5fc90c72324a45e36f60c47ca8a0e6381c2a25e146a537c8ea8c7f",
+        "qvina_lock_sha256": "f20e50c9240f53d4500ed1764d525b612c6e0603c11431283e7bb96bd7a32b53"
+      }
+    },
+    "layoutReason": "worker_missing"
+  },
+  "layout": {
+    "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)",
+    "files": 132,
+    "treeSha256": "0d34aec16b4bcde1d6394c8ff11ceda26149f513ecfe69a3e57f53498b5c096b"
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "docking-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "D-run-create": "pass",
+        "D-structure-kept": "pass",
+        "D-imports": "pass",
+        "D-ack-missing": "pass",
+        "D-mode-compat": "pass",
+        "D-free-job": "pass",
+        "D-free-result": "pass",
+        "D-contacts": "pass",
+        "D-downloads": "pass",
+        "D-report": "pass",
+        "D-instance": "pass",
+        "D-m17-candidates": "pass",
+        "D-core-fixed": "pass",
+        "D-run-switch-late": "pass",
+        "D-reject-planar": "pass",
+        "D-reject-implicit-h": "pass",
+        "D-reject-box": "pass",
+        "D-reject-receptor": "pass",
+        "D-cancel": "pass",
+        "D-wording": "pass"
+      },
+      "runs": {
+        "A": "run_b738ec9070d14358a214f3ecf1296e3c",
+        "B": "run_8c3e0b6ce86344d8a2d4046a496d9eb4"
+      },
+      "runId": "run_b738ec9070d14358a214f3ecf1296e3c",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "imports": {
+          "receptor": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "ligand_sdf": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+        },
+        "free": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/04b88c9afb77ba8ebaeb329ce9d42473c71579790b59af66a9aea11d2a7712dd",
+        "report": "obj://run_b738ec9070d14358a214f3ecf1296e3c/method_report_manifest/319888e7c7f7a4611ca8fd38d4253fbc648dcd5777c8320f7896be7670a581af",
+        "complexReceptor": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/3c1515e9d8013f8d02dd9906a1930a9e9c00d286a1dff1034ba6035815c9d61d",
+        "instance": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/08f391f998da3f90442dd36089e1b20512e61b4128c5d50567471180a7d66208",
+        "candidateSet": "obj://run_b738ec9070d14358a214f3ecf1296e3c/ligand_candidate_set/7e2265aa702714618cd220f025debbb39770bfc975492acfed03548e01135734",
+        "core": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/dcf8ed39331f367633fc7d0be280325715d4159f4721467d0fbb06f8150d2565"
+      },
+      "inputs": [
+        {
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+          "bytes": 504575,
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+          "bytes": 6816,
+          "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-complex-receptor-lig.pdb",
+          "bytes": 512782,
+          "sha256": "2b840a4542fcef060b44f4ef78c4d4eee9e4abf8941a19ef526ce7b8b402d43d"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-planar-z0.sdf",
+          "bytes": 6829,
+          "sha256": "ad531eae2446c0baebf1f8d0ddb648677c0b1d6c4053d2224d404f7f1c7b4573"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-implicit-h.sdf",
+          "bytes": 3857,
+          "sha256": "eca0d17066a3f00075805b79a1864782a5e11b721d28a341bda2da78a7d2e387"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/synthetic-docking-blocks.smi",
+          "bytes": 160,
+          "sha256": "966f7a8607d3011fc3570a39f64e05ab284281fe0602c1cb18f847352d6392ec"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/expected.json",
+          "bytes": 9642,
+          "sha256": "a997053df1cf0e7c5314395b50cf4e5faeecc9f91531e4a7d51f27e054193df3"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/m17-enumerate-result-record0-nmethyl.json",
+          "bytes": 6328,
+          "sha256": "cfebdf81afb32fef2fb41af2a4e46268cc9261676f7b21882776fb651fbe3a60"
+        }
+      ],
+      "fixtureLabels": [
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+      ],
+      "controls": {
+        "docking-file-receptor": [
+          {
+            "file": "prolif-vina-rec.pdb"
+          },
+          {
+            "file": "synthetic-complex-receptor-lig.pdb"
+          },
+          {
+            "file": "prolif-vina-rec.pdb"
+          },
+          {
+            "file": "synthetic-receptor-water-zinc.pdb"
+          },
+          {
+            "file": "synthetic-receptor-altloc.pdb"
+          }
+        ],
+        "docking-file-ligand": [
+          {
+            "file": "public-derived-parent-record0.sdf"
+          },
+          {
+            "file": "synthetic-ligand-planar-z0.sdf"
+          },
+          {
+            "file": "synthetic-ligand-implicit-h.sdf"
+          },
+          {
+            "file": "public-derived-parent-record0.sdf"
+          }
+        ],
+        "docking-import": [
+          {
+            "files": [
+              "receptor",
+              "ligand"
+            ]
+          },
+          {
+            "files": [
+              "receptor"
+            ]
+          },
+          {
+            "files": [
+              "receptor",
+              "ligand"
+            ]
+          },
+          {
+            "files": [
+              "ligand"
+            ]
+          },
+          {
+            "files": [
+              "ligand"
+            ]
+          },
+          {
+            "files": [
+              "receptor"
+            ]
+          },
+          {
+            "files": [
+              "receptor"
+            ]
+          }
+        ],
+        "docking-receptor": [
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/3c1515e9d8013f8d02dd9906a1930a9e9c00d286a1dff1034ba6035815c9d61d"
+          },
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/895b09aae7fe3a9ad7b834f8fa0f6ae77e7566f858929398a5418b387b42028c"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/7daa0f63c4da117551f011a8befd98b8d5b8da9088ab249ee4b156754451b9d5"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          }
+        ],
+        "docking-model": [
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          },
+          {
+            "model": 1
+          }
+        ],
+        "docking-instance-radio": [
+          {
+            "instance": "none"
+          },
+          {
+            "instance": {
+              "model_number": 1,
+              "chain_auth": "L",
+              "chain_label": null,
+              "seq_auth": 1,
+              "seq_label": null,
+              "icode": "",
+              "resname": "LIG"
+            }
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          },
+          {
+            "instance": "none"
+          }
+        ],
+        "docking-connectivity-radio": [
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          },
+          {
+            "kind": "pdb_conect"
+          }
+        ],
+        "docking-source-radio": [
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "candidate"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          },
+          {
+            "source": "sdf"
+          }
+        ],
+        "docking-sdf": [
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/58b79a6299f2917d0bba92fe08219adf6091daf8a9cc1bc934bfcd31242fb086"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/1f0485eab86948ba73e6dce33c955d3d63033a6e7454fea46cf9473088b8564e"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          },
+          {
+            "handle": "obj://run_8c3e0b6ce86344d8a2d4046a496d9eb4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          }
+        ],
+        "docking-mode-radio": [
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "core_fixed"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          },
+          {
+            "mode": "free"
+          }
+        ],
+        "docking-box-radio": [
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "instance_range"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "manual"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          },
+          {
+            "source": "ligand_range"
+          }
+        ],
+        "docking-margin": [
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "20"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "8"
+          }
+        ],
+        "docking-seed": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-exhaustiveness": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-num-modes": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-energy-range": [
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {}
+        ],
+        "docking-ack-keep_input_protonation": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "docking-ack-tool_assigned_types_charges": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "docking-ack-rigid_no_optimization": [
+          {
+            "checked": false
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "docking-start": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true,
+            "expectRefusal": "receptor_unsupported_residue"
+          },
+          {
+            "clicked": true,
+            "expectRefusal": "receptor_altloc_present"
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "docking-job-approve": [
+          {
+            "phaseAfter": "saved",
+            "notice": "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다."
+          },
+          {
+            "phaseAfter": "saved",
+            "notice": "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다."
+          }
+        ],
+        "docking-job-start": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "docking-result-radio": [
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/04b88c9afb77ba8ebaeb329ce9d42473c71579790b59af66a9aea11d2a7712dd"
+          },
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/08f391f998da3f90442dd36089e1b20512e61b4128c5d50567471180a7d66208"
+          },
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/docking_result/dcf8ed39331f367633fc7d0be280325715d4159f4721467d0fbb06f8150d2565"
+          }
+        ],
+        "docking-mode-contacts": [
+          {
+            "mode": 1
+          }
+        ],
+        "docking-download-1": [
+          {
+            "sha256": "efd267b42d23e4cefb19c31010514ce3e67193097bfabe621b3fe7c55832dd13"
+          }
+        ],
+        "docking-download-all": [
+          {
+            "sha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+          }
+        ],
+        "docking-report": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-prereq-refresh": [
+          {
+            "clicked": true
+          }
+        ],
+        "docking-candidate-set": [
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/ligand_candidate_set/7e2265aa702714618cd220f025debbb39770bfc975492acfed03548e01135734"
+          }
+        ],
+        "docking-candidate-radio": [
+          {
+            "id": "c_1afb7cd3e603456c"
+          }
+        ],
+        "docking-parent-sdf": [
+          {
+            "handle": "obj://run_b738ec9070d14358a214f3ecf1296e3c/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          }
+        ],
+        "docking-conformers": [
+          {}
+        ],
+        "docking-manual-box": [
+          {
+            "center": [
+              "3.41",
+              "0.72",
+              "11.31"
+            ],
+            "size": [
+              "41",
+              "20",
+              "20"
+            ]
+          }
+        ],
+        "docking-job-cancel": [
+          {
+            "enabledAfterMs": 1
+          }
+        ]
+      },
+      "notObserved": [
+        {
+          "case": "D-zero-modes",
+          "reason": "qvina returns modes for every valid input used here; no input or value is forged to produce a zero-mode result. Covered by frontend/tests/docking.test.cjs (dockingPanelState: 0 modes = scientific_null, a failed job is never an empty result) and the backend docking tests."
+        }
+      ],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-06T15:05:04.397Z"
+    },
+    {
+      "step": "docking-unavailable",
+      "mode": "unavailable",
+      "status": "pass",
+      "cases": {
+        "D-no-run": "pass",
+        "D-unavailable": "pass"
+      },
+      "runs": {
+        "A": "run_fd8afe92e7f94536803f1d36c881c161"
+      },
+      "runId": "run_fd8afe92e7f94536803f1d36c881c161",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)"
+      ],
+      "controls": {},
+      "notObserved": [],
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-06T15:05:22.651Z"
+    }
+  ]
+}
