@@ -1,0 +1,394 @@
+M24 T1 착수 확인 (preflight) — 2026-10-06, 브랜치 dryforge/m24-jev-egress, 기준 커밋 71ba769
+명세: .dryforge/spec.md 3·4·5·6·7·11절, 계획 T1. 항목 (a)–(j)는 조율 세션 지시의 정의를 따른다((f) = async 라우트 방식·
+fixture transport 방법·run 취소 뒤 감사·이벤트·객체 저장 측정(계획 원문 (j)의 늦은 응답 저장 포함), (j) = 기존 게이트 골든 감사 열).
+
+제품 코드는 한 줄도 바꾸지 않았다(`git status --short`는 새 폴더 `backend/tests/fixtures/jev/`와 이 문서 폴더뿐, 추적 파일 변경
+0). 외부 요청 0건: OpenRouter 실호출 0회, 모든 전송은 `httpx.MockTransport`(가짜 transport)와 가짜 sentinel 키로만 했다.
+API 키 값은 출력·기록하지 않았고(존재 불리언만) `.env` 내용은 열지 않았다(키 해석기 `env_or_root_dotenv_key`만 불렀다).
+서비스를 띄우지 않았다(8000·3000 LISTEN 0, 측정은 in-process TestClient·Run·JobQueue). 측정용 run 폴더는 스크립트 옆
+`_work_*`(저장소 안, /tmp 아님)에 만들고 스크립트 끝에서 지웠다(남은 `_work_*` 없음 확인).
+키 노출 검사: 해석기로 얻은 실제 키 문자열을 새 폴더 두 곳의 파일 16개(캐시 포함)에서 찾음 → real_key_found_in_any False
+(불리언만 출력). 측정 스크립트의 sentinel 키는 run 산출물에도 없었다((f)·(j)).
+
+측정 기기: Apple M3 Ultra, Python 3.11.11(.venv), gemmi 0.7.5, numpy 2.4.6, httpx 0.28.1, fastapi 0.141.1,
+starlette 1.7.0, anyio 4.15.1, ruff 0.16.8. M17 작업은 .deps/prolif/venv-locked(RDKit 2026.03.6) 고정 작업 모듈.
+새 파일: backend/tests/fixtures/jev/(SYNTHETIC-PROVENANCE.md, independent_neighbors.py, expected.json,
+golden_egress_events.json, prototype_golden_egress.py, prototype_body_size.py, prototype_boundary_margin.py,
+prototype_budget_replay.py, prototype_late_response.py, prototype_event_log_read.py, prototype_field_map.py,
+prototype_pains_names.py, prototype_token_ratio.py). prototype_* 는 일회용 측정이며 제품에 들어가지 않는다(각 파일 첫 줄).
+expected.json sha256 113aecccb3691213b5124dec82138ed45e40a33a43d4c9fc80c4cb7d2cf94c06 (51,907 B)
+golden_egress_events.json sha256 a662f8ecbb311d5e6efdba68f2e16036061e5a9c8b54dc0738297ffdd53e042f (59,769 B)
+
+==================================================================================================
+판정 요약
+==================================================================================================
+- 멈출 사유(handoff 절대 조건 16)에 해당하는 측정 없음: 키 파일 있음·0600, 20개 후보 본문은 64 KiB 안(최대 측정 29,828 B),
+  취소·동의 끄기 뒤에도 감사·이벤트·제안 객체 저장 가능(events-only 복구까지), `expensive_calls` 없는 예약의 예약·정산·
+  환불·재생이 기존 코드 그대로 정상, 새 `jev_*` 이벤트 종류가 재생·읽기를 깨지 않음, 응답 모양 가정은 기존 해석과 같음.
+- 명세 이름과 저장 이름이 다르거나 파생이 필요한 곳(구현 조건, 멈춤 아님) — 아래 (b) 표의 ★:
+  ★1 M17 후보 `origins`에는 종류 필드가 없다. `generation_kinds`(`fixed_replace`·`user_rule`)는 저장 값이 아니라
+     `origins[].rule_id`에서 파생해야 한다(`"fixed"` → fixed_replace, `"user_<n>"` → user_rule; 같은 뜻으로 집합의
+     `rules_used[].method` = `replace_single_bond_v1` / `user_reaction_smarts_v1`).
+  ★2 `generation_order`는 저장 필드가 아니라 저장 배열 위치다(ligand_filters.query_candidates 정의와 같음). id 문자열 순서와
+     다르다(실측: 작은 풀 10개 id가 문자열 순서 아님).
+  ★3 M20 위치 `sources`는 이름 목록이 아니라 객체 목록 `{kind, pocket_rank}`·`{kind, radius_A}`·`{kind:"user"}`이다. 와이어
+     `sources`(닫힌 이름)는 `kind`에서 만들고, 포켓 순위가 여럿이면 `pocket` 하나로 합쳐야 한다(순위 값은 와이어에 없음).
+  ★4 `protection_checks.<검사>`는 문자열이 아니라 객체(상태 + 개수·threshold·handle·이름표)이다. 와이어는 `.status`만.
+     `pockets`에는 `pocket_set` handle이 들어 있어 와이어에서 빼야 한다.
+  ★5 부모 정규 SMILES·속성은 집합 필수 필드(`parent_canonical_smiles`·`parent_properties`)이고 검증이 점검 객체와 같은지까지
+     본다. 명세의 "없으면 점검 객체에서, 그래도 없으면 smiles 빼기"는 유효한 집합에서는 도달하지 않는 경로다.
+  ★6 `property_methods`의 서버 검증은 "1–200자 문자열"뿐이다. 실제 저장 값 8개(아래 (b))의 문자 집합은
+     ` (),-.2=A-Za-z^`, 최대 48자 → T2 패턴 후보 `[A-Za-z0-9 (),.=^_-]{1,200}` 또는 관측 8문자열 정확 일치.
+- 주의(구현 조건 C1–C8, 아래 각 항목에 근거):
+  C1 예약식 여유: M8 실호출 3건(커밋된 증거)에서 JSON 본문 ≈2.24–2.25 B/입력 토큰. 같은 바이트면 예약식
+     `4096 + ceil(bytes/2)`는 보고 사용량보다 31–32% 크다(뷰어형 JSON 기준). SMILES 밀도가 높은 리간드 본문의 비율은 재지
+     못했다. 사용량이 예약을 넘으면 기존 규칙대로 그 run의 모든 온라인 전송(뷰어 포함)이 `budget_exhausted`로 멈춘다.
+     T10 첫 실호출에서 확인하고 상수만 고치는 명세 경로 그대로 두되, 리간드 본문 첫 호출의 사용량/바이트를 꼭 기록할 것.
+  C2 async 전송이 run 실행 잠금(`_mutation`)을 HTTP 동안 잡으므로 같은 run의 다른 `_mutation` 사용자는 503 busy다(실측).
+     → `/jev/sends`는 `_mutation` 전에 `ACTIVE_SENDS`를 보고 409, `/jev/preview`·`/jev/status`는 잠금 없이 읽고,
+     `/jev/consent`는 `set_online`처럼 `_transition()`만 써야 한다. 전송 중 `build_jev_projection`(Run.call)은 503.
+  C3 전송 중 `run.cancelled`(메모리 플래그)는 갱신되지 않는다(실측 False). 늦음·취소 판정은 이벤트(또는 `cancel.request`
+     파일)로 해야 한다(명세 "이벤트 순서만으로"와 일치).
+  C4 `_reconcile_egress`는 "보내지 않음"을 `dispatch_skipped` 감사 또는 `delta.expensive_calls == -1`로 안다. 과학 환불에는
+     비싼 계산 축이 없으므로 `dispatch_skipped` 감사만 표지다. 음수 정산 뒤·`dispatch_skipped` 전 충돌이면 재시작 때
+     `wall_charged`(egress, 남은 시간 상한) 하나가 더 붙는다(usage_unknown은 아님, 실측). 순서를 뒤집으면(감사 먼저) 그 틈의
+     충돌이 미정산 예약 → usage_unknown이 되므로 뷰어와 같은 "정산 → 감사" 순서를 유지할 것. 오케스트레이터 수정 불필요.
+  C5 예약 이벤트에는 `external_tokens`·`usd` 둘 다 있어야 한다(`_settle_egress`가 `reservation[axis]`로 읽음, 없으면 KeyError).
+  C6 증액 AST 테스트 셋은 mw 아래 모든 .py의 **본문 문자열**에서 "raise_limits"·"limit_approval"을 찾아 파일 집합을 고정한다.
+     새 M24 모듈은 주석에서도 이 두 문자열을 쓰면 안 된다.
+  C7 `EventLog.append`는 매번 로그 전체를 다시 읽는다. 50 MB 로그에서 append 0.09 s, `_mutation` 진입·종료 0.54 s
+     → 전송 한 번(이벤트 약 10개 + 객체 1개)에 이벤트 루프를 약 1.5 s 막는다(뷰어 전송과 같은 성질).
+  C8 경계·수치: NumPy 최소거리와 `math.dist`는 비트가 19% 쌍에서 다르다(최대 7.1e-15 Å). 포함 여부는 전부 같고 5.0 Å
+     경계까지 최소 여유 0.00126 Å. 거리 비교 테스트는 허용 오차(≤1e-9)로 할 것.
+
+==================================================================================================
+(a) 키 해석기와 .env 권한 (불리언만)
+==================================================================================================
+명령:
+  stat -f 'mode=%Sp octal=%OLp regular=%HT uid=%u' .env ; test -L .env ; git check-ignore -q .env ; git ls-files --error-unmatch .env
+  .venv/bin/python -c "import os; print(bool(os.environ.get('OPENROUTER_API_KEY')))"
+  env -u OPENROUTER_API_KEY .venv/bin/python -c "from mw.egress.gate import env_or_root_dotenv_key as r; k=r();
+      print(isinstance(k,str) and bool(k)); print(isinstance(k,str) and bool(k) and not any(c in k for c in '\r\n'))"
+출력:
+  mode=-rw------- octal=600 regular=Regular File uid=501 / not_symlink / ignored / untracked
+  OPENROUTER_API_KEY_env_set False
+  resolver_found_key True      (환경변수를 지운 상태 → 루트 .env 경로에서 찾음)
+  gate_accepts_shape True      (게이트의 키 모양 검사: 문자열·비어 있지 않음·CR/LF 없음)
+결론: 통과. 키는 루트 .env(일반 파일, 0600, git 무시·미추적)에서 해석기로 찾아지고 게이트가 받는 모양이다. 키 값은 어디에도
+  출력·기록하지 않았다. 환경변수 OPENROUTER_API_KEY는 이 셸에 없다(서버도 .env 경로로 읽게 된다).
+
+==================================================================================================
+(b) M17·M20 저장 필드 이름과 와이어 허용 목록의 출처
+==================================================================================================
+명령:
+  .venv/bin/python backend/tests/fixtures/jev/prototype_field_map.py
+    (커밋된 실제 제품 출력 ../ligand_ga/m17-candidate-set-small-pool.json(M17 실제 작업)과
+     ../sequence_ga/m20-candidate-set-1ubq-8pos.json(M20 실제 도구, validated_set 통과)을 열고 검증기의 닫힌 키 집합을 출력)
+  .venv/bin/python backend/tests/fixtures/jev/prototype_body_size.py (아래 (c), 실제 작업·도구로 새로 만든 집합에서도 같은 필드
+    경로로 와이어를 만들었다)
+  .deps/prolif/venv-locked/bin/python backend/tests/fixtures/jev/prototype_pains_names.py
+출력(요지):
+  M17 집합 키(저장 = 검증기 SET_KEYS): block_handles, block_libraries, candidates, counts, crossing_bond, input_sha256,
+    inspection_handle, limit_reached, limitations, limits, method, methods, parent_canonical_smiles, parent_handle,
+    parent_properties, parent_sha256, property_methods, protocol, retained_parent_atoms, rules_used, schema, site_atoms,
+    stop_reason, use_fixed
+  M17 후보 행 키(저장 = ROW_KEYS): id, origins, pains, properties, retained_parent_atoms, smiles, stereo_flag
+    origins[] 키: block_name, rule_id / pains 키: matches / matches[] 키: catalog, name (PAINS_A|PAINS_B|PAINS_C)
+    row_has_generation_order_field False, ids_in_string_order False
+  M17 점검 객체 키(INSPECTION_KEYS): block_handles, block_libraries, input_sha256, method, parent, parent_handle,
+    property_methods, protocol, rules, schema / parent 키: atoms, atoms_in_sdf, bonds, canonical_smiles, heavy_atom_count,
+    hydrogens, properties, sha256, svg, svg_bytes
+  property_methods(저장 값): crippen_logp "rdkit Crippen.MolLogP (Wildman-Crippen estimate)", formal_charge
+    "rdkit GetFormalCharge (sum)", hba "rdkit CalcNumLipinskiHBA", hbd "rdkit CalcNumLipinskiHBD", heavy_atoms
+    "rdkit GetNumHeavyAtoms", mol_weight "rdkit Descriptors.MolWt (average, Da)", rotatable_bonds
+    "rdkit CalcNumRotatableBonds (default = Strict)", tpsa "rdkit CalcTPSA (A^2, includeSandP=False)"
+    문자 집합 ' (),-.2=ABCDFGHLMNPRSTW^abcdefghiklmnoprstuvy', 최대 48자. 서버 검증(_property_methods)은 1–200자 문자열만.
+  rules_used(고정 교체 집합): [{"method":"replace_single_bond_v1","rule_id":"fixed","text":null}]
+    상수: FIXED_RULE_ID "fixed", FIXED_METHOD "replace_single_bond_v1", USER_RULE_METHOD "user_reaction_smarts_v1",
+    USER_RULE_PREFIX "user_". 2,000개 풀(사용자 규칙)의 origins rule_id 값 = user_1, user_2.
+  stereo_flag 닫힌 값: none, parent_stereo_lost, new_unspecified_center. 속성 8개 이름 = PROPERTY_NAMES.
+  PAINS 이름: A 16·B 55·C 409개(모두 서로 다름), 명세 패턴 [A-Za-z0-9_().\-]{1,64}에 맞지 않는 이름 0개, 최장 23자
+    ("hzone_acyl_naphthol(22)"). 저장 SMILES 상한(MAX_SMILES_CHARS)은 20,000자 → 1,024자 넘는 저장 SMILES는 와이어
+    규칙에서 wire_field_invalid가 된다(실측 풀의 SMILES는 111–119자, 부모 110자, 패턴 불일치 0).
+  M20 집합 최상위(_TOP_KEYS): candidates, counts, ligand, limitations, method_version, null_result, parameters, pockets,
+    positions, protection_checks, released_residues, schema, structure
+  M20 위치 키: candidate_count, exclusion_reasons, index, ligand_min_distance_A, numbering, one_letter, protection, residue,
+    sources, standard_resname, status / residue 7필드: chain_auth, chain_label, icode, model_number, resname, seq_auth,
+    seq_label / protection 키: disulfide_partner, klifs_sites, metal, reasons, released
+  sources 저장 예: [{"kind":"user"}], 포켓은 {"kind":"pocket","pocket_rank":n}(순위마다 한 항목), 껍질은
+    {"kind":"ligand_shell","radius_A":r}. 종류 순서 = SOURCE_KINDS (pocket, ligand_shell, user).
+  protection_checks 저장 예: user_list {status checked, protected, released}, klifs_key_sites {status not_checked, reason
+    annotation_not_given, annotation null, annotated_sites null, absent_sites null}, metal_contact {status checked,
+    threshold_A, metal_residues, metal_names}, disulfide {status checked, threshold_A, pairs}, catalytic_residue_database
+    {status not_available, reason not_implemented}. 상태 집합 checked / not_checked / not_available.
+  pockets: 포켓 출처가 없으면 null, 있으면 {pocket_set(handle), ranks, lining_residue_count}.
+  candidates 키: from, index, position_index, to — 저장 순서 = index 오름차순(True).
+  numbering·klifs_sites: 대응 지도·주석을 주지 않으면 null(주면 값이 위치에 저장됨 → 와이어 빌더가 읽지 않아야 함).
+
+표 — 명세 3절 와이어 항목 ← 저장 위치(★ = 이름·모양이 명세 문구와 다름, 파생 필요)
+  리간드 parent.smiles            ← ligand_candidate_set.parent_canonical_smiles (필수 필드, 점검 객체 parent.canonical_smiles
+                                     와 같음을 검증기가 확인) ★5
+  리간드 parent.properties        ← ligand_candidate_set.parent_properties (= 점검 parent.properties) ★5
+  리간드 property_methods         ← ligand_candidate_set.property_methods (= 점검 property_methods) ★6
+  후보 순서(별칭 c01…)            ← candidates 배열 위치(= generation_order, 저장 필드 아님) ★2
+  후보 id(로컬 selection 전용)    ← candidates[].id ("c_"+sha256(smiles)[:16], 와이어에 넣지 않음)
+  후보 smiles                     ← candidates[].smiles
+  generation_kinds                ← candidates[].origins[].rule_id 파생 ("fixed"→fixed_replace, 그 밖→user_rule) ★1
+                                     (block_name은 와이어 금지)
+  stereo_flag                     ← candidates[].stereo_flag (닫힌 값 그대로)
+  properties 8개                  ← candidates[].properties (키 = PROPERTY_NAMES, int 다섯·float 셋)
+  pains_matches[{catalog,name}]   ← candidates[].pains.matches[] (키 이름이 같음; 정렬·중복 없음을 검증기가 확인)
+  변이 위치 residue(7필드)         ← positions[].residue
+  one_letter                      ← positions[].one_letter (후보가 있는 위치는 표준 잔기라 null 아님)
+  sources(닫힌 이름)              ← positions[].sources[].kind 파생, pocket 중복 합침 ★3
+  ligand_min_distance_A           ← positions[].ligand_min_distance_A (float 또는 null 그대로)
+  protection_released             ← positions[].protection.released (bool)
+  window·neighbors                ← 저장 구조(structure.handle의 prepared_structure 좌표)에서 계산(아래 (d))
+  최상위 protection_checks        ← protection_checks.<5 키>.status ★4
+  최상위 pockets                  ← pockets.{ranks, lining_residue_count} (pocket_set handle 제외) ★4
+  candidates {alias,pos,from,to}  ← candidates[].{index→별칭 m01…, position_index→p01…, from, to}
+  와이어에 들어가지 않음(읽지 않음): positions[].numbering, protection.{reasons, klifs_sites, metal, disulfide_partner},
+    exclusion_reasons, standard_resname, protection_checks의 개수·threshold·metal_names·annotation handle,
+    parameters(numbering_map·annotation·pocket_set handle 포함), structure.handle, released_residues, counts, limitations.
+결론: 와이어 허용 목록의 모든 항목이 저장 객체에 있다. 이름이 그대로가 아닌 곳은 ★1–★6(파생·선택 규칙)뿐이며 닫힌 집합으로
+  표현 가능하다(멈춤 아님). 번호 대응·KLIFS·보호 사유 값은 별도 필드라 이름 지정 빌더가 읽지 않으면 와이어에 들어가지
+  않는다. 라이선스 문자열은 번호 대응을 보내지 않으므로 필요 없다(명세 1절 범위 밖).
+
+==================================================================================================
+(c) 20개 후보 와이어 본문 크기 (64 KiB = 65,536 B)
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev/prototype_body_size.py   (13.2 s, exit 0, _work_body_size 삭제됨)
+  M20: 실제 도구(Run.call load_structure → prepare_structure → generate_mutation_candidates). 사용자 위치 = oracle
+    이웃 수 상위 20 잔기, 1MQ4는 + ADP(A2001) 5.0 Å 껍질. 선택: (max) 이웃 수가 가장 많은 후보 위치 20곳에서 위치마다 첫
+    후보 1개(위치 20개) / (min) index 앞 20개(위치 2개).
+  M17: 실제 작업(rdkit_inspect_v1 → rdkit_enumerate_v1, JobQueue, 고정 작업 모듈). 2,000개 풀(부모 public-derived-parent-
+    record0.sdf + pool2000 블록·규칙, site [22], use_fixed false)과 10개 작은 풀(고정 교체). 선택: 생성 순서 앞 20개 / 행
+    바이트(SMILES+PAINS)가 가장 큰 20개.
+  본문 = {"model","state","questions":{"candidate_choice":{type choice, instructions(프로토타입 영어 455 B), criteria 별칭별
+    "Candidate xNN."}},"provider"}, json.dumps(sort_keys, (",",":"), allow_nan=False) ASCII. 상수는 gate.py 값.
+출력:
+  1UBQ: 위치 20 · 후보 380, prepared_vs_raw_geometry_equal True
+    max(위치 20, 이웃 합 276): state 24,643 B, body 25,751 B / min(위치 2, 이웃 30): body 5,040 B
+  1MQ4: 위치 39 · 후보 703 (protection_checks: user_list checked, klifs not_checked, metal checked, disulfide checked,
+    catalytic not_available)
+    max(위치 20, 이웃 합 332, 평균 16.6): state 28,720 B, body 29,828 B / min(위치 2, 이웃 25): body 4,823 B
+  리간드 2,000개 풀(작업 11.6 s): 앞 20개 9,714 B, 가장 큰 20개 9,876 B (PAINS 일치 행 0, stereo none)
+  리간드 작은 풀(10개만 있음): 5,658 B
+  가장 넓은 모양의 산술(같은 인코더): 리간드 20개 × SMILES 1,024자 + 부모 1,024자 + PAINS 일치 k개씩 →
+    k=0 29,955 B, k=5 35,435 B, k=10 40,935 B, k=20 51,935 B (모두 64 KiB 안)
+    변이 위치 20개 × 이웃 n개(체인 이름 16자·삽입 코드·음수 번호 등 가장 넓은 식별자) → n=21 44,826 B, n=30 59,226 B,
+    64 KiB 안에 드는 최대 n = 33(위치당 평균). 실측 위치당 이웃 최대 21(1MQ4 W313), 1UBQ 17.
+  식별자 안전 패턴 불일치 0(두 구조 모두 체인 "A", 삽입 코드 "").
+결론: 통과. 실측 최대 29,828 B로 64 KiB의 45.5%. 질문 문구가 T2에서 몇 배 길어져도 여유가 크다. 넘을 수 있는 경우는
+  위치마다 평균 33개 넘는 이웃을 가진 20위치(긴 체인 이름) 같은 비현실적 모양뿐이고 명세대로 payload_too_large(자르지 않음).
+
+==================================================================================================
+(d) 이웃·서열 구간·거리 독립 oracle
+==================================================================================================
+명령:
+  .venv/bin/python backend/tests/fixtures/jev/independent_neighbors.py --write   → wrote expected.json
+  .venv/bin/python backend/tests/fixtures/jev/independent_neighbors.py --check   → matches, exit 0 (0.42 s)
+  .venv/bin/python backend/tests/fixtures/jev/prototype_boundary_margin.py
+  (prototype_body_size.py 안에서 제품 prepare_structure가 쓴 mmCIF를 같은 oracle로 다시 읽어 원본 cif와 비교)
+oracle 정의(제품 import 없음, gemmi + 표준 라이브러리, NumPy도 없음): 첫 모델, 단백질 = het_flag "A"(M20 위치 정의),
+  중원자 = 원소 H·D 제외, 이웃 = 다른 단백질 잔기 중 최소거리 ≤ 5.0 Å(math.dist), 모든 체인, 구조 순서, {chain_auth,
+  seq_auth, icode, resname}. 구간 = 같은 체인 단백질 잔기 구조 순서 앞뒤 5개(가정 W1: 대상 잔기 포함 최대 11개),
+  20 표준 이름만 한 글자·그 밖 X(가정 W2: HID 등 M12 대응 이름도 X로 둠 — 1UBQ·1MQ4에는 없음), contiguous = 삽입 코드 없음
+  + seq_auth 1씩 증가. 가정 N1·N2·D1은 expected.json "assumptions"에 적었다.
+출력(요지):
+  1UBQ 단백질 76, 이웃 수 2–17(평균 9.5). M1: 이웃 11, 구간 1 "MQIFVK" True / I44: 이웃 12, 구간 39 "DQQRLIFAGKQ" True
+    / G76: 이웃 2, 구간 71 "LRLRGG" True.
+  1MQ4 단백질 261(체인 A 126–388, 285와 288 사이 결손), 이웃 수 2–21. K143 이웃 5, 구간 138 "PLGKGKFGNVY" True,
+    ADP 거리 2.6283578523481124 / K162 2.6428630308814687 / D274 2.853779599058067 (M20 preflight 값과 같음) /
+    E211 2.6956997236339246 (M20 numpy 값 2.695699723633924와 마지막 비트만 다름) / S283·R285·T288·C290 구간
+    contiguous False(결손 285|288을 지남) / R126·S388 사슬 끝에서 구간이 잘림.
+  경계 여유(모든 단백질 잔기 쌍): 1UBQ 2,850쌍 최소 |d−5.0| 0.001257 Å, 1MQ4 33,930쌍 0.001382 Å.
+    math.dist와 NumPy(sqrt(sum(diff²))) 포함 여부 불일치 0, 값이 비트까지 다른 쌍 543/2,850·6,352/33,930, 최대 차 7.1e-15.
+  제품 prepare_structure 출력(mmCIF)을 같은 oracle로 읽은 결과 = 원본 cif 결과(prepared_vs_raw_geometry_equal True, 두 구조).
+결론: 통과. expected.json(1UBQ 6위치·1MQ4 10위치 상세 + 모든 단백질 잔기의 이웃 수)이 T2·T3 대조 기준이다. 거리 값은
+  허용 오차로 비교해야 한다(C8). 구간 문자열 표현(문자열 vs 목록)·대상 포함(W1)·대응 이름(W2)은 T2가 명세에 맞춰 정하고
+  다르면 oracle 가정을 함께 고친다.
+
+==================================================================================================
+(e) Run 예약·정산·재생 (expensive_calls 없는 예약) + 새 이벤트 종류
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev/prototype_budget_replay.py   (1.0 s, exit 0, _work_budget 삭제됨)
+  예약 = 명세 식: 본문 29,828 B → external_tokens min(40000, 4096 + ceil(29828/2)) = 19,010, usd 0.10, expensive_calls 없음.
+  각 시나리오: jev_science_consent_changed → jev_send_approved → budget_reserved{audit_id, external_tokens, usd} →
+  egress prepared → … 을 실제 Run 메서드로 쓰고, 이벤트 로그만으로 새 Run을 열어(생성 시 _refresh + _reconcile_egress) 다시
+  `_mutation()`까지 들어갔다 나온 상태를 기록.
+출력(재생 후 상태: expensive_calls / external_tokens / usd / egress_unknown / egress_stop_reason, 재열기가 더한 이벤트):
+  known_usage(사용량 9,040 tok · 0.0123 USD)          0 / 9,040 / 0.0123 / False / None   [wall_charged:runtime_overhead]
+  refund_before_dispatch(음수 정산 + dispatch_skipped)  0 / 0 / 0.0 / False / None           [runtime_overhead]
+  refund_after_dispatch_audit(dispatch_started 뒤 환불)  0 / 0 / 0.0 / False / None           [runtime_overhead]
+  crash_between_refund_and_skip_audit                    0 / 0 / 0.0 / False / None    [wall_charged:egress, runtime_overhead] (C4)
+  unknown_usage(사용량 없음)                              0 / 19,010 / 0.1 / True / usage_unknown
+  crash_after_dispatch_no_response(응답 없음)            0 / 19,010 / 0.1 / True / usage_unknown [wall_charged:egress, …]
+  overrun(사용 토큰 = 예약 + 1)                          0 / 19,011 / 0.0123 / True / budget_exhausted
+  shared_with_viewer_reservation(뷰어 예약 1건 추가)    1 / 18,080 / 0.0246 / False / None  (비싼 계산 1은 뷰어 예약에서만)
+  would_exceed: 한도와 정확히 같음 None(허용), 1 토큰 초과 "external_tokens", USD 초과 "usd".
+  새 이벤트 4종(jev_science_consent_changed, jev_send_approved, jev_science_dispatch_started, jev_send_outcome)을 쓴 run과
+  일반 run에서 GET 25개 라우트 상태 코드가 같다(/runs, /runs/{id}, events, budget, viewer/online, viewer/intents, reports,
+  jobs, analysis/executions·plans, mutation_candidate_sets, ligand/candidate_sets·inspections, docking/results·batches,
+  ligand/ga/results, sequence_ga/results, mutation_models, pockets, numbering_maps, site_annotations, viewer/scenes·figures
+  = 200, 필수 쿼리 없는 objects·interface_sasa·openmm_minimization = 422 양쪽 동일). EventType은 타입 표기뿐이고 런타임
+  검사·열거 테스트가 없다(grep: EventType 참조는 events.py 정의·append 서명뿐).
+결론: 통과. `_refresh`(있는 축만 과금)·`_settle_egress`·`_reconcile_egress`·`would_exceed`가 비싼 계산 축 없는 예약을 그대로
+  처리하고, 환불 경로는 usage_unknown을 만들지 않으며, 응답 없는 전송은 재시작 때 usage_unknown(명세 delivery_unknown과 일치),
+  과다는 budget_exhausted로 멈춘다. 오케스트레이터에 예외가 필요 없다. 조건 C4·C5.
+
+==================================================================================================
+(f) async + run._mutation() 라우트, fixture transport 방법, run 취소 뒤 저장 (늦은 응답)
+==================================================================================================
+fixture transport 선례(읽기):
+  - backend/tests/test_llm_egress.py `mock_gate`: EgressGate(transport=httpx.MockTransport(spy), credential_resolver=resolve)
+    로 transport 호출 수·키 읽기 수를 센다. sentinel 키와 경로·서열 문자열이 산출물에 없음을 검사한다.
+  - backend/tests/test_agent_viewer.py: `monkeypatch.setattr(api_module, "VIEWER_GATE", EgressGate(...MockTransport...))` +
+    TestClient(base_url http://127.0.0.1), 동시성은 스레드로 POST를 띄우고 transport 안 threading.Event로 멈춘 채 다른
+    요청을 보냄. 시간 한도·늦은 신호는 `gate._http_request`를 가짜 async 함수로 바꿈. 충돌은 자식 프로세스 `os._exit`.
+  - backend/tests/offscreen_agent_fixture/server.py: 모듈 전역 VIEWER_GATE를 스크립트된 MockTransport 게이트로 바꾸고
+    `/__fixture/scenario|release|status`를 단 FastAPI에 제품 앱을 mount. 과학 전송은 같은 방식으로 SCIENCE_GATE를 바꾸면 된다.
+명령: .venv/bin/python backend/tests/fixtures/jev/prototype_late_response.py   (0.5 s, exit 0, _work_late 삭제됨)
+  제품 앱을 mount한 일회용 FastAPI에 async 라우트 하나(request_viewer 모양: `with run._mutation():` 안에서 _transition으로
+  승인·예약·prepared·dispatch_started·jev_science_dispatch_started를 쓰고 `await gate._http_request(...)`). transport는
+  풀릴 때까지 대기. 대기 중에 (1) `RUNS[rid].cancel()` (2) `_transition()`으로 jev_science_consent_changed{enabled false}
+  (3) 아무것도 안 함, 그리고 GET 3개·`POST /commands load_structure`를 보냄. 응답 뒤 감사·정산·`store.put("jev_choice")`·
+  jev_send_outcome을 쓰고, events.jsonl만 복사한 새 루트에서 run을 열어 객체를 읽음.
+출력:
+  run_cancel: cancel 0.0003 s(잠금 대기 없음), GET events/budget/viewer/online 200(1.0–1.7 ms), 동시 `/commands` 503
+    {"busy": true}, 라우트 200, late_reason run_cancelled, 메모리 run.cancelled False, events-only 재열기에서 제안 객체 동일
+    로드 True, 재열기 cancelled True, egress_stop_reason None.
+    이벤트 끝부분: budget_reserved, egress:prepared, egress:dispatch_started, jev_science_dispatch_started, cancel_requested,
+    wall_charged, egress:response_received, egress_budget_settled, egress:settled, object_created, jev_send_outcome,
+    wall_charged
+  consent_off: 같은 결과, late_reason consent_off, 재열기 cancelled False.
+  none: late_reason null.
+  취소된 run에서 새 `_mutation()` + store.put도 됨(True). sentinel 키가 run 산출물 어디에도 없음(False).
+  transport가 받은 바이트 == prepared 감사 body를 같은 인코딩으로 만든 바이트(3건 모두 True).
+결론: 통과(BLOCKED 아님). 취소·동의 끄기 뒤에도 감사 기록·새 이벤트·제안 객체 저장이 되고 events-only로 복구된다.
+  ObjectStore.put·EventLog.append는 취소를 보지 않는다(`_check_cancelled`를 부르는 곳만 막힘). 조건 C2(busy 503)·C3(메모리
+  플래그) 참조. TestClient는 요청마다 따로 이벤트 루프를 쓰므로 실제 uvicorn(한 루프)과 다르다: 실제 서버에서 async 라우트의
+  파일 I/O는 루프를 막는다(C7).
+
+==================================================================================================
+(g) 카디널리티 결합 지도 (실제 파일 목록, grep)
+==================================================================================================
+명령(요지): grep -rn "generate_mutation_candidates|SUPPORTED_TOOLS|EventType|\"/tools\"|mentions ==|limit_approval|httpx|
+  mutation_candidates\"|PROVIDER_EVENT_TYPES|SCRIPT_TESTS|PYTEST_GROUPS|len(stop.CHECKS)|mw-app-run|LIST_PATH" backend scripts
+  frontend .codex docs/standards.md
+새 도구(build_jev_projection)를 더하면 고칠 곳(제품):
+  config/tools.yaml(generate_mutation_candidates 항목 L202 선례), backend/mw/workspace.py build_registry L23–31(모듈 register),
+  backend/mw/api/app.py SUPPORTED_TOOLS L122–124, frontend/src/lib/api.ts command 도구 유니언 L255.
+새 capability(methods.jev_choice): backend/mw/api/app.py /capabilities L642–671, frontend/src/lib/api.ts Capabilities 타입
+  L55–66. analysis_plans.capability(methods)는 자기 키만 봄(영향 없음).
+새 보고서 종류(jev_choice): app.py list_reports 집합 L1321–1324, _saved_any_report 집합 L1338–1342와 분기 L1343–1374,
+  create_method_report 분기 L1249–1297(kind → build_*), frontend/src/lib/report-library.ts reportKindLabel L87–98,
+  frontend/src/lib/api.ts MethodReportArtifact.analysis_type 유니언 L84–87, frontend/src/lib/contracts.ts(보고서 manifest 타입,
+  M20 L764·M23 L1003 선례).
+새 이벤트 종류: backend/mw/core/events.py EventType L17–41(타입 표기만, 런타임 검사 없음 — (e)에서 실측).
+새 게이트: app.py VIEWER_GATE L170 옆에 SCIENCE_GATE(테스트·fixture 서버가 치환).
+깨지는 기존 테스트(최소 수정 대상):
+  - backend/tests/test_api.py L279–283: `/tools`(L1–L5) 이름 집합을 정확히 비교 → 새 L2 도구를 넣어야 함.
+  - backend/tests/test_docking_batch_budget.py L139, test_ligand_ga_budget.py L120, test_sequence_ga_budget.py L123:
+    mw 아래 .py 본문에 "raise_limits"·"limit_approval" 문자열이 있는 파일 집합을 고정(C6). 새 모듈이 이 문자열을 쓰면 깨짐.
+    같은 파일들의 limit_approval 라우트 목록(`path.endswith("limit_approval")`)과 app.py `_callers(..., "limit_approval")` 집합
+    — 새 라우트 이름·경로에 이 문자열이 없으면 영향 없음.
+  - scripts/test_codex_hooks.py L177: scripts/test_*.py 전부가 SCRIPT_TESTS에 있어야 함 → scripts/test_m24_offscreen_acceptance.py
+    를 .codex/hooks/stop.py SCRIPT_TESTS L26–35에 손으로 넣어야 함. L145 `len(stop.CHECKS) == 15`(그룹을 새로 만들면 수정).
+    L180 backend/tests/test_*.py 전부 한 그룹 → 새 백엔드 테스트는 REST_GROUP(L96, `backend/tests` + --ignore)에 자동 포함.
+영향 없음(확인만): test_mutation_tool.py L136·L143·L465, test_reference_site_annotation.py L737, test_mutation_model_api.py
+  L256–262·test_sequence_ga_jobs.py L246·test_openmm.py L431(L3 목록·포함 검사), "httpx 위치" 전역 AST 테스트는 아직 없음
+  (모듈별 소스 금지어 검사만: test_*_reports.py·*_api.py 등 16곳) → 명세 11절의 httpx 위치 AST 테스트는 새로 만들어야 함.
+  backend/mw 안 httpx import는 egress/gate.py·egress/viewer.py 둘뿐(grep).
+  frontend/tests/report-library.test.cjs L47(라벨 추가만), workspace-tabs.test.cjs L18(탭 4개 불변),
+  frontend/src/lib/event-model.ts(tool 이름별 선택이라 새 도구 영향 없음).
+  오프스크린 흐름 13개(annotation, chemical, docking-batch, docking, ligand, ligand-ga, mutation, mutation-model, numbering,
+  pocket, sequence-ga, tabs, workflows)와 scripts/m18_offscreen_acceptance.py L271·m11_replay_probe.py의 PROVIDER_EVENT_TYPES
+  는 "egress"를 포함하므로 과학 전송 감사도 센다(빈틈·깨짐 없음).
+  tabs-flow.cjs L32 LIST_PATH(run 없을 때 reports·figures·executions 목록 요청 0) — jev 경로는 해당 없음. 단 L216·L706이
+  `.mw-app-run` textContent를 run id와 같다고 확인 → "과학 전송 허용" 표시는 `.mw-app-run` span 밖에 둘 것(T7).
+문서·게이트: docs/standards.md 게이트 목록 L38–55(새 실행기 테스트·`node --check` 흐름 추가), docs/operations.md Stop 훅
+  문단(L136–140 일대).
+결론: 지도 확정. 깨지는 기존 검사는 test_api.py `/tools` 집합 하나와(새 모듈이 금지 문자열을 쓰면) 증액 언급 테스트 셋,
+  SCRIPT_TESTS 수동 추가뿐이다.
+
+==================================================================================================
+(h) 큰 이벤트 로그 읽기 시간
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev/prototype_event_log_read.py --real \
+        runs/m13-acceptance-20260929b/m11-acceptance/replay-runs/run_b2493b0c50e6404dbfb59f2b77c2a6c6/events.jsonl
+  (로컬 최대 로그 48.5 MB, EventLog.read()만, 읽기 전후 크기·mtime 같음 48510718 / 1790671894)
+  합성 로그는 _work_eventlog(저장소 안, 끝에 삭제)에 48 KiB 합성 객체(object_created) + 작은 이벤트로 5 MB·50 MB.
+출력(중앙값, 3회):
+  실제 48.5 MB(이벤트 86개, 큰 객체 위주): events.read 0.147 s
+  합성 5.3 MB(1,799 이벤트): read 0.009 s, run 열기 0.083/0.070 s, _mutation 진입·종료 0.058 s, append 1회 0.010 s,
+    status 모양 읽기 0.011 s, preview 모양 읽기 0.010 s
+  합성 52.5 MB(17,857 이벤트): read 0.092 s, run 열기 0.649/0.553 s, _mutation 0.545 s, append 1회 0.091 s,
+    status 모양 0.095 s, preview 모양 0.093 s
+결론: 통과. 한 번 읽는 status·preview는 50 MB에서 0.1 s 안팎. append가 매번 전체를 다시 읽어 전송 한 번(append 약 10 + 객체
+  1 + _mutation)은 50 MB에서 약 1.5 s이고 async 라우트에서는 이벤트 루프를 막는다(C7, 뷰어와 같음). M23 기록의 165 MB 규모면
+  대략 세 배로 가늠된다(재지 않음).
+
+==================================================================================================
+(i) 응답 형식 가정 대조 (코드 수준)
+==================================================================================================
+명령: backend/mw/egress/gate.py `_parse_answer`·`_safe_model`·`_usage`, backend/mw/egress/viewer.py `_valid_answer_shape`·
+  `parse_answers`, 명세 4절 `parse_choice` 비교. 실호출 증거: docs/qa/m8/raw/live-v1-events.json의 실제 호출 3건.
+대조:
+  - 모델: gate는 `"model" 없음/None → missing_model`, `≠ SERVED_SNAPSHOT → model_mismatch`. viewer는 `data.get("model") is
+    None → missing_model`. 명세와 같다. 저장·이벤트에는 `_safe_model`(허용 스냅숏일 때만 값, 아니면 null)을 써야 임의 모델
+    문자열이 기록되지 않는다(두 선례 모두 그렇게 함).
+  - answers: viewer는 `set(answers) == 기대 질문 집합`(추가·누락 키 거부), 각 답은 키 ⊆ {type, choice, confidence,
+    probabilities}, type "choice", choice ∈ 허용 집합(문자열), confidence 있으면 0–1 유한(bool 거부), probabilities 있으면
+    dict·항목 수 ≤ 선택지 수·키 ∈ 선택지·값 0–1 유한. 명세 parse_choice(키 `candidate_choice` 하나뿐, 다른 키 없음, 별칭 집합)
+    는 viewer 규칙과 같다. gate(M3)는 더 느슨하다(다른 답 키·답 안 추가 키를 막지 않음, probabilities ≤ 4).
+  - 크기·상태: 두 선례 모두 64 KiB 초과는 response_invalid, HTTP 200이 아니면 provider_http_error(해석 전), 사용량은 `_usage`
+    (정수 토큰·유한 cost, 없으면 null)로 정산.
+  - 실호출 근거: M8 실제 호출 3건(served typesafe/jev-1.13-20260917)이 엄격한 viewer `parse_answers`를 통과해 outcome
+    `planned/accepted`(seq 32·47·61). 응답 본문은 저장되지 않아(response_sha256만) confidence·probabilities 포함 여부는 모른다.
+결론: 통과. 응답 모양 가정은 기존 viewer 해석과 같다(M3보다 엄격). 선택지형 단일 질문 실호출 증거는 T10에서.
+
+==================================================================================================
+(j) 기존 request_jev·request_viewer 감사 이벤트 골든
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev/prototype_golden_egress.py --write  (두 번 기록해 같은지 먼저 확인)
+      .venv/bin/python backend/tests/fixtures/jev/prototype_golden_egress.py --check  → matches, exit 0
+  고정: MockTransport 응답(사용량 100/2 tok, 0.001 USD), sentinel 키, 정규 v4 UUID 클라이언트 id. 이벤트마다 type, 필드
+  이름(디스크 순서 = 정렬)과 값 유형, 닫힌·상수 필드 값만 기록(시각·seq·id·해시·경과 초는 유형만).
+출력(결과 / transport 호출 / 키 읽기 / 이벤트 열):
+  M3 request_jev
+    local_only            fallback local_only            0/0  egress:denied:local_only, wall_charged
+    dry_run               fallback dry_run               0/0  egress:denied:dry_run, wall_charged
+    missing_configuration fallback missing_configuration 0/0  egress:denied:missing_configuration, wall_charged
+    approval_required     fallback approval_required     0/0  approval_requested, egress:denied:approval_required, wall_charged
+    missing_credential    fallback missing_credential    0/1  egress:denied:missing_credential, wall_charged
+    accepted              accepted accepted              1/1  budget_reserved, egress:prepared, egress:dispatch_started,
+                          wall_charged, egress:response_received, egress_budget_settled, egress:settled, wall_charged
+    provider_http_error   fallback                       1/1  … response_received, egress_budget_settled, checkpoint, settled, …
+    transport_error       fallback                       1/1  … dispatch_started, wall_charged, egress:transport_failed, wall_charged
+    usage_missing         accepted                       1/1  … egress_budget_settled, checkpoint, egress:settled, wall_charged
+  M8 request_viewer
+    local_only            rejected local_only            0/0  egress:denied:local_only, wall_charged
+    dry_run               rejected dry_run               0/0  egress:denied:dry_run, wall_charged
+    missing_credential    rejected missing_credential    0/1  egress:denied:missing_credential, wall_charged
+    accepted              accepted                       1/1  budget_reserved, egress:prepared, egress:dispatch_started,
+                          viewer_dispatch_started, wall_charged, egress:response_received, egress_budget_settled, wall_charged
+    provider_http_error   rejected provider_http_error   1/1  … egress_budget_settled, checkpoint, wall_charged
+  M8 HTTP 라우트(동의 켬, 정상): 201 planned accepted, transport 1 — viewer_intent_requested, budget_reserved, egress:prepared,
+    egress:dispatch_started, viewer_dispatch_started, wall_charged, egress:response_received, egress_budget_settled,
+    wall_charged, viewer_intent_outcome
+  sentinel 키가 run 산출물에 없음(False). 관찰: viewer에는 `egress:settled` 감사가 없고, `egress_stop_reason`·남은 시간 소진·
+  재확인 단계의 거절은 denied 감사 없이 돌아간다(기존 동작, 바꾸지 않음). 과학 전송은 명세대로 거절마다 denied 감사를 쓴다.
+결론: 통과. 골든 파일이 "기존 동작 불변"의 기준이다(T4 이후 `--check`가 exit 0이어야 함).
+
+==================================================================================================
+참고: 예약식 보정 근거 (C1)
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev/prototype_token_ratio.py
+  커밋된 M8 증거의 세션 카탈로그·프롬프트로 오늘의 body_for를 다시 돌림. 기록된 payload_sha256과 같은 바이트는 재현되지
+  않아(M8 당시 코드·상태 차이로 추정) 근사값이다.
+출력: 카탈로그 99–100개, 본문 근사 28,096–28,414 B, 보고 input 12,521–12,629 tok · output 1,262–1,276 tok(4개 질문) ·
+  external 13,783–13,905 tok · cost 0.000526–0.000530 USD → 2.24–2.25 B/입력 토큰. 같은 바이트의 과학 예약식 값
+  18,144–18,303 tok(보고 사용량 대비 +31–32%). USD 예약 0.10은 보고 비용의 약 190배.
+  외부 토큰 한도 120,000에서 29.8 KB 변이 본문(예약 19,010, 사용량 ≈13.6 K로 가늠)은 약 8번째 전송 뒤 예약이 한도를 넘어
+  10회 상한보다 먼저 budget_exhausted가 된다(명세 5절이 예상한 동작). 10 KB 리간드 본문(예약 8,953)은 10회 모두 들어간다.

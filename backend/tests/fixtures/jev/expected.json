@@ -1,0 +1,4234 @@
+{
+ "_fixture": "ORACLE (independent, gemmi only, no mw import): M24 T1 expected neighbors / windows / ligand distances for public 1UBQ and 1MQ4. Not product output.",
+ "constants": {
+  "neighbor_radius_A": 5.0,
+  "window_flank": 5,
+  "hydrogen_elements": [
+   "H",
+   "D"
+  ]
+ },
+ "assumptions": {
+  "W1": "the window includes the target residue (5 before + target + 5 after, cut at chain ends)",
+  "W2": "one-letter codes over the 20 standard names only; any other name (incl. HID/MSE) is X",
+  "N1": "protein residue = gemmi het_flag 'A' (ATOM record), as M20 positions; first model only",
+  "N2": "a protein residue without heavy atoms is never a neighbor (no distance)",
+  "D1": "distances are math.dist on gemmi float64 positions; <= 5.0 inclusive"
+ },
+ "structures": {
+  "1UBQ": {
+   "protein_residues": 76,
+   "ligand": null,
+   "positions": [
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 1,
+      "icode": "",
+      "resname": "MET"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 2,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 3,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 15,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 16,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 17,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 18,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 19,
+       "icode": "",
+       "resname": "PRO"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 56,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 61,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 62,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 63,
+       "icode": "",
+       "resname": "LYS"
+      }
+     ],
+     "neighbor_count": 11,
+     "margins": {
+      "largest_included_A": 4.458241918065909,
+      "smallest_excluded_A": 5.415363884357173
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 1,
+      "residues": "MQIFVK",
+      "contiguous": true,
+      "members": [
+       [
+        1,
+        ""
+       ],
+       [
+        2,
+        ""
+       ],
+       [
+        3,
+        ""
+       ],
+       [
+        4,
+        ""
+       ],
+       [
+        5,
+        ""
+       ],
+       [
+        6,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": null
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 2,
+      "icode": "",
+      "resname": "GLN"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 1,
+       "icode": "",
+       "resname": "MET"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 3,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 4,
+       "icode": "",
+       "resname": "PHE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 14,
+       "icode": "",
+       "resname": "THR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 15,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 16,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 17,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 62,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 63,
+       "icode": "",
+       "resname": "LYS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 64,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 65,
+       "icode": "",
+       "resname": "SER"
+      }
+     ],
+     "neighbor_count": 11,
+     "margins": {
+      "largest_included_A": 4.978959931551971,
+      "smallest_excluded_A": 7.06697233615641
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 1,
+      "residues": "MQIFVKT",
+      "contiguous": true,
+      "members": [
+       [
+        1,
+        ""
+       ],
+       [
+        2,
+        ""
+       ],
+       [
+        3,
+        ""
+       ],
+       [
+        4,
+        ""
+       ],
+       [
+        5,
+        ""
+       ],
+       [
+        6,
+        ""
+       ],
+       [
+        7,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": null
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 44,
+      "icode": "",
+      "resname": "ILE"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 42,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 43,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 45,
+       "icode": "",
+       "resname": "PHE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 46,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 47,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 48,
+       "icode": "",
+       "resname": "LYS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 49,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 50,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 66,
+       "icode": "",
+       "resname": "THR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 67,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 68,
+       "icode": "",
+       "resname": "HIS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 70,
+       "icode": "",
+       "resname": "VAL"
+      }
+     ],
+     "neighbor_count": 12,
+     "margins": {
+      "largest_included_A": 4.66959837673434,
+      "smallest_excluded_A": 5.042258521734087
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 39,
+      "residues": "DQQRLIFAGKQ",
+      "contiguous": true,
+      "members": [
+       [
+        39,
+        ""
+       ],
+       [
+        40,
+        ""
+       ],
+       [
+        41,
+        ""
+       ],
+       [
+        42,
+        ""
+       ],
+       [
+        43,
+        ""
+       ],
+       [
+        44,
+        ""
+       ],
+       [
+        45,
+        ""
+       ],
+       [
+        46,
+        ""
+       ],
+       [
+        47,
+        ""
+       ],
+       [
+        48,
+        ""
+       ],
+       [
+        49,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": null
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 48,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 43,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 44,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 45,
+       "icode": "",
+       "resname": "PHE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 46,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 47,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 49,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 50,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 59,
+       "icode": "",
+       "resname": "TYR"
+      }
+     ],
+     "neighbor_count": 8,
+     "margins": {
+      "largest_included_A": 4.113872749611976,
+      "smallest_excluded_A": 6.862314624090038
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 43,
+      "residues": "LIFAGKQLEDG",
+      "contiguous": true,
+      "members": [
+       [
+        43,
+        ""
+       ],
+       [
+        44,
+        ""
+       ],
+       [
+        45,
+        ""
+       ],
+       [
+        46,
+        ""
+       ],
+       [
+        47,
+        ""
+       ],
+       [
+        48,
+        ""
+       ],
+       [
+        49,
+        ""
+       ],
+       [
+        50,
+        ""
+       ],
+       [
+        51,
+        ""
+       ],
+       [
+        52,
+        ""
+       ],
+       [
+        53,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": null
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 72,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 27,
+       "icode": "",
+       "resname": "LYS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 38,
+       "icode": "",
+       "resname": "PRO"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 39,
+       "icode": "",
+       "resname": "ASP"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 40,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 41,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 42,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 70,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 71,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 73,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 74,
+       "icode": "",
+       "resname": "ARG"
+      }
+     ],
+     "neighbor_count": 10,
+     "margins": {
+      "largest_included_A": 4.970337111303416,
+      "smallest_excluded_A": 5.230009369016467
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 67,
+      "residues": "LHLVLRLRGG",
+      "contiguous": true,
+      "members": [
+       [
+        67,
+        ""
+       ],
+       [
+        68,
+        ""
+       ],
+       [
+        69,
+        ""
+       ],
+       [
+        70,
+        ""
+       ],
+       [
+        71,
+        ""
+       ],
+       [
+        72,
+        ""
+       ],
+       [
+        73,
+        ""
+       ],
+       [
+        74,
+        ""
+       ],
+       [
+        75,
+        ""
+       ],
+       [
+        76,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": null
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 76,
+      "icode": "",
+      "resname": "GLY"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 74,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 75,
+       "icode": "",
+       "resname": "GLY"
+      }
+     ],
+     "neighbor_count": 2,
+     "margins": {
+      "largest_included_A": 4.674952299221887,
+      "smallest_excluded_A": 5.796119218925713
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 71,
+      "residues": "LRLRGG",
+      "contiguous": true,
+      "members": [
+       [
+        71,
+        ""
+       ],
+       [
+        72,
+        ""
+       ],
+       [
+        73,
+        ""
+       ],
+       [
+        74,
+        ""
+       ],
+       [
+        75,
+        ""
+       ],
+       [
+        76,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": null
+    }
+   ],
+   "neighbor_counts": [
+    [
+     "A",
+     1,
+     "",
+     "MET",
+     11
+    ],
+    [
+     "A",
+     2,
+     "",
+     "GLN",
+     11
+    ],
+    [
+     "A",
+     3,
+     "",
+     "ILE",
+     16
+    ],
+    [
+     "A",
+     4,
+     "",
+     "PHE",
+     11
+    ],
+    [
+     "A",
+     5,
+     "",
+     "VAL",
+     14
+    ],
+    [
+     "A",
+     6,
+     "",
+     "LYS",
+     11
+    ],
+    [
+     "A",
+     7,
+     "",
+     "THR",
+     9
+    ],
+    [
+     "A",
+     8,
+     "",
+     "LEU",
+     6
+    ],
+    [
+     "A",
+     9,
+     "",
+     "THR",
+     4
+    ],
+    [
+     "A",
+     10,
+     "",
+     "GLY",
+     5
+    ],
+    [
+     "A",
+     11,
+     "",
+     "LYS",
+     8
+    ],
+    [
+     "A",
+     12,
+     "",
+     "THR",
+     8
+    ],
+    [
+     "A",
+     13,
+     "",
+     "ILE",
+     12
+    ],
+    [
+     "A",
+     14,
+     "",
+     "THR",
+     8
+    ],
+    [
+     "A",
+     15,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     16,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     17,
+     "",
+     "VAL",
+     11
+    ],
+    [
+     "A",
+     18,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     19,
+     "",
+     "PRO",
+     9
+    ],
+    [
+     "A",
+     20,
+     "",
+     "SER",
+     6
+    ],
+    [
+     "A",
+     21,
+     "",
+     "ASP",
+     12
+    ],
+    [
+     "A",
+     22,
+     "",
+     "THR",
+     11
+    ],
+    [
+     "A",
+     23,
+     "",
+     "ILE",
+     15
+    ],
+    [
+     "A",
+     24,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     25,
+     "",
+     "ASN",
+     8
+    ],
+    [
+     "A",
+     26,
+     "",
+     "VAL",
+     15
+    ],
+    [
+     "A",
+     27,
+     "",
+     "LYS",
+     15
+    ],
+    [
+     "A",
+     28,
+     "",
+     "ALA",
+     10
+    ],
+    [
+     "A",
+     29,
+     "",
+     "LYS",
+     13
+    ],
+    [
+     "A",
+     30,
+     "",
+     "ILE",
+     16
+    ],
+    [
+     "A",
+     31,
+     "",
+     "GLN",
+     12
+    ],
+    [
+     "A",
+     32,
+     "",
+     "ASP",
+     7
+    ],
+    [
+     "A",
+     33,
+     "",
+     "LYS",
+     10
+    ],
+    [
+     "A",
+     34,
+     "",
+     "GLU",
+     9
+    ],
+    [
+     "A",
+     35,
+     "",
+     "GLY",
+     7
+    ],
+    [
+     "A",
+     36,
+     "",
+     "ILE",
+     11
+    ],
+    [
+     "A",
+     37,
+     "",
+     "PRO",
+     7
+    ],
+    [
+     "A",
+     38,
+     "",
+     "PRO",
+     9
+    ],
+    [
+     "A",
+     39,
+     "",
+     "ASP",
+     6
+    ],
+    [
+     "A",
+     40,
+     "",
+     "GLN",
+     10
+    ],
+    [
+     "A",
+     41,
+     "",
+     "GLN",
+     14
+    ],
+    [
+     "A",
+     42,
+     "",
+     "ARG",
+     10
+    ],
+    [
+     "A",
+     43,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     44,
+     "",
+     "ILE",
+     12
+    ],
+    [
+     "A",
+     45,
+     "",
+     "PHE",
+     12
+    ],
+    [
+     "A",
+     46,
+     "",
+     "ALA",
+     4
+    ],
+    [
+     "A",
+     47,
+     "",
+     "GLY",
+     5
+    ],
+    [
+     "A",
+     48,
+     "",
+     "LYS",
+     8
+    ],
+    [
+     "A",
+     49,
+     "",
+     "GLN",
+     8
+    ],
+    [
+     "A",
+     50,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     51,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     52,
+     "",
+     "ASP",
+     8
+    ],
+    [
+     "A",
+     53,
+     "",
+     "GLY",
+     6
+    ],
+    [
+     "A",
+     54,
+     "",
+     "ARG",
+     10
+    ],
+    [
+     "A",
+     55,
+     "",
+     "THR",
+     11
+    ],
+    [
+     "A",
+     56,
+     "",
+     "LEU",
+     17
+    ],
+    [
+     "A",
+     57,
+     "",
+     "SER",
+     8
+    ],
+    [
+     "A",
+     58,
+     "",
+     "ASP",
+     6
+    ],
+    [
+     "A",
+     59,
+     "",
+     "TYR",
+     13
+    ],
+    [
+     "A",
+     60,
+     "",
+     "ASN",
+     7
+    ],
+    [
+     "A",
+     61,
+     "",
+     "ILE",
+     13
+    ],
+    [
+     "A",
+     62,
+     "",
+     "GLN",
+     8
+    ],
+    [
+     "A",
+     63,
+     "",
+     "LYS",
+     7
+    ],
+    [
+     "A",
+     64,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     65,
+     "",
+     "SER",
+     10
+    ],
+    [
+     "A",
+     66,
+     "",
+     "THR",
+     9
+    ],
+    [
+     "A",
+     67,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     68,
+     "",
+     "HIS",
+     9
+    ],
+    [
+     "A",
+     69,
+     "",
+     "LEU",
+     13
+    ],
+    [
+     "A",
+     70,
+     "",
+     "VAL",
+     9
+    ],
+    [
+     "A",
+     71,
+     "",
+     "LEU",
+     8
+    ],
+    [
+     "A",
+     72,
+     "",
+     "ARG",
+     10
+    ],
+    [
+     "A",
+     73,
+     "",
+     "LEU",
+     5
+    ],
+    [
+     "A",
+     74,
+     "",
+     "ARG",
+     5
+    ],
+    [
+     "A",
+     75,
+     "",
+     "GLY",
+     3
+    ],
+    [
+     "A",
+     76,
+     "",
+     "GLY",
+     2
+    ]
+   ]
+  },
+  "1MQ4": {
+   "protein_residues": 261,
+   "ligand": {
+    "chain_auth": "A",
+    "seq_auth": 2001,
+    "icode": "",
+    "resname": "ADP"
+   },
+   "positions": [
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 126,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 127,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 128,
+       "icode": "",
+       "resname": "TRP"
+      }
+     ],
+     "neighbor_count": 2,
+     "margins": {
+      "largest_included_A": 3.4387746364075653,
+      "smallest_excluded_A": 5.225883274624491
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 126,
+      "residues": "RQWALE",
+      "contiguous": true,
+      "members": [
+       [
+        126,
+        ""
+       ],
+       [
+        127,
+        ""
+       ],
+       [
+        128,
+        ""
+       ],
+       [
+        129,
+        ""
+       ],
+       [
+        130,
+        ""
+       ],
+       [
+        131,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 18.226795055631694
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 143,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 141,
+       "icode": "",
+       "resname": "LYS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 142,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 144,
+       "icode": "",
+       "resname": "PHE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 145,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 172,
+       "icode": "",
+       "resname": "ALA"
+      }
+     ],
+     "neighbor_count": 5,
+     "margins": {
+      "largest_included_A": 4.544964906355164,
+      "smallest_excluded_A": 6.053828127722159
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 138,
+      "residues": "PLGKGKFGNVY",
+      "contiguous": true,
+      "members": [
+       [
+        138,
+        ""
+       ],
+       [
+        139,
+        ""
+       ],
+       [
+        140,
+        ""
+       ],
+       [
+        141,
+        ""
+       ],
+       [
+        142,
+        ""
+       ],
+       [
+        143,
+        ""
+       ],
+       [
+        144,
+        ""
+       ],
+       [
+        145,
+        ""
+       ],
+       [
+        146,
+        ""
+       ],
+       [
+        147,
+        ""
+       ],
+       [
+        148,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 2.6283578523481124
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 162,
+      "icode": "",
+      "resname": "LYS"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 146,
+       "icode": "",
+       "resname": "ASN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 147,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 148,
+       "icode": "",
+       "resname": "TYR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 160,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 161,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 163,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 164,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 181,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 206,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 207,
+       "icode": "",
+       "resname": "TYR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 208,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 210,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 274,
+       "icode": "",
+       "resname": "ASP"
+      }
+     ],
+     "neighbor_count": 13,
+     "margins": {
+      "largest_included_A": 4.767169810275268,
+      "smallest_excluded_A": 5.045378974864042
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 157,
+      "residues": "FILALKVLFKA",
+      "contiguous": true,
+      "members": [
+       [
+        157,
+        ""
+       ],
+       [
+        158,
+        ""
+       ],
+       [
+        159,
+        ""
+       ],
+       [
+        160,
+        ""
+       ],
+       [
+        161,
+        ""
+       ],
+       [
+        162,
+        ""
+       ],
+       [
+        163,
+        ""
+       ],
+       [
+        164,
+        ""
+       ],
+       [
+        165,
+        ""
+       ],
+       [
+        166,
+        ""
+       ],
+       [
+        167,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 2.6428630308814687
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 211,
+      "icode": "",
+      "resname": "GLU"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 159,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 160,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 193,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 194,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 195,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 196,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 197,
+       "icode": "",
+       "resname": "TYR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 209,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 210,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 212,
+       "icode": "",
+       "resname": "TYR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 213,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 271,
+       "icode": "",
+       "resname": "LYS"
+      }
+     ],
+     "neighbor_count": 12,
+     "margins": {
+      "largest_included_A": 4.964499068385446,
+      "smallest_excluded_A": 5.370124020914232
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 206,
+      "residues": "VYLILEYAPLG",
+      "contiguous": true,
+      "members": [
+       [
+        206,
+        ""
+       ],
+       [
+        207,
+        ""
+       ],
+       [
+        208,
+        ""
+       ],
+       [
+        209,
+        ""
+       ],
+       [
+        210,
+        ""
+       ],
+       [
+        211,
+        ""
+       ],
+       [
+        212,
+        ""
+       ],
+       [
+        213,
+        ""
+       ],
+       [
+        214,
+        ""
+       ],
+       [
+        215,
+        ""
+       ],
+       [
+        216,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 2.6956997236339246
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 274,
+      "icode": "",
+      "resname": "ASP"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 162,
+       "icode": "",
+       "resname": "LYS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 181,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 185,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 254,
+       "icode": "",
+       "resname": "HIS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 256,
+       "icode": "",
+       "resname": "ASP"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 261,
+       "icode": "",
+       "resname": "ASN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 272,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 273,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 275,
+       "icode": "",
+       "resname": "PHE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 276,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 277,
+       "icode": "",
+       "resname": "TRP"
+      }
+     ],
+     "neighbor_count": 11,
+     "margins": {
+      "largest_included_A": 4.703232611725687,
+      "smallest_excluded_A": 5.575689553768216
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 269,
+      "residues": "ELKIADFGWSV",
+      "contiguous": true,
+      "members": [
+       [
+        269,
+        ""
+       ],
+       [
+        270,
+        ""
+       ],
+       [
+        271,
+        ""
+       ],
+       [
+        272,
+        ""
+       ],
+       [
+        273,
+        ""
+       ],
+       [
+        274,
+        ""
+       ],
+       [
+        275,
+        ""
+       ],
+       [
+        276,
+        ""
+       ],
+       [
+        277,
+        ""
+       ],
+       [
+        278,
+        ""
+       ],
+       [
+        279,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 2.853779599058067
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 283,
+      "icode": "",
+      "resname": "SER"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 253,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 255,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 279,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 280,
+       "icode": "",
+       "resname": "HIS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 281,
+       "icode": "",
+       "resname": "ALA"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 282,
+       "icode": "",
+       "resname": "PRO"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 284,
+       "icode": "",
+       "resname": "SER"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 285,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 304,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 305,
+       "icode": "",
+       "resname": "MET"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 306,
+       "icode": "",
+       "resname": "HIS"
+      }
+     ],
+     "neighbor_count": 11,
+     "margins": {
+      "largest_included_A": 4.771180776285887,
+      "smallest_excluded_A": 5.149064186820748
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 278,
+      "residues": "SVHAPSSRTLC",
+      "contiguous": false,
+      "members": [
+       [
+        278,
+        ""
+       ],
+       [
+        279,
+        ""
+       ],
+       [
+        280,
+        ""
+       ],
+       [
+        281,
+        ""
+       ],
+       [
+        282,
+        ""
+       ],
+       [
+        283,
+        ""
+       ],
+       [
+        284,
+        ""
+       ],
+       [
+        285,
+        ""
+       ],
+       [
+        288,
+        ""
+       ],
+       [
+        289,
+        ""
+       ],
+       [
+        290,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 17.651476142238078
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 285,
+      "icode": "",
+      "resname": "ARG"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 255,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 277,
+       "icode": "",
+       "resname": "TRP"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 283,
+       "icode": "",
+       "resname": "SER"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 284,
+       "icode": "",
+       "resname": "SER"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 288,
+       "icode": "",
+       "resname": "THR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 289,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 290,
+       "icode": "",
+       "resname": "CYS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 300,
+       "icode": "",
+       "resname": "MET"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 301,
+       "icode": "",
+       "resname": "ILE"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 302,
+       "icode": "",
+       "resname": "GLU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 303,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 304,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 306,
+       "icode": "",
+       "resname": "HIS"
+      }
+     ],
+     "neighbor_count": 13,
+     "margins": {
+      "largest_included_A": 4.970518081649033,
+      "smallest_excluded_A": 5.705071778689554
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 280,
+      "residues": "HAPSSRTLCGT",
+      "contiguous": false,
+      "members": [
+       [
+        280,
+        ""
+       ],
+       [
+        281,
+        ""
+       ],
+       [
+        282,
+        ""
+       ],
+       [
+        283,
+        ""
+       ],
+       [
+        284,
+        ""
+       ],
+       [
+        285,
+        ""
+       ],
+       [
+        288,
+        ""
+       ],
+       [
+        289,
+        ""
+       ],
+       [
+        290,
+        ""
+       ],
+       [
+        291,
+        ""
+       ],
+       [
+        292,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 14.978713596300583
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 288,
+      "icode": "",
+      "resname": "THR"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 174,
+       "icode": "",
+       "resname": "VAL"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 176,
+       "icode": "",
+       "resname": "HIS"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 177,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 277,
+       "icode": "",
+       "resname": "TRP"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 285,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 289,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 290,
+       "icode": "",
+       "resname": "CYS"
+      }
+     ],
+     "neighbor_count": 7,
+     "margins": {
+      "largest_included_A": 4.039001609308911,
+      "smallest_excluded_A": 5.305302347651823
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 281,
+      "residues": "APSSRTLCGTL",
+      "contiguous": false,
+      "members": [
+       [
+        281,
+        ""
+       ],
+       [
+        282,
+        ""
+       ],
+       [
+        283,
+        ""
+       ],
+       [
+        284,
+        ""
+       ],
+       [
+        285,
+        ""
+       ],
+       [
+        288,
+        ""
+       ],
+       [
+        289,
+        ""
+       ],
+       [
+        290,
+        ""
+       ],
+       [
+        291,
+        ""
+       ],
+       [
+        292,
+        ""
+       ],
+       [
+        293,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 11.745973139761558
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 290,
+      "icode": "",
+      "resname": "CYS"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 277,
+       "icode": "",
+       "resname": "TRP"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 285,
+       "icode": "",
+       "resname": "ARG"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 288,
+       "icode": "",
+       "resname": "THR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 289,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 291,
+       "icode": "",
+       "resname": "GLY"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 292,
+       "icode": "",
+       "resname": "THR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 293,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 296,
+       "icode": "",
+       "resname": "LEU"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 334,
+       "icode": "",
+       "resname": "TYR"
+      }
+     ],
+     "neighbor_count": 9,
+     "margins": {
+      "largest_included_A": 4.912934968020641,
+      "smallest_excluded_A": 5.26829175350037
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 283,
+      "residues": "SSRTLCGTLDY",
+      "contiguous": false,
+      "members": [
+       [
+        283,
+        ""
+       ],
+       [
+        284,
+        ""
+       ],
+       [
+        285,
+        ""
+       ],
+       [
+        288,
+        ""
+       ],
+       [
+        289,
+        ""
+       ],
+       [
+        290,
+        ""
+       ],
+       [
+        291,
+        ""
+       ],
+       [
+        292,
+        ""
+       ],
+       [
+        293,
+        ""
+       ],
+       [
+        294,
+        ""
+       ],
+       [
+        295,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 11.505345583684132
+    },
+    {
+     "residue": {
+      "chain_auth": "A",
+      "seq_auth": 388,
+      "icode": "",
+      "resname": "SER"
+     },
+     "neighbors": [
+      {
+       "chain_auth": "A",
+       "seq_auth": 231,
+       "icode": "",
+       "resname": "GLN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 235,
+       "icode": "",
+       "resname": "THR"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 386,
+       "icode": "",
+       "resname": "ASN"
+      },
+      {
+       "chain_auth": "A",
+       "seq_auth": 387,
+       "icode": "",
+       "resname": "SER"
+      }
+     ],
+     "neighbor_count": 4,
+     "margins": {
+      "largest_included_A": 4.826062266486005,
+      "smallest_excluded_A": 5.552905005490368
+     },
+     "window": {
+      "chain_auth": "A",
+      "first_seq_auth": 383,
+      "residues": "ITANSS",
+      "contiguous": true,
+      "members": [
+       [
+        383,
+        ""
+       ],
+       [
+        384,
+        ""
+       ],
+       [
+        385,
+        ""
+       ],
+       [
+        386,
+        ""
+       ],
+       [
+        387,
+        ""
+       ],
+       [
+        388,
+        ""
+       ]
+      ]
+     },
+     "ligand_min_distance_A": 22.450286791041222
+    }
+   ],
+   "neighbor_counts": [
+    [
+     "A",
+     126,
+     "",
+     "ARG",
+     2
+    ],
+    [
+     "A",
+     127,
+     "",
+     "GLN",
+     4
+    ],
+    [
+     "A",
+     128,
+     "",
+     "TRP",
+     9
+    ],
+    [
+     "A",
+     129,
+     "",
+     "ALA",
+     7
+    ],
+    [
+     "A",
+     130,
+     "",
+     "LEU",
+     9
+    ],
+    [
+     "A",
+     131,
+     "",
+     "GLU",
+     5
+    ],
+    [
+     "A",
+     132,
+     "",
+     "ASP",
+     10
+    ],
+    [
+     "A",
+     133,
+     "",
+     "PHE",
+     15
+    ],
+    [
+     "A",
+     134,
+     "",
+     "GLU",
+     8
+    ],
+    [
+     "A",
+     135,
+     "",
+     "ILE",
+     9
+    ],
+    [
+     "A",
+     136,
+     "",
+     "GLY",
+     7
+    ],
+    [
+     "A",
+     137,
+     "",
+     "ARG",
+     7
+    ],
+    [
+     "A",
+     138,
+     "",
+     "PRO",
+     8
+    ],
+    [
+     "A",
+     139,
+     "",
+     "LEU",
+     10
+    ],
+    [
+     "A",
+     140,
+     "",
+     "GLY",
+     7
+    ],
+    [
+     "A",
+     141,
+     "",
+     "LYS",
+     7
+    ],
+    [
+     "A",
+     142,
+     "",
+     "GLY",
+     7
+    ],
+    [
+     "A",
+     143,
+     "",
+     "LYS",
+     5
+    ],
+    [
+     "A",
+     144,
+     "",
+     "PHE",
+     11
+    ],
+    [
+     "A",
+     145,
+     "",
+     "GLY",
+     10
+    ],
+    [
+     "A",
+     146,
+     "",
+     "ASN",
+     11
+    ],
+    [
+     "A",
+     147,
+     "",
+     "VAL",
+     15
+    ],
+    [
+     "A",
+     148,
+     "",
+     "TYR",
+     14
+    ],
+    [
+     "A",
+     149,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     150,
+     "",
+     "ALA",
+     13
+    ],
+    [
+     "A",
+     151,
+     "",
+     "ARG",
+     11
+    ],
+    [
+     "A",
+     152,
+     "",
+     "GLU",
+     11
+    ],
+    [
+     "A",
+     153,
+     "",
+     "LYS",
+     9
+    ],
+    [
+     "A",
+     154,
+     "",
+     "GLN",
+     4
+    ],
+    [
+     "A",
+     155,
+     "",
+     "SER",
+     5
+    ],
+    [
+     "A",
+     156,
+     "",
+     "LYS",
+     7
+    ],
+    [
+     "A",
+     157,
+     "",
+     "PHE",
+     8
+    ],
+    [
+     "A",
+     158,
+     "",
+     "ILE",
+     8
+    ],
+    [
+     "A",
+     159,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     160,
+     "",
+     "ALA",
+     14
+    ],
+    [
+     "A",
+     161,
+     "",
+     "LEU",
+     17
+    ],
+    [
+     "A",
+     162,
+     "",
+     "LYS",
+     13
+    ],
+    [
+     "A",
+     163,
+     "",
+     "VAL",
+     13
+    ],
+    [
+     "A",
+     164,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     165,
+     "",
+     "PHE",
+     11
+    ],
+    [
+     "A",
+     166,
+     "",
+     "LYS",
+     13
+    ],
+    [
+     "A",
+     167,
+     "",
+     "ALA",
+     7
+    ],
+    [
+     "A",
+     168,
+     "",
+     "GLN",
+     9
+    ],
+    [
+     "A",
+     169,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     170,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     171,
+     "",
+     "LYS",
+     7
+    ],
+    [
+     "A",
+     172,
+     "",
+     "ALA",
+     8
+    ],
+    [
+     "A",
+     173,
+     "",
+     "GLY",
+     8
+    ],
+    [
+     "A",
+     174,
+     "",
+     "VAL",
+     9
+    ],
+    [
+     "A",
+     175,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     176,
+     "",
+     "HIS",
+     8
+    ],
+    [
+     "A",
+     177,
+     "",
+     "GLN",
+     11
+    ],
+    [
+     "A",
+     178,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     179,
+     "",
+     "ARG",
+     9
+    ],
+    [
+     "A",
+     180,
+     "",
+     "ARG",
+     14
+    ],
+    [
+     "A",
+     181,
+     "",
+     "GLU",
+     16
+    ],
+    [
+     "A",
+     182,
+     "",
+     "VAL",
+     12
+    ],
+    [
+     "A",
+     183,
+     "",
+     "GLU",
+     8
+    ],
+    [
+     "A",
+     184,
+     "",
+     "ILE",
+     14
+    ],
+    [
+     "A",
+     185,
+     "",
+     "GLN",
+     17
+    ],
+    [
+     "A",
+     186,
+     "",
+     "SER",
+     9
+    ],
+    [
+     "A",
+     187,
+     "",
+     "HIS",
+     9
+    ],
+    [
+     "A",
+     188,
+     "",
+     "LEU",
+     13
+    ],
+    [
+     "A",
+     189,
+     "",
+     "ARG",
+     7
+    ],
+    [
+     "A",
+     190,
+     "",
+     "HIS",
+     9
+    ],
+    [
+     "A",
+     191,
+     "",
+     "PRO",
+     7
+    ],
+    [
+     "A",
+     192,
+     "",
+     "ASN",
+     11
+    ],
+    [
+     "A",
+     193,
+     "",
+     "ILE",
+     15
+    ],
+    [
+     "A",
+     194,
+     "",
+     "LEU",
+     13
+    ],
+    [
+     "A",
+     195,
+     "",
+     "ARG",
+     10
+    ],
+    [
+     "A",
+     196,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     197,
+     "",
+     "TYR",
+     8
+    ],
+    [
+     "A",
+     198,
+     "",
+     "GLY",
+     7
+    ],
+    [
+     "A",
+     199,
+     "",
+     "TYR",
+     9
+    ],
+    [
+     "A",
+     200,
+     "",
+     "PHE",
+     13
+    ],
+    [
+     "A",
+     201,
+     "",
+     "HIS",
+     8
+    ],
+    [
+     "A",
+     202,
+     "",
+     "ASP",
+     7
+    ],
+    [
+     "A",
+     203,
+     "",
+     "ALA",
+     5
+    ],
+    [
+     "A",
+     204,
+     "",
+     "THR",
+     8
+    ],
+    [
+     "A",
+     205,
+     "",
+     "ARG",
+     11
+    ],
+    [
+     "A",
+     206,
+     "",
+     "VAL",
+     14
+    ],
+    [
+     "A",
+     207,
+     "",
+     "TYR",
+     13
+    ],
+    [
+     "A",
+     208,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     209,
+     "",
+     "ILE",
+     15
+    ],
+    [
+     "A",
+     210,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     211,
+     "",
+     "GLU",
+     12
+    ],
+    [
+     "A",
+     212,
+     "",
+     "TYR",
+     10
+    ],
+    [
+     "A",
+     213,
+     "",
+     "ALA",
+     9
+    ],
+    [
+     "A",
+     214,
+     "",
+     "PRO",
+     7
+    ],
+    [
+     "A",
+     215,
+     "",
+     "LEU",
+     10
+    ],
+    [
+     "A",
+     216,
+     "",
+     "GLY",
+     9
+    ],
+    [
+     "A",
+     217,
+     "",
+     "THR",
+     11
+    ],
+    [
+     "A",
+     218,
+     "",
+     "VAL",
+     15
+    ],
+    [
+     "A",
+     219,
+     "",
+     "TYR",
+     9
+    ],
+    [
+     "A",
+     220,
+     "",
+     "ARG",
+     10
+    ],
+    [
+     "A",
+     221,
+     "",
+     "GLU",
+     13
+    ],
+    [
+     "A",
+     222,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     223,
+     "",
+     "GLN",
+     8
+    ],
+    [
+     "A",
+     224,
+     "",
+     "LYS",
+     6
+    ],
+    [
+     "A",
+     225,
+     "",
+     "LEU",
+     9
+    ],
+    [
+     "A",
+     226,
+     "",
+     "SER",
+     9
+    ],
+    [
+     "A",
+     227,
+     "",
+     "LYS",
+     11
+    ],
+    [
+     "A",
+     228,
+     "",
+     "PHE",
+     13
+    ],
+    [
+     "A",
+     229,
+     "",
+     "ASP",
+     8
+    ],
+    [
+     "A",
+     230,
+     "",
+     "GLU",
+     12
+    ],
+    [
+     "A",
+     231,
+     "",
+     "GLN",
+     9
+    ],
+    [
+     "A",
+     232,
+     "",
+     "ARG",
+     10
+    ],
+    [
+     "A",
+     233,
+     "",
+     "THR",
+     14
+    ],
+    [
+     "A",
+     234,
+     "",
+     "ALA",
+     13
+    ],
+    [
+     "A",
+     235,
+     "",
+     "THR",
+     12
+    ],
+    [
+     "A",
+     236,
+     "",
+     "TYR",
+     16
+    ],
+    [
+     "A",
+     237,
+     "",
+     "ILE",
+     16
+    ],
+    [
+     "A",
+     238,
+     "",
+     "THR",
+     12
+    ],
+    [
+     "A",
+     239,
+     "",
+     "GLU",
+     12
+    ],
+    [
+     "A",
+     240,
+     "",
+     "LEU",
+     16
+    ],
+    [
+     "A",
+     241,
+     "",
+     "ALA",
+     13
+    ],
+    [
+     "A",
+     242,
+     "",
+     "ASN",
+     12
+    ],
+    [
+     "A",
+     243,
+     "",
+     "ALA",
+     12
+    ],
+    [
+     "A",
+     244,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     245,
+     "",
+     "SER",
+     11
+    ],
+    [
+     "A",
+     246,
+     "",
+     "TYR",
+     13
+    ],
+    [
+     "A",
+     247,
+     "",
+     "CYS",
+     12
+    ],
+    [
+     "A",
+     248,
+     "",
+     "HIS",
+     13
+    ],
+    [
+     "A",
+     249,
+     "",
+     "SER",
+     7
+    ],
+    [
+     "A",
+     250,
+     "",
+     "LYS",
+     9
+    ],
+    [
+     "A",
+     251,
+     "",
+     "ARG",
+     12
+    ],
+    [
+     "A",
+     252,
+     "",
+     "VAL",
+     14
+    ],
+    [
+     "A",
+     253,
+     "",
+     "ILE",
+     15
+    ],
+    [
+     "A",
+     254,
+     "",
+     "HIS",
+     14
+    ],
+    [
+     "A",
+     255,
+     "",
+     "ARG",
+     16
+    ],
+    [
+     "A",
+     256,
+     "",
+     "ASP",
+     8
+    ],
+    [
+     "A",
+     257,
+     "",
+     "ILE",
+     13
+    ],
+    [
+     "A",
+     258,
+     "",
+     "LYS",
+     9
+    ],
+    [
+     "A",
+     259,
+     "",
+     "PRO",
+     13
+    ],
+    [
+     "A",
+     260,
+     "",
+     "GLU",
+     8
+    ],
+    [
+     "A",
+     261,
+     "",
+     "ASN",
+     11
+    ],
+    [
+     "A",
+     262,
+     "",
+     "LEU",
+     18
+    ],
+    [
+     "A",
+     263,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     264,
+     "",
+     "LEU",
+     16
+    ],
+    [
+     "A",
+     265,
+     "",
+     "GLY",
+     10
+    ],
+    [
+     "A",
+     266,
+     "",
+     "SER",
+     7
+    ],
+    [
+     "A",
+     267,
+     "",
+     "ALA",
+     5
+    ],
+    [
+     "A",
+     268,
+     "",
+     "GLY",
+     9
+    ],
+    [
+     "A",
+     269,
+     "",
+     "GLU",
+     11
+    ],
+    [
+     "A",
+     270,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     271,
+     "",
+     "LYS",
+     15
+    ],
+    [
+     "A",
+     272,
+     "",
+     "ILE",
+     15
+    ],
+    [
+     "A",
+     273,
+     "",
+     "ALA",
+     10
+    ],
+    [
+     "A",
+     274,
+     "",
+     "ASP",
+     11
+    ],
+    [
+     "A",
+     275,
+     "",
+     "PHE",
+     16
+    ],
+    [
+     "A",
+     276,
+     "",
+     "GLY",
+     7
+    ],
+    [
+     "A",
+     277,
+     "",
+     "TRP",
+     15
+    ],
+    [
+     "A",
+     278,
+     "",
+     "SER",
+     12
+    ],
+    [
+     "A",
+     279,
+     "",
+     "VAL",
+     11
+    ],
+    [
+     "A",
+     280,
+     "",
+     "HIS",
+     10
+    ],
+    [
+     "A",
+     281,
+     "",
+     "ALA",
+     10
+    ],
+    [
+     "A",
+     282,
+     "",
+     "PRO",
+     8
+    ],
+    [
+     "A",
+     283,
+     "",
+     "SER",
+     11
+    ],
+    [
+     "A",
+     284,
+     "",
+     "SER",
+     8
+    ],
+    [
+     "A",
+     285,
+     "",
+     "ARG",
+     13
+    ],
+    [
+     "A",
+     288,
+     "",
+     "THR",
+     7
+    ],
+    [
+     "A",
+     289,
+     "",
+     "LEU",
+     5
+    ],
+    [
+     "A",
+     290,
+     "",
+     "CYS",
+     9
+    ],
+    [
+     "A",
+     291,
+     "",
+     "GLY",
+     5
+    ],
+    [
+     "A",
+     292,
+     "",
+     "THR",
+     7
+    ],
+    [
+     "A",
+     293,
+     "",
+     "LEU",
+     11
+    ],
+    [
+     "A",
+     294,
+     "",
+     "ASP",
+     12
+    ],
+    [
+     "A",
+     295,
+     "",
+     "TYR",
+     15
+    ],
+    [
+     "A",
+     296,
+     "",
+     "LEU",
+     13
+    ],
+    [
+     "A",
+     297,
+     "",
+     "PRO",
+     11
+    ],
+    [
+     "A",
+     298,
+     "",
+     "PRO",
+     14
+    ],
+    [
+     "A",
+     299,
+     "",
+     "GLU",
+     14
+    ],
+    [
+     "A",
+     300,
+     "",
+     "MET",
+     13
+    ],
+    [
+     "A",
+     301,
+     "",
+     "ILE",
+     12
+    ],
+    [
+     "A",
+     302,
+     "",
+     "GLU",
+     10
+    ],
+    [
+     "A",
+     303,
+     "",
+     "GLY",
+     9
+    ],
+    [
+     "A",
+     304,
+     "",
+     "ARG",
+     12
+    ],
+    [
+     "A",
+     305,
+     "",
+     "MET",
+     7
+    ],
+    [
+     "A",
+     306,
+     "",
+     "HIS",
+     14
+    ],
+    [
+     "A",
+     307,
+     "",
+     "ASP",
+     11
+    ],
+    [
+     "A",
+     308,
+     "",
+     "GLU",
+     11
+    ],
+    [
+     "A",
+     309,
+     "",
+     "LYS",
+     12
+    ],
+    [
+     "A",
+     310,
+     "",
+     "VAL",
+     13
+    ],
+    [
+     "A",
+     311,
+     "",
+     "ASP",
+     16
+    ],
+    [
+     "A",
+     312,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     313,
+     "",
+     "TRP",
+     21
+    ],
+    [
+     "A",
+     314,
+     "",
+     "SER",
+     13
+    ],
+    [
+     "A",
+     315,
+     "",
+     "LEU",
+     15
+    ],
+    [
+     "A",
+     316,
+     "",
+     "GLY",
+     11
+    ],
+    [
+     "A",
+     317,
+     "",
+     "VAL",
+     14
+    ],
+    [
+     "A",
+     318,
+     "",
+     "LEU",
+     16
+    ],
+    [
+     "A",
+     319,
+     "",
+     "CYS",
+     15
+    ],
+    [
+     "A",
+     320,
+     "",
+     "TYR",
+     17
+    ],
+    [
+     "A",
+     321,
+     "",
+     "GLU",
+     15
+    ],
+    [
+     "A",
+     322,
+     "",
+     "PHE",
+     17
+    ],
+    [
+     "A",
+     323,
+     "",
+     "LEU",
+     17
+    ],
+    [
+     "A",
+     324,
+     "",
+     "VAL",
+     12
+    ],
+    [
+     "A",
+     325,
+     "",
+     "GLY",
+     10
+    ],
+    [
+     "A",
+     326,
+     "",
+     "LYS",
+     7
+    ],
+    [
+     "A",
+     327,
+     "",
+     "PRO",
+     10
+    ],
+    [
+     "A",
+     328,
+     "",
+     "PRO",
+     11
+    ],
+    [
+     "A",
+     329,
+     "",
+     "PHE",
+     14
+    ],
+    [
+     "A",
+     330,
+     "",
+     "GLU",
+     9
+    ],
+    [
+     "A",
+     331,
+     "",
+     "ALA",
+     8
+    ],
+    [
+     "A",
+     332,
+     "",
+     "ASN",
+     5
+    ],
+    [
+     "A",
+     333,
+     "",
+     "THR",
+     6
+    ],
+    [
+     "A",
+     334,
+     "",
+     "TYR",
+     9
+    ],
+    [
+     "A",
+     335,
+     "",
+     "GLN",
+     6
+    ],
+    [
+     "A",
+     336,
+     "",
+     "GLU",
+     9
+    ],
+    [
+     "A",
+     337,
+     "",
+     "THR",
+     14
+    ],
+    [
+     "A",
+     338,
+     "",
+     "TYR",
+     12
+    ],
+    [
+     "A",
+     339,
+     "",
+     "LYS",
+     10
+    ],
+    [
+     "A",
+     340,
+     "",
+     "ARG",
+     14
+    ],
+    [
+     "A",
+     341,
+     "",
+     "ILE",
+     16
+    ],
+    [
+     "A",
+     342,
+     "",
+     "SER",
+     11
+    ],
+    [
+     "A",
+     343,
+     "",
+     "ARG",
+     7
+    ],
+    [
+     "A",
+     344,
+     "",
+     "VAL",
+     13
+    ],
+    [
+     "A",
+     345,
+     "",
+     "GLU",
+     8
+    ],
+    [
+     "A",
+     346,
+     "",
+     "PHE",
+     11
+    ],
+    [
+     "A",
+     347,
+     "",
+     "THR",
+     5
+    ],
+    [
+     "A",
+     348,
+     "",
+     "PHE",
+     9
+    ],
+    [
+     "A",
+     349,
+     "",
+     "PRO",
+     8
+    ],
+    [
+     "A",
+     350,
+     "",
+     "ASP",
+     5
+    ],
+    [
+     "A",
+     351,
+     "",
+     "PHE",
+     8
+    ],
+    [
+     "A",
+     352,
+     "",
+     "VAL",
+     11
+    ],
+    [
+     "A",
+     353,
+     "",
+     "THR",
+     9
+    ],
+    [
+     "A",
+     354,
+     "",
+     "GLU",
+     6
+    ],
+    [
+     "A",
+     355,
+     "",
+     "GLY",
+     8
+    ],
+    [
+     "A",
+     356,
+     "",
+     "ALA",
+     12
+    ],
+    [
+     "A",
+     357,
+     "",
+     "ARG",
+     14
+    ],
+    [
+     "A",
+     358,
+     "",
+     "ASP",
+     10
+    ],
+    [
+     "A",
+     359,
+     "",
+     "LEU",
+     14
+    ],
+    [
+     "A",
+     360,
+     "",
+     "ILE",
+     15
+    ],
+    [
+     "A",
+     361,
+     "",
+     "SER",
+     11
+    ],
+    [
+     "A",
+     362,
+     "",
+     "ARG",
+     12
+    ],
+    [
+     "A",
+     363,
+     "",
+     "LEU",
+     13
+    ],
+    [
+     "A",
+     364,
+     "",
+     "LEU",
+     13
+    ],
+    [
+     "A",
+     365,
+     "",
+     "LYS",
+     11
+    ],
+    [
+     "A",
+     366,
+     "",
+     "HIS",
+     13
+    ],
+    [
+     "A",
+     367,
+     "",
+     "ASN",
+     6
+    ],
+    [
+     "A",
+     368,
+     "",
+     "PRO",
+     10
+    ],
+    [
+     "A",
+     369,
+     "",
+     "SER",
+     5
+    ],
+    [
+     "A",
+     370,
+     "",
+     "GLN",
+     8
+    ],
+    [
+     "A",
+     371,
+     "",
+     "ARG",
+     17
+    ],
+    [
+     "A",
+     372,
+     "",
+     "PRO",
+     10
+    ],
+    [
+     "A",
+     373,
+     "",
+     "MET",
+     7
+    ],
+    [
+     "A",
+     374,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     375,
+     "",
+     "ARG",
+     6
+    ],
+    [
+     "A",
+     376,
+     "",
+     "GLU",
+     8
+    ],
+    [
+     "A",
+     377,
+     "",
+     "VAL",
+     15
+    ],
+    [
+     "A",
+     378,
+     "",
+     "LEU",
+     12
+    ],
+    [
+     "A",
+     379,
+     "",
+     "GLU",
+     7
+    ],
+    [
+     "A",
+     380,
+     "",
+     "HIS",
+     12
+    ],
+    [
+     "A",
+     381,
+     "",
+     "PRO",
+     7
+    ],
+    [
+     "A",
+     382,
+     "",
+     "TRP",
+     16
+    ],
+    [
+     "A",
+     383,
+     "",
+     "ILE",
+     13
+    ],
+    [
+     "A",
+     384,
+     "",
+     "THR",
+     9
+    ],
+    [
+     "A",
+     385,
+     "",
+     "ALA",
+     6
+    ],
+    [
+     "A",
+     386,
+     "",
+     "ASN",
+     11
+    ],
+    [
+     "A",
+     387,
+     "",
+     "SER",
+     10
+    ],
+    [
+     "A",
+     388,
+     "",
+     "SER",
+     4
+    ]
+   ]
+  }
+ }
+}
