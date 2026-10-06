@@ -50,7 +50,7 @@ def _judge(phase="fixture", rows=None, leftovers=(), environment=None, checks=No
 def _args(**override):
     values = {"root": str(REPO / "runs/m24-test-root"), "artifacts": str(REPO / "frontend/tests/offscreen/artifacts/x"),
               "out": str(REPO / "runs/m24-test-out"), "code_root": str(REPO), "build": "never", "phase": "fixture",
-              "live_calls": 0, "regressions": False, "kbase": None}
+              "live_calls": 0, "regressions": False, "kbase": None, "finalize": False}
     return argparse.Namespace(**{**values, **override})
 
 
@@ -116,6 +116,20 @@ def test_default_out_is_the_m24_qa_folder_per_phase():
     assert runner.out.parent.name.startswith("m24-jev-") and runner.out.name == "acceptance-fixture"
     assert runner.out.parent.parent == REPO / "docs/qa"
     assert m24.Runner(_args(out=None, phase="calibrate", live_calls=1)).out.name == "acceptance-calibrate"
+    assert m24.Runner(_args(out=None, phase="calibrate", finalize=True)).out.name == "acceptance-calibrate"
+
+
+def test_finalize_is_a_calibrate_option_that_takes_no_live_calls():
+    parser = m24.build_parser()
+    args = parser.parse_args(["--root", "r", "--artifacts", "a", "--phase", "calibrate", "--finalize"])
+    assert (args.phase, args.finalize, args.live_calls) == ("calibrate", True, 0)
+    assert parser.parse_args(["--root", "r", "--artifacts", "a"]).finalize is False
+    runner = m24.Runner(_args(phase="calibrate", finalize=True))
+    assert runner.finalize is True and runner.live_calls == 0
+    for phase, calls in (("fixture", 0), ("live", 0), ("live", 6), ("calibrate", 1), ("calibrate", 6)):
+        with pytest.raises(SystemExit, match="--finalize"):
+            m24.Runner(_args(phase=phase, live_calls=calls, finalize=True))
+    assert m24.Runner(_args(phase="calibrate", live_calls=1)).finalize is False
 
 
 @pytest.mark.parametrize("field", ["root", "artifacts", "out"])
@@ -660,3 +674,181 @@ def test_a_damaged_ledger_refuses_every_real_phase(monkeypatch, qa_base, isolate
     assert not runner.runs.exists() and isolated_ledger.read_text() == "{not json"
     # the fixture phase does not read it
     _stubbed(monkeypatch, qa_base, "fixture", "fixture").run()
+
+
+# ----- the end of the calibrate phase and --finalize (stored files only; no service, harness or call) -------------------
+# The shape of a stored jev-calibrate ledger row with one completed send (test data, not evidence).
+CALIBRATE_SEND = {"entry": "L1-ligand-5", "run": "run_aa", "kind": "ligand", "aliases": 5, "bodyBytes": 3539,
+                  "bodySha256": "a" * 64, "reservation": {"external_tokens": 5866, "usd": 0.1}, "sendId": "s",
+                  "status": "completed", "reasonCode": None, "servedModel": "typesafe/jev-1.13-20260917",
+                  "usage": {"cost": 8.7654e-05, "external_tokens": 2152, "input_tokens": 2087, "output_tokens": 65},
+                  "late": False, "egressStop": None,
+                  "responseShape": {"confidence": True, "probabilities": True, "probabilityCount": 5}}
+CALIBRATE_ROW = {"schema": "m24_case_ledger_row@1", "step": "jev-calibrate", "mode": "live", "status": "pass",
+                 "cases": {"JL-live": "pass"}, "externalRequestCount": 0, "sends": [CALIBRATE_SEND],
+                 "dispatchCounts": {"run_aa": 1, "run_bb": 0}}
+CALIBRATE_ENV = {key: True for key in ("workerPython", "ligandAvailable", "mutationAvailable", "jevAvailable",
+                                       "keyAvailable", "setup")}
+
+
+def test_no_record_call_spreads_a_dict_into_its_keywords():
+    """record(step, status, **extra): a ``**`` spread of a dict holding ``status`` (the calibration's send status) or
+    ``step`` raises TypeError — the calibrate crash right after the first real call. Every check dict goes in as one
+    ``detail`` keyword instead."""
+    tree = ast.parse(Path(m24.__file__).read_text())
+    calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call) and getattr(node.func, "attr", "") == "record"]
+    assert len(calls) > 10
+    assert [ast.unparse(node) for node in calls if any(keyword.arg is None for keyword in node.keywords)] == []
+    assert [ast.unparse(node) for node in calls
+            if any(keyword.arg in ("step", "status") for keyword in node.keywords)] == []
+
+
+def test_run_calibrate_ends_by_storing_and_recording_the_calibration(monkeypatch, qa_base):
+    root = qa_base / "calibrate-end"
+    runner = m24.Runner(_args(root=str(root), artifacts=str(qa_base / "artifacts" / "calibrate-end"),
+                              out=str(qa_base / "out" / "calibrate-end"), phase="calibrate", live_calls=6))
+    runner.artifacts.mkdir(parents=True)
+    runner.runs.mkdir(parents=True)
+    monkeypatch.setattr(runner, "start_backend_at", lambda *args: None)
+    monkeypatch.setattr(runner, "capabilities_ready", lambda: True)
+    monkeypatch.setattr(runner, "key_available", lambda: True)
+
+    def setup_runs(shapes, label, keys=None):
+        target = runner.artifacts / f"setup-{label}.json"
+        target.write_text(json.dumps({"schema": "m24_jev_setup@1", "label": label, "runs": {}}) + "\n")
+        return target
+
+    def flow(step, mode, extra, limit=None):
+        assert (step, mode, limit) == ("jev-calibrate", "live", 1)
+        _events(runner.runs, "run_aa", [DISPATCH, SCIENCE_RESPONSE])
+        _events(runner.runs, "run_bb", [])
+        return json.loads(json.dumps(CALIBRATE_ROW))
+    monkeypatch.setattr(runner, "setup_runs", setup_runs)
+    monkeypatch.setattr(runner, "flow", flow)
+    runner.run_calibrate()
+    state = json.loads(runner.state_path.read_text())
+    assert state["calibration"] == m24.calibration(CALIBRATE_ROW)
+    assert (state["calibration"]["ok"], state["calibration"]["status"], state["livePhaseRan"]) == (True, "completed", False)
+    assert state["counts"] == m24.count_events(runner.runs) and runner.checks["liveCount"]["ok"] is True
+    recorded = [json.loads(line) for line in (runner.artifacts / "runner-summary.jsonl").read_text().splitlines()]
+    entry = [item for item in recorded if item["step"] == "calibration"][-1]
+    assert (entry["status"], entry["detail"]) == ("pass", state["calibration"])     # the send status stays in detail
+
+
+def _tree_bytes(folder):
+    return {str(path.relative_to(folder)): path.read_bytes() for path in sorted(Path(folder).rglob("*")) if path.is_file()}
+
+
+def _finished_calibrate(base, ledger_file, name="finished"):
+    """A calibrate root whose real call finished but whose runner stopped before its evidence: its runs events,
+    live-setup.json and live-state.json; the artifacts' runner-state.json, setup-live.json, jev-calibrate row and summary
+    (with the live-ledger record); the ledger with this root's finished calibrate phase."""
+    root, artifacts, out = base / name, base / "artifacts" / name, base / "out" / name
+    _events(root / "runs", "run_aa", [DISPATCH, SCIENCE_RESPONSE])
+    _events(root / "runs", "run_bb", [])
+    setup = json.dumps({"schema": "m24_jev_setup@1", "label": "live", "runs": {}}) + "\n"
+    (root / "live-setup.json").write_text(setup)
+    (root / "live-state.json").write_text(json.dumps({
+        "schema": "m24_jev_live_state@1", "setup": str(root / "live-setup.json"),
+        "calibration": m24.calibration(CALIBRATE_ROW), "counts": m24.count_events(root / "runs"), "liveCalls": 6,
+        "livePhaseRan": False, "writtenAt": "2026-10-06T00:00:30+00:00"}, indent=2) + "\n")
+    (artifacts / "jev-calibrate").mkdir(parents=True)
+    (artifacts / "jev-calibrate/ledger-row.json").write_text(json.dumps(CALIBRATE_ROW, indent=2) + "\n")
+    (artifacts / "setup-live.json").write_text(setup)
+    (artifacts / "runner-state.json").write_text(json.dumps({
+        "build": {"buildId": "b", "gitHead": "h", "buildCurrentWithSource": True}, "environment": CALIBRATE_ENV},
+        indent=2) + "\n")
+    (artifacts / "runner-summary.jsonl").write_text(json.dumps({
+        "step": "live-ledger", "status": "pass", "at": "2026-10-06T00:01:00+00:00", "ok": True, "before": 0,
+        "planned": 1, "after": 1, "rootDispatch": 1}) + "\n")
+    _ledger_file(ledger_file, {str(root): {"phases": [_phase()], "dispatch": {"run_aa": 1, "run_bb": 0}}})
+    return root, artifacts, out
+
+
+def _finalizer(monkeypatch, root, artifacts, out):
+    """A --finalize Runner: every way to build, start a service or Electron, post, run a phase, write the ledger or
+    rewrite runner-state.json fails the test; leftovers and the key search are stubs."""
+    runner = m24.Runner(_args(root=str(root), artifacts=str(artifacts), out=str(out), phase="calibrate", live_calls=0,
+                              finalize=True))
+    monkeypatch.setattr(m24.m13, "listening", lambda port: [])
+    monkeypatch.setattr(runner, "leftovers", list)
+    monkeypatch.setattr(runner, "key_scan", lambda roots: {"ok": True, "keyAvailable": True, "keyHits": [],
+                                                           "sentinelHits": [], "roots": [str(item) for item in roots]})
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("--finalize must not build, start services, post, call, write the ledger or the state")
+    for method in ("build", "start_frontend", "start_backend_at", "start_fixture_backend", "flow", "api", "setup_runs",
+                   "run_fixture", "run_calibrate", "run_live", "ledger_guard", "execute", "save", "key_available"):
+        monkeypatch.setattr(runner, method, forbidden)
+    monkeypatch.setattr(m24, "write_ledger", forbidden)
+    return runner
+
+
+def test_finalize_rebuilds_the_calibrate_evidence_from_the_stored_files_only(monkeypatch, qa_base, isolated_ledger):
+    root, artifacts, out = _finished_calibrate(qa_base, isolated_ledger)
+    ledger_before, root_before = isolated_ledger.read_bytes(), _tree_bytes(root)
+    state_before = (artifacts / "runner-state.json").read_bytes()
+    assert _finalizer(monkeypatch, root, artifacts, out).run() == 0
+    # the ledger, the root (events, live-state.json) and runner-state.json are only read
+    assert isolated_ledger.read_bytes() == ledger_before and _tree_bytes(root) == root_before
+    assert (artifacts / "runner-state.json").read_bytes() == state_before
+    book = json.loads((artifacts / "case-ledger.json").read_text())
+    assert (book["phase"], book["verdict"], book["acceptance"], book["liveCalls"]) == ("calibrate", "pass", True, 6)
+    assert {case: value["status"] for case, value in book["cases"].items()} == {
+        case: "pass" for case in ("JL-calibrate-send", "S-browser-egress-zero", "S-key-absent", "S-wording-evidence",
+                                  "JL-count", "JL-calibration", "JL-ledger")}
+    assert book["checks"]["calibration"] == json.loads((root / "live-state.json").read_text())["calibration"]
+    ledger_check = book["checks"]["liveLedger"]
+    assert {key: ledger_check[key] for key in ("ok", "before", "planned", "after", "rootDispatch", "readOnly")} == {
+        "ok": True, "before": 0, "planned": 1, "after": 1, "rootDispatch": 1, "readOnly": True}
+    assert book["finalize"]["realCalls"] == 0 and book["finalize"]["ledgerSha256"] == m24.m13.sha_bytes(ledger_before)
+    assert book["build"] == json.loads(state_before)["build"] and book["environment"] == CALIBRATE_ENV
+    readme = (out / "README.md").read_text()
+    assert "--finalize" in readme and "acceptance **true**" in readme and m24.forbidden_in(readme) == []
+    assert (out / "evidence/case-ledger.json").is_file() and (out / "post-export-checks.json").is_file()
+    recorded = [json.loads(line) for line in (artifacts / "runner-summary.jsonl").read_text().splitlines()]
+    assert recorded[0]["step"] == "live-ledger" and recorded[0]["before"] == 0         # the original record is kept
+    calibration = [item for item in recorded if item["step"] == "calibration"][-1]
+    assert (calibration["status"], calibration["detail"]["status"]) == ("pass", "completed")
+
+
+def _set(path, **fields):
+    path.write_text(json.dumps({**json.loads(path.read_text()), **fields}))
+
+
+FINALIZE_REFUSALS = {
+    "ledger-absent": (lambda root, art, out, book: book.unlink(), "no record"),
+    "ledger-damaged": (lambda root, art, out, book: book.write_text("{"), "ledger"),
+    "root-not-recorded": (lambda root, art, out, book: _ledger_file(book, {}), "no record"),
+    "phase-unfinished": (lambda root, art, out, book: _ledger_file(book, {str(root): {
+        "phases": [_phase(finished=False)], "dispatch": {"run_aa": 1, "run_bb": 0}}}), "finished"),
+    "no-calibrate-phase": (lambda root, art, out, book: _ledger_file(book, {str(root): {
+        "phases": [_phase("live")], "dispatch": {"run_aa": 1, "run_bb": 0}}}), "finished"),
+    "ledger-counts-differ": (lambda root, art, out, book: _ledger_file(book, {str(root): {
+        "phases": [_phase()], "dispatch": {"run_aa": 0, "run_bb": 0}}}), "dispatch counts"),
+    "events-grew": (lambda root, art, out, book: _events(root / "runs", "run_bb", [DISPATCH]), "dispatch counts"),
+    "no-live-state": (lambda root, art, out, book: (root / "live-state.json").unlink(), "live-state"),
+    "live-phase-ran": (lambda root, art, out, book: _set(root / "live-state.json", livePhaseRan=True), "live"),
+    "calibration-differs": (lambda root, art, out, book: _set(root / "live-state.json", calibration={"ok": True}),
+                            "calibration"),
+    "no-runner-state": (lambda root, art, out, book: (art / "runner-state.json").unlink(), "runner-state"),
+    "no-calibrate-row": (lambda root, art, out, book: (art / "jev-calibrate/ledger-row.json").unlink(), "jev-calibrate"),
+    "other-run-artifacts": (lambda root, art, out, book: (art / "setup-live.json").write_text("{}\n"), "setup"),
+    "out-not-empty": (lambda root, art, out, book: (out.mkdir(parents=True), (out / "README.md").write_text("kept\n")),
+                      "--out"),
+}
+
+
+@pytest.mark.parametrize("case", list(FINALIZE_REFUSALS))
+def test_finalize_refuses_before_writing_anything(monkeypatch, qa_base, isolated_ledger, case):
+    root, artifacts, out = _finished_calibrate(qa_base, isolated_ledger)
+    change, reason = FINALIZE_REFUSALS[case]
+    change(root, artifacts, out, isolated_ledger)
+    ledger_before = isolated_ledger.read_bytes() if isolated_ledger.exists() else None
+    root_before, artifacts_before = _tree_bytes(root), _tree_bytes(artifacts)
+    out_before = _tree_bytes(out) if out.exists() else None
+    with pytest.raises(SystemExit, match=f"--finalize refused.*{re.escape(reason)}"):
+        _finalizer(monkeypatch, root, artifacts, out).run()
+    assert (isolated_ledger.read_bytes() if isolated_ledger.exists() else None) == ledger_before
+    assert _tree_bytes(root) == root_before and _tree_bytes(artifacts) == artifacts_before
+    assert (_tree_bytes(out) if out.exists() else None) == out_before

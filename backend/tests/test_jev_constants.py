@@ -10,8 +10,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import math
 import subprocess
 import sys
+from fractions import Fraction
 from pathlib import Path
 
 import pytest
@@ -259,15 +261,24 @@ def test_instructions_cover_exactly_the_two_questions():
 
 
 @pytest.mark.parametrize(("body_bytes", "tokens"), [
-    (0, 4096), (1, 4097), (2, 4097), (3, 4098), (29_828, 19_010), (65_535, 36_864), (65_536, 36_864),
-    (71_806, 39_999), (71_807, 40_000), (71_808, 40_000), (10**9, 40_000)])
+    (0, 4096), (1, 4097), (2, 4098), (3, 4098), (4, 4099), (3_539, 6_456), (29_828, 23_982), (65_535, 47_786),
+    (65_536, 47_787), (68_854, 49_999), (68_855, 50_000), (68_857, 50_000), (10**9, 50_000)])
 def test_reserve_tokens_formula_and_boundaries(body_bytes, tokens):
+    # min(50000, 4096 + ceil(body_bytes * 2 / 3)); 3,539 B is the first real science call's body (T10 calibrate)
     assert J.reserve_tokens(body_bytes) == tokens
     assert type(J.reserve_tokens(body_bytes)) is int
 
 
+def test_reserve_tokens_is_the_exact_integer_ceiling_and_never_exceeds_the_cap():
+    for body_bytes in range(70_000):
+        assert J.reserve_tokens(body_bytes) == min(50_000, 4096 + math.ceil(Fraction(2 * body_bytes, 3)))
+    # the 64 KiB body cap reserves below the token cap, and the reservation covers 1.5 body bytes per token
+    assert J.reserve_tokens(J.MAX_BODY_BYTES) < J.RESERVE_TOKEN_CAP
+    assert all(J.reserve_tokens(size) - 4096 >= size / 1.5 for size in (1, 3_539, 29_828, J.MAX_BODY_BYTES))
+
+
 def test_reserve_constants_and_bad_input():
-    assert (J.RESERVE_TOKEN_BASE, J.RESERVE_TOKEN_CAP, J.RESERVE_USD) == (4096, 40_000, 0.10)
+    assert (J.RESERVE_TOKEN_BASE, J.RESERVE_TOKEN_CAP, J.RESERVE_USD) == (4096, 50_000, 0.10)
     for bad in (-1, 1.0, True, None, "1"):
         with pytest.raises(ValueError):
             J.reserve_tokens(bad)

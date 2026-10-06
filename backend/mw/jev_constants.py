@@ -77,16 +77,22 @@ SEND_CONFLICT_REASONS = ("preview_mismatch", "send_id_conflict", "send_in_progre
 PARSE_REASONS = ("response_invalid", "missing_model", "model_mismatch")
 
 # --- reservation (adjustable defaults, spec 5) -----------------------------------------------------------------------
+# Checked against the first real science call (M24 T10 calibrate, 2026-10-06): a 3,539-byte ligand body (5 candidates)
+# was reported as 2,087 input + 65 output = 2,152 external tokens and 8.7654e-05 USD, against a reservation of 5,866
+# tokens / 0.10 USD under the first formula min(40000, 4096 + ceil(body_bytes / 2)). That body gave 1.70 body bytes per
+# input token, below the 2.0 the first formula assumed, so for a large body (about 45 KB and up at that ratio) it could
+# reserve less than the use. The token part now assumes 1.5 bytes per token (47,787 tokens at the 64 KiB body cap).
+# The USD reservation stays 0.10: the measured cost was far below it.
 RESERVE_TOKEN_BASE = 4096
-RESERVE_TOKEN_CAP = 40_000
+RESERVE_TOKEN_CAP = 50_000
 RESERVE_USD = 0.10
 
 
 def reserve_tokens(body_bytes: int) -> int:
-    """External-token reservation for one science send: ``min(40000, 4096 + ceil(body_bytes / 2))``."""
+    """External-token reservation for one science send: ``min(50000, 4096 + ceil(body_bytes * 2 / 3))``."""
     if type(body_bytes) is not int or body_bytes < 0:
         raise ValueError("body_bytes must be a non-negative integer")
-    return min(RESERVE_TOKEN_CAP, RESERVE_TOKEN_BASE + (body_bytes + 1) // 2)
+    return min(RESERVE_TOKEN_CAP, RESERVE_TOKEN_BASE + (2 * body_bytes + 2) // 3)
 
 
 # --- questions (spec 4) ----------------------------------------------------------------------------------------------

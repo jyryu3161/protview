@@ -30,6 +30,15 @@ Phases (``--phase``):
              <root>/live-state.json.
   live       the same --root after a passed calibrate (once per root): the plan entries 2..N through the screen.
              Needs --live-calls N >= 2.
+  calibrate --finalize (--live-calls stays 0)
+             the same --root and --artifacts after a calibrate whose real call finished but whose runner stopped before
+             its evidence: rebuilds the checks, case-ledger.json and the --out evidence (cases, acceptance, README) from
+             the stored files only (live-state.json, the jev-calibrate row, runner-state.json, the root's events, the
+             ledger). No build, service, Electron, POST or call; the ledger, the root and runner-state.json are only
+             read. Refused, with nothing written, unless the ledger records this root with every phase finished (a
+             calibrate phase among them) and dispatch counts equal to the root's events and to live-state.json, the
+             stored calibration is the one the jev-calibrate row gives, --artifacts is this root's calibrate run (same
+             setup file) and --out is absent or empty (committed evidence is never overwritten or removed).
 In calibrate and live the harness and this runner both guard the count: the harness checks every run's
 jev_science_dispatch_started events before each click (plan maxDispatch, at most 3 per run) and this runner counts the
 events of every QA run while the harness runs and stops it and the backend at once when the count passes N. Across
@@ -628,7 +637,12 @@ class Runner(m18.Runner):
         self.live_calls = int(getattr(args, "live_calls", 0))
         if self.phase not in PHASES:
             raise SystemExit(f"--phase must be one of {PHASES}")
-        if self.phase == "calibrate" and self.live_calls < 1:
+        self.finalize = bool(getattr(args, "finalize", False))
+        self.finalized: dict | None = None
+        if self.finalize and (self.phase != "calibrate" or self.live_calls != 0):
+            raise SystemExit("--finalize rebuilds the evidence of a finished calibrate root from its stored files and "
+                             "makes no call: use it with --phase calibrate and leave --live-calls at 0")
+        if self.phase == "calibrate" and self.live_calls < 1 and not self.finalize:
             raise SystemExit("--phase calibrate makes one real call: it needs --live-calls >= 1")
         if self.phase == "live" and self.live_calls < 2:
             raise SystemExit("--phase live sends the plan entries 2..N: it needs --live-calls N >= 2")
@@ -867,7 +881,8 @@ class Runner(m18.Runner):
         self.checks["events"] = counts
         server = json.loads((self.control / "server.json").read_text()) if (self.control / "server.json").exists() else None
         self.checks["fixtureProof"] = fixture_proof(server, self.fixture_calls(), counts)
-        self.record("fixture-proof", "pass" if self.checks["fixtureProof"]["ok"] else "fail", **self.checks["fixtureProof"])
+        self.record("fixture-proof", "pass" if self.checks["fixtureProof"]["ok"] else "fail",
+                    detail=self.checks["fixtureProof"])
 
     def run_calibrate(self) -> None:
         self.start_backend_at("backend", self.code, self.runs)
@@ -888,7 +903,10 @@ class Runner(m18.Runner):
                                                "calibration": self.checks["calibration"], "counts": counts,
                                                "liveCalls": self.live_calls, "livePhaseRan": False,
                                                "writtenAt": now()}, indent=2) + "\n")
-        self.record("calibration", "pass" if self.checks["calibration"]["ok"] else "fail", **self.checks["calibration"])
+        # One ``detail`` keyword: the calibration holds the send's own ``status`` (a ``**`` spread clashed with
+        # record(step, status, ...) and stopped the runner after the first real call, before any evidence).
+        self.record("calibration", "pass" if self.checks["calibration"]["ok"] else "fail",
+                    detail=self.checks["calibration"])
 
     def run_live(self) -> None:
         state = json.loads(self.state_path.read_text())
@@ -962,7 +980,112 @@ class Runner(m18.Runner):
         self.artifacts.mkdir(parents=True, exist_ok=True)
         self.checks["liveLedger"] = {**self.checks.get("liveLedger", {}), "ok": after <= MAX_LIVE_CALLS, "after": after,
                                      "rootDispatch": sum(entry["dispatch"].values())}
-        self.record("live-ledger", "pass" if after <= MAX_LIVE_CALLS else "fail", **self.checks["liveLedger"])
+        self.record("live-ledger", "pass" if after <= MAX_LIVE_CALLS else "fail", detail=self.checks["liveLedger"])
+
+    # ----- --finalize: the calibrate evidence of a finished root, from its stored files only -----
+    def latest_row(self, step: str) -> dict | None:
+        """The ledger row of the latest attempt of ``step`` in --artifacts (None when there is none)."""
+        found = []
+        for row_file in self.artifacts.glob("*/ledger-row.json"):
+            base, order = m13.step_base(row_file.parent.name)
+            if base == step:
+                found.append((order, row_file))
+        return json.loads(max(found)[1].read_text()) if found else None
+
+    def recorded_ledger_before(self) -> int | None:
+        """The ledger total at this phase's admission, as its live-ledger record in runner-summary.jsonl gave it."""
+        before = None
+        summary = self.artifacts / "runner-summary.jsonl"
+        for line in summary.read_text().splitlines() if summary.is_file() else []:
+            entry = json.loads(line)
+            if entry.get("step") == "live-ledger":
+                before = (entry.get("detail") or entry).get("before")
+        return before
+
+    def finalize_inputs(self) -> dict:
+        """The stored files --finalize reads, each checked against the others; any doubt is a refusal (SystemExit)
+        before anything is written. Reads only: the ledger, the root (events, live-state.json, live-setup.json) and
+        --artifacts (runner-state.json, setup-live.json, the jev-calibrate row)."""
+        def refuse(reason: str) -> None:
+            raise SystemExit(f"--finalize refused, nothing written: {reason}")
+
+        if self.out.exists() and (not self.out.is_dir() or any(self.out.iterdir())):
+            refuse(f"{self.out} already holds files and committed evidence is never overwritten or removed: choose a "
+                   "new --out")
+        try:
+            self.ledger_file = ledger_path(self.code)
+            book = read_ledger(self.ledger_file)
+            after = ledger_total(book)
+        except LedgerError as exc:
+            refuse(f"the real-call ledger: {exc}")
+        entry = book["roots"].get(str(self.root))
+        if entry is None:
+            refuse(f"the real-call ledger has no record of {self.root}")
+        phases = entry["phases"]
+        if (not any(item["phase"] == "calibrate" for item in phases)
+                or any(item.get("finishedAt") is None for item in phases)):
+            refuse("the real-call ledger does not record this root's calibrate phase as finished")
+        if not self.state_path.is_file():
+            refuse(f"no {self.state_path} (not a calibrate root)")
+        try:
+            state = json.loads(self.state_path.read_text())
+        except ValueError:
+            state = None
+        if not (isinstance(state, dict) and state.get("schema") == "m24_jev_live_state@1"
+                and isinstance(state.get("calibration"), dict) and type(state.get("liveCalls")) is int
+                and 1 <= state["liveCalls"] <= MAX_LIVE_CALLS):
+            refuse(f"{self.state_path} is not a stored calibrate state")
+        if state.get("livePhaseRan") is not False:
+            refuse("the live phase already ran on this root: the calibrate evidence cannot be rebuilt alone")
+        counts = count_events(self.runs) if self.runs.is_dir() else {}
+        if {run: item["dispatch"] for run, item in counts.items()} != entry["dispatch"] or counts != state.get("counts"):
+            refuse("the real-call ledger, live-state.json and the root's events do not hold the same dispatch counts")
+        saved_file = self.artifacts / "runner-state.json"
+        try:
+            saved = json.loads(saved_file.read_text())
+        except (OSError, ValueError):
+            saved = None
+        if not (isinstance(saved, dict) and isinstance(saved.get("build"), dict)
+                and isinstance(saved.get("environment"), dict)):
+            refuse(f"{saved_file} (this run's build and environment) is missing or unreadable")
+        row = self.latest_row("jev-calibrate")
+        if row is None:
+            refuse(f"no jev-calibrate ledger row in {self.artifacts}")
+        if calibration(row) != state["calibration"]:
+            refuse("the calibration in live-state.json is not the one the stored jev-calibrate row gives")
+        setup, stored = self.artifacts / "setup-live.json", self.root / "live-setup.json"
+        if not (setup.is_file() and stored.is_file() and setup.read_bytes() == stored.read_bytes()):
+            refuse(f"{self.artifacts} is not this root's calibrate run (setup-live.json differs from live-setup.json)")
+        planned = [item for item in phases if item["phase"] == "calibrate"][-1].get("planned")
+        return {"state": state, "saved": saved, "entry": entry, "after": after, "planned": planned, "counts": counts}
+
+    def finalize_calibrate(self) -> int:
+        """--finalize: the end of run_calibrate and of execute, rebuilt from the stored files of a calibrate root whose
+        real call finished (no build, service, Electron, POST or call; the ledger and the root are only read and
+        runner-state.json is not rewritten)."""
+        found = self.finalize_inputs()
+        self.state = found["saved"]                      # that run's build and environment, in memory only
+        self.environment = dict(self.state["environment"])
+        self.live_calls = found["state"]["liveCalls"]
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.code, capture_output=True, text=True,
+                              check=False).stdout.strip()
+        self.finalized = {"at": now(), "realCalls": 0, "gitHead": head, "runnerSha256": m13.sha_file(Path(__file__)),
+                          "ledgerSha256": m13.sha_file(self.ledger_file),
+                          "liveStateSha256": m13.sha_file(self.state_path),
+                          "note": "rebuilt from the stored files of a finished calibrate root; no call"}
+        self.record("finalize", "pass", detail=self.finalized)
+        counts = found["counts"]
+        self.checks["events"] = counts
+        self.checks["liveCount"] = {"ok": live_count_ok(counts, 1), "limit": 1, "counts": counts}
+        self.checks["calibration"] = found["state"]["calibration"]
+        self.record("calibration", "pass" if self.checks["calibration"].get("ok") is True else "fail",
+                    detail=self.checks["calibration"])
+        entry, after = found["entry"], found["after"]
+        self.checks["liveLedger"] = {"ok": after <= MAX_LIVE_CALLS, "path": str(self.ledger_file),
+                                     "before": self.recorded_ledger_before(), "planned": found["planned"],
+                                     "after": after, "rootDispatch": sum(entry["dispatch"].values()), "readOnly": True}
+        self.record("live-ledger", "pass" if after <= MAX_LIVE_CALLS else "fail", detail=self.checks["liveLedger"])
+        return self.finish()
 
     # ----- optional regression chain (separate runners; their own ledgers decide) -----------------
     def regression_commands(self) -> list[tuple[str, list[str]]]:
@@ -1038,7 +1161,8 @@ class Runner(m18.Runner):
                   "verdict": "pass" if passed else "fail", "acceptance": acceptance_ok(passed, self.state.get("build")),
                   "verdictParts": judged["verdictParts"], "cases": judged["cases"], "steps": judged["steps"],
                   "notObserved": judged["notObserved"], "environment": self.environment,
-                  "checks": self.checks, "dispatchCapExceeded": self.state.get("dispatchCapExceeded"),
+                  "checks": self.checks, "finalize": self.finalized,
+                  "dispatchCapExceeded": self.state.get("dispatchCapExceeded"),
                   "leftoverProcesses": leftovers,
                   "externalRequestsTotal": sum(r["externalRequestCount"] or 0 for r in rows),
                   "rowsWithUnknownExternalCount": [r["step"] for r in rows if r["externalRequestCount"] is None],
@@ -1080,7 +1204,14 @@ class Runner(m18.Runner):
                       (f"- 실호출 대장(저장소 단위, Git 제외 runs/{LEDGER_NAME}, 모든 root의 dispatch 이벤트): 단계 전 "
                        f"{book.get('before')}회 + 이번 계획 {book.get('planned')}회, 단계 뒤 합계 {book.get('after')}회 / "
                        f"{MAX_LIVE_CALLS} · 판정 {book.get('ok')}"),
-                      (f"- 첫 실호출 보정: {json.dumps(calib, ensure_ascii=False)}"), ""]
+                      (f"- 첫 실호출 보정: {json.dumps(calib, ensure_ascii=False)}")]
+            fin = ledger.get("finalize")
+            if fin:
+                lines.append(f"- 마무리 모드(--finalize, {fin.get('at')}): 실호출을 마친 root의 저장 파일(live-state.json·"
+                             "jev-calibrate 행·runner-state.json·root의 이벤트·대장)만 읽어 이 증거를 다시 만들었다. 새 "
+                             "호출·빌드·서버·Electron·POST 없음, 대장·root·runner-state.json은 읽기만(대장 SHA-256 "
+                             f"{fin.get('ledgerSha256')}, 실행기 SHA-256 {fin.get('runnerSha256')}, git {fin.get('gitHead')}).")
+            lines.append("")
         lines += [("스크린숏·paint 프레임·다운로드 원본은 Git 제외 artifacts 폴더에 있고 여기에는 `binary-artifacts.json`의 "
                    "SHA-256만 기록한다. 절대 경로는 `<repo>`/`<home>`으로 바꿨다. 실패한 시도의 증거도 그대로 남긴다. "
                    "키·헤더·원시 오류는 기록하지 않는다."), "",
@@ -1099,6 +1230,8 @@ class Runner(m18.Runner):
                   "    --out docs/qa/m24-jev-<YYYYMMDD>/acceptance-fixture   # --phase fixture (실호출 0)",
                   "# 실호출(사용자 할당 안에서만): 새 --root로 --phase calibrate --live-calls N, 이어서 같은 --root로",
                   "# --phase live --live-calls N (N <= 6, run당 3회 이하; 저장소 대장 합계 + 계획이 6을 넘으면 거절)",
+                  "# calibrate 실호출 뒤 증거를 쓰기 전에 멈췄으면: 같은 --root·--artifacts로 --phase calibrate --finalize",
+                  "# (새 호출 없음, --live-calls 0, 비어 있는 --out)",
                   "```"]
         return "\n".join(lines) + "\n"
 
@@ -1118,6 +1251,8 @@ class Runner(m18.Runner):
         busy = {port: m13.listening(port) for port in (8000, 3000)}
         if any(busy.values()):
             raise SystemExit(f"ports must be free before the runner starts its own services: {busy}")
+        if self.finalize:
+            return self.finalize_calibrate()     # stored files only: no ledger guard, build, service or call
         if self.phase == "live":
             if not self.state_path.is_file():
                 raise SystemExit(f"--phase live needs the calibrate root (no {self.state_path})")
@@ -1172,6 +1307,10 @@ class Runner(m18.Runner):
             self.state["environment"] = self.environment
             self.save()
             self.ledger_close()          # calibrate and live: this root's dispatch events into the ledger
+        return self.finish()
+
+    def finish(self) -> int:
+        """Leftovers, evidence searches, case ledger, export (and the opt-in regressions); the exit code."""
         left = self.leftovers()
         self.record("leftover-processes", "pass" if not left else "fail", processes=left)
         self.checks["keyScan"] = self.key_scan([self.artifacts, self.root])
@@ -1202,6 +1341,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "first real call), live (the rest of the allocation)")
     parser.add_argument("--live-calls", type=live_calls_arg, default=0, help=f"real OpenRouter calls allowed in total "
                         f"(0..{MAX_LIVE_CALLS}, default 0); calibrate needs >= 1, live >= 2")
+    parser.add_argument("--finalize", action="store_true", help="with --phase calibrate and --live-calls 0: rebuild the "
+                        "evidence of a calibrate root whose real call finished but whose runner stopped before its "
+                        "evidence, from the stored files of the same --root and --artifacts only (no build, service, "
+                        "call or ledger write; --out must be absent or empty)")
     parser.add_argument("--code-root", default=str(REPO), help="code root the services and harness are started from")
     parser.add_argument("--build", choices=["auto", "always", "never"], default="auto",
                         help="auto: typecheck then build unless frontend/.next/BUILD_ID was stamped by a runner "

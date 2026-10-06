@@ -89,7 +89,7 @@ const preview = over => ({ schema: "jev_preview@1", projection_handle: PROJ, kin
   question: { id: "ligand_candidate_choice@1", key: "candidate_choice", type: "choice", instructions: INSTRUCTIONS,
     instructions_sha256: "c".repeat(64) },
   body: BODY, body_sha256: "d".repeat(64), body_bytes: BODY.length, selection: SELECTION.slice(0, 2), selection_sent: false,
-  reservation: { external_tokens: 4096 + Math.ceil(BODY.length / 2), usd: 0.1 }, send_cap: 10, used: 3, remaining: 7,
+  reservation: { external_tokens: 4096 + Math.ceil(BODY.length * 2 / 3), usd: 0.1 }, send_cap: 10, used: 3, remaining: 7,
   budget_remaining: { external_tokens: 110000, usd: 1.9 }, blocked_by: [], previous_sends: 2, ...over });
 const USAGE = { input_tokens: 1500, output_tokens: 20, external_tokens: 1520, cost: 0.00123 };
 const RESIDUE = { model_number: 1, chain_auth: "A", chain_label: "A", seq_auth: 42, seq_label: 40, icode: "", resname: "LYS" };
@@ -324,7 +324,7 @@ test("preview view keeps the exact body string, bytes, SHA-256, alias table (not
   assert.deepEqual(plain(view.aliasRows), [
     { alias: "c01", localRefText: `후보 ${id16(1)}`, sentText: "전송하지 않음" },
     { alias: "c02", localRefText: `후보 ${id16(2)}`, sentText: "전송하지 않음" }]);
-  assert.equal(view.reservationText, `예약: 외부 토큰 ${4096 + Math.ceil(BODY.length / 2)} · 0.1000 USD`);
+  assert.equal(view.reservationText, `예약: 외부 토큰 ${4096 + Math.ceil(BODY.length * 2 / 3)} · 0.1000 USD`);
   assert.equal(view.capText, "run당 과학 전송 10회 · 사용 3회 · 남은 7회");
   assert.equal(view.budgetRemainingText, "남은 외부 토큰 110000 · 남은 1.9000 USD");
   assert.deepEqual(plain(view.blocked), [
