@@ -189,6 +189,12 @@ class EgressGate:
         from .viewer import request_viewer
         return await request_viewer(self, run, state, intent_id)
 
+    async def request_science(self, run: Run, projection_content: Any, send_id: str, *,
+                              admit: Callable[[list[dict[str, Any]]], None] | None = None) -> Any:
+        """M24 science scope (one approved jev_projection@1 body), using this same gate's owned HTTP transport."""
+        from .science import request_science
+        return await request_science(self, run, projection_content, send_id, admit=admit)
+
     @staticmethod
     def _audit(run: Run, stage: str, audit_id: str, **fields: Any) -> None:
         run.events.append("egress", stage=stage, audit_id=audit_id, **fields)

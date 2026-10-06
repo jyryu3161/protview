@@ -801,6 +801,39 @@ def test_check_wire_keeps_null_and_empty_identifiers(mutation_wire):
         P.check_wire(wire, "protein")
 
 
+ROOT_WORDS = ("tmp", "var", "runs", "home", "Users", "objects", "backend", "private")
+
+
+@pytest.mark.parametrize("word", ROOT_WORDS)
+def test_check_wire_keeps_identifiers_that_are_local_root_words(word, mutation_wire, ligand_wire):
+    # SYNTHETIC: legal [A-Za-z0-9_-]{0,16} identifiers equal to a local root name are chain / residue names, not paths
+    wire = copy.deepcopy(mutation_wire)
+    position = wire["positions"][0]
+    position["residue"].update(chain_auth=word, chain_label=word, resname=word)
+    position["window"]["chain_auth"] = word
+    position["neighbors"][0].update(chain_auth=word, resname=word, icode=word)
+    P.check_wire(wire, "mutation")
+    lig = copy.deepcopy(ligand_wire)
+    lig["candidates"][0]["pains_matches"] = [{"catalog": "PAINS_A", "name": word}]
+    P.check_wire(lig, "ligand")
+
+
+@pytest.mark.parametrize("smiles, refused", [
+    ("C/C=C/C", False), ("F/C=C\\F", False), ("c1ccccc1:c", False),
+    ("/tmp/x", True), ("~CC", True), ("C:\\x", True), ("CC/../C", True), ("obj://run_x/a", True),
+    ("CCO.sdf", True), ("CCO.json", True),   # SMILES fields keep the whole location check (file name shapes)
+])
+def test_smiles_fields_keep_the_full_location_check(smiles, refused, ligand_wire):
+    for place in ("candidate", "parent"):
+        wire = copy.deepcopy(ligand_wire)   # SYNTHETIC SMILES values
+        (wire["candidates"][0] if place == "candidate" else wire["parent"])["smiles"] = smiles
+        if refused:
+            with pytest.raises(P.WireFieldInvalid):
+                P.check_wire(wire, "ligand")
+        else:
+            P.check_wire(wire, "ligand")
+
+
 # ---------------------------------------------------------------- body encoding
 
 

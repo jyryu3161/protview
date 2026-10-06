@@ -128,7 +128,11 @@ from .jev_constants import (
 
 # Strings that look like a location (absolute / home / relative-dot / drive / UNC paths, any URL scheme including
 # obj://, a ".." segment, a well-known local root as a path segment, a file name extension). Defense in depth: the
-# per-field patterns already keep "/" and "." out of every wire string except SMILES.
+# per-field patterns already keep "/" and "." out of every wire string except SMILES. The generic scan applies it only
+# to strings with a path character (``_PATH_TRIGGER``: "/", "\", "~", a drive letter "C:" or ".."), so a legal
+# identifier such as "tmp" or "Users" (a chain or residue name) is never refused; SMILES fields always get the whole
+# check (``_check_ligand``), file name shapes included.
+_PATH_TRIGGER = re.compile(r"[/\\~]|[A-Za-z]:|\.\.")
 _PATH_SHAPE = re.compile(
     r"^(?:/|~|\\|\.{1,2}[\\/]|[A-Za-z]:[\\/])"
     r"|://"
@@ -404,7 +408,8 @@ def _scan(value: Any, field: str) -> None:
         for index, item in enumerate(value):
             _scan(item, f"{field}[{index}]")
     elif type(value) is str:
-        _need(_PATH_SHAPE.search(value) is None, "a handle, path or file name is never sent", field)
+        _need(_PATH_TRIGGER.search(value) is None or _PATH_SHAPE.search(value) is None,
+              "a handle, path or file name is never sent", field)
     elif type(value) is float:
         _need(math.isfinite(value), "numbers must be finite", field)
     else:
@@ -423,13 +428,19 @@ def _check_properties(values: Any, field: str) -> None:
     _need(all(_is_number(values[name]) for name in PROPERTY_NAMES), "properties are finite numbers", field)
 
 
+def _check_smiles(value: Any, field: str) -> None:
+    _need(_matches(SMILES_RE, value), "unsafe SMILES", field)
+    _need(_PATH_SHAPE.search(value) is None, "a handle, path or file name is never sent", field)
+
+
 def _check_ligand(wire: dict[str, Any]) -> None:
     _fields(wire, ALLOWED_LIGAND_TOP, "wire")
     _need(wire["schema"] == WIRE_SCHEMAS["ligand"] and wire["task"] == WIRE_TASK, "schema or task", "wire")
     _need(wire["values_note"] == LIGAND_VALUES_NOTE, "values_note is the fixed note", "values_note")
     parent = wire["parent"]
     _fields(parent, ALLOWED_LIGAND_PARENT, "parent", optional=("smiles",))
-    _need("smiles" not in parent or _matches(SMILES_RE, parent["smiles"]), "unsafe SMILES", "parent.smiles")
+    if "smiles" in parent:
+        _check_smiles(parent["smiles"], "parent.smiles")
     _check_properties(parent["properties"], "parent.properties")
     methods = wire["property_methods"]
     _fields(methods, PROPERTY_NAMES, "property_methods")
@@ -439,7 +450,7 @@ def _check_ligand(wire: dict[str, Any]) -> None:
     for index, candidate in enumerate(wire["candidates"]):
         field = f"candidates[{index}]"
         _fields(candidate, ALLOWED_LIGAND_CANDIDATE, field)
-        _need(_matches(SMILES_RE, candidate["smiles"]), "unsafe SMILES", f"{field}.smiles")
+        _check_smiles(candidate["smiles"], f"{field}.smiles")
         kinds = candidate["generation_kinds"]
         _need(type(kinds) is list and bool(kinds) and all(kind in GENERATION_KINDS for kind in kinds)
               and kinds == sorted(set(kinds)), "generation kinds", f"{field}.generation_kinds")
