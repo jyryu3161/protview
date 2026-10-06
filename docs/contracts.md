@@ -18,15 +18,16 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 200 / 201 | 성공(scientific_null 포함) |
 | 400 | run ID 형식 오류, 경로 오류, 잘못된 Content-Length |
 | 404 | 이 run에 없는 handle/job |
-| 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy` |
-| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등) |
+| 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy`, M24 과학 전송의 `preview_mismatch`·`send_id_conflict`·`send_in_progress` |
+| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등), M24 dry-run run의 과학 전송 동의 켜기(`dry_run`) |
 | 413 | 본문 크기 초과(`resource_exceeded`) |
-| 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문 |
+| 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문, M24 JEV POST(`/jev/consent`·`/jev/preview`·`/jev/sends`)에 `application/json`이 아닌 본문(`unsupported_media_type`, 본문을 읽기 전) |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
-| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`) |
-| 503 | 도구의 `transient` 또는 `fatal` |
+| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`, M24 투영의 `payload_too_large`) |
+| 500 | M24 과학 전송 라우트의 `internal_error`(기록 중 디스크 오류·승인 대조 실패, 고정 문장만, 예외 텍스트 없음) |
+| 503 | 도구의 `transient` 또는 `fatal`, M24 과학 전송의 `busy`(run 실행 잠금이 잡혀 있음, 아무것도 쓰지 않음) |
 
-- **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다.
+- **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를, M24 과학 전송은 `send_id`(v4 UUID)를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다.
 - **목록**: `offset`/`limit` 페이지 단위다. 기본·최대 개수는 호출마다 다르다: 객체 행·저장 보기·그림·화학 결과 행 50/100, 원자 카탈로그 100/500, 화학 원자 목록 100/1000, 이벤트 200/500.
 - **다운로드**: 파일 이름은 서버가 handle 앞부분으로 만든다(`protview-figure-<prefix>.png` 등). 저장된 산출물은 다시 받아도 같은 바이트다.
 
@@ -37,7 +38,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | `POST /runs` | `{goal?, context?, dry_run?: bool, egress?: "local_only"}`. egress에는 `local_only`만 넣을 수 있다 | 201, run 요약 | 422 |
 | `GET /runs`, `GET /runs/{id}` | — | run 요약 목록/단건 | 400, 404 |
 | `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, …모델·체인 요약}` | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
-| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16), `generate_mutation_candidates`(M20) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
+| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16), `generate_mutation_candidates`(M20), `build_jev_projection`(M24) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
 | `POST /runs/{id}/inspect_complex` | 업로드 ID 또는 같은 run의 구조 handle, 모델, 전처리 정책, 선택적 리간드, cutoff | 완료된 handle 목록 또는 `needs_selection`/`no_ligand` | 412, 422, 409 |
 
 `load_structure`의 `source`는 이 run의 업로드 ID여야 한다. 파일 경로나 URL은 받지 않는다. `decided_by`는 기록용 출처 정보일 뿐이며, 승인 권한을 주지 않는다.
@@ -46,7 +47,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch, ligand_ga_design}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch, ligand_ga_design, jev_choice}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -61,7 +62,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·리간드 GA 설계 요약·변이 후보·변이 구조 모델 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·리간드 GA 설계 요약·변이 후보·변이 구조 모델 결과·JEV 판정 제안 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -565,6 +566,49 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 ### 보고서
 - `POST /runs/{id}/method_reports` `{result_handle: <sequence_ga_result>}` → 201. manifest는 `method_report_manifest@1`, `analysis_type: "sequence_ga"`, `status: "complete"`, `render_version: "sequence_ga_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_schema: "sequence_ga_result@1"`, `result_sha256`, 요약에서 복사한 핵심 키, `ga_status`, `docking_method`, `claims`, `provenance{sequence_ga, rows[]}`, `limitation_ids`, `evidence_statement`, 스냅숏 키(`event_seq`, `time_utc`, `run_egress_mode`, `capability`, `budget`). 제목 "서열 GA 설계 보고서".
 - 주장은 모두 `computed`. statement ID: `candidate_set_input`, `structure_input`, `ligand_input`, `box`, `parameter`, `ga_parameter`, `space_count`, `run_count`, `generation_count`, `generation_score_range`, `individual_score`, `individual_result_score`, `reference_score`, `reference_result_score`. 점수 주장은 `scored` 개체·기준 행만이다. 점수 없는 개체의 점수 주장, 다른 statement의 필드 경로, 틀린 반올림·개수, 해석 문장, 요약 점수와 결과 첫 모드 점수의 불일치, OpenMM 전위·구조 간 비교 주장, 변조·미완료 요약, 다른 run의 증거는 422 `report_evidence_invalid`.
+
+## M24 JEV 과학 전송
+
+규칙은 `docs/business-rules.md` "JEV 과학 전송 (M24, `build_jev_projection` / `request_science`)". JEV 라우트(`/runs/{id}/jev/*`)는 알 수 없는 쿼리 파라미터를 422 `input_invalid`로 거부한다. POST 셋(`/jev/consent`·`/jev/preview`·`/jev/sends`)은 `Content-Type: application/json`(대소문자 무시, 파라미터 허용)만 받고 아니면 본문을 읽기 전에 415 `unsupported_media_type`이며, 본문은 최대 4 KiB(413 `resource_exceeded`), 정해진 키·타입만 담은 JSON 객체 하나다(중복 키·알 수 없는 키·타입 오류는 422 `input_invalid`). 오류는 HTTP 경계 형태(`{"detail": {"error", "message", …}}`)이고 투영 거절은 `detail.reason_code: "projection_invalid"`를 담는다. 읽기(상태·미리보기·목록·상세)는 이벤트·도구·작업·외부 요청을 만들지 않고 키를 읽지 않으며 run 실행 잠금 없이 이벤트 로그를 한 번만 읽는다. 형식이 틀린 run ID는 400, 없는 run은 404다.
+
+### 투영: `POST /runs/{id}/commands` `{tool: "build_jev_projection", args}`
+```json
+{"source": "obj://…/ligand_candidate_set/…" | "obj://…/mutation_candidate_set/…",
+ "candidates": ["c_0123456789abcdef", "c_…"] | [0, 5, 12],
+ "filter": null | {"ranges": {"mol_weight": {"min": null, "max": 500}}, "pains_exclude": true}}
+```
+- 성공: 200 `{ok: true, handle: <envelope>}`, kind `jev_projection`, schema `jev_projection@1`, summary `{kind, source, selection_count, body_bytes, body_sha256}`. 같은 정규화 인자면 같은 handle(훅이 `bound`를 돌려주지 않음). dry-run run에서도 실행해 저장한다.
+- 실패(도구 실패 본문, `detail.reason_code`): 422 `input_invalid`, 사전 검사 훅(구현을 부르지 않음), 이 순서: `unknown_field`, `source_invalid`, `selection_invalid`, `candidate_unknown`(`detail.candidates`), `filter_invalid`, `candidate_filtered_out`(`detail.candidates`), `structure_unavailable`, `wire_field_invalid`(`detail.field`). 429 `resource_exceeded` `payload_too_large`(`detail{reason_code, body_bytes, limit: 65536}`)와 422 `input_invalid` `projection_invalid`(구현이 만든 객체가 저장 형태 검증을 통과하지 못함)는 아무것도 저장하지 않는다. 과학 전송이 도는 동안에는 run 실행 잠금 때문에 503 `transient`(busy)다.
+- 객체 필드는 business-rules "투영 객체"와 같다. 일반 `GET /runs/{id}/objects`도 이 종류를 읽을 수 있지만 `validated_projection`을 거치지 않는다. 화면은 아래 미리보기로만 본문을 본다.
+
+### 라우트
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/jev/status` | — | `jev_status@1`: `{schema, enabled, policy: "jev_science@1", send_cap: 10, used, remaining, budget{external_tokens, usd: {used, limit, remaining}}, egress_stop_reason, dry_run, cancelled, question_ids, send_in_progress, request_model, allowed_served_model, destination}`. `used` = `jev_science_dispatch_started` 수, `enabled`는 마지막 동의 이벤트, `send_in_progress`는 프로세스 메모리 진행 중 집합 | 422 모르는 파라미터, 404, 409 `run_corrupt` |
+| `POST /runs/{id}/jev/consent` | `{enabled: bool}` | 200 `jev_status@1`. 이벤트 `jev_science_consent_changed` 하나(이 라우트가 유일한 writer, 짧은 전이 잠금만이라 전송 중에도 됨). 뷰어 모드·뷰어 동의는 바뀌지 않는다 | 412 `dry_run`(dry-run run에서 켜기, 이벤트 없음), 415, 413, 422, 404 |
+| `POST /runs/{id}/jev/preview` | `{projection}` | 200 `jev_preview@1`: `{schema, projection_handle, kind, source{handle, schema}, question{id, key, type, instructions, instructions_sha256}, body(보낼 정확한 본문 문자열), body_sha256, body_bytes, selection(별칭 ↔ 로컬 참조), selection_sent: false, reservation{external_tokens, usd}, send_cap, used, remaining, budget_remaining{external_tokens, usd}, blocked_by, previous_sends}`. `blocked_by`는 지금 성립하는 거절을 모두 이 순서로: `dry_run`, `consent_off`, `cancelled`, `egress_stopped`, `send_cap_exhausted`, `budget_exhausted`(남은 활동 시간 없음 또는 예약 초과), `send_in_progress`(전송 때 게이트가 다시 검사한다). `previous_sends`는 같은 투영으로 dispatch된 전송 수. 이벤트 없음 | 404 이 run에 없는 handle, 422 `input_invalid`(`reason_code: "projection_invalid"`: 다른 종류·검증 실패·다른 run을 가리키는 투영), 415, 413, 422 |
+| `POST /runs/{id}/jev/sends` | `{send_id, projection, body_sha256, confirm: "send_to_jev"}` | 200 `jev_send@1`(거절·실패도 200). 같은 `send_id`를 같은 투영·해시로 다시 보내면 기존 기록(진행 중이면 `in_progress`)을 새 이벤트 없이 돌려준다 | 422 `input_invalid`(모양·`confirm`·정규 v4 UUID가 아닌 `send_id`·소문자 hex 64자가 아닌 해시), 404 투영 없음, 422 `projection_invalid`, 409 `preview_mismatch`(해시가 투영 본문과 다름)·`send_id_conflict`(같은 `send_id`가 다른 투영·해시로 승인됨)·`send_in_progress`(이 run의 다른 전송이 진행 중), 503 `busy`(run 실행 잠금), 500 `internal_error`(고정 문장, 기록은 아래 도출 규칙), 409 `run_corrupt`, 415, 413 — 앞의 거절은 모두 이벤트를 쓰지 않는다 |
+| `GET /runs/{id}/jev/sends` | — | `jev_send@1` 배열, 승인 순서(오래된 것부터), 이벤트만으로 도출 | 422 모르는 파라미터, 409 `run_corrupt` |
+| `GET /runs/{id}/jev/sends/{send_id}` | — | `jev_send@1` + `choice`(`completed`면 투영·소스 집합과 다시 검증한 `jev_choice@1`, 아니면 null) + `local_display`(`choice.answer.local_display` 또는 null) | 404 없는 `send_id`, 422 `method_evidence_invalid`(제안 검증 실패), 409 `run_corrupt` |
+
+- `jev_send@1`: `{schema, send_id, status, reason_code, projection_handle, source{handle, schema}, kind, question_id, selection_count, body_sha256, body_bytes, audit_id, requested_model, served_model, usage, choice_handle, late, late_reason, approved_event_seq, outcome_event_seq}`. `status` ∈ `completed`·`rejected`·`failed`(저장) + 읽기 전용 `in_progress`. `reason_code`는 `completed`·`in_progress`면 null, `audit_id`는 거절이면 `denied` 감사의 id(진행 중이면 dispatch 뒤에만), `usage{input_tokens, output_tokens, external_tokens, cost}`는 없으면 null(값마다 null 가능, 0 아님), `choice_handle`은 `completed`만, `outcome_event_seq`는 결과 이벤트가 없으면 null. 결과 이벤트가 없고 진행 중이 아니면 `failed`/`delivery_unknown`(응답 감사 없음) 또는 `failed`/`outcome_not_recorded`(응답 감사 있음, 응답 모델·사용량은 그 감사에서)로 도출한다.
+
+### 이벤트
+- `jev_science_consent_changed {enabled, policy: "jev_science@1", send_cap: 10, request_model, allowed_served_model, destination}`: 동의 라우트만 쓴다.
+- `jev_send_approved {send_id, projection_handle, body_sha256, question_id, source_handle, selection_count, approved_by: "human"}`: 전송 라우트의 승인 콜백이 run 실행 잠금 안에서 게이트 검사보다 먼저 쓴다.
+- `jev_science_dispatch_started {send_id, audit_id}`: HTTP 직전(감사 `dispatch_started` 다음). run당 상한 10회는 이 이벤트 수다.
+- `jev_send_outcome {send_id, status, reason_code, audit_id, requested_model, served_model, choice_handle, usage, late, late_reason}`: 모든 전송의 끝(거절 포함). `completed`면 같은 전이에서 제안 객체를 먼저 저장한다.
+- 과학 전송의 감사는 기존 `egress` 이벤트에 `scope: "science"`·`send_id`를 더하고, 예약은 `budget_reserved{audit_id, send_id, external_tokens, usd}`(비싼 계산 축 없음), 정산·환불은 기존 `egress_budget_settled`다(security "감사 기록").
+- 이 네 이벤트를 쓰는 코드는 `jev_sends.py`(`set_consent`, `run_send`의 승인 콜백, `_finish`)와 `egress/science.py`(`request_science`)뿐이다(`backend/tests/test_jev_ast.py`).
+
+### capability와 도구 목록
+- `/capabilities`의 `methods.jev_choice`: `{available, reason_code, reason}`. 투영 도구가 `SUPPORTED_TOOLS`와 레지스트리에 있고 과학 pin(요청 모델·응답 스냅숏·provider·목적지·응답 상한)이 게이트 값과 같으면 `available: true`, 아니면 `tool_unavailable` 또는 `missing_configuration`. 키·run의 동의를 읽지 않는다(키가 없으면 전송 때 `missing_credential` 거절로 드러난다).
+- `GET /tools`(기본 `levels=L2,L4`)에 `build_jev_projection`(L2, `accepts: {source: [ligand_candidate_set, mutation_candidate_set]}`, `emits: jev_projection`, `cost_class: cheap`)이 나온다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <jev_choice>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "jev_choice"`, `status: "complete"`, `render_version: "jev_choice_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "jev_choice@1"`, `result_sha256`, `external_response{kind: "jev_choice", scientific_evidence: false}`, `kind`(`ligand`·`mutation`), 제안에서 복사한 `method_version, label, scientific_result, send, source, projection, question, requested_model, served_model, arrival, limitations`, `chosen{local_ref, local_display}`, `claims`, `provenance{send_id, audit_id, approved_event_seq, dispatch_event_seq, created_event_seq, outcome_event_seq}`, `evidence_statement`, `snapshot{event_seq, time_utc, run_egress_mode, science_consent, budget}`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 이름 "JEV 판정 보고서"). 만들 때 run 실행 잠금을 잡으므로 과학 전송이 도는 동안에는 503 `transient`다.
+- 주장 statement ID: `computed` — `selection_count`(`selection[*]`, `operation: "count(selection[*])"`), `body_bytes`, `usage_input_tokens`, `usage_output_tokens`, `usage_cost`(보고된 값만). `model_response` — `choice_alias`, `confidence`(보고됐을 때만), `served_model`, `arrival_late`, `arrival_late_reason`(늦었을 때만). 모델 응답 주장은 `reference{note: "외부 모델의 응답, 제안이며 과학 증거가 아니다", proposal_handle}`을, 계산값 주장은 `reference: null`을 가진다. 섞인 증거 종류(계산값이 모델 응답 필드를 인용하거나 그 반대), 다른 statement의 필드 경로, 확률 필드, 틀린 값·개수, 해석 문장, 전송 이벤트 사슬 불일치, 변조된 제안·보고서는 422 `report_evidence_invalid`.
 
 ## 과거 단계 실행기 (CLI)
 

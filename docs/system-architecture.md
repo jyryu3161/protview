@@ -27,7 +27,8 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   │     └─ fpocket 작업 프로세스 (프로젝트 .venv, .deps/fpocket/env/bin/fpocket 고정 실행 파일)
   └─ EgressGate (egress/) ─ 유일한 외부 HTTP 출구
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
-           — 해당 run에서 온라인 모드를 명시적으로 켰을 때만
+           — 뷰어 의도·M3: 해당 run에서 온라인 모드를 명시적으로 켰을 때만 (VIEWER_GATE)
+           — M24 과학 전송: 과학 전송 동의가 켜진 run에서 사람이 미리보기 본문을 승인했을 때만 (SCIENCE_GATE)
 ```
 
 프런트엔드는 과학 값을 직접 계산하지 않는다. 화면의 모든 수치는 백엔드 handle을 읽어서 표시한다. 백엔드는 과학 계산의 유일한 실행자이고, 계산 경로는 동기 `Run.call`과 비동기 `JobQueue` 두 가지뿐이다.
@@ -40,6 +41,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `frontend/src/components/WorkspaceTabs.tsx` | M14 최상위 탭 4개와 전역 run·예산 줄. 구조 분석 탭은 숨긴 채 유지, 기능 없는 탭은 사용할 수 없음·여는 단계 안내 | `src/lib/workspace-tabs.ts` |
 | `frontend/src/components/ReportLibraryPanel.tsx` | M14 지식·보고서 탭의 run 전체 보고서·그림·완료된 흐름 요약 목록, 내용 보기, 기존 다운로드 | `src/lib/report-library.ts`, `api.ts`(기존 읽기 API만) |
 | `frontend/src/components/NumberingPanel.tsx` | M15 지식·보고서 탭의 잔기 번호 대응 화면: 스냅샷 상태, 대응 만들기(PDB ID 확인·SIFTS 미리 채움·UniProt 검색), 대응 목록·체인 요약·행 표, 보고서 만들기 | `src/lib/numbering.ts`, `api.ts` |
+| `frontend/src/components/JevPanel.tsx` | M24 지식·보고서 탭의 JEV 판정 영역(번호 대응 화면과 보고서 목록 사이): 과학 전송 동의, 후보 집합·후보 고르기, 보낼 내용 만들기·미리보기(정확한 본문), 승인·전송, 결과 카드, 전송 기록, 보고서 만들기. 페이지는 동의 상태로 전역 줄의 "과학 전송 허용" 표시를 정한다 | `src/lib/jev.ts`, `api.ts`, `LigandPanel`의 `FilterForm` |
 | `frontend/src/components/MolstarViewer.tsx` | Mol* 인스턴스를 소유하고 명령을 직렬화하는 브리지. 적용 확인(ack)을 만드는 유일한 곳 | Mol* 패키지, 백엔드 구조 바이트 |
 | `frontend/src/components/ViewerAgentPanel.tsx` | 뷰어 세션 생성, 로컬 명령·자연어 요청, 온라인 동의 UI | `api.ts`, MolstarViewer 브리지 |
 | `frontend/src/components/ChemicalWorkspace.tsx` | M11 화학 입력·미리보기·작업·결과 화면 | `src/lib/chemical.ts` |
@@ -48,7 +50,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/tools/` | 버전이 붙은 과학 도구: structural(불러오기·전처리·기하 접촉), sasa(FreeSASA), comparison(원자 거리·Kabsch 정렬), openmm_method, energetic(Rosetta 사용 불가 표시) | gemmi, numpy, freesasa, openmm |
 | `backend/mw/core/` | handle·객체 해시, 추가 전용 이벤트 로그, 잔기 식별자, 오류 분류 | 없음 (최하층) |
 | `backend/mw/jobs/` | 영속 작업 큐, 프로세스 신원 기록, guardian의 정리·복구, 작업 프로세스 진입점 | core, runtime, psutil |
-| `backend/mw/egress/`, `backend/mw/llm/` | 외부 요청 게이트(`gate.py`), 뷰어 의도 투영(`viewer.py`), Decisions 어댑터 | httpx, core |
+| `backend/mw/egress/`, `backend/mw/llm/` | 외부 요청 게이트(`gate.py`), 뷰어 의도 투영(`viewer.py`), M24 과학 전송 단계(`science.py`, `EgressGate.request_science`가 위임), Decisions 어댑터 | httpx, core, `jev_projection`·`jev_sends`(science.py) |
 | `backend/mw/*_reports.py`, `reports.py` | 증거가 연결된 불변 보고서 생성·검증·렌더링 | core, tools 결과 객체 |
 | `backend/mw/viewer_intents.py`, `saved_scenes.py` | 뷰어 세션·대상 카탈로그·명령 컴파일러, 저장된 보기와 PNG | core, egress |
 | `backend/mw/chemical_*.py` | M11 입력 가져오기, 번들 조립, 결과·보고서 | core, jobs |
@@ -73,6 +75,8 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/docking_batch_reads.py`, `docking_batch_reports.py` | M19 읽기 API(시작 전 확인·요약 목록·상세, 이벤트 없음)와 계산값 증거 보고서(요약 행 점수 + 행 결과 첫 행 점수) | docking_batch_jobs, `docking_reports`·`pocket_reports`(공용 검사), reports, core |
 | `frontend/src/components/DockingBatchPanel.tsx` | M19 리간드 설계·탐색 탭의 일괄 도킹 영역(도킹 영역 다음): 가져온 수용체·사이드카·부모 SDF·후보 집합 고르기, M17 필터(`FilterForm` 공용) + 체크박스, 방식·부모 기준 행·상자·값·확인, 시작 전 확인·증액 승인, 작업(승인·폴링·취소), 결과표·정렬, 행 상세는 도킹 영역(`openRequest`)으로, 보고서 만들기 | `src/lib/docking-batch.ts`, `src/lib/docking.ts`, `api.ts`, `LigandPanel`·`DockingPanel`의 공용 구성 요소 |
 | `frontend/src/components/SiteAnnotationPanel.tsx` | M16 구조 분석 탭 메인 화면의 참조 주석 패널: 같은 구조의 대응·접촉 결과 선택, 주석 만들기·켜기, 범례, 부위 표, 보고서 만들기. Mol* 그리기는 MolstarViewer 브리지의 `siteAnnotation` | `src/lib/site-annotation.ts`, `api.ts`, MolstarViewer 브리지 |
+| `backend/mw/jev_constants.py`, `jev_projection.py`, `tools/jev.py` | M24 과학 전송의 닫힌 상수·질문·고정 문장(표준 라이브러리만), 순수 와이어 빌더·와이어 검사·이웃·구간 기하·본문 인코딩·`validated_projection`·`parse_choice`(numpy), 값싼 도구 `build_jev_projection`(사전 검사 훅 + `jev_projection@1` 저장) | core, `ligand_bundle`·`ligand_filters`(M17 검증 읽기·필터), `mutation_candidates`(M20 검증), tools(structural 파서) |
+| `backend/mw/jev_sends.py`, `jev_reports.py` | M24 과학 전송 동의·상태·미리보기, 승인 전송 `run_send`(진행 중 집합 `ACTIVE_SENDS`, 게이트 호출, 결과 기록), 이벤트에서 도출하는 전송 기록, 제안 객체 `jev_choice@1`과 검증, 보고서(계산값·모델 응답 분리, 보내지 않음). 게이트는 import하지 않고 라우트가 넘긴 인스턴스를 쓴다 | jev_constants, jev_projection, `ligand_bundle`·`mutation_candidates`, reports·`numbering_reports`, core |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
 | `backend/mw/analysis_executions.py` | M13 실행 driver: 실행 기록 접기, 계획 승인·철회, 한 단계 진행, 재시도, 범위 한정 중지, 충돌 복구, `workflow_summary@1`. 과학은 `ExecutionLink`를 단 `Run.call`·`JobQueue`·기존 보고서 함수로만 실행 | analysis_plans, runtime, jobs, 보고서 모듈 |
@@ -119,11 +123,15 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간�
 
 리간드 탭 일괄 영역에서 사용자가 M18 도킹 영역으로 가져온 수용체·부모 SDF와 M17 후보 집합을 고르고, M17 필터 결과(`/ligand/candidate_sets/rows`) 위에서 후보를 체크하고, 방식·부모 기준 행·상자·값·확인을 정한다. 화면은 `POST /docking/batches/preflight`(이벤트 없는 읽기)로 행별 재사용·새 계산 수 N·필요 예산·부족분을 받는다. 부족하면 사람이 `POST /docking/batches/limit_approval`을 눌러 run 한도를 부족분만큼 올린다(`budget_limit_updated`, `by: "human"`). 그다음 `POST /jobs`로 `qvina_batch_dock_v1`을 제출·승인·시작한다. 서버는 RDKit·Meeko 없이 행마다 M18 입장 검사를 하고, 시작 때 run 실행 잠금 안에서 재사용 행을 정해 N단위를 예약한 뒤 수용체·부모 SDF와 행 목록을 스테이징한다. guardian이 `docking_batch_worker.py`를 띄우면 작업 모듈이 수용체를 한 번 준비하고 행마다 M18 `dock_row`로 `qvina2`를 돌리며, 행마다 `rows/` 아래 시작·결과·상태 파일을 내구적으로 쓴다. 작업이 어떻게 끝나든(완료, 취소, 시간 소진, 크래시, 서버 재시작 복구) 서버는 그룹 정리를 확인한 뒤 검증 가능한 행 결과를 `docking_result@1`로 게시하고(`docking_batch_row_published`), 스테이징 관찰과 종료 원인으로 요약 `docking_batch_result@1`을 만들어 마지막에 게시한다(`docking_batch_published`). 화면은 작업 기록의 `batch` 진행(상태 파일 수, 요약 handle·상태)을 폴링하고, 요약 상세(`/docking/batches/detail`)로 표를 그리며, 행의 "상세 열기"는 M18 도킹 영역의 `/docking/results/*` 상세로 넘긴다. 보고서는 기존 `method_reports` 경로다. 일괄이 도는 동안 run 실행 잠금과 전역 작업 슬롯을 쥐므로 같은 run의 다른 계산과 다른 run의 비싼 작업이 기다린다. 네트워크는 쓰지 않는다.
 
+## JEV 과학 전송 (M24)
+
+지식·보고서 탭 JEV 영역에서 사용자가 이 run의 과학 전송 동의를 켜고(`POST /jev/consent`, 이벤트 하나, 뷰어 모드 불변), 게시된 M17 리간드 후보 집합 또는 M20 변이 후보 집합에서 후보를 최대 20개 고르면, 화면이 `POST /commands`로 값싼 도구 `build_jev_projection`을 부른다. 사전 검사 훅이 같은 run·게시·검증·선택·필터·구조를 검사하고, 구현이 저장 객체(변이는 전처리 구조 좌표에서 이웃·구간까지)로 허용 목록 와이어와 정확한 요청 본문의 바이트 수·SHA-256을 담은 `jev_projection@1`을 저장한다(외부 요청 없음). `POST /jev/preview`는 그 투영을 다시 검증해 보낼 본문 문자열·해시·예약값·차단 이유를 돌려주고(이벤트 없음), 사람이 확인을 체크하고 누르면 `POST /jev/sends`가 해시 일치·멱등·진행 중을 확인한 뒤 `SCIENCE_GATE.request_science`를 부른다. 게이트는 run 실행 잠금 안에서 승인 이벤트를 먼저 쓰고, 거절 검사 → 키 → 외부 토큰·USD 예약 → `prepared` 감사(승인한 본문 그대로) → dispatch를 기록한 뒤 OpenRouter에 한 번 보내고 기존 규칙으로 정산한다. 검증을 통과한 답은 제안 객체 `jev_choice@1`로 저장되고 모든 전송은 `jev_send_outcome`으로 끝난다. 전송 기록·늦은 응답·상한은 이벤트에서 다시 만들며, 보고서는 기존 `method_reports` 경로로 저장 객체·이벤트만 읽어 만든다. JEV의 선택은 어떤 작업·도구도 일으키지 않는다.
+
 ## 외부 경계
 
-- 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다.
-- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 서열, 원자·리간드 이름, 로컬 경로, handle, run ID, 자격 증명, 이전 대화.
-- 정책 변경(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 아직 게이트 투영이 이 데이터 종류를 만들지 않으므로 실제 전송은 다음 단계에서 구현한다. 자격 증명은 계속 전송 금지다.
+- 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다. M24 과학 전송은 과학 전송 동의가 켜진 run에서 사람이 승인한 투영 본문 하나씩만 간다: 리간드 후보(정규 SMILES, RDKit 추정 속성, PAINS 일치, 생성 방식 종류) 또는 변이 후보(잔기 7필드, 서열 구간 앞뒤 5개, 5.0 Å 이웃 잔기 이름, 리간드까지 거리, 보호 검사 상태, 포켓 요약), 고정 질문. 서열 구간·이웃 잔기 이름으로 단백질이 알려질 수 있다.
+- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, 로컬 경로, handle, run ID, 후보 id, 자격 증명, 이전 대화.
+- 정책(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 실제로 보내는 과학 데이터는 M24의 두 투영뿐이며, 새 종류는 게이트 투영·미리보기·예산·감사를 함께 만들어야 보낸다. 자격 증명은 계속 전송 금지다.
 - 브라우저의 글꼴·스크립트·Mol* 자산·예시 구조는 모두 로컬 번들이다. 오프스크린 QA는 loopback이 아닌 요청을 전부 차단하고 기록한다.
 - 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)에만 네트워크가 필요하다. 실행 중에는 다운로드하지 않는다. 참조 스냅샷 가져오기도 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
 
