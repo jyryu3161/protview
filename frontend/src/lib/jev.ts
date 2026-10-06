@@ -115,6 +115,96 @@ export const NOT_A_PROJECTION_TEXT = "도구 결과가 JEV 투영(jev_projection
 
 export const KIND_LABEL: Record<JevKind, string> = { ligand: "리간드 후보", mutation: "변이 후보" };
 export const SOURCE_KIND_LABEL: Record<JevKind, string> = { ligand: "리간드 후보 집합", mutation: "변이 후보 집합" };
+export const DRY_RUN_NOTE = "dry-run run: 보낼 내용 만들기와 미리보기는 할 수 있지만 외부로 보내지 않으며 과학 전송 동의를 " +
+  "켤 수 없습니다 (dry_run).";
+export const BUILDING_REASON = "보낼 내용을 만드는 중입니다.";
+export const SEND_LOCK_REASON = "전송 중에는 보낼 내용을 새로 만들 수 없습니다(한 번에 한 전송).";
+export const RESPONSE_SHAPE_TEXT = "응답 형식이나 대상이 요청과 다릅니다.";
+
+/** Layout text of the JevPanel screen (every visible string of the area comes from this module). */
+export const JEV_TEXT = {
+  loadingCapability: "기능 상태를 확인하는 중",
+  unavailable: "사용할 수 없음",
+  loading: "읽는 중",
+  retry: "다시 읽기",
+  areaStatus: "① 상태와 동의",
+  areaSource: "② 후보 집합",
+  areaCandidates: "③ 후보 고르기",
+  areaBuild: "④ 보낼 내용과 미리보기",
+  areaApproval: "⑤ 승인과 전송",
+  areaResult: `⑥ ${JEV_CHOICE_LABEL}`,
+  areaHistory: "⑦ 전송 기록",
+  consentOn: "켜짐",
+  consentOff: "꺼짐",
+  consentBusy: "동의 상태를 바꾸는 중",
+  destination: "목적지",
+  models: "모델",
+  kindLegend: "후보 집합 종류 (자동으로 고르지 않음)",
+  sourceLegend: "이 run의 후보 집합 (자동으로 고르지 않음)",
+  chooseKind: "후보 집합 종류를 먼저 고르세요.",
+  noSets: "이 run에 이 종류의 후보 집합이 없습니다.",
+  setsReload: "후보 집합 목록 다시 읽기",
+  passesOnly: "필터 통과만 보기",
+  ligandFilterNote: "리간드 후보는 적용한 필터를 통과한 후보만 고를 수 있습니다(필터를 적용하지 않았으면 모든 후보).",
+  orderNote: "고른 후보는 클릭 순서가 아니라 후보 집합의 저장 순서로 보냅니다(변이: 후보 번호 순서, 리간드: 생성 순서).",
+  rowsLoading: "후보 행을 읽는 중",
+  noRows: "표시할 후보 행이 없습니다.",
+  previous: "이전",
+  next: "다음",
+  headerPick: "고르기",
+  headerOrder: "생성 순서",
+  headerCandidateId: "후보 id",
+  headerSmiles: "SMILES (2D)",
+  headerFilter: "모든 필터",
+  headerIndex: "후보 번호",
+  headerPosition: "위치 번호",
+  headerResidue: "잔기",
+  headerChange: "치환",
+  candidateCheck: "이 후보 고르기",
+  conflictNote: "선택한 후보 중 지금 적용한 필터를 통과하지 못하는 후보(체크를 해제하세요):",
+  building: "보낼 내용을 만드는 중",
+  projectionMade: "보낼 내용(jev_projection@1)을 저장했습니다",
+  previewLoading: "미리보기를 읽는 중",
+  previewReload: "미리보기 다시 읽기",
+  kind: "종류",
+  question: "질문 (고정 문구)",
+  bodySummary: "정확한 본문 (펼쳐 보기, 이 문자열 그대로 보냄)",
+  bytes: "본문 바이트",
+  sha256: "본문 SHA-256",
+  aliasAlias: "별칭 (보냄)",
+  aliasLocal: "로컬 후보",
+  aliasSent: "로컬 후보 전송",
+  serverBlockers: "서버가 알린 차단 이유",
+  noServerBlockers: "서버가 알린 차단 이유 없음",
+  sendBlockers: "보낼 수 없는 이유",
+  sendingNow: "전송 중입니다. 응답이 올 때까지 다시 눌러도 같은 전송으로 처리합니다.",
+  sendRecorded: "전송 기록을 받았습니다",
+  sendId: "전송 id",
+  resultNone: "아직 연 결과가 없습니다. 보내거나 전송 기록에서 \"결과 열기\"를 누르세요.",
+  resultLoading: "결과를 읽는 중",
+  chosenAlias: "고른 후보 별칭",
+  localRef: "로컬 참조",
+  localDisplay: "로컬 표기",
+  requestedModel: "요청 모델",
+  servedModel: "응답 모델",
+  usage: "사용량",
+  lateMark: "늦은 응답",
+  fixedSentences: "고정 문장",
+  probabilities: "후보별 확률 (모델 보고값, 펼쳐 보기)",
+  open: "결과 열기",
+  report: "보고서 만들기",
+  reportLoading: "보고서를 만드는 중",
+  reportDone: "보고서를 저장했습니다. 아래 보고서 목록에서 열고 받을 수 있습니다",
+  historyReload: "전송 기록 다시 읽기",
+  noSends: "이 run에 과학 전송 기록이 없습니다.",
+  headerApproved: "승인 기록 순번",
+  headerStatus: "상태",
+  headerKind: "종류",
+  headerCount: "후보 수",
+  headerHash: "본문 해시 앞부분",
+  headerLate: "늦은 응답",
+  headerActions: "동작",
+} as const;
 
 // ---- closed reason labels ("한국어 (code)"; anything outside a set is UNKNOWN_CODE_TEXT) ----
 
@@ -271,6 +361,50 @@ export function scienceBadgeText(status: Pick<JevStatusV1, "enabled"> | null | u
   return status?.enabled === true ? SCIENCE_ALLOWED_BADGE : null;
 }
 
+/** The page's last known science consent of one run (from a status read or a consent change). */
+export interface ScienceConsentMark { runId: string; enabled: boolean }
+
+export function scienceMarkFromStatus(runId: string, status: Pick<JevStatusV1, "enabled">): ScienceConsentMark {
+  return { runId, enabled: status.enabled === true };
+}
+
+/** The global line mark of the page's current run: only when the last mark is for that same run and says on. */
+export function globalScienceBadge(mark: ScienceConsentMark | null, runId: string | null):
+  { text: string; note: string } | null {
+  if (runId === null || mark === null || mark.runId !== runId) return null;
+  const text = scienceBadgeText(mark);
+  return text === null ? null : { text, note: SCIENCE_BADGE_NOTE };
+}
+
+export interface JevStatusView {
+  enabled: boolean; switchText: string; dryRun: boolean;
+  /** Cap use and remaining external budget; null in a dry-run run (nothing can be sent there: the reason only). */
+  capText: string | null; budgetText: string | null;
+  /** Dry-run, cancelled, stopped egress and a send in progress, in this order (reasons only). */
+  notes: string[]; destinationText: string; modelText: string;
+}
+
+export function jevStatusView(status: JevStatusV1): JevStatusView {
+  const notes: string[] = [];
+  if (status.dry_run) notes.push(DRY_RUN_NOTE);
+  if (status.cancelled) notes.push(blockReasonText("cancelled"));
+  const stop = egressStopText(status.egress_stop_reason);
+  if (stop !== null) notes.push(stop);
+  if (status.send_in_progress) notes.push(blockReasonText("send_in_progress"));
+  const enabled = status.enabled === true;
+  return { enabled, switchText: `${CONSENT_SWITCH_LABEL}: ${enabled ? JEV_TEXT.consentOn : JEV_TEXT.consentOff}`,
+    dryRun: status.dry_run === true, capText: status.dry_run ? null : jevCapText(status),
+    budgetText: status.dry_run ? null : jevBudgetText(status.budget), notes,
+    destinationText: `${JEV_TEXT.destination}: ${status.destination}`,
+    modelText: `${JEV_TEXT.requestedModel} ${status.request_model} · 허용 ${JEV_TEXT.servedModel} ` +
+      status.allowed_served_model };
+}
+
+/** A `jev_status@1` answer (status read or consent change). */
+export function jevStatusMatches(value: unknown): value is JevStatusV1 {
+  return typeof value === "object" && value !== null && (value as { schema?: unknown }).schema === "jev_status@1";
+}
+
 /** Why the consent switch cannot move to `nextEnabled` (null = it can); turning it off is always possible. */
 export function consentSwitchDisabledReason(status: Pick<JevStatusV1, "dry_run"> | null, nextEnabled: boolean):
   string | null {
@@ -393,6 +527,21 @@ export function jevProjectionArgs(selection: JevSelection | null, filter: Ligand
     filter: selection.kind === "ligand" ? active : null } };
 }
 
+/** Every reason "보낼 내용 만들기" is closed now (empty = it can be pressed). */
+export function jevBuildBlockers(input: { selection: JevSelection | null; filter: LigandFilterSpec | null;
+  building: boolean; sending: boolean }): string[] {
+  const check = jevProjectionArgs(input.selection, input.filter);
+  const reasons = check.ok ? [] : [...check.errors];
+  if (input.building) reasons.push(BUILDING_REASON);
+  if (input.sending) reasons.push(SEND_LOCK_REASON);
+  return reasons;
+}
+
+/** "변이 후보 3개 · 본문 1234 바이트" of a stored projection summary. */
+export function projectionSummaryText(summary: JevProjectionSummary): string {
+  return `${KIND_LABEL[summary.kind] ?? NULL_TEXT} ${summary.selection_count}개 · 본문 ${summary.body_bytes} 바이트`;
+}
+
 export type JevProjectionOutcome = { ok: true; handle: string; summary: JevProjectionSummary } |
   { ok: false; text: string; reasonCode: string | null };
 
@@ -458,6 +607,19 @@ export function jevCanSend(input: { preview: JevPreviewV1 | null; confirmed: boo
   return jevSendBlockers(input).length === 0;
 }
 
+/** The confirmation is bound to the exact body hash it was given for (a different body is not confirmed). */
+export function jevConfirmed(confirmedFor: string | null, preview: Pick<JevPreviewV1, "body_sha256"> | null): boolean {
+  return preview !== null && confirmedFor !== null && confirmedFor === preview.body_sha256;
+}
+
+/** A `jev_preview@1` answer for exactly this projection. */
+export function jevPreviewMatches(value: unknown, projectionHandle: string): value is JevPreviewV1 {
+  if (typeof value !== "object" || value === null) return false;
+  const preview = value as Partial<JevPreviewV1>;
+  return preview.schema === "jev_preview@1" && preview.projection_handle === projectionHandle &&
+    typeof preview.body === "string" && typeof preview.body_sha256 === "string" && Array.isArray(preview.blocked_by);
+}
+
 // ---- send_id (client v4 UUID, one per approval) ----
 
 export const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -502,6 +664,21 @@ export function jevAttemptAfter(current: JevSendAttempt | null,
 export function jevSendRequest(attempt: JevSendAttempt): JevSendRequest {
   return { send_id: attempt.sendId, projection: attempt.projectionHandle, body_sha256: attempt.bodySha256,
     confirm: JEV_CONFIRM };
+}
+
+/** The `jev_send@1` answer is the record of exactly this attempt (same id, projection and body hash). */
+export function jevSendResponseMatches(record: unknown, attempt: JevSendAttempt): record is JevSendV1 {
+  if (typeof record !== "object" || record === null) return false;
+  const value = record as Partial<JevSendV1>;
+  return value.schema === "jev_send@1" && value.send_id === attempt.sendId &&
+    value.projection_handle === attempt.projectionHandle && value.body_sha256 === attempt.bodySha256;
+}
+
+/** A send detail answer for exactly this send id. */
+export function jevDetailMatches(detail: unknown, sendId: string): detail is JevSendDetail {
+  if (typeof detail !== "object" || detail === null) return false;
+  const value = detail as Partial<JevSendDetail>;
+  return value.schema === "jev_send@1" && value.send_id === sendId;
 }
 
 // ---- result card (a proposal, shown as stored) ----
@@ -606,6 +783,19 @@ export function jevSendRows(records: readonly JevSendV1[]): JevSendRow[] {
     choiceHandle: item.choice_handle, canOpen: item.status !== "in_progress",
     canReport: item.status === "completed" && item.choice_handle !== null, approvedSeq: item.approved_event_seq,
   }));
+}
+
+/** The send list is re-read (reads only) every `JEV_POLL_MS` while a listed send is still in progress. */
+export const JEV_POLL_MS = 2000;
+
+export function jevSendsPending(records: readonly Pick<JevSendV1, "status">[]): boolean {
+  return records.some(item => item.status === "in_progress");
+}
+
+/** A send list answer: an array of `jev_send@1` records. */
+export function jevSendListMatches(value: unknown): value is JevSendV1[] {
+  return Array.isArray(value) && value.every(item => typeof item === "object" && item !== null &&
+    (item as { schema?: unknown }).schema === "jev_send@1");
 }
 
 // ---- reports ----

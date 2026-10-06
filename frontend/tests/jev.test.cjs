@@ -111,6 +111,12 @@ const detail = (over, choiceOver) => {
   const value = choice(choiceOver);
   return { ...record(over), choice: value, local_display: value.answer.local_display };
 };
+const statusOf = over => ({ schema: "jev_status@1", enabled: false, policy: "jev_science@1", send_cap: 10, used: 4,
+  remaining: 6, budget: { external_tokens: { used: 20000, limit: 120000, remaining: 100000 },
+    usd: { used: 0.25, limit: 2, remaining: 1.75 } }, egress_stop_reason: null, dry_run: false, cancelled: false,
+  question_ids: ["ligand_candidate_choice@1", "mutation_candidate_choice@1"], send_in_progress: false,
+  request_model: "typesafe/jev-1.13", allowed_served_model: "typesafe/jev-1.13-20260917",
+  destination: "https://openrouter.ai/api/alpha/decisions", ...over });
 const ligandRow = (n, passes = null) => ({ generation_order: n, candidate: { id: id16(n), smiles: "C".repeat(n + 1) },
   filters: {}, passes_all: passes });
 const mutationRow = (index, position = index) => ({ index, position_index: position, residue: RESIDUE,
@@ -760,6 +766,13 @@ test("no screen string uses rank, recommendation, prediction or effect wording (
     lib.jevPanelState({ runId: null }), lib.jevPanelState({ runId: RUN, capability: null }),
     lib.jevErrorInfo({ status: 503, code: "busy", message: "" }),
     lib.jevProjectionOutcome({ ok: true, handle: { handle: LIG_SET, kind: "x", schema: "x", summary: {}, preview: [] } }),
+    lib.jevStatusView(statusOf({ dry_run: true, cancelled: true, egress_stop_reason: "usage_unknown", send_in_progress: true })),
+    lib.jevStatusView(statusOf()),
+    lib.jevBuildBlockers({ selection: null, filter: null, building: true, sending: true }),
+    lib.jevBuildBlockers({ selection: lib.emptyJevSelection("mutation", MUT_SET), filter: { ranges: {}, pains_exclude: true },
+      building: false, sending: false }),
+    lib.projectionSummaryText({ kind: "ligand", source: LIG_SET, selection_count: 3, body_bytes: 1234, body_sha256: "d" }),
+    lib.globalScienceBadge({ runId: RUN, enabled: true }, RUN),
   ];
   for (const view of views) outputs.push(...strings(view, skip).map(text => ["view", text]));
   assert.ok(outputs.length > 150);
@@ -768,4 +781,295 @@ test("no screen string uses rank, recommendation, prediction or effect wording (
   assert.ok(lib.jevPreviewView(preview()).instructions.includes("not a prediction of binding"));
   // no "가장 높음" / bars / colours: the probability rows carry only alias, local reference, value and text
   assert.ok(!JSON.stringify(plain(lib.jevResultView(detail()))).includes("가장"));
+});
+
+// ---- T7 screen helpers (pure; the JevPanel screen uses them and adds no wording, guard or view model of its own) ----
+
+test("global mark: only for the page's current run, only when that run's last known consent is on", () => {
+  assert.deepEqual(plain(lib.scienceMarkFromStatus(RUN, statusOf({ enabled: true }))), { runId: RUN, enabled: true });
+  assert.deepEqual(plain(lib.scienceMarkFromStatus(RUN, statusOf())), { runId: RUN, enabled: false });
+  assert.deepEqual(plain(lib.scienceMarkFromStatus(RUN, { enabled: "true" })), { runId: RUN, enabled: false });
+  const on = lib.scienceMarkFromStatus(RUN, statusOf({ enabled: true }));
+  assert.deepEqual(plain(lib.globalScienceBadge(on, RUN)), { text: "과학 전송 허용", note: lib.SCIENCE_BADGE_NOTE });
+  assert.equal(lib.globalScienceBadge(on, "run-b"), null);   // another run's mark is never shown
+  assert.equal(lib.globalScienceBadge(on, null), null);
+  assert.equal(lib.globalScienceBadge(null, RUN), null);
+  assert.equal(lib.globalScienceBadge({ runId: RUN, enabled: false }, RUN), null);
+  // the note says the mark is a separate run state, not the viewer interpretation mode
+  assert.ok(lib.SCIENCE_BADGE_NOTE.includes("local_only") && lib.SCIENCE_BADGE_NOTE.includes("별개"));
+});
+
+test("status view: numbers from the server; a dry-run run shows the reason only (no cap or budget numbers)", () => {
+  const view = lib.jevStatusView(statusOf({ enabled: true }));
+  assert.equal(view.enabled, true);
+  assert.equal(view.switchText, `${lib.CONSENT_SWITCH_LABEL}: 켜짐`);
+  assert.equal(view.capText, "run당 과학 전송 10회 · 사용 4회 · 남은 6회");
+  assert.equal(view.budgetText, "외부 토큰 남은 100000 / 한도 120000 · USD 남은 1.7500 / 한도 2.0000");
+  assert.deepEqual(plain(view.notes), []);
+  assert.equal(view.destinationText, "목적지: https://openrouter.ai/api/alpha/decisions");
+  assert.ok(view.modelText.includes("typesafe/jev-1.13") && view.modelText.includes("typesafe/jev-1.13-20260917"));
+  assert.equal(lib.jevStatusView(statusOf()).switchText, `${lib.CONSENT_SWITCH_LABEL}: 꺼짐`);
+  assert.equal(lib.jevStatusView(statusOf({ enabled: "yes" })).enabled, false);
+  const dry = lib.jevStatusView(statusOf({ dry_run: true }));
+  assert.equal(dry.dryRun, true);
+  assert.equal(dry.capText, null);
+  assert.equal(dry.budgetText, null);
+  assert.deepEqual(plain(dry.notes), [lib.DRY_RUN_NOTE]);
+  assert.ok(!/\d/.test(lib.DRY_RUN_NOTE));
+  const stopped = lib.jevStatusView(statusOf({ cancelled: true, egress_stop_reason: "usage_unknown", send_in_progress: true }));
+  assert.deepEqual(plain(stopped.notes), [lib.blockReasonText("cancelled"), lib.egressStopText("usage_unknown"),
+    lib.blockReasonText("send_in_progress")]);
+  assert.equal(lib.jevStatusMatches(statusOf()), true);
+  for (const bad of [null, {}, { schema: "jev_preview@1" }, "jev_status@1"]) assert.equal(lib.jevStatusMatches(bad), false);
+});
+
+test("build blockers: selection errors, building and a send in flight close 보낼 내용 만들기", () => {
+  assert.deepEqual(plain(lib.jevBuildBlockers({ selection: null, filter: null, building: false, sending: false })),
+    [lib.NO_SOURCE_REASON]);
+  const empty = lib.emptyJevSelection("ligand", LIG_SET);
+  assert.equal(lib.jevBuildBlockers({ selection: empty, filter: null, building: false, sending: false }).length, 1);
+  const one = choose(empty, [ligandOption(1)]);
+  assert.deepEqual(plain(lib.jevBuildBlockers({ selection: one, filter: null, building: false, sending: false })), []);
+  assert.deepEqual(plain(lib.jevBuildBlockers({ selection: one, filter: null, building: true, sending: true })),
+    [lib.BUILDING_REASON, lib.SEND_LOCK_REASON]);
+  const mutation = choose(lib.emptyJevSelection("mutation", MUT_SET), [mutationOption(3)]);
+  assert.deepEqual(plain(lib.jevBuildBlockers({ selection: mutation, filter: { ranges: {}, pains_exclude: true },
+    building: false, sending: false })), ["변이 후보 집합에는 필터를 줄 수 없습니다 (filter_invalid)."]);
+  assert.equal(lib.projectionSummaryText({ kind: "mutation", source: MUT_SET, selection_count: 3, body_bytes: 1234,
+    body_sha256: "d".repeat(64) }), "변이 후보 3개 · 본문 1234 바이트");
+});
+
+test("confirmation is bound to the exact previewed body hash", () => {
+  assert.equal(lib.jevConfirmed("d".repeat(64), preview()), true);
+  assert.equal(lib.jevConfirmed("e".repeat(64), preview()), false);
+  assert.equal(lib.jevConfirmed(null, preview()), false);
+  assert.equal(lib.jevConfirmed("d".repeat(64), null), false);
+  // a body hash change (a different preview) is not confirmed, so the send button stays closed
+  const changed = preview({ body_sha256: "f".repeat(64) });
+  assert.equal(lib.jevCanSend({ preview: changed, confirmed: lib.jevConfirmed("d".repeat(64), changed), sending: false }), false);
+});
+
+test("answers are applied only when they belong to the request (preview, send record, detail, list)", () => {
+  assert.equal(lib.jevPreviewMatches(preview(), PROJ), true);
+  assert.equal(lib.jevPreviewMatches(preview(), PROJ_2), false);
+  assert.equal(lib.jevPreviewMatches({ ...preview(), schema: "jev_status@1" }, PROJ), false);
+  assert.equal(lib.jevPreviewMatches({ ...preview(), body: null }, PROJ), false);
+  assert.equal(lib.jevPreviewMatches(null, PROJ), false);
+  const attempt = { projectionHandle: PROJ, bodySha256: `0123abcd${"a".repeat(56)}`, sendId: SID };
+  assert.equal(lib.jevSendResponseMatches(record(), attempt), true);
+  for (const over of [{ send_id: SID_2 }, { projection_handle: PROJ_2 }, { body_sha256: "a".repeat(64) },
+    { schema: "jev_choice@1" }]) assert.equal(lib.jevSendResponseMatches(record(over), attempt), false, JSON.stringify(over));
+  assert.equal(lib.jevSendResponseMatches(null, attempt), false);
+  assert.equal(lib.jevDetailMatches(detail(), SID), true);
+  assert.equal(lib.jevDetailMatches(detail(), SID_2), false);
+  assert.equal(lib.jevDetailMatches({ ...detail(), schema: "x" }, SID), false);
+  assert.equal(lib.jevSendListMatches([record(), record({ send_id: SID_2 })]), true);
+  assert.equal(lib.jevSendListMatches([]), true);
+  assert.equal(lib.jevSendListMatches([record(), { schema: "x" }]), false);
+  assert.equal(lib.jevSendListMatches({ rows: [] }), false);
+  assert.equal(lib.jevSendsPending([record(), record({ status: "in_progress" })]), true);
+  assert.equal(lib.jevSendsPending([record(), record({ status: "failed" })]), false);
+  assert.equal(lib.JEV_POLL_MS, 2000);
+});
+
+// ---- T7 screen: the real components compiled from source and rendered on the server (effects do not run, so no
+// request is made), plus source checks of what the component can render and request ----
+
+const React = require("react");
+const { renderToStaticMarkup } = require("react-dom/server");
+function compileTsx(relativePath, dependencies) {
+  const source = fs.readFileSync(path.join(__dirname, relativePath), "utf8");
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  const moduleObject = { exports: {} };
+  vm.runInNewContext(compiled, { module: moduleObject, exports: moduleObject.exports,
+    require: name => dependencies[name] ?? require(name) });
+  return moduleObject.exports;
+}
+const ligandLib = load("ligand", { "./site-annotation": siteAnnotation });
+const mutationsLib = load("mutations", { "./site-annotation": siteAnnotation, "./event-model": eventModel });
+const primitives = compileTsx("../src/components/primitives.tsx", { "@/lib/contracts": load("contracts") });
+const noRequest = () => { throw new Error("a server render makes no request"); };
+const apiStub = { api: new Proxy({}, { get: () => noRequest }), ApiError: class ApiError extends Error {} };
+const ligandPanel = compileTsx("../src/components/LigandPanel.tsx", { "@/lib/api": apiStub, "@/lib/ligand": ligandLib,
+  "./primitives": primitives });
+const jevPanel = compileTsx("../src/components/JevPanel.tsx", { "@/lib/api": apiStub, "@/lib/jev": lib,
+  "@/lib/ligand": ligandLib, "@/lib/mutations": mutationsLib, "./LigandPanel": ligandPanel, "./primitives": primitives });
+const workspaceTabs = compileTsx("../src/components/WorkspaceTabs.tsx", { "@/lib/workspace-tabs": load("workspace-tabs") });
+const PANEL_RUN = { run_id: "fixture-run", goal: "", context: [], dry_run: false, egress: "local_only", last_seq: 1 };
+const AVAILABLE = { available: true, reason_code: null, reason: null };
+const renderJev = props => renderToStaticMarkup(React.createElement(jevPanel.JevPanel,
+  { run: PANEL_RUN, capability: AVAILABLE, onReportCreated: () => undefined, ...props }));
+const decode = text => text.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&amp;/g, "&");
+const textLines = html => decode(html.replace(/<[^>]+>/g, "\n")).split("\n").map(line => line.trim()).filter(Boolean);
+const tagOf = (html, testId) => new RegExp(`<[a-z]+ [^>]*data-testid="${testId}"[^>]*>`).exec(html)?.[0] ?? "";
+
+test("JevPanel gates: no run, capability absent or unavailable, capabilities not read: reason only, no controls", () => {
+  const unavailable = { available: false, reason_code: "tool_unavailable", reason: "투영 도구가 등록되어 있지 않다." };
+  for (const [props, id, state] of [[{ run: null }, "jev-no-run", "unavailable"],
+    [{ capability: null }, "jev-unavailable", "unavailable"], [{ capability: unavailable }, "jev-unavailable", "unavailable"],
+    [{ capability: undefined }, null, "loading"]]) {
+    const html = renderJev(props);
+    assert.match(tagOf(html, "jev-panel"), new RegExp(`data-jev-state="${state}"`), JSON.stringify(props));
+    if (id) assert.ok(html.includes(`data-testid="${id}"`), id);
+    assert.ok(!/<(input|select|button|table|a|details|pre) /.test(html), html);
+    const text = textLines(html).join("\n");
+    assert.ok(!/\d/.test(text), text);
+    assert.deepEqual(plain(lib.jevForbiddenWords(text)), [], text);
+  }
+  assert.ok(textLines(renderJev({ run: null })).join(" ").includes(lib.NO_RUN_REASON));
+  assert.ok(textLines(renderJev({ capability: null })).join(" ").includes(lib.CAPABILITY_REASON));
+  assert.ok(renderJev({ capability: unavailable }).includes("(tool_unavailable)"));
+});
+
+test("JevPanel first render: nothing chosen or sent; build and send closed with reasons; notices U1–U3 shown", () => {
+  const html = renderJev({});
+  assert.match(tagOf(html, "jev-panel"), /data-jev-state="loading"/);
+  assert.match(tagOf(html, "jev-panel"), /data-sending="false"/);
+  // The seven areas in order.
+  assert.deepEqual([...html.matchAll(/data-jev-area="([a-z]+)"/g)].map(match => match[1]),
+    ["status", "source", "candidates", "build", "approval", "result", "history"]);
+  // No source kind and no candidate set is chosen; no set list or candidate row exists yet.
+  for (const kind of ["ligand", "mutation"]) {
+    const tag = tagOf(html, `jev-kind-${kind}`);
+    assert.ok(tag && !/checked/.test(tag), kind);
+  }
+  for (const id of ["jev-source", "jev-candidate", "jev-candidates", "jev-preview", "jev-preview-body", "jev-result-card",
+    "jev-result-probabilities", "jev-consent", "jev-sends", "jev-send-record", "jev-report-done"])
+    assert.ok(!html.includes(`data-testid="${id}"`), id);
+  // Build and send are closed and say why; the confirmation cannot be checked before a preview.
+  assert.match(tagOf(html, "jev-build"), /disabled=""/);
+  assert.match(tagOf(html, "jev-send"), /disabled=""/);
+  assert.match(tagOf(html, "jev-confirm"), /disabled=""/);
+  assert.ok(!/checked/.test(tagOf(html, "jev-confirm")));
+  assert.ok(!/data-send-id/.test(tagOf(html, "jev-send")));
+  const lines = textLines(html);
+  assert.ok(lines.includes(lib.NO_SOURCE_REASON) && lines.includes(lib.NO_PREVIEW_REASON));
+  for (const line of [...lib.CONSENT_NOTICE, lib.JEV_SCREEN_NOTES.U1, lib.JEV_SCREEN_NOTES.U2, lib.JEV_SCREEN_NOTES.U3,
+    lib.SCIENCE_BADGE_NOTE, lib.CONFIRM_CHECK_TEXT, lib.SEND_BUTTON_TEXT, lib.BUILD_BUTTON_TEXT, lib.JEV_TEXT.resultNone])
+    assert.ok(lines.includes(line), line);
+  // Wording, test-id prefix, no viewer markup.
+  assert.deepEqual(plain(lib.jevForbiddenWords(lines.join("\n"))), []);
+  const ids = [...html.matchAll(/data-testid="([^"]+)"/g)].map(match => match[1]);
+  assert.ok(ids.length >= 15, String(ids.length));
+  for (const id of ids) assert.ok(id.startsWith("jev-"), id);
+  assert.ok(!/molstar|<canvas/i.test(html));
+});
+
+test("JevPanel source: wording, test ids, reads on mount only, one call site per write, the send never aborted", () => {
+  const file = path.join(__dirname, "../src/components/JevPanel.tsx");
+  const source = fs.readFileSync(file, "utf8");
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
+  const texts = [], effects = [], ids = [];
+  const visit = node => {
+    if (ts.isJsxText(node) && node.text.trim()) texts.push(node.text.trim());
+    else if (ts.isStringLiteral(node) && !ts.isImportDeclaration(node.parent)) texts.push(node.text);
+    else if (ts.isNoSubstitutionTemplateLiteral(node)) texts.push(node.text);
+    else if (ts.isTemplateExpression(node)) texts.push(node.head.text, ...node.templateSpans.map(span => span.literal.text));
+    if (ts.isCallExpression(node) && node.expression.getText(sourceFile) === "useEffect")
+      effects.push(node.arguments[0].getText(sourceFile));
+    if (ts.isJsxAttribute(node) && ["data-testid", "testId", "idPrefix"].includes(node.name.getText(sourceFile))) {
+      const value = node.initializer;
+      if (value && ts.isStringLiteral(value)) ids.push(value.text);
+      else if (value && ts.isJsxExpression(value) && value.expression) {
+        const expression = value.expression;
+        if (ts.isTemplateExpression(expression)) ids.push(expression.head.text);
+        else if (ts.isConditionalExpression(expression)) ids.push(expression.whenTrue.text, expression.whenFalse.text);
+        else ids.push(`<${expression.getText(sourceFile)}>`);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  // Every literal the component can render passes the M24 wording check; the visible text is the module's.
+  assert.ok(texts.length > 60, String(texts.length));
+  for (const text of texts) assert.deepEqual(plain(lib.jevForbiddenWords(text)), [], text);
+  assert.ok(!/[가-힣]/.test(texts.filter(text => !text.startsWith("JEV")).join("")),
+    "Korean screen text comes from lib/jev.ts, not from component literals");
+  assert.ok(!/dangerouslySetInnerHTML|innerHTML|localStorage|sessionStorage/.test(source));
+  // Every test id carries the area prefix (the ErrorLine / Pager pass-through and the M17 FilterForm prefix aside).
+  for (const id of ids) assert.ok(id === "<testId>" || id === "jev" || id.startsWith("jev-"), id);
+  assert.ok(ids.length > 40, String(ids.length));
+  // Effects (mount = entering the tab, polling, candidate pages) only read: no build, preview, send, consent or report,
+  // and nothing is chosen, opened or checked by itself.
+  assert.ok(effects.length >= 5, String(effects.length));
+  const reads = new Set(["jevStatus", "jevSends", "ligandCandidateRows", "mutationCandidates"]);
+  for (const body of effects) {
+    for (const match of body.matchAll(/api\.(\w+)\(/g)) assert.ok(reads.has(match[1]), match[1]);
+    assert.ok(!/\b(send|buildProjection|changeConsent|makeReport|readPreview|openSend|chooseKind|chooseSource|toggle|setSelection|setKind|setConfirmedFor)\(/
+      .test(body), body);
+  }
+  // Each writing (or preview) request has one call site.
+  for (const name of ["jevSend", "jevSetConsent", "buildJevProjection", "createJevReport", "jevPreview", "jevSendDetail"])
+    assert.equal([...source.matchAll(new RegExp(`api\\.${name}\\(`, "g"))].length, 1, name);
+  // The send is the person's click only, uses the one-attempt send id rule and is never aborted by leaving the tab.
+  assert.equal([...source.matchAll(/onClick=\{\(\) => void send\(\)\}/g)].length, 1);
+  assert.equal([...source.matchAll(/(?<!function )\bsend\(\)/g)].length, 1);   // its only call site is that click
+  assert.ok(source.includes("const record = await api.jevSend(runId, jevSendRequest(attempt));"));
+  assert.ok(/const attempt = jevSendAttempt\(attemptRef\.current, previewValue\);/.test(source));
+  assert.ok(/jevAttemptAfter\(attempt, \{ record: true \}\)/.test(source) &&
+    /jevAttemptAfter\(attempt, \{ record: false, code: info\.code \}\)/.test(source));
+  assert.ok(/if \(sendingRef\.current \|\| previewValue === null \|\| sendBlockers\.length\) return;/.test(source));
+  assert.ok(/disabled=\{sendBlockers\.length > 0\}/.test(source));
+  assert.ok(/const confirmed = jevConfirmed\(confirmedFor, previewValue\);/.test(source));
+  assert.equal([...source.matchAll(/onClick=\{\(\) => void buildProjection\(\)\}/g)].length, 1);
+  assert.equal([...source.matchAll(/void changeConsent\(event\.target\.checked\)/g)].length, 1);
+  // Values are shown through the view models only: no sorting, arithmetic or bars on probabilities or confidence.
+  assert.ok(!/\.sort\(|toFixed\(|<progress|<meter|width:/.test(source));
+  assert.deepEqual([...source.matchAll(/Math\.\w+/g)].map(match => match[0]), ["Math.max"]);   // the pager's offset only
+  assert.ok(source.includes("onClick={() => onPage(Math.max(0, offset - limit))}"));
+  assert.ok(/jevResultView\(detail\)/.test(source) && /jevPreviewView\(preview\)/.test(source) &&
+    /jevSendRows\(sends\.value\)/.test(source));
+  // The exact body and the probabilities are collapsed (no `open`); the body is shown verbatim from the preview.
+  assert.ok(!/<details[^>]*\bopen\b/.test(source));
+  assert.ok(source.includes('<pre className="mw-jev-body" data-testid="jev-preview-body">{view.body}</pre>'));
+  // Late answers: every apply is behind the per-area run + handle + request number check.
+  assert.ok(/jevResponseCurrent\(captured, \{ runId, handle: keyOf\(area\), seq: seqs\.current\[area\] \}\)/.test(source));
+  // No viewer, saved view, bridge, or another tab's area.
+  assert.ok(!/MolstarViewer|molstar|viewer-agent|saved-scene|captureScene|request_science/.test(source));
+  // The M17 filter form is reused with its own prefix.
+  assert.ok(/<FilterForm idPrefix="jev"/.test(source) && source.includes('import { FilterForm } from "./LigandPanel";'));
+});
+
+test("global line: the science mark sits outside .mw-app-run and only when given; the JEV area is between numbering and reports", () => {
+  const render = props => renderToStaticMarkup(React.createElement(workspaceTabs.WorkspaceTabs, { active: "knowledge",
+    onSelect: () => undefined, runId: "run_123", budget: null, structure: React.createElement("div", null, "S"),
+    numbering: React.createElement("div", null, "N"), jev: React.createElement("div", null, "J"),
+    reports: React.createElement("div", null, "R"), ...props }));
+  const withMark = render({ scienceBadge: lib.globalScienceBadge({ runId: "run_123", enabled: true }, "run_123") });
+  const run = /<span class="mw-mono mw-app-run"[^>]*>([^<]*)<\/span>/.exec(withMark);
+  assert.equal(run?.[1], "run_123");                       // the run element's text is the run id only
+  const mark = /<span class="mw-badge mw-app-science" data-science-consent="on" title="([^"]*)">([^<]*)<\/span>/
+    .exec(withMark);
+  assert.ok(mark, withMark);
+  assert.equal(decode(mark[1]), lib.SCIENCE_BADGE_NOTE);
+  assert.equal(decode(mark[2]).trim(), "과학 전송 허용");
+  assert.ok(withMark.indexOf("mw-app-run") < withMark.indexOf("mw-app-science"));
+  for (const off of [null, lib.globalScienceBadge({ runId: "run_123", enabled: false }, "run_123"),
+    lib.globalScienceBadge({ runId: "run_other", enabled: true }, "run_123")])
+    assert.ok(!render({ scienceBadge: off }).includes("mw-app-science"));
+  assert.ok(!render({}).includes("mw-app-science"));
+  const order = ["mw-app-numbering", "mw-app-jev", "mw-app-reports"].map(name => withMark.indexOf(`class="${name}"`));
+  assert.ok(order.every(index => index > 0) && order[0] < order[1] && order[1] < order[2], order.join());
+  // Other tabs never render the JEV area.
+  for (const active of ["structure", "protein", "ligand"]) assert.ok(!render({ active }).includes("mw-app-jev"), active);
+});
+
+test("page: JevPanel keyed by run in the knowledge tab; report reload and the global mark guarded by the run", () => {
+  const page = fs.readFileSync(path.join(__dirname, "../app/page.tsx"), "utf8");
+  assert.ok(page.includes('import { JevPanel } from "@/components/JevPanel";'));
+  assert.ok(page.includes("jev={<JevPanel key={`jev-${run?.run_id ?? \"none\"}`} run={run}"));
+  assert.ok(/capability=\{capabilities \? capabilities\.methods\?\.jev_choice \?\? null : undefined\}/.test(page));
+  assert.ok(/onStatus=\{\(statusRunId, status\) => \{ if \(hostRequestAccepted\(\{ runId: statusRunId \}, analysisHostRef\.current\)\)\n\s+setScienceMark\(scienceMarkFromStatus\(statusRunId, status\)\); \}\}/.test(page));
+  assert.ok(page.includes("scienceBadge={globalScienceBadge(scienceMark, runId ?? null)}"));
+  // The run-change read is one GET of the status (no consent write, no polling).
+  const start = page.indexOf("// M24 global mark");
+  const effect = page.slice(start, page.indexOf("}, [runId]);", start));
+  assert.ok(start > 0 && /api\.jevStatus\(runId, controller\.signal\)/.test(effect), effect);
+  assert.ok(!/jevSetConsent|setInterval|jevSend\b/.test(effect));
+  assert.equal([...page.matchAll(/api\.jev\w+\(/g)].length, 1);
+  // The tab shell and the shared component surface stay as they were; the panel is imported by path.
+  const index = fs.readFileSync(path.join(__dirname, "../src/components/index.ts"), "utf8");
+  assert.ok(!/Panel/.test(index));
 });
