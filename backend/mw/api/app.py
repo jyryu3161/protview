@@ -25,6 +25,9 @@ from .. import (
     docking_batch_reads,
     docking_bundle,
     docking_reads,
+    jev_constants,
+    jev_projection,
+    jev_sends,
     ligand_bundle,
     ligand_ga_jobs,
     ligand_ga_reads,
@@ -51,7 +54,9 @@ from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import RUN_ID_RE, canonical_json
 from ..docking_batch_reports import build_docking_batch_report, saved_docking_batch_report
 from ..docking_reports import build_docking_report, saved_docking_report
+from ..egress import science as egress_science
 from ..egress.gate import EgressGate
+from ..jev_reports import build_jev_report, saved_jev_report
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_ga_constants import PROTOCOL as GA_PROTOCOL
 from ..ligand_ga_reports import build_ligand_ga_report, saved_ligand_ga_report
@@ -168,6 +173,9 @@ app.add_middleware(HostAllowlistMiddleware)  # added last = outermost
 REGISTRY = build_registry()
 RUNS: dict[str, Run] = {}
 VIEWER_GATE = EgressGate()
+# M24: the science sends' own gate (not VIEWER_GATE); only POST /runs/{rid}/jev/sends uses it. Tests and the offscreen
+# fixture server replace it with a fixture-transport gate.
+SCIENCE_GATE = EgressGate()
 
 
 class NewRun(BaseModel):
@@ -668,6 +676,8 @@ def capabilities() -> dict[str, Any]:
     methods["mutation_model"] = mutation_model_bundle.capability()
     # M23: mutation_model + ligand_docking + the sequence GA modules, project interpreter and GA worker handshake.
     methods["sequence_ga_design"] = sequence_ga_jobs.capability(methods["ligand_docking"], methods["mutation_model"])
+    # M24: local conditions only (tool exposed, pins equal the gate's); never reads a credential or a run's consent.
+    methods["jev_choice"] = _jev_choice_capability()
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1294,6 +1304,9 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == "mutation_model":
             # Reads the stored mutation model only (re-validated); nothing is modelled or minimized again.
             return build_mutation_model_report(run, body.result_handle)
+        if kind == jev_constants.CHOICE_KIND:
+            # M24: reads the stored proposal, its projection, candidate set and send events only; nothing is sent.
+            return build_jev_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1321,7 +1334,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga", "sequence_ga"}
+                                        "ligand_ga", "sequence_ga", "jev_choice"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1339,7 +1352,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
-                                                              "sequence_ga"}
+                                                              "sequence_ga", "jev_choice"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1370,6 +1383,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_mutation_report(run, handle)
         if report.get("analysis_type") == "mutation_model":
             return saved_mutation_model_report(run, handle)
+        if report.get("analysis_type") == "jev_choice":
+            return saved_jev_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -2261,6 +2276,162 @@ def sequence_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any
         return {**sequence_ga_reads.summary_detail(run, handle), "meta": meta}
     except sequence_ga_reads.SequenceGaEvidenceError as exc:
         raise _sequence_ga_evidence_error(exc) from exc
+
+
+# ----------------------------------------------------------------- M24 JEV science sends (one human-approved send route)
+JEV_REQUEST_LIMIT = jev_constants.MAX_SEND_REQUEST_BYTES   # every /jev POST body; 4 KiB is the approval bound
+JEV_BUSY_MESSAGE = "the run is busy with another operation; nothing was approved or sent"
+JEV_CAPABILITY_REASONS = {
+    "tool_unavailable": "투영 도구 build_jev_projection이 등록·노출되어 있지 않다.",
+    "missing_configuration": "과학 전송의 요청·응답 모델·provider pin이 게이트 값과 다르다.",
+}
+
+
+class JevConsentRequest(BaseModel):
+    enabled: bool
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class JevPreviewRequest(BaseModel):
+    projection: str
+    model_config = {"extra": "forbid", "strict": True}
+
+
+class JevSendRequest(BaseModel):
+    send_id: str
+    projection: str
+    body_sha256: str
+    confirm: str
+    model_config = {"extra": "forbid", "strict": True}
+
+
+def _jev_choice_capability() -> dict[str, Any]:
+    """Local conditions only: the projection tool is registered and exposed, and the science pins equal the gate's
+    (the gate's own check). No credential and no run consent is read; a missing key surfaces at send time as the
+    ``missing_credential`` refusal."""
+    if jev_constants.TOOL not in SUPPORTED_TOOLS or jev_constants.TOOL not in REGISTRY.specs:
+        reason = "tool_unavailable"
+    elif not egress_science._pins_match({"model": jev_projection.REQUEST_MODEL, "provider": jev_projection.PROVIDER}):
+        reason = "missing_configuration"
+    else:
+        return {"available": True, "reason_code": None, "reason": None}
+    return {"available": False, "reason_code": reason, "reason": JEV_CAPABILITY_REASONS[reason]}
+
+
+async def _jev_request(request: Request, model: type[BaseModel]) -> Any:
+    """No query parameter, a body of at most 4 KiB (413), one JSON object with exactly the model's typed keys (422)."""
+    _only_query(request, set())
+    raw = _chemical_json(await _bounded_chemical_body(request, JEV_REQUEST_LIMIT))
+    try:
+        return model.model_validate(raw)
+    except PydanticValidationError as exc:
+        raise HTTPException(422, detail={"error": "input_invalid", "message": (
+            f"expected exactly the keys {sorted(model.model_fields)} with their documented types")}) from exc
+
+
+def _jev_error(error: jev_sends.JevSendError) -> HTTPException:
+    return HTTPException(error.http_status, detail={"error": error.code, "message": error.message, **error.detail})
+
+
+class _JevReadView:
+    """One event-log read for a JEV read: ``events.read()`` returns that one list (the M23 read-snapshot precedent)."""
+
+    def __init__(self, run: Run) -> None:
+        self.store, self.run_id, self.run_dir = run.store, run.run_id, run.run_dir
+        self._events = list(run.events.read())
+        self.events = self
+
+    def read(self) -> list[dict[str, Any]]:
+        return self._events
+
+
+@app.get("/runs/{rid}/jev/status")
+def jev_status(rid: str, request: Request) -> dict[str, Any]:
+    """``jev_status@1``: consent, cap use, budget, the two question ids, a send in progress. No event, no key."""
+    _only_query(request, set())
+    run = _run(rid)
+    return jev_sends.status_for(run, list(run.events.read()))
+
+
+@app.post("/runs/{rid}/jev/consent")
+async def jev_consent(rid: str, request: Request) -> dict[str, Any]:
+    """The run-level science consent: the only writer of ``jev_science_consent_changed`` (412 ``dry_run`` when turning
+    it on in a dry-run run). The viewer mode, viewer consent and every other gate are untouched."""
+    body = await _jev_request(request, JevConsentRequest)
+    try:
+        return await run_in_threadpool(lambda: jev_sends.set_consent(_run(rid), body.enabled))
+    except jev_sends.JevSendError as exc:
+        raise _jev_error(exc) from exc
+
+
+@app.post("/runs/{rid}/jev/preview")
+async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
+    """``jev_preview@1``: the exact body string, its SHA-256 and bytes, the alias table (local only), the reservation,
+    the cap use and every refusal that holds now. A read: no event, tool, job or external request."""
+    body = await _jev_request(request, JevPreviewRequest)
+
+    def read() -> dict[str, Any]:
+        run = _run(rid)
+        return jev_sends.preview_for(run, body.projection, list(run.events.read()))
+
+    try:
+        return await run_in_threadpool(read)
+    except jev_sends.JevSendError as exc:
+        raise _jev_error(exc) from exc
+
+
+@app.post("/runs/{rid}/jev/sends")
+async def jev_send_create(rid: str, request: Request) -> Any:
+    """The person's approval of one exact projection body and its one send (spec 5): the only caller of
+    ``jev_sends.run_send``, so the only path to ``EgressGate.request_science``. Not a tool, plan or workflow step,
+    model command or job. Refusals and failures answer 200 with their ``jev_send@1`` record."""
+    body = await _jev_request(request, JevSendRequest)
+    run = _run(rid)
+    try:
+        return await jev_sends.run_send(run, SCIENCE_GATE, send_id=body.send_id, projection=body.projection,
+                                        body_sha256=body.body_sha256, confirm=body.confirm)
+    except jev_sends.JevSendError as exc:
+        raise _jev_error(exc) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt",
+                                         "message": "the science send could not be recorded"}) from exc
+
+
+@app.get("/runs/{rid}/jev/sends")
+def jev_send_list(rid: str, request: Request) -> list[dict[str, Any]]:
+    """This run's sends, oldest first; each row a ``jev_send@1`` derived from events only (one log read)."""
+    _only_query(request, set())
+    run = _run(rid)
+    try:
+        return jev_sends.list_sends(list(run.events.read()))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid science send record"}) from exc
+
+
+@app.get("/runs/{rid}/jev/sends/{send_id}")
+def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
+    """One ``jev_send@1`` plus, when completed, its ``jev_choice@1`` proposal re-validated against the projection and
+    the candidate set (``choice``, ``local_display``; null otherwise). One log read, no event."""
+    _only_query(request, set())
+    view = _JevReadView(_run(rid))
+    try:
+        record = jev_sends.send_record(view.read(), send_id)
+    except jev_sends.JevSendError as exc:
+        raise _jev_error(exc) from exc
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid science send record"}) from exc
+    choice = None
+    if record["status"] == "completed":
+        try:
+            choice = jev_sends.load_choice(view, record["choice_handle"])
+        except (jev_sends.ChoiceInvalid, jev_sends.JevSendError) as exc:
+            raise HTTPException(422, detail={"error": "method_evidence_invalid",
+                                             "message": "the stored JEV choice does not validate"}) from exc
+    return {**record, "choice": choice, "local_display": None if choice is None else choice["answer"]["local_display"]}
 
 
 @app.get("/runs/{rid}/interface_sasa")
