@@ -3,7 +3,8 @@
 Every HTTP exchange is an ``httpx.MockTransport`` (``jev_send_fixture.Fake``) and every credential the inert sentinel;
 no socket is opened and ``.env`` is never read. Inputs are the REAL template runs of ``jev_send_fixture`` (public 1UBQ
 M20 set, real M17 set, real ``build_jev_projection`` objects). Monkeypatched caps, clocks, audits and pins are fault
-injection, marked where used.
+injection, marked where used. Every send here goes through an approval: ``jev_send_fixture.approver`` records the
+``jev_send_approved`` event exactly as ``jev_sends.run_send``'s ``admit`` does (the gate has no path without one).
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ from jev_send_fixture import (
     SENTINEL,
     USAGE,
     Fake,
+    approver,
     audits,
     body_of,
     clone,
@@ -74,7 +76,9 @@ def dry(base, tmp_path):
 
 
 def gate_send(world, fake, *, which="projection", send_id=None):
-    return asyncio.run(fake.gate.request_science(world["run"], projection_of(world, which), send_id or new_send_id()))
+    send_id = send_id or new_send_id()
+    return asyncio.run(fake.gate.request_science(world["run"], projection_of(world, which), send_id,
+                                                 admit=approver(world, send_id, which)))
 
 
 def stages(run, audit_id):
@@ -99,14 +103,15 @@ def test_accepted_send_is_one_audited_reserved_and_settled_request_of_the_previe
     run = mut["run"]
     S.set_consent(run, True)
     content = projection_of(mut)
-    fake = Fake(lambda request: reply("m02", confidence=0.62, probabilities={"m01": 0.2, "m02": 0.62, "m03": 0.18}))
+    # fixture reply values chosen so that any rounding or float re-formatting would change them
+    probabilities = {"m01": 1e-9, "m02": 0.9999999999, "m03": 0.1 + 0.2}
+    fake = Fake(lambda request: reply("m02", confidence=0.123456789, probabilities=probabilities))
     before = len(events(run))
     send_id = new_send_id()
-    result = asyncio.run(fake.gate.request_science(run, content, send_id))
+    result = asyncio.run(fake.gate.request_science(run, content, send_id, admit=approver(mut, send_id)))
     assert isinstance(result, science.ScienceGateResult)
     assert (result.status, result.reason_code) == ("accepted", None)
-    assert result.answer == {"choice_alias": "m02", "confidence": 0.62,
-                             "probabilities": {"m01": 0.2, "m02": 0.62, "m03": 0.18}}
+    assert result.answer == {"choice_alias": "m02", "confidence": 0.123456789, "probabilities": probabilities}
     assert result.requested_model == J.REQUEST_MODEL and result.served_model == J.SERVED_SNAPSHOT
     assert result.usage == {"input_tokens": 3000, "output_tokens": 20, "external_tokens": 3020, "cost": 0.001}
     # one request, the exact bytes of the preview / projection body, the key only in the transport header
@@ -132,7 +137,7 @@ def test_accepted_send_is_one_audited_reserved_and_settled_request_of_the_previe
     assert stages(run, result.audit_id) == ["prepared", "dispatch_started", "response_received", "settled"]
     assert all(e["scope"] == "science" and e["send_id"] == send_id for e in audits(run, result.audit_id))
     assert tail_types(run, before) == [
-        "budget_reserved", "egress:prepared", "egress:dispatch_started", "jev_science_dispatch_started",
+        J.EVENT_APPROVED, "budget_reserved", "egress:prepared", "egress:dispatch_started", "jev_science_dispatch_started",
         "wall_charged", "egress:response_received", "egress_budget_settled", "egress:settled", "wall_charged"]
     reserved = events(run, "budget_reserved")[-1]
     assert {k: v for k, v in reserved.items() if k not in ("seq", "ts", "type")} == {
@@ -174,22 +179,97 @@ def test_projection_content_that_does_not_validate_is_refused_before_any_event(m
     content["wire"]["candidates"][0]["rank"] = 1   # fault injection: an edited projection
     before = len(events(run))
     fake = Fake()
+    send_id = new_send_id()
     with pytest.raises(P.ProjectionInvalid):
-        asyncio.run(fake.gate.request_science(run, content, new_send_id()))
+        asyncio.run(fake.gate.request_science(run, content, send_id, admit=approver(mut, send_id)))
     assert len(events(run)) == before and fake.requests == [] and fake.key_reads == 0
 
 
 def test_the_gate_delegate_is_the_science_function(mut, monkeypatch):
     seen = []
 
-    async def fake_science(gate, run, content, send_id, *, admit=None):
+    async def fake_science(gate, run, content, send_id, *, admit):
         seen.append((gate, run, content, send_id, admit))
         return "ok"
 
     monkeypatch.setattr(science, "request_science", fake_science)
     gate = G.EgressGate(credential_resolver=lambda: pytest.fail("read"))
-    assert asyncio.run(gate.request_science(mut["run"], {"x": 1}, "s")) == "ok"
-    assert seen == [(gate, mut["run"], {"x": 1}, "s", None)]
+    admit = approver(mut, "s")
+    assert asyncio.run(gate.request_science(mut["run"], {"x": 1}, "s", admit=admit)) == "ok"
+    assert seen == [(gate, mut["run"], {"x": 1}, "s", admit)]
+    with pytest.raises(TypeError):   # the delegate itself has no default either
+        gate.request_science(mut["run"], {"x": 1}, "s")
+    assert len(seen) == 1
+
+
+# ---------------------------------------------------------------- no send without a recorded approval
+
+
+def _untouched(world, fake, before, *, owner=False, hook_wrote=()):
+    """Nothing of a send: no approval the gate accepted, audit, reservation, dispatch, key read or request.
+
+    ``owner``: the hook ran under the run owner, whose exit always charges its activity time (one existing
+    ``wall_charged``/``runtime_overhead`` accounting event, written for every owner entry; not a send step).
+    ``hook_wrote``: event types the faulty hook itself appended."""
+    run = world["run"]
+    new = [(e["type"], e.get("reason")) for e in events(run)[before:]]
+    overhead = [("wall_charged", "runtime_overhead")] if owner else []
+    assert new in ([*[(t, None) for t in hook_wrote], *overhead], [(t, None) for t in hook_wrote]), new
+    assert fake.requests == [] and fake.key_reads == 0
+    assert not events(run, "budget_reserved") and not events(run, J.EVENT_DISPATCH) and not audits(run)
+    assert not events(run, "egress_budget_settled") and not events(run, J.EVENT_OUTCOME)
+    assert run.budget.external_tokens == 0 and run.budget.usd == 0
+
+
+@pytest.mark.parametrize("via", ["gate", "module"])
+@pytest.mark.parametrize("admit", ["missing", None, "admit", 5, {"admit": True}])
+def test_without_a_callable_approval_hook_nothing_is_written_read_or_sent(mut, via, admit):
+    run = mut["run"]
+    S.set_consent(run, True)   # everything else would let this send through
+    fake = Fake(lambda request: pytest.fail("sent without an approval"))
+    before = len(events(run))
+    call = fake.gate.request_science if via == "gate" else (
+        lambda *args, **kwargs: science.request_science(fake.gate, *args, **kwargs))
+    kwargs = {} if admit == "missing" else {"admit": admit}
+    with pytest.raises(TypeError):
+        asyncio.run(call(run, projection_of(mut), new_send_id(), **kwargs))
+    _untouched(mut, fake, before)
+
+
+def test_an_approval_hook_that_raises_sends_nothing(mut):
+    run = mut["run"]
+    S.set_consent(run, True)
+    fake = Fake(lambda request: pytest.fail("sent after a failed approval"))
+    before = len(events(run))
+
+    def admit(events_seen):
+        raise RuntimeError("approval refused")   # fault injection
+    with pytest.raises(RuntimeError, match="approval refused"):
+        asyncio.run(fake.gate.request_science(run, projection_of(mut), new_send_id(), admit=admit))
+    _untouched(mut, fake, before, owner=True)
+
+
+@pytest.mark.parametrize("hook", ["records_nothing", "other_send_id", "other_body", "other_question",
+                                  "other_source", "other_count", "not_human", "other_projection_body"])
+def test_an_approval_hook_that_does_not_record_this_approval_sends_nothing(mut, hook):
+    run = mut["run"]
+    S.set_consent(run, True)
+    fake = Fake(lambda request: pytest.fail("sent without a matching approval"))
+    send_id = new_send_id()
+    admit = {   # fault injection: hooks that record no approval, or one that does not match this body
+        "records_nothing": lambda events_seen: None,
+        "other_send_id": approver(mut, new_send_id()),
+        "other_body": approver(mut, send_id, body_sha256="0" * 64),
+        "other_question": approver(mut, send_id, question_id=J.LIGAND_QUESTION_ID),
+        "other_source": approver(mut, send_id, source_handle=mut["prepared"]),
+        "other_count": approver(mut, send_id, selection_count=1),
+        "not_human": approver(mut, send_id, approved_by="model"),
+        "other_projection_body": approver(mut, send_id, which="other_projection"),
+    }[hook]
+    before = len(events(run))
+    with pytest.raises(PermissionError):
+        asyncio.run(fake.gate.request_science(run, projection_of(mut), send_id, admit=admit))
+    _untouched(mut, fake, before, owner=True, hook_wrote=() if hook == "records_nothing" else (J.EVENT_APPROVED,))
 
 
 # ---------------------------------------------------------------- rejections (first failure only)
@@ -198,14 +278,19 @@ def test_the_gate_delegate_is_the_science_function(mut, monkeypatch):
 def _rejected(world, fake, reason, *, keys=0, checkpoint=False):
     run = world["run"]
     before = len(events(run))
-    result = gate_send(world, fake)
+    send_id = new_send_id()
+    result = gate_send(world, fake, send_id=send_id)
     assert (result.status, result.reason_code) == ("rejected", reason)
     assert result.answer is None and result.requested_model is None and result.usage is None
     new = events(run)[before:]
     denied = [e for e in new if e["type"] == "egress"]
     assert [(e["stage"], e["reason_code"], e["scope"], e["transport_invoked"], e["sent"]) for e in denied] == [
         ("denied", reason, "science", False, False)]
-    assert denied[0]["audit_id"] == result.audit_id
+    assert denied[0]["audit_id"] == result.audit_id and denied[0]["send_id"] == send_id
+    # the approval is the gate's first step: recorded before the refusal's audit, in log order
+    approved = [e for e in new if e["type"] == J.EVENT_APPROVED]
+    assert new[0] is approved[0] and len(approved) == 1 and approved[0]["send_id"] == send_id
+    assert approved[0]["seq"] < denied[0]["seq"]
     assert not [e for e in new if e["type"] in ("budget_reserved", "jev_science_dispatch_started",
                                                 "egress_budget_settled")]
     assert [e.get("axis") for e in new if e["type"] == "checkpoint"] == (["wall_clock_s"] if checkpoint else [])
@@ -282,6 +367,102 @@ def test_only_the_first_failing_step_is_reported(mut):
     _rejected(mut, Fake(), "consent_off")
     S.set_consent(run, True)
     _rejected(mut, Fake(), "cancelled")
+
+
+def _reservation(world):
+    return {"external_tokens": J.reserve_tokens(len(body_of(world))), "usd": J.RESERVE_USD}
+
+
+def _usage_unknown_send(world):
+    assert gate_send(world, Fake(lambda request: reply("m01", usage=None))).status == "accepted"
+    assert world["run"].egress_stop_reason == "usage_unknown"
+
+
+def _drift_pin(monkeypatch):
+    monkeypatch.setattr(J, "SERVED_SNAPSHOT", "typesafe/jev-1.12-20250101")   # fault injection: a drifted pin
+
+
+def _pair_dry_run_and_consent_off(world, monkeypatch):
+    assert world["run"].dry_run is True   # a dry-run run can never enable science consent
+
+
+def _pair_consent_off_and_cancelled(world, monkeypatch):
+    world["run"].cancel()
+
+
+def _pair_cancelled_and_egress_stopped(world, monkeypatch):
+    S.set_consent(world["run"], True)
+    _usage_unknown_send(world)
+    world["run"].cancel()
+
+
+def _pair_egress_stopped_and_send_cap(world, monkeypatch):
+    monkeypatch.setattr(J, "SEND_CAP", 1)   # fault injection: a cap of one
+    S.set_consent(world["run"], True)
+    _usage_unknown_send(world)
+
+
+def _pair_send_cap_and_time(world, monkeypatch):
+    monkeypatch.setattr(J, "SEND_CAP", 1)   # fault injection: a cap of one
+    S.set_consent(world["run"], True)
+    assert gate_send(world, Fake()).status == "accepted"
+    limited(world, wall_clock_s=0.001)
+
+
+def _pair_time_and_reservation(world, monkeypatch):
+    S.set_consent(world["run"], True)
+    limited(world, wall_clock_s=0.001, usd=0.05)
+
+
+def _pair_reservation_and_configuration(world, monkeypatch):
+    S.set_consent(world["run"], True)
+    limited(world, usd=0.05)
+    _drift_pin(monkeypatch)
+
+
+def _pair_configuration_and_credential(world, monkeypatch):
+    S.set_consent(world["run"], True)
+    _drift_pin(monkeypatch)
+
+
+#        setup, fixture, reported reason, checkpoint (time step), the later condition that also holds
+ADJACENT_PAIRS = {
+    "dry_run>consent_off": (_pair_dry_run_and_consent_off, "dry", "dry_run", False, "consent_off"),
+    "consent_off>cancelled": (_pair_consent_off_and_cancelled, "mut", "consent_off", False, "cancelled"),
+    "cancelled>egress_stopped": (_pair_cancelled_and_egress_stopped, "mut", "cancelled", False, "egress_stopped"),
+    "egress_stopped>send_cap": (_pair_egress_stopped_and_send_cap, "mut", "egress_stopped", False, "send_cap"),
+    "send_cap>time": (_pair_send_cap_and_time, "mut", "send_cap_exhausted", False, "time"),
+    "time>reservation": (_pair_time_and_reservation, "mut", "budget_exhausted", True, "reservation"),
+    "reservation>configuration": (_pair_reservation_and_configuration, "mut", "budget_exhausted", False,
+                                  "configuration"),
+    "configuration>credential": (_pair_configuration_and_credential, "mut", "missing_configuration", False,
+                                 "credential"),
+}
+
+
+def _later_holds(world, later):
+    run = world["run"]
+    seen = list(run.events.read())
+    return {"consent_off": lambda: not S.consent_enabled(seen),
+            "cancelled": lambda: S.cancel_seen(run, seen),
+            "egress_stopped": lambda: run.egress_stop_reason is not None,
+            "send_cap": lambda: S.dispatch_count(seen) >= J.SEND_CAP,
+            "time": lambda: run._time_left() <= 0,
+            "reservation": lambda: bool(run.budget.would_exceed(**_reservation(world))),
+            "configuration": lambda: not science._pins_match(P.projection_body(projection_of(world))[0]),
+            "credential": lambda: True}[later]()   # the credential case uses an unusable key below
+
+
+@pytest.mark.parametrize("pair", list(ADJACENT_PAIRS))
+def test_two_adjacent_failing_steps_report_only_the_earlier_one(pair, request, monkeypatch):
+    setup, fixture, reason, checkpoint, later = ADJACENT_PAIRS[pair]
+    world = request.getfixturevalue(fixture)
+    setup(world, monkeypatch)
+    assert _later_holds(world, later), f"the later condition {later} does not hold"
+    reserved = len(events(world["run"], "budget_reserved"))
+    fake = Fake(key=None) if later == "credential" else Fake()
+    _rejected(world, fake, reason, checkpoint=checkpoint)   # no key read, no reservation, no transport
+    assert len(events(world["run"], "budget_reserved")) == reserved
 
 
 # ---------------------------------------------------------------- failures (sent, no choice)

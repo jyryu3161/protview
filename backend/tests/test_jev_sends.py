@@ -19,6 +19,7 @@ from jev_send_fixture import (
     SENTINEL,
     USAGE,
     Fake,
+    approval,
     body_of,
     clone,
     events,
@@ -173,16 +174,23 @@ def test_viewer_consent_and_science_consent_grant_nothing_to_each_other(base, tm
 
 
 @pytest.mark.parametrize("which", ["mutation", "ligand"])
-def test_an_approved_send_records_approval_outcome_and_one_choice(which, mut, lig):
+def test_an_approved_send_records_approval_outcome_and_one_choice(which, mut, lig, tmp_path):
     world = mut if which == "mutation" else lig
     run = world["run"]
     S.set_consent(run, True)
     content = projection_of(world)
-    if which == "mutation":
-        answer = {"choice": "m01", "confidence": 0.7, "probabilities": {"m03": 0.5, "m01": 0.3}}
+    if which == "mutation":   # fixture reply values: any rounding or float re-formatting would change them
+        answer = {"choice": "m01", "confidence": 0.123456789,
+                  "probabilities": {"m03": 1e-9, "m01": 0.9999999999, "m02": 0.1 + 0.2}}
     else:
         answer = {"choice": "c02"}
-    fake = Fake(lambda request: reply(**answer))
+    replies = []
+
+    def respond(request):
+        response = reply(**answer)
+        replies.append(response.content)   # the exact bytes the gate receives
+        return response
+    fake = Fake(respond)
     send_id = new_send_id()
     before = len(events(run))
     record = send(world, fake, send_id=send_id)
@@ -197,6 +205,7 @@ def test_an_approved_send_records_approval_outcome_and_one_choice(which, mut, li
                                    "body_sha256": content["body_sha256"], "question_id": content["question"]["id"],
                                    "source_handle": world["source"], "selection_count": len(content["selection"]),
                                    "approved_by": "human"}
+    assert fields(approved[0]) == approval(world, send_id)   # the gate tests' approver records the same event
     usage = {"input_tokens": 3000, "output_tokens": 20, "external_tokens": 3020, "cost": 0.001}
     assert fields(outcome[0]) == {"send_id": send_id, "status": "completed", "reason_code": None,
                                   "audit_id": record["audit_id"], "requested_model": J.REQUEST_MODEL,
@@ -242,6 +251,17 @@ def test_an_approved_send_records_approval_outcome_and_one_choice(which, mut, li
                    "confidence": answer.get("confidence"), "probabilities": answer.get("probabilities")},
         "usage": usage, "arrival": {"late": False, "late_reason": None},
         "limitations": J.limitations_for(which, False)}
+    if which == "mutation":   # the reply's floats, unchanged: no rounding, no re-formatting, also after JSON
+        replied = json.loads(replies[0])["answers"][J.QUESTION_KEY]
+        sha = record["choice_handle"].rsplit("/", 1)[1]
+        stored_raw = json.loads((run.run_dir / "objects" / f"{sha}.json").read_bytes())["answer"]
+        replayed = S.load_choice(reopen(world, tmp_path / "replayed"), record["choice_handle"])["answer"]
+        for got in (choice["answer"], stored_raw, replayed, json.loads(json.dumps(choice["answer"]))):
+            assert got["confidence"] == replied["confidence"] == 0.123456789
+            assert got["probabilities"] == replied["probabilities"] == answer["probabilities"]
+            for alias, value in answer["probabilities"].items():
+                assert type(got["probabilities"][alias]) is float and repr(got["probabilities"][alias]) == repr(value)
+        assert answer["probabilities"]["m02"] != 0.3 and round(answer["probabilities"]["m01"], 2) == 1.0
     assert S.preview_for(run, world["projection"], current(run))["previous_sends"] == 1
     assert SENTINEL.encode() not in run_bytes(run) and no_secret(record, choice)
 

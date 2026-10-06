@@ -2,8 +2,11 @@
 
 Spec .dryforge/spec.md 5. The bytes sent are ``jev_projection.projection_body(content)`` -- the same function the
 preview and the ``prepared`` audit use -- so the transport, the preview string and the audited body are identical.
-Under the run owner and one transition guard the steps run in this order, and only the first failing check is
-recorded (one ``denied`` audit, ``rejected``): the caller's ``admit`` hook (records the approval) -> ``dry_run`` ->
+There is no send without an approval: ``admit`` is required (a missing or non-callable hook is a ``TypeError`` before
+anything is written, read or sent), and after it runs the log must hold this send's ``jev_send_approved`` for exactly
+this body (else ``PermissionError``: no audit, reservation, key read or request). Under the run owner and one
+transition guard the steps run in this order, and only the first failing check is recorded (one ``denied`` audit,
+``rejected``): the caller's ``admit`` hook (records the approval) and its check -> ``dry_run`` ->
 ``consent_off`` -> ``cancelled`` -> ``egress_stopped`` -> ``send_cap_exhausted`` -> activity time (``budget_exhausted``
 with a checkpoint) -> external tokens / USD reservation (``budget_exhausted``) -> ``missing_configuration`` (pins) ->
 the key (``missing_credential``; nothing earlier reads it) -> ``budget_reserved`` (external tokens and USD only) ->
@@ -52,9 +55,24 @@ def _pins_match(body: dict[str, Any]) -> bool:
             and J.DESTINATION == G.DESTINATION and J.MAX_RESPONSE_BYTES == G.MAX_RESPONSE_BYTES)
 
 
+def _approval_recorded(events: list[dict[str, Any]], send_id: str, content: dict[str, Any],
+                       payload_sha256: str) -> bool:
+    """The first ``jev_send_approved`` of this send_id is a human approval of exactly this body."""
+    approved = next((event for event in events if event.get("type") == J.EVENT_APPROVED
+                     and event.get("send_id") == send_id), None)
+    return (approved is not None and approved.get("body_sha256") == payload_sha256
+            and approved.get("question_id") == content["question"]["id"]
+            and approved.get("source_handle") == content["source"]["handle"]
+            and approved.get("selection_count") == len(content["selection"])
+            and approved.get("approved_by") == J.APPROVED_BY)
+
+
 async def request_science(gate: G.EgressGate, run: Any, projection_content: Any, send_id: str, *,
-                          admit: Callable[[list[dict[str, Any]]], None] | None = None) -> ScienceGateResult:
-    """At most one physical request. ``admit(events)`` runs first under the owner and transition guard."""
+                          admit: Callable[[list[dict[str, Any]]], None]) -> ScienceGateResult:
+    """At most one physical request, only after ``admit(events)`` (under the owner and transition guard) has
+    recorded this send's approval of this body."""
+    if not callable(admit):   # before any event, key read or transport
+        raise TypeError("request_science needs the approval hook admit(events); nothing was recorded or sent")
     content = P.validated_projection(projection_content)   # a refusal here writes nothing
     body, encoded = P.projection_body(content)
     payload_sha256 = P.body_sha256(encoded)
@@ -96,9 +114,10 @@ async def request_science(gate: G.EgressGate, run: Any, projection_content: Any,
             return run._time_left() - max(0.0, run.monotonic() - started)
 
         with run._transition():
+            admit(list(run.events.read()))
             events = list(run.events.read())
-            if admit is not None:
-                admit(events)
+            if not _approval_recorded(events, send_id, content, payload_sha256):
+                raise PermissionError("no recorded approval of this send's body; nothing was sent")
             if run.dry_run:
                 return deny("dry_run")
             if not consent_enabled(events):

@@ -142,6 +142,23 @@ def body_of(world: dict[str, Any], which: str = "projection") -> bytes:
     return P.projection_body(projection_of(world, which))[1]
 
 
+def approval(world: dict[str, Any], send_id: str, which: str = "projection") -> dict[str, Any]:
+    """The ``jev_send_approved`` fields ``run_send`` records for this projection (a test-side copy)."""
+    content = projection_of(world, which)
+    return {"send_id": send_id, "projection_handle": world[which], "body_sha256": content["body_sha256"],
+            "question_id": content["question"]["id"], "source_handle": content["source"]["handle"],
+            "selection_count": len(content["selection"]), "approved_by": J.APPROVED_BY}
+
+
+def approver(world: dict[str, Any], send_id: str, which: str = "projection", **overrides: Any) -> Any:
+    """An ``admit`` callback for direct gate tests: records the approval exactly as ``run_send``'s does."""
+    fields = {**approval(world, send_id, which), **overrides}
+
+    def admit(events: list[dict[str, Any]]) -> None:
+        world["run"].events.append(J.EVENT_APPROVED, **fields)
+    return admit
+
+
 def send(world: dict[str, Any], fake: Fake, *, which: str = "projection", send_id: Any = _UNSET,
          **overrides: Any) -> dict[str, Any]:
     """One approved send through ``jev_sends.run_send`` (the T5 route will wrap exactly this call)."""

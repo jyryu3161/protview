@@ -190,8 +190,9 @@ class EgressGate:
         return await request_viewer(self, run, state, intent_id)
 
     async def request_science(self, run: Run, projection_content: Any, send_id: str, *,
-                              admit: Callable[[list[dict[str, Any]]], None] | None = None) -> Any:
-        """M24 science scope (one approved jev_projection@1 body), using this same gate's owned HTTP transport."""
+                              admit: Callable[[list[dict[str, Any]]], None]) -> Any:
+        """M24 science scope (one approved jev_projection@1 body), using this same gate's owned HTTP transport.
+        ``admit`` (required) records the approval first; the science function refuses to send without it."""
         from .science import request_science
         return await request_science(self, run, projection_content, send_id, admit=admit)
 
