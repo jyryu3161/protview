@@ -1,0 +1,33 @@
+M24 T8 — 오프스크린 흐름·수락 실행기 검증 기록 (2026-10-06, 브랜치 dryforge/m24-jev-egress)
+
+코드 커밋: 7a24650 (흐름·fixture 서버·실행기·단위 테스트), 9c0ce31 (실행기 README 문구 한 줄).
+OpenRouter 실호출: 0회. 모든 전송은 backend/tests/offscreen_jev_fixture/server.py(SCIENCE_GATE = 스크립트된
+httpx.MockTransport, placeholder 자격 증명, VIEWER_GATE 거절)로만 했다. --live-calls는 이 작업에서 0만 썼다.
+키 값은 출력·기록하지 않았다(존재 불리언과 파일 경로만 내는 해석기 검색).
+
+명령과 결과(프로젝트 루트):
+  node --check frontend/tests/offscreen/jev-flow.cjs                                  → 0
+  .venv/bin/python -m pytest scripts/test_m24_offscreen_acceptance.py -q              → 51 passed (약 1.6 s)
+  .venv/bin/python -m pytest <게이트의 scripts/test_*.py 19개> -q                      → 526 passed
+  .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py → All checks passed
+  Stop 훅 나머지 그룹(REST_GROUP: backend/tests에서 --ignore 뺀 것 + SCRIPT_TESTS 19개) 단독 실행
+                                                                                     → 2147 passed, 269 s (그룹 한도 480 s)
+  npm --prefix frontend run typecheck, 이어서 build (실행기가 차례로, 동시 실행 없음)    → 0, 0
+
+수락 실행기 fixture 단계(증거: t8-fixture-acceptance/, 커밋 9c0ce31에서 만든 빌드, dirtyFiles 없음):
+  .venv/bin/python scripts/m24_offscreen_acceptance.py --root runs/m24-t8-fixture-20261006b \
+      --artifacts frontend/tests/offscreen/artifacts/m24-acceptance/t8-fixture-b \
+      --out docs/qa/m24-jev-20261006/t8-fixture-acceptance
+  → 종료 0, verdict pass, acceptance true(범위 fixture), 사례 26개 pass(화면 22 + 실행기 4),
+    실제 Electron 오프스크린(isOffscreen true, 숨김, painting, 하드웨어 가속, WebGL 2.0 ANGLE Metal),
+    브라우저 비-loopback 요청 0, dispatch 이벤트 18 = fixture transport 호출 18, response_received 감사 18,
+    키·placeholder 문자열 0건(551개 파일 + 내보낸 21개), 증거 금지 표현 0건, 남은 프로세스·리스너 없음.
+  관찰하지 않음: JL-calibrate-send·JL-live-sends(실호출 할당은 T10) 외 백엔드 테스트가 덮는 여섯 사례(README).
+  같은 실행을 7a24650에서도 한 번 통과시켰다(Git 제외 frontend/tests/offscreen/artifacts/m24-acceptance/
+  t8-fixture-out-7a24650). 개발 반복 dev-1·dev-2는 하네스 자체 결함(U1 문장의 낱말, 다시 읽는 중인 빈 표,
+  값 설명 문장의 "pocket")으로 실패했고 증거는 Git 제외 frontend/tests/offscreen/artifacts/m24-t8/에 그대로 둔다.
+
+M14 탭 회귀: t8-m14-regression.txt (15사례 pass, acceptance true).
+
+T8 증거 전체(docs/qa/m24-jev-20261006, Git 제외 artifacts의 m24-acceptance·m24-t8, QA run 폴더 다섯)를 해석기 검색으로
+다시 봤다: 파일 3,357개, 키 문자열 0건, placeholder 문자열 0건.
