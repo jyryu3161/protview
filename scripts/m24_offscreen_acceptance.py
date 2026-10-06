@@ -862,6 +862,7 @@ class Runner(m18.Runner):
 
     def readme(self, ledger: dict) -> str:
         env = ledger["environment"]
+        key = env.get("keyAvailable", ((ledger.get("checks") or {}).get("keyScan") or {}).get("keyAvailable"))
         proof = (ledger.get("checks") or {}).get("fixtureProof") or {}
         calib = (ledger.get("checks") or {}).get("calibration") or {}
         count = (ledger.get("checks") or {}).get("liveCount") or {}
@@ -872,8 +873,8 @@ class Runner(m18.Runner):
                  f"- 빌드: {json.dumps(ledger.get('build'), ensure_ascii=False)}",
                  (f"- 환경: M17 venv-locked {'있음' if env.get('workerPython') else '없음'} · ligand_candidates "
                   f"{env.get('ligandAvailable')} · mutation_candidates {env.get('mutationAvailable')} · jev_choice "
-                  f"{env.get('jevAvailable')} · fixture 서버 {env.get('fixtureServer')} · 키 존재(불리언) "
-                  f"{env.get('keyAvailable')}"),
+                  f"{env.get('jevAvailable')} · fixture 서버 {env.get('fixtureServer')} · 키 존재(불리언, 증거 검색용 "
+                  f"해석기) {key}"),
                  ("- 입력: 공개 1UBQ·1MQ4(`backend/tests/fixtures/public_*.cif`, 이웃 수가 많은 Ala 아닌 잔기 22·24곳, A로만 치환한 "
                   "실제 M20 후보 집합), 공개 파생 부모 + 합성 표시 작은 block 목록의 실제 M17 후보 10개(부위 22, 고정 교체)."),
                  f"- 남은 프로세스/포트: {ledger['leftoverProcesses'] or '없음'}",
