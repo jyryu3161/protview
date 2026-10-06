@@ -1,0 +1,410 @@
+{
+  "schema": "m24_case_ledger_row@1",
+  "mode": "live",
+  "rehearsal": false,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "JL-live": "pass"
+  },
+  "runs": {
+    "L1": "run_1b47383f84ce4286a686c21d1080a99d",
+    "L2": "run_34c0b3fd12444b6fa261f34d241fa3a4"
+  },
+  "sends": [
+    {
+      "entry": "L1-ligand-5",
+      "run": "run_1b47383f84ce4286a686c21d1080a99d",
+      "kind": "ligand",
+      "aliases": 5,
+      "bodyBytes": 3539,
+      "bodySha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+      "reservation": {
+        "external_tokens": 5866,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 0,
+        "inRun": 0
+      },
+      "sendId": "730bfc3b-3a64-4ee6-b0a2-610d6dde3a05",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000087654,
+        "external_tokens": 2152,
+        "input_tokens": 2087,
+        "output_tokens": 65
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 1,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 2152,
+          "limit": 120000,
+          "remaining": 117848
+        },
+        "usd": {
+          "used": 0.00008765400000000645,
+          "limit": 2,
+          "remaining": 1.999912346
+        }
+      },
+      "preparedSha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "c01",
+        "confidence": "0.780",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "2087",
+          "output_tokens": "65",
+          "external_tokens": "2152",
+          "cost": "0.000087654"
+        },
+        "foldedBefore": true
+      },
+      "report": {
+        "handle": "obj://run_1b47383f84ce4286a686c21d1080a99d/method_report_manifest/b8533f473e6f92d862eb19ccf7fc5a4bad7e3da17d5bd8d6d37dcb7268ab631e",
+        "markdownSha256": "001be316ced44821d01e572e79ac17e4b87b7cc0077b473b67d98627bd5ab772",
+        "kind": "JEV 판정 보고서"
+      }
+    }
+  ],
+  "preChecks": {
+    "set": "ubq",
+    "kind": "mutation",
+    "refused": "후보는 20개까지 고를 수 있습니다. 더 고르려면 먼저 다른 후보의 체크를 해제하세요.",
+    "kept": 5,
+    "identity": {
+      "bodySha256": "a556e5eb22baeb788d7a1b0de9a9a552b53dd63b2989b1b8e424bb087bd4f56b",
+      "bodyBytes": 7030,
+      "aliases": 5,
+      "reservation": {
+        "external_tokens": 7611,
+        "usd": 0.1
+      }
+    },
+    "blockedOff": [
+      "consent_off"
+    ],
+    "unconfirmed": "보낼 수 없는 이유확인 체크를 켜세요: \"이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다\".",
+    "offConfirmed": "보낼 수 없는 이유과학 전송 동의가 꺼져 있음 (consent_off)",
+    "back": "보낼 수 없는 이유확인 체크를 켜세요: \"이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다\".",
+    "sendRequests": 0,
+    "dispatched": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "plan": {
+    "entries": [
+      "L1-ligand-5"
+    ],
+    "maxDispatch": 1,
+    "maxPerRun": 3,
+    "preChecks": {
+      "run": "L1",
+      "kind": "mutation",
+      "set": "ubq",
+      "keep": 5
+    },
+    "rehearsal": false
+  },
+  "fixture": null,
+  "dispatchCounts": {
+    "run_1b47383f84ce4286a686c21d1080a99d": 1,
+    "run_34c0b3fd12444b6fa261f34d241fa3a4": 0
+  },
+  "fixtureLabels": [],
+  "controls": {
+    "jev-consent": [
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "enabled": true
+      },
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "enabled": false
+      },
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "enabled": true
+      }
+    ],
+    "jev-source-mutation": [
+      {
+        "handle": "obj://run_1b47383f84ce4286a686c21d1080a99d/mutation_candidate_set/af507141fcd61722a272068ad799c240d8148d4dca7e35e02c7f130c4be4c378"
+      }
+    ],
+    "jev-candidate": [
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_c42a53803595e440"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_71188fcf0e6703c9"
+      },
+      {
+        "key": "c_21d6c6f0d07e3759"
+      }
+    ],
+    "jev-candidate-21st": [
+      {
+        "key": "20"
+      }
+    ],
+    "jev-candidate-uncheck": [
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      }
+    ],
+    "jev-build": [
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "projection": "obj://run_1b47383f84ce4286a686c21d1080a99d/jev_projection/3f88ba3c5b8608889e8c35f388c39534b55a8e30eb8137c6b2e473914a26a7a5",
+        "count": 5
+      },
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "projection": "obj://run_1b47383f84ce4286a686c21d1080a99d/jev_projection/e89e9d54ea459d7d798963d90da4fd929845cf5dce931acca82f92b1ca9bdb13",
+        "count": 5
+      }
+    ],
+    "jev-confirm": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "jev-source-ligand": [
+      {
+        "handle": "obj://run_1b47383f84ce4286a686c21d1080a99d/ligand_candidate_set/152cb3e2eaf64ee5f676b6924e2eb993c40cc48e6fb828072bf8d328ed51db6d"
+      }
+    ],
+    "jev-send": [
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "script": null
+      }
+    ],
+    "jev-send-report": [
+      {
+        "run": "run_1b47383f84ce4286a686c21d1080a99d",
+        "choice": "obj://run_1b47383f84ce4286a686c21d1080a99d/jev_choice/cc3fb4a5a013ac7cbb02707afe1e115a4b11464ac5d7fb17148e8c5b9766cd95"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_1b47383f84ce4286a686c21d1080a99d/method_report_manifest/b8533f473e6f92d862eb19ccf7fc5a4bad7e3da17d5bd8d6d37dcb7268ab631e"
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "pre-checks",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "after L1-ligand-5",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report markdown",
+      "kind": "report",
+      "found": 0
+    }
+  ],
+  "buildId": "L1WcPjrTR60b9VYSegZtb",
+  "harness": {
+    "jev-flow.cjs": "9e68cfe2292b2f4d3ec7802d24c001c704d84e44eee77e8a96d85088ebbfeed1",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 143,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/live-20261006/jev-calibrate/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 274,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m24-acceptance/live-20261006/jev-calibrate/paint-first.png",
+        "paintOrdinal": 2,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 99,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "jev-live.jsonl",
+  "startedAt": "2026-10-06T14:04:15.688Z",
+  "finishedAt": "2026-10-06T14:04:24.339Z"
+}
