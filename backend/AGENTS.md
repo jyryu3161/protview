@@ -21,7 +21,7 @@
 - 객체 저장 순서는 객체 파일 기록 → 전체 payload를 담은 `object_created` 이벤트 추가·fsync → SQLite 색인 갱신이다. 색인은 지워도 되고, `events.jsonl`에서 다시 만들 수 있어야 한다.
 - handle은 `sha256(kind, schema, canonical raw)`다. 시각, 호출 ID, 요청 UUID는 내용 해시에 넣지 않는다.
 - 과학 계산은 `Run.call` 또는 `JobQueue`로만 실행한다. 라우트 함수가 `tools/`의 계산 함수를 직접 부르면 안 된다. 읽기 라우트는 도구·작업·외부 요청을 실행하지 않는다.
-- run을 바꾸는 호출은 `execution.lock`을 잡은 상태에서 이벤트를 다시 읽고 판단한다. 취소·종료 전이는 `transitions.lock`만 쓰고, 긴 실행 잠금을 기다리지 않는다.
+- run을 바꾸는 호출은 `execution.lock`을 잡은 상태에서 이벤트를 다시 읽고 판단한다. 취소·종료 전이는 `transitions.lock`만 쓰고, 긴 실행 잠금을 기다리지 않는다. M24 과학 전송의 동의 변경(`jev_sends.set_consent`)과 결과 기록(`_finish`)도 전이 잠금만 쓴다(전송은 HTTP 동안 실행 잠금을 쥐므로 동의를 끄는 요청이 막히면 안 되고, `_finish`는 게이트가 잠금을 놓은 뒤에 돈다).
 - 비싼 계산 예약은 실제 프로세스를 띄우기 직전에 한 번만 한다. `Run.call`과 큐가 같은 시도를 이중 과금하면 안 된다. 예약 뒤의 실패·취소·시간 초과는 환불하지 않는다.
 - 작업 프로세스는 guardian의 HELLO/GO 핸드셰이크를 마친 뒤에만 과학 작업을 시작한다. 프로세스 신원은 `jobs/process_identity.py`의 `psutil_raw_start_v1` 레코드로만 판단한다. 공개 `create_time`, PID, PGID 정수만으로 신호를 보내면 안 된다.
 - 모든 HTTP 요청은 가장 바깥 미들웨어에서 Host 허용 목록(`127.0.0.1`·`localhost`·`[::1]`, 포트 선택)을 통과해야 한다. 테스트 클라이언트는 `base_url="http://127.0.0.1"`로 만든다.

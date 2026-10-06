@@ -49,3 +49,5 @@
 256 KiB를 넘는 텍스트 증거 1개(1,191,725 bytes)는 Git에 넣지 않고 `frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/export-full/m14-regression/`로 옮겼다(이 폴더 기준 상대 경로 유지). 해시는 `ARCHIVED-EVIDENCE.sha256`, 원래 줄은 `SHA256SUMS`에 남아 있다.
 
 확인: `cd frontend/tests/offscreen/artifacts/m24-acceptance/final-20261006/export-full/m14-regression && shasum -a 256 -c ../../../../../../../docs/qa/m24-jev-20261006/m14-regression/ARCHIVED-EVIDENCE.sha256`
+
+참고: 이 폴더의 `SHA256SUMS`에서 `README.md` 줄만 일치하지 않는다. 해시를 만든 뒤 이 "옮긴 큰 텍스트 증거" 절을 덧붙였기 때문이며, 절을 빼면 기록된 해시와 같다. 나머지 파일은 일치한다.

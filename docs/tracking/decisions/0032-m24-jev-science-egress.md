@@ -17,7 +17,7 @@
 - **실호출 합계 6회**(결정 0012). 2026-10-06에 모두 썼다.
 
 ## 조율 세션이 정한 것 (사용자가 최종 확인에서 바꿀 수 있음)
-- **닫힌 이름**(`backend/mw/jev_constants.py`): 도구 `build_jev_projection`(값싼 도구, 불변 객체 `jev_projection@1`), 와이어 스키마 `jev_ligand_candidates@1`·`jev_mutation_candidates@1`, 제안 `jev_choice@1`, 기록 `jev_send@1`·`jev_status@1`·`jev_preview@1`, 이벤트 `jev_science_consent_changed`·`jev_send_approved`·`jev_science_dispatch_started`·`jev_send_outcome`, 투영 입장 사유 10개, 거절 8·실패 8·차단 7·늦음 2 이유, 전송 상태 `completed`·`rejected`·`failed`(읽기 전용 파생 `in_progress`).
+- **닫힌 이름**(`backend/mw/jev_constants.py`): 도구 `build_jev_projection`(값싼 도구, 불변 객체 `jev_projection@1`), 와이어 스키마 `jev_ligand_candidates@1`·`jev_mutation_candidates@1`, 제안 `jev_choice@1`, 기록 `jev_send@1`·`jev_status@1`·`jev_preview@1`, 이벤트 `jev_science_consent_changed`·`jev_send_approved`·`jev_science_dispatch_started`·`jev_send_outcome`, 투영 입장 사유 9개(사전 검사 8 + `payload_too_large`)와 저장 형태 거절 `projection_invalid`, 거절 8·실패 8·차단 7·늦음 2 이유, 전송 상태 `completed`·`rejected`·`failed`(읽기 전용 파생 `in_progress`).
 - **고정 문장** J1–J7(제안 한계)·U1–U3(화면 안내: 재전송 응답 합치지 않음, 뷰어와 예산 공유, 서열 구간·이웃으로 단백질이 알려질 수 있음). 질문 지시문(영어, 대기열 순서 선택일 뿐 예측이 아님).
 - **상수**: 이웃 5.0 Å(중원자, M20 위치와 같은 단백질 잔기)·서열 구간 앞뒤 5, 본문 64 KiB, 응답 64 KiB, 제한 시간 15초, HTTP 1회·재시도 없음.
 - **투영을 값싼 도구가 저장하는 불변 객체로**: 이웃 잔기·구간·거리가 좌표에서 오므로 프로젝트 규칙(과학 계산은 `Run.call`·`JobQueue`)대로 만들고, 미리보기·승인·전송은 그 저장 객체만 가리킨다.
@@ -31,6 +31,6 @@
 - 착수 확인(`docs/qa/m24-jev-20261006/preflight.txt`): 와이어 허용 목록의 모든 항목이 저장 객체에 있고(일부는 파생: `generation_kinds`·`sources` 이름), 20개 후보 본문 최대 29,828 B로 64 KiB 안, 예약·정산·재생이 `expensive_calls` 축 없이 동작, 취소된 run에서도 감사·결과 이벤트와 제안 객체 저장 가능, 전송이 HTTP 동안 run 실행 잠금을 잡아 같은 run의 다른 변경 요청은 503 busy.
 - 독립 검토: 명세 점검 두 차례(지적 7건 → 사용자 질문, 새 지적 3건 → 반영), 실행 가능성 검토(막는 지적 6건 → 문서 반영), T2·T4 명세 검토(T4: 게이트 승인 필수화·순서 테스트 보강), 코드 검토 둘(백엔드 approved, 프런트 1건 → 수정).
 - 실호출 6회가 모두 `completed`(응답 모델 `typesafe/jev-1.13-20260917`, 외부 요청 중지·예약 초과 없음). 응답에 `confidence`와 후보별 `probabilities`가 있었다. 본문 바이트/입력 토큰은 1.63–1.79. **6회 모두 목록의 첫 후보(`c01`·`m01`)를 골랐다**(같은 본문 재전송 포함). 기준 문구가 없는 고정 질문의 선택이 목록 순서의 영향을 받을 수 있다는 J4의 근거이며, 6건으로 일반화하지 않는다. 목표를 담는 질문은 M25의 몫이다.
-- 변경하지 않은 파일(해시 대상): M17·M18·M19·M20·M21·M22·M23 코드·상수·결과. 덧붙인 기존 코드는 등록 파일(`config/tools.yaml`·`workspace.py`·`app.py`)·`gate.py`의 위임 메서드 하나·`core/events.py` 이벤트 종류 넷·화면 연결(`page.tsx`·`WorkspaceTabs.tsx`)뿐이다. 기존 테스트는 도구·capability 이름 집합을 하드코딩한 곳과 JSON 헤더가 없던 원시 본문 거절 테스트만 최소로 고쳤다.
-- 하지 않게 된 것: 예·아니오·점수형·계속/멈춤, 목표·기준 입력, 좌표·전체 서열·번호 대응 전송, 도킹·GA 점수 표 투영, 선택 결과의 자동 사용, 응답 합치기·다수결, 비싼 계산 단위 사용, 새 한도 증액 경로.
+- 변경하지 않은 파일(해시 대상): M17·M18·M19·M20·M21·M22·M23 코드·상수·결과. 덧붙인 기존 코드는 등록 파일(`config/tools.yaml`·`workspace.py`·`app.py`)·`gate.py`의 위임 메서드 하나·`core/events.py` 이벤트 종류 넷·화면 연결(`page.tsx`·`WorkspaceTabs.tsx`)뿐이다. 덧붙인 기존 프런트·설정은 `lib/api.ts`·`contracts.ts`·`report-library.ts`·`design/components.css`·`package.json` 스크립트·`.codex/hooks/stop.py`·`docs/standards.md` 목록이다. 기존 테스트는 도구·capability 이름 집합을 하드코딩한 네 파일(`test_api.py`·`test_ligand_api.py`·`test_reference_site_annotation.py`·`test_residue_numbering.py`)과 `report-library.test.cjs`의 단언 한 줄만 최소로 고쳤다(M24 새 JEV 테스트의 원시 본문 거절 테스트는 JSON 헤더를 붙인다).
+- 이 단계에서 하지 않은 것(M24 범위 밖): 예·아니오·점수형·계속/멈춤, 목표·기준 입력, 좌표·전체 서열·번호 대응 전송, 도킹·GA 점수 표 투영, 선택 결과의 자동 사용, 응답 합치기·다수결, 비싼 계산 단위 사용, 새 한도 증액 경로(목표·점수 표·자동 사용은 M25 이후 사용자와 정한다).
 - 규칙 전체: `docs/business-rules.md` "JEV 과학 전송 (M24)". API: `docs/contracts.md` "M24 JEV 과학 전송". 보안: `docs/security.md`. 완료 기록: `docs/tracking/m24-acceptance.md`.

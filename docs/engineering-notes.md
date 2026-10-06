@@ -476,6 +476,11 @@
 - **원인**: 기록은 이벤트만으로 만든다. 승인 이벤트는 있고 결과 이벤트·dispatch 이벤트가 없으며 진행 중도 아니면 닫힌 이유 집합에서 `delivery_unknown`밖에 없다.
 - **대응**: 실제로 보냈는지는 감사로 판단한다: `prepared` 저장 실패는 게이트가 음수 정산 뒤 `dispatch_skipped`(`reason_code: "prepared_not_recorded"`, `transport_invoked=false`)를 쓰려 하고(디스크가 그것도 못 쓰면 미정산 예약이 남아 재시작 때 `usage_unknown` 멈춤), 승인 대조 실패는 감사가 없다. 두 경우 모두 `jev_science_dispatch_started`가 없어 전송 상한을 쓰지 않는다. 응답을 받은 뒤 `_finish`가 실패하면(`response_received`는 있음) `outcome_not_recorded`다. 닫힌 이유 집합을 넓히려면 사용자 결정이 필요하다.
 
+### JEV POST는 `application/json`이 아니면 본문을 읽기 전에 415다 (M24)
+- **증상**: `Content-Type`이 없거나 `text/plain`·폼·multipart인 `POST /runs/{id}/jev/consent`·`/jev/preview`·`/jev/sends`가 415 `unsupported_media_type`을 받고 어떤 이벤트·상태도 바뀌지 않는다. 같은 본문을 FastAPI 본문 모델 라우트(예: `/viewer/online`)나 M11–M23 화학·도킹·GA 라우트에 보내면 받아 준다.
+- **원인**: 다른 사이트 페이지의 단순 POST(사전 요청 없음)가 과학 데이터 전송 동의·전송 라우트를 막지 못하는 성질을 막으려고 `_jev_request`(`api/app.py`)가 쿼리 검사 다음, 본문을 읽기 전에 매개변수(`; charset=utf-8`)를 허용하는 대소문자 무시 `application/json`만 받는다.
+- **대응**: 테스트·하네스·스크립트 클라이언트는 `content-type: application/json`을 붙인다(프런트 `jsonPost`는 이미 붙인다). 원시 본문으로 JSON 형식·크기 거절(422·413)을 시험하는 테스트도 이 헤더가 있어야 거기까지 간다. 도구 호출(`POST /runs/{id}/commands`)은 이 검사를 받지 않는다. 다른 라우트도 같은 검사가 필요해지면 공통 요청 헬퍼로 합친다(`docs/tracking/findings.md`).
+
 ### 서열 구간 한 글자는 M20 이름 규칙을 따르고, HETATM 변형 잔기는 구간에서 빠진다 (M24)
 - 구간 글자는 M20 위치의 `one_letter` 규칙(표준 20종 + 이름 대응 10개: HID·HIE·HIP·HSD·HSE·HSP → H, CYX → C, ASH → D, GLH → E, LYN → K)이고 그 밖의 이름은 `X`다. 대응 이름을 `X`로 두면 같은 잔기의 위치 `one_letter`와 구간 글자가 어긋난다.
 - 단백질 잔기는 M20 위치 정의와 같은 ATOM 레코드(`het_flag == "A"`, 물 아님)다. MSE처럼 HETATM으로 기록된 변형 잔기는 구간 글자·이웃에 들어가지 않고(`X`로도 나오지 않음), 그 자리를 지나는 구간은 `seq_auth`가 건너뛰어 `contiguous: false`다.
@@ -495,7 +500,7 @@
 
 ### 과학 본문은 바이트당 토큰이 뷰어 본문보다 많다 (M24)
 - M24 실호출 6회(2026-10-06, 응답 모델 모두 `typesafe/jev-1.13-20260917`, 모두 `completed`)의 본문 바이트/입력 토큰: 리간드 1.63–1.70(5개 3,539 B → 2,087 토큰, 10개 5,607 B → 3,433 토큰), 변이 1.71–1.79(1UBQ 5개 7,030 B → 3,921, 1UBQ 20개 25,428 B → 14,619, 1MQ4 20개 29,151 B → 17,011 두 번). M8 뷰어형 JSON은 약 2.24였다. 출력 65–200 토큰, 비용 호출당 약 0.00009–0.00071 USD였다.
-- 예약식 `min(50000, 4096 + ceil(body_bytes × 2 / 3))`은 1.5 B/토큰을 가정해 모든 실측 사용량보다 컸다(예: 3,539 B 본문 예약 5,866 대 사용 2,152). 식은 조정 가능한 기본값이므로 바꿀 때는 이 실측과 대조한다. 예약이 사용량보다 작으면 기존 규칙대로 그 run의 모든 온라인 전송이 `budget_exhausted`로 멈춘다.
+- 예약식 `min(50000, 4096 + ceil(body_bytes × 2 / 3))`은 1.5 B/토큰을 가정해 모든 실측 사용량보다 컸다(예: 3,539 B 본문 예약 6,456 대 사용 2,152. 같은 본문의 첫 식 `4096 + ceil(body_bytes / 2)`는 5,866이었다). 식은 조정 가능한 기본값이므로 바꿀 때는 이 실측과 대조한다. 예약이 사용량보다 작으면 기존 규칙대로 그 run의 모든 온라인 전송이 `budget_exhausted`로 멈춘다.
 - 여섯 응답 모두 `confidence`와 보낸 후보 수만큼의 `probabilities`를 담았고, 모두 첫 별칭(`c01`·`m01`)을 골랐다(같은 본문 재전송 포함, J4 참고).
 
 ## 동작 원리
