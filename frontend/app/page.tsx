@@ -34,7 +34,7 @@ import { featureGates, overlayContextDecision, pocketRequestAccepted, type Pocke
   type PocketSourceKind } from "@/lib/pockets";
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
-import { globalScienceBadge, scienceMarkFromStatus, type ScienceConsentMark } from "@/lib/jev";
+import { globalScienceBadge, scienceMarkFromStatus, scienceMarkGate, type ScienceConsentMark } from "@/lib/jev";
 import { DEFAULT_WORKSPACE_TAB, type WorkspaceTabId } from "@/lib/workspace-tabs";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
@@ -133,6 +133,8 @@ export default function WorkspacePage() {
   const [reportsReloadToken, setReportsReloadToken] = useState(0);
   /** M24: the last known science consent of a run (the global "과학 전송 허용" mark shows it for the current run only). */
   const [scienceMark, setScienceMark] = useState<ScienceConsentMark | null>(null);
+  /** M24: request order of that mark (a JEV-area report or a later read supersedes a page read still in flight). */
+  const scienceMarkOrder = useRef(scienceMarkGate());
   /** M19: a batch row's "상세 열기" hands its per-row result handle to the M18 docking area (same run only). */
   const [dockingOpenRequest, setDockingOpenRequest] = useState<{ runId: string; handle: string; seq: number } | null>(null);
   const [modelStartRequest, setModelStartRequest] = useState<ModelStartRequest | null>(null);
@@ -325,12 +327,15 @@ export default function WorkspacePage() {
   }, []);
 
   // M24 global mark: one science-consent status read when the run changes (no polling); the JEV area reports every
-  // later status it reads or sets. Another run's answer is dropped.
+  // later status it reads or sets. Another run's answer is dropped, and so is an answer that a later read or a
+  // JEV-area report (e.g. a consent change) overtook.
   useEffect(() => {
     if (!runId) return;
     const controller = new AbortController();
+    const ticket = scienceMarkOrder.current.begin();
     api.jevStatus(runId, controller.signal).then(status => {
-      if (hostRequestAccepted({ runId }, analysisHostRef.current)) setScienceMark(scienceMarkFromStatus(runId, status));
+      if (scienceMarkOrder.current.current(ticket) && hostRequestAccepted({ runId }, analysisHostRef.current))
+        setScienceMark(scienceMarkFromStatus(runId, status));
     }).catch(() => undefined);
     return () => controller.abort();
   }, [runId]);
@@ -2063,8 +2068,8 @@ export default function WorkspacePage() {
       capability={capabilities ? capabilities.methods?.jev_choice ?? null : undefined}
       onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
         setReportsReloadToken(token => token + 1); }}
-      onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current))
-        setScienceMark(scienceMarkFromStatus(statusRunId, status)); }} />}
+      onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current)) {
+        scienceMarkOrder.current.report(); setScienceMark(scienceMarkFromStatus(statusRunId, status)); } }} />}
     protein={<>
       <MutationPanel key={`mutation-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.mutation_candidates ?? null : undefined}

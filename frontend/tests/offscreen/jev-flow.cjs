@@ -25,7 +25,9 @@
 //            events of every run in --runs-dir must stay below the plan's maxDispatch and below maxPerRun in the run.
 //            Against the real backend this is the only mode that sends to JEV (scripts/m24_offscreen_acceptance.py
 //            --phase calibrate|live); with --control it is the rehearsal of that plan against the fixture server.
-//            A send that is not completed, or a stopped egress, ends the plan (no retry, no new run).
+//            A plan with `preChecks` (the calibrate plan) first checks, with no send, consent off → consent_off and a
+//            closed send button, the refused 21st candidate, and the closed button before the confirmation.
+//            A send that is not completed, or a stopped egress, ends the plan (no retry, no new run); its row is kept.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -59,8 +61,11 @@ const U = {
   U3: "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다.",
 };
 const FIXED_LINES = [...Object.values(J), ...Object.values(U)];
-// Forbidden expressions outside the fixed sentences (Korean words and English words on word boundaries).
-const FORBIDDEN = /순위|추천|최고|최적|개선|점수|친화도|안정성|ΔΔG|\bwinner\b|\bbest\b|\brank(?:s|ed|ing)?\b|\brecommend\w*/gi;
+// Forbidden expressions (spec 2 and 8, plus 최고, 가장 높/낮 and highest; "비활성" is not "활성"): the same pattern and
+// line rule as the product's jevForbiddenWords (frontend/src/lib/jev.ts JEV_FORBIDDEN) and the acceptance runner
+// (scripts/m24_offscreen_acceptance.py FORBIDDEN); frontend/tests/jev.test.cjs and scripts/test_m24_offscreen_acceptance.py
+// compare the three. A line exactly equal to a fixed sentence J1–J7 or note U1–U3 is exempt; nothing else is.
+const FORBIDDEN = /순위|추천|최고|최적|개선|예측|유망|점수|에너지|(?<!비)활성|친화|안정성|ΔΔG|좋은|나쁜|안전|가장 높|가장 낮|winner|\bbest|\brank|recommend|highest/gi;
 const LATE_TEXT = { consent_off: "동의 끈 뒤 도착", run_cancelled: "run 취소 뒤 도착" };
 const UNKNOWN_USAGE_TEXT = "알 수 없음";
 const NOT_REPORTED_TEXT = "보고 없음";
@@ -123,12 +128,11 @@ function halfUp(value, places) {
 function expectedLimitations(kind, late) {
   return [J.J1, J.J2, J.J3, J.J4, kind === "ligand" ? J.J5 : J.J6, ...(late ? [J.J7] : [])];
 }
-/** Forbidden expressions in text, line by line, with every fixed sentence removed first. */
+/** Forbidden expressions in text, line by line; a line exactly equal to a fixed sentence or note is exempt. */
 function forbiddenWords(text) {
   const found = [];
-  for (const raw of String(text ?? "").split("\n")) {
-    let line = raw;
-    for (const fixed of FIXED_LINES) line = line.split(fixed).join(" ");
+  for (const line of String(text ?? "").split("\n")) {
+    if (FIXED_LINES.includes(line)) continue;
     for (const match of line.matchAll(FORBIDDEN)) found.push(match[0]);
   }
   return found;
@@ -474,8 +478,10 @@ async function sendState(page) {
     confirmed: await jt(page, "jev-confirm").isChecked(),
     blocked: (await jt(page, "jev-send-blocked").count()) ? clean(await jt(page, "jev-send-blocked").textContent()) : "" };
 }
-/** Confirmation, then 이 내용을 JEV로 보냅니다 (one human click); `during` runs while the request is in flight. */
-async function confirmAndSend(page, run, { control: controlDir = null, script = null, during = null } = {}, evidence) {
+/** Confirmation, then 이 내용을 JEV로 보냅니다 (one human click); `during` runs while the request is in flight and
+ * `onRecord` gets the send record as soon as it arrives (before anything is waited for on the screen). */
+async function confirmAndSend(page, run, { control: controlDir = null, script = null, during = null, onRecord = null } = {},
+                              evidence) {
   if (controlDir) writeScript(controlDir, script);
   if (!(await jt(page, "jev-confirm").isChecked())) await jt(page, "jev-confirm").check();
   await waitFor(page, async () => await jt(page, "jev-send").isEnabled() ? true : null, "send enabled", 15000);
@@ -487,6 +493,7 @@ async function confirmAndSend(page, run, { control: controlDir = null, script = 
   const response = await posted;
   assert.equal(response.status(), 200, await response.text());
   const record = await response.json();
+  if (onRecord) onRecord(record);
   await jev(page).locator(`[data-testid="jev-send-record"]${attr("data-send-id", record.send_id)}`).waitFor({ timeout: 30000 });
   await waitFor(page, async () => {
     const card = jev(page).locator(`[data-testid="jev-result-card"]${attr("data-send-id", record.send_id)}`);
@@ -569,21 +576,32 @@ function cardMatches(shown, record, choice, projection) {
   assert.equal(shown.late === null, !late);
   if (late) assert.ok(shown.late.includes(LATE_TEXT[choice.arrival.late_reason]), shown.late);
   assert.deepEqual(shown.comparison, { graphics: 0, ariaSort: 0, styled: 0, attrs: 0 });
+  assert.equal(shown.foldedBefore, true, "the per-candidate values were not folded when the card appeared");
   return { alias: shown.alias, confidence: shown.confidence, reported: shown.reported, late, usage: shown.usage,
     foldedBefore: shown.foldedBefore };
 }
-/** Failed or refused: the reason only (no card, no number, no candidate). */
+/** Failed or refused, observed only (read-only; reasonOnlyMatches judges it). */
 async function reasonOnly(page, record) {
   const reason = jev(page).locator(`[data-testid="jev-result-reason"]${attr("data-send-id", record.send_id)}`);
   const result = jarea(page, "result");
-  const value = { status: await reason.getAttribute("data-status"), code: await reason.getAttribute("data-reason-code"),
+  return { status: await reason.getAttribute("data-status"), code: await reason.getAttribute("data-reason-code"),
     text: clean(await reason.textContent()), resultText: clean(await result.innerText()),
-    cards: await jt(page, "jev-result-card").count() };
+    cards: await jt(page, "jev-result-card").count(), probabilities: await jt(page, "jev-result-probabilities").count(),
+    aliasItems: await result.locator("[data-alias], [data-chosen-alias]").count() };
+}
+/** The reason only: status and code of the record, "(code)" in the reason line, no result card, no candidate value
+ * and no number in the result area outside that reason line (the product's fixed label may hold one, e.g. 15초). */
+function reasonOnlyMatches(value, record) {
   assert.equal(value.status, record.status);
   assert.equal(value.code, record.reason_code);
   assert.ok(value.text.includes(`(${record.reason_code})`), value.text);
   assert.equal(value.cards, 0);
-  assert.ok(!/\d/.test(value.resultText), `a number in the result area: ${value.resultText}`);
+  assert.equal(value.probabilities, 0);
+  assert.equal(value.aliasItems, 0);
+  const outside = value.resultText.split(value.text).join(" ");
+  assert.ok(value.resultText.includes(value.text), `the reason line is not in the result area: ${value.resultText}`);
+  assert.ok(!/\d/.test(outside), `a number in the result area outside the reason line: ${outside}`);
+  assert.ok(!/\b[cm]\d{2}\b/.test(value.resultText), `a candidate alias in the result area: ${value.resultText}`);
   return value;
 }
 /** The audit `prepared` body of a send = the preview body; the payload hash = the preview hash. */
@@ -722,9 +740,11 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
         assert.ok(value.reads.some(item => item.endsWith(route)), `no GET ${route}: ${value.reads}`);
       assert.equal(value.consent, "off");
       assert.equal(value.consentChecked, false);
-      assert.equal(value.notice.length, 6);
       const notice = value.notice.join("\n");
-      for (const word of ["OpenRouter", "data_collection=deny", "zdr", "10"]) assert.ok(notice.includes(word), word);
+      // destination, provider policy, the cap, per-send approval of the exact body, and what each body carries (spec 3)
+      for (const word of ["OpenRouter", "data_collection=deny", "zdr", "10", "정확한 본문", "리간드 후보 본문", "정규 SMILES",
+        "stereo_flag", "PAINS", "변이 후보 본문", "서열 구간", "이웃 잔기", "거리", "보내지 않는 것", "API 키"])
+        assert.ok(notice.includes(word), word);
       assert.equal(value.u2, U.U2);
       assert.equal(value.u3, U.U3);
       assert.deepEqual([value.cap.used, value.cap.remaining], ["0", String(SEND_CAP)]);
@@ -1006,6 +1026,7 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
     }, async value => {
       assert.deepEqual([value.sent.record.status, value.sent.record.reason_code], ["failed", "response_invalid"]);
       assert.equal(value.sent.record.choice_handle, null);
+      reasonOnlyMatches(value.reason, value.sent.record);
       preparedMatches(runsDir, A.run, value.sent.record.send_id, ligandBuilt.shown.body, ligandBuilt.made.preview.body_sha256);
       assert.equal(fixtureCalls(controlDir).at(-1).bodySha256, ligandBuilt.made.preview.body_sha256);
       return value.reason;
@@ -1017,6 +1038,7 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
     }, async value => {
       assert.deepEqual([value.sent.record.status, value.sent.record.reason_code], ["failed", "model_mismatch"]);
       assert.equal(value.sent.record.served_model, null);
+      reasonOnlyMatches(value.reason, value.sent.record);
       return value.reason;
     });
     await rec_.step("F15-late", ["J-late"], "Send (fixture slow); while the reply is held, click the consent switch off; then " +
@@ -1162,6 +1184,7 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
       assert.deepEqual(value.wording, []);
       assert.deepEqual([value.sent.record.status, value.sent.record.reason_code], ["failed", "provider_http_error"]);
       assert.equal(value.sent.record.choice_handle, null);
+      reasonOnlyMatches(value.reason, value.sent.record);
       return { reason: value.reason, egressStop: value.status.egress_stop_reason };
     });
   });
@@ -1177,6 +1200,105 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
 }
 
 // ------------------------------------------------------------------ mode live (the plan; also the fixture rehearsal)
+/** Choose `run` in the rail, record the other tabs before any JEV action there, then open the knowledge tab. */
+async function enterRun(page, run, signatures, log) {
+  await chooseRun(page, run);
+  signatures[run] = { protein: await tabSignature(page, "단백질 공학", "protein", log),
+    ligand: await tabSignature(page, "리간드 설계·탐색", "ligand", log) };
+  await openKnowledge(page);
+}
+
+/** The plan's pre-checks (spec 11 "실서버로" screen cases that need no call): real input on the real screen before
+ * the first send of the plan; nothing is sent. Observation only; preChecksMatch judges it. */
+async function preChecks(page, runsDir, run, set, spec, evidence, log) {
+  const since = Date.now();
+  const dispatchedBefore = dispatchCounts(runsDir)[run] ?? 0;
+  await setConsent(page, run, true, evidence);
+  await chooseSource(page, spec.kind, set.handle, set.candidates, evidence);
+  await uncheckAll(page);
+  const rows = await rowKeys(page);
+  assert.ok(rows.length > MAX_CANDIDATES, `the ${spec.set} set needs more than ${MAX_CANDIDATES} candidate rows`);
+  const want = rows.slice(0, MAX_CANDIDATES).map(row => row.key);
+  await checkKeys(page, want, evidence);
+  const full = await jt(page, "jev-selection-full").count();
+  const extra = rows[MAX_CANDIDATES].key;
+  await candidateBox(page, extra).click();
+  control(evidence, "jev-candidate-21st", { key: extra });
+  await jt(page, "jev-selection-refused").waitFor({ timeout: 10000 });
+  const capped = await rowKeys(page);
+  const cap = { full, refused: clean(await jt(page, "jev-selection-refused").textContent()), count: await selectedCount(page),
+    extraRow: capped.find(row => row.key === extra), checked: capped.filter(row => row.checked).map(row => row.key) };
+  for (const key of want.slice(spec.keep)) {
+    await candidateBox(page, key).uncheck();
+    control(evidence, "jev-candidate-uncheck", { key });
+  }
+  const reduced = { count: await selectedCount(page),
+    checked: (await rowKeys(page)).filter(row => row.checked).map(row => row.key) };
+  const built = await build(page, run, evidence);
+  const shownOn = await previewWhen(page, built.handle, item => item.blocked.length === 0, "preview without refusals");
+  const stored = storedObject(runsDir, run, built.handle);
+  const unconfirmed = await sendState(page);
+  await setConsent(page, run, false, evidence);
+  const shownOff = await previewWhen(page, built.handle, item => item.blocked.length > 0, "preview with consent_off");
+  const lineOff = await waitFor(page, async () => { const line = await globalLine(page); return line.badge ? null : line; },
+    "global mark gone", 15000);
+  await jt(page, "jev-confirm").check();
+  control(evidence, "jev-confirm", { checked: true });
+  const offConfirmed = await sendState(page);
+  await jt(page, "jev-confirm").uncheck();
+  control(evidence, "jev-confirm", { checked: false });
+  await setConsent(page, run, true, evidence);
+  const shownBack = await previewWhen(page, built.handle, item => item.blocked.length === 0, "preview without refusals again");
+  const lineOn = await waitFor(page, async () => { const line = await globalLine(page); return line.badge ? line : null; },
+    "global mark back", 15000);
+  return { want, extra, cap, reduced, built, shownOn, stored, unconfirmed, shownOff, lineOff, offConfirmed, shownBack,
+    lineOn, back: await sendState(page), wording: await wordingCheck(page, "pre-checks", evidence),
+    sendPosts: posts(log, since).filter(item => item.endsWith("/jev/sends")),
+    dispatched: { before: dispatchedBefore, after: dispatchCounts(runsDir)[run] ?? 0 } };
+}
+function preChecksMatch(value, spec) {
+  // the 21st candidate: refused with its reason, 20 stay checked; then reduced to `keep`
+  assert.equal(value.cap.full, 1);
+  assert.equal(value.cap.count, MAX_CANDIDATES);
+  assert.deepEqual(value.cap.checked, value.want);
+  assert.equal(value.cap.extraRow.checked, false);
+  assert.ok(value.cap.refused.includes(`${MAX_CANDIDATES}개`), value.cap.refused);
+  assert.equal(value.cap.extraRow.blocked, value.cap.refused);
+  const kept = value.want.slice(0, spec.keep);
+  assert.equal(value.reduced.count, spec.keep);
+  assert.deepEqual(value.reduced.checked, kept);
+  // the body of the kept candidates: preview identity; no refusal while consent is on
+  const identity = previewIdentity(value.shownOn, value.built, value.stored);
+  assert.deepEqual(value.built.request.args.candidates, kept.map(key => spec.kind === "mutation" ? Number(key) : key));
+  assert.deepEqual(value.shownOn.blocked, []);
+  // without the confirmation the send button is closed with that reason
+  assert.equal(value.unconfirmed.confirmed, false);
+  assert.equal(value.unconfirmed.enabled, false);
+  assert.ok(value.unconfirmed.blocked.includes("확인 체크"), value.unconfirmed.blocked);
+  // consent off: consent_off in the preview, the global mark gone, the button closed even with the confirmation
+  assert.deepEqual(value.shownOff.blocked.map(item => item.code), ["consent_off"]);
+  assert.ok(value.shownOff.blocked[0].text.includes("(consent_off)"), value.shownOff.blocked[0].text);
+  assert.equal(value.shownOff.blockedAttr, "true");
+  assert.equal(value.lineOff.badge, null);
+  assert.equal(value.offConfirmed.confirmed, true);
+  assert.equal(value.offConfirmed.enabled, false);
+  assert.ok(value.offConfirmed.blocked.includes("(consent_off)"), value.offConfirmed.blocked);
+  // consent on again: no refusal, the mark back, the button closed for the (unchecked) confirmation only
+  assert.deepEqual(value.shownBack.blocked, []);
+  assert.equal(value.lineOn.badge.text, "과학 전송 허용");
+  assert.equal(value.back.confirmed, false);
+  assert.equal(value.back.enabled, false);
+  assert.ok(value.back.blocked.includes("확인 체크") && !value.back.blocked.includes("(consent_off)"), value.back.blocked);
+  assert.deepEqual(value.wording, []);
+  // nothing was sent
+  assert.deepEqual(value.sendPosts, [], "a send request during the pre-checks");
+  assert.equal(value.dispatched.after, value.dispatched.before, "a dispatch event during the pre-checks");
+  return { set: spec.set, kind: spec.kind, refused: value.cap.refused, kept: spec.keep, identity,
+    blockedOff: value.shownOff.blocked.map(item => item.code), unconfirmed: value.unconfirmed.blocked,
+    offConfirmed: value.offConfirmed.blocked, back: value.back.blocked, sendRequests: value.sendPosts.length,
+    dispatched: value.dispatched };
+}
+
 async function modeLive(session, input, setup, rec_, evidence, log) {
   const { page } = session;
   const runsDir = input["runs-dir"];
@@ -1190,8 +1312,11 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
   }
   assert.ok(Number.isInteger(plan.maxDispatch) && plan.maxDispatch >= 1, "plan.maxDispatch");
   assert.ok(Number.isInteger(plan.maxPerRun) && plan.maxPerRun >= 1 && plan.maxPerRun <= 3, "plan.maxPerRun");
+  const checks = plan.preChecks ?? null;
+  assert.ok(checks === null || (setup.runs[checks.run]?.sets?.[checks.set] && ["ligand", "mutation"].includes(checks.kind) &&
+    Number.isInteger(checks.keep) && checks.keep >= 1 && checks.keep < MAX_CANDIDATES), "plan.preChecks");
   evidence.plan = { entries: plan.entries.map(item => item.id), maxDispatch: plan.maxDispatch, maxPerRun: plan.maxPerRun,
-    rehearsal };
+    preChecks: checks, rehearsal };
   evidence.runs = Object.fromEntries(Object.entries(setup.runs).map(([key, value]) => [key, value.run]));
   await waitForBoot(page);
   const caseId = rehearsal ? "J-live-rehearsal" : "JL-live";
@@ -1199,6 +1324,23 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
   const signatures = {};
   let current = null;
   let stop = null;
+  if (checks !== null) {
+    const run = setup.runs[checks.run].run;
+    const done = await rec_.part("pre-checks", [caseId], () => rec_.step("P-pre-checks", [caseId], `Before the first send ` +
+      `(run ${checks.run}, ${checks.kind} set ${checks.set}; nothing is sent): consent on; 20 candidates checked and the ` +
+      `21st click refused (unchecked, the reason shown, 20 kept), then ${checks.keep} kept; 보낼 내용 만들기 and the preview ` +
+      "identity; without the confirmation the send button is closed with that reason; consent off: consent_off in the " +
+      "preview, the global mark gone and the button closed even with the confirmation checked; confirmation unchecked " +
+      "and consent on again: no refusal, the mark back, the button closed for the confirmation only; no send request " +
+      "and no dispatch event", async () => {
+      if (current !== run) { await enterRun(page, run, signatures, log); current = run; }
+      return preChecks(page, runsDir, run, setup.runs[checks.run].sets[checks.set], checks, evidence, log);
+    }, async value => {
+      evidence.preChecks = preChecksMatch(value, checks);
+      return evidence.preChecks;
+    }));
+    if (done === null) stop = "the pre-checks failed (nothing sent)";
+  }
   for (const entry of plan.entries) {
     if (stop) { evidence.sends.push({ entry: entry.id, skipped: stop }); continue; }
     const runInfo = setup.runs[entry.run];
@@ -1206,14 +1348,9 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
     const done = await rec_.part(`send-${entry.id}`, [caseId], () => rec_.step(`P-${entry.id}`, [caseId], `Plan entry ` +
       `${entry.id}: run ${entry.run}, ${entry.resend ? `same body as ${entry.resend}` : `${entry.kind} set ${entry.set}, ` +
       `first ${entry.pick.first} candidates`}; consent on, 보낼 내용 만들기, preview identity, confirmation, one send` +
-      `${rehearsal ? " (fixture good)" : ""}; the result shown as stored`, async () => {
-      if (current !== run) {
-        await chooseRun(page, run);
-        signatures[run] = { protein: await tabSignature(page, "단백질 공학", "protein", log),
-          ligand: await tabSignature(page, "리간드 설계·탐색", "ligand", log) };
-        await openKnowledge(page);
-        current = run;
-      }
+      `${rehearsal ? " (fixture good)" : ""}; the result shown as stored (a card with its per-candidate values folded at ` +
+      "first, or the reason only); the send row is recorded as soon as the record arrives", async () => {
+      if (current !== run) { await enterRun(page, run, signatures, log); current = run; }
       await setConsent(page, run, true, evidence);
       let made;
       if (entry.resend) {
@@ -1239,13 +1376,20 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
       const total = Object.values(counts).reduce((sum, item) => sum + item, 0);
       if (total >= plan.maxDispatch || (counts[run] ?? 0) >= plan.maxPerRun)
         return { entry: entry.id, run, guard: { total, inRun: counts[run] ?? 0 }, identity };
-      const sent = await confirmAndSend(page, run, rehearsal ? { control: controlDir, script: "good" } : {}, evidence);
+      const row = { entry: entry.id, run, kind: stored.kind, aliases: identity.aliases, bodyBytes: identity.bodyBytes,
+        bodySha256: identity.bodySha256, reservation: identity.reservation, dispatchedBefore: { total, inRun: counts[run] ?? 0 } };
+      const sent = await confirmAndSend(page, run, { ...(rehearsal ? { control: controlDir, script: "good" } : {}),
+        onRecord: record => {
+          // kept at once: a later failed wait or check still leaves this send and its reason code in the evidence
+          Object.assign(row, { sendId: record.send_id, status: record.status, reasonCode: record.reason_code,
+            servedModel: record.served_model, usage: record.usage, late: record.late });
+          evidence.sends.push(row);
+        } }, evidence);
       const status = await readApi(page, `/runs/${run}/jev/status`);
-      const value = { entry: entry.id, run, sent, identity, body: shown.body, statusUsed: status.used,
-        egressStop: status.egress_stop_reason, budget: status.budget, kind: stored.kind, stored,
-        dispatchedBefore: { total, inRun: counts[run] ?? 0 } };
+      Object.assign(row, { egressStop: status.egress_stop_reason, statusUsed: status.used, budgetAfter: status.budget });
+      const value = { entry: entry.id, run, sent, identity, body: shown.body, stored, row };
       if (sent.record.status === "completed") value.shown = await readCard(page, sent.record.send_id);
-      else value.reason = await reasonOnly(page, sent.record);
+      else value.reason = row.reason = await reasonOnly(page, sent.record);
       if (entry.report && sent.record.status === "completed")
         value.report = await makeReport(page, run, sent.record.choice_handle, evidence,
           jev(page).locator(`[data-testid="jev-result-report"]${attr("data-choice-handle", sent.record.choice_handle)}`));
@@ -1255,13 +1399,9 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
       if (value.blocked) throw new Error(`the server refuses before the send: ${value.blocked.join(", ")}`);
       if (value.guard) throw new Error(`dispatch guard: ${JSON.stringify(value.guard)} (no send)`);
       const record = value.sent.record;
-      const prepared = record.status === "rejected" ? { preparedSha256: null }
-        : preparedMatches(runsDir, value.run, record.send_id, value.body, value.identity.bodySha256);
-      const row = { entry: value.entry, run: value.run, sendId: record.send_id, status: record.status,
-        reasonCode: record.reason_code, servedModel: record.served_model, usage: record.usage, late: record.late,
-        bodyBytes: value.identity.bodyBytes, bodySha256: value.identity.bodySha256, reservation: value.identity.reservation,
-        kind: value.kind, aliases: value.identity.aliases, egressStop: value.egressStop, preparedSha256: prepared.preparedSha256,
-        dispatchedBefore: value.dispatchedBefore, statusUsed: value.statusUsed, budgetAfter: value.budget };
+      const row = value.row;
+      row.preparedSha256 = record.status === "rejected" ? null
+        : preparedMatches(runsDir, value.run, record.send_id, value.body, value.identity.bodySha256).preparedSha256;
       if (rehearsal) {
         const call = fixtureCalls(controlDir).at(-1);
         assert.equal(call.bodySha256, value.identity.bodySha256);
@@ -1269,18 +1409,18 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
       }
       if (value.shown) {
         const choice = storedObject(runsDir, value.run, record.choice_handle);
-        row.card = cardMatches(value.shown, record, choice, value.stored);
         row.responseShape = { confidence: choice.answer.confidence !== null,
           probabilities: choice.answer.probabilities !== null,
           probabilityCount: choice.answer.probabilities === null ? 0 : Object.keys(choice.answer.probabilities).length };
+        row.card = cardMatches(value.shown, record, choice, value.stored);
+        assert.equal(row.card.foldedBefore, true);
         if (value.report) row.report = reportMatches(value.report, choice, record.choice_handle, evidence);
       } else {
-        row.reason = value.reason;
+        reasonOnlyMatches(value.reason, record);
       }
       assert.deepEqual(value.wording, []);
-      evidence.sends.push(row);
       if (record.status !== "completed") throw new Error(`send ${entry.id} ended ${record.status}/${record.reason_code}`);
-      if (value.egressStop) throw new Error(`egress stopped after ${entry.id}: ${value.egressStop}`);
+      if (row.egressStop) throw new Error(`egress stopped after ${entry.id}: ${row.egressStop}`);
       return row;
     }));
     if (done === null) stop = `stopped after ${entry.id} (see its row)`;
@@ -1354,7 +1494,7 @@ async function main() {
     .map(name => [name, sha(fs.readFileSync(path.join(__dirname, name)))]));
   const row = { schema: "m24_case_ledger_row@1", mode: input.mode, rehearsal: evidence.rehearsal,
     evidenceKind: "real_electron_offscreen", status: passed ? "pass" : "fail", cases, runs: evidence.runs,
-    sends: evidence.sends, plan: evidence.plan ?? null, fixture: evidence.fixture ?? null,
+    sends: evidence.sends, preChecks: evidence.preChecks ?? null, plan: evidence.plan ?? null, fixture: evidence.fixture ?? null,
     dispatchCounts: evidence.dispatchCounts ?? null, fixtureLabels: evidence.fixtureLabels, controls: evidence.controls,
     wording: evidence.wording.map(item => ({ label: item.label, kind: item.kind, found: item.found.length })),
     buildId: buildId(), harness, offscreen: proof, externalRequestCount: proof ? proof.nonLoopbackRequests : null,
@@ -1371,4 +1511,4 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, halfUp, expectedLimitations, forbiddenWords, J, U, MODES };
+module.exports = { options, main, halfUp, expectedLimitations, forbiddenWords, FORBIDDEN, FIXED_LINES, J, U, MODES };

@@ -161,7 +161,24 @@ test("closed sets, caps and fixed sentences equal backend/mw/jev_constants.py an
   // the consent notice names the one destination, the content kinds, per-send approval, the cap and the provider policy
   const notice = lib.CONSENT_NOTICE.join("\n");
   for (const part of ["OpenRouter의 JEV 하나", "보낼 수 있는 내용", "전송마다", "승인", "run당 과학 전송은 10회",
-    "data_collection=deny", "zdr", "뷰어 모델 명령의 온라인 동의와 별개"]) assert.ok(notice.includes(part), part);
+    "data_collection=deny", "zdr", "뷰어 모델 명령의 온라인 동의와 별개", "정확한 본문을 미리 보고"])
+    assert.ok(notice.includes(part), part);
+  // what each body carries (spec 3), one line per kind, and what is never sent
+  const line = start => {
+    const found = lib.CONSENT_NOTICE.filter(item => item.startsWith(start));
+    assert.equal(found.length, 1, start);
+    return found[0];
+  };
+  const ligand = line("리간드 후보 본문:");
+  for (const part of ["부모의 정규 SMILES와 RDKit 추정 속성", "후보 정규 SMILES", "생성 방식 종류", "입체 표시",
+    "RDKit 추정 속성", "정의 이름", "PAINS 구조 경고 일치", "수용체·포켓 정보는 넣지 않습니다"])
+    assert.ok(ligand.includes(part), `ligand: ${part}`);
+  const mutation = line("변이 후보 본문:");
+  for (const part of ["잔기 식별자", "서열 구간", "이웃 잔기", "리간드까지 최소 거리", "보호 해제 여부", "보호 검사 상태",
+    "포켓 요약", "바꿀 잔기"]) assert.ok(mutation.includes(part), `mutation: ${part}`);
+  const never = line("보내지 않는 것:");
+  for (const part of ["좌표", "구조 파일", "전체 서열", "번호 대응", "보호 사유 이름", "handle", "로컬 경로", "API 키"])
+    assert.ok(never.includes(part), `never: ${part}`);
 });
 
 // ---- closed reason labels ----
@@ -311,8 +328,8 @@ test("preview view keeps the exact body string, bytes, SHA-256, alias table (not
   assert.equal(view.capText, "run당 과학 전송 10회 · 사용 3회 · 남은 7회");
   assert.equal(view.budgetRemainingText, "남은 외부 토큰 110000 · 남은 1.9000 USD");
   assert.deepEqual(plain(view.blocked), [
-    { code: "consent_off", text: lib.blockReasonText("consent_off") },
-    { code: "send_cap_exhausted", text: lib.blockReasonText("send_cap_exhausted") }]);
+    { code: "consent_off", text: lib.blockReasonText("consent_off"), stale: false },
+    { code: "send_cap_exhausted", text: lib.blockReasonText("send_cap_exhausted"), stale: false }]);
   assert.equal(view.previousSendsText, "같은 투영으로 이전에 보낸 수: 2회");
   assert.deepEqual(plain(input), before);                    // the response is not changed
   const mutationView = lib.jevPreviewView(preview({ kind: "mutation", selection: [
@@ -341,6 +358,39 @@ test("canSend only with zero blockers, the confirmation checked and no send in f
     sending: true }).length, 4);
   assert.equal(lib.CONFIRM_CHECK_TEXT, "이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다");
   assert.equal(lib.SEND_BUTTON_TEXT, "이 내용을 JEV로 보냅니다");
+});
+
+test("a preview's send_in_progress that a later status read no longer reports is shown as stale and still closes the send", () => {
+  const busy = preview({ blocked_by: ["send_in_progress"] });
+  const fresh = [{ code: "send_in_progress", text: lib.blockReasonText("send_in_progress"), stale: false }];
+  // no later status read, or a later read that still reports the send: the server reason as it is
+  assert.deepEqual(plain(lib.jevPreviewBlockers(busy, null)), fresh);
+  assert.deepEqual(plain(lib.jevPreviewBlockers(busy)), fresh);
+  assert.deepEqual(plain(lib.jevPreviewBlockers(busy, statusOf({ send_in_progress: true }))), fresh);
+  // a later read without a send in progress: "다시 읽기 필요" (the screen never re-reads the preview by itself)
+  const stale = plain(lib.jevPreviewBlockers(busy, statusOf({ send_in_progress: false })));
+  assert.deepEqual(stale, [{ code: "send_in_progress", text: lib.SEND_IN_PROGRESS_STALE_TEXT, stale: true }]);
+  assert.ok(lib.SEND_IN_PROGRESS_STALE_TEXT.startsWith("다시 읽기 필요"));
+  assert.ok(lib.SEND_IN_PROGRESS_STALE_TEXT.includes(lib.JEV_TEXT.previewReload));
+  assert.ok(lib.SEND_IN_PROGRESS_STALE_TEXT.endsWith("(send_in_progress)"));
+  // every other server reason keeps its label whatever the status says
+  for (const code of lib.PREVIEW_BLOCK_REASONS.filter(item => item !== "send_in_progress")) {
+    const other = preview({ blocked_by: [code, "send_in_progress"] });
+    const items = plain(lib.jevPreviewBlockers(other, statusOf({ send_in_progress: false, enabled: true })));
+    assert.deepEqual(items[0], { code, text: lib.blockReasonText(code), stale: false }, code);
+    assert.equal(items[1].stale, true, code);
+  }
+  // the send button stays closed until the person re-reads the preview; the reason says why
+  const later = statusOf({ send_in_progress: false });
+  assert.equal(lib.jevCanSend({ preview: busy, confirmed: true, sending: false, laterStatus: later }), false);
+  assert.deepEqual(plain(lib.jevSendBlockers({ preview: busy, confirmed: true, sending: false, laterStatus: later })),
+    [lib.SEND_IN_PROGRESS_STALE_TEXT]);
+  assert.deepEqual(plain(lib.jevSendBlockers({ preview: busy, confirmed: true, sending: false })),
+    [lib.blockReasonText("send_in_progress")]);
+  // the preview view shows the same items
+  assert.deepEqual(plain(lib.jevPreviewView(busy, later).blocked), stale);
+  assert.deepEqual(plain(lib.jevPreviewView(busy).blocked), fresh);
+  assert.deepEqual(plain(lib.jevForbiddenWords(lib.SEND_IN_PROGRESS_STALE_TEXT)), []);
 });
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -598,27 +648,32 @@ test("late responses apply only for the same run, handle and request number", ()
 
 // ---- errors and the projection command ----
 
-test("error parsing: projection reasons, send conflicts, busy, unknown codes and network errors", () => {
+test("error parsing: the Korean label with its code only (the server's English message is never shown)", () => {
   const filtered = lib.jevErrorInfo({ status: 422, code: "input_invalid", message: "chosen candidates do not pass the filter",
     detail: { reason_code: "candidate_filtered_out", candidates: [id16(3)] } });
   assert.deepEqual(plain(filtered), { status: 422, code: "input_invalid", reasonCode: "candidate_filtered_out",
-    text: `${lib.projectionReasonText("candidate_filtered_out")}: chosen candidates do not pass the filter` });
+    text: lib.projectionReasonText("candidate_filtered_out") });
   const tooLarge = lib.jevErrorInfo({ status: 429, code: "resource_exceeded", message: "", detail: { reason_code: "payload_too_large" } });
   assert.equal(tooLarge.text, lib.projectionReasonText("payload_too_large"));
   const invalid = lib.jevErrorInfo({ status: 422, code: "input_invalid", message: "not a valid jev_projection@1 of this run",
     detail: { error: "input_invalid", reason_code: "projection_invalid" } });
   assert.equal(invalid.reasonCode, "projection_invalid");
-  assert.ok(invalid.text.startsWith(lib.projectionReasonText("projection_invalid")));
+  assert.equal(invalid.text, lib.projectionReasonText("projection_invalid"));
   for (const code of ["preview_mismatch", "send_id_conflict", "send_in_progress", "busy", "not_found", "dry_run"]) {
-    const info = lib.jevErrorInfo({ status: 409, code, message: "m", detail: { error: code, message: "m" } });
+    const info = lib.jevErrorInfo({ status: 409, code, message: "server words", detail: { error: code, message: "server words" } });
     assert.equal(info.code, code);
     assert.equal(info.reasonCode, null);
-    assert.equal(info.text, `${lib.errorCodeText(code)}: m`, code);
+    assert.equal(info.text, lib.errorCodeText(code), code);
+    assert.ok(info.text.endsWith(`(${code})`) && !info.text.includes("server words"), code);
   }
-  assert.equal(lib.jevErrorInfo({ status: 409, code: "brand_new", message: "" }).text, lib.UNKNOWN_CODE_TEXT);
+  assert.equal(lib.jevErrorInfo({ status: 409, code: "brand_new", message: "server words" }).text, lib.UNKNOWN_CODE_TEXT);
+  // a browser network error or timeout: the fixed Korean text only (its English message is not shown either)
   assert.deepEqual(plain(lib.jevErrorInfo(new TypeError("Failed to fetch"))),
-    { status: null, code: null, reasonCode: null, text: "요청 실패: Failed to fetch" });
+    { status: null, code: null, reasonCode: null, text: "요청 실패" });
+  assert.equal(lib.jevErrorInfo({ name: "TimeoutError", message: "signal timed out" }).text, "요청 실패");
   assert.deepEqual(plain(lib.jevErrorInfo("weird")), { status: null, code: null, reasonCode: null, text: "요청 실패" });
+  // this module's own fixed Korean text (an answer of the wrong shape) is kept after the label
+  assert.equal(lib.jevErrorInfo(new Error(lib.RESPONSE_SHAPE_TEXT)).text, `요청 실패: ${lib.RESPONSE_SHAPE_TEXT}`);
 });
 
 test("projection outcome: a jev_projection handle with its summary, or the refusal reason", () => {
@@ -632,7 +687,7 @@ test("projection outcome: a jev_projection handle with its summary, or the refus
   const refused = lib.jevProjectionOutcome({ ok: false, error: "input_invalid", message: "unknown parameters: ['x']",
     detail: { reason_code: "unknown_field" } });
   assert.deepEqual(plain(refused), { ok: false, reasonCode: "unknown_field",
-    text: `${lib.projectionReasonText("unknown_field")}: unknown parameters: ['x']` });
+    text: lib.projectionReasonText("unknown_field") });
   assert.equal(lib.jevProjectionOutcome({ ok: false, loop_stop: { reason: "x" } }).ok, false);
 });
 
@@ -673,7 +728,8 @@ test("API client: paths, methods and bodies of every JEV call; error bodies beco
     confirm: "send_to_jev" }).catch(error => error);
   assert.equal(conflict.status, 409);
   assert.equal(conflict.code, "send_id_conflict");
-  assert.equal(lib.jevErrorInfo(conflict).text, `${lib.errorCodeText("send_id_conflict")}: this send_id was approved for another body`);
+  assert.equal(conflict.message, "this send_id was approved for another body");   // kept on the error object only
+  assert.equal(lib.jevErrorInfo(conflict).text, lib.errorCodeText("send_id_conflict"));
   assert.equal(lib.jevAttemptAfter({ projectionHandle: PROJ, bodySha256: "d".repeat(64), sendId: SID },
     { record: false, code: lib.jevErrorInfo(conflict).code }), null);
   answer = { status: 422, body: { detail: { error: "input_invalid", message: "not a valid jev_projection@1 of this run",
@@ -685,7 +741,7 @@ test("API client: paths, methods and bodies of every JEV call; error bodies beco
     detail: { reason_code: "candidate_unknown", candidates: [id16(9)] } } };
   const unknown = await api.buildJevProjection(RUN, args).catch(error => error);
   assert.deepEqual(plain(lib.jevErrorInfo(unknown)), { status: 422, code: "input_invalid", reasonCode: "candidate_unknown",
-    text: `${lib.projectionReasonText("candidate_unknown")}: candidates are not in the candidate set` });
+    text: lib.projectionReasonText("candidate_unknown") });
   // send ids with reserved characters stay one path segment
   calls.length = 0;
   answer = { status: 200, body: {} };
@@ -781,6 +837,38 @@ test("no screen string uses rank, recommendation, prediction or effect wording (
   assert.ok(lib.jevPreviewView(preview()).instructions.includes("not a prediction of binding"));
   // no "가장 높음" / bars / colours: the probability rows carry only alias, local reference, value and text
   assert.ok(!JSON.stringify(plain(lib.jevResultView(detail()))).includes("가장"));
+});
+
+test("wording rule: one regex and one line rule shared with the offscreen harness; 비활성 is not 활성", () => {
+  // spec 2 and 8 terms (plus 최고, 가장 높/낮, highest); exactly-equal fixed lines exempt, nothing else
+  for (const [text, found] of [["활성 후보", ["활성"]], ["비활성 버튼", []], ["활성화", ["활성"]], ["가장 높은 값", ["가장 높"]],
+    ["가장 낮은 값", ["가장 낮"]], ["the highest one", ["highest"]], ["친화도·안정성", ["친화", "안정성"]],
+    ["에너지 점수", ["에너지", "점수"]], ["안전한 후보", ["안전"]], ["좋은 것과 나쁜 것", ["좋은", "나쁜"]],
+    ["유망한 예측", ["유망", "예측"]], ["best ranked, recommended winner", ["best", "rank", "recommend", "winner"]],
+    ["ΔΔG", ["ΔΔG"]], ["frank stabilizer", []], ["후보 c02", []]])
+    assert.deepEqual(plain(lib.jevForbiddenWords(text)), found, text);
+  const harness = require("./offscreen/jev-flow.cjs");
+  assert.equal(harness.FORBIDDEN.source, lib.JEV_FORBIDDEN.source);
+  assert.equal(harness.FORBIDDEN.flags, lib.JEV_FORBIDDEN.flags);
+  assert.deepEqual(plain(harness.FIXED_LINES), plain(lib.JEV_FIXED_LINES));
+  const probes = [...Object.values(SPEC_J), ...Object.values(SPEC_U), `요약: ${SPEC_J.J1}`, `${SPEC_U.U2} 점수`,
+    `${SPEC_J.J5}\n활성 후보`, "비활성\n활성", "가장 높음 · highest · Best · RANK · ΔΔG", lib.CONSENT_NOTICE.join("\n"),
+    ` ${SPEC_J.J4}`, "순위 추천 최고 최적 개선 예측 유망 점수 에너지 친화 안정성 좋은 나쁜 안전 winner"];
+  for (const probe of probes)
+    assert.deepEqual(plain(harness.forbiddenWords(probe)), plain(lib.jevForbiddenWords(probe)), probe);
+});
+
+test("global mark request order: a page status read in flight never overwrites a later read or JEV-area report", () => {
+  const order = lib.scienceMarkGate();
+  const first = order.begin();                 // the run changes: the page reads the status once
+  assert.equal(order.current(first), true);
+  order.report();                              // the JEV area reports a consent change before that read answers
+  assert.equal(order.current(first), false);   // the older read is dropped
+  const second = order.begin(), third = order.begin();
+  assert.equal(order.current(second), false);
+  assert.equal(order.current(third), true);
+  // separate pages do not share an order
+  assert.equal(lib.scienceMarkGate().current(third), false);
 });
 
 // ---- T7 screen helpers (pure; the JevPanel screen uses them and adds no wording, guard or view model of its own) ----
@@ -1019,7 +1107,11 @@ test("JevPanel source: wording, test ids, reads on mount only, one call site per
   assert.ok(!/\.sort\(|toFixed\(|<progress|<meter|width:/.test(source));
   assert.deepEqual([...source.matchAll(/Math\.\w+/g)].map(match => match[0]), ["Math.max"]);   // the pager's offset only
   assert.ok(source.includes("onClick={() => onPage(Math.max(0, offset - limit))}"));
-  assert.ok(/jevResultView\(detail\)/.test(source) && /jevPreviewView\(preview\)/.test(source) &&
+  // A preview's send_in_progress is compared only with a status read that arrived after that preview (no re-read).
+  assert.ok(/const sendBlockers = jevSendBlockers\(\{ preview: previewValue, confirmed, sending, laterStatus \}\);/
+    .test(source));
+  assert.ok(/<PreviewView preview=\{previewValue\} laterStatus=\{laterStatus\}/.test(source));
+  assert.ok(/jevResultView\(detail\)/.test(source) && /jevPreviewView\(preview, laterStatus\)/.test(source) &&
     /jevSendRows\(sends\.value\)/.test(source));
   // The exact body and the probabilities are collapsed (no `open`); the body is shown verbatim from the preview.
   assert.ok(!/<details[^>]*\bopen\b/.test(source));
@@ -1061,12 +1153,18 @@ test("page: JevPanel keyed by run in the knowledge tab; report reload and the gl
   assert.ok(page.includes('import { JevPanel } from "@/components/JevPanel";'));
   assert.ok(page.includes("jev={<JevPanel key={`jev-${run?.run_id ?? \"none\"}`} run={run}"));
   assert.ok(/capability=\{capabilities \? capabilities\.methods\?\.jev_choice \?\? null : undefined\}/.test(page));
-  assert.ok(/onStatus=\{\(statusRunId, status\) => \{ if \(hostRequestAccepted\(\{ runId: statusRunId \}, analysisHostRef\.current\)\)\n\s+setScienceMark\(scienceMarkFromStatus\(statusRunId, status\)\); \}\}/.test(page));
+  // A JEV-area report (its status read or consent change) takes the next request number before it is applied.
+  assert.ok(/onStatus=\{\(statusRunId, status\) => \{ if \(hostRequestAccepted\(\{ runId: statusRunId \}, analysisHostRef\.current\)\) \{\n\s+scienceMarkOrder\.current\.report\(\); setScienceMark\(scienceMarkFromStatus\(statusRunId, status\)\); \} \}\}/.test(page));
   assert.ok(page.includes("scienceBadge={globalScienceBadge(scienceMark, runId ?? null)}"));
-  // The run-change read is one GET of the status (no consent write, no polling).
+  assert.equal([...page.matchAll(/scienceMarkGate\(\)/g)].length, 1);
+  assert.ok(page.includes("const scienceMarkOrder = useRef(scienceMarkGate());"));
+  // The run-change read is one GET of the status (no consent write, no polling), applied only while it is the latest.
   const start = page.indexOf("// M24 global mark");
   const effect = page.slice(start, page.indexOf("}, [runId]);", start));
   assert.ok(start > 0 && /api\.jevStatus\(runId, controller\.signal\)/.test(effect), effect);
+  assert.ok(/const ticket = scienceMarkOrder\.current\.begin\(\);/.test(effect), effect);
+  assert.ok(/if \(scienceMarkOrder\.current\.current\(ticket\) && hostRequestAccepted\(\{ runId \}, analysisHostRef\.current\)\)/
+    .test(effect), effect);
   assert.ok(!/jevSetConsent|setInterval|jevSend\b/.test(effect));
   assert.equal([...page.matchAll(/api\.jev\w+\(/g)].length, 1);
   // The tab shell and the shared component surface stay as they were; the panel is imported by path.

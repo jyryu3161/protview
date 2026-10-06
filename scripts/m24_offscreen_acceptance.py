@@ -14,22 +14,32 @@ Phases (``--phase``):
   fixture    (default) a fresh --root; the backend is backend/tests/offscreen_jev_fixture/server.py: the real app with
              SCIENCE_GATE over a scripted httpx.MockTransport (sentinel placeholder credential, no provider socket) and
              VIEWER_GATE refusing. Steps: jev-fixture (runs A, B, C: every screen case of the spec with the scripts
-             good, good_no_extras, alias_outside, http_500, no_usage, model_mismatch, slow) and jev-rehearsal (the live
-             plan below through the same live-mode screen path, against the fixture). Real OpenRouter calls: 0, proven
+             good, good_no_extras, alias_outside, http_500, no_usage, model_mismatch, slow), then the live plan below
+             rehearsed through the same live-mode screen path against the fixture, split as the real phases are:
+             jev-rehearsal-calibrate (the pre-checks with no send, then the first entry) and jev-rehearsal-live (entries
+             2..6 from a new browser session, only after a passed calibrate rehearsal). Real OpenRouter calls: 0, proven
              by the fixture server record and by every dispatch / response audit matching one scripted transport call.
-             The live cases are recorded as not observed (실호출 할당은 T10).
+             The live cases are recorded as not observed (실호출 할당은 T10). The real-call ledger is not touched.
   calibrate  a fresh --root; the product backend (uvicorn mw.api.app:app, the real SCIENCE_GATE) after the key is
-             found present (boolean only). Runs L1 (ligand set + 1UBQ set) and L2 (1MQ4 set + 1UBQ set); ONE real send:
-             the first plan entry. The usage (input/output tokens, cost) against the body bytes and the reservation is
-             recorded; a stop (usage unknown, over the reservation, egress stopped) ends here with no further call.
-             Needs --live-calls >= 1. Writes <root>/live-state.json.
+             found present (boolean only). Runs L1 (ligand set + 1UBQ set) and L2 (1MQ4 set + 1UBQ set). Before the
+             first click, with no send, the pre-checks on L1's 1UBQ set (consent off → consent_off and a closed send
+             button → consent on; 20 checked, the 21st refused, reduced to 5; the button closed before the
+             confirmation); then ONE real send: the first plan entry. The usage (input/output tokens, cost) against the
+             body bytes and the reservation is recorded; a stop (usage unknown, over the reservation, egress stopped, a
+             failed calibrate flow) ends here with no further call. Needs --live-calls >= 1. Writes
+             <root>/live-state.json.
   live       the same --root after a passed calibrate (once per root): the plan entries 2..N through the screen.
              Needs --live-calls N >= 2.
 In calibrate and live the harness and this runner both guard the count: the harness checks every run's
 jev_science_dispatch_started events before each click (plan maxDispatch, at most 3 per run) and this runner counts the
-events of every QA run while the harness runs and stops it and the backend at once when the count passes N. Nothing is
-retried and no new run is opened to get more calls. The outside-traffic verdict is: browser non-loopback requests 0
-and, on the server side, `response_received` audits <= --live-calls (0 real calls in the fixture phase).
+events of every QA run while the harness runs and stops it and the backend at once when the count passes N. Across
+roots, the repository-level ledger runs/m24-live-ledger.json of the main checkout (git-ignored) holds the confirmed
+dispatch-event counts of every calibrate/live root: before anything starts, a phase is refused when the ledger cannot
+be read or its total (every recorded root, rescanned, plus this root) plus this phase's planned calls passes 6; the
+phase is recorded as started at once and its root's counts (failed sends included) when it ends, so a crash still
+leaves the root counted. Nothing is retried and no new run is opened to get more calls. The outside-traffic verdict
+is: browser non-loopback requests 0 and, on the server side, `response_received` audits <= --live-calls (0 real
+calls in the fixture phase).
 
 Every phase ends with: no worker, fixture server, Electron, 8000/3000 listener left; a search of the evidence, the QA
 root and the export for the API key (read by the product resolver in a child process; only booleans and file paths are
@@ -51,6 +61,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
 import re
@@ -75,9 +86,17 @@ import m18_offscreen_acceptance as m18
 REPO = Path(__file__).resolve().parents[1]
 FLOW = "jev-flow.cjs"
 PHASES = ("fixture", "calibrate", "live")
-PHASE_STEPS = {"fixture": ["jev-fixture", "jev-rehearsal"], "calibrate": ["jev-calibrate"], "live": ["jev-live"]}
-MODE_OF = {"jev-fixture": "fixture", "jev-rehearsal": "live", "jev-calibrate": "live", "jev-live": "live"}
+PHASE_STEPS = {"fixture": ["jev-fixture", "jev-rehearsal-calibrate", "jev-rehearsal-live"], "calibrate": ["jev-calibrate"],
+               "live": ["jev-live"]}
+MODE_OF = {"jev-fixture": "fixture", "jev-rehearsal-calibrate": "live", "jev-rehearsal-live": "live",
+           "jev-calibrate": "live", "jev-live": "live"}
 MAX_LIVE_CALLS = 6
+# The repository-level ledger of real calls (every root, every calibrate/live phase; git-ignored runs/ folder of the
+# main checkout). Only jev_science_dispatch_started event counts go into it; rehearsals never touch it.
+LEDGER_NAME = "m24-live-ledger.json"
+LEDGER_SCHEMA = "m24_live_ledger@1"
+LEDGER_PHASES = ("calibrate", "live")
+RUN_NAME = re.compile(r"run_[A-Za-z0-9_-]+")
 MAX_PER_RUN = 3
 STEP_TIMEOUT_S = 3600
 SETUP_TIMEOUT_S = 600
@@ -103,6 +122,9 @@ LIVE_PLAN = [
     {"id": "L2-mutation-1mq4-20-again", "run": "L2", "resend": "L2-mutation-1mq4-20"},
     {"id": "L2-mutation-1ubq-20", "run": "L2", "kind": "mutation", "set": "ubq", "pick": {"first": 20}},
 ]
+# Before the first real call (calibrate plan only), with no send: consent off → consent_off and a closed send button →
+# consent on; 20 candidates checked, the 21st refused, reduced to `keep`; the button closed before the confirmation.
+PRE_CHECKS = {"run": "L1", "kind": "mutation", "set": "ubq", "keep": 5}
 FIXTURE_CASES = ["J-tab-entry", "J-source-choice", "J-consent-off-block", "J-consent-toggle", "J-candidate-limit",
                  "J-preview-match", "J-confirm-required", "J-send-good", "J-bytes-equal", "J-resend", "J-report",
                  "J-ligand-filter", "J-failed-alias", "J-failed-model", "J-late", "J-send-cap", "J-other-tabs",
@@ -136,11 +158,18 @@ CASE_TEXT = {
     "J-failed-http": "run C fixture HTTP 500: failed provider_http_error, 이유만",
     "J-wording": "금지 표현 검사(고정 문장 J1–J7·U1–U3 제외): 화면 여러 시점, 보고서 Markdown, fixture 응답",
     "J-no-egress-browser": "브라우저의 비-loopback 요청 0건",
-    "J-live-rehearsal": "실호출 계획(여섯 전송, run당 셋 이하) 전체를 같은 화면 경로로 fixture 서버에 대고 미리 돌림: 모두 "
-                        "completed, 전송 전 계수 확인, 보고서 하나, 다른 탭 불변",
-    "JL-calibrate-send": "첫 실호출 한 번(리간드 5개): 실제 JEV 결과 카드·접힌 후보별 값·고정 문장·보고서, 다른 탭 불변",
-    "JL-live-sends": "나머지 실호출(변이 소규모·리간드 10개·1MQ4 20개·같은 본문 재전송·1UBQ 20개 중 N−1개): 결과 표시와 "
-                     "다른 탭 불변",
+    "J-live-rehearsal": "실호출 계획(여섯 전송, run당 셋 이하)을 같은 화면 경로로 fixture 서버에 대고 calibrate·live 두 "
+                        "번으로 나눠 미리 돌림: calibrate 리허설은 첫 전송 전에 전송 없이 사전 확인(L1의 1UBQ 집합: 동의 "
+                        "끔 → 미리보기 consent_off·확인 체크해도 전송 단추 닫힘 → 다시 켬, 20개 체크 뒤 21번째 거절 → 5개로 "
+                        "줄임, 확인 체크 전 전송 단추 닫힘, 전송 요청·dispatch 0) 뒤 한 전송, live 리허설은 새 화면에서 나머지 "
+                        "다섯 전송; 모두 completed, 결과 카드의 후보별 값은 처음에 접힘, 전송 전 계수 확인, 보고서 하나, 다른 "
+                        "탭 불변",
+    "JL-calibrate-send": "첫 실호출 클릭 전에 같은 화면에서 전송 없이(L1의 1UBQ 집합): 동의 끔 → 미리보기 consent_off·확인 "
+                         "체크해도 전송 단추 닫힘 → 다시 켬, 20개 체크 뒤 21번째 거절(체크되지 않고 이유 표시) → 5개로 "
+                         "줄임, 확인 체크 전 전송 단추 닫힘, 전송 요청·dispatch 이벤트 0; 이어서 첫 실호출 한 번(리간드 "
+                         "5개): 실제 JEV 결과 카드(후보별 값은 처음에 접힘)·고정 문장·보고서, 다른 탭 불변",
+    "JL-live-sends": "나머지 실호출(변이 소규모·리간드 10개·1MQ4 20개·같은 본문 재전송·1UBQ 20개 중 N−1개): 결과 카드(후보별 "
+                     "값은 처음에 접힘)와 다른 탭 불변",
 }
 RUNNER_CASE_TEXT = {
     "S-browser-egress-zero": "모든 흐름 행의 브라우저 비-loopback 요청 0건",
@@ -149,7 +178,11 @@ RUNNER_CASE_TEXT = {
     "S-key-absent": "증거 폴더·QA 루트·내보낸 증거에서 API 키 문자열과 fixture placeholder 문자열 0건",
     "S-wording-evidence": "증거 텍스트에 금지 표현 0건(고정 문장 제외)",
     "JL-count": "실호출 계수: 모든 QA run의 dispatch 이벤트와 response_received 감사가 --live-calls 이하, run당 3회 이하",
-    "JL-calibration": "첫 실호출: completed, 사용량(입력·출력 토큰·비용)을 알고 예약값 이하, 외부 전송 멈춤 없음",
+    "JL-calibration": "첫 실호출: completed, 사용량(입력·출력 토큰·비용)을 알고 예약값 이하, 외부 전송 멈춤 없음, calibrate "
+                      "흐름 전체(사전 확인·결과 카드·보고서·다른 탭) 통과",
+    "JL-ledger": "저장소 단위 실호출 대장(Git 제외 runs/m24-live-ledger.json, 모든 QA root의 dispatch 이벤트로 확정, 실패한 "
+                 "전송 포함): 단계 뒤 합계 6회 이하. 단계 시작 전에 대장 합계 + 이번 계획이 6을 넘거나 대장을 읽을 수 "
+                 "없으면 아무것도 시작하지 않고 거절",
 }
 NOT_OBSERVED_LIVE = ("관찰하지 않음 — 실호출 할당은 T10. 이 실행은 가짜 transport fixture 서버만 썼다(OpenRouter 실호출 "
                      "0회). 실호출은 --phase calibrate --live-calls N, 이어서 같은 --root로 --phase live --live-calls N.")
@@ -187,8 +220,11 @@ FIXED_SENTENCES = (
      "run에서 다른 쪽도 멈춘다."),
     "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다.",
 )
-FORBIDDEN = re.compile(r"순위|추천|최고|최적|개선|점수|친화도|안정성|ΔΔG|\bwinner\b|\bbest\b|\brank(?:s|ed|ing)?\b|"
-                       r"\brecommend\w*", re.IGNORECASE)
+# The screen wording rule of the product (frontend/src/lib/jev.ts JEV_FORBIDDEN, jevForbiddenWords) and the harness
+# (jev-flow.cjs FORBIDDEN): the same pattern, and a line exactly equal to a fixed sentence is the only exemption.
+# re.ASCII gives \b its JavaScript (non-unicode) meaning; scripts/test_m24_offscreen_acceptance.py compares the three.
+FORBIDDEN = re.compile(r"순위|추천|최고|최적|개선|예측|유망|점수|에너지|(?<!비)활성|친화|안정성|ΔΔG|좋은|나쁜|안전|가장 높|가장 낮|"
+                       r"winner|\bbest|\brank|recommend|highest", re.IGNORECASE | re.ASCII)
 TEXT_SUFFIXES = {".json", ".jsonl", ".log", ".md", ".txt", ".html"}
 # Reads the key with the product resolver in a child process and prints only booleans, a file count and the paths of
 # files holding the key or the placeholder (never the key itself).
@@ -307,20 +343,24 @@ def kill_group(proc: subprocess.Popen) -> None:
 
 
 def plan_for(phase: str, used: int, live_calls: int, base: int = 0) -> dict:
-    """The harness plan of a phase. ``used`` = dispatch events already in the root; ``base`` = the rehearsal offset."""
-    if phase == "rehearsal":
-        return {"entries": LIVE_PLAN, "maxDispatch": base + len(LIVE_PLAN), "maxPerRun": MAX_PER_RUN}
+    """The harness plan of a phase. ``used`` = dispatch events already in the root, ``live_calls`` = --live-calls.
+    calibrate = the first entry after the pre-checks; live = entries ``used``..``live_calls``. ``rehearsal-calibrate``
+    and ``rehearsal-live`` are the same plans with the dispatch bound shifted by ``base`` (the fixture dispatch events
+    already in the rehearsal's runs folder)."""
+    if phase.startswith("rehearsal-"):
+        plan = plan_for(phase.removeprefix("rehearsal-"), used, live_calls)
+        return {**plan, "maxDispatch": base + plan["maxDispatch"]}
     if phase == "calibrate":
-        return {"entries": LIVE_PLAN[:1], "maxDispatch": 1, "maxPerRun": MAX_PER_RUN}
+        return {"entries": LIVE_PLAN[:1], "maxDispatch": 1, "maxPerRun": MAX_PER_RUN, "preChecks": dict(PRE_CHECKS)}
     return {"entries": LIVE_PLAN[used:live_calls], "maxDispatch": live_calls, "maxPerRun": MAX_PER_RUN}
 
 
 def forbidden_in(text: str) -> list[str]:
-    """Forbidden expressions in ``text``, line by line, after removing every fixed sentence."""
+    """Forbidden expressions in ``text``, line by line; a line exactly equal to a fixed sentence is exempt."""
     found: list[str] = []
     for line in str(text).split("\n"):
-        for sentence in FIXED_SENTENCES:
-            line = line.replace(sentence, " ")
+        if line in FIXED_SENTENCES:
+            continue
         found += FORBIDDEN.findall(line)
     return found
 
@@ -345,6 +385,8 @@ def scan_wording(folder: Path) -> dict[str, list[str]]:
                 or rel.parts[0] == "services"):
             continue
         text = path.read_text(errors="replace")
+        if path.suffix == ".html":         # a panel dump: one line per element, as the screen shows it
+            text = html.unescape(re.sub(r"<[^>]+>", "\n", text))
         texts: list[str] = []
         if path.suffix in (".json", ".jsonl"):
             for chunk in ([text] if path.suffix == ".json" else text.splitlines()):
@@ -388,7 +430,8 @@ def fixture_proof(server: dict | None, calls: list[dict], counts: dict[str, dict
 
 
 def calibration(row: dict | None) -> dict:
-    """The first real send: completed, usage known and within the reservation, no egress stop."""
+    """The first real send: completed, usage known and within the reservation, no egress stop, and the calibrate flow
+    around it (pre-checks, card, report, other tabs) passed."""
     sends = [item for item in ((row or {}).get("sends") or []) if item.get("sendId")]
     if not sends:
         return {"ok": False, "reason": "no send recorded"}
@@ -397,10 +440,12 @@ def calibration(row: dict | None) -> dict:
     reservation = send.get("reservation") or {}
     known = all(isinstance(usage.get(key), (int, float)) for key in ("input_tokens", "output_tokens",
                                                                      "external_tokens", "cost"))
-    ok = (send.get("status") == "completed" and known and send.get("egressStop") is None
+    flow = (row or {}).get("status") == "pass"
+    ok = (flow and send.get("status") == "completed" and known and send.get("egressStop") is None
           and usage["external_tokens"] <= reservation.get("external_tokens", -1)
           and usage["cost"] <= reservation.get("usd", -1))
-    out = {"ok": ok, "entry": send.get("entry"), "status": send.get("status"), "reasonCode": send.get("reasonCode"),
+    out = {"ok": ok, "flowPassed": flow, "entry": send.get("entry"), "status": send.get("status"),
+           "reasonCode": send.get("reasonCode"),
            "servedModel": send.get("servedModel"), "bodyBytes": send.get("bodyBytes"), "usage": usage or None,
            "reservation": reservation or None, "egressStop": send.get("egressStop"),
            "responseShape": send.get("responseShape")}
@@ -411,9 +456,85 @@ def calibration(row: dict | None) -> dict:
     return out
 
 
+class LedgerError(Exception):
+    """The real-call ledger cannot be found, read, trusted or counted: every real-call phase is refused."""
+
+
+def ledger_path(code: Path = REPO) -> Path:
+    """``runs/m24-live-ledger.json`` of the main checkout (found through the common git directory, so a worktree
+    shares it); it must be a git-ignored place. Raises LedgerError otherwise."""
+    done = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=code,
+                          capture_output=True, text=True, check=False)
+    if done.returncode != 0 or not done.stdout.strip():
+        raise LedgerError(f"no git repository at {code}")
+    main = Path(done.stdout.strip()).resolve().parent
+    path = main / "runs" / LEDGER_NAME
+    if subprocess.run(["git", "check-ignore", "-q", str(path)], cwd=main, check=False).returncode != 0:
+        raise LedgerError(f"the ledger place is not git-ignored: {path}")
+    return path
+
+
+def read_ledger(path: Path) -> dict:
+    """The ledger (absent = nothing recorded yet). Unreadable, not JSON or not exactly the ledger shape: LedgerError."""
+    if not Path(path).exists():
+        return {"schema": LEDGER_SCHEMA, "roots": {}}
+    try:
+        ledger = json.loads(Path(path).read_text())
+    except (OSError, ValueError) as exc:
+        raise LedgerError(f"the ledger cannot be read ({exc.__class__.__name__})") from exc
+    if not (isinstance(ledger, dict) and set(ledger) == {"schema", "roots"} and ledger["schema"] == LEDGER_SCHEMA
+            and isinstance(ledger["roots"], dict)):
+        raise LedgerError("the ledger is damaged (not an m24_live_ledger@1 object)")
+    for root, entry in ledger["roots"].items():
+        ok = (Path(root).is_absolute() and isinstance(entry, dict) and set(entry) == {"phases", "dispatch"}
+              and isinstance(entry["phases"], list) and isinstance(entry["dispatch"], dict)
+              and all(isinstance(run, str) and RUN_NAME.fullmatch(run) and type(count) is int and count >= 0
+                      for run, count in entry["dispatch"].items())
+              and all(isinstance(item, dict) and item.get("phase") in LEDGER_PHASES
+                      and isinstance(item.get("startedAt"), str)
+                      and (item.get("finishedAt") is None or isinstance(item.get("finishedAt"), str))
+                      for item in entry["phases"]))
+        if not ok:
+            raise LedgerError(f"the ledger is damaged (root {root!r})")
+    return ledger
+
+
+def ledger_total(ledger: dict, extra_roots: tuple[Path, ...] = ()) -> int:
+    """Real calls of every recorded root (and ``extra_roots``): per run, the larger of the recorded count and the
+    jev_science_dispatch_started events now in the root's runs folder (events only grow). A root whose phase never
+    finished and whose runs folder is gone cannot be counted: LedgerError."""
+    roots = {root: entry for root, entry in ledger["roots"].items()}
+    for root in extra_roots:
+        roots.setdefault(str(Path(root).resolve()), {"phases": [], "dispatch": {}})
+    total = 0
+    for root, entry in roots.items():
+        runs = Path(root) / "runs"
+        if runs.is_dir():
+            try:
+                found = {run: item["dispatch"] for run, item in count_events(runs).items()}
+            except (OSError, ValueError) as exc:
+                raise LedgerError(f"the events of {root} cannot be counted ({exc.__class__.__name__})") from exc
+        elif any(item.get("finishedAt") is None for item in entry["phases"]):
+            raise LedgerError(f"an unfinished real-call phase of {root} has no runs folder left to count")
+        else:
+            found = {}
+        total += sum(max(entry["dispatch"].get(run, 0), found.get(run, 0)) for run in {*entry["dispatch"], *found})
+    return total
+
+
+def write_ledger(path: Path, ledger: dict) -> None:
+    """Replace the ledger file at once (a temporary file next to it, then rename)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n")
+    os.replace(temporary, path)
+
+
 def case_plan(phase: str) -> dict[str, list[str]]:
     if phase == "fixture":
-        return {**{case: ["jev-fixture"] for case in FIXTURE_CASES}, "J-live-rehearsal": ["jev-rehearsal"]}
+        return {**{case: ["jev-fixture"] for case in FIXTURE_CASES},
+                "J-live-rehearsal": ["jev-rehearsal-calibrate", "jev-rehearsal-live"]}
     if phase == "calibrate":
         return {"JL-calibrate-send": ["jev-calibrate"]}
     return {"JL-live-sends": ["jev-live"]}
@@ -440,7 +561,8 @@ def assemble(rows: list[dict], leftovers: list[str], environment: dict, phase: s
 
     A step passes when its latest row passed and measured 0 non-loopback requests. A case passes only when every
     covering step's latest row reports it as pass (absent = fail). ``checks``: keyScan {ok}, wordingScan {path:
-    words}, and fixtureProof {ok} (fixture) or liveCount {ok} and calibration {ok} (calibrate, live)."""
+    words}, and fixtureProof {ok} (fixture) or liveCount {ok}, calibration {ok} and liveLedger {ok} (calibrate,
+    live)."""
     attempts: dict[str, list[tuple[tuple[int, str], dict]]] = {}
     for row in rows:
         base, order = m13.step_base(row["step"])
@@ -479,6 +601,7 @@ def assemble(rows: list[dict], leftovers: list[str], environment: dict, phase: s
     else:
         runner_case("JL-count", (checks.get("liveCount") or {}).get("ok") is True)
         runner_case("JL-calibration", (checks.get("calibration") or {}).get("ok") is True)
+        runner_case("JL-ledger", (checks.get("liveLedger") or {}).get("ok") is True)
     parts = {"steps": all(v["status"] == "pass" for v in steps.values()),
              "cases": all(v["status"] == "pass" for v in cases.values()),
              "environment": environment_ok(environment, phase), "leftoverProcesses": not leftovers}
@@ -520,6 +643,10 @@ class Runner(m18.Runner):
         self.control = self.root / "fixture-control"
         self.state_path = self.root / "live-state.json"
         self.checks: dict = {}
+        # The repository-level real-call ledger: found, checked and written by calibrate and live only (ledger_guard);
+        # the fixture phase and its rehearsals never touch it.
+        self.ledger_file: Path | None = None
+        self.ledger_open = False
 
     def write_row(self, step_dir: Path, row: dict) -> None:
         step_dir.mkdir(parents=True, exist_ok=True)
@@ -721,10 +848,21 @@ class Runner(m18.Runner):
                                     keys={"R1": "L1", "R2": "L2"})
         self.environment["setup"] = True
         self.flow("jev-fixture", "fixture", ["--control", str(self.control), "--setup", str(setup)])
+        # The live plan rehearsed against the fixture as the real phases run it: calibrate (pre-checks, then the first
+        # send), then live (the rest, from a new browser session), each with its own dispatch bound.
         base = dispatch_total(count_events(self.runs))
-        plan = self.write_plan("rehearsal", plan_for("rehearsal", base, 0, base=base))
-        self.flow("jev-rehearsal", "live", ["--control", str(self.control), "--setup", str(rehearsal), "--plan", str(plan)],
-                  limit=base + len(LIVE_PLAN))
+        fixture_args = ["--control", str(self.control), "--setup", str(rehearsal)]
+        plan = self.write_plan("rehearsal-calibrate", plan_for("rehearsal-calibrate", 0, 1, base=base))
+        row = self.flow("jev-rehearsal-calibrate", "live", [*fixture_args, "--plan", str(plan)],
+                        limit=plan_for("rehearsal-calibrate", 0, 1, base=base)["maxDispatch"])
+        if (row or {}).get("status") != "pass":
+            self.missing_prerequisite("jev-rehearsal-live", "the calibrate rehearsal did not pass (the live phase needs a "
+                                                            "passed calibrate)")
+        else:
+            used = dispatch_total(count_events(self.runs)) - base
+            live = plan_for("rehearsal-live", used, MAX_LIVE_CALLS, base=base)
+            self.flow("jev-rehearsal-live", "live", [*fixture_args, "--plan", str(self.write_plan("rehearsal-live", live))],
+                      limit=live["maxDispatch"])
         counts = count_events(self.runs)
         self.checks["events"] = counts
         server = json.loads((self.control / "server.json").read_text()) if (self.control / "server.json").exists() else None
@@ -773,6 +911,58 @@ class Runner(m18.Runner):
         self.checks["events"] = counts
         self.checks["liveCount"] = {"ok": live_count_ok(counts, self.live_calls), "limit": self.live_calls,
                                     "counts": counts}
+
+    # ----- the repository-level real-call ledger (calibrate and live only) ----------------------
+    def planned_calls(self) -> int:
+        """Real calls this phase may make: the calibrate send, or the live plan entries left in this root."""
+        if self.phase == "calibrate":
+            return len(plan_for("calibrate", 0, self.live_calls)["entries"])
+        used = dispatch_total(count_events(self.runs)) if self.runs.is_dir() else 0
+        return len(plan_for("live", used, self.live_calls)["entries"])
+
+    def ledger_guard(self) -> None:
+        """Before anything starts: refuse (SystemExit) when the ledger cannot be found, read or counted, or when its
+        total (every root, rescanned) plus this phase's planned calls passes MAX_LIVE_CALLS; otherwise record this
+        phase as started (unfinished until ledger_close) so a crash still leaves this root counted."""
+        planned = self.planned_calls()
+        try:
+            self.ledger_file = ledger_path(self.code)
+            ledger = read_ledger(self.ledger_file)
+            before = ledger_total(ledger, (self.root,))
+        except LedgerError as exc:
+            raise SystemExit(f"real calls refused, nothing started: {exc}") from exc
+        if before + planned > MAX_LIVE_CALLS:
+            raise SystemExit(f"real calls refused, nothing started: the ledger counts {before} real calls (every root) and "
+                             f"this {self.phase} phase plans {planned}; the allocation is {MAX_LIVE_CALLS} in total")
+        entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
+        entry["phases"].append({"phase": self.phase, "startedAt": now(), "finishedAt": None, "planned": planned,
+                                "liveCalls": self.live_calls})
+        try:
+            write_ledger(self.ledger_file, ledger)
+        except OSError as exc:
+            raise SystemExit(f"real calls refused, nothing started: the ledger cannot be written ({exc})") from exc
+        self.ledger_open = True
+        self.checks["liveLedger"] = {"ok": False, "path": str(self.ledger_file), "before": before, "planned": planned}
+
+    def ledger_close(self) -> None:
+        """Record this root's jev_science_dispatch_started counts (failed sends included) and close its phase."""
+        if not self.ledger_open:
+            return
+        self.ledger_open = False
+        ledger = read_ledger(self.ledger_file)
+        entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
+        found = count_events(self.runs) if self.runs.is_dir() else {}
+        for run, item in found.items():
+            entry["dispatch"][run] = max(entry["dispatch"].get(run, 0), item["dispatch"])
+        for item in entry["phases"]:
+            if item["finishedAt"] is None:
+                item["finishedAt"] = now()
+        write_ledger(self.ledger_file, ledger)
+        after = ledger_total(ledger)
+        self.artifacts.mkdir(parents=True, exist_ok=True)
+        self.checks["liveLedger"] = {**self.checks.get("liveLedger", {}), "ok": after <= MAX_LIVE_CALLS, "after": after,
+                                     "rootDispatch": sum(entry["dispatch"].values())}
+        self.record("live-ledger", "pass" if after <= MAX_LIVE_CALLS else "fail", **self.checks["liveLedger"])
 
     # ----- optional regression chain (separate runners; their own ledgers decide) -----------------
     def regression_commands(self) -> list[tuple[str, list[str]]]:
@@ -884,8 +1074,12 @@ class Runner(m18.Runner):
                        f"{proof.get('dispatchEvents')}개 = fixture transport 호출 {proof.get('fixtureTransportCalls')}개, "
                        f"response_received 감사 {proof.get('responseAudits')}개 = 응답한 호출 {proof.get('answeredCalls')}개."), ""]
         else:
+            book = (ledger.get("checks") or {}).get("liveLedger") or {}
             lines += [(f"- 실호출 계수(모든 QA run): {json.dumps(count.get('counts'), ensure_ascii=False)} · 한도 "
                        f"{count.get('limit')} · 판정 {count.get('ok')}"),
+                      (f"- 실호출 대장(저장소 단위, Git 제외 runs/{LEDGER_NAME}, 모든 root의 dispatch 이벤트): 단계 전 "
+                       f"{book.get('before')}회 + 이번 계획 {book.get('planned')}회, 단계 뒤 합계 {book.get('after')}회 / "
+                       f"{MAX_LIVE_CALLS} · 판정 {book.get('ok')}"),
                       (f"- 첫 실호출 보정: {json.dumps(calib, ensure_ascii=False)}"), ""]
         lines += [("스크린숏·paint 프레임·다운로드 원본은 Git 제외 artifacts 폴더에 있고 여기에는 `binary-artifacts.json`의 "
                    "SHA-256만 기록한다. 절대 경로는 `<repo>`/`<home>`으로 바꿨다. 실패한 시도의 증거도 그대로 남긴다. "
@@ -904,7 +1098,7 @@ class Runner(m18.Runner):
                   "    --artifacts frontend/tests/offscreen/artifacts/m24-acceptance/<label> \\",
                   "    --out docs/qa/m24-jev-<YYYYMMDD>/acceptance-fixture   # --phase fixture (실호출 0)",
                   "# 실호출(사용자 할당 안에서만): 새 --root로 --phase calibrate --live-calls N, 이어서 같은 --root로",
-                  "# --phase live --live-calls N (N <= 6, run당 3회 이하)",
+                  "# --phase live --live-calls N (N <= 6, run당 3회 이하; 저장소 대장 합계 + 계획이 6을 넘으면 거절)",
                   "```"]
         return "\n".join(lines) + "\n"
 
@@ -937,6 +1131,17 @@ class Runner(m18.Runner):
             for folder in (self.runs, self.control):
                 if folder.exists() and any(folder.iterdir()):
                     raise SystemExit(f"{folder} is not fresh; choose a new --root")
+        real = self.phase != "fixture"
+        if real:
+            self.ledger_guard()          # nothing has started yet; refused when the ledger total + this plan > 6
+        try:
+            return self.execute()
+        finally:
+            if real:
+                self.ledger_close()      # once (execute closes it before the ledger and export when it gets there)
+
+    def execute(self) -> int:
+        """The phase after its admission checks: build, services, flows, searches, ledger, export."""
         self.artifacts.mkdir(parents=True, exist_ok=True)
         worker = self.code / WORKER_PYTHON
         self.environment["workerPython"] = worker.is_file()
@@ -966,6 +1171,7 @@ class Runner(m18.Runner):
             self.stop_all()
             self.state["environment"] = self.environment
             self.save()
+            self.ledger_close()          # calibrate and live: this root's dispatch events into the ledger
         left = self.leftovers()
         self.record("leftover-processes", "pass" if not left else "fail", processes=left)
         self.checks["keyScan"] = self.key_scan([self.artifacts, self.root])

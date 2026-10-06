@@ -73,12 +73,20 @@ export const JEV_SCREEN_NOTES = {
 export const JEV_PANEL_TITLE = "JEV 판정(외부 모델)";
 export const SCIENCE_ALLOWED_BADGE = "과학 전송 허용";
 export const SCIENCE_BADGE_NOTE = "과학 전송 동의는 뷰어 모델 명령의 해석 모드(local_only·online)와 별개인 run 상태입니다.";
-/** Fixed consent notice (spec 9 (1)); the cap use and the remaining budget come from `jev_status@1`. */
+/**
+ * Fixed consent notice (spec 9 (1)); the content lines follow the wire allow-list of spec 3 (ligand and mutation body
+ * each). The cap use and the remaining budget come from `jev_status@1`.
+ */
 export const CONSENT_NOTICE: readonly string[] = [
   "이 동의를 켜면 이 run의 과학 데이터를 외부 서비스로 보낼 수 있습니다. 목적지는 OpenRouter의 JEV 하나뿐입니다.",
-  "보낼 수 있는 내용: 직접 고른 후보(최대 20개)의 별칭과 저장된 값. 리간드 후보는 SMILES·RDKit 추정 속성·PAINS 구조 " +
-    "경고 일치, 변이 후보는 위치 잔기 식별자·바꿀 잔기·저장 좌표의 기하(서열 구간·이웃 잔기 이름·리간드까지 거리)·" +
-    "보호 검사 상태·포켓 요약. 좌표·구조 파일·전체 서열·번호 대응 값·handle·API 키는 보내지 않습니다.",
+  "보낼 수 있는 내용: 직접 고른 후보(최대 20개)의 별칭(c01·m01 …)과 저장된 값뿐이며, 후보 순서는 후보 집합의 저장 순서입니다.",
+  "리간드 후보 본문: 부모의 정규 SMILES와 RDKit 추정 속성, 후보마다 후보 정규 SMILES·생성 방식 종류(fixed_replace·" +
+    "user_rule)·입체 표시(stereo_flag)·RDKit 추정 속성(mol_weight·crippen_logp·hbd·hba·tpsa·rotatable_bonds·" +
+    "heavy_atoms·formal_charge)과 그 정의 이름·PAINS 구조 경고 일치(목록·이름). 수용체·포켓 정보는 넣지 않습니다.",
+  "변이 후보 본문: 위치마다 잔기 식별자(모델·체인·번호·삽입 코드·잔기 이름)·한 글자 코드·위치 출처·리간드까지 최소 " +
+    "거리(저장 좌표의 기하)·보호 해제 여부·같은 체인의 서열 구간(앞뒤 5개)·5.0 Å 안 이웃 잔기 이름, 후보마다 위치와 " +
+    "바꿀 잔기, 그리고 집합의 보호 검사 상태와 포켓 출처를 썼을 때의 포켓 요약.",
+  "보내지 않는 것: 좌표·구조 파일·전체 서열·번호 대응 값(UniProt·KLIFS)·보호 사유 이름·handle·로컬 경로·API 키.",
   "동의만으로는 아무것도 보내지 않습니다. 전송마다 정확한 본문을 미리 보고 사람이 승인해야 한 번 보냅니다.",
   `run당 과학 전송은 ${JEV_SEND_CAP}회까지입니다(보낸 뒤 실패한 전송도 1회로 셉니다).`,
   "provider 정책: data_collection=deny, zdr(데이터 보존 없음).",
@@ -206,6 +214,10 @@ export const JEV_TEXT = {
   headerActions: "동작",
 } as const;
 
+/** A preview's `send_in_progress` that a status read after that preview no longer reports (see `jevPreviewBlockers`). */
+export const SEND_IN_PROGRESS_STALE_TEXT = "다시 읽기 필요: 미리보기를 읽은 뒤 이 run의 다른 과학 전송이 끝났습니다. " +
+  `"${JEV_TEXT.previewReload}"를 누르세요 (send_in_progress)`;
+
 // ---- closed reason labels ("한국어 (code)"; anything outside a set is UNKNOWN_CODE_TEXT) ----
 
 const REFUSAL_LABEL: Record<string, string> = {
@@ -304,10 +316,15 @@ export function egressStopText(reason: string | null): string | null {
 
 export interface JevErrorInfo { status: number | null; code: string | null; reasonCode: string | null; text: string }
 
+/** This module's own fixed texts a thrown `Error` may carry; they are the only messages shown after the label. */
+const OWN_ERROR_TEXTS: readonly string[] = [RESPONSE_SHAPE_TEXT];
+
 /**
  * An `ApiError` (or any thrown value) as status, code, `detail.reason_code` and text. JEV routes answer
  * `{"detail": {error, message, ...}}`, the command route `{"ok": false, error, message, detail: {reason_code}}`;
- * `ApiError` carries both as `code` and `detail`. The reason code wins over the error class.
+ * `ApiError` carries both as `code` and `detail`. The reason code wins over the error class. The text is the Korean
+ * label with its code ("한국어 (code)"): the server's English `message` and a browser error's message are never shown
+ * (only this module's own fixed text, e.g. an answer of the wrong shape, follows the label).
  */
 export function jevErrorInfo(error: unknown): JevErrorInfo {
   if (typeof error !== "object" || error === null)
@@ -320,8 +337,9 @@ export function jevErrorInfo(error: unknown): JevErrorInfo {
     ? ((PROJECTION_REASON_CODES as readonly string[]).includes(reasonCode) ? projectionReasonText(reasonCode)
       : errorCodeText(reasonCode))
     : codeText !== null ? errorCodeText(codeText) : REQUEST_FAILED_TEXT;
+  const own = typeof message === "string" && OWN_ERROR_TEXTS.includes(message) ? message : null;
   return { status: typeof status === "number" ? status : null, code: codeText, reasonCode,
-    text: typeof message === "string" && message ? `${head}: ${message}` : head };
+    text: own !== null ? `${head}: ${own}` : head };
 }
 
 // ---- panel state, status and sources ----
@@ -374,6 +392,22 @@ export function globalScienceBadge(mark: ScienceConsentMark | null, runId: strin
   if (runId === null || mark === null || mark.runId !== runId) return null;
   const text = scienceBadgeText(mark);
   return text === null ? null : { text, note: SCIENCE_BADGE_NOTE };
+}
+
+/** Request order of the page's global mark (one per page). */
+export interface ScienceMarkGate {
+  /** A page status read starts: its ticket supersedes every earlier read. */
+  begin(): number;
+  /** The JEV area reported a status (its own read or a consent change): every page read still in flight is older. */
+  report(): void;
+  /** Whether a page read's answer may be applied (no later read or report came since it started). */
+  current(ticket: number): boolean;
+}
+
+/** A new request order: only the latest request's answer reaches the global mark. */
+export function scienceMarkGate(): ScienceMarkGate {
+  let latest = 0;
+  return { begin: () => ++latest, report: () => { latest += 1; }, current: ticket => ticket === latest };
 }
 
 export interface JevStatusView {
@@ -567,16 +601,33 @@ export function localRefText(ref: JevSelectionItem | JevLocalRef): string {
     : `후보 번호 ${ref.candidate_index} · 위치 번호 ${ref.position_index}`;
 }
 
+export interface JevPreviewBlocker { code: string; text: string; stale: boolean }
+
+/**
+ * The preview's server refusals as shown. `send_in_progress` is the server's answer when the preview was read; when a
+ * status read that arrived after that preview (`laterStatus`) no longer reports a send in progress, the reason is shown
+ * as stale ("다시 읽기 필요") and still closes the send button until the person re-reads the preview (the screen never
+ * re-reads it by itself: the preview read is a POST the person presses). Every other reason is shown as it is.
+ */
+export function jevPreviewBlockers(preview: Pick<JevPreviewV1, "blocked_by">,
+                                   laterStatus: Pick<JevStatusV1, "send_in_progress"> | null = null): JevPreviewBlocker[] {
+  return preview.blocked_by.map(code => {
+    const stale = code === "send_in_progress" && laterStatus !== null && laterStatus.send_in_progress === false;
+    return { code, text: stale ? SEND_IN_PROGRESS_STALE_TEXT : blockReasonText(code), stale };
+  });
+}
+
 export interface JevPreviewView {
   projectionHandle: string; kind: JevKind; kindText: string; questionId: string;
   /** The fixed question wording and the exact body, verbatim from the server. */
   instructions: string; body: string; bodyBytesText: string; bodySha256: string;
   aliasRows: { alias: string; localRefText: string; sentText: string }[];
   reservationText: string; capText: string; budgetRemainingText: string;
-  blocked: { code: string; text: string }[]; previousSendsText: string;
+  blocked: JevPreviewBlocker[]; previousSendsText: string;
 }
 
-export function jevPreviewView(preview: JevPreviewV1): JevPreviewView {
+export function jevPreviewView(preview: JevPreviewV1,
+                               laterStatus: Pick<JevStatusV1, "send_in_progress"> | null = null): JevPreviewView {
   return {
     projectionHandle: preview.projection_handle, kind: preview.kind, kindText: KIND_LABEL[preview.kind],
     questionId: preview.question.id, instructions: preview.question.instructions, body: preview.body,
@@ -587,23 +638,28 @@ export function jevPreviewView(preview: JevPreviewV1): JevPreviewView {
     capText: jevCapText(preview),
     budgetRemainingText: `남은 외부 토큰 ${preview.budget_remaining.external_tokens} · 남은 ` +
       usdText(preview.budget_remaining.usd),
-    blocked: preview.blocked_by.map(code => ({ code, text: blockReasonText(code) })),
+    blocked: jevPreviewBlockers(preview, laterStatus),
     previousSendsText: `같은 투영으로 이전에 보낸 수: ${preview.previous_sends}회`,
   };
 }
 
+export interface JevSendGuardInput {
+  preview: JevPreviewV1 | null; confirmed: boolean; sending: boolean;
+  /** A status read that arrived after the preview (null or absent = none). */
+  laterStatus?: Pick<JevStatusV1, "send_in_progress"> | null;
+}
+
 /** Every reason the send button is closed now (empty = it can be pressed). */
-export function jevSendBlockers(input: { preview: JevPreviewV1 | null; confirmed: boolean; sending: boolean }):
-  string[] {
+export function jevSendBlockers(input: JevSendGuardInput): string[] {
   if (input.preview === null) return [NO_PREVIEW_REASON];
-  const reasons = input.preview.blocked_by.map(code => blockReasonText(code));
+  const reasons = jevPreviewBlockers(input.preview, input.laterStatus ?? null).map(item => item.text);
   if (input.sending) reasons.push(SENDING_REASON);
   if (!input.confirmed) reasons.push(CONFIRM_REQUIRED_REASON);
   return reasons;
 }
 
 /** True only with zero server blockers, the confirmation checked and no send in flight. */
-export function jevCanSend(input: { preview: JevPreviewV1 | null; confirmed: boolean; sending: boolean }): boolean {
+export function jevCanSend(input: JevSendGuardInput): boolean {
   return jevSendBlockers(input).length === 0;
 }
 
@@ -821,14 +877,19 @@ export function jevResponseCurrent(captured: JevStamp, live: JevStamp): boolean 
 
 /** Lines exempt from the check: exactly a fixed sentence J1–J7 or screen note U1–U3. */
 export const JEV_FIXED_LINES: readonly string[] = [...Object.values(JEV_STATEMENTS), ...Object.values(JEV_SCREEN_NOTES)];
-const FORBIDDEN = /순위|추천|최고|최적|개선|예측|유망|점수|에너지|활성|친화|안정성|ΔΔG|좋은|나쁜|안전|가장 높|가장 낮|winner|\bbest|\brank|recommend|highest/gi;
+/**
+ * Spec 2 and 8 wording (plus 최고, 가장 높/낮 and highest). "비활성" (inactive) is not "활성". The offscreen harness
+ * (`tests/offscreen/jev-flow.cjs`) and the acceptance runner (`scripts/m24_offscreen_acceptance.py`) use this same
+ * pattern and line rule; tests on both sides compare them.
+ */
+export const JEV_FORBIDDEN = /순위|추천|최고|최적|개선|예측|유망|점수|에너지|(?<!비)활성|친화|안정성|ΔΔG|좋은|나쁜|안전|가장 높|가장 낮|winner|\bbest|\brank|recommend|highest/gi;
 
-/** Forbidden words in screen text, line by line. */
+/** Forbidden words in screen text, line by line; a line exactly equal to a fixed sentence or note is exempt. */
 export function jevForbiddenWords(text: string): string[] {
   const found: string[] = [];
   for (const line of text.split("\n")) {
     if (JEV_FIXED_LINES.includes(line)) continue;
-    for (const match of line.matchAll(FORBIDDEN)) found.push(match[0]);
+    for (const match of line.matchAll(JEV_FORBIDDEN)) found.push(match[0]);
   }
   return found;
 }

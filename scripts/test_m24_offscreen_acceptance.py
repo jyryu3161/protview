@@ -4,9 +4,12 @@ chain of scripts/m24_offscreen_acceptance.py (no services run here)."""
 import argparse
 import ast
 import json
+import re
+import shutil
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import pytest
@@ -15,10 +18,12 @@ from scripts import m24_offscreen_acceptance as m24
 
 REPO = Path(m24.__file__).resolve().parents[1]
 FLOW = REPO / "frontend/tests/offscreen" / m24.FLOW
+PRODUCT_JEV = REPO / "frontend/src/lib/jev.ts"
+REAL_LEDGER_PATH = m24.ledger_path
 ENV = {"workerPython": True, "ligandAvailable": True, "mutationAvailable": True, "jevAvailable": True,
        "fixtureServer": True, "setup": True, "keyAvailable": True, "liveState": True}
 CHECKS = {"keyScan": {"ok": True}, "wordingScan": {}, "fixtureProof": {"ok": True}, "liveCount": {"ok": True},
-          "calibration": {"ok": True}}
+          "calibration": {"ok": True}, "liveLedger": {"ok": True}}
 SERVER = {"fixture": True, "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
           "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)"}
 
@@ -60,6 +65,14 @@ def _events(folder, run, lines):
 DISPATCH = {"type": "jev_science_dispatch_started", "send_id": "s", "audit_id": "eg_x"}
 SCIENCE_RESPONSE = {"type": "egress", "stage": "response_received", "scope": "science", "audit_id": "eg_x"}
 VIEWER_RESPONSE = {"type": "egress", "stage": "response_received", "audit_id": "eg_y"}
+
+
+@pytest.fixture(autouse=True)
+def isolated_ledger(tmp_path, monkeypatch):
+    """No test reads or writes the repository's real-call ledger: every Runner gets a ledger in tmp_path."""
+    path = tmp_path / "ledger" / m24.LEDGER_NAME
+    monkeypatch.setattr(m24, "ledger_path", lambda code=None: path)
+    return path
 
 
 @pytest.fixture
@@ -187,11 +200,18 @@ def test_live_plan_shape_and_phase_slices():
             assert entry["set"] in m24.LIVE_RUNS[entry["run"]] and 1 <= entry["pick"]["first"] <= 20
     assert max(per_run.values()) <= m24.MAX_PER_RUN
     assert plan[0]["kind"] == "ligand" and plan[0].get("report") is True    # the calibrate send makes the report
-    assert m24.plan_for("calibrate", 0, 6) == {"entries": plan[:1], "maxDispatch": 1, "maxPerRun": 3}
-    assert m24.plan_for("live", 1, 6)["entries"] == plan[1:6] and m24.plan_for("live", 1, 6)["maxDispatch"] == 6
+    checks = m24.PRE_CHECKS
+    assert m24.plan_for("calibrate", 0, 6) == {"entries": plan[:1], "maxDispatch": 1, "maxPerRun": 3, "preChecks": checks}
+    assert m24.plan_for("live", 1, 6) == {"entries": plan[1:6], "maxDispatch": 6, "maxPerRun": 3}   # no pre-checks
     assert m24.plan_for("live", 1, 3)["entries"] == plan[1:3]
     assert m24.plan_for("live", 6, 6)["entries"] == []
-    assert m24.plan_for("rehearsal", 12, 0, base=12) == {"entries": plan, "maxDispatch": 18, "maxPerRun": 3}
+    # the rehearsal is the same two plans, shifted by the fixture dispatch events already in its runs folder
+    assert m24.plan_for("rehearsal-calibrate", 0, 1, base=12) == {"entries": plan[:1], "maxDispatch": 13, "maxPerRun": 3,
+                                                                   "preChecks": checks}
+    assert m24.plan_for("rehearsal-live", 1, 6, base=13) == {"entries": plan[1:6], "maxDispatch": 19, "maxPerRun": 3}
+    # the pre-checks use L1's 1UBQ set (a 21st candidate exists), keep 5, and send nothing
+    assert checks == {"run": "L1", "kind": "mutation", "set": "ubq", "keep": 5}
+    assert checks["set"] in m24.LIVE_RUNS[checks["run"]] and m24.STRUCTURES["ubq"][2] > 20
 
 
 def test_calibration_needs_a_completed_send_with_known_usage_within_the_reservation():
@@ -199,17 +219,21 @@ def test_calibration_needs_a_completed_send_with_known_usage_within_the_reservat
             "servedModel": "typesafe/jev-1.13-20260917", "bodyBytes": 6000,
             "usage": {"input_tokens": 2600, "output_tokens": 30, "external_tokens": 2630, "cost": 0.0002},
             "reservation": {"external_tokens": 7096, "usd": 0.1}, "responseShape": {"confidence": True}}
-    good = m24.calibration({"sends": [send]})
+    good = m24.calibration({"status": "pass", "sends": [send]})
     assert good["ok"] is True and round(good["bodyBytesPerInputToken"], 3) == round(6000 / 2600, 3)
     assert good["reservedTokensOverUsed"] == 7096 / 2630
     for changed in ({"status": "failed"}, {"egressStop": "usage_unknown"},
                     {"usage": {**send["usage"], "cost": None}},
                     {"usage": {**send["usage"], "external_tokens": 7097}},
                     {"usage": {**send["usage"], "cost": 0.11}}):
-        assert m24.calibration({"sends": [{**send, **changed}]})["ok"] is False, changed
-    assert m24.calibration({"sends": []})["ok"] is False
+        assert m24.calibration({"status": "pass", "sends": [{**send, **changed}]})["ok"] is False, changed
+    # the send was fine but the calibrate flow (pre-checks, card, report, other tabs) did not pass: no live phase
+    failed_flow = m24.calibration({"status": "fail", "sends": [send]})
+    assert failed_flow["ok"] is False and failed_flow["flowPassed"] is False and failed_flow["status"] == "completed"
+    assert m24.calibration({"sends": [send]})["ok"] is False
+    assert m24.calibration({"status": "pass", "sends": []})["ok"] is False
     assert m24.calibration(None)["ok"] is False
-    assert m24.calibration({"sends": [{"entry": "x", "skipped": "stopped"}]})["ok"] is False
+    assert m24.calibration({"status": "pass", "sends": [{"entry": "x", "skipped": "stopped"}]})["ok"] is False
 
 
 # ----- fixture proof, searches, wording ------------------------------------------------------------------------------
@@ -228,14 +252,42 @@ def test_fixture_proof_matches_every_audit_to_a_scripted_call():
         assert m24.fixture_proof(server, calls_, counts_)["ok"] is False
 
 
-def test_forbidden_words_with_the_fixed_sentences_exempt():
+def test_forbidden_words_with_the_fixed_lines_exempt():
     for sentence in m24.FIXED_SENTENCES:
         assert m24.forbidden_in(sentence) == []
-        assert m24.forbidden_in(f"카드: {sentence}") == []
+        assert m24.forbidden_in(f"{sentence}\n{sentence}") == []
+    # only a line exactly equal to a fixed sentence is exempt (the product's rule)
+    assert m24.forbidden_in(f"카드: {m24.FIXED_SENTENCES[0]}") == ["순위", "추천", "예측"]
     assert m24.forbidden_in("JEV가 고른 후보는 최고의 추천") == ["최고", "추천"]
-    assert m24.forbidden_in("the best candidate ranks first; we recommend it") == ["best", "ranks", "recommend"]
-    assert m24.forbidden_in("bestow a frank ranking") == ["ranking"]
-    assert m24.forbidden_in("점수 · 친화도 · 안정성 · ΔΔG · winner") == ["점수", "친화도", "안정성", "ΔΔG", "winner"]
+    assert m24.forbidden_in("the best candidate ranks first; we recommend it") == ["best", "rank", "recommend"]
+    assert m24.forbidden_in("frank stabilizer") == []
+    assert m24.forbidden_in("점수 · 친화도 · 안정성 · ΔΔG · winner") == ["점수", "친화", "안정성", "ΔΔG", "winner"]
+    # spec 2 and 8 terms; 비활성 is a plain word, not 활성
+    assert m24.forbidden_in("예측·유망·좋은·나쁜·안전·에너지·활성") == ["예측", "유망", "좋은", "나쁜", "안전", "에너지", "활성"]
+    assert m24.forbidden_in("비활성 버튼") == [] and m24.forbidden_in("활성화") == ["활성"]
+    assert m24.forbidden_in("가장 높은 값과 가장 낮은 값, highest") == ["가장 높", "가장 낮", "highest"]
+    assert m24.forbidden_in("후보best") == ["best"]                   # ASCII word boundary, as in JavaScript
+
+
+WORDING_PROBES = [*m24.FIXED_SENTENCES, f"요약: {m24.FIXED_SENTENCES[0]}", f" {m24.FIXED_SENTENCES[3]}",
+                  "비활성\n활성\n활성화", "가장 높음 · 가장 낮음 · highest · Best · RANKS · ΔΔG", "후보best 순위c01",
+                  "순위 추천 최고 최적 개선 예측 유망 점수 에너지 친화 안정성 좋은 나쁜 안전 winner recommend",
+                  "bestow frank ranking", "JEV 판정(모델 선택)", "모델 보고 확신도(0–1, 과학 값 아님)"]
+
+
+def test_wording_rule_is_the_product_rule_and_the_harness_rule():
+    literal = re.search(r"^export const JEV_FORBIDDEN = /(.+)/gi;$", PRODUCT_JEV.read_text(), re.MULTILINE)
+    assert literal, "JEV_FORBIDDEN literal not found in frontend/src/lib/jev.ts"
+    assert m24.FORBIDDEN.pattern == literal.group(1)
+    assert m24.FORBIDDEN.flags & re.IGNORECASE and m24.FORBIDDEN.flags & re.ASCII   # \b as in JavaScript (no u flag)
+    script = (f"const f=require({json.dumps(str(FLOW))});const probes=JSON.parse(process.argv[1]);"
+              "console.log(JSON.stringify({source:f.FORBIDDEN.source,flags:f.FORBIDDEN.flags,"
+              "fixed:f.FIXED_LINES,found:probes.map(p=>f.forbiddenWords(p))}))")
+    done = subprocess.run(["node", "-e", script, json.dumps(WORDING_PROBES)], capture_output=True, text=True, check=True)
+    harness = json.loads(done.stdout)
+    assert (harness["source"], harness["flags"]) == (literal.group(1), "gi")
+    assert harness["fixed"] == list(m24.FIXED_SENTENCES)
+    assert harness["found"] == [m24.forbidden_in(probe) for probe in WORDING_PROBES]
 
 
 def test_fixed_sentences_equal_the_product_constants_and_the_harness_copy():
@@ -263,7 +315,11 @@ def test_scan_wording_reads_json_strings_and_text_but_not_profiles_or_service_lo
     (tmp_path / "step/browser-profile").mkdir()
     (tmp_path / "step/browser-profile/Preferences.json").write_text('{"best": 1}')
     (tmp_path / "shot.png").write_bytes(b"\x89PNG best")
-    assert m24.scan_wording(tmp_path) == {"step/rows.jsonl": ["best"]}
+    # a panel dump: tags become line breaks, so a fixed sentence in its own element is its own (exempt) line
+    (tmp_path / "step/F09-failure.panel.html").write_text(
+        f'<section><p data-limitation="0">{m24.FIXED_SENTENCES[0]}</p><p>{m24.FIXED_SENTENCES[8]}</p></section>')
+    (tmp_path / "step/F10-failure.panel.html").write_text("<div><p>비활성</p><b>순위</b> &amp; 1</div>")
+    assert m24.scan_wording(tmp_path) == {"step/F10-failure.panel.html": ["순위"], "step/rows.jsonl": ["best"]}
 
 
 def test_files_containing_finds_needles_and_skips_absent_roots(tmp_path):
@@ -335,7 +391,8 @@ def test_all_passing_rows_pass(phase):
         assert judged["notObserved"]["JL-calibrate-send"].startswith("관찰하지 않음 — 실호출 할당은 T10")
         assert judged["notObserved"]["JL-live-sends"] == m24.NOT_OBSERVED_LIVE
     else:
-        assert {"JL-count", "JL-calibration"} <= set(judged["cases"]) and "JL-live-sends" not in judged["notObserved"]
+        assert {"JL-count", "JL-calibration", "JL-ledger"} <= set(judged["cases"])
+        assert "JL-live-sends" not in judged["notObserved"]
 
 
 def test_a_case_missing_or_failed_in_its_row_fails():
@@ -343,20 +400,23 @@ def test_a_case_missing_or_failed_in_its_row_fails():
     del rows[0]["cases"]["J-late"]
     judged = _judge(rows=rows)
     assert judged["cases"]["J-late"]["status"] == "fail" and judged["passed"] is False
-    rows = _rows()
-    rows[1]["cases"]["J-live-rehearsal"] = "fail"
-    assert _judge(rows=rows)["cases"]["J-live-rehearsal"]["status"] == "fail"
+    for index in (1, 2):                                  # either rehearsal step decides the rehearsal case
+        rows = _rows()
+        rows[index]["cases"]["J-live-rehearsal"] = "fail"
+        assert _judge(rows=rows)["cases"]["J-live-rehearsal"]["status"] == "fail"
     rows = _rows("calibrate")
     rows[0]["cases"]["JL-live"] = "fail"
     assert _judge("calibrate", rows=rows)["cases"]["JL-calibrate-send"]["status"] == "fail"
 
 
 def test_missing_step_and_browser_egress_fail():
-    judged = _judge(rows=[_row("jev-fixture")])
-    assert judged["steps"]["jev-rehearsal"]["status"] == "missing"
+    assert m24.PHASE_STEPS["fixture"] == ["jev-fixture", "jev-rehearsal-calibrate", "jev-rehearsal-live"]
+    judged = _judge(rows=[_row("jev-fixture"), _row("jev-rehearsal-calibrate")])
+    assert judged["steps"]["jev-rehearsal-live"]["status"] == "missing"
     assert judged["cases"]["S-browser-egress-zero"]["status"] == "fail" and judged["passed"] is False
     for bad in (None, 1):
-        judged = _judge(rows=[_row("jev-fixture", external=bad), _row("jev-rehearsal")])
+        judged = _judge(rows=[_row("jev-fixture", external=bad), _row("jev-rehearsal-calibrate"),
+                              _row("jev-rehearsal-live")])
         assert judged["steps"]["jev-fixture"]["status"] == "fail"
         assert judged["cases"]["S-browser-egress-zero"]["status"] == "fail" and judged["passed"] is False
 
@@ -370,6 +430,8 @@ def test_missing_step_and_browser_egress_fail():
     ("fixture", {k: v for k, v in CHECKS.items() if k != "fixtureProof"}, "S-real-calls-zero"),
     ("calibrate", {**CHECKS, "liveCount": {"ok": False}}, "JL-count"),
     ("calibrate", {**CHECKS, "calibration": {"ok": False}}, "JL-calibration"),
+    ("calibrate", {**CHECKS, "liveLedger": {"ok": False}}, "JL-ledger"),
+    ("live", {k: v for k, v in CHECKS.items() if k != "liveLedger"}, "JL-ledger"),
     ("live", {**CHECKS, "liveCount": {"ok": False}}, "JL-count"),
     ("live", {**CHECKS, "calibration": None}, "JL-calibration"),
 ])
@@ -393,7 +455,7 @@ def test_leftovers_fail_and_latest_attempt_decides():
     assert _judge(leftovers=["port 8000 still listening: pid 1"])["passed"] is False
     failed = _row("jev-fixture", status="fail", cases={case: "fail" for case in m24.FIXTURE_CASES})
     retried = _row("jev-fixture-20261006T120000000000")
-    judged = _judge(rows=[failed, retried, _row("jev-rehearsal")])
+    judged = _judge(rows=[failed, retried, _row("jev-rehearsal-calibrate"), _row("jev-rehearsal-live")])
     assert judged["steps"]["jev-fixture"]["latest"] == "jev-fixture-20261006T120000000000"
     assert judged["passed"] is True
 
@@ -450,3 +512,151 @@ def test_harness_never_posts_itself_and_its_fixture_server_never_uses_the_real_g
     assert "product_api.VIEWER_GATE = EgressGate(transport=httpx.MockTransport(refuse)" in server
     assert f'SENTINEL = "{m24.SENTINEL}"' in server
     assert "env_or_root_dotenv_key" not in server and "OPENROUTER" not in server
+
+
+# ----- the repository-level real-call ledger (every root, every phase) ---------------------------------------------------
+def _ledger_file(path, roots):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": roots}))
+
+
+def _phase(phase="calibrate", finished=True):
+    return {"phase": phase, "startedAt": "2026-10-06T00:00:00+00:00",
+            "finishedAt": "2026-10-06T00:01:00+00:00" if finished else None, "planned": 1}
+
+
+def test_the_ledger_is_one_git_ignored_file_of_the_main_checkout():
+    path = REAL_LEDGER_PATH(REPO)
+    main = Path(subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=REPO,
+                               capture_output=True, text=True, check=True).stdout.strip()).parent
+    assert path == main / "runs" / "m24-live-ledger.json"
+    assert subprocess.run(["git", "check-ignore", "-q", str(path)], cwd=main, check=False).returncode == 0
+    with pytest.raises(m24.LedgerError, match="git"):
+        REAL_LEDGER_PATH(Path("/"))
+
+
+def test_ledger_total_adds_every_root_and_counts_their_dispatch_events(tmp_path):
+    a, b, c = tmp_path / "a", tmp_path / "b", tmp_path / "c"
+    _events(a / "runs", "run_a1", [DISPATCH])
+    _events(b / "runs", "run_b1", [DISPATCH, DISPATCH, SCIENCE_RESPONSE])
+    ledger = {"schema": m24.LEDGER_SCHEMA, "roots": {
+        str(a): {"phases": [_phase()], "dispatch": {"run_a1": 1}},
+        str(b): {"phases": [_phase(finished=False)], "dispatch": {}}}}    # unfinished: its events are counted
+    assert m24.ledger_total(ledger) == 3
+    _events(a / "runs", "run_a1", [DISPATCH])                              # events only grow: the larger count wins
+    assert m24.ledger_total(ledger) == 4
+    shutil.rmtree(a)                                                       # a finished root that is gone keeps its record
+    assert m24.ledger_total(ledger) == 3
+    _events(c / "runs", "run_c1", [DISPATCH])                              # the current root is counted too
+    assert m24.ledger_total(ledger, (c,)) == 4
+    shutil.rmtree(b)                                                       # an unfinished root that is gone: not countable
+    with pytest.raises(m24.LedgerError, match="unfinished"):
+        m24.ledger_total(ledger)
+
+
+def test_a_damaged_or_unreadable_ledger_is_refused(tmp_path):
+    path = tmp_path / "ledger.json"
+    assert m24.read_ledger(path) == {"schema": m24.LEDGER_SCHEMA, "roots": {}}          # absent = nothing recorded yet
+    good = {"phases": [_phase()], "dispatch": {"run_a1": 1}}
+    for bad in ("{", "[]", "null", json.dumps({"schema": "other@1", "roots": {}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": []}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {}, "extra": 1}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"relative/root": good}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": {**good, "dispatch": {"run_a1": -1}}}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": {**good, "dispatch": {"run_a1": True}}}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": {**good, "dispatch": {"x": 1}}}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": {**good, "phases": "calibrate"}}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": {**good, "phases": [{"phase": "fixture"}]}}}),
+                json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": {"phases": []}}})):
+        path.write_text(bad)
+        with pytest.raises(m24.LedgerError):
+            m24.read_ledger(path)
+    path.write_text(json.dumps({"schema": m24.LEDGER_SCHEMA, "roots": {"/r": good}}))
+    assert m24.read_ledger(path)["roots"]["/r"] == good
+    path.chmod(0)
+    try:
+        with pytest.raises(m24.LedgerError):
+            m24.read_ledger(path)
+    finally:
+        path.chmod(0o600)
+
+
+@pytest.fixture
+def qa_base():
+    """A git-ignored QA folder inside the repository (the runner refuses tracked artifacts and /tmp), removed after."""
+    base = REPO / "runs" / f"pytest-m24-ledger-{uuid.uuid4().hex[:12]}"
+    yield base
+    shutil.rmtree(base, ignore_errors=True)
+
+
+def _stubbed(monkeypatch, base, name, phase, live_calls=0, dispatches=1, crash=False):
+    """A Runner whose build, services, harness steps, searches and export are stubs; its phase writes ``dispatches``
+    jev_science_dispatch_started events into one run of its root (then crashes when ``crash``)."""
+    root, attempt = base / name, f"{name}-{phase}-{uuid.uuid4().hex[:8]}"
+    runner = m24.Runner(_args(root=str(root), artifacts=str(base / "artifacts" / attempt),
+                              out=str(base / "out" / attempt), phase=phase, live_calls=live_calls))
+    monkeypatch.setattr(m24.m13, "listening", lambda port: [])
+    monkeypatch.setattr(m24.m13, "build_is_current", lambda frontend: True)
+    for method in ("build", "start_frontend", "stop_all", "export"):
+        monkeypatch.setattr(runner, method, lambda *args, **kwargs: None)
+    monkeypatch.setattr(runner, "leftovers", list)
+    monkeypatch.setattr(runner, "key_scan", lambda roots: {"ok": True, "keyAvailable": True, "keyHits": [],
+                                                           "sentinelHits": []})
+
+    def harness():
+        _events(runner.runs, f"run_{uuid.uuid4().hex}", [DISPATCH] * dispatches)
+        if crash:
+            raise RuntimeError("harness crashed after its sends")
+    for method in ("run_fixture", "run_calibrate", "run_live"):
+        monkeypatch.setattr(runner, method, harness)
+    return runner
+
+
+def _calibrated(root):
+    (root).mkdir(parents=True, exist_ok=True)
+    (root / "live-state.json").write_text(json.dumps({"calibration": {"ok": True}, "livePhaseRan": False,
+                                                      "setup": str(root / "live-setup.json")}))
+
+
+def test_rehearsals_never_touch_the_ledger_and_real_phases_add_their_event_counts(monkeypatch, qa_base, isolated_ledger):
+    # the fixture phase (its rehearsal dispatches against the fixture server) is not a real call: nothing is written
+    fixture = _stubbed(monkeypatch, qa_base, "fixture", "fixture", dispatches=6)
+    fixture.run()
+    assert not isolated_ledger.exists()
+    # a calibrate root, then a second calibrate root: the ledger adds both (event counts, failed sends included)
+    first = _stubbed(monkeypatch, qa_base, "calibrate-1", "calibrate", live_calls=1)
+    first.run()
+    ledger = json.loads(isolated_ledger.read_text())
+    entry = ledger["roots"][str(first.root)]
+    assert sum(entry["dispatch"].values()) == 1 and entry["phases"][0]["finishedAt"] is not None
+    assert first.checks["liveLedger"]["before"] == 0 and first.checks["liveLedger"]["after"] == 1
+    second = _stubbed(monkeypatch, qa_base, "calibrate-2", "calibrate", live_calls=1, crash=True)
+    with pytest.raises(RuntimeError, match="crashed"):
+        second.run()
+    assert m24.ledger_total(m24.read_ledger(isolated_ledger)) == 2      # the crashed phase's call is recorded too
+    # live on the first root with --live-calls 6 plans 5 more: 2 + 5 > 6 is refused before anything starts
+    _calibrated(first.root)
+    refused = _stubbed(monkeypatch, qa_base, "calibrate-1", "live", live_calls=6, dispatches=5)
+    with pytest.raises(SystemExit, match="ledger counts 2"):
+        refused.run()
+    assert m24.ledger_total(m24.read_ledger(isolated_ledger)) == 2
+    assert not (refused.artifacts / "runner-summary.jsonl").exists()         # nothing started
+    # with --live-calls 5 it plans 4: 2 + 4 = 6 is allowed and recorded
+    allowed = _stubbed(monkeypatch, qa_base, "calibrate-1", "live", live_calls=5, dispatches=4)
+    allowed.run()
+    assert m24.ledger_total(m24.read_ledger(isolated_ledger)) == 6
+    assert allowed.checks["liveLedger"]["planned"] == 4 and allowed.checks["liveLedger"]["after"] == 6
+    # the allocation is used up: a new calibrate root is refused, whatever its --live-calls
+    with pytest.raises(SystemExit, match="ledger counts 6"):
+        _stubbed(monkeypatch, qa_base, "calibrate-3", "calibrate", live_calls=1).run()
+
+
+def test_a_damaged_ledger_refuses_every_real_phase(monkeypatch, qa_base, isolated_ledger):
+    isolated_ledger.parent.mkdir(parents=True, exist_ok=True)
+    isolated_ledger.write_text("{not json")
+    runner = _stubbed(monkeypatch, qa_base, "calibrate", "calibrate", live_calls=1)
+    with pytest.raises(SystemExit, match="ledger"):
+        runner.run()
+    assert not runner.runs.exists() and isolated_ledger.read_text() == "{not json"
+    # the fixture phase does not read it
+    _stubbed(monkeypatch, qa_base, "fixture", "fixture").run()

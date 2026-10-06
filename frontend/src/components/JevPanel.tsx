@@ -113,6 +113,9 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
   onStatus?: (runId: string, status: JevStatusV1) => void }) {
   const runId = run.run_id;
   const [status, setStatus] = useState<Load<JevStatusV1>>({ status: "idle" });
+  /** Number of status answers applied so far; a preview keeps the number it was read at (see `laterStatus`). */
+  const statusTick = useRef(0);
+  const [statusAt, setStatusAt] = useState(0);
   const [consentBusy, setConsentBusy] = useState(false);
   const [consentError, setConsentError] = useState<string | null>(null);
   const [ligandSets, setLigandSets] = useState<Load<LigandCandidateSetListRow[]>>({ status: "idle" });
@@ -130,7 +133,7 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
   const [mutationRows, setMutationRows] = useState<{ key: string; load: Load<MutationCandidatePage> } | null>(null);
   const [projection, setProjection] = useState<{ handle: string; summary: JevProjectionSummary } | null>(null);
   const [build, setBuild] = useState<Load<true>>({ status: "idle" });
-  const [preview, setPreview] = useState<{ handle: string; load: Load<JevPreviewV1> } | null>(null);
+  const [preview, setPreview] = useState<{ handle: string; load: Load<JevPreviewV1>; statusAt: number } | null>(null);
   const [confirmedFor, setConfirmedFor] = useState<string | null>(null);
   /** The send id of the one send in flight (null = none). */
   const [inFlight, setInFlight] = useState<string | null>(null);
@@ -172,14 +175,20 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
     AbortSignal.any([readAbort.current?.signal ?? new AbortController().signal, AbortSignal.timeout(ms)]);
 
   // ---- reads (entering the tab reads status, this run's candidate sets and sends; nothing is chosen or sent) ----
+  function applyStatus(value: JevStatusV1) {
+    statusTick.current += 1;
+    setStatusAt(statusTick.current);
+    setStatus({ status: "ready", value });
+    statusCallback.current?.(runId, value);
+  }
+
   function readStatus() {
     const captured = stamp("status");
     setStatus(previous => previous.status === "ready" ? previous : { status: "loading" });
     api.jevStatus(runId, readSignal()).then(value => {
       if (!current("status", captured)) return;
       if (!jevStatusMatches(value)) throw new Error(RESPONSE_SHAPE_TEXT);
-      setStatus({ status: "ready", value });
-      statusCallback.current?.(runId, value);
+      applyStatus(value);
     }).catch(e => { if (current("status", captured)) setStatus({ status: "error", message: errorText(e) }); });
   }
 
@@ -302,8 +311,7 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
       if (!current("consent", captured)) return;
       if (!jevStatusMatches(value)) throw new Error(RESPONSE_SHAPE_TEXT);
       seqs.current.status += 1;   // the answer is the new status: a status read in flight is superseded
-      setStatus({ status: "ready", value });
-      statusCallback.current?.(runId, value);
+      applyStatus(value);
       if (live.current.projection) readPreview(live.current.projection);
     } catch (e) {
       if (!current("consent", captured)) return;
@@ -339,19 +347,23 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
   function readPreview(handle: string) {
     const captured = stamp("preview");
     setPreview(previous => previous?.handle === handle && previous.load.status === "ready" ? previous
-      : { handle, load: { status: "loading" } });
+      : { handle, load: { status: "loading" }, statusAt: statusTick.current });
     api.jevPreview(runId, handle, readSignal()).then(value => {
       if (!current("preview", captured)) return;
       if (!jevPreviewMatches(value, handle)) throw new Error(RESPONSE_SHAPE_TEXT);
-      setPreview({ handle, load: { status: "ready", value } });
+      setPreview({ handle, load: { status: "ready", value }, statusAt: statusTick.current });
     }).catch(e => { if (current("preview", captured))
-      setPreview({ handle, load: { status: "error", message: errorText(e) } }); });
+      setPreview({ handle, load: { status: "error", message: errorText(e) }, statusAt: statusTick.current }); });
   }
 
   const previewLoad = projection && preview && preview.handle === projection.handle ? preview.load : null;
   const previewValue = previewLoad?.status === "ready" ? previewLoad.value : null;
+  // A status answer applied after the preview arrived (e.g. the polling saw the other send end): only it can mark the
+  // preview's send_in_progress as stale; the preview itself is re-read only when the person presses its button.
+  const laterStatus = previewValue !== null && preview !== null && statusValue !== null && statusAt > preview.statusAt
+    ? statusValue : null;
   const confirmed = jevConfirmed(confirmedFor, previewValue);
-  const sendBlockers = jevSendBlockers({ preview: previewValue, confirmed, sending });
+  const sendBlockers = jevSendBlockers({ preview: previewValue, confirmed, sending, laterStatus });
 
   // ---- the one send: the person's approval of exactly the previewed body ----
   async function send() {
@@ -531,7 +543,8 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
         {previewLoad?.status === "loading" && <Loading text={JEV_TEXT.previewLoading} />}
         {previewLoad?.status === "error" && <ErrorLine message={previewLoad.message}
           onRetry={() => readPreview(projection.handle)} testId="jev-preview-error" />}
-        {previewValue && <PreviewView preview={previewValue} onReload={() => readPreview(projection.handle)} />}
+        {previewValue && <PreviewView preview={previewValue} laterStatus={laterStatus}
+          onReload={() => readPreview(projection.handle)} />}
       </>}
     </Section>
 
@@ -677,8 +690,9 @@ function MutationTable({ page, selection, onToggle, onPage }: { page: MutationCa
   </div>;
 }
 
-function PreviewView({ preview, onReload }: { preview: JevPreviewV1; onReload: () => void }) {
-  const view = jevPreviewView(preview);
+function PreviewView({ preview, laterStatus, onReload }: { preview: JevPreviewV1; laterStatus: JevStatusV1 | null;
+  onReload: () => void }) {
+  const view = jevPreviewView(preview, laterStatus);
   return <div className="mw-jev-preview" data-testid="jev-preview" data-projection-handle={view.projectionHandle}
     data-body-sha256={view.bodySha256} data-body-bytes={preview.body_bytes} data-blocked={view.blocked.length > 0}>
     <dl className="mw-jev-facts">
@@ -706,7 +720,7 @@ function PreviewView({ preview, onReload }: { preview: JevPreviewV1; onReload: (
     <div data-testid="jev-preview-blocked" data-count={view.blocked.length}>
       <span className="mw-eyebrow">{JEV_TEXT.serverBlockers}</span>
       {view.blocked.length ? <ul className="mw-jev-errors">{view.blocked.map(item => <li key={item.code}
-        data-block-reason={item.code}>{item.text}</li>)}</ul>
+        data-block-reason={item.code} data-stale={item.stale ? "true" : undefined}>{item.text}</li>)}</ul>
         : <p className="mw-jev-note">{JEV_TEXT.noServerBlockers}</p>}
     </div>
     <div className="mw-jev-inline">
