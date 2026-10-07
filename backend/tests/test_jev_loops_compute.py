@@ -1204,6 +1204,53 @@ def test_an_end_stopped_after_its_summary_retries_to_the_same_summary(protein, s
     assert response.json()["result_handle"] == stored[0]["handle"]
 
 
+def test_an_ended_loops_record_stays_its_summary_after_outside_jobs_results_and_a_run_cancel(
+        protein, serve, monkeypatch, tmp_path):
+    served = serve(protein, protein["modelled"])
+    w, a = protein["refs"][W], protein["refs"][A]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    record, content = end_loop(served, loop_id, "ended_by_user")         # W (stored model) and A both pending
+    assert [row["state"] for row in content["candidates"]] == ["pending", "pending"]
+    # After the end, outside the loop: W's mutant docking runs and is stored (the live reading would make W
+    # reused), A's model job is submitted and cancelled (the live reading would make A unavailable), the run is
+    # cancelled. The ended record keeps the end's reading; the refusals read the live log.
+    job = served.submit_job(DC.PROTOCOL, hand_dock_request(protein, protein["model"]), 300)
+    started = served.client.post(f"/runs/{PRID}/jobs/{job['job_id']}/start")
+    assert started.status_code == 200 and started.json()["status"] == "done", started.text
+    model = served.submit_job(MC.PROTOCOL, hand_model_request(protein, a), 120)
+    assert served.client.post(f"/runs/{PRID}/jobs/{model['job_id']}/cancel").json()["job"]["status"] == "cancelled"
+    after = served.record(loop_id)
+    frozen = {key: value for key, value in record.items() if key != "current"}
+    assert {key: value for key, value in after.items() if key != "current"} == frozen
+    assert (after["candidates"], after["counts"]) == (content["candidates"], content["counts"])
+    assert after["current"] | {"remaining": None} == record["current"] | {"remaining": None}   # action none
+    assert after["current"]["remaining"]["expensive_units"] < record["current"]["remaining"]["expensive_units"]
+    assert after["counts"]["reused_count"] == 0 and after["limitations"][-1] == L.LJ8
+    row = served.client.get(f"/runs/{PRID}/jev_loops").json()[0]
+    assert (row["loop_id"], row["counts"], row["end_reason"]) == (loop_id, content["counts"], "ended_by_user")
+    refused(served.end(loop_id), "loop_ended")
+    served.run.cancel()
+    cancelled = served.record(loop_id)
+    assert {key: value for key, value in cancelled.items() if key != "current"} == frozen   # not run_cancelled
+    refused(served.end(loop_id), "cancelled")
+    refused(served.compute(loop_id, iteration=1, candidate=w), "cancelled")
+    refused(served.abandon(loop_id, iteration=1), "cancelled")
+    log = served.log()
+    with monkeypatch.context() as patch:   # fault injection: events-only replay with no engine or job lane
+        patch.setattr(docking_bundle, "WORKER_PYTHON", tmp_path / "missing/python")
+        docking_bundle._HANDSHAKE_CACHE.clear()
+
+        def no_lane(*args, **kwargs):
+            raise AssertionError("a read never reaches the job lane or a tool")
+
+        for name in ("submit", "start", "retry", "request_cancel"):
+            patch.setattr(JobQueue, name, no_lane)
+        patch.setattr(Run, "call", no_lane)
+        replay = serve(protein, log, name="replay_ended")
+        assert replay.record(loop_id) == cancelled
+    docking_bundle._HANDSHAKE_CACHE.clear()
+
+
 def test_a_stored_summary_that_is_not_its_loops_summary_is_refused_on_read(protein, serve):
     served = serve(protein, protein["modelled"])
     loop_id = served.create(protein_loop(protein, (W, A), cap=2))

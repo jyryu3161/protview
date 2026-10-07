@@ -117,13 +117,16 @@ summary from that read, which is validated, stored (same content, same handle) a
 ``end`` stores nothing new and writes the event. Every read of an ended loop checks its summary: the record is
 derived again from the events up to the loop's ``jev_loop_ended`` event (no engine, job or network) and the stored
 object must be exactly the summary that record makes (``jev_loop_result.validated_loop_result``); anything else is
-``LoopResultInvalid`` (409 ``run_corrupt`` on the routes). The ended record itself is still derived from the whole
-log like every record, so it shows the summary's rows until a later outside job or result changes an uncomputed
-candidate's reading.
+``LoopResultInvalid`` (409 ``run_corrupt`` on the routes). The record of an ended loop IS that derivation (frozen at its
+end: a job or result made outside the loop afterwards changes no candidate, count or LJ sentence); only
+``current.remaining`` (the run's remaining budget and sends now) and the refusal inputs ``cancelled`` (a run cancel
+event, also after the end) and ``send_active`` come from the live log, so a write route still answers ``cancelled``
+before ``loop_ended``. ``run_cancelled`` is derived only for a loop without its own end event.
 """
 from __future__ import annotations
 
 import copy
+import dataclasses
 import hashlib
 import math
 from collections.abc import Iterable, Mapping
@@ -200,7 +203,7 @@ ACTION_MESSAGES = {
     "job_running": "a job this loop approved is queued or running",
     "docking_pending": "the modelled candidate of the iteration awaits its docking or its abandon",
 }
-_SNAPSHOT_BUDGET = {"expensive_units": 0, "wall_clock_s": 0, "external_tokens": 0, "usd": 0}   # not in a summary
+_SNAPSHOT_BUDGET = {"expensive_units": 0, "wall_clock_s": 0, "external_tokens": 0, "usd": 0}   # no summary field
 PINS_CHANGED_CODE = "missing_configuration"   # the existing pin-mismatch capability name (M24 gate), no new name
 PINS_CHANGED_REASON = ("이 루프를 만들 때 기록한 M18·M21 작업 모듈·엔진 pin이 지금 값과 달라, 루프가 기록한 호출 키의 "
                        "작업을 만들 수 없다.")
@@ -690,11 +693,19 @@ def validated_loop_record(record: Any, inputs: Mapping[str, Any]) -> dict[str, A
 
 def _read(view: Any, created: Mapping[str, Any], *, budget: Mapping[str, Any], send_active: bool,
           send_reservation: Mapping[str, Any] | None) -> jev_loops.LoopState:
+    events = view.read()
+    if any(event.get("type") == L.EVENT_ENDED and event.get("loop_id") == created["loop_id"] for event in events):
+        at_end, _content = _at_end(view, created, budget=budget)          # the record frozen at the loop's end
+        record = copy.deepcopy(at_end.record)
+        record["current"]["remaining"] = {
+            "expensive_units": max(0, budget["expensive_units"]),
+            "wall_clock_s": math.floor(max(0, budget["wall_clock_s"])), "external_tokens": None, "usd": None,
+            "sends": max(0, J.SEND_CAP - jev_loops.dispatch_count(events))}
+        return dataclasses.replace(at_end, record=record, cancelled=jev_loops.run_cancel_seen(events),
+                                   send_active=send_active)
     inputs = derive_inputs(view, created, budget=budget, send_active=send_active, send_reservation=send_reservation)
-    state = jev_loops.derive_loop(created["loop_id"], view.read(), **inputs)
+    state = jev_loops.derive_loop(created["loop_id"], events, **inputs)
     validated_loop_record(state.record, inputs)
-    if state.ended_event:
-        _checked_result(view, created)
     return state
 
 
@@ -719,16 +730,24 @@ def _load_result(view: Any, handle: Any) -> Any:
     return view.store.load_bounded_json(handle, L.MAX_OBJECT_BYTES)
 
 
-def _checked_result(view: Any, created: Mapping[str, Any]) -> dict[str, Any]:
-    """The stored summary named by the loop's ``jev_loop_ended`` event, checked against the record derived again from
-    the events up to and including that event (one prefix of the view's one read: stored objects, job records,
-    proposals and results as they were when the loop ended)."""
+def _at_end(view: Any, created: Mapping[str, Any], *,
+            budget: Mapping[str, Any]) -> tuple[jev_loops.LoopState, dict[str, Any]]:
+    """An ended loop as it was when it ended: the state derived from the events up to and including its
+    ``jev_loop_ended`` event (one prefix of the view's one read: job records, proposals and stored results as they
+    were then; no send was in flight, the end refuses one), the record checked, and the stored summary that event
+    names checked to be exactly the one that record makes. A loop event of this loop after its end is
+    ``LoopRecordInvalid`` (no route writes one)."""
     events = view.read()
     position, ended = _ended(events, created["loop_id"])
+    if any(event.get("type") in L.EVENT_TYPES and event.get("loop_id") == created["loop_id"]
+           for event in events[position + 1:]):
+        raise jev_loops.LoopRecordInvalid("a loop event after the loop ended")
     snapshot = LoopReadView(view, events[:position + 1])
-    inputs = derive_inputs(snapshot, created, budget=_SNAPSHOT_BUDGET, send_active=False)
-    at_end = jev_loops.derive_loop(created["loop_id"], snapshot.read(), **inputs)
-    return LR.validated_loop_result(_load_result(view, ended["result_handle"]), at_end.record, ended["end_reason"])
+    inputs = derive_inputs(snapshot, created, budget=budget, send_active=False)
+    state = jev_loops.derive_loop(created["loop_id"], snapshot.read(), **inputs)
+    validated_loop_record(state.record, inputs)
+    content = LR.validated_loop_result(_load_result(view, ended["result_handle"]), state.record, ended["end_reason"])
+    return state, content
 
 
 def stored_result(view: Any, handle: Any) -> dict[str, Any]:
@@ -744,7 +763,7 @@ def stored_result(view: Any, handle: Any) -> dict[str, Any]:
         raise LR.LoopResultInvalid("the summary's loop is not in this run") from exc
     if _ended(events, loop_id)[1]["result_handle"] != handle:
         raise LR.LoopResultInvalid("the loop's end event names another summary")
-    return _checked_result(view, created)
+    return _at_end(view, created, budget=_SNAPSHOT_BUDGET)[1]
 
 
 def read_loop(view: Any, loop_id: Any, *, budget: Mapping[str, Any], send_active: bool = False,
