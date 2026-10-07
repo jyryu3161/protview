@@ -1,6 +1,6 @@
 # 진행 현황
 
-기준: 2026-10-07 UTC(2026-10-08 KST), 브랜치 `dryforge/m25-jev-loop`(`phase/m25-jev-loop` = main `b8866a8`에서 분기). M24까지 main에 병합됨(M24 병합 `2e0f2b9`, 기록 `b8866a8`). M25 완료(고정 `4360598`, 수락 증거 `docs/qa/m25-jev-loop-20261007/`, 착수 확인 `preflight.txt`, 실호출 8회 소진).
+기준: 2026-10-07 UTC(2026-10-08 KST), 브랜치 `dryforge/m25-jev-loop`(`phase/m25-jev-loop` = main `b8866a8`에서 분기). M24까지 main에 병합됨(M24 병합 `2e0f2b9`, 기록 `b8866a8`). M25 완료(고정 `4360598`, 수락 증거 `docs/qa/m25-jev-loop-20261007/`, 착수 확인 `preflight.txt`, 실호출 8회 소진). M25는 main에 병합되었다(`877d5cf`, 사용자 승인, `--no-ff`, push 없음).
 
 ## 완료 (단계 게이트와 당시 검토 통과)
 

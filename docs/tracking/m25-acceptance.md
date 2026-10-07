@@ -1,7 +1,7 @@
 # M25 JEV 설계 루프 완료 기록
 
 - 판정: **완료** (2026-10-07 UTC / 2026-10-08 KST).
-- 브랜치: `dryforge/m25-jev-loop` (`phase/m25-jev-loop` = main `b8866a8`에서 분기). M24는 시작 전에 main에 병합되어 있었다(`2e0f2b9`, 기록 `b8866a8`).
+- 브랜치: `dryforge/m25-jev-loop` (`phase/m25-jev-loop` = main `b8866a8`에서 분기). M24는 시작 전에 main에 병합되어 있었다(`2e0f2b9`, 기록 `b8866a8`). M25는 main에 병합되었다(`877d5cf`, 사용자 승인, `--no-ff`, push 없음).
 - 고정 소스: `4360598`(T11 마지막 검토 수정). 고정 뒤 제품 소스(`backend/mw`·`frontend/src`·`frontend/app`·`design`·`config`) 변경은 없다. 고정 뒤 커밋은 M24 오프스크린 하네스 한 파일(`frontend/tests/offscreen/jev-flow.cjs`, `9a9a625`), 증거(`c782419`·`c092591`·`27ea348`), 이 기록 문서뿐이다. 변경 규모는 `git diff main...HEAD`에서 증거 폴더를 뺀 68개 파일(T12 시점)이고 수정 금지 파일은 0개다(`gate-invariants.txt` (3)).
 - 수락 증거: `docs/qa/m25-jev-loop-20261007/`(`preflight.txt` 착수 확인, `gate-backend.txt`·`gate-frontend.txt`·`gate-invariants.txt` 게이트, `acceptance-fixture/` 수락(fixture 단계), `acceptance-calibrate/` 첫 실호출, `acceptance-live/` 나머지 실호출, `m24-regression/`…`m13-regression/` 회귀, `regression-harness-changes.txt` M24 하네스 수정과 회귀 사슬). 256 KiB를 넘는 텍스트 증거 53개(`m13-regression` 51개 331,655,797 B, `m14-regression` 1개 1,191,725 B, `m15-regression` 1개 590,108 B)는 결정 0020에 따라 Git 제외 `frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/export-full/<폴더>/`로 옮겼다(해시는 각 폴더의 `ARCHIVED-EVIDENCE.sha256`, `shasum -c` 모두 OK).
 - 외부 요청: 브라우저 비-loopback 0건. **OpenRouter 호출은 실호출 8회뿐**(사용자 할당 합계 8회, 결정 0012·0033. fixture 단계와 회귀는 0회, 가짜 transport). 키·헤더·원시 오류는 어떤 증거에도 없다(키 문자열 검색 0건).
