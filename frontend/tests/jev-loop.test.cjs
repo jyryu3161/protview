@@ -824,6 +824,8 @@ test("proposal card: label, local notation, list position n/m, model-reported co
   const card = view.card;
   assert.equal(card.label, "JEV 판정(모델 선택)");
   assert.equal(card.isSelection, true);
+  assert.equal(card.role, "selection");
+  assert.equal(card.roleText, "바퀴 4의 선택(계산은 사람이 승인해야 시작)");
   assert.equal(card.chosenAlias, "c03");
   assert.equal(card.ref, id16(3));
   assert.equal(card.refText, `후보 ${id16(3)}`);
@@ -859,10 +861,15 @@ test("proposal card: label, local notation, list position n/m, model-reported co
     { loop: { loop_id: LOOP_P, iteration: 1, send_ordinal: 0 }, selection: [{ alias: "m01", ref: 3, state: "pending" },
       { alias: "m02", ref: 30, state: "pending" }], answer: { choice_alias: "m02", list_position: 2, list_size: 2,
       local_ref: { candidate_index: 30, position_index: 4 }, local_display: { residue: RESIDUE, from: "K", to: "W" },
-      confidence: 1, probabilities: { m02: 1, m01: 0 } } }), proteinRecord());
+      confidence: 1, probabilities: { m02: 1, m01: 0 } } }),
+    // T11 fix: the record must show the send completed before the card is judged (here: completed, no proposal kept)
+    proteinRecord({ iterations: [{ ...proteinRecord().iterations[0], sends: [send({ send_id: SID_2, send_ordinal: 0,
+      proposal_handle: null })] }] }));
   assert.equal(mutation.card.ref, 30);
   assert.equal(mutation.card.refText, "후보 번호 30");
   assert.equal(mutation.card.isSelection, false);       // the record lists no such selection for iteration 1
+  assert.equal(mutation.card.role, "not_selection");
+  assert.equal(mutation.card.roleText, "바퀴 1의 선택이 아님");
   assert.deepEqual(plain(mutation.card.probabilityRows.map(row => [row.alias, row.text])), [["m01", "0.000"],
     ["m02", "1.000"]]);
 });
@@ -894,6 +901,89 @@ test("a late proposal shows J7 and is not the iteration's selection; refusals an
     [{}, { schema: "jev_choice@1" }], [{}, { label: "추천" }], [{ loop: null }, {}], [{ choice_handle: null }, {}],
     [{ loop: { loop_id: LOOP, iteration: 3, send_ordinal: 1 } }, {}]])
     assert.equal(lib.loopChoiceView(detail(over, choiceOver), record).state, "invalid", JSON.stringify([over, choiceOver]));
+});
+
+test("card judged only from a record that shows the send completed: stale record → confirming, no number or judgment", () => {
+  // The send answer arrived but the record read is older: iteration 4 lists the send still in progress, or not at all.
+  const fresh = computeRecord();
+  const inProgress = { ...fresh, iterations: fresh.iterations.map(it => it.index !== 4 ? it : { ...it,
+    sends: it.sends.map(item => item.send_id === SID_2 ? { ...item, status: "in_progress", proposal_handle: null } : item) }) };
+  const unlisted = ligandRecord();   // no iteration 4 row yet
+  for (const stale of [inProgress, unlisted]) {
+    const view = lib.loopChoiceView(detail(), stale);
+    assert.equal(view.state, "confirming");
+    assert.equal(view.message, lib.CHOICE_CONFIRMING_TEXT);
+    assert.equal("card" in view, false);
+    assert.ok(!/\d/.test(view.message) && !/선택이 아님|의 선택\(/.test(view.message));
+    assert.deepEqual(plain(lib.jevLoopForbiddenWords(view.message)), []);
+    assert.equal(lib.loopRecordReflectsSend(stale, SID_2, "completed"), false);
+  }
+  // A fresh record that shows it as the iteration's selection: the selection mark.
+  const selected = lib.loopChoiceView(detail(), fresh);
+  assert.equal(selected.state, "completed");
+  assert.equal(selected.card.role, "selection");
+  assert.equal(selected.card.roleText, "바퀴 4의 선택(계산은 사람이 승인해야 시작)");
+  assert.equal(lib.loopRecordReflectsSend(fresh, SID_2, "completed"), true);
+  assert.equal(lib.loopRecordReflectsSend(fresh, SID_2, "failed"), false);
+  assert.equal(lib.loopRecordReflectsSend(fresh, SID), true);      // the failed send of iteration 4, any status
+  // A fresh record whose send is a late proposal: not the selection, with J7.
+  const lateRecord = { ...fresh, iterations: fresh.iterations.map(it => it.index !== 4 ? it : { ...it, phase:
+    "awaiting_selection", sends: it.sends.map(item => item.send_id === SID_2 ? { ...item, late: true } : item) }),
+  current: current() };
+  const late = lib.loopChoiceView(detail({ late: true, late_reason: "consent_off" }, { arrival: { late: true,
+    late_reason: "consent_off" }, limitations: [...choice().limitations, jev.JEV_STATEMENTS.J7] }), lateRecord);
+  assert.equal(late.state, "completed");
+  assert.equal(late.card.role, "not_selection");
+  assert.equal(late.card.roleText, "바퀴 4의 선택이 아님");
+  assert.equal(late.card.lateNote, `${lib.LATE_CHOICE_NOTE}\n${jev.JEV_STATEMENTS.J7}`);
+  assert.equal(late.card.limitations.at(-1), jev.JEV_STATEMENTS.J7);
+  // The record names another proposal as the selection: this one is not it.
+  const other = { ...fresh, iterations: fresh.iterations.map(it => it.index !== 4 ? it : { ...it,
+    sends: it.sends.map(item => item.send_id === SID_2 ? { ...item, proposal_handle: CHOICE_1 } : item) }) };
+  assert.equal(lib.loopChoiceView(detail(), other).card.role, "not_selection");
+  assert.equal(lib.loopRecordSend(fresh, "absent"), null);
+  assert.deepEqual(plain(lib.loopRecordSend(fresh, SID_2)), { ...send({ send_id: SID_2, send_ordinal: 1,
+    proposal_handle: CHOICE_4 }), iteration: 4 });
+});
+
+test("record reads: a request while a read is in flight is kept (merged), read once more when it ends, never dropped", () => {
+  let queue = lib.initialLoopReadQueue();
+  assert.deepEqual(plain(queue), { inFlight: null, pending: false });
+  let step = lib.loopReadRequest(queue, LOOP);
+  assert.equal(step.start, true);
+  queue = step.queue;
+  // Requests while the read is in flight (the send's finally, poll ticks) are merged into one pending mark.
+  for (let i = 0; i < 3; i++) {
+    step = lib.loopReadRequest(queue, LOOP);
+    assert.equal(step.start, false);
+    queue = step.queue;
+    assert.deepEqual(plain(queue), { inFlight: LOOP, pending: true });
+  }
+  // The read ends (applied or dropped): exactly one more read, which starts at once.
+  let settled = lib.loopReadSettled(queue, LOOP);
+  assert.equal(settled.again, LOOP);
+  queue = settled.queue;
+  assert.deepEqual(plain(queue), { inFlight: null, pending: false });
+  step = lib.loopReadRequest(queue, settled.again);
+  assert.equal(step.start, true);
+  queue = step.queue;
+  // That read ends with no request meanwhile: nothing more.
+  settled = lib.loopReadSettled(queue, LOOP);
+  assert.equal(settled.again, null);
+  queue = settled.queue;
+  // Another loop opened while a read of the first is in flight: its read starts; the old read's end changes nothing.
+  queue = lib.loopReadRequest(queue, LOOP).queue;
+  step = lib.loopReadRequest(queue, LOOP_P);
+  assert.equal(step.start, true);
+  queue = step.queue;
+  settled = lib.loopReadSettled(queue, LOOP);
+  assert.equal(settled.again, null);
+  assert.deepEqual(plain(settled.queue), { inFlight: LOOP_P, pending: false });
+  // The request-number rule still decides whether an answer is applied: a later request number drops the older answer.
+  const captured = { runId: RUN, loopId: LOOP, iteration: null, seq: 3 };
+  assert.equal(lib.loopResponseCurrent(captured, { ...captured }), true);
+  assert.equal(lib.loopResponseCurrent(captured, { ...captured, seq: 4 }), false);
+  assert.equal(lib.loopResponseCurrent(captured, { ...captured, loopId: LOOP_P }), false);
 });
 
 // ---- errors, projection command, API client, history, reports, panel ----

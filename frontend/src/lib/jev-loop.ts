@@ -16,9 +16,9 @@ import type { CommandResult } from "./api";
 import type { JevKind, JevLocalDisplay, JevLoopAbandonRequest, JevLoopAction, JevLoopAmounts, JevLoopAxis,
   JevLoopBranch, JevLoopCandidateState, JevLoopCapability, JevLoopComputeRequest, JevLoopCreateRequest,
   JevLoopDecidedBy, JevLoopEndReason, JevLoopEvaluation, JevLoopExhaustedReason, JevLoopGoal, JevLoopIteration,
-  JevLoopIterationState, JevLoopLigandSetup, JevLoopListRow, JevLoopPhase, JevLoopPoolArgs, JevLoopPreviewV1,
-  JevLoopProjectionArgs, JevLoopProjectionSummary, JevLoopProteinSetup, JevLoopRef, JevLoopReportArtifact,
-  JevLoopSendDetail, JevLoopSendLoopRef, JevLoopStep, JevLoopStepState, JevLoopV1, JevStatusV1,
+  JevLoopIterationSend, JevLoopIterationState, JevLoopLigandSetup, JevLoopListRow, JevLoopPhase, JevLoopPoolArgs,
+  JevLoopPreviewV1, JevLoopProjectionArgs, JevLoopProjectionSummary, JevLoopProteinSetup, JevLoopRef,
+  JevLoopReportArtifact, JevLoopSendDetail, JevLoopSendLoopRef, JevLoopStep, JevLoopStepState, JevLoopV1, JevStatusV1,
   LigandFilterSpec } from "./contracts";
 import { type ArgsCheck, type DockingForm, DOCKING_REASON_LABEL, SCORE_COLUMN_LABEL, SCORE_LABEL, dockingArgs,
   dockingConditionArgs, initialDockingForm, patchDockingForm, scoreText } from "./docking";
@@ -1070,10 +1070,21 @@ export function jevLoopDetailMatches(detail: unknown, sendId: string, loopId: st
 
 export interface LoopProbabilityRow { alias: string; refText: string; displayText: string; value: number | null;
   text: string }
+/** Whether the card is the iteration's JEV selection, judged from a record that already shows the send completed. */
+export type LoopChoiceRole = "selection" | "not_selection";
+/**
+ * Shown instead of the card while the loop record does not yet show the send completed (the send answer arrived before
+ * a record read that knows it): no number and no judgment of whether it is the iteration's selection.
+ */
+export const CHOICE_CONFIRMING_TEXT = "루프 기록이 이 전송의 완료를 아직 보이지 않습니다. 기록을 다시 읽어 이 바퀴의 선택인지 확인하는 " +
+  "중입니다.";
 export interface LoopChoiceCard {
   sendId: string; proposalHandle: string; label: string; iteration: number;
-  /** True only for the iteration's selection (the first completed, not-late proposal); a late proposal is not one. */
-  isSelection: boolean; chosenAlias: string; ref: JevLoopRef; refText: string; localDisplayText: string;
+  /**
+   * True only when the record shows this send completed and as the iteration's selection (its one completed, not-late
+   * send with a proposal handle, this proposal); a late proposal is never one.
+   */
+  isSelection: boolean; role: LoopChoiceRole; roleText: string; chosenAlias: string; ref: JevLoopRef; refText: string; localDisplayText: string;
   listPositionLabel: string; listPositionText: string; confidenceLabel: string; confidence: number | null;
   confidenceText: string; probabilitiesReported: boolean; probabilityNote: string;
   probabilityRows: LoopProbabilityRow[]; probabilityText: string | null; reasonText: string; requestedModel: string;
@@ -1085,13 +1096,37 @@ export interface LoopChoiceCard {
 export type LoopChoiceView =
   | { state: "in_progress"; statusText: string }
   | { state: "rejected" | "failed"; statusText: string; reasonText: string }
+  | { state: "confirming"; statusText: string; message: string }
   | { state: "completed"; statusText: string; card: LoopChoiceCard }
   | { state: "invalid"; statusText: string; message: string };
+
+/** The record's row of one send with its iteration number (null when the record does not list the send). */
+export function loopRecordSend(record: Pick<JevLoopV1, "iterations">, sendId: string):
+  (JevLoopIterationSend & { iteration: number }) | null {
+  for (const it of record.iterations) {
+    const send = it.sends.find(item => item.send_id === sendId);
+    if (send) return { ...send, iteration: it.index };
+  }
+  return null;
+}
+
+/**
+ * Whether the record already shows this send ended (listed and no longer in progress; with `status`, ended with that
+ * status). Until it does, the area keeps reading the record after the send answer (the answer can arrive before a
+ * record read that knows it).
+ */
+export function loopRecordReflectsSend(record: Pick<JevLoopV1, "iterations">, sendId: string,
+                                       status: string | null = null): boolean {
+  const row = loopRecordSend(record, sendId);
+  return row !== null && row.status !== "in_progress" && (status === null || row.status === status);
+}
 
 /**
  * One loop send's result: the proposal card when completed, the reason only when refused or failed. The chosen
  * candidate, its list position "n/m", the confidence and the probabilities are the stored values; probabilities are
- * listed in the sent order (the not-yet-computed aliases of the send), never sorted, ranked or compared.
+ * listed in the sent order (the not-yet-computed aliases of the send), never sorted, ranked or compared. Whether the
+ * proposal is the iteration's selection is judged only from a record that shows this send completed: before that the
+ * view is `confirming` (no card, no number, no judgment).
  */
 export function loopChoiceView(detail: JevLoopSendDetail, record: JevLoopV1): LoopChoiceView {
   const statusText = sendStatusText(detail.status);
@@ -1104,14 +1139,21 @@ export function loopChoiceView(detail: JevLoopSendDetail, record: JevLoopV1): Lo
       choice.label !== JEV_CHOICE_LABEL || choice.scientific_result !== false || choice.loop.loop_id !== record.loop_id ||
       detail.loop === null || detail.loop.loop_id !== record.loop_id || detail.loop.iteration !== choice.loop.iteration)
     return { state: "invalid", statusText, message: CHOICE_MISMATCH_TEXT };
+  const row = loopRecordSend(record, detail.send_id);
+  if (row === null || row.iteration !== choice.loop.iteration || row.status !== "completed")
+    return { state: "confirming", statusText, message: CHOICE_CONFIRMING_TEXT };
   const answer = choice.answer, late = choice.arrival.late;
   const ref: JevLoopRef = "candidate_id" in answer.local_ref ? answer.local_ref.candidate_id
     : answer.local_ref.candidate_index;
   const selection = loopIterationSelection(iterationOf(record, choice.loop.iteration));
+  const isSelection = !late && !row.late && row.proposal_handle === detail.choice_handle &&
+    selection?.sendId === detail.send_id && selection.proposalHandle === detail.choice_handle;
   const probabilities = answer.probabilities;
   return { state: "completed", statusText, card: {
     sendId: detail.send_id, proposalHandle: detail.choice_handle, label: JEV_CHOICE_LABEL,
-    iteration: choice.loop.iteration, isSelection: !late && selection?.proposalHandle === detail.choice_handle,
+    iteration: choice.loop.iteration, isSelection, role: isSelection ? "selection" : "not_selection",
+    roleText: isSelection ? `바퀴 ${choice.loop.iteration}의 선택(계산은 사람이 승인해야 시작)`
+      : `바퀴 ${choice.loop.iteration}의 선택이 아님`,
     chosenAlias: answer.choice_alias, ref, refText: loopRefText(ref),
     localDisplayText: localDisplayText(answer.local_display), listPositionLabel: LIST_POSITION_LABEL,
     listPositionText: `${answer.list_position}/${answer.list_size}`, confidenceLabel: JEV_CONFIDENCE_LABEL,
@@ -1150,6 +1192,33 @@ export function loopSendHistoryMark(record: { kind: JevKind; loop?: JevLoopSendL
 export function jevLoopReportMatches(artifact: Pick<JevLoopReportArtifact, "manifest">, resultHandle: string): boolean {
   return artifact.manifest.schema === "method_report_manifest@1" &&
     artifact.manifest.analysis_type === LOOP_REPORT_TYPE && artifact.manifest.result_handle === resultHandle;
+}
+
+// ---- record reads: one at a time, a request while one is in flight is kept and read once more ----
+
+/** The record read in flight (its loop id) and whether another read was asked for meanwhile. */
+export interface LoopReadQueue { inFlight: string | null; pending: boolean }
+
+export function initialLoopReadQueue(): LoopReadQueue { return { inFlight: null, pending: false }; }
+
+/**
+ * A request to read `loopId`'s record: it starts now when no read of that loop is in flight (a read of another loop
+ * still in flight is left to be dropped by its request number); otherwise it is never dropped but marked pending, and
+ * any number of such requests are merged into one more read.
+ */
+export function loopReadRequest(queue: LoopReadQueue, loopId: string): { queue: LoopReadQueue; start: boolean } {
+  if (queue.inFlight === loopId) return { queue: { inFlight: loopId, pending: true }, start: false };
+  return { queue: { inFlight: loopId, pending: false }, start: true };
+}
+
+/**
+ * The read of `loopId` ended (its answer applied or dropped by the request-number rule, or failed): `again` is the loop
+ * to read once more right away when a request came while it was in flight, else null. The end of an older read of
+ * another loop changes nothing.
+ */
+export function loopReadSettled(queue: LoopReadQueue, loopId: string): { queue: LoopReadQueue; again: string | null } {
+  if (queue.inFlight !== loopId) return { queue, again: null };
+  return { queue: { inFlight: null, pending: false }, again: queue.pending ? loopId : null };
 }
 
 // ---- late responses (run + loop + iteration + request number per area) ----

@@ -22,13 +22,14 @@ import { BRANCH_LABEL, CANCEL_BEFORE_START_NOTE, FREE_DOCKING_NOTE, GOAL_LABEL, 
   ITERATION_CAP_MAX, ITERATION_CAP_MIN, LIST_POSITION_LABEL, LOOP_AREA_TITLE, LOOP_GOALS, LOOP_KIND_FOR_BRANCH,
   LOOP_MAX_POOL, LOOP_POLL_MS, LOOP_SCREEN_NOTES, LOOP_SEED_MAX, LOOP_SEED_MIN, LOOP_SEED_NOTE, ORDER_NOTE, POOL_FIXED_NOTE,
   PROTEIN_SCREEN_NOTE, PROTEIN_SEED_NOTE, SCORE_COLUMN_LABEL, SCORE_LABEL, initialLigandLoopSetupForm,
-  initialLoopSettings, initialProteinLoopSetupForm, jevLoopCanSend, jevLoopDetailMatches, jevLoopPreviewMatches,
+  initialLoopReadQueue, initialLoopSettings, initialProteinLoopSetupForm, jevLoopCanSend, jevLoopDetailMatches, jevLoopPreviewMatches,
   jevLoopPreviewView, jevLoopProjectionOutcome, jevLoopReportMatches, jevLoopSendBlockers, ligandLoopSetup,
   createReasonText, loopAbandonRequest, loopActionView, loopAriaSort, loopCandidateComputeRequest, loopCandidateRows,
   loopChoiceView, loopCreateAttempt, loopCreateAttemptAfter, loopCreateBlockedReason, loopCreateBody,
   loopCreateRefusal, loopCreateRequest, loopCurrentIteration, loopDockRequest, loopErrorInfo, loopIterationRows,
   loopIterationSelection, loopListRows, loopPanelState, loopPoolArgs, loopPoolCountText, loopProjectionArgs,
-  loopProposalComputeRequest, loopRecordMatches, loopResponseCurrent, loopResumeRequest, loopSelectableCandidates,
+  loopProposalComputeRequest, loopReadRequest, loopReadSettled, loopRecordMatches, loopRecordReflectsSend,
+  loopResponseCurrent, loopResumeRequest, loopSelectableCandidates,
   loopStatusView, loopSwitchBlockedReason, nextLoopSort, patchLigandLoopSetupForm, patchProteinLoopSetupForm,
   proteinLoopSetup, sortLoopCandidates, type LoopButtonState, type LoopChoiceView, type LoopCreateAttempt,
   type LoopCreateField, type LoopSettingsForm, type LoopSort, type LoopSortKey, type LoopStamp,
@@ -188,6 +189,8 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [lastRecord, setLastRecord] = useState<JevSendV1 | null>(null);
+  /** The last send answered with a record: the loop record is read again until it shows that send ended. */
+  const [awaitedSend, setAwaitedSend] = useState<{ sendId: string; status: string } | null>(null);
   /** Send details of the opened loop by send id: the iteration's JEV selection and the sends a person opened. */
   const [details, setDetails] = useState<Record<string, Load<JevLoopSendDetail>>>({});
   const [openedSend, setOpenedSend] = useState<string | null>(null);
@@ -210,7 +213,8 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
   /** Request numbers of the send detail reads, one counter per send id (two reads never drop each other). */
   const detailSeqs = useRef<Record<string, number>>({});
   const live = useRef({ loopId: null as string | null, iteration: null as number | null });
-  const recordReading = useRef<string | null>(null);
+  /** One record read at a time; a request while one is in flight is kept and read once more (`loopReadRequest`). */
+  const readQueue = useRef(initialLoopReadQueue());
   const sendingRef = useRef(false);
   const computeRef = useRef(false);
   const attemptRef = useRef<JevSendAttempt | null>(null);
@@ -275,8 +279,10 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
   }
 
   function readRecord(loopId = live.current.loopId) {
-    if (loopId === null || recordReading.current === loopId) return;   // one record read at a time
-    recordReading.current = loopId;
+    if (loopId === null) return;
+    const request = loopReadRequest(readQueue.current, loopId);
+    readQueue.current = request.queue;
+    if (!request.start) return;   // kept: read once more as soon as the read in flight ends (never skipped)
     const captured = stamp("detail");
     setRecord(previous => previous?.loopId === loopId ? previous : { loopId, load: { status: "loading" } });
     api.jevLoop(runId, loopId, readSignal()).then(value => {
@@ -290,7 +296,11 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
       setRecordError(message);
       setRecord(previous => previous?.loopId === loopId && previous.load.status === "ready" ? previous
         : { loopId, load: { status: "error", message } });
-    }).finally(() => { if (recordReading.current === loopId) recordReading.current = null; });
+    }).finally(() => {
+      const settled = loopReadSettled(readQueue.current, loopId);
+      readQueue.current = settled.queue;
+      if (settled.again !== null && mounted.current) readRecord(settled.again);
+    });
   }
 
   function readDetail(sendId: string) {
@@ -416,8 +426,12 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
   const sendPolling = sending || statusValue?.send_in_progress === true;
   const pollStatus = useRef(sendPolling);
   pollStatus.current = sendPolling;
+  // A send that answered is followed until the record shows it ended (a status read saying no send is in progress does
+  // not stop the reads before that).
+  const sendUnseen = awaitedSend !== null && recordValue !== null &&
+    !loopRecordReflectsSend(recordValue, awaitedSend.sendId, awaitedSend.status);
   const pollNeeded = recordValue !== null && recordValue.status === "active" &&
-    (recordValue.current.action === "wait_job" || computeBusy || sendPolling);
+    (recordValue.current.action === "wait_job" || computeBusy || sendPolling || sendUnseen);
   useEffect(() => {
     if (!pollNeeded) return;
     const timer = window.setInterval(() => { readRecord(); if (pollStatus.current) readStatus(); }, LOOP_POLL_MS);
@@ -536,7 +550,8 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
     detailSeqs.current = {};
     attemptRef.current = null;
     setProjection(null); setBuild({ status: "idle" }); setPreview(null); setConfirmedFor(null); setPendingId(null);
-    setSendError(null); setLastRecord(null); setDetails({}); setOpenedSend(null); setComputeConfirmedFor(null);
+    setSendError(null); setLastRecord(null); setAwaitedSend(null); setDetails({}); setOpenedSend(null);
+    setComputeConfirmedFor(null);
     setDesignated(null); setComputeError(null); setJobNotice(null); setJobError(null); setActionError(null);
     setSort(null); setM18(null); setReport(null); setRecordError(null);
   }
@@ -620,6 +635,7 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
       if (!jevSendResponseMatches(sent, attempt)) throw new Error(RESPONSE_SHAPE_TEXT);
       attemptRef.current = jevAttemptAfter(attempt, { record: true });
       setPendingId(null); setLastRecord(sent); setConfirmedFor(null);
+      setAwaitedSend({ sendId: sent.send_id, status: sent.status });
       setOpenedSend(sent.send_id);
       readDetail(sent.send_id);
     } catch (e) {
@@ -1476,6 +1492,8 @@ function SendResult({ load, record, onRetry }: { load: Load<JevLoopSendDetail> |
   if (load === undefined || load.status === "idle" || load.status === "loading") return <Loading text={JEV_TEXT.resultLoading} />;
   if (load.status === "error") return <ErrorLine message={load.message} onRetry={onRetry} testId="jev-loop-choice-error" />;
   const view = loopChoiceView(load.value, record);
+  if (view.state === "confirming") return <p className="mw-jev-note" role="status" aria-busy="true"
+    data-testid="jev-loop-choice-confirming" data-send-id={load.value.send_id}>{view.statusText}: {view.message}</p>;
   if (view.state !== "completed") {
     const reason = view.state === "rejected" || view.state === "failed" ? view.reasonText
       : view.state === "invalid" ? view.message : null;
@@ -1486,10 +1504,9 @@ function SendResult({ load, record, onRetry }: { load: Load<JevLoopSendDetail> |
   const card = view.card;
   return <div className="mw-jev-card" data-testid="jev-loop-choice-card" data-send-id={card.sendId}
     data-proposal-handle={card.proposalHandle} data-chosen-alias={card.chosenAlias} data-late={card.lateText !== null}
-    data-selection={card.isSelection} data-list-position={card.listPositionText}>
+    data-selection={card.isSelection} data-role={card.role} data-list-position={card.listPositionText}>
     <p className="mw-jev-title">{card.label}</p>
-    <p className="mw-jev-note" data-testid="jev-loop-choice-role">
-      {card.isSelection ? `바퀴 ${card.iteration}의 선택(계산은 사람이 승인해야 시작)` : `바퀴 ${card.iteration}의 선택이 아님`}</p>
+    <p className="mw-jev-note" data-testid="jev-loop-choice-role">{card.roleText}</p>
     {card.lateText !== null && <p className="mw-jev-unavailable" role="status" data-testid="jev-loop-choice-late">
       {JEV_TEXT.lateMark}: {card.lateText}</p>}
     {card.lateNote !== null && <p className="mw-jev-note" data-testid="jev-loop-choice-late-note">{card.lateNote}</p>}
