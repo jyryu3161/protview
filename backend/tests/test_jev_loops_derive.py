@@ -1195,7 +1195,8 @@ def test_compute_admission_order():
     pending_state = derive(log, results=results, approval_pending=True)
     assert JL.compute_admission(pending_state, iteration=1, candidate=IDS[0], capability_available=True) == {
         "outcome": "idempotent", "job_id": job, "start": True}
-    assert admit(iteration=1, candidate=IDS[0]) == {"outcome": "idempotent", "job_id": job, "start": False}
+    # M25 T6: once the person approved the first expensive call, the same press continues the blocked job (spec 6.1)
+    assert admit(iteration=1, candidate=IDS[0]) == {"outcome": "idempotent", "job_id": job, "start": True}
     log.reserve(job)
     log.dispatch(job)
     assert admit(iteration=1, candidate=IDS[0]) == {"outcome": "idempotent", "job_id": job, "start": False}

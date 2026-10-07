@@ -1005,7 +1005,9 @@ def compute_admission(state: LoopState, *, iteration: Any, proposal: Any = None,
 
 def _idempotent(state: LoopState, iteration: int, step_name: str, proposal: Any,
                 candidate: Any) -> dict[str, Any] | None:
-    """Spec 6.1: the same step again with the arguments of its latest approval, whose job is not lost before start."""
+    """Spec 6.1: the same step again with the arguments of its latest approval, whose job is not lost before start.
+    ``start`` when that job is queued or claimed and blocked at the first expensive-call approval: while the approval
+    is still requested the start blocks again (no charge); once the person approved it, this press continues it."""
     own = [step for step in state.steps if step["iteration"] == iteration and step["step"] == step_name]
     if not own:
         return None
@@ -1021,10 +1023,25 @@ def _idempotent(state: LoopState, iteration: int, step_name: str, proposal: Any,
         return None
     job = latest["job"]
     start = latest["state"] == "waiting_start" and job is not None and (
-        job["status"] == "queued" or (job["status"] == "claimed" and job.get("blocked_reason") == _APPROVAL_BLOCK
-                                      and state.approval_pending))
+        job["status"] == "queued" or (job["status"] == "claimed" and job.get("blocked_reason") == _APPROVAL_BLOCK))
     return {"outcome": "idempotent", "job_id": None if job is None or latest["state"] == "reused" else job["job_id"],
             "start": start}
+
+
+def abandon_refusal(state: LoopState, iteration: Any) -> str | None:
+    """Spec 6.3 after ``loop_not_found``, in the compute order with its names: cancelled, loop_ended,
+    send_in_progress, iteration_invalid, then phase_invalid (the iteration does not await its docking decision)."""
+    if state.cancelled:
+        return "cancelled"
+    if state.ended_event:
+        return "loop_ended"
+    if state.send_active:
+        return "send_in_progress"
+    if type(iteration) is not int or iteration != state.current_number:
+        return "iteration_invalid"
+    if state.branch != "protein" or state.current_phase != "awaiting_docking":
+        return "phase_invalid"
+    return None
 
 
 def end_refusal(state: LoopState) -> str | None:

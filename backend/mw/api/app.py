@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import uuid
+from contextlib import ExitStack
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -2505,7 +2506,99 @@ async def jev_loop_create(rid: str, request: Request) -> Any:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
 
 
-# T6 adds the loop sub-path POST routes (/compute, /abandon_docking, /end) HERE, before the detail route below.
+JEV_LOOP_START_RACE = {"global_concurrency_busy", "global_job_cleanup_pending", "global_job_ledger_unavailable"}
+
+
+def _jev_loop_compute(run: Run, loop_id: str, body: Any, send_active: bool) -> dict[str, Any]:
+    """Spec 6.1 up to the submission, under the run owner: the request shape, the loop read and admission, the step's
+    M18 / M21 job admission, the approval event, then ``JobQueue.submit`` of the standalone request (outside the
+    transition lock the submission takes itself). Returns {"job_id", "start"}: the job the route starts after the
+    owner is released. While another request holds the owner only an answer that writes and starts nothing is given
+    (``jev_loop_store.compute_when_busy``); the rest is the owner's busy failure, nothing written."""
+    request = jev_loop_store.action_request(body, jev_loop_constants.COMPUTE_KEYS)
+    with ExitStack() as stack:
+        try:
+            stack.enter_context(run._owner())
+        except ToolFailure as busy:
+            if busy.detail.get("busy") is not True:
+                raise
+            return jev_loop_store.compute_when_busy(run, loop_id, request, send_active=send_active, busy=busy)
+        view, budget = jev_loop_store.locked_view(run)
+        state, decision = jev_loop_store.compute_decision(view, loop_id, request, budget=budget,
+                                                          send_active=send_active)
+        if decision["outcome"] == "idempotent":       # the same step again: no event, no job (spec 6.1)
+            return {"job_id": decision["job_id"], "start": decision["start"]}
+        job = jev_loop_store.step_job(run, state, decision)
+        jev_loop_store.write_approval(run, state, decision, job)
+        if job is None:                                # a stored model adopted: no job, no unit
+            return {"job_id": None, "start": False}
+        submitted = JobQueue(run).submit(job["protocol"], job["args"], timeout_s=job["timeout_s"])
+        return {"job_id": submitted["job_id"], "start": submitted["status"] == "queued"}
+
+
+@app.post("/runs/{rid}/jev_loops/{loop_id}/compute")
+async def jev_loop_compute(rid: str, loop_id: str, request: Request) -> Any:
+    """The person's start of one loop step (spec 6.1): ``jev_loop_compute_approved`` first, then the standalone M18 /
+    M21 job with the arguments and call key a standalone submission gets, started like ``POST /jobs/{id}/start``
+    after the run owner is released (the response waits for the job; reads go on without the lock). The first
+    expensive-call approval answers 200 with the record (``current.job.start_blocked``; the person approves with
+    ``POST /jobs/approve`` and presses again). Every other start failure answers as the job start route does. Calls no
+    tool, send, approval or limit path; nothing runs in the background."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        step = await run_in_threadpool(lambda: _jev_loop_compute(run, loop_id, body, send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)        # the M18 / M21 job admission refusal as it is; nothing was written
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+    if step["start"]:
+        try:
+            await run_in_threadpool(lambda: JobQueue(run).start(
+                step["job_id"], owner_active=lambda eid: analysis_executions.execution_active(run, eid)))
+        except ApprovalRequired:
+            pass                       # spec 6.1: 200 and the record, whose current.job shows the wait
+        except RunCancelled:
+            return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled",
+                                                          "message": "run cancelled"})
+        except ToolFailure as error:
+            if error.detail.get("reason_code") in JEV_LOOP_START_RACE:
+                return JSONResponse(status_code=409, content={"ok": False, **error.to_dict()})
+            return _tool_error(error)
+    return await run_in_threadpool(lambda: _jev_loop_read(rid, request, lambda view, budget, active: (
+        jev_loop_store.read_loop(view, loop_id, budget=budget, send_active=active).record)))
+
+
+@app.post("/runs/{rid}/jev_loops/{loop_id}/abandon_docking")
+async def jev_loop_abandon_docking(rid: str, loop_id: str, request: Request) -> Any:
+    """The person's decision not to dock the modelled candidate of the iteration (spec 6.3): one
+    ``jev_loop_docking_abandoned`` event, the candidate ``not_run``, the iteration ended. No job, tool or send."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        return await run_in_threadpool(lambda: jev_loop_store.abandon_docking(run, loop_id, body,
+                                                                             send_active=send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+# T6 adds the loop end route (/end) HERE as well, before the detail route below.
 
 
 def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:

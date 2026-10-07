@@ -43,6 +43,18 @@ Public API
     normalize_setup(branch, setup, source)    the pure setup check and its normalized value
     create(run, body, *, send_active)         ``POST /runs/{rid}/jev_loops`` -> ``jev_loop@1``
     engine_unavailable(branch, docking, model), capability(docking, model, *, tool_exposed, pins_match)
+    action_request(body, keys)                the closed body of ``.../compute`` / ``.../abandon_docking``
+    locked_view(run)                          (view, budget) refolded under the caller's run owner
+    step_capability(branch, pins)             None, or the ``capability_unavailable`` detail (engines; creation pins)
+    compute_decision(view, loop_id, request, *, budget, send_active) -> (state, decision)
+                                              spec 6.1 from the loop lookup to ``budget_blocked`` (refusals raise)
+    compute_when_busy(run, loop_id, request, *, send_active, busy)
+                                              the answer while another request holds the run owner
+    step_job(run, state, decision)            the approved step's standalone M18 / M21 job request (job admission
+                                              first), None for an adopted stored model
+    write_approval(run, state, decision, job) the ``jev_loop_compute_approved`` event (``step_unavailable`` first)
+    abandon_docking(run, loop_id, body, *, send_active)
+                                              ``POST .../abandon_docking`` -> ``jev_loop@1``
 
 Reading (spec 3.2: built and checked on every read, nothing written)
 --------------------------------------------------------------------
@@ -74,6 +86,22 @@ same-run ``ligand_sdf`` import of the SDF (M18 refuses it the same way at the do
 models a candidate it can never dock), M21 ``admission`` 1-7 and ``selection`` (the M7 preflight:
 ``openmm_preflight_failed``) of ``model_request``. ``pins`` = {"m18": the M18 pins} (ligand) or {"m18", "m21": the
 M21 pins} (protein): the values a standalone M18 / M21 job records as its ``method``.
+
+Compute and docking abandon (spec 6.1, 6.3; the routes in ``api/app.py``)
+-------------------------------------------------------------------------
+The request shape is checked first (``unknown_field``, 422). Under the run owner the log is refolded
+(``locked_view``), the loop read and ``jev_loops.compute_admission`` / ``abandon_refusal`` decide; a refusal raises
+``LoopRequestError`` and writes nothing. While another request holds the owner (a running job of this run holds it
+for the job's whole run, a send for its HTTP exchange) the same decision is read without the lock: a refusal, or for
+compute the idempotent answer that starts nothing, is still given; anything that would write or start is the owner's
+busy failure (503 ``busy``, nothing written). ``capability_unavailable`` names in ``detail.capability`` the branch's
+engine reason, or ``missing_configuration`` (the existing pin-mismatch capability name, no new name) when the engine
+pins now differ from the pins recorded at creation (every loop call key was made under those). An approved step runs
+the job admission the queue runs at submission on the same request (``step_job``: an M18 / M21 refusal is passed on
+with its closed ``detail.reason_code``, nothing written), then ``write_approval`` writes ``jev_loop_compute_approved``
+under the transition lock unless a same-key job appeared since the read (``step_unavailable``). The job itself is
+submitted by the route under the same run owner and started after the owner is released (``JobQueue.start``, as the
+job start route): this module never submits, starts, cancels or retries a job.
 """
 from __future__ import annotations
 
@@ -81,6 +109,7 @@ import copy
 import hashlib
 import math
 from collections.abc import Iterable, Mapping
+from contextlib import ExitStack
 from typing import Any
 
 from . import (
@@ -131,6 +160,28 @@ CAPABILITY_REASONS = {
 }
 _FIRST_APPROVAL_GATE = "expensive_first_call"
 _APPROVAL_EVENTS = ("approval_requested", "approval_resolved")
+# Spec 6.1 / 6.3: the messages of the closed compute / abandon refusals (the names and statuses are the spec's).
+ACTION_MESSAGES = {
+    "unknown_field": "the request takes iteration (an integer) and at most one of proposal or candidate",
+    "loop_not_found": "no such loop in this run",
+    "cancelled": "the run is cancelled; its loops take no new step",
+    "loop_ended": "the loop has ended",
+    "send_in_progress": "a science send of this run is in progress",
+    "iteration_invalid": "iteration is not the loop's current iteration",
+    "phase_invalid": "the current iteration does not take this step now",
+    "iteration_cap_reached": "the loop has started as many iterations as its effective cap",
+    "proposal_invalid": "proposal is not this iteration's first completed JEV proposal that arrived in time",
+    "proposal_late": "this JEV proposal arrived late; it is not the iteration's selection",
+    "candidate_invalid": "candidate is not a candidate of the loop's pool",
+    "candidate_unavailable": "a same-key job of this candidate cannot be used in this run",
+    "candidate_computed": "this candidate is already computed (by this loop or a stored same-condition result)",
+    "capability_unavailable": "the branch's engines are not available as they were when the loop was created",
+    "budget_blocked": "the run's remaining budget is short of this candidate's need",
+    L.STEP_UNAVAILABLE: "a same-key job of this step appeared outside the loop",
+}
+PINS_CHANGED_CODE = "missing_configuration"   # the existing pin-mismatch capability name (M24 gate), no new name
+PINS_CHANGED_REASON = ("이 루프를 만들 때 기록한 M18·M21 작업 모듈·엔진 pin이 지금 값과 달라, 루프가 기록한 호출 키의 "
+                       "작업을 만들 수 없다.")
 
 
 class LoopRequestError(Exception):
@@ -908,6 +959,174 @@ def create(run: Any, body: Any, *, send_active: bool) -> dict[str, Any]:
         with run._transition():
             run.events.append(L.EVENT_CREATED, **payload)
         return _record(run, LoopReadView(run), loop_id, send_active)
+
+
+# --- compute and docking abandon (spec 6.1, 6.3; module docstring) --------------------------------------------------
+
+def _action_refusal(reason: str, message: str | None = None, **detail: Any) -> LoopRequestError:
+    return LoopRequestError(reason, message or ACTION_MESSAGES[reason], jev_loops.COMPUTE_HTTP.get(reason, 409),
+                            **detail)
+
+
+def action_request(body: Any, keys: tuple[str, ...]) -> dict[str, Any]:
+    """The closed body of ``.../compute`` (``L.COMPUTE_KEYS``: ``iteration`` and, for a first step, exactly one
+    non-null ``proposal`` or ``candidate``) or ``.../abandon_docking`` (``L.ABANDON_KEYS``). Anything else is the
+    request shape refusal ``unknown_field`` (422), before the loop is looked up."""
+    if type(body) is not dict:
+        raise _action_refusal("unknown_field", "the request is one JSON object")
+    unknown = sorted(set(body) - set(keys))
+    if unknown:
+        raise _action_refusal("unknown_field", f"unknown fields: {unknown}", fields=unknown)
+    if type(body.get("iteration")) is not int:
+        raise _action_refusal("unknown_field", "iteration is a required integer")
+    chosen = [key for key in ("proposal", "candidate") if key in body]
+    if len(chosen) > 1 or any(body[key] is None for key in chosen):
+        raise _action_refusal("unknown_field", "name at most one of proposal and candidate, never null")
+    return dict(body)
+
+
+def locked_view(run: Any) -> tuple[LoopReadView, dict[str, Any]]:
+    """Under the caller's run owner: the store index and the run's budget refolded from the log, then ONE read view
+    and the remaining budget of that fold."""
+    run.store.rebuild_from_events()
+    run._refresh()
+    return LoopReadView(run), remaining_budget(run.budget_snapshot())
+
+
+def _loop_state(view: Any, loop_id: Any, *, budget: Mapping[str, Any], send_active: bool) -> jev_loops.LoopState:
+    try:
+        return read_loop(view, loop_id, budget=budget, send_active=send_active)
+    except jev_loops.LoopNotFound as exc:
+        raise _action_refusal("loop_not_found") from exc
+
+
+def step_capability(branch: str, pins: Mapping[str, Any]) -> dict[str, Any] | None:
+    """None when the branch's engines are available and their pins are the loop's creation pins; else the
+    ``capability_unavailable`` detail {reason_code, reason}: the engine's own reason (ligand: the docking environment
+    and qvina; protein: OpenMM / PDBFixer, then the docking environment), or ``missing_configuration`` when the pins
+    changed since creation (the step's job would get another call key than the loop's)."""
+    engine = engine_unavailable(branch, docking_bundle.capability(),
+                                mutation_model_bundle.capability() if branch == "protein" else None)
+    if engine is not None:
+        return {"reason_code": engine[0], "reason": engine[1]}
+    current = {"m18": docking_bundle.require_ready()}
+    if branch == "protein":
+        current["m21"] = mutation_model_bundle.require_ready()
+    if not _same(current, pins):
+        return {"reason_code": PINS_CHANGED_CODE, "reason": PINS_CHANGED_REASON}
+    return None
+
+
+def compute_decision(view: Any, loop_id: Any, request: Mapping[str, Any], *, budget: Mapping[str, Any],
+                     send_active: bool) -> tuple[jev_loops.LoopState, dict[str, Any]]:
+    """Spec 6.1 after the request shape: ``loop_not_found`` (404), then ``jev_loops.compute_admission`` (cancelled ...
+    budget_blocked, the idempotent path included) on one read. A refusal raises ``LoopRequestError`` with the
+    admission's detail (``blocked_axes`` and ``needs``; ``capability`` for capability_unavailable). Returns (state,
+    decision) for ``idempotent`` and ``approve``."""
+    state = _loop_state(view, loop_id, budget=budget, send_active=send_active)
+    capability = step_capability(state.branch, state.record["pins"])
+    decision = jev_loops.compute_admission(state, iteration=request["iteration"], proposal=request.get("proposal"),
+                                           candidate=request.get("candidate"),
+                                           capability_available=capability is None)
+    if decision["outcome"] == "refused":
+        reason = decision["reason_code"]
+        extra = {"capability": capability} if reason == "capability_unavailable" else {}
+        raise _action_refusal(reason, **decision["detail"], **extra)
+    return state, decision
+
+
+def compute_when_busy(run: Any, loop_id: Any, request: Mapping[str, Any], *, send_active: bool,
+                      busy: ToolFailure) -> dict[str, Any]:
+    """A compute press while another request holds the run owner (this run's job is running, a send is in flight):
+    the same decision read without the lock. A refusal is given; the idempotent answer that starts nothing (the job
+    runs or has ended) is {"job_id", "start": False}; anything that would write or start raises ``busy``."""
+    _state, decision = compute_decision(LoopReadView(run), loop_id, request,
+                                        budget=remaining_budget(run.budget_snapshot()), send_active=send_active)
+    if decision["outcome"] == "idempotent" and not decision["start"]:
+        return {"job_id": decision["job_id"], "start": False}
+    raise busy
+
+
+def step_job(run: Any, state: jev_loops.LoopState, decision: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The standalone job of an approved step: {"protocol", "args", "timeout_s", "call_key"} (M18 ``qvina_dock_v1``
+    free docking or M21 ``openmm_mutation_model_v1``, the request builders above), or None when a stored model is
+    adopted (no job). Runs the job admission the queue runs at submission on that request first: a refusal is the
+    M18 / M21 ``ToolFailure`` with its closed ``detail.reason_code`` and nothing is written. The call key the queue
+    gives that request under the current pins must be the approved one."""
+    if decision["reuse"]:
+        return None
+    record = state.record
+    setup, source = record["setup"], record["pool"]["source"]["handle"]
+    step, ref = decision["step"], decision["candidate_ref"]
+    timeout = L.STEP_TIMEOUT_DEFAULTS_S[step]
+    if step == "model":
+        args = model_request(setup, source, ref)
+        admitted, timeout = mutation_model_bundle.admission(run, args, timeout)
+        _selected, pins = mutation_model_bundle.selection(run, admitted)
+        key, protocol = mutation_model_bundle.call_key(admitted["arguments"], pins), MC.PROTOCOL
+    else:
+        args = (ligand_request(setup, source, ref) if step == "ligand_dock" else
+                dock_request(setup, state.results[state.keys[ref]["model"]]["result_handle"]))
+        _selected, normalized, _handles = docking_bundle.submission(run, args)
+        key, protocol = docking_bundle.call_key(normalized, docking_bundle.require_ready()), DC.PROTOCOL
+    if key != decision["call_key"]:
+        raise jev_loops.LoopRecordInvalid("the standalone job of this step would get another call key")
+    return {"protocol": protocol, "args": args, "timeout_s": timeout, "call_key": key}
+
+
+def write_approval(run: Any, state: jev_loops.LoopState, decision: Mapping[str, Any],
+                   job: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The step's ``jev_loop_compute_approved`` event (spec 6.1, ``approved_by: "human"``), under the transition lock
+    after one last look at the queue: a same-key job that appeared since the read (another request's submission) is
+    ``step_unavailable`` (409, ``detail.job`` {id, status}, nothing written; the loop never starts, retries or
+    cancels another job). Returns the payload."""
+    payload = {"loop_id": state.record["loop_id"], "iteration": decision["iteration"], "step": decision["step"],
+               "candidate_ref": decision["candidate_ref"], "decided_by": decision["decided_by"],
+               "proposal_handle": decision["proposal_handle"], "call_key": decision["call_key"],
+               "units": decision["units"], "approved_by": L.APPROVED_BY}
+    jev_loops.parse_compute_approved({"seq": 1, "type": L.EVENT_COMPUTE_APPROVED, **payload})   # write what reads
+    with run._transition():
+        if job is not None:
+            same = sorted((item for item in JobQueue(run).list() if item["call_key"] == job["call_key"]),
+                          key=lambda item: item["created"])
+            if same:
+                raise _action_refusal(L.STEP_UNAVAILABLE, job={"id": same[0]["job_id"], "status": same[0]["status"]})
+        run.events.append(L.EVENT_COMPUTE_APPROVED, **payload)
+    return payload
+
+
+def _abandon_payload(view: Any, loop_id: Any, request: Mapping[str, Any], *, budget: Mapping[str, Any],
+                     send_active: bool) -> dict[str, Any]:
+    state = _loop_state(view, loop_id, budget=budget, send_active=send_active)
+    reason = jev_loops.abandon_refusal(state, request["iteration"])
+    if reason is not None:
+        raise _action_refusal(reason)
+    model = [step for step in state.steps if step["iteration"] == request["iteration"] and step["step"] == "model"]
+    return {"loop_id": state.record["loop_id"], "iteration": request["iteration"],
+            "candidate_ref": model[-1]["candidate_ref"]}
+
+
+def abandon_docking(run: Any, loop_id: Any, body: Any, *, send_active: bool) -> dict[str, Any]:
+    """``POST /runs/{rid}/jev_loops/{loop_id}/abandon_docking`` (spec 6.3): only while the iteration awaits its
+    docking decision. One ``jev_loop_docking_abandoned`` event; the candidate becomes ``not_run`` (the model step was
+    charged or adopted and is never undone) and the iteration ends. Returns the ``jev_loop@1`` record; raises
+    ``LoopRequestError`` or the owner's busy ``ToolFailure`` (nothing written)."""
+    request = action_request(body, L.ABANDON_KEYS)
+    with ExitStack() as stack:
+        try:
+            stack.enter_context(run._owner())
+        except ToolFailure as busy:
+            if busy.detail.get("busy") is not True:
+                raise
+            _abandon_payload(LoopReadView(run), loop_id, request, budget=remaining_budget(run.budget_snapshot()),
+                             send_active=send_active)     # a refusal is still given; the write is busy
+            raise
+        view, budget = locked_view(run)
+        payload = _abandon_payload(view, loop_id, request, budget=budget, send_active=send_active)
+        jev_loops.parse_docking_abandoned({"seq": 1, "type": L.EVENT_DOCKING_ABANDONED, **payload})
+        with run._transition():
+            run.events.append(L.EVENT_DOCKING_ABANDONED, **payload)
+        return _record(run, LoopReadView(run), payload["loop_id"], send_active)
 
 
 # --- capability ------------------------------------------------------------------------------------------------------------
