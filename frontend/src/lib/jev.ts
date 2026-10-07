@@ -362,7 +362,8 @@ export function jevPanelState(input: { runId: string | null;
   return { state: "ready" };
 }
 
-function usdText(value: number): string { return `${decimalHalfUp(value, 4)} USD`; }
+/** "0.1000 USD": a stored USD amount with four decimals (display only; M25 loop area reuses it). */
+export function usdText(value: number): string { return `${decimalHalfUp(value, 4)} USD`; }
 
 /** "run당 과학 전송 10회 · 사용 n회 · 남은 m회" from a status or preview (server counts). */
 export function jevCapText(value: { send_cap: number; used: number; remaining: number }): string {
