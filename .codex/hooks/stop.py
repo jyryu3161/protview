@@ -81,6 +81,8 @@ PYTEST_GROUPS = [
     [T + "test_mutation_model_worker.py", T + "test_mutation_model_jobs.py", T + "test_mutation_model_inputs.py",
      T + "test_mutation_model_api.py", T + "test_mutation_model_pairs.py", T + "test_mutation_model_docking.py",
      T + "test_mutation_model_reports.py", T + "test_openmm.py"],
+    [T + "test_jev_loops_read.py", T + "test_jev_loop_sends.py", T + "test_jev_loop_tool.py",
+     T + "test_jev_loop_choice.py", T + "test_jev_loops_api.py"],
 ]
 
 
