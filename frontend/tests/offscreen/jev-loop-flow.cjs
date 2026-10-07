@@ -21,7 +21,7 @@
 // bytes the scripted fixture transport received (calls.jsonl). Scores are never computed here: each one shown is
 // compared with the stored M18 docking_result@1 of that step.
 //
-// Mode (the full sequence will be the M25 acceptance runner's):
+// Modes (the full sequence: scripts/m25_offscreen_acceptance.py):
 //   fixture  backend = backend/tests/offscreen_jev_loop_fixture/server.py (SCIENCE_GATE over a scripted
 //            httpx.MockTransport; no provider socket; no credential read but the sentinel placeholder). Run L (ligand):
 //            tab entry, create field reasons, loop A (exploit, pool 5, cap 3): consent off block, preview identity and
@@ -38,6 +38,18 @@
 //            a second loop (exploit) reusing the computed candidate and HTTP 500 (a reply without usage stops the run's
 //            egress, so it is the run's last send); the M21 pair table's loop docking mark, 지식·보고서 loop rows, other
 //            tabs.
+//   calibrate, live
+//            the --plan the runner wrote (entries = loops of one branch in one setup run, one send per round; calibrate
+//            = the first entry after pre-checks with no send, live = the rest). Every round: consent on, 보낼 내용 만들기,
+//            the preview identity and order oracle, a dispatch guard right before the one click (the jev_science_
+//            dispatch_started events of every run of --runs-dir must stay below plan.maxDispatch and plan.maxPerRun[run]),
+//            the send, the result as stored; a compute round then presses 이 선택으로 계산 시작 (the first expensive-call
+//            approval when asked; protein: the model, then 도킹 시작). Each loop is ended (summary) and, when planned,
+//            reported; the shuffle entry records its first send beside the earlier loop's (same pool and goal, other loop
+//            seed): two orders and two chosen list positions as observed values only. Against the product backend (no
+//            --control) this sends to JEV and is run only by the runner's calibrate/live phases (its ledger and count);
+//            with --control it is the rehearsal of the same path against the fixture server (script good, no call).
+//            A send that does not complete, or a stopped egress, ends the plan (no retry, no new run); its row is kept.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -46,7 +58,8 @@ const { launchOffscreen, capture } = require("./driver.cjs");
 const { halfUp, forbiddenWords: m24ForbiddenWords, J, U } = require("./jev-flow.cjs");
 
 const REPO = path.resolve(__dirname, "../../..");
-const MODES = ["fixture"];
+const MODES = ["fixture", "calibrate", "live"];
+const MAX_LIVE_CALLS = 8;              // the user's allocation of real calls for M25 (2026-10-07)
 const TAB = { structure: "구조 분석", protein: "단백질 공학", ligand: "리간드 설계·탐색", knowledge: "지식·보고서" };
 const TAB_LABELS = [TAB.structure, TAB.protein, TAB.ligand, TAB.knowledge];
 const SERVED_MODEL = "typesafe/jev-1.13-20260917";
@@ -123,7 +136,7 @@ const WIRE_TOP = {
 // Spec 2 and 8.3 wording (a proposal is never a rank, recommendation, prediction or improvement; no comparison of
 // scores). "점수" is allowed (the qvina score is shown); "최적화" is a process; "비활성" is not "활성". A line exactly equal
 // to a fixed line is exempt and the exact score names are removed first (they say 친화도가 아님).
-const FORBIDDEN = /순위|추천|최고|최저|최적(?!화)|최솟값|최댓값|개선|예측|유망|좋은|나쁜|좋아짐|승자|평균|차이|증감|친화|안정성|ΔΔG|(?<!비)활성|가장\s*높|가장\s*낮|\bbest|\brank|recommend|improv|winner|highest|lowest/gi;
+const FORBIDDEN = /순위|추천|최고|최저|최적(?!화)|최솟값|최댓값|개선|예측|유망|좋은|나쁜|좋아짐|승자|평균|차이|증감|친화|안정성|ΔΔG|(?<!비)활성|가장\s*높|가장\s*낮|\bbest|\brank|recommend|improv|winner|highest|lowest|효과|편향|\beffects?\b|\bbias(?:es|ed)?\b/gi;
 const LATE_TEXT = "동의 끈 뒤 도착";
 const ACK_KEYS = ["keep_input_protonation", "tool_assigned_types_charges", "rigid_no_optimization"];
 // Ligand computation values: the M22 T1 small-pool docking values (manual 12 Å box, exhaustiveness 1, num_modes 2).
@@ -144,7 +157,8 @@ const attr = (name, value) => `[${name}="${String(value).replace(/\\/g, "\\\\").
 const masked = text => (text ?? "").replace(/\d+(?:[.,]\d+)*/g, "#").replace(/[ \t]+/g, " ").trim();
 
 function options(argv) {
-  const value = { url: "http://127.0.0.1:3000", artifacts: null, mode: null, "runs-dir": null, control: null, setup: null };
+  const value = { url: "http://127.0.0.1:3000", artifacts: null, mode: null, "runs-dir": null, control: null, setup: null,
+    plan: null };
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
     if (!key.startsWith("--")) throw new Error(`Unknown argument ${key}`);
@@ -152,14 +166,16 @@ function options(argv) {
     if (!(name in value)) throw new Error(`Unknown argument ${key}`);
     value[name] = argv[++i];
   }
-  if (!value.artifacts || !MODES.includes(value.mode) || !value["runs-dir"] || !value.setup || !value.control)
+  if (!value.artifacts || !MODES.includes(value.mode) || !value["runs-dir"] || !value.setup ||
+      (value.mode === "fixture" && !value.control) || (value.mode !== "fixture" && !value.plan))
     throw new Error(`Usage: jev-loop-flow.cjs --mode ${MODES.join("|")} --artifacts <dir> --runs-dir <backend MW_RUNS_DIR> ` +
-      "--control <fixture control dir> --setup <json> [--url http://127.0.0.1:3000]. The setup file is written by " +
-      "backend/tests/offscreen_jev_loop_fixture/qa_setup.py against the fixture server.");
+      "--setup <json> [--control <fixture control dir> (fixture: required; calibrate/live: the rehearsal against the " +
+      "fixture server)] [--plan <json> (calibrate, live)] [--url http://127.0.0.1:3000]. The setup and plan files are " +
+      "written by scripts/m25_offscreen_acceptance.py, which also starts the services and counts the real calls.");
   const url = new URL(value.url);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) || !["http:", "https:"].includes(url.protocol))
     throw new Error("Only a loopback service is permitted");
-  for (const key of ["artifacts", "runs-dir", "control", "setup"]) value[key] = path.resolve(value[key]);
+  for (const key of ["artifacts", "runs-dir", "control", "setup", "plan"]) if (value[key]) value[key] = path.resolve(value[key]);
   value.url = new URL("/", value.url).toString();
   return value;
 }
@@ -373,9 +389,15 @@ function fileRecord(file) {
   return file && fs.existsSync(file) ? { path: file, bytes: fs.statSync(file).size, sha256: sha(fs.readFileSync(file)) }
     : { path: file ?? null, missing: true };
 }
+/** The JSON summary of a step's value; the exact outgoing body and the fixed question text are left out (they are
+ * checked byte for byte where they are read and sit whole in the stored projection). */
+const OMITTED_TEXT = new Set(["body", "instructions", "question"]);
 function summarize(value) {
-  try { const text = JSON.stringify(value); return text.length > 12000 ? `${text.slice(0, 12000)}…` : JSON.parse(text); }
-  catch { return String(value); }
+  try {
+    const text = JSON.stringify(value, (key, item) => OMITTED_TEXT.has(key) && typeof item === "string"
+      ? `<omitted ${item.length} characters>` : item);
+    return text.length > 12000 ? `${text.slice(0, 12000)}…` : JSON.parse(text);
+  } catch { return String(value); }
 }
 function control(evidence, id, observed) { (evidence.controls[id] ??= []).push(observed); }
 
@@ -736,12 +758,13 @@ async function sendState(page, branch) {
       ? await lt(page, branch, "jev-loop-send-blockers").locator("li").evaluateAll(items => items.map(item => item.textContent.trim()))
       : [] };
 }
-/** Confirmation, then 이 내용을 JEV로 보냅니다 (one click); `during` runs while the request is in flight. */
-async function confirmAndSend(page, branch, run, controlDir, script, log, evidence, during = null) {
-  writeScript(controlDir, script);
+/** Confirmation, then 이 내용을 JEV로 보냅니다 (one click); `during` runs while the request is in flight and `onRecord`
+ * gets the send record as soon as it arrives. `controlDir` null = the real gate (no fixture script, no transport rows). */
+async function confirmAndSend(page, branch, run, controlDir, script, log, evidence, during = null, onRecord = null) {
+  if (controlDir) writeScript(controlDir, script);
   if (!(await lt(page, branch, "jev-loop-confirm").isChecked())) await lt(page, branch, "jev-loop-confirm").check();
   await waitFor(page, async () => await lt(page, branch, "jev-loop-send").isEnabled() ? true : null, "send enabled", 15000);
-  const callsBefore = fixtureCalls(controlDir).length;
+  const callsBefore = controlDir ? fixtureCalls(controlDir).length : 0;
   const since = Date.now();
   await lt(page, branch, "jev-loop-send").click();
   control(evidence, "jev-loop-send", { run, script });
@@ -749,14 +772,16 @@ async function confirmAndSend(page, branch, run, controlDir, script, log, eviden
   const entry = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev/sends`, "send answer", 120000);
   assert.equal(entry.status, 200, JSON.stringify(entry.json));
   const record = entry.json;
+  if (onRecord) onRecord(record);
   await lp(page, branch).locator(`[data-testid="jev-loop-send-record"]${attr("data-send-id", record.send_id)}`)
     .waitFor({ timeout: 30000 });
-  const calls = fixtureCalls(controlDir).slice(callsBefore);
+  const calls = controlDir ? fixtureCalls(controlDir).slice(callsBefore) : null;
   return { request: entry.request, record, extra, calls };
 }
 /** Server-side byte comparisons of every send (written to jev-loop-bytes.json). */
 const BYTE_LOG = [];
-/** The send's audit `prepared` body = the preview body; its payload hash = the preview hash; one dispatch. */
+/** The send's audit `prepared` body = the preview body; its payload hash = the preview hash; one dispatch; and, with
+ * the fixture server (`calls` not null), the bytes its transport received. */
 function serverBytes(runsDir, run, sendId, shownBody, bodySha, calls) {
   const events = runEvents(runsDir, run);
   const prepared = events.filter(event => event.type === "egress" && event.stage === "prepared" && event.send_id === sendId);
@@ -766,14 +791,18 @@ function serverBytes(runsDir, run, sendId, shownBody, bodySha, calls) {
   assert.deepEqual(prepared[0].body, JSON.parse(shownBody), "prepared audit body differs from the preview body");
   const dispatched = events.filter(event => event.type === "jev_science_dispatch_started" && event.send_id === sendId);
   assert.equal(dispatched.length, 1);
-  assert.equal(calls.length, 1, "fixture transport calls of this send");
-  assert.equal(calls[0].bodySha256, bodySha, "transport bytes differ from the preview");
-  assert.equal(calls[0].bodyBytes, Buffer.byteLength(shownBody, "utf8"));
-  assert.equal(calls[0].authorizationIsSentinel, true);
-  const row = { run, sendId, script: calls[0].script, previewSha256: bodySha, previewBytes: Buffer.byteLength(shownBody, "utf8"),
-    preparedSha256: prepared[0].payload_sha256, preparedBodyEqual: true, transportSha256: calls[0].bodySha256,
-    transportBytes: calls[0].bodyBytes, authorizationIsSentinel: calls[0].authorizationIsSentinel,
-    dispatched: dispatched.length, fixtureCall: calls[0].n };
+  const call = calls === null ? null : calls[0];
+  if (calls !== null) {
+    assert.equal(calls.length, 1, "fixture transport calls of this send");
+    assert.equal(call.bodySha256, bodySha, "transport bytes differ from the preview");
+    assert.equal(call.bodyBytes, Buffer.byteLength(shownBody, "utf8"));
+    assert.equal(call.authorizationIsSentinel, true);
+  }
+  const row = { run, sendId, script: call?.script ?? null, previewSha256: bodySha,
+    previewBytes: Buffer.byteLength(shownBody, "utf8"), preparedSha256: prepared[0].payload_sha256, preparedBodyEqual: true,
+    transportSha256: call?.bodySha256 ?? null, transportBytes: call?.bodyBytes ?? null,
+    authorizationIsSentinel: call?.authorizationIsSentinel ?? null, dispatched: dispatched.length,
+    fixtureCall: call?.n ?? null, gate: calls === null ? "product" : "fixture" };
   BYTE_LOG.push(row);
   return row;
 }
@@ -839,10 +868,16 @@ function cardMatches(shown, record, choice, projection, { late, isSelection, ite
     const value = choice.usage === null ? null : choice.usage[key];
     assert.equal(shown.usage[key], value === null ? UNKNOWN_USAGE : String(value), `usage ${key}`);
   }
-  assert.equal(shown.reported, "true");
-  assert.deepEqual(shown.probabilities.map(item => item.alias), criteria, "probabilities not in the sent order");
-  for (const item of shown.probabilities)
-    assert.ok(item.text.endsWith(halfUp(choice.answer.probabilities[item.alias], 3)), `${item.alias}: ${item.text}`);
+  const reported = choice.answer.probabilities;
+  assert.equal(shown.reported, String(reported !== null));
+  if (reported === null) assert.deepEqual(shown.probabilities, []);
+  else {
+    assert.deepEqual(shown.probabilities.map(item => item.alias), criteria, "probabilities not in the sent order");
+    for (const item of shown.probabilities) {
+      const value = Object.prototype.hasOwnProperty.call(reported, item.alias) ? reported[item.alias] : null;
+      assert.ok(value === null ? item.text.includes("보고 없음") : item.text.endsWith(halfUp(value, 3)), `${item.alias}: ${item.text}`);
+    }
+  }
   assert.equal(shown.foldedBefore, true, "the per-candidate values were not folded when the card appeared");
   assert.deepEqual(shown.limitations, expectedLimitations(projection.kind, choice.goal, { late }));
   assert.deepEqual(choice.limitations, shown.limitations);
@@ -1018,15 +1053,17 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
   await rec_.part("L-entry", ["L-tab-entry", "L-create-fields"], async () => {
     viewerBefore = await rec_.step("L00-run", [], "구조 분석: run L chosen in the rail; the viewer shows its structure",
       () => chooseRun(page, run), async value => ({ sourceHandle: value.sourceHandle, sessionId: value.sessionId }));
-    before = await rec_.step("L01-other-areas-before", [], "리간드 설계·탐색 and 단백질 공학 visited before any loop action " +
-      "(areas and digit-masked text recorded; the JEV loop area is last in each tab)", async () => ({
-      ligand: await tabAreas(page, "ligand", log), protein: await tabAreas(page, "protein", log) }), async value => {
+    await rec_.step("L01-other-areas-before", [], "리간드 설계·탐색 and 단백질 공학 visited before any loop action " +
+      "(areas and digit-masked text recorded; the JEV loop area is last in each tab)", async () => {
+      before = { ligand: await tabAreas(page, "ligand", log), protein: await tabAreas(page, "protein", log) };
+      return before;
+    }, async value => {
       assert.deepEqual(value.ligand.areas.map(item => item.id), ["ligand-panel", "docking-panel", "docking-batch-panel",
         "ligand-ga-panel", "jev-loop-panel"]);
       assert.deepEqual(value.protein.areas.map(item => item.id), ["mutation-panel", "mutation-model-panel",
         "sequence-ga-panel", "jev-loop-panel"]);
       for (const sig of Object.values(value)) assert.deepEqual(sig.posts, [], "entering a tab posted");
-      return value;
+      return { ligand: value.ligand.areas.map(item => item.id), protein: value.protein.areas.map(item => item.id) };
     });
     await rec_.step("L02-tab-entry", ["L-tab-entry"], "Click 리간드 설계·탐색: the JEV 루프 area mounts with GET reads only; " +
       "consent off; UL1 and UL3 (no U3 here); no loop (empty state); the set listed and not chosen; no goal chosen; loop " +
@@ -1136,7 +1173,7 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
   let firstBuilt = null;
   await rec_.part("L-iter1-preview", ["L-consent-off-block", "L-preview-match", "L-order-oracle", "L-consent-toggle",
     "L-confirm-required"], async () => {
-    firstBuilt = await rec_.step("L05-consent-off", ["L-consent-off-block", "L-preview-match", "L-order-oracle"], "보낼 내용 " +
+    await rec_.step("L05-consent-off", ["L-consent-off-block", "L-preview-match", "L-order-oracle"], "보낼 내용 " +
       "만들기 (consent off): the stored projection, the exact body folded at first; its text = the server preview string, " +
       "SHA-256 and bytes computed here = shown = stored; the order, aliases, criteria and computed rows = the independent " +
       "sha256_order_v1 oracle; the question is the spec 4.5 exploit text; the preview lists consent_off and with the " +
@@ -1159,7 +1196,8 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       assert.equal(value.send.enabled, false);
       assert.ok(value.send.blockers.some(text => text.includes("(consent_off)")), value.send.blockers.join(" | "));
       assert.deepEqual(value.stored.limitations, expectedLimitations("ligand", "exploit"));
-      return { identity, built: value.built, shown: value.shown };
+      firstBuilt = { built: value.built, shown: value.shown };     // kept for the next steps, not logged
+      return identity;
     });
     await rec_.step("L06-consent-confirm", ["L-consent-toggle", "L-confirm-required"], "Turn the loop area's consent switch " +
       "on: the preview is read again without refusals and the global line shows 과학 전송 허용 after the run id; uncheck the " +
@@ -1414,7 +1452,7 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
     await rec_.step("L15-candidate-table", ["L-candidate-table"], "Candidate table: score cells = the stored first modes " +
       "(one decimal), rows without a score show — with the reason; click the score header (ascending, then descending), " +
       "the iteration and candidate headers: rows with a score are ordered by the column and every row without a score " +
-      "stays last in pool order; aria-sort follows; no rank column", async () => {
+      "stays last in pool order; aria-sort follows; no position-number column", async () => {
       const record = await readLoop(page, run, loopA.loopId);
       const initial = await candidateTable(page, b);
       const orders = {};
@@ -1669,13 +1707,14 @@ async function proteinBranch(session, input, setup, rec_, evidence, log) {
   await rec_.part("P-entry", ["P-tab-entry", "P-pool-limit", "P-create-fields", "P-create-refused"], async () => {
     viewerBefore = await rec_.step("P00-run", [], "구조 분석: run P chosen in the rail", () => chooseRun(page, run),
       async value => ({ sourceHandle: value.sourceHandle, sessionId: value.sessionId }));
-    before = await rec_.step("P01-other-areas-before", [], "단백질 공학 and 리간드 설계·탐색 visited before any loop action " +
-      "(the protein tab first, so the next step enters it afresh)",
-      async () => ({ protein: await tabAreas(page, "protein", log), ligand: await tabAreas(page, "ligand", log) }),
-      async value => {
-        for (const sig of Object.values(value)) assert.deepEqual(sig.posts, []);
-        return value;
-      });
+    await rec_.step("P01-other-areas-before", [], "단백질 공학 and 리간드 설계·탐색 visited before any loop action " +
+      "(the protein tab first, so the next step enters it afresh)", async () => {
+      before = { protein: await tabAreas(page, "protein", log), ligand: await tabAreas(page, "ligand", log) };
+      return before;
+    }, async value => {
+      for (const sig of Object.values(value)) assert.deepEqual(sig.posts, []);
+      return { ligand: value.ligand.areas.map(item => item.id), protein: value.protein.areas.map(item => item.id) };
+    });
     await rec_.step("P02-tab-entry", ["P-tab-entry"], "Click 단백질 공학: the JEV 루프 area mounts with GET reads only; consent " +
       "off; UL1, UL3 and U3; no loop; both mutation sets listed and none chosen; no goal; seed empty", async () => {
       const since = await openLoopArea(page, b, log);
@@ -2132,8 +2171,359 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
     reads.sentinelReads === dispatched);
 }
 
+// ------------------------------------------------------------------ modes calibrate and live (the real-call plan)
+const PLAN_ENTRY_KEYS = ["branch", "cap", "compareWith", "compute", "goal", "id", "loopSeed", "pool", "report", "rounds",
+  "run", "sends"];
+/** The plan the runner wrote: every entry a loop of one branch in one setup run, one send per round. */
+function checkPlan(plan, setup) {
+  assert.ok(Number.isInteger(plan.maxDispatch) && plan.maxDispatch >= 1 && plan.maxDispatch <= MAX_LIVE_CALLS,
+    "plan.maxDispatch");
+  assert.ok(plan.maxPerRun && typeof plan.maxPerRun === "object" && Object.values(plan.maxPerRun).every(value =>
+    Number.isInteger(value) && value >= 1 && value <= SEND_CAP), "plan.maxPerRun");
+  assert.ok(Array.isArray(plan.entries), "plan.entries");
+  for (const entry of plan.entries) {
+    assert.deepEqual(Object.keys(entry).filter(key => !PLAN_ENTRY_KEYS.includes(key)), [], `plan entry ${entry.id} keys`);
+    assert.ok(setup.runs[entry.run], `plan entry ${entry.id}: run ${entry.run}`);
+    assert.ok(["ligand", "protein"].includes(entry.branch) && ["explore", "exploit"].includes(entry.goal));
+    assert.ok(Number.isInteger(entry.loopSeed) && Number.isInteger(entry.cap) && entry.cap >= 1 && entry.cap <= 8);
+    assert.ok(Array.isArray(entry.pool) && entry.pool.length >= 2 && entry.pool.length <= MAX_POOL);
+    assert.ok(Number.isInteger(entry.rounds) && entry.rounds >= 1 && entry.rounds <= entry.cap && entry.sends === entry.rounds);
+    assert.ok(entry.pool.length - entry.rounds + 1 >= 2, `plan entry ${entry.id}: two pending candidates in every round`);
+  }
+}
+/** The pool refs of a plan entry: ligand candidate ids (by set order) or mutation candidate indices. */
+function entryPool(setup, entry) {
+  const run = setup.runs[entry.run];
+  return entry.branch === "ligand" ? { source: run.ligandSet, refs: entry.pool.map(index => run.ligandSet.ids[index]) }
+    : { source: run.ubqSet, refs: [...entry.pool] };
+}
+/** After a person's compute press: the run's first expensive-call approval when the server asks for it (guide →
+ * 비싼 계산 승인 → 작업 시작), then, for a protein round, the docking step; returns when the round has ended. */
+async function finishRound(page, b, run, loopId, first, round, log, evidence) {
+  const steps = [{ request: first.request, status: first.status }];
+  let approval = null;
+  if (first.json?.current?.job?.start_blocked === "approval_required") {
+    await lt(page, b, "jev-loop-approval-guide").waitFor({ timeout: 30000 });
+    const since = Date.now();
+    await lt(page, b, "jev-loop-approve-first").click();
+    control(evidence, "jev-loop-approve-first", { run });
+    const approved = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jobs/approve`, "approve", 30000);
+    await waitFor(page, async () => await lt(page, b, "jev-loop-job-start").isEnabled() ? true : null, "job start", 30000);
+    const since2 = Date.now();
+    await lt(page, b, "jev-loop-job-start").click();
+    control(evidence, "jev-loop-job-start", { run });
+    const resumed = await waitApi(page, log, since2, item => item.path === `/api/runs/${run}/jev_loops/${loopId}/compute`,
+      "job start answer", 900000);
+    approval = { approve: approved.status, resumed: resumed.status };
+    steps.push({ request: resumed.request, status: resumed.status });
+  }
+  if (b === "protein") {
+    await recordWhen(page, b, item => item.action === "dock" || item.action === "end" || Number(item.iteration) > round,
+      "modelled", 900000);
+    if ((await recordAttrs(page, b)).action === "dock") {
+      const dock = await pressCompute(page, b, run, loopId, "jev-loop-dock", log, evidence, { timeout: 900000 });
+      steps.push({ request: dock.request, status: dock.status });
+    }
+  }
+  await recordWhen(page, b, item => item.action === "end" || Number(item.iteration) > round, "round ended", 900000);
+  return { steps, approval };
+}
+async function modeLive(session, input, setup, rec_, evidence, log) {
+  const { page } = session;
+  const runsDir = input["runs-dir"];
+  const controlDir = input.control;
+  const rehearsal = !!controlDir;
+  const plan = JSON.parse(fs.readFileSync(input.plan, "utf8"));
+  checkPlan(plan, setup);
+  if (rehearsal) {
+    const server = JSON.parse(fs.readFileSync(path.join(controlDir, "server.json"), "utf8"));
+    assert.equal(server.fixture, true, "a rehearsal needs the fixture server");
+    assert.equal(server.runsDir, runsDir);
+    evidence.fixtureLabels.push(PROCESS_NOTE);
+  }
+  const caseId = input.mode === "calibrate" ? "JL-calibrate" : "JL-live";
+  evidence.rehearsal = rehearsal;
+  evidence.plan = { entries: plan.entries.map(entry => entry.id), maxDispatch: plan.maxDispatch, maxPerRun: plan.maxPerRun,
+    preChecks: plan.preChecks ?? null };
+  evidence.runs = { L: setup.runs.L.run, P: setup.runs.P.run };
+  evidence.loops = [];
+  const callsBefore = rehearsal ? fixtureCalls(controlDir).length : 0;
+  await waitForBoot(page);
+  const signatures = {};
+  const viewers = {};
+  let current = null;
+  let stop = null;
+  for (const entry of plan.entries) {
+    if (stop) { evidence.loops.push({ entry: entry.id, skipped: stop }); continue; }
+    const outcome = await rec_.part(`entry-${entry.id}`, [caseId], () => liveEntry(entry));
+    if (outcome === null || outcome.stop) stop = outcome?.stop ?? `stopped after ${entry.id} (see its rows)`;
+  }
+  await rec_.part("live-other-tabs", [caseId], async () => {
+    for (const [run, before] of Object.entries(signatures)) {
+      await rec_.step(`X-other-tabs-${run.slice(4, 12)}`, [caseId], `Run ${run}: the other areas of 리간드 설계·탐색 and ` +
+        "단백질 공학 unchanged (the M18 docking area and the M21 area list the loop's standalone results: kept as " +
+        "evidence), no POST on entry, 구조 분석 hidden and inert, the viewer shows the same source", async () => {
+        await chooseRun(page, run);
+        const ligand = await tabAreas(page, "ligand", log);
+        const protein = await tabAreas(page, "protein", log);
+        await selectTab(page, TAB.structure);
+        return { ligand: compareAreas(before.ligand, ligand, ["docking-panel"]),
+          protein: compareAreas(before.protein, protein, ["mutation-model-panel"]), posts: [...ligand.posts, ...protein.posts],
+          structure: [ligand.structure, protein.structure], viewer: await viewerSnapshot(page) };
+      }, async value => {
+        for (const side of [value.ligand, value.protein]) {
+          assert.deepEqual(side.order.after, side.order.before);
+          for (const [id, item] of Object.entries(side.areas)) if (!item.listing) assert.equal(item.same, true, `${id} changed`);
+        }
+        assert.deepEqual(value.posts, []);
+        for (const item of value.structure) assert.deepEqual(item, { shown: "false", inert: true });
+        assert.equal(value.viewer.sourceHandle, viewers[run].sourceHandle);
+        return { ligand: value.ligand, protein: value.protein };
+      });
+    }
+  });
+  evidence.dispatchCounts = dispatchCounts(runsDir);
+  if (rehearsal) {
+    const calls = fixtureCalls(controlDir).slice(callsBefore);
+    evidence.fixture = { calls: calls.length, scripts: calls.map(call => call.script), statuses: calls.map(call => call.status),
+      sentinelAuthorization: calls.every(call => call.authorizationIsSentinel === true), credentialReads: credentialReads(controlDir) };
+  }
+
+  async function liveEntry(entry) {
+    const b = entry.branch;
+    const S = setup.runs[entry.run];
+    const run = S.run;
+    const kind = b === "ligand" ? "ligand" : "mutation";
+    const { source, refs } = entryPool(setup, entry);
+    if (current !== run) {
+      const viewer = await chooseRun(page, run);
+      if (!signatures[run]) {
+        viewers[run] = viewer;
+        signatures[run] = { protein: await tabAreas(page, "protein", log), ligand: await tabAreas(page, "ligand", log) };
+      }
+      current = run;
+    }
+    const loopRow = { entry: entry.id, run, branch: b, goal: entry.goal, loopSeed: entry.loopSeed, rounds: [] };
+    evidence.loops.push(loopRow);
+    const created = await rec_.step(`${entry.id}-create`, [caseId], `${entry.id}: on ${TAB[b]}, choose the set, check ` +
+      `the pool (${refs.length}), ${entry.goal === "explore" ? "탐색형" : "활용형"}, loop seed ${entry.loopSeed}, cap ` +
+      `${entry.cap}, the computation inputs; 루프 만들기: the loop opens at iteration 1 awaiting its selection`, async () => {
+      await openLoopArea(page, b, log);
+      await chooseSource(page, b, source.handle, source.candidates, evidence);
+      await uncheckAll(page, b, evidence);
+      await checkKeys(page, b, refs.map(String), evidence);
+      await settings(page, b, { goal: entry.goal, seed: String(entry.loopSeed), cap: String(entry.cap) }, evidence);
+      if (b === "ligand") await ligandSetupInputs(page, S, evidence);
+      else await proteinSetupInputs(page, S, evidence);
+      const made = await createLoop(page, b, run, log, evidence);
+      await recordWhen(page, b, value => value.loopId === made.json?.loop_id, "loop opened", 30000);
+      return { made, record: await readLoop(page, run, made.json.loop_id) };
+    }, async value => {
+      assert.equal(value.made.status, 200, JSON.stringify(value.made.json).slice(0, 600));
+      assert.deepEqual(value.made.request.pool.candidates, refs);
+      assert.deepEqual([value.made.request.goal, value.made.request.loop_seed, value.made.request.iteration_cap],
+        [entry.goal, entry.loopSeed, entry.cap]);
+      assert.deepEqual(value.record.candidates.map(item => item.ref), refs);
+      assert.deepEqual(value.record.limitations, expectedLimitations(kind, entry.goal));
+      return { loopId: value.made.json.loop_id };
+    });
+    const loopId = created.loopId;
+    loopRow.loopId = loopId;
+    if (input.mode === "calibrate" && plan.preChecks && entry === plan.entries[0]) {
+      evidence.preChecks = await rec_.step(`${entry.id}-pre-checks`, [caseId], "Before the first real send, with no send: " +
+        "consent off → 보낼 내용 만들기 shows consent_off and the send stays closed with the confirmation checked; consent on " +
+        "→ no refusal; confirmation unchecked → closed with its reason; checked → open; no send request, no dispatch event",
+      async () => {
+        const since = Date.now();
+        const before = dispatchCounts(runsDir)[run] ?? 0;
+        await setConsent(page, b, run, false, log, evidence);
+        const made = await build(page, b, run, log, evidence);
+        const off = await previewWhen(page, b, made.handle, item => item.blocked.length > 0, "consent_off shown");
+        if (!(await lt(page, b, "jev-loop-confirm").isChecked())) await lt(page, b, "jev-loop-confirm").check();
+        const offSend = await sendState(page, b);
+        await setConsent(page, b, run, true, log, evidence);
+        const on = await previewWhen(page, b, made.handle, item => item.blocked.length === 0, "preview unblocked");
+        await lt(page, b, "jev-loop-confirm").uncheck();
+        const unchecked = await sendState(page, b);
+        await lt(page, b, "jev-loop-confirm").check();
+        return { off, offSend, on, unchecked, checked: await sendState(page, b),
+          sendPosts: posts(log, since).filter(item => item.endsWith("/jev/sends")),
+          dispatched: { before, after: dispatchCounts(runsDir)[run] ?? 0 } };
+      }, async value => {
+        assert.deepEqual(value.off.blocked.map(item => item.code), ["consent_off"]);
+        assert.equal(value.offSend.enabled, false);
+        assert.ok(value.offSend.blockers.some(text => text.includes("(consent_off)")));
+        assert.deepEqual([value.on.blocked, value.on.loopBlocks], [[], []]);
+        assert.equal(value.unchecked.enabled, false);
+        assert.ok(value.unchecked.blockers.some(text => text.includes("확인 체크")));
+        assert.equal(value.checked.enabled, true);
+        assert.deepEqual(value.sendPosts, []);
+        assert.equal(value.dispatched.after, value.dispatched.before);
+        return { blockedOff: ["consent_off"], unchecked: value.unchecked.blockers, dispatched: value.dispatched };
+      });
+    }
+    for (let round = 1; round <= entry.rounds; round++) {
+      const roundRow = { round };
+      loopRow.rounds.push(roundRow);
+      const sent = await rec_.step(`${entry.id}-r${round}-send`, [caseId], `${entry.id} round ${round}: consent on, 보낼 ` +
+        "내용 만들기, preview identity and the independent order oracle, the dispatch guard, the confirmation and one send" +
+        `${rehearsal ? " (fixture good)" : ""}; the result as stored (the JEV card with its list position and values ` +
+        "folded at first, or the reason only)", async () => {
+        await setConsent(page, b, run, true, log, evidence);
+        const record = await readLoop(page, run, loopId);
+        assert.equal(record.current.action, "select", `round ${round} is not awaiting its selection`);
+        const made = await build(page, b, run, log, evidence);
+        const shown = await previewWhen(page, b, made.handle, () => true, "preview");
+        const stored = storedObject(runsDir, run, made.handle);
+        const identity = previewMatches({ shown, built: made, stored, record, iteration: record.current.iteration,
+          ordinal: made.summary.send_ordinal, runId: run });
+        if (shown.blocked.length || shown.loopBlocks.length)
+          return { blocked: [...shown.blocked, ...shown.loopBlocks].map(item => item.code), identity };
+        const counts = dispatchCounts(runsDir);
+        const total = Object.values(counts).reduce((sum, item) => sum + item, 0);
+        if (total >= plan.maxDispatch || (counts[run] ?? 0) >= (plan.maxPerRun[run] ?? 0))
+          return { guard: { total, inRun: counts[run] ?? 0 }, identity };
+        const row = { entry: entry.id, round, run, branch: b, goal: entry.goal, loopId, iteration: record.current.iteration,
+          sendOrdinal: made.summary.send_ordinal, aliases: identity.order.length, order: identity.order,
+          criteria: identity.criteria, bodyBytes: identity.bodyBytes, bodySha256: identity.bodySha256,
+          reservation: identity.reservation, dispatchedBefore: { total, inRun: counts[run] ?? 0 } };
+        const result = await confirmAndSend(page, b, run, rehearsal ? controlDir : null, rehearsal ? "good" : null, log,
+          evidence, null, item => {
+            Object.assign(row, { sendId: item.send_id, status: item.status, reasonCode: item.reason_code,
+              servedModel: item.served_model, usage: item.usage, late: item.late });
+            evidence.sends.push(row);
+          });
+        const status = await readApi(page, `/runs/${run}/jev/status`);
+        Object.assign(row, { egressStop: status.egress_stop_reason, statusUsed: status.used, budgetAfter: status.budget });
+        const value = { row, record, made, shown, stored, identity, result };
+        if (result.record.status === "completed") {
+          await lp(page, b).locator(`[data-testid="jev-loop-selection"]${attr("data-send-id", result.record.send_id)}`)
+            .waitFor({ timeout: 30000 });
+          value.card = await readCard(page, b, result.record.send_id);
+        } else value.reason = await reasonOnly(page, b, result.record.send_id);
+        value.wording = await wordingCheck(page, b, `${entry.id} round ${round}`, evidence);
+        return value;
+      }, async value => {
+        if (value.blocked) throw new Error(`the server refuses before the send: ${value.blocked.join(", ")}`);
+        if (value.guard) throw new Error(`dispatch guard: ${JSON.stringify(value.guard)} (no send)`);
+        const record = value.result.record;
+        const row = value.row;
+        if (record.status !== "rejected")       // a refusal before the dispatch has no prepared audit and sends nothing
+          row.bytes = serverBytes(runsDir, run, record.send_id, value.shown.body, value.identity.bodySha256, value.result.calls);
+        if (value.card) {
+          const choice = storedObject(runsDir, run, record.choice_handle);
+          const card = cardMatches(value.card, record, choice, value.stored, { late: false, isSelection: true,
+            iteration: row.iteration });
+          Object.assign(row, { proposal: record.choice_handle, chosenAlias: choice.answer.choice_alias,
+            chosenRef: "candidate_id" in choice.answer.local_ref ? choice.answer.local_ref.candidate_id
+              : choice.answer.local_ref.candidate_index,
+            listPosition: choice.answer.list_position, listSize: choice.answer.list_size,
+            responseShape: { answersParsed: true, confidence: choice.answer.confidence !== null,
+              probabilities: choice.answer.probabilities !== null,
+              probabilityCount: choice.answer.probabilities === null ? 0 : Object.keys(choice.answer.probabilities).length } });
+          row.card = card;
+        } else {
+          assert.ok(["failed", "rejected"].includes(record.status), record.status);
+          assert.deepEqual([value.reason.status, value.reason.code], [record.status, record.reason_code]);
+          assert.ok(value.reason.text.includes(`(${record.reason_code})`), value.reason.text);
+          assert.equal(value.reason.cards, 0, "a proposal card for a send that did not complete");
+          row.responseShape = { answersParsed: false };
+        }
+        assert.deepEqual(value.wording, []);
+        roundRow.send = { sendId: row.sendId, status: row.status, reasonCode: row.reasonCode };
+        return { status: record.status, reasonCode: record.reason_code, proposal: record.choice_handle,
+          egressStop: row.egressStop, listPosition: row.listPosition ?? null, listSize: row.listSize ?? null };
+      });
+      // a send that did not complete or a stopped egress ends the plan here: no retry, no other call
+      if (sent.status !== "completed") return { stop: `${entry.id} round ${round}: ${sent.status}/${sent.reasonCode}` };
+      if (sent.egressStop) return { stop: `${entry.id} round ${round}: egress stopped (${sent.egressStop})` };
+      if (!entry.compute) continue;
+      await rec_.step(`${entry.id}-r${round}-compute`, [caseId], `${entry.id} round ${round}: the compute confirmation and ` +
+        "이 선택으로 계산 시작 (JEV 판정 사용); the run's first expensive-call approval when asked; " +
+        `${b === "protein" ? "the real PDBFixer/OpenMM model, then 도킹 시작 and the real qvina docking into it" :
+          "the real qvina docking"}; the round ends with the stored first-mode score`, async () => {
+        const first = await pressCompute(page, b, run, loopId, "jev-loop-compute-proposal", log, evidence, { timeout: 900000 });
+        const steps = await finishRound(page, b, run, loopId, first, round, log, evidence);
+        return { first, steps, record: await readLoop(page, run, loopId), table: await candidateTable(page, b) };
+      }, async value => {
+        assert.equal(value.first.status, 200, JSON.stringify(value.first.json).slice(0, 600));
+        assert.deepEqual(value.first.request, { iteration: round, proposal: sent.proposal });
+        const it = value.record.iterations.find(item => item.index === round);
+        assert.equal(it.decided_by, "jev");
+        assert.ok(["scored", "null_result", "failed"].includes(it.state), it.state);
+        const docked = it.steps.find(item => item.step === (b === "ligand" ? "ligand_dock" : "dock"));
+        if (it.state === "scored")
+          assert.equal(it.score_kcal_mol, storedObject(runsDir, run, docked.result_handle).modes[0].score_kcal_mol);
+        candidateRowsMatch(value.table, value.record);
+        Object.assign(roundRow, { state: it.state, score: it.score_kcal_mol, steps: it.steps.map(item => ({ step: item.step,
+          state: item.state })), approval: value.steps.approval });
+        return roundRow;
+      });
+    }
+    const ended = await rec_.step(`${entry.id}-end`, [caseId], `${entry.id}: 루프 끝내기; the summary jev_loop_result@1 is ` +
+      "stored and the record's sentences are the stored ones", async () => {
+      const since = Date.now();
+      await lt(page, b, "jev-loop-end").click();
+      control(evidence, "jev-loop-end", { loopId });
+      const answer = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev_loops/${loopId}/end`, "end",
+        120000);
+      const result = await waitFor(page, async () => (await lt(page, b, "jev-loop-ended").count())
+        ? lt(page, b, "jev-loop-ended").getAttribute("data-result-handle") : null, "ended", 30000);
+      return { answer, result, record: await readLoop(page, run, loopId) };
+    }, async value => {
+      assert.equal(value.answer.status, 200, JSON.stringify(value.answer.json).slice(0, 400));
+      const stored = storedObject(runsDir, run, value.result);
+      assert.equal(stored.end_reason, value.record.end_reason);
+      assert.deepEqual(value.record.limitations, expectedLimitations(kind, entry.goal, { ended: true,
+        uncomputed: value.record.candidates.some(item => ["pending", "unavailable"].includes(item.state)) }));
+      Object.assign(loopRow, { endReason: value.record.end_reason, result: value.result, counts: value.record.counts });
+      return { endReason: value.record.end_reason, result: value.result };
+    });
+    if (entry.report) {
+      await rec_.step(`${entry.id}-report`, [caseId], `${entry.id}: 보고서 만들기 (JEV 루프 보고서) and the saved Markdown in ` +
+        "the 지식·보고서 library", async () => {
+        const made = await makeLoopReport(page, b, run, log, evidence);
+        return { made, report: await libraryReport(page, run, made.json.handle, evidence) };
+      }, async value => {
+        loopRow.report = value.made.json.handle;
+        return reportMatches(value.report, storedObject(runsDir, run, ended.result), kind, entry.goal, evidence);
+      });
+    }
+    if (entry.compareWith) {
+      evidence.shuffle = await rec_.step(`${entry.id}-shuffle`, [caseId], `${entry.id}: the first send of this loop and ` +
+        `of ${entry.compareWith} (same pool and goal, other loop seed) side by side: both sent orders and both chosen list ` +
+        "positions, recorded as observed values only", async () => {
+        const loops = await readApi(page, `/runs/${run}/jev_loops`);
+        const records = await Promise.all(loops.map(row => readLoop(page, run, row.loop_id)));
+        const mine = records.find(item => item.loop_id === loopId);
+        const theirs = records.filter(item => item.loop_id !== loopId && item.branch === b && item.goal === entry.goal &&
+          JSON.stringify(item.pool.candidates.map(row => row.ref)) === JSON.stringify(refs));
+        const first = async loop => {
+          const send = loop.iterations.find(item => item.index === 1)?.sends.find(item => item.send_ordinal === 0);
+          if (!send) return { loopSeed: loop.loop_seed, send: null };
+          const detail = await readApi(page, `/runs/${run}/jev/sends/${enc(send.send_id)}`);
+          const projection = storedObject(runsDir, run, detail.projection_handle);
+          return { loopSeed: loop.loop_seed, sendId: send.send_id, status: detail.status,
+            order: projection.selection.map(item => item.ref), aliases: projection.selection.map(item => item.alias),
+            listPosition: detail.choice?.answer.list_position ?? null, listSize: detail.choice?.answer.list_size ?? null,
+            chosenRef: detail.choice ? ("candidate_id" in detail.choice.answer.local_ref
+              ? detail.choice.answer.local_ref.candidate_id : detail.choice.answer.local_ref.candidate_index) : null };
+        };
+        return { mine: await first(mine), theirs: await Promise.all(theirs.map(first)) };
+      }, async value => {
+        assert.equal(value.theirs.length, 1, "the loop to set beside this one (same pool and goal) was not found");
+        const [a, b_] = [value.theirs[0], value.mine];
+        assert.notEqual(a.loopSeed, b_.loopSeed);
+        assert.deepEqual([...a.order].map(String).sort(), [...b_.order].map(String).sort());
+        return { note: "observed values only (two sent orders and two chosen list positions)", first: a, second: b_ };
+      });
+    }
+    return { loopId };
+  }
+}
+
 // ------------------------------------------------------------------ main
-const RUNNERS = { fixture: modeFixture };
+const RUNNERS = { fixture: modeFixture, calibrate: modeLive, live: modeLive };
 
 function buildId() {
   const file = path.join(REPO, "frontend/.next/BUILD_ID");
@@ -2145,8 +2535,8 @@ async function main() {
   fs.mkdirSync(input.artifacts, { recursive: true });
   const setup = JSON.parse(fs.readFileSync(input.setup, "utf8"));
   assert.equal(setup.schema, "m25_jev_loop_setup@1");
-  const evidence = { schema: "m25_jev_loop_evidence@1", mode: input.mode, runs: {}, sends: [], fixtureLabels: [],
-    partFailures: [], controls: {}, wording: [], startedAt: new Date().toISOString() };
+  const evidence = { schema: "m25_jev_loop_evidence@1", mode: input.mode, rehearsal: input.mode !== "fixture" && !!input.control,
+    runs: {}, sends: [], fixtureLabels: [], partFailures: [], controls: {}, wording: [], startedAt: new Date().toISOString() };
   const session = await launchOffscreen({ url: input.url, artifacts: input.artifacts, interactive: false });
   const log = requestLog(session.page);
   const rec_ = recorder(session, input, evidence);
@@ -2175,13 +2565,15 @@ async function main() {
   fs.writeFileSync(path.join(input.artifacts, "jev-loop-requests.jsonl"), log.rows.map(row => JSON.stringify(row)).join("\n") + "\n");
   fs.writeFileSync(path.join(input.artifacts, "jev-loop-bytes.json"), JSON.stringify({ schema: "m25_jev_loop_bytes@1",
     rule: "per send: the preview <pre> text = the server preview string; its SHA-256 = the audit prepared payload_sha256 " +
-      "(prepared body deep-equal) = the SHA-256 of the bytes the fixture transport received; one dispatch event",
+      "(prepared body deep-equal) = (fixture server) the SHA-256 of the bytes its transport received; one dispatch event",
     sends: BYTE_LOG }, null, 2) + "\n");
   const harness = Object.fromEntries(["jev-loop-flow.cjs", "jev-flow.cjs", "driver.cjs", "main.cjs"]
     .map(name => [name, sha(fs.readFileSync(path.join(__dirname, name)))]));
-  const row = { schema: "m25_case_ledger_row@1", mode: input.mode, evidenceKind: "real_electron_offscreen",
-    status: passed ? "pass" : "fail", cases, runs: evidence.runs, sends: evidence.sends, fixture: evidence.fixture ?? null,
-    bytes: BYTE_LOG.length,
+  const row = { schema: "m25_case_ledger_row@1", mode: input.mode, rehearsal: evidence.rehearsal,
+    evidenceKind: "real_electron_offscreen", status: passed ? "pass" : "fail", cases, runs: evidence.runs,
+    sends: evidence.sends, fixture: evidence.fixture ?? null, bytes: BYTE_LOG.length, plan: evidence.plan ?? null,
+    preChecks: evidence.preChecks ?? null, loops: evidence.loops ?? null, shuffle: evidence.shuffle ?? null,
+    dispatchCounts: evidence.dispatchCounts ?? null,
     fixtureLabels: evidence.fixtureLabels, controls: evidence.controls,
     wording: evidence.wording.map(item => ({ label: item.label, kind: item.kind, found: item.found.length })),
     buildId: buildId(), harness, offscreen: proof, externalRequestCount: proof ? proof.nonLoopbackRequests : null,
@@ -2198,5 +2590,5 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, oracleOrder, expectedLimitations, forbiddenWords, FORBIDDEN, FIXED_LINES, LJ, UL,
-  INSTRUCTIONS, MODES };
+module.exports = { options, main, oracleOrder, expectedLimitations, forbiddenWords, checkPlan, FORBIDDEN, FIXED_LINES, LJ,
+  UL, INSTRUCTIONS, MODES, MAX_LIVE_CALLS };
