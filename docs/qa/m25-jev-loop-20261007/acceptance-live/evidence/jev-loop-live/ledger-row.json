@@ -1,0 +1,1532 @@
+{
+  "schema": "m25_case_ledger_row@1",
+  "mode": "live",
+  "rehearsal": false,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "JL-live": "pass",
+    "X-wording": "pass",
+    "X-no-egress-browser": "pass"
+  },
+  "runs": {
+    "L": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+    "P": "run_3c47e688f11048a485180e132da985b8"
+  },
+  "sends": [
+    {
+      "entry": "L-exploit-3",
+      "round": 1,
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "exploit",
+      "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5",
+      "iteration": 1,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "c01=c_14271764afae517b:pending",
+        "c02=c_2c7a25e0cc0ad3f2:pending",
+        "c03=c_5d474f8db1578d8d:pending",
+        "c04=c_9d4897ac9ecdb2d4:pending",
+        "c05=c_da033b82807ffbe7:pending"
+      ],
+      "criteria": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "bodyBytes": 4194,
+      "bodySha256": "1258e3a1a9ed677625938f155f94d3e6a8528233a9c3ecadc78e3f8838c62b6c",
+      "reservation": {
+        "external_tokens": 6892,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 1,
+        "inRun": 1
+      },
+      "sendId": "812eaa85-8f76-4414-87a3-4af4942d0ab7",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000095382,
+        "external_tokens": 2336,
+        "input_tokens": 2271,
+        "output_tokens": 65
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 2,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 4555,
+          "limit": 120000,
+          "remaining": 115445
+        },
+        "usd": {
+          "used": 0.0001858500000000013,
+          "limit": 2,
+          "remaining": 1.99981415
+        }
+      },
+      "bytes": {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "sendId": "812eaa85-8f76-4414-87a3-4af4942d0ab7",
+        "script": null,
+        "previewSha256": "1258e3a1a9ed677625938f155f94d3e6a8528233a9c3ecadc78e3f8838c62b6c",
+        "previewBytes": 4194,
+        "preparedSha256": "1258e3a1a9ed677625938f155f94d3e6a8528233a9c3ecadc78e3f8838c62b6c",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_choice/1ecd676ece9b7234b5800d82a012dea09b75e3617a0065ef24c2d7b305ef8335",
+      "chosenAlias": "c01",
+      "chosenRef": "c_14271764afae517b",
+      "listPosition": 1,
+      "listSize": 5,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "c01",
+        "position": "1/5",
+        "confidence": "0.620",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 5,
+        "local": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CCC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+        "confirmingSeen": false
+      }
+    },
+    {
+      "entry": "L-exploit-3",
+      "round": 2,
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "exploit",
+      "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5",
+      "iteration": 2,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "c01=c_5d474f8db1578d8d:pending",
+        "c02=c_14271764afae517b:scored",
+        "c03=c_2c7a25e0cc0ad3f2:pending",
+        "c04=c_da033b82807ffbe7:pending",
+        "c05=c_9d4897ac9ecdb2d4:pending"
+      ],
+      "criteria": [
+        "c01",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "bodyBytes": 4225,
+      "bodySha256": "19ead15c14c2c1a361b8ca6bba28d18a4f84a5b3b7b616b1eb8777d293964cff",
+      "reservation": {
+        "external_tokens": 6913,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 2,
+        "inRun": 2
+      },
+      "sendId": "907879af-04bb-4d80-9104-d3848fc3d439",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000096012,
+        "external_tokens": 2342,
+        "input_tokens": 2286,
+        "output_tokens": 56
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 3,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 6897,
+          "limit": 120000,
+          "remaining": 113103
+        },
+        "usd": {
+          "used": 0.0002818620000000077,
+          "limit": 2,
+          "remaining": 1.999718138
+        }
+      },
+      "bytes": {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "sendId": "907879af-04bb-4d80-9104-d3848fc3d439",
+        "script": null,
+        "previewSha256": "19ead15c14c2c1a361b8ca6bba28d18a4f84a5b3b7b616b1eb8777d293964cff",
+        "previewBytes": 4225,
+        "preparedSha256": "19ead15c14c2c1a361b8ca6bba28d18a4f84a5b3b7b616b1eb8777d293964cff",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_choice/39a342c52c9d9286a4295e4203e8dd15152e24f08db83d98d71e9910e72391c8",
+      "chosenAlias": "c03",
+      "chosenRef": "c_2c7a25e0cc0ad3f2",
+      "listPosition": 2,
+      "listSize": 4,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 4
+      },
+      "card": {
+        "alias": "c03",
+        "position": "2/4",
+        "confidence": "0.690",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 4,
+        "local": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C(F)(F)F)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+        "confirmingSeen": false
+      }
+    },
+    {
+      "entry": "L-exploit-3",
+      "round": 3,
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "exploit",
+      "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5",
+      "iteration": 3,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "c01=c_14271764afae517b:scored",
+        "c02=c_5d474f8db1578d8d:pending",
+        "c03=c_2c7a25e0cc0ad3f2:scored",
+        "c04=c_da033b82807ffbe7:pending",
+        "c05=c_9d4897ac9ecdb2d4:pending"
+      ],
+      "criteria": [
+        "c02",
+        "c04",
+        "c05"
+      ],
+      "bodyBytes": 4257,
+      "bodySha256": "be358de678fb69fe22a85887c5c23d0d92ed008dad093dbf179904250a8bb44a",
+      "reservation": {
+        "external_tokens": 6934,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 3,
+        "inRun": 3
+      },
+      "sendId": "e03faa7f-28b8-4214-a29a-1f136dfd13fb",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000096684,
+        "external_tokens": 2349,
+        "input_tokens": 2302,
+        "output_tokens": 47
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 4,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 9246,
+          "limit": 120000,
+          "remaining": 110754
+        },
+        "usd": {
+          "used": 0.0003785460000000074,
+          "limit": 2,
+          "remaining": 1.999621454
+        }
+      },
+      "bytes": {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "sendId": "e03faa7f-28b8-4214-a29a-1f136dfd13fb",
+        "script": null,
+        "previewSha256": "be358de678fb69fe22a85887c5c23d0d92ed008dad093dbf179904250a8bb44a",
+        "previewBytes": 4257,
+        "preparedSha256": "be358de678fb69fe22a85887c5c23d0d92ed008dad093dbf179904250a8bb44a",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_choice/0f95059388100687f949693ca180e0d0370cbac65c62ad3b89cd4b534ccd3b17",
+      "chosenAlias": "c04",
+      "chosenRef": "c_da033b82807ffbe7",
+      "listPosition": 2,
+      "listSize": 3,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 3
+      },
+      "card": {
+        "alias": "c04",
+        "position": "2/3",
+        "confidence": "0.860",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 3,
+        "local": "C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CF)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O",
+        "confirmingSeen": false
+      }
+    },
+    {
+      "entry": "P-exploit-3",
+      "round": 1,
+      "run": "run_3c47e688f11048a485180e132da985b8",
+      "branch": "protein",
+      "goal": "exploit",
+      "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2",
+      "iteration": 1,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "m01=19:pending",
+        "m02=14:pending",
+        "m03=21:pending",
+        "m04=10:pending",
+        "m05=4:pending"
+      ],
+      "criteria": [
+        "m01",
+        "m02",
+        "m03",
+        "m04",
+        "m05"
+      ],
+      "bodyBytes": 7900,
+      "bodySha256": "168ffec20ca1f1e89905b747fd3cd5e7508054741b8098e88dadf52afc622bd8",
+      "reservation": {
+        "external_tokens": 9363,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 4,
+        "inRun": 0
+      },
+      "sendId": "9db8d0de-bd81-4b2e-bdc8-401a830b76d5",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000174132,
+        "external_tokens": 4211,
+        "input_tokens": 4146,
+        "output_tokens": 65
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 1,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 4211,
+          "limit": 120000,
+          "remaining": 115789
+        },
+        "usd": {
+          "used": 0.00017413199999999351,
+          "limit": 2,
+          "remaining": 1.999825868
+        }
+      },
+      "bytes": {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "sendId": "9db8d0de-bd81-4b2e-bdc8-401a830b76d5",
+        "script": null,
+        "previewSha256": "168ffec20ca1f1e89905b747fd3cd5e7508054741b8098e88dadf52afc622bd8",
+        "previewBytes": 7900,
+        "preparedSha256": "168ffec20ca1f1e89905b747fd3cd5e7508054741b8098e88dadf52afc622bd8",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_3c47e688f11048a485180e132da985b8/jev_loop_choice/1aa66130f628d6d612473302003c46c642d2e79eb9023319d023601ee5855521",
+      "chosenAlias": "m01",
+      "chosenRef": 19,
+      "listPosition": 1,
+      "listSize": 5,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "m01",
+        "position": "1/5",
+        "confidence": "0.840",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 5,
+        "local": "ILE 체인 A · seq_auth 61 · 삽입 코드 없음 · 모델 1 · I→A",
+        "confirmingSeen": false
+      }
+    },
+    {
+      "entry": "P-exploit-3",
+      "round": 2,
+      "run": "run_3c47e688f11048a485180e132da985b8",
+      "branch": "protein",
+      "goal": "exploit",
+      "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2",
+      "iteration": 2,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "m01=19:scored",
+        "m02=21:pending",
+        "m03=14:pending",
+        "m04=4:pending",
+        "m05=10:pending"
+      ],
+      "criteria": [
+        "m02",
+        "m03",
+        "m04",
+        "m05"
+      ],
+      "bodyBytes": 7931,
+      "bodySha256": "bbb1ff9d6f69a12f1dbb836f1302f56b53f3c91c0445569d374f57743ec37301",
+      "reservation": {
+        "external_tokens": 9384,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 5,
+        "inRun": 1
+      },
+      "sendId": "865f7e35-ab16-4870-9b45-e6cf59e9c939",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000174678,
+        "external_tokens": 4215,
+        "input_tokens": 4159,
+        "output_tokens": 56
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 2,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 8426,
+          "limit": 120000,
+          "remaining": 111574
+        },
+        "usd": {
+          "used": 0.00034880999999999107,
+          "limit": 2,
+          "remaining": 1.99965119
+        }
+      },
+      "bytes": {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "sendId": "865f7e35-ab16-4870-9b45-e6cf59e9c939",
+        "script": null,
+        "previewSha256": "bbb1ff9d6f69a12f1dbb836f1302f56b53f3c91c0445569d374f57743ec37301",
+        "previewBytes": 7931,
+        "preparedSha256": "bbb1ff9d6f69a12f1dbb836f1302f56b53f3c91c0445569d374f57743ec37301",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_3c47e688f11048a485180e132da985b8/jev_loop_choice/6da9af6f34f4295e103a9fa523ec8a026eba49800995beba78507fc902294dd1",
+      "chosenAlias": "m03",
+      "chosenRef": 14,
+      "listPosition": 2,
+      "listSize": 4,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 4
+      },
+      "card": {
+        "alias": "m03",
+        "position": "2/4",
+        "confidence": "0.560",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 4,
+        "local": "ILE 체인 A · seq_auth 44 · 삽입 코드 없음 · 모델 1 · I→A",
+        "confirmingSeen": false
+      }
+    },
+    {
+      "entry": "P-exploit-3",
+      "round": 3,
+      "run": "run_3c47e688f11048a485180e132da985b8",
+      "branch": "protein",
+      "goal": "exploit",
+      "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2",
+      "iteration": 3,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "m01=14:scored",
+        "m02=4:pending",
+        "m03=19:scored",
+        "m04=21:pending",
+        "m05=10:pending"
+      ],
+      "criteria": [
+        "m02",
+        "m04",
+        "m05"
+      ],
+      "bodyBytes": 7963,
+      "bodySha256": "3626e4de97c64f5a175c6ac7dbb62a3eae007a53320565fadadaab5998c191ef",
+      "reservation": {
+        "external_tokens": 9405,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 6,
+        "inRun": 2
+      },
+      "sendId": "babc0daf-b59b-4902-8a5c-48a2826c4eb8",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.00017535,
+        "external_tokens": 4222,
+        "input_tokens": 4175,
+        "output_tokens": 47
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 3,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 12648,
+          "limit": 120000,
+          "remaining": 107352
+        },
+        "usd": {
+          "used": 0.0005241599999999957,
+          "limit": 2,
+          "remaining": 1.9994758400000001
+        }
+      },
+      "bytes": {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "sendId": "babc0daf-b59b-4902-8a5c-48a2826c4eb8",
+        "script": null,
+        "previewSha256": "3626e4de97c64f5a175c6ac7dbb62a3eae007a53320565fadadaab5998c191ef",
+        "previewBytes": 7963,
+        "preparedSha256": "3626e4de97c64f5a175c6ac7dbb62a3eae007a53320565fadadaab5998c191ef",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_3c47e688f11048a485180e132da985b8/jev_loop_choice/417b06d545538273613560efd7c7182b9248cfbb673b1a1150418356f7d3b048",
+      "chosenAlias": "m05",
+      "chosenRef": 10,
+      "listPosition": 3,
+      "listSize": 3,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 3
+      },
+      "card": {
+        "alias": "m05",
+        "position": "3/3",
+        "confidence": "0.460",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 3,
+        "local": "ILE 체인 A · seq_auth 30 · 삽입 코드 없음 · 모델 1 · I→A",
+        "confirmingSeen": false
+      }
+    },
+    {
+      "entry": "L-explore-shuffle",
+      "round": 1,
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "explore",
+      "loopId": "ebd9c05d-ffd4-4976-ab4c-4730c553d114",
+      "iteration": 1,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "c01=c_c42a53803595e440:pending",
+        "c02=c_1afb7cd3e603456c:pending",
+        "c03=c_21d6c6f0d07e3759:pending",
+        "c04=c_71188fcf0e6703c9:pending",
+        "c05=c_f1f6983d23c3009f:pending"
+      ],
+      "criteria": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "bodyBytes": 3855,
+      "bodySha256": "112c95ccf988397902edb0e3d412f92e3faabbaca02170942b815f26db76054c",
+      "reservation": {
+        "external_tokens": 6666,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 7,
+        "inRun": 4
+      },
+      "sendId": "42fabffa-a4db-4da3-907f-370abe0f7855",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000090468,
+        "external_tokens": 2219,
+        "input_tokens": 2154,
+        "output_tokens": 65
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 5,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 11465,
+          "limit": 120000,
+          "remaining": 108535
+        },
+        "usd": {
+          "used": 0.0004690140000000037,
+          "limit": 2,
+          "remaining": 1.999530986
+        }
+      },
+      "bytes": {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "sendId": "42fabffa-a4db-4da3-907f-370abe0f7855",
+        "script": null,
+        "previewSha256": "112c95ccf988397902edb0e3d412f92e3faabbaca02170942b815f26db76054c",
+        "previewBytes": 3855,
+        "preparedSha256": "112c95ccf988397902edb0e3d412f92e3faabbaca02170942b815f26db76054c",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_choice/41da1163994022ff0396a4e38d87a1238000da366105ea7b3e9bf14daff57815",
+      "chosenAlias": "c01",
+      "chosenRef": "c_c42a53803595e440",
+      "listPosition": 1,
+      "listSize": 5,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "c01",
+        "position": "1/5",
+        "confidence": "0.410",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 5,
+        "local": "CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+        "confirmingSeen": false
+      }
+    }
+  ],
+  "fixture": null,
+  "bytes": 7,
+  "plan": {
+    "entries": [
+      "L-exploit-3",
+      "P-exploit-3",
+      "L-explore-shuffle"
+    ],
+    "maxDispatch": 8,
+    "maxPerRun": {
+      "run_a6f1fdc86c674f33b5cf975a085dc3a4": 5,
+      "run_3c47e688f11048a485180e132da985b8": 3
+    },
+    "preChecks": null
+  },
+  "preChecks": null,
+  "loops": [
+    {
+      "entry": "L-exploit-3",
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "exploit",
+      "loopSeed": 202,
+      "rounds": [
+        {
+          "round": 1,
+          "send": {
+            "sendId": "812eaa85-8f76-4414-87a3-4af4942d0ab7",
+            "status": "completed",
+            "reasonCode": null
+          },
+          "state": "scored",
+          "score": -0.3,
+          "steps": [
+            {
+              "step": "ligand_dock",
+              "state": "completed"
+            }
+          ],
+          "approval": null
+        },
+        {
+          "round": 2,
+          "send": {
+            "sendId": "907879af-04bb-4d80-9104-d3848fc3d439",
+            "status": "completed",
+            "reasonCode": null
+          },
+          "state": "scored",
+          "score": -8.7,
+          "steps": [
+            {
+              "step": "ligand_dock",
+              "state": "completed"
+            }
+          ],
+          "approval": null
+        },
+        {
+          "round": 3,
+          "send": {
+            "sendId": "e03faa7f-28b8-4214-a29a-1f136dfd13fb",
+            "status": "completed",
+            "reasonCode": null
+          },
+          "state": "scored",
+          "score": -9.1,
+          "steps": [
+            {
+              "step": "ligand_dock",
+              "state": "completed"
+            }
+          ],
+          "approval": null
+        }
+      ],
+      "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5",
+      "endReason": "iteration_cap",
+      "result": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_result/71dab217588b55d9becbc297512bd741444d9ce4263d335e3e4905b9c80b1e72",
+      "counts": {
+        "started": 3,
+        "done": 3,
+        "jev_decided": 3,
+        "human_decided": 0,
+        "sends_dispatched": 3,
+        "units_charged": 3,
+        "reused_count": 0
+      },
+      "report": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/method_report_manifest/e3bac1303f235e18a4ba2f90b33af0c4e096959475e330b81a3999a0ec2d41a5"
+    },
+    {
+      "entry": "P-exploit-3",
+      "run": "run_3c47e688f11048a485180e132da985b8",
+      "branch": "protein",
+      "goal": "exploit",
+      "loopSeed": 303,
+      "rounds": [
+        {
+          "round": 1,
+          "send": {
+            "sendId": "9db8d0de-bd81-4b2e-bdc8-401a830b76d5",
+            "status": "completed",
+            "reasonCode": null
+          },
+          "state": "scored",
+          "score": -3,
+          "steps": [
+            {
+              "step": "model",
+              "state": "completed"
+            },
+            {
+              "step": "dock",
+              "state": "completed"
+            }
+          ],
+          "approval": {
+            "approve": 200,
+            "resumed": 200
+          }
+        },
+        {
+          "round": 2,
+          "send": {
+            "sendId": "865f7e35-ab16-4870-9b45-e6cf59e9c939",
+            "status": "completed",
+            "reasonCode": null
+          },
+          "state": "scored",
+          "score": -2.8,
+          "steps": [
+            {
+              "step": "model",
+              "state": "completed"
+            },
+            {
+              "step": "dock",
+              "state": "completed"
+            }
+          ],
+          "approval": null
+        },
+        {
+          "round": 3,
+          "send": {
+            "sendId": "babc0daf-b59b-4902-8a5c-48a2826c4eb8",
+            "status": "completed",
+            "reasonCode": null
+          },
+          "state": "scored",
+          "score": -3,
+          "steps": [
+            {
+              "step": "model",
+              "state": "completed"
+            },
+            {
+              "step": "dock",
+              "state": "completed"
+            }
+          ],
+          "approval": null
+        }
+      ],
+      "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2",
+      "endReason": "iteration_cap",
+      "result": "obj://run_3c47e688f11048a485180e132da985b8/jev_loop_result/2e554e27405d1a888a91a7e5b2a5d7c47917951f7c528ec7ac2828f87a20d248",
+      "counts": {
+        "started": 3,
+        "done": 3,
+        "jev_decided": 3,
+        "human_decided": 0,
+        "sends_dispatched": 3,
+        "units_charged": 6,
+        "reused_count": 0
+      },
+      "report": "obj://run_3c47e688f11048a485180e132da985b8/method_report_manifest/14eb5bcda801a2b0c8679364ce04b5e3ef34044e47decfb56cded341085f24fc"
+    },
+    {
+      "entry": "L-explore-shuffle",
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "explore",
+      "loopSeed": 404,
+      "rounds": [
+        {
+          "round": 1,
+          "send": {
+            "sendId": "42fabffa-a4db-4da3-907f-370abe0f7855",
+            "status": "completed",
+            "reasonCode": null
+          }
+        }
+      ],
+      "loopId": "ebd9c05d-ffd4-4976-ab4c-4730c553d114",
+      "endReason": "ended_by_user",
+      "result": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_result/155ed86c5fd73722c25cede923abbd2f68599a03e91b50cd2bd695a326c4095f",
+      "counts": {
+        "started": 0,
+        "done": 0,
+        "jev_decided": 0,
+        "human_decided": 0,
+        "sends_dispatched": 1,
+        "units_charged": 0,
+        "reused_count": 0
+      }
+    }
+  ],
+  "shuffle": {
+    "note": "observed values only (two sent orders and two chosen list positions)",
+    "first": {
+      "loopSeed": 101,
+      "sendId": "74cc38e3-71e2-449e-a80d-c87e341ac723",
+      "status": "completed",
+      "order": [
+        "c_1afb7cd3e603456c",
+        "c_f1f6983d23c3009f",
+        "c_c42a53803595e440",
+        "c_71188fcf0e6703c9",
+        "c_21d6c6f0d07e3759"
+      ],
+      "aliases": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "listPosition": 1,
+      "listSize": 5,
+      "chosenRef": "c_1afb7cd3e603456c"
+    },
+    "second": {
+      "loopSeed": 404,
+      "sendId": "42fabffa-a4db-4da3-907f-370abe0f7855",
+      "status": "completed",
+      "order": [
+        "c_c42a53803595e440",
+        "c_1afb7cd3e603456c",
+        "c_21d6c6f0d07e3759",
+        "c_71188fcf0e6703c9",
+        "c_f1f6983d23c3009f"
+      ],
+      "aliases": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "listPosition": 1,
+      "listSize": 5,
+      "chosenRef": "c_c42a53803595e440"
+    }
+  },
+  "dispatchCounts": {
+    "run_3c47e688f11048a485180e132da985b8": 3,
+    "run_a6f1fdc86c674f33b5cf975a085dc3a4": 5
+  },
+  "fixtureLabels": [],
+  "controls": {
+    "jev-loop-source-ligand": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/ligand_candidate_set/ec3c2fcf4e00055dbbf8c8fa36a58f4be91b6a836e0707842bba00fc40d6baf4"
+      },
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/ligand_candidate_set/ec3c2fcf4e00055dbbf8c8fa36a58f4be91b6a836e0707842bba00fc40d6baf4"
+      }
+    ],
+    "jev-loop-candidate": [
+      {
+        "key": "c_14271764afae517b"
+      },
+      {
+        "key": "c_5d474f8db1578d8d"
+      },
+      {
+        "key": "c_da033b82807ffbe7"
+      },
+      {
+        "key": "c_2c7a25e0cc0ad3f2"
+      },
+      {
+        "key": "c_9d4897ac9ecdb2d4"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "21"
+      },
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_c42a53803595e440"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_71188fcf0e6703c9"
+      },
+      {
+        "key": "c_21d6c6f0d07e3759"
+      }
+    ],
+    "jev-loop-goal": [
+      {
+        "goal": "exploit"
+      },
+      {
+        "goal": "exploit"
+      },
+      {
+        "goal": "explore"
+      }
+    ],
+    "jev-loop-seed": [
+      {
+        "value": "202"
+      },
+      {
+        "value": "303"
+      },
+      {
+        "value": "404"
+      }
+    ],
+    "jev-loop-iteration-cap": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-parent-sdf": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      },
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      }
+    ],
+    "jev-loop-receptor": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      },
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      }
+    ],
+    "jev-loop-model": [
+      {
+        "model": "1"
+      },
+      {
+        "model": "1"
+      }
+    ],
+    "jev-loop-instance": [
+      {
+        "instance": "none"
+      },
+      {
+        "instance": "none"
+      }
+    ],
+    "jev-loop-connectivity": [
+      {
+        "kind": "pdb_conect"
+      },
+      {
+        "kind": "pdb_conect"
+      }
+    ],
+    "jev-loop-box": [
+      {
+        "source": "manual"
+      },
+      {
+        "source": "manual"
+      }
+    ],
+    "jev-loop-center-x": [
+      {
+        "value": "3.41"
+      },
+      {
+        "value": "3.41"
+      }
+    ],
+    "jev-loop-size-x": [
+      {
+        "value": "12"
+      },
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-center-y": [
+      {
+        "value": "0.72"
+      },
+      {
+        "value": "0.72"
+      }
+    ],
+    "jev-loop-size-y": [
+      {
+        "value": "12"
+      },
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-center-z": [
+      {
+        "value": "11.31"
+      },
+      {
+        "value": "11.31"
+      }
+    ],
+    "jev-loop-size-z": [
+      {
+        "value": "12"
+      },
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-docking-seed": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-exhaustiveness": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-num-modes": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "jev-loop-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "jev-loop-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-create": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "branch": "protein"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      }
+    ],
+    "jev-loop-build": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "branch": "protein"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "branch": "protein"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "branch": "protein"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      }
+    ],
+    "jev-loop-send": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "script": null
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "script": null
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "script": null
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "script": null
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "script": null
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "script": null
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "script": null
+      }
+    ],
+    "jev-loop-compute-proposal": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      }
+    ],
+    "jev-loop-end": [
+      {
+        "loopId": "10bc06a8-0b09-441e-a04d-6b38fe0cc9d5"
+      },
+      {
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      },
+      {
+        "loopId": "ebd9c05d-ffd4-4976-ab4c-4730c553d114"
+      }
+    ],
+    "jev-loop-report": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "branch": "protein"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/method_report_manifest/e3bac1303f235e18a4ba2f90b33af0c4e096959475e330b81a3999a0ec2d41a5"
+      },
+      {
+        "handle": "obj://run_3c47e688f11048a485180e132da985b8/method_report_manifest/14eb5bcda801a2b0c8679364ce04b5e3ef34044e47decfb56cded341085f24fc"
+      }
+    ],
+    "jev-loop-source-protein": [
+      {
+        "handle": "obj://run_3c47e688f11048a485180e132da985b8/mutation_candidate_set/def4fb9b29fa002ee64d51413edd4832a178763f18575132856bd525bd03448c"
+      }
+    ],
+    "jev-loop-confirmations": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-cutoff": [
+      {
+        "value": "4.0"
+      }
+    ],
+    "jev-loop-setup-sdf": [
+      {
+        "handle": "obj://run_3c47e688f11048a485180e132da985b8/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      }
+    ],
+    "jev-loop-setup-box": [
+      {
+        "source": "ligand_range"
+      }
+    ],
+    "jev-loop-setup-margin": [
+      {
+        "value": "8"
+      }
+    ],
+    "jev-loop-setup-seed": [
+      {
+        "value": "20261007"
+      }
+    ],
+    "jev-loop-setup-exhaustiveness": [
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-setup-num-modes": [
+      {
+        "value": "2"
+      }
+    ],
+    "jev-loop-setup-energy-range": [
+      {
+        "value": "3"
+      }
+    ],
+    "jev-loop-setup-ack-keep_input_protonation": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-setup-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-setup-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-consent": [
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "enabled": true
+      }
+    ],
+    "jev-loop-approve-first": [
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8"
+      }
+    ],
+    "jev-loop-job-start": [
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8"
+      }
+    ],
+    "jev-loop-dock": [
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      },
+      {
+        "run": "run_3c47e688f11048a485180e132da985b8",
+        "loopId": "17d6f7eb-eafb-4181-a0b5-cced70b9b7b2"
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "L-exploit-3 round 1",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "L-exploit-3 round 2",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "L-exploit-3 round 3",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report 10bc06a8-0b09-441e-a04d-6b38fe0cc9d5",
+      "kind": "report",
+      "found": 0
+    },
+    {
+      "label": "P-exploit-3 round 1",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "P-exploit-3 round 2",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "P-exploit-3 round 3",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report 17d6f7eb-eafb-4181-a0b5-cced70b9b7b2",
+      "kind": "report",
+      "found": 0
+    },
+    {
+      "label": "L-explore-shuffle round 1",
+      "kind": "screen",
+      "found": 0
+    }
+  ],
+  "buildId": "W4Fsnhol08JIGulRiMyz7",
+  "harness": {
+    "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+    "jev-flow.cjs": "b372e73f5d68c6e2b26ead6e42d9782aa2a9f42b60606dad2d8ed392a5638982",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 479,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/live-20261008-calibrate/jev-loop-live/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 619,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 12,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/live-20261008-calibrate/jev-loop-live/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 82,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "jev-loop-live.jsonl",
+  "startedAt": "2026-10-07T17:01:44.947Z",
+  "finishedAt": "2026-10-07T17:04:32.764Z"
+}
