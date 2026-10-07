@@ -2542,8 +2542,9 @@ async def jev_loop_compute(rid: str, loop_id: str, request: Request) -> Any:
     M21 job with the arguments and call key a standalone submission gets, started like ``POST /jobs/{id}/start``
     after the run owner is released (the response waits for the job; reads go on without the lock). The first
     expensive-call approval answers 200 with the record (``current.job.start_blocked``; the person approves with
-    ``POST /jobs/approve`` and presses again). Every other start failure answers as the job start route does. Calls no
-    tool, send, approval or limit path; nothing runs in the background."""
+    ``POST /jobs/approve`` and presses again). Every other start failure answers as the job start route does; the
+    same press of a queued or claimed (blocked) job starts it again. Calls no tool, send, approval or limit path;
+    nothing runs in the background."""
     body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
     run = _run(rid)
     send_active = jev_sends.send_active(rid)
@@ -2563,8 +2564,11 @@ async def jev_loop_compute(rid: str, loop_id: str, request: Request) -> Any:
         try:
             await run_in_threadpool(lambda: JobQueue(run).start(
                 step["job_id"], owner_active=lambda eid: analysis_executions.execution_active(run, eid)))
-        except ApprovalRequired:
-            pass                       # spec 6.1: 200 and the record, whose current.job shows the wait
+        except ApprovalRequired as exc:
+            if exc.gate != "expensive_first_call":      # a budget checkpoint: as the job start route answers it
+                return JSONResponse(status_code=409, content={"ok": False, "approval": {
+                    "gate": exc.gate, "tool": exc.tool, "reason": exc.reason}})
+            # spec 6.1: 200 and the record, whose current.job shows the wait for the first expensive-call approval
         except RunCancelled:
             return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled",
                                                           "message": "run cancelled"})

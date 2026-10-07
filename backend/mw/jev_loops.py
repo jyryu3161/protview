@@ -57,7 +57,8 @@ L.EVENT_CREATED            loop_id (v4 UUID), branch, pool{source{handle, schema
 L.EVENT_COMPUTE_APPROVED   loop_id, iteration (1-8), step, candidate_ref, decided_by, proposal_handle, call_key (64
                            hex), units, approved_by "human". First steps: decided_by "jev" with the proposal's handle or
                            "human" with None. "dock": decided_by "human", proposal_handle None (the candidate is fixed
-                           by the model step). units: 0 only for a model step that adopts a stored model, else 1.
+                           by the model step). units: 0 only for a model or docking step that adopts a stored result
+                           (no job), else 1.
 L.EVENT_DOCKING_ABANDONED  loop_id, iteration, candidate_ref.
 L.EVENT_ENDED              loop_id, end_reason (END_REASONS without "run_cancelled", which is derived, never written),
                            result_handle (the jev_loop_result@1 handle).
@@ -69,6 +70,9 @@ Derivation rules that are this module's reading of the spec (see the T2 report's
   closed failure reason or null); a terminal without one is unavailable; a job already ended before the approval is
   reused (done + validated result, job_id null) or unavailable; an approval whose key has no job is reused when the
   result is stored, else unavailable (only a crash between the approval event and the submit leaves that).
+* A key's job belongs to the latest approval of that key before its submission (the compute route writes the
+  approval and submits under one run owner, so that order always holds; T6 review ruling): an earlier approval of
+  the same key whose submission was lost is ``unavailable`` without a job, whatever is stored for the key later.
 * A candidate whose iteration started and has not ended is ``pending`` with ``iteration`` null (spec 3.2 literal rule
   for pending); it still counts as pending (so ``pool_exhausted`` never fires while it runs) but cannot be selected.
 * A candidate held by a live step of this loop (the job of a step's latest approval is queued, claimed or running)
@@ -236,7 +240,7 @@ def parse_compute_approved(event: Any) -> dict[str, Any]:
     _need(proposal is None or _is_handle(proposal, L.CHOICE_KIND), "proposal_handle")
     _need(step != "dock" or decided_by == "human", "the docking step is decided by the human")
     _need(type(data["call_key"]) is str and _SHA_RE.fullmatch(data["call_key"]) is not None, "call_key")
-    _need(_is_int(data["units"], 0, 1) and (data["units"] == 1 or step == "model"), "units")
+    _need(_is_int(data["units"], 0, 1) and (data["units"] == 1 or step in ("model", "dock")), "units")
     _need(data["approved_by"] == L.APPROVED_BY, "approved_by")
     return data
 
@@ -477,8 +481,10 @@ def _failure_reason(step: str, status: Any, failure: Any) -> str | None:
 
 
 def _step(seq: int, approval: dict[str, Any], by_key: dict[str, Any], timelines: dict[str, Any],
-          results: Mapping[str, Any]) -> dict[str, Any]:
-    """Spec 6.4: the step's result is the first change of its call key's job after the approval event."""
+          results: Mapping[str, Any], later: int | None = None) -> dict[str, Any]:
+    """Spec 6.4: the step's result is the first change of its call key's job after the approval event. ``later``: the
+    seq of this loop's next approval of the same call key, if any (that approval holds the key's job when the job was
+    submitted after it)."""
     call_key, step = approval["call_key"], approval["step"]
     entry = {"seq": seq, "iteration": approval["iteration"], "step": step, "candidate_ref": approval["candidate_ref"],
              "decided_by": approval["decided_by"], "proposal_handle": approval["proposal_handle"],
@@ -491,6 +497,9 @@ def _step(seq: int, approval: dict[str, Any], by_key: dict[str, Any], timelines:
         entry.update(state="reused", result=result, start_seq=seq, resolve_seq=seq, job=None)
         return entry
 
+    if later is not None and (job is None or timelines[job["job_id"]]["submitted"] > later):
+        entry.update(state="unavailable", resolve_seq=seq)       # its submission was lost; a later approval holds
+        return entry                                             # the key's job (module docstring)
     if job is None:
         if result is not None:
             return reused()
@@ -704,7 +713,10 @@ def _candidate_need(branch: str, ref: Any, keys: Mapping[Any, Any], results: Map
             "wall_clock_s": sum(L.STEP_TIMEOUT_DEFAULTS_S[step] for step in steps)}
 
 
-def _dock_need() -> dict[str, int]:
+def _dock_need(dock_key: Any = None, results: Mapping[str, Any] | None = None) -> dict[str, int]:
+    """The docking step's need: none when its result is already stored (adopted without a job, T6 review ruling)."""
+    if dock_key is not None and results is not None and dock_key in results:
+        return {"expensive_units": 0, "wall_clock_s": 0}
     return {"expensive_units": L.UNITS_PER_STEP, "wall_clock_s": L.STEP_TIMEOUT_DEFAULTS_S["dock"]}
 
 
@@ -727,7 +739,10 @@ def derive_loop(loop_id: Any, events: Iterable[dict[str, Any]], *, jobs: Any, ke
     effective_cap = min(created["iteration_cap"], len(pool))
     _check_inputs(branch, pool, keys, results, displays, budget, send_reservation)
     by_key, timelines = _job_index(events, jobs)
-    steps = [_step(seq, approval, by_key, timelines, results) for seq, approval in approvals]
+    steps = [_step(seq, approval, by_key, timelines, results,
+                   next((at for at, other in approvals[position + 1:] if other["call_key"] == approval["call_key"]),
+                        None))
+             for position, (seq, approval) in enumerate(approvals)]
     sends = _sends(events, loop_id, send_active)
     selections, late, info = _proposals(sends, proposals, kind, loop_id)
     iterations = _iterations(branch, pool, effective_cap, steps, abandons, selections, info, ended)
@@ -799,7 +814,7 @@ def derive_loop(loop_id: Any, events: Iterable[dict[str, Any]], *, jobs: Any, ke
             least = min(needs.values(), key=lambda item: (item["expensive_units"], item["wall_clock_s"]))
             need.update(least)
         elif action == "dock":
-            need.update(_dock_need())
+            need.update(_dock_need(keys[current["latest"]["candidate_ref"]]["dock"], results))
         out["blocked_axes"] = _blocked(need, rest)
         if action == "select" and len(pending) >= L.MIN_PENDING_TO_SEND:
             need["sends"] = 1
@@ -988,7 +1003,8 @@ def compute_admission(state: LoopState, *, iteration: Any, proposal: Any = None,
         if state.branch != "protein" or state.current_phase != "awaiting_docking":
             return _refused("phase_invalid")
         latest = [step for step in state.steps if step["iteration"] == iteration and step["step"] == "model"][-1]
-        ref, decided_by, need = latest["candidate_ref"], "human", _dock_need()
+        ref, decided_by = latest["candidate_ref"], "human"
+        need = _dock_need(state.keys[ref]["dock"], state.results)
     if not capability_available:
         return _refused("capability_unavailable")
     blocked = _blocked(need, state.remaining)
@@ -997,7 +1013,7 @@ def compute_admission(state: LoopState, *, iteration: Any, proposal: Any = None,
     call_key = state.keys[ref][step_name]
     if call_key is None:
         raise ValueError("the docking key of a modelled candidate is missing")
-    reuse = step_name == "model" and call_key in state.results
+    reuse = step_name in ("model", "dock") and call_key in state.results   # adopt a stored result: no job
     return {"outcome": "approve", "iteration": iteration, "step": step_name, "candidate_ref": ref,
             "decided_by": decided_by, "proposal_handle": proposal if decided_by == "jev" else None,
             "call_key": call_key, "units": 0 if reuse else L.UNITS_PER_STEP, "reuse": reuse, "needs": need}
@@ -1006,8 +1022,8 @@ def compute_admission(state: LoopState, *, iteration: Any, proposal: Any = None,
 def _idempotent(state: LoopState, iteration: int, step_name: str, proposal: Any,
                 candidate: Any) -> dict[str, Any] | None:
     """Spec 6.1: the same step again with the arguments of its latest approval, whose job is not lost before start.
-    ``start`` when that job is queued or claimed and blocked at the first expensive-call approval: while the approval
-    is still requested the start blocks again (no charge); once the person approved it, this press continues it."""
+    ``start`` when that job is queued or claimed (blocked at the first expensive-call approval, the global worker slot
+    or the budget): the queue's own start then decides again (T6 review ruling)."""
     own = [step for step in state.steps if step["iteration"] == iteration and step["step"] == step_name]
     if not own:
         return None
@@ -1022,8 +1038,7 @@ def _idempotent(state: LoopState, iteration: int, step_name: str, proposal: Any,
     if not same or latest["state"] == "unavailable":
         return None
     job = latest["job"]
-    start = latest["state"] == "waiting_start" and job is not None and (
-        job["status"] == "queued" or (job["status"] == "claimed" and job.get("blocked_reason") == _APPROVAL_BLOCK))
+    start = latest["state"] == "waiting_start" and job is not None and job["status"] in ("queued", "claimed")
     return {"outcome": "idempotent", "job_id": None if job is None or latest["state"] == "reused" else job["job_id"],
             "start": start}
 

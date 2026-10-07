@@ -181,7 +181,7 @@ def _check_step(branch: str, step: Any, refs_json: set[bytes]) -> None:
     _need((step["result_handle"] is not None) == (state in ("completed", "reused"))
           and (step["result_handle"] is None or _handle(step["result_handle"])), "step result")
     _need(step["reason_code"] is None or type(step["reason_code"]) is str, "step reason")
-    _need(state != "reused" or step["step"] == "model", "only a stored model is adopted")
+    _need(state != "reused" or step["step"] in ("model", "dock"), "only a stored model or docking is adopted")
 
 
 def _check_iteration(branch: str, row: Any, number: int, refs_json: set[bytes]) -> None:

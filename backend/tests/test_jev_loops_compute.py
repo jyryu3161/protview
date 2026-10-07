@@ -1107,6 +1107,117 @@ def test_first_approval_wait_cancel_another_candidate_running_press_and_a_failed
     docking_bundle._HANDSHAKE_CACHE.clear()
 
 
+# ---------------------------------------------------------------- review fixes: a lost submission, a blocked start,
+# ---------------------------------------------------------------- a docking stored outside the loop
+
+
+def test_an_approval_whose_submission_was_lost_is_unavailable_and_the_candidate_can_be_approved_again(
+        ligand, serve, monkeypatch):
+    served = serve(ligand, ligand["log"])
+    f1, f2, f3 = ligand["free"]
+    loop_id = served.create(ligand_loop(ligand, [f1, f2], cap=2))
+    jobs = len(served.events("job_submitted"))
+
+    def lost(queue, *args, **kwargs):     # fault injection: the server stops between the approval and the submission
+        raise RuntimeError("stopped before the submission")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(JobQueue, "submit", lost)
+        with pytest.raises(RuntimeError):
+            served.compute(loop_id, iteration=1, candidate=f1)
+    assert len(served.events(L.EVENT_COMPUTE_APPROVED)) == 1 and len(served.events("job_submitted")) == jobs
+    record = served.record(loop_id)                       # readable: the approval without a job is unavailable
+    assert candidate(record, f1)["state"] == "pending" and record["current"]["action"] == "select"
+    assert (record["iterations"][0]["state"], record["iterations"][0]["steps"][0]["job_id"],
+            record["iterations"][0]["steps"][0]["state"]) == ("unavailable", None, "unavailable")
+    assert served.client.get(f"/runs/{LRID}/jev_loops").status_code == 200
+    orphan = served.log()
+    response = served.compute(loop_id, iteration=1, candidate=f1)     # the same candidate approved again
+    assert response.status_code == 200, response.text
+    record = response.json()
+    first = record["iterations"][0]
+    key = m18_key(hand_ligand_request(ligand, f1))
+    submitted = [event for event in served.events("job_submitted") if event["job"]["call_key"] == key]
+    assert len(submitted) == 1 and len(served.events(L.EVENT_COMPUTE_APPROVED)) == 2
+    assert [(item["candidate_ref"], item["call_key"]) for item in first["approvals"]] == [(f1, key), (f1, key)]
+    assert [(step["job_id"], step["state"]) for step in first["steps"]] == [
+        (None, "unavailable"), (submitted[0]["job"]["job_id"], "completed")]
+    handle = first["steps"][1]["result_handle"]
+    assert candidate(record, f1) == {"ref": f1, "display": candidate(record, f1)["display"],
+                                     "state": scored_state(served.run, handle), "evaluation": "computed",
+                                     "score_kcal_mol": first_mode(served.run, handle), "iteration": 1}
+    assert record["counts"] == counts(started=1, done=1, human_decided=1, units_charged=1)
+    assert served.client.get(f"/runs/{LRID}/jev_loops").status_code == 200
+    _record, content = end_loop(served, loop_id, "ended_by_user")
+    assert [step["state"] for step in content["iterations"][0]["steps"]] == ["unavailable", "completed"]
+    assert content["unfinished"] == []
+    served.create(ligand_loop(ligand, [f2, f3]))           # the branch takes a new loop once this one ended
+    replay = serve(ligand, served.log(), name="replay_lost")  # events only: the same two approvals and one job
+    assert replay.record(loop_id) == served.record(loop_id)
+    alone = serve(ligand, orphan, name="orphan")           # the lost approval alone: readable and endable
+    _record, content = end_loop(alone, loop_id, "ended_by_user")
+    assert content["unfinished"] == [{"iteration": 1, "candidate_ref": f1}] and content["counts"] == counts()
+
+
+def test_a_start_refused_for_a_busy_global_slot_continues_on_the_same_press(protein, serve):
+    from mw.jobs import queue as queue_module
+
+    served = serve(protein, protein["modelled"])
+    w = protein["refs"][W]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    assert served.compute(loop_id, iteration=1, candidate=w).status_code == 200
+    with queue_module._GLOBAL_LOCK_GUARD:
+        slot = queue_module._GLOBAL_LOCAL_LOCKS.setdefault(str(served.root.resolve()), threading.Lock())
+    assert slot.acquire(blocking=False)    # fault injection: another run's worker holds the global worker slot
+    try:
+        busy = served.compute(loop_id, iteration=1)
+        assert busy.status_code == 409 and busy.json()["detail"]["reason_code"] == "global_concurrency_busy"
+        job = served.record(loop_id)["current"]["job"]
+        assert (job["step"], job["status"]) == ("dock", "claimed")
+        approvals, jobs = len(served.events(L.EVENT_COMPUTE_APPROVED)), len(served.events("job_submitted"))
+        again = served.compute(loop_id, iteration=1)         # the same press calls start again: still busy
+        assert again.status_code == 409 and again.json()["detail"]["reason_code"] == "global_concurrency_busy"
+        assert (len(served.events(L.EVENT_COMPUTE_APPROVED)), len(served.events("job_submitted"))) == (approvals, jobs)
+    finally:
+        slot.release()
+    response = served.compute(loop_id, iteration=1)          # the slot is free: the same press runs the job
+    assert response.status_code == 200, response.text
+    assert (len(served.events(L.EVENT_COMPUTE_APPROVED)), len(served.events("job_submitted"))) == (approvals, jobs)
+    dock = response.json()["iterations"][0]["steps"][1]
+    assert (dock["job_id"], dock["state"]) == (job["job_id"], "completed")
+    assert candidate(response.json(), w)["state"] == scored_state(served.run, dock["result_handle"])
+
+
+def test_a_docking_already_stored_outside_the_loop_is_adopted_without_a_job_or_unit(protein, serve):
+    served = serve(protein, protein["modelled"])
+    w = protein["refs"][W]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    assert served.compute(loop_id, iteration=1, candidate=w).status_code == 200      # the stored model, adopted
+    outside = served.submit_job(DC.PROTOCOL, hand_dock_request(protein, protein["model"]), 300)
+    started = served.client.post(f"/runs/{PRID}/jobs/{outside['job_id']}/start")
+    assert started.status_code == 200 and started.json()["status"] == "done", started.text
+    handle = started.json()["output_handles"][0]
+    assert served.record(loop_id)["current"]["needs"]["expensive_units"] == 0      # nothing left to charge
+    used, before = served.used(), len(served.events())
+    response = served.compute(loop_id, iteration=1)
+    assert response.status_code == 200, response.text
+    new = served.events()[before:]
+    key = m18_key(hand_dock_request(protein, protein["model"]))
+    assert [payload(event) for event in new] == [approval(
+        loop_id=loop_id, iteration=1, step="dock", candidate_ref=w, decided_by="human", proposal_handle=None,
+        call_key=key, units=0)]                                                     # no job, no reservation
+    record = response.json()
+    assert [(step["step"], step["job_id"], step["state"], step["result_handle"])
+            for step in record["iterations"][0]["steps"]] == [
+        ("model", None, "reused", protein["model"]), ("dock", None, "reused", handle)]
+    assert candidate(record, w) == {"ref": w, "display": candidate(record, w)["display"],
+                                    "state": scored_state(served.run, handle), "evaluation": "computed",
+                                    "score_kcal_mol": first_mode(served.run, handle), "iteration": 1}
+    assert record["counts"] == counts(started=1, done=1, human_decided=1) and served.used() == used
+    _record, content = end_loop(served, loop_id, "ended_by_user")
+    assert [step["state"] for step in content["iterations"][0]["steps"]] == ["reused", "reused"]
+
+
 # ---------------------------------------------------------------- ending a loop: refusals, reasons, summary reads
 
 
