@@ -2423,7 +2423,7 @@ async def jev_send_create(rid: str, request: Request) -> Any:
         return _tool_error(exc)
     except jev_loops.LoopRecordInvalid as exc:   # M25: a loop event order no loop route writes; nothing was sent
         raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
-    except (KeyError, ValueError) as exc:
+    except (KeyError, TypeError, ValueError) as exc:   # M25: a loop record that does not derive, as the preview maps
         raise HTTPException(409, detail={"error": "run_corrupt",
                                          "message": "the science send could not be recorded"}) from exc
     except OSError as exc:

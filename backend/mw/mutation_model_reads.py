@@ -21,9 +21,8 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
-from . import docking_bundle, docking_inputs
+from . import docking_bundle, docking_inputs, jev_loops
 from . import docking_constants as DC
-from . import jev_loop_constants as LOOP
 from . import mutation_model_bundle as bundle
 from .core.handles import canonical_json
 from .jobs.queue import JobQueue
@@ -160,21 +159,14 @@ def _side_entry(side: str, job: dict[str, Any] | None, seq: int | None) -> dict[
             "result_handle": None, "score_kcal_mol": None, "score_mode": None}
 
 
-def _loop_docking(events: list[dict[str, Any]], job: dict[str, Any] | None,
-                  submitted_seq: int | None) -> dict[str, Any] | None:
-    """M25: ``{loop_id, iteration}`` when ``job`` is the job of a JEV loop docking step of this run: the latest
-    ``jev_loop_compute_approved`` with ``step: "dock"`` and this job's call key before the job was submitted (the loop
-    compute route writes its approval, then submits; a same-key job submitted before an approval is not the loop's)."""
-    if job is None:
+def _loop_docking(owners: dict[str, dict[str, Any]], job: dict[str, Any] | None) -> dict[str, Any] | None:
+    """M25: ``{loop_id, iteration}`` when ``job`` is the job of a JEV loop docking step of this run, by the loop's one
+    attribution rule ``jev_loops.job_owners`` (its approval, then its submission with no loop event between; any other
+    same-key job is outside every loop)."""
+    owner = None if job is None else owners.get(job["job_id"])
+    if owner is None or owner.get("step") != "dock":
         return None
-    found = None
-    for event in events:
-        if event["seq"] >= submitted_seq:
-            break
-        if (event["type"] == LOOP.EVENT_COMPUTE_APPROVED and event["step"] == "dock"
-                and event["call_key"] == job["call_key"]):
-            found = {"loop_id": event["loop_id"], "iteration": event["iteration"]}
-    return found
+    return {"loop_id": owner["loop_id"], "iteration": owner["iteration"]}
 
 
 def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
@@ -196,6 +188,7 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
             job["parameters"]["receptor_source"].get("mutation_model") == handle]
     events = list(run.events.read())
     submitted = {event["job"]["job_id"]: event["seq"] for event in events if event["type"] == "job_submitted"}
+    owners = jev_loops.job_owners(events)
     groups: dict[bytes, dict[str, Any]] = {}
     for job in sorted(jobs, key=lambda item: submitted[item["job_id"]]):
         side = job["parameters"]["receptor_source"]["side"]
@@ -229,8 +222,7 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
         pair = {"index": index,
                 "first_submitted_seq": min(submitted[job["job_id"]] for job in group["jobs"].values()),
                 "condition": group["condition"], "both_published": both, "sides": sides}
-        mutant = found["mutant"]
-        loop = _loop_docking(events, mutant, None if mutant is None else submitted[mutant["job_id"]])
+        loop = _loop_docking(owners, found["mutant"])
         if loop is not None:
             pair["loop"] = loop
         pairs.append(pair)

@@ -554,8 +554,10 @@ def test_race_and_crash_orders_resolve_the_step_without_a_new_state():
     log.approve(1, IDS[0])                                  # the queue hands back the ended job
     state = derive(log)
     step = state.record["iterations"][0]["steps"][0]
-    # a job that had already ended when approved: no usable result -> unavailable (never reused, never re-run)
-    assert (step["state"], step["job_id"], step["evaluation"]) == ("unavailable", done_unvalidated, None)
+    # a job that had already ended when approved: no usable result -> unavailable (never reused, never re-run);
+    # M25 T11 ruling: a job submitted before the approval is outside the loop, so the step names no job
+    assert (step["state"], step["job_id"], step["evaluation"]) == ("unavailable", None, None)
+    assert done_unvalidated not in {row["job_id"] for row in state.record["iterations"][0]["steps"]}
     assert states(state)[IDS[0]] == "unavailable" and state.record["counts"]["started"] == 0
     log.approve(1, IDS[1])
     state = derive(log)
@@ -709,7 +711,7 @@ def test_a_dock_result_stored_outside_after_the_model_does_not_change_the_starte
     state = derive(log, results=results)
     # spec 6.5: a result made after the candidate's iteration started does not change that iteration
     assert state.record["current"]["phase"] == "awaiting_docking" and states(state)[7] == "pending"
-    log.approve(1, 7, "dock")                              # the queue hands back the existing done job
+    log.approve(1, 7, "dock", units=0)                     # adopted, no job (the route writes units 0, T6 fix)
     state = derive(log, results=results)
     step = state.record["iterations"][0]["steps"][1]
     assert (step["state"], step["job_id"], step["evaluation"]) == ("reused", None, "reused")

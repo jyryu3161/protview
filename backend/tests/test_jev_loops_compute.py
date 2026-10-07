@@ -39,6 +39,9 @@ from fastapi.testclient import TestClient
 from jev_send_fixture import Fake, new_send_id, reply
 from ligand_job_fixture import import_file, new_ligand_run, run_job
 from test_jev_loops_api import I44, PHENOL, UBQ
+from test_jev_loops_derive import IDS as SYNTHETIC_IDS
+from test_jev_loops_derive import Log, docked
+from test_jev_loops_derive import derive as derive_synthetic
 from test_ligand_ga_jobs import ACK, BLOCKS, BOX, FAST, GA, IDS, PARENT, REC, evaluated, ga_args, run_ga, summary
 
 from mw import (
@@ -576,7 +579,7 @@ def test_compute_refusals_follow_the_spec_order_and_write_nothing(ligand, serve,
     refused(served.abandon(loop_id, iteration=1), "phase_invalid")
     refused(served.compute(loop_id, iteration=1, proposal=f"obj://{LRID}/{L.CHOICE_KIND}/" + "0" * 64),
             "proposal_invalid")
-    refused(served.compute(loop_id, iteration=1, proposal=7), "proposal_invalid")
+    refused(served.compute(loop_id, iteration=1, proposal=7), "unknown_field")      # T11: a proposal is a string
     refused(served.compute(loop_id, iteration=1, candidate="c_0000000000000000"), "candidate_invalid")
     refused(served.compute(loop_id, iteration=1, candidate=3), "candidate_invalid")
     refused(served.compute(loop_id, iteration=1, candidate=ligand["cancelled"]), "candidate_unavailable")
@@ -1216,6 +1219,163 @@ def test_a_docking_already_stored_outside_the_loop_is_adopted_without_a_job_or_u
     assert record["counts"] == counts(started=1, done=1, human_decided=1) and served.used() == used
     _record, content = end_loop(served, loop_id, "ended_by_user")
     assert [step["state"] for step in content["iterations"][0]["steps"]] == ["reused", "reused"]
+
+
+# ---------------------------------------------------------------- T11 review: job attribution, shapes, races
+
+
+def _lose_submission(served: Served, monkeypatch, loop_id: str, **body) -> None:
+    """Fault injection: the server stops between the approval event and the job submission."""
+    def lost(queue, *args, **kwargs):
+        raise RuntimeError("stopped before the submission")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(JobQueue, "submit", lost)
+        with pytest.raises(RuntimeError):
+            served.compute(loop_id, **body)
+
+
+def test_job_owners_gives_a_job_to_an_approval_only_with_no_loop_event_between():
+    log = Log()
+    log.created()
+    own = log.approve(1, SYNTHETIC_IDS[0])
+    job_own = log.submit(SYNTHETIC_IDS[0])                  # the route's order: approval, then its submission
+    log.approve(2, SYNTHETIC_IDS[1])                        # a lost submission ...
+    log.created("protein", loop_id=str(uuid.UUID(int=7, version=4)))   # ... then any loop event
+    job_outside = log.submit(SYNTHETIC_IDS[1])              # the same request, outside the loop
+    owners = jev_loops.job_owners(log.events)
+    assert owners[job_own]["seq"] == own["seq"] and job_outside not in owners
+
+
+def test_an_outside_job_after_a_lost_approval_and_another_loop_event_is_never_the_loops():
+    """Case B: no second approval; the outside job lands after another loop event (here a loop of the other branch
+    was created). The step stays unavailable without a job, the candidate is read by spec 3.2 priority 2 (reused,
+    the outside result), nothing is started or charged."""
+    x = SYNTHETIC_IDS[0]
+    log = Log()
+    log.created(pool=SYNTHETIC_IDS[:3])
+    log.approve(1, x)                                         # lost submission
+    log.created("protein", loop_id=str(uuid.UUID(int=9, version=4)))
+    log.run_job(x)                                            # outside: done, its result stored and valid
+    state = derive_synthetic(log, results=docked(x, 1, -4.0))
+    step = state.record["iterations"][0]["steps"][0]
+    assert (step["state"], step["job_id"], state.record["iterations"][0]["state"]) == (
+        "unavailable", None, "unavailable")
+    assert {key: state.record["counts"][key] for key in ("started", "units_charged", "reused_count")} == {
+        "started": 0, "units_charged": 0, "reused_count": 1}
+    row = next(row for row in state.record["candidates"] if row["ref"] == x)
+    assert (row["state"], row["evaluation"], row["score_kcal_mol"]) == ("scored", "reused", -4.0)
+    # With no loop event between, an outside submission is indistinguishable from the accepted race (the route's
+    # own submission returned the same-request job someone posted first): it is the step's job.
+    race = Log()
+    race.created(pool=SYNTHETIC_IDS[:3])
+    race.approve(1, x)
+    race.run_job(x)
+    raced = derive_synthetic(race, results=docked(x, 1, -4.0))
+    assert raced.record["iterations"][0]["steps"][0]["state"] == "completed"
+    assert raced.record["counts"]["units_charged"] == 1
+
+
+def test_a_lost_approval_never_takes_an_outside_job_submitted_after_another_approval(ligand, serve, monkeypatch):
+    """Case A: X approved and its submission lost, Y approved and docked, then the same request as X submitted
+    outside the loop. X's step stays without a job; X is unavailable by priority 3; reads, the list and the end
+    answer 200; only Y is counted."""
+    served = serve(ligand, ligand["log"])
+    x, y, z = ligand["free"]
+    loop_id = served.create(ligand_loop(ligand, [x, y, z], cap=3))
+    _lose_submission(served, monkeypatch, loop_id, iteration=1, candidate=x)
+    response = served.compute(loop_id, iteration=1, candidate=y)
+    assert response.status_code == 200, response.text
+    job_y = response.json()["iterations"][0]["steps"][1]["job_id"]
+    outside = served.submit_job(DC.PROTOCOL, hand_ligand_request(ligand, x), 300)     # queued, outside the loop
+    record = served.record(loop_id)
+    first = record["iterations"][0]
+    assert [(step["candidate_ref"], step["job_id"], step["state"]) for step in first["steps"]] == [
+        (x, None, "unavailable"), (y, job_y, "completed")]
+    assert outside["job_id"] not in {step["job_id"] for row in record["iterations"] for step in row["steps"]}
+    assert candidate(record, x)["state"] == "unavailable"
+    assert record["counts"] == counts(started=1, done=1, human_decided=1, units_charged=1)
+    assert served.client.get(f"/runs/{LRID}/jev_loops").status_code == 200
+    _record, content = end_loop(served, loop_id, "ended_by_user")
+    assert content["counts"]["units_charged"] == 1
+
+
+def test_a_lost_docking_approval_never_takes_a_later_outside_docking(protein, serve, monkeypatch):
+    """Case C: the iteration-1 docking approval lost its submission (W not_run, the iteration ended), iteration 2
+    was approved, then the same mutant docking ran outside the loop (as from the M21 screen). The loop and the M21
+    docking pairs never count it as the loop's; reads, the list and the end answer 200."""
+    served = serve(protein, protein["modelled"])
+    w, a = protein["refs"][W], protein["refs"][A]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    assert served.compute(loop_id, iteration=1, candidate=w).status_code == 200      # W's stored model adopted
+    _lose_submission(served, monkeypatch, loop_id, iteration=1)
+    record = served.record(loop_id)
+    assert (candidate(record, w)["state"], record["iterations"][0]["state"]) == ("not_run", "not_run")
+    with held_start(monkeypatch):
+        assert served.compute(loop_id, iteration=2, candidate=a).status_code == 503   # iteration 2 approved
+    outside = served.submit_job(DC.PROTOCOL, hand_dock_request(protein, protein["model"]), 300)
+    started = served.client.post(f"/runs/{PRID}/jobs/{outside['job_id']}/start")
+    assert started.status_code == 200 and started.json()["status"] == "done", started.text
+    record = served.record(loop_id)
+    assert [(step["step"], step["job_id"], step["state"], step["reason_code"])
+            for step in record["iterations"][0]["steps"]] == [
+        ("model", None, "reused", None), ("dock", None, "unavailable", L.NOT_RUN_REASON)]
+    assert candidate(record, w)["state"] == "not_run"
+    assert record["counts"] == counts(started=1, done=1, human_decided=1)
+    pairs = served.client.get(f"/runs/{PRID}/mutation_models/{protein['model']}/docking_pairs")
+    assert pairs.status_code == 200, pairs.text
+    mutant = [pair for pair in pairs.json()["pairs"] if pair["sides"]["mutant"]["job_id"] == outside["job_id"]]
+    assert len(mutant) == 1 and "loop" not in mutant[0]
+    assert served.client.get(f"/runs/{PRID}/jev_loops").status_code == 200
+    job_a = served.record(loop_id)["current"]["job"]["job_id"]
+    assert served.client.post(f"/runs/{PRID}/jobs/{job_a}/cancel").json()["job"]["status"] == "cancelled"
+    end_loop(served, loop_id, "pool_exhausted")
+
+
+@pytest.mark.parametrize("field, values", [
+    ("proposal", ({}, [], {"a": 1}, ["x"], 7, 1.5, True, False, None)),
+    ("candidate", ({}, [], {"a": 1}, ["x"], 1.5, True, False, None)),
+])
+def test_a_proposal_or_candidate_of_a_wrong_type_is_a_shape_refusal(field, values, protein, serve):
+    served = serve(protein, protein["modelled"])
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    log = served.log()
+    for value in values:
+        refused(served.post(loop_id, "compute", {"iteration": 1, field: value}), "unknown_field")
+    unchanged(served, log)
+
+
+def test_a_run_cancel_between_the_read_and_the_approval_writes_no_approval(protein, serve, monkeypatch):
+    served = serve(protein, protein["modelled"])
+    a = protein["refs"][A]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    real = mutation_model_bundle.selection
+
+    def cancelled_meanwhile(run, admitted):   # fault injection: the run is cancelled after the locked read
+        served.run.cancel()
+        return real(run, admitted)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(mutation_model_bundle, "selection", cancelled_meanwhile)
+        refused(served.compute(loop_id, iteration=1, candidate=a), "cancelled")
+    assert not served.events(L.EVENT_COMPUTE_APPROVED) and len(served.events("job_submitted")) == 1   # template's
+
+
+def test_a_loop_derivation_type_error_in_a_send_is_run_corrupt(protein, serve, monkeypatch):
+    served = serve(protein, protein["modelled"])
+    loop_id = served.create(protein_loop(protein, (W, A, B), cap=3))
+    S.set_consent(served.run, True)
+    handle = served.run.call(L.TOOL, {"loop_id": loop_id, "iteration": 1}).handle
+
+    def broken(*args, **kwargs):              # fault injection: a loop derivation that fails with a TypeError
+        raise TypeError("synthetic derivation failure")
+
+    monkeypatch.setattr(jev_loop_store, "loop_send_check", broken)
+    api_module.SCIENCE_GATE = Fake().gate
+    body = {"send_id": new_send_id(), "projection": handle,
+            "body_sha256": served.run.store.load(handle)["body_sha256"], "confirm": J.CONFIRM}
+    response = served.client.post(f"/runs/{PRID}/jev/sends", content=json.dumps(body).encode(), headers=JSON_HEADERS)
+    assert response.status_code == 409 and response.json()["detail"]["error"] == "run_corrupt", response.text
 
 
 # ---------------------------------------------------------------- ending a loop: refusals, reasons, summary reads

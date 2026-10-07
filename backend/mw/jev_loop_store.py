@@ -1074,6 +1074,10 @@ def action_request(body: Any, keys: tuple[str, ...]) -> dict[str, Any]:
     chosen = [key for key in ("proposal", "candidate") if key in body]
     if len(chosen) > 1 or any(body[key] is None for key in chosen):
         raise _action_refusal("unknown_field", "name at most one of proposal and candidate, never null")
+    if "proposal" in body and type(body["proposal"]) is not str:
+        raise _action_refusal("unknown_field", "proposal is a proposal handle string")
+    if "candidate" in body and type(body["candidate"]) not in (str, int):    # bool is not an int here
+        raise _action_refusal("unknown_field", "candidate is a ligand candidate id or a mutation candidate index")
     return dict(body)
 
 
@@ -1171,13 +1175,16 @@ def write_approval(run: Any, state: jev_loops.LoopState, decision: Mapping[str, 
     """The step's ``jev_loop_compute_approved`` event (spec 6.1, ``approved_by: "human"``), under the transition lock
     after one last look at the queue: a same-key job that appeared since the read (another request's submission) is
     ``step_unavailable`` (409, ``detail.job`` {id, status}, nothing written; the loop never starts, retries or
-    cancels another job). Returns the payload."""
+    cancels another job), and a run cancel that landed since the read is ``cancelled`` (nothing written). Returns the
+    payload."""
     payload = {"loop_id": state.record["loop_id"], "iteration": decision["iteration"], "step": decision["step"],
                "candidate_ref": decision["candidate_ref"], "decided_by": decision["decided_by"],
                "proposal_handle": decision["proposal_handle"], "call_key": decision["call_key"],
                "units": decision["units"], "approved_by": L.APPROVED_BY}
     jev_loops.parse_compute_approved({"seq": 1, "type": L.EVENT_COMPUTE_APPROVED, **payload})   # write what reads
     with run._transition():
+        if run._cancel_path.exists() or jev_loops.run_cancel_seen(run.events.read()):
+            raise _action_refusal("cancelled")      # a run cancel that landed after the read: no approval, no job
         if job is not None:
             same = sorted((item for item in JobQueue(run).list() if item["call_key"] == job["call_key"]),
                           key=lambda item: item["created"])

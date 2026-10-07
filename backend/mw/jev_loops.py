@@ -65,14 +65,15 @@ L.EVENT_ENDED              loop_id, end_reason (END_REASONS without "run_cancell
 
 Derivation rules that are this module's reading of the spec (see the T2 report's spec_gaps)
 -------------------------------------------------------------------------------------------
-* Step result (spec 6.4) = the first change of that call key's job after the approval: a terminal with a reservation
-  after its (re)queue mark is charged (completed when done and the result validates, else failed with the job's
-  closed failure reason or null); a terminal without one is unavailable; a job already ended before the approval is
-  reused (done + validated result, job_id null) or unavailable; an approval whose key has no job is reused when the
-  result is stored, else unavailable (only a crash between the approval event and the submit leaves that).
-* A key's job belongs to the latest approval of that key before its submission (the compute route writes the
-  approval and submits under one run owner, so that order always holds; T6 review ruling): an earlier approval of
-  the same key whose submission was lost is ``unavailable`` without a job, whatever is stored for the key later.
+* A job belongs to a step only by ``job_owners`` (T11 ruling): its ``job_submitted`` follows an approval of its call
+  key with no ``jev_loop_*`` event of any loop between them (the compute route writes the approval and submits in
+  one run-owner hold, so its own job always qualifies). Every other job of the key is outside the loop.
+* Step result (spec 6.4) = the first change of its own job after the approval: a terminal with a reservation after
+  its (re)queue mark is charged (completed when done and the result validates, else failed with the job's closed
+  failure reason or null); a terminal without one is unavailable. A step without its own job is ``reused`` when it
+  adopts a stored result (``units`` 0, model or docking) and the result is stored, else ``unavailable`` with no job
+  (its submission was lost): an outside job or result never makes it charged, started or reused; the candidate is
+  then read by spec 3.2 priority 2 / 3 like any other.
 * A candidate whose iteration started and has not ended is ``pending`` with ``iteration`` null (spec 3.2 literal rule
   for pending); it still counts as pending (so ``pool_exhausted`` never fires while it runs) but cannot be selected.
 * A candidate held by a live step of this loop (the job of a step's latest approval is queued, claimed or running)
@@ -480,11 +481,30 @@ def _failure_reason(step: str, status: Any, failure: Any) -> str | None:
     return code if type(code) is str and code in _FAILURE_REASONS[step] else None
 
 
+def job_owners(events: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """{job_id: the ``jev_loop_compute_approved`` event (envelope and payload) whose step that job is}, the one
+    attribution rule of every loop reader (T11 ruling): a ``job_submitted`` belongs to the latest approval of its call
+    key before it only when no ``jev_loop_*`` event of any loop (created, approved, abandoned, ended) lies between the
+    two, i.e. the last loop event before the submission is that approval. The compute route writes its approval and
+    submits in one run-owner hold, so its own job always qualifies; a job submitted later, after another loop event,
+    is outside every loop. Pure; never raises on other events."""
+    owners: dict[str, dict[str, Any]] = {}
+    last = None
+    for event in events:
+        kind = event.get("type")
+        if kind in L.EVENT_TYPES:
+            last = event
+        elif kind == "job_submitted" and last is not None and last.get("type") == L.EVENT_COMPUTE_APPROVED:
+            job = event.get("job")
+            if isinstance(job, Mapping) and job.get("call_key") == last.get("call_key") and "job_id" in job:
+                owners[job["job_id"]] = last
+    return owners
+
+
 def _step(seq: int, approval: dict[str, Any], by_key: dict[str, Any], timelines: dict[str, Any],
-          results: Mapping[str, Any], later: int | None = None) -> dict[str, Any]:
-    """Spec 6.4: the step's result is the first change of its call key's job after the approval event. ``later``: the
-    seq of this loop's next approval of the same call key, if any (that approval holds the key's job when the job was
-    submitted after it)."""
+          results: Mapping[str, Any], owners: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    """Spec 6.4: the step's result is the first change of its own job (``job_owners``) after the approval event
+    (module docstring)."""
     call_key, step = approval["call_key"], approval["step"]
     entry = {"seq": seq, "iteration": approval["iteration"], "step": step, "candidate_ref": approval["candidate_ref"],
              "decided_by": approval["decided_by"], "proposal_handle": approval["proposal_handle"],
@@ -497,25 +517,15 @@ def _step(seq: int, approval: dict[str, Any], by_key: dict[str, Any], timelines:
         entry.update(state="reused", result=result, start_seq=seq, resolve_seq=seq, job=None)
         return entry
 
-    if later is not None and (job is None or timelines[job["job_id"]]["submitted"] > later):
-        entry.update(state="unavailable", resolve_seq=seq)       # its submission was lost; a later approval holds
-        return entry                                             # the key's job (module docstring)
-    if job is None:
-        if result is not None:
+    owner = None if job is None else owners.get(job["job_id"])
+    if owner is None or owner.get("seq") != seq:      # no job of its own: an adoption, or a lost submission
+        if approval["units"] == 0 and result is not None:
             return reused()
         entry.update(state="unavailable", resolve_seq=seq)
         return entry
     entry["job"] = job
     timeline = timelines[job["job_id"]]
     marks, terminals = timeline["marks"], timeline["terminals"]
-    before = max([(mark, False) for mark in marks if mark < seq]
-                 + [(end, True) for end, _, _ in terminals if end < seq], default=None)
-    if before is not None and before[1]:       # the job had already ended when the step was approved
-        status = next(status for end, status, _ in terminals if end == before[0])
-        if status == "done" and result is not None:
-            return reused()
-        entry.update(state="unavailable", resolve_seq=seq)
-        return entry
     after = next(((end, status, failure) for end, status, failure in terminals if end > seq), None)
     if after is None:
         mark = max(marks)
@@ -739,10 +749,8 @@ def derive_loop(loop_id: Any, events: Iterable[dict[str, Any]], *, jobs: Any, ke
     effective_cap = min(created["iteration_cap"], len(pool))
     _check_inputs(branch, pool, keys, results, displays, budget, send_reservation)
     by_key, timelines = _job_index(events, jobs)
-    steps = [_step(seq, approval, by_key, timelines, results,
-                   next((at for at, other in approvals[position + 1:] if other["call_key"] == approval["call_key"]),
-                        None))
-             for position, (seq, approval) in enumerate(approvals)]
+    owners = job_owners(events)
+    steps = [_step(seq, approval, by_key, timelines, results, owners) for seq, approval in approvals]
     sends = _sends(events, loop_id, send_active)
     selections, late, info = _proposals(sends, proposals, kind, loop_id)
     iterations = _iterations(branch, pool, effective_cap, steps, abandons, selections, info, ended)
