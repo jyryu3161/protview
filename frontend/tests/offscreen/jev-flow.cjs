@@ -319,6 +319,14 @@ async function globalLine(page) {
         afterRun: run?.nextElementSibling === badge, title: badge.getAttribute("title") } : null };
   });
 }
+/** The tab's text without the M25 "JEV 루프" area (jev-loop-panel), which those tabs now hold by design. */
+const textWithoutLoopArea = panel => panel.evaluate(node => {
+  const all = node.innerText;
+  const loop = node.querySelector('[data-testid="jev-loop-panel"]');
+  const part = loop ? loop.innerText : "";
+  const at = part ? all.indexOf(part) : -1;
+  return at < 0 ? all : all.slice(0, at) + all.slice(at + part.length);
+});
 /** Areas and masked text of one tab once its content is settled (no busy element, text stable for 0.7 s). */
 async function tabSignature(page, label, id, log) {
   const since = Date.now();
@@ -327,13 +335,14 @@ async function tabSignature(page, label, id, log) {
   await panel.waitFor({ timeout: 15000 });
   const text = await waitFor(page, async () => {
     if (await panel.locator('[aria-busy="true"]').count()) return null;
-    const a = masked(await panel.innerText());
+    const a = masked(await textWithoutLoopArea(panel));
     await page.waitForTimeout(700);
-    const b = masked(await panel.innerText());
+    const b = masked(await textWithoutLoopArea(panel));
     return a === b && !(await panel.locator('[aria-busy="true"]').count()) ? b : null;
   }, `${label} settled`, 60000);
   return { label, areas: await panel.locator("[data-testid$='-panel']").evaluateAll(items =>
-    items.map(item => item.getAttribute("data-testid"))), jevElements: await panel.locator('[data-testid^="jev-"]').count(),
+    items.map(item => item.getAttribute("data-testid"))),
+  jevElements: await panel.locator('[data-testid^="jev-"]:not([data-testid^="jev-loop-"])').count(),
   textSha256: sha(Buffer.from(text)), lines: text.split("\n").length, text, posts: posts(log, since) };
 }
 function sameSignature(before, after) {
