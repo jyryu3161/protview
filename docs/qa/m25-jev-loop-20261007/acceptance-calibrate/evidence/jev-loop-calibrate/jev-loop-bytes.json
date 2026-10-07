@@ -1,0 +1,21 @@
+{
+  "schema": "m25_jev_loop_bytes@1",
+  "rule": "per send: the preview <pre> text = the server preview string; its SHA-256 = the audit prepared payload_sha256 (prepared body deep-equal) = (fixture server) the SHA-256 of the bytes its transport received; one dispatch event",
+  "sends": [
+    {
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "sendId": "74cc38e3-71e2-449e-a80d-c87e341ac723",
+      "script": null,
+      "previewSha256": "f18dcc1e0d59ca4d854c93330640389f7f70d00b0cbf433dd7b28de7b7265f2e",
+      "previewBytes": 3855,
+      "preparedSha256": "f18dcc1e0d59ca4d854c93330640389f7f70d00b0cbf433dd7b28de7b7265f2e",
+      "preparedBodyEqual": true,
+      "transportSha256": null,
+      "transportBytes": null,
+      "authorizationIsSentinel": null,
+      "dispatched": 1,
+      "fixtureCall": null,
+      "gate": "product"
+    }
+  ]
+}
