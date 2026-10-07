@@ -34,7 +34,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from jev_send_fixture import Fake
+from jev_send_fixture import Fake, reply
 from ligand_job_fixture import new_ligand_run
 from test_jev_loops_api import DRY_RID, FIX, RID, _template, ligand_body, protein_body
 from test_jev_loops_read import approve, log_bytes
@@ -804,16 +804,34 @@ def test_the_m24_preview_shape_is_unchanged_next_to_a_loop(scenario, tmp_path, m
     assert preview["body"] == P.projection_body(world["run"].store.load(m24))[1].decode("ascii")
 
 
-def test_the_send_route_still_refuses_a_loop_projection_before_t5(scenario, tmp_path, monkeypatch):
-    # T4 opens the preview only; the send branch for loop projections is T5 (this expectation changes there).
+def test_the_send_route_sends_a_ligand_loop_projection_and_stores_its_proposal(scenario, tmp_path, monkeypatch):
+    # M25 T5-B replaced the T4 expectation (the send route refused loop projections until the T5 send branch): the
+    # projection the tool built is sent through the M24 route and its answer becomes iteration 1's selection.
     world = _open(scenario, tmp_path, monkeypatch, "select1")
-    content = world["run"].store.load(scenario["projection"])
-    before = _log(world)
+    run, handle = world["run"], scenario["projection"]
+    content = run.store.load(handle)
+    S.set_consent(run, True)
+    alias = LP.criteria_aliases(content)[0]
+    fake = Fake(lambda request: reply(alias, confidence=0.5))     # a fixture reply: the first criteria alias
+    monkeypatch.setattr(api_module, "SCIENCE_GATE", fake.gate)
+    send_id = str(uuid.uuid4())
     response = world["client"].post(f"/runs/{RID}/jev/sends", headers=JSON, content=json.dumps({
-        "send_id": str(uuid.uuid4()), "projection": scenario["projection"], "body_sha256": content["body_sha256"],
+        "send_id": send_id, "projection": handle, "body_sha256": content["body_sha256"],
         "confirm": J.CONFIRM}).encode())
-    assert response.status_code == 422 and response.json()["detail"]["reason_code"] == J.PROJECTION_INVALID
-    assert _log(world) == before and world["fake"].requests == [] and world["fake"].key_reads == 0
+    assert response.status_code == 200, response.text
+    record = response.json()
+    assert (record["status"], record["kind"], record["loop"]) == (
+        "completed", "ligand", {"loop_id": LOOP, "iteration": 1, "send_ordinal": 0})
+    assert [request.content for request in fake.requests] == [_spec_body(content).encode("ascii")]
+    choice = world["client"].get(f"/runs/{RID}/jev/sends/{send_id}").json()["choice"]
+    ref = next(item["ref"] for item in content["selection"] if item["alias"] == alias)
+    smiles = next(row["smiles"] for row in run.store.load(scenario["world"]["ligand_set"])["candidates"]
+                  if row["id"] == ref)
+    assert choice["schema"] == L.CHOICE_SCHEMA and choice["answer"]["local_ref"] == {"candidate_id": ref}
+    assert choice["answer"]["local_display"] == {"smiles": smiles} and choice["answer"]["list_position"] == 1
+    detail = world["client"].get(f"/runs/{RID}/jev_loops/{LOOP}").json()
+    assert detail["iterations"][0]["phase"] == "awaiting_compute" and detail["current"]["action"] == "compute"
+    assert detail["iterations"][0]["sends"][0]["proposal_handle"] == record["choice_handle"]
 
 
 # ---------------------------------------------------------------- events-only recovery

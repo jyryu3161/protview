@@ -2400,7 +2400,8 @@ async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
 async def jev_send_create(rid: str, request: Request) -> Any:
     """The person's approval of one exact projection body and its one send (spec 5): the only caller of
     ``jev_sends.run_send``, so the only path to ``EgressGate.request_science``. Not a tool, plan or workflow step,
-    model command or job. Refusals and failures answer 200 with their ``jev_send@1`` record."""
+    model command or job. Refusals and failures answer 200 with their ``jev_send@1`` record. A ``jev_loop_projection@1``
+    (M25) takes the same call; its loop send check refuses with 409 ``loop_send_invalid`` (``JevSendError``)."""
     body = await _jev_request(request, JevSendRequest)
     run = _run(rid)
     try:
@@ -2412,6 +2413,8 @@ async def jev_send_create(rid: str, request: Request) -> Any:
         if exc.detail.get("busy"):
             raise HTTPException(503, detail={"error": "busy", "message": JEV_BUSY_MESSAGE}) from exc
         return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # M25: a loop event order no loop route writes; nothing was sent
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
     except (KeyError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt",
                                          "message": "the science send could not be recorded"}) from exc
@@ -2447,8 +2450,9 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid science send record"}) from exc
     choice = None
     if record["status"] == "completed":
+        load = jev_sends.load_loop_choice if "loop" in record else jev_sends.load_choice   # M25 loop send
         try:
-            choice = jev_sends.load_choice(view, record["choice_handle"])
+            choice = load(view, record["choice_handle"])
         except (jev_sends.ChoiceInvalid, jev_sends.JevSendError) as exc:
             raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                              "message": "the stored JEV choice does not validate"}) from exc
