@@ -38,6 +38,12 @@ export interface JevPanelProps {
   onReportCreated: (runId: string) => void;
   /** Every status this area reads or sets: the page's global "과학 전송 허용" mark follows it (same run only). */
   onStatus?: (runId: string, status: JevStatusV1) => void;
+  /**
+   * M25: the mark of a JEV loop send in the history (`lib/jev-loop.ts` `loopSendHistoryMark`, passed by the page): a
+   * read-only row with the loop mark and the way to the loop area, its open and report buttons off. Null for an M24
+   * send, whose row is unchanged.
+   */
+  sendHistoryMark?: (record: JevSendV1) => { text: string; guide: string } | null;
 }
 
 type JevCapability = { available: boolean; reason_code: string | null; reason: string | null };
@@ -106,11 +112,13 @@ export function JevPanel(p: JevPanelProps) {
         : <Loading text={JEV_TEXT.loadingCapability} />}
     </section>;
   }
-  return <JevWorkspace run={p.run} onReportCreated={p.onReportCreated} onStatus={p.onStatus} />;
+  return <JevWorkspace run={p.run} onReportCreated={p.onReportCreated} onStatus={p.onStatus}
+    sendHistoryMark={p.sendHistoryMark} />;
 }
 
-function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onReportCreated: (runId: string) => void;
-  onStatus?: (runId: string, status: JevStatusV1) => void }) {
+function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run: RunSummary;
+  onReportCreated: (runId: string) => void; onStatus?: (runId: string, status: JevStatusV1) => void;
+  sendHistoryMark?: JevPanelProps["sendHistoryMark"] }) {
   const runId = run.run_id;
   const [status, setStatus] = useState<Load<JevStatusV1>>({ status: "idle" });
   /** Number of status answers applied so far; a preview keeps the number it was read at (see `laterStatus`). */
@@ -589,18 +597,24 @@ function JevWorkspace({ run, onReportCreated, onStatus }: { run: RunSummary; onR
             <th>{JEV_TEXT.headerActions}</th></tr></thead>
           <tbody>{jevSendRows(sends.value).map(row => {
             const choiceHandle = row.choiceHandle;
+            // M25: a loop send is a read-only row (its mark and the way to the loop area); an M24 row is as before.
+            const record = sendHistoryMark ? sends.value.find(item => item.send_id === row.sendId) : undefined;
+            const loopMark = record ? sendHistoryMark?.(record) ?? null : null;
             return <tr key={row.sendId} data-jev-send={row.sendId} data-status={row.status} data-late={row.lateText !== null}
-              data-opened={opened === row.sendId}>
+              data-opened={opened === row.sendId} data-jev-loop={loopMark ? "true" : undefined}>
               <td className="mw-mono">{row.approvedSeq}</td>
               <td>{row.statusText}{row.reasonText ? ` · ${row.reasonText}` : ""}</td>
-              <td>{row.kindText}</td><td>{row.countText}</td><td className="mw-mono">{row.bodyHashText}</td>
+              <td>{row.kindText}{loopMark && <> · <span data-testid="jev-send-loop-mark">{loopMark.text}</span></>}</td>
+              <td>{row.countText}</td><td className="mw-mono">{row.bodyHashText}</td>
               <td>{row.lateText ?? NULL_TEXT}</td>
               <td><div className="mw-jev-inline">
-                {row.canOpen && <Button size="sm" data-testid="jev-send-open" data-send-id={row.sendId}
-                  onClick={() => openSend(row.sendId)}>{JEV_TEXT.open}</Button>}
-                {row.canReport && choiceHandle !== null && <Button size="sm" data-testid="jev-send-report"
-                  data-choice-handle={choiceHandle} disabled={reportBusy}
-                  onClick={() => void makeReport(choiceHandle)}>{JEV_TEXT.report}</Button>}
+                {loopMark ? <span className="mw-jev-note" data-testid="jev-send-loop-guide">{loopMark.guide}</span> : <>
+                  {row.canOpen && <Button size="sm" data-testid="jev-send-open" data-send-id={row.sendId}
+                    onClick={() => openSend(row.sendId)}>{JEV_TEXT.open}</Button>}
+                  {row.canReport && choiceHandle !== null && <Button size="sm" data-testid="jev-send-report"
+                    data-choice-handle={choiceHandle} disabled={reportBusy}
+                    onClick={() => void makeReport(choiceHandle)}>{JEV_TEXT.report}</Button>}
+                </>}
               </div></td>
             </tr>;
           })}</tbody>

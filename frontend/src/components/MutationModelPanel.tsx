@@ -967,9 +967,11 @@ function PairTable({ pairs }: { pairs: MutationModelDockingPairs }) {
   return <div className="mw-mutation-table-wrap"><table className="mw-mutation-table" data-testid="mutation-model-pairs"
     data-total={pairs.total}>
     <thead><tr>{headers.map(header => <th key={header}>{header}</th>)}</tr></thead>
-    <tbody>{pairRows(pairs).map(row => <tr key={row.index} data-pair-index={row.index}>
+    <tbody>{pairRows(pairs).map(row => <tr key={row.index} data-pair-index={row.index}
+      data-pair-loop={row.loopText === null ? undefined : "true"}>
       <td className="mw-mono">{row.index}</td>
-      <td className="mw-mono">{row.condition}</td>
+      <td className="mw-mono">{row.condition}{row.loopText !== null && <><br /><span className="mw-mutation-note"
+        data-testid="mutation-model-pair-loop">{row.loopText}</span></>}</td>
       {STRUCTURE_SIDES.map(side => {
         const cell = row.cells[side];
         return <td key={side} data-side={side} data-has-score={cell.score !== null}

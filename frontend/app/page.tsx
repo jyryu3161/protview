@@ -21,6 +21,7 @@ import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/An
 import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
 import { JevPanel } from "@/components/JevPanel";
+import { JevLoopPanel } from "@/components/JevLoopPanel";
 import { LigandPanel } from "@/components/LigandPanel";
 import { MutationPanel } from "@/components/MutationPanel";
 import { MutationModelPanel, type ModelStartRequest } from "@/components/MutationModelPanel";
@@ -35,6 +36,7 @@ import { featureGates, overlayContextDecision, pocketRequestAccepted, type Pocke
 import { chemicalEntryBlockedReason } from "@/lib/chemical";
 import { advanceSceneGeneration } from "@/lib/viewer-scene";
 import { globalScienceBadge, scienceMarkFromStatus, scienceMarkGate, type ScienceConsentMark } from "@/lib/jev";
+import { loopSendHistoryMark } from "@/lib/jev-loop";
 import { DEFAULT_WORKSPACE_TAB, type WorkspaceTabId } from "@/lib/workspace-tabs";
 import { mergeSavedRows, sceneMatches, type NativeSceneState, type SavedFigureDetail, type SavedSceneDetail } from "@/lib/saved-scene";
 import type { ViewerSession } from "@/lib/viewer-agent";
@@ -2069,7 +2071,8 @@ export default function WorkspacePage() {
       onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
         setReportsReloadToken(token => token + 1); }}
       onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current)) {
-        scienceMarkOrder.current.report(); setScienceMark(scienceMarkFromStatus(statusRunId, status)); } }} />}
+        scienceMarkOrder.current.report(); setScienceMark(scienceMarkFromStatus(statusRunId, status)); } }}
+      sendHistoryMark={loopSendHistoryMark} />}
     protein={<>
       <MutationPanel key={`mutation-${run?.run_id ?? "none"}`} run={run}
         capability={capabilities ? capabilities.methods?.mutation_candidates ?? null : undefined}
@@ -2089,6 +2092,12 @@ export default function WorkspacePage() {
         capability={capabilities ? capabilities.methods?.sequence_ga_design ?? null : undefined}
         onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
           setReportsReloadToken(token => token + 1); }} />
+      <JevLoopPanel key={`jev-loop-protein-${run?.run_id ?? "none"}`} branch="protein" run={run}
+        capability={capabilities ? capabilities.methods?.jev_loop ?? null : undefined}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }}
+        onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current)) {
+          scienceMarkOrder.current.report(); setScienceMark(scienceMarkFromStatus(statusRunId, status)); } }} />
     </>}
     ligand={<>
       <LigandPanel key={run?.run_id ?? "none"} run={run}
@@ -2112,6 +2121,12 @@ export default function WorkspacePage() {
           setReportsReloadToken(token => token + 1); }}
         onOpenResult={(openRunId, handle) => { if (hostRequestAccepted({ runId: openRunId }, analysisHostRef.current))
           setDockingOpenRequest(previous => ({ runId: openRunId, handle, seq: (previous?.seq ?? 0) + 1 })); }} />
+      <JevLoopPanel key={`jev-loop-ligand-${run?.run_id ?? "none"}`} branch="ligand" run={run}
+        capability={capabilities ? capabilities.methods?.jev_loop ?? null : undefined}
+        onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+          setReportsReloadToken(token => token + 1); }}
+        onStatus={(statusRunId, status) => { if (hostRequestAccepted({ runId: statusRunId }, analysisHostRef.current)) {
+          scienceMarkOrder.current.report(); setScienceMark(scienceMarkFromStatus(statusRunId, status)); } }} />
     </>}
     onSelect={tab => { setWorkspaceTab(tab); if (tab === "structure") setStructureTabEntries(value => value + 1);
       if (runId) refreshGlobalBudget(runId); }} />;

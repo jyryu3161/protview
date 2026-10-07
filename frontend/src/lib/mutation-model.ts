@@ -736,12 +736,26 @@ export function pairSideCell(pair: Pick<MutationModelPair, "both_published" | "c
   return { side, job, score: null, text: `없음(${reason})`, resultHandle: pair.both_published ? entry.result_handle : null };
 }
 
-export interface PairRow { index: number; condition: string; cells: Record<MutationModelSide, PairSideCell> }
+/** M25: the key the server adds to a group whose mutant docking a JEV loop docking step approved (no new reason). */
+export interface PairLoopKey { loop_id: string; iteration: number }
+export const PAIR_LOOP_TEXT = "루프 도킹(야생형 없음)";
+
+/** "루프 도킹(야생형 없음) · 바퀴 n" for a JEV loop docking group; null for every other group (shown as before). */
+export function pairLoopText(pair: Pick<MutationModelPair, "index"> & { loop?: PairLoopKey | null }): string | null {
+  const loop = pair.loop;
+  return loop && typeof loop === "object" && Number.isSafeInteger(loop.iteration)
+    ? `${PAIR_LOOP_TEXT} · 바퀴 ${loop.iteration}` : null;
+}
+
+/** `loopText`: the JEV loop mark of a loop docking group (M25), null for every other group. */
+export interface PairRow { index: number; condition: string; cells: Record<MutationModelSide, PairSideCell>;
+  loopText: string | null }
 
 /** Every group in the server's order (first submission), none picked or re-ordered. */
 export function pairRows(pairs: Pick<MutationModelDockingPairs, "pairs">): PairRow[] {
   return pairs.pairs.map(pair => ({ index: pair.index, condition: pairConditionText(pair.condition),
-    cells: { wild_type_reference: pairSideCell(pair, "wild_type_reference"), mutant: pairSideCell(pair, "mutant") } }));
+    cells: { wild_type_reference: pairSideCell(pair, "wild_type_reference"), mutant: pairSideCell(pair, "mutant") },
+    loopText: pairLoopText(pair) }));
 }
 
 /** Pair table header; the score name is the server's `score_label` (the M18 wording). */
