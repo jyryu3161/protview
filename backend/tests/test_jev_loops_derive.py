@@ -1301,6 +1301,158 @@ def test_loop_send_status_late_and_proposal_equal_the_m24_record():
     assert (lost["status"], S.send_record(log.events, ids[-1])["status"]) == ("failed", "failed")
 
 
+def _m24_send(log) -> str:
+    """SYNTHETIC M24 (non-loop) send of the same run, approved and dispatched: its projection is a jev_projection."""
+    send_id = str(uuid.UUID(label_sha("m24 send", len(log.events))[:32], version=4))
+    log.add(J.EVENT_APPROVED, send_id=send_id, projection_handle=handle("jev_projection", send_id),
+            body_sha256=label_sha("m24 body", send_id), question_id=J.LIGAND_QUESTION_ID,
+            source_handle=handle("ligand_candidate_set", "set"), selection_count=2, approved_by="human")
+    log.add(J.EVENT_DISPATCH, send_id=send_id, audit_id="eg_" + label_sha("m24 audit", send_id)[:32])
+    return send_id
+
+
+def _late_after_cancel(log) -> None:
+    """A loop send answered after a run cancel (the M24 late order ``run_cancelled``)."""
+    send_id, _ = log.send(1, 0, status=None)
+    log.cancel_run()
+    choice = handle(L.CHOICE_KIND, send_id)
+    log.proposals[choice] = {
+        "schema": L.CHOICE_SCHEMA, "loop": {"loop_id": LOOP, "iteration": 1, "send_ordinal": 0},
+        "send": {"send_id": send_id, "audit_id": "eg_" + "0" * 32},
+        "answer": {"choice_alias": "c01", "list_position": 1, "list_size": 3, "local_ref": {"candidate_id": IDS[0]},
+                   "local_display": {"smiles": "C"}, "confidence": None, "probabilities": None},
+        "arrival": {"late": True, "late_reason": "run_cancelled"}}
+    log.add(J.EVENT_OUTCOME, send_id=send_id, status="completed", reason_code=None, audit_id="eg_" + "0" * 32,
+            requested_model=J.REQUEST_MODEL, served_model=J.SERVED_SNAPSHOT, choice_handle=choice, usage=None,
+            late=True, late_reason="run_cancelled")
+
+
+def _orders_with_an_active_send():
+    """(name, log, the run's in-flight send id | None): SYNTHETIC event orders of loop sends next to other sends."""
+    def answered(log):
+        log.send(1, 0, status="failed")
+        log.send(1, 1, status="rejected", dispatched=False)
+        log.send(1, 1, ref=IDS[2])
+
+    def late_after_consent_off(log):
+        log.send(1, 0, ref=IDS[0], late=True)
+
+    def consent_off_after_the_outcome(log):
+        log.send(1, 0, ref=IDS[1])
+        log.consent(False)
+
+    def cancel_after_the_outcome(log):
+        log.send(1, 0, ref=IDS[1])
+        log.cancel_run()
+
+    def lost(log):
+        log.send(1, 0, status=None)
+
+    def lost_before_dispatch(log):
+        log.send(1, 0, status=None, dispatched=False)
+
+    def in_flight_after_approval(log):
+        return log.send(1, 0, status=None, dispatched=False)[0]
+
+    def in_flight_after_dispatch(log):
+        return log.send(1, 0, status=None)[0]
+
+    def in_flight_consent_off(log):
+        send_id = log.send(1, 0, status=None)[0]
+        log.consent(False)
+        return send_id
+
+    def lost_then_in_flight(log):
+        log.send(1, 0, status=None)
+        return log.send(1, 1, status=None)[0]
+
+    def lost_then_failed_then_in_flight(log):
+        log.send(1, 0, status=None)
+        log.send(1, 1, status="failed")
+        return log.send(1, 2, status=None)[0]
+
+    def lost_loop_send_with_an_m24_send_in_flight(log):
+        log.send(1, 0, status=None)
+        return _m24_send(log)
+
+    def loop_send_in_flight_after_an_m24_send(log):
+        _m24_send(log)
+        return log.send(1, 0, status=None)[0]
+
+    def outcome_before_the_send_ends(log):
+        return log.send(1, 0, ref=IDS[3])[0]
+
+    def late_outcome_before_the_send_ends(log):
+        return log.send(1, 0, ref=IDS[3], late=True)[0]
+
+    builders = {"completed_failed_rejected": answered, "late_after_consent_off": late_after_consent_off,
+                "late_after_run_cancel": _late_after_cancel,
+                "consent_off_after_the_outcome": consent_off_after_the_outcome,
+                "cancel_after_the_outcome": cancel_after_the_outcome, "lost_nothing_active": lost,
+                "lost_before_dispatch_nothing_active": lost_before_dispatch,
+                "in_flight_after_approval": in_flight_after_approval,
+                "in_flight_after_dispatch": in_flight_after_dispatch,
+                "in_flight_consent_off_no_outcome_yet": in_flight_consent_off,
+                "lost_then_a_new_send_in_flight": lost_then_in_flight,
+                "lost_then_failed_then_in_flight": lost_then_failed_then_in_flight,
+                "lost_loop_send_while_an_m24_send_is_in_flight": lost_loop_send_with_an_m24_send_in_flight,
+                "loop_send_in_flight_after_an_m24_send": loop_send_in_flight_after_an_m24_send,
+                "outcome_written_before_the_send_ends": outcome_before_the_send_ends,
+                "late_outcome_written_before_the_send_ends": late_outcome_before_the_send_ends}
+    out = []
+    for name, build in builders.items():
+        log = Log()
+        log.created()
+        log.consent(True)
+        out.append((name, log, build(log)))
+    return out
+
+
+def _loop_and_m24(log, active):
+    """The loop record's send rows (``send_active`` = the M24 process-memory answer) and the M24 records of the
+    same sends, as (status, late, proposal handle)."""
+    if active is not None:
+        S.begin_send(RUN_ID, active)
+    try:
+        rows = [item for it in derive(log, send_active=S.send_active(RUN_ID)).record["iterations"]
+                for item in it["sends"]]
+        m24 = [S.send_record(log.events, item["send_id"]) for item in rows]
+    finally:
+        if active is not None:
+            S.end_send(RUN_ID, active)
+    return ([(item["status"], item["late"], item["proposal_handle"]) for item in rows],
+            [(record["status"], record["late"], record["choice_handle"]) for record in m24])
+
+
+@pytest.mark.parametrize("index", range(len(_orders_with_an_active_send())))
+def test_loop_send_rows_equal_the_m24_record_in_every_event_order(index):
+    name, log, active = _orders_with_an_active_send()[index]
+    loop_rows, m24_rows = _loop_and_m24(log, active)
+    assert loop_rows, name
+    assert loop_rows == m24_rows, name
+    statuses = {status for status, _, _ in loop_rows}
+    assert statuses <= {"completed", "failed", "rejected", J.IN_PROGRESS}, name
+    assert (J.IN_PROGRESS in statuses) == (active is not None and name.startswith(("in_flight", "lost_then",
+                                                                                     "loop_send_in_flight"))), name
+
+
+def test_known_gap_a_lost_send_reads_in_progress_while_a_new_send_is_not_yet_approved():
+    """Spec 5.1 gives the loop derivation only ``jev_sends.send_active(rid)`` (a boolean). In the window between
+    ``begin_send`` of a new send and its approval event (the gate entry and the approval callback, including a loop
+    send the callback refuses), a previous send that never got an outcome (lost) is the run's last approved send, so
+    the loop row reads ``in_progress`` while the M24 record (which knows the active send's id) reads ``failed``. Not
+    reachable with a boolean; reported as a T5-A spec gap. Every other order agrees (test above)."""
+    for build in (lambda log: log.send(1, 0, status=None), lambda log: (_m24_send(log), log.send(1, 0, status=None))):
+        log = Log()
+        log.created()
+        log.consent(True)
+        build(log)
+        not_yet_approved = str(uuid.uuid4())
+        loop_rows, m24_rows = _loop_and_m24(log, not_yet_approved)
+        assert loop_rows[-1][0] == J.IN_PROGRESS and m24_rows[-1][0] == "failed"
+        assert _loop_and_m24(log, None)[0] == _loop_and_m24(log, None)[1]   # once the window closes they agree
+
+
 # ---------------------------------------------------------------- payload parsers (closed keys and types)
 
 

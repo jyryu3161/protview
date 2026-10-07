@@ -1,4 +1,5 @@
-"""M25 JEV design loop: pure send order, loop wire, body and response functions (spec .dryforge/spec.md 4.2-4.5, 5.2).
+"""M25 JEV design loop: pure send order, loop wire, body, response and proposal functions (spec .dryforge/spec.md
+4.2-4.5, 5.2, 5.3).
 
 Imports the standard library, ``.jev_loop_constants`` and the M24 modules ``.jev_constants`` / ``.jev_projection``
 only (never the send, gate or loop-record modules). Nothing here reads the object store, an event log, a file, the
@@ -11,7 +12,8 @@ only re-orders their output into the send order, renumbers the aliases, adds ``g
 ``schema`` / ``values_note``, and ``check_loop_wire`` runs the M24 ``check_wire`` on the M24-shaped core before the
 loop rules. Bodies use the one M24 encoder ``jev_projection.canonical_ascii``; the reply parser is the M24
 ``parse_choice`` over the not-yet-computed aliases. Refusals are the M24 error classes (``JevProjectionError`` with a
-closed ``reason_code``, ``WireFieldInvalid``, ``ProjectionInvalid``, ``PayloadTooLarge``).
+closed ``reason_code``, ``WireFieldInvalid``, ``ProjectionInvalid``, ``PayloadTooLarge``); a stored proposal that
+does not validate is ``LoopChoiceInvalid`` (a ``ValueError``, like the M24 send module's ``ChoiceInvalid``).
 
 Public API (T2-B / T3 / T4 / T5 / T6 use these signatures; all pure):
 
@@ -52,6 +54,16 @@ Public API (T2-B / T3 / T4 / T5 / T6 use these signatures; all pure):
         alias as the choice or as a probability key is response_invalid. answer = {choice_alias, confidence | None,
         probabilities | None} as received; reasons are the M24 PARSE_REASONS. The HTTP status and the response size
         are checked by the gate before the parser, as for M24.
+    class LoopChoiceInvalid(ValueError)                 a proposal that does not validate (the M24 ``ChoiceInvalid``
+                                                        counterpart; the loop modules never import the send module)
+    build_loop_choice(projection_handle, projection, source, *, send_id, audit_id, answer, served_model, usage, late,
+                      late_reason) -> dict
+        jev_loop_choice@1 content (spec 5.3) of one answered send of the validated loop ``projection`` stored at
+        ``projection_handle``; ``source`` = its stored candidate set content; ``answer`` = ``parse_loop_choice``'s
+        answer, kept as received; ``usage`` {input_tokens, output_tokens, external_tokens, cost} | None; ``late`` /
+        ``late_reason`` the M24 event-order arrival. Returned only once ``validated_loop_choice`` passes.
+    validated_loop_choice(content, projection, source) -> content     LoopChoiceInvalid unless every spec 5.3 rule
+                                                        holds against that projection and candidate set
 """
 from __future__ import annotations
 
@@ -438,3 +450,178 @@ def validated_loop_projection(content: Any) -> dict[str, Any]:
 
 def parse_loop_choice(data: Any, projection: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     return P.parse_choice(data, criteria_aliases(projection))
+
+
+# --- proposal object (spec 5.3) --------------------------------------------------------------------------------------
+
+_AUDIT_ID_RE = re.compile(r"eg_[0-9a-f]{32}")
+_MAX_SAFE_INT = 9_007_199_254_740_991
+
+
+class LoopChoiceInvalid(ValueError):
+    """A ``jev_loop_choice@1`` that is not a well-formed proposal of its loop projection and candidate set (the loop
+    counterpart of the M24 send module's ``ChoiceInvalid``, which a loop module never imports)."""
+
+
+def _choice_need(condition: Any, message: str) -> None:
+    if not condition:
+        raise LoopChoiceInvalid(message)
+
+
+def _same(left: Any, right: Any) -> bool:
+    """Equal as stored JSON (types count: 1, 1.0 and True differ)."""
+    return P.canonical_ascii(left) == P.canonical_ascii(right)
+
+
+def _is_unit(value: Any) -> bool:
+    return (type(value) is int and 0 <= value <= 1) or (type(value) is float and math.isfinite(value)
+                                                        and 0.0 <= value <= 1.0)
+
+
+def _usage_value(key: str, value: Any) -> bool:
+    if value is None:
+        return True
+    if key == "cost":
+        return type(value) in (int, float) and math.isfinite(value) and value >= 0
+    return type(value) is int and 0 <= value <= _MAX_SAFE_INT
+
+
+def _one(rows: Any, key: str, value: Any) -> dict[str, Any]:
+    found = [row for row in rows if type(row[key]) is type(value) and row[key] == value]
+    _choice_need(len(found) == 1, "the chosen candidate is not exactly one row of the candidate set")
+    return found[0]
+
+
+def _local_ref(kind: str, source: dict[str, Any], ref: Any) -> dict[str, Any]:
+    """The chosen candidate's local reference, rebuilt from the stored set: ligand {candidate_id}, mutation
+    {candidate_index, position_index}."""
+    _choice_need(_is_ref(ref, kind), "the chosen candidate reference")
+    if kind == "ligand":
+        return {"candidate_id": _one(source["candidates"], "id", ref)["id"]}
+    row = _one(source["candidates"], "index", ref)
+    _choice_need(_is_int(row["position_index"]), "the chosen candidate's position")
+    return {"candidate_index": ref, "position_index": row["position_index"]}
+
+
+def _local_display(kind: str, source: dict[str, Any], local_ref: dict[str, Any]) -> dict[str, Any]:
+    """The chosen candidate's notation, copied from the stored set (the M24 rule): ligand {smiles}, mutation
+    {residue (the 7 identity fields, nulls kept), from, to}."""
+    if kind == "ligand":
+        return {"smiles": _one(source["candidates"], "id", local_ref["candidate_id"])["smiles"]}
+    row = _one(source["candidates"], "index", local_ref["candidate_index"])
+    position = _one(source["positions"], "index", local_ref["position_index"])
+    _choice_need(_same(row["position_index"], local_ref["position_index"]), "the chosen candidate's position")
+    residue = position["residue"]
+    return {"residue": {key: residue[key] for key in J.ALLOWED_RESIDUE}, "from": row["from"], "to": row["to"]}
+
+
+def _chosen_ref(projection: dict[str, Any], alias: Any) -> Any:
+    found = [item["ref"] for item in projection["selection"] if item["alias"] == alias]
+    _choice_need(len(found) == 1, "the chosen alias is not one projection candidate")
+    return found[0]
+
+
+def build_loop_choice(projection_handle: str, projection: dict[str, Any], source: dict[str, Any], *, send_id: str,
+                      audit_id: str, answer: dict[str, Any], served_model: Any, usage: dict[str, Any] | None,
+                      late: bool, late_reason: str | None) -> dict[str, Any]:
+    """The ``jev_loop_choice@1`` content of one answered loop send. ``projection``: the validated
+    ``jev_loop_projection@1`` content at ``projection_handle``; ``source``: its stored candidate set content;
+    ``answer``: ``parse_loop_choice``'s answer {choice_alias, confidence, probabilities}, kept as received (no
+    conversion, reordering or rounding); ``usage``: {input_tokens, output_tokens, external_tokens, cost} or None;
+    ``late`` / ``late_reason``: the M24 event-order arrival. Returns the content only if ``validated_loop_choice``
+    passes (``LoopChoiceInvalid`` otherwise): a late proposal is a valid proposal, never the iteration's selection."""
+    try:
+        kind, goal = projection["kind"], projection["goal"]
+        criteria = criteria_aliases(projection)
+        alias = answer["choice_alias"]
+        _choice_need(type(alias) is str and alias in criteria, "the chosen alias is not a not-yet-computed candidate")
+        local_ref = _local_ref(kind, source, _chosen_ref(projection, alias))
+        probabilities = answer["probabilities"]
+        content = {
+            "schema": L.CHOICE_SCHEMA, "method_version": L.CHOICE_METHOD_VERSION, "label": L.CHOICE_LABEL,
+            "scientific_result": False, "loop": dict(projection["loop"]), "goal": goal,
+            "send": {"send_id": send_id, "audit_id": audit_id}, "source": dict(projection["source"]),
+            "projection": {"handle": projection_handle, "wire_sha256": projection["wire_sha256"],
+                           "body_sha256": projection["body_sha256"], "body_bytes": projection["body_bytes"]},
+            "question": {"id": L.QUESTION_FOR_KIND[kind], "key": L.QUESTION_KEY,
+                         "instructions_sha256": L.instructions_sha256(kind, goal)},
+            "requested_model": J.REQUEST_MODEL, "served_model": served_model,
+            "selection": [dict(item) for item in projection["selection"]],
+            "answer": {"choice_alias": alias, "list_position": list_position(criteria, alias),
+                       "list_size": len(criteria), "local_ref": local_ref,
+                       "local_display": _local_display(kind, source, local_ref), "confidence": answer["confidence"],
+                       "probabilities": dict(probabilities) if isinstance(probabilities, dict) else probabilities},
+            "usage": None if usage is None else {key: usage[key] for key in L.USAGE_KEYS},
+            "arrival": {"late": late, "late_reason": late_reason},
+            "limitations": L.limitations_for(kind, goal, late),
+        }
+    except LoopChoiceInvalid:
+        raise
+    except (KeyError, TypeError, ValueError, AttributeError, P.JevProjectionError) as exc:
+        raise LoopChoiceInvalid("the loop proposal cannot be built from this answer") from exc
+    return validated_loop_choice(content, projection, source)
+
+
+def _check_loop_choice(content: Any, projection: dict[str, Any], source: dict[str, Any]) -> None:
+    _choice_need(type(content) is dict and set(content) == set(L.CHOICE_KEYS), "proposal keys")
+    _choice_need(content["schema"] == L.CHOICE_SCHEMA and content["method_version"] == L.CHOICE_METHOD_VERSION
+                 and content["label"] == L.CHOICE_LABEL, "schema or label")
+    _choice_need(content["scientific_result"] is False, "a proposal is never a scientific result")
+    kind, goal = projection["kind"], projection["goal"]
+    _choice_need(_same(content["loop"], projection["loop"]) and _same(content["goal"], goal), "loop and goal")
+    send = content["send"]
+    _choice_need(type(send) is dict and set(send) == set(L.CHOICE_SEND_KEYS) and L.is_loop_id(send["send_id"])
+                 and type(send["audit_id"]) is str and _AUDIT_ID_RE.fullmatch(send["audit_id"]) is not None, "send")
+    _choice_need(_same(content["source"], projection["source"]), "source")
+    ref = content["projection"]
+    _choice_need(type(ref) is dict and set(ref) == set(L.CHOICE_PROJECTION_KEYS) and type(ref["handle"]) is str
+                 and re.fullmatch(_HANDLE_RE % L.PROJECTION_KIND, ref["handle"]) is not None
+                 and all(_same(ref[key], projection[key]) for key in ("wire_sha256", "body_sha256", "body_bytes")),
+                 "projection reference and hashes")
+    _choice_need(_same(content["question"], {"id": L.QUESTION_FOR_KIND[kind], "key": L.QUESTION_KEY,
+                                             "instructions_sha256": L.instructions_sha256(kind, goal)}), "question")
+    _choice_need(_same(content["requested_model"], J.REQUEST_MODEL)
+                 and _same(content["served_model"], J.SERVED_SNAPSHOT), "requested and served models")
+    _choice_need(_same(content["selection"], projection["selection"]), "selection")
+    criteria = criteria_aliases(projection)
+    answer = content["answer"]
+    _choice_need(type(answer) is dict and set(answer) == set(L.ANSWER_KEYS), "answer keys")
+    alias = answer["choice_alias"]
+    _choice_need(type(alias) is str and alias in criteria, "the chosen alias is not a not-yet-computed candidate")
+    _choice_need(_same(answer["list_position"], list_position(criteria, alias))
+                 and _same(answer["list_size"], len(criteria)), "list position")
+    local_ref = _local_ref(kind, source, _chosen_ref(projection, alias))
+    _choice_need(_same(answer["local_ref"], local_ref), "local reference")
+    _choice_need(_same(answer["local_display"], _local_display(kind, source, local_ref)), "local display")
+    _choice_need(answer["confidence"] is None or _is_unit(answer["confidence"]), "confidence")
+    probabilities = answer["probabilities"]
+    _choice_need(probabilities is None or (type(probabilities) is dict and len(probabilities) <= len(criteria) and all(
+        type(key) is str and key in criteria and _is_unit(value) for key, value in probabilities.items())),
+        "probabilities")
+    usage = content["usage"]
+    _choice_need(usage is None or (type(usage) is dict and set(usage) == set(L.USAGE_KEYS)
+                                   and all(_usage_value(key, value) for key, value in usage.items())), "usage")
+    arrival = content["arrival"]
+    _choice_need(type(arrival) is dict and set(arrival) == set(L.ARRIVAL_KEYS) and type(arrival["late"]) is bool
+                 and (type(arrival["late_reason"]) is str and arrival["late_reason"] in J.LATE_REASONS
+                      if arrival["late"] else arrival["late_reason"] is None), "arrival")
+    _choice_need(content["limitations"] == L.limitations_for(kind, goal, arrival["late"]), "limitations")
+    stored = json.dumps(content, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+    _choice_need(len(stored.encode("utf-8")) <= L.MAX_OBJECT_BYTES, "object size")
+
+
+def validated_loop_choice(content: Any, projection: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+    """``content`` if it is a well-formed ``jev_loop_choice@1`` of ``projection`` (a validated
+    ``jev_loop_projection@1``) and ``source`` (its stored candidate set), checked on every read; else
+    ``LoopChoiceInvalid``. Exact keys (no rank, score, best or recommended key can exist), ``scientific_result`` false,
+    the loop / goal / source / hashes / selection of the projection, the chosen alias among the not-yet-computed
+    ones (``criteria``) with its ``list_position`` / ``list_size``, ``local_ref`` / ``local_display`` rebuilt from the
+    stored set, confidence and probabilities in 0-1 with keys among the criteria, the served model, the arrival and
+    its sentences (+ J7 when late), at most 1 MiB."""
+    try:
+        _check_loop_choice(content, projection, source)
+    except LoopChoiceInvalid:
+        raise
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError, P.JevProjectionError) as exc:
+        raise LoopChoiceInvalid("loop proposal content is malformed") from exc
+    return content

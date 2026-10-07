@@ -27,7 +27,7 @@ Public API
     remaining_budget(snapshot), approval_pending(events), loop_approvals(events, loop_id)
     model_index(events)                       M21 call key -> output handle of a done M21 job with that key
     load_results(view, created, approvals)    (results, models): validated stored M18 / M21 results by call key
-    load_proposals(view, created)             {handle: validated jev_loop_choice@1}: empty until T5 adds the object
+    load_proposals(view, created)             {handle: jev_loop_choice@1} of this loop that validate now
     derive_inputs(view, created, *, budget, send_active, send_reservation=None)
                                               the ``jev_loops.derive_loop`` keyword inputs of one loop
     validated_loop_record(record, inputs)     the spec 3.2 record check every read runs (``LoopRecordInvalid``)
@@ -51,9 +51,11 @@ Every read takes ONE ``LoopReadView`` (one event-log read) and hands that same v
 ``docking_bundle.validated_result`` / ``mutation_model_bundle.validated_result`` (a stored result that does not
 validate, or whose normalized input is not the loop request of that candidate, is left out and never counts as
 computed), the candidate set check. ``keys`` come from the created event's setup and pins (events only, no engine);
-a protein docking key exists once that candidate's model validates. ``proposals`` come from ``load_proposals``
-(empty until T5 stores ``jev_loop_choice@1``). The derived record then passes ``validated_loop_record``. Reads never
-take the run lock, never write an event or object and never start, submit or cancel a job.
+a protein docking key exists once that candidate's model validates. ``proposals`` come from ``load_proposals`` (this
+loop's stored ``jev_loop_choice@1`` objects, each re-validated with ``jev_loop_projection.validated_loop_choice``
+against its stored projection and the pool's candidate set). The derived record then passes
+``validated_loop_record``. Reads never take the run lock, never write an event or object and never start, submit or
+cancel a job.
 
 Creation (spec 3.1)
 -------------------
@@ -93,6 +95,8 @@ from . import (
 from . import docking_constants as DC
 from . import jev_constants as J
 from . import jev_loop_constants as L
+from . import jev_loop_projection as LP
+from . import jev_projection as P
 from . import mutation_candidates as mc
 from . import mutation_model_constants as MC
 from . import mutation_model_inputs as mi
@@ -397,10 +401,49 @@ def load_results(view: Any, created: Mapping[str, Any],
     return results, models
 
 
+def _stored_loop_projection(view: Any, handle: Any) -> dict[str, Any]:
+    """This run's stored ``jev_loop_projection@1`` at ``handle``, validated (``ValueError`` / ``KeyError`` /
+    ``TypeError`` / ``JevProjectionError`` otherwise)."""
+    if type(handle) is not str or not handle.startswith(f"obj://{view.run_id}/"):
+        raise ValueError("the proposal's projection is not of this run")
+    meta = view.store.meta(handle)
+    if (meta["kind"], meta["schema"]) != (L.PROJECTION_KIND, L.PROJECTION_SCHEMA):
+        raise ValueError("the proposal's projection is not a jev_loop_projection@1")
+    return LP.validated_loop_projection(view.store.load_bounded_json(handle, L.MAX_OBJECT_BYTES))
+
+
 def load_proposals(view: Any, created: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
-    """{handle: content} of this loop's stored ``jev_loop_choice@1`` proposals that validate now. T5 adds that object
-    (and its ``validated_loop_choice``); until then no such object can exist and this is empty."""
-    return {}
+    """{handle: content} of this loop's stored ``jev_loop_choice@1`` proposals that validate now: every object of that
+    kind and schema in the view's one event list whose ``loop.loop_id`` is this loop's, read back (bounded), checked by
+    ``jev_loop_projection.validated_loop_choice`` against its stored projection (this run's validated
+    ``jev_loop_projection@1`` of this loop's pool) and the pool's candidate set (validated once, only when such an
+    object exists). Anything else (an M24 ``jev_choice@1``, another loop's proposal, an object that does not read back
+    or validate) is left out, so a completed send without a validating proposal has no selection. A late proposal
+    that validates is kept (the derivation never takes it as a selection). Writes nothing."""
+    loop_id, branch, pool = created["loop_id"], created["branch"], created["pool"]
+    handles = dict.fromkeys(event["handle"] for event in view.read() if event.get("type") == "object_created"
+                            and event.get("kind") == L.CHOICE_KIND and event.get("schema") == L.CHOICE_SCHEMA)
+    source: dict[str, Any] | None = None
+    found: dict[str, dict[str, Any]] = {}
+    for handle in handles:
+        try:
+            if type(handle) is not str or not handle.startswith(f"obj://{view.run_id}/"):
+                continue
+            content = view.store.load_bounded_json(handle, L.MAX_OBJECT_BYTES)
+            if type(content) is not dict or type(content.get("loop")) is not dict \
+                    or content["loop"].get("loop_id") != loop_id:
+                continue
+            projection = _stored_loop_projection(view, content["projection"]["handle"])
+            if not (projection["kind"] == L.KIND_FOR_BRANCH[branch] and projection["goal"] == created["goal"]
+                    and _same(projection["order"]["loop_seed"], created["loop_seed"])
+                    and _same(projection["source"], pool["source"]) and _same(projection["structure"], pool["structure"])):
+                continue
+            if source is None:
+                source = source_content(view, branch, pool["source"]["handle"])
+            found[handle] = LP.validated_loop_choice(content, projection, source)
+        except (KeyError, TypeError, ValueError, P.JevProjectionError):   # LoopChoiceInvalid is a ValueError
+            continue
+    return found
 
 
 def derive_inputs(view: Any, created: Mapping[str, Any], *, budget: Mapping[str, Any], send_active: bool,
