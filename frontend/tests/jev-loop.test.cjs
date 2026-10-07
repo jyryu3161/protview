@@ -960,7 +960,7 @@ test("record reads: a request while a read is in flight is kept (merged), read o
     assert.deepEqual(plain(queue), { inFlight: LOOP, pending: true });
   }
   // The read ends (applied or dropped): exactly one more read, which starts at once.
-  let settled = lib.loopReadSettled(queue, LOOP);
+  let settled = lib.loopReadSettled(queue, LOOP, LOOP);
   assert.equal(settled.again, LOOP);
   queue = settled.queue;
   assert.deepEqual(plain(queue), { inFlight: null, pending: false });
@@ -968,7 +968,7 @@ test("record reads: a request while a read is in flight is kept (merged), read o
   assert.equal(step.start, true);
   queue = step.queue;
   // That read ends with no request meanwhile: nothing more.
-  settled = lib.loopReadSettled(queue, LOOP);
+  settled = lib.loopReadSettled(queue, LOOP, LOOP);
   assert.equal(settled.again, null);
   queue = settled.queue;
   // Another loop opened while a read of the first is in flight: its read starts; the old read's end changes nothing.
@@ -976,14 +976,36 @@ test("record reads: a request while a read is in flight is kept (merged), read o
   step = lib.loopReadRequest(queue, LOOP_P);
   assert.equal(step.start, true);
   queue = step.queue;
-  settled = lib.loopReadSettled(queue, LOOP);
+  settled = lib.loopReadSettled(queue, LOOP, LOOP_P);
   assert.equal(settled.again, null);
   assert.deepEqual(plain(settled.queue), { inFlight: LOOP_P, pending: false });
+  // A pending read of loop A ends after loop B was opened without a read of its own (B's create answer applied): no
+  // re-read of A (it would cover B's record); the queue is free for B's reads.
+  queue = lib.loopReadRequest(lib.loopReadRequest(lib.initialLoopReadQueue(), LOOP).queue, LOOP).queue;
+  assert.deepEqual(plain(queue), { inFlight: LOOP, pending: true });
+  settled = lib.loopReadSettled(queue, LOOP, LOOP_P);
+  assert.equal(settled.again, null);
+  assert.deepEqual(plain(settled.queue), { inFlight: null, pending: false });
+  assert.equal(lib.loopReadRequest(settled.queue, LOOP_P).start, true);
+  // No loop open any more (null): nothing is read again either.
+  assert.equal(lib.loopReadSettled({ inFlight: LOOP, pending: true }, LOOP, null).again, null);
   // The request-number rule still decides whether an answer is applied: a later request number drops the older answer.
   const captured = { runId: RUN, loopId: LOOP, iteration: null, seq: 3 };
   assert.equal(lib.loopResponseCurrent(captured, { ...captured }), true);
   assert.equal(lib.loopResponseCurrent(captured, { ...captured, seq: 4 }), false);
   assert.equal(lib.loopResponseCurrent(captured, { ...captured, loopId: LOOP_P }), false);
+});
+
+test("send followed until the record shows it: only an ended send record is awaited, an in-progress one is not", () => {
+  // A replay of the same send_id can answer with the record still in progress: nothing is awaited (the usual polling
+  // rule, a send in progress, applies), so the polling never waits forever on a status the record will not keep.
+  assert.equal(lib.loopAwaitedSend({ send_id: SID_2, status: "in_progress" }), null);
+  for (const status of ["completed", "rejected", "failed"])
+    assert.deepEqual(plain(lib.loopAwaitedSend({ send_id: SID_2, status })), { sendId: SID_2, status });
+  // The awaited completed send is seen once the record lists it completed.
+  const awaited = lib.loopAwaitedSend({ send_id: SID_2, status: "completed" });
+  assert.equal(lib.loopRecordReflectsSend(computeRecord(), awaited.sendId, awaited.status), true);
+  assert.equal(lib.loopRecordReflectsSend(ligandRecord(), awaited.sendId, awaited.status), false);
 });
 
 // ---- errors, projection command, API client, history, reports, panel ----

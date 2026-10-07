@@ -1122,6 +1122,15 @@ export function loopRecordReflectsSend(record: Pick<JevLoopV1, "iterations">, se
 }
 
 /**
+ * The send the area keeps reading the record for after a send answer: an ended record (completed, rejected, failed)
+ * until the record shows it; null for a record still in progress (a replayed send_id), which the usual polling rule
+ * (a send in progress) covers, so the reads never wait for a status the record does not keep.
+ */
+export function loopAwaitedSend(record: { send_id: string; status: string }): { sendId: string; status: string } | null {
+  return record.status === "in_progress" ? null : { sendId: record.send_id, status: record.status };
+}
+
+/**
  * One loop send's result: the proposal card when completed, the reason only when refused or failed. The chosen
  * candidate, its list position "n/m", the confidence and the probabilities are the stored values; probabilities are
  * listed in the sent order (the not-yet-computed aliases of the send), never sorted, ranked or compared. Whether the
@@ -1213,12 +1222,14 @@ export function loopReadRequest(queue: LoopReadQueue, loopId: string): { queue: 
 
 /**
  * The read of `loopId` ended (its answer applied or dropped by the request-number rule, or failed): `again` is the loop
- * to read once more right away when a request came while it was in flight, else null. The end of an older read of
- * another loop changes nothing.
+ * to read once more right away when a request came while it was in flight and that loop is still the opened one
+ * (`openedLoopId`), else null: a re-read of a loop no longer open would cover the opened loop's record. The end of an
+ * older read of another loop changes nothing.
  */
-export function loopReadSettled(queue: LoopReadQueue, loopId: string): { queue: LoopReadQueue; again: string | null } {
+export function loopReadSettled(queue: LoopReadQueue, loopId: string, openedLoopId: string | null):
+  { queue: LoopReadQueue; again: string | null } {
   if (queue.inFlight !== loopId) return { queue, again: null };
-  return { queue: { inFlight: null, pending: false }, again: queue.pending ? loopId : null };
+  return { queue: { inFlight: null, pending: false }, again: queue.pending && loopId === openedLoopId ? loopId : null };
 }
 
 // ---- late responses (run + loop + iteration + request number per area) ----

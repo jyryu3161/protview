@@ -177,9 +177,11 @@ test("loop area source: wording, test ids, reads on mount only, one call site pe
   // T11 fix: a record read asked for while one is in flight is kept and read once more (never skipped); a send that
   // answered keeps the reads going until the record shows it ended; the card is judged by the lib from that record.
   assert.ok(/const request = loopReadRequest\(readQueue\.current, loopId\);/.test(SOURCE) &&
-    /const settled = loopReadSettled\(readQueue\.current, loopId\);/.test(SOURCE) &&
+    /const settled = loopReadSettled\(readQueue\.current, loopId, live\.current\.loopId\);/.test(SOURCE) &&
+    /if \(loopId === null \|\| loopId !== live\.current\.loopId\) return;/.test(SOURCE) &&
     /if \(settled\.again !== null && mounted\.current\) readRecord\(settled\.again\);/.test(SOURCE));
   assert.ok(!/recordReading/.test(SOURCE));
+  assert.ok(/setAwaitedSend\(loopAwaitedSend\(sent\)\);/.test(SOURCE));   // an in-progress replay awaits nothing
   assert.ok(/!loopRecordReflectsSend\(recordValue, awaitedSend\.sendId, awaitedSend\.status\)/.test(SOURCE) &&
     /computeBusy \|\| sendPolling \|\| sendUnseen\)/.test(SOURCE));
   assert.ok(/view\.state === "confirming"/.test(SOURCE) && SOURCE.includes('data-testid="jev-loop-choice-confirming"') &&

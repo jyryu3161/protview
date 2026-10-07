@@ -22,8 +22,8 @@ import { BRANCH_LABEL, CANCEL_BEFORE_START_NOTE, FREE_DOCKING_NOTE, GOAL_LABEL, 
   ITERATION_CAP_MAX, ITERATION_CAP_MIN, LIST_POSITION_LABEL, LOOP_AREA_TITLE, LOOP_GOALS, LOOP_KIND_FOR_BRANCH,
   LOOP_MAX_POOL, LOOP_POLL_MS, LOOP_SCREEN_NOTES, LOOP_SEED_MAX, LOOP_SEED_MIN, LOOP_SEED_NOTE, ORDER_NOTE, POOL_FIXED_NOTE,
   PROTEIN_SCREEN_NOTE, PROTEIN_SEED_NOTE, SCORE_COLUMN_LABEL, SCORE_LABEL, initialLigandLoopSetupForm,
-  initialLoopReadQueue, initialLoopSettings, initialProteinLoopSetupForm, jevLoopCanSend, jevLoopDetailMatches, jevLoopPreviewMatches,
-  jevLoopPreviewView, jevLoopProjectionOutcome, jevLoopReportMatches, jevLoopSendBlockers, ligandLoopSetup,
+  initialLoopReadQueue, initialLoopSettings, initialProteinLoopSetupForm, jevLoopCanSend, jevLoopDetailMatches,
+  jevLoopPreviewMatches, loopAwaitedSend, jevLoopPreviewView, jevLoopProjectionOutcome, jevLoopReportMatches, jevLoopSendBlockers, ligandLoopSetup,
   createReasonText, loopAbandonRequest, loopActionView, loopAriaSort, loopCandidateComputeRequest, loopCandidateRows,
   loopChoiceView, loopCreateAttempt, loopCreateAttemptAfter, loopCreateBlockedReason, loopCreateBody,
   loopCreateRefusal, loopCreateRequest, loopCurrentIteration, loopDockRequest, loopErrorInfo, loopIterationRows,
@@ -279,7 +279,7 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
   }
 
   function readRecord(loopId = live.current.loopId) {
-    if (loopId === null) return;
+    if (loopId === null || loopId !== live.current.loopId) return;   // only the opened loop's record is read
     const request = loopReadRequest(readQueue.current, loopId);
     readQueue.current = request.queue;
     if (!request.start) return;   // kept: read once more as soon as the read in flight ends (never skipped)
@@ -297,7 +297,7 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
       setRecord(previous => previous?.loopId === loopId && previous.load.status === "ready" ? previous
         : { loopId, load: { status: "error", message } });
     }).finally(() => {
-      const settled = loopReadSettled(readQueue.current, loopId);
+      const settled = loopReadSettled(readQueue.current, loopId, live.current.loopId);
       readQueue.current = settled.queue;
       if (settled.again !== null && mounted.current) readRecord(settled.again);
     });
@@ -635,7 +635,7 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
       if (!jevSendResponseMatches(sent, attempt)) throw new Error(RESPONSE_SHAPE_TEXT);
       attemptRef.current = jevAttemptAfter(attempt, { record: true });
       setPendingId(null); setLastRecord(sent); setConfirmedFor(null);
-      setAwaitedSend({ sendId: sent.send_id, status: sent.status });
+      setAwaitedSend(loopAwaitedSend(sent));
       setOpenedSend(sent.send_id);
       readDetail(sent.send_id);
     } catch (e) {
