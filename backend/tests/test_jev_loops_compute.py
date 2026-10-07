@@ -1,6 +1,6 @@
-"""M25 T6-A: the compute route ``POST /runs/{rid}/jev_loops/{loop_id}/compute`` and the docking abandon route
-``POST /runs/{rid}/jev_loops/{loop_id}/abandon_docking`` (spec .dryforge/spec.md 3.2, 3.3, 6.1-6.5, 7, 9.1, 9.2, 11,
-12).
+"""M25 T6: the compute route ``POST /runs/{rid}/jev_loops/{loop_id}/compute``, the docking abandon route
+``POST /runs/{rid}/jev_loops/{loop_id}/abandon_docking`` and the end route ``POST /runs/{rid}/jev_loops/{loop_id}/end``
+with its summary ``jev_loop_result@1`` (spec .dryforge/spec.md 3.2, 3.3, 6.1-6.5, 7, 8.1, 8.2, 9.1-9.3, 11, 12).
 
 Inputs are REAL product objects, built once per module, and every test gets an events-only copy served by the product
 app (``SCIENCE_GATE`` is a ``jev_send_fixture.Fake``: MockTransport, inert sentinel credential, fixture replies):
@@ -21,7 +21,8 @@ LABELLED fault injection, marked where used: a held run lock; a ``JobQueue.start
 start lost the race to another request, so the approved job stays queued); ``Run._time_left`` reporting one second
 left (a job that times out after its reservation); edited engine pins; a missing docking worker; an M18 / M21 job
 admission refusal; a same-key job submitted between the locked read and the approval event; a synthetic
-``jev_loop_ended`` event (the end route is T6-B).
+``jev_loop_ended`` event; a server stop right before the end event; stored summaries that are not their loop's;
+engines, job lane and gate made to fail for the events-only replay.
 """
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ import json
 import threading
 import time
 import uuid
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 
 import pytest
@@ -39,10 +41,18 @@ from ligand_job_fixture import import_file, new_ligand_run, run_job
 from test_jev_loops_api import I44, PHENOL, UBQ
 from test_ligand_ga_jobs import ACK, BLOCKS, BOX, FAST, GA, IDS, PARENT, REC, evaluated, ga_args, run_ga, summary
 
-from mw import docking_bundle, docking_inputs, jev_loops, mutation_model_bundle
+from mw import (
+    docking_batch_inputs,
+    docking_bundle,
+    docking_inputs,
+    jev_loop_store,
+    jev_loops,
+    mutation_model_bundle,
+)
 from mw import docking_constants as DC
 from mw import jev_constants as J
 from mw import jev_loop_constants as L
+from mw import jev_loop_result as R
 from mw import jev_sends as S
 from mw import mutation_model_constants as MC
 from mw.api import app as api_module
@@ -61,7 +71,8 @@ W, A, B, X = 17, 0, 3, 9        # positions in the ILE44 set's candidate list (1
 STATUS = {"unknown_field": 422, "loop_not_found": 404, "cancelled": 409, "loop_ended": 409, "send_in_progress": 409,
           "iteration_invalid": 409, "phase_invalid": 409, "iteration_cap_reached": 409, "proposal_invalid": 409,
           "proposal_late": 409, "candidate_invalid": 422, "candidate_unavailable": 409, "candidate_computed": 409,
-          "capability_unavailable": 412, "budget_blocked": 429, "step_unavailable": 409}   # spec 6.1, written out
+          "capability_unavailable": 412, "budget_blocked": 429, "step_unavailable": 409, "job_running": 409,
+          "docking_pending": 409}                                                  # spec 6.1 and 8.1, written out
 LOOP_EVENTS = set(L.EVENT_TYPES)
 
 
@@ -198,6 +209,9 @@ class Served:
 
     def abandon(self, loop_id: str, **body):
         return self.post(loop_id, "abandon_docking", body)
+
+    def end(self, loop_id: str, **body):
+        return self.post(loop_id, "end", body)
 
     def record(self, loop_id: str) -> dict:
         response = self.client.get(f"/runs/{self.rid}/jev_loops/{loop_id}")
@@ -337,6 +351,41 @@ def unchanged(served: Served, before: bytes) -> None:
     assert served.log() == before
 
 
+def stored_score(served: Served, request: dict):
+    """The first-mode score of the stored M18 result a standalone submission of ``request`` would reuse: read from the
+    run's publication index and the stored object (not through the loop code)."""
+    handle = docking_batch_inputs.published_m18_results(served.events())[m18_key(request)]
+    return first_mode(served.run, handle)
+
+
+def end_loop(served: Served, loop_id: str, reason: str) -> tuple[dict, dict]:
+    """``POST .../end`` (spec 8.1): the summary object first, then ``jev_loop_ended`` naming it; the ended record shows
+    the summary's rows and LJ sentences; every write route then answers ``loop_ended``. Returns (record, summary)."""
+    before = len(served.events())
+    response = served.end(loop_id)
+    assert response.status_code == 200, response.text
+    new = served.events()[before:]
+    assert [(event["type"], event.get("kind")) for event in new] == [("object_created", L.RESULT_KIND),
+                                                                    (L.EVENT_ENDED, None)]
+    handle = new[0]["handle"]
+    assert (new[0]["schema"], payload(new[1])) == (L.RESULT_SCHEMA, {"loop_id": loop_id, "end_reason": reason,
+                                                                     "result_handle": handle})
+    record = response.json()
+    assert (record["status"], record["end_reason"], record["result_handle"]) == ("ended", reason, handle)
+    assert record["current"]["action"] == "none" and record == served.record(loop_id)
+    content = served.run.store.load(handle)
+    assert R.validated_loop_result(content) == content and content["end_reason"] == reason
+    assert (content["candidates"], content["counts"], content["pool"]) == (record["candidates"], record["counts"],
+                                                                         record["pool"])
+    assert record["limitations"] == [L.STATEMENTS[name] for name in content["limitations"]]
+    log = served.log()
+    refused(served.end(loop_id), "loop_ended")
+    refused(served.abandon(loop_id, iteration=1), "loop_ended")
+    refused(served.compute(loop_id, iteration=1, candidate=record["candidates"][0]["ref"]), "loop_ended")
+    unchanged(served, log)
+    return record, content
+
+
 # ---------------------------------------------------------------- ligand: one human-decided iteration end to end
 
 
@@ -387,6 +436,25 @@ def test_a_human_compute_writes_one_approval_then_runs_the_standalone_m18_job(li
     log = served.log()
     refused(served.compute(loop_id, iteration=1, candidate=f1), "iteration_invalid")
     unchanged(served, log)
+    # Nothing is left to compute (F1 computed, three stored results, one unavailable): the person ends the loop.
+    assert served.record(loop_id)["exhausted_reason"] == "pool_exhausted"
+    record, content = end_loop(served, loop_id, "pool_exhausted")
+    assert content["iterations"] == [{
+        "index": 1, "decided_by": "human", "candidate_ref": f1, "proposal_handle": None, "send_id": None,
+        "list_position": None, "list_size": None,
+        "approvals": [{"step": "ligand_dock", "candidate_ref": f1, "decided_by": "human", "proposal_handle": None,
+                       "call_key": key}],
+        "steps": [{"step": "ligand_dock", "candidate_ref": f1, "job_id": job["job_id"], "call_key": key,
+                   "result_handle": handle, "state": "completed", "reason_code": None}],
+        "state": state, "score_kcal_mol": score}]
+    for ref in (ligand["ga"], ligand["m19"], ligand["m18"]):     # each score is its stored result's first mode
+        row = candidate(content, ref)
+        assert (row["evaluation"], row["score_kcal_mol"]) == ("reused", stored_score(
+            served, hand_ligand_request(ligand, ref)))
+    assert candidate(content, f1)["score_kcal_mol"] == score and content["unfinished"] == []
+    assert content["limitations"] == ["LJ1", "LJ2", "LJ3", "LJ4", "LJ6", "LJ8"]   # one candidate left unavailable
+    assert (content["setup"], content["pins"]) == (record["setup"], {"m18": docking_bundle.require_ready()})
+    served.create(ligand_loop(ligand, ligand["free"][1:]))       # an ended loop never reopens; a new one may start
 
 
 def test_stored_m18_m19_and_m22_results_are_computed_and_cannot_be_chosen(ligand, serve):
@@ -474,6 +542,13 @@ def test_two_presses_make_one_step_and_a_job_cancelled_before_start_is_unavailab
         "active", "pool_exhausted", "end")
     assert record["counts"] == counts(started=1, done=1, human_decided=1, units_charged=1)
     assert served.used() == used + 1
+    record, content = end_loop(served, loop_id, "pool_exhausted")
+    assert content["unfinished"] == [{"iteration": 2, "candidate_ref": f3}]      # approved, never started
+    assert [item["candidate_ref"] for item in content["iterations"][0]["approvals"]] == [f1, f2]
+    assert [(row["index"], row["candidate_ref"], row["state"]) for row in content["iterations"]] == [
+        (1, f2, scored_state(served.run, handle)), (2, f3, "unavailable")]
+    assert content["counts"] == counts(started=1, done=1, human_decided=1, units_charged=1)
+    assert content["limitations"][-1] == "LJ8"
 
 
 # ---------------------------------------------------------------- ligand: the refusals, their order, no write
@@ -523,10 +598,9 @@ def test_compute_refusals_follow_the_spec_order_and_write_nothing(ligand, serve,
     got = refused(served.compute(loop_id, iteration=1, candidate=f1), "budget_blocked")
     assert got["blocked_axes"] == ["expensive_units"]
     unchanged(served, log)
-    # a loop end event and a run cancel come first of all (after the lookup)
+    # a loop end and a run cancel come first of all (after the lookup)
     served.limit(units=40)
-    served.run.events.append(L.EVENT_ENDED, loop_id=loop_id, end_reason="ended_by_user",   # LABELLED SYNTHETIC
-                             result_handle=f"obj://{LRID}/{L.RESULT_KIND}/" + "e" * 64)
+    assert served.end(loop_id).json()["end_reason"] == "ended_by_user"
     S.begin_send(LRID, "another-send")
     try:
         refused(served.compute(loop_id, iteration=1, candidate=f1), "loop_ended")
@@ -820,6 +894,11 @@ def test_the_iteration_cap_is_checked_before_the_proposal_and_the_candidate(prot
             "iteration_cap_reached")
     refused(served.compute(loop_id, iteration=2, candidate=w), "iteration_cap_reached")
     unchanged(served, log)
+    record, content = end_loop(served, loop_id, "iteration_cap")
+    assert [(row["candidate_ref"], row["state"]) for row in content["iterations"]] == [(w, "not_run")]
+    assert [step["state"] for step in content["iterations"][0]["steps"]] == ["reused"]
+    assert content["counts"] == counts(started=1, done=1, human_decided=1) and content["unfinished"] == []
+    assert candidate(content, a)["state"] == "pending" and content["limitations"][-1] == "LJ8"
 
 
 def test_a_jev_proposal_decides_by_jev_and_late_or_other_proposals_are_refused(protein, serve):
@@ -870,6 +949,13 @@ def test_a_jev_proposal_decides_by_jev_and_late_or_other_proposals_are_refused(p
     assert again.status_code == 200 and again.json() == response.json()
     assert served.abandon(loop_id, iteration=1).status_code == 200
     refused(served.compute(loop_id, iteration=2, proposal=proposal), "proposal_invalid")   # another iteration's
+    _record, content = end_loop(served, loop_id, "ended_by_user")
+    decided = content["iterations"][0]
+    assert (decided["decided_by"], decided["candidate_ref"], decided["proposal_handle"], decided["send_id"],
+            decided["list_position"], decided["list_size"], decided["state"]) == (
+        "jev", w, proposal, chosen["send_id"], choice["list_position"], choice["list_size"], "not_run")
+    assert content["counts"] == counts(started=1, done=1, jev_decided=1, sends_dispatched=2)
+    assert content["limitations"] == ["LJ1", "LJ2", "LJ3", "LJ5", "LJ7", "LJ8"]
     # The same state, but the person names the candidate: decided_by human even with a JEV choice present.
     other = serve(protein, snapshot, name="human")
     response = other.compute(loop_id, iteration=1, candidate=w)
@@ -904,7 +990,8 @@ def test_changed_m21_pins_and_an_m21_admission_refusal_write_nothing(protein, se
 # ---------------------------------------------------------------- protein, fresh run: first approval, cancel, failure
 
 
-def test_first_approval_wait_cancel_another_candidate_running_press_and_a_failed_model(protein, serve, monkeypatch):
+def test_first_approval_wait_cancel_another_candidate_running_press_and_a_failed_model(protein, serve, monkeypatch,
+                                                                                      tmp_path):
     served = serve(protein, protein["fresh"])
     w, a, x = protein["refs"][W], protein["refs"][A], protein["refs"][X]
     loop_id = served.create(protein_loop(protein, (W, A, X), cap=3))
@@ -983,12 +1070,167 @@ def test_first_approval_wait_cancel_another_candidate_running_press_and_a_failed
         "active", "pool_exhausted", "end")
     assert record["counts"] == counts(started=2, done=2, human_decided=2, units_charged=3)
     assert served.used() == 3
+    record, content = end_loop(served, loop_id, "pool_exhausted")
+    first, second = content["iterations"]
+    assert [(step["step"], step["candidate_ref"], step["state"]) for step in first["steps"]] == [
+        ("model", w, "unavailable"), ("model", a, "completed"), ("dock", a, "completed")]
+    assert (first["candidate_ref"], first["state"], second["candidate_ref"], second["state"]) == (
+        a, scored_state(served.run, dock["result_handle"]), x, "failed")
+    assert candidate(content, a)["score_kcal_mol"] == first_mode(served.run, dock["result_handle"])
+    assert content["unfinished"] == [] and content["counts"] == counts(started=2, done=2, human_decided=2,
+                                                                       units_charged=3)
+    assert content["limitations"] == ["LJ1", "LJ2", "LJ3", "LJ4", "LJ7", "LJ8"]     # W left unavailable
+    # Events-only replay of the ended loop with no engine, job lane or tool: the same record and summary.
+    log = served.log()
+    with monkeypatch.context() as patch:   # fault injection: every engine, job and tool path fails
+        patch.setattr(docking_bundle, "WORKER_PYTHON", tmp_path / "missing/python")
+        docking_bundle._HANDSHAKE_CACHE.clear()
+
+        def missing(*args):
+            raise PackageNotFoundError("pdbfixer")
+
+        def no_lane(*args, **kwargs):
+            raise AssertionError("a read never reaches the job lane or a tool")
+
+        patch.setattr(mutation_model_bundle, "_pdbfixer_version", missing)
+        for name in ("submit", "start", "retry", "request_cancel"):
+            patch.setattr(JobQueue, name, no_lane)
+        patch.setattr(Run, "call", no_lane)
+        replay = serve(protein, log, name="replay")
+        base = replay.log()
+        assert replay.record(loop_id) == record
+        rows = replay.client.get(f"/runs/{PRID}/jev_loops").json()
+        assert (rows[0]["loop_id"], rows[0]["status"], rows[0]["end_reason"]) == (loop_id, "ended", "pool_exhausted")
+        view = jev_loop_store.LoopReadView(replay.run)
+        assert jev_loop_store.stored_result(view, record["result_handle"]) == content
+        unchanged(replay, base)
+    docking_bundle._HANDSHAKE_CACHE.clear()
+
+
+# ---------------------------------------------------------------- ending a loop: refusals, reasons, summary reads
+
+
+def test_end_refusals_follow_the_spec_order_and_write_nothing(protein, serve, monkeypatch):
+    served = serve(protein, protein["modelled"])
+    w = protein["refs"][W]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    log = served.log()
+    for body in ({"iteration": 1}, {"x": None}):
+        refused(served.post(loop_id, "end", body), "unknown_field")
+    refused(served.end(str(uuid.uuid4())), "loop_not_found")
+    unchanged(served, log)
+    assert served.compute(loop_id, iteration=1, candidate=w).status_code == 200      # W's stored model adopted
+    log = served.log()
+    refused(served.end(loop_id), "docking_pending")
+    S.begin_send(PRID, "another-send")
+    try:
+        refused(served.end(loop_id), "send_in_progress")
+    finally:
+        S.end_send(PRID, "another-send")
+    with held_start(monkeypatch):
+        assert served.compute(loop_id, iteration=1).status_code == 503              # the docking job stays queued
+    log = served.log()
+    refused(served.end(loop_id), "job_running")
+    S.begin_send(PRID, "another-send")
+    try:
+        refused(served.end(loop_id), "send_in_progress")
+    finally:
+        S.end_send(PRID, "another-send")
+    with served.run._owner():          # fault injection: a held run lock; a refusal is still read
+        refused(served.end(loop_id), "job_running")
+    unchanged(served, log)
+    job = served.record(loop_id)["current"]["job"]["job_id"]
+    assert served.client.post(f"/runs/{PRID}/jobs/{job}/cancel").json()["job"]["status"] == "cancelled"
+    log = served.log()
+    with served.run._owner():          # fault injection: a held run lock; the end would write -> busy
+        busy = served.end(loop_id)
+    assert busy.status_code == 503 and busy.json()["detail"]["error"] == "busy"
+    unchanged(served, log)
+    served.run.cancel()
+    refused(served.end(loop_id), "cancelled")
+    assert not served.events(L.EVENT_ENDED) and not [event for event in served.events("object_created")
+                                                     if event["kind"] == L.RESULT_KIND]
+
+
+def test_a_loop_short_of_compute_budget_ends_budget_exhausted_with_its_unfinished_iteration(protein, serve,
+                                                                                          monkeypatch):
+    served = serve(protein, protein["modelled"])
+    w, a = protein["refs"][W], protein["refs"][A]
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    with held_start(monkeypatch):
+        assert served.compute(loop_id, iteration=1, candidate=a).status_code == 503
+    job = JobQueue(served.run).get(served.record(loop_id)["current"]["job"]["job_id"])
+    assert served.client.post(f"/runs/{PRID}/jobs/{job['job_id']}/cancel").json()["job"]["status"] == "cancelled"
+    served.limit(units=served.used())                       # no unit left: W (stored model) needs one
+    assert served.record(loop_id)["current"]["blocked_axes"] == ["expensive_units"]
+    _record, content = end_loop(served, loop_id, "budget_exhausted")
+    assert content["iterations"] == [{
+        "index": 1, "decided_by": "human", "candidate_ref": a, "proposal_handle": None, "send_id": None,
+        "list_position": None, "list_size": None,
+        "approvals": [{"step": "model", "candidate_ref": a, "decided_by": "human", "proposal_handle": None,
+                       "call_key": job["call_key"]}],
+        "steps": [{"step": "model", "candidate_ref": a, "job_id": job["job_id"], "call_key": job["call_key"],
+                   "result_handle": None, "state": "unavailable", "reason_code": None}],
+        "state": "unavailable", "score_kcal_mol": None}]
+    assert content["unfinished"] == [{"iteration": 1, "candidate_ref": a}] and content["counts"] == counts()
+    assert [(row["ref"], row["state"]) for row in content["candidates"]] == [(a, "unavailable"), (w, "pending")]
+    assert content["limitations"] == ["LJ1", "LJ2", "LJ3", "LJ4", "LJ7", "LJ8"]
+    served.limit(units=40)
+    served.create(protein_loop(protein, (W, A), cap=2))     # the same branch may start a new loop
+
+
+def test_an_end_stopped_after_its_summary_retries_to_the_same_summary(protein, serve, monkeypatch):
+    served = serve(protein, protein["modelled"])
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    real = served.run.events.append
+
+    def stop(event_type, /, **fields):  # fault injection: the server stops right before the end event
+        if event_type == L.EVENT_ENDED:
+            raise RuntimeError("stopped before jev_loop_ended")
+        return real(event_type, **fields)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(served.run.events, "append", stop)
+        with pytest.raises(RuntimeError):
+            served.end(loop_id)
+    stored = [event for event in served.events("object_created") if event["kind"] == L.RESULT_KIND]
+    assert len(stored) == 1 and not served.events(L.EVENT_ENDED)
+    assert served.record(loop_id)["status"] == "active"           # no end event: the loop has not ended
+    before = len(served.events())
+    response = served.end(loop_id)
+    assert response.status_code == 200, response.text
+    assert [(event["type"], event.get("result_handle")) for event in served.events()[before:]] == [
+        (L.EVENT_ENDED, stored[0]["handle"])]                      # the same content, the same handle, stored once
+    assert response.json()["result_handle"] == stored[0]["handle"]
+
+
+def test_a_stored_summary_that_is_not_its_loops_summary_is_refused_on_read(protein, serve):
+    served = serve(protein, protein["modelled"])
+    loop_id = served.create(protein_loop(protein, (W, A), cap=2))
+    content = R.build_loop_result(served.record(loop_id), "ended_by_user")
+    forged = {**content, "loop_seed": content["loop_seed"] + 1}          # LABELLED fault injection
+    assert R.validated_loop_result(forged) == forged                       # well formed, but not this loop's
+    handle = served.run.store.put(L.RESULT_KIND, L.RESULT_SCHEMA, forged).handle
+    served.run.events.append(L.EVENT_ENDED, loop_id=loop_id, end_reason="ended_by_user", result_handle=handle)
+    log = served.log()
+    for response in (served.client.get(f"/runs/{PRID}/jev_loops/{loop_id}"),
+                     served.client.get(f"/runs/{PRID}/jev_loops"), served.end(loop_id)):
+        assert response.status_code == 409 and response.json()["detail"]["error"] == "run_corrupt", response.text
+    unchanged(served, log)
+    with pytest.raises(R.LoopResultInvalid):
+        jev_loop_store.stored_result(jev_loop_store.LoopReadView(served.run), handle)
+    other = serve(protein, protein["modelled"], name="missing")
+    loop_id = other.create(protein_loop(protein, (W, A), cap=2))
+    other.run.events.append(L.EVENT_ENDED, loop_id=loop_id, end_reason="ended_by_user",   # LABELLED SYNTHETIC
+                            result_handle=f"obj://{PRID}/{L.RESULT_KIND}/" + "0" * 64)
+    response = other.client.get(f"/runs/{PRID}/jev_loops/{loop_id}")
+    assert response.status_code == 409 and response.json()["detail"]["error"] == "run_corrupt"
 
 
 # ---------------------------------------------------------------- HTTP shape, route order and boundaries
 
 
-@pytest.mark.parametrize("action", ["compute", "abandon_docking"])
+@pytest.mark.parametrize("action", ["compute", "abandon_docking", "end"])
 def test_the_action_routes_take_json_only_bound_the_body_and_refuse_queries(action, protein, serve):
     served = serve(protein, protein["fresh"])
     loop_id = served.create(protein_loop(protein, (W, A), cap=2))
@@ -1027,7 +1269,7 @@ def test_the_action_routes_are_posts_registered_before_the_detail_route():
     paths = [(route.path, sorted(route.methods)) for route in api_module.app.routes
              if getattr(route, "methods", None) and route.path.startswith("/runs/{rid}/jev_loops")]
     detail = paths.index(("/runs/{rid}/jev_loops/{loop_id}", ["GET"]))
-    for action in ("compute", "abandon_docking"):
+    for action in ("compute", "abandon_docking", "end"):
         assert paths.index((f"/runs/{{rid}}/jev_loops/{{loop_id}}/{action}", ["POST"])) < detail
     assert [path for path, _ in paths].count("/runs/{rid}/jev_loops/{loop_id}/compute") == 1
 
@@ -1036,14 +1278,14 @@ def test_the_action_routes_and_the_loop_modules_name_no_send_approval_or_limit_p
     tree = ast.parse((MW / "api/app.py").read_text())
     functions = {node.name: node for node in ast.walk(tree)
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in {
-                     "jev_loop_compute", "jev_loop_abandon_docking", "_jev_loop_compute"}}
-    assert set(functions) == {"jev_loop_compute", "jev_loop_abandon_docking", "_jev_loop_compute"}
+                     "jev_loop_compute", "jev_loop_abandon_docking", "_jev_loop_compute", "jev_loop_end"}}
+    assert set(functions) == {"jev_loop_compute", "jev_loop_abandon_docking", "_jev_loop_compute", "jev_loop_end"}
     for function in functions.values():
         names = {node.id if isinstance(node, ast.Name) else node.attr for node in ast.walk(function)
                  if isinstance(node, (ast.Name, ast.Attribute))}
         assert not names & {"run_send", "request_science", "SCIENCE_GATE", "raise_limits", "limit_approval",
                             "approve", "retry", "request_cancel", "update_limits", "Thread", "Timer"}
-    for name in ("jev_loop_store.py", "jev_loops.py", "jev_loop_constants.py"):
+    for name in ("jev_loop_store.py", "jev_loops.py", "jev_loop_constants.py", "jev_loop_result.py"):
         text = (MW / name).read_text()
         assert "raise_limits" not in text and "limit_approval" not in text, name
     store = ast.parse((MW / "jev_loop_store.py").read_text())

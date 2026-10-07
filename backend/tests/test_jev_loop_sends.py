@@ -197,9 +197,9 @@ def adopt_and_abandon(world, loop_id, iteration) -> int:
 
 
 def ended(world, loop_id) -> None:
-    """LABELLED SYNTHETIC ``jev_loop_ended`` (the T6 end route writes the real one with its summary)."""
-    world["run"].events.append(L.EVENT_ENDED, loop_id=loop_id, end_reason="ended_by_user",
-                               result_handle=f"obj://{RID}/{L.RESULT_KIND}/" + "e" * 64)
+    """The T6 end route's store function: the summary ``jev_loop_result@1``, then ``jev_loop_ended`` (M25 T6-B: a
+    read now checks an ended loop's summary, so the earlier synthetic event naming no summary is gone)."""
+    jev_loop_store.end_loop(world["run"], loop_id, {}, send_active=False)
 
 
 def forged(world, loop_id, iteration, states, *, ordinal=0, seed=11, goal="exploit", run=None) -> str:

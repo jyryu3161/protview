@@ -248,9 +248,9 @@ def proposal(monkeypatch, run, projection, ref, *, late=False) -> str:
 
 
 def ended(run, loop_id=LOOP) -> None:
-    """LABELLED SYNTHETIC ``jev_loop_ended`` (the T6 end route writes the real one with its summary handle)."""
-    run.events.append(L.EVENT_ENDED, loop_id=loop_id, end_reason="ended_by_user",
-                      result_handle=f"obj://{run.run_id}/{L.RESULT_KIND}/" + "e" * 64)
+    """The T6 end route's store function: the summary ``jev_loop_result@1``, then ``jev_loop_ended`` (M25 T6-B: a
+    read now checks an ended loop's summary, so the earlier synthetic event naming no summary is gone)."""
+    jev_loop_store.end_loop(run, loop_id, {}, send_active=False)
 
 
 def _protein_loop(scenario, world, goal, pool):

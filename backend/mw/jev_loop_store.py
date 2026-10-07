@@ -55,6 +55,10 @@ Public API
     write_approval(run, state, decision, job) the ``jev_loop_compute_approved`` event (``step_unavailable`` first)
     abandon_docking(run, loop_id, body, *, send_active)
                                               ``POST .../abandon_docking`` -> ``jev_loop@1``
+    end_loop(run, loop_id, body, *, send_active)
+                                              ``POST .../end`` -> ``jev_loop@1``: the summary, then the end event
+    stored_result(view, handle)               a stored ``jev_loop_result@1`` checked against its loop (the report
+                                              input; ``jev_loop_result.LoopResultInvalid`` otherwise)
 
 Reading (spec 3.2: built and checked on every read, nothing written)
 --------------------------------------------------------------------
@@ -102,6 +106,20 @@ with its closed ``detail.reason_code``, nothing written), then ``write_approval`
 under the transition lock unless a same-key job appeared since the read (``step_unavailable``). The job itself is
 submitted by the route under the same run owner and started after the owner is released (``JobQueue.start``, as the
 job start route): this module never submits, starts, cancels or retries a job.
+
+Ending and the summary (spec 8.1, 8.2)
+--------------------------------------
+``end_loop`` checks the body (no key), then under the run owner and, for the last read and the two writes, the
+transition lock (so no submission, cancel or result lands between them): ``loop_not_found``, then
+``jev_loops.end_refusal``; ``end_reason_for`` decides the reason; ``jev_loop_result.build_loop_result`` makes the
+summary from that read, which is validated, stored (same content, same handle) and then named by
+``jev_loop_ended``. A stop between the two leaves a stored summary and no end: the loop is not ended and the next
+``end`` stores nothing new and writes the event. Every read of an ended loop checks its summary: the record is
+derived again from the events up to the loop's ``jev_loop_ended`` event (no engine, job or network) and the stored
+object must be exactly the summary that record makes (``jev_loop_result.validated_loop_result``); anything else is
+``LoopResultInvalid`` (409 ``run_corrupt`` on the routes). The ended record itself is still derived from the whole
+log like every record, so it shows the summary's rows until a later outside job or result changes an uncomputed
+candidate's reading.
 """
 from __future__ import annotations
 
@@ -125,6 +143,7 @@ from . import docking_constants as DC
 from . import jev_constants as J
 from . import jev_loop_constants as L
 from . import jev_loop_projection as LP
+from . import jev_loop_result as LR
 from . import jev_projection as P
 from . import mutation_candidates as mc
 from . import mutation_model_constants as MC
@@ -178,7 +197,10 @@ ACTION_MESSAGES = {
     "capability_unavailable": "the branch's engines are not available as they were when the loop was created",
     "budget_blocked": "the run's remaining budget is short of this candidate's need",
     L.STEP_UNAVAILABLE: "a same-key job of this step appeared outside the loop",
+    "job_running": "a job this loop approved is queued or running",
+    "docking_pending": "the modelled candidate of the iteration awaits its docking or its abandon",
 }
+_SNAPSHOT_BUDGET = {"expensive_units": 0, "wall_clock_s": 0, "external_tokens": 0, "usd": 0}   # not in a summary
 PINS_CHANGED_CODE = "missing_configuration"   # the existing pin-mismatch capability name (M24 gate), no new name
 PINS_CHANGED_REASON = ("이 루프를 만들 때 기록한 M18·M21 작업 모듈·엔진 pin이 지금 값과 달라, 루프가 기록한 호출 키의 "
                        "작업을 만들 수 없다.")
@@ -671,7 +693,58 @@ def _read(view: Any, created: Mapping[str, Any], *, budget: Mapping[str, Any], s
     inputs = derive_inputs(view, created, budget=budget, send_active=send_active, send_reservation=send_reservation)
     state = jev_loops.derive_loop(created["loop_id"], view.read(), **inputs)
     validated_loop_record(state.record, inputs)
+    if state.ended_event:
+        _checked_result(view, created)
     return state
+
+
+# --- the stored summary of an ended loop (spec 8.2) -------------------------------------------------------------------
+
+def _ended(events: list[dict[str, Any]], loop_id: Any) -> tuple[int, dict[str, Any]]:
+    for position, event in enumerate(events):
+        if event.get("type") == L.EVENT_ENDED and event.get("loop_id") == loop_id:
+            return position, jev_loops.parse_ended(event)
+    raise LR.LoopResultInvalid("the loop has no end event")
+
+
+def _load_result(view: Any, handle: Any) -> Any:
+    if type(handle) is not str or not handle.startswith(f"obj://{view.run_id}/"):
+        raise LR.LoopResultInvalid("the summary is not an object of this run")
+    try:
+        meta = view.store.meta(handle)
+    except (KeyError, ValueError) as exc:
+        raise LR.LoopResultInvalid("the summary is not stored") from exc
+    if (meta["kind"], meta["schema"]) != (L.RESULT_KIND, L.RESULT_SCHEMA):
+        raise LR.LoopResultInvalid("the end event names another kind of object")
+    return view.store.load_bounded_json(handle, L.MAX_OBJECT_BYTES)
+
+
+def _checked_result(view: Any, created: Mapping[str, Any]) -> dict[str, Any]:
+    """The stored summary named by the loop's ``jev_loop_ended`` event, checked against the record derived again from
+    the events up to and including that event (one prefix of the view's one read: stored objects, job records,
+    proposals and results as they were when the loop ended)."""
+    events = view.read()
+    position, ended = _ended(events, created["loop_id"])
+    snapshot = LoopReadView(view, events[:position + 1])
+    inputs = derive_inputs(snapshot, created, budget=_SNAPSHOT_BUDGET, send_active=False)
+    at_end = jev_loops.derive_loop(created["loop_id"], snapshot.read(), **inputs)
+    return LR.validated_loop_result(_load_result(view, ended["result_handle"]), at_end.record, ended["end_reason"])
+
+
+def stored_result(view: Any, handle: Any) -> dict[str, Any]:
+    """The validated ``jev_loop_result@1`` at ``handle`` (the ``jev_loop`` report input): an object of this run of
+    that kind and schema whose loop's ``jev_loop_ended`` event names exactly it, equal to the summary the loop's
+    record at its end makes. ``jev_loop_result.LoopResultInvalid`` otherwise. Writes nothing."""
+    content = _load_result(view, handle)
+    loop_id = content.get("loop_id") if type(content) is dict else None
+    events = view.read()
+    try:
+        created = created_payload(events, loop_id)
+    except jev_loops.LoopNotFound as exc:
+        raise LR.LoopResultInvalid("the summary's loop is not in this run") from exc
+    if _ended(events, loop_id)[1]["result_handle"] != handle:
+        raise LR.LoopResultInvalid("the loop's end event names another summary")
+    return _checked_result(view, created)
 
 
 def read_loop(view: Any, loop_id: Any, *, budget: Mapping[str, Any], send_active: bool = False,
@@ -964,8 +1037,8 @@ def create(run: Any, body: Any, *, send_active: bool) -> dict[str, Any]:
 # --- compute and docking abandon (spec 6.1, 6.3; module docstring) --------------------------------------------------
 
 def _action_refusal(reason: str, message: str | None = None, **detail: Any) -> LoopRequestError:
-    return LoopRequestError(reason, message or ACTION_MESSAGES[reason], jev_loops.COMPUTE_HTTP.get(reason, 409),
-                            **detail)
+    status = {**jev_loops.END_HTTP, **jev_loops.COMPUTE_HTTP}.get(reason, 409)
+    return LoopRequestError(reason, message or ACTION_MESSAGES[reason], status, **detail)
 
 
 def action_request(body: Any, keys: tuple[str, ...]) -> dict[str, Any]:
@@ -1126,6 +1199,42 @@ def abandon_docking(run: Any, loop_id: Any, body: Any, *, send_active: bool) -> 
         jev_loops.parse_docking_abandoned({"seq": 1, "type": L.EVENT_DOCKING_ABANDONED, **payload})
         with run._transition():
             run.events.append(L.EVENT_DOCKING_ABANDONED, **payload)
+        return _record(run, LoopReadView(run), payload["loop_id"], send_active)
+
+
+def _end_state(view: Any, loop_id: Any, *, budget: Mapping[str, Any], send_active: bool) -> jev_loops.LoopState:
+    state = _loop_state(view, loop_id, budget=budget, send_active=send_active)
+    reason = jev_loops.end_refusal(state)
+    if reason is not None:
+        raise _action_refusal(reason)
+    return state
+
+
+def end_loop(run: Any, loop_id: Any, body: Any, *, send_active: bool) -> dict[str, Any]:
+    """``POST /runs/{rid}/jev_loops/{loop_id}/end`` (spec 8.1; module docstring: ending and the summary). Returns the
+    ended ``jev_loop@1`` record; raises ``LoopRequestError`` or the owner's busy ``ToolFailure`` (nothing written)."""
+    if type(body) is not dict or body:
+        raise _action_refusal("unknown_field", "the request is an empty JSON object",
+                              fields=sorted(body) if type(body) is dict else [])
+    with ExitStack() as stack:
+        try:
+            stack.enter_context(run._owner())
+        except ToolFailure as busy:
+            if busy.detail.get("busy") is not True:
+                raise
+            _end_state(LoopReadView(run), loop_id, budget=remaining_budget(run.budget_snapshot()),
+                       send_active=send_active)                    # a refusal is still given; the end is busy
+            raise
+        _view, budget = locked_view(run)
+        with run._transition():
+            state = _end_state(LoopReadView(run), loop_id, budget=budget, send_active=send_active)
+            reason = jev_loops.end_reason_for(state)
+            content = LR.validated_loop_result(LR.build_loop_result(state.record, reason), state.record, reason)
+            handle = run.store.put(L.RESULT_KIND, L.RESULT_SCHEMA, content, summary={
+                "loop_id": state.record["loop_id"], "branch": state.branch, "end_reason": reason}).handle
+            payload = {"loop_id": state.record["loop_id"], "end_reason": reason, "result_handle": handle}
+            jev_loops.parse_ended({"seq": 1, "type": L.EVENT_ENDED, **payload})   # never write what reads refuse
+            run.events.append(L.EVENT_ENDED, **payload)
         return _record(run, LoopReadView(run), payload["loop_id"], send_active)
 
 

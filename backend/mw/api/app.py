@@ -2598,7 +2598,25 @@ async def jev_loop_abandon_docking(rid: str, loop_id: str, request: Request) -> 
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
 
 
-# T6 adds the loop end route (/end) HERE as well, before the detail route below.
+@app.post("/runs/{rid}/jev_loops/{loop_id}/end")
+async def jev_loop_end(rid: str, loop_id: str, request: Request) -> Any:
+    """The person's end of a loop (spec 8.1): the refusals in order, the end reason, the summary
+    ``jev_loop_result@1`` stored first and then ``jev_loop_ended``. No job, tool, send or limit change."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        return await run_in_threadpool(lambda: jev_loop_store.end_loop(run, loop_id, body, send_active=send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record (its summary) that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
 
 
 def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:
