@@ -4,8 +4,8 @@
 The functions in this part of the module are pure: they read no object store, event log, job index, file, clock,
 network or credential and write nothing. The read routes (T3), the projection admission (T4), the loop check inside
 the send approval callback (T5, from the callback's event list only), the compute and end admission (T6) and the
-summary / report (T6, T7) all call the same ``derive_loop``. The record routes and the event writers T3 adds to this
-module go below a separate divider and are never called from the pure functions.
+summary / report (T6, T7) all call the same ``derive_loop``. The record routes, the run reads and the event writers
+live in ``jev_loop_store`` (which imports this module, never the reverse).
 
 Imports: the standard library, ``jev_loop_constants``, ``jev_constants`` (the M24 event names only through its
 ``EVENT_*`` attributes, never spelled out), the dependency-free M18 / M21 constant modules (closed job failure

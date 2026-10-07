@@ -22,21 +22,29 @@ Public API
                                               the exact standalone M18 / M21 job requests of one loop step
     ligand_call_key / model_call_key / dock_call_key, candidate_keys(created, models=None)
                                               their call keys under the pins recorded at creation
-    remaining_budget(snapshot), approval_pending(events)
+    remaining_budget(snapshot), approval_pending(events), loop_approvals(events, loop_id)
+    model_index(events)                       M21 call key -> output handle of a done M21 job with that key
+    load_results(view, created, approvals)    (results, models): validated stored M18 / M21 results by call key
+    load_proposals(view, created)             {handle: validated jev_loop_choice@1}: empty until T5 adds the object
     derive_inputs(view, created, *, budget, send_active, send_reservation=None)
                                               the ``jev_loops.derive_loop`` keyword inputs of one loop
+    validated_loop_record(record, inputs)     the spec 3.2 record check every read runs (``LoopRecordInvalid``)
     read_loop(view, loop_id, *, budget, send_active=False, send_reservation=None) -> jev_loops.LoopState
+    list_loops(view, *, budget, send_active=False) -> the list rows, newest first
     normalize_setup(branch, setup, source)    the pure setup check and its normalized value
     create(run, body, *, send_active)         ``POST /runs/{rid}/jev_loops`` -> ``jev_loop@1``
     engine_unavailable(branch, docking, model), capability(docking, model, *, tool_exposed, pins_match)
 
-Reading (T3-A scope)
---------------------
-``derive_inputs`` builds ``keys`` (from the created event's setup and pins: events only, no engine) and ``displays``
-(the validated stored set). At creation no approval, step, proposal or same-loop job can exist, so ``jobs``,
-``results`` and ``proposals`` are empty and every docking key is None; the read step that follows (T3-B) fills them
-from the same view (the job fold, ``docking_batch_inputs.published_m18_results``, an M21 call key -> model index,
-each handle validated) and passes ``models`` to ``candidate_keys``.
+Reading (spec 3.2: built and checked on every read, nothing written)
+--------------------------------------------------------------------
+Every read takes ONE ``LoopReadView`` (one event-log read) and hands that same view to every reader: the job fold
+(``JobQueue(view).list()``), ``docking_batch_inputs.published_m18_results`` and ``model_index`` (call key -> handle),
+``docking_bundle.validated_result`` / ``mutation_model_bundle.validated_result`` (a stored result that does not
+validate, or whose normalized input is not the loop request of that candidate, is left out and never counts as
+computed), the candidate set check. ``keys`` come from the created event's setup and pins (events only, no engine);
+a protein docking key exists once that candidate's model validates. ``proposals`` come from ``load_proposals``
+(empty until T5 stores ``jev_loop_choice@1``). The derived record then passes ``validated_loop_record``. Reads never
+take the run lock, never write an event or object and never start, submit or cancel a job.
 
 Creation (spec 3.1)
 -------------------
@@ -60,6 +68,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import math
 from collections.abc import Iterable, Mapping
 from typing import Any
 
@@ -80,6 +89,7 @@ from . import mutation_model_constants as MC
 from . import mutation_model_inputs as mi
 from .core.errors import FailureClass, ToolFailure
 from .core.handles import canonical_json
+from .jobs.queue import JobQueue
 from .ligand_ga_inputs import M18_KEYS
 
 # --- closed values of this layer ---------------------------------------------------------------------------------------
@@ -276,26 +286,293 @@ def approval_pending(events: Iterable[dict[str, Any]]) -> bool:
     return last == _APPROVAL_EVENTS[0]
 
 
+def loop_approvals(events: Iterable[dict[str, Any]], loop_id: Any) -> list[dict[str, Any]]:
+    """This loop's ``jev_loop_compute_approved`` payloads in event order, each checked."""
+    return [jev_loops.parse_compute_approved(event) for event in events
+            if event.get("type") == L.EVENT_COMPUTE_APPROVED and event.get("loop_id") == loop_id]
+
+
+def model_index(events: Iterable[dict[str, Any]]) -> dict[str, str]:
+    """M21 call key -> the output handle of the earliest done ``openmm_mutation_model_v1`` job with that key (the M21
+    counterpart of ``docking_batch_inputs.published_m18_results``; the caller still validates the handle)."""
+    events = list(events)
+    keys = {event["job"]["job_id"]: event["job"]["call_key"] for event in events
+            if event.get("type") == "job_submitted" and event["job"].get("protocol_id") == MC.PROTOCOL}
+    found: dict[str, str] = {}
+    for event in events:
+        if (event.get("type") == "job_terminal" and event.get("status") == "done" and event.get("job_id") in keys
+                and type(event.get("output_handles")) is list and len(event["output_handles"]) == 1):
+            found.setdefault(keys[event["job_id"]], event["output_handles"][0])
+    return found
+
+
+def _docking_summary(view: Any, handle: str, request: dict[str, Any]) -> dict[str, Any] | None:
+    """The derive summary of a stored M18 result that validates now and is the result of exactly ``request``."""
+    try:
+        content = docking_bundle.validated_result(view, handle)
+        expected = docking_inputs.input_sha256(docking_inputs.validate_arguments(request))
+    except (docking_bundle.DockingEvidenceError, ToolFailure):
+        return None
+    if content["input_sha256"] != expected:
+        return None
+    modes = content["modes"]
+    return {"result_handle": handle, "mode_count": len(modes),
+            "score_kcal_mol": modes[0]["score_kcal_mol"] if modes else None}
+
+
+def _model_ok(view: Any, handle: str, created: Mapping[str, Any], ref: Any) -> bool:
+    """A stored ``mutation_model@1`` that validates now and models exactly this loop's request for ``ref``."""
+    setup, source = created["setup"], created["pool"]["source"]["handle"]
+    try:
+        content = mutation_model_bundle.validated_result(view, handle)
+        expected = mi.normalize_arguments(model_request(setup, source, ref))
+    except (mutation_model_bundle.MutationEvidenceError, ToolFailure):
+        return False
+    return (content["candidate"]["candidate_set"] == source and content["candidate"]["candidate_index"] == ref and
+            _same(content["parameters"], {key: expected[key] for key in ("seed", "contact_cutoff_A",
+                                                                          "selection_policy", "hydrogen_policy")}))
+
+
+def load_results(view: Any, created: Mapping[str, Any],
+                 approvals: Iterable[Mapping[str, Any]]) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """(``results``, ``models``) for ``derive_loop`` / ``candidate_keys`` from one view: every call key of the pool
+    candidates (under the creation pins) and of this loop's approvals whose stored result is published (M18:
+    ``published_m18_results``; M21: ``model_index``), validates now and is the loop request of that candidate.
+    M18 summary {result_handle, mode_count, score_kcal_mol (first mode, unchanged) | None}; M21 {result_handle}.
+    ``models`` = {M21 call key under the creation pins: validated model handle}."""
+    events = view.read()
+    branch, setup = created["branch"], created["setup"]
+    source, pins, refs = created["pool"]["source"]["handle"], created["pins"], created["pool"]["candidates"]
+    approvals = list(approvals)
+    published = docking_batch_inputs.published_m18_results(events)
+    results: dict[str, dict[str, Any]] = {}
+    models: dict[str, str] = {}
+    if branch == "ligand":
+        wanted = [(ligand_call_key(setup, source, ref, pins["m18"]), ref) for ref in refs]
+        wanted += [(item["call_key"], item["candidate_ref"]) for item in approvals]
+        for key, ref in wanted:
+            if key in results or key not in published:
+                continue
+            summary = _docking_summary(view, published[key], ligand_request(setup, source, ref))
+            if summary is not None:
+                results[key] = summary
+        return results, models
+    stored_models = model_index(events)
+    model_of: dict[Any, str] = {}
+    base = [(model_call_key(setup, source, ref, pins["m21"]), ref) for ref in refs]
+    extra = [(item["call_key"], item["candidate_ref"]) for item in approvals if item["step"] == "model"]
+    for position, (key, ref) in enumerate(base + extra):
+        handle = stored_models.get(key)
+        if key in results or handle is None or not _model_ok(view, handle, created, ref):
+            continue
+        results[key] = {"result_handle": handle}
+        model_of.setdefault(ref, handle)
+        if position < len(base):
+            models[key] = handle
+    wanted = [(dock_call_key(setup, model_of[ref], pins["m18"]), ref) for ref in refs if ref in model_of]
+    wanted += [(item["call_key"], item["candidate_ref"]) for item in approvals if item["step"] == "dock"]
+    for key, ref in wanted:
+        if key in results or key not in published or ref not in model_of:
+            continue
+        summary = _docking_summary(view, published[key], dock_request(setup, model_of[ref]))
+        if summary is not None:
+            results[key] = summary
+    return results, models
+
+
+def load_proposals(view: Any, created: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """{handle: content} of this loop's stored ``jev_loop_choice@1`` proposals that validate now. T5 adds that object
+    (and its ``validated_loop_choice``); until then no such object can exist and this is empty."""
+    return {}
+
+
 def derive_inputs(view: Any, created: Mapping[str, Any], *, budget: Mapping[str, Any], send_active: bool,
                   send_reservation: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    """The keyword inputs of ``jev_loops.derive_loop`` for one loop from one read view. ``jobs``, ``results`` and
-    ``proposals`` are empty in this step (module docstring: creation), the docking keys None."""
-    branch = created["branch"]
-    refs = created["pool"]["candidates"]
+    """The keyword inputs of ``jev_loops.derive_loop`` for one loop from one read view (module docstring: reading).
+    ``send_active`` is the caller's (``api/app.py``), ``send_reservation`` the previewed loop projection's or None."""
+    events = view.read()
+    branch, refs = created["branch"], created["pool"]["candidates"]
     content = source_content(view, branch, created["pool"]["source"]["handle"])
-    return {"jobs": {}, "keys": candidate_keys(created), "results": {},
-            "displays": candidate_displays(branch, content, refs), "proposals": {}, "budget": dict(budget),
-            "send_reservation": None if send_reservation is None else dict(send_reservation),
-            "send_active": send_active, "approval_pending": approval_pending(view.read())}
+    results, models = load_results(view, created, loop_approvals(events, created["loop_id"]))
+    return {"jobs": JobQueue(view).list(), "keys": candidate_keys(created, models), "results": results,
+            "displays": candidate_displays(branch, content, refs), "proposals": load_proposals(view, created),
+            "budget": dict(budget), "send_reservation": None if send_reservation is None else dict(send_reservation),
+            "send_active": send_active, "approval_pending": approval_pending(events)}
+
+
+# --- the record check every read runs (spec 3.2) -----------------------------------------------------------------
+
+_ACTION_FOR_PHASE = {"awaiting_selection": "select", "awaiting_compute": "compute", "running": "wait_job",
+                     "awaiting_docking": "dock"}
+_ENDED_STATES = ("scored", "null_result", "failed", "not_run")
+
+
+def _need(condition: Any, message: str) -> None:
+    if not condition:
+        raise jev_loops.LoopRecordInvalid(message)
+
+
+def _count(value: Any) -> bool:
+    return type(value) is int and value >= 0
+
+
+def _score_ok(state: Any, score: Any) -> bool:
+    if state == "scored":
+        return type(score) in (int, float) and math.isfinite(score)
+    return score is None
+
+
+def _check_iterations(record: Mapping[str, Any], branch: str, refs: list[Any]) -> dict[int, dict[str, Any]]:
+    steps = L.BRANCH_STEPS[branch]
+    rows = record["iterations"]
+    _need(type(rows) is list, "iterations")
+    by_index: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        _need(type(row) is dict and set(row) == set(jev_loops.ITERATION_KEYS), "iteration keys")
+        index = row["index"]
+        _need(type(index) is int and 1 <= index <= L.MAX_ITERATION_CAP and index not in by_index
+              and all(index > other for other in by_index), "iteration numbers ascend")
+        _need(row["phase"] in L.PHASES and row["state"] in L.ITERATION_STATES, "iteration phase / state")
+        _need((row["phase"] == "done") == (row["state"] in _ENDED_STATES), "a finished iteration is done")
+        _need(row["decided_by"] in (*L.DECIDED_BY, None) and row["candidate_ref"] in (*refs, None),
+              "iteration decision / candidate")
+        _need(_score_ok(row["state"], row["score_kcal_mol"]), "iteration score")
+        _need(all(value is None or _count(value) for value in (row["list_position"], row["list_size"])),
+              "list position")
+        _need(all(type(row[name]) is list for name in ("approvals", "sends", "steps")), "iteration lists")
+        for item in row["approvals"]:
+            _need(type(item) is dict and set(item) == set(jev_loops.APPROVAL_KEYS) and item["step"] in steps
+                  and item["candidate_ref"] in refs and item["decided_by"] in L.DECIDED_BY, "approval row")
+        for item in row["sends"]:
+            _need(type(item) is dict and set(item) == set(jev_loops.SEND_KEYS) and type(item["late"]) is bool,
+                  "send row")
+        for item in row["steps"]:
+            _need(type(item) is dict and set(item) == set(jev_loops.STEP_KEYS) and item["step"] in steps
+                  and item["candidate_ref"] in refs and item["state"] in L.STEP_STATES
+                  and item["evaluation"] in (*L.EVALUATIONS, None), "step row")
+        by_index[index] = row
+    return by_index
+
+
+def _check_candidates(record: Mapping[str, Any], inputs: Mapping[str, Any], branch: str, refs: list[Any],
+                      iterations: Mapping[int, Mapping[str, Any]]) -> None:
+    results, keys = inputs["results"], inputs["keys"]
+    by_handle = {summary["result_handle"]: summary for summary in results.values()}
+    rows = record["candidates"]
+    _need(type(rows) is list and [row.get("ref") if type(row) is dict else None for row in rows] == refs,
+          "candidate rows follow the pool")
+    for row, item in zip(rows, record["pool"]["candidates"], strict=True):
+        _need(set(row) == set(jev_loops.CANDIDATE_KEYS) and _same(row["display"], item["display"]),
+              "candidate row keys / display")
+        state, evaluation, score, number = row["state"], row["evaluation"], row["score_kcal_mol"], row["iteration"]
+        _need(state in L.CANDIDATE_STATES and evaluation in (*L.EVALUATIONS, None) and _score_ok(state, score),
+              "candidate state / score")
+        if state in ("pending", "unavailable"):
+            _need(evaluation is None and number is None, "an uncomputed candidate has no evaluation")
+            continue
+        if evaluation == "reused":
+            summary = results.get(keys[row["ref"]]["ligand_dock" if branch == "ligand" else "dock"])
+            _need(number is None and summary is not None and "mode_count" in summary, "a reused stored result")
+        else:
+            iteration = iterations.get(number)
+            _need(evaluation == "computed" and iteration is not None and iteration["state"] == state
+                  and iteration["candidate_ref"] == row["ref"] and iteration["score_kcal_mol"] == score,
+                  "a computed candidate follows its iteration")
+            if state not in ("scored", "null_result"):
+                continue
+            handles = [step["result_handle"] for step in iteration["steps"] if step["result_handle"] is not None]
+            summary = by_handle.get(handles[-1]) if handles else None
+            _need(summary is not None and "mode_count" in summary, "a computed result")
+        _need(state == ("scored" if summary["mode_count"] >= 1 else "null_result") and (
+            score is None or _same(score, summary["score_kcal_mol"])), "the score is the stored first mode")
+
+
+def _check_current(record: Mapping[str, Any], branch: str) -> None:
+    current = record["current"]
+    _need(type(current) is dict and set(current) == set(jev_loops.CURRENT_KEYS), "current keys")
+    _need(current["action"] in L.ACTIONS and type(current["can_end"]) is bool, "current action")
+    for name in ("needs", "remaining"):
+        _need(type(current[name]) is dict and set(current[name]) == set(L.AXES), f"current {name}")
+    _need(set(current["blocked_axes"]) <= set(L.COMPUTE_AXES) and set(current["send_blocked_axes"]) <= set(L.SEND_AXES),
+          "blocked axes")
+    job = current["job"]
+    _need(job is None or (type(job) is dict and set(job) == set(jev_loops.JOB_KEYS)
+                          and job["step"] in L.BRANCH_STEPS[branch]
+                          and job["start_blocked"] in (L.START_BLOCKED, None)), "current job")
+    if record["status"] == "ended" or record["exhausted_reason"] is not None:
+        _need(current["iteration"] is None and current["phase"] is None and current["step"] is None and job is None
+              and current["action"] == ("none" if record["status"] == "ended" else "end"), "current at the end")
+        _need(record["status"] == "active" or current["can_end"] is False, "an ended loop cannot end")
+        return
+    _need(type(current["iteration"]) is int and current["iteration"] >= 1 and current["phase"] in _ACTION_FOR_PHASE
+          and current["action"] == _ACTION_FOR_PHASE[current["phase"]]
+          and current["step"] in L.BRANCH_STEPS[branch], "current iteration / phase / action")
+
+
+def validated_loop_record(record: Any, inputs: Mapping[str, Any]) -> dict[str, Any]:
+    """Spec 3.2, on every read: exact keys, closed sets, the pool's candidates in pool order with the pool notation,
+    ``effective_cap``, status / end reason / result handle, the seven counts, every score = the stored result's first
+    mode (reused: the candidate's stored result; computed: its iteration's result), the ``current`` shape and the
+    limitation sentences. ``inputs`` are the ``derive_inputs`` the record was derived from. ``LoopRecordInvalid``."""
+    _need(type(record) is dict and set(record) == set(jev_loops.RECORD_KEYS), "record keys")
+    _need(record["schema"] == L.LOOP_SCHEMA and L.is_loop_id(record["loop_id"]), "schema / loop_id")
+    branch, goal = record["branch"], record["goal"]
+    _need(branch in L.BRANCHES and goal in L.GOALS, "branch / goal")
+    _need(type(record["loop_seed"]) is int and L.MIN_LOOP_SEED <= record["loop_seed"] <= L.MAX_LOOP_SEED
+          and type(record["iteration_cap"]) is int
+          and L.MIN_ITERATION_CAP <= record["iteration_cap"] <= L.MAX_ITERATION_CAP, "seed / cap")
+    pool = record["pool"]
+    _need(type(pool) is dict and set(pool) == {"source", "structure", "filter", "candidates"}
+          and type(pool["candidates"]) is list
+          and all(type(item) is dict and set(item) == {"ref", "display"} for item in pool["candidates"]), "pool")
+    refs = [item["ref"] for item in pool["candidates"]]
+    _need(L.MIN_POOL <= len(refs) <= L.MAX_POOL and len(set(refs)) == len(refs)
+          and all(_ref_ok(branch, ref) for ref in refs) and set(inputs["keys"]) == set(refs), "pool candidates")
+    _need(record["effective_cap"] == min(record["iteration_cap"], len(refs)), "effective_cap")
+    _need(record["setup_sha256"] == hashlib.sha256(canonical_json(record["setup"])).hexdigest(), "setup_sha256")
+    status, end_reason = record["status"], record["end_reason"]
+    _need(status in L.LOOP_STATUSES and (end_reason is None) == (status == "active")
+          and end_reason in (*L.END_REASONS, None), "status / end_reason")
+    _need(record["exhausted_reason"] in (*L.EXHAUSTED_REASONS, None), "exhausted_reason")
+    _need((record["result_handle"] is not None) == (status == "ended" and end_reason != "run_cancelled")
+          and (record["result_handle"] is None or type(record["result_handle"]) is str), "result_handle")
+    iterations = _check_iterations(record, branch, refs)
+    _check_candidates(record, inputs, branch, refs, iterations)
+    counts, rows = record["counts"], record["candidates"]
+    _need(type(counts) is dict and set(counts) == set(jev_loops.COUNT_KEYS)
+          and all(_count(value) for value in counts.values()), "counts")
+    _need(counts["done"] <= counts["started"] <= record["effective_cap"]
+          and counts["jev_decided"] + counts["human_decided"] == counts["started"]
+          and counts["done"] == sum(row["phase"] == "done" for row in iterations.values())
+          and counts["reused_count"] == sum(row["evaluation"] == "reused" for row in rows), "counts agree")
+    _check_current(record, branch)
+    uncomputed = status == "ended" and any(row["state"] in ("pending", "unavailable") for row in rows)
+    _need(record["limitations"] == [L.STATEMENTS[name] for name in L.limitation_ids(
+        L.KIND_FOR_BRANCH[branch], goal, uncomputed_left=uncomputed)], "limitation sentences")
+    return record
+
+
+def _read(view: Any, created: Mapping[str, Any], *, budget: Mapping[str, Any], send_active: bool,
+          send_reservation: Mapping[str, Any] | None) -> jev_loops.LoopState:
+    inputs = derive_inputs(view, created, budget=budget, send_active=send_active, send_reservation=send_reservation)
+    state = jev_loops.derive_loop(created["loop_id"], view.read(), **inputs)
+    validated_loop_record(state.record, inputs)
+    return state
 
 
 def read_loop(view: Any, loop_id: Any, *, budget: Mapping[str, Any], send_active: bool = False,
               send_reservation: Mapping[str, Any] | None = None) -> jev_loops.LoopState:
-    """The derived state of one loop from one snapshot; ``jev_loops.LoopNotFound`` when the run has no such loop."""
-    events = view.read()
-    created = created_payload(events, loop_id)
-    inputs = derive_inputs(view, created, budget=budget, send_active=send_active, send_reservation=send_reservation)
-    return jev_loops.derive_loop(loop_id, events, **inputs)
+    """The derived, checked state of one loop from one snapshot; ``jev_loops.LoopNotFound`` when the run has no such
+    loop, ``jev_loops.LoopRecordInvalid`` when its events or the derived record break the closed shapes."""
+    return _read(view, created_payload(view.read(), loop_id), budget=budget, send_active=send_active,
+                 send_reservation=send_reservation)
+
+
+def list_loops(view: Any, *, budget: Mapping[str, Any], send_active: bool = False) -> list[dict[str, Any]]:
+    """``GET /runs/{rid}/jev_loops``: one row per loop of the run, newest first, each loop read and checked."""
+    states = [_read(view, created, budget=budget, send_active=send_active, send_reservation=None)
+              for created in _created_loops(view.read()).values()]
+    return jev_loops.list_rows(states)
 
 
 # --- the setup ------------------------------------------------------------------------------------------------------------

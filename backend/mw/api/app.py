@@ -28,6 +28,7 @@ from .. import (
     jev_constants,
     jev_loop_constants,
     jev_loop_store,
+    jev_loops,
     jev_projection,
     jev_sends,
     ligand_bundle,
@@ -2450,6 +2451,7 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
 
 # ----------------------------------------------------------------- M25 JEV design loops (record and creation)
 JEV_LOOP_BUSY_MESSAGE = "the run is busy with another operation; nothing was recorded"
+JEV_LOOP_INTERNAL_MESSAGE = "the JEV loop record could not be derived from this run's events; nothing was changed"
 
 
 def _jev_loop_capability(methods: dict[str, Any]) -> dict[str, Any]:
@@ -2487,8 +2489,46 @@ async def jev_loop_create(rid: str, request: Request) -> Any:
         if exc.detail.get("busy"):
             raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
         return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
     except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+# T6 adds the loop sub-path POST routes (/compute, /abandon_docking, /end) HERE, before the detail route below.
+
+
+def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:
+    """One loop read: no run lock, ONE event-log read (``LoopReadView``), nothing written. ``send_active`` is this
+    process's in-flight science send (the loop modules never import the send module); no preview reservation
+    exists before T4, so ``send_reservation`` is None."""
+    _only_query(request, set())
+    run = _run(rid)
+    view = jev_loop_store.LoopReadView(run)
+    budget = jev_loop_store.remaining_budget(run.budget_snapshot())
+    try:
+        return read(view, budget, jev_sends.send_active(rid))
+    except jev_loops.LoopNotFound as exc:
+        error = jev_loop_store.LoopRequestError("loop_not_found", "no such loop in this run", 404)
+        raise HTTPException(404, detail=error.detail) from exc
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a stored object of the loop that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+@app.get("/runs/{rid}/jev_loops")
+def jev_loop_list(rid: str, request: Request) -> list[dict[str, Any]]:
+    """This run's loops, newest first: one row each (spec 3.2), every loop derived and checked from one log read."""
+    return _jev_loop_read(rid, request, lambda view, budget, active: jev_loop_store.list_loops(
+        view, budget=budget, send_active=active))
+
+
+@app.get("/runs/{rid}/jev_loops/{loop_id}")
+def jev_loop_detail(rid: str, loop_id: str, request: Request) -> dict[str, Any]:
+    """``jev_loop@1`` of one loop (404 ``loop_not_found`` when this run has none with that id)."""
+    return _jev_loop_read(rid, request, lambda view, budget, active: jev_loop_store.read_loop(
+        view, loop_id, budget=budget, send_active=active).record)
 
 
 @app.get("/runs/{rid}/interface_sasa")
