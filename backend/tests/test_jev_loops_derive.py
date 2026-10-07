@@ -925,6 +925,43 @@ def test_send_status_ordinal_and_dispatch_count():
     assert derive(log, send_active=True).record["iterations"][0]["sends"][-1]["status"] == J.IN_PROGRESS
 
 
+def _mismatched(log, choice, edit):
+    content = copy.deepcopy(log.proposals[choice])
+    edit(content)
+    return {**log.proposals, choice: content}
+
+
+PROPOSAL_MISMATCH = {   # SYNTHETIC proposals that validate on their own but do not belong to the send naming them
+    "other_send_id": lambda c: c["send"].update(send_id=str(uuid.uuid4())),
+    "other_iteration": lambda c: c["loop"].update(iteration=2),
+    "other_send_ordinal": lambda c: c["loop"].update(send_ordinal=1),
+    "other_loop": lambda c: c["loop"].update(loop_id=OTHER),
+    "late_flipped": lambda c: c["arrival"].update(late=True, late_reason="consent_off"),
+    "list_position_outside": lambda c: c["answer"].update(list_position=9),
+    "unreadable": lambda c: c.pop("answer"),
+}
+
+
+@pytest.mark.parametrize("name", sorted(PROPOSAL_MISMATCH))
+def test_a_proposal_that_does_not_belong_to_its_send_is_dropped_never_an_error(name):
+    log = Log()
+    log.created()
+    send_id, choice = log.send(1, 0, ref=IDS[2])
+    good = derive(log)
+    assert good.record["iterations"][0]["phase"] == "awaiting_compute"
+    assert good.record["iterations"][0]["sends"][0]["proposal_handle"] == choice
+    state = JL.derive_loop(LOOP, log.events, jobs=[], keys={ref: {"ligand_dock": key(ref, "ligand_dock")}
+                                                            for ref in IDS[:4]},
+                           results={}, displays={ref: display("ligand", n, ref) for n, ref in enumerate(IDS[:4])},
+                           proposals=_mismatched(log, choice, PROPOSAL_MISMATCH[name]), budget=BUDGET)
+    iteration = state.record["iterations"][0]
+    assert iteration["phase"] == "awaiting_selection" and state.selections == {}
+    assert iteration["sends"] == [{"send_id": send_id, "status": "completed", "send_ordinal": 0,
+                                   "proposal_handle": None, "late": False}]
+    assert JL.compute_admission(state, iteration=1, proposal=choice,
+                                capability_available=True)["reason_code"] == "proposal_invalid"
+
+
 def test_sends_of_another_loop_or_the_m24_projection_are_not_this_loops():
     log = Log()
     log.created()

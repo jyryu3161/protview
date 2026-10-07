@@ -2450,9 +2450,9 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid science send record"}) from exc
     choice = None
     if record["status"] == "completed":
-        load = jev_sends.load_loop_choice if "loop" in record else jev_sends.load_choice   # M25 loop send
         try:
-            choice = load(view, record["choice_handle"])
+            choice = (jev_sends.load_loop_choice(view, record["choice_handle"], record["send_id"]) if "loop" in record
+                      else jev_sends.load_choice(view, record["choice_handle"]))   # M25: a loop send's own proposal
         except (jev_sends.ChoiceInvalid, jev_sends.JevSendError) as exc:
             raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                              "message": "the stored JEV choice does not validate"}) from exc

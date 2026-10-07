@@ -418,8 +418,9 @@ def load_proposals(view: Any, created: Mapping[str, Any]) -> dict[str, dict[str,
     ``jev_loop_projection.validated_loop_choice`` against its stored projection (this run's validated
     ``jev_loop_projection@1`` of this loop's pool) and the pool's candidate set (validated once, only when such an
     object exists). Anything else (an M24 ``jev_choice@1``, another loop's proposal, an object that does not read back
-    or validate) is left out, so a completed send without a validating proposal has no selection. A late proposal
-    that validates is kept (the derivation never takes it as a selection). Writes nothing."""
+    or validate, or that does not belong to its own send: ``jev_loops.proposal_matches_send``) is left out, so a
+    completed send without a validating proposal of its own has no selection. A late proposal that validates is kept
+    (the derivation never takes it as a selection). Writes nothing."""
     loop_id, branch, pool = created["loop_id"], created["branch"], created["pool"]
     handles = dict.fromkeys(event["handle"] for event in view.read() if event.get("type") == "object_created"
                             and event.get("kind") == L.CHOICE_KIND and event.get("schema") == L.CHOICE_SCHEMA)
@@ -438,6 +439,8 @@ def load_proposals(view: Any, created: Mapping[str, Any]) -> dict[str, dict[str,
                     and _same(projection["order"]["loop_seed"], created["loop_seed"])
                     and _same(projection["source"], pool["source"]) and _same(projection["structure"], pool["structure"])):
                 continue
+            if not jev_loops.proposal_matches_send(content, handle, view.read()):
+                continue                         # a proposal counts only for its own send (T5 review ruling)
             if source is None:
                 source = source_content(view, branch, pool["source"]["handle"])
             found[handle] = LP.validated_loop_choice(content, projection, source)

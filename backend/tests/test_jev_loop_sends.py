@@ -640,7 +640,7 @@ def test_the_send_detail_refuses_a_tampered_loop_proposal(world):
         edit(tampered)
         forged_choice = run.store.put(L.CHOICE_KIND, L.CHOICE_SCHEMA, tampered).handle   # fault injection
         with pytest.raises(S.ChoiceInvalid):
-            S.load_loop_choice(run, forged_choice)
+            S.load_loop_choice(run, forged_choice, record["send_id"])
         # LABELLED SYNTHETIC send events naming the tampered object as their proposal
         send_id, audit_id = new_send_id(), f"eg_{uuid.uuid4().hex}"
         run.events.append(J.EVENT_APPROVED, send_id=send_id, projection_handle=handle,
@@ -654,7 +654,127 @@ def test_the_send_detail_refuses_a_tampered_loop_proposal(world):
         assert response.status_code == 422 and response.json()["detail"]["error"] == "method_evidence_invalid"
     with pytest.raises(S.JevSendError):                    # the M24 loader keeps refusing a loop proposal
         S.load_choice(run, record["choice_handle"])
-    assert S.load_loop_choice(run, record["choice_handle"]) == good
+    assert S.load_loop_choice(run, record["choice_handle"], record["send_id"]) == good
+
+
+# ---------------------------------------------------------------- a proposal counts only for its own send
+
+
+def synthetic_send(world, projection, choice, *, send_id, audit_id, body_sha256=None, late_reason=None) -> None:
+    """LABELLED SYNTHETIC send events (as ``run_send`` / ``_finish`` write them) whose outcome names ``choice``."""
+    run = world["run"]
+    content = run.store.load(projection)
+    run.events.append(J.EVENT_APPROVED, send_id=send_id, projection_handle=projection,
+                      body_sha256=body_sha256 or content["body_sha256"], question_id=content["question"]["id"],
+                      source_handle=content["source"]["handle"], selection_count=len(content["selection"]),
+                      approved_by=J.APPROVED_BY)
+    run.events.append(J.EVENT_DISPATCH, send_id=send_id, audit_id=audit_id)
+    if late_reason is not None:
+        S.set_consent(run, False)
+    run.events.append(J.EVENT_OUTCOME, send_id=send_id, status="completed", reason_code=None, audit_id=audit_id,
+                      requested_model=J.REQUEST_MODEL, served_model=J.SERVED_SNAPSHOT, choice_handle=choice,
+                      usage=SETTLED_USAGE, late=late_reason is not None, late_reason=late_reason)
+
+
+def stored_choice(world, projection, *, ref_position=None, send_id, audit_id, late_reason=None) -> str:
+    """A proposal made by the product builder for ``projection`` (fault injection: stored without a send)."""
+    run = world["run"]
+    content = run.store.load(projection)
+    pending = LP.criteria_aliases(content)
+    alias = pending[0] if ref_position is None else next(
+        item["alias"] for item in content["selection"] if item["ref"] == world["indexes"][ref_position])
+    choice = LP.build_loop_choice(projection, content, S.source_content(run, content), send_id=send_id,
+                                  audit_id=audit_id, answer={"choice_alias": alias, "confidence": None,
+                                                             "probabilities": None},
+                                  served_model=J.SERVED_SNAPSHOT, usage=SETTLED_USAGE,
+                                  late=late_reason is not None, late_reason=late_reason)
+    return run.store.put(L.CHOICE_KIND, L.CHOICE_SCHEMA, choice).handle
+
+
+def _projection_swap(world, loop_id):
+    """P1 lists B as not yet computed; B's same-key job is then cancelled outside the loop; P2 (same iteration and
+    send ordinal) leaves B out. The send of P2 names a proposal made from P1 that chose B."""
+    run = world["run"]
+    p1 = project(world, loop_id)
+    ref = world["indexes"][B]
+    setup = jev_loop_store.created_payload(events(run), loop_id)["setup"]
+    queue = JobQueue(run)
+    job = queue.submit(MC.PROTOCOL, jev_loop_store.model_request(setup, world["set"], ref), timeout_s=120)
+    assert queue.request_cancel(job["job_id"])["job"]["status"] == "cancelled"
+    p2 = project(world, loop_id)
+    assert p2 != p1 and ref not in {item["ref"] for item in run.store.load(p2)["selection"]}
+    send_id, audit_id = new_send_id(), f"eg_{uuid.uuid4().hex}"
+    choice = stored_choice(world, p1, ref_position=B, send_id=send_id, audit_id=audit_id)
+    synthetic_send(world, p2, choice, send_id=send_id, audit_id=audit_id)
+    return send_id, choice
+
+
+def _other_send_id(world, loop_id):
+    handle = project(world, loop_id)
+    send_id, audit_id = new_send_id(), f"eg_{uuid.uuid4().hex}"
+    choice = stored_choice(world, handle, send_id=new_send_id(), audit_id=audit_id)
+    synthetic_send(world, handle, choice, send_id=send_id, audit_id=audit_id)
+    return send_id, choice
+
+
+def _other_late_reason(world, loop_id):
+    handle = project(world, loop_id)
+    send_id, audit_id = new_send_id(), f"eg_{uuid.uuid4().hex}"
+    choice = stored_choice(world, handle, send_id=send_id, audit_id=audit_id, late_reason="run_cancelled")
+    synthetic_send(world, handle, choice, send_id=send_id, audit_id=audit_id, late_reason="consent_off")
+    return send_id, choice
+
+
+def _other_body(world, loop_id):
+    handle = project(world, loop_id)
+    send_id, audit_id = new_send_id(), f"eg_{uuid.uuid4().hex}"
+    choice = stored_choice(world, handle, send_id=send_id, audit_id=audit_id)
+    synthetic_send(world, handle, choice, send_id=send_id, audit_id=audit_id, body_sha256="0" * 64)
+    return send_id, choice
+
+
+def _matching(world, loop_id):
+    handle = project(world, loop_id)
+    send_id, audit_id = new_send_id(), f"eg_{uuid.uuid4().hex}"
+    choice = stored_choice(world, handle, send_id=send_id, audit_id=audit_id)
+    synthetic_send(world, handle, choice, send_id=send_id, audit_id=audit_id)
+    return send_id, choice
+
+
+SEND_MISMATCH = {"projection_swap": _projection_swap, "other_send_id": _other_send_id,
+                 "other_late_reason": _other_late_reason, "other_approved_body": _other_body}
+
+
+@pytest.mark.parametrize("name", sorted(SEND_MISMATCH))
+def test_a_proposal_that_does_not_belong_to_its_send_is_no_selection_and_its_detail_is_refused(name, world):
+    run = world["run"]
+    loop_id = make_loop(world)
+    send_id, choice = SEND_MISMATCH[name](world, loop_id)
+    created = jev_loop_store.created_payload(events(run), loop_id)
+    assert choice not in jev_loop_store.load_proposals(jev_loop_store.LoopReadView(run), created)
+    response = world["client"].get(f"/runs/{RID}/jev_loops/{loop_id}")
+    assert response.status_code == 200, response.text      # a forged input never blocks the loop read
+    iteration = response.json()["iterations"][0]
+    assert iteration["phase"] == "awaiting_selection"
+    assert [(row["send_id"], row["status"], row["proposal_handle"]) for row in iteration["sends"]] == [
+        (send_id, "completed", None)]
+    detail = world["client"].get(f"/runs/{RID}/jev/sends/{send_id}")
+    assert detail.status_code == 422 and detail.json()["detail"]["error"] == "method_evidence_invalid"
+    with pytest.raises(S.ChoiceInvalid):
+        S.load_loop_choice(run, choice, send_id)
+
+
+def test_a_proposal_that_belongs_to_its_send_is_still_the_selection(world):
+    run = world["run"]
+    loop_id = make_loop(world)
+    send_id, choice = _matching(world, loop_id)
+    record = world["client"].get(f"/runs/{RID}/jev_loops/{loop_id}").json()
+    assert record["iterations"][0]["phase"] == "awaiting_compute"
+    assert record["iterations"][0]["sends"][0]["proposal_handle"] == choice
+    detail = world["client"].get(f"/runs/{RID}/jev/sends/{send_id}")
+    assert detail.status_code == 200 and detail.json()["choice"] == run.store.load(choice)
+    with pytest.raises(S.ChoiceInvalid):                    # the right proposal, asked for another send
+        S.load_loop_choice(run, choice, new_send_id())
 
 
 # ---------------------------------------------------------------- source structure

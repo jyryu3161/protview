@@ -609,7 +609,9 @@ def test_a_completed_send_whose_stored_proposal_does_not_validate_is_no_selectio
     assert proposals(run) == {}
     iteration = read(run).record["iterations"][0]
     assert iteration["phase"] == "awaiting_selection"
-    assert iteration["sends"][0]["status"] == "completed" and iteration["sends"][0]["proposal_handle"] == handle
+    # T5 review ruling: a send row names its proposal only when that proposal validates and belongs to the send
+    assert iteration["sends"][0]["status"] == "completed" and iteration["sends"][0]["proposal_handle"] is None
+    assert handle != iteration["sends"][0]["proposal_handle"]
 
 
 def test_only_this_loops_validated_loop_proposals_are_read(world):

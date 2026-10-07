@@ -36,9 +36,10 @@ results           {call_key: summary} of the results that are published AND vali
 displays          {ref: display} for every pool candidate, rebuilt from the stored candidate set (ligand {"smiles"},
                   mutation {"residue" (7 fields), "from", "to"}).
 proposals         {choice_handle: content} of the ``jev_loop_choice@1`` objects of this run that validate now
-                  (``validated_loop_choice``). Read: loop{loop_id, iteration, send_ordinal}, send.send_id,
-                  answer{local_ref, list_position, list_size}, arrival.late. A completed send whose proposal is absent
-                  is no proposal (never a selection).
+                  (``validated_loop_choice``) and belong to their send (``proposal_matches_send``). Read:
+                  loop{loop_id, iteration, send_ordinal}, send.send_id, answer{local_ref, list_position, list_size},
+                  arrival.late. A completed send whose proposal is absent, or names another send / loop reference /
+                  arrival, is no proposal (never a selection; its send row's ``proposal_handle`` is null).
 budget            The run's remaining amounts {"expensive_units": int, "wall_clock_s": number, "external_tokens": int,
                   "usd": number} (limit - used of the caller's snapshot).
 send_reservation  {"external_tokens": int, "usd": number} of the previewed loop projection, or None (no preview yet).
@@ -303,6 +304,33 @@ def late_arrival(events: list[dict[str, Any]], send_id: Any) -> tuple[bool, str 
     return False, None
 
 
+def proposal_matches_send(content: Any, handle: Any, events: list[dict[str, Any]], send_id: Any = None) -> bool:
+    """A stored ``jev_loop_choice@1`` counts only for its own send (T5 review ruling): the first outcome of
+    ``send.send_id`` is completed and names ``handle`` (with the proposal's audit id), the first approval of that
+    send names the proposal's ``projection.handle`` and ``projection.body_sha256``, and ``arrival`` {late,
+    late_reason} equals that outcome's and the event-order judgment before it (``late_arrival``). ``send_id``, when
+    given, must be the proposal's send. Never raises: anything unreadable is no match."""
+    try:
+        own, audit_id = content["send"]["send_id"], content["send"]["audit_id"]
+        projection, arrival = content["projection"], (content["arrival"]["late"], content["arrival"]["late_reason"])
+        if send_id is not None and own != send_id:
+            return False
+        approval = next((event for event in events if event.get("type") == J.EVENT_APPROVED
+                         and event.get("send_id") == own), None)
+        outcome = next((event for event in events if event.get("type") == J.EVENT_OUTCOME
+                        and event.get("send_id") == own), None)
+        if approval is None or outcome is None or type(arrival[0]) is not bool:
+            return False
+        before = [event for event in events if event["seq"] < outcome["seq"]]
+        return (outcome.get("status") == _COMPLETED and outcome.get("choice_handle") == handle
+                and outcome.get("audit_id") == audit_id
+                and approval.get("projection_handle") == projection["handle"]
+                and approval.get("body_sha256") == projection["body_sha256"]
+                and arrival == (outcome.get("late"), outcome.get("late_reason")) == late_arrival(before, own))
+    except (KeyError, TypeError, AttributeError):
+        return False
+
+
 def loop_projection_refs(events: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """{projection handle: {loop_id, iteration, send_ordinal}} decoded from each stored loop projection's event."""
     refs: dict[str, dict[str, Any]] = {}
@@ -534,31 +562,41 @@ def _sends(events: list[dict[str, Any]], loop_id: str, send_active: bool) -> lis
     return sends
 
 
-def _proposal_ref(content: Any, kind: str, send: dict[str, Any], loop_id: str) -> tuple[Any, int, int, bool]:
+def _proposal_ref(content: Any, kind: str, send: dict[str, Any], loop_id: str) -> tuple[Any, int, int, bool] | None:
+    """The proposal's chosen candidate, list place and lateness, or None when it is not readable or does not belong
+    to this send (another loop reference, send or arrival): such a proposal is dropped, never an error."""
     try:
         loop, answer, late = content["loop"], content["answer"], content["arrival"]["late"]
         local = answer["local_ref"]
         ref = local["candidate_id"] if kind == "ligand" else local["candidate_index"]
         position, size, send_id = answer["list_position"], answer["list_size"], content["send"]["send_id"]
-    except (KeyError, TypeError) as exc:
-        raise LoopRecordInvalid("a loop proposal is not readable") from exc
-    _need(loop == {"loop_id": loop_id, "iteration": send["iteration"], "send_ordinal": send["send_ordinal"]}
-          and send_id == send["send_id"] and late is send["late"], "a proposal that does not belong to its send")
-    _need(_is_ref(ref, "ligand" if kind == "ligand" else "protein") and _is_int(size, 1)
-          and _is_int(position, 1, size), "a proposal's chosen candidate and list position")
+    except (KeyError, TypeError):
+        return None
+    if not (loop == {"loop_id": loop_id, "iteration": send["iteration"], "send_ordinal": send["send_ordinal"]}
+            and send_id == send["send_id"] and late is send["late"]):
+        return None
+    if not (_is_ref(ref, "ligand" if kind == "ligand" else "protein") and _is_int(size, 1)
+            and _is_int(position, 1, size)):
+        return None
     return ref, position, size, late
 
 
 def _proposals(sends: list[dict[str, Any]], proposals: Mapping[str, Any], kind: str, loop_id: str) -> tuple[Any, ...]:
+    """Selections, late proposals and proposal info from the completed sends whose proposal is present and belongs
+    to them; every other send row's ``proposal_handle`` becomes null (T5 review ruling)."""
     selections: dict[int, str] = {}
     late: dict[int, set[str]] = {}
     info: dict[str, dict[str, Any]] = {}
+    matched: set[str] = set()
     answered = [send for send in sends if send["outcome"] is not None and send["status"] == _COMPLETED]
     for send in sorted(answered, key=lambda item: item["outcome"]["seq"]):
         handle = send["proposal_handle"]
-        if handle is None or handle not in proposals:
+        found = None if handle is None or handle not in proposals else _proposal_ref(proposals[handle], kind, send,
+                                                                                     loop_id)
+        if found is None:
             continue
-        ref, position, size, is_late = _proposal_ref(proposals[handle], kind, send, loop_id)
+        matched.add(send["send_id"])
+        ref, position, size, is_late = found
         number = send["iteration"]
         info[handle] = {"ref": ref, "list_position": position, "list_size": size, "iteration": number,
                         "seq": send["outcome"]["seq"]}
@@ -566,6 +604,9 @@ def _proposals(sends: list[dict[str, Any]], proposals: Mapping[str, Any], kind: 
             late.setdefault(number, set()).add(handle)
         elif number not in selections:
             selections[number] = handle
+    for send in sends:
+        if send["send_id"] not in matched:
+            send["proposal_handle"] = None
     return selections, {number: frozenset(handles) for number, handles in late.items()}, info
 
 

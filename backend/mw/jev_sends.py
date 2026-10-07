@@ -35,7 +35,7 @@ Public API:
     source_content(run, projection) -> the projection's stored candidate set content (ChoiceInvalid if unusable)
     build_choice(...) -> jev_choice@1 content;  validated_choice(content, projection, source) -> content
     load_choice(run, handle) -> validated jev_choice@1 content
-    load_loop_choice(run, handle) -> validated jev_loop_choice@1 content (M25; ChoiceInvalid if it does not validate)
+    load_loop_choice(run, handle, send_id) -> validated jev_loop_choice@1 of that send (M25; else ChoiceInvalid)
 """
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ from typing import Any
 from . import jev_constants as J
 from . import jev_loop_constants as L
 from . import jev_loop_projection as LP
-from . import jev_loop_store, ligand_bundle
+from . import jev_loop_store, jev_loops, ligand_bundle
 from . import jev_projection as P
 from . import mutation_candidates as mc
 from .core.handles import canonical_json
@@ -647,9 +647,10 @@ def load_choice(run: Any, handle: Any) -> dict[str, Any]:
     return validated_choice(content, projection, source_content(run, projection))
 
 
-def load_loop_choice(run: Any, handle: Any) -> dict[str, Any]:
-    """M25: this run's stored ``jev_loop_choice@1``, re-validated against its ``jev_loop_projection@1`` and candidate
-    set on every read (``jev_loop_projection.validated_loop_choice``); ``ChoiceInvalid`` as for ``load_choice``."""
+def load_loop_choice(run: Any, handle: Any, send_id: Any) -> dict[str, Any]:
+    """M25: this run's stored ``jev_loop_choice@1`` of send ``send_id``, re-validated on every read against its
+    ``jev_loop_projection@1`` and candidate set (``jev_loop_projection.validated_loop_choice``) and against that send's
+    approval and outcome events (``jev_loops.proposal_matches_send``); ``ChoiceInvalid`` as for ``load_choice``."""
     if type(handle) is not str:
         raise JevSendError("input_invalid", "choice must be a handle string", 422)
     try:
@@ -663,6 +664,8 @@ def load_loop_choice(run: Any, handle: Any) -> dict[str, Any]:
         projection = load_projection(run, content["projection"]["handle"], accept_loop=True)
         if projection["schema"] != L.PROJECTION_SCHEMA:
             raise ValueError("a loop proposal names a loop projection")
+        if not jev_loops.proposal_matches_send(content, handle, list(run.events.read()), send_id):
+            raise ValueError("the loop proposal does not belong to this send")
         return LP.validated_loop_choice(content, projection, source_content(run, projection))
     except (ValueError, KeyError, TypeError, JevSendError) as exc:   # LoopChoiceInvalid is a ValueError
         raise ChoiceInvalid("the loop proposal does not validate against its projection and candidate set") from exc
