@@ -23,8 +23,9 @@ Control folder (inside the QA root, given by ``--control``):
   server.json        written at start: which gates and defaults were replaced and the runs folder.
 
 Scripts (spec 12, fixture phase): good (the first ``criteria`` key, i.e. the first not-yet-computed alias in the sent
-order, with a confidence and per-criteria probabilities in the sent order), computed_alias (the first alias of the
-wire's ``computed`` list: the gate refuses it, ``response_invalid``; no computed alias = transport error),
+order, with a confidence and per-criteria probabilities in the sent order), good_second (the same reply naming the
+second ``criteria`` key, list position 2/m; fewer than two criteria keys = transport error), computed_alias (the first
+alias of the wire's ``computed`` list: the gate refuses it, ``response_invalid``; no computed alias = transport error),
 http_500 (HTTP 500 without usage), slow (waits for ``release`` up to 20 s, then answers as ``good``), no_usage (a valid
 answer without usage), model_mismatch (another served model). Usage values are small labeled fixture numbers.
 
@@ -55,7 +56,7 @@ from mw.egress.gate import EgressGate
 SENTINEL = "m25-loop-fixture-sentinel-placeholder-not-a-key"
 SERVED = "typesafe/jev-1.13-20260917"
 OTHER_MODEL = "fixture/unexpected-model-snapshot"
-SCRIPTS = ("good", "computed_alias", "http_500", "slow", "no_usage", "model_mismatch")
+SCRIPTS = ("good", "good_second", "computed_alias", "http_500", "slow", "no_usage", "model_mismatch")
 CONFIDENCE = 0.62
 SLOW_WAIT_S = 20.0
 
@@ -78,6 +79,8 @@ def reply(script: str, criteria: list[str], computed: list[str], body_bytes: int
         return 500, {"error": {"code": 500, "message": "fixture provider error"}}
     answer: dict = {"type": "choice", "choice": criteria[0], "confidence": CONFIDENCE,
                     "probabilities": probabilities(criteria)}
+    if script == "good_second":
+        answer["choice"] = criteria[1]       # the second not-yet-computed alias in the sent order (list position 2/m)
     if script == "computed_alias":
         answer["choice"] = computed[0]       # an alias that was sent but is not in criteria (already computed)
     payload: dict = {"model": OTHER_MODEL if script == "model_mismatch" else SERVED,
@@ -149,10 +152,11 @@ class Controller:
                        criteria=criteria, computed=computed)
         except (ValueError, KeyError, TypeError):
             aliases, criteria, computed = [], [], []
-        if script is None or not criteria or (script == "computed_alias" and not computed):
+        if (script is None or not criteria or (script == "computed_alias" and not computed)
+                or (script == "good_second" and len(criteria) < 2)):
             row.update(status=None, outcome="transport_error")
             self.record(row)
-            raise httpx.ConnectError("fixture: no valid script, no criteria or no computed alias for the script")
+            raise httpx.ConnectError("fixture: no valid script, no criteria or no alias the script names")
         if script == "slow":
             inflight = self.control / "inflight.json"
             inflight.write_text(json.dumps({"n": self.calls, "script": script}) + "\n")

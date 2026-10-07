@@ -25,16 +25,17 @@
 //   fixture  backend = backend/tests/offscreen_jev_loop_fixture/server.py (SCIENCE_GATE over a scripted
 //            httpx.MockTransport; no provider socket; no credential read but the sentinel placeholder). Run L (ligand):
 //            tab entry, create field reasons, loop A (exploit, pool 5, cap 3): consent off block, preview identity and
-//            order oracle, confirmation, model mismatch (then ordinal_mismatch), good (JEV card, list position, folded
-//            values), compute with the JEV proposal (real qvina), computed alias (response_invalid), late reply after
-//            consent off, human
-//            designation of the late choice, a designation with no send, the candidate table orders, end, summary,
-//            report; loop B (explore, a stored result reused) with no usage (egress stop); loop C (the stop refuses the
+//            order oracle, confirmation, model mismatch (then ordinal_mismatch), good_second (JEV card at list position
+//            2/m, folded values), compute with that JEV proposal on that candidate (real qvina), computed alias
+//            (response_invalid), late reply after consent off, human designation of the late choice, a designation with
+//            no send, the candidate table orders, end, summary, report; loop B (explore, a stored result reused) with no
+//            usage (egress stop), its compute and the table orders with the reused row; loop C (the stop refuses the
 //            send); send cap display; 지식·보고서 loop rows; other tabs. Run P (protein, 1UBQ): tab entry, the 21st
 //            candidate refused, create field reasons, the 1MQ4 pool refused by the server (setup_invalid,
-//            openmm_preflight_failed), loop (explore, pool 3, cap 2): good send, compute with the first expensive-call
-//            approval (POST /jobs/approve) and job start, end refused while the job waits and while docking waits, real
-//            PDBFixer/OpenMM model and qvina docking, a human designation then docking abandoned, end, summary, report;
+//            openmm_preflight_failed), loop (explore, pool 3, cap 2): good_second send (list position 2/3), compute on
+//            that candidate with the first expensive-call approval (POST /jobs/approve) and job start, end refused while
+//            the job waits and while docking waits, real PDBFixer/OpenMM model and qvina docking, a human designation
+//            then docking abandoned, the table orders with the not_run row, end, summary, report;
 //            a second loop (exploit) reusing the computed candidate and HTTP 500 (a reply without usage stops the run's
 //            egress, so it is the run's last send); the M21 pair table's loop docking mark, 지식·보고서 loop rows, other
 //            tabs.
@@ -48,13 +49,18 @@
 //            reported; the shuffle entry records its first send beside the earlier loop's (same pool and goal, other loop
 //            seed): two orders and two chosen list positions as observed values only. Against the product backend (no
 //            --control) this sends to JEV and is run only by the runner's calibrate/live phases (its ledger and count);
-//            with --control it is the rehearsal of the same path against the fixture server (script good, no call).
+//            with --control it is the rehearsal of the same path against the fixture server (scripts good and
+//            good_second by turns, no call).
+//   --control is accepted only with --backend-pid: the control folder's server.json must name that pid, the process must
+//   be alive and be the one listening on the backend port 8000 (next.config.mjs proxies /api there); an old control
+//   folder (another server, or the product backend now on the port) is refused before anything starts.
 //            A send that does not complete, or a stopped egress, ends the plan (no retry, no new run); its row is kept.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { launchOffscreen, capture } = require("./driver.cjs");
+const { execFileSync } = require("node:child_process");
 const { halfUp, forbiddenWords: m24ForbiddenWords, J, U } = require("./jev-flow.cjs");
 
 const REPO = path.resolve(__dirname, "../../..");
@@ -75,6 +81,8 @@ const APPROVAL_NOTICE = "승인을 기록했습니다. 작업 시작을 누르�
 const PAIR_LOOP_TEXT = "루프 도킹(야생형 없음)";
 const LOOP_REPORT_KIND = "JEV 루프 보고서";
 const PROCESS_NOTE = "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_loop_fixture/server.py)";
+const BACKEND_PORT = 8000;             // the runners' backend port (frontend/next.config.mjs proxies /api to it)
+const CONFIRMING_TEXT = "루프 기록이 이 전송의 완료를 아직 보이지 않습니다. 기록을 다시 읽어 이 바퀴의 선택인지 확인하는 중입니다.";
 // spec 9.3 verbatim (independent of the product constants)
 const LJ = {
   LJ1: "JEV 루프는 사람이 바퀴마다 보낼 내용과 계산 시작을 승인하며, JEV 판정은 외부 모델이 계산 대기열에 먼저 둘 후보로 " +
@@ -158,7 +166,7 @@ const masked = text => (text ?? "").replace(/\d+(?:[.,]\d+)*/g, "#").replace(/[ 
 
 function options(argv) {
   const value = { url: "http://127.0.0.1:3000", artifacts: null, mode: null, "runs-dir": null, control: null, setup: null,
-    plan: null };
+    plan: null, "backend-pid": null };
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
     if (!key.startsWith("--")) throw new Error(`Unknown argument ${key}`);
@@ -166,12 +174,16 @@ function options(argv) {
     if (!(name in value)) throw new Error(`Unknown argument ${key}`);
     value[name] = argv[++i];
   }
+  const pid = value["backend-pid"] === null ? null : Number(value["backend-pid"]);
   if (!value.artifacts || !MODES.includes(value.mode) || !value["runs-dir"] || !value.setup ||
-      (value.mode === "fixture" && !value.control) || (value.mode !== "fixture" && !value.plan))
+      (value.mode === "fixture" && !value.control) || (value.mode !== "fixture" && !value.plan) ||
+      (!!value.control !== (pid !== null)) || (pid !== null && !(Number.isInteger(pid) && pid > 0)))
     throw new Error(`Usage: jev-loop-flow.cjs --mode ${MODES.join("|")} --artifacts <dir> --runs-dir <backend MW_RUNS_DIR> ` +
-      "--setup <json> [--control <fixture control dir> (fixture: required; calibrate/live: the rehearsal against the " +
-      "fixture server)] [--plan <json> (calibrate, live)] [--url http://127.0.0.1:3000]. The setup and plan files are " +
-      "written by scripts/m25_offscreen_acceptance.py, which also starts the services and counts the real calls.");
+      "--setup <json> [--control <fixture control dir> --backend-pid <pid of the fixture server just started> " +
+      "(fixture: required; calibrate/live: the rehearsal against the fixture server)] [--plan <json> (calibrate, " +
+      "live)] [--url http://127.0.0.1:3000]. The setup and plan files are written by " +
+      "scripts/m25_offscreen_acceptance.py, which also starts the services and counts the real calls.");
+  value["backend-pid"] = pid;
   const url = new URL(value.url);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) || !["http:", "https:"].includes(url.protocol))
     throw new Error("Only a loopback service is permitted");
@@ -261,6 +273,31 @@ function credentialReads(control) {
 }
 function writeScript(control, script) {
   fs.writeFileSync(path.join(control, "script.json"), JSON.stringify({ script }) + "\n");
+}
+/** Pids listening on the backend port (lsof; none = []). */
+function backendListeners(port = BACKEND_PORT) {
+  try {
+    return execFileSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], { encoding: "utf8" })
+      .split(/\s+/).filter(Boolean).map(Number);
+  } catch { return []; }
+}
+/** The control folder's server.json is trusted only when it names the backend the runner just started (--backend-pid),
+ * that process is alive and it is the only one listening on the backend port; otherwise (an old control folder, another
+ * server or the product backend now on the port) nothing starts. */
+function fixtureServer(controlDir, runsDir, backendPid, listeners = backendListeners) {
+  const file = path.join(controlDir, "server.json");
+  assert.ok(fs.existsSync(file), `no ${file}: not a fixture control folder`);
+  const server = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.equal(server.fixture, true, "the backend is not the fixture server");
+  assert.equal(server.schema, "m25_jev_loop_fixture_server@1");
+  assert.equal(server.runsDir, runsDir, "server.json names another runs folder");
+  assert.ok(Number.isInteger(backendPid) && backendPid > 0, "--backend-pid is required with --control");
+  assert.equal(server.pid, backendPid, "server.json does not name the backend just started (an old control folder?)");
+  let alive = true;
+  try { process.kill(backendPid, 0); } catch { alive = false; }
+  assert.ok(alive, `the backend ${backendPid} is not running`);
+  assert.deepEqual(listeners(), [backendPid], `the process listening on ${BACKEND_PORT} is not the fixture server`);
+  return server;
 }
 async function waitFor(page, probe, label, timeout = 60000) {
   const deadline = Date.now() + timeout;
@@ -421,7 +458,9 @@ async function chooseRun(page, run) {
   await waitFor(page, async () => await globalRun(page) === run, `run ${run} selected`, 30000);
   return waitFor(page, async () => {
     const value = await viewerSnapshot(page);
-    return value?.ready === true && value.sourceHandle && value.catalogReady === true ? value : null;
+    // the viewer binding (its session) arrives after the source is ready: wait for it as well, so a later comparison
+    // of the session is not against the moment before the binding existed
+    return value?.ready === true && value.sourceHandle && value.catalogReady === true && value.sessionId ? value : null;
   }, `run ${run} viewer ready`, 90000);
 }
 async function globalLine(page) {
@@ -806,18 +845,29 @@ function serverBytes(runsDir, run, sendId, shownBody, bodySha, calls) {
   BYTE_LOG.push(row);
   return row;
 }
+/** The proposal card of a completed send. Until the loop record shows the send completed, the area shows only the
+ * confirming line (no card, number or selection judgment) and keeps reading the record: that line is recorded when seen
+ * (it can be gone before the first look), then the card is awaited. */
 async function readCard(page, branch, sendId) {
   const card = lp(page, branch).locator(`[data-testid="jev-loop-choice-card"]${attr("data-send-id", sendId)}`);
-  await card.waitFor({ timeout: 30000 });
+  const line = lp(page, branch).locator(`[data-testid="jev-loop-choice-confirming"]${attr("data-send-id", sendId)}`);
+  const first = await waitFor(page, async () => {
+    if (await card.count()) return { confirming: null };
+    if (await line.count()) return { confirming: { text: clean(await line.textContent()), busy: await line.getAttribute("aria-busy"),
+      role: await line.getAttribute("role"), cardsMeanwhile: await card.count() } };
+    return null;
+  }, "proposal card or confirming line", 30000);
+  await card.waitFor({ timeout: 60000 });
   const details = card.locator('[data-testid="jev-loop-choice-probabilities"]');
   const foldedBefore = !(await details.evaluate(node => node.open));
   if (foldedBefore) await details.locator("summary").click();
   const late = card.locator('[data-testid="jev-loop-choice-late"]');
   const lateNote = card.locator('[data-testid="jev-loop-choice-late-note"]');
-  return { foldedBefore, container: await card.evaluate(node => node.parentElement?.getAttribute("data-testid") ?? null),
+  return { foldedBefore, confirming: first.confirming,
+    container: await card.evaluate(node => node.parentElement?.getAttribute("data-testid") ?? null),
     proposalHandle: await card.getAttribute("data-proposal-handle"), chosen: await card.getAttribute("data-chosen-alias"),
     lateAttr: await card.getAttribute("data-late"), selectionAttr: await card.getAttribute("data-selection"),
-    positionAttr: await card.getAttribute("data-list-position"),
+    roleAttr: await card.getAttribute("data-role"), positionAttr: await card.getAttribute("data-list-position"),
     title: clean(await card.locator(".mw-jev-title").first().textContent()),
     role: clean(await card.locator('[data-testid="jev-loop-choice-role"]').textContent()),
     alias: clean(await card.locator('[data-testid="jev-loop-choice-alias"]').textContent()),
@@ -884,7 +934,13 @@ function cardMatches(shown, record, choice, projection, { late, isSelection, ite
   assert.deepEqual(choice.arrival.late, late);
   assert.equal(shown.lateAttr, String(late));
   assert.equal(shown.selectionAttr, String(isSelection));
+  assert.equal(shown.roleAttr, isSelection ? "selection" : "not_selection");
   assert.equal(shown.role, isSelection ? `바퀴 ${iteration}의 선택(계산은 사람이 승인해야 시작)` : `바퀴 ${iteration}의 선택이 아님`);
+  if (shown.confirming !== null) {         // seen before the record knew the send: no number, alias or judgment
+    assert.ok(shown.confirming.text.endsWith(CONFIRMING_TEXT), shown.confirming.text);
+    assert.ok(!/\d/.test(shown.confirming.text) && !/\b[cm]\d{2}\b/.test(shown.confirming.text), shown.confirming.text);
+    assert.deepEqual([shown.confirming.busy, shown.confirming.role, shown.confirming.cardsMeanwhile], ["true", "status", 0]);
+  }
   assert.equal(shown.late === null, !late);
   if (late) {
     assert.ok(shown.late.includes(LATE_TEXT), shown.late);
@@ -892,7 +948,7 @@ function cardMatches(shown, record, choice, projection, { late, isSelection, ite
   }
   assert.deepEqual(shown.comparison, { graphics: 0, ariaSort: 0, styled: 0, attrs: 0 });
   return { alias: shown.alias, position: shown.position, confidence: shown.confidence, late, container: shown.container,
-    probabilities: shown.probabilities.length };
+    probabilities: shown.probabilities.length, local: shown.local, confirmingSeen: shown.confirming !== null };
 }
 async function reasonOnly(page, branch, sendId) {
   const reason = lp(page, branch).locator(`[data-testid="jev-loop-choice-reason"]${attr("data-send-id", sendId)}`);
@@ -938,6 +994,9 @@ async function candidateTable(page, branch) {
   const table = lt(page, branch, "jev-loop-candidate-table");
   return { headers: await table.locator("thead th").evaluateAll(items => items.map(item => item.textContent.trim())),
     ariaSort: await table.locator("thead th[aria-sort]").evaluateAll(items => items.map(item => item.getAttribute("aria-sort"))),
+    sortState: Object.fromEntries(await table.locator("thead th[aria-sort]").evaluateAll(items => items.map(item => [
+      (item.querySelector('[data-testid^="jev-loop-sort-"]')?.getAttribute("data-testid") ?? "").replace("jev-loop-sort-", ""),
+      item.getAttribute("aria-sort")]))),
     rows: await table.locator("tbody tr").evaluateAll(items => items.map(item => ({ ref: item.getAttribute("data-ref"),
       state: item.getAttribute("data-state"), evaluation: item.getAttribute("data-evaluation"),
       hasScore: item.getAttribute("data-has-score") === "true", iteration: item.getAttribute("data-iteration"),
@@ -956,13 +1015,101 @@ function candidateRowsMatch(table, record) {
     else { assert.equal(item.score_kcal_mol, null); assert.ok(row.score.startsWith(NULL_TEXT), row.score); }
   }
 }
+/** The wording rule over the loop area as shown (innerText) and over what innerText leaves out: the title, aria-label
+ * and alt attributes (read by assistive technology and tooltips) and the text inside folded <details>. Exempt: the
+ * M18 area (its own milestone's rule), the stored sentence lists, the exact preview body and question (the fixed
+ * instructions; "lowest" of the exploit instruction) and the M17 filter form (its "분자량(평균)" label). */
+const WORDING_EXEMPT = '[data-testid="jev-loop-m18-area"], [data-testid="jev-loop-limitations"], ' +
+  '[data-testid="jev-loop-choice-limitations"], [data-testid="jev-loop-preview-body"], ' +
+  '[data-testid="jev-loop-preview-question"], .mw-ligand-filter';
+/** What a person or assistive technology reads in `locator`: innerText, the title/aria-label/alt attributes and the
+ * text inside folded <details> (innerText leaves both out), outside the `exemptSelector` subtrees (null: none). */
+async function shownTexts(locator, exemptSelector = null) {
+  return locator.evaluate((node, selector) => {
+    const exempt = selector ? [...node.querySelectorAll(selector)] : [];
+    const inExempt = item => exempt.some(root => root.contains(item));
+    const attributes = [node, ...node.querySelectorAll("[title], [aria-label], [alt]")].filter(item => !inExempt(item))
+      .flatMap(item => ["title", "aria-label", "alt"].map(name => item.getAttribute(name)).filter(text => text));
+    const folded = [];
+    for (const details of node.querySelectorAll("details:not([open])"))
+      for (const item of details.querySelectorAll("*")) {
+        if (inExempt(item)) continue;
+        const own = [...item.childNodes].some(child => child.nodeType === Node.TEXT_NODE && child.textContent.trim());
+        if (own) folded.push(item.textContent.replace(/\s+/g, " ").trim());
+      }
+    return { text: node.innerText, attributes, folded, exempt: exempt.flatMap(item => item.innerText.split("\n")) };
+  }, exemptSelector);
+}
+const textsJoined = value => [value.text, ...value.attributes, ...value.folded].join("\n");
+// ---- the candidate table order (display only)
+const SORT_KEYS = ["pool", "candidate", "score", "iteration"];
+/** Spec order rule, written here independently: rows with a score (state scored) first, ordered by the column and
+ * direction (ties in pool order; the pool column descending = pool order reversed; in the iteration column a score row
+ * without an iteration — a stored result reused — stays after the numbered ones in both directions), then every row
+ * without a score (pending, null_result, failed, not_run, unavailable) in pool order, whatever the column and direction.
+ * `candidates` = the record's pool rows in pool order. */
+function sortExpected(candidates, key, direction) {
+  const rows = candidates.map((item, position) => ({ ref: item.ref, position, iteration: item.iteration,
+    score: item.state === "scored" && item.score_kcal_mol !== null ? item.score_kcal_mol : null }));
+  const sign = direction === "asc" ? 1 : -1;
+  const refOrder = (a, b) => typeof a === "number" && typeof b === "number" ? a - b
+    : String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0;
+  const order = (a, b) => {
+    if (key === "pool") return sign * (a.position - b.position);
+    if (key === "candidate") return sign * refOrder(a.ref, b.ref) || a.position - b.position;
+    if (key === "score") return sign * (a.score - b.score) || a.position - b.position;
+    if (a.iteration === null || b.iteration === null)
+      return a.iteration === b.iteration ? a.position - b.position : a.iteration === null ? 1 : -1;
+    return sign * (a.iteration - b.iteration) || a.position - b.position;
+  };
+  return [...rows.filter(row => row.score !== null).sort(order), ...rows.filter(row => row.score === null)]
+    .map(row => String(row.ref));
+}
+/** Click one sort header until its aria-sort is `want` (a new column starts ascending; the same column toggles). */
+async function sortTo(page, branch, key, want, evidence) {
+  for (let click = 0; click < 2; click++) {
+    const before = (await candidateTable(page, branch)).sortState[key];
+    await lt(page, branch, `jev-loop-sort-${key}`).click();
+    control(evidence, `jev-loop-sort-${key}`, { want });
+    const next = before === "ascending" ? "descending" : "ascending";
+    const table = await waitFor(page, async () => {
+      const value = await candidateTable(page, branch);
+      return value.sortState[key] === next ? value : null;
+    }, `${key} ${next}`, 15000);
+    if (next === want) return table;
+  }
+  throw new Error(`${key}: aria-sort never reached ${want}`);
+}
+/** Every column in both directions: the shown order, aria-sort and every row (state, score cell) = the record. */
+async function sortOrders(page, branch, evidence) {
+  const orders = {};
+  for (const key of SORT_KEYS)
+    for (const direction of ["asc", "desc"])
+      orders[`${key}-${direction}`] = await sortTo(page, branch, key, direction === "asc" ? "ascending" : "descending", evidence);
+  return orders;
+}
+function sortMatches(orders, record) {
+  const covered = { noScoreStates: [...new Set(record.candidates.filter(item => item.state !== "scored")
+    .map(item => item.state))].sort(), reusedRows: record.candidates.filter(item => item.evaluation === "reused").length };
+  for (const [name, table] of Object.entries(orders)) {
+    const [key, direction] = name.split("-");
+    assert.deepEqual(table.rows.map(row => row.ref), sortExpected(record.candidates, key, direction), `${name} order`);
+    assert.deepEqual(Object.entries(table.sortState).filter(([, state]) => state !== "none"),
+      [[key, direction === "asc" ? "ascending" : "descending"]], `${name} aria-sort`);
+    const flags = table.rows.map(row => row.hasScore);
+    assert.ok(flags.indexOf(false) === -1 || flags.slice(flags.indexOf(false)).every(flag => !flag),
+      `${name}: a row without a score is not last`);
+    candidateRowsMatch(table, record);
+  }
+  return { ...covered, orders: Object.fromEntries(Object.entries(orders).map(([name, table]) => [name, table.rows.map(row =>
+    `${row.ref.slice(0, 8)}:${row.state}:${row.score}`)])) };
+}
+
 async function wordingCheck(page, branch, label, evidence) {
-  const value = await lp(page, branch).evaluate(node => ({ text: node.innerText,
-    exempt: [...node.querySelectorAll('[data-testid="jev-loop-m18-area"], [data-testid="jev-loop-limitations"], ' +
-      '[data-testid="jev-loop-choice-limitations"], [data-testid="jev-loop-preview-body"], ' +
-      '[data-testid="jev-loop-preview-question"], .mw-ligand-filter')].flatMap(item => item.innerText.split("\n")) }));
-  const found = forbiddenWords(value.text, value.exempt);
-  evidence.wording.push({ label, kind: "screen", found });
+  const value = await shownTexts(lp(page, branch), WORDING_EXEMPT);
+  const found = forbiddenWords(textsJoined(value), value.exempt);
+  evidence.wording.push({ label, kind: "screen", found,
+    checked: { lines: value.text.split("\n").length, attributes: value.attributes.length, folded: value.folded.length } });
   return found;
 }
 /** The 지식·보고서 tab's report library: the saved report listed with its kind; clicking it shows the saved Markdown. */
@@ -1017,7 +1164,7 @@ async function knowledgeRows(page, run) {
     guide: item.querySelector('[data-testid="jev-send-loop-guide"]')?.textContent.trim() ?? null,
     openButtons: item.querySelectorAll('[data-testid="jev-send-open"]').length,
     reportButtons: item.querySelectorAll('[data-testid="jev-send-report"]').length })));
-  return { rows, list: await readApi(page, `/runs/${run}/jev/sends`), text: await jev.evaluate(node => node.innerText) };
+  return { rows, list: await readApi(page, `/runs/${run}/jev/sends`), text: textsJoined(await shownTexts(jev)) };
 }
 function knowledgeRowsMatch(value, tab, expectedSends) {
   assert.equal(value.rows.length, expectedSends.length);
@@ -1251,9 +1398,10 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       return { reason: value.reason.text, bytes, blockers: value.send.blockers };
     });
     goodSend = await rec_.step("L08-good", ["L-send-good", "L-choice-card", "L-bytes-equal", "L-order-oracle"], "보낼 내용 " +
-      "만들기 again (send ordinal 1: a new order = the oracle) and send (fixture good: the first criteria key): completed; " +
-      "the iteration's JEV selection card = the stored jev_loop_choice@1 (JEV 판정(모델 선택), the chosen alias, list " +
-      "position n/m = its criteria place, the local SMILES, confidence 0.620, the served model, usage, per-candidate values " +
+      "만들기 again (send ordinal 1: a new order = the oracle) and send (fixture good_second: the second criteria key): " +
+      "completed; until the record knows the send only the confirming line shows; then the iteration's JEV selection card " +
+      "= the stored jev_loop_choice@1 (JEV 판정(모델 선택), the chosen alias, list position 2/5 = its criteria place, the " +
+      "local SMILES, confidence 0.620, the served model, usage, per-candidate values " +
       "folded at first and listed in the sent order, LJ1-LJ4 and LJ6); no ordering, bar or colour element; the phase " +
       "becomes awaiting_compute and 보낼 내용 만들기 closes (selection_done)", async () => {
       const record = await readLoop(page, run, loopA.loopId);
@@ -1261,9 +1409,7 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       const shown = await previewWhen(page, b, made.handle, item => item.blocked.length === 0 && item.loopBlocks.length === 0,
         "preview");
       const stored = storedObject(runsDir, run, made.handle);
-      const sent = await confirmAndSend(page, b, run, controlDir, "good", log, evidence);
-      await lp(page, b).locator(`[data-testid="jev-loop-selection"]${attr("data-send-id", sent.record.send_id)}`)
-        .waitFor({ timeout: 30000 });
+      const sent = await confirmAndSend(page, b, run, controlDir, "good_second", log, evidence);
       const card = await readCard(page, b, sent.record.send_id);
       const attrs = await recordWhen(page, b, item => item.action === "compute", "awaiting compute");
       const buildBlocked = await waitFor(page, async () => (await lt(page, b, "jev-loop-build-blocked").count())
@@ -1281,16 +1427,17 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       const choice = storedObject(runsDir, run, record.choice_handle);
       const card = cardMatches(value.card, record, choice, value.stored, { late: false, isSelection: true, iteration: 1 });
       const call = value.sent.calls[0];
-      assert.equal(call.script, "good");
+      assert.equal(call.script, "good_second");
       assert.deepEqual(call.criteria, identity.criteria);
-      assert.equal(choice.answer.choice_alias, identity.criteria[0], "the fixture chose the first criteria key");
+      assert.equal(choice.answer.choice_alias, identity.criteria[1], "the fixture chose the second criteria key");
+      assert.equal(card.position, `2/${identity.criteria.length}`);
       assert.equal(card.container, "jev-loop-selection");
       const bytes = serverBytes(runsDir, run, record.send_id, value.shown.body, value.made.preview.body_sha256, value.sent.calls);
       assert.deepEqual([value.attrs.phase, value.attrs.iteration], ["awaiting_compute", "1"]);
       assert.ok(value.buildBlocked.includes("(selection_done)"), value.buildBlocked);
       sends.push(record);
       return { card, bytes, choiceHandle: record.choice_handle, ref: choice.answer.local_ref.candidate_id,
-        position: card.position, identity };
+        position: card.position, local: card.local, identity };
     });
   });
 
@@ -1298,13 +1445,15 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
   await rec_.part("L-compute-jev", ["L-compute-jev", "L-real-engine"], async () => {
     await rec_.step("L10-compute-jev", ["L-compute-jev", "L-real-engine"], "Check the compute confirmation and press 이 " +
       "선택으로 계산 시작 (JEV 판정 사용): one jev_loop_compute_approved (decided_by jev), the standalone M18 job runs (real " +
-      "qvina); iteration 1 ends scored; the candidate's score = the stored docking_result@1 first mode (shown with one " +
-      "decimal), evaluation 새 계산, the iteration row shows list position n/m", async () => {
+      "qvina) on the candidate the card named (list position 2/5); iteration 1 ends scored; the candidate's score = the " +
+      "stored docking_result@1 first mode (shown with one decimal), evaluation 새 계산, the iteration row shows that " +
+      "candidate and list position 2/5", async () => {
       const entry = await pressCompute(page, b, run, loopA.loopId, "jev-loop-compute-proposal", log, evidence);
       const attrs = await recordWhen(page, b, item => item.iteration === "2" && item.action === "select", "iteration 2", 120000);
       const record = await readLoop(page, run, loopA.loopId);
       return { entry, attrs, record, table: await candidateTable(page, b),
         position: clean(await lt(page, b, "jev-loop-iterations").locator('tr[data-iteration="1"] [data-testid="jev-loop-iteration-position"]').textContent()),
+        candidate: clean(await lt(page, b, "jev-loop-iterations").locator('tr[data-iteration="1"] td:nth-child(5)').textContent()),
         approvals: runEvents(runsDir, run).filter(event => event.type === "jev_loop_compute_approved") };
     }, async value => {
       assert.equal(value.entry.status, 200, JSON.stringify(value.entry.json).slice(0, 600));
@@ -1317,6 +1466,9 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       assert.deepEqual([it.state, it.decided_by, it.candidate_ref], ["scored", "jev", goodSend.ref]);
       assert.equal(`${it.list_position}/${it.list_size}`, goodSend.position);
       assert.equal(value.position, goodSend.position);
+      assert.equal(goodSend.position, `2/${LOOP_A.size}`);
+      assert.equal(value.candidate, goodSend.local, "the iteration row is not the candidate the card named");
+      assert.equal(it.steps[0].candidate_ref, goodSend.ref, "the docking step is not on the chosen candidate");
       const step = it.steps[0];
       assert.deepEqual([step.step, step.state], ["ligand_dock", "completed"]);
       const result = storedObject(runsDir, run, step.result_handle);
@@ -1450,51 +1602,24 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       return { ref: value.options[0] };
     });
     await rec_.step("L15-candidate-table", ["L-candidate-table"], "Candidate table: score cells = the stored first modes " +
-      "(one decimal), rows without a score show — with the reason; click the score header (ascending, then descending), " +
-      "the iteration and candidate headers: rows with a score are ordered by the column and every row without a score " +
-      "stays last in pool order; aria-sort follows; no position-number column", async () => {
+      "(one decimal), rows without a score show — with the reason; click every sort header (풀 순서, 후보, score, 바퀴) " +
+      "ascending then descending: rows with a score are ordered by the column, every row without a score (here pending) " +
+      "stays last in pool order in both directions = the order rule written here; aria-sort follows; no position-number " +
+      "column", async () => {
       const record = await readLoop(page, run, loopA.loopId);
       const initial = await candidateTable(page, b);
-      const orders = {};
-      for (const key of ["score", "iteration", "candidate"]) {
-        for (const direction of ["asc", "desc"]) {
-          await lt(page, b, `jev-loop-sort-${key}`).click();
-          control(evidence, `jev-loop-sort-${key}`, { direction });
-          const want = direction === "asc" ? "ascending" : "descending";
-          orders[`${key}-${direction}`] = await waitFor(page, async () => {
-            const table = await candidateTable(page, b);
-            return table.ariaSort.includes(want) ? table : null;
-          }, `${key} ${direction}`, 15000);
-        }
-      }
+      const orders = await sortOrders(page, b, evidence);
       return { record, initial, orders, note: clean(await lt(page, b, "jev-loop-order-note").textContent()),
         wording: await wordingCheck(page, b, "candidate table", evidence) };
     }, async value => {
       assert.deepEqual(value.wording, []);
       candidateRowsMatch(value.initial, value.record);
       assert.deepEqual(value.initial.headers, ["풀 순서", "후보", "표기", "상태", SCORE_COLUMN, "바퀴", "선택 주체", "평가", "상세"]);
-      const pool = value.record.candidates.map(item => String(item.ref));
-      const scores = Object.fromEntries(value.record.candidates.map(item => [String(item.ref), item.score_kcal_mol]));
-      const its = Object.fromEntries(value.record.candidates.map(item => [String(item.ref), item.iteration]));
-      for (const [name, table] of Object.entries(value.orders)) {
-        const flags = table.rows.map(row => row.hasScore);
-        const firstNo = flags.indexOf(false);
-        assert.ok(firstNo > 0 && flags.slice(firstNo).every(flag => !flag), `${name}: a row without a score is not last`);
-        const tail = table.rows.slice(firstNo).map(row => row.ref);
-        assert.deepEqual(tail, pool.filter(ref => tail.includes(ref)), `${name}: no-score rows not in pool order`);
-        const head = table.rows.slice(0, firstNo).map(row => row.ref);
-        const [key, direction] = name.split("-");
-        const sign = direction === "asc" ? 1 : -1;
-        const value_ = ref => key === "score" ? scores[ref] : key === "iteration" ? its[ref] : ref;
-        for (let i = 1; i < head.length; i++) {
-          const a = value_(head[i - 1]), z = value_(head[i]);
-          assert.ok(sign * (a < z ? -1 : a > z ? 1 : 0) <= 0, `${name}: ${head.join(",")}`);
-        }
-        candidateRowsMatch(table, value.record);
-      }
+      assert.deepEqual(value.initial.rows.map(row => row.ref), sortExpected(value.record.candidates, "pool", "asc"));
       assert.equal(value.note, "표의 정렬은 표시 순서일 뿐입니다. 점수 없는 후보는 0이 아니며 어떤 정렬에서도 끝에 둡니다.");
-      return Object.fromEntries(Object.entries(value.orders).map(([name, table]) => [name, table.rows.map(row =>
-        `${row.ref.slice(0, 8)}:${row.score}`)]));
+      const covered = sortMatches(value.orders, value.record);
+      assert.deepEqual(covered.noScoreStates, ["pending"]);
+      return covered;
     });
     summaryA = await rec_.step("L16-end", ["L-end-summary"], "루프 끝내기: ended (iteration_cap); the summary " +
       "jev_loop_result@1 is stored (counts, scores = stored first modes, the JEV-decided iteration's list position); the " +
@@ -1552,6 +1677,7 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
     const reusedRef = goodSend?.ref;
     const poolB = ids.filter(id => id === reusedRef || id === ids[5] || id === ids[6]);
     let loopB = null;
+    let noUsageSend = null;
     loopB = await rec_.step("L18-reuse", ["L-reuse"], "Back on 리간드 설계·탐색 (the area mounts afresh): a new loop (탐색형, " +
       "seed 99, cap 2) over the iteration-1 candidate and two candidates no loop computed: the first is already computed " +
       "(the stored M18 result of the same call key: scored, 저장된 결과 재사용, no iteration, no unit); the others pending",
@@ -1605,7 +1731,32 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
       assert.equal(value.status.egress_stop_reason, "usage_unknown");
       serverBytes(runsDir, run, record.send_id, value.shown.body, value.made.preview.body_sha256, value.sent.calls);
       sends.push(record);
+      noUsageSend = { choiceHandle: record.choice_handle, ref: choice.answer.local_ref.candidate_id };
       return { notes: value.notes, usage: value.card.usage };
+    });
+    await rec_.step("L19b-reused-order", ["L-candidate-table", "L-real-engine"], "Loop B: the compute confirmation and 이 " +
+      "선택으로 계산 시작 (the stopped egress stops sends only): the real docking scores the JEV-chosen candidate (iteration " +
+      "1); the table now holds a reused row (score, no iteration), a computed row and a pending row: every sort header " +
+      "ascending then descending = the order rule (the reused row after the numbered one in both directions of 바퀴, the " +
+      "pending row last in every order)", async () => {
+      const entry = await pressCompute(page, b, run, loopB.loopId, "jev-loop-compute-proposal", log, evidence);
+      await recordWhen(page, b, item => item.iteration === "2" && item.action === "select", "loop B iteration 2", 120000);
+      const record = await readLoop(page, run, loopB.loopId);
+      return { entry, record, orders: await sortOrders(page, b, evidence),
+        wording: await wordingCheck(page, b, "loop B table", evidence) };
+    }, async value => {
+      assert.deepEqual(value.wording, []);
+      assert.equal(value.entry.status, 200, JSON.stringify(value.entry.json).slice(0, 600));
+      assert.deepEqual(value.entry.request, { iteration: 1, proposal: noUsageSend.choiceHandle });
+      const it = value.record.iterations.find(item => item.index === 1);
+      assert.deepEqual([it.state, it.decided_by, it.candidate_ref], ["scored", "jev", noUsageSend.ref]);
+      assert.equal(it.score_kcal_mol, storedObject(runsDir, run, it.steps[0].result_handle).modes[0].score_kcal_mol);
+      const states = value.record.candidates.map(item => [item.state, item.evaluation, item.iteration === null]);
+      assert.deepEqual(states.filter(([state]) => state === "scored").length, 2);
+      assert.ok(states.some(([, evaluation, noIteration]) => evaluation === "reused" && noIteration), "no reused row");
+      const covered = sortMatches(value.orders, value.record);
+      assert.deepEqual([covered.noScoreStates, covered.reusedRows], [["pending"], 1]);
+      return covered;
     });
     await rec_.step("L20-stop-refuses", ["L-no-usage-stop", "L-send-cap-display"], "End loop B (ended_by_user, LJ5, LJ6, " +
       "LJ8); a loop C (활용형, two other candidates): 보낼 내용 만들기 shows egress_stopped and the send stays closed even with " +
@@ -1843,15 +1994,14 @@ async function proteinBranch(session, input, setup, rec_, evidence, log) {
     "P-end-refused-docking", "P-dock", "P-real-engine"], async () => {
     good = await rec_.step("P07-good", ["P-send-good", "P-bytes-equal", "P-order-oracle"], "Consent on (this run); 보낼 내용 " +
       "만들기: the mutation body (oracle order, explore question text, no coordinate, sequence, numbering, handle or id); " +
-      "confirmation; send (fixture good): the JEV card with the residue notation and list position n/3", async () => {
+      "confirmation; send (fixture good_second): the JEV card (after the confirming line, if seen) with the residue " +
+      "notation and list position 2/3", async () => {
       await setConsent(page, b, run, true, log, evidence);
       const record = await readLoop(page, run, loop.loopId);
       const made = await build(page, b, run, log, evidence);
       const shown = await previewWhen(page, b, made.handle, item => item.blocked.length === 0, "preview");
       const stored = storedObject(runsDir, run, made.handle);
-      const sent = await confirmAndSend(page, b, run, controlDir, "good", log, evidence);
-      await lp(page, b).locator(`[data-testid="jev-loop-selection"]${attr("data-send-id", sent.record.send_id)}`)
-        .waitFor({ timeout: 30000 });
+      const sent = await confirmAndSend(page, b, run, controlDir, "good_second", log, evidence);
       const card = await readCard(page, b, sent.record.send_id);
       return { record, made, shown, stored, sent, card, wording: await wordingCheck(page, b, "protein good card", evidence) };
     }, async value => {
@@ -1863,10 +2013,14 @@ async function proteinBranch(session, input, setup, rec_, evidence, log) {
       assert.equal(record.status, "completed");
       const choice = storedObject(runsDir, run, record.choice_handle);
       const card = cardMatches(value.card, record, choice, value.stored, { late: false, isSelection: true, iteration: 1 });
-      assert.equal(card.position, `1/${PROTEIN_POOL.length}`);
+      assert.equal(value.sent.calls[0].script, "good_second");
+      assert.equal(choice.answer.choice_alias, identity.criteria[1], "the fixture chose the second criteria key");
+      assert.equal(card.position, `2/${PROTEIN_POOL.length}`);
+      assert.equal(card.container, "jev-loop-selection");
       const bytes = serverBytes(runsDir, run, record.send_id, value.shown.body, value.made.preview.body_sha256, value.sent.calls);
       sends.push(record);
-      return { card, bytes, choiceHandle: record.choice_handle, ref: choice.answer.local_ref.candidate_index };
+      return { card, bytes, choiceHandle: record.choice_handle, ref: choice.answer.local_ref.candidate_index,
+        position: card.position, local: card.local };
     });
     await rec_.step("P08-first-approval", ["P-first-approval", "P-end-refused-job"], "이 선택으로 계산 시작: the M21 job is " +
       "made and waits for the run's first expensive-call approval (200, start_blocked approval_required): the guide and " +
@@ -1919,17 +2073,24 @@ async function proteinBranch(session, input, setup, rec_, evidence, log) {
     });
     await rec_.step("P09-dock", ["P-end-refused-docking", "P-dock", "P-real-engine"], "Awaiting docking: 루프 끝내기 is closed " +
       "with docking_pending; check the compute confirmation and press 도킹 시작: the M18 docking into the mutant model " +
-      "runs (real qvina) and iteration 1 ends scored (score = the stored first mode)", async () => {
+      "runs (real qvina) and iteration 1 ends scored (score = the stored first mode) on the candidate the card named: the " +
+      "iteration row shows its residue notation and list position 2/3", async () => {
       const end = await endState(page, b);
       const entry = await pressCompute(page, b, run, loop.loopId, "jev-loop-dock", log, evidence);
       const attrs = await recordWhen(page, b, item => item.iteration === "2" && item.action === "select", "iteration 2", 120000);
-      return { end, entry, attrs, record: await readLoop(page, run, loop.loopId), table: await candidateTable(page, b) };
+      const rowOne = lt(page, b, "jev-loop-iterations").locator('tr[data-iteration="1"]');
+      return { end, entry, attrs, record: await readLoop(page, run, loop.loopId), table: await candidateTable(page, b),
+        candidate: clean(await rowOne.locator("td:nth-child(5)").textContent()),
+        position: clean(await rowOne.locator('[data-testid="jev-loop-iteration-position"]').textContent()) };
     }, async value => {
       assert.equal(value.end.enabled, false);
       assert.ok(value.end.reasons.some(text => text.includes("(docking_pending)")), value.end.reasons.join(" | "));
       assert.deepEqual(value.entry.request, { iteration: 1 });
       const it = value.record.iterations[0];
-      assert.deepEqual([it.state, it.decided_by], ["scored", "jev"]);
+      assert.deepEqual([it.state, it.decided_by, it.candidate_ref], ["scored", "jev", good.ref]);
+      assert.ok(it.steps.every(item => item.candidate_ref === good.ref), "a step is not on the chosen candidate");
+      assert.deepEqual([value.candidate, value.position], [good.local, good.position]);
+      assert.equal(`${it.list_position}/${it.list_size}`, good.position);
       const dock = it.steps.find(item => item.step === "dock");
       assert.equal(dock.state, "completed");
       const result = storedObject(runsDir, run, dock.result_handle);
@@ -1977,6 +2138,19 @@ async function proteinBranch(session, input, setup, rec_, evidence, log) {
       assert.equal(value.record.exhausted_reason, "iteration_cap");
       assert.equal(value.record.counts.units_charged, 3);
       return { ref: value.options[0] };
+    });
+    await rec_.step("P10b-table-order", ["P-candidate-table"], "Candidate table with a scored, a not_run (docking_not_run) " +
+      "and a pending row: every sort header (풀 순서, 후보 as numbers, score, 바퀴) ascending then descending = the order " +
+      "rule written here: the not_run and pending rows last in pool order in both directions; aria-sort follows",
+    async () => {
+      const record = await readLoop(page, run, loop.loopId);
+      return { record, orders: await sortOrders(page, b, evidence),
+        wording: await wordingCheck(page, b, "protein table", evidence) };
+    }, async value => {
+      assert.deepEqual(value.wording, []);
+      const covered = sortMatches(value.orders, value.record);
+      assert.deepEqual(covered.noScoreStates, ["not_run", "pending"]);
+      return covered;
     });
     summary = await rec_.step("P11-end", ["P-end-summary"], "루프 끝내기: ended (iteration_cap), the summary stored, LJ1-LJ3, " +
       "LJ5, LJ7 and LJ8", async () => {
@@ -2143,10 +2317,7 @@ async function proteinBranch(session, input, setup, rec_, evidence, log) {
 async function modeFixture(session, input, setup, rec_, evidence, log) {
   const { page } = session;
   const controlDir = input.control;
-  const server = JSON.parse(fs.readFileSync(path.join(controlDir, "server.json"), "utf8"));
-  assert.equal(server.fixture, true, "the backend is not the fixture server");
-  assert.equal(server.schema, "m25_jev_loop_fixture_server@1");
-  assert.equal(server.runsDir, input["runs-dir"]);
+  fixtureServer(controlDir, input["runs-dir"], input["backend-pid"]);
   evidence.fixtureLabels.push(PROCESS_NOTE);
   evidence.runs = { L: setup.runs.L.run, P: setup.runs.P.run };
   const callsBefore = fixtureCalls(controlDir).length;
@@ -2191,6 +2362,9 @@ function checkPlan(plan, setup) {
     assert.ok(entry.pool.length - entry.rounds + 1 >= 2, `plan entry ${entry.id}: two pending candidates in every round`);
   }
 }
+/** The rehearsal's fixture script of a round: good (criteria[0]) and good_second (criteria[1], list position 2/m) by
+ * turns, so the rehearsed compute also starts on a candidate that is not the first listed. */
+function rehearsalScript(round) { return round % 2 === 0 ? "good_second" : "good"; }
 /** The pool refs of a plan entry: ligand candidate ids (by set order) or mutation candidate indices. */
 function entryPool(setup, entry) {
   const run = setup.runs[entry.run];
@@ -2236,9 +2410,7 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
   const plan = JSON.parse(fs.readFileSync(input.plan, "utf8"));
   checkPlan(plan, setup);
   if (rehearsal) {
-    const server = JSON.parse(fs.readFileSync(path.join(controlDir, "server.json"), "utf8"));
-    assert.equal(server.fixture, true, "a rehearsal needs the fixture server");
-    assert.equal(server.runsDir, runsDir);
+    fixtureServer(controlDir, runsDir, input["backend-pid"]);
     evidence.fixtureLabels.push(PROCESS_NOTE);
   }
   const caseId = input.mode === "calibrate" ? "JL-calibrate" : "JL-live";
@@ -2367,7 +2539,8 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
       loopRow.rounds.push(roundRow);
       const sent = await rec_.step(`${entry.id}-r${round}-send`, [caseId], `${entry.id} round ${round}: consent on, 보낼 ` +
         "내용 만들기, preview identity and the independent order oracle, the dispatch guard, the confirmation and one send" +
-        `${rehearsal ? " (fixture good)" : ""}; the result as stored (the JEV card with its list position and values ` +
+        `${rehearsal ? ` (fixture ${rehearsalScript(round)})` : ""}; the result as stored (the JEV card with its list ` +
+        "position and values " +
         "folded at first, or the reason only)", async () => {
         await setConsent(page, b, run, true, log, evidence);
         const record = await readLoop(page, run, loopId);
@@ -2387,8 +2560,8 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
           sendOrdinal: made.summary.send_ordinal, aliases: identity.order.length, order: identity.order,
           criteria: identity.criteria, bodyBytes: identity.bodyBytes, bodySha256: identity.bodySha256,
           reservation: identity.reservation, dispatchedBefore: { total, inRun: counts[run] ?? 0 } };
-        const result = await confirmAndSend(page, b, run, rehearsal ? controlDir : null, rehearsal ? "good" : null, log,
-          evidence, null, item => {
+        const result = await confirmAndSend(page, b, run, rehearsal ? controlDir : null,
+          rehearsal ? rehearsalScript(round) : null, log, evidence, null, item => {
             Object.assign(row, { sendId: item.send_id, status: item.status, reasonCode: item.reason_code,
               servedModel: item.served_model, usage: item.usage, late: item.late });
             evidence.sends.push(row);
@@ -2431,7 +2604,7 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
         }
         assert.deepEqual(value.wording, []);
         roundRow.send = { sendId: row.sendId, status: row.status, reasonCode: row.reasonCode };
-        return { status: record.status, reasonCode: record.reason_code, proposal: record.choice_handle,
+        return { sendId: record.send_id, status: record.status, reasonCode: record.reason_code, proposal: record.choice_handle,
           egressStop: row.egressStop, listPosition: row.listPosition ?? null, listSize: row.listSize ?? null };
       });
       // a send that did not complete or a stopped egress ends the plan here: no retry, no other call
@@ -2450,6 +2623,8 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
         assert.deepEqual(value.first.request, { iteration: round, proposal: sent.proposal });
         const it = value.record.iterations.find(item => item.index === round);
         assert.equal(it.decided_by, "jev");
+        const chosen = evidence.sends.find(item => item.sendId === sent.sendId);
+        assert.equal(it.candidate_ref, chosen.chosenRef, "the computation is not on the candidate JEV chose");
         assert.ok(["scored", "null_result", "failed"].includes(it.state), it.state);
         const docked = it.steps.find(item => item.step === (b === "ligand" ? "ligand_dock" : "dock"));
         if (it.state === "scored")
@@ -2535,6 +2710,8 @@ async function main() {
   fs.mkdirSync(input.artifacts, { recursive: true });
   const setup = JSON.parse(fs.readFileSync(input.setup, "utf8"));
   assert.equal(setup.schema, "m25_jev_loop_setup@1");
+  // before anything starts: a control folder is used only with the fixture server the runner just started
+  if (input.control) fixtureServer(input.control, input["runs-dir"], input["backend-pid"]);
   const evidence = { schema: "m25_jev_loop_evidence@1", mode: input.mode, rehearsal: input.mode !== "fixture" && !!input.control,
     runs: {}, sends: [], fixtureLabels: [], partFailures: [], controls: {}, wording: [], startedAt: new Date().toISOString() };
   const session = await launchOffscreen({ url: input.url, artifacts: input.artifacts, interactive: false });
@@ -2590,5 +2767,5 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, oracleOrder, expectedLimitations, forbiddenWords, checkPlan, FORBIDDEN, FIXED_LINES, LJ,
-  UL, INSTRUCTIONS, MODES, MAX_LIVE_CALLS };
+module.exports = { options, main, oracleOrder, expectedLimitations, forbiddenWords, checkPlan, fixtureServer, sortExpected,
+  rehearsalScript, FORBIDDEN, FIXED_LINES, LJ, UL, INSTRUCTIONS, MODES, MAX_LIVE_CALLS };

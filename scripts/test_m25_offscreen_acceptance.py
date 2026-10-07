@@ -5,6 +5,7 @@ scripts/m25_offscreen_acceptance.py (no services run here; nothing is sent)."""
 import argparse
 import ast
 import json
+import os
 import re
 import runpy
 import shutil
@@ -433,7 +434,7 @@ def test_every_case_has_a_text_and_the_harness_declares_it():
     for mode in set(m25.MODE_OF.values()):
         assert f'"{mode}"' in flow
     assert not set(m25.NOT_OBSERVED_COMMON) & set(m25.CASE_TEXT)
-    assert len(m25.FIXTURE_CASES) == len(set(m25.FIXTURE_CASES)) == 52
+    assert len(m25.FIXTURE_CASES) == len(set(m25.FIXTURE_CASES)) == 53
 
 
 def test_evidence_texts_carry_no_forbidden_word_and_the_shuffle_is_observation_only():
@@ -445,7 +446,10 @@ def test_evidence_texts_carry_no_forbidden_word_and_the_shuffle_is_observation_o
             "leftoverProcesses": [], "externalRequestsTotal": 0, "cases": _judge()["cases"],
             "notObserved": m25.not_observed("fixture"), "steps": _judge()["steps"]}
     for override in ({}, {"phase": "calibrate", "rehearsal": True, "notObserved": m25.not_observed("calibrate")},
-                     {"phase": "live", "notObserved": m25.not_observed("live"), "finalize": {"at": "t"}}):
+                     {"phase": "live", "notObserved": m25.not_observed("live"), "finalize": {"at": "t"}},
+                     {"acceptance": False, "verdict": "fail", "postExportChecks": {
+                         "ok": False, "keyScanOk": False, "keyHits": [], "sentinelHits": ["out/x.json"],
+                         "wording": {}, "checkedAt": "t"}}):
         texts.append(runner.readme({**base, **override}))
     assert [word for text in texts for word in m25.forbidden_in(text)] == []
     assert "관찰값" in m25.RUNNER_CASE_TEXT["JL-shuffle-observed"]
@@ -777,7 +781,7 @@ def test_run_calibrate_stores_and_records_the_calibration(monkeypatch, qa_base):
                               out=str(qa_base / "out" / "calibrate-end"), phase="calibrate", live_calls=8))
     runner.artifacts.mkdir(parents=True)
     runner.runs.mkdir(parents=True)
-    monkeypatch.setattr(runner, "start_phase_backend", lambda: None)
+    monkeypatch.setattr(runner, "start_phase_backend", lambda: True)
     monkeypatch.setattr(runner, "capabilities_ready", lambda: True)
     monkeypatch.setattr(runner, "key_available", lambda: True)
     monkeypatch.setattr(runner, "check_remaining", lambda ids, entries: True)
@@ -916,3 +920,348 @@ def test_finalize_refuses_before_writing_anything(monkeypatch, qa_base, isolated
     assert (isolated_ledger.read_bytes() if isolated_ledger.exists() else None) == ledger_before
     assert _tree_bytes(root) == root_before and _tree_bytes(artifacts) == artifacts_before
     assert (_tree_bytes(out) if out.exists() else None) == out_before
+
+
+# ----- T11: good_second, the harness's widened checks, counting and watch, ledger reservation and lock --------------------
+def _fixture_reply(monkeypatch):
+    """The fixture server module loaded with stand-ins for the two product modules it imports (no mw import here, no
+    server started): its ``reply`` and ``SCRIPTS`` as written."""
+    import importlib.util
+    import types
+    monkeypatch.setattr(sys, "path", list(sys.path))                     # the module adds backend/ to the path
+    for name in ("mw", "mw.api", "mw.api.app", "mw.egress", "mw.egress.gate"):
+        monkeypatch.setitem(sys.modules, name, types.ModuleType(name))
+    sys.modules["mw.egress.gate"].EgressGate = object
+    sys.modules["mw.api"].app = sys.modules["mw.api.app"]
+    spec = importlib.util.spec_from_file_location("m25_fixture_server_under_test", REPO / m25.FIXTURE_SERVER)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_fixture_server_can_choose_the_second_criteria_key_and_both_branches_use_it(monkeypatch):
+    server = _fixture_reply(monkeypatch)
+    assert "good_second" in server.SCRIPTS
+    criteria = ["c04", "c01", "c03"]
+    for script, chosen in (("good", "c04"), ("good_second", "c01"), ("slow", "c04"), ("no_usage", "c04")):
+        status, payload = server.reply(script, criteria, ["c02"], 900)
+        answer = payload["answers"]["candidate_choice"]
+        assert (status, answer["choice"]) == (200, chosen)
+        assert list(answer["probabilities"]) == criteria                      # the sent order, never sorted
+    source = (REPO / m25.FIXTURE_SERVER).read_text()
+    assert 'script == "good_second" and len(criteria) < 2' in source           # no second key: a transport error
+    flow = FLOW.read_text()
+    ligand = flow[flow.index("async function ligandBranch"):flow.index("async function proteinBranch")]
+    protein = flow[flow.index("async function proteinBranch"):flow.index("async function modeFixture")]
+    for body, size in ((ligand, "LOOP_A.size"), (protein, "PROTEIN_POOL.length")):
+        assert 'controlDir, "good_second"' in body and "identity.criteria[1]" in body
+        assert re.search(r"`2/\$\{(identity\.criteria\.length|" + re.escape(size) + r")\}`", body)
+    assert "the iteration row is not the candidate the card named" in ligand
+    assert "a step is not on the chosen candidate" in protein
+    script = f"const f=require({json.dumps(str(FLOW))});console.log(JSON.stringify([1,2,3,4].map(f.rehearsalScript)))"
+    assert _node(script) == ["good", "good_second", "good", "good_second"]
+
+
+def test_the_harness_waits_through_the_confirming_line_before_reading_the_card():
+    flow = FLOW.read_text()
+    body = flow[flow.index("async function readCard"):flow.index("function cardMatches")]
+    assert '"jev-loop-choice-confirming"' in body and "card.waitFor" in body
+    product = (REPO / "frontend/src/lib/jev-loop.ts").read_text()
+    shown = re.search(r'CHOICE_CONFIRMING_TEXT = "([^"]+)" \+\s*"([^"]+)"', product)
+    assert shown and f'const CONFIRMING_TEXT = "{shown.group(1)}{shown.group(2)}";' in flow
+    assert 'data-testid="jev-loop-choice-confirming"' in (REPO / "frontend/src/components/JevLoopPanel.tsx").read_text()
+
+
+def test_the_harness_wording_check_reads_attributes_and_folded_details_with_the_same_exemptions():
+    flow = FLOW.read_text()
+    body = flow[flow.index("async function shownTexts"):flow.index("async function wordingCheck")]
+    assert all(name in body for name in ('"title"', '"aria-label"', '"alt"', 'details:not([open])', "innerText"))
+    exempt = flow[flow.index("const WORDING_EXEMPT"):flow.index("async function shownTexts")]
+    for item in ("jev-loop-m18-area", "jev-loop-limitations", "jev-loop-choice-limitations", "jev-loop-preview-body",
+                 "jev-loop-preview-question", ".mw-ligand-filter"):
+        assert item in exempt, item
+    check = flow[flow.index("async function wordingCheck"):flow.index("/** The 지식·보고서 tab's report library")]
+    assert "shownTexts(lp(page, branch), WORDING_EXEMPT)" in check and "textsJoined(value)" in check
+    assert "textsJoined(await shownTexts(jev))" in flow                      # the 지식·보고서 JEV area as well
+
+
+SORT_POOL = [
+    {"ref": "e", "state": "pending", "score_kcal_mol": None, "iteration": None},
+    {"ref": "b", "state": "scored", "score_kcal_mol": -6.0, "iteration": None},      # a stored result reused
+    {"ref": "d", "state": "null_result", "score_kcal_mol": None, "iteration": 2},
+    {"ref": "a", "state": "scored", "score_kcal_mol": -7.5, "iteration": 1},
+    {"ref": "f", "state": "failed", "score_kcal_mol": None, "iteration": 3},
+    {"ref": "c", "state": "scored", "score_kcal_mol": -6.0, "iteration": 4},
+    {"ref": "g", "state": "not_run", "score_kcal_mol": None, "iteration": 5},
+    {"ref": "h", "state": "unavailable", "score_kcal_mol": None, "iteration": None},
+]
+
+
+def test_the_harness_table_order_oracle_keeps_every_row_without_a_score_last():
+    script = (f"const f=require({json.dumps(str(FLOW))});const pool=JSON.parse(process.argv[1]);const out={{}};"
+              "for(const k of ['pool','candidate','score','iteration'])for(const d of ['asc','desc'])"
+              "out[k+'-'+d]=f.sortExpected(pool,k,d);console.log(JSON.stringify(out))")
+    orders = _node(script, json.dumps(SORT_POOL))
+    tail = ["e", "d", "f", "g", "h"]                                          # pool order, whatever the column
+    assert orders == {"pool-asc": ["b", "a", "c", *tail], "pool-desc": ["c", "a", "b", *tail],
+                      "candidate-asc": ["a", "b", "c", *tail], "candidate-desc": ["c", "b", "a", *tail],
+                      "score-asc": ["a", "b", "c", *tail], "score-desc": ["b", "c", "a", *tail],
+                      "iteration-asc": ["a", "c", "b", *tail], "iteration-desc": ["c", "a", "b", *tail]}
+    numbers = [{"ref": 12, "state": "scored", "score_kcal_mol": -4, "iteration": 1},
+               {"ref": 3, "state": "not_run", "score_kcal_mol": None, "iteration": 2},
+               {"ref": 4, "state": "scored", "score_kcal_mol": -5, "iteration": 3}]
+    script = (f"const f=require({json.dumps(str(FLOW))});"
+              "console.log(JSON.stringify(f.sortExpected(JSON.parse(process.argv[1]),'candidate','asc')))")
+    assert _node(script, json.dumps(numbers)) == ["4", "12", "3"]             # indices as numbers, not as text
+    flow = FLOW.read_text()
+    for step, states in (('"L15-candidate-table"', '["pending"]'), ('"L19b-reused-order"', '[["pending"], 1]'),
+                         ('"P10b-table-order"', '["not_run", "pending"]')):
+        body = flow[flow.index(step):]
+        body = body[:body.index("    });")]
+        assert "sortOrders(page, b, evidence)" in body and "sortMatches(value.orders" in body and states in body, step
+    assert "L-sort-null-failed" in m25.NOT_OBSERVED_COMMON
+    assert "candidate order: display only; rows without a score are last in every column and direction" in (
+        REPO / "frontend/tests/jev-loop.test.cjs").read_text()
+
+
+def test_the_harness_refuses_a_control_folder_that_does_not_name_the_backend_just_started(tmp_path):
+    control, runs = tmp_path / "control", tmp_path / "runs"
+    control.mkdir()
+    pid = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+    try:
+        (control / "server.json").write_text(json.dumps({**SERVER, "pid": pid.pid, "runsDir": str(runs)}))
+        script = (f"const f=require({json.dumps(str(FLOW))});const [c,r,p,l]=process.argv.slice(1);"
+                  "try{f.fixtureServer(c,r,Number(p),()=>JSON.parse(l));console.log(JSON.stringify('ok'))}"
+                  "catch(e){console.log(JSON.stringify(e.message))}")
+
+        def check(backend, listeners, folder=runs):
+            return _node(script, str(control), str(folder), str(backend), json.dumps(listeners))
+        assert check(pid.pid, [pid.pid]) == "ok"
+        assert "does not name the backend just started" in check(pid.pid + 1, [pid.pid + 1])     # an old record
+        assert "not the fixture server" in check(pid.pid, [pid.pid, 1])                           # another listener
+        assert "not the fixture server" in check(pid.pid, [])
+        assert "another runs folder" in check(pid.pid, [pid.pid], tmp_path / "other")
+        (control / "server.json").write_text(json.dumps({**SERVER, "fixture": False, "pid": pid.pid,
+                                                          "runsDir": str(runs)}))
+        assert "not the fixture server" in check(pid.pid, [pid.pid])
+    finally:
+        pid.kill()
+        pid.wait()
+    (control / "server.json").write_text(json.dumps({**SERVER, "pid": pid.pid, "runsDir": str(runs)}))
+    assert "is not running" in _node(script, str(control), str(runs), str(pid.pid), json.dumps([pid.pid]))
+    usage = (f"const f=require({json.dumps(str(FLOW))});const a=JSON.parse(process.argv[1]);"
+             "try{f.options(a);console.log('true')}catch(e){console.log(JSON.stringify(e.message))}")
+    base = ["--mode", "live", "--artifacts", "a", "--runs-dir", "r", "--setup", "s", "--plan", "p"]
+    assert _node(usage, json.dumps(base)) is True
+    assert "Usage" in _node(usage, json.dumps([*base, "--control", "c"]))                  # no --backend-pid
+    assert "Usage" in _node(usage, json.dumps([*base, "--backend-pid", "12"]))              # a pid without a folder
+    assert "Usage" in _node(usage, json.dumps([*base, "--control", "c", "--backend-pid", "x"]))
+    assert _node(usage, json.dumps([*base, "--control", "c", "--backend-pid", "12"])) is True
+    flow = FLOW.read_text()
+    main = flow[flow.index("async function main"):]
+    assert main.index("fixtureServer(input.control") < main.index("launchOffscreen(")   # before anything starts
+
+
+def test_the_runner_starts_no_harness_on_a_fixture_record_of_another_process(monkeypatch, qa_base):
+    runs = qa_base / "root/runs"
+    assert m25.fixture_server_started({**SERVER, "pid": 42, "runsDir": str(runs)}, 42, ["42"], runs) is True
+    for server, pid, listeners in (({**SERVER, "pid": 41, "runsDir": str(runs)}, 42, ["42"]),
+                                   ({**SERVER, "pid": 42, "runsDir": str(runs)}, 42, ["42", "43"]),
+                                   ({**SERVER, "pid": 42, "runsDir": str(runs)}, 42, []),
+                                   ({**SERVER, "pid": 42, "runsDir": "/elsewhere"}, 42, ["42"]),
+                                   ({**SERVER, "pid": 42, "runsDir": str(runs), "fixture": False}, 42, ["42"]),
+                                   ({}, 42, ["42"])):
+        assert m25.fixture_server_started(server, pid, listeners, runs) is False
+    runner = m25.Runner(_args(root=str(qa_base / "root"), artifacts=str(qa_base / "artifacts/start"),
+                              out=str(qa_base / "out/start")))
+    runner.artifacts.mkdir(parents=True)
+    runner.control.mkdir(parents=True)
+
+    class Started:
+        pid = 4242
+
+    stopped = []
+    monkeypatch.setattr(m25.subprocess, "Popen", lambda *args, **kwargs: Started())
+    monkeypatch.setattr(m25.subprocess, "run", lambda *args, **kwargs: argparse.Namespace(
+        stdout=str(runner.code / "backend/mw/__init__.py"), returncode=0))
+    monkeypatch.setattr(runner, "wait_http", lambda url: None)
+    monkeypatch.setattr(runner, "stop_backend", lambda: stopped.append(True))
+    monkeypatch.setattr(m25.m13, "listening", lambda port: ["4242"])
+    (runner.control / "server.json").write_text(json.dumps({**SERVER, "pid": 1111, "runsDir": str(runner.runs)}))
+    assert runner.start_fixture_backend() is False and stopped == [True]
+    assert runner.environment["fixtureServer"] is False
+    (runner.control / "server.json").write_text(json.dumps({**SERVER, "pid": 4242, "runsDir": str(runner.runs)}))
+    assert runner.start_fixture_backend() is True and stopped == [True]
+    assert runner.fixture_args() == ["--control", str(runner.control), "--backend-pid", "4242"]
+    flows = []
+    monkeypatch.setattr(runner, "start_phase_backend", lambda: False)
+    monkeypatch.setattr(runner, "flow", lambda *args, **kwargs: flows.append(args))
+    runner.run_fixture()
+    assert flows == []
+
+
+@pytest.mark.parametrize("phase", ["calibrate", "live"])
+def test_a_rehearsal_never_starts_the_product_backend(monkeypatch, qa_base, phase):
+    runner = m25.Runner(_args(root=str(qa_base / phase), artifacts=str(qa_base / "artifacts" / phase),
+                              out=str(qa_base / "out" / phase), phase=phase, live_calls=8, rehearse=True))
+    started = []
+
+    def product(*args, **kwargs):
+        raise AssertionError("a rehearsal started the product backend")
+
+    def fixture():
+        started.append("fixture")
+        runner.services["backend"] = argparse.Namespace(pid=777)
+        return True
+    monkeypatch.setattr(runner, "start_backend_at", product)
+    monkeypatch.setattr(runner, "start_fixture_backend", fixture)
+    assert runner.uses_fixture() is True and runner.start_phase_backend() is True and started == ["fixture"]
+    extra = runner.phase_extra(Path("setup.json"), Path("plan.json"))
+    assert extra[extra.index("--backend-pid") + 1] == "777" and extra[extra.index("--control") + 1] == str(runner.control)
+    real = m25.Runner(_args(root=str(qa_base / f"{phase}-real"), artifacts=str(qa_base / "artifacts" / f"{phase}-real"),
+                            out=str(qa_base / "out" / f"{phase}-real"), phase=phase, live_calls=8))
+    calls = []
+    monkeypatch.setattr(real, "start_backend_at", lambda *args: calls.append(args))
+    monkeypatch.setattr(real, "start_fixture_backend", lambda: (_ for _ in ()).throw(AssertionError("fixture")))
+    assert real.start_phase_backend() is True and calls == [("backend", real.code, real.runs)]
+    assert "--control" not in real.phase_extra(Path("setup.json"), Path("plan.json"))
+
+
+def test_count_events_leaves_a_half_written_last_line_for_the_next_read(tmp_path):
+    _events(tmp_path, "run_aa", [DISPATCH, SCIENCE_RESPONSE])
+    log = tmp_path / "run_aa/events.jsonl"
+    whole = json.dumps(DISPATCH)
+    with log.open("a") as out:
+        out.write(whole[:17])                                               # the writer is mid-line
+    assert m25.count_events(tmp_path)["run_aa"] == {"dispatch": 1, "responseReceived": 1, "scienceResponses": 1}
+    with log.open("a") as out:
+        out.write(whole[17:] + "\n")
+    assert m25.count_events(tmp_path)["run_aa"]["dispatch"] == 2
+    with log.open("a") as out:
+        out.write('{"type": "jev_science_dispatch_started", broken\n' + whole + "\n")   # a damaged complete line
+    with pytest.raises(ValueError):
+        m25.count_events(tmp_path)
+
+
+def _pid_gone(pid, timeout_s=10.0):
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def test_the_watch_cleans_up_the_harness_group_on_every_way_out(tmp_path, monkeypatch):
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    marker = tmp_path / "child.pid"
+    leave_child = (f"import subprocess,sys,pathlib;c=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']);"
+                   f"pathlib.Path({str(marker)!r}).write_text(str(c.pid))")
+    # the leader exits and leaves a child in its group (an Electron left behind): the child is stopped too
+    proc = subprocess.Popen([sys.executable, "-c", leave_child], start_new_session=True)
+    assert m25.watch_process(proc, runs, 8, timeout_s=30, poll_s=0.05) == (0, None)
+    assert _pid_gone(int(marker.read_text()))
+    # counting fails while the harness runs: the group is stopped and the error is raised
+    marker.unlink()
+    proc = subprocess.Popen([sys.executable, "-c", leave_child + ";import time; time.sleep(60)"], start_new_session=True)
+    deadline = time.monotonic() + 15
+    while not marker.exists() and time.monotonic() < deadline:
+        time.sleep(0.05)
+
+    def broken(folder):
+        raise ValueError("a damaged events line")
+    monkeypatch.setattr(m25, "count_events", broken)
+    with pytest.raises(ValueError, match="damaged"):
+        m25.watch_process(proc, runs, 8, timeout_s=30, poll_s=0.05)
+    assert proc.poll() is not None and _pid_gone(int(marker.read_text()))
+
+
+def test_an_unfinished_phase_of_another_root_reserves_its_planned_calls(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    _events(a / "runs", "run_a1", [DISPATCH])
+    (b / "runs").mkdir(parents=True)
+    running = {**_phase("live", finished=False), "planned": 7}
+    ledger = {"schema": m25.LEDGER_SCHEMA, "roots": {
+        str(a): {"phases": [_phase(), running], "dispatch": {"run_a1": 1}},
+        str(b): {"phases": [_phase(finished=False)], "dispatch": {}}}}
+    assert m25.root_count(str(a), ledger["roots"][str(a)]) == 8                 # 1 recorded + 7 still planned
+    assert m25.root_count(str(b), ledger["roots"][str(b)]) == 1                 # nothing sent yet: its plan is held
+    assert m25.ledger_total(ledger) == 9
+    _events(a / "runs", "run_a1", [DISPATCH] * 3)                               # 4 sent so far: the plan still holds 8
+    assert m25.root_count(str(a), ledger["roots"][str(a)]) == 8
+    ledger["roots"][str(a)]["phases"][1]["finishedAt"] = "2026-10-07T01:00:00+00:00"
+    assert m25.root_count(str(a), ledger["roots"][str(a)]) == 4                 # closed: the events decide
+    still = {"phases": [{**running, "finishedAt": None}], "dispatch": {"run_a1": 1}}
+    assert m25.ledger_admission(m25.root_count(str(a), still), 0, 1, 1) is not None    # 8 held: no ninth call
+    path = tmp_path / "ledger.json"
+    path.write_text(json.dumps({"schema": m25.LEDGER_SCHEMA, "roots": {"/r": {
+        "phases": [{**_phase(finished=False), "planned": None}], "dispatch": {}}}}))
+    with pytest.raises(m25.LedgerError, match="damaged"):
+        m25.read_ledger(path)
+
+
+def test_a_phase_beside_an_unfinished_one_cannot_pass_eight_together(monkeypatch, qa_base, isolated_ledger):
+    other = qa_base / "running"
+    _events(other / "runs", "run_o1", [DISPATCH])
+    _ledger_file(isolated_ledger, {str(other.resolve()): {
+        "phases": [_phase(), {**_phase("live", finished=False), "planned": 7}], "dispatch": {"run_o1": 1}}})
+    refused = _stubbed(monkeypatch, qa_base, "beside", "calibrate", live_calls=1)
+    with pytest.raises(SystemExit, match="ledger counts 8"):
+        refused.run()
+    assert not refused.runs.exists()
+
+
+def test_ledger_updates_hold_one_lock(monkeypatch, qa_base, isolated_ledger):
+    with m25.ledger_lock(isolated_ledger):
+        with pytest.raises(m25.LedgerError, match="locked"), m25.ledger_lock(isolated_ledger, timeout_s=0.3):
+            pass
+        monkeypatch.setattr(m25, "LEDGER_LOCK_TIMEOUT_S", 0.3)
+        runner = _stubbed(monkeypatch, qa_base, "locked", "calibrate", live_calls=1)
+        with pytest.raises(SystemExit, match="locked"):
+            runner.run()
+        assert not isolated_ledger.exists() and not runner.runs.exists()
+    with m25.ledger_lock(isolated_ledger, timeout_s=0.3):
+        pass                                                                    # released with the block
+    source = Path(m25.__file__).read_text()
+    for method in ("def ledger_guard", "def ledger_close"):
+        body = source[source.index(method):]
+        body = body[:body.index("\n    def ", 10)]
+        assert "with ledger_lock(self.ledger_file):" in body and "write_ledger(" in body, method
+
+
+def _exporting(monkeypatch, base, name, out_hits):
+    runner = m25.Runner(_args(root=str(base / name), artifacts=str(base / "artifacts" / name),
+                              out=str(base / "out" / name)))
+    runner.artifacts.mkdir(parents=True)
+    runner.state["build"] = {"buildId": "b", "buildCurrentWithSource": True}
+    monkeypatch.setattr(runner, "leftovers", list)
+
+    def key_scan(roots):
+        hits = out_hits if roots == [runner.out] else []
+        return {"ok": not hits, "keyAvailable": True, "keyHits": [], "sentinelHits": hits,
+                "roots": [str(item) for item in roots]}
+    monkeypatch.setattr(runner, "key_scan", key_scan)
+    monkeypatch.setattr(m25, "assemble", lambda *args, **kwargs: {
+        "steps": {}, "cases": {}, "notObserved": {}, "verdictParts": {"cases": True}, "passed": True})
+    return runner
+
+
+def test_a_failed_search_of_the_export_makes_every_exported_document_say_acceptance_false(monkeypatch, qa_base):
+    passing = _exporting(monkeypatch, qa_base, "clean", [])
+    assert passing.finish() == 0
+    assert json.loads((passing.out / "evidence/case-ledger.json").read_text())["acceptance"] is True
+    assert "acceptance **true**" in (passing.out / "README.md").read_text()
+    failing = _exporting(monkeypatch, qa_base, "leaked", ["evidence/x.json"])
+    assert failing.finish() == 1
+    for book in (failing.artifacts / "case-ledger.json", failing.out / "evidence/case-ledger.json"):
+        ledger = json.loads(book.read_text())
+        assert (ledger["acceptance"], ledger["verdict"], ledger["postExportChecks"]["sentinelHits"]) == (
+            False, "fail", ["evidence/x.json"]), book
+    readme = (failing.out / "README.md").read_text()
+    assert "acceptance **false**" in readme and "acceptance **true**" not in readme
+    assert json.loads((failing.out / "post-export-checks.json").read_text())["ok"] is False
+    sums = (failing.out / "SHA256SUMS").read_text()
+    assert sums.count("  README.md") == 1 and sums.count("post-export-checks.json") == 1

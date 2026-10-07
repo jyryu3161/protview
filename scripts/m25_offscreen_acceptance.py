@@ -15,9 +15,11 @@ Phases (``--phase``):
   fixture    (default) a fresh --root; the backend is backend/tests/offscreen_jev_loop_fixture/server.py (the real app,
              SCIENCE_GATE over a scripted httpx.MockTransport with a sentinel placeholder credential, the other gates
              refusing and reading no credential). Step jev-loop-fixture: every screen case of the spec (ligand and
-             protein branches, scripts good, computed_alias, http_500, slow, no_usage, model_mismatch). Real calls 0,
-             proven by the fixture server record: every dispatch event and response audit is one scripted transport
-             call that carried the placeholder, and the stand-in product key resolver was never called.
+             protein branches, scripts good, good_second, computed_alias, http_500, slow, no_usage, model_mismatch).
+             Real calls 0, proven by the fixture server record: every dispatch event and response audit is one
+             scripted transport call that carried the placeholder, and the stand-in product key resolver was never
+             called. The server's server.json must name the pid this runner just started, listening on 8000 (else the
+             harness is not started); the harness checks the same with --backend-pid.
   calibrate  a fresh --root; the product backend (uvicorn mw.api.app:app, the real SCIENCE_GATE) after the key is
              found present (boolean, the product resolver in a child process) and the root .env is private (0600,
              os.lstat only, never read here). The first plan entry: a ligand 탐색형 loop over a pool of 5 with pre-checks
@@ -38,7 +40,8 @@ Phases (``--phase``):
   --rehearse (calibrate, live, calibrate --finalize)
              the same phase code path against the fixture server instead of the product backend: same setup, plan,
              dispatch guard, event counting, ledger shape and evidence, with the ledger at <root>/rehearsal-live-
-             ledger.json (never the repository ledger) and the fixture script good for every send. Real calls 0.
+             ledger.json (never the repository ledger) and the fixture scripts good and good_second by turns. It
+             never starts the product backend. Real calls 0.
 
 Counting and the ledger. The plan sends 8 times in total (calibrate 1 + live 7): run L 5, run P 3. The harness checks
 every run's jev_science_dispatch_started events before each click (plan maxDispatch and maxPerRun), this runner counts
@@ -46,8 +49,11 @@ them while the harness runs and stops it and the backend at once when the count 
 ledger runs/m25-live-ledger.json of the main checkout (git-ignored; the M24 ledger is never read) records every
 calibrate/live root: before anything starts, a phase is refused when the ledger cannot be read, when its total (every
 root, rescanned) plus this phase's planned calls passes 8, or when --live-calls passes what the ledger leaves; the phase
-is recorded as started at once and its root's counts (failed sends included) when it ends. Nothing is retried and no new
-run is opened to get more calls; a send that does not complete or a stopped egress ends the plan. Before the first
+is recorded as started at once and its root's counts (failed sends included) when it ends; an unfinished phase of any
+root counts as max(its dispatch events, its recorded calls + its planned calls), so two real-call phases started side by
+side cannot pass 8 together, and every ledger read-and-write holds the lock file next to it. A half-written last events
+line is left for the next count. Nothing is retried and no new run is opened to get more calls; a send that does not
+complete or a stopped egress ends the plan. Before the first
 real call the plan's per-run needs (expensive units incl. the M17 setup, activity time by the step time limits,
 external tokens and USD by the reservation of the widest measured body, sends) are checked against the run defaults
 (8 units, 1800 s, 120,000 tokens, USD 2.00, 10 sends) and, once the runs exist, against their remaining budget.
@@ -55,7 +61,8 @@ external tokens and USD by the reservation of the widest measured body, sends) a
 Every phase ends with: no worker, fixture server, Electron, 8000/3000 listener left; a search of the evidence, the QA
 root and the export for the API key and for the fixture placeholder (only booleans and file paths are printed); a
 wording check of the evidence; the ledger with ``acceptance`` true only when every case of the phase passed, the
-environment was present, nothing was left and the build was stamped from the current frontend source.
+environment was present, nothing was left and the build was stamped from the current frontend source. When the same
+searches over the exported folder fail, the exported README and case-ledger.json say acceptance false as well.
 ``--regressions`` (fixture phase only, with --kbase) afterwards runs the M24 (fixture phase), M23, M22, M21, M20, M19,
 M18, M17, M16, M15, M14 and M13 (all phases) runners, each with its own fresh folders; none of them sends to JEV.
 
@@ -72,6 +79,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
 import html
 import json
 import math
@@ -145,8 +154,8 @@ FIXTURE_CASES = [
     "L-send-cap-display", "L-knowledge-rows", "L-other-tabs", "P-tab-entry", "P-pool-limit", "P-create-fields",
     "P-create-refused", "P-create", "P-send-good", "P-bytes-equal", "P-order-oracle", "P-first-approval",
     "P-end-refused-job", "P-end-refused-docking", "P-dock", "P-real-engine", "P-abandon", "P-end-summary", "P-report",
-    "P-reuse", "P-failed-http", "P-pair-loop", "P-knowledge-rows", "P-other-tabs", "X-fixture-proof", "X-wording",
-    "X-no-egress-browser"]
+    "P-candidate-table", "P-reuse", "P-failed-http", "P-pair-loop", "P-knowledge-rows", "P-other-tabs", "X-fixture-proof",
+    "X-wording", "X-no-egress-browser"]
 # Ledger case → the harness row case it reads.
 ROW_CASE = {"JL-calibrate-send": "JL-calibrate", "JL-live-sends": "JL-live"}
 CASE_TEXT = {
@@ -163,7 +172,8 @@ CASE_TEXT = {
     "L-failed-model": "fixture model_mismatch: failed model_mismatch, 이유만",
     "L-ordinal-refused": "dispatch 뒤 같은 투영은 ordinal_mismatch로 막히고 다시 만들면 새 순서",
     "L-bytes-equal": "전송마다 transport 수신 바이트 SHA-256 = 미리보기 = 감사 prepared(본문 같음)",
-    "L-send-good": "fixture good(첫 criteria 키): completed, 이 바퀴의 선택",
+    "L-send-good": "fixture good_second(두 번째 criteria 키): completed, 기록이 전송을 알기 전에는 확인 중 줄만, 이 바퀴의 선택, 목록 "
+                   "위치 2/5, 계산이 그 후보로 시작",
     "L-choice-card": "JEV 판정(모델 선택) 카드 = 저장 제안: 목록 위치 n/m, 확신도, 모델, 사용량, 접힌 후보별 값은 보낸 순서 그대로, "
                      "정렬·막대·색 비교 요소 없음",
     "L-compute-jev": "이 선택으로 계산 시작: decided_by jev 승인 하나, 단독 M18 작업",
@@ -172,7 +182,8 @@ CASE_TEXT = {
     "L-late": "fixture slow 중 동의 끄기: completed + 늦은 응답, 이 바퀴의 선택이 아님, J7",
     "L-designate": "직접 지정(늦은 응답이 고른 후보): decided_by human, 실제 도킹",
     "L-designate-no-send": "전송 없는 바퀴의 직접 지정, 유효 반복 상한 도달(iteration_cap)",
-    "L-candidate-table": "후보 표: 점수 = 저장값, 점수 없는 행은 어떤 정렬·방향에서도 끝(풀 순서), aria-sort, 순번 열·강조 없음",
+    "L-candidate-table": "후보 표(루프 A: pending, 루프 B: 재사용 행·계산 행·pending): 네 열 모두 오름·내림에서 여기서 쓴 순서 규칙과 "
+                         "같음(점수 없는 행은 끝·풀 순서, 재사용 행은 바퀴 열에서 번호 있는 행 뒤), aria-sort, 순번 열·강조 없음",
     "L-end-summary": "루프 끝내기: iteration_cap, 요약 jev_loop_result@1 = 기록, LJ8",
     "L-report": "보고서 만들기: 목록의 \"JEV 루프 보고서\"와 저장된 Markdown(고정 문장, 확률 없음)",
     "L-reuse": "저장된 같은 조건 결과는 계산됨(저장된 결과 재사용, 단위 0)",
@@ -186,7 +197,8 @@ CASE_TEXT = {
     "P-create-fields": "단백질 칸별 이유: 목표·seed·반복 상한 0·확인 두 항목(confirmation_missing)·cutoff 7(argument_invalid)",
     "P-create-refused": "1MQ4 풀: 서버 422 setup_invalid(openmm_preflight_failed)가 계산 조건 칸에, 이벤트 없음",
     "P-create": "1UBQ 풀 3개로 루프 만들기, loop_active",
-    "P-send-good": "변이 본문(좌표·서열·handle 없음) 전송, 카드의 잔기 표기와 목록 위치",
+    "P-send-good": "fixture good_second: 변이 본문(좌표·서열·handle 없음) 전송, 카드의 잔기 표기와 목록 위치 2/3, 모델링·도킹이 그 "
+                   "후보로 시작",
     "P-bytes-equal": "단백질 전송 바이트 = 미리보기 = 감사 prepared = transport",
     "P-order-oracle": "단백질 순서·별칭·criteria = 독립 계산",
     "P-first-approval": "첫 비싼 계산 승인 안내 → 비싼 계산 승인(POST /jobs/approve) → 작업 시작(새 승인 이벤트 없음)",
@@ -195,6 +207,8 @@ CASE_TEXT = {
     "P-dock": "변이 구조에 도킹: 점수 = 저장 결과 첫 모드, 수용체 = 그 모델의 변이형",
     "P-real-engine": "실제 PDBFixer·OpenMM 모델링과 qvina 도킹",
     "P-abandon": "도킹 포기: not_run(docking_not_run), 유효 반복 상한 도달",
+    "P-candidate-table": "후보 표(점수 행·not_run·pending): 네 열 모두 오름·내림에서 여기서 쓴 순서 규칙과 같음(not_run·pending은 "
+                         "끝·풀 순서), 후보 열은 번호 순, aria-sort",
     "P-end-summary": "루프 끝내기: iteration_cap, 요약, LJ8",
     "P-report": "단백질 루프 보고서 저장과 목록",
     "P-reuse": "모델·변이형 도킹이 저장된 후보는 재사용(단위 0), 활용형 computed 행은 저장 점수 그대로",
@@ -239,6 +253,10 @@ NOT_OBSERVED_COMMON = {
                       "test_the_ten_send_cap_and_the_budget_are_shared_with_m24_sends 가 덮는다.",
     "L-dry-run": "연습용 run: test_jev_loop_sends.py::"
                  "test_a_loop_projection_in_a_dry_run_run_names_no_loop_and_never_reads_the_key 가 덮는다.",
+    "L-sort-null-failed": "null_result·failed 후보 행의 표 정렬 위치: 화면 run의 실제 도킹이 포즈 없음이나 실패를 만들지 않아 실제 루프 "
+                          "상태로 보이지 못했다(fixture가 결과를 꾸며 넣지 않는다). frontend/tests/jev-loop.test.cjs의 "
+                          "\"candidate order: display only; rows without a score are last in every column and direction, "
+                          "ties in pool order\" 가 덮고, 화면은 pending·not_run·재사용 행으로 같은 규칙을 확인했다.",
 }
 WORKERS = (*m13.WORKERS, "ligand_worker.py", "docking_worker.py", "openmm_mutation_worker.py", "qvina2",
            "offscreen_jev_loop_fixture/server.py")
@@ -341,12 +359,15 @@ def live_calls_arg(text: str) -> int:
 
 def count_events(runs_dir: Path) -> dict[str, dict[str, int]]:
     """Per run of the runs folder: jev_science_dispatch_started events, egress `response_received` audits (all
-    scopes) and those of the science scope (read-only file reads)."""
+    scopes) and those of the science scope (read-only file reads). A last line without its newline is being written:
+    it is left out here and counted by the next read. A damaged complete line raises ValueError."""
     counts: dict[str, dict[str, int]] = {}
     for log in sorted(Path(runs_dir).glob("run_*/events.jsonl")):
         found = {"dispatch": 0, "responseReceived": 0, "scienceResponses": 0}
         with log.open() as lines:
             for line in lines:
+                if not line.endswith("\n"):
+                    break                                 # half-written last line: the next read counts it
                 if "jev_science_dispatch_started" not in line and "response_received" not in line:
                     continue
                 event = json.loads(line)
@@ -375,37 +396,60 @@ def live_count_ok(counts: dict[str, dict[str, int]], live_calls: int, per_run: d
 
 def watch_process(proc: subprocess.Popen, runs_dir: Path, limit: int | None, timeout_s: float,
                   poll_s: float = 0.5) -> tuple[int, dict | None]:
-    """Wait for ``proc``; while it runs, count the dispatch events of every run and, once they pass ``limit``, kill its
-    process group at once. Returns (exit code, the counts that passed the limit or None); -9 on timeout."""
-    deadline = time.monotonic() + timeout_s
-    while proc.poll() is None:
+    """Wait for ``proc`` (a process group leader); while it runs, count the dispatch events of every run and, once they
+    pass ``limit``, kill its process group at once. Returns (exit code, the counts that passed the limit or None); -9 on
+    timeout. Whatever happens here (an exit, a stop, an error while counting, an interrupt), the group is cleaned up
+    before this returns or raises: no harness or Electron process of it is left."""
+    try:
+        deadline = time.monotonic() + timeout_s
+        while proc.poll() is None:
+            if limit is not None:
+                counts = count_events(runs_dir)
+                if dispatch_total(counts) > limit:
+                    kill_group(proc)
+                    return -15, counts
+            if time.monotonic() > deadline:
+                kill_group(proc)
+                return -9, None
+            time.sleep(poll_s)
         if limit is not None:
             counts = count_events(runs_dir)
             if dispatch_total(counts) > limit:
-                kill_group(proc)
-                return -15, counts
-        if time.monotonic() > deadline:
-            kill_group(proc)
-            return -9, None
-        time.sleep(poll_s)
-    if limit is not None:
-        counts = count_events(runs_dir)
-        if dispatch_total(counts) > limit:
-            return proc.returncode, counts
-    return proc.returncode, None
+                return proc.returncode, counts
+        return proc.returncode, None
+    finally:
+        kill_group(proc)
 
 
-def kill_group(proc: subprocess.Popen) -> None:
-    for sig in (signal.SIGTERM, signal.SIGKILL):
-        try:
-            os.killpg(proc.pid, sig)
-        except ProcessLookupError:
-            return
-        try:
-            proc.wait(timeout=10)
-            return
-        except subprocess.TimeoutExpired:
-            continue
+def group_alive(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def kill_group(proc: subprocess.Popen, grace_s: float = 10.0) -> None:
+    """SIGTERM to the process group of ``proc`` (the leader may already be gone), SIGKILL to whatever of the group is
+    still there after ``grace_s``; the leader is reaped. A group with nothing left is a no-op."""
+    proc.poll()
+    if not group_alive(proc.pid):
+        return
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(proc.pid, signal.SIGTERM)
+    deadline = time.monotonic() + grace_s
+    while time.monotonic() < deadline:
+        proc.poll()
+        if not group_alive(proc.pid):
+            break
+        time.sleep(0.1)
+    else:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(proc.pid, signal.SIGKILL)
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        proc.wait(timeout=10)
 
 
 def plan_sends(entries: list[dict]) -> int:
@@ -565,6 +609,15 @@ def fixture_proof(server: dict | None, calls: list[dict], dispatched: int, respo
             "answeredCalls": answered, "credentialReads": reads, "realProviderCalls": 0 if ok else None}
 
 
+def fixture_server_started(server: dict, pid: int, listeners: list[str], runs: Path) -> bool:
+    """The fixture server record names the server just started: its pid is the started pid and the only process
+    listening on 8000, and it is a fixture server (MockTransport science gate) over this runs folder."""
+    return (isinstance(server, dict) and server.get("fixture") is True
+            and server.get("schema") == "m25_jev_loop_fixture_server@1" and server.get("pid") == pid
+            and listeners == [str(pid)] and server.get("runsDir") == str(runs)
+            and "MockTransport" in str(server.get("scienceGate", "")))
+
+
 def calibration(row: dict | None) -> dict:
     """The first real send: completed, usage known and within the reservation, no egress stop, and the calibrate flow
     around it passed. Also recorded: the body bytes per input token, the reserved/used ratio, the response shape and
@@ -641,6 +694,8 @@ def read_ledger(path: Path) -> dict:
               and all(isinstance(item, dict) and item.get("phase") in LEDGER_PHASES
                       and isinstance(item.get("startedAt"), str)
                       and (item.get("finishedAt") is None or isinstance(item.get("finishedAt"), str))
+                      and (item.get("finishedAt") is not None
+                           or (type(item.get("planned")) is int and 0 <= item["planned"] <= MAX_LIVE_CALLS))
                       for item in entry["phases"]))
         if not ok:
             raise LedgerError(f"the ledger is damaged (root {root!r})")
@@ -649,7 +704,10 @@ def read_ledger(path: Path) -> dict:
 
 def root_count(root: str, entry: dict) -> int:
     """Real calls of one recorded root: per run, the larger of the recorded count and the jev_science_dispatch_started
-    events now in the root's runs folder (events only grow). An unfinished root whose runs folder is gone: LedgerError."""
+    events now in the root's runs folder (events only grow). While a phase of the root is unfinished (running in another
+    runner, or stopped before it closed), the root counts at least its recorded calls plus every unfinished phase's
+    planned calls: a phase admitted elsewhere is reserved before its sends exist. An unfinished root whose runs folder is
+    gone: LedgerError."""
     runs = Path(root) / "runs"
     if runs.is_dir():
         try:
@@ -660,7 +718,9 @@ def root_count(root: str, entry: dict) -> int:
         raise LedgerError(f"an unfinished real-call phase of {root} has no runs folder left to count")
     else:
         found = {}
-    return sum(max(entry["dispatch"].get(run, 0), found.get(run, 0)) for run in {*entry["dispatch"], *found})
+    seen = sum(max(entry["dispatch"].get(run, 0), found.get(run, 0)) for run in {*entry["dispatch"], *found})
+    reserved = sum(item.get("planned", 0) for item in entry["phases"] if item.get("finishedAt") is None)
+    return max(seen, sum(entry["dispatch"].values()) + reserved) if reserved else seen
 
 
 def ledger_total(ledger: dict, extra_roots: tuple[Path, ...] = (), exclude: Path | None = None) -> int:
@@ -670,6 +730,32 @@ def ledger_total(ledger: dict, extra_roots: tuple[Path, ...] = (), exclude: Path
         roots.setdefault(str(Path(root).resolve()), {"phases": [], "dispatch": {}})
     skip = str(Path(exclude).resolve()) if exclude is not None else None
     return sum(root_count(root, entry) for root, entry in roots.items() if root != skip)
+
+
+LEDGER_LOCK_TIMEOUT_S = 60.0
+
+
+@contextlib.contextmanager
+def ledger_lock(path: Path, timeout_s: float | None = None):
+    """Hold the lock file next to the ledger (``<ledger>.lock``, flock) for one read-and-write: two runners never
+    admit their phases or close them from the same reading. Released when the block ends or the process dies; a lock
+    still held after ``timeout_s`` (default LEDGER_LOCK_TIMEOUT_S) is a LedgerError (nothing is started or written)."""
+    lock = Path(path).with_name(f"{Path(path).name}.lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    handle = os.open(lock, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        deadline = time.monotonic() + (LEDGER_LOCK_TIMEOUT_S if timeout_s is None else timeout_s)
+        while True:
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError as exc:
+                if time.monotonic() > deadline:
+                    raise LedgerError(f"the ledger is locked by another runner ({lock})") from exc
+                time.sleep(0.1)
+        yield
+    finally:
+        os.close(handle)
 
 
 def write_ledger(path: Path, ledger: dict) -> None:
@@ -778,6 +864,18 @@ def acceptance_ok(passed: bool, build: dict | None) -> bool:
     return passed and bool((build or {}).get("buildCurrentWithSource"))
 
 
+def refuse_acceptance(ledger: dict, post: dict) -> None:
+    """The searches over the exported folder failed: the case ledger says fail and acceptance false, with what failed
+    (hit counts and file paths only, never a matched value)."""
+    scan = post.get("keyScan") or {}
+    ledger["postExportChecks"] = {"ok": False, "keyScanOk": scan.get("ok") is True,
+                                  "keyHits": scan.get("keyHits", []), "sentinelHits": scan.get("sentinelHits", []),
+                                  "wording": post.get("wordingScan"), "checkedAt": post.get("checkedAt")}
+    ledger["verdictParts"] = {**ledger.get("verdictParts", {}), "postExportChecks": False}
+    ledger["verdict"] = "fail"
+    ledger["acceptance"] = False
+
+
 class Runner(m18.Runner):
     """The M18/M17/M15 runner protections (outside /tmp, git-ignored artifacts, free ports, build stamp, mw path check,
     allowlisted env, redacted export, loopback API helpers) with the M25 setup, fixture server, guarded calibrate and
@@ -840,7 +938,10 @@ class Runner(m18.Runner):
     def uses_fixture(self) -> bool:
         return self.phase == "fixture" or self.rehearse
 
-    def start_fixture_backend(self) -> None:
+    def start_fixture_backend(self) -> bool:
+        """The fixture server on 8000. True only when its server.json names the pid just started, that pid is the one
+        listening on 8000 and the record is a fixture server over this runs folder (an old control folder's record is
+        never trusted); otherwise the server is stopped and no harness is started."""
         env = m13.child_env({"PYTHONPATH": str(self.code / "backend"), "MW_RUNS_DIR": str(self.runs),
                              "MW_REFERENCE_DIR": str(self.reference)})
         probe = subprocess.run([str(self.python), "-c", "import mw;print(mw.__file__)"], env=env, cwd=self.code,
@@ -849,28 +950,46 @@ class Runner(m18.Runner):
             raise RuntimeError(f"backend import resolved outside {self.code}: {probe.stdout}")
         log = self.artifacts / "services" / "fixture-backend.log"
         log.parent.mkdir(parents=True, exist_ok=True)
-        self.services["backend"] = subprocess.Popen(
+        proc = subprocess.Popen(
             [str(self.python), str(self.code / FIXTURE_SERVER), "--port", "8000", "--runs-dir", str(self.runs),
              "--control", str(self.control)],
             cwd=self.code, env=env, stdout=log.open("a"), stderr=subprocess.STDOUT, start_new_session=True)
+        self.services["backend"] = proc
         self.wait_http(f"{m15.API}/capabilities")
-        server = json.loads((self.control / "server.json").read_text())
-        self.environment["fixtureServer"] = (server.get("fixture") is True and server.get("runsDir") == str(self.runs)
-                                             and "MockTransport" in server.get("scienceGate", ""))
+        try:
+            server = json.loads((self.control / "server.json").read_text())
+        except (OSError, ValueError):
+            server = {}
+        listeners = m13.listening(8000)
+        started = fixture_server_started(server, proc.pid, listeners, self.runs)
+        self.environment["fixtureServer"] = started
         self.environment["fixtureServerRecord"] = {k: server.get(k) for k in ("schema", "scienceGate", "viewerGate",
                                                                                "defaultGate", "scripts")}
         self.state.setdefault("services", []).append({"name": "fixture-backend", "runs": str(self.runs),
-                                                      "control": str(self.control), "startedAt": now()})
+                                                      "control": str(self.control), "pid": proc.pid,
+                                                      "startedAt": now()})
         self.save()
+        self.record("fixture-server", "pass" if started else "fail", detail={
+            "startedPid": proc.pid, "serverJsonPid": server.get("pid"), "listeners": listeners})
+        if not started:
+            self.stop_backend()
+        return started
 
-    def start_phase_backend(self) -> None:
-        """The fixture server (fixture phase and rehearsals) or the product backend (the real-call phases)."""
+    def start_phase_backend(self) -> bool:
+        """The fixture server (fixture phase and rehearsals: never the product backend) or the product backend (the
+        real-call phases). False when the fixture server cannot be trusted (no harness then)."""
         if self.uses_fixture():
-            self.start_fixture_backend()
+            ready = self.start_fixture_backend()
         else:
             self.start_backend_at("backend", self.code, self.runs)
+            ready = True
         self.dispatch_before = dispatch_total(count_events(self.runs)) if self.runs.is_dir() else 0
         self.calls_before = len(self.fixture_calls())
+        return ready
+
+    def fixture_args(self) -> list[str]:
+        """The harness arguments of the fixture server just started: its control folder and pid."""
+        return ["--control", str(self.control), "--backend-pid", str(self.services["backend"].pid)]
 
     def capabilities_ready(self) -> bool:
         methods = self.get_json("/capabilities").get("methods") or {}
@@ -1005,7 +1124,10 @@ class Runner(m18.Runner):
 
     # ----- phases ------------------------------------------------------------------------------
     def run_fixture(self) -> None:
-        self.start_phase_backend()
+        if not self.start_phase_backend():
+            self.missing_prerequisite("jev-loop-fixture", "the fixture server record does not name the server just "
+                                                          "started (no harness started)")
+            return
         if not self.capabilities_ready():
             self.missing_prerequisite("jev-loop-fixture", "backend reports a needed method unavailable")
             return
@@ -1013,16 +1135,19 @@ class Runner(m18.Runner):
         if setup is None:
             self.missing_prerequisite("jev-loop-fixture", "the QA runs could not be made")
             return
-        self.flow("jev-loop-fixture", "fixture", ["--control", str(self.control), "--setup", str(setup)])
+        self.flow("jev-loop-fixture", "fixture", [*self.fixture_args(), "--setup", str(setup)])
         self.checks["events"] = count_events(self.runs)
         self.check_fixture_proof()
 
     def phase_extra(self, setup: Path, plan: Path) -> list[str]:
         extra = ["--setup", str(setup), "--plan", str(plan)]
-        return [*extra, "--control", str(self.control)] if self.rehearse else extra
+        return [*extra, *self.fixture_args()] if self.rehearse else extra
 
     def run_calibrate(self) -> None:
-        self.start_phase_backend()
+        if not self.start_phase_backend():
+            self.missing_prerequisite("jev-loop-calibrate", "the fixture server record does not name the server just "
+                                                            "started (no harness started, no call made)")
+            return
         if not (self.capabilities_ready() and self.key_available()):
             self.missing_prerequisite("jev-loop-calibrate", "a needed method is unavailable or the key is absent (no call "
                                                             "made)")
@@ -1058,7 +1183,10 @@ class Runner(m18.Runner):
     def run_live(self) -> None:
         state = json.loads(self.state_path.read_text())
         self.checks["calibration"] = state.get("calibration") or {"ok": False}
-        self.start_phase_backend()
+        if not self.start_phase_backend():
+            self.missing_prerequisite("jev-loop-live", "the fixture server record does not name the server just started "
+                                                       "(no harness started, no call made)")
+            return
         if not (self.capabilities_ready() and self.key_available()):
             self.missing_prerequisite("jev-loop-live", "a needed method is unavailable or the key is absent (no call made)")
             return
@@ -1106,19 +1234,19 @@ class Runner(m18.Runner):
         planned = self.planned_calls()
         try:
             self.ledger_file = self.ledger_location()
-            ledger = read_ledger(self.ledger_file)
-            others = ledger_total(ledger, exclude=self.root)
-            mine = root_count(str(self.root), ledger["roots"].get(str(self.root)) or {"phases": [], "dispatch": {}})
+            with ledger_lock(self.ledger_file):
+                ledger = read_ledger(self.ledger_file)
+                others = ledger_total(ledger, exclude=self.root)
+                mine = root_count(str(self.root), ledger["roots"].get(str(self.root)) or {"phases": [], "dispatch": {}})
+                refusal = ledger_admission(others, mine, planned, self.live_calls)
+                if refusal is not None:
+                    raise SystemExit(f"real calls refused, nothing started: {refusal}")
+                entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
+                entry["phases"].append({"phase": self.phase, "startedAt": now(), "finishedAt": None, "planned": planned,
+                                        "liveCalls": self.live_calls})
+                write_ledger(self.ledger_file, ledger)
         except LedgerError as exc:
             raise SystemExit(f"real calls refused, nothing started: {exc}") from exc
-        refusal = ledger_admission(others, mine, planned, self.live_calls)
-        if refusal is not None:
-            raise SystemExit(f"real calls refused, nothing started: {refusal}")
-        entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
-        entry["phases"].append({"phase": self.phase, "startedAt": now(), "finishedAt": None, "planned": planned,
-                                "liveCalls": self.live_calls})
-        try:
-            write_ledger(self.ledger_file, ledger)
         except OSError as exc:
             raise SystemExit(f"real calls refused, nothing started: the ledger cannot be written ({exc})") from exc
         self.ledger_open = True
@@ -1130,16 +1258,17 @@ class Runner(m18.Runner):
         if not self.ledger_open:
             return
         self.ledger_open = False
-        ledger = read_ledger(self.ledger_file)
-        entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
-        found = count_events(self.runs) if self.runs.is_dir() else {}
-        for run, item in found.items():
-            entry["dispatch"][run] = max(entry["dispatch"].get(run, 0), item["dispatch"])
-        for item in entry["phases"]:
-            if item["finishedAt"] is None:
-                item["finishedAt"] = now()
-        write_ledger(self.ledger_file, ledger)
-        after = ledger_total(ledger)
+        with ledger_lock(self.ledger_file):
+            ledger = read_ledger(self.ledger_file)
+            entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
+            found = count_events(self.runs) if self.runs.is_dir() else {}
+            for run, item in found.items():
+                entry["dispatch"][run] = max(entry["dispatch"].get(run, 0), item["dispatch"])
+            for item in entry["phases"]:
+                if item["finishedAt"] is None:
+                    item["finishedAt"] = now()
+            write_ledger(self.ledger_file, ledger)
+            after = ledger_total(ledger)
         self.artifacts.mkdir(parents=True, exist_ok=True)
         self.checks["liveLedger"] = {**self.checks.get("liveLedger", {}), "ok": after <= MAX_LIVE_CALLS, "after": after,
                                      "rootDispatch": sum(entry["dispatch"].values())}
@@ -1364,6 +1493,9 @@ class Runner(m18.Runner):
                  ("- 입력: run L = 공개 준비 수용체 예제·공개 파생 부모·합성 표시 작은 block 목록의 실제 M17 후보 10개(부위 22, 고정 "
                   "교체), run P = 공개 1UBQ(22곳)·1MQ4(3곳) A 치환 실제 M20 후보 집합과 합성 표시 페놀 SDF."),
                  f"- 남은 프로세스/포트: {ledger['leftoverProcesses'] or '없음'}",
+                 *([(f"- 내보낸 증거 검사(키·placeholder·문구) 실패: "
+                     f"{json.dumps(ledger['postExportChecks'], ensure_ascii=False)} — acceptance false")]
+                   if ledger.get("postExportChecks") else []),
                  f"- 브라우저 비-loopback 요청 합계: {ledger['externalRequestsTotal']}", ""]
         if ledger["phase"] == "fixture" or ledger.get("rehearsal"):
             lines += [(f"- 실호출: 0회. fixture 서버(SCIENCE_GATE = 스크립트된 httpx.MockTransport)만 썼고, 이 단계의 dispatch "
@@ -1412,16 +1544,25 @@ class Runner(m18.Runner):
         return "\n".join(lines) + "\n"
 
     def export(self, ledger: dict) -> None:
+        """Export, then the key/placeholder and wording searches over the exported folder. When they fail, the case
+        ledger (artifacts and export) and the exported README are written again with acceptance false and the failed
+        searches (counts and paths only), so no exported document says true beside a failed check."""
         super().export(ledger)
         post = {"keyScan": self.key_scan([self.out]), "wordingScan": scan_wording(self.out), "checkedAt": now()}
         ok = post["keyScan"]["ok"] and post["wordingScan"] == {}
+        if not ok:
+            refuse_acceptance(ledger, post)
+            (self.artifacts / "case-ledger.json").write_text(json.dumps(ledger, indent=2, ensure_ascii=False) + "\n")
+            super().export(ledger)
         target = self.out / "post-export-checks.json"
-        target.write_text(json.dumps({**post, "keyScan": {k: v for k, v in post["keyScan"].items() if k != "roots"}},
+        target.write_text(json.dumps({**post, "ok": ok, "keyScan": {k: v for k, v in post["keyScan"].items()
+                                                                    if k != "roots"}},
                                      indent=2, ensure_ascii=False) + "\n")
         with (self.out / "SHA256SUMS").open("a") as sums:
             sums.write(f"{m13.sha_file(target)}  post-export-checks.json\n")
         self.record("post-export-checks", "pass" if ok else "fail", keyHits=len(post["keyScan"].get("keyHits", [])),
-                    sentinelHits=len(post["keyScan"].get("sentinelHits", [])), wording=post["wordingScan"])
+                    sentinelHits=len(post["keyScan"].get("sentinelHits", [])), wording=post["wordingScan"],
+                    acceptance=ledger["acceptance"])
 
     def run(self) -> int:
         busy = {port: m13.listening(port) for port in (8000, 3000)}
