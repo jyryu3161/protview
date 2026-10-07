@@ -1,0 +1,357 @@
+M25 T1 착수 확인 (preflight) — 2026-10-07, 브랜치 dryforge/m25-jev-loop, 기준 커밋 b8866a8 (main = M24 병합 기록)
+명세: .dryforge/spec.md 전체(특히 3.2·3.3·4.1·5.1·6.1·6.4·7·8·11), 계획 T1 (a)–(l). 위험 등급 MECHANICAL.
+
+제품 코드(backend/mw)는 한 줄도 바꾸지 않았다(git status: 새 폴더 backend/tests/fixtures/jev_loop/, 새 파일
+backend/tests/fixtures/jev/golden_science_m24.{py,json}, jev/SYNTHETIC-PROVENANCE.md 표·변경 기록 두 줄 추가, 이 문서뿐).
+외부 요청 0건: OpenRouter 실호출 0회, 과학 전송은 모두 httpx.MockTransport(가짜 transport) + 가짜 sentinel 키. API 키 값은
+출력·기록하지 않았고(존재 불리언만) .env 내용은 열지 않았다. 서비스를 띄우지 않았다(8000·3000 LISTEN 0, 측정은 in-process
+Run·JobQueue·TestClient). 측정 run 폴더는 세션 스크래치 디렉터리 <S> = /private/tmp/claude-501/-Users-jaeyongryu-Projects-
+protview/ff8a2117-62a5-4dd6-b3da-040e6c680030/scratchpad/t1 아래(저장소 밖, /tmp 하위 세션 전용 폴더, 커밋 안 함). 골든 기록기는
+Git 제외 runs/golden-science-m24-<pid>를 쓰고 끝에 지운다(남은 폴더 0 확인).
+측정 기기: Apple M3 Ultra, Python 3.11.11(.venv), OpenMM 8.6.0, PDBFixer 1.12.0, gemmi 0.7.5, numpy 2.4.6, httpx 0.28.1,
+fastapi 0.141.1, ruff 0.16.8. 도킹: .deps/docking/venv-locked + .deps/qvina/env/bin/qvina2(--cpu 1), M17: .deps/prolif/venv-locked.
+새 측정 스크립트(전부 PROTOTYPE, 제품 아님, 각 파일 첫 줄): backend/tests/fixtures/jev_loop/prototype_queue_semantics.py,
+prototype_engine_calls.py, prototype_loop_body_size.py, prototype_loop_read.py, prototype_loop_events.py,
+prototype_m24_branch_points.py (+ SYNTHETIC-PROVENANCE.md). 골든: backend/tests/fixtures/jev/golden_science_m24.json
+(sha256 78d4cf12078c443b7525d16c6af3df7afcc3be135a49de431bf0f7616fee482c, 209,001 B) + 기록기 golden_science_m24.py.
+
+==================================================================================================
+요약 표 (항목 a–l)
+==================================================================================================
+항목 | 명세 기대 | 실측 | 판정 | 후속 작업에 주는 정보
+(a) 큐 의미 | submit은 같은 호출 키의 기존 작업을 상태 무관 반환, 시작 전 취소 = cancelled·무과금, retry는 failed·interrupted만, 프로세스 전/후를 예약 과금 이벤트로 가름, M18·M21 키에 timeout_s 없음 | 전부 그대로(M21 6사례 + M18 취소 1사례). 전/후 경계 = budget_reserved{attempt_id, root_call_id=<job_id>, tool, expensive_calls:1}(job_id 필드 없음). 다른 timeout_s 재제출 = 같은 job_id, 첫 timeout_s 유지 | 일치 | T6: 과금 판정은 budget_reserved.root_call_id == job_id로(job_terminal.attempt_id는 시작 전·예약 직후 취소에서 None). 예약 직후·dispatch 전 취소 창이 있다(과금 1, 프로세스 없음, cancelled/attempt None) → 명세 규칙(과금 = 뒤)대로 failed. 시간 초과 실패의 failure는 {error: resource_exceeded, message: "job timeout"}로 reason_code가 없다(→ steps[].reason_code null). 첫 계산 승인 대기 = claimed + blocked_reason approval_or_cancel(approval_requested는 run 수준, job_id 없음; budget 막힘도 같은 blocked_reason). 재시작 시 승인 대기 작업은 interrupted·무과금(→ unavailable)이고 루프 밖 retry로 다시 queued가 될 수 있다
+(b) 호출 키 일치 | 루프 인자 = 단독 M18(리간드·변이 구조)·M21과 같은 바이트, published_m18_results로 키→handle | 리간드: loop 요청 정규화 바이트·호출 키 = M19 row_arguments = M22 row_arguments·individual_selection = 실제 JobQueue 작업 call_key(인코딩 변형 3종 동일). 단백질: M21 키 = 작업 call_key(cutoff 4/4.0/생략 동일), 변이 쪽 M18 = M23 individual_arguments·작업 call_key. published_m18_results가 단독 작업·M19 행 결과를 루프 키로 찾음 | 일치 | 키 계산: M18 docking_bundle.call_key(docking_inputs.validate_arguments(req), docking_bundle.require_ready()), M21 mutation_model_bundle.call_key(mutation_model_inputs.normalize_arguments(args), mutation_model_bundle.require_ready()) — 저장소 읽기 없이 인자만으로. M21 키→모델 handle 색인 함수는 기존에 없다(T3/T6이 job_submitted(protocol·call_key) → job_terminal done output_handles[0]로 만들고 mutation_model_bundle.validated_result로 검증; 프로토타입 일치 확인)
+(c) M24 확장 | M24 바이트 불변인 최소 분기로 루프 투영·제안을 받을 수 있음 | 분기 지점 9곳(아래 표, 함수·줄·분기 방법). 수정 안 한 M24 함수가 루프 모양을 어디서 거절하는지 실측. golden_egress --check 0, 새 골든 --check 0, M24·증액 AST pytest 528 통과 | 일치 | 분기 키 = 저장 kind/schema(jev_loop_projection@1) 또는 content["schema"]·question id. egress/science.py가 jev_sends를 import하므로(L33) jev_sends는 science를 import 못 함; 루프 모듈은 둘 다 import하지 않으면 순환 없음
+(d) 본문 크기 | 후보 20개 루프 본문(섞기·computed 포함) ≤ 64 KiB | 최대 실측 31,525 B(1MQ4 변이 exploit, 18개 계산·폭 최대 점수), 닿을 수 없는 상한(20개 모두 계산 + criteria 20) 32,089 B, 1UBQ 최대 27,448 B, 리간드 최대 11,362 B | 일치 | 64 KiB의 48%. 지시문 684/906/733/1,115 B(리간드 explore/exploit, 변이 explore/exploit). 예약식으로 1MQ4 최대 본문도 run당 6전송(명세 §7 "약 6번"과 같음)
+(e) 읽기 비용·잠금 | 로그 한 번 읽기 도출, 큰 로그 시간, compute 라우트의 submit·start가 잠금·owner_active·취소/재시도 규칙과 충돌 없음 | 읽기 보기(M24 _JevReadView 모양) 하나로 JobQueue 접기·재사용 색인·저장 결과 검증까지 읽기 1회. 50 MB: 읽기 0.089 s, 도출 0.122 s(후보별 재읽기 방식 0.495 s·5회), append 0.087 s, _mutation 0.52 s. _mutation 안 submit 가능·start는 busy, start 중 다른 스레드의 owner/mutation/start는 busy·submit/cancel은 가능 | 일치 | T3: 읽기는 view 하나를 JobQueue(view).list()·published_m18_results·docking_bundle/mutation_model_bundle.validated_result에 넘긴다. T6: 승인 이벤트·submit은 실행 잠금 안, start는 잠금을 놓은 뒤(_transition 안에서 submit을 부르면 같은 스레드 교착: 재진입 불가). M13은 M18·M21 작업을 만들지 않아 execution_link 없음 → _refuse_unlinked_owned 거절 없음
+(f) 엔진 시간 | 리간드 도킹 300 s·모델링 120 s·변이 구조 도킹 300 s 안 | 리간드 M18 기본값(exh 8, 9모드, ligand_range 8 Å) 32.5 s·40.4 s, M19 1행 37.5 s(M22 실측 35–83 s), M21 1UBQ I44W 20.0 s·20.6 s, 변이 구조 도킹(페놀) 2.8 s | 일치 | 여유 3.6배 이상. 1MQ4는 M21 입장에서 422 openmm_preflight_failed(모델링 불가) → 단백질 루프 QA·실호출은 1UBQ로(로컬 공개 구조 중 M7 통과는 1UBQ뿐)
+(g) 새 이벤트 넷 | core/events.py 추가와 재생·정산 무영향 | 루프 이벤트 넷을 끼운 run과 안 끼운 run의 예산·egress 멈춤·작업 상태·재사용 색인·전송 기록·상태·재열기 추가 이벤트·GET 25개 상태 코드 전부 같음 | 일치 | EventType은 typing Literal(런타임 검사 없음). jev_loop_compute_approved의 units·call_key 필드를 읽는 기존 접기 없음
+(h) M21 짝 표 | docking_pairs가 변이 쪽만 있는 도킹을 어떻게 읽는지, 그 파일이 호출 키 해시 집합 밖 | 짝 1개: wild_type_reference not_submitted, mutant done·other_side_missing(점수·handle null), both_published false. mutation_model_reads.py는 어떤 해시 집합에도 없음 | 일치 | T7: 짝 행에 loop 키만 더하면 됨(이유 집합 불변). 짝 행 키 = {both_published, condition, first_submitted_seq, index, sides}
+(i) 카디널리티 지도 | 실제 파일 목록 | 아래 (i) 목록(파일:줄) | 일치 | T3–T10 최소 수정 대상 확정
+(j) 키·권한 | 키 해석기 불리언 True, .env 0600 | resolver_found_key True, gate_accepts_shape True, mode 600, 일반 파일, git 무시·미추적, 환경변수 미설정 | 일치 | T12 실호출 전제 충족(값은 보지 않음)
+(k) M24 과학 전송 골든 | 수정 안 한 M24로 투영·미리보기·jev_send@1(완료·거절·실패)·jev_choice@1·감사 열·/jev/status 바이트 기록 + --check | 9사례(완료 2·재생·충돌 409 둘·사용량 없음 → egress_stopped·거절 consent_off/missing_credential·실패 http 500/response_invalid/model_mismatch·dry-run) + 보고서 + capability. --write(두 번 기록 동일) 0, --check 0(별도 프로세스 2회) | 일치 | 이후 모든 작업이 golden_science_m24.py --check와 prototype_golden_egress.py --check를 통과해야 함
+(l) 점검 사실 재확인 | 큐·게이트·매핑 사실 6개 | 6개 모두 코드 줄과 실측으로 확인 | 일치 | 아래 (l)
+
+판정: 불일치 0. 멈출 사유(계획 "멈추고 알릴 상황") 없음. 해석이 필요한 곳 두 개는 끝의 "명세 해석 메모"에 적었다(멈춤 아님).
+
+==================================================================================================
+(a) 작업 큐 의미 — 같은 호출 키, 시작·재시도·취소, 프로세스 전/후 경계
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev_loop/prototype_queue_semantics.py --work <S>/queue   (27.7 s, exit 0)
+      (M18 사례는 (b)의 prototype_engine_calls.py 안 "m18_cancel_before_start")
+입력: 공개 1UBQ I44(M20 값싼 도구, 후보 19개), M21 openmm_mutation_model_v1, 사례마다 다른 후보 번호(다른 호출 키), 기본 한도.
+출력(각 사례의 작업 이벤트 순서; 예약은 job_id 없이 root_call_id = job_id로 연결):
+  1 시작 전 취소: job_submitted → job_cancel_requested → job_terminal:cancelled(attempt None). 예약 0.
+    같은 인자(timeout 240)로 재제출 → 같은 job_id, status cancelled, timeout_s 120 유지. start → precondition "job cannot start from
+    its current state", retry → precondition "job recovery allowance exhausted or not eligible".
+  2 첫 계산 승인 대기 후 취소: start → ApprovalRequired expensive_first_call, 상태 claimed + blocked_reason approval_or_cancel,
+    이벤트 job_claimed → approval_requested(run 수준, gate expensive_first_call, job_id 없음) → job_blocked:approval_or_cancel →
+    (cancel) job_cancel_requested → job_terminal:cancelled(attempt None). 예약 0. 재제출 = 같은 job_id.
+  3 승인 대기 중 서버 재시작: 새 Run 객체 + reconcile_run → job_terminal:interrupted(attempt None, failure {interrupted, "claim
+    owner lost"}), 예약 0. 루프 밖 retry → 허용(job_retry_queued, status queued, attempt_ordinal 0). 재제출 = 같은 job_id(queued).
+  4 승인 대기 → 승인 → 다시 start → done(20.56 s): job_submitted → job_claimed → approval_requested → job_blocked:approval_or_cancel
+    → approval_resolved → budget_reserved:units=1 → job_dispatch_intent → job_launch_identity → job_execution_authorized →
+    job_worker_started → job_cleanup_verified → job_result_candidate → job_terminal:done(attempt set) → wall_charged.
+    done 작업에 start/retry → precondition, cancel → already_terminal.
+  5 예약 직후·dispatch 전 취소(이 Run 인스턴스의 reserve_attempt를 측정 프로세스에서만 감싸 예약 반환 직후 request_cancel):
+    job_claimed → budget_reserved:units=1 → job_cancel_requested → job_terminal:cancelled(attempt None) → wall_charged.
+    비싼 계산 사용량 +1, job_dispatch_intent 0, attempt_ordinal 1. (claimed 작업이라 request_cancel이 종료를 바로 쓰고, 큐
+    L1474–1489가 cancel_requested를 보고 dispatch_intent 없이 _terminal(None, cancelled)로 끝낸다)
+  6 시간 초과 1 s: … budget_reserved → job_dispatch_intent → … → job_cleanup_verified → job_terminal:failed(attempt set) →
+    wall_charged. failure {"error": "resource_exceeded", "message": "job timeout"}(reason_code 키 없음). retry → 허용(queued,
+    attempt_ordinal 1). 재제출 = 같은 job_id.
+  timeout_s 무관: M21 120/240, M18 300/60 재제출 모두 같은 job_id((b)); 호출 키 함수 docking_bundle.call_key(L380–383)·
+    mutation_model_bundle.call_key(L223–228)에 timeout 인자가 없다.
+결론: 일치. 프로세스가 뜨기 전/후를 가르는 이벤트는 budget_reserved(L297 orchestrator.reserve_attempt; 필드 attempt_id,
+  root_call_id, tool, expensive_calls; job_id 없음)이고 그 뒤 job_dispatch_intent가 실제 시작이다. 명세 §6.4는 "예약 과금 이벤트
+  유무"로 정의하므로 5번 창(과금됨·프로세스 없음)도 명세상 "뒤"(failed, 바퀴 시작으로 셈, 단위 1)다 — 요약 검증의 "단위 수 =
+  과금된 단계 수"도 예약 기준이어야 일관된다(dispatch_intent 기준으로 세면 어긋남). 시작 전 취소·승인 대기 중 중단은 예약 0.
+
+==================================================================================================
+(b) 호출 키 일치 — 루프 인자 vs 단독 M18·M19·M22·M23·M21, published_m18_results
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev_loop/prototype_engine_calls.py --work <S>/engine --keep   (137 s, exit 0)
+입력: 리간드 — 수용체 prolif-vina-rec.pdb(pdb_conect, model 1, 인스턴스 없음), 부모 public-derived-parent-record0.sdf, 합성 표시
+  블록 synthetic-ga-small-blocks.smi → 실제 M17 작업(점검·생성, site [22], 고정 교체) 10개 풀. setup(§3.1 리간드) = M22 공유
+  필드 + parent_sdf_handle, box ligand_range 8, parameters {seed 7}. 루프 요청 = docking_batch_inputs.row_request({**setup, mode:
+  "free", candidate_set_handle, parent_sdf_handle}, "candidate", cid).
+  단백질 — 1UBQ I44(M20), I44W(index 17), 합성 표시 페놀 SDF, setup(§3.1 단백질) parameters {seed 20261007}, cutoff 4.0, 정책 둘.
+출력:
+  리간드 정규화 바이트 sha256 7098d4d6…709a, 호출 키 fdeab27d…0e51.
+    인코딩 변형(기본값 명시 / margin·energy_range 실수 / 키 순서 뒤집기) 3종: 정규화 바이트·호출 키 모두 같음.
+    M19 row_arguments == 루프 정규화(True), M22 row_arguments == (True), M22 individual_selection == docking_bundle.submission의
+    selected(canonical 바이트 True), M19·M22 경로 호출 키 == 루프 키(True).
+    실제 JobQueue.submit(qvina_dock_v1, 루프 요청, timeout 300) call_key == 루프 키(True); 기본값 명시 요청·timeout 60 재제출 →
+    같은 job_id, timeout_s 300 유지. 완료 뒤 published_m18_results(events)[루프 키] == 결과 handle(True), validated_result의
+    input_sha256 == 루프 정규화의 input_sha256(True).
+    다른 후보 하나를 같은 setup의 M19 1행 일괄로 계산 → published_m18_results[그 후보의 루프 키] == 행 결과 handle(True, 검증 통과).
+  단백질 M21: call_key(normalize_arguments(루프 인자), require_ready()) == 작업 call_key(True); cutoff 4(정수)·생략(기본 4.0) 변형도
+    같은 키. timeout 240 재제출 = 같은 job_id. 키→모델 handle 프로토타입 조회(job_submitted protocol·call_key → job_terminal done
+    output_handles[0]) == 실제 모델(True), mutation_model_bundle.validated_result 통과.
+  단백질 M18(변이 쪽): 정규화 sha256 d5d5498d…9c36, 키 59c351d0…adf2. sequence_ga_inputs.individual_arguments(…, 모델, "mutant")
+    == 루프 정규화(True), 키 같음(True), 기본값 명시 변형 같음(True). 작업 call_key == 루프 키(True), published_m18_results 조회 True.
+  키 계산 비용: docking_bundle.require_ready() 첫 호출 0.499 s(작업 모듈 handshake)·이후 0.0007 s, mutation_model_bundle.
+    require_ready() 0.044 s.
+결론: 일치. 루프가 만드는 요청은 단독 M18·M21과 바이트까지 같은 정규화·호출 키를 가지며, 서버는 저장소를 읽지 않고 인자만으로
+  키를 계산할 수 있다. M18 결과는 기존 docking_batch_inputs.published_m18_results(events)(L179–226; 단독·M19 행·M22·M23)로 키 →
+  handle을 찾고 docking_bundle.validated_result + input_sha256 대조로 검증한다. M21에는 키 → handle 색인 함수가 없어 루프 쪽에
+  같은 모양의 순수 함수(이벤트 목록 → {키: handle})가 필요하다(producer와 같은 "가장 먼저 완료된 게시").
+
+==================================================================================================
+(c) M24 확장 가능성 — 분기 지점(함수·줄·분기 방식), 바이트 불변
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev_loop/prototype_m24_branch_points.py --work <S>/branch   (exit 0)
+      .venv/bin/python backend/tests/fixtures/jev/prototype_golden_egress.py --check   → matches, exit 0
+      .venv/bin/python backend/tests/fixtures/jev/golden_science_m24.py --check        → matches, exit 0
+      .venv/bin/python -m pytest backend/tests/test_jev_{ast,constants,projection,tool,science_gate,sends,api,reports}.py
+        backend/tests/test_{docking_batch,ligand_ga,sequence_ga}_budget.py -q -p no:cacheprovider → 528 passed, exit 0 (50.4 s)
+실측(수정 안 한 M24 함수에 진짜 M24 투영 / 합성 표시 루프 모양 객체):
+  M24 투영: load_projection·preview_for·validated_projection 모두 통과.
+  루프 모양: load_projection → JevSendError input_invalid {reason_code: projection_invalid}(종류 검사 L163) / validated_projection →
+  ProjectionInvalid "projection keys" / J.INSTRUCTIONS["mutation_loop_choice@1"] → KeyError / parse_choice(계산된 별칭 m01 선택,
+  별칭 전부) → 통과(= 루프에는 criteria 별칭 기준 parse_loop_choice가 필요) / 루프 질문 id 승인의 _record → kind null, source.schema
+  null, body_bytes null / validated_choice(루프 투영) → ChoiceInvalid.
+분기 지점(정확한 이름과 시그니처; 줄은 b8866a8 기준):
+  1 jev_sends.load_projection(run: Any, handle: Any) -> dict  (L154–173)
+    L163 (kind, schema) == (jev_projection, jev_projection@1), L166 P.validated_projection. 분기: 저장 (kind, schema) ==
+    (jev_loop_projection, jev_loop_projection@1)이면 루프 검증기(validated_loop_projection)로. 이웃 prefix 검사 L169–172는 공통.
+  2 jev_sends.preview_for(run: Any, projection_handle: Any, events: list[dict]) -> dict  (L213–233)
+    L215 P.projection_body, L226 J.INSTRUCTIONS[question_id], L227 J.instructions_sha256(question_id). 분기: content["schema"]로
+    루프 본문 함수·루프 지시문, 응답에 loop·loop_blocks 키는 루프일 때만(M24 응답 키 집합 불변). _blocked(L193–210) 공통.
+  3 async jev_sends.run_send(run: Any, gate: Any, /, *, send_id=None, projection=None, body_sha256=None, confirm=None,
+      **unknown) -> dict  (L279–309)
+    L284 P.projection_body(분기), L292–294 승인 dict(공통: question_id·source_handle·selection_count), L296–300 admit(events):
+    _AlreadyApproved 검사 → (루프 투영이면 여기서 루프 검사, 실패 시 승인 이벤트 없이 JevSendError 409 loop_send_invalid) →
+    run.events.append(J.EVENT_APPROVED, …). _replayed(L268–276)는 begin_send 전에 그대로 먼저(명세 순서와 같음).
+  4 jev_sends._finish(run, content, projection_handle, send_id, result) -> dict  (L312–336)
+    L323–330 source_content·build_choice·validated_choice·store.put(J.CHOICE_KIND …). 분기: 루프 투영이면 루프 제안 만들기·
+    validated_loop_choice·store.put(jev_loop_choice …). 늦음 판정 L320·결과 이벤트 L331–334 공통.
+  5 egress/science.py request_science(gate, run, projection_content, send_id, *, admit) -> ScienceGateResult  (L70–226)
+    L76 P.validated_projection, L77 P.projection_body, L79 aliases(L222 P.parse_choice에 씀). 분기: content["schema"]로 루프 검증·
+    루프 본문·criteria 별칭·parse_loop_choice. _approval_recorded(L58–67, selection_count = len(selection) → 루프 selection은
+    unavailable 제외로 같은 규칙)·_pins_match(L50–55, 본문 model·provider)·감사 prepared 필드(L147–150) 공통.
+  6 jev_sends._check_choice(content, projection, source) -> None (L494–534) / validated_choice(content, projection, source) -> dict
+    (L537–545) / build_choice(projection_handle, projection, source, *, send_id, audit_id, answer, served_model, usage, late,
+    late_reason) -> dict (L447–469): M24 스키마 전용(CHOICE_KEYS, instructions_sha256, limitations_for). 손대지 않고 루프 모듈에
+    jev_loop_choice@1 전용 함수를 둔다.
+  7 jev_sends.load_choice(run: Any, handle: Any) -> dict  (L548–563) L556 종류 검사 → app.py jev_send_detail(L2425–2444)이
+    choice_handle의 종류(jev_loop_choice)로 루프 제안 로더를 고르는 분기(M24 상세 응답 바이트 불변).
+  8 jev_sends._index(events) -> dict (L341–356) L354 object_created 중 jev_projection만 색인 → jev_loop_projection도 색인해야
+    _body_bytes(index, handle) (L359–367)와 loop{loop_id, iteration, send_ordinal}(투영 payload에서 읽음)가 나온다.
+  9 jev_sends._record(index, send_id) -> dict (L370–396) L374 KIND_FOR_QUESTION.get(question_id)(L56) → 루프 질문 id 둘의
+    갈래 대응과 loop 키(루프일 때만; M24 기록 키 집합 SEND_KEYS 불변). send_record(events, send_id) (L399–403)·list_sends(events)
+    (L406–408)는 그대로 전달.
+  공통 순수 함수(재사용·대조 대상): consent_enabled(events) L107, dispatch_count(events) L115, cancel_seen(run, events) L119,
+  late_arrival(events, send_id) L123, send_active(run_id) L95, status_for(run, events) L183. app.py 라우트: jev_preview L2372,
+  jev_send_create L2388(새 409 loop_send_invalid는 기존 _jev_error L2337로 나감), jev_send_list L2414, jev_send_detail L2425.
+결론: 일치. M24 경로는 저장 종류·스키마·질문 id로 가르는 최소 분기로 루프를 받을 수 있고, M24 투영·본문·감사 열·jev_choice@1·
+  읽기 바이트는 두 골든 --check로 지킨다. import 제약: egress/science.py가 jev_sends를 import(L33: cancel_seen, consent_enabled,
+  dispatch_count)하므로 jev_sends → science는 순환. 루프 모듈(jev_loop_*·jev_loops)은 jev_sends·science를 import하지 않으면
+  jev_sends·science·app이 루프 모듈을 import해도 순환이 없다(test_jev_ast.py L94–97 임포터 집합 불변).
+
+==================================================================================================
+(d) 루프 본문 크기 (64 KiB = 65,536 B)
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev_loop/prototype_loop_body_size.py --work <S>/body   (12.1 s, exit 0)
+방법: 실제 M20 집합(1UBQ·1MQ4, 사용자 위치 = M24 oracle 이웃 수 상위 20, 1MQ4는 ADP 5.0 Å 껍질 추가)과 실제 M17 2,000개 풀(작업
+  11.4 s)에서 위치 20곳(이웃 최다)·행 바이트 최대 20개를 고르고, 수정 안 한 M24 빌더(build_mutation_wire·build_ligand_wire)의 필드를
+  §4.3 섞기(sha256 오름차순, 별칭 재부여, 위치 별칭은 첫 참조 순)·§4.4 goal/computed·§4.5 지시문(명세 문자 그대로 사본)·M24 인코더
+  (canonical_ascii)로 본문을 만들었다. 점수는 폭만 보는 자리값(-10.1, 가장 긴 유한 float -1.7976931348623157e+308).
+출력(바이트, 모두 64 KiB 안):
+  1MQ4 변이(위치 20, 이웃 합 332): M24 본문 29,807 / explore 계산0 30,142 · 계산18 30,015 / exploit 계산0 30,590 · 계산18 31,183
+    (폭 최대 점수 31,525) / 상한(20개 계산 + criteria 20) explore 30,461 · exploit 32,089
+  1UBQ 변이(위치 20, 이웃 합 276): M24 25,730 / exploit 계산18 27,106(폭 최대 27,448) / 상한 28,012
+  리간드 2,000개 풀 가장 큰 20행: M24 9,825 / exploit 계산18 11,020(폭 최대 11,362) / 상한 11,926
+  지시문 바이트: 리간드 explore 684 · exploit 906, 변이 explore 733 · exploit 1,115. 같은 입력 같은 순서 True, send_ordinal 0/1/2
+    세 순서 서로 다름 True(세 경우 모두).
+  가장 넓은 모양 산술(exploit, 계산 18): 리간드 20 × SMILES 1,024자 + PAINS 0/5/10개 → 31,229 / 36,709 / 42,209 B. 변이 20위치 × 가장
+    넓은 이웃 21개 → 46,523 B, 64 KiB 안 최대 이웃 = 위치당 32개(M24는 33).
+결론: 일치. 실측 최대 31,525 B로 64 KiB의 48%. 예약식 min(50000, 4096 + ceil(2b/3))로 31,525 B → 25,113 토큰; M24 실측 비율
+  (변이 1.71 B/토큰)로 사용 ≈ 18,400 → run당 6전송(6번째까지 used + 예약 ≤ 120,000), 1UBQ 최대 27,448 B는 7전송. 명세 §7 "약 6번"과
+  같다. 넘을 수 있는 경우는 위치당 이웃 33개 넘는 비현실적 모양뿐이며 명세대로 payload_too_large(자르지 않음).
+
+==================================================================================================
+(e) 읽기 비용·잠금
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev_loop/prototype_loop_read.py --source-run <S>/engine/m25_t1_ligand --work <S>/read
+      (5.2 s, exit 0)  /  잠금은 (a) 스크립트의 4·7번 사례
+방법: (b)의 실제 리간드 run(M17 2, M18 단독 2, M19 행 1, 시작 전 취소 1)을 events-only로 복사하고 합성 표시 jev_loop_created(풀 10)·
+  jev_loop_compute_approved(계산된 후보마다) 이벤트를 붙인 뒤, 프로토타입 도출 = 읽기 보기(store·run_id·run_dir + events.read()가
+  스냅숏을 돌려줌, app._JevReadView 모양) 하나 → JobQueue(view)._state() → published_m18_results(스냅숏) → 저장 결과마다
+  docking_bundle.validated_result(view, h). 비교 = 같은 일을 run으로(후보마다 로그 재읽기). 읽기 횟수는 이 Run 인스턴스의
+  events.read를 세는 래퍼로. 그 뒤 합성 표시 48 KiB 패딩 객체로 5 MB·50 MB까지 키움.
+출력(중앙값, 3회):
+  원본 1.8 MB(78 이벤트): 읽기 0.0023 s, 한 번 읽기 도출 0.0215 s(읽기 1회), 재읽기 도출 0.031 s(5회), 같은 결과 True
+  5.3 MB(1,261): 읽기 0.0077, 도출 0.0285(1회), 재읽기 0.059(5회), JobQueue.list 0.011, append 0.0076, _mutation 0.046
+  52.5 MB(17,324): 읽기 0.089, 도출 0.122(1회), 재읽기 0.495(5회), JobQueue.list 0.094, append 0.087, _mutation 진입·종료 0.52
+  선형 외삽(M23 기록 165 MB 규모 ≈ ×3.1): 도출 ≈ 0.4 s, _mutation ≈ 1.6 s(재지 않음).
+잠금(실측, (a) 4·7번): 작업이 도는 동안 다른 스레드의 run._owner()·_mutation()·다른 작업 start → ToolFailure transient busy,
+  다른 작업 submit → queued(전이 잠금만), request_cancel → accepted, get/list 가능. 같은 스레드: _owner 안의 _owner → busy(재진입 불가,
+  비차단), _mutation 안 submit → 허용, _mutation 안 start → busy, _transition 안에서 같은 잠금 재획득(비차단) False.
+코드: JobQueue.submit은 _transition만(L810), start는 claim에 _owner+_transition(L942) 뒤 execute_claim이 작업 내내 _owner(L1295),
+  _owner 비차단(orchestrator L195–213), _transition은 threading.Lock + flock(L239–250, 차단·재진입 불가).
+  owner_active: start(job_id, owner_active=…)는 execution_link가 있는 작업만 거절(L878–887). M13 계획의 durable_job 프로토콜은
+  prolif_prepare_v1·prolif_detect_v1·fpocket_detect_v1·openmm_protein_minimize뿐(analysis_plans.py L99–119) → M18·M21 작업은
+  link가 없어 거절되지 않는다. 기존 시작 라우트처럼 owner_active=analysis_executions.execution_active를 넘겨도 결과는 같다.
+  취소: 링크 없는 request_cancel은 어느 작업이나 허용(L965–983). 재시도: 루프는 부르지 않음.
+결론: 일치. 한 번 읽기 도출은 기존 함수에 읽기 보기를 넘기면 되고(제품 코드 변경 불필요) 50 MB에서 0.12 s. compute 라우트는
+  "실행 잠금 안에서 승인 이벤트·submit → 잠금 놓기 → start"(명세 §6.1)여야 한다: 잠금을 쥔 채 start는 busy, _transition 안에서
+  submit은 교착. start 응답은 작업이 끝날 때까지 기다린다(기존 시작 라우트와 같음).
+
+==================================================================================================
+(f) 엔진 시간 (로컬, 외부 요청 없음)
+==================================================================================================
+명령: (b)와 같은 실행(prototype_engine_calls.py) + (a) 4번 사례.
+출력(실제 JobQueue 작업, guardian·인터프리터 시작·import·수용체 준비 포함):
+  리간드 M18 단독(기본값 exhaustiveness 8, num_modes 9, energy_range 3, ligand_range 8 Å, seed 7): 후보 0 32.53 s(9모드),
+    가장 무거운 후보(중원자 46, 회전결합 7) 40.44 s(7모드). M19 1행 일괄 37.52 s. (참고: M22 착수 확인 2,000개 풀 6건 35.0–82.9 s)
+  M21 1UBQ I44W(seed 20261007, cutoff 4.0): 20.04 s, (a) 4번 20.56 s.
+  변이 구조 M18(receptor_source mutation_model mutant, 합성 표시 페놀, ligand_range 8 Å, 기본값): 2.80 s(9모드).
+  1MQ4 K143 M21 제출 → 422 input_invalid openmm_preflight_failed(M7 사전 검사). 1MQ4는 M21로 모델링할 수 없다.
+  관찰 점수(관찰값만, qvina 점수 kcal/mol, Vina 계열 스코어링 함수 값이며 친화도가 아니다): 리간드 후보 0 첫 모드 -12.7, 변이 구조
+    페놀 -3.6. 서로 다른 수용체 사이에서 비교하지 않는다.
+결론: 일치. 기본 한도(리간드 300 s, 모델링 120 s, 변이 구조 도킹 300 s) 대비 여유 3.6배 이상. 단백질 루프의 QA·실호출은
+  1UBQ로 한다(로컬 공개 구조 중 M7 사전 검사 통과는 1UBQ뿐, M21 기록과 같음).
+
+==================================================================================================
+(g) 새 이벤트 넷과 재생·정산
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev_loop/prototype_loop_events.py --source-run <S>/engine/m25_t1_ligand --work <S>/events
+      (4.9 s, exit 0)
+방법: (b)의 실제 리간드 run을 events-only로 두 벌(A, B) 복사. 두 벌 모두 과학 전송 동의 켬 → 실제 build_jev_projection →
+  jev_sends.run_send 한 번(가짜 MockTransport 게이트, sentinel 키, fixture 응답 c01) → 미정산 과학 예약 충돌 흉내(budget_reserved
+  {audit_id, external_tokens, usd} + egress prepared·dispatch_started + jev_science_dispatch_started, 응답 없음) → 재열기
+  (생성자의 _reconcile_egress + _mutation). B에만 명세 모양 jev_loop_created·jev_loop_compute_approved·jev_loop_docking_abandoned·
+  jev_loop_ended를 단계 사이에 붙였다(EventLog.append는 런타임에 종류를 검사하지 않음).
+출력: A·B 전송 completed. 재열기가 더한 이벤트 A = B = [wall_charged:egress, wall_charged:runtime_overhead].
+  A 충돌 뒤: expensive 5/8, external_tokens 8,932/120,000, usd 0.101/2.0, egress_stop_reason usage_unknown.
+  A vs B(전송 뒤·충돌 뒤 각각): 예산(비싼 계산·외부 토큰·USD) 같음, 활동 시간 차 ≤ 0.004 s(오버헤드 측정 오차), egress 멈춤·
+  egress_unknown·approved_expensive·cancelled 같음, 작업 상태 같음, published_m18_results 같음, jev_send@1 기록(무작위 audit_id·
+  choice_handle 제외) 같음, /jev/status 같음, events-only 재구축 투영 바이트 같음, GET 25개(/runs/{id} 하위 24 + /capabilities)
+  상태 코드 모두 200으로 같음. sentinel 키는 두 run 파일 어디에도 없음.
+코드: core/events.py EventType(L17–41)은 typing Literal뿐(런타임 열거 검사 없음, grep: EventType 참조는 정의뿐). 기존 접기는 모두
+  type 일치로만 읽는다(_refresh L302–385, _settle_egress L387, _reconcile_egress L468, JobQueue._state, published_m18_results,
+  jev_sends._index) → units·call_key 필드는 읽히지 않는다. test_jev_ast.py L149–168은 M24 이벤트 네 이름의 문자열 위치·writer만 본다.
+결론: 일치. 새 이벤트 넷의 core/events.py 추가는 타입 표기뿐이고 재생·정산·복구에 영향이 없다.
+
+==================================================================================================
+(h) M21 짝 표 구분
+==================================================================================================
+명령: (b) 실행 안의 mutation_model_reads.docking_pairs(run, 모델)(변이 쪽 도킹만 있는 모델).
+출력: total 1. 짝 0: wild_type_reference {job_status not_submitted, reason_code not_submitted, score null, result_handle null},
+  mutant {job_status done, reason_code other_side_missing, score null, result_handle null}, both_published false.
+  짝 키 {both_published, condition, first_submitted_seq, index, sides}, 쪽 키 {job_id, job_status, reason, reason_code,
+  result_handle, score_kcal_mol, score_mode, side, submitted_seq}.
+해시 집합 확인(grep): 호출 키·시작 재확인에 SHA-256이 들어가는 파일 = docking_bundle WORKER·CONSTANTS(+잠금 파일 둘), mutation_model_
+  bundle WORKER + DEPENDENCIES(mutation_model_math, mutation_model_constants, jobs/openmm_worker, tools/openmm_method, mutation_
+  candidates), sequence_ga_inputs GA_MODULES(+M21_MODULES), ligand_ga_jobs GA_WORKER·GA_CONSTANTS, docking_batch_jobs BATCH_WORKER·
+  BATCH_CONSTANTS, ligand_bundle WORKER·CONSTANTS, chemical_bundle WORKER·LOCK, pocket 작업 모듈·pocket_output. mutation_model_reads.py는
+  어디에도 없다(참조는 app.py 라우트와 mutation_model_reports.py의 structure_summary import뿐).
+결론: 일치. 루프의 변이 쪽 도킹은 기존 짝 읽기에서 "다른 구조 결과 없음" 짝으로 보이며, 짝 행에 loop 키만 더하면 된다(PAIR_REASONS
+  불변). 그 파일을 바꿔도 기존 결과 재사용은 끊기지 않는다.
+
+==================================================================================================
+(i) 카디널리티 결합 지도 (실제 파일·줄, grep, b8866a8)
+==================================================================================================
+제품(새 도구·이벤트·보고서 종류·capability를 더하면 고칠 곳):
+  backend/mw/api/app.py: SUPPORTED_TOOLS L127–129, /capabilities methods L650–681(methods["jev_choice"] L680), create_method_report
+    종류 분기 L1260–1309(jev_choice L1307), list_reports 보고서 종류 집합 L1337, _saved_any_report 집합 L1355·분기 L1386, M24 라우트
+    L2281–2444.
+  backend/mw/core/events.py EventType L17–41. backend/mw/workspace.py import L12·build_registry L25–32(jev.register L32).
+  config/tools.yaml build_jev_projection 항목 L221(선례).
+  frontend/src/lib/api.ts Capabilities methods 타입 L68, 보고서 analysis_type 유니언 L90, command 도구 유니언 L258, L486–488;
+    report-library.ts reportKindLabel L97; contracts.ts L1061–1078(jev_choice 타입 선례).
+깨지는 기존 검사(최소 수정 대상):
+  backend/tests/test_api.py L279–284 (/tools 이름 집합 — 새 L2 도구)
+  backend/tests/test_ligand_api.py L423·L457 (/capabilities methods 집합 둘 — methods.jev_loop)
+  backend/tests/test_reference_site_annotation.py L693–696, test_residue_numbering.py L749–751 (사전 검사 훅 도구 집합)
+  backend/tests/test_docking_batch_budget.py L137–140, test_ligand_ga_budget.py L117–120, test_sequence_ga_budget.py L121–124
+    (backend/mw 모든 .py 본문에 raise_limits·limit_approval 문자열이 있는 파일 집합 고정 — 새 모듈은 주석에도 쓰지 않으면 영향 없음)
+  backend/tests/test_jev_ast.py L21 NEW_MODULES(새 루프 모듈을 넣으면 httpx·증액 문자열 검사 적용), L94–97 jev_sends 임포터 집합
+    {api/app.py, egress/science.py, jev_reports.py}(불변 유지), L164–168 M24 이벤트 이름 문자열 위치·writer(루프 모듈은 EVENT_* 속성만)
+  frontend/tests/report-library.test.cjs L49(라벨 추가)
+  .codex/hooks/stop.py SCRIPT_TESTS L26(scripts/test_m25_offscreen_acceptance.py 수동 추가), PYTEST_GROUPS L62, REST_GROUP L97
+    (새 백엔드 테스트 파일 자동 포함 — 시간 한도만 확인); scripts/test_codex_hooks.py L145(len(stop.CHECKS) == 15, 그룹을 새로
+    만들 때만), L177(scripts/test_*.py 전부 SCRIPT_TESTS), L180(backend/tests/test_*.py 전부 한 그룹)
+  docs/standards.md 게이트 L40(스크립트 pytest 목록), L41–53(node --check 하네스 목록)
+확인만(영향 없음): tabs-flow.cjs L32 LIST_PATH(run 없을 때 reports·figures·executions 목록 요청 0)·L215–216 .mw-app-run 글자 —
+  T9가 루프 영역을 탭에 붙일 때 run 없이 GET을 내지 않는지 회귀로 확인.
+결론: 지도 확정(계획 공통 규칙의 목록과 같고, 줄 번호를 붙임).
+
+==================================================================================================
+(j) 키 해석기와 .env 권한 (불리언·권한 숫자만)
+==================================================================================================
+명령:
+  stat -f 'mode=%Sp octal=%OLp regular=%HT uid=%u' .env ; test -L .env ; git check-ignore -q .env ; git ls-files --error-unmatch .env
+  .venv/bin/python -c "import os; print('OPENROUTER_API_KEY_env_set', bool(os.environ.get('OPENROUTER_API_KEY')))"
+  (cd backend) env -u OPENROUTER_API_KEY ../.venv/bin/python -c "from mw.egress.gate import env_or_root_dotenv_key as r; k=r();
+      print('resolver_found_key', isinstance(k,str) and bool(k)); print('gate_accepts_shape', isinstance(k,str) and bool(k) and
+      not any(c in k for c in '\r\n')); del k"
+출력:
+  mode=-rw------- octal=600 regular=Regular File uid=501 / not_symlink / ignored / untracked
+  OPENROUTER_API_KEY_env_set False / resolver_found_key True / gate_accepts_shape True
+결론: 일치. 키는 루트 .env(일반 파일, 0600, git 무시·미추적)에서 해석기로 찾아지고 게이트가 받는 모양이다. 값은 출력·기록하지
+  않았다. 새 파일 전부에서 해석기 키 문자열 검색 → 아래 "키 노출 검사".
+
+==================================================================================================
+(k) M24 과학 전송 골든
+==================================================================================================
+명령: .venv/bin/python backend/tests/fixtures/jev/golden_science_m24.py --write   → "wrote golden_science_m24.json"(먼저 두 번 기록해
+        같은지 확인)
+      .venv/bin/python backend/tests/fixtures/jev/golden_science_m24.py --check   → matches, exit 0 (별도 프로세스, 2회)
+방식: 기존 prototype_golden_egress.py와 같은 --write/--check(새로 두 번 기록해 같을 때만 쓰기). 고정 run id 템플릿(공개 1UBQ M20
+  M1·I44·K48 일반·dry-run, 합성 표시 메타세틴 M17 standard_run)을 사례마다 events-only로 복사해 제품 앱(TestClient)으로 돌리고
+  SCIENCE_GATE를 MockTransport 게이트(sentinel 키)로 바꾼다. 기록: /commands build_jev_projection 응답·저장 jev_projection@1,
+  consent·preview·sends 응답, 목록·상세, 저장 jev_choice@1, 사례가 덧붙인 모든 이벤트(감사 열 포함), /jev/status, jev_choice 보고서,
+  /capabilities methods.jev_choice. 무작위 audit·call·attempt·report id와 그 값을 내용에 품은 객체 handle(jev_choice·보고서)은 순서
+  표지(<audit_id#1> 등, Markdown 이스케이프 형태 포함), 시각·순번·경과 초는 <number>, 200자 넘는 문자열(본문·Markdown·저장 객체
+  JSON)은 texts 표에 SHA-256 키로 한 번(나머지는 바이트 그대로). prepared 감사의 body는 정확한 요청 바이트 문자열로 바꿔 미리보기
+  body와 같은 texts 항목을 가리킨다.
+사례(전송 응답 HTTP·상태·이유): ligand_completed 200 completed + 같은 send_id 재전송 200 completed(새 이벤트 없음);
+  mutation_completed_and_conflicts 200 completed ×2, 409 send_id_conflict, 409 preview_mismatch; usage 없음 → 200 completed 뒤
+  200 rejected egress_stopped; consent_off 200 rejected; missing_credential 200 rejected; http 500 → 200 failed provider_http_error;
+  범위 밖 별칭 → failed response_invalid; 다른 모델 → failed model_mismatch; dry-run consent 412·preview blocked.
+  모든 사례 transport 수신 바이트 == 미리보기 body == prepared 감사 body(True), sentinel 키는 산출물에 없음(False).
+결론: 일치. 이후 모든 작업은 golden_science_m24.py --check와 prototype_golden_egress.py --check 둘 다 exit 0이어야 한다.
+
+==================================================================================================
+(l) 독립 점검이 읽은 큐·게이트 사실 재확인
+==================================================================================================
+  1 submit은 같은 호출 키의 기존 작업을 상태 무관 반환: queue.py L816(M18·M21 등 일반 프로토콜 next(… call_key == key))·L824–825.
+    실측 cancelled(M18·M21)·queued·interrupted→retry→queued·failed→retry→queued 모두 같은 job_id(done은 같은 코드 경로, 재제출은
+    재지 않음). (일괄·GA 셋만 complete_job 규칙 L813–815)
+  2 시작 전 취소 = 종료 상태 cancelled: request_cancel L979–982(queued·claimed → job_terminal cancelled, attempt_id 그대로 None). 실측.
+  3 retry는 failed·interrupted만: L2100–2102(+ attempt_ordinal < 4, 요약 프로토콜 1). 실측 cancelled·done 거절, interrupted·failed 허용.
+  4 start는 작업이 도는 동안 run 소유권을 쥐고 소유권은 재진입하지 않음: L942(claim), L1295(_execute_claim_with_slot 전체 _owner),
+    orchestrator _owner L195–213(비차단 threading.Lock + flock). start가 받는 상태 = queued 또는 claimed + blocked_reason ∈
+    {approval_or_cancel, global_concurrency_busy, global_job_cleanup_pending, global_job_ledger_unavailable}(L952–962). 실측.
+  5 request_science는 M24 검증기로 투영을 검증하고 응답을 모든 별칭으로 해석: egress/science.py L76(P.validated_projection),
+    L79(aliases = selection 전부), L222(P.parse_choice(data, aliases)). 실측((c): 계산된 별칭 선택도 통과) → 루프 분기 필요.
+  6 /commands 실패 분류: app.py _tool_error L323–327 input_invalid 422, precondition 412, resource_exceeded 429, transient·fatal 503;
+    command 라우트의 ToolFailure 밖은 ValueError 409 run_corrupt, ApprovalRequired 409, LoopStop 409, RunCancelled 409(L1208–1220).
+    run 잠금 경합(busy)은 transient → 503.
+결론: 일치. 여섯 가지 모두 코드 줄과 실측이 같다.
+
+==================================================================================================
+명세 해석 메모 (불일치 아님, 후속 작업이 정할 것)
+==================================================================================================
+  N1 (§3.1 단백질 setup_invalid의 범위) 1MQ4 집합은 M21 admission(1–7)을 통과하고 제출 때 M7 사전 검사에서 422
+     openmm_preflight_failed가 난다(이 이름은 ADMISSION_REASON_CODES의 여덟째). 명세 문장 "첫 단계 작업을 제출할 때 서버가 거절할
+     이유만"은 사전 검사를 포함하고, 괄호 "mutation_model_bundle.admission의 서버 부분"은 함수 이름상 1–7만 가리킨다. 포함하면 1MQ4
+     루프는 만들기에서 setup_invalid(setup_reason openmm_preflight_failed)로, 빼면 만들 수는 있고 compute가 매번 422(이벤트 없음).
+     어느 쪽도 닫힌 이름을 늘리지 않는다. T3 결정 사항(조율 세션 판단).
+  N2 (§3.2 steps[].reason_code) 시간 초과·취소·중단 실패의 job failure에는 reason_code 키가 없다(시간 초과 = {error:
+     resource_exceeded, message: "job timeout"}). M18·M21 작업 모듈 실패만 닫힌 detail.reason_code가 있다. 명세는 reason_code|null을
+     허용하므로 이 경우 null이 자연스럽다(T6).
+  N3 (§6.4 과금 판정) 예약 직후·dispatch 전 취소(과금 1, 프로세스 없음)는 명세 정의(예약 과금 이벤트 유무)로 "뒤" = failed다. 바퀴·
+     단위 셈과 요약 검증 모두 예약 기준(budget_reserved.root_call_id == job_id)으로 통일해야 어긋나지 않는다(T6·T7).
+
+==================================================================================================
+키 노출 검사·정리
+==================================================================================================
+명령: (cd backend) env -u OPENROUTER_API_KEY ../.venv/bin/python - (해석기 env_or_root_dotenv_key로 얻은 키 문자열을 새·바뀐 파일
+  전부(backend/tests/fixtures/jev_loop/*, jev/golden_science_m24.{py,json}, jev/SYNTHETIC-PROVENANCE.md, 이 문서)와 스크래치 측정
+  출력(<S>/*.out, *.err)의 바이트에서 검색, 불리언만 출력)
+출력: files_checked 24 real_key_found_in_any False
+  (이 문서는 검사 뒤 이 줄과 위 두 문장만 고쳤다. 키 문자열은 넣지 않았다.)
+측정 run 폴더: <S>/{engine,queue,body,read,events,branch}(스크래치, 커밋 안 함). runs/golden-* 남은 폴더 0.
