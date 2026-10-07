@@ -108,6 +108,8 @@
 - 끝난 루프 기록은 `jev_loop_ended` 이벤트로 동결한다(상태·끝 이유·결과 handle은 그 시점 도출에서, 쓰기 라우트 거절은 지금 로그에서, `current.remaining`만 지금 값). 끝난 루프의 `current`는 바퀴·phase·단계가 null이다.
 - 작업 큐 기존 동작을 그대로 쓴 선택: 시작 전 취소는 `cancelled`·무과금, `retry`는 `failed`/`interrupted`만, `submit`은 같은 호출 키의 기존 작업을 상태와 무관하게 돌려준다. 그래서 루프가 승인했다가 시작 전에 취소된 후보는 그 run에서 `unavailable`이다.
 - 작업 → 승인 귀속: 같은 호출 키의 가장 가까운 앞 승인에 속하되 사이에 `jev_loop_*` 이벤트나 M24 과학 전송 이벤트(승인·dispatch·결과)가 있으면 끊긴다. 단위 0 승인(재사용 채택)은 작업을 소유하지 않는다.
+- 취소된 run에서도 루프 만들기는 거절하지 않는다(명세 3.1 거절 집합에 `cancelled`가 없다). 만든 루프는 곧바로 `run_cancelled`로 읽히고 이후 쓰기 라우트는 `cancelled`로 거절한다. 거절 집합에 이유를 더하는 것은 사용자 결정이라 더하지 않았다.
+- 루프 쪽 전송 상태 `in_progress`와 M24 전송 기록의 `failed`는, 결과를 못 받고 사라진 이전 전송이 있는 run에서 새 전송의 `begin_send`부터 승인 이벤트까지의 짧은 구간에 서로 다르게 보일 수 있다(표시만의 차이, 쓰기 거절 판정은 같다).
 - 새 `jev_loop_*` 이름·이유는 모두 명세 문자 그대로이고 새 이름을 만들지 않았다(`setup_reason`·`capability_unavailable`의 pin 불일치는 기존 이름 `missing_configuration`).
 
 ## 알려진 한계
@@ -118,6 +120,8 @@
 - 실호출의 transport 바이트 해시는 제품 게이트에서 기록하지 않으므로 transport 바이트 동일성은 fixture 단계 증거에 근거한다(미리보기 = `prepared`는 실호출에서도 확인).
 - 화면에서 만들 수 없는 경로(run 취소 뒤 늦은 응답, 예산 부족, 10회 소진, dry-run, `null_result`·`failed` 정렬)는 백엔드·프런트 단위 테스트로만 확인했다.
 - Stop 훅을 동시에 돌릴 때 환경·우연으로 간헐 실패하는 기존 테스트 셋이 있다(`docs/tracking/findings.md`).
+- 명세·계획이 말한 M24 미리보기·승인 구성 요소의 공용화는 하지 않았다. `JevLoopPanel.tsx`가 마크업을 따로 두고 판단 로직만 `lib/jev.ts` 함수를 공유한다(`jev.ts`는 `usdText` export만 바뀜, `JevPanel`은 전송 기록 행 표시 prop `sendHistoryMark` 하나가 늘었고 그 값이 null이면 M24 DOM과 같다). M24 화면 불변이라는 더 강한 조건을 지키려는 선택이다.
+- 독립 최종 검토(고정 뒤)의 막지 않는 관찰 다섯은 고정 소스를 바꾸지 않으려고 고치지 않고 `docs/tracking/findings.md`에 기록했다(수락 실행기가 멈춘 실호출 계획의 건너뛴 항목을 판정에 넣지 않음, 짝 표 행 `loop` 키가 프런트 타입에 없음, `qa_setup.py` 설명, 시작 경합 오류 코드의 화면 문구, 끝난 루프 요약의 `unfinished[]` 미표시).
 
 ## 대체한 과거 검증 범위
 - M25는 공유 소스를 바꿨다: 백엔드 `api/app.py`(루프 라우트·capability·보고서 등록·`SUPPORTED_TOOLS`), `core/events.py`(이벤트 종류 넷), `jev_sends.py`·`egress/science.py`(루프 분기), `mutation_model_reads.py`(짝 행 `loop` 키), `workspace.py`·`config/tools.yaml`(새 도구), 프런트 `app/page.tsx`(마운트 둘)·`JevPanel.tsx`(루프 행 표시)·`MutationModelPanel.tsx`·`lib/mutation-model.ts`·`lib/jev.ts`·`lib/api.ts`·`contracts.ts`·`report-library.ts`, `design/components.css`.

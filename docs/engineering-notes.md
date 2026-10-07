@@ -557,7 +557,7 @@
 - `backend/tests/offscreen_jev_loop_fixture/server.py`는 M24 fixture 서버와 같은 방식으로 제품 앱의 `SCIENCE_GATE`를 스크립트된 `httpx.MockTransport` 게이트(sentinel placeholder 자격 증명)로, `VIEWER_GATE`와 기본 인자로 만드는 게이트를 거절하고 `.env`를 읽지 않는 게이트로 바꾼다. 스크립트는 `good`·`good_second`(두 번째 `criteria` 키, 목록 위치 2/m)·`computed_alias`·`http_500`·`slow`·`no_usage`·`model_mismatch`이고 `calls.jsonl`·`credentials.json`에는 본문 SHA-256·바이트·개수·불리언만 남는다(본문·헤더 값·자격 증명 없음). 수락 실행기는 `server.json`의 pid가 방금 띄운 pid이고 8000 포트의 유일한 리스너일 때만 하네스를 띄우고(하네스도 `--backend-pid`로 확인), 연습(`--rehearse`)은 제품 백엔드를 띄우지 않는다. QA run은 `offscreen_jev_loop_fixture/qa_setup.py`가 loopback API로 만든다.
 
 ### 무거운 루프 테스트가 나머지 그룹을 480초 넘게 했다 (M25)
-- **증상**: 루프 API·읽기·도구·제안·전송 테스트(실제 엔진, 약 150초)가 이름 없는 나머지 그룹에 들어가자 Stop 훅이 480초 시간 초과를 보고했다.
+- **증상**: 루프 API·읽기·도구·제안·전송 테스트(실제 엔진, 약 175초)가 이름 없는 나머지 그룹에 들어가자 Stop 훅이 480초 시간 초과를 보고했다.
 - **대응**: 그 다섯 파일(`test_jev_loops_read.py`·`test_jev_loop_sends.py`·`test_jev_loop_tool.py`·`test_jev_loop_choice.py`·`test_jev_loops_api.py`)을 열넷째 이름 있는 그룹으로(`b0d0f96`), `test_jev_loops_compute.py`를 열다섯째로(`da37288`) 나눴다(`PYTEST_GROUPS` 열다섯 + 나머지 = 열여섯 그룹, `CHECKS` 17, `scripts/test_codex_hooks.py`의 기대 17). M25 고정 게이트에서 두 그룹은 175초·224초, 가장 긴 그룹은 나머지 그룹 398초였다(`docs/qa/m25-jev-loop-20261007/gate-backend.txt`).
 
 ### Stop 훅 동시 실행 중의 간헐 실패 셋 (M25 기간, 환경·우연)
