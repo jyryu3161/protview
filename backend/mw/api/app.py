@@ -60,6 +60,7 @@ from ..docking_batch_reports import build_docking_batch_report, saved_docking_ba
 from ..docking_reports import build_docking_report, saved_docking_report
 from ..egress import science as egress_science
 from ..egress.gate import EgressGate
+from ..jev_loop_reports import build_jev_loop_report, saved_jev_loop_report
 from ..jev_reports import build_jev_report, saved_jev_report
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_ga_constants import PROTOCOL as GA_PROTOCOL
@@ -1314,6 +1315,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == jev_constants.CHOICE_KIND:
             # M24: reads the stored proposal, its projection, candidate set and send events only; nothing is sent.
             return build_jev_report(run, body.result_handle)
+        if kind == jev_loop_constants.RESULT_KIND:
+            # M25: reads the stored loop summary, its candidates' docking results and its proposals only; nothing is
+            # computed or sent. A loop proposal (jev_loop_choice) is no report input: wrong_method_result_kind below.
+            return build_jev_loop_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1341,7 +1346,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga", "sequence_ga", "jev_choice"}
+                                        "ligand_ga", "sequence_ga", "jev_choice", "jev_loop"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1359,7 +1364,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
-                                                              "sequence_ga", "jev_choice"}
+                                                              "sequence_ga", "jev_choice", "jev_loop"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1392,6 +1397,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_mutation_model_report(run, handle)
         if report.get("analysis_type") == "jev_choice":
             return saved_jev_report(run, handle)
+        if report.get("analysis_type") == "jev_loop":
+            return saved_jev_loop_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 

@@ -14,6 +14,7 @@ run, kind and schema first.
 
 * ``docking_pairs()`` (spec 7, same-condition docking): this run's single M18 jobs whose ``receptor_source`` is this
   model, grouped by condition, every group listed (never one picked). See its docstring for the key and the rules.
+  M25 (spec .dryforge/spec.md 10): a group whose mutant job a JEV loop docking step approved carries ``loop``.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from typing import Any
 
 from . import docking_bundle, docking_inputs
 from . import docking_constants as DC
+from . import jev_loop_constants as LOOP
 from . import mutation_model_bundle as bundle
 from .core.handles import canonical_json
 from .jobs.queue import JobQueue
@@ -158,6 +160,23 @@ def _side_entry(side: str, job: dict[str, Any] | None, seq: int | None) -> dict[
             "result_handle": None, "score_kcal_mol": None, "score_mode": None}
 
 
+def _loop_docking(events: list[dict[str, Any]], job: dict[str, Any] | None,
+                  submitted_seq: int | None) -> dict[str, Any] | None:
+    """M25: ``{loop_id, iteration}`` when ``job`` is the job of a JEV loop docking step of this run: the latest
+    ``jev_loop_compute_approved`` with ``step: "dock"`` and this job's call key before the job was submitted (the loop
+    compute route writes its approval, then submits; a same-key job submitted before an approval is not the loop's)."""
+    if job is None:
+        return None
+    found = None
+    for event in events:
+        if event["seq"] >= submitted_seq:
+            break
+        if (event["type"] == LOOP.EVENT_COMPUTE_APPROVED and event["step"] == "dock"
+                and event["call_key"] == job["call_key"]):
+            found = {"loop_id": event["loop_id"], "iteration": event["iteration"]}
+    return found
+
+
 def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
     """Spec 7 ``docking_pairs``: same-condition M18 docking on the two structures of one model.
 
@@ -168,14 +187,15 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
     A side shows its result handle and the stored first mode row score (``modes[0].score_kcal_mol``, unchanged)
     only when BOTH sides are published, validated results; otherwise every side shows its job status, null score
     and a ``PAIR_REASONS`` code. Groups are ordered by the earliest submission event of their jobs. Nothing is
-    subtracted, ranked or chosen."""
+    subtracted, ranked or chosen. M25: a group whose mutant job is a JEV loop docking step's (``_loop_docking``) also
+    has ``loop: {loop_id, iteration}`` (no new reason; every other group is unchanged, without the key)."""
     bundle.validated_result(run, handle)
     jobs = [job for job in JobQueue(run).list()
             if job["protocol_id"] == DC.PROTOCOL and job["tool_id"] == DC.TOOL and
             type(job["parameters"]) is dict and type(job["parameters"].get("receptor_source")) is dict and
             job["parameters"]["receptor_source"].get("mutation_model") == handle]
-    submitted = {event["job"]["job_id"]: event["seq"] for event in run.events.read()
-                 if event["type"] == "job_submitted"}
+    events = list(run.events.read())
+    submitted = {event["job"]["job_id"]: event["seq"] for event in events if event["type"] == "job_submitted"}
     groups: dict[bytes, dict[str, Any]] = {}
     for job in sorted(jobs, key=lambda item: submitted[item["job_id"]]):
         side = job["parameters"]["receptor_source"]["side"]
@@ -206,8 +226,13 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
                                         "result_invalid" if job["status"] == "done" else _STATUS_REASON[job["status"]])
             entry["reason"] = None if entry["reason_code"] is None else PAIR_REASONS[entry["reason_code"]]
             sides[side] = entry
-        pairs.append({"index": index,
-                      "first_submitted_seq": min(submitted[job["job_id"]] for job in group["jobs"].values()),
-                      "condition": group["condition"], "both_published": both, "sides": sides})
+        pair = {"index": index,
+                "first_submitted_seq": min(submitted[job["job_id"]] for job in group["jobs"].values()),
+                "condition": group["condition"], "both_published": both, "sides": sides}
+        mutant = found["mutant"]
+        loop = _loop_docking(events, mutant, None if mutant is None else submitted[mutant["job_id"]])
+        if loop is not None:
+            pair["loop"] = loop
+        pairs.append(pair)
     return {"schema": "mutation_model_docking_pairs@1", "handle": handle, "score_label": DC.SCORE_LABEL,
             "total": len(pairs), "pairs": pairs, "starts_job": False}
