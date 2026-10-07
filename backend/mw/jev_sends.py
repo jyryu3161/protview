@@ -18,9 +18,13 @@ Public API:
     dispatch_count(events) -> int          jev_science_dispatch_started events (the run's send cap counts these)
     cancel_seen(run, events) -> bool       a cancel event or the cancel marker file
     set_consent(run, enabled) -> jev_status@1      one event; 412 dry_run when enabling a dry-run run
-    load_projection(run, handle) -> content        this run's validated jev_projection@1
+    load_projection(run, handle, *, accept_loop=False) -> content
+                                           this run's validated jev_projection@1 (M25: also a validated
+                                           jev_loop_projection@1 when accept_loop)
     status_for(run, events) -> jev_status@1        never reads a key
-    preview_for(run, projection_handle, events) -> jev_preview@1     the exact body string and its SHA-256
+    preview_for(run, projection_handle, events) -> jev_preview@1     the exact body string and its SHA-256; for a
+                                           jev_loop_projection@1 (M25) also ``loop`` and ``loop_blocks`` (the loop
+                                           send check of ``jev_loop_store``)
     async run_send(run, gate, /, *, send_id, projection, body_sha256, confirm) -> jev_send@1
     send_record(events, send_id) -> jev_send@1 (404 not_found);  list_sends(events) -> [jev_send@1], oldest first
     late_arrival(events, send_id) -> (late, late_reason)
@@ -40,8 +44,10 @@ import uuid
 from typing import Any
 
 from . import jev_constants as J
+from . import jev_loop_constants as L
+from . import jev_loop_projection as LP
+from . import jev_loop_store, ligand_bundle
 from . import jev_projection as P
-from . import ligand_bundle
 from . import mutation_candidates as mc
 from .core.handles import canonical_json
 
@@ -151,7 +157,10 @@ def set_consent(run: Any, enabled: Any) -> dict[str, Any]:
 
 # --- projection, status, preview ---------------------------------------------------------------------------------------
 
-def load_projection(run: Any, handle: Any) -> dict[str, Any]:
+def load_projection(run: Any, handle: Any, *, accept_loop: bool = False) -> dict[str, Any]:
+    """This run's validated ``jev_projection@1``; with ``accept_loop`` also a ``jev_loop_projection@1`` (M25,
+    validated by ``jev_loop_projection.validated_loop_projection``). Without it a loop projection is refused as
+    before (the send route takes loop projections only with its loop branch)."""
     if type(handle) is not str:
         raise JevSendError("input_invalid", "projection must be a handle string", 422)
     try:
@@ -160,10 +169,12 @@ def load_projection(run: Any, handle: Any) -> dict[str, Any]:
         raise JevSendError("not_found", "no such projection in this run", 404) from None
     invalid = JevSendError("input_invalid", "not a valid jev_projection@1 of this run", 422,
                            reason_code=J.PROJECTION_INVALID)
-    if (meta["kind"], meta["schema"]) != (J.PROJECTION_KIND, J.PROJECTION_SCHEMA):
+    loop = accept_loop and (meta["kind"], meta["schema"]) == (L.PROJECTION_KIND, L.PROJECTION_SCHEMA)
+    if not loop and (meta["kind"], meta["schema"]) != (J.PROJECTION_KIND, J.PROJECTION_SCHEMA):
         raise invalid
+    validated = LP.validated_loop_projection if loop else P.validated_projection
     try:
-        content = P.validated_projection(run.store.load_bounded_json(handle, J.MAX_OBJECT_BYTES))
+        content = validated(run.store.load_bounded_json(handle, J.MAX_OBJECT_BYTES))
     except (P.JevProjectionError, ValueError, TypeError, KeyError):
         raise invalid from None
     prefix = f"obj://{run.run_id}/"
@@ -210,27 +221,51 @@ def _blocked(run: Any, events: list[dict[str, Any]], reservation: dict[str, Any]
     return reasons
 
 
+def _loop_preview(run: Any, content: dict[str, Any], events: list[dict[str, Any]],
+                  reservation: dict[str, Any]) -> dict[str, Any]:
+    """M25 (spec 5.1): the ``loop`` block (the projection's loop reference with the send-side ``needs`` /
+    ``remaining`` / ``send_blocked_axes`` of the loop record derived from the same events with this preview's
+    reservation) and ``loop_blocks``: the refusal of the loop send check (``jev_loop_store.loop_send_check``, the
+    loop judgment the send uses), empty when the loop may send this projection now."""
+    state, reason = jev_loop_store.loop_send_check(
+        jev_loop_store.LoopReadView(run, events), content,
+        budget=jev_loop_store.remaining_budget(run.budget_snapshot()), send_active=send_active(run.run_id),
+        send_reservation=reservation)
+    current = None if state is None else state.record["current"]
+    block = {**content["loop"], **{name: None if current is None else copy.deepcopy(current[name])
+                                   for name in ("needs", "remaining", "send_blocked_axes")}}
+    return {"loop": block, "loop_blocks": [] if reason is None else [reason]}
+
+
 def preview_for(run: Any, projection_handle: Any, events: list[dict[str, Any]]) -> dict[str, Any]:
-    content = load_projection(run, projection_handle)
-    _, encoded = P.projection_body(content)
+    content = load_projection(run, projection_handle, accept_loop=True)
+    loop = content["schema"] == L.PROJECTION_SCHEMA
+    _, encoded = LP.loop_projection_body(content) if loop else P.projection_body(content)
     question_id = content["question"]["id"]
+    if loop:
+        instructions = L.INSTRUCTIONS[(content["kind"], content["goal"])]
+        instructions_sha256 = L.instructions_sha256(content["kind"], content["goal"])
+    else:
+        instructions, instructions_sha256 = J.INSTRUCTIONS[question_id], J.instructions_sha256(question_id)
     reservation = {"external_tokens": J.reserve_tokens(len(encoded)), "usd": J.RESERVE_USD}
     used = dispatch_count(events)
     dispatched = {event["send_id"] for event in events if event.get("type") == J.EVENT_DISPATCH}
     previous = sum(event.get("type") == J.EVENT_APPROVED and event.get("projection_handle") == projection_handle
                    and event.get("send_id") in dispatched for event in events)
     budget = _budget(run)
-    return {"schema": J.PREVIEW_SCHEMA, "projection_handle": projection_handle, "kind": content["kind"],
-            "source": dict(content["source"]),
-            "question": {"id": question_id, "key": J.QUESTION_KEY, "type": J.QUESTION_TYPE,
-                         "instructions": J.INSTRUCTIONS[question_id],
-                         "instructions_sha256": J.instructions_sha256(question_id)},
-            "body": encoded.decode("ascii"), "body_sha256": P.body_sha256(encoded), "body_bytes": len(encoded),
-            "selection": copy.deepcopy(content["selection"]), "selection_sent": False,
-            "reservation": reservation, "send_cap": J.SEND_CAP, "used": used,
-            "remaining": max(0, J.SEND_CAP - used),
-            "budget_remaining": {axis: budget[axis]["remaining"] for axis in ("external_tokens", "usd")},
-            "blocked_by": _blocked(run, events, reservation), "previous_sends": previous}
+    preview = {"schema": J.PREVIEW_SCHEMA, "projection_handle": projection_handle, "kind": content["kind"],
+               "source": dict(content["source"]),
+               "question": {"id": question_id, "key": J.QUESTION_KEY, "type": J.QUESTION_TYPE,
+                            "instructions": instructions, "instructions_sha256": instructions_sha256},
+               "body": encoded.decode("ascii"), "body_sha256": P.body_sha256(encoded), "body_bytes": len(encoded),
+               "selection": copy.deepcopy(content["selection"]), "selection_sent": False,
+               "reservation": reservation, "send_cap": J.SEND_CAP, "used": used,
+               "remaining": max(0, J.SEND_CAP - used),
+               "budget_remaining": {axis: budget[axis]["remaining"] for axis in ("external_tokens", "usd")},
+               "blocked_by": _blocked(run, events, reservation), "previous_sends": previous}
+    if loop:
+        preview.update(_loop_preview(run, content, events, reservation))
+    return preview
 
 
 # --- one approved send ---------------------------------------------------------------------------------------------------

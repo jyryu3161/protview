@@ -754,13 +754,16 @@ def test_capability_names_the_branch_reasons_without_numbers(base, tmp_path, mon
     assert "jev_loop" in methods
     loop = methods["jev_loop"]
     assert set(loop) == {"ligand", "protein"}
-    # T3: the projection tool is not registered yet (T4 adds it), so neither branch can send.
+    # M25 T4 registered the projection tool: both branches are available on this host (real engines). (This test
+    # pinned tool_unavailable while T3 had no tool; the unexposed case is now simulated below.)
+    for branch in L.BRANCHES:
+        assert loop[branch] == {"available": True, "reason_code": None, "reason": None}
+    monkeypatch.setattr(api_module, "SUPPORTED_TOOLS", api_module.SUPPORTED_TOOLS - {L.TOOL})   # tool not exposed
+    loop = client.get("/capabilities").json()["methods"]["jev_loop"]
     for branch in L.BRANCHES:
         assert loop[branch] == {"available": False, "reason_code": "tool_unavailable",
                                 "reason": jev_loop_store.CAPABILITY_REASONS["tool_unavailable"]}
-    # With the tool exposed (simulated) both branches are available on this host (real engines).
     monkeypatch.setattr(api_module, "SUPPORTED_TOOLS", api_module.SUPPORTED_TOOLS | {L.TOOL})
-    monkeypatch.setitem(api_module.REGISTRY.specs, L.TOOL, api_module.REGISTRY.specs[J.TOOL])
     loop = client.get("/capabilities").json()["methods"]["jev_loop"]
     for branch in L.BRANCHES:
         assert loop[branch] == {"available": True, "reason_code": None, "reason": None}

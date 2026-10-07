@@ -10,12 +10,14 @@ writes an M24 event. Routes stay thin in ``api/app.py``.
 
 Public API
 ----------
-    LoopReadView(run)                         one event-log snapshot: ``store``, ``run_id``, ``run_dir``,
-                                              ``events.read()`` (the shape of the M24 read view in ``api/app.py``)
+    LoopReadView(run, events=None)            one event-log snapshot: ``store``, ``run_id``, ``run_dir``,
+                                              ``events.read()`` (the shape of the M24 read view in ``api/app.py``);
+                                              ``events`` = a list the caller already read
     LoopRequestError(reason_code, message, http_status, **detail)
                                               a loop route refusal; ``detail`` is the response ``detail`` body
                                               (``reason_code`` = the closed spec name)
     created_payload(events, loop_id)          the parsed ``jev_loop_created`` payload (``jev_loops.LoopNotFound``)
+    projection_source(view, branch, handle)   (validated stored candidate set, M17 inspection | None)
     source_content(view, branch, handle)      the stored candidate set of the pool, validated (KeyError/ValueError)
     candidate_displays(branch, content, refs) {ref: display}: ligand {smiles}, mutation {residue (7 fields), from, to}
     ligand_request / model_request / dock_request
@@ -31,6 +33,13 @@ Public API
     validated_loop_record(record, inputs)     the spec 3.2 record check every read runs (``LoopRecordInvalid``)
     read_loop(view, loop_id, *, budget, send_active=False, send_reservation=None) -> jev_loops.LoopState
     list_loops(view, *, budget, send_active=False) -> the list rows, newest first
+    projection_inputs(state, iteration)       the record inputs a loop projection reads (its call-key inputs)
+    send_refusal(state, projection) -> str | None
+                                              spec 5.1 after loop_not_found: the selection refusals, state_changed,
+                                              ordinal_mismatch
+    loop_send_check(view, projection, *, budget, send_active, send_reservation=None) -> (state | None, reason | None)
+                                              the whole loop send check (loop_not_found first); the preview's loop
+                                              blocks and the T5 send approval callback
     normalize_setup(branch, setup, source)    the pure setup check and its normalized value
     create(run, body, *, send_active)         ``POST /runs/{rid}/jev_loops`` -> ``jev_loop@1``
     engine_unavailable(branch, docking, model), capability(docking, model, *, tool_exposed, pins_match)
@@ -139,11 +148,12 @@ def _refusal(reason: str, message: str, **detail: Any) -> LoopRequestError:
 
 class LoopReadView:
     """One event-log read for one loop read or admission: ``events.read()`` returns that one list, so every reader
-    that takes a run (the M17 / M18 / M21 validated reads) sees the same snapshot."""
+    that takes a run (the M17 / M18 / M21 validated reads) sees the same snapshot. ``events``: a list the caller
+    already read (the preview's one read; the send approval callback's list) instead of reading the log again."""
 
-    def __init__(self, run: Any) -> None:
+    def __init__(self, run: Any, events: Iterable[dict[str, Any]] | None = None) -> None:
         self.store, self.run_id, self.run_dir = run.store, run.run_id, run.run_dir
-        self._events = list(run.events.read())
+        self._events = list(run.events.read() if events is None else events)
         self.events = self
 
     def read(self) -> list[dict[str, Any]]:
@@ -179,10 +189,11 @@ def _unended(events: list[dict[str, Any]], loops: Mapping[str, Mapping[str, Any]
 
 # --- the pool's stored candidate set -------------------------------------------------------------------------------------
 
-def source_content(view: Any, branch: str, handle: Any) -> dict[str, Any]:
-    """The pool's candidate set: a published ``ligand_candidate_set@1`` (``ligand_bundle.validated_candidate_set``) or
-    a stored ``mutation_candidate_set@1`` (``mutation_candidates.validated_set``) of this run, as the M24 projection
-    tool checks its source. KeyError / ValueError / TypeError otherwise."""
+def projection_source(view: Any, branch: str, handle: Any) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """The pool's candidate set: a published ``ligand_candidate_set@1`` (``ligand_bundle.validated_candidate_set``,
+    with its validated M17 inspection: the M24 wire's parent fallback) or a stored ``mutation_candidate_set@1``
+    (``mutation_candidates.validated_set``, no inspection) of this run, as the M24 projection tool checks its source.
+    KeyError / ValueError / TypeError otherwise."""
     kind = L.KIND_FOR_BRANCH[branch]
     if type(handle) is not str:
         raise TypeError("the pool source must be a handle string")
@@ -190,8 +201,14 @@ def source_content(view: Any, branch: str, handle: Any) -> dict[str, Any]:
     if (meta["kind"], meta["schema"]) != (J.SOURCE_STORE_KINDS[kind], J.SOURCE_SCHEMAS[kind]):
         raise ValueError("the pool source is not this branch's candidate set kind")
     if kind == "ligand":
-        return ligand_bundle.validated_candidate_set(view, handle)[0]
-    return mc.validated_set(view.store.load(handle))
+        content, inspection = ligand_bundle.validated_candidate_set(view, handle)
+        return content, inspection
+    return mc.validated_set(view.store.load(handle)), None
+
+
+def source_content(view: Any, branch: str, handle: Any) -> dict[str, Any]:
+    """``projection_source`` without the inspection."""
+    return projection_source(view, branch, handle)[0]
 
 
 def candidate_displays(branch: str, content: Mapping[str, Any], refs: Iterable[Any]) -> dict[Any, dict[str, Any]]:
@@ -573,6 +590,71 @@ def list_loops(view: Any, *, budget: Mapping[str, Any], send_active: bool = Fals
     states = [_read(view, created, budget=budget, send_active=send_active, send_reservation=None)
               for created in _created_loops(view.read()).values()]
     return jev_loops.list_rows(states)
+
+
+# --- the loop projection's record inputs and the loop send check (spec 4.1, 5.1) ---------------------------------------
+
+def projection_inputs(state: jev_loops.LoopState, iteration: int) -> dict[str, Any]:
+    """What a loop projection of ``iteration`` reads from the record (its call key hashes these with the normalized
+    arguments, spec 4.1): the pool in stored order, the goal, the loop seed, the send ordinal and every pool
+    candidate's state and stored score (``unavailable`` ones included: they are left out of the wire)."""
+    record = state.record
+    return {"pool": [row["ref"] for row in record["candidates"]], "goal": record["goal"],
+            "loop_seed": record["loop_seed"], "send_ordinal": jev_loops.send_ordinal(state, iteration),
+            "candidates": [{"ref": row["ref"], "state": row["state"], "score_kcal_mol": row["score_kcal_mol"]}
+                           for row in record["candidates"]]}
+
+
+def _projection_differs(state: jev_loops.LoopState, projection: Mapping[str, Any]) -> bool:
+    """The projection is not what this loop's record derives now: another kind, goal, loop seed, source or
+    structure; another set of sendable candidates (the record's minus ``unavailable``) or another state of one; or,
+    for exploit, a sent score that is not the candidate's stored first-mode value."""
+    record = state.record
+    pool = record["pool"]
+    if (projection["kind"] != L.KIND_FOR_BRANCH[state.branch] or projection["goal"] != record["goal"]
+            or projection["order"]["loop_seed"] != record["loop_seed"]
+            or not _same(projection["source"], pool["source"]) or not _same(projection["structure"], pool["structure"])):
+        return True
+    now = {row["ref"]: row for row in record["candidates"] if row["state"] != "unavailable"}
+    sent = {item["ref"]: item for item in projection["selection"]}
+    if set(sent) != set(now) or any(sent[ref]["state"] != now[ref]["state"] for ref in sent):
+        return True
+    if projection["goal"] == "exploit":
+        refs = {item["alias"]: item["ref"] for item in projection["selection"]}
+        return any(row["state"] == "scored" and not _same(row["score_kcal_mol"], now[refs[row["alias"]]][
+            "score_kcal_mol"]) for row in projection["wire"]["computed"])
+    return False
+
+
+def send_refusal(state: jev_loops.LoopState, projection: Mapping[str, Any]) -> str | None:
+    """Spec 5.1 after ``loop_not_found``, for a validated ``jev_loop_projection@1`` of this loop: the selection
+    refusals of the projection's iteration (``jev_loops.selection_refusal``: loop_ended ... too_few_candidates), then
+    ``state_changed`` (the projection is not what the record derives now), then ``ordinal_mismatch`` (its send
+    ordinal is not the iteration's dispatched send count). None when the loop may send this projection now."""
+    loop = projection["loop"]
+    refusal = jev_loops.selection_refusal(state, loop["iteration"])
+    if refusal is not None:
+        return refusal
+    if _projection_differs(state, projection):
+        return "state_changed"
+    if loop["send_ordinal"] != jev_loops.send_ordinal(state, loop["iteration"]):
+        return "ordinal_mismatch"
+    return None
+
+
+def loop_send_check(view: Any, projection: Mapping[str, Any], *, budget: Mapping[str, Any], send_active: bool,
+                    send_reservation: Mapping[str, Any] | None = None,
+                    ) -> tuple[jev_loops.LoopState | None, str | None]:
+    """The loop send check of spec 5.1 (``LOOP_SEND_REASONS`` in order) from one view: ``(None, "loop_not_found")``
+    when the projection's loop is not in this run, else ``(state, send_refusal(state, projection))`` with the state
+    derived with ``send_reservation`` (the preview's M24 reservation of this projection body). The preview shows the
+    result as its loop blocks; the send approval callback (T5) runs the same check on its own event list."""
+    try:
+        state = read_loop(view, projection["loop"]["loop_id"], budget=budget, send_active=send_active,
+                          send_reservation=send_reservation)
+    except jev_loops.LoopNotFound:
+        return None, "loop_not_found"
+    return state, send_refusal(state, projection)
 
 
 # --- the setup ------------------------------------------------------------------------------------------------------------

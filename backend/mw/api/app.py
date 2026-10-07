@@ -129,7 +129,8 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
                    "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
-                   "annotate_reference_sites", "generate_mutation_candidates", "build_jev_projection"}
+                   "annotate_reference_sites", "generate_mutation_candidates", "build_jev_projection",
+                   "build_jev_loop_projection"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -2377,7 +2378,8 @@ async def jev_consent(rid: str, request: Request) -> dict[str, Any]:
 @app.post("/runs/{rid}/jev/preview")
 async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
     """``jev_preview@1``: the exact body string, its SHA-256 and bytes, the alias table (local only), the reservation,
-    the cap use and every refusal that holds now. A read: no event, tool, job or external request."""
+    the cap use and every refusal that holds now. A read: no event, tool, job or external request. A loop projection
+    (M25) adds ``loop`` and ``loop_blocks`` from its loop record (one log read for both)."""
     body = await _jev_request(request, JevPreviewRequest)
 
     def read() -> dict[str, Any]:
@@ -2388,6 +2390,10 @@ async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
         return await run_in_threadpool(read)
     except jev_sends.JevSendError as exc:
         raise _jev_error(exc) from exc
+    except jev_loops.LoopRecordInvalid as exc:   # a loop event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a stored object of the loop that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
 
 
 @app.post("/runs/{rid}/jev/sends")
@@ -2500,8 +2506,9 @@ async def jev_loop_create(rid: str, request: Request) -> Any:
 
 def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:
     """One loop read: no run lock, ONE event-log read (``LoopReadView``), nothing written. ``send_active`` is this
-    process's in-flight science send (the loop modules never import the send module); no preview reservation
-    exists before T4, so ``send_reservation`` is None."""
+    process's in-flight science send (the loop modules never import the send module). A record read has no
+    preview, so ``send_reservation`` is None; the preview of a loop projection carries the record's send-side amounts
+    derived with its reservation (``jev_sends.preview_for``)."""
     _only_query(request, set())
     run = _run(rid)
     view = jev_loop_store.LoopReadView(run)

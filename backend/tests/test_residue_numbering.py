@@ -746,9 +746,10 @@ def test_reference_rows_are_embedded(tmp_path, ref):
 
 def test_argument_repair_path_runs_the_same_precheck(tmp_path, ref):
     # no other tool's validation or key changes (M16 annotate_reference_sites, M20 generate_mutation_candidates and
-    # M24 build_jev_projection have their own pre-checks, no key fields)
+    # M24 build_jev_projection have their own pre-checks, no key fields; M25 build_jev_loop_projection adds the hash
+    # of the loop-record inputs it reads as key fields)
     assert set(build_registry().prechecks) == {TOOL, "annotate_reference_sites", "generate_mutation_candidates",
-                                               "build_jev_projection"}
+                                               "build_jev_projection", "build_jev_loop_projection"}
     run, calls = _run(tmp_path)
     structure = _load(run, CIF_1MQ4)
     with pytest.raises(ToolFailure):
