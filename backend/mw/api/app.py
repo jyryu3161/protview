@@ -26,6 +26,8 @@ from .. import (
     docking_bundle,
     docking_reads,
     jev_constants,
+    jev_loop_constants,
+    jev_loop_store,
     jev_projection,
     jev_sends,
     ligand_bundle,
@@ -678,6 +680,8 @@ def capabilities() -> dict[str, Any]:
     methods["sequence_ga_design"] = sequence_ga_jobs.capability(methods["ligand_docking"], methods["mutation_model"])
     # M24: local conditions only (tool exposed, pins equal the gate's); never reads a credential or a run's consent.
     methods["jev_choice"] = _jev_choice_capability()
+    # M25: per branch, the loop projection tool, the science pins (as jev_choice), then that branch's engines.
+    methods["jev_loop"] = _jev_loop_capability(methods)
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -2442,6 +2446,49 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
             raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                              "message": "the stored JEV choice does not validate"}) from exc
     return {**record, "choice": choice, "local_display": None if choice is None else choice["answer"]["local_display"]}
+
+
+# ----------------------------------------------------------------- M25 JEV design loops (record and creation)
+JEV_LOOP_BUSY_MESSAGE = "the run is busy with another operation; nothing was recorded"
+
+
+def _jev_loop_capability(methods: dict[str, Any]) -> dict[str, Any]:
+    """``methods.jev_loop``: per branch, the loop projection tool exposed, the science pins equal to the gate's (the
+    M24 check), then the branch's engines (the creation admission's engine order). Reasons only, no numbers."""
+    tool = jev_loop_constants.TOOL
+    return jev_loop_store.capability(
+        methods["ligand_docking"], methods["mutation_model"],
+        tool_exposed=tool in SUPPORTED_TOOLS and tool in REGISTRY.specs,
+        pins_match=egress_science._pins_match({"model": jev_projection.REQUEST_MODEL,
+                                               "provider": jev_projection.PROVIDER}))
+
+
+async def _jev_loop_request(request: Request, limit: int) -> dict[str, Any]:
+    """No query parameter, Content-Type application/json (415 before the body is read, as the M24 posts), a body of
+    at most ``limit`` bytes (413) and one JSON object (422). Its keys are the loop admission's."""
+    _only_query(request, set())
+    if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json":
+        raise HTTPException(415, detail={"error": "unsupported_media_type", "message": JEV_MEDIA_TYPE_MESSAGE})
+    return _chemical_json(await _bounded_chemical_body(request, limit))
+
+
+@app.post("/runs/{rid}/jev_loops")
+async def jev_loop_create(rid: str, request: Request) -> Any:
+    """``jev_loop@1`` of a new loop (spec 3.1): the closed admission in order, then one ``jev_loop_created`` event; the
+    same loop_id and request answers the existing record. No job, tool, external request or budget change."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_CREATE_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        return await run_in_threadpool(lambda: jev_loop_store.create(run, body, send_active=send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
 
 
 @app.get("/runs/{rid}/interface_sasa")

@@ -39,6 +39,7 @@ EventType = Literal[
     "viewer_scene_admitted", "viewer_figure_admitted",
     "viewer_scene_saved", "viewer_figure_saved",
     "jev_science_consent_changed", "jev_send_approved", "jev_science_dispatch_started", "jev_send_outcome",
+    "jev_loop_created", "jev_loop_compute_approved", "jev_loop_docking_abandoned", "jev_loop_ended",
 ]
 DecisionSource = Literal["rule", "jev", "frontier", "human"]
 
