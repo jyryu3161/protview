@@ -17,17 +17,17 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 |---|---|
 | 200 / 201 | 성공(scientific_null 포함) |
 | 400 | run ID 형식 오류, 경로 오류, 잘못된 Content-Length |
-| 404 | 이 run에 없는 handle/job |
-| 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy`, M24 과학 전송의 `preview_mismatch`·`send_id_conflict`·`send_in_progress` |
-| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등), M24 dry-run run의 과학 전송 동의 켜기(`dry_run`) |
+| 404 | 이 run에 없는 handle/job, M25 루프 라우트의 `loop_not_found` |
+| 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy`, M24 과학 전송의 `preview_mismatch`·`send_id_conflict`·`send_in_progress`, M25 루프의 `loop_id_conflict`·`loop_active`·`loop_ended`·`send_in_progress`·`iteration_invalid`·`phase_invalid`·`iteration_cap_reached`·`proposal_invalid`·`proposal_late`·`candidate_unavailable`·`candidate_computed`·`step_unavailable`·`job_running`·`docking_pending`, 루프 전송의 `loop_send_invalid` |
+| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등), M24 dry-run run의 과학 전송 동의 켜기(`dry_run`), M25 루프 만들기의 `dry_run`·`capability_unavailable`, 루프 계산 시작의 `capability_unavailable`, 루프 투영의 상태 거절(`loop_ended`·`iteration_mismatch`·`selection_done`·`phase_invalid`·`cap_reached`·`too_few_candidates`) |
 | 413 | 본문 크기 초과(`resource_exceeded`) |
-| 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문, M24 JEV POST(`/jev/consent`·`/jev/preview`·`/jev/sends`)에 `application/json`이 아닌 본문(`unsupported_media_type`, 본문을 읽기 전) |
+| 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문, M24 JEV POST(`/jev/consent`·`/jev/preview`·`/jev/sends`)와 M25 루프 POST(`/jev_loops`, `/jev_loops/{loop_id}/compute`·`/abandon_docking`·`/end`)에 `application/json`이 아닌 본문(`unsupported_media_type`, 본문을 읽기 전) |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
-| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`, M24 투영의 `payload_too_large`) |
-| 500 | M24 과학 전송 라우트의 `internal_error`(기록 중 디스크 오류·승인 대조 실패, 고정 문장만, 예외 텍스트 없음) |
-| 503 | 도구의 `transient` 또는 `fatal`, M24 과학 전송의 `busy`(run 실행 잠금이 잡혀 있음, 아무것도 쓰지 않음) |
+| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`, M24·M25 투영의 `payload_too_large`), M25 루프 계산 시작의 `budget_blocked` |
+| 500 | M24 과학 전송 라우트의 `internal_error`(기록 중 디스크 오류·승인 대조 실패, 고정 문장만, 예외 텍스트 없음), M25 루프 라우트·루프 투영의 미리보기·전송에서 루프 라우트가 쓰지 않는 이벤트 순서(`internal_error`, 고정 문장) |
+| 503 | 도구의 `transient` 또는 `fatal`, M24 과학 전송·M25 루프 쓰기 라우트의 `busy`(run 실행 잠금이 잡혀 있음, 아무것도 쓰지 않음) |
 
-- **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를, M24 과학 전송은 `send_id`(v4 UUID)를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다.
+- **멱등성**: 뷰어 의도·저장 보기·그림 생성은 클라이언트 요청 UUID를, M24 과학 전송은 `send_id`(v4 UUID)를, M25 루프 만들기는 `loop_id`(v4 UUID)를 받는다. UUID와 정규화한 본문이 같으면 같은 결과를 돌려주고 다시 실행하지 않는다. UUID가 같은데 본문이 다르면 409다. M25 계산 시작은 UUID 없이 같은 단계의 가장 최근 승인과 인자가 같으면 새 이벤트·작업을 만들지 않는다.
 - **목록**: `offset`/`limit` 페이지 단위다. 기본·최대 개수는 호출마다 다르다: 객체 행·저장 보기·그림·화학 결과 행 50/100, 원자 카탈로그 100/500, 화학 원자 목록 100/1000, 이벤트 200/500.
 - **다운로드**: 파일 이름은 서버가 handle 앞부분으로 만든다(`protview-figure-<prefix>.png` 등). 저장된 산출물은 다시 받아도 같은 바이트다.
 
@@ -38,7 +38,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | `POST /runs` | `{goal?, context?, dry_run?: bool, egress?: "local_only"}`. egress에는 `local_only`만 넣을 수 있다 | 201, run 요약 | 422 |
 | `GET /runs`, `GET /runs/{id}` | — | run 요약 목록/단건 | 400, 404 |
 | `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, …모델·체인 요약}` | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
-| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16), `generate_mutation_candidates`(M20), `build_jev_projection`(M24) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
+| `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16), `generate_mutation_candidates`(M20), `build_jev_projection`(M24), `build_jev_loop_projection`(M25) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
 | `POST /runs/{id}/inspect_complex` | 업로드 ID 또는 같은 run의 구조 handle, 모델, 전처리 정책, 선택적 리간드, cutoff | 완료된 handle 목록 또는 `needs_selection`/`no_ligand` | 412, 422, 409 |
 
 `load_structure`의 `source`는 이 run의 업로드 ID여야 한다. 파일 경로나 URL은 받지 않는다. `decided_by`는 기록용 출처 정보일 뿐이며, 승인 권한을 주지 않는다.
@@ -47,7 +47,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch, ligand_ga_design, jev_choice}` 사용 가능 여부와 이유, 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch, ligand_ga_design, jev_choice, jev_loop}` 사용 가능 여부와 이유(`jev_loop`은 갈래별), 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -62,7 +62,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·리간드 GA 설계 요약·변이 후보·변이 구조 모델 결과·JEV 판정 제안 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·리간드 GA 설계 요약·변이 후보·변이 구조 모델 결과·JEV 판정 제안·JEV 루프 요약 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -609,6 +609,52 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 ### 보고서
 - `POST /runs/{id}/method_reports` `{result_handle: <jev_choice>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "jev_choice"`, `status: "complete"`, `render_version: "jev_choice_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "jev_choice@1"`, `result_sha256`, `external_response{kind: "jev_choice", scientific_evidence: false}`, `kind`(`ligand`·`mutation`), 제안에서 복사한 `method_version, label, scientific_result, send, source, projection, question, requested_model, served_model, arrival, limitations`, `chosen{local_ref, local_display}`, `claims`, `provenance{send_id, audit_id, approved_event_seq, dispatch_event_seq, created_event_seq, outcome_event_seq}`, `evidence_statement`, `snapshot{event_seq, time_utc, run_egress_mode, science_consent, budget}`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 이름 "JEV 판정 보고서"). 만들 때 run 실행 잠금을 잡으므로 과학 전송이 도는 동안에는 503 `transient`다.
 - 주장 statement ID: `computed` — `selection_count`(`selection[*]`, `operation: "count(selection[*])"`), `body_bytes`, `usage_input_tokens`, `usage_output_tokens`, `usage_cost`(보고된 값만). `model_response` — `choice_alias`, `confidence`(보고됐을 때만), `served_model`, `arrival_late`, `arrival_late_reason`(늦었을 때만). 모델 응답 주장은 `reference{note: "외부 모델의 응답, 제안이며 과학 증거가 아니다", proposal_handle}`을, 계산값 주장은 `reference: null`을 가진다. 섞인 증거 종류(계산값이 모델 응답 필드를 인용하거나 그 반대), 다른 statement의 필드 경로, 확률 필드, 틀린 값·개수, 해석 문장, 전송 이벤트 사슬 불일치, 변조된 제안·보고서는 422 `report_evidence_invalid`.
+
+## M25 JEV 설계 루프
+
+규칙은 `docs/business-rules.md` "JEV 설계 루프 (M25, `build_jev_loop_projection` / 루프 라우트)". 루프 라우트(`/runs/{id}/jev_loops…`)는 알 수 없는 쿼리 파라미터를 422 `input_invalid`로 거부한다. 쓰기 라우트 넷(만들기·`compute`·`abandon_docking`·`end`)은 `Content-Type: application/json`(대소문자 무시, 파라미터 허용)만 받고 아니면 본문을 읽기 전에 415 `unsupported_media_type`이며, 본문은 만들기 16 KiB·나머지 4 KiB 이하(413 `resource_exceeded`), 중복 키 없는 JSON 객체 하나다. 루프 거절은 HTTP 경계 형태 `{"detail": {"error", "reason_code", "message", …}}`이고 `error`는 422면 `input_invalid`, 그 밖에는 이유 이름 자체다. run 실행 잠금을 잡지 못한 쓰기는 503 `busy`이고 아무것도 쓰지 않는다. 루프 라우트가 쓰지 않는 이벤트 순서는 500 `internal_error`(고정 문장), 다시 읽히지 않는 루프·저장 객체는 409 `run_corrupt`다. 읽기(목록·상세)는 run 실행 잠금 없이 이벤트 로그를 한 번만 읽고 이벤트·작업·도구·외부 요청을 만들지 않으며 키를 읽지 않는다. 라우트 사이에 호출 관계는 없고 어느 루프 라우트도 `request_science`·`run_send`·`Run.raise_limits`를 부르지 않는다. 하위 경로(`/compute`·`/abandon_docking`·`/end`)는 상세보다 먼저 등록되어 있다.
+
+### 투영: `POST /runs/{id}/commands` `{tool: "build_jev_loop_projection", args}`
+```json
+{"loop_id": "<루프의 v4 UUID>", "iteration": 1}
+```
+- 성공: 200 `{ok: true, handle: <envelope>}`, kind `jev_loop_projection`, schema `jev_loop_projection@1`, summary `{kind, loop_id, iteration, send_ordinal, selection_count, body_bytes, body_sha256}`. 사전 검사 훅이 루프 기록에서 읽은 입력(풀 순서, 목표, `loop_seed`, `send_ordinal`, 후보 상태·저장 점수)을 `bound`로 고정하고 그 SHA-256을 호출 키에 더한다. 같은 입력이면 같은 handle. dry-run run에는 루프가 없어 `loop_not_found`다.
+- 실패(도구 실패 본문, `detail.reason_code`), 사전 검사 훅(구현을 부르지 않음), 이 순서: 422 `input_invalid` `unknown_field`·`loop_not_found` → 412 `precondition` `loop_ended`·`iteration_mismatch`·`selection_done`·`phase_invalid`·`cap_reached`·`too_few_candidates` → 422 `source_invalid`·`structure_unavailable`·`wire_field_invalid` → 429 `resource_exceeded` `payload_too_large`(`detail{reason_code, body_bytes, limit: 65536}`). 구현이 만든 객체가 저장 형태 검증을 통과하지 못하면 422 `projection_invalid`. 거절은 아무것도 저장하지 않는다. 과학 전송이나 루프 작업이 run 실행 잠금을 쥔 동안에는 503 `transient`(busy)다.
+- 객체 필드는 business-rules "투영 도구"와 같다. 화면은 아래 미리보기로만 본문을 본다.
+
+### 라우트
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `POST /runs/{id}/jev_loops` | `{loop_id, branch, pool{source, candidates, filter}, goal, loop_seed, iteration_cap, setup}`(키·값 규칙은 business-rules "루프 만들기") | 200 `jev_loop@1`. 이벤트 `jev_loop_created` 하나. 같은 `loop_id`·같은 정규화 요청은 기존 기록을 새 이벤트 없이 | 422 `unknown_field`·`loop_id_invalid`·`branch_invalid`·`pool_invalid`·`goal_invalid`·`seed_invalid`·`iteration_cap_invalid`·`setup_invalid`(`detail.setup_reason`, 기존 M18·M21 닫힌 이름), 409 `loop_id_conflict`·`loop_active`, 412 `dry_run`·`capability_unavailable`(`detail.capability{reason_code, reason}`), 415, 413, 503 `busy` — 모두 이벤트 없음 |
+| `GET /runs/{id}/jev_loops` | — | 목록 행 `{loop_id, branch, status, end_reason, goal, pool_size, counts, created_seq}` 배열, 최신 순 | 422 모르는 파라미터, 404 없는 run, 409 `run_corrupt`, 500 `internal_error` |
+| `GET /runs/{id}/jev_loops/{loop_id}` | — | `jev_loop@1`(아래) | 404 `loop_not_found`, 422, 409 `run_corrupt`, 500 `internal_error` |
+| `POST /runs/{id}/jev_loops/{loop_id}/compute` | `{iteration}` + 첫 단계에서 정확히 하나의 `proposal`(제안 handle) 또는 `candidate`(리간드 후보 id·단백질 후보 `index`), `dock` 단계는 `{iteration}`만 | 200 `jev_loop@1`. 이벤트 `jev_loop_compute_approved` 하나 뒤 단독 M18·M21 작업 제출, 잠금을 놓은 뒤 시작(작업이 끝날 때까지 응답을 기다림). 첫 계산 승인 대기면 200 + `current.job.start_blocked: "approval_required"`(화면은 `POST /jobs/approve` 뒤 같은 요청을 다시 보냄). 같은 단계의 같은 인자 재호출은 새 이벤트·작업 없이 살아 있는 작업의 `start`만. 저장 모델·도킹 결과 채택은 작업 없이 `units: 0` | 422 `unknown_field`·`candidate_invalid`, 404 `loop_not_found`, 409 `cancelled`·`loop_ended`·`send_in_progress`·`iteration_invalid`·`phase_invalid`·`iteration_cap_reached`·`proposal_invalid`·`proposal_late`·`candidate_unavailable`·`candidate_computed`·`step_unavailable`(`detail.job{id, status}`), 412 `capability_unavailable`(`detail.capability`), 429 `budget_blocked`(`detail.blocked_axes`·`needs`), M18·M21 작업 입장 거절(도구 실패 본문, 닫힌 `detail.reason_code`), 503 `busy` — 여기까지 이벤트 없음. 시작 단계의 실패는 작업 시작 라우트와 같음(409 `approval`·`cancelled`·전역 작업 게이트, 도구 실패 본문) |
+| `POST /runs/{id}/jev_loops/{loop_id}/abandon_docking` | `{iteration}` | 200 `jev_loop@1`. 이벤트 `jev_loop_docking_abandoned` 하나(후보 `not_run`, 바퀴 끝) | 422 `unknown_field`, 404, 409 `cancelled`·`loop_ended`·`send_in_progress`·`iteration_invalid`·`phase_invalid`, 503 `busy` |
+| `POST /runs/{id}/jev_loops/{loop_id}/end` | `{}` | 200 끝난 `jev_loop@1`. 요약 `jev_loop_result@1`을 저장한 뒤 이벤트 `jev_loop_ended` 하나 | 422 `unknown_field`(빈 객체가 아님), 404, 409 `cancelled`·`loop_ended`·`send_in_progress`·`job_running`·`docking_pending`, 503 `busy` |
+
+- `jev_loop@1`: `{schema, loop_id, branch, status, end_reason, exhausted_reason, goal, loop_seed, iteration_cap, effective_cap, pool{source{handle, schema}, structure{handle, model_number}|null, candidates[{ref, display}], filter}, setup, setup_sha256, pins, counts{started, done, jev_decided, human_decided, sends_dispatched, units_charged, reused_count}, candidates[{ref, display, state, evaluation, score_kcal_mol, iteration}], iterations[{index, phase, decided_by, candidate_ref, proposal_handle, list_position, list_size, approvals[{step, candidate_ref, decided_by, proposal_handle, call_key}], sends[{send_id, status, send_ordinal, proposal_handle, late}], steps[{step, candidate_ref, job_id, call_key, result_handle, state, reason_code, evaluation}], state, score_kcal_mol}], current{iteration, phase, step, action, needs, remaining, blocked_axes, send_blocked_axes, can_end, job{job_id, step, status, start_blocked}|null}, result_handle, limitations}`. `needs`·`remaining`은 `{expensive_units, wall_clock_s, external_tokens, usd, sends}`(외부 토큰·USD는 값이 없으면 null). 점수는 저장 결과 첫 모드의 사본이고 점수 없음은 null이며 0이 아니다. 끝난 루프는 그 `jev_loop_ended` 시점에 동결된 기록이고 `current.remaining`만 지금 값이다.
+
+### M24 라우트의 루프 투영
+- `POST /runs/{id}/jev/preview` `{projection: <jev_loop_projection handle>}` → 200 `jev_preview@1`에 `loop{loop_id, iteration, send_ordinal, needs, remaining, send_blocked_axes}`와 `loop_blocks`(지금 성립하는 `LOOP_SEND_REASONS` 거절, 없으면 `[]`)가 더해진다. `question`은 루프 질문 id·지시문·`instructions_sha256`이다. M24 투영의 미리보기 응답 모양·바이트는 그대로다.
+- `POST /runs/{id}/jev/sends` `{send_id, projection, body_sha256, confirm: "send_to_jev"}`가 루프 투영을 받는다. 라우트 순서는 M24 요청 검사 → 투영 → 409 `preview_mismatch` → 같은 `send_id` 재생 → 409 `send_in_progress` → 루프 검사(승인 콜백 안, 승인 이벤트 앞) → 게이트. 루프 검사 거절은 409 `{"detail": {"error": "loop_send_invalid", "message", "reason"}}`(`reason` ∈ `loop_not_found`, `loop_ended`, `iteration_mismatch`, `selection_done`, `phase_invalid`, `cap_reached`, `too_few_candidates`, `state_changed`, `ordinal_mismatch`)이고 승인·감사·예약·키 읽기가 없다(게이트의 `wall_charged`만 남을 수 있음). 그 밖의 결과·거절·실패는 M24와 같은 200 `jev_send@1`이며 완료된 루프 전송의 제안은 `jev_loop_choice@1`이다.
+- `GET /runs/{id}/jev/sends`·`/jev/sends/{send_id}`: 루프 전송의 `jev_send@1`에 `loop{loop_id, iteration, send_ordinal}`(투영 객체 이벤트에서, 읽을 수 없으면 null)가 더해진다. M24 전송 기록에는 `loop` 키가 없다. 상세의 `choice`는 루프 전송이면 투영·후보 집합·그 전송의 승인·결과 이벤트와 다시 검증한 `jev_loop_choice@1`(검증 실패는 422 `method_evidence_invalid`), `local_display`는 그 `answer.local_display`다.
+- `GET /runs/{id}/jev/status`의 `used`·`remaining`·예산은 루프 전송을 함께 센다(run당 10회, 외부 토큰·USD 공유).
+
+### 이벤트
+- `jev_loop_created {loop_id, branch, pool{source{handle, schema}, structure|null, candidates, filter}, goal, loop_seed, iteration_cap, setup, setup_sha256, pins}`: 만들기 라우트만.
+- `jev_loop_compute_approved {loop_id, iteration, step, candidate_ref, decided_by, proposal_handle|null, call_key, units, approved_by: "human"}`: 계산 시작 라우트만, 작업 제출 전(같은 실행 잠금 안). `units`는 저장 결과 채택이면 0, 아니면 1.
+- `jev_loop_docking_abandoned {loop_id, iteration, candidate_ref}`: 도킹 포기 라우트만.
+- `jev_loop_ended {loop_id, end_reason, result_handle}`: 끝내기 라우트만, 요약 저장 뒤. `end_reason`에 `run_cancelled`는 쓰지 않는다(읽을 때 도출).
+- 네 이벤트는 예산 예약·정산·egress 정산·재생에 영향이 없다(`core/events.py` `EventType`에 이름만 더함). 투영·제안·요약 객체는 기존 `object_created`로 저장되고 events-only로 다시 열린다. 루프 전송은 M24 이벤트 넷(`jev_send_approved` 등)을 그대로 쓰고 새 전송 이벤트가 없다.
+
+### capability와 도구 목록
+- `/capabilities`의 `methods.jev_loop`: `{ligand: {available, reason_code, reason}, protein: {available, reason_code, reason}}`. 갈래마다 투영 도구가 `SUPPORTED_TOOLS`·레지스트리에 없으면 `tool_unavailable`, 과학 pin이 게이트 값과 다르면 `missing_configuration`, 그다음 그 갈래 엔진의 이유(리간드: `methods.ligand_docking`, 단백질: `methods.mutation_model` 다음 `methods.ligand_docking`)다. 사용할 수 없으면 숫자·pin·버전 없이 이유만. 키·run 동의를 읽지 않는다.
+- `GET /tools`(기본 `levels=L2,L4`)에 `build_jev_loop_projection`(L2, `emits: jev_loop_projection`, `cost_class: cheap`, 인자 `loop_id`·`iteration`)이 나온다.
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <jev_loop_result>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "jev_loop"`, `status: "complete"`, `render_version: "jev_loop_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "jev_loop_result@1"`, `result_sha256`, `external_response{kind: "jev_loop_choice", scientific_evidence: false}`, 요약에서 복사한 `branch, loop_id, goal, loop_seed, iteration_cap, effective_cap, end_reason, pool, setup, setup_sha256, pins, counts, candidates, iterations, unfinished`, `score_label`, `score_column_label`, `chosen[{iteration, proposal_handle, local_ref, local_display}]`, `claims`, `provenance{created_event_seq, ended_event_seq}`, `evidence_statement`, `limitation_ids`, `limitations`, `snapshot{event_seq, time_utc, run_egress_mode, budget}`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 이름 "JEV 루프 보고서"). `jev_loop_choice` handle은 422 `wrong_method_result_kind`다.
+- 주장 statement ID: `computed` — `pool_size`(`count(pool.candidates)`), `pool_source`, `loop_setting`(`loop_seed`·`iteration_cap`·`effective_cap`·`setup_sha256`), `setup_value`(`setup.parameters.{seed, exhaustiveness, num_modes, energy_range}`, 단백질 `setup.contact_cutoff_A`), `count`(`counts.*` 일곱), `candidate_score`(요약 `candidates[i].score_kcal_mol`)·`candidate_result_score`(그 후보 M18 결과 `modes[0].score_kcal_mol`, `scored` 후보만, `row_selector {"candidate": i}`, 0.1 `ROUND_HALF_UP`). `model_response` — `list_position`, `list_size`, `confidence`(보고됐을 때만), `arrival_late`(JEV가 고른 바퀴만, `row_selector {"iteration": n}`, `reference{note: "외부 모델의 응답, 제안이며 과학 증거가 아니다", proposal_handle}`). 섞인 증거 종류, 다른 statement의 필드 경로, 확률 필드, 틀린 값·개수·반올림, 점수 없는 후보의 점수 주장, 해석 문장, 변조된 요약·제안·보고서는 422 `report_evidence_invalid`.
 
 ## 과거 단계 실행기 (CLI)
 
