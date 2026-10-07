@@ -40,7 +40,7 @@ from jev_send_fixture import Fake, new_send_id, reply
 from ligand_job_fixture import import_file, new_ligand_run, run_job
 from test_jev_loops_api import I44, PHENOL, UBQ
 from test_jev_loops_derive import IDS as SYNTHETIC_IDS
-from test_jev_loops_derive import Log, docked
+from test_jev_loops_derive import Log, docked, modelled
 from test_jev_loops_derive import derive as derive_synthetic
 from test_ligand_ga_jobs import ACK, BLOCKS, BOX, FAST, GA, IDS, PARENT, REC, evaluated, ga_args, run_ga, summary
 
@@ -55,6 +55,7 @@ from mw import (
 from mw import docking_constants as DC
 from mw import jev_constants as J
 from mw import jev_loop_constants as L
+from mw import jev_loop_projection as LP
 from mw import jev_loop_result as R
 from mw import jev_sends as S
 from mw import mutation_model_constants as MC
@@ -1330,6 +1331,71 @@ def test_a_lost_docking_approval_never_takes_a_later_outside_docking(protein, se
     job_a = served.record(loop_id)["current"]["job"]["job_id"]
     assert served.client.post(f"/runs/{PRID}/jobs/{job_a}/cancel").json()["job"]["status"] == "cancelled"
     end_loop(served, loop_id, "pool_exhausted")
+
+
+def test_job_owners_breaks_on_a_science_send_event_never_on_other_run_events_and_skips_adoptions():
+    x = SYNTHETIC_IDS[0]
+    log = Log()
+    log.created()
+    log.approve(1, x)                                         # lost submission ...
+    log.send(1, ref=SYNTHETIC_IDS[1])                         # ... then a science send (M24 events only)
+    after_send = log.submit(x)                                # the same request, outside the loop
+    log.approve(2, SYNTHETIC_IDS[2])
+    log.add("approval_resolved", gate="expensive_first_call", approved=True, by="human")   # another tab's event
+    owned = log.submit(SYNTHETIC_IDS[2])                      # the route's own submission still qualifies
+    adoption = log.approve(3, SYNTHETIC_IDS[3], units=0)      # an adoption never submits a job ...
+    adopted_key = log.submit(SYNTHETIC_IDS[3])                # ... so a same-key job after it is outside
+    owners = jev_loops.job_owners(log.events)
+    assert after_send not in owners and adopted_key not in owners and adoption["units"] == 0
+    assert owners[owned]["candidate_ref"] == SYNTHETIC_IDS[2]
+
+
+def test_a_lost_docking_approval_stays_done_when_a_later_outside_docking_lands():
+    """Approval -> lost submission -> next iteration approved -> an outside same-key docking: the read is monotonic
+    (iteration 1 stays done, not_run) before and after the outside job, whatever the job does."""
+    log = Log()
+    log.created("protein", cap=3)
+    log.approve(1, 7, "model")
+    log.run_job(7, "model")
+    log.approve(1, 7, "dock")                                 # lost submission: 7 not_run, iteration 1 done
+    log.approve(2, 11, "model")
+    log.submit(11, "model")
+    results = modelled(7)
+    before = derive_synthetic(log, results=results)
+    outside = log.run_job(7, "dock")                          # the same docking, outside the loop, done
+    after = derive_synthetic(log, results=results | docked(7, 1, -3.0, "dock"))
+    for state in (before, after):
+        first = state.record["iterations"][0]
+        assert (first["phase"], first["state"], state.record["counts"]["done"]) == ("done", "not_run", 1)
+        assert [step["job_id"] for step in first["steps"]][1] is None
+    assert outside not in jev_loops.job_owners(log.events)
+
+
+def test_a_lost_docking_approval_never_takes_an_outside_docking_after_a_science_send(protein, serve, monkeypatch):
+    """The T11 re-review order through the product routes: W's model adopted, its docking submission lost
+    (W not_run), iteration 2 projected and sent once (M24 send events only), then the same mutant docking submitted
+    as from the M21 screen. The job stays outside the loop; reads, the list and the end answer 200."""
+    served = serve(protein, protein["modelled"])
+    w = protein["refs"][W]
+    loop_id = served.create(protein_loop(protein, (W, A, B), cap=3))
+    assert served.compute(loop_id, iteration=1, candidate=w).status_code == 200
+    _lose_submission(served, monkeypatch, loop_id, iteration=1)
+    assert served.record(loop_id)["counts"]["done"] == 1
+    S.set_consent(served.run, True)
+    handle = served.run.call(L.TOOL, {"loop_id": loop_id, "iteration": 2}).handle
+    alias = LP.criteria_aliases(served.run.store.load(handle))[0]
+    sent = served.send(Fake(lambda request: reply(alias, confidence=0.5)), handle)
+    assert sent["status"] == "completed"
+    outside = served.submit_job(DC.PROTOCOL, hand_dock_request(protein, protein["model"]), 300)
+    record = served.record(loop_id)
+    first = record["iterations"][0]
+    assert (first["phase"], first["state"], record["counts"]["done"]) == ("done", "not_run", 1)
+    assert outside["job_id"] not in {step["job_id"] for row in record["iterations"] for step in row["steps"]}
+    assert served.client.get(f"/runs/{PRID}/jev_loops").status_code == 200
+    pairs = served.client.get(f"/runs/{PRID}/mutation_models/{protein['model']}/docking_pairs").json()["pairs"]
+    mine = [pair for pair in pairs if pair["sides"]["mutant"]["job_id"] == outside["job_id"]]
+    assert len(mine) == 1 and "loop" not in mine[0]
+    end_loop(served, loop_id, "ended_by_user")
 
 
 @pytest.mark.parametrize("field, values", [

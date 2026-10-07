@@ -65,9 +65,10 @@ L.EVENT_ENDED              loop_id, end_reason (END_REASONS without "run_cancell
 
 Derivation rules that are this module's reading of the spec (see the T2 report's spec_gaps)
 -------------------------------------------------------------------------------------------
-* A job belongs to a step only by ``job_owners`` (T11 ruling): its ``job_submitted`` follows an approval of its call
-  key with no ``jev_loop_*`` event of any loop between them (the compute route writes the approval and submits in
-  one run-owner hold, so its own job always qualifies). Every other job of the key is outside the loop.
+* A job belongs to a step only by ``job_owners`` (T11 rulings): its ``job_submitted`` follows an approval of its call
+  key (not an adoption) with no ``jev_loop_*`` event of any loop and no M24 science send event between them (the
+  compute route writes the approval and submits in one run-owner hold, so its own job always qualifies). Every other
+  job of the key is outside the loop.
 * Step result (spec 6.4) = the first change of its own job after the approval: a terminal with a reservation after
   its (re)queue mark is charged (completed when done and the result validates, else failed with the job's closed
   failure reason or null); a terminal without one is unavailable. A step without its own job is ``reused`` when it
@@ -483,18 +484,22 @@ def _failure_reason(step: str, status: Any, failure: Any) -> str | None:
 
 def job_owners(events: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """{job_id: the ``jev_loop_compute_approved`` event (envelope and payload) whose step that job is}, the one
-    attribution rule of every loop reader (T11 ruling): a ``job_submitted`` belongs to the latest approval of its call
-    key before it only when no ``jev_loop_*`` event of any loop (created, approved, abandoned, ended) lies between the
-    two, i.e. the last loop event before the submission is that approval. The compute route writes its approval and
-    submits in one run-owner hold, so its own job always qualifies; a job submitted later, after another loop event,
-    is outside every loop. Pure; never raises on other events."""
+    attribution rule of every loop reader (T11 rulings): a ``job_submitted`` belongs to the latest approval of its call
+    key before it only when no breaking event lies between the two: a ``jev_loop_*`` event of any loop (created,
+    approved, abandoned, ended) or an M24 science send event (``J.EVENT_APPROVED`` / ``EVENT_DISPATCH`` /
+    ``EVENT_OUTCOME``, written only by the holder of the run owner). The compute route writes its approval and submits
+    in one run-owner hold, so neither kind can come between them and its own job always qualifies; other events
+    (another tab's approval, a viewer event) do not break it. An adoption (``units`` 0: a stored model or docking)
+    submits no job and owns none. Every other job is outside every loop. Pure; never raises on other events."""
+    breaking = (*L.EVENT_TYPES, J.EVENT_APPROVED, J.EVENT_DISPATCH, J.EVENT_OUTCOME)
     owners: dict[str, dict[str, Any]] = {}
     last = None
     for event in events:
         kind = event.get("type")
-        if kind in L.EVENT_TYPES:
+        if kind in breaking:
             last = event
-        elif kind == "job_submitted" and last is not None and last.get("type") == L.EVENT_COMPUTE_APPROVED:
+        elif (kind == "job_submitted" and last is not None and last.get("type") == L.EVENT_COMPUTE_APPROVED
+              and last.get("units") != 0):
             job = event.get("job")
             if isinstance(job, Mapping) and job.get("call_key") == last.get("call_key") and "job_id" in job:
                 owners[job["job_id"]] = last
