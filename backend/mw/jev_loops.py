@@ -70,7 +70,13 @@ Derivation rules that are this module's reading of the spec (see the T2 report's
   result is stored, else unavailable (only a crash between the approval event and the submit leaves that).
 * A candidate whose iteration started and has not ended is ``pending`` with ``iteration`` null (spec 3.2 literal rule
   for pending); it still counts as pending (so ``pool_exhausted`` never fires while it runs) but cannot be selected.
-* An iteration that has not started is ``in_progress`` until its latest first-step approval is unavailable.
+* A candidate held by a live step of this loop (the job of a step's latest approval is queued, claimed or running)
+  is ``pending`` before priority 2 and 3 apply: a same-key result published elsewhere meanwhile does not make it
+  ``reused`` and the job does not make it ``unavailable`` (coordinator ruling). Once that step is ``unavailable`` the
+  candidate is read by 2-4 again; once charged it follows the iteration (1).
+* An iteration's ``state`` is ``unavailable`` when the step of its latest first-step approval is ``unavailable`` and
+  no newer approval exists; the record keeps it even if the candidate later reads ``reused``. Until then a
+  not-started iteration is ``in_progress``.
 * ``counts.jev_decided`` / ``human_decided`` count started iterations by their deciding approval; ``reused_count``
   counts pool candidates whose evaluation is "reused"; ``units_charged`` counts charged steps.
 * ``current.needs`` for wait_job / end / none is zero; the send axes are judged only at "select" with at least two
@@ -700,7 +706,7 @@ def derive_loop(loop_id: Any, events: Iterable[dict[str, Any]], *, jobs: Any, ke
         _need(send["iteration"] <= number, "a send for an iteration that was never current")
 
     # candidates (spec 3.2 priority 1-4)
-    live_jobs = {step["job"]["job_id"] for step in steps if step["state"] in _LIVE and step["job"] is not None}
+    held = {step["candidate_ref"] for step in steps if step["state"] in _LIVE}   # this loop's live steps
     ended_by = {it["latest"]["candidate_ref"]: it for it in iterations.values() if it["done"]}
     running_ref = in_progress[0]["latest"]["candidate_ref"] if in_progress else None
     rows, pending, needs, evaluation_reused = [], [], {}, 0
@@ -712,12 +718,12 @@ def derive_loop(loop_id: Any, events: Iterable[dict[str, Any]], *, jobs: Any, ke
             it = ended_by[ref]
             row.update(state=it["outcome"], evaluation="computed", score_kcal_mol=it.get("score"),
                        iteration=it["index"])
-        elif ref == running_ref:
+        elif ref == running_ref or ref in held:
             pass
         elif stored is not None:
             row.update(state=stored[0], evaluation="reused", score_kcal_mol=stored[1])
             evaluation_reused += 1
-        elif _unusable(branch, keys[ref], results, by_key, live_jobs):
+        elif _unusable(branch, keys[ref], results, by_key):
             row["state"] = "unavailable"
         if row["state"] == "pending":
             pending.append(ref)
@@ -814,13 +820,13 @@ def _stored(branch: str, entry: Mapping[str, Any], results: Mapping[str, Any]) -
     return None if summary is None else _result_state(summary)
 
 
-def _unusable(branch: str, entry: Mapping[str, Any], results: Mapping[str, Any], by_key: Mapping[str, Any],
-              live_jobs: set[str]) -> bool:
-    """Spec 3.2 3: a same-key job (the next step to run) left in any state but this loop's own live step."""
+def _unusable(branch: str, entry: Mapping[str, Any], results: Mapping[str, Any], by_key: Mapping[str, Any]) -> bool:
+    """Spec 3.2 3: a same-key job (of the next step to run) exists; a candidate this loop's live step holds never
+    gets here."""
     key = entry["ligand_dock"] if branch == "ligand" else entry["model"] if entry["model"] not in results \
         else entry["dock"]
     job = by_key.get(key)
-    return job is not None and job["job_id"] not in live_jobs
+    return job is not None
 
 
 def _iteration_row(number: int, it: dict[str, Any] | None, sends: list[dict[str, Any]],

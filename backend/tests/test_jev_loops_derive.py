@@ -717,6 +717,162 @@ def test_a_dock_result_stored_outside_after_the_model_does_not_change_the_starte
     assert state.record["counts"]["units_charged"] == 1
 
 
+# ---------------------------------------------------------------- a live approved step holds its candidate
+
+
+def assert_consistent(state):
+    """One snapshot never contradicts itself: exhausted_reason, current, can_end, end_refusal, end_reason_for."""
+    record, current = state.record, state.record["current"]
+    refusal = JL.end_refusal(state)
+    if record["status"] == "ended":
+        assert current["action"] == "none" and current["can_end"] is False and refusal in ("cancelled", "loop_ended")
+        return
+    assert current["can_end"] == (refusal is None)
+    if record["exhausted_reason"] is not None:
+        assert current["action"] == "end" and current["job"] is None and refusal in (None, "send_in_progress")
+    if current["action"] == "wait_job":
+        assert current["job"] is not None and refusal in ("job_running", "send_in_progress")
+        assert record["exhausted_reason"] is None
+    if current["action"] == "dock":
+        assert refusal in ("docking_pending", "send_in_progress")
+    if refusal is None:
+        expected = record["exhausted_reason"] or ("budget_exhausted" if current["blocked_axes"] else "ended_by_user")
+        assert JL.end_reason_for(state) == expected
+    else:
+        with pytest.raises(ValueError):
+            JL.end_reason_for(state)
+    pending = sum(row["state"] == "pending" for row in record["candidates"])
+    assert (record["exhausted_reason"] == "pool_exhausted") == (pending == 0 and record["exhausted_reason"]
+                                                                != "iteration_cap")
+    assert record["counts"]["done"] <= record["counts"]["started"] <= record["effective_cap"]
+
+
+def test_a_live_approved_step_keeps_its_candidate_pending_when_a_same_key_result_appears():
+    """Review order: pool [A, B], B computed in iteration 1, iteration 2 approves A (claimed, waiting for the first
+    expensive-call approval, nothing charged), then an M19 row / M22 individual publishes A's same-key result."""
+    a, b = IDS[0], IDS[1]
+    log = Log()
+    log.created(pool=[a, b])
+    log.approve(1, b)
+    log.run_job(b)
+    log.approve(2, a)
+    job = log.submit(a)
+    log.claim(job, blocked="approval_or_cancel")
+    results = docked(b, 1, -4.0) | docked(a, 2, -5.5)          # A's result published by another producer
+    state = derive(log, results=results, approval_pending=True)
+    # the iteration holds A: neither 2 (reused) nor 3 (unavailable) applies while its approved job is live
+    assert candidate(state, a) == {"ref": a, "display": {"smiles": "C"}, "state": "pending", "evaluation": None,
+                                   "score_kcal_mol": None, "iteration": None}
+    assert state.record["exhausted_reason"] is None
+    assert state.record["current"] == {
+        "iteration": 2, "phase": "running", "step": "ligand_dock", "action": "wait_job", "needs": ZERO_NEEDS,
+        "remaining": remaining(), "blocked_axes": [], "send_blocked_axes": [], "can_end": False,
+        "job": {"job_id": job, "step": "ligand_dock", "status": "claimed", "start_blocked": "approval_required"}}
+    assert state.record["counts"] == counts(started=1, done=1, human_decided=1, units_charged=1)
+    assert JL.end_refusal(state) == "job_running"
+    assert JL.compute_admission(state, iteration=2, candidate=a, capability_available=True) == {
+        "outcome": "idempotent", "job_id": job, "start": True}
+    assert_consistent(state)
+
+    charged = Log()
+    charged.events = copy.deepcopy(log.events)
+    charged.attempts = dict(log.attempts)
+    charged.reserve(job)
+    charged.dispatch(job)
+    state = derive(charged, results=results)
+    assert candidate(state, a)["state"] == "pending" and state.record["current"]["action"] == "wait_job"
+    assert state.record["counts"] == counts(started=2, done=1, human_decided=2, units_charged=2)
+    assert_consistent(state)
+    charged.terminal(job, "done")
+    state = derive(charged, results=results)
+    # charged and done: the iteration's own result (1) -> scored, computed; both iterations used -> iteration_cap
+    assert candidate(state, a) == {"ref": a, "display": {"smiles": "C"}, "state": "scored",
+                                   "evaluation": "computed", "score_kcal_mol": -5.5, "iteration": 2}
+    assert state.record["exhausted_reason"] == "iteration_cap" and JL.end_reason_for(state) == "iteration_cap"
+    assert state.record["counts"] == counts(started=2, done=2, human_decided=2, units_charged=2)
+    assert_consistent(state)
+
+    log.cancel(job)                                             # cancelled before its process started
+    state = derive(log, results=results)
+    # the step is unavailable, the iteration does not hold A any more: the stored result applies again (2)
+    assert candidate(state, a) == {"ref": a, "display": {"smiles": "C"}, "state": "scored", "evaluation": "reused",
+                                   "score_kcal_mol": -5.5, "iteration": None}
+    second = state.record["iterations"][1]
+    assert (second["phase"], second["state"], second["steps"][0]["state"]) == (
+        "awaiting_selection", "unavailable", "unavailable")
+    assert state.record["exhausted_reason"] == "pool_exhausted"
+    assert state.record["current"]["action"] == "end" and JL.end_refusal(state) is None
+    assert JL.end_reason_for(state) == "pool_exhausted"
+    assert state.record["counts"] == counts(started=1, done=1, human_decided=1, units_charged=1, reused_count=1)
+    assert_consistent(state)
+
+
+def test_protein_live_model_and_dock_steps_hold_their_candidate_too():
+    log = Log()
+    log.created("protein", pool=[3, 7])
+    log.approve(1, 3, "model")
+    model_job = log.submit(3, "model")
+    log.claim(model_job, blocked="approval_or_cancel")
+    results = modelled(3) | docked(3, 1, -2.2, "dock")         # both results appear while the model step waits
+    state = derive(log, results=results)
+    assert states(state) == {3: "pending", 7: "pending"}
+    assert state.record["current"]["phase"] == "running" and state.record["current"]["step"] == "model"
+    assert state.record["current"]["job"]["job_id"] == model_job
+    assert JL.end_refusal(state) == "job_running" and state.record["exhausted_reason"] is None
+    assert_consistent(state)
+    log.cancel(model_job)
+    state = derive(log, results=results)
+    assert states(state) == {3: "scored", 7: "pending"} and candidate(state, 3)["evaluation"] == "reused"
+    assert state.record["iterations"][0]["state"] == "unavailable"
+    assert_consistent(state)
+
+    log = Log()
+    log.created("protein", pool=[3, 7])
+    log.approve(1, 7, "model")
+    log.run_job(7, "model")
+    log.approve(1, 7, "dock")
+    dock_job = log.submit(7, "dock")
+    log.claim(dock_job)
+    results = modelled(7) | docked(7, 1, -3.1, "dock")         # the same-condition docking result appears
+    state = derive(log, results=results)
+    assert states(state)[7] == "pending" and state.record["current"]["step"] == "dock"
+    assert state.record["current"]["job"]["job_id"] == dock_job and JL.end_refusal(state) == "job_running"
+    assert_consistent(state)
+    log.cancel(dock_job)
+    state = derive(log, results=results)
+    # the iteration had started (model charged): a dock step lost before its process -> not_run, the result made
+    # elsewhere does not change the iteration (spec 6.4, 6.5)
+    assert candidate(state, 7)["state"] == "not_run" and candidate(state, 7)["evaluation"] == "computed"
+    assert_consistent(state)
+
+
+def test_snapshots_of_every_scenario_are_self_consistent():
+    log = Log()
+    log.created(pool=IDS[:3], cap=2)
+    snapshots = [derive(log)]
+    _, choice = log.send(1, 0, ref=IDS[1])
+    snapshots.append(derive(log))
+    log.approve(1, IDS[1], by="jev", proposal=choice)
+    job = log.submit(IDS[1])
+    snapshots += [derive(log), derive(log, send_active=True)]
+    log.start(job, end=None)
+    snapshots.append(derive(log))
+    log.terminal(job, "done")
+    results = docked(IDS[1], 1, -1.0)
+    snapshots += [derive(log, results=results), derive(log, results=results, budget={**BUDGET, "expensive_units": 0})]
+    log.approve(2, IDS[0])
+    log.cancel(log.submit(IDS[0]))
+    snapshots.append(derive(log, results=results))
+    log.approve(2, IDS[2])
+    log.run_job(IDS[2])
+    snapshots.append(derive(log, results=results | docked(IDS[2], 0, None)))
+    log.ended("iteration_cap")
+    log.cancel_run()
+    snapshots.append(derive(log, results=results | docked(IDS[2], 0, None)))
+    for state in snapshots:
+        assert_consistent(state)
+
+
 # ---------------------------------------------------------------- proposals, late replies, sends
 
 
