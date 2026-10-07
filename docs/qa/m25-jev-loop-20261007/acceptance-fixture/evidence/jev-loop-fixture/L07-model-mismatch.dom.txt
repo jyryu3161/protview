@@ -1,0 +1,538 @@
+리간드 설계·탐색 · 부분 교체 후보
+준비
+
+후보는 2D 그래프(SMILES)이며 3D 배치·점수는 계산하지 않았습니다. 속성값은 RDKit 추정값입니다(측정값이 아닙니다). PAINS 일치는 구조 경고일 뿐 화합물에 대한 판정이 아닙니다.
+
+rdkit 2026.03.6 · 제한 시간 120s · 작업마다 비싼 계산 예산 1단위 · 비싼 계산 2/8
+
+① 입력
+부모 리간드 SDF (V2000, 분자 1개)
+building block SDF (선택)
+building block SMILES 목록 (선택, 줄마다 SMILES 이름)
+가져오기
+반응 규칙 (반응 SMARTS, 한 줄에 규칙 하나, 최대 10개, 선택). 규칙 검증은 점검 작업이 합니다.
+② 점검 작업
+
+부모 검증, 번호 붙은 2D 그림, 원자 표, building block·규칙 검증을 RDKit 작업으로 한 번 실행합니다.
+
+점검 시작
+부모 리간드 SDF를 먼저 가져오세요.
+③ 점검 결과
+점검 결과 선택 (자동으로 고르지 않음)
+생성 순번 25 · 8b4a242c24d4 · C[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21 · 중원자 43 · 수락 block 10 · 검증 통과 규칙 0/0
+점검 결과 목록 다시 읽기
+부위 지정과 부위 검사
+
+점검 작업을 먼저 끝내고 점검 결과를 고르세요. 부위 검사는 점검 결과의 원자 표·결합 목록으로만 할 수 있습니다.
+
+④ 후보 생성 작업
+후보 생성 시작
+점검 결과를 고르세요.
+⑤ 후보 집합
+후보 집합 선택 (자동으로 고르지 않음, 각 집합은 자기 점검 결과에 묶임)
+생성 순번 37 · b4ba65b057c1 · 점검 8b4a242c24d4 · 부위 22 · 고정 교체 사용 · 규칙 fixed · 후보 10개
+후보 집합 목록 다시 읽기
+리간드 도킹 (qvina)
+준비
+
+점수는 qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)입니다. 화면은 저장된 결과 값을 표시만 하며 점수·접촉을 다시 계산하지 않습니다.
+
+qvina · qvina_dock_ligand · 작업마다 비싼 계산 예산 1단위 · 비싼 계산 2/8
+
+가져오기
+수용체 (PDB·mmCIF, 명시적 수소와 연결 정보 포함)
+결합 사이드카 (receptor_bonds@1 JSON, 선택)
+리간드 3D SDF (V2000, 분자 1개, 명시적 수소)
+가져오기
+입력 목록 다시 읽기
+위 후보 영역에서 만든 후보 집합·가져온 부모 SDF는 다시 읽어야 보입니다.
+① 수용체
+수용체 가져오기
+선택
+생성 순번 10 · pdb · 504575 B · 8a6929ec7706
+연결 정보
+PDB CONECT (파일 안의 완전한 연결 정보)
+결합 사이드카 (receptor_bonds@1)
+② 리간드 출처
+출처 (한 번에 하나)
+3D SDF 가져오기
+M17 후보 + 부모 3D SDF
+③ 방식
+방식
+자유 도킹
+리간드 출처를 먼저 고르세요.
+코어 고정(구속 샘플, 점수만)
+리간드 출처를 먼저 고르세요.
+④ 상자
+
+리간드 좌표가 수용체와 같은 좌표계에 있다고 가정합니다. 도구는 상자 안에 수용체 중원자가 하나라도 있는지만 검사하며, 그 밖의 좌표계 어긋남은 검증하지 못합니다.
+
+상자 출처 (자동으로 고르지 않음)
+리간드 범위+여백
+수용체 안 인스턴스 범위+여백
+수용체 안 인스턴스 범위는 뺄 리간드 인스턴스를 골랐을 때만 쓸 수 있습니다.
+직접 입력
+⑤ 값과 확인
+seed (필수, 0–2147483647)
+exhaustiveness (1–32)
+num_modes (1–20)
+energy_range (kcal/mol, 1–5)
+
+cpu는 1로 고정됩니다.
+
+제출 전 확인 (세 항목 모두)
+입력 수용체의 protonation·수소를 그대로 씁니다.
+AutoDock4 원자 유형·부분 전하는 도구(Meeko)가 정합니다.
+수용체는 강체이며 protonation·최적화는 하지 않습니다.
+수용체 가져오기를 고르세요.
+수용체 모델 번호를 고르세요.
+연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요.
+뺄 리간드 인스턴스를 고르거나 "없음(단백질만)"을 고르세요.
+리간드 출처를 고르세요.
+방식(자유 도킹 | 코어 고정)을 고르세요.
+상자 출처를 고르세요.
+seed: 0–2147483647 사이의 정수를 입력하세요(필수).
+확인 세 항목을 모두 체크하세요 (acknowledgement_missing).
+⑥ 작업 시작
+도킹 작업 시작
+수용체 가져오기를 고르세요. 수용체 모델 번호를 고르세요. 연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요. 뺄 리간드 인스턴스를 고르거나 "없음(단백질만)"을 고르세요. 리간드 출처를 고르세요. 방식(자유 도킹 | 코어 고정)을 고르세요. 상자 출처를 고르세요. seed: 0–2147483647 사이의 정수를 입력하세요(필수). 확인 세 항목을 모두 체크하세요 (acknowledgement_missing).
+⑦ 도킹 결과
+
+이 run에 도킹 결과가 없습니다.
+
+도킹 결과 목록 다시 읽기
+후보 일괄 도킹 (qvina)
+
+한 수용체·한 후보 집합의 후보 50개까지를 같은 수용체·상자·seed·방식·값으로 차례로 도킹합니다. 점수는 qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)입니다. 화면은 저장된 값을 표시만 하며 점수·집계를 계산하지 않습니다.
+
+qvina · qvina_dock_batch · 새로 계산하는 행마다 비싼 계산 예산 1단위
+
+입력 목록 다시 읽기
+가져오기는 위 도킹 영역에서 합니다. 위에서 가져온 파일·만든 후보 집합은 다시 읽어야 보입니다.
+① 수용체와 뺄 인스턴스
+수용체 가져오기
+선택
+생성 순번 10 · pdb · 504575 B · 8a6929ec7706
+연결 정보
+PDB CONECT (파일 안의 완전한 연결 정보)
+결합 사이드카 (receptor_bonds@1)
+② 후보 집합과 후보 선택
+후보 집합
+선택
+b4ba65b057c1 · 후보 10개
+③ 방식과 부모 기준 행
+방식 (일괄마다 하나)
+자유 도킹
+코어 고정(구속 샘플, 점수만)
+부모 기준 행 넣기 (후보와 같은 설정으로 부모 SDF를 도킹, 선택 사항, 첫 행)
+
+방식을 먼저 고르세요(부모 기준 행은 자유 도킹에서만 씁니다).
+
+④ 상자 (일괄 전체에 하나)
+
+리간드 좌표가 수용체와 같은 좌표계에 있다고 가정합니다. 도구는 상자 안에 수용체 중원자가 하나라도 있는지만 검사하며, 그 밖의 좌표계 어긋남은 검증하지 못합니다.
+
+상자 출처 (자동으로 고르지 않음)
+리간드 범위+여백
+수용체 안 인스턴스 범위+여백
+수용체 안 인스턴스 범위는 뺄 리간드 인스턴스를 골랐을 때만 쓸 수 있습니다.
+직접 입력
+⑤ 값과 확인
+seed (필수, 0–2147483647)
+exhaustiveness (1–32)
+num_modes (1–20)
+energy_range (kcal/mol, 1–5)
+
+cpu는 1로 고정됩니다.
+
+제출 전 확인 (세 항목 모두)
+입력 수용체의 protonation·수소를 그대로 씁니다.
+AutoDock4 원자 유형·부분 전하는 도구(Meeko)가 정합니다.
+수용체는 강체이며 protonation·최적화는 하지 않습니다.
+수용체 가져오기를 고르세요.
+수용체 모델 번호를 고르세요.
+연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요.
+뺄 리간드 인스턴스를 고르거나 "없음(단백질만)"을 고르세요.
+후보 집합을 고르세요.
+후보 집합의 부모 3D SDF 가져오기를 고르세요.
+방식(자유 도킹 | 코어 고정)을 고르세요.
+상자 출처를 고르세요.
+seed: 0–2147483647 사이의 정수를 입력하세요(필수).
+확인 세 항목을 모두 체크하세요 (acknowledgement_missing).
+후보를 1개 이상 고르세요 (batch_empty).
+⑥ 시작 전 확인
+시작 전 확인 보기
+⑦ 일괄 시작
+일괄 시작
+수용체 가져오기를 고르세요. 수용체 모델 번호를 고르세요. 연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요. 뺄 리간드 인스턴스를 고르거나 "없음(단백질만)"을 고르세요. 후보 집합을 고르세요. 후보 집합의 부모 3D SDF 가져오기를 고르세요. 방식(자유 도킹 | 코어 고정)을 고르세요. 상자 출처를 고르세요. seed: 0–2147483647 사이의 정수를 입력하세요(필수). 확인 세 항목을 모두 체크하세요 (acknowledgement_missing). 후보를 1개 이상 고르세요 (batch_empty).
+⑧ 일괄 결과
+
+이 run에 일괄 결과가 없습니다.
+
+일괄 결과 목록 다시 읽기
+GA 설계 (qvina 도킹 탐색)
+
+게시된 후보 집합 하나를 후보 풀로 삼아, 유전 알고리즘(GA)이 세대마다 어느 후보를 도킹할지 정합니다. 개체마다 같은 수용체·상자·값으로 자유 도킹하며 점수는 qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)입니다. 화면은 저장된 값을 표시만 하며 점수·집계를 계산하지 않습니다.
+
+qvina · qvina_ga_design · 새로 도킹하는 개체마다 비싼 계산 예산 1단위(시작 전에 한 번에 예약)
+
+입력 목록 다시 읽기
+가져오기는 위 도킹 영역에서 합니다. 위에서 가져온 파일·만든 후보 집합은 다시 읽어야 보입니다.
+① 후보 풀(후보 집합)과 부모 SDF
+후보 집합
+선택
+b4ba65b057c1 · 후보 10개
+② 수용체와 뺄 인스턴스
+수용체 가져오기
+선택
+생성 순번 10 · pdb · 504575 B · 8a6929ec7706
+연결 정보
+PDB CONECT (파일 안의 완전한 연결 정보)
+결합 사이드카 (receptor_bonds@1)
+③ 상자 (GA 전체에 하나)
+
+리간드 좌표가 수용체와 같은 좌표계에 있다고 가정합니다. 도구는 상자 안에 수용체 중원자가 하나라도 있는지만 검사하며, 그 밖의 좌표계 어긋남은 검증하지 못합니다.
+
+상자 출처 (자동으로 고르지 않음)
+리간드 범위+여백
+수용체 안 인스턴스 범위+여백
+수용체 안 인스턴스 범위는 뺄 리간드 인스턴스를 골랐을 때만 쓸 수 있습니다.
+직접 입력
+④ 도킹 값과 확인
+
+GA의 개체 도킹은 자유 도킹으로 고정됩니다(코어 고정 없음).
+
+도킹 seed (qvina 난수, 필수, 0–2147483647)
+exhaustiveness (1–32)
+num_modes (1–20)
+energy_range (kcal/mol, 1–5)
+
+cpu는 1로 고정됩니다.
+
+제출 전 확인 (세 항목 모두)
+입력 수용체의 protonation·수소를 그대로 씁니다.
+AutoDock4 원자 유형·부분 전하는 도구(Meeko)가 정합니다.
+수용체는 강체이며 protonation·최적화는 하지 않습니다.
+⑤ GA 파라미터
+
+GA seed는 후보 선택 순서의 난수이고, 도킹 값의 seed는 qvina 난수입니다. 두 값은 따로 입력하며 같은 숫자여도 됩니다.
+
+GA seed(후보 선택 난수)
+0–2147483647 · 기본 없음(필수)
+GA seed(후보 선택 난수): 0–2147483647 사이의 정수를 입력하세요(필수) (invalid_job_arguments).
+세대당 개체 수
+4–24 개 · 기본 12
+세대 수 상한(첫 세대 = 세대 1)
+1–8 세대 · 기본 5
+다음 세대로 이어받는 개체 수
+0–4 개 · 기본 2
+부모 선택 토너먼트 크기
+2–4 개 · 기본 2
+유사 후보를 뽑을 가까운 미평가 후보 수
+3–30 개 · 기본 10
+새 자리 중 무작위 후보 비율
+0–0.5 · 기본 0.2
+점수 최솟값이 내려가지 않는 연속 세대 수(이만큼이면 중단)
+1–8 세대 · 기본 3
+새 도킹 건수 상한(재사용은 세지 않음)
+세대당 개체 수–100 건 · 기본 60
+GA 전체 시간 상한(수용체 준비 포함)
+600–14400 초 · 기본 7200
+기본값으로
+GA seed는 기본값이 없어 입력한 값을 그대로 둡니다.
+
+입력 오류를 고치면 유효 파라미터 요약이 보입니다.
+
+수용체 가져오기를 고르세요.
+수용체 모델 번호를 고르세요.
+연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요.
+뺄 리간드 인스턴스를 고르거나 "없음(단백질만)"을 고르세요.
+후보 집합을 고르세요.
+후보 집합의 부모 3D SDF 가져오기를 고르세요.
+상자 출처를 고르세요.
+seed: 0–2147483647 사이의 정수를 입력하세요(필수).
+확인 세 항목을 모두 체크하세요 (acknowledgement_missing).
+GA seed(후보 선택 난수): 0–2147483647 사이의 정수를 입력하세요(필수) (invalid_job_arguments).
+⑥ 시작 전 확인
+시작 전 확인 보기
+⑦ GA 시작
+GA 시작
+수용체 가져오기를 고르세요. 수용체 모델 번호를 고르세요. 연결 정보(PDB CONECT 또는 결합 사이드카)를 고르세요. 뺄 리간드 인스턴스를 고르거나 "없음(단백질만)"을 고르세요. 후보 집합을 고르세요. 후보 집합의 부모 3D SDF 가져오기를 고르세요. 상자 출처를 고르세요. seed: 0–2147483647 사이의 정수를 입력하세요(필수). 확인 세 항목을 모두 체크하세요 (acknowledgement_missing). GA seed(후보 선택 난수): 0–2147483647 사이의 정수를 입력하세요(필수) (invalid_job_arguments).
+⑧ GA 결과
+
+이 run에 GA 결과가 없습니다.
+
+GA 결과 목록 다시 읽기
+JEV 루프 · 리간드
+① 과학 전송 동의 (이 run)
+
+JEV 루프는 바퀴마다 보낼 내용 승인과 계산 시작 승인을 따로 받는다. JEV가 고른 후보도 사람이 승인해야 계산된다.
+
+루프 전송은 뷰어 모델 명령·지식·보고서 탭의 전송과 같은 외부 토큰·USD 예산, 같은 run 10회 전송 상한, 같은 '사용량 모름' 중지 상태를 쓴다.
+
+과학 전송 동의는 run 하나에 하나입니다. 지식·보고서 탭 JEV 판정 영역의 동의와 같으며 루프마다 따로 켜지 않습니다. 동의만으로는 아무것도 보내지 않습니다.
+
+과학 전송 동의(이 run): 켜짐
+
+run당 과학 전송 10회 · 사용 1회 · 남은 9회
+
+외부 토큰 남은 119839 / 한도 120000 · USD 남은 1.9999 / 한도 2.0000
+
+② 루프 만들기
+
+풀과 계산 조건은 루프를 만들 때 고정되며 바퀴 중에 바꿀 수 없습니다.
+
+이 run에 끝나지 않은 같은 갈래의 루프가 있음 (loop_active)
+
+풀 (후보 집합 하나, 후보 2–20개, 자동으로 고르지 않음)
+리간드 후보 집합 (자동으로 고르지 않음)
+리간드 후보 집합 · 후보 10개 · b4ba…dd
+후보 집합 목록 다시 읽기
+
+선택 5/20 · 최소 2
+
+리간드 후보는 적용한 필터를 통과한 후보만 고를 수 있습니다(필터를 적용하지 않았으면 모든 후보).
+
+필터는 저장된 RDKit 추정값에 서버가 적용합니다(경계 포함, 비우면 범위 없음). 후보를 다시 생성하지 않습니다.
+
+분자량(평균) (Da, RDKit 추정값)
+Crippen logP (무차원, RDKit 추정값)
+HBD(Lipinski) (개, RDKit 추정값)
+HBA(Lipinski) (개, RDKit 추정값)
+TPSA (Å², RDKit 추정값)
+회전 가능 결합 수 (개, RDKit 추정값)
+중원자 수 (개, RDKit 추정값)
+형식 전하 합 (무차원, RDKit 추정값)
+PAINS 구조 경고 일치 후보 제외
+필터 적용
+필터 지우기
+적용한 필터 없음
+필터 통과만 보기
+
+전체 후보 10개 · 적용한 필터 없음
+
+고르기	생성 순서	후보 id	SMILES (2D)	모든 필터
+	0	c_1afb7cd3e603456c	CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	—
+	1	c_c42a53803595e440	CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	—
+	2	c_f1f6983d23c3009f	CC(C)[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	—
+	3	c_71188fcf0e6703c9	CCCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	—
+	4	c_21d6c6f0d07e3759	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	—
+	5	c_14271764afae517b	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CCC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	—
+	6	c_5d474f8db1578d8d	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CO)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	—
+	7	c_da033b82807ffbe7	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CF)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	—
+	8	c_2c7a25e0cc0ad3f2	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C(F)(F)F)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	—
+	9	c_9d4897ac9ecdb2d4	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](CCO)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	—
+이전
+다음
+목표 (루프 내내 고정, 자동으로 고르지 않음)
+탐색형
+이미 계산한 후보와 가장 다른 후보를 고르게 묻습니다(계산된 후보의 별칭만 보내고 점수는 보내지 않음).
+활용형
+점수가 낮게 나온 계산된 후보와 비슷한 후보를 고르게 묻습니다(계산된 후보의 저장된 qvina 점수 값을 함께 보냄).
+루프 seed (필수, 0–2147483647)
+
+루프 seed는 전송마다 후보 순서와 별칭을 섞는 데만 쓰며 도킹·모델링 seed와 별개입니다.
+
+반복 상한 (1–8, 기본 5)
+
+유효 반복 상한은 서버가 반복 상한과 풀 크기 가운데 작은 값으로 정합니다.
+
+계산 조건 (루프 내내 고정)
+
+루프의 도킹은 자유 도킹으로 고정됩니다(코어 고정 없음).
+
+입력 목록 다시 읽기
+수용체·사이드카·부모 SDF 가져오기는 위 도킹 영역에서 합니다.
+부모 3D SDF 가져오기 (SHA-256이 후보 집합의 부모와 같은 것만)
+선택
+d0b3…fd
+수용체 가져오기
+선택
+생성 순번 10 · pdb · 504575 B · 8a69…33
+모델 (암묵적으로 첫 모델을 쓰지 않음)
+선택
+모델 1
+수용체에서 뺄 리간드 인스턴스 (하나만, 자동으로 고르지 않음)
+없음(단백질만)
+
+이 모델에는 물 밖의 비표준 잔기 인스턴스가 없습니다.
+
+연결 정보
+PDB CONECT (파일 안의 완전한 연결 정보)
+결합 사이드카 (receptor_bonds@1)
+
+리간드 좌표가 수용체와 같은 좌표계에 있다고 가정합니다. 도구는 상자 안에 수용체 중원자가 하나라도 있는지만 검사하며, 그 밖의 좌표계 어긋남은 검증하지 못합니다.
+
+상자 출처 (루프 전체에 하나, 자동으로 고르지 않음)
+리간드 범위+여백
+수용체 안 인스턴스 범위+여백
+수용체 안 인스턴스 범위는 뺄 리간드 인스턴스를 골랐을 때만 쓸 수 있습니다.
+직접 입력
+중심 x (Å)
+중심 y (Å)
+중심 z (Å)
+크기 x (Å, 8–40)
+크기 y (Å, 8–40)
+크기 z (Å, 8–40)
+도킹 seed (qvina 난수, 필수, 0–2147483647)
+exhaustiveness (1–32)
+num_modes (1–20)
+energy_range (kcal/mol, 1–5)
+
+cpu는 1로 고정됩니다.
+
+제출 전 확인 (세 항목 모두, 루프의 모든 도킹에 같이 적용)
+입력 수용체의 protonation·수소를 그대로 씁니다.
+AutoDock4 원자 유형·부분 전하는 도구(Meeko)가 정합니다.
+수용체는 강체이며 protonation·최적화는 하지 않습니다.
+루프 만들기
+③ 이 run의 JEV 루프
+루프 (최신 순, 자동으로 열지 않음, 한 번에 하나)
+활용형 · 풀 5개 · 시작한 바퀴 0 · 진행 중
+루프 목록 다시 읽기
+④ 루프 진행
+상태
+진행 중 (active)
+목표
+활용형 · 점수가 낮게 나온 계산된 후보와 비슷한 후보를 고르게 묻습니다(계산된 후보의 저장된 qvina 점수 값을 함께 보냄).
+진행
+시작한 바퀴 0 · 끝난 바퀴 0 · 유효 반복 상한 3(반복 상한 3, 풀 5개)
+지금 바퀴
+바퀴 1
+바퀴 단계
+선택 대기(보내거나 직접 지정) (awaiting_selection)
+계산 단계
+리간드 도킹(M18 자유 도킹) (ligand_dock)
+다음 동작
+보낼 내용 만들기 또는 직접 지정 (select)
+다음 동작에 필요한 양과 남은 양 (서버 값)
+축	필요	남은 양	막힘
+비싼 계산 단위 (expensive_units)	1단위	6단위	—
+활동 시간 (wall_clock_s)	300초	1799초	—
+외부 토큰 (external_tokens)	—	—	—
+USD (usd)	—	—	—
+과학 전송 횟수 (sends)	1회	9회	—
+루프 기록 다시 읽기
+⑤ 보낼 내용·미리보기·승인 (JEV에 묻기)
+
+한 바퀴에 JEV 응답이 한 번 완료되면 다시 묻지 않는다. 다른 후보를 원하면 직접 지정한다.
+
+보낼 내용 만들기
+
+보낼 내용(jev_loop_projection@1)을 저장했습니다 · 후보 5개 · 본문 4141 바이트 · e800…70
+
+종류
+리간드 후보 · ligand_loop_choice@1
+본문 바이트
+4141 바이트
+본문 SHA-256
+442690c06abac3f454bb86c772966d47c95cacf23179571bde66e4f38653d6fc
+정확한 본문 (펼쳐 보기, 이 문자열 그대로 보냄)
+{"model":"typesafe/jev-1.13","provider":{"allow_fallbacks":false,"data_collection":"deny","zdr":true},"questions":{"candidate_choice":{"criteria":{"c01":"Candidate c01.","c02":"Candidate c02.","c03":"Candidate c03.","c04":"Candidate c04.","c05":"Candidate c05."},"instructions":"Choose exactly one candidate from the candidates listed in the criteria to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Prefer the candidate whose structure (SMILES) is most similar to the one computed candidate with the lowest listed score; if no candidate has a listed score, choose any one. This is a judgment of structural similarity only, not a prediction of any score. Computed candidates are listed with their stored qvina score (Vina-family scoring function value in kcal/mol, not an affinity); a candidate without a score is listed without one, which is not zero. Property values are RDKit estimates, not measurements or interactions. The order of the candidate list and the alias numbers were shuffled for this request and carry no meaning.","type":"choice"}},"state":{"candidates":[{"alias":"c01","generation_kinds":["fixed_replace"],"pains_matches":[],"properties":{"crippen_logp":1.3523000000000058,"formal_charge":1,"hba":10,"hbd":4,"heavy_atoms":45,"mol_weight":610.735,"rotatable_bonds":5,"tpsa":119.41},"smiles":"CC(C)[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21","stereo_flag":"none"},{"alias":"c02","generation_kinds":["fixed_replace"],"pains_matches":[],"properties":{"crippen_logp":1.3539000000000057,"formal_charge":1,"hba":10,"hbd":4,"heavy_atoms":45,"mol_weight":610.735,"rotatable_bonds":6,"tpsa":119.41},"smiles":"CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21","stereo_flag":"none"},{"alias":"c03","generation_kinds":["fixed_replace"],"pains_matches":[],"properties":{"crippen_logp":0.9638000000000055,"formal_charge":1,"hba":10,"hbd":4,"heavy_atoms":44,"mol_weight":596.7080000000001,"rotatable_bonds":5,"tpsa":119.41},"smiles":"CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21","stereo_flag":"none"},{"alias":"c04","generation_kinds":["fixed_replace"],"pains_matches":[],"properties":{"crippen_logp":1.1063000000000027,"formal_charge":1,"hba":10,"hbd":4,"heavy_atoms":45,"mol_weight":608.7190000000004,"rotatable_bonds":5,"tpsa":119.41},"smiles":"C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O","stereo_flag":"none"},{"alias":"c05","generation_kinds":["fixed_replace"],"pains_matches":[],"properties":{"crippen_logp":1.7440000000000053,"formal_charge":1,"hba":10,"hbd":4,"heavy_atoms":46,"mol_weight":624.7620000000001,"rotatable_bonds":7,"tpsa":119.41},"smiles":"CCCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21","stereo_flag":"none"}],"computed":[],"goal":"exploit","parent":{"properties":{"crippen_logp":0.5737000000000068,"formal_charge":1,"hba":10,"hbd":4,"heavy_atoms":43,"mol_weight":582.6810000000002,"rotatable_bonds":4,"tpsa":119.41},"smiles":"C[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21"},"property_methods":{"crippen_logp":"rdkit Crippen.MolLogP (Wildman-Crippen estimate)","formal_charge":"rdkit GetFormalCharge (sum)","hba":"rdkit CalcNumLipinskiHBA","hbd":"rdkit CalcNumLipinskiHBD","heavy_atoms":"rdkit GetNumHeavyAtoms","mol_weight":"rdkit Descriptors.MolWt (average, Da)","rotatable_bonds":"rdkit CalcNumRotatableBonds (default = Strict)","tpsa":"rdkit CalcTPSA (A^2, includeSandP=False)"},"schema":"jev_loop_ligand_candidates@1","task":"choose_one_candidate","values_note":"RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included; scores are stored qvina values from one fixed receptor and box"}}
+
+질문 (고정 문구)
+
+Choose exactly one candidate from the candidates listed in the criteria to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Prefer the candidate whose structure (SMILES) is most similar to the one computed candidate with the lowest listed score; if no candidate has a listed score, choose any one. This is a judgment of structural similarity only, not a prediction of any score. Computed candidates are listed with their stored qvina score (Vina-family scoring function value in kcal/mol, not an affinity); a candidate without a score is listed without one, which is not zero. Property values are RDKit estimates, not measurements or interactions. The order of the candidate list and the alias numbers were shuffled for this request and carry no meaning.
+
+별칭 ↔ 로컬 후보 대응은 이 화면에만 있으며 외부로 보내지 않습니다. 계산된 후보는 JEV가 고를 수 없습니다.
+
+별칭 (보냄)	로컬 후보	로컬 표기	계산 상태	JEV 선택 가능	로컬 후보 전송
+c01	후보 c_f1f6983d23c3009f	CC(C)[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	JEV가 고를 수 있음	전송하지 않음
+c02	후보 c_c42a53803595e440	CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	JEV가 고를 수 있음	전송하지 않음
+c03	후보 c_1afb7cd3e603456c	CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	JEV가 고를 수 있음	전송하지 않음
+c04	후보 c_21d6c6f0d07e3759	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	계산하지 않음 (pending)	JEV가 고를 수 있음	전송하지 않음
+c05	후보 c_71188fcf0e6703c9	CCCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	JEV가 고를 수 있음	전송하지 않음
+
+후보 순서·별칭: sha256_order_v1로 섞음 · 루프 seed 7 · 바퀴 1 · 전송 순번 0
+
+예약: 외부 토큰 6857 · 0.1000 USD
+
+run당 과학 전송 10회 · 사용 1회 · 남은 9회
+
+남은 외부 토큰 119839 · 남은 1.9999 USD
+
+다음 동작에 필요한 양과 남은 양 (서버 값)
+축	필요	남은 양	막힘
+비싼 계산 단위 (expensive_units)	1단위	6단위	—
+활동 시간 (wall_clock_s)	300초	1799초	—
+외부 토큰 (external_tokens)	6857	119839	—
+USD (usd)	0.1000 USD	1.9999 USD	—
+과학 전송 횟수 (sends)	1회	9회	—
+
+같은 투영으로 이전에 보낸 수: 1회
+
+서버가 알린 차단 이유
+보낼 내용을 만든 뒤 이 바퀴의 전송 수가 바뀜(보낼 내용을 다시 만드세요) (ordinal_mismatch)
+미리보기 다시 읽기
+이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다
+이 내용을 JEV로 보냅니다
+보낼 수 없는 이유
+보낼 내용을 만든 뒤 이 바퀴의 전송 수가 바뀜(보낼 내용을 다시 만드세요) (ordinal_mismatch)
+확인 체크를 켜세요: "이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다".
+
+전송 기록을 받았습니다: 실패(보냈으나 제안 없음) (failed) · 응답 모델이 허용한 모델과 다름 (model_mismatch)
+
+⑥ JEV 판정(모델 선택)
+연 전송의 결과
+
+실패(보냈으나 제안 없음) (failed): 응답 모델이 허용한 모델과 다름 (model_mismatch)
+
+⑦ 계산 시작 (사람의 승인)
+계산 시작 확인: 기존 작업 큐로 계산합니다. 서버가 알린 이 단계의 필요량은 1단위 · 활동 시간 300초입니다(후보마다 다를 수 있음).
+직접 지정 (계산하지 않은 후보, 전송 없이도 가능, 자동으로 고르지 않음)
+후보 c_1afb7cd3e603456c
+CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21
+후보 c_c42a53803595e440
+CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21
+후보 c_f1f6983d23c3009f
+CC(C)[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21
+후보 c_71188fcf0e6703c9
+CCCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21
+후보 c_21d6c6f0d07e3759
+C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O
+고른 후보로 계산 시작 (직접 지정)
+직접 지정할 후보를 고르세요.
+계산 시작 확인 체크를 켜세요.
+
+시작 전에 취소하면 이 후보는 이 run에서 다시 계산할 수 없게 됩니다(unavailable). 그 뒤 다른 후보를 직접 지정하거나 루프를 끝낼 수 있습니다.
+
+⑧ 풀 후보 (저장값만)
+
+표의 정렬은 표시 순서일 뿐입니다. 점수 없는 후보는 0이 아니며 어떤 정렬에서도 끝에 둡니다.
+
+qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)
+풀 순서	후보	표기	상태	qvina 점수(kcal/mol)	바퀴	선택 주체	평가	상세
+1	후보 c_1afb7cd3e603456c	CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	— (계산하지 않음)	—	—	—	상세 열기
+2	후보 c_c42a53803595e440	CCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	— (계산하지 않음)	—	—	—	상세 열기
+3	후보 c_f1f6983d23c3009f	CC(C)[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	— (계산하지 않음)	—	—	—	상세 열기
+4	후보 c_71188fcf0e6703c9	CCCC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21	계산하지 않음 (pending)	— (계산하지 않음)	—	—	—	상세 열기
+5	후보 c_21d6c6f0d07e3759	C[C@@]1(NC(=O)[C@@H]2C=C3c4cccc5[nH]cc(c45)C[C@H]3[N@H+](C3CC3)C2)O[C@@]2(O)[C@@H]3CCCN3C(=O)[C@H](Cc3ccccc3)N2C1=O	계산하지 않음 (pending)	— (계산하지 않음)	—	—	—	상세 열기
+⑨ 바퀴 기록
+바퀴	바퀴 단계	상태	선택 주체	후보	목록 위치(보낸 목록에서 계산하지 않은 후보 가운데 순번/개수)	qvina 점수(kcal/mol)	계산 단계	전송
+1	선택 대기(보내거나 직접 지정) (awaiting_selection)	진행 중 (in_progress)	—	—	—	— (진행 중 (in_progress))	—	
+전송 순번 0 · 실패(보냈으나 제안 없음) (failed) 결과 열기
+⑩ 끝내기·요약·보고서
+시작한 바퀴
+0
+끝난 바퀴
+0
+JEV가 고른 바퀴
+0
+사람이 지정한 바퀴
+0
+보낸 전송(dispatch)
+1
+과금된 비싼 계산 단위
+0
+저장된 결과 재사용 후보
+0
+루프 끝내기
+
+끝낸 루프는 다시 열 수 없습니다. 끝내면 서버가 요약(jev_loop_result@1)을 저장합니다.
+
+⑪ 고정 문장 (서버가 저장한 문장 그대로)
+JEV 루프는 사람이 바퀴마다 보낼 내용과 계산 시작을 승인하며, JEV 판정은 외부 모델이 계산 대기열에 먼저 둘 후보로 고른 하나일 뿐 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니고 고른 이유는 알 수 없다.
+점수는 저장된 qvina 도킹 결과의 첫 모드 값(kcal/mol, Vina 계열 스코어링 함수 값, 친화도가 아님)이며, 점수 없음은 0이 아니다. 바퀴 순서·표 정렬·선택 표시는 순위나 개선이 아니다.
+후보 순서와 별칭은 전송마다 기록된 seed로 섞은 것이며 의미가 없다. 모델 선택은 목록 위치의 영향을 받을 수 있어 고른 위치를 값으로 기록했고, 이 기록은 효과를 뜻하지 않는다.
+활용형은 점수가 낮게 나온 후보와 구조가 비슷한 후보를 고르게 하는 질문이며 점수 예측이 아니고 후보를 줄 세우지 않는다.
+후보는 2D 그래프이고 점수는 사용자가 정한 수용체·상자에서 자유 도킹한 qvina 값이며 결합·활성·합성 가능성이 아니다. JEV에는 수용체 정보를 보내지 않았다.

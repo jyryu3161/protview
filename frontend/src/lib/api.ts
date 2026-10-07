@@ -17,7 +17,8 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   DockingSourceArgs, MutationReportArtifact, MutationRequestArgs, ReferenceSiteAnnotation, ResidueRef, RunEvent, SceneAnnotationRef, SiteAnnotationList,
   SequenceGaArgs, SequenceGaCapability, SequenceGaDetail, SequenceGaIndividualRead, SequenceGaJob,
   SequenceGaLimitApproval, SequenceGaList, SequenceGaPreflight, SequenceGaReportArtifact, SequenceGaSubmission,
-  ToolError } from "./contracts";
+  ToolError, JevLoopAbandonRequest, JevLoopCapability, JevLoopComputeRequest, JevLoopCreateRequest, JevLoopListRow,
+  JevLoopProjectionArgs, JevLoopReportArtifact, JevLoopV1 } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
@@ -65,7 +66,9 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     mutation_model?: MutationModelCapability;
     sequence_ga_design?: SequenceGaCapability;
     /** M24: local conditions only (projection tool, model pins); no key and no run consent is read. */
-    jev_choice?: { available: boolean; reason_code: string | null; reason: string | null } } }
+    jev_choice?: { available: boolean; reason_code: string | null; reason: string | null };
+    /** M25: per branch (projection tool, science pins, then the branch's engines); reasons only. */
+    jev_loop?: JevLoopCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -255,7 +258,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection" | "build_jev_loop_projection", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -502,6 +505,31 @@ export const api = {
   /** Report `analysis_type: "jev_choice"` of one stored proposal (nothing is sent or chosen again). */
   createJevReport: (id: string, choiceHandle: string, signal?: AbortSignal) =>
     request<JevReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: choiceHandle }, signal)),
+  // ---- M25 JEV design loops (list and detail are reads; create, compute, abandon_docking and end are the person's
+  // presses; the projection is the ordinary command route; preview, send and send records are the M24 calls above,
+  // which take a `jev_loop_projection@1` handle too) ----
+  /** `jev_loop@1` of a new loop; the same `loop_id` and body answer the existing record. */
+  createJevLoop: (id: string, body: JevLoopCreateRequest, signal?: AbortSignal) =>
+    request<JevLoopV1>(runPath(id, "/jev_loops"), jsonPost(body, signal)),
+  /** This run's loops, newest first. */
+  jevLoops: (id: string, signal?: AbortSignal) => request<JevLoopListRow[]>(runPath(id, "/jev_loops"), { signal }),
+  jevLoop: (id: string, loopId: string, signal?: AbortSignal) =>
+    request<JevLoopV1>(runPath(id, `/jev_loops/${encodeURIComponent(loopId)}`), { signal }),
+  /** The person's start of one loop step (the answer waits for the job; the record is re-read meanwhile). */
+  jevLoopCompute: (id: string, loopId: string, body: JevLoopComputeRequest, signal?: AbortSignal) =>
+    request<JevLoopV1>(runPath(id, `/jev_loops/${encodeURIComponent(loopId)}/compute`), jsonPost(body, signal)),
+  jevLoopAbandonDocking: (id: string, loopId: string, body: JevLoopAbandonRequest, signal?: AbortSignal) =>
+    request<JevLoopV1>(runPath(id, `/jev_loops/${encodeURIComponent(loopId)}/abandon_docking`),
+      jsonPost(body, signal)),
+  /** The person's end of a loop (the body is an empty JSON object). */
+  jevLoopEnd: (id: string, loopId: string, signal?: AbortSignal) =>
+    request<JevLoopV1>(runPath(id, `/jev_loops/${encodeURIComponent(loopId)}/end`), jsonPost({}, signal)),
+  /** Runs `build_jev_loop_projection` through the ordinary Run.call command route (no job, approval or budget). */
+  buildJevLoopProjection: (id: string, args: JevLoopProjectionArgs, signal?: AbortSignal) =>
+    api.command(id, "build_jev_loop_projection", args as unknown as Record<string, unknown>, signal),
+  /** Report `analysis_type: "jev_loop"` of one stored `jev_loop_result@1` (nothing is computed or sent again). */
+  createJevLoopReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
+    request<JevLoopReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

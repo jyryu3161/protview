@@ -577,3 +577,15 @@
 .mw-jev details summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .mw-jev-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px solid var(--line); border-left: 3px solid var(--prov-jev); border-radius: var(--radius-xs); background: var(--surface-100); }
 .mw-jev-list { margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-wrap: anywhere; }
+
+/* M25 JEV loop areas (JevLoopPanel: 리간드 설계·탐색 tab after the GA area, 단백질 공학 tab after the sequence GA area),
+   built on the M24 .mw-jev classes. Stored values and a proposal shown as given, in tables and lists only: no bars,
+   rank marks, highlights or colour comparisons. */
+.mw-jev-loop { border-top: 1px solid var(--line-strong); }
+.mw-jev-loop-field, .mw-jev-loop-setup, .mw-jev-loop-record, .mw-jev-loop-job { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-jev-loop-field + .mw-jev-loop-field { padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.mw-jev-loop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-2) var(--space-3); }
+.mw-jev-loop-grid > div { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.mw-jev-loop-button { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; }
+.mw-jev-loop .mw-jev-check { flex-wrap: wrap; }
+.mw-jev-loop .mw-jev-check select.mw-select { max-width: 100%; }

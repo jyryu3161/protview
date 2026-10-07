@@ -1,0 +1,96 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "W4Fsnhol08JIGulRiMyz7",
+    "gitHead": "9a9a625c548ee7095bbf815be14704fd47376d0a",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "0e3c44577aef41022074ed5ec3787c6fd84eb78ff35acc07b5991b25061299ce",
+    "dirtyFiles": [
+      "?? docs/qa/m25-jev-loop-20261007/acceptance-fixture/",
+      "?? docs/qa/m25-jev-loop-20261007/gate-backend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-frontend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-invariants.txt",
+      "?? docs/qa/m25-jev-loop-20261007/m17-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m18-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m19-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m20-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m21-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m22-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m23-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m24-regression/"
+    ],
+    "recordedAt": "2026-10-07T16:10:35.623554+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "annotation-flow.cjs": "8f670b8262fa02ca11c29625fb3be563e305d475df43935f7f31f1cf61fd5d85",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "7172edb88a386383d8ba5e43e65ab7a427687aedb89469d5ee1ac6dedfd47394"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m25-regress-20261008a-m16/runs",
+      "reference": "<repo>/runs/m25-regress-20261008a-m16/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-07T16:10:39.882494+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m25-regress-20261008a-m16/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/m16/services/reference-import.log",
+      "setHash": "30393e77c862e534c545dfdc7666d3880e53480fd6bf9dbf65b5e175ff545377",
+      "served": {
+        "available": true,
+        "set_hash": "30393e77c862e534c545dfdc7666d3880e53480fd6bf9dbf65b5e175ff545377",
+        "imported_at": "2026-10-07T16:10:39.961462Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  }
+}

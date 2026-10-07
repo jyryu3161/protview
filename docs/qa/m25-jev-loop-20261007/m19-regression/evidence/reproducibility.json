@@ -1,0 +1,252 @@
+{
+  "flowArgs": {
+    "receptor_handle": "obj://run_c81542d0d46349639b7b74837d4f9903/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+    "receptor_model_number": 1,
+    "connectivity": {
+      "kind": "pdb_conect",
+      "sidecar_handle": null
+    },
+    "receptor_instance": null,
+    "mode": "free",
+    "box": {
+      "source": "ligand_range",
+      "margin_A": 8
+    },
+    "parameters": {
+      "seed": 42,
+      "exhaustiveness": 1,
+      "num_modes": 3,
+      "energy_range": 3
+    },
+    "candidate_set_handle": "obj://run_c81542d0d46349639b7b74837d4f9903/ligand_candidate_set/df13801b18b1665ca992727d0a9db4210d83c3f85a34b5ebccc66a0f9c632473",
+    "parent_sdf_handle": "obj://run_c81542d0d46349639b7b74837d4f9903/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+    "candidate_ids": [
+      "c_1afb7cd3e603456c",
+      "c_2c7a25e0cc0ad3f2",
+      "c_21d6c6f0d07e3759"
+    ],
+    "include_parent": true
+  },
+  "reference": {
+    "run": "run_c81542d0d46349639b7b74837d4f9903",
+    "summary": "obj://run_c81542d0d46349639b7b74837d4f9903/docking_batch_result/45c0b800ff595bd5288c7e1a4d35f94c7930d73eb183873386adaaba4f96af70",
+    "summarySha256": "c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475",
+    "batchStatus": "complete",
+    "rows": [
+      {
+        "row_index": 0,
+        "kind": "parent",
+        "candidate_id": null,
+        "state": "scored",
+        "reason_code": null,
+        "score_kcal_mol": -12.9,
+        "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+        "resultSha256": "f330540b682f59a0ff97bdacb02bdc1eb97a3588fdf8de2e4fafb86a89037fbe",
+        "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+      },
+      {
+        "row_index": 1,
+        "kind": "candidate",
+        "candidate_id": "c_1afb7cd3e603456c",
+        "state": "scored",
+        "reason_code": null,
+        "score_kcal_mol": -9.6,
+        "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+        "resultSha256": "5dd4caf7f12ff5469c5948507dfdf9696f565d978c30bb759230752d4eb8f7a8",
+        "posesSha256": "ac79bf1bdc3b69ad66263a964ca214c47aec19ab42233c804a367c5ce2984eca"
+      },
+      {
+        "row_index": 2,
+        "kind": "candidate",
+        "candidate_id": "c_2c7a25e0cc0ad3f2",
+        "state": "scored",
+        "reason_code": null,
+        "score_kcal_mol": -11.8,
+        "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+        "resultSha256": "886347b63fd34d8483b943bcce322fc4bea62af06d13a2bda0bc2146404e7a92",
+        "posesSha256": "c44dc66f47f139a421fc9137b5b51de65cc5c7f4a80beb56f383996df0aade98"
+      },
+      {
+        "row_index": 3,
+        "kind": "candidate",
+        "candidate_id": "c_21d6c6f0d07e3759",
+        "state": "scored",
+        "reason_code": null,
+        "score_kcal_mol": -11.6,
+        "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+        "resultSha256": "96f13508394450830d9d991130055ff66231f0ac52b4a1426a8876af3ea6677f",
+        "posesSha256": "78257b48c964922a3675ea84e9be6ab71349b18bc18d6147f7572659cf91140f"
+      }
+    ]
+  },
+  "reruns": [
+    {
+      "run": "run_420ca096071e4d6a90048dffb94ea656",
+      "jobId": "job_c6b1db35d1384781a792b79e9228d1bf",
+      "status": "done",
+      "failure": null,
+      "args": {
+        "receptor_handle": "obj://run_420ca096071e4d6a90048dffb94ea656/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+        "receptor_model_number": 1,
+        "connectivity": {
+          "kind": "pdb_conect",
+          "sidecar_handle": null
+        },
+        "receptor_instance": null,
+        "mode": "free",
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 42,
+          "exhaustiveness": 1,
+          "num_modes": 3,
+          "energy_range": 3
+        },
+        "candidate_set_handle": "obj://run_420ca096071e4d6a90048dffb94ea656/ligand_candidate_set/ccfdf0d702aba8ee4daf2a292be4cbe003413a759806debece55c55976eb5d1b",
+        "parent_sdf_handle": "obj://run_420ca096071e4d6a90048dffb94ea656/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+        "candidate_ids": [
+          "c_1afb7cd3e603456c",
+          "c_2c7a25e0cc0ad3f2",
+          "c_21d6c6f0d07e3759"
+        ],
+        "include_parent": true
+      },
+      "summary": "obj://run_420ca096071e4d6a90048dffb94ea656/docking_batch_result/c9cd163f01baf2e6c95cb6b7cedfcb109c388bbdaac27a521e365db30143ab6c",
+      "summarySha256": "c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475",
+      "batchStatus": "complete",
+      "rows": [
+        {
+          "row_index": 0,
+          "kind": "parent",
+          "candidate_id": null,
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -12.9,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "f330540b682f59a0ff97bdacb02bdc1eb97a3588fdf8de2e4fafb86a89037fbe",
+          "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+        },
+        {
+          "row_index": 1,
+          "kind": "candidate",
+          "candidate_id": "c_1afb7cd3e603456c",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -9.6,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "5dd4caf7f12ff5469c5948507dfdf9696f565d978c30bb759230752d4eb8f7a8",
+          "posesSha256": "ac79bf1bdc3b69ad66263a964ca214c47aec19ab42233c804a367c5ce2984eca"
+        },
+        {
+          "row_index": 2,
+          "kind": "candidate",
+          "candidate_id": "c_2c7a25e0cc0ad3f2",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -11.8,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "886347b63fd34d8483b943bcce322fc4bea62af06d13a2bda0bc2146404e7a92",
+          "posesSha256": "c44dc66f47f139a421fc9137b5b51de65cc5c7f4a80beb56f383996df0aade98"
+        },
+        {
+          "row_index": 3,
+          "kind": "candidate",
+          "candidate_id": "c_21d6c6f0d07e3759",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -11.6,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "96f13508394450830d9d991130055ff66231f0ac52b4a1426a8876af3ea6677f",
+          "posesSha256": "78257b48c964922a3675ea84e9be6ab71349b18bc18d6147f7572659cf91140f"
+        }
+      ],
+      "providerCallsZero": true
+    },
+    {
+      "run": "run_d5871c939cf24739bcaab56324041486",
+      "jobId": "job_12e961b8e4824d7392b606340f506372",
+      "status": "done",
+      "failure": null,
+      "args": {
+        "receptor_handle": "obj://run_d5871c939cf24739bcaab56324041486/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+        "receptor_model_number": 1,
+        "connectivity": {
+          "kind": "pdb_conect",
+          "sidecar_handle": null
+        },
+        "receptor_instance": null,
+        "mode": "free",
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 42,
+          "exhaustiveness": 1,
+          "num_modes": 3,
+          "energy_range": 3
+        },
+        "candidate_set_handle": "obj://run_d5871c939cf24739bcaab56324041486/ligand_candidate_set/0633865b6becbae2205fb235dd5e4d5686033887ff4e4e1e6666644779446a8e",
+        "parent_sdf_handle": "obj://run_d5871c939cf24739bcaab56324041486/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+        "candidate_ids": [
+          "c_1afb7cd3e603456c",
+          "c_2c7a25e0cc0ad3f2",
+          "c_21d6c6f0d07e3759"
+        ],
+        "include_parent": true
+      },
+      "summary": "obj://run_d5871c939cf24739bcaab56324041486/docking_batch_result/7f1f10b6d89a41a550d5a4739f85ffea2c4b612d6ebc21feafa4088ec70fd451",
+      "summarySha256": "c3cc21a17d4f2853b23be35bdab0a405ac363ebb6833e87fe1bd257c9833b475",
+      "batchStatus": "complete",
+      "rows": [
+        {
+          "row_index": 0,
+          "kind": "parent",
+          "candidate_id": null,
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -12.9,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "f330540b682f59a0ff97bdacb02bdc1eb97a3588fdf8de2e4fafb86a89037fbe",
+          "posesSha256": "0973dece75c14de8ad101dd22b14e868c4586b6542fc5f460fa979f46247ed94"
+        },
+        {
+          "row_index": 1,
+          "kind": "candidate",
+          "candidate_id": "c_1afb7cd3e603456c",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -9.6,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "5dd4caf7f12ff5469c5948507dfdf9696f565d978c30bb759230752d4eb8f7a8",
+          "posesSha256": "ac79bf1bdc3b69ad66263a964ca214c47aec19ab42233c804a367c5ce2984eca"
+        },
+        {
+          "row_index": 2,
+          "kind": "candidate",
+          "candidate_id": "c_2c7a25e0cc0ad3f2",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -11.8,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "886347b63fd34d8483b943bcce322fc4bea62af06d13a2bda0bc2146404e7a92",
+          "posesSha256": "c44dc66f47f139a421fc9137b5b51de65cc5c7f4a80beb56f383996df0aade98"
+        },
+        {
+          "row_index": 3,
+          "kind": "candidate",
+          "candidate_id": "c_21d6c6f0d07e3759",
+          "state": "scored",
+          "reason_code": null,
+          "score_kcal_mol": -11.6,
+          "score_row_label": "\ubaa8\ub4dc 1(\uc5d4\uc9c4 \ucd9c\ub825 \uc21c\uc11c)",
+          "resultSha256": "96f13508394450830d9d991130055ff66231f0ac52b4a1426a8876af3ea6677f",
+          "posesSha256": "78257b48c964922a3675ea84e9be6ab71349b18bc18d6147f7572659cf91140f"
+        }
+      ],
+      "providerCallsZero": true
+    }
+  ]
+}

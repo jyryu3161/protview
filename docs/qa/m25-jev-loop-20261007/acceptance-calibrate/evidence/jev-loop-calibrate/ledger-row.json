@@ -1,0 +1,442 @@
+{
+  "schema": "m25_case_ledger_row@1",
+  "mode": "calibrate",
+  "rehearsal": false,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "JL-calibrate": "pass",
+    "X-wording": "pass",
+    "X-no-egress-browser": "pass"
+  },
+  "runs": {
+    "L": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+    "P": "run_3c47e688f11048a485180e132da985b8"
+  },
+  "sends": [
+    {
+      "entry": "L-explore-calibrate",
+      "round": 1,
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "explore",
+      "loopId": "211ddc10-314b-48ba-b2c3-97e97351925c",
+      "iteration": 1,
+      "sendOrdinal": 0,
+      "aliases": 5,
+      "order": [
+        "c01=c_1afb7cd3e603456c:pending",
+        "c02=c_f1f6983d23c3009f:pending",
+        "c03=c_c42a53803595e440:pending",
+        "c04=c_71188fcf0e6703c9:pending",
+        "c05=c_21d6c6f0d07e3759:pending"
+      ],
+      "criteria": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "bodyBytes": 3855,
+      "bodySha256": "f18dcc1e0d59ca4d854c93330640389f7f70d00b0cbf433dd7b28de7b7265f2e",
+      "reservation": {
+        "external_tokens": 6666,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 0,
+        "inRun": 0
+      },
+      "sendId": "74cc38e3-71e2-449e-a80d-c87e341ac723",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.000090468,
+        "external_tokens": 2219,
+        "input_tokens": 2154,
+        "output_tokens": 65
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 1,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 2219,
+          "limit": 120000,
+          "remaining": 117781
+        },
+        "usd": {
+          "used": 0.00009046799999999633,
+          "limit": 2,
+          "remaining": 1.999909532
+        }
+      },
+      "bytes": {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "sendId": "74cc38e3-71e2-449e-a80d-c87e341ac723",
+        "script": null,
+        "previewSha256": "f18dcc1e0d59ca4d854c93330640389f7f70d00b0cbf433dd7b28de7b7265f2e",
+        "previewBytes": 3855,
+        "preparedSha256": "f18dcc1e0d59ca4d854c93330640389f7f70d00b0cbf433dd7b28de7b7265f2e",
+        "preparedBodyEqual": true,
+        "transportSha256": null,
+        "transportBytes": null,
+        "authorizationIsSentinel": null,
+        "dispatched": 1,
+        "fixtureCall": null,
+        "gate": "product"
+      },
+      "proposal": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_choice/fd823a8123dc5e184a92049beecde04fd42af9bfac7e81f659acfeb9099cb21a",
+      "chosenAlias": "c01",
+      "chosenRef": "c_1afb7cd3e603456c",
+      "listPosition": 1,
+      "listSize": 5,
+      "responseShape": {
+        "answersParsed": true,
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "c01",
+        "position": "1/5",
+        "confidence": "0.360",
+        "late": false,
+        "container": "jev-loop-selection",
+        "probabilities": 5,
+        "local": "CC[N@@H+]1C[C@H](C(=O)N[C@]2(C)O[C@@]3(O)[C@@H]4CCCN4C(=O)[C@H](Cc4ccccc4)N3C2=O)C=C2c3cccc4[nH]cc(c34)C[C@H]21",
+        "confirmingSeen": false
+      }
+    }
+  ],
+  "fixture": null,
+  "bytes": 1,
+  "plan": {
+    "entries": [
+      "L-explore-calibrate"
+    ],
+    "maxDispatch": 1,
+    "maxPerRun": {
+      "run_a6f1fdc86c674f33b5cf975a085dc3a4": 5,
+      "run_3c47e688f11048a485180e132da985b8": 3
+    },
+    "preChecks": true
+  },
+  "preChecks": {
+    "blockedOff": [
+      "consent_off"
+    ],
+    "unchecked": [
+      "확인 체크를 켜세요: \"이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다\"."
+    ],
+    "dispatched": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "loops": [
+    {
+      "entry": "L-explore-calibrate",
+      "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+      "branch": "ligand",
+      "goal": "explore",
+      "loopSeed": 101,
+      "rounds": [
+        {
+          "round": 1,
+          "send": {
+            "sendId": "74cc38e3-71e2-449e-a80d-c87e341ac723",
+            "status": "completed",
+            "reasonCode": null
+          }
+        }
+      ],
+      "loopId": "211ddc10-314b-48ba-b2c3-97e97351925c",
+      "endReason": "ended_by_user",
+      "result": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/jev_loop_result/dc3e5aeafce33a3d832f567913d7d07d5e854807dbe01b4994bfdff582d9a1fb",
+      "counts": {
+        "started": 0,
+        "done": 0,
+        "jev_decided": 0,
+        "human_decided": 0,
+        "sends_dispatched": 1,
+        "units_charged": 0,
+        "reused_count": 0
+      },
+      "report": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/method_report_manifest/718dab077e08170da5b8c34eefb0d363409c9e14d704dc39d2f446952c396ed9"
+    }
+  ],
+  "shuffle": null,
+  "dispatchCounts": {
+    "run_3c47e688f11048a485180e132da985b8": 0,
+    "run_a6f1fdc86c674f33b5cf975a085dc3a4": 1
+  },
+  "fixtureLabels": [],
+  "controls": {
+    "jev-loop-source-ligand": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/ligand_candidate_set/ec3c2fcf4e00055dbbf8c8fa36a58f4be91b6a836e0707842bba00fc40d6baf4"
+      }
+    ],
+    "jev-loop-candidate": [
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_c42a53803595e440"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_71188fcf0e6703c9"
+      },
+      {
+        "key": "c_21d6c6f0d07e3759"
+      }
+    ],
+    "jev-loop-goal": [
+      {
+        "goal": "explore"
+      }
+    ],
+    "jev-loop-seed": [
+      {
+        "value": "101"
+      }
+    ],
+    "jev-loop-iteration-cap": [
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-parent-sdf": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      }
+    ],
+    "jev-loop-receptor": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      }
+    ],
+    "jev-loop-model": [
+      {
+        "model": "1"
+      }
+    ],
+    "jev-loop-instance": [
+      {
+        "instance": "none"
+      }
+    ],
+    "jev-loop-connectivity": [
+      {
+        "kind": "pdb_conect"
+      }
+    ],
+    "jev-loop-box": [
+      {
+        "source": "manual"
+      }
+    ],
+    "jev-loop-center-x": [
+      {
+        "value": "3.41"
+      }
+    ],
+    "jev-loop-size-x": [
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-center-y": [
+      {
+        "value": "0.72"
+      }
+    ],
+    "jev-loop-size-y": [
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-center-z": [
+      {
+        "value": "11.31"
+      }
+    ],
+    "jev-loop-size-z": [
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-docking-seed": [
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-exhaustiveness": [
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-num-modes": [
+      {
+        "value": "2"
+      }
+    ],
+    "jev-loop-energy-range": [
+      {
+        "value": "3"
+      }
+    ],
+    "jev-loop-ack-keep_input_protonation": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-create": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      }
+    ],
+    "jev-loop-build": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      }
+    ],
+    "jev-loop-consent": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "enabled": true
+      }
+    ],
+    "jev-loop-send": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "script": null
+      }
+    ],
+    "jev-loop-end": [
+      {
+        "loopId": "211ddc10-314b-48ba-b2c3-97e97351925c"
+      }
+    ],
+    "jev-loop-report": [
+      {
+        "run": "run_a6f1fdc86c674f33b5cf975a085dc3a4",
+        "branch": "ligand"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_a6f1fdc86c674f33b5cf975a085dc3a4/method_report_manifest/718dab077e08170da5b8c34eefb0d363409c9e14d704dc39d2f446952c396ed9"
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "L-explore-calibrate round 1",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report 211ddc10-314b-48ba-b2c3-97e97351925c",
+      "kind": "report",
+      "found": 0
+    }
+  ],
+  "buildId": "W4Fsnhol08JIGulRiMyz7",
+  "harness": {
+    "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+    "jev-flow.cjs": "b372e73f5d68c6e2b26ead6e42d9782aa2a9f42b60606dad2d8ed392a5638982",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 124,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/live-20261008-calibrate/jev-loop-calibrate/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 257,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/live-20261008-calibrate/jev-loop-calibrate/paint-first.png",
+        "paintOrdinal": 2,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 82,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "jev-loop-calibrate.jsonl",
+  "startedAt": "2026-10-07T16:54:29.177Z",
+  "finishedAt": "2026-10-07T16:54:39.042Z"
+}

@@ -1,0 +1,892 @@
+{
+  "schema": "m25_case_ledger@1",
+  "phase": "fixture",
+  "rehearsal": false,
+  "acceptanceScope": "fixture",
+  "liveCalls": 0,
+  "generatedAt": "2026-10-07T16:51:15.278633+00:00",
+  "build": {
+    "buildId": "W4Fsnhol08JIGulRiMyz7",
+    "gitHead": "9a9a625c548ee7095bbf815be14704fd47376d0a",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "04e0ef5f64dc80f42a003fa7b34fae8561c72c64ca4298a83f78511b2ef0770c",
+    "dirtyFiles": [
+      "?? docs/qa/m25-jev-loop-20261007/gate-backend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-frontend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-invariants.txt",
+      "?? docs/qa/m25-jev-loop-20261007/m13-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m14-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m15-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m16-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m17-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m18-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m19-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m20-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m21-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m22-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m23-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m24-regression/"
+    ],
+    "recordedAt": "2026-10-07T16:49:06.682005+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+      "jev-flow.cjs": "b372e73f5d68c6e2b26ead6e42d9782aa2a9f42b60606dad2d8ed392a5638982",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "199b5b1fac6ef509c3760a161f8258ab7ed43e3c0989be8dd8312c4c07126cb9",
+    "qaSetupSha256": "f973aee568be6882b1c514eb08312be0739709c01e69b7407127da8ab6a80c29",
+    "runnerSha256": "e0787b7f2953774cbc1ef0fd8b18422024741d9a842a7a8820f4f2860bea2865"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "L-tab-entry": {
+      "text": "리간드 탭 진입: GET 읽기만, 동의 꺼짐, UL1·UL3, 루프 없음, 집합·목표 자동 선택 없음, seed 비어 있음, 반복 상한 5",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-create-fields": {
+      "text": "만들기 칸별 이유: 풀 1개(pool_invalid)·목표 없음(goal_invalid)·seed 비어 있음(seed_invalid)·반복 상한 9(iteration_cap_invalid)·계산 조건, 만들기 단추 닫힘",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-create": {
+      "text": "루프 만들기: jev_loop_created 하나, 바퀴 1 선택 대기, 요청 = 화면 입력",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-loop-active": {
+      "text": "같은 갈래의 끝나지 않은 루프가 있으면 만들기가 loop_active 이유와 함께 닫힘",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-consent-off-block": {
+      "text": "동의 꺼짐: 미리보기 consent_off, 확인 체크를 해도 전송 단추 닫힘",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-preview-match": {
+      "text": "미리보기 <pre> = 서버 문자열, 여기서 계산한 SHA-256·바이트 = 표시 = 저장 투영",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-order-oracle": {
+      "text": "후보 순서·별칭·criteria·computed 행 = 독립 sha256_order_v1 계산, 질문 = 명세 4.5 문장",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-consent-toggle": {
+      "text": "동의 켬: 차단 이유 없음, 전역 줄 run id 바로 뒤 \"과학 전송 허용\"",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-confirm-required": {
+      "text": "확인 체크 없이는 전송 단추가 닫히고 이유가 보임; 체크하면 열림",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-failed-model": {
+      "text": "fixture model_mismatch: failed model_mismatch, 이유만",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-ordinal-refused": {
+      "text": "dispatch 뒤 같은 투영은 ordinal_mismatch로 막히고 다시 만들면 새 순서",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-bytes-equal": {
+      "text": "전송마다 transport 수신 바이트 SHA-256 = 미리보기 = 감사 prepared(본문 같음)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-send-good": {
+      "text": "fixture good_second(두 번째 criteria 키): completed, 기록이 전송을 알기 전에는 확인 중 줄만, 이 바퀴의 선택, 목록 위치 2/5, 계산이 그 후보로 시작",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-choice-card": {
+      "text": "JEV 판정(모델 선택) 카드 = 저장 제안: 목록 위치 n/m, 확신도, 모델, 사용량, 접힌 후보별 값은 보낸 순서 그대로, 정렬·막대·색 비교 요소 없음",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-compute-jev": {
+      "text": "이 선택으로 계산 시작: decided_by jev 승인 하나, 단독 M18 작업",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-real-engine": {
+      "text": "실제 qvina 도킹, 점수 = 저장 결과 첫 모드(소수 첫째 자리 표시)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-failed-computed-alias": {
+      "text": "fixture computed_alias: 게이트에서 response_invalid, 이유만",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-late": {
+      "text": "fixture slow 중 동의 끄기: completed + 늦은 응답, 이 바퀴의 선택이 아님, J7",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-designate": {
+      "text": "직접 지정(늦은 응답이 고른 후보): decided_by human, 실제 도킹",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-designate-no-send": {
+      "text": "전송 없는 바퀴의 직접 지정, 유효 반복 상한 도달(iteration_cap)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-candidate-table": {
+      "text": "후보 표(루프 A: pending, 루프 B: 재사용 행·계산 행·pending): 네 열 모두 오름·내림에서 여기서 쓴 순서 규칙과 같음(점수 없는 행은 끝·풀 순서, 재사용 행은 바퀴 열에서 번호 있는 행 뒤), aria-sort, 순번 열·강조 없음",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-end-summary": {
+      "text": "루프 끝내기: iteration_cap, 요약 jev_loop_result@1 = 기록, LJ8",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-report": {
+      "text": "보고서 만들기: 목록의 \"JEV 루프 보고서\"와 저장된 Markdown(고정 문장, 확률 없음)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-reuse": {
+      "text": "저장된 같은 조건 결과는 계산됨(저장된 결과 재사용, 단위 0)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-no-usage-stop": {
+      "text": "fixture no_usage: completed, 사용량 \"알 수 없음\", 외부 전송 멈춤(usage_unknown), 다음 루프 미리보기 egress_stopped",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-send-cap-display": {
+      "text": "run 전송 상한 줄 = dispatch 수(10회 중 5회)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-knowledge-rows": {
+      "text": "지식·보고서 전송 기록: 루프 전송은 읽기 전용 \"JEV 루프\" 행, 열기·보고서 만들기 단추 없음",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "L-other-tabs": {
+      "text": "다른 영역의 숫자를 가린 글자가 같음(M18 도킹 영역은 루프의 단독 결과를 목록에 보임), 진입 POST 없음, 구조 분석 숨김",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-tab-entry": {
+      "text": "단백질 탭 진입: GET 읽기만, UL1·UL3·U3, 두 집합 모두 고르지 않음",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-pool-limit": {
+      "text": "20개 체크 뒤 21번째 거절(이유 표시), 1개로 줄이면 최소 2(pool_invalid)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-create-fields": {
+      "text": "단백질 칸별 이유: 목표·seed·반복 상한 0·확인 두 항목(confirmation_missing)·cutoff 7(argument_invalid)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-create-refused": {
+      "text": "1MQ4 풀: 서버 422 setup_invalid(openmm_preflight_failed)가 계산 조건 칸에, 이벤트 없음",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-create": {
+      "text": "1UBQ 풀 3개로 루프 만들기, loop_active",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-send-good": {
+      "text": "fixture good_second: 변이 본문(좌표·서열·handle 없음) 전송, 카드의 잔기 표기와 목록 위치 2/3, 모델링·도킹이 그 후보로 시작",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-bytes-equal": {
+      "text": "단백질 전송 바이트 = 미리보기 = 감사 prepared = transport",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-order-oracle": {
+      "text": "단백질 순서·별칭·criteria = 독립 계산",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-first-approval": {
+      "text": "첫 비싼 계산 승인 안내 → 비싼 계산 승인(POST /jobs/approve) → 작업 시작(새 승인 이벤트 없음)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-end-refused-job": {
+      "text": "작업 대기 중 루프 끝내기 닫힘(job_running)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-end-refused-docking": {
+      "text": "도킹 대기 중 루프 끝내기 닫힘(docking_pending)",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-dock": {
+      "text": "변이 구조에 도킹: 점수 = 저장 결과 첫 모드, 수용체 = 그 모델의 변이형",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-real-engine": {
+      "text": "실제 PDBFixer·OpenMM 모델링과 qvina 도킹",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-abandon": {
+      "text": "도킹 포기: not_run(docking_not_run), 유효 반복 상한 도달",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-end-summary": {
+      "text": "루프 끝내기: iteration_cap, 요약, LJ8",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-report": {
+      "text": "단백질 루프 보고서 저장과 목록",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-candidate-table": {
+      "text": "후보 표(점수 행·not_run·pending): 네 열 모두 오름·내림에서 여기서 쓴 순서 규칙과 같음(not_run·pending은 끝·풀 순서), 후보 열은 번호 순, aria-sort",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-reuse": {
+      "text": "모델·변이형 도킹이 저장된 후보는 재사용(단위 0), 활용형 computed 행은 저장 점수 그대로",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-failed-http": {
+      "text": "fixture HTTP 500: failed provider_http_error, 이유만, 외부 전송 멈춤",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-pair-loop": {
+      "text": "M21 같은 조건 짝 표: \"루프 도킹(야생형 없음) · 바퀴 1\"(loop 키), 야생형 쪽 점수 없음",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-knowledge-rows": {
+      "text": "지식·보고서: run P의 루프 전송 두 줄이 읽기 전용 행",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "P-other-tabs": {
+      "text": "run P의 다른 영역 불변(M21 영역·M18 도킹 영역은 루프 결과 목록), 구조 분석 숨김",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "X-fixture-proof": {
+      "text": "흐름 안 확인: fixture transport 호출 = dispatch 이벤트 = 바이트 대조 행, placeholder만, 제품 키 해석기 0회",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "X-wording": {
+      "text": "화면 문구 검사(고정 문장·지시문·본문 줄 제외) 모든 시점 통과",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "X-no-egress-browser": {
+      "text": "브라우저의 비-loopback 요청 0건",
+      "modes": {
+        "jev-loop-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "S-browser-egress-zero": {
+      "text": "모든 흐름 행의 브라우저 비-loopback 요청 0건",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-key-absent": {
+      "text": "증거 폴더·QA 루트·내보낸 증거에서 API 키 문자열과 fixture placeholder 문자열 0건",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-wording-evidence": {
+      "text": "증거 텍스트에 금지 표현 0건(고정 문장·지시문·보낸 본문 줄 제외)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-real-calls-zero": {
+      "text": "실호출 0회: 서버 기록이 MockTransport 게이트이고 이 단계의 dispatch·response_received 감사 수가 fixture transport 호출 기록과 같으며 모든 호출의 인증 값이 placeholder였고 제품 키 해석기 호출 0회",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "jev-loop-fixture": {
+      "status": "pass",
+      "latest": "jev-loop-fixture",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "JL-calibrate-send": "관찰하지 않음 — 실호출은 T12의 calibrate·live 단계에서만 한다. 이 실행은 가짜 transport fixture 서버만 썼다(실호출 0회).",
+    "JL-live-sends": "관찰하지 않음 — 실호출은 T12의 calibrate·live 단계에서만 한다. 이 실행은 가짜 transport fixture 서버만 썼다(실호출 0회).",
+    "L-late-run-cancelled": "run 취소 뒤 도착한 루프 응답: 화면에 run 취소 경로가 없다. backend/tests/test_jev_loop_sends.py::test_a_late_reply_is_kept_but_never_the_selection 이 덮는다.",
+    "L-unavailable-before-start": "시작 전 취소된 후보(unavailable): backend/tests/test_jev_loops_compute.py::test_two_presses_make_one_step_and_a_job_cancelled_before_start_is_unavailable 이 덮는다.",
+    "L-budget-blocked": "계산 예산 부족(budget_blocked)과 budget_exhausted 끝내기: 화면 run은 한도를 늘리거나 줄이지 않는다. test_jev_loops_compute.py::test_budget_blocked_names_each_short_axis_and_charges_nothing, test_a_loop_short_of_compute_budget_ends_budget_exhausted_with_its_unfinished_iteration 이 덮는다.",
+    "L-end-server-refusal": "끝내기 서버 거절(job_running·docking_pending): 화면은 단추를 닫아 요청을 보내지 않는다. test_jev_loops_compute.py::test_end_refusals_follow_the_spec_order_and_write_nothing 이 덮는다.",
+    "L-send-cap-ten": "run당 10회 전송 소진: 한 run의 fixture 계획이 5회에서 외부 전송 멈춤으로 끝난다. test_jev_loop_sends.py::test_the_ten_send_cap_and_the_budget_are_shared_with_m24_sends 가 덮는다.",
+    "L-dry-run": "연습용 run: test_jev_loop_sends.py::test_a_loop_projection_in_a_dry_run_run_names_no_loop_and_never_reads_the_key 가 덮는다.",
+    "L-sort-null-failed": "null_result·failed 후보 행의 표 정렬 위치: 화면 run의 실제 도킹이 포즈 없음이나 실패를 만들지 않아 실제 루프 상태로 보이지 못했다(fixture가 결과를 꾸며 넣지 않는다). frontend/tests/jev-loop.test.cjs의 \"candidate order: display only; rows without a score are last in every column and direction, ties in pool order\" 가 덮고, 화면은 pending·not_run·재사용 행으로 같은 규칙을 확인했다."
+  },
+  "environment": {
+    "workerPython": true,
+    "dockingPython": true,
+    "qvina": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m25_jev_loop_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "defaultGate": "EgressGate defaults: httpx.MockTransport refusing, resolver without a credential",
+      "scripts": [
+        "good",
+        "good_second",
+        "computed_alias",
+        "http_500",
+        "slow",
+        "no_usage",
+        "model_mismatch"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "dockingAvailable": true,
+    "modelAvailable": true,
+    "jevAvailable": true,
+    "loopLigand": true,
+    "loopProtein": true,
+    "setup": true
+  },
+  "checks": {
+    "events": {
+      "run_3b834907843c492887508d47e1fea5bd": {
+        "dispatch": 5,
+        "responseReceived": 5,
+        "scienceResponses": 5
+      },
+      "run_535e0a8a8e1b410b867876bdf73cb594": {
+        "dispatch": 2,
+        "responseReceived": 2,
+        "scienceResponses": 2
+      }
+    },
+    "fixtureProof": {
+      "ok": true,
+      "dispatchEvents": 7,
+      "fixtureTransportCalls": 7,
+      "responseAudits": 7,
+      "answeredCalls": 7,
+      "credentialReads": {
+        "productResolverReads": 0,
+        "sentinelReads": 7,
+        "updatedAt": "2026-10-07T16:51:07.994431+00:00"
+      },
+      "realProviderCalls": 0
+    },
+    "keyScan": {
+      "ok": true,
+      "keyAvailable": true,
+      "files": 430,
+      "keyHits": [],
+      "sentinelHits": [],
+      "roots": [
+        "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/fixture-20261008b",
+        "<repo>/runs/m25-acceptance-20261008b"
+      ]
+    },
+    "wordingScan": {}
+  },
+  "finalize": null,
+  "dispatchCapExceeded": null,
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "jev-loop-fixture",
+      "mode": "fixture",
+      "rehearsal": false,
+      "status": "pass",
+      "cases": {
+        "L-tab-entry": "pass",
+        "L-create-fields": "pass",
+        "L-create": "pass",
+        "L-loop-active": "pass",
+        "L-consent-off-block": "pass",
+        "L-preview-match": "pass",
+        "L-order-oracle": "pass",
+        "L-consent-toggle": "pass",
+        "L-confirm-required": "pass",
+        "L-failed-model": "pass",
+        "L-ordinal-refused": "pass",
+        "L-bytes-equal": "pass",
+        "L-send-good": "pass",
+        "L-choice-card": "pass",
+        "L-compute-jev": "pass",
+        "L-real-engine": "pass",
+        "L-failed-computed-alias": "pass",
+        "L-late": "pass",
+        "L-designate": "pass",
+        "L-designate-no-send": "pass",
+        "L-candidate-table": "pass",
+        "L-end-summary": "pass",
+        "L-report": "pass",
+        "L-reuse": "pass",
+        "L-no-usage-stop": "pass",
+        "L-send-cap-display": "pass",
+        "L-knowledge-rows": "pass",
+        "L-other-tabs": "pass",
+        "P-tab-entry": "pass",
+        "P-pool-limit": "pass",
+        "P-create-fields": "pass",
+        "P-create-refused": "pass",
+        "P-create": "pass",
+        "P-send-good": "pass",
+        "P-bytes-equal": "pass",
+        "P-order-oracle": "pass",
+        "P-first-approval": "pass",
+        "P-end-refused-job": "pass",
+        "P-end-refused-docking": "pass",
+        "P-dock": "pass",
+        "P-real-engine": "pass",
+        "P-abandon": "pass",
+        "P-candidate-table": "pass",
+        "P-end-summary": "pass",
+        "P-report": "pass",
+        "P-reuse": "pass",
+        "P-failed-http": "pass",
+        "P-pair-loop": "pass",
+        "P-knowledge-rows": "pass",
+        "P-other-tabs": "pass",
+        "X-fixture-proof": "pass",
+        "X-wording": "pass",
+        "X-no-egress-browser": "pass"
+      },
+      "runs": {
+        "L": "run_3b834907843c492887508d47e1fea5bd",
+        "P": "run_535e0a8a8e1b410b867876bdf73cb594"
+      },
+      "sends": [
+        {
+          "sendId": "c1b27ee3-a482-4e8b-84c1-a4a3860b7989",
+          "status": "failed",
+          "reasonCode": "model_mismatch",
+          "late": false,
+          "loop": {
+            "loop_id": "92909a43-bba0-436a-bc99-97b9dda8dd88",
+            "iteration": 1,
+            "send_ordinal": 0
+          }
+        },
+        {
+          "sendId": "5b567f6d-cd33-468a-ab46-d7a4342b3be4",
+          "status": "completed",
+          "reasonCode": null,
+          "late": false,
+          "loop": {
+            "loop_id": "92909a43-bba0-436a-bc99-97b9dda8dd88",
+            "iteration": 1,
+            "send_ordinal": 1
+          }
+        },
+        {
+          "sendId": "2b891533-0fd7-41d7-8f4e-7d8e869297ef",
+          "status": "failed",
+          "reasonCode": "response_invalid",
+          "late": false,
+          "loop": {
+            "loop_id": "92909a43-bba0-436a-bc99-97b9dda8dd88",
+            "iteration": 2,
+            "send_ordinal": 0
+          }
+        },
+        {
+          "sendId": "db2f0e74-44c0-4f64-b646-c12cac929a05",
+          "status": "completed",
+          "reasonCode": null,
+          "late": true,
+          "loop": {
+            "loop_id": "92909a43-bba0-436a-bc99-97b9dda8dd88",
+            "iteration": 2,
+            "send_ordinal": 1
+          }
+        },
+        {
+          "sendId": "a594a252-331c-4809-94d6-a34eca7281c8",
+          "status": "completed",
+          "reasonCode": null,
+          "late": false,
+          "loop": {
+            "loop_id": "3e3a4dd9-916f-431e-a136-02760a322451",
+            "iteration": 1,
+            "send_ordinal": 0
+          }
+        },
+        {
+          "sendId": "0bf6a386-cd64-4380-8cf4-afc4387746eb",
+          "status": "completed",
+          "reasonCode": null,
+          "late": false,
+          "loop": {
+            "loop_id": "ba55e132-8a47-479d-8684-df8bb842162f",
+            "iteration": 1,
+            "send_ordinal": 0
+          }
+        },
+        {
+          "sendId": "560c375d-7bb8-40f1-84c2-1e1fbf344376",
+          "status": "failed",
+          "reasonCode": "provider_http_error",
+          "late": false,
+          "loop": {
+            "loop_id": "d75f49a8-8c0c-4887-9927-be971a8e1321",
+            "iteration": 1,
+            "send_ordinal": 0
+          }
+        }
+      ],
+      "plan": null,
+      "fixture": {
+        "calls": 7,
+        "scripts": [
+          "model_mismatch",
+          "good_second",
+          "computed_alias",
+          "slow",
+          "no_usage",
+          "good_second",
+          "http_500"
+        ],
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          500
+        ],
+        "sentinelAuthorization": true,
+        "bodySha256": [
+          "442690c06abac3f454bb86c772966d47c95cacf23179571bde66e4f38653d6fc",
+          "ca4db287d605c5e45ee2da0f7d303d51a3ba16ea45c3624d1d32a9d993b0a185",
+          "4d7e722814503ffb21aac15604313a20a05bb934ccfeb5d92e9b67bb82274f23",
+          "01ac75d764e0f1bea462b9c5e9e519e58ba2128f18f82b43d90b885be00fae1e",
+          "a373bafa53a7c639801872b947ddd2d949f8ba09238defe5396a67d1468de6f9",
+          "fe90e990bd42da7a62cdd1701d6680b058e930d9ad69be0234dfdca45a625903",
+          "26be63a8608e5ecebf41277b4cbd99b3752063550d99190fb5a11dd622abaca8"
+        ],
+        "credentialReads": {
+          "productResolverReads": 0,
+          "sentinelReads": 7,
+          "updatedAt": "2026-10-07T16:51:07.994431+00:00"
+        },
+        "dispatchCounts": {
+          "run_3b834907843c492887508d47e1fea5bd": 5,
+          "run_535e0a8a8e1b410b867876bdf73cb594": 2
+        },
+        "dispatched": 7
+      },
+      "loops": null,
+      "shuffle": null,
+      "preChecks": null,
+      "dispatchCounts": null,
+      "evidenceKind": "real_electron_offscreen",
+      "fixtureLabels": [
+        "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_loop_fixture/server.py)"
+      ],
+      "controls": [
+        "jev-loop-abandon",
+        "jev-loop-ack-keep_input_protonation",
+        "jev-loop-ack-rigid_no_optimization",
+        "jev-loop-ack-tool_assigned_types_charges",
+        "jev-loop-approve-first",
+        "jev-loop-box",
+        "jev-loop-build",
+        "jev-loop-candidate",
+        "jev-loop-candidate-21st",
+        "jev-loop-candidate-uncheck",
+        "jev-loop-center-x",
+        "jev-loop-center-y",
+        "jev-loop-center-z",
+        "jev-loop-compute-proposal",
+        "jev-loop-confirm",
+        "jev-loop-confirmations",
+        "jev-loop-connectivity",
+        "jev-loop-consent",
+        "jev-loop-create",
+        "jev-loop-cutoff",
+        "jev-loop-designate",
+        "jev-loop-designate-option",
+        "jev-loop-dock",
+        "jev-loop-docking-seed",
+        "jev-loop-end",
+        "jev-loop-energy-range",
+        "jev-loop-exhaustiveness",
+        "jev-loop-goal",
+        "jev-loop-instance",
+        "jev-loop-iteration-cap",
+        "jev-loop-job-start",
+        "jev-loop-model",
+        "jev-loop-num-modes",
+        "jev-loop-parent-sdf",
+        "jev-loop-receptor",
+        "jev-loop-report",
+        "jev-loop-seed",
+        "jev-loop-send",
+        "jev-loop-setup-ack-keep_input_protonation",
+        "jev-loop-setup-ack-rigid_no_optimization",
+        "jev-loop-setup-ack-tool_assigned_types_charges",
+        "jev-loop-setup-box",
+        "jev-loop-setup-energy-range",
+        "jev-loop-setup-exhaustiveness",
+        "jev-loop-setup-margin",
+        "jev-loop-setup-num-modes",
+        "jev-loop-setup-sdf",
+        "jev-loop-setup-seed",
+        "jev-loop-size-x",
+        "jev-loop-size-y",
+        "jev-loop-size-z",
+        "jev-loop-sort-candidate",
+        "jev-loop-sort-iteration",
+        "jev-loop-sort-pool",
+        "jev-loop-sort-score",
+        "jev-loop-source-ligand",
+        "jev-loop-source-protein",
+        "mutation-model-open",
+        "report-library-open"
+      ],
+      "wording": [
+        {
+          "label": "good card",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "late card",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "candidate table",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "report 92909a43-bba0-436a-bc99-97b9dda8dd88",
+          "kind": "report",
+          "found": 0
+        },
+        {
+          "label": "loop B table",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "knowledge JEV area (run L)",
+          "kind": "screen-m24",
+          "found": 0
+        },
+        {
+          "label": "protein good card",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "protein table",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "report ba55e132-8a47-479d-8684-df8bb842162f",
+          "kind": "report",
+          "found": 0
+        },
+        {
+          "label": "knowledge JEV area (run P)",
+          "kind": "screen-m24",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 1",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 2",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 3",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 4",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 5",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 6",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 7",
+          "kind": "reply",
+          "found": 0
+        }
+      ],
+      "externalRequestCount": 0,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-07T16:51:14.542Z"
+    }
+  ]
+}

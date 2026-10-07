@@ -1,0 +1,124 @@
+# M25 불변 조건 확인 (소스 고정 4360598, 실행 HEAD 4360598, 2026-10-07 UTC, 백엔드·프런트 게이트 뒤)
+
+## (1) 골든 --check (별도 프로세스, 제품 앱 TestClient + MockTransport 게이트, 실호출 0)
+$ .venv/bin/python backend/tests/fixtures/jev/golden_science_m24.py --check  -> exit 0
+  golden_science_m24.json matches a fresh recording
+$ .venv/bin/python backend/tests/fixtures/jev/prototype_golden_egress.py --check  -> exit 0
+  golden_egress_events.json matches a fresh recording
+  (기록기가 쓰는 Git 제외 runs/golden-* 남은 폴더 0)
+
+## (2) 호출자·위치 AST 테스트 (게이트 그룹에서도 통과; 여기서 따로 다시 실행)
+$ .venv/bin/python -m pytest -q -p no:cacheprovider backend/tests/test_jev_ast.py backend/tests/test_docking_batch_budget.py backend/tests/test_ligand_ga_budget.py backend/tests/test_sequence_ga_budget.py  -> exit 0
+  58 passed, 1 warning in 32.76s
+  해당 테스트: test_jev_ast.py::test_request_science_is_called_only_by_run_send_through_the_gate, ::test_run_send_is_called_only_by_the_approval_route,
+    ::test_no_tool_job_flow_viewer_or_report_module_names_the_send_functions, ::test_httpx_is_imported_and_clients_are_built_only_inside_egress,
+    ::test_new_modules_never_name_the_limit_raise_functions, ::test_the_four_science_events_are_written_only_by_the_send_modules;
+    test_sequence_ga_budget.py::test_raise_limits_is_called_only_by_the_three_limit_approvals_from_their_routes,
+    test_ligand_ga_budget.py::test_raise_limits_is_called_only_by_the_two_limit_approvals_from_their_routes, test_docking_batch_budget.py::test_the_raise_is_reachable_only_from_its_human_route
+
+## (3) 보호 파일·호출자 grep (scratchpad invariants.py; git diff main...HEAD + 이름 패턴 대조)
+보호 패턴: 파일 이름 docking_worker.py·docking_constants.py·openmm_mutation_worker.py·mutation_model_constants.py·mutation_model_math.py·mutation_candidates.py·ligand_ga_*·sequence_ga_*·docking_batch_*(위치 무관),
+  M17 코드(backend/mw/ligand_{constants,inputs,site,filters,bundle,reads,reports}.py, jobs/ligand_worker.py), M20 코드(mutation_{constants,reads,reports}.py, tools/mutations.py), M13 코드(analysis_plans.py, analysis_executions.py),
+  대문자 docs/*.md(이름에 대문자가 있는 docs/ 바로 아래 .md), docs/qa/ 기존 파일(A 아닌 변경), docs/reviews/*, phases/*, .dryforge/*, frontend/app/gallery/*
+  HEAD 436059863ccc88a46a9c2c66a6b70dbc2c90bd34  main b8866a888535d2b41d5db68c04edd6e88d2498b4  merge-base b8866a888535d2b41d5db68c04edd6e88d2498b4
+  git diff main...HEAD --name-only: 68 files
+  protected-pattern hits: 0 []
+  docs/qa existing files modified/deleted/renamed: 0 []
+  docs/qa files added on the branch: ['docs/qa/m25-jev-loop-20261007/preflight.txt']
+  changed product/test/doc files (name-status):
+    M .codex/hooks/stop.py
+    M backend/mw/api/app.py
+    M backend/mw/core/events.py
+    M backend/mw/egress/science.py
+    A backend/mw/jev_loop_constants.py
+    A backend/mw/jev_loop_projection.py
+    A backend/mw/jev_loop_reports.py
+    A backend/mw/jev_loop_result.py
+    A backend/mw/jev_loop_store.py
+    A backend/mw/jev_loops.py
+    M backend/mw/jev_sends.py
+    M backend/mw/mutation_model_reads.py
+    A backend/mw/tools/jev_loop.py
+    M backend/mw/workspace.py
+    M backend/tests/fixtures/jev/SYNTHETIC-PROVENANCE.md
+    A backend/tests/fixtures/jev/golden_science_m24.json
+    A backend/tests/fixtures/jev/golden_science_m24.py
+    A backend/tests/fixtures/jev_loop/SYNTHETIC-PROVENANCE.md
+    A backend/tests/fixtures/jev_loop/expected.json
+    A backend/tests/fixtures/jev_loop/independent_order.py
+    A backend/tests/fixtures/jev_loop/prototype_engine_calls.py
+    A backend/tests/fixtures/jev_loop/prototype_loop_body_size.py
+    A backend/tests/fixtures/jev_loop/prototype_loop_events.py
+    A backend/tests/fixtures/jev_loop/prototype_loop_read.py
+    A backend/tests/fixtures/jev_loop/prototype_m24_branch_points.py
+    A backend/tests/fixtures/jev_loop/prototype_queue_semantics.py
+    A backend/tests/offscreen_jev_loop_fixture/SYNTHETIC-PROVENANCE.md
+    A backend/tests/offscreen_jev_loop_fixture/qa_setup.py
+    A backend/tests/offscreen_jev_loop_fixture/server.py
+    M backend/tests/test_api.py
+    A backend/tests/test_jev_loop_choice.py
+    A backend/tests/test_jev_loop_constants.py
+    A backend/tests/test_jev_loop_projection.py
+    A backend/tests/test_jev_loop_reports.py
+    A backend/tests/test_jev_loop_result.py
+    A backend/tests/test_jev_loop_sends.py
+    A backend/tests/test_jev_loop_tool.py
+    A backend/tests/test_jev_loops_api.py
+    A backend/tests/test_jev_loops_compute.py
+    A backend/tests/test_jev_loops_derive.py
+    A backend/tests/test_jev_loops_read.py
+    M backend/tests/test_ligand_api.py
+    M backend/tests/test_reference_site_annotation.py
+    M backend/tests/test_residue_numbering.py
+    M config/tools.yaml
+    M design/components.css
+    A docs/qa/m25-jev-loop-20261007/preflight.txt
+    M docs/standards.md
+    M frontend/app/page.tsx
+    M frontend/package.json
+    A frontend/src/components/JevLoopPanel.tsx
+    M frontend/src/components/JevPanel.tsx
+    M frontend/src/components/MutationModelPanel.tsx
+    M frontend/src/design/components.css
+    M frontend/src/lib/api.ts
+    M frontend/src/lib/contracts.ts
+    A frontend/src/lib/jev-loop.ts
+    M frontend/src/lib/jev.ts
+    M frontend/src/lib/mutation-model.ts
+    M frontend/src/lib/report-library.ts
+    A frontend/tests/jev-loop-panel.test.cjs
+    A frontend/tests/jev-loop.test.cjs
+    A frontend/tests/offscreen/jev-loop-flow.cjs
+    M frontend/tests/report-library.test.cjs
+    M scripts/AGENTS.md
+    A scripts/m25_offscreen_acceptance.py
+    M scripts/test_codex_hooks.py
+    A scripts/test_m25_offscreen_acceptance.py
+  
+  # backend/mw lines that import httpx (location check)
+    backend/mw/egress/viewer.py:11
+    backend/mw/egress/gate.py:21
+    backend/mw/egress/science.py:35
+  
+  # backend/mw call sites of .raise_limits( (Run.raise_limits callers)
+    backend/mw/docking_batch_jobs.py:227  event = run.raise_limits(plan, by="human") if any(increase.values()) else None
+    backend/mw/ligand_ga_jobs.py:309  event = run.raise_limits(plan, by="human") if any(increase.values()) else None
+    backend/mw/sequence_ga_jobs.py:626  event = run.raise_limits(plan, by="human") if any(increase.values()) else None
+  
+  # backend/mw call sites of request_science( and run_send(
+    backend/mw/jev_sends.py:28  async run_send(run, gate, /, *, send_id, projection, body_sha256, confirm) -> jev_send@1
+    backend/mw/jev_sends.py:336  async def run_send(run: Any, gate: Any, /, *, send_id: Any = None, projection: Any = None, body_sha2
+    backend/mw/jev_sends.py:363  result = await gate.request_science(run, content, send_id, admit=admit)
+    backend/mw/egress/gate.py:192  async def request_science(self, run: Run, projection_content: Any, send_id: str, *,
+    backend/mw/egress/gate.py:197  return await request_science(self, run, projection_content, send_id, admit=admit)
+    backend/mw/egress/science.py:78  async def request_science(gate: G.EgressGate, run: Any, projection_content: Any, send_id: str, *,
+    backend/mw/api/app.py:2416  return await jev_sends.run_send(run, SCIENCE_GATE, send_id=body.send_id, projection=body.projection,
+  
+  # new loop modules: raise_limits/limit_approval strings, jev_sends imports
+    backend/mw/jev_loop_constants.py: raise_limits=False limit_approval=False imports_jev_sends=False
+    backend/mw/jev_loop_projection.py: raise_limits=False limit_approval=False imports_jev_sends=False
+    backend/mw/jev_loop_reports.py: raise_limits=False limit_approval=False imports_jev_sends=False
+    backend/mw/jev_loop_result.py: raise_limits=False limit_approval=False imports_jev_sends=False
+    backend/mw/jev_loop_store.py: raise_limits=False limit_approval=False imports_jev_sends=False
+    backend/mw/jev_loops.py: raise_limits=False limit_approval=False imports_jev_sends=False
+    backend/mw/tools/jev_loop.py: raise_limits=False limit_approval=False imports_jev_sends=False

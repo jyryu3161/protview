@@ -1077,3 +1077,117 @@ export interface JevProjectionSummary { kind: JevKind; source: string; selection
 export interface JevReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "jev_choice"; result_handle: string;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M25 JEV design loop (backend/mw/jev_loop_constants.py, jev_loops.py, jev_loop_store.py, tools/jev_loop.py,
+// jev_loop_projection.py, jev_sends.py loop branch, jev_loop_reports.py; `.dryforge/spec.md` 3-10). Loop routes are
+// under `/runs/{id}/jev_loops`; their errors are `{"detail": {error, reason_code, message, ...}}`. The preview, the
+// send and the send records are the M24 routes (a loop projection handle is accepted there).
+export type JevLoopBranch = "ligand" | "protein";
+export type JevLoopGoal = "explore" | "exploit";
+/** A pool candidate: the ligand candidate id ("c_" + 16 hex) or the mutation candidate `index` (never a name). */
+export type JevLoopRef = string | number;
+export type JevLoopCandidateState = "pending" | "scored" | "null_result" | "failed" | "not_run" | "unavailable";
+export type JevLoopEvaluation = "computed" | "reused";
+export type JevLoopStep = "ligand_dock" | "model" | "dock";
+export type JevLoopStepState = "waiting_start" | "running" | "completed" | "failed" | "unavailable" | "reused";
+export type JevLoopIterationState = "in_progress" | "scored" | "null_result" | "failed" | "not_run" | "unavailable";
+export type JevLoopPhase = "awaiting_selection" | "awaiting_compute" | "running" | "awaiting_docking" | "done";
+export type JevLoopAction = "select" | "compute" | "wait_job" | "dock" | "end" | "none";
+export type JevLoopDecidedBy = "jev" | "human";
+export type JevLoopExhaustedReason = "iteration_cap" | "pool_exhausted";
+export type JevLoopEndReason = "iteration_cap" | "pool_exhausted" | "ended_by_user" | "budget_exhausted" | "run_cancelled";
+export type JevLoopComputeAxis = "expensive_units" | "wall_clock_s";
+export type JevLoopSendAxis = "external_tokens" | "usd" | "sends";
+export type JevLoopAxis = JevLoopComputeAxis | JevLoopSendAxis;
+export type JevLoopQuestionId = "ligand_loop_choice@1" | "mutation_loop_choice@1";
+/** `loop_send_invalid` `detail.reason` (closed, in check order) and the preview's `loop_blocks`. */
+export type JevLoopSendReason = "loop_not_found" | "loop_ended" | "iteration_mismatch" | "selection_done" |
+  "phase_invalid" | "cap_reached" | "too_few_candidates" | "state_changed" | "ordinal_mismatch";
+/** Needs and remaining amounts of the next action (server values; tokens and USD only with a preview reservation). */
+export interface JevLoopAmounts { expensive_units: number; wall_clock_s: number; external_tokens: number | null;
+  usd: number | null; sends: number }
+export interface JevLoopCandidate { ref: JevLoopRef; display: JevLocalDisplay; state: JevLoopCandidateState;
+  evaluation: JevLoopEvaluation | null; score_kcal_mol: number | null; iteration: number | null }
+export interface JevLoopApproval { step: JevLoopStep; candidate_ref: JevLoopRef; decided_by: JevLoopDecidedBy;
+  proposal_handle: string | null; call_key: string }
+export interface JevLoopIterationSend { send_id: string; status: JevSendStatus; send_ordinal: number;
+  proposal_handle: string | null; late: boolean }
+export interface JevLoopStepRow { step: JevLoopStep; candidate_ref: JevLoopRef; job_id: string | null; call_key: string;
+  result_handle: string | null; state: JevLoopStepState; reason_code: string | null;
+  evaluation: JevLoopEvaluation | null }
+export interface JevLoopIteration { index: number; phase: JevLoopPhase; decided_by: JevLoopDecidedBy | null;
+  candidate_ref: JevLoopRef | null; proposal_handle: string | null; list_position: number | null;
+  list_size: number | null; approvals: JevLoopApproval[]; sends: JevLoopIterationSend[]; steps: JevLoopStepRow[];
+  state: JevLoopIterationState; score_kcal_mol: number | null }
+export interface JevLoopJob { job_id: string; step: JevLoopStep; status: string; start_blocked: "approval_required" | null }
+export interface JevLoopCurrent { iteration: number | null; phase: JevLoopPhase | null; step: JevLoopStep | null;
+  action: JevLoopAction; needs: JevLoopAmounts; remaining: JevLoopAmounts; blocked_axes: JevLoopComputeAxis[];
+  send_blocked_axes: JevLoopSendAxis[]; can_end: boolean; job: JevLoopJob | null }
+export interface JevLoopCounts { started: number; done: number; jev_decided: number; human_decided: number;
+  sends_dispatched: number; units_charged: number; reused_count: number }
+export interface JevLoopPool { source: { handle: string; schema: string };
+  structure: { handle: string; model_number: number } | null; filter: LigandFilterSpec | null;
+  candidates: { ref: JevLoopRef; display: JevLocalDisplay }[] }
+/** `jev_loop@1` (read-only, never stored): `GET /runs/{id}/jev_loops/{loop_id}` and every loop write's answer. */
+export interface JevLoopV1 { schema: "jev_loop@1"; loop_id: string; branch: JevLoopBranch; status: "active" | "ended";
+  end_reason: JevLoopEndReason | null; exhausted_reason: JevLoopExhaustedReason | null; goal: JevLoopGoal;
+  loop_seed: number; iteration_cap: number; effective_cap: number; pool: JevLoopPool; setup: Record<string, unknown>;
+  setup_sha256: string; pins: Record<string, unknown>; counts: JevLoopCounts; candidates: JevLoopCandidate[];
+  iterations: JevLoopIteration[]; current: JevLoopCurrent; result_handle: string | null; limitations: string[] }
+/** `GET /runs/{id}/jev_loops` row (newest first). */
+export interface JevLoopListRow { loop_id: string; branch: JevLoopBranch; status: "active" | "ended";
+  end_reason: JevLoopEndReason | null; goal: JevLoopGoal; pool_size: number; counts: JevLoopCounts; created_seq: number }
+/** `methods.jev_loop` of `/capabilities`: per branch, reasons only when unavailable. */
+export type JevLoopCapability = Record<JevLoopBranch, { available: boolean; reason_code: string | null;
+  reason: string | null }>;
+/** Ligand setup: the M22 shared M18 fields (free docking, no `ligand` / `mode`) and the candidate set's parent SDF. */
+export interface JevLoopLigandSetup extends Omit<DockingArgs, "ligand" | "mode"> { parent_sdf_handle: string }
+/** Protein setup: the 3D SDF ligand, the M18 box / free values / acknowledgements, the two M21 literals, the cutoff. */
+export interface JevLoopProteinSetup { ligand: { source: "sdf"; sdf_handle: string }; box: DockingSourceArgs["box"];
+  parameters: { seed: number; exhaustiveness: number; num_modes: number; energy_range: number };
+  selection_policy: "protein_only"; hydrogen_policy: "rebuild_pH7";
+  acknowledgement: Record<DockingAcknowledgementKey, true>; contact_cutoff_A: number }
+export interface JevLoopPoolArgs { source: string; candidates: string[] | number[]; filter: LigandFilterSpec | null }
+/** `POST /runs/{id}/jev_loops` body (closed keys, at most 16 KiB). */
+export interface JevLoopCreateRequest { loop_id: string; branch: JevLoopBranch; pool: JevLoopPoolArgs; goal: JevLoopGoal;
+  loop_seed: number; iteration_cap: number; setup: JevLoopLigandSetup | JevLoopProteinSetup }
+/** `POST .../compute`: a first step names exactly one of proposal or candidate; the docking step names neither. */
+export type JevLoopComputeRequest = { iteration: number } | { iteration: number; proposal: string } |
+  { iteration: number; candidate: JevLoopRef };
+export interface JevLoopAbandonRequest { iteration: number }
+/** `build_jev_loop_projection` arguments (everything else is read from the loop record by the server). */
+export interface JevLoopProjectionArgs { loop_id: string; iteration: number }
+/** Summary of a stored `jev_loop_projection@1` (the command envelope's `handle.summary`). */
+export interface JevLoopProjectionSummary { kind: JevKind; loop_id: string; iteration: number; send_ordinal: number;
+  selection_count: number; body_bytes: number; body_sha256: string }
+/** Local alias table of a loop projection (never sent); `unavailable` candidates are never listed. */
+export interface JevLoopSelectionItem { alias: string; ref: JevLoopRef;
+  state: Exclude<JevLoopCandidateState, "unavailable"> }
+export interface JevLoopSendLoopRef { loop_id: string; iteration: number; send_ordinal: number }
+/** The `jev_preview@1` of a loop projection: the M24 fields plus `loop` (send-side amounts) and `loop_blocks`. */
+export interface JevLoopPreviewV1 extends Omit<JevPreviewV1, "question" | "selection"> {
+  question: { id: JevLoopQuestionId; key: "candidate_choice"; type: "choice"; instructions: string;
+    instructions_sha256: string };
+  selection: JevLoopSelectionItem[];
+  loop: JevLoopSendLoopRef & { needs: JevLoopAmounts | null; remaining: JevLoopAmounts | null;
+    send_blocked_axes: JevLoopSendAxis[] | null };
+  loop_blocks: JevLoopSendReason[] }
+/** `jev_loop_choice@1`: a proposal, never a scientific result; the answer exactly as received. */
+export interface JevLoopChoiceV1 { schema: "jev_loop_choice@1"; method_version: "mw.jev_loop_choice/v1"; label: string;
+  scientific_result: false; loop: JevLoopSendLoopRef; goal: JevLoopGoal; send: { send_id: string; audit_id: string };
+  source: { handle: string; schema: string };
+  projection: { handle: string; wire_sha256: string; body_sha256: string; body_bytes: number };
+  question: { id: JevLoopQuestionId; key: "candidate_choice"; instructions_sha256: string };
+  requested_model: string; served_model: string; selection: JevLoopSelectionItem[];
+  answer: { choice_alias: string; list_position: number; list_size: number; local_ref: JevLocalRef;
+    local_display: JevLocalDisplay; confidence: number | null; probabilities: Record<string, number> | null };
+  usage: JevUsage | null; arrival: { late: boolean; late_reason: JevLateReason | null }; limitations: string[] }
+/** A loop send's `jev_send@1` record: the M24 fields plus `loop` (null when its projection does not read back). */
+export interface JevLoopSendRecord extends Omit<JevSendV1, "question_id"> { question_id: JevLoopQuestionId;
+  loop: JevLoopSendLoopRef | null }
+/** `GET /runs/{id}/jev/sends/{send_id}` of a loop send: the record plus its re-validated `jev_loop_choice@1`. */
+export interface JevLoopSendDetail extends JevLoopSendRecord { choice: JevLoopChoiceV1 | null;
+  local_display: JevLocalDisplay | null }
+export interface JevLoopReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "jev_loop"; result_handle: string;
+  snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }

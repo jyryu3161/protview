@@ -1,0 +1,48 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "main",
+  "run": "run_50add626cc254f9c92fda81d7d81351b",
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "handles": {
+    "raw": "obj://run_50add626cc254f9c92fda81d7d81351b/structure/7f82f5f51cb827a33c1a5ac988778d16a7807d7e09b82af6cd3ff4c72f1ae384",
+    "stoppedBeforeApproval": "exec_d56150228c7e40e9b5a5e9b6ade80777",
+    "inspectRaw": {
+      "plan": "obj://run_50add626cc254f9c92fda81d7d81351b/analysis_plan/c72deabec493bd7031e8710e1d4309a02ea2978e587faaf29d376848646f2d1a",
+      "execution": "exec_0fdaf094f7ff4245a8d596b720b94b18",
+      "summary": "obj://run_50add626cc254f9c92fda81d7d81351b/workflow_summary/41aa83d20b1de10ac87df7102fffb74da5e4e115f2a3b38e028280ea1eb1746b"
+    },
+    "prepared": "obj://run_50add626cc254f9c92fda81d7d81351b/prepared_structure/5ccf19de163c654998c146739acbc02bfadba371fb076e883a2beecd21a71403",
+    "displayedPrepared": "obj://run_50add626cc254f9c92fda81d7d81351b/prepared_structure/5ccf19de163c654998c146739acbc02bfadba371fb076e883a2beecd21a71403",
+    "inspectPrepared": {
+      "plan": "obj://run_50add626cc254f9c92fda81d7d81351b/analysis_plan/6a33d97edd31643f38599cfa8a63860ea5d88592ba1b03185729a34a87a047bc",
+      "execution": "exec_356ad4a75b234cf8b0746dbf7c211781",
+      "summary": "obj://run_50add626cc254f9c92fda81d7d81351b/workflow_summary/ac13d4d8956675b531c3a5a1b96ed1fbb4aee172fd07efdc44200c66ad4c9195"
+    },
+    "cavitiesMain": {
+      "plan": "obj://run_50add626cc254f9c92fda81d7d81351b/analysis_plan/60e13f5706b1cc1a3fa77bcc2f5acec8e2d4fa850e63be45065fa18f85bcbbb5",
+      "execution": "exec_67ec690cfddb482d9a688eaa0b2cade7"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_50add626cc254f9c92fda81d7d81351b",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-07T16:13:59.199Z",
+  "finishedAt": "2026-10-07T16:14:38.509Z",
+  "error": null
+}

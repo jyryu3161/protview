@@ -29,6 +29,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
            — 뷰어 의도·M3: 해당 run에서 온라인 모드를 명시적으로 켰을 때만 (VIEWER_GATE)
            — M24 과학 전송: 과학 전송 동의가 켜진 run에서 사람이 미리보기 본문을 승인했을 때만 (SCIENCE_GATE)
+             (M25 루프 투영도 같은 라우트·같은 게이트로만, 승인 이벤트 앞의 루프 검사를 더 통과해야 함)
 ```
 
 프런트엔드는 과학 값을 직접 계산하지 않는다. 화면의 모든 수치는 백엔드 handle을 읽어서 표시한다. 백엔드는 과학 계산의 유일한 실행자이고, 계산 경로는 동기 `Run.call`과 비동기 `JobQueue` 두 가지뿐이다.
@@ -77,6 +78,9 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `frontend/src/components/SiteAnnotationPanel.tsx` | M16 구조 분석 탭 메인 화면의 참조 주석 패널: 같은 구조의 대응·접촉 결과 선택, 주석 만들기·켜기, 범례, 부위 표, 보고서 만들기. Mol* 그리기는 MolstarViewer 브리지의 `siteAnnotation` | `src/lib/site-annotation.ts`, `api.ts`, MolstarViewer 브리지 |
 | `backend/mw/jev_constants.py`, `jev_projection.py`, `tools/jev.py` | M24 과학 전송의 닫힌 상수·질문·고정 문장(표준 라이브러리만), 순수 와이어 빌더·와이어 검사·이웃·구간 기하·본문 인코딩·`validated_projection`·`parse_choice`(numpy), 값싼 도구 `build_jev_projection`(사전 검사 훅 + `jev_projection@1` 저장) | core, `ligand_bundle`·`ligand_filters`(M17 검증 읽기·필터), `mutation_candidates`(M20 검증), tools(structural 파서) |
 | `backend/mw/jev_sends.py`, `jev_reports.py` | M24 과학 전송 동의·상태·미리보기, 승인 전송 `run_send`(진행 중 집합 `ACTIVE_SENDS`, 게이트 호출, 결과 기록), 이벤트에서 도출하는 전송 기록, 제안 객체 `jev_choice@1`과 검증, 보고서(계산값·모델 응답 분리, 보내지 않음). 게이트는 import하지 않고 라우트가 넘긴 인스턴스를 쓴다 | jev_constants, jev_projection, `ligand_bundle`·`mutation_candidates`, reports·`numbering_reports`, core |
+| `backend/mw/jev_loop_constants.py`, `jev_loop_projection.py`, `jev_loops.py`, `jev_loop_result.py` | M25 JEV 설계 루프의 순수 모듈: 닫힌 상수·질문 지시문·고정 문장(표준 라이브러리만), 섞기 `sha256_order_v1`·루프 와이어·본문·`parse_loop_choice`·제안 `jev_loop_choice@1`과 검증(M24 빌더·인코더를 바꾸지 않고 불러 씀), 이벤트·작업 기록·저장 결과 요약에서 `jev_loop@1`을 도출하는 `derive_loop`·입장 판정·작업 귀속 `job_owners`, 요약 `jev_loop_result@1` 만들기·검증. 저장소·로그·네트워크를 읽지 않는다 | jev_constants(`EVENT_*` 속성), jev_projection, `docking_constants`·`mutation_model_constants`, core |
+| `backend/mw/jev_loop_store.py`, `tools/jev_loop.py`, `jev_loop_reports.py` | M25 run을 읽고 쓰는 층: 한 번 읽기 보기(`LoopReadView`), 만들기 입장과 `jev_loop_created`, 단독 M18·M21 요청·호출 키, 저장 결과·제안 읽기, 계산 판정·`jev_loop_compute_approved`·도킹 포기·끝내기, `methods.jev_loop`, 값싼 도구 `build_jev_loop_projection`(사전 검사 훅 + `jev_loop_projection@1` 저장), 보고서 `jev_loop`. `jev_sends`·게이트를 import하지 않고 작업을 제출·시작하지 않는다(계산 시작 라우트가 `JobQueue`로) | 위 순수 모듈, `docking_batch_inputs`·`docking_bundle`·`mutation_model_bundle`·`ligand_bundle`(검증 읽기·입장), jobs(작업 기록 읽기), reports, core |
+| `frontend/src/components/JevLoopPanel.tsx` | M25 리간드 설계·탐색 탭(M22 GA 영역 다음)과 단백질 공학 탭(M23 서열 GA 영역 다음)의 "JEV 루프" 영역(갈래 prop): 동의, 만들기, 보낼 내용 만들기·미리보기·승인·전송, JEV 판정 카드, 계산 시작·직접 지정·도킹 시작·포기, 후보 표·바퀴 표, 끝내기·요약·보고서 | `src/lib/jev-loop.ts`, `src/lib/jev.ts`, `src/lib/docking.ts`, `api.ts`, `LigandPanel`의 `FilterForm`, `MutationModelPanel`의 `PairInputs` |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
 | `backend/mw/analysis_executions.py` | M13 실행 driver: 실행 기록 접기, 계획 승인·철회, 한 단계 진행, 재시도, 범위 한정 중지, 충돌 복구, `workflow_summary@1`. 과학은 `ExecutionLink`를 단 `Run.call`·`JobQueue`·기존 보고서 함수로만 실행 | analysis_plans, runtime, jobs, 보고서 모듈 |
@@ -127,11 +131,15 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간�
 
 지식·보고서 탭 JEV 영역에서 사용자가 이 run의 과학 전송 동의를 켜고(`POST /jev/consent`, 이벤트 하나, 뷰어 모드 불변), 게시된 M17 리간드 후보 집합 또는 M20 변이 후보 집합에서 후보를 최대 20개 고르면, 화면이 `POST /commands`로 값싼 도구 `build_jev_projection`을 부른다. 사전 검사 훅이 같은 run·게시·검증·선택·필터·구조를 검사하고, 구현이 저장 객체(변이는 전처리 구조 좌표에서 이웃·구간까지)로 허용 목록 와이어와 정확한 요청 본문의 바이트 수·SHA-256을 담은 `jev_projection@1`을 저장한다(외부 요청 없음). `POST /jev/preview`는 그 투영을 다시 검증해 보낼 본문 문자열·해시·예약값·차단 이유를 돌려주고(이벤트 없음), 사람이 확인을 체크하고 누르면 `POST /jev/sends`가 해시 일치·멱등·진행 중을 확인한 뒤 `SCIENCE_GATE.request_science`를 부른다. 게이트는 run 실행 잠금 안에서 승인 이벤트를 먼저 쓰고, 거절 검사 → 키 → 외부 토큰·USD 예약 → `prepared` 감사(승인한 본문 그대로) → dispatch를 기록한 뒤 OpenRouter에 한 번 보내고 기존 규칙으로 정산한다. 검증을 통과한 답은 제안 객체 `jev_choice@1`로 저장되고 모든 전송은 `jev_send_outcome`으로 끝난다. 전송 기록·늦은 응답·상한은 이벤트에서 다시 만들며, 보고서는 기존 `method_reports` 경로로 저장 객체·이벤트만 읽어 만든다. JEV의 선택은 어떤 작업·도구도 일으키지 않는다.
 
+## JEV 설계 루프 (M25)
+
+리간드 탭 또는 단백질 공학 탭의 JEV 루프 영역에서 사용자가 게시된 후보 집합 하나에서 풀(2–20)·목표·루프 seed·반복 상한·계산 조건을 정하면 `POST /jev_loops`가 입장 검사 뒤 `jev_loop_created` 하나를 쓴다. 루프 기록 `jev_loop@1`은 저장하지 않고 `GET /jev_loops/{loop_id}`가 이벤트 로그를 한 번 읽어 작업 기록·저장 결과·제안에서 도출한다. 바퀴마다 사람이 "보낼 내용 만들기"를 누르면 `POST /commands`의 `build_jev_loop_projection`이 루프 기록으로 전송마다 섞은 순서의 `jev_loop_projection@1`을 저장하고(외부 요청 없음), 미리보기·전송은 M24 `/jev/preview`·`/jev/sends` 그대로다(승인 콜백 안에서 루프 검사 뒤 승인 이벤트, 게이트는 스키마로 루프 검증·본문·응답 해석만 가름, 답은 `jev_loop_choice@1`). 사람이 JEV의 선택이나 직접 지정한 후보로 `POST /jev_loops/{loop_id}/compute`를 누르면 라우트가 run 실행 잠금 안에서 `jev_loop_compute_approved`를 쓰고 단독 M18(리간드)·M21(단백질 모델링) 작업과 같은 인자·호출 키의 작업을 `JobQueue`에 제출한 뒤, 잠금을 놓고 기존 시작 라우트처럼 시작한다(첫 비싼 계산 승인은 기존 `/jobs/approve`). 단백질은 모델이 게시되면 사람이 같은 라우트로 변이 구조 도킹을 시작하거나 `abandon_docking`으로 포기한다. 작업은 기존 큐·guardian·작업 모듈이 돌리고 루프는 그 기록을 읽기만 한다. `POST /jev_loops/{loop_id}/end`가 요약 `jev_loop_result@1`을 저장한 뒤 `jev_loop_ended`를 쓰고, 보고서는 기존 `method_reports` 경로(`analysis_type: "jev_loop"`)다. 백그라운드·자동 다음 바퀴·자동 계산 시작은 없고 새 한도 증액 경로도 없다.
+
 ## 외부 경계
 
-- 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다. M24 과학 전송은 과학 전송 동의가 켜진 run에서 사람이 승인한 투영 본문 하나씩만 간다: 리간드 후보(정규 SMILES, RDKit 추정 속성, PAINS 일치, 생성 방식 종류) 또는 변이 후보(잔기 7필드, 서열 구간 앞뒤 5개, 5.0 Å 이웃 잔기 이름, 리간드까지 거리, 보호 검사 상태, 포켓 요약), 고정 질문. 서열 구간·이웃 잔기 이름으로 단백질이 알려질 수 있다.
-- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, 로컬 경로, handle, run ID, 후보 id, 자격 증명, 이전 대화.
-- 정책(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 실제로 보내는 과학 데이터는 M24의 두 투영뿐이며, 새 종류는 게이트 투영·미리보기·예산·감사를 함께 만들어야 보낸다. 자격 증명은 계속 전송 금지다.
+- 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다. M24 과학 전송은 과학 전송 동의가 켜진 run에서 사람이 승인한 투영 본문 하나씩만 간다: 리간드 후보(정규 SMILES, RDKit 추정 속성, PAINS 일치, 생성 방식 종류) 또는 변이 후보(잔기 7필드, 서열 구간 앞뒤 5개, 5.0 Å 이웃 잔기 이름, 리간드까지 거리, 보호 검사 상태, 포켓 요약), 고정 질문. M25 루프 전송은 같은 경로로 같은 종류의 후보 필드에 목표(`goal`)·계산된 후보 표시(`computed`, 활용형만 저장된 qvina 점수)·목표별 지시문을 더하고 후보 순서·별칭을 전송마다 섞는다. 서열 구간·이웃 잔기 이름으로 단백질이 알려질 수 있다.
+- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, 로컬 경로, handle, run ID, 후보 id, 루프 ID·루프 seed·바퀴 번호, 자격 증명, 이전 대화.
+- 정책(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 실제로 보내는 과학 데이터는 M24의 두 투영과 M25의 두 루프 투영뿐이며, 새 종류는 게이트 투영·미리보기·예산·감사를 함께 만들어야 보낸다. 자격 증명은 계속 전송 금지다.
 - 브라우저의 글꼴·스크립트·Mol* 자산·예시 구조는 모두 로컬 번들이다. 오프스크린 QA는 loopback이 아닌 요청을 전부 차단하고 기록한다.
 - 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)에만 네트워크가 필요하다. 실행 중에는 다운로드하지 않는다. 참조 스냅샷 가져오기도 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
 

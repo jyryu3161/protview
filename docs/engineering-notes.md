@@ -296,7 +296,7 @@
 - `GET /docking/batches`·`/detail`·`GET /jobs`(일괄 작업의 `batch` 필드)는 요약을 읽을 때마다 단일 게시, 일괄 선택 기록, 모든 행 결과(`validated_result`, 행마다 이벤트 로그 재파싱)를 다시 검증한다. 입장·시작 전 확인도 행마다 M18 입장 검사(수용체 바이트 gemmi 파싱 포함)를 한다. 51행 일괄이 여러 개인 run에서는 목록·폴링이 눈에 띄게 느려질 수 있다(정확성 문제는 아님, `docs/tracking/findings.md`).
 
 ### Stop 훅 그룹과 M11 handshake 수 테스트 (M19)
-- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`, 그때 다섯 그룹). M23 뒤 그룹을 열넷으로 다시 나눴다(아래 "Stop 훅 그룹 시간과 그룹 나눔"). 지금 그룹 목록은 `.codex/hooks/stop.py`의 `PYTEST_GROUPS`(열셋)이고, 마지막 나머지 그룹은 `backend/tests`에서 거기 적힌 파일을 `--ignore`로 뺀 것(목록은 자동으로 만듦)과 실행기 테스트 `SCRIPT_TESTS`다. `scripts/test_codex_hooks.py`는 `--collect-only` 없이 모든 `backend/tests/test_*.py`·`scripts/test_*.py`가 정확히 한 그룹에 들어 있는지, 테스트 단위로 나눈 파일은 모듈 수준 테스트 이름이 정확히 한 번씩 적혔는지 검사한다. 그래서 새 실행기 테스트 파일을 `SCRIPT_TESTS`에 넣지 않거나 나눈 파일에 테스트를 더하고 적지 않으면 이 테스트가 실패한다. 그룹 수를 바꾸면 같은 파일의 그룹 수 기대도 고친다. 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침, `8a327c8`).
+- 일괄 작업 모듈 테스트가 실제 qvina를 돌려 나머지 그룹이 480초 제한을 넘었다. 일괄 테스트 일곱 파일을 별도 그룹으로 나눴다(`b8fafd5`, 그때 다섯 그룹). M23 뒤 그룹을 열넷으로 다시 나눴고 M25에서 열여섯이 되었다(아래 "Stop 훅 그룹 시간과 그룹 나눔", "무거운 루프 테스트가 나머지 그룹을 480초 넘게 했다"). 지금 그룹 목록은 `.codex/hooks/stop.py`의 `PYTEST_GROUPS`(열다섯)이고, 마지막 나머지 그룹은 `backend/tests`에서 거기 적힌 파일을 `--ignore`로 뺀 것(목록은 자동으로 만듦)과 실행기 테스트 `SCRIPT_TESTS`다. `scripts/test_codex_hooks.py`는 `--collect-only` 없이 모든 `backend/tests/test_*.py`·`scripts/test_*.py`가 정확히 한 그룹에 들어 있는지, 테스트 단위로 나눈 파일은 모듈 수준 테스트 이름이 정확히 한 번씩 적혔는지 검사한다. 그래서 새 실행기 테스트 파일을 `SCRIPT_TESTS`에 넣지 않거나 나눈 파일에 테스트를 더하고 적지 않으면 이 테스트가 실패한다. 그룹 수를 바꾸면 같은 파일의 그룹 수 기대도 고친다. 실행기 스레드 수는 그룹 수(`len(CHECKS) - 1`)와 같아 모든 그룹이 동시에 돈다(M19 마무리 때 `max_workers=4`를 고침, `8a327c8`).
 - `/capabilities`가 M17·M18·M19 작업 모듈 handshake까지 실행하므로, `test_m11_job_api.py`의 handshake 캐시 테스트를 그룹 단독으로 돌리면 다른 작업 모듈 실행도 셌다. 테스트가 화학 작업 모듈 argv만 세도록 좁혔다(`b2c6436`). capability에 handshake를 더하는 단계는 subprocess 수를 세는 기존 테스트를 확인한다.
 
 ### 사전 검사 훅의 store로도 게시 확인 읽기를 할 수 있다 (M20)
@@ -502,6 +502,66 @@
 - M24 실호출 6회(2026-10-06, 응답 모델 모두 `typesafe/jev-1.13-20260917`, 모두 `completed`)의 본문 바이트/입력 토큰: 리간드 1.63–1.70(5개 3,539 B → 2,087 토큰, 10개 5,607 B → 3,433 토큰), 변이 1.71–1.79(1UBQ 5개 7,030 B → 3,921, 1UBQ 20개 25,428 B → 14,619, 1MQ4 20개 29,151 B → 17,011 두 번). M8 뷰어형 JSON은 약 2.24였다. 출력 65–200 토큰, 비용 호출당 약 0.00009–0.00071 USD였다.
 - 예약식 `min(50000, 4096 + ceil(body_bytes × 2 / 3))`은 1.5 B/토큰을 가정해 모든 실측 사용량보다 컸다(예: 3,539 B 본문 예약 6,456 대 사용 2,152. 같은 본문의 첫 식 `4096 + ceil(body_bytes / 2)`는 5,866이었다). 식은 조정 가능한 기본값이므로 바꿀 때는 이 실측과 대조한다. 예약이 사용량보다 작으면 기존 규칙대로 그 run의 모든 온라인 전송이 `budget_exhausted`로 멈춘다.
 - 여섯 응답 모두 `confidence`와 보낸 후보 수만큼의 `probabilities`를 담았고, 모두 첫 별칭(`c01`·`m01`)을 골랐다(같은 본문 재전송 포함, J4 참고).
+- M25 루프 실호출 8회(2026-10-07, 모두 `completed`, 응답 모델 `typesafe/jev-1.13-20260917`)의 본문 바이트/입력 토큰은 리간드 1.79–1.85(3,855–4,257 B → 2,154–2,302 토큰), 1UBQ 변이 1.91(7,900–7,963 B → 4,146–4,175 토큰)이었고 사용 토큰은 예약의 0.33–0.45배였다. 첫 호출 보정에서 예약식을 바꿀 필요가 없었다.
+
+### 작업 큐는 같은 호출 키의 기존 작업을 상태와 무관하게 돌려준다 (M25)
+- **증상**: 루프가 승인한 작업을 시작 전에 취소한 뒤 같은 후보로 다시 계산을 시작해도 새 작업이 생기지 않는다. 다른 `timeout_s`로 다시 제출해도 같은 `job_id`이고 첫 `timeout_s`가 남는다.
+- **원인**: `JobQueue.submit`은 같은 호출 키의 작업이 있으면 상태(`cancelled`·`failed`·`queued`·`done` 등)와 무관하게 그 작업을 돌려주고, M18·M21 호출 키에는 `timeout_s`가 들어가지 않는다. 시작 전 취소는 `cancelled`(무과금)이고 `retry`는 `failed`·`interrupted`만 받는다(착수 확인 (a)·(l), `docs/qa/m25-jev-loop-20261007/preflight.txt`).
+- **대응**: 루프는 시작 전에 취소·종료된 단계를 `unavailable`로 읽고(그 후보는 이 run에서 다시 계산할 수 없음, 사용자 결정. 새 run에서는 된다) 자기 작업이든 남의 작업이든 시작·재시도·취소하지 않는다. 루프 밖의 쓸 수 없는 같은 키 작업은 `candidate_unavailable`, 후보 상태를 읽은 뒤 경합으로 나타나면 `step_unavailable`(승인 이벤트 직전에 큐를 다시 봄)이다. 화면은 승인 대기 작업을 취소하기 전에 이 결과를 안내한다.
+
+### 프로세스가 떴는지는 `budget_reserved.root_call_id`로만 가린다 (M25)
+- **증상**: `job_terminal`의 `attempt_id`나 종료 상태 이름으로 판정하면 예약 직후·dispatch 전 취소가 "시작 전"으로 읽혀 과금 단위와 바퀴 셈이 어긋난다.
+- **원인**: 비싼 계산 예약 이벤트는 `budget_reserved{attempt_id, root_call_id=<job_id>, tool, expensive_calls: 1}`이고 `job_id` 필드가 없다. 예약 뒤 dispatch 전에 취소된 작업은 과금 1·프로세스 없음으로 끝난다.
+- **대응**: 단계 상태·바퀴 시작·`units_charged`·요약 검증 모두 그 작업의 마지막 대기열 표시 뒤 `budget_reserved.root_call_id == job_id`가 있느냐 하나로 가른다(해석 N3). 있으면 실패해도 `failed`(과금, 바퀴 시작), 없으면 `unavailable`(무과금)이다.
+
+### 첫 계산 승인 대기와 예산 막힘은 같은 작업 표시다 (M25)
+- 시작이 막힌 작업은 두 경우 모두 `claimed` + `blocked_reason: "approval_or_cancel"`이다. 루프는 run의 첫 계산 승인 요청(`approval_requested`, gate `expensive_first_call`)이 아직 풀리지 않았는지로 `current.job.start_blocked: "approval_required"`를 가린다. 그 상태에서 서버가 다시 시작되면 복구가 무과금 `interrupted`로 닫으므로 그 단계는 `unavailable`이다.
+
+### M21에는 호출 키 → 모델 handle 색인이 없다 (M25)
+- M18에는 `docking_batch_inputs.published_m18_results`(호출 키 → 결과 handle, 단독·M19 행·M22 개체)가 있지만 M21에는 없다. 루프는 `jev_loop_store.model_index`가 같은 이벤트 스냅숏의 `job_submitted`(M21 프로토콜 작업의 호출 키)와 `job_terminal(done)`의 `output_handles[0]`을 이어 만들고, 그 handle을 `mutation_model_bundle.validated_result`와 입력 대조로 다시 검증한 것만 저장 모델로 친다. 변이 쪽 도킹 호출 키는 모델 handle이 들어가므로 모델이 검증되기 전에는 없다.
+
+### 전이 잠금 안에서 `submit`하면 같은 스레드가 교착한다 (M25)
+- **증상**: 승인 이벤트와 작업 제출을 `Run._transition()` 안에서 하면 응답이 돌아오지 않는다. 실행 잠금을 쥔 채 `JobQueue.start`를 부르면 busy다.
+- **원인**: `_transition`은 `threading.Lock` + `flock`이라 재진입하지 않고 `submit`이 스스로 전이 잠금을 잡는다. `start`는 작업이 도는 동안 run 실행 소유권(`_owner`)을 쥐고 소유권도 재진입하지 않는다(착수 확인 (e)).
+- **대응**: 계산 라우트는 실행 잠금 안에서 루프 판정 → 작업 입장 검사 → 승인 이벤트(짧은 전이 잠금 안, 같은 키 작업·취소 재확인) → `submit`(전이 잠금 밖)을 하고, 실행 잠금을 놓은 뒤 기존 시작 라우트처럼 `start`를 부른다. 응답은 작업이 끝날 때까지 기다리고(기존 시작 라우트와 같은 성질) 읽기는 잠금 없이 계속된다. 다른 요청이 잠금을 쥐고 있으면 아무것도 쓰거나 시작하지 않는 답(거절, 시작이 필요 없는 멱등 답)만 잠금 없이 주고 나머지는 503 `busy`다.
+
+### 작업은 승인과 제출 사이에 끼어든 이벤트가 없을 때만 그 단계의 것이다 (M25)
+- **증상**: T11 검토에서, 제출이 사라진 승인 뒤에 같은 요청의 루프 밖 작업이 생기면 그 작업이 루프 단계로 읽혀 끝난 바퀴가 다시 `running`이 되거나 기록·목록·끝내기가 500이 되는 경우를 찾았다.
+- **원인**: "같은 호출 키의 가장 가까운 앞 승인"만으로 귀속하면 루프 밖 작업과 구분할 수 없다.
+- **대응**: `jev_loops.job_owners` 하나가 모든 루프 읽기와 M21 짝 표의 귀속을 정한다: 사이에 어느 루프의 `jev_loop_*` 이벤트나 M24 과학 전송 이벤트(`J.EVENT_APPROVED`·`EVENT_DISPATCH`·`EVENT_OUTCOME`, 실행 잠금 보유자만 씀)가 있으면 끊기고, 단위 0 승인(저장 결과 채택)은 작업을 소유하지 않는다(`490cfc7`·`43a3e5d`). 계산 라우트는 승인과 제출을 한 번의 실행 잠금 안에서 하므로 자기 작업은 늘 귀속된다. 귀속되지 않은 같은 키 작업은 루프 밖이며 그 단계는 제출이 사라진 `unavailable`이다.
+
+### 끝난 루프의 기록은 끝 이벤트 시점으로 동결해서 읽는다 (M25)
+- 끝난 뒤 루프 밖에서 같은 키의 결과가 생기면 지금 로그로 도출한 후보 상태·`counts`·LJ8이 저장 요약과 달라져 요약 검증이 실패한다. 그래서 끝난 루프는 `jev_loop_ended`까지의 이벤트로 다시 도출하고 저장 요약이 그 도출과 정확히 같아야 한다(`8079024`). 지금 값은 `current.remaining`과 쓰기 거절 입력(run 취소 이벤트, 진행 중 전송)뿐이라 끝난 루프에도 쓰기 라우트는 `cancelled`를 `loop_ended`보다 먼저 답한다. 요약 저장과 끝 이벤트 사이에 멈추면 루프는 끝나지 않았고 다음 `end`가 같은 handle로 이벤트만 쓴다.
+
+### 루프 제안은 자기 전송에만 맞고, 늦은 응답은 이벤트 순서로만 가린다 (M25)
+- 저장된 `jev_loop_choice@1`은 내용만으로는 어느 전송의 응답인지 보증되지 않는다. 기록·전송 상세·요약·보고서는 `jev_loops.proposal_matches_send`로 그 전송의 첫 결과 이벤트가 이 handle·`audit_id`를 가리키는 `completed`이고 첫 승인이 이 투영·본문 해시이며 `arrival`이 이벤트 순서 판정과 같을 때만 제안으로 센다(`853a43c`). 늦음은 M24처럼 dispatch 뒤 취소·동의 끄기 이벤트로만 판정하고(시계·메모리 플래그 없음), 늦은 제안은 저장되지만 바퀴의 선택이 아니다(계산 시작에 넘기면 `proposal_late`).
+
+### 루프 전송 검사는 승인 콜백이 받은 이벤트 목록만 쓴다 (M25)
+- 루프 전송 검사는 게이트의 실행 잠금·전이 잠금 아래 승인 콜백에서 돈다. 로그를 다시 읽거나 잠금을 다시 잡으면 교착하거나 다른 스냅숏을 본다. 그래서 `jev_loop_store.loop_send_check`는 콜백이 받은 이벤트 목록으로 만든 `LoopReadView`만 쓰고, 프로세스 메모리의 전송 진행 여부는 `app.py`가 `jev_sends.send_active` 값을 넘긴다. 거절(409 `loop_send_invalid`)은 승인 이벤트 앞이라 감사·예약·키 읽기가 없지만 게이트가 끝에 남기는 `wall_charged`는 남을 수 있다. 같은 `send_id`의 재생(`_replayed`)이 루프 검사보다 먼저라 두 번 눌러도 한 전송이다. `send_ordinal`은 이 바퀴의 dispatch 수라 실패한 전송 뒤에는 투영을 다시 만들어야 하고(`ordinal_mismatch`), 투영 뒤 계산 상태가 바뀌면 `state_changed`다.
+
+### `jev_loop_*` 이벤트는 예산·egress 정산·재생에 영향이 없다 (M25)
+- `core/events.py` `EventType`은 타입 표기(`Literal`)뿐이고 `jev_loop_compute_approved`의 `units`·`call_key`를 읽는 기존 접기가 없다. 착수 확인 (g)에서 루프 이벤트 넷을 끼운 run과 안 끼운 run의 예산·egress 멈춤·작업 상태·재사용 색인·전송 기록·재열기·GET 25개 상태 코드가 모두 같았다. 승인 이벤트는 예산 이벤트가 아니고 비싼 계산 과금은 기존 작업 예약(`budget_reserved`)으로만 생긴다.
+
+### 루프 서버 모듈은 `jev_sends`를 import하지 않는다 (M25)
+- `egress/science.py`가 `jev_sends`를 import하므로 루프 모듈이 `jev_sends`를 import하면 순환이 생기고 `test_jev_ast.py`의 `jev_sends` 임포터 집합(`api/app.py`·`egress/science.py`·`jev_reports.py`)이 깨진다. 전송 수·늦음·동의 같은 이벤트 도출은 `jev_loops`에 순수 함수로 다시 쓰고 M24 함수와 같은 결과임을 대조 테스트로 확인한다. M24 이벤트 이름은 `jev_constants`의 `EVENT_*` 속성으로만 가리킨다(이름 문자열의 위치는 `jev_constants.py`·`core/events.py`로 고정). 반대 방향(`jev_sends`·`egress/science.py`·`mutation_model_reads.py`가 루프 모듈을 import)은 허용이다. 루프 모듈도 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다.
+
+### 1MQ4는 M7 사전 검사를 통과하지 못해 단백질 루프를 만들 수 없다 (M25)
+- 1MQ4 집합은 M21 입장 1–7을 통과하지만 제출 때 M7 사전 검사에서 422 `openmm_preflight_failed`가 난다. 루프 만들기는 이 사전 검사까지 서버 쪽 입장으로 보아 `setup_invalid`/`setup_reason: "openmm_preflight_failed"`로 거절한다(해석 N1, 수락 사례 `P-create-refused`). 로컬 공개 구조 중 M7을 통과하는 것은 1UBQ뿐이라 단백질 루프의 QA·실호출은 1UBQ 풀로 했다(M21 기록과 같음).
+
+### M24 오프스크린 하네스의 다른 탭 검사가 `jev-` 선택자로 루프 영역을 셌다 (M25)
+- **증상**: 고정 소스(`4360598`)에서 M24 회귀의 fixture 단계가 실패했다: `jev-flow.cjs`의 F01이 단백질 공학 탭 `jev-` 요소 41개·리간드 설계·탐색 탭 35개를 0이어야 한다고 거절했고, 연습 단계의 P-other-tabs는 탭 글자 서명에서 루프 영역의 동의 줄이 달라 거절했다(`docs/qa/m25-jev-loop-20261007/regression-harness-changes.txt`).
+- **원인**: M24 하네스가 다른 탭의 `[data-testid^="jev-"]`를 모두 세고 탭 전체 글자를 비교했는데, M25 루프 영역의 `data-testid`도 `jev-loop-` 접두사다.
+- **대응**: `tabSignature`만 고쳤다(`9a9a625`): 글자 서명에서 `[data-testid="jev-loop-panel"]` 하위 트리를 빼고, M24 요소 수를 `[data-testid^="jev-"]:not([data-testid^="jev-loop-"])`로 센다. 다른 단언·실행기는 그대로다. 새 영역에 `jev-` 접두사를 쓰면 이 선택자 결합을 함께 확인한다.
+
+### 오프스크린 루프 fixture 서버도 모듈 전역 `SCIENCE_GATE`를 바꾼다 (M25)
+- `backend/tests/offscreen_jev_loop_fixture/server.py`는 M24 fixture 서버와 같은 방식으로 제품 앱의 `SCIENCE_GATE`를 스크립트된 `httpx.MockTransport` 게이트(sentinel placeholder 자격 증명)로, `VIEWER_GATE`와 기본 인자로 만드는 게이트를 거절하고 `.env`를 읽지 않는 게이트로 바꾼다. 스크립트는 `good`·`good_second`(두 번째 `criteria` 키, 목록 위치 2/m)·`computed_alias`·`http_500`·`slow`·`no_usage`·`model_mismatch`이고 `calls.jsonl`·`credentials.json`에는 본문 SHA-256·바이트·개수·불리언만 남는다(본문·헤더 값·자격 증명 없음). 수락 실행기는 `server.json`의 pid가 방금 띄운 pid이고 8000 포트의 유일한 리스너일 때만 하네스를 띄우고(하네스도 `--backend-pid`로 확인), 연습(`--rehearse`)은 제품 백엔드를 띄우지 않는다. QA run은 `offscreen_jev_loop_fixture/qa_setup.py`가 loopback API로 만든다.
+
+### 무거운 루프 테스트가 나머지 그룹을 480초 넘게 했다 (M25)
+- **증상**: 루프 API·읽기·도구·제안·전송 테스트(실제 엔진, 약 175초)가 이름 없는 나머지 그룹에 들어가자 Stop 훅이 480초 시간 초과를 보고했다.
+- **대응**: 그 다섯 파일(`test_jev_loops_read.py`·`test_jev_loop_sends.py`·`test_jev_loop_tool.py`·`test_jev_loop_choice.py`·`test_jev_loops_api.py`)을 열넷째 이름 있는 그룹으로(`b0d0f96`), `test_jev_loops_compute.py`를 열다섯째로(`da37288`) 나눴다(`PYTEST_GROUPS` 열다섯 + 나머지 = 열여섯 그룹, `CHECKS` 17, `scripts/test_codex_hooks.py`의 기대 17). M25 고정 게이트에서 두 그룹은 175초·224초, 가장 긴 그룹은 나머지 그룹 398초였다(`docs/qa/m25-jev-loop-20261007/gate-backend.txt`).
+
+### Stop 훅 동시 실행 중의 간헐 실패 셋 (M25 기간, 환경·우연)
+- 그룹을 동시에 돌릴 때 한 번씩 실패하고 따로 돌리면 통과한 테스트가 셋 있었다: 부하 때 psutil `proc_cmdline`의 `SystemError`(`test_sequence_ga_worker`), M23 SIGTERM 타이밍 테스트, M24 `test_jev_reports.py`의 `'0.1234' not in dumped`가 보고서의 `time_utc` 숫자와 우연히 겹친 경우. 제품 동작과 무관하며 고정 게이트(`gate-backend.txt`)에서는 재현되지 않았다. 기록은 `docs/tracking/findings.md`.
 
 ## 동작 원리
 
@@ -547,6 +607,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 ### JEV 과학 전송 경로 (M24)
 투영은 값싼 도구다: `POST /commands`의 `build_jev_projection`이 `Run.call`에서 사전 검사 훅(`tools/jev.precheck`)으로 입장 여덟 단계를 구현보다 먼저 하고 정규화 인자(저장 순서 후보, 정규화 필터)만 호출 키로 돌려준다. 구현은 같은 읽기를 반복해 순수 모듈 `jev_projection`(표준 라이브러리 + numpy, 저장 객체 내용과 파싱한 구조만 받음)으로 와이어를 만들고 `check_wire` → 본문 인코딩·64 KiB 확인 → 저장 형태 `validated_projection`을 통과할 때만 `jev_projection@1`을 저장한다. 미리보기(`jev_sends.preview_for`)는 저장 투영을 다시 검증하고 같은 `projection_body`로 본문 문자열·해시를 만든다(이벤트 없음). 전송 라우트는 요청·투영·해시·멱등·진행 중을 이벤트 없이 확인한 뒤 `ACTIVE_SENDS`에 넣고 `SCIENCE_GATE.request_science`(`egress/science.py`)를 부른다. 게이트는 run 실행 잠금 + 전이 잠금 안에서 승인 콜백 → 승인 대조 → 거절 검사 → 키 → 예약 → `prepared` → 재확인 → `dispatch_started`·`jev_science_dispatch_started`를 쓰고, 전이 잠금 밖에서 기존 `_http_request`로 한 번 보낸 뒤 기존 정산을 하고 `parse_choice`로 답을 검증한다. 결과는 `_finish`가 전이 잠금 안에서 쓴다(완료면 제안 객체를 `validated_choice` 통과 뒤 저장하고, 모든 경우 `jev_send_outcome`). 기록·늦음·상한은 모두 이벤트에서 다시 만든다(`list_sends`, `send_record`, `late_arrival`, `dispatch_count`). 보고서(`jev_reports.py`)는 제안·투영·소스 집합을 다시 검증하고 전송 이벤트 사슬과 대조하며 아무것도 보내지 않는다.
 
+### JEV 설계 루프 경로 (M25)
+루프 기록은 저장하지 않는다. `jev_loop_store`가 이벤트 로그를 한 번 읽은 `LoopReadView` 하나로 만들기 이벤트(`jev_loops.parse_created`), 작업 기록(`JobQueue(view)`), 단독 M18·M21 요청 빌더와 만들 때의 pin으로 낸 후보별 호출 키, 저장 결과(`published_m18_results`·`model_index` → `validated_result` + 입력 대조), 루프 제안(`validated_loop_choice` + `proposal_matches_send`), 남은 예산을 모아 순수 함수 `jev_loops.derive_loop`에 넘기고, 나온 `jev_loop@1`을 `validated_loop_record`로 검사한다(읽기는 아무것도 쓰지 않음). 만들기는 실행 잠금 안에서 입장 검사 뒤 `jev_loop_created` 하나를 쓴다. 투영은 값싼 도구다: `build_jev_loop_projection`의 사전 검사 훅이 루프 기록에서 선택 거절(`jev_loops.selection_refusal`)·소스·구조·와이어를 보고 기록 입력을 `bound`로 고정하며, 구현은 수정하지 않은 M24 빌더의 출력을 `jev_loop_projection`이 섞은 순서로 다시 늘어놓고 별칭·`goal`·`computed`·`values_note`를 더해 `validated_loop_projection`을 통과할 때만 저장한다. 미리보기·전송은 M24 라우트 그대로이고 `jev_sends`가 `jev_loop_projection@1`을 받아(`accept_loop`) 미리보기에 `loop`·`loop_blocks`를 더하며, 전송은 승인 콜백 안에서 `jev_loop_store.loop_send_check` 뒤 승인 이벤트를 쓰고 게이트(`egress/science.py`)가 스키마로 루프 검증·본문·`parse_loop_choice`를 고른다. `_finish`는 루프 투영의 답을 `jev_loop_choice@1`로 만들어 검증한 뒤 저장한다. 계산 시작 라우트(`app.py`)는 실행 잠금 안에서 `compute_decision`(거절·멱등·승인) → `step_job`(단독 M18·M21 작업 입장, 호출 키가 승인과 같은지 확인) → `write_approval`(전이 잠금 안 재확인 뒤 `jev_loop_compute_approved`) → `JobQueue.submit`을 하고 잠금을 놓은 뒤 `JobQueue.start`를 부른다. 작업은 기존 큐·guardian·작업 모듈이 그대로 돌리고 루프는 그 기록을 읽기만 한다(단계 결과 = 승인 뒤 그 작업이 처음 맞은 상태 변화, 귀속은 `job_owners`). 도킹 포기는 이벤트 하나, 끝내기는 실행 잠금 + 전이 잠금 안에서 기록을 다시 읽어 `jev_loop_result.build_loop_result` → `validated_loop_result` → 저장 → `jev_loop_ended`다. 보고서(`jev_loop_reports.py`)는 요약을 `stored_result`로 확인하고 끝 이벤트 시점의 저장 M18 결과·제안과 대조하며 아무것도 계산·전송하지 않는다. M21 짝 읽기는 `job_owners`로 루프 도킹 짝에 `loop` 키만 더한다.
+
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
 
@@ -563,7 +626,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 8. 참조 데이터를 읽는 도구(M15 번호 대응 등)는 호출 시작 때 참조 세트를 고정하고, 그 세트 해시를 호출 키에 넣고(사전 검사 훅의 `key_fields`), 결과 객체에 세트 해시와 계산에 쓴 참조 행을 담아 참조 폴더 없이 다시 열리게 한다. 참조 값과 계산 값은 보고서에서 다른 증거 종류로 둔다.
 9. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
 10. 기존 결과를 여러 개 묶는 작업(M19 일괄 등)은 행 계산을 복제하지 않고 기존 작업 모듈 함수를 불러 쓰며, 행 결과가 단독 실행과 같은 handle인지 실제 엔진으로 바이트 비교한다. 900초보다 긴 작업 시간 한도가 필요하면 `JobQueue.submit`과 API `JobSubmit.timeout_s` 두 곳을 그 프로토콜에만 넓힌다. 작업 하나가 결과 여러 개를 내면 게시 증거 이벤트·재사용 색인·`producer()`·보고서 입력 검사가 그 결과를 받아들이는지, 시도 1회·예약 단위·환불 없음이 재생과 맞는지 확인한다. 검증: 실제 엔진 테스트, events-only 복구, 기존 프로토콜 테스트 전부.
-11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
+11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳, M25도 같은 네 파일·`report-library.test.cjs`와 Stop 훅 그룹 수 기대(`scripts/test_codex_hooks.py`)를 고쳤다): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
 
 ### UI 컨트롤 변경
 1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.
@@ -573,7 +636,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 5. 실패한 실행은 지우지 말고 회귀 증거로 남긴다.
 
 ### 제품의 실제 OpenRouter 호출이 필요할 때
-1. 사용자에게 필요한 횟수와 이유를 말하고 한도를 받는다. M8 4회와 M24 6회 할당은 모두 썼다.
-2. 전용 QA run에서 뷰어 요청이면 온라인 모드와 뷰어 동의를, M24 과학 전송이면 과학 전송 동의를 켠다(서로 권한을 주지 않음). 과학 전송은 `scripts/m24_offscreen_acceptance.py`의 calibrate·live 단계로만 하고 저장소 대장(`runs/m24-live-ledger.json`)이 합계를 막는다. 먼저 키 존재를 불리언으로만 확인한다(`.env` 내용은 열지 않음).
+1. 사용자에게 필요한 횟수와 이유를 말하고 한도를 받는다. M8 4회, M24 6회, M25 8회 할당은 모두 썼다.
+2. 전용 QA run에서 뷰어 요청이면 온라인 모드와 뷰어 동의를, 과학 전송(M24 수동·M25 루프)이면 과학 전송 동의를 켠다(서로 권한을 주지 않음). 과학 전송은 그 단계 수락 실행기의 calibrate·live 단계로만 하고(M24 `scripts/m24_offscreen_acceptance.py`, M25 `scripts/m25_offscreen_acceptance.py`) 저장소 대장(`runs/m24-live-ledger.json`·`runs/m25-live-ledger.json`, 서로 읽지 않음)이 합계를 막는다. 리간드·단백질처럼 비싼 계산 단위를 함께 쓰는 실호출은 run을 나눈다(M25: 리간드 run 5회, 단백질 run 3회). 먼저 키 존재를 불리언으로만 확인한다(`.env` 내용은 열지 않음).
 3. 호출마다 served model, 사용량(본문 바이트·예약값과 함께), 발행한 명령 또는 전송 기록, Mol* 확인을 기록한다. 키, 헤더, 원시 provider 오류는 기록하지 않고 증거에서 키 문자열을 검색한다.
 4. 한도를 다 쓰면 결과를 그대로 보고한다. 실패한 호출도 1회이며, 추가 호출을 하려고 다시 시도하거나 새 run을 몰래 열지 않는다.

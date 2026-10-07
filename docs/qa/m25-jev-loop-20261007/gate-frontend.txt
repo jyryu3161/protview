@@ -1,0 +1,50 @@
+# M25 프런트 게이트 (소스 고정 4360598, 실행 HEAD 4360598, git status 비어 있음(증거 파일 gate-backend.txt만 새로 생김), 2026-10-07T15:29:27Z–15:29:47Z UTC, 순서대로 실행 — typecheck와 build는 동시에 돌리지 않음, 백엔드 게이트가 끝난 뒤)
+# 스크립트 종료 코드 1은 셸 스크립트 마지막 줄의 '[[ rc -ne 0 ]] &&' 표현식 값이며 각 단계 exit는 아래 줄이다. 로그: Git 제외 runs/m25-gate-20261008/frontend/
+## node --check frontend/tests/offscreen/*.cjs
+files=29 exit=0
+## node --check frontend/tests/*.cjs (unit test files, incl. the new jev-loop tests)
+files=28 exit=0
+## npm --prefix frontend run test:events
+ℹ tests 455
+ℹ pass 455
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+exit=0 seconds=0
+## npm --prefix frontend run typecheck
+exit=0 seconds=5
+## npm --prefix frontend run build
+ ✓ Compiled successfully in 1895ms
+○  (Static)  prerendered as static content
+exit=0 seconds=13
+## 하네스 목록 (node --check, 29개)
+  frontend/tests/offscreen/annotation-flow.cjs
+  frontend/tests/offscreen/chemical-flow.cjs
+  frontend/tests/offscreen/comparison-flow.cjs
+  frontend/tests/offscreen/docking-batch-flow.cjs
+  frontend/tests/offscreen/docking-flow.cjs
+  frontend/tests/offscreen/driver.cjs
+  frontend/tests/offscreen/dry-run.cjs
+  frontend/tests/offscreen/history-keyboard.cjs
+  frontend/tests/offscreen/jev-flow.cjs
+  frontend/tests/offscreen/jev-loop-flow.cjs
+  frontend/tests/offscreen/ligand-flow.cjs
+  frontend/tests/offscreen/ligand-ga-flow.cjs
+  frontend/tests/offscreen/m11-case-ledger.cjs
+  frontend/tests/offscreen/m11-ledger.cjs
+  frontend/tests/offscreen/main.cjs
+  frontend/tests/offscreen/mutation-flow.cjs
+  frontend/tests/offscreen/mutation-model-flow.cjs
+  frontend/tests/offscreen/normal-flow.cjs
+  frontend/tests/offscreen/numbering-flow.cjs
+  frontend/tests/offscreen/openmm-faults.cjs
+  frontend/tests/offscreen/openmm-flow.cjs
+  frontend/tests/offscreen/openmm-persistence.cjs
+  frontend/tests/offscreen/openmm-post-races.cjs
+  frontend/tests/offscreen/openmm-retry.cjs
+  frontend/tests/offscreen/pocket-flow.cjs
+  frontend/tests/offscreen/scenes-flow.cjs
+  frontend/tests/offscreen/sequence-ga-flow.cjs
+  frontend/tests/offscreen/tabs-flow.cjs
+  frontend/tests/offscreen/workflows-flow.cjs

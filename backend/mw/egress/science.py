@@ -16,6 +16,12 @@ the key (``missing_credential``; nothing earlier reads it) -> ``budget_reserved`
 transition guard, so a cancel or a consent change can land while it is in flight; the reply is then recorded and
 settled by the existing rules (``response_received`` / ``transport_failed`` / ``settled``, ``Run._settle_egress``).
 No key, header, raw provider error or response body is written anywhere: only safe enums and the HTTP status.
+
+M25 (spec 5.1, 5.2): a ``jev_loop_projection@1`` takes the same steps; only three calls are chosen by the projection's
+``schema``: its validator (``jev_loop_projection.validated_loop_projection``), its body
+(``jev_loop_projection.loop_projection_body``, the preview's function) and the reply parser
+(``jev_loop_projection.parse_loop_choice``: only a not-yet-computed alias may be chosen or carry a probability, else
+``response_invalid`` after the usage is settled). A ``jev_projection@1`` takes exactly the M24 calls.
 """
 from __future__ import annotations
 
@@ -29,6 +35,8 @@ from typing import Any, Literal
 import httpx
 
 from .. import jev_constants as J
+from .. import jev_loop_constants as L
+from .. import jev_loop_projection as LP
 from .. import jev_projection as P
 from ..jev_sends import cancel_seen, consent_enabled, dispatch_count
 from . import gate as G
@@ -73,8 +81,13 @@ async def request_science(gate: G.EgressGate, run: Any, projection_content: Any,
     recorded this send's approval of this body."""
     if not callable(admit):   # before any event, key read or transport
         raise TypeError("request_science needs the approval hook admit(events); nothing was recorded or sent")
-    content = P.validated_projection(projection_content)   # a refusal here writes nothing
-    body, encoded = P.projection_body(content)
+    loop = isinstance(projection_content, dict) and projection_content.get("schema") == L.PROJECTION_SCHEMA
+    if loop:   # M25 loop projection: its own validator and body (a refusal here writes nothing)
+        content = LP.validated_loop_projection(projection_content)
+        body, encoded = LP.loop_projection_body(content)
+    else:
+        content = P.validated_projection(projection_content)   # a refusal here writes nothing
+        body, encoded = P.projection_body(content)
     payload_sha256 = P.body_sha256(encoded)
     aliases = [item["alias"] for item in content["selection"]]
     reservation = {"external_tokens": J.reserve_tokens(len(encoded)), "usd": J.RESERVE_USD}
@@ -219,7 +232,7 @@ async def request_science(gate: G.EgressGate, run: Any, projection_content: Any,
             return failed("provider_http_error", served, usage)
         if too_large or len(raw) > J.MAX_RESPONSE_BYTES:
             return failed("response_invalid", served, usage)
-        answer, reason = P.parse_choice(data, aliases)
+        answer, reason = LP.parse_loop_choice(data, content) if loop else P.parse_choice(data, aliases)
         if answer is None:
             return failed(reason or "response_invalid", served, usage)
         return ScienceGateResult("accepted", None, answer=answer, audit_id=audit_id,

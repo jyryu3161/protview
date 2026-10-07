@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import uuid
+from contextlib import ExitStack
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -26,6 +27,9 @@ from .. import (
     docking_bundle,
     docking_reads,
     jev_constants,
+    jev_loop_constants,
+    jev_loop_store,
+    jev_loops,
     jev_projection,
     jev_sends,
     ligand_bundle,
@@ -56,6 +60,7 @@ from ..docking_batch_reports import build_docking_batch_report, saved_docking_ba
 from ..docking_reports import build_docking_report, saved_docking_report
 from ..egress import science as egress_science
 from ..egress.gate import EgressGate
+from ..jev_loop_reports import build_jev_loop_report, saved_jev_loop_report
 from ..jev_reports import build_jev_report, saved_jev_report
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
 from ..ligand_ga_constants import PROTOCOL as GA_PROTOCOL
@@ -126,7 +131,8 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmcif)\Z")
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
                    "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
-                   "annotate_reference_sites", "generate_mutation_candidates", "build_jev_projection"}
+                   "annotate_reference_sites", "generate_mutation_candidates", "build_jev_projection",
+                   "build_jev_loop_projection"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -678,6 +684,8 @@ def capabilities() -> dict[str, Any]:
     methods["sequence_ga_design"] = sequence_ga_jobs.capability(methods["ligand_docking"], methods["mutation_model"])
     # M24: local conditions only (tool exposed, pins equal the gate's); never reads a credential or a run's consent.
     methods["jev_choice"] = _jev_choice_capability()
+    # M25: per branch, the loop projection tool, the science pins (as jev_choice), then that branch's engines.
+    methods["jev_loop"] = _jev_loop_capability(methods)
     return {"mode": "local_only", "energy_protocols": matrix, "methods": methods, "supported": {
         "upload": "local PDB/mmCIF, up to 25 MiB", "preparation": "model, altloc, water, hydrogen policies",
         "interactions": "heavy-atom geometric contacts in angstroms", "viewer_bytes": "local PDB/mmCIF",
@@ -1307,6 +1315,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         if kind == jev_constants.CHOICE_KIND:
             # M24: reads the stored proposal, its projection, candidate set and send events only; nothing is sent.
             return build_jev_report(run, body.result_handle)
+        if kind == jev_loop_constants.RESULT_KIND:
+            # M25: reads the stored loop summary, its candidates' docking results and its proposals only; nothing is
+            # computed or sent. A loop proposal (jev_loop_choice) is no report input: wrong_method_result_kind below.
+            return build_jev_loop_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1334,7 +1346,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga", "sequence_ga", "jev_choice"}
+                                        "ligand_ga", "sequence_ga", "jev_choice", "jev_loop"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1352,7 +1364,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
-                                                              "sequence_ga", "jev_choice"}
+                                                              "sequence_ga", "jev_choice", "jev_loop"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1385,6 +1397,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_mutation_model_report(run, handle)
         if report.get("analysis_type") == "jev_choice":
             return saved_jev_report(run, handle)
+        if report.get("analysis_type") == "jev_loop":
+            return saved_jev_loop_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -2372,7 +2386,8 @@ async def jev_consent(rid: str, request: Request) -> dict[str, Any]:
 @app.post("/runs/{rid}/jev/preview")
 async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
     """``jev_preview@1``: the exact body string, its SHA-256 and bytes, the alias table (local only), the reservation,
-    the cap use and every refusal that holds now. A read: no event, tool, job or external request."""
+    the cap use and every refusal that holds now. A read: no event, tool, job or external request. A loop projection
+    (M25) adds ``loop`` and ``loop_blocks`` from its loop record (one log read for both)."""
     body = await _jev_request(request, JevPreviewRequest)
 
     def read() -> dict[str, Any]:
@@ -2383,13 +2398,18 @@ async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
         return await run_in_threadpool(read)
     except jev_sends.JevSendError as exc:
         raise _jev_error(exc) from exc
+    except jev_loops.LoopRecordInvalid as exc:   # a loop event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a stored object of the loop that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
 
 
 @app.post("/runs/{rid}/jev/sends")
 async def jev_send_create(rid: str, request: Request) -> Any:
     """The person's approval of one exact projection body and its one send (spec 5): the only caller of
     ``jev_sends.run_send``, so the only path to ``EgressGate.request_science``. Not a tool, plan or workflow step,
-    model command or job. Refusals and failures answer 200 with their ``jev_send@1`` record."""
+    model command or job. Refusals and failures answer 200 with their ``jev_send@1`` record. A ``jev_loop_projection@1``
+    (M25) takes the same call; its loop send check refuses with 409 ``loop_send_invalid`` (``JevSendError``)."""
     body = await _jev_request(request, JevSendRequest)
     run = _run(rid)
     try:
@@ -2401,7 +2421,9 @@ async def jev_send_create(rid: str, request: Request) -> Any:
         if exc.detail.get("busy"):
             raise HTTPException(503, detail={"error": "busy", "message": JEV_BUSY_MESSAGE}) from exc
         return _tool_error(exc)
-    except (KeyError, ValueError) as exc:
+    except jev_loops.LoopRecordInvalid as exc:   # M25: a loop event order no loop route writes; nothing was sent
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # M25: a loop record that does not derive, as the preview maps
         raise HTTPException(409, detail={"error": "run_corrupt",
                                          "message": "the science send could not be recorded"}) from exc
     except OSError as exc:
@@ -2437,11 +2459,209 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
     choice = None
     if record["status"] == "completed":
         try:
-            choice = jev_sends.load_choice(view, record["choice_handle"])
+            choice = (jev_sends.load_loop_choice(view, record["choice_handle"], record["send_id"]) if "loop" in record
+                      else jev_sends.load_choice(view, record["choice_handle"]))   # M25: a loop send's own proposal
         except (jev_sends.ChoiceInvalid, jev_sends.JevSendError) as exc:
             raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                              "message": "the stored JEV choice does not validate"}) from exc
     return {**record, "choice": choice, "local_display": None if choice is None else choice["answer"]["local_display"]}
+
+
+# ----------------------------------------------------------------- M25 JEV design loops (record and creation)
+JEV_LOOP_BUSY_MESSAGE = "the run is busy with another operation; nothing was recorded"
+JEV_LOOP_INTERNAL_MESSAGE = "the JEV loop record could not be derived from this run's events; nothing was changed"
+
+
+def _jev_loop_capability(methods: dict[str, Any]) -> dict[str, Any]:
+    """``methods.jev_loop``: per branch, the loop projection tool exposed, the science pins equal to the gate's (the
+    M24 check), then the branch's engines (the creation admission's engine order). Reasons only, no numbers."""
+    tool = jev_loop_constants.TOOL
+    return jev_loop_store.capability(
+        methods["ligand_docking"], methods["mutation_model"],
+        tool_exposed=tool in SUPPORTED_TOOLS and tool in REGISTRY.specs,
+        pins_match=egress_science._pins_match({"model": jev_projection.REQUEST_MODEL,
+                                               "provider": jev_projection.PROVIDER}))
+
+
+async def _jev_loop_request(request: Request, limit: int) -> dict[str, Any]:
+    """No query parameter, Content-Type application/json (415 before the body is read, as the M24 posts), a body of
+    at most ``limit`` bytes (413) and one JSON object (422). Its keys are the loop admission's."""
+    _only_query(request, set())
+    if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json":
+        raise HTTPException(415, detail={"error": "unsupported_media_type", "message": JEV_MEDIA_TYPE_MESSAGE})
+    return _chemical_json(await _bounded_chemical_body(request, limit))
+
+
+@app.post("/runs/{rid}/jev_loops")
+async def jev_loop_create(rid: str, request: Request) -> Any:
+    """``jev_loop@1`` of a new loop (spec 3.1): the closed admission in order, then one ``jev_loop_created`` event; the
+    same loop_id and request answers the existing record. No job, tool, external request or budget change."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_CREATE_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        return await run_in_threadpool(lambda: jev_loop_store.create(run, body, send_active=send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+JEV_LOOP_START_RACE = {"global_concurrency_busy", "global_job_cleanup_pending", "global_job_ledger_unavailable"}
+
+
+def _jev_loop_compute(run: Run, loop_id: str, body: Any, send_active: bool) -> dict[str, Any]:
+    """Spec 6.1 up to the submission, under the run owner: the request shape, the loop read and admission, the step's
+    M18 / M21 job admission, the approval event, then ``JobQueue.submit`` of the standalone request (outside the
+    transition lock the submission takes itself). Returns {"job_id", "start"}: the job the route starts after the
+    owner is released. While another request holds the owner only an answer that writes and starts nothing is given
+    (``jev_loop_store.compute_when_busy``); the rest is the owner's busy failure, nothing written."""
+    request = jev_loop_store.action_request(body, jev_loop_constants.COMPUTE_KEYS)
+    with ExitStack() as stack:
+        try:
+            stack.enter_context(run._owner())
+        except ToolFailure as busy:
+            if busy.detail.get("busy") is not True:
+                raise
+            return jev_loop_store.compute_when_busy(run, loop_id, request, send_active=send_active, busy=busy)
+        view, budget = jev_loop_store.locked_view(run)
+        state, decision = jev_loop_store.compute_decision(view, loop_id, request, budget=budget,
+                                                          send_active=send_active)
+        if decision["outcome"] == "idempotent":       # the same step again: no event, no job (spec 6.1)
+            return {"job_id": decision["job_id"], "start": decision["start"]}
+        job = jev_loop_store.step_job(run, state, decision)
+        jev_loop_store.write_approval(run, state, decision, job)
+        if job is None:                                # a stored model adopted: no job, no unit
+            return {"job_id": None, "start": False}
+        submitted = JobQueue(run).submit(job["protocol"], job["args"], timeout_s=job["timeout_s"])
+        return {"job_id": submitted["job_id"], "start": submitted["status"] == "queued"}
+
+
+@app.post("/runs/{rid}/jev_loops/{loop_id}/compute")
+async def jev_loop_compute(rid: str, loop_id: str, request: Request) -> Any:
+    """The person's start of one loop step (spec 6.1): ``jev_loop_compute_approved`` first, then the standalone M18 /
+    M21 job with the arguments and call key a standalone submission gets, started like ``POST /jobs/{id}/start``
+    after the run owner is released (the response waits for the job; reads go on without the lock). The first
+    expensive-call approval answers 200 with the record (``current.job.start_blocked``; the person approves with
+    ``POST /jobs/approve`` and presses again). Every other start failure answers as the job start route does; the
+    same press of a queued or claimed (blocked) job starts it again. Calls no tool, send, approval or limit path;
+    nothing runs in the background."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        step = await run_in_threadpool(lambda: _jev_loop_compute(run, loop_id, body, send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)        # the M18 / M21 job admission refusal as it is; nothing was written
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+    if step["start"]:
+        try:
+            await run_in_threadpool(lambda: JobQueue(run).start(
+                step["job_id"], owner_active=lambda eid: analysis_executions.execution_active(run, eid)))
+        except ApprovalRequired as exc:
+            if exc.gate != "expensive_first_call":      # a budget checkpoint: as the job start route answers it
+                return JSONResponse(status_code=409, content={"ok": False, "approval": {
+                    "gate": exc.gate, "tool": exc.tool, "reason": exc.reason}})
+            # spec 6.1: 200 and the record, whose current.job shows the wait for the first expensive-call approval
+        except RunCancelled:
+            return JSONResponse(status_code=409, content={"ok": False, "error": "cancelled",
+                                                          "message": "run cancelled"})
+        except ToolFailure as error:
+            if error.detail.get("reason_code") in JEV_LOOP_START_RACE:
+                return JSONResponse(status_code=409, content={"ok": False, **error.to_dict()})
+            return _tool_error(error)
+    return await run_in_threadpool(lambda: _jev_loop_read(rid, request, lambda view, budget, active: (
+        jev_loop_store.read_loop(view, loop_id, budget=budget, send_active=active).record)))
+
+
+@app.post("/runs/{rid}/jev_loops/{loop_id}/abandon_docking")
+async def jev_loop_abandon_docking(rid: str, loop_id: str, request: Request) -> Any:
+    """The person's decision not to dock the modelled candidate of the iteration (spec 6.3): one
+    ``jev_loop_docking_abandoned`` event, the candidate ``not_run``, the iteration ended. No job, tool or send."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        return await run_in_threadpool(lambda: jev_loop_store.abandon_docking(run, loop_id, body,
+                                                                             send_active=send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+@app.post("/runs/{rid}/jev_loops/{loop_id}/end")
+async def jev_loop_end(rid: str, loop_id: str, request: Request) -> Any:
+    """The person's end of a loop (spec 8.1): the refusals in order, the end reason, the summary
+    ``jev_loop_result@1`` stored first and then ``jev_loop_ended``. No job, tool, send or limit change."""
+    body = await _jev_loop_request(request, jev_loop_constants.MAX_ACTION_REQUEST_BYTES)
+    run = _run(rid)
+    send_active = jev_sends.send_active(rid)
+    try:
+        return await run_in_threadpool(lambda: jev_loop_store.end_loop(run, loop_id, body, send_active=send_active))
+    except jev_loop_store.LoopRequestError as exc:
+        raise HTTPException(exc.http_status, detail=exc.detail) from exc
+    except ToolFailure as exc:
+        if exc.detail.get("busy"):
+            raise HTTPException(503, detail={"error": "busy", "message": JEV_LOOP_BUSY_MESSAGE}) from exc
+        return _tool_error(exc)
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record (its summary) that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:
+    """One loop read: no run lock, ONE event-log read (``LoopReadView``), nothing written. ``send_active`` is this
+    process's in-flight science send (the loop modules never import the send module). A record read has no
+    preview, so ``send_reservation`` is None; the preview of a loop projection carries the record's send-side amounts
+    derived with its reservation (``jev_sends.preview_for``)."""
+    _only_query(request, set())
+    run = _run(rid)
+    view = jev_loop_store.LoopReadView(run)
+    budget = jev_loop_store.remaining_budget(run.budget_snapshot())
+    try:
+        return read(view, budget, jev_sends.send_active(rid))
+    except jev_loops.LoopNotFound as exc:
+        error = jev_loop_store.LoopRequestError("loop_not_found", "no such loop in this run", 404)
+        raise HTTPException(404, detail=error.detail) from exc
+    except jev_loops.LoopRecordInvalid as exc:   # an event order no loop route writes: fixed body, no content
+        raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
+    except (KeyError, TypeError, ValueError) as exc:   # a stored object of the loop that does not read back
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+
+
+@app.get("/runs/{rid}/jev_loops")
+def jev_loop_list(rid: str, request: Request) -> list[dict[str, Any]]:
+    """This run's loops, newest first: one row each (spec 3.2), every loop derived and checked from one log read."""
+    return _jev_loop_read(rid, request, lambda view, budget, active: jev_loop_store.list_loops(
+        view, budget=budget, send_active=active))
+
+
+@app.get("/runs/{rid}/jev_loops/{loop_id}")
+def jev_loop_detail(rid: str, loop_id: str, request: Request) -> dict[str, Any]:
+    """``jev_loop@1`` of one loop (404 ``loop_not_found`` when this run has none with that id)."""
+    return _jev_loop_read(rid, request, lambda view, budget, active: jev_loop_store.read_loop(
+        view, loop_id, budget=budget, send_active=active).record)
 
 
 @app.get("/runs/{rid}/interface_sasa")

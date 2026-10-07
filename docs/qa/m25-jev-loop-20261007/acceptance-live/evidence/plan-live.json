@@ -1,0 +1,67 @@
+{
+  "entries": [
+    {
+      "id": "L-exploit-3",
+      "run": "L",
+      "branch": "ligand",
+      "goal": "exploit",
+      "loopSeed": 202,
+      "cap": 3,
+      "pool": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "rounds": 3,
+      "sends": 3,
+      "compute": true,
+      "report": true
+    },
+    {
+      "id": "P-exploit-3",
+      "run": "P",
+      "branch": "protein",
+      "goal": "exploit",
+      "loopSeed": 303,
+      "cap": 3,
+      "pool": [
+        4,
+        10,
+        14,
+        19,
+        21
+      ],
+      "rounds": 3,
+      "sends": 3,
+      "compute": true,
+      "report": true
+    },
+    {
+      "id": "L-explore-shuffle",
+      "run": "L",
+      "branch": "ligand",
+      "goal": "explore",
+      "loopSeed": 404,
+      "cap": 1,
+      "pool": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "rounds": 1,
+      "sends": 1,
+      "compute": false,
+      "report": false,
+      "compareWith": "L-explore-calibrate"
+    }
+  ],
+  "maxDispatch": 8,
+  "maxPerRun": {
+    "run_a6f1fdc86c674f33b5cf975a085dc3a4": 5,
+    "run_3c47e688f11048a485180e132da985b8": 3
+  }
+}

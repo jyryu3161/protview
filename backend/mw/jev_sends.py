@@ -18,15 +18,24 @@ Public API:
     dispatch_count(events) -> int          jev_science_dispatch_started events (the run's send cap counts these)
     cancel_seen(run, events) -> bool       a cancel event or the cancel marker file
     set_consent(run, enabled) -> jev_status@1      one event; 412 dry_run when enabling a dry-run run
-    load_projection(run, handle) -> content        this run's validated jev_projection@1
+    load_projection(run, handle, *, accept_loop=False) -> content
+                                           this run's validated jev_projection@1 (M25: also a validated
+                                           jev_loop_projection@1 when accept_loop)
     status_for(run, events) -> jev_status@1        never reads a key
-    preview_for(run, projection_handle, events) -> jev_preview@1     the exact body string and its SHA-256
+    preview_for(run, projection_handle, events) -> jev_preview@1     the exact body string and its SHA-256; for a
+                                           jev_loop_projection@1 (M25) also ``loop`` and ``loop_blocks`` (the loop
+                                           send check of ``jev_loop_store``)
     async run_send(run, gate, /, *, send_id, projection, body_sha256, confirm) -> jev_send@1
+                                           M25: also a jev_loop_projection@1, whose loop send check runs inside the
+                                           approval callback before the approval event (409 loop_send_invalid,
+                                           detail ``reason``; nothing recorded); its answer is a jev_loop_choice@1
     send_record(events, send_id) -> jev_send@1 (404 not_found);  list_sends(events) -> [jev_send@1], oldest first
+                                           a loop send's record adds ``loop`` {loop_id, iteration, send_ordinal}
     late_arrival(events, send_id) -> (late, late_reason)
     source_content(run, projection) -> the projection's stored candidate set content (ChoiceInvalid if unusable)
     build_choice(...) -> jev_choice@1 content;  validated_choice(content, projection, source) -> content
     load_choice(run, handle) -> validated jev_choice@1 content
+    load_loop_choice(run, handle, send_id) -> validated jev_loop_choice@1 of that send (M25; else ChoiceInvalid)
 """
 from __future__ import annotations
 
@@ -40,8 +49,10 @@ import uuid
 from typing import Any
 
 from . import jev_constants as J
+from . import jev_loop_constants as L
+from . import jev_loop_projection as LP
+from . import jev_loop_store, jev_loops, ligand_bundle
 from . import jev_projection as P
-from . import ligand_bundle
 from . import mutation_candidates as mc
 from .core.handles import canonical_json
 
@@ -54,6 +65,7 @@ OUTCOME_FIELDS = ("status", "reason_code", "audit_id", "requested_model", "serve
                   "late", "late_reason")
 STATUS_FOR_RESULT = {"accepted": "completed", "rejected": "rejected", "failed": "failed"}
 KIND_FOR_QUESTION = {question: kind for kind, question in J.QUESTION_FOR_KIND.items()}
+LOOP_KIND_FOR_QUESTION = {question: kind for kind, question in L.QUESTION_FOR_KIND.items()}   # M25 loop sends
 _CANCEL_EVENTS = ("cancel_requested", "run_cancelled")
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
 _AUDIT_ID_RE = re.compile(r"eg_[0-9a-f]{32}")
@@ -151,7 +163,10 @@ def set_consent(run: Any, enabled: Any) -> dict[str, Any]:
 
 # --- projection, status, preview ---------------------------------------------------------------------------------------
 
-def load_projection(run: Any, handle: Any) -> dict[str, Any]:
+def load_projection(run: Any, handle: Any, *, accept_loop: bool = False) -> dict[str, Any]:
+    """This run's validated ``jev_projection@1``; with ``accept_loop`` also a ``jev_loop_projection@1`` (M25,
+    validated by ``jev_loop_projection.validated_loop_projection``). Without it a loop projection is refused as
+    before (the send route takes loop projections only with its loop branch)."""
     if type(handle) is not str:
         raise JevSendError("input_invalid", "projection must be a handle string", 422)
     try:
@@ -160,10 +175,12 @@ def load_projection(run: Any, handle: Any) -> dict[str, Any]:
         raise JevSendError("not_found", "no such projection in this run", 404) from None
     invalid = JevSendError("input_invalid", "not a valid jev_projection@1 of this run", 422,
                            reason_code=J.PROJECTION_INVALID)
-    if (meta["kind"], meta["schema"]) != (J.PROJECTION_KIND, J.PROJECTION_SCHEMA):
+    loop = accept_loop and (meta["kind"], meta["schema"]) == (L.PROJECTION_KIND, L.PROJECTION_SCHEMA)
+    if not loop and (meta["kind"], meta["schema"]) != (J.PROJECTION_KIND, J.PROJECTION_SCHEMA):
         raise invalid
+    validated = LP.validated_loop_projection if loop else P.validated_projection
     try:
-        content = P.validated_projection(run.store.load_bounded_json(handle, J.MAX_OBJECT_BYTES))
+        content = validated(run.store.load_bounded_json(handle, J.MAX_OBJECT_BYTES))
     except (P.JevProjectionError, ValueError, TypeError, KeyError):
         raise invalid from None
     prefix = f"obj://{run.run_id}/"
@@ -210,27 +227,51 @@ def _blocked(run: Any, events: list[dict[str, Any]], reservation: dict[str, Any]
     return reasons
 
 
+def _loop_preview(run: Any, content: dict[str, Any], events: list[dict[str, Any]],
+                  reservation: dict[str, Any]) -> dict[str, Any]:
+    """M25 (spec 5.1): the ``loop`` block (the projection's loop reference with the send-side ``needs`` /
+    ``remaining`` / ``send_blocked_axes`` of the loop record derived from the same events with this preview's
+    reservation) and ``loop_blocks``: the refusal of the loop send check (``jev_loop_store.loop_send_check``, the
+    loop judgment the send uses), empty when the loop may send this projection now."""
+    state, reason = jev_loop_store.loop_send_check(
+        jev_loop_store.LoopReadView(run, events), content,
+        budget=jev_loop_store.remaining_budget(run.budget_snapshot()), send_active=send_active(run.run_id),
+        send_reservation=reservation)
+    current = None if state is None else state.record["current"]
+    block = {**content["loop"], **{name: None if current is None else copy.deepcopy(current[name])
+                                   for name in ("needs", "remaining", "send_blocked_axes")}}
+    return {"loop": block, "loop_blocks": [] if reason is None else [reason]}
+
+
 def preview_for(run: Any, projection_handle: Any, events: list[dict[str, Any]]) -> dict[str, Any]:
-    content = load_projection(run, projection_handle)
-    _, encoded = P.projection_body(content)
+    content = load_projection(run, projection_handle, accept_loop=True)
+    loop = content["schema"] == L.PROJECTION_SCHEMA
+    _, encoded = LP.loop_projection_body(content) if loop else P.projection_body(content)
     question_id = content["question"]["id"]
+    if loop:
+        instructions = L.INSTRUCTIONS[(content["kind"], content["goal"])]
+        instructions_sha256 = L.instructions_sha256(content["kind"], content["goal"])
+    else:
+        instructions, instructions_sha256 = J.INSTRUCTIONS[question_id], J.instructions_sha256(question_id)
     reservation = {"external_tokens": J.reserve_tokens(len(encoded)), "usd": J.RESERVE_USD}
     used = dispatch_count(events)
     dispatched = {event["send_id"] for event in events if event.get("type") == J.EVENT_DISPATCH}
     previous = sum(event.get("type") == J.EVENT_APPROVED and event.get("projection_handle") == projection_handle
                    and event.get("send_id") in dispatched for event in events)
     budget = _budget(run)
-    return {"schema": J.PREVIEW_SCHEMA, "projection_handle": projection_handle, "kind": content["kind"],
-            "source": dict(content["source"]),
-            "question": {"id": question_id, "key": J.QUESTION_KEY, "type": J.QUESTION_TYPE,
-                         "instructions": J.INSTRUCTIONS[question_id],
-                         "instructions_sha256": J.instructions_sha256(question_id)},
-            "body": encoded.decode("ascii"), "body_sha256": P.body_sha256(encoded), "body_bytes": len(encoded),
-            "selection": copy.deepcopy(content["selection"]), "selection_sent": False,
-            "reservation": reservation, "send_cap": J.SEND_CAP, "used": used,
-            "remaining": max(0, J.SEND_CAP - used),
-            "budget_remaining": {axis: budget[axis]["remaining"] for axis in ("external_tokens", "usd")},
-            "blocked_by": _blocked(run, events, reservation), "previous_sends": previous}
+    preview = {"schema": J.PREVIEW_SCHEMA, "projection_handle": projection_handle, "kind": content["kind"],
+               "source": dict(content["source"]),
+               "question": {"id": question_id, "key": J.QUESTION_KEY, "type": J.QUESTION_TYPE,
+                            "instructions": instructions, "instructions_sha256": instructions_sha256},
+               "body": encoded.decode("ascii"), "body_sha256": P.body_sha256(encoded), "body_bytes": len(encoded),
+               "selection": copy.deepcopy(content["selection"]), "selection_sent": False,
+               "reservation": reservation, "send_cap": J.SEND_CAP, "used": used,
+               "remaining": max(0, J.SEND_CAP - used),
+               "budget_remaining": {axis: budget[axis]["remaining"] for axis in ("external_tokens", "usd")},
+               "blocked_by": _blocked(run, events, reservation), "previous_sends": previous}
+    if loop:
+        preview.update(_loop_preview(run, content, events, reservation))
+    return preview
 
 
 # --- one approved send ---------------------------------------------------------------------------------------------------
@@ -276,12 +317,29 @@ def _replayed(run: Any, send_id: str, projection: str, body_sha256: str) -> dict
     return send_record(events, send_id)
 
 
+def _loop_send_refusal(run: Any, content: dict[str, Any], events: list[dict[str, Any]], body_bytes: int) -> None:
+    """M25 spec 5.1: the loop send check of a ``jev_loop_projection@1`` inside the approval callback (the gate's run
+    owner and transition guard are held; nothing here takes either again). The loop record is derived from the
+    callback's event list only, with this process's in-flight state (``send_active``) and the M24 reservation of this
+    body; a refusal raises 409 ``loop_send_invalid`` with ``reason`` in ``LOOP_SEND_REASONS`` before any approval,
+    audit, reservation or key read."""
+    reservation = {"external_tokens": J.reserve_tokens(body_bytes), "usd": J.RESERVE_USD}
+    _, reason = jev_loop_store.loop_send_check(
+        jev_loop_store.LoopReadView(run, events), content,
+        budget=jev_loop_store.remaining_budget(run.budget_snapshot()), send_active=send_active(run.run_id),
+        send_reservation=reservation)
+    if reason is not None:
+        raise JevSendError(L.LOOP_SEND_INVALID, "the JEV loop cannot send this projection now; nothing was recorded",
+                           409, reason=reason)
+
+
 async def run_send(run: Any, gate: Any, /, *, send_id: Any = None, projection: Any = None, body_sha256: Any = None,
                    confirm: Any = None, **unknown: Any) -> dict[str, Any]:
     """Check, approve and send one projection body; returns its ``jev_send@1`` record (also for refusals)."""
     _check_request(send_id, projection, body_sha256, confirm, unknown)
-    content = load_projection(run, projection)
-    _, encoded = P.projection_body(content)
+    content = load_projection(run, projection, accept_loop=True)
+    loop = content["schema"] == L.PROJECTION_SCHEMA
+    _, encoded = LP.loop_projection_body(content) if loop else P.projection_body(content)
     if P.body_sha256(encoded) != body_sha256:
         raise JevSendError("preview_mismatch", "body_sha256 is not the SHA-256 of this projection's body", 409)
     existing = _replayed(run, send_id, projection, body_sha256)
@@ -297,6 +355,8 @@ async def run_send(run: Any, gate: Any, /, *, send_id: Any = None, projection: A
             # Runs under the gate's run owner and transition guard, before its first check: a busy run writes nothing.
             if _approved(events, send_id) is not None:
                 raise _AlreadyApproved
+            if loop:   # M25: the loop send check, from this event list only, before the approval event
+                _loop_send_refusal(run, content, events, len(encoded))
             run.events.append(J.EVENT_APPROVED, **approval)
 
         try:
@@ -319,7 +379,17 @@ def _finish(run: Any, content: dict[str, Any], projection_handle: str, send_id: 
         events = list(run.events.read())
         late, late_reason = late_arrival(events, send_id) if status != "rejected" else (False, None)
         choice_handle = None
-        if status == "completed":
+        if status == "completed" and content["schema"] == L.PROJECTION_SCHEMA:
+            # M25: a loop projection's answer is a jev_loop_choice@1, stored only once it validates (a
+            # LoopChoiceInvalid propagates like the M24 ChoiceInvalid below: no outcome is recorded)
+            choice = LP.build_loop_choice(projection_handle, content, source_content(run, content), send_id=send_id,
+                                          audit_id=result.audit_id, answer=result.answer,
+                                          served_model=result.served_model, usage=result.usage, late=late,
+                                          late_reason=late_reason)
+            choice_handle = run.store.put(L.CHOICE_KIND, L.CHOICE_SCHEMA, choice,
+                                          summary={"kind": content["kind"], "send_id": send_id,
+                                                   "projection": projection_handle, "late": late}).handle
+        elif status == "completed":
             source = source_content(run, content)
             choice = build_choice(projection_handle, content, source, send_id=send_id, audit_id=result.audit_id,
                                   answer=result.answer, served_model=result.served_model, usage=result.usage,
@@ -351,7 +421,7 @@ def _index(events: list[dict[str, Any]]) -> dict[str, Any]:
             index["dispatches"].setdefault(event["send_id"], event)
         elif kind == "egress" and event.get("stage") == "response_received":
             index["responses"].setdefault(event["audit_id"], event)
-        elif kind == "object_created" and event.get("kind") == J.PROJECTION_KIND:
+        elif kind == "object_created" and event.get("kind") in (J.PROJECTION_KIND, L.PROJECTION_KIND):
             index["projections"].setdefault(event["handle"], event)
     return index
 
@@ -371,7 +441,7 @@ def _record(index: dict[str, Any], send_id: str) -> dict[str, Any]:
     approved = index["approved"][send_id]
     outcome = index["outcomes"].get(send_id)
     dispatch = index["dispatches"].get(send_id)
-    kind = KIND_FOR_QUESTION.get(approved["question_id"])
+    kind = KIND_FOR_QUESTION.get(approved["question_id"], LOOP_KIND_FOR_QUESTION.get(approved["question_id"]))
     record: dict[str, Any] = {
         "schema": J.SEND_SCHEMA, "send_id": send_id, "status": None, "reason_code": None,
         "projection_handle": approved["projection_handle"],
@@ -396,16 +466,30 @@ def _record(index: dict[str, Any], send_id: str) -> dict[str, Any]:
     return record
 
 
+def _loop_of(index: dict[str, Any], record: dict[str, Any]) -> dict[str, Any]:
+    """M25: a send of a ``jev_loop_projection@1`` adds ``loop`` {loop_id, iteration, send_ordinal}, read from that
+    projection's event payload (None if it does not read back); an M24 send's record is unchanged (no ``loop`` key)."""
+    event = index["projections"].get(record["projection_handle"])
+    if event is None or event.get("kind") != L.PROJECTION_KIND:
+        return record
+    try:
+        loop = json.loads(base64.b64decode(event["payload_b64"], validate=True))["loop"]
+        record["loop"] = {key: loop[key] for key in L.LOOP_REF_KEYS}
+    except (KeyError, TypeError, ValueError):
+        record["loop"] = None
+    return record
+
+
 def send_record(events: list[dict[str, Any]], send_id: Any) -> dict[str, Any]:
     index = _index(events)
     if type(send_id) is not str or send_id not in index["approved"]:
         raise JevSendError("not_found", "no such science send in this run", 404)
-    return _record(index, send_id)
+    return _loop_of(index, _record(index, send_id))
 
 
 def list_sends(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     index = _index(events)
-    return [_record(index, send_id) for send_id in index["approved"]]
+    return [_loop_of(index, _record(index, send_id)) for send_id in index["approved"]]
 
 
 # --- the proposal object -------------------------------------------------------------------------------------------------
@@ -561,3 +645,27 @@ def load_choice(run: Any, handle: Any) -> dict[str, Any]:
     except (ValueError, KeyError, TypeError, JevSendError) as exc:
         raise ChoiceInvalid("the proposal or its projection is unreadable") from exc
     return validated_choice(content, projection, source_content(run, projection))
+
+
+def load_loop_choice(run: Any, handle: Any, send_id: Any) -> dict[str, Any]:
+    """M25: this run's stored ``jev_loop_choice@1`` of send ``send_id``, re-validated on every read against its
+    ``jev_loop_projection@1`` and candidate set (``jev_loop_projection.validated_loop_choice``) and against that send's
+    approval and outcome events (``jev_loops.proposal_matches_send``); ``ChoiceInvalid`` as for ``load_choice``."""
+    if type(handle) is not str:
+        raise JevSendError("input_invalid", "choice must be a handle string", 422)
+    try:
+        meta = run.store.meta(handle)
+    except (KeyError, ValueError):
+        raise JevSendError("not_found", "no such proposal in this run", 404) from None
+    if (meta["kind"], meta["schema"]) != (L.CHOICE_KIND, L.CHOICE_SCHEMA):
+        raise JevSendError("input_invalid", "not a jev_loop_choice@1 of this run", 422)
+    try:
+        content = run.store.load_bounded_json(handle, L.MAX_OBJECT_BYTES)
+        projection = load_projection(run, content["projection"]["handle"], accept_loop=True)
+        if projection["schema"] != L.PROJECTION_SCHEMA:
+            raise ValueError("a loop proposal names a loop projection")
+        if not jev_loops.proposal_matches_send(content, handle, list(run.events.read()), send_id):
+            raise ValueError("the loop proposal does not belong to this send")
+        return LP.validated_loop_choice(content, projection, source_content(run, projection))
+    except (ValueError, KeyError, TypeError, JevSendError) as exc:   # LoopChoiceInvalid is a ValueError
+        raise ChoiceInvalid("the loop proposal does not validate against its projection and candidate set") from exc
