@@ -1,0 +1,379 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "chemical-workspace",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "W4Fsnhol08JIGulRiMyz7",
+  "startedAt": "2026-10-07T16:43:26.042Z",
+  "run": "run_ec2e869ac680432e8784c04950107f2d",
+  "handles": {
+    "chemicalResult": "obj://run_ec2e869ac680432e8784c04950107f2d/chemical_interaction_set/5d0e07d9779b3f2094ea4814387947992337d56c774a35e21957bc6a5aed498e",
+    "chemicalSource": "obj://run_ec2e869ac680432e8784c04950107f2d/chemical_structure/91345140e8222712890476658857d1974b62b6ee9d4900d407984c9ee1e6c835",
+    "set": "obj://run_ec2e869ac680432e8784c04950107f2d/pocket_set/22ed81a6221a28dbf9283bf1b9dbe520cc1166db420557a72043f4f8dac2bc64"
+  },
+  "inputs": [],
+  "fixtureLabels": [],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 6,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/m13/m12-acceptance/evidence/chemical-workspace/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 59,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "summary": {
+    "total": 31,
+    "null_result": false
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 97,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/m13/m12-acceptance/evidence/chemical-workspace/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 155,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/results",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/view",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/results/rows",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/graphs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/preparation-manifests",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/chemical/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs/job_e561e934e704494eb4a6367190e09dc6",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs/job_e561e934e704494eb4a6367190e09dc6",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs/job_e561e934e704494eb4a6367190e09dc6",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs/job_e561e934e704494eb4a6367190e09dc6",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs/job_e561e934e704494eb4a6367190e09dc6",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs/job_e561e934e704494eb4a6367190e09dc6/start",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets/result",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_ec2e869ac680432e8784c04950107f2d/reports",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-10-07T16:43:51.557Z",
+  "externalRequestCount": 0
+}

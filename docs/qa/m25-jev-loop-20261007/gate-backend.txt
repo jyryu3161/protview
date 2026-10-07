@@ -1,0 +1,21 @@
+# M25 백엔드 게이트 (소스 고정 4360598, 실행 HEAD 4360598, git status 비어 있음, 시작 2026-10-07T15:22:25Z UTC, 끝 2026-10-07T15:29:03Z UTC, Stop 훅(.codex/hooks/stop.py) PYTEST_GROUPS 열다섯 + REST_GROUP = 열여섯 그룹을 같은 인자로 동시에 제한 없이 실행 + ruff, 다른 ProtView pytest·서비스 없음(8000·3000 LISTEN 0))
+# 명령: ruff = .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py; 그룹마다 .venv/bin/python -m pytest -q <stop.PYTEST_GROUPS[i] | stop.REST_GROUP> (start_new_session, 시간 제한 없음). args는 앞 세 개만 적음(전체 인자 목록·그룹 로그는 Git 제외 runs/m25-gate-20261008/backend/).
+{"group": 0, "exit": 0, "seconds": 347, "tail": "24 passed in 346.30s (0:05:46)", "args": ["backend/tests/test_chemical_interactions.py"]}
+{"group": 1, "exit": 0, "seconds": 290, "tail": "25 passed, 1 warning in 289.72s (0:04:49)", "args": ["backend/tests/test_m11_job_api.py"]}
+{"group": 2, "exit": 0, "seconds": 328, "tail": "220 passed, 1 warning in 327.48s (0:05:27)", "args": ["backend/tests/test_docking_inputs.py", "backend/tests/test_docking_worker.py", "backend/tests/test_docking_jobs.py"]}
+{"group": 3, "exit": 0, "seconds": 318, "tail": "120 passed, 1 warning in 317.84s (0:05:17)", "args": ["backend/tests/test_docking_batch_worker.py", "backend/tests/test_docking_batch_jobs.py", "backend/tests/test_pockets.py"]}
+{"group": 4, "exit": 0, "seconds": 317, "tail": "390 passed, 1 warning in 316.96s (0:05:16)", "args": ["backend/tests/test_docking_batch_inputs.py", "backend/tests/test_docking_batch_bundle.py", "backend/tests/test_docking_batch_budget.py"]}
+{"group": 5, "exit": 0, "seconds": 336, "tail": "12 passed, 1 warning in 335.14s (0:05:35)", "args": ["backend/tests/test_ligand_ga_jobs.py"]}
+{"group": 6, "exit": 0, "seconds": 314, "tail": "15 passed in 313.81s (0:05:13)", "args": ["backend/tests/test_ligand_ga_worker.py"]}
+{"group": 7, "exit": 0, "seconds": 303, "tail": "2 passed, 1 warning in 302.86s (0:05:02)", "args": ["backend/tests/test_sequence_ga_jobs.py::test_product_path_publication_m18_identity_reuse_duplicates_and_events_only", "backend/tests/test_sequence_ga_jobs.py::test_golden_m18_m19_m21_call_keys_results_and_hashed_files_are_unchanged"]}
+{"group": 8, "exit": 0, "seconds": 263, "tail": "12 passed, 1 warning in 262.73s (0:04:22)", "args": ["backend/tests/test_sequence_ga_jobs.py::test_registration_capability_and_protocol_timeout_bound", "backend/tests/test_sequence_ga_jobs.py::test_admission_order_refusals_record_and_charge_nothing", "backend/tests/test_sequence_ga_jobs.py::test_dry_run_plans_only"]}
+{"group": 9, "exit": 0, "seconds": 312, "tail": "24 passed, 1 warning in 311.26s (0:05:11)", "args": ["backend/tests/test_sequence_ga_api.py"]}
+{"group": 10, "exit": 0, "seconds": 333, "tail": "20 passed, 1 warning in 332.60s (0:05:32)", "args": ["backend/tests/test_sequence_ga_reports.py"]}
+{"group": 11, "exit": 0, "seconds": 281, "tail": "417 passed, 1 warning in 280.10s (0:04:40)", "args": ["backend/tests/test_sequence_ga_worker.py", "backend/tests/test_sequence_model_worker.py", "backend/tests/test_sequence_ga_inputs.py"]}
+{"group": 12, "exit": 0, "seconds": 279, "tail": "244 passed, 1 warning in 278.46s (0:04:38)", "args": ["backend/tests/test_mutation_model_worker.py", "backend/tests/test_mutation_model_jobs.py", "backend/tests/test_mutation_model_inputs.py"]}
+{"group": 13, "exit": 0, "seconds": 175, "tail": "200 passed, 1 warning in 174.25s (0:02:54)", "args": ["backend/tests/test_jev_loops_read.py", "backend/tests/test_jev_loop_sends.py", "backend/tests/test_jev_loop_tool.py"]}
+{"group": 14, "exit": 0, "seconds": 224, "tail": "43 passed, 1 warning in 223.93s (0:03:43)", "args": ["backend/tests/test_jev_loops_compute.py"]}
+{"group": 15, "exit": 0, "seconds": 398, "tail": "2732 passed, 1 warning in 397.90s (0:06:37)", "args": ["backend/tests", "scripts/test_execute.py", "scripts/test_codex_hooks.py"]}
+{"ruff_exit": 0, "tail": ["All checks passed!"]}
+{"all_ok": true, "seconds": 398, "groups": 16, "groups_over_480s": []}
+# 합계 통과 4,500개, skipped·xfail·error 0(그룹 로그 grep), 480초 넘은 그룹 0(가장 긴 그룹 15 = 나머지 그룹 398초). 경고는 starlette TestClient의 httpx 사용 안내 1건(그룹마다 같은 경고).

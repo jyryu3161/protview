@@ -1,0 +1,47 @@
+{
+  "entries": [
+    {
+      "id": "L1-mutation-1ubq-5",
+      "run": "L1",
+      "kind": "mutation",
+      "set": "ubq",
+      "pick": {
+        "first": 5
+      }
+    },
+    {
+      "id": "L1-ligand-10",
+      "run": "L1",
+      "kind": "ligand",
+      "set": "ligand",
+      "pick": {
+        "first": 10
+      }
+    },
+    {
+      "id": "L2-mutation-1mq4-20",
+      "run": "L2",
+      "kind": "mutation",
+      "set": "mq4",
+      "pick": {
+        "first": 20
+      }
+    },
+    {
+      "id": "L2-mutation-1mq4-20-again",
+      "run": "L2",
+      "resend": "L2-mutation-1mq4-20"
+    },
+    {
+      "id": "L2-mutation-1ubq-20",
+      "run": "L2",
+      "kind": "mutation",
+      "set": "ubq",
+      "pick": {
+        "first": 20
+      }
+    }
+  ],
+  "maxDispatch": 18,
+  "maxPerRun": 3
+}

@@ -1,0 +1,481 @@
+{
+  "schema": "m17_case_ledger@1",
+  "generatedAt": "2026-10-07T16:10:35.238994+00:00",
+  "build": {
+    "buildId": "W4Fsnhol08JIGulRiMyz7",
+    "gitHead": "9a9a625c548ee7095bbf815be14704fd47376d0a",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "06878a995a96048ccd4199fdef1252de62da4095f8236267323d557ff2d50357",
+    "dirtyFiles": [
+      "?? docs/qa/m25-jev-loop-20261007/acceptance-fixture/",
+      "?? docs/qa/m25-jev-loop-20261007/gate-backend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-frontend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-invariants.txt",
+      "?? docs/qa/m25-jev-loop-20261007/m18-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m19-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m20-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m21-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m22-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m23-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m24-regression/"
+    ],
+    "recordedAt": "2026-10-07T16:07:38.574992+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "ligand-flow.cjs": "61f6503a72b57d0255281afbda7b3c563edde0e6dbb5cc5d656adb27792c3000",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "7583d335fbd25f65b8cc97da0b28e1b9493e4395c8d238447eecb2f91eaedf65"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "L-run-create": {
+      "text": "structure tab: 새 run + public_1mq4.cif; the ligand tab uses the global run (ready, capability line)",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-inputs-import": {
+      "text": "explicit-H parent SDF, block SDF, block SMILES chosen through the file chooser, six rules typed, 가져오기 → three chemical_raw_input handles listed by the backend",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-inspect-job": {
+      "text": "점검 시작 → 비싼 계산 승인 → 작업 시작 → real rdkit_inspect_v1 done, one expensive unit",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-inspection-figure": {
+      "text": "inspection chosen by hand (none automatic); numbered RDKit 2D figure loads as an <img> data URI equal to the stored SVG, no inline SVG",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-atom-numbering": {
+      "text": "atom table = heavy atoms with SDF serials of the explicit-H parent (H serials skipped), elements and heavy neighbours equal the T1 hand oracle",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-rules-status": {
+      "text": "rules user_1–3 valid, user_4 reactant_count, user_5 reaction_parse_failed, user_6 duplicate_rule; block library accepted/rejected counts equal the hand oracle",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-invalid-rule": {
+      "text": "invalid rules shown as invalid with the reason and cannot be chosen for generation",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-site-check": {
+      "text": "site 19 → rejected crossing_bond_count (start disabled); 19+20 → one single crossing bond 14–19, site hydrogens 21–23, start enabled",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-enumerate-job": {
+      "text": "후보 생성 시작 (fixed + user_1–3) → real rdkit_enumerate_v1 done, one expensive unit",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-candidates-oracle": {
+      "text": "table rows = server rows; 10 candidate SMILES equal the hand oracle, ids = c_ + SHA-256[:16], duplicate origins and rejected counts equal the hand trace, five limitations",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-filters": {
+      "text": "heavy atoms 12–14 (inclusive) and mol_weight max = stored boundary value; invalid input refused without a read; PAINS exclusion per stored matches",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-passes-only": {
+      "text": "필터 통과만 보기: only passing rows; total and hidden-by-filter counts shown",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-sort": {
+      "text": "sort by mol_weight descending equals the stored values' order",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-paging": {
+      "text": "labeled generated chain list → 62 candidates: page 1 (50), 다음 (12), 이전; ids disjoint and complete",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-report": {
+      "text": "보고서 만들기 (filters recorded) → 리간드 후보 보고서 in the knowledge-tab list; downloads equal the backend bytes",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-zero-candidates": {
+      "text": "fixed off + user_3 (outside the site) → 0 candidates: 빈 결과 (not 실패), outside_site counts",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-structure-kept": {
+      "text": "structure tab stays mounted (hidden) while the ligand tab is shown; same Mol* session, source and generation on return; global budget equals the backend",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-run-switch-late": {
+      "text": "run B shows only its own lists; a held run A inspection-list response released after the switch is not applied",
+      "modes": {
+        "ligand-main": "pass"
+      },
+      "status": "pass"
+    },
+    "L-no-run": {
+      "text": "no run: the ligand tab shows only the no-run reason (no numbers, no controls)",
+      "modes": {
+        "ligand-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "L-unavailable": {
+      "text": "backend without the locked environment: 사용할 수 없음 with the capability reason (worker_missing), no numbers, no controls, no ligand requests",
+      "modes": {
+        "ligand-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "ligand-main": {
+      "status": "pass",
+      "latest": "ligand-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "ligand-unavailable": {
+      "status": "pass",
+      "latest": "ligand-unavailable",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "environment": {
+    "workerPython": true,
+    "workerPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "rdkit",
+        "rdkit_version": "2026.03.6",
+        "worker_sha256": "24e2d9a27d48f70d322721b16d82a8d213f43a493ede84f5785544b60b6d22fb",
+        "constants_sha256": "dc195402de4598b879bcdc8813750c16b6d50397874ccd4498d184f0e18d72a3",
+        "lock_sha256": "be320702daba7ea9922e278c49d6c69efc6f3ce7962a7be47623421b2387999a"
+      }
+    },
+    "layoutReason": "worker_missing"
+  },
+  "layout": {
+    "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked RDKit environment absent: capability worker_missing)",
+    "files": 139,
+    "treeSha256": "73bebccc2ac98a0231c67e1f85d6fde79448725ee44e5b2ddc2f8caa9ad313be"
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "ligand-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "L-run-create": "pass",
+        "L-structure-kept": "pass",
+        "L-inputs-import": "pass",
+        "L-inspect-job": "pass",
+        "L-inspection-figure": "pass",
+        "L-atom-numbering": "pass",
+        "L-rules-status": "pass",
+        "L-invalid-rule": "pass",
+        "L-site-check": "pass",
+        "L-enumerate-job": "pass",
+        "L-candidates-oracle": "pass",
+        "L-filters": "pass",
+        "L-passes-only": "pass",
+        "L-sort": "pass",
+        "L-report": "pass",
+        "L-zero-candidates": "pass",
+        "L-paging": "pass",
+        "L-run-switch-late": "pass"
+      },
+      "runs": {
+        "A": "run_c0d15116c5534a22a4a8a2d75680bee2",
+        "B": "run_dc75b02d5aec497a9cca4e9fc1977340"
+      },
+      "runId": "run_c0d15116c5534a22a4a8a2d75680bee2",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "structureA": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/structure/696852c033cba7702be49ffca835e40688053eb867d16cd49b7fc4dc8afed853",
+        "imports": {
+          "ligand_sdf": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/chemical_raw_input/36ad998a130618e7065bfe1595bde32d4c0c516189cb96f2a7079725ce1d222f",
+          "building_blocks_sdf": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/chemical_raw_input/fa1727f4bf554aeeb6a89a6a94dab53b0af8c366d5ae1007ec418a4c12ab24b7",
+          "building_blocks_smiles": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/chemical_raw_input/18dfa16655b73a2115961fc1b338b3c50b1e1e6189fc233b50b972e10933b91c"
+        },
+        "inspection": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/ligand_inspection/03cfb883be89d5e64a0a25e0e2899134d53dd8a760cbd1a62747d68ac4e6fcee",
+        "candidateSet": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/ligand_candidate_set/11ba8b6dff3496d1ff78393e0e0af96bc10eb10dceac898f887b79e4164bbad5",
+        "report": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/method_report_manifest/fc4d1d6ca35fab1869df56e46f393a2b0d822593dc9ae446abac604e3aa8cdda",
+        "zeroSet": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/ligand_candidate_set/6b3ffe8ab7f1ef4b80c13ad62581f26208ac0b89a8bdb2365ed75c843e2f7742",
+        "pagingSet": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/ligand_candidate_set/ed2dcbf1001b775ff92e1265d9599be99ed00f65244439dde218955a1e439a8b"
+      },
+      "inputs": [
+        {
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand/synthetic-parent-methacetin-explicit-h.sdf",
+          "bytes": 2148,
+          "sha256": "2e4f5b395f92a12b6a3a15a898e18d744345f5203da76c2489ebb0e7ef463d8e"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.sdf",
+          "bytes": 3173,
+          "sha256": "0bfeb73474ede8b1f372b69072774fc9e2fd1398e8d0b24b31768e69fc9bda11"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.smi",
+          "bytes": 535,
+          "sha256": "fc603c4b9d2e3cf48ab0521963369a270f73a78b354977af6c4d4d452d85c976"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand/expected.json",
+          "bytes": 35355,
+          "sha256": "5d6790aa0d2f9a4a91a1810fb766cd9c6e4e3fb63bdd3122a146ec0cea607606"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand/synthetic-reaction-rules.json",
+          "bytes": 8683,
+          "sha256": "cc27e69029c68d1481c1237cefaec5e6b6d8001dd6d0e08bcd0015ebca9bd66c"
+        },
+        {
+          "path": "<repo>/frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/m17/ligand-main/qa-generated-chain-blocks.smi",
+          "bytes": 2812,
+          "sha256": "2bc043b8522bac86e871dd26dd722f2197bf4690bcf99298729b541ceffa4c9f",
+          "label": "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons"
+        }
+      ],
+      "fixtureLabels": [
+        "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons",
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+      ],
+      "controls": {
+        "ligand-import": [
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-file-parent": [
+          {
+            "chosen": true
+          }
+        ],
+        "ligand-file-blockSdf": [
+          {
+            "chosen": true
+          }
+        ],
+        "ligand-file-blockSmiles": [
+          {
+            "chosen": true
+          }
+        ],
+        "ligand-rules": [
+          {
+            "lines": 6
+          }
+        ],
+        "ligand-inspect-start": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-job-approve": [
+          {
+            "phaseAfter": "saved",
+            "notice": "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다."
+          }
+        ],
+        "ligand-job-start": [
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-inspection-radio": [
+          {
+            "handle": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/ligand_inspection/03cfb883be89d5e64a0a25e0e2899134d53dd8a760cbd1a62747d68ac4e6fcee"
+          }
+        ],
+        "ligand-atom-checkbox": [
+          {
+            "serial": 19
+          }
+        ],
+        "ligand-rule-user_1": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-rule-user_2": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-rule-user_3": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-use-fixed": [
+          {
+            "checked": true
+          },
+          {
+            "checked": false
+          }
+        ],
+        "ligand-enumerate-start": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-candidate-set-radio": [
+          {
+            "handle": "obj://run_c0d15116c5534a22a4a8a2d75680bee2/ligand_candidate_set/11ba8b6dff3496d1ff78393e0e0af96bc10eb10dceac898f887b79e4164bbad5"
+          }
+        ],
+        "ligand-filter-apply": [
+          {
+            "query": "?handle=obj%3A%2F%2Frun_c0d15116c5534a22a4a8a2d75680bee2%2Fligand_candidate_set%2F11ba8b6dff3496d1ff78393e0e0af96bc10eb10dceac898f887b79e4164bbad5&heavy_atoms_min=12&heavy_atoms_max=14&sort=generation_order&direction=asc&offset=0&limit=50"
+          }
+        ],
+        "ligand-filter-pains": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-passes-only": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-sort": [
+          {
+            "value": "mol_weight"
+          }
+        ],
+        "ligand-direction": [
+          {
+            "value": "desc"
+          }
+        ],
+        "ligand-report": [
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-page-next": [
+          {
+            "offset": 50
+          }
+        ],
+        "ligand-page-prev": [
+          {
+            "offset": 0
+          }
+        ]
+      },
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-07T16:10:29.702Z"
+    },
+    {
+      "step": "ligand-unavailable",
+      "mode": "unavailable",
+      "status": "pass",
+      "cases": {
+        "L-no-run": "pass",
+        "L-unavailable": "pass"
+      },
+      "runs": {
+        "A": "run_78b5eb9acffd4a4d917b3582337dd805"
+      },
+      "runId": "run_78b5eb9acffd4a4d917b3582337dd805",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked RDKit environment absent: capability worker_missing)"
+      ],
+      "controls": {},
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-07T16:10:34.701Z"
+    }
+  ]
+}

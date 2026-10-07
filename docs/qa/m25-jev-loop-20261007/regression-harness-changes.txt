@@ -1,0 +1,62 @@
+# M25 T12-1 회귀 하네스 변경 기록 (2026-10-07 UTC / 2026-10-08 KST)
+
+제품 소스는 고정 4360598 그대로다(backend/mw·frontend/src·frontend/app·design·config 변경 0). 바꾼 것은 M24 오프스크린 하네스의
+"다른 탭 불변" 판정 한 함수뿐이다(커밋 9a9a625). 과거 증거(docs/qa 기존 폴더)는 건드리지 않았다.
+
+## 첫 시도의 실패 (한 줄)
+4360598에서 M25 --regressions의 M24 fixture 회귀가 실패했다(exit 1): jev-flow.cjs F01-other-tabs-before가 단백질 공학 탭 jev- 요소 41개·리간드 설계·탐색 탭 35개(영역 jev-loop-panel, 명세 §10의 M25 "JEV 루프" 영역)를 0이어야 한다고 거절했고, rehearsal의 P-other-tabs는 탭 텍스트 서명에서 루프 영역의 동의 줄("과학 전송 동의(이 run): 켜짐")이 달라 거절했으며, 나머지 실패 사례는 이 단계가 지식 탭을 열기 전에 끝나 이어진 것이다(제품 동작 변화 아님; 그 실패 증거는 커밋하지 않고 Git 제외 frontend/tests/offscreen/artifacts/m25-acceptance/fixture-20261008/superseded-out/m24-regression-failed-4360598/에 보관).
+
+## 변경 (frontend/tests/offscreen/jev-flow.cjs, 커밋 9a9a625, sha256 9e68cfe2…feed1 → b372e73f…38982)
+1) 새 helper 322–329줄(주석 322, 함수 323–329) textWithoutLoopArea(panel): 탭 패널 innerText에서 [data-testid="jev-loop-panel"] 하위 트리의 innerText 부분만 한 번 빼서 돌려준다(루프 영역이 없으면 전체 그대로).
+   이유: 탭 텍스트 서명이 M25가 의도한 새 영역(동의 상태 줄 등, M24 동작으로 바뀔 수 있음)까지 비교했다. 제외는 루프 영역에 한정.
+2) tabSignature 338줄·340줄
+   이전: const a = masked(await panel.innerText());  /  const b = masked(await panel.innerText());
+   이후: const a = masked(await textWithoutLoopArea(panel));  /  const b = masked(await textWithoutLoopArea(panel));
+   이유: 위와 같음. 안정 대기(0.7 s 같은 텍스트)·aria-busy 검사는 그대로(aria-busy는 탭 전체에 대해 그대로).
+3) tabSignature 344–345줄
+   이전: jevElements: await panel.locator('[data-testid^="jev-"]').count()
+   이후: jevElements: await panel.locator('[data-testid^="jev-"]:not([data-testid^="jev-loop-"])').count()
+   이유: M24의 "다른 탭에 JEV(M24) 요소 없음" 판정이 M25 루프 영역 요소(jev-loop-*)를 세었다. M24 요소(jev-panel·jev-kind-* 등)는 계속 0이어야 한다.
+바꾸지 않은 것: 단언 719줄(F01 jevElements 0)·1138줄(F17)·1446–1449줄(P-other-tabs: areasEqual·textEqual·jevElements 0·POST 없음),
+  영역 목록(areas: [data-testid$='-panel'] — jev-loop-panel 포함, 전후 비교 그대로), sameSignature, 다른 모든 사례. 실행기
+  scripts/m24_offscreen_acceptance.py·scripts/test_m24_offscreen_acceptance.py는 하네스 텍스트를 검사하지 않아 바꾸지 않았다.
+  다른 회귀 하네스(M13–M23)와 M25 하네스(jev-loop-flow.cjs, jev-flow.cjs에서 halfUp·forbiddenWords·J·U만 import)는 바꾸지 않았다.
+git diff 4360598 9a9a625 --name-only: frontend/tests/offscreen/jev-flow.cjs (이 한 파일)
+
+## 회귀 사슬 (하나씩 순서대로, 새 격리 root, 실호출 0, 서비스 수명 = 각 실행기)
+명령 모양(M25 실행기 regression_commands와 같음): .venv/bin/python scripts/<mN>_offscreen_acceptance.py --root runs/m25-regress-20261008a-<mN>
+  --artifacts frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/<mN> --out docs/qa/m25-jev-loop-20261007/<mN>-regression
+  --code-root <repo> [M20·M16·M15: --kbase <home>/Projects/kbase_kinase] [M13: --phases workflows,unavailable,regressions,m11,m12,ledger]
+실행기 | exit | 초 | 시작(UTC) | 사례(모두 pass) | acceptance | HEAD(실행기 기록)
+m24 | 0 | 53 | 15:54:46 | 26 | true | 4360598 + jev-flow.cjs 수정본(하네스 sha256 b372e73f… = 9a9a625의 파일)
+m23 | 0 | 약 617 | 15:35:42 | 35 | true | 4360598 (첫 사슬에서 통과; M23 하네스는 바뀌지 않아 다시 돌리지 않음)
+m22 | 0 | 328 | 15:55:38 | 25 | true | 9a9a625
+m21 | 0 | 101 | 16:01:06 | 23 | true | 9a9a625
+m20 | 0 | 38 | 16:02:47 | 24 | true | 9a9a625
+m19 | 0 | 181 | 16:03:25 | 26 | true | 9a9a625
+m18 | 0 | 72 | 16:06:26 | 24 | true | 9a9a625
+m17 | 0 | 177 | 16:07:38 | 21 | true | 9a9a625
+m16 | 0 | 59 | 16:10:35 | 19 | true | 9a9a625
+m15 | 0 | 32 | 16:11:34 | 14 | true | 9a9a625
+m14 | 0 | 107 | 16:12:06 | 15 | true | 9a9a625
+m13 | 0 | 2077 | 16:13:54 | 28 | true | 9a9a625 (workflows·unavailable·regressions(M8–M10)·m11·m12·ledger)
+같은 종류의 충돌로 실패한 다른 실행기: 없음. 간헐 실패(psutil·타이밍): 없음(재실행 없음). 각 실행기 끝에 남은 프로세스·8000·3000 LISTEN 0.
+
+## M25 fixture 단계 재실행 (하네스 의존 파일 jev-flow.cjs가 바뀌어 새 팁 9a9a625에서 다시)
+.venv/bin/python scripts/m25_offscreen_acceptance.py --phase fixture --root runs/m25-acceptance-20261008b
+  --artifacts frontend/tests/offscreen/artifacts/m25-acceptance/fixture-20261008b --out docs/qa/m25-jev-loop-20261007/acceptance-fixture -> exit 0
+  verdict pass, acceptance true, 사례 57개 pass(관찰하지 않음 9: 실호출 2 + 백엔드 테스트가 덮는 7), dispatch 이벤트 7 = fixture transport 7 =
+  응답 감사 7, 제품 키 해석기 호출 0(sentinel 7), 실제 provider 호출 0, 브라우저 비루프백 0, 키·sentinel 검색 430개 파일 0건, 남은 프로세스 없음.
+  4360598에서의 첫 fixture 단계(같은 결과: 57 pass, transport 7 = dispatch 7)는 Git 제외 .../fixture-20261008/superseded-out/acceptance-fixture-pass-4360598/.
+
+## 새 팁(9a9a625) 재확인 (제품 소스가 같아 pytest 16그룹·typecheck·build는 gate-backend.txt·gate-frontend.txt(4360598) 그대로)
+node --check frontend/tests/offscreen/*.cjs frontend/tests/*.cjs (57개) -> exit 0
+npm --prefix frontend run test:events -> exit 0 (455 pass, fail 0, skipped 0)
+.venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py -> exit 0
+.venv/bin/python -m pytest -q scripts/test_m24_offscreen_acceptance.py scripts/test_m25_offscreen_acceptance.py scripts/test_codex_hooks.py -> exit 0 (201 passed)
+
+## 증거 크기 (결정 0020)
+256 KiB를 넘는 텍스트 증거: m13-regression 51개(331,655,797 B), m14-regression 1개(1,191,725 B), m15-regression 1개(590,108 B) →
+Git 제외 frontend/tests/offscreen/artifacts/m25-acceptance/regress-20261008a/export-full/<폴더>/로 옮김(ARCHIVED-EVIDENCE.sha256, SHA256SUMS 원래 줄
+유지, 각 README 끝 절에 확인 명령; 세 폴더 모두 shasum -c 전부 OK). 대장 파일 중 256 KiB 초과 없음. 남은 256 KiB 초과 텍스트 0개.
+키 검색: 이 폴더 전체 + export-full(784개 파일)에서 제품 키 해석기 키 문자열 0건, authorization:·bearer ·sk-or-·x-api-key 0건(불리언·경로만 출력).

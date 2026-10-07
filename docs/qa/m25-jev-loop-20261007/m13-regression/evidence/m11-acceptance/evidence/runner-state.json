@@ -1,0 +1,101 @@
+{
+  "build": {
+    "buildId": "W4Fsnhol08JIGulRiMyz7",
+    "gitHead": "9a9a625c548ee7095bbf815be14704fd47376d0a",
+    "gitStatusPorcelainSha256": "ffc685a46938f5d748267e8e26c595c9f8bf95b0c7acd4dab3c23c168abb9922",
+    "dirtyFiles": [
+      "?? docs/qa/m25-jev-loop-20261007/acceptance-fixture/",
+      "?? docs/qa/m25-jev-loop-20261007/gate-backend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-frontend.txt",
+      "?? docs/qa/m25-jev-loop-20261007/gate-invariants.txt",
+      "?? docs/qa/m25-jev-loop-20261007/m14-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m15-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m16-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m17-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m18-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m19-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m20-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m21-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m22-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m23-regression/",
+      "?? docs/qa/m25-jev-loop-20261007/m24-regression/"
+    ],
+    "recordedAt": "2026-10-07T16:21:00.295273+00:00",
+    "harnessSha256": {
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "m11-case-ledger.cjs": "445666ab975a4db5abcbec7f86be95bf33b09c94a051f83a87855d1464a86f43",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "runnerSha256": "476c41bf3b088fd5d1067717b145986a0b27c55bdbbb0f8cedf5e1a9dee54227"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-07T16:21:04.834557+00:00"
+    },
+    {
+      "name": "backend-replay-worker-missing",
+      "runs": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/replay-runs",
+      "code": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/layout-worker-missing",
+      "mw": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-07T16:36:06.127084+00:00"
+    },
+    {
+      "name": "backend-worker-mismatch",
+      "runs": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/capability-mismatch-runs",
+      "code": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/layout-worker-mismatch",
+      "mw": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/layout-worker-mismatch/backend/mw/__init__.py",
+      "startedAt": "2026-10-07T16:40:34.492718+00:00"
+    }
+  ],
+  "create": {
+    "run": "run_047319e714cb465ba211b2ac718d4f8d",
+    "result": "obj://run_047319e714cb465ba211b2ac718d4f8d/chemical_interaction_set/b1e00e9caf7a17c2180cde0eecf89898f5e1bd95adc8d3c66109725507c3ba45",
+    "report": "obj://run_047319e714cb465ba211b2ac718d4f8d/method_report_manifest/178cd4c620194077a8e7dd4b49ea558a4e68e42ff775ed0cff7f223e38ecffd2",
+    "md": "a0fff585a3440754b75e966105395b47118eae5a8dd86d1038120fdf3219c59d",
+    "json": "c0e4b8fa814eaf35975047b8b909bb62a0f5787b25db54f06f4cf33fe8add9e4"
+  },
+  "empty": {
+    "run": "run_807ff185769648b6a48133f1aa52db99",
+    "result": "obj://run_807ff185769648b6a48133f1aa52db99/chemical_interaction_set/f339a574a81762ed69cfb0bdfb763a28da87b8d9204b8aadf78f0bfe9fa806b7",
+    "report": "obj://run_807ff185769648b6a48133f1aa52db99/method_report_manifest/038c2f5de28d05f1c32a778170c1ab980fa4ee11123cc4877f8751a6fe2222d2",
+    "md": "e38e3bd5daee402451481fffd6c4f0bf46e5973412dd4d9799ed9cd4d37a1cae",
+    "json": "199841f076965c448955bf2be6770cc0da8977787cc4c7fb1429308f9ebc33ae"
+  },
+  "prepared": {
+    "run": "run_cdedb952f2334ee385f54d7715af37cb",
+    "graph": "obj://run_cdedb952f2334ee385f54d7715af37cb/chemical_graph/83525a94fa080f4616cd5159518c73902805dc737e3cfb156547cd5adc9bd623"
+  },
+  "attach": {
+    "run": "run_f1d832190c064f67ad571b59319d61ee",
+    "complex": "obj://run_f1d832190c064f67ad571b59319d61ee/structure/16d97c7eaddc6fadaa629918c80bb33f996d5da57e25df58455432d3490e43f6",
+    "dir": "<repo>/runs/m25-regress-20261008a-m13/m11-acceptance/inputs/attach-setup",
+    "sdfImport": "obj://run_f1d832190c064f67ad571b59319d61ee/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+    "mapResult": "obj://run_f1d832190c064f67ad571b59319d61ee/chemical_interaction_set/e158d83cd5461f2f70b528b81fcddfbd078fd82a265a1998166f4650709637c2",
+    "mapReport": "obj://run_f1d832190c064f67ad571b59319d61ee/method_report_manifest/4a9ba12188fd53498b9885947cc1ee0f4c1560d451b8708f14d8154f2a2a1015",
+    "mapMd": "9350483acc1ab2c931f2a117c95cab926213076ffeb63bf051d1cb1484eb7185",
+    "mapJson": "aad259f44fda9b062e71bc75142d57dac5f340c43efda46123f5c97e1bb682a9",
+    "replaceResult": "obj://run_f1d832190c064f67ad571b59319d61ee/chemical_interaction_set/0e18755d1899652579edb0cd2a0d5050fcf938419766afc566b942a9364c55c3",
+    "replaceReport": "obj://run_f1d832190c064f67ad571b59319d61ee/method_report_manifest/2297c37b3bbd2f0895329af5a6e5561570aaf580718eb24d440ca55d5c8151c4",
+    "replaceReport2": "obj://run_f1d832190c064f67ad571b59319d61ee/method_report_manifest/6142d8b1e64f474c72190e023f4b5d5e0904ad8a0491c8cff60f83849fcad613"
+  },
+  "normalRun": "run_8c8bc1732af947268bd59174c272eaa0",
+  "scenesRun": "run_b8441faf85234ead9b6c9d61c8df6d28",
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent",
+      "files": 139,
+      "treeSha256": "73bebccc2ac98a0231c67e1f85d6fde79448725ee44e5b2ddc2f8caa9ad313be"
+    },
+    "layout-worker-mismatch": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path points at a non-pinned interpreter <repo>/.venv/bin/python",
+      "files": 139,
+      "treeSha256": "73bebccc2ac98a0231c67e1f85d6fde79448725ee44e5b2ddc2f8caa9ad313be"
+    }
+  }
+}
