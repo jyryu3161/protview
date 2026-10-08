@@ -1,0 +1,56 @@
+{
+  "entryType": "UniProtKB reviewed (Swiss-Prot)",
+  "primaryAccession": "Q0SYT1",
+  "uniProtkbId": "SYT1_SYNTH",
+  "organism": {"scientificName": "Synthetica fixturae", "commonName": "synthetic fixture organism", "taxonId": 999999991,
+               "lineage": ["Synthetic", "Fixture"]},
+  "proteinDescription": {
+    "recommendedName": {
+      "fullName": {"value": "SYNTHETIC fixture protein T3 one", "evidences": [{"evidenceCode": "ECO:9999999"}]},
+      "ecNumbers": [{"value": "9.99.3.1", "evidences": [{"evidenceCode": "ECO:9999999"}]}]
+    },
+    "alternativeNames": [
+      {"fullName": {"value": "synthetic alternative name"}, "ecNumbers": [{"value": "9.99.3.4"}]}
+    ],
+    "includes": [
+      {"recommendedName": {"fullName": {"value": "synthetic included domain"}, "ecNumbers": [{"value": "9.99.3.2"}]}}
+    ],
+    "contains": [
+      {"recommendedName": {"fullName": {"value": "synthetic contained chain"}, "ecNumbers": [{"value": "9.99.3.1"}]}}
+    ]
+  },
+  "sequence": {"length": 120},
+  "features": [
+    {"type": "Active site",
+     "location": {"start": {"value": 40, "modifier": "EXACT"}, "end": {"value": 40, "modifier": "EXACT"}},
+     "description": "Synthetic proton acceptor text", "evidences": [{"evidenceCode": "ECO:9999999"}]},
+    {"type": "Binding site",
+     "location": {"start": {"value": 12, "modifier": "EXACT"}, "end": {"value": 14, "modifier": "EXACT"}},
+     "description": "", "evidences": [{"evidenceCode": "ECO:9999999", "source": "SYNTHETIC", "id": "0SY7"}],
+     "ligand": {"name": "synthetic ligand", "id": "ChEBI:CHEBI:993101", "label": "1", "note": "synthetic note"},
+     "ligandPart": {"name": "synthetic ligand part", "id": "ChEBI:CHEBI:993199"}},
+    {"type": "Binding site",
+     "location": {"start": {"value": 50, "modifier": "EXACT"}, "end": {"value": 50, "modifier": "EXACT"}},
+     "description": "", "ligand": {"name": "substrate"}},
+    {"type": "Site",
+     "location": {"start": {"value": 88, "modifier": "EXACT"}, "end": {"value": 89, "modifier": "EXACT"}},
+     "description": "Synthetic site text", "featureCrossReferences": [{"database": "SYNTHETIC", "id": "0SY7"}]}
+  ],
+  "comments": [
+    {"commentType": "CATALYTIC ACTIVITY",
+     "reaction": {"name": "synthetic A + synthetic B = synthetic C",
+                  "reactionCrossReferences": [{"database": "Rhea", "id": "RHEA:93002"},
+                                              {"database": "Rhea", "id": "RHEA-COMP:93009"},
+                                              {"database": "ChEBI", "id": "CHEBI:993102"},
+                                              {"database": "ChEBI", "id": "CHEBI:993101"}],
+                  "ecNumber": "9.99.3.1", "evidences": [{"evidenceCode": "ECO:9999999"}]},
+     "physiologicalReactions": [{"directionType": "left-to-right",
+                                 "reactionCrossReference": {"database": "Rhea", "id": "RHEA:93003"},
+                                 "evidences": [{"evidenceCode": "ECO:9999999"}]}]},
+    {"commentType": "CATALYTIC ACTIVITY",
+     "reaction": {"name": "synthetic D = synthetic E",
+                  "reactionCrossReferences": [{"database": "ChEBI", "id": "CHEBI:993103"}]},
+     "molecule": "Synthetic isoform 2"}
+  ],
+  "extraAttributes": {"uniParcId": "UPISYNTHETIC0001"}
+}
