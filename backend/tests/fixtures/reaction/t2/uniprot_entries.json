@@ -1,0 +1,143 @@
+[
+ {
+  "accession": "P0SYN3",
+  "entry_name": "SYN3_FIXTURE",
+  "protein_name": null,
+  "organism": "Fixtureus syntheticus",
+  "sequence_length": 120,
+  "ec_numbers": [],
+  "catalytic_activities": [],
+  "features": [
+   {
+    "type": "Site",
+    "start": 7,
+    "end": 7,
+    "description": "fixture site note",
+    "ligand_name": null,
+    "ligand_id": null
+   }
+  ]
+ },
+ {
+  "accession": "Q0SYN1",
+  "entry_name": "SYN1_FIXTURE",
+  "protein_name": "SYNTHETIC fixture protein one",
+  "organism": "Fixtureus syntheticus",
+  "sequence_length": 200,
+  "ec_numbers": [
+   "9.99.1.1",
+   "9.99.1.3"
+  ],
+  "catalytic_activities": [
+   {
+    "reaction_name": "synthetic substrate one = synthetic product one",
+    "ec_number": "9.99.1.1",
+    "rhea_ids": [
+     "RHEA:10000",
+     "RHEA:9000010"
+    ],
+    "chebi_ids": [
+     "CHEBI:990001",
+     "CHEBI:990004"
+    ]
+   },
+   {
+    "reaction_name": "synthetic substrate two = synthetic product two",
+    "ec_number": null,
+    "rhea_ids": [
+     "RHEA:800",
+     "RHEA:9000099"
+    ],
+    "chebi_ids": []
+   },
+   {
+    "reaction_name": "synthetic reaction without a Rhea link",
+    "ec_number": "9.99.1.2",
+    "rhea_ids": [],
+    "chebi_ids": []
+   },
+   {
+    "reaction_name": "synthetic substrate one = synthetic product one (again)",
+    "ec_number": "9.99.1.1",
+    "rhea_ids": [
+     "RHEA:9000010"
+    ],
+    "chebi_ids": []
+   }
+  ],
+  "features": [
+   {
+    "type": "Active site",
+    "start": 10,
+    "end": 10,
+    "description": "fixture active site note",
+    "ligand_name": null,
+    "ligand_id": null
+   },
+   {
+    "type": "Binding site",
+    "start": 12,
+    "end": 14,
+    "description": "",
+    "ligand_name": "synthetic ligand",
+    "ligand_id": "ChEBI:CHEBI:990005"
+   },
+   {
+    "type": "Site",
+    "start": 99,
+    "end": 99,
+    "description": "",
+    "ligand_name": null,
+    "ligand_id": null
+   },
+   {
+    "type": "Binding site",
+    "start": 10,
+    "end": 10,
+    "description": "",
+    "ligand_name": "substrate",
+    "ligand_id": null
+   }
+  ]
+ },
+ {
+  "accession": "Q0SYN2",
+  "entry_name": "SYN2_FIXTURE",
+  "protein_name": "SYNTHETIC fixture protein two",
+  "organism": "Fixtureus syntheticus",
+  "sequence_length": 80,
+  "ec_numbers": [],
+  "catalytic_activities": [],
+  "features": []
+ },
+ {
+  "accession": "Q0SYN5",
+  "entry_name": "SYN5_FIXTURE",
+  "protein_name": "SYNTHETIC fixture protein five",
+  "organism": "Fixtureus syntheticus",
+  "sequence_length": 70,
+  "ec_numbers": [
+   "9.99.3.1"
+  ],
+  "catalytic_activities": [
+   {
+    "reaction_name": "synthetic reaction five",
+    "ec_number": "9.99.3.1",
+    "rhea_ids": [
+     "RHEA:9000020"
+    ],
+    "chebi_ids": []
+   }
+  ],
+  "features": [
+   {
+    "type": "Active site",
+    "start": 10,
+    "end": 10,
+    "description": "fixture active site five",
+    "ligand_name": null,
+    "ligand_id": null
+   }
+  ]
+ }
+]
