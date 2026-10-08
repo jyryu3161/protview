@@ -215,6 +215,7 @@ tools:
       metal_contact_A: { type: float, default: 3.0 }
       numbering_map: { default: null }                   # residue_numbering_map handle of the same structure | null
       annotation: { default: null }                      # reference_site_annotation handle of the same structure | null
+      catalytic_annotation: { default: null }            # M26 reaction_knowledge handle of the same structure | null
     description: 전처리 구조의 포켓 안쪽·리간드 주변·직접 고른 위치에서 보호 잔기(사용자 지정·KLIFS 주요 부위·금속 근접·이황화 Cys)를 이유와 함께 빼고 남은 위치마다 단일 아미노산 치환 후보 목록을 만든다(위치와 바꿀 잔기의 조합 목록이며 구조 모델링을 하지 않음)
 
   # M24: local projection only (no egress); the JEV send is a separate human-approved route.

@@ -8,16 +8,23 @@ Oracle: 1MQ4 ADP-shell distances, KLIFS sites and MG contacts are the independen
 docs/qa/m20-mutations-20261003/preflight.txt (``abs <= 1e-9``); pocket expectations are re-read from the stored
 pocket_set of the same run (fpocket is not deterministic, so no pocket numbers are hard-coded). fpocket runs for real
 from ``.deps/fpocket``; these tests FAIL, never skip, when it is missing. Fault injections are labelled.
+
+M26 v2 (catalytic annotation): ``reaction_knowledge@1`` results come from the product tool ``link_reaction_knowledge``
+over the LABELLED SYNTHETIC reaction reference set of ``m20_catalytic_fixture`` (made-up PDB ID 0SY6 naming the M20
+synthetic fixture's chains; rows in ``fixtures/reaction/t6/``). The expected protection is written out by hand from
+the fixture design and re-derived here from the stored result rows (plain dict comparisons, no product function).
 """
 from __future__ import annotations
 
 import copy
+import json
 import math
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import m20_catalytic_fixture as CF
 import pytest
 from fastapi.testclient import TestClient
 from reference_fixture_set import build_fixture_set
@@ -36,6 +43,8 @@ from mw.workspace import CONFIG, build_registry, new_run
 FIX = Path(__file__).resolve().parent / "fixtures"
 CIF_1MQ4 = FIX / "public_1mq4.cif"
 CIF_1HSG = FIX / "public_1hsg.cif"
+CIF_1UBQ = FIX / "public_1ubq.cif"
+SYN = FIX / "mutation" / "synthetic-mutation-fixture.cif"
 REPO = Path(__file__).resolve().parents[2]
 TOOL = K.TOOL
 TOL = 1e-9
@@ -72,6 +81,14 @@ def ref(tmp_path, monkeypatch):
     monkeypatch.setenv(rs.ENV_VAR, str(root))
     build_fixture_set(root)
     return root
+
+
+@pytest.fixture
+def reaction(tmp_path, monkeypatch):
+    root = tmp_path / "reaction_reference"
+    CF.activate(root, monkeypatch)
+    yield root
+    CF.reset_caches()
 
 
 def _run(tmp_path, name="run_mut", dry_run=False):
@@ -155,7 +172,7 @@ def test_server_modules_import_no_heavy_chemistry_package():
 
 # --- admission through Run.call: typed failure, implementation never called -----------------------------------------
 
-def test_every_admission_reason_rejects_before_the_implementation(tmp_path, ref):
+def test_every_admission_reason_rejects_before_the_implementation(tmp_path, ref, reaction):
     run, calls = _run(tmp_path)
     structure = _load(run, CIF_1MQ4)
     prepared = _prepare(run, structure)
@@ -169,6 +186,15 @@ def test_every_admission_reason_rejects_before_the_implementation(tmp_path, ref)
     foreign_prepared = _prepare(other, _load(other, CIF_1MQ4))
     foreign_map = _map(other, foreign_prepared)
     foreign_annotation = _annotate(other, foreign_map)
+    # M26 results on 1MQ4 with a PDB ID that no row of the set names (valid results: pdb_not_in_snapshot)
+    knowledge = CF.link(run, prepared, ["A"], pdb_id=CF.OTHER_PDB_ID)
+    original_knowledge = CF.link(run, structure, ["A"], pdb_id=CF.OTHER_PDB_ID)   # the unprepared structure
+    foreign_knowledge = CF.link(other, foreign_prepared, ["A"], pdb_id=CF.OTHER_PDB_ID)
+    # LABELLED FAULT INJECTION: a reaction_knowledge@1 object whose content fails validated_result (counts edited)
+    forged_content = copy.deepcopy(run.store.load(knowledge))
+    forged_content["counts"]["chains"] = 2
+    forged_knowledge = run.store.put("reaction_knowledge", "reaction_knowledge@1", forged_content,
+                                     produced_by="forged_test_fixture").handle
 
     base = _args(prepared, residues=[LYS141])
     shell = {"radius_A": 5.0}
@@ -240,14 +266,31 @@ def test_every_admission_reason_rejects_before_the_implementation(tmp_path, ref)
         ({**base, "annotation": numbering_map}, "annotation_invalid"),
         ({**base, "annotation": foreign_annotation}, "annotation_invalid"),
         ({**base, "annotation": "x"}, "annotation_invalid"),
+        # catalytic_annotation_invalid (M26 8.1): not a handle, unknown, other kind, other run, fails validated_result
+        ({**base, "catalytic_annotation": 7}, "catalytic_annotation_invalid"),
+        ({**base, "catalytic_annotation": "x"}, "catalytic_annotation_invalid"),
+        ({**base, "catalytic_annotation": numbering_map}, "catalytic_annotation_invalid"),
+        ({**base, "catalytic_annotation": annotation}, "catalytic_annotation_invalid"),
+        ({**base, "catalytic_annotation": foreign_knowledge}, "catalytic_annotation_invalid"),
+        ({**base, "catalytic_annotation": forged_knowledge}, "catalytic_annotation_invalid"),
+        # ... right after annotation_invalid
+        ({**base, "annotation": numbering_map, "catalytic_annotation": "x"}, "annotation_invalid"),
         # every kind/run check runs before structure_mismatch
         ({**base, "numbering_map": original_map, "annotation": numbering_map}, "annotation_invalid"),
-        # structure_mismatch (map, annotation), before annotation_map_mismatch
+        ({**base, "numbering_map": original_map, "catalytic_annotation": forged_knowledge},
+         "catalytic_annotation_invalid"),
+        ({**base, "annotation": original_annotation, "catalytic_annotation": "x"}, "catalytic_annotation_invalid"),
+        # structure_mismatch (map, annotation, catalytic annotation), before annotation_map_mismatch
         ({**base, "numbering_map": original_map}, "structure_mismatch"),
         ({**base, "annotation": original_annotation}, "structure_mismatch"),
         ({**base, "numbering_map": original_map, "annotation": original_annotation}, "structure_mismatch"),
         ({**base, "numbering_map": numbering_map, "annotation": original_annotation}, "structure_mismatch"),
+        ({**base, "catalytic_annotation": original_knowledge}, "structure_mismatch"),
+        ({**base, "numbering_map": other_map, "annotation": annotation, "catalytic_annotation": original_knowledge},
+         "structure_mismatch"),
         ({**base, "numbering_map": other_map, "annotation": annotation}, "annotation_map_mismatch"),
+        ({**base, "numbering_map": other_map, "annotation": annotation, "catalytic_annotation": knowledge},
+         "annotation_map_mismatch"),
     ]
     assert {code for _, code in cases} == set(K.ADMISSION_REASON_CODES) - {"pocket_rank_invalid",
                                                                             "pocket_residue_mismatch"}
@@ -256,8 +299,12 @@ def test_every_admission_reason_rejects_before_the_implementation(tmp_path, ref)
     assert not [e for e in _events(run, "tool_called") if e["tool"] == TOOL]
     assert not [e for e in _events(run, "object_created") if e["kind"] == K.KIND]
     # the same inputs are accepted once the wrong field is fixed
-    ok = run.call(TOOL, {**base, "numbering_map": numbering_map, "annotation": annotation})
+    ok = run.call(TOOL, {**base, "numbering_map": numbering_map, "annotation": annotation,
+                         "catalytic_annotation": knowledge})
     assert ok.kind == K.KIND and len(calls) == 1
+    check = run.store.load(ok.handle)["protection_checks"]["catalytic_residue_database"]
+    assert check["annotation"] == knowledge and check["uncovered_chains"] == [{"chain_auth": "A",
+                                                                              "coverage": "pdb_not_in_snapshot"}]
 
 
 def test_argument_repair_runs_the_same_precheck(tmp_path):
@@ -343,6 +390,7 @@ def test_same_set_same_handle_and_different_allowed_set_new_handle(tmp_path):
     assert third.handle != first.handle and len(calls) == 2
     called = next(e for e in _events(run, "tool_called") if e["tool"] == TOOL)["args"]   # the call key args
     assert called["allowed_residues"] == "ACDE" and called["ligand"] == adp7 and called["metal_contact_A"] == 3.0
+    assert "catalytic_annotation" in called and called["catalytic_annotation"] is None    # always in the call key
     assert [r["seq_auth"] for r in called["sources"]["residues"]] == [126, 139, 141]
     assert all(set(r) == set(K.IDENTITY_FIELDS) for r in called["sources"]["residues"])
 
@@ -486,7 +534,8 @@ def test_http_tools_capabilities_and_commands_on_public_1mq4(client, ref):
         by_seq = {p["residue"]["seq_auth"]: p for p in content["positions"]}
         assert by_seq[139]["exclusion_reasons"] == ["user_protected"]
         assert by_seq[261]["protection"] == {"reasons": ["metal_contact"], "released": True, "klifs_sites": (
-            [] if annotated else None), "metal": by_seq[261]["protection"]["metal"], "disulfide_partner": None}
+            [] if annotated else None), "metal": by_seq[261]["protection"]["metal"], "disulfide_partner": None,
+            "catalytic": None}   # v2 without a catalytic annotation: not checked
         assert by_seq[261]["status"] == "candidate"
         assert by_seq[274]["exclusion_reasons"] == (["klifs_key_site", "metal_contact"] if annotated
                                                     else ["metal_contact"])
@@ -696,3 +745,195 @@ def test_a_built_set_that_does_not_validate_is_never_stored(client, monkeypatch)
     assert failed.json()["error"] == "input_invalid"
     assert failed.json()["detail"]["reason_code"] == "candidate_set_invalid"
     assert K.KIND not in _kinds(rid)
+
+
+# --- M26 v2: catalytic residue protection through the tool (spec 8) ---------------------------------------------------
+
+def _syn(run):
+    return _prepare(run, _load(run, SYN))
+
+
+def _rows_by_status(result, chains):
+    """Independent re-derivation from the stored result: (matched entries by residue, conflict items, unmatched items)
+    of the named chains whose M-CSA section is covered, in chain order then (mcsa_id, residue_index)."""
+    matched, lists = {}, {"conflict": [], "unmatched": []}
+    by_chain = {c["chain_auth"]: c for c in result["chains"]}
+    for chain in chains:
+        mcsa = by_chain[chain]["mcsa"]
+        if mcsa["coverage"] != "covered":
+            continue
+        for row in sorted(mcsa["rows"], key=lambda r: (r["mcsa_id"], r["residue_index"])):
+            if row["status"] == "matched":
+                key = json.dumps(row["residue"], sort_keys=True)
+                matched.setdefault(key, []).append({"mcsa_id": row["mcsa_id"], "residue_index": row["residue_index"],
+                                                    "is_reference": row["is_reference"]})
+            else:
+                lists[row["status"]].append({
+                    "chain_auth": chain, "mcsa_id": row["mcsa_id"], "residue_index": row["residue_index"],
+                    "reason": row["reason"], "residue": row["residue"],
+                    "listed": {k: row["listed"][k] for k in ("chain_name", "resid", "auth_resid", "code")}})
+    return matched, lists["conflict"], lists["unmatched"]
+
+
+CAT_RESIDUES = [res(2, "ALA"), res(5, "CYS"), res(6, "HID"), {**res(10, "LEU")}, res(26, "ASP"), res(2, "ALA", "B"),
+                res(6, "HID", "B")]
+
+
+def test_catalytic_protection_from_a_real_reaction_result(tmp_path, reaction):
+    run, calls = _run(tmp_path)
+    prepared = _syn(run)
+    knowledge = CF.link(run, prepared, ["A", "B"])
+    result = run.store.load(knowledge)
+    out = run.call(TOOL, _args(prepared, residues=CAT_RESIDUES, protected_residues=[res(5, "CYS")],
+                               released_residues=[res(26, "ASP")], catalytic_annotation=knowledge))
+    content = run.store.load(out.handle)
+    assert content["method_version"] == "mw.mutation_candidates/v2" and len(calls) == 1
+    by = {(p["residue"]["chain_auth"], p["residue"]["seq_auth"]): p for p in content["positions"]}
+    entry = {"mcsa_id": 601, "residue_index": 0, "is_reference": True}
+    expected = {("A", 2): [{"mcsa_id": 601, "residue_index": 7, "is_reference": True}],
+                ("A", 5): [{"mcsa_id": 601, "residue_index": 6, "is_reference": True}],
+                ("A", 6): [entry, {"mcsa_id": 602, "residue_index": 0, "is_reference": False}],
+                ("A", 10): [],    # only an unmatched (ambiguous number) row names 10: checked, not protected
+                ("A", 26): [{"mcsa_id": 601, "residue_index": 1, "is_reference": False}],   # a non-reference row too
+                ("B", 2): [{"mcsa_id": 601, "residue_index": 9, "is_reference": True}],
+                ("B", 6): [{"mcsa_id": 601, "residue_index": 8, "is_reference": True}]}
+    assert {key: p["protection"]["catalytic"] for key, p in by.items()} == expected
+    matched, conflicts, unmatched = _rows_by_status(result, ["A", "B"])
+    for p in content["positions"]:      # every matched row of the same 7 fields protects, nothing else does
+        assert p["protection"]["catalytic"] == matched.get(json.dumps(p["residue"], sort_keys=True), [])
+        assert ("catalytic_residue" in p["protection"]["reasons"]) == bool(p["protection"]["catalytic"])
+    assert by[("A", 5)]["protection"]["reasons"] == ["user_protected", "disulfide_cys", "catalytic_residue"]
+    assert by[("A", 2)]["exclusion_reasons"] == ["metal_contact", "catalytic_residue"]
+    assert by[("A", 26)]["protection"]["released"] is True and by[("A", 26)]["status"] == "candidate"
+    assert by[("A", 26)]["protection"]["reasons"] == ["catalytic_residue"]   # released: the reason list stays
+    assert content["protection_checks"]["catalytic_residue_database"] == {
+        "status": "checked", "reason": None, "annotation": knowledge, "covered_chains": ["A", "B"],
+        "uncovered_chains": [], "matched_rows": 9, "conflict_rows": 2, "unmatched_rows": 4,
+        "conflicts": conflicts, "unmatched": unmatched}
+    assert [(i["chain_auth"], i["mcsa_id"], i["residue_index"], i["reason"]) for i in conflicts] == [
+        ("A", 601, 2, "residue_name_differs"), ("B", 601, 10, "mcsa_rows_disagree")]
+    assert conflicts[0]["residue"]["resname"] == "MSE" and conflicts[1]["residue"] is None
+    assert conflicts[1]["listed"] == {"chain_name": "B", "resid": 13, "auth_resid": 13, "code": "Asn/Asp"}
+    assert [(i["residue_index"], i["reason"]) for i in unmatched] == [
+        (3, "ambiguous_residue_number"), (4, "residue_not_in_structure"), (5, "no_author_number"),
+        (11, "non_standard_code")]
+    assert unmatched[2]["listed"] == {"chain_name": "A", "resid": None, "auth_resid": None, "code": "Cys"}
+    assert content["counts"]["exclusion_reason_counts"]["catalytic_residue"] == 5   # A2 A5 A6 B2 B6 (A26 released)
+    assert content["limitations"][2] == K.LIMITATION_3_CHECKED
+
+
+@pytest.mark.parametrize("coverage", ["chain_not_listed", "not_in_annotation", "pdb_not_in_snapshot", "not_checked"])
+def test_catalytic_uncovered_chains_through_the_tool(tmp_path, reaction, coverage):
+    run, _ = _run(tmp_path)
+    prepared = _syn(run)
+    residues = [res(6, "HID"), res(6, "HID", "B"), res(1, "HIE", "CC")]
+    if coverage == "chain_not_listed":
+        knowledge = CF.link(run, prepared, ["A", "B", "CC"])
+    elif coverage == "not_in_annotation":
+        knowledge = CF.link(run, prepared, ["A", "B"])
+    elif coverage == "pdb_not_in_snapshot":
+        knowledge = CF.link(run, prepared, ["A", "B", "CC"], pdb_id=CF.OTHER_PDB_ID)
+    else:
+        knowledge = CF.link(run, prepared, ["A", "B", "CC"], pdb_id=None)
+    content = run.store.load(run.call(TOOL, _args(prepared, residues=residues,
+                                                  catalytic_annotation=knowledge)).handle)
+    check = content["protection_checks"]["catalytic_residue_database"]
+    assert (check["status"], check["reason"]) == ("not_checked", "chains_not_covered")
+    by = {p["residue"]["chain_auth"]: p for p in content["positions"]}
+    assert by["CC"]["protection"]["catalytic"] is None
+    if coverage in ("chain_not_listed", "not_in_annotation"):
+        assert check["covered_chains"] == ["A", "B"]
+        assert check["uncovered_chains"] == [{"chain_auth": "CC", "coverage": coverage}]
+        assert (check["matched_rows"], check["conflict_rows"], check["unmatched_rows"]) == (9, 2, 4)
+        assert by["A"]["protection"]["reasons"] == ["catalytic_residue"]       # covered chains still protect
+        assert by["B"]["protection"]["catalytic"] == [{"mcsa_id": 601, "residue_index": 8, "is_reference": True}]
+    else:
+        assert check["covered_chains"] == []
+        assert check["uncovered_chains"] == [{"chain_auth": c, "coverage": coverage} for c in ("A", "B", "CC")]
+        assert (check["matched_rows"], check["conflict_rows"], check["unmatched_rows"]) == (0, 0, 0)
+        assert check["conflicts"] == [] and check["unmatched"] == []
+        assert all(p["protection"]["catalytic"] is None and not p["protection"]["reasons"]
+                   for p in content["positions"])
+    assert content["limitations"][2] == K.LIMITATION_3_NOT_CHECKED
+
+
+def _synthetic_numbering_map(run, structure):
+    """LABELLED SYNTHETIC residue_numbering_map@1 object (hand-built, not an M15 result): chain A residue LEU A10 at
+    position 10 of the synthetic accession Q0SYN1, whose T2 UniProt row has an Active site at 10."""
+    from mw import reaction_knowledge as rk
+    from mw.tools.registry import ToolContext
+    from mw.tools.structural import _parse
+    residues = rk.chain_polymer_residues(_parse(ToolContext(store=run.store, call_id="test"), structure))
+    (a10,) = [r for r in residues["A"] if r["seq_auth"] == 10 and r["icode"] == ""]
+    row = {"residue": dict(a10), "status": "mapped", "uniprot_accession": "Q0SYN1", "uniprot_position": 10,
+           "uniprot_residue": "L", "residue_match": True, "klifs_index": None, "klifs_label": None,
+           "klifs_match": None, "conflict_reason": None, "sifts": None, "alignment": None}
+    content = {"schema": "residue_numbering_map@1", "method_version": "mw.residue_numbering/v1",
+               "structure": {"handle": structure, "structure_kind": "prepared_structure", "model_number": 1},
+               "pdb_id": CF.PDB_ID, "chains": [{"chain_auth": "A", "requested_uniprot_accession": "Q0SYN1",
+                                                "methods_run": ["local_alignment"]}],
+               "rows": [row], "null_result": False, "fixture": "SYNTHETIC constructed numbering map (not M15 output)"}
+    return run.store.put("residue_numbering_map", "residue_numbering_map@1", content,
+                         produced_by="synthetic_fixture").handle
+
+
+def test_uniprot_sites_never_protect(tmp_path, reaction):
+    run, _ = _run(tmp_path)
+    prepared = _syn(run)
+    knowledge = CF.link(run, prepared, ["A"], accessions={"A": "Q0SYN1"},
+                        numbering_map=_synthetic_numbering_map(run, prepared))
+    chain = run.store.load(knowledge)["chains"][0]
+    linked = [link for f in chain["uniprot"]["features"] if f["type"] == "Active site" for link in f["links"] or []
+              if link["status"] == "mapped"]
+    assert linked and linked[0]["residue"]["seq_auth"] == 10          # a UniProt Active site linked to LEU A10
+    content = run.store.load(run.call(TOOL, _args(prepared, residues=[res(10, "LEU")],
+                                                  catalytic_annotation=knowledge)).handle)
+    (a10,) = content["positions"]
+    assert a10["protection"]["catalytic"] == [] and a10["protection"]["reasons"] == []
+    assert a10["status"] == "candidate"
+
+
+def test_catalytic_list_cap_is_429_and_nothing_is_stored(tmp_path, monkeypatch):
+    root = tmp_path / "reaction_reference"
+    CF.activate(root, monkeypatch, long_unmatched=401)     # 4 + 401 unmatched rows on chain A
+    try:
+        run, calls = _run(tmp_path)
+        prepared = _syn(run)
+        knowledge = CF.link(run, prepared, ["A"])
+        before = len(_events(run, "object_created"))
+        with pytest.raises(ToolFailure) as caught:
+            run.call(TOOL, _args(prepared, residues=[res(6, "HID")], catalytic_annotation=knowledge))
+        assert caught.value.cls == FailureClass.resource_exceeded
+        assert caught.value.detail == {"reason_code": "catalytic_list_too_long", "list": "unmatched", "count": 405,
+                                       "limit": 400}
+        assert len(calls) == 1 and not [e for e in _events(run, "object_created")[before:] if e["kind"] == K.KIND]
+        CF.activate(root, monkeypatch, long_unmatched=396, imported_at="2026-10-08T00:00:01Z")   # exactly 400
+        at_limit = CF.link(run, prepared, ["A"])
+        content = run.store.load(run.call(TOOL, _args(prepared, residues=[res(6, "HID")],
+                                                      catalytic_annotation=at_limit)).handle)
+        check = content["protection_checks"]["catalytic_residue_database"]
+        assert check["unmatched_rows"] == len(check["unmatched"]) == 400 and check["status"] == "checked"
+    finally:
+        CF.reset_caches()
+
+
+def test_v2_set_differs_from_the_stored_v1_set_of_the_same_input_only_in_the_m26_fields(tmp_path):
+    fixture = json.loads((FIX / "reaction" / "t1" / "m20-v1-candidate-set-golden_m24_mutation.json").read_text())
+    v1 = fixture["content"]
+    run = new_run(tmp_path / "runs", run_id="golden_m24_mutation", dry_run=False)
+    prepared = _prepare(run, _load(run, CIF_1UBQ))
+    assert prepared == v1["structure"]["handle"]
+    out = run.call(TOOL, _args(prepared, residues=[res(1, "MET"), res(44, "ILE"), res(48, "LYS")]))
+    assert out.handle != fixture["handle"]
+    v2 = run.store.load(out.handle)
+    assert v2["method_version"] == "mw.mutation_candidates/v2"
+    expected = copy.deepcopy(v1)     # v1 + exactly the M26 spec 8.6 changes
+    expected["method_version"] = "mw.mutation_candidates/v2"
+    expected["parameters"]["catalytic_annotation"] = None
+    for p in expected["positions"]:
+        p["protection"]["catalytic"] = None
+    expected["protection_checks"]["catalytic_residue_database"] = {"status": "not_checked",
+                                                                   "reason": "annotation_not_given", "annotation": None}
+    expected["counts"]["exclusion_reason_counts"]["catalytic_residue"] = 0
+    expected["limitations"][2] = K.LIMITATION_3_NOT_CHECKED
+    assert v2 == expected
