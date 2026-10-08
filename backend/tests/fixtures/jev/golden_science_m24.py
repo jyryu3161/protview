@@ -8,9 +8,13 @@ failed, replayed, conflicts), ``GET /jev/sends`` and ``/jev/sends/{send_id}``, t
 event the steps append (the science audit rows included), ``GET /jev/status``, the ``jev_choice`` method report and
 ``/capabilities`` ``methods.jev_choice``.
 
-Inputs (fixed run ids, so every content handle is the same in every recording): public 1UBQ (M20 cheap tool, positions
+Inputs (fixed run ids, so every content handle is the same in every recording): public 1UBQ (M20 set for positions
 MET1, ILE44, LYS48) in a normal and a dry-run run, and the labelled synthetic methacetin M17 run of
-``ligand_job_fixture.standard_run`` (real RDKit jobs). Each case is an events-only copy of its template served by the
+``ligand_job_fixture.standard_run`` (real RDKit jobs). Since M26 T1 the M20 set is the stored v1 content of
+``fixtures/reaction/t1/m20-v1-candidate-set-<run id>.json`` (made once by the unmodified v1 tool), put with
+``store.put`` inside the same ``Run.call`` envelope the tool call had, so the template keeps its event count and every
+later event sequence number (a bare ``store.put`` moves the report's absolute ``*_event_seq`` values by -4); the M20
+implementation is not run (M20 v2 builds other sets). Each case is an events-only copy of its template served by the
 product app with ``SCIENCE_GATE`` replaced by an ``httpx.MockTransport`` gate and an inert sentinel credential
 (fixture replies, never provider output); nothing opens a socket or reads ``.env``.
 
@@ -57,6 +61,7 @@ from mw.workspace import new_run
 
 GOLDEN = HERE / "golden_science_m24.json"
 FIX = TESTS / "fixtures"
+V1_SETS = FIX / "reaction" / "t1"   # stored M20 v1 candidate sets (SYNTHETIC-PROVENANCE-t1.md)
 SENTINEL = "sentinel_m25_t1_golden_science_key"
 USAGE = {"input_tokens": 3000, "output_tokens": 20, "cost": 0.001}
 JSON = {"content-type": "application/json"}
@@ -73,15 +78,33 @@ def res(seq_auth: int, resname: str) -> dict[str, Any]:
 
 
 # ----------------------------------------------------------------------------------------------- templates
+def stored_v1_set(run: Any, args: dict[str, Any]) -> str:
+    """The ``generate_mutation_candidates`` call of the template, its result taken from the stored v1 fixture."""
+    fixture = json.loads((V1_SETS / f"m20-v1-candidate-set-{run.run_id}.json").read_text(encoding="utf-8"))
+    content = fixture["content"]
+
+    def put_stored(ctx: Any, structure: str, **params: Any) -> Any:
+        assert structure == content["structure"]["handle"], structure
+        assert all(params[key] == value for key, value in content["parameters"].items() if key in params), params
+        summary = {"structure": structure, **content["counts"], "null_result": content["null_result"]}
+        return ctx.store.put("mutation_candidate_set", "mutation_candidate_set@1", content, produced_by=ctx.call_id,
+                             summary=summary, null_result=content["null_result"])
+
+    run.registry.impls["generate_mutation_candidates"] = put_stored   # this run's own registry only
+    handle = run.call("generate_mutation_candidates", args).handle
+    assert handle == fixture["handle"], handle
+    return handle
+
+
 def templates(root: Path) -> dict[str, dict[str, Any]]:
     out = {}
     for name, dry in (("mutation", False), ("dry", True)):
         run = new_run(root / name, run_id=f"golden_m24_{name}", dry_run=dry)
         loaded = run.call("load_structure", {"source": str(FIX / "public_1ubq.cif"), "model_index": 0}).handle
         prepared = run.call("prepare_structure", {"structure": loaded}).handle
-        source = run.call("generate_mutation_candidates", {
+        source = stored_v1_set(run, {
             "structure": prepared, "sources": {"pocket": None, "ligand_shell": None,
-                                               "residues": [res(1, "MET"), res(44, "ILE"), res(48, "LYS")]}}).handle
+                                               "residues": [res(1, "MET"), res(44, "ILE"), res(48, "LYS")]}})
         out[name] = {"root": root / name, "run_id": run.run_id, "dry_run": dry, "kind": "mutation",
                      "source": source, "candidates": [30, 3, 0], "other": [1, 2]}
     made = standard_run(root / "ligand", "golden_m24_ligand")
