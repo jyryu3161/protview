@@ -182,6 +182,23 @@ def test_non_canonical_manifest_with_a_consistent_hash(ref):
     _invalid()
 
 
+def test_deeply_nested_pointer_is_snapshot_invalid(ref):
+    RF.build_set(ref)
+    (ref / "active.json").write_bytes(b"[" * 3000)  # json raises RecursionError, not ValueError
+    _invalid()
+    assert rs.capability()["reason_code"] == "snapshot_invalid"
+
+
+def test_deeply_nested_manifest_with_a_consistent_hash_is_snapshot_invalid(ref):
+    raw = b"[" * 100000
+    set_hash = K.set_hash_of(raw)
+    (ref / "sets" / set_hash).mkdir()
+    (ref / "sets" / set_hash / "manifest.json").write_bytes(raw)
+    RF.activate(ref, set_hash)
+    _invalid()
+    assert rs.capability()["reason_code"] == "snapshot_invalid"
+
+
 def test_unterminated_last_line_is_a_rows_mismatch(ref):
     rows = RF.synthetic_rows()
     data = K.encode_jsonl("rhea", rows["rhea"])[:-1]  # last line without "\n": line count differs from rows

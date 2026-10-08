@@ -9,7 +9,18 @@ import yaml
 
 from .runtime.guards import Budget, BudgetLimits, LoopGuard
 from .runtime.orchestrator import Run
-from .tools import comparison, energetic, jev, jev_loop, mutations, numbering, sasa, site_annotation, structural
+from .tools import (
+    comparison,
+    energetic,
+    jev,
+    jev_loop,
+    mutations,
+    numbering,
+    reaction_knowledge,
+    sasa,
+    site_annotation,
+    structural,
+)
 from .tools.registry import ToolRegistry
 
 ROOT = Path(__file__).resolve().parents[2]          # repo root
@@ -31,6 +42,7 @@ def build_registry(tools_yaml: Path | None = None) -> ToolRegistry:
     mutations.register(reg)
     jev.register(reg)
     jev_loop.register(reg)
+    reaction_knowledge.register(reg)
     return reg
 
 

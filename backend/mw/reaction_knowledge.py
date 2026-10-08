@@ -142,7 +142,7 @@ def reaction_index(pinned: rs.PinnedReactionSet) -> ReactionIndex:
         mcsa_rows = _decode(pinned, "mcsa")
         uniprot_rows = _decode(pinned, "uniprot_function")
         rhea_rows = _decode(pinned, "rhea")
-    except ValueError as exc:
+    except (ValueError, RecursionError) as exc:  # RecursionError: a line nested past the recursion limit
         raise rs.SnapshotUnavailable("snapshot_invalid") from exc
     by_pdb: dict[str, list[int]] = {}
     for row in mcsa_rows:
@@ -873,6 +873,6 @@ def validated_result(obj: Any) -> Any:
         _validate(obj)
     except ResultInvalid:
         raise
-    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as exc:
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError, RecursionError) as exc:
         raise ResultInvalid(f"malformed result: {exc}") from exc
     return obj
