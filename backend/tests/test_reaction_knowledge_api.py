@@ -223,6 +223,21 @@ def test_list_items_newest_first(client, world, monkeypatch):
     assert paged == {"items": [full], "total": 2}
 
 
+def test_list_default_limit_is_50(client, world):
+    from mw import reaction_knowledge_reads as reads
+
+    assert (reads.LIST_LIMIT_DEFAULT, reads.LIST_LIMIT_MAX) == (50, 100)
+    run = _app()._run(world["rid"])
+    for i in range(50):   # 50 more distinct results (one PDB ID each, none in the snapshot) -> 52 in all
+        run.call(TOOL, {"structure": world["ubq"], "pdb_id": f"9X{i:02d}", "numbering_map": None,
+                        "chains": [{"chain_auth": "A", "uniprot_accession": None}]})
+    body = client.get(f"/runs/{world['rid']}/reaction_knowledge").json()
+    assert body["total"] == 52 and len(body["items"]) == 50
+    assert [item["pdb_id"] for item in body["items"][:2]] == ["9X49", "9X48"]   # newest first
+    rest = client.get(f"/runs/{world['rid']}/reaction_knowledge", params={"offset": 50}).json()["items"]
+    assert [item["handle"] for item in rest] == [world["empty"], world["full"]]
+
+
 @pytest.mark.parametrize("params", [{"limit": 0}, {"limit": 101}, {"offset": -1}, {"limit": "x"}, {"other": 1}])
 def test_list_parameter_bounds(client, world, params):
     assert client.get(f"/runs/{world['rid']}/reaction_knowledge", params=params).status_code == 422
@@ -334,6 +349,19 @@ def test_detail_and_list_revalidate_the_stored_object(client, world):
     content["counts"]["chains"] = 3        # SYNTHETIC forged object written past the tool
     forged = run.store.put(K.KIND, K.SCHEMA, content, produced_by="synthetic_fixture").handle
     response = _detail(client, world, handle=forged)
+    assert response.status_code == 422 and response.json()["detail"]["error"] == "method_evidence_invalid"
+    listed = client.get(f"/runs/{world['rid']}/reaction_knowledge")
+    assert listed.status_code == 409 and listed.json()["detail"]["error"] == "run_corrupt"
+
+
+def test_a_deeply_nested_stored_result_is_refused_by_the_reads(client, world):
+    """SYNTHETIC damaged object: raw JSON nested past the recursion limit, stored under the result kind."""
+    run = _app()._run(world["rid"])
+    depth = 100000
+    deep = run.store.put(K.KIND, K.SCHEMA, b"[" * depth + b"]" * depth, produced_by="synthetic_fixture").handle
+    with pytest.raises(RecursionError):
+        run.store.load(deep)
+    response = _detail(client, world, handle=deep)
     assert response.status_code == 422 and response.json()["detail"]["error"] == "method_evidence_invalid"
     listed = client.get(f"/runs/{world['rid']}/reaction_knowledge")
     assert listed.status_code == 409 and listed.json()["detail"]["error"] == "run_corrupt"

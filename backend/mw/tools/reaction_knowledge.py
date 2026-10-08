@@ -155,7 +155,10 @@ def _numbering_map(store: Any, handle: Any) -> dict[str, Any] | None:
         raise _invalid("unknown handle (not an object of this run)", "numbering_map_invalid") from None
     if (meta["kind"], meta["schema"]) != MAP_TYPE:
         raise _invalid(f"numbering_map must be a residue_numbering_map, got '{meta['kind']}'", "numbering_map_invalid")
-    content = store.load(handle)
+    try:
+        content = store.load(handle)
+    except RecursionError:   # a stored object nested past the recursion limit is not a map (never a 500)
+        raise _invalid("the numbering map object cannot be read", "numbering_map_invalid") from None
     if not _map_shape_ok(content):
         raise _invalid("the numbering map object does not have the residue_numbering_map@1 fields",
                        "numbering_map_invalid")

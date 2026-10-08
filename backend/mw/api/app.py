@@ -80,6 +80,7 @@ from ..pocket_bundle import list_sets as list_pocket_sets
 from ..pocket_bundle import preflight as pocket_preflight
 from ..pocket_bundle import result_summary as pocket_result_summary
 from ..pocket_reports import build_pocket_report, saved_pocket_report
+from ..reaction_knowledge_reports import build_reaction_report, saved_reaction_report
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
@@ -1322,6 +1323,11 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # M25: reads the stored loop summary, its candidates' docking results and its proposals only; nothing is
             # computed or sent. A loop proposal (jev_loop_choice) is no report input: wrong_method_result_kind below.
             return build_jev_loop_report(run, body.result_handle)
+        if kind == reaction_knowledge_reads.KIND:
+            # M26: reads the stored result only (re-validated); the linking is not run again. The active reaction
+            # reference set at creation is recorded in the report snapshot only.
+            return build_reaction_report(run, body.result_handle,
+                                         active_set_hash=reaction_knowledge_reads.capability()["set_hash"])
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1349,7 +1355,8 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga", "sequence_ga", "jev_choice", "jev_loop"}
+                                        "ligand_ga", "sequence_ga", "jev_choice", "jev_loop",
+                                        "reaction_knowledge"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1367,7 +1374,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
-                                                              "sequence_ga", "jev_choice", "jev_loop"}
+                                                              "sequence_ga", "jev_choice", "jev_loop",
+                                                              "reaction_knowledge"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1402,6 +1410,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_jev_report(run, handle)
         if report.get("analysis_type") == "jev_loop":
             return saved_jev_loop_report(run, handle)
+        if report.get("analysis_type") == "reaction_knowledge":
+            return saved_reaction_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 

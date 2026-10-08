@@ -380,6 +380,18 @@ def test_malformed_map_content_is_numbering_map_invalid(world):
     _rejected(run, world["calls"], _w(world, numbering_map=damaged), "numbering_map_invalid")
 
 
+def test_deeply_nested_map_object_is_numbering_map_invalid_not_a_crash(world):
+    """SYNTHETIC damaged map object: raw JSON nested past the recursion limit (``store.load`` raises RecursionError)."""
+    run = world["run"]
+    depth = 100000
+    deep = run.store.put("residue_numbering_map", "residue_numbering_map@1", b"[" * depth + b"]" * depth,
+                         produced_by="synthetic_fixture").handle
+    with pytest.raises(RecursionError):
+        run.store.load(deep)
+    failure = _rejected(run, world["calls"], _w(world, numbering_map=deep), "numbering_map_invalid")
+    assert failure.message
+
+
 def test_absent_accession_and_null_map_are_accepted_and_normalized(world):
     run = world["run"]
     out = run.call(TOOL, {"structure": world["alpha"], "chains": [{"chain_auth": "A"}]})
