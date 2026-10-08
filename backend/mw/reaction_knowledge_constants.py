@@ -87,6 +87,8 @@ ADMISSION_REASON_CODES = (
     "accession_invalid", "numbering_map_invalid", "structure_mismatch", "map_pdb_mismatch",
 )
 RESULT_INVALID_REASON = "result_invalid"  # input_invalid when validated_result refuses the content before storing
+RESULT_TOO_LARGE_REASON = "result_too_large"  # resource_exceeded (429): canonical JSON above MAX_RESULT_BYTES
+TOO_MANY_LINKS_REASON = "too_many_links"      # resource_exceeded (429): more than MAX_LINKS link elements
 
 # 5.3-5.6 section states and reasons (closed)
 CHECKED = "checked"

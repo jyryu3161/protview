@@ -223,6 +223,17 @@ def test_unknown_content_format_is_snapshot_invalid_and_not_cached(ref, source, 
     assert rk.capability()["reason_code"] == "snapshot_invalid"
 
 
+def test_deeply_nested_jsonl_line_is_snapshot_invalid_and_not_cached(ref):
+    # hash-consistent set (the manifest records this file), one line nested past the json recursion limit
+    RF.build_set(ref, file_bytes={"rhea": b"[" * 100000 + b"\n"})
+    rs.pin_active_set()
+    with pytest.raises(rs.SnapshotUnavailable) as err:
+        rk.pin_and_index()
+    assert err.value.reason_code == "snapshot_invalid"
+    assert rk._INDEX_CACHE == {}
+    assert rk.capability()["reason_code"] == "snapshot_invalid"
+
+
 def test_capability_shapes(ref, tmp_path, monkeypatch):
     set_hash = RF.build_set(ref)
     cap = rk.capability()
@@ -770,6 +781,17 @@ def test_validated_result_rejects_non_objects_and_floats(world):
     with pytest.raises(rk.ResultInvalid):
         rk.validated_result(result)
     assert issubclass(rk.ResultInvalid, ValueError)
+
+
+def test_validated_result_refuses_a_deeply_nested_object(world):
+    deep: list = []
+    for _ in range(100000):
+        deep = [deep]
+    for path in (["limitations"], ["chains", 0, "flags"], ["counts", "mcsa_rows"]):
+        result = full(world)
+        _set(result, path, deep)
+        with pytest.raises(rk.ResultInvalid):
+            rk.validated_result(result)
 
 
 def test_validated_result_checks_skipped_and_not_in_snapshot_against_the_manifest(world):

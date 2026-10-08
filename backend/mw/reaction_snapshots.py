@@ -167,7 +167,7 @@ def pin_active_set(root: Path | None = None) -> PinnedReactionSet:
         set_hash = _read_pointer(root)
     except FileNotFoundError as exc:
         raise SnapshotUnavailable("not_installed") from exc
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:  # RecursionError: JSON nested past the recursion limit
         raise SnapshotUnavailable("snapshot_invalid") from exc
     set_dir = root / K.SETS_DIR / set_hash
     try:
@@ -196,7 +196,7 @@ def pin_active_set(root: Path | None = None) -> PinnedReactionSet:
                 raise ValueError("files changed during verification")
             with _LOCK:
                 _VERIFIED[key[0]] = key
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:
         raise SnapshotUnavailable("snapshot_invalid") from exc
     return PinnedReactionSet(set_hash, set_dir, raw, manifest, identity)
 
