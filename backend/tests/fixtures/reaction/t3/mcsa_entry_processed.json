@@ -1,0 +1,54 @@
+{
+  "mcsa_id": 7,
+  "enzyme_name": "SYNTHETIC fixture enzyme T3",
+  "reference_uniprot_id": "Q0SYT1, P0SYT2",
+  "all_ecs": ["9.99.3.1", "9.99.3.2"],
+  "residues": [
+    {
+      "roles_summary": "synthetic fixture role summary",
+      "function_location_abv": "",
+      "ptm": "",
+      "roles": [
+        {"group_function": "", "function_type": "interaction", "function": "synthetic fixture function one",
+         "emo": "EMO_99001"},
+        {"group_function": "synthetic group", "function_type": "spectator", "function": "synthetic fixture function two",
+         "emo": "EMO_99002"}
+      ],
+      "residue_chains": [
+        {"pdb_id": "0sy7", "chain_name": "A", "assembly_chain_name": "A", "assembly": 1, "code": "Asp", "resid": 30,
+         "auth_resid": 40, "is_reference": true}
+      ],
+      "residue_sequences": [{"uniprot_id": "Q0SYT1", "code": "Asp", "is_reference": true}]
+    },
+    {
+      "roles_summary": "",
+      "function_location_abv": "main-N",
+      "ptm": "Llp",
+      "roles": [],
+      "residue_chains": [
+        {"pdb_id": "0sy7", "chain_name": "B", "assembly_chain_name": "BB", "assembly": null, "code": "Lys", "resid": 31,
+         "auth_resid": null, "is_reference": true}
+      ],
+      "residue_sequences": [{"uniprot_id": "", "code": "Lys", "is_reference": true}]
+    },
+    {
+      "roles_summary": "synthetic fixture second summary",
+      "function_location_abv": "ptm",
+      "ptm": "",
+      "roles": [
+        {"group_function": "", "function_type": "reactant", "function": "synthetic fixture function three",
+         "emo": "EMO_99003"}
+      ],
+      "residue_chains": [],
+      "residue_sequences": [{"uniprot_id": "Q0SYT3", "code": "Sec", "is_reference": true}]
+    }
+  ],
+  "reaction": {
+    "ec": "9.99.3.1",
+    "compounds": [
+      {"type": "reactant", "chebi_id": "993001", "name": "synthetic substrate"},
+      {"type": "product", "chebi_id": "X00699", "name": ""},
+      {"type": "reactant", "chebi_id": "993001", "name": "synthetic substrate"}
+    ]
+  }
+}

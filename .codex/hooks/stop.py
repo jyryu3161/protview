@@ -33,6 +33,7 @@ SCRIPT_TESTS = [
     "scripts/test_m20_offscreen_acceptance.py", "scripts/test_m21_offscreen_acceptance.py",
     "scripts/test_m22_offscreen_acceptance.py", "scripts/test_m23_offscreen_acceptance.py",
     "scripts/test_m24_offscreen_acceptance.py", "scripts/test_m25_offscreen_acceptance.py",
+    "scripts/test_import_reaction_references.py",
 ]
 
 # test_sequence_ga_jobs.py alone takes about 540 s, more than one group's bound, so its tests are split by node id.
