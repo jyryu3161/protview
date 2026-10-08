@@ -3,6 +3,10 @@
 Dependency-free on purpose (no imports beyond ``__future__``) so the tool, read, report and any later module can
 share one copy. Changing any reason set, status, source kind, limitation sentence or limit needs a user decision
 (spec 6, 11; handoff absolute condition 7).
+
+Two generations (M26 spec 8): every set the tool builds now is v2 (``METHOD_VERSION_V2``); stored v1 sets stay valid.
+The unsuffixed names keep their v1 values byte for byte (they are what a stored v1 set is checked against); the
+``_V2`` names and the catalytic block below are the v2 additions.
 """
 from __future__ import annotations
 
@@ -10,11 +14,13 @@ TOOL = "generate_mutation_candidates"
 KIND = "mutation_candidate_set"
 SCHEMA = "mutation_candidate_set@1"
 METHOD_VERSION = "mw.mutation_candidates/v1"
+METHOD_VERSION_V2 = "mw.mutation_candidates/v2"
+METHOD_VERSIONS = (METHOD_VERSION, METHOD_VERSION_V2)
 STRUCTURE_KIND = "prepared_structure"
 
-# 2 request fields (unknown keys at these four levels -> ``unknown_field``).
+# 2 request fields (unknown keys at these four levels -> ``unknown_field``); M26 8.1 adds ``catalytic_annotation``.
 ARG_KEYS = ("structure", "sources", "ligand", "allowed_residues", "protected_residues", "released_residues",
-            "metal_contact_A", "numbering_map", "annotation")
+            "metal_contact_A", "numbering_map", "annotation", "catalytic_annotation")
 SOURCES_KEYS = ("pocket", "ligand_shell", "residues")
 POCKET_KEYS = ("pocket_set", "ranks")
 LIGAND_SHELL_KEYS = ("radius_A",)
@@ -23,15 +29,16 @@ LIGAND_SHELL_KEYS = ("radius_A",)
 IDENTITY_FIELDS = ("model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname")
 REFERENCE_REQUIRED = ("model_number", "chain_auth", "seq_auth", "icode", "resname")
 
-# 2 admission reason codes, in check order (the handle kind/run checks of pocket_set, numbering_map and annotation
-# all run before ``structure_mismatch``; see spec 2).
+# 2 admission reason codes, in check order (the handle kind/run checks of pocket_set, numbering_map, annotation and
+# catalytic_annotation all run before ``structure_mismatch``; see spec 2 and M26 8.1).
 ADMISSION_REASON_CODES = (
     "unknown_field", "structure_invalid", "no_position_source", "argument_invalid", "allowed_residues_invalid",
     "residue_invalid", "duplicate_residue", "protect_release_conflict", "ligand_required", "ligand_invalid",
     "pocket_set_invalid", "structure_mismatch", "pocket_rank_invalid", "pocket_residue_mismatch",
-    "numbering_map_invalid", "annotation_invalid", "annotation_map_mismatch",
+    "numbering_map_invalid", "annotation_invalid", "catalytic_annotation_invalid", "annotation_map_mismatch",
 )
 TOO_MANY_POSITIONS = "too_many_positions"  # resource_exceeded (HTTP 429), never truncated
+CATALYTIC_LIST_TOO_LONG = "catalytic_list_too_long"  # resource_exceeded (HTTP 429), never truncated (M26 8.3)
 
 # 2 / 11 limits, defaults and ranges (both ends inclusive).
 MAX_POSITIONS = 400
@@ -45,10 +52,13 @@ DISULFIDE_SG_A = 2.5  # constant, never a request field
 # 3 position sources, stored in this order on each position.
 SOURCE_KINDS = ("pocket", "ligand_shell", "user")
 
-# 4 protection reasons and exclusion reasons (closed, in this order).
+# 4 protection reasons and exclusion reasons (closed, in this order). v1 (stored v1 sets) and v2 (M26 8.2).
 PROTECTION_REASONS = ("user_protected", "klifs_key_site", "metal_contact", "disulfide_cys")
 EXCLUSION_REASONS = ("non_standard_residue", "user_protected", "klifs_key_site", "metal_contact", "disulfide_cys",
                      "no_allowed_alternative")
+PROTECTION_REASONS_V2 = ("user_protected", "klifs_key_site", "metal_contact", "disulfide_cys", "catalytic_residue")
+EXCLUSION_REASONS_V2 = ("non_standard_residue", "user_protected", "klifs_key_site", "metal_contact",
+                        "disulfide_cys", "catalytic_residue", "no_allowed_alternative")
 POSITION_STATUSES = ("candidate", "excluded")
 RELEASE_EFFECTS = ("released", "none")
 NUMBERING_STATUSES = ("mapped", "unmapped", "conflict", "not_in_map")
@@ -60,8 +70,32 @@ CHECKED = "checked"
 NOT_CHECKED = "not_checked"
 NOT_AVAILABLE = "not_available"
 KLIFS_NOT_CHECKED_REASON = "annotation_not_given"
-CATALYTIC_NOT_AVAILABLE_REASON = "not_implemented"
+CATALYTIC_NOT_AVAILABLE_REASON = "not_implemented"   # v1 only: {"status": "not_available", "reason": this}
 ANNOTATED_SITE_STATUS = "annotated"
+
+# M26 8.2-8.3 v2 ``protection_checks.catalytic_residue_database`` and ``positions[].protection.catalytic``.
+# Copies of the M26 closed sets this file needs (a test checks them against ``reaction_knowledge_constants``).
+CATALYTIC_NOT_GIVEN_REASON = "annotation_not_given"     # {"status": "not_checked", "reason": this, "annotation": None}
+CATALYTIC_NOT_COVERED_REASON = "chains_not_covered"     # not_checked although an annotation was given
+CATALYTIC_REASON = "catalytic_residue"                  # the v2 protection / exclusion reason
+CATALYTIC_COVERED = "covered"
+CATALYTIC_UNCOVERED_COVERAGE = ("chain_not_listed", "pdb_not_in_snapshot", "not_checked", "not_in_annotation")
+CATALYTIC_NOT_IN_ANNOTATION = "not_in_annotation"      # a chain with positions that the result does not list
+CATALYTIC_MATCHED = "matched"
+CATALYTIC_CONFLICT = "conflict"
+CATALYTIC_UNMATCHED = "unmatched"
+CATALYTIC_CONFLICT_REASONS = ("residue_name_differs", "mcsa_rows_disagree")
+CATALYTIC_UNMATCHED_REASONS = ("non_standard_code", "no_author_number", "residue_not_in_structure",
+                               "ambiguous_residue_number", "insertion_code_present")
+CATALYTIC_WITH_RESIDUE = ("residue_name_differs", "insertion_code_present")   # list items whose residue is not null
+CATALYTIC_CHECK_KEYS = ("status", "reason", "annotation", "covered_chains", "uncovered_chains", "matched_rows",
+                        "conflict_rows", "unmatched_rows", "conflicts", "unmatched")
+CATALYTIC_NOT_GIVEN_KEYS = ("status", "reason", "annotation")
+CATALYTIC_UNCOVERED_KEYS = ("chain_auth", "coverage")
+CATALYTIC_ITEM_KEYS = ("chain_auth", "mcsa_id", "residue_index", "reason", "residue", "listed")
+CATALYTIC_LISTED_KEYS = ("chain_name", "resid", "auth_resid", "code")
+CATALYTIC_ENTRY_KEYS = ("mcsa_id", "residue_index", "is_reference")
+MAX_CATALYTIC_LIST = 400   # conflicts / unmatched each; above it the call is refused (never truncated)
 
 # 4 / 5 residue names: the 20 standard names with one-letter codes, and the ten M12 mapped names.
 ONE_LETTER_ORDER = "ACDEFGHIKLMNPQRSTVWY"
@@ -85,3 +119,12 @@ LIMITATIONS = (
     "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다.",
     "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다.",
 )
+# M26 8.4: in v2 only the third sentence follows ``catalytic_residue_database.status``; the other four are the v1 ones.
+# (v1 ``not_available`` keeps the third sentence of ``LIMITATIONS`` above byte for byte.)
+LIMITATION_3_CHECKED = "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다."
+LIMITATION_3_NOT_CHECKED = ("보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 "
+                            "주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다).")
+LIMITATIONS_V2 = {
+    CHECKED: (LIMITATIONS[0], LIMITATIONS[1], LIMITATION_3_CHECKED, LIMITATIONS[3], LIMITATIONS[4]),
+    NOT_CHECKED: (LIMITATIONS[0], LIMITATIONS[1], LIMITATION_3_NOT_CHECKED, LIMITATIONS[3], LIMITATIONS[4]),
+}

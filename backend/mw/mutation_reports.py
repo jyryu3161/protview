@@ -19,8 +19,16 @@ The report has no per-position table (the rows are in the stored object). Creati
 regenerate candidates: the stored set is re-validated (``mutation_candidates.validated_set``), the numbering map,
 annotation and pocket set it names are checked to be the same structure and their copied values / site counts are
 compared with the stored objects, every manifest field and claim is compared, and the Markdown is compared byte for
-byte with a re-render. The renderer refuses interpretive wording on every line except the five fixed limitation
-sentences (matched exactly; sentence 2 contains "안정성·결합·활성" and "순위나 추천").
+byte with a re-render. The renderer refuses interpretive wording on every line except the fixed limitation sentences
+(matched exactly; sentence 2 contains "안정성·결합·활성" and "순위나 추천"; the M26 third-sentence variants are fixed too).
+
+M26 v2 sets (spec 8.5) add a catalytic part, and only v2 sets do: a v1 set's manifest, claims and Markdown are the
+v1 bytes. For v2 the catalytic check status is a status claim; when it is ``checked`` the covered chain count and the
+``matched`` / ``conflict`` / ``unmatched`` row counts are computed claims, and a ``not_checked`` check has the status
+claim only (no number). The distinct M-CSA entry IDs of the positions' ``protection.catalytic`` are reference values
+citing the ``reaction_knowledge@1`` result. Creating and reopening re-validate that result
+(``reaction_knowledge.validated_result``) and compare the set's catalytic check and every ``protection.catalytic``
+with the ones the result gives (``mutation_catalytic_value_mismatch`` otherwise).
 """
 from __future__ import annotations
 
@@ -33,13 +41,18 @@ from typing import Any
 
 from . import mutation_candidates as mc
 from . import numbering_reports as nr
+from . import reaction_knowledge as rk
+from . import reaction_knowledge_constants as rkc
 from . import site_annotation as sa
 from .core.handles import canonical_json
 from .mutation_constants import (
     CHECKED,
     EXCLUSION_REASONS,
+    EXCLUSION_REASONS_V2,
     KIND,
     LIMITATIONS,
+    LIMITATIONS_V2,
+    METHOD_VERSION_V2,
     NOT_AVAILABLE,
     NOT_CHECKED,
     NUMBERING_STATUSES,
@@ -50,35 +63,48 @@ from .mutation_constants import (
     TOOL,
 )
 from .reports import EvidenceError, _md, _provenance, _ref
+from .tools.mutations import catalytic_input
 
 ANALYSIS_TYPE = "mutation_candidates"
 RENDER_VERSION = "mutation_candidates_markdown@1"
 REPORT_BYTES = nr.REPORT_BYTES
 REFERENCE_NOTE = nr.REFERENCE_NOTE
 POCKET_KIND = ("pocket_set", "pocket_set@1")
-FIXED_LIMITATIONS = frozenset(LIMITATIONS)
+CATALYTIC_KIND = (rkc.KIND, rkc.SCHEMA)
+FIXED_LIMITATIONS = frozenset(LIMITATIONS) | frozenset(s for v in LIMITATIONS_V2.values() for s in v)
 EVIDENCE_STATEMENT = ("ProtView counted the stored position and candidate rows, took the minimum of the stored "
                       "ligand distances, and copied the protection check states. UniProt accessions and KLIFS site "
                       "labels are reference snapshot values (참조 스냅샷 값, 계산 아님) copied into the set, not "
                       "ProtView calculations. No structure was modelled and no candidate was regenerated.")
+EVIDENCE_STATEMENT_V2 = ("ProtView counted the stored position and candidate rows and the catalytic annotation rows, "
+                         "took the minimum of the stored ligand distances, and copied the protection check states. "
+                         "UniProt accessions, KLIFS site labels and M-CSA entry IDs are reference snapshot values "
+                         "(참조 스냅샷 값, 계산 아님) copied into the set, not ProtView calculations. No structure was "
+                         "modelled and no candidate was regenerated.")
 
 STATUS_KO = {"candidate": "후보 위치", "excluded": "제외 위치"}
 REASON_KO = {"non_standard_residue": "비표준 잔기", "user_protected": "사용자 보호",
              "klifs_key_site": "KLIFS 주요 부위", "metal_contact": "금속 근접", "disulfide_cys": "이황화 Cys",
-             "no_allowed_alternative": "허용 목록에 바꿀 잔기 없음"}
+             "catalytic_residue": "M-CSA 촉매 잔기 주석", "no_allowed_alternative": "허용 목록에 바꿀 잔기 없음"}
 SOURCE_KO = {"pocket": "포켓", "ligand_shell": "리간드 껍질", "user": "직접 선택"}
 NUMBERING_KO = {"mapped": "대응됨", "unmapped": "대응 안 됨", "conflict": "충돌", "not_in_map": "지도에 없음"}
 CHECK_KO = {"user_list": "사용자 보호·해제 목록", "klifs_key_sites": "KLIFS 주요 부위",
             "metal_contact": "금속 근접", "disulfide": "이황화 Cys SG–SG",
             "catalytic_residue_database": "촉매 잔기 데이터베이스"}
 CHECK_STATUS_KO = {CHECKED: "검사함", NOT_CHECKED: "검사하지 않음", NOT_AVAILABLE: "사용할 수 없음"}
-CHECK_REASON_KO = {"annotation_not_given": "주석을 주지 않음", "not_implemented": "구현하지 않음"}
+CHECK_REASON_KO = {"annotation_not_given": "주석을 주지 않음", "not_implemented": "구현하지 않음",
+                   "chains_not_covered": "위치가 있는 체인을 M-CSA 주석이 모두 다루지는 않음"}
+COVERAGE_KO = {"chain_not_listed": "체인이 M-CSA 행에 없음", "pdb_not_in_snapshot": "PDB가 스냅샷에 없음",
+               "not_checked": "M-CSA 절을 검사하지 않음", "not_in_annotation": "결과에 체인이 없음"}
 NOT_GIVEN = "주지 않음"
 NOT_COMPUTED = "계산하지 않음"
 
 EVIDENCE_KINDS = ("computed", "reference_value")
 _COUNT_FIELDS = ("user_list.protected", "user_list.released", "klifs_key_sites.annotated_sites",
-                 "klifs_key_sites.absent_sites", "metal_contact.metal_residues", "disulfide.pairs")
+                 "klifs_key_sites.absent_sites", "metal_contact.metal_residues", "disulfide.pairs",
+                 # v2 only (a v1 catalytic check is not_available and never has these numbers)
+                 "catalytic_residue_database.matched_rows", "catalytic_residue_database.conflict_rows",
+                 "catalytic_residue_database.unmatched_rows")
 # statement ID -> (evidence kind, field path rule); fixed template, nothing else carries a number in this report.
 STATEMENTS = {
     "position_count": ("computed", re.compile(r"positions\[\*\]")),
@@ -95,9 +121,15 @@ STATEMENTS = {
         r"protection_checks\.(" + "|".join(re.escape(f) for f in _COUNT_FIELDS) + r")")),
     "reference_uniprot_accession": ("reference_value", re.compile(r"positions\[\d+\]\.numbering\.uniprot_accession")),
     "reference_klifs_site_label": ("reference_value", re.compile(r"positions\[\d+\]\.protection\.klifs_sites\[\d+\]")),
+    # M26 v2
+    "catalytic_covered_chain_count": ("computed", re.compile(
+        r"protection_checks\.catalytic_residue_database\.covered_chains")),
+    "reference_mcsa_entry_id": ("reference_value", re.compile(
+        r"positions\[\d+\]\.protection\.catalytic\[\d+\]\.mcsa_id")),
 }
 REFERENCE_FIELDS = re.compile(r"positions\[\d+\]\.(numbering\.(uniprot_accession|uniprot_position|uniprot_residue|"
-                              r"klifs_index|klifs_label)|protection\.klifs_sites\[\d+\])")
+                              r"klifs_index|klifs_label)|protection\.klifs_sites\[\d+\]|"
+                              r"protection\.catalytic\[\d+\]\.(mcsa_id|residue_index|is_reference))")
 CLAIM_KEYS = nr.CLAIM_KEYS
 # M15 interpretive wording plus the M20 list (spec 9). "촉매" is not listed: the report must state that the catalytic
 # residue database is unavailable. Handles are lowercase hex, so none of these words can occur inside one.
@@ -164,11 +196,15 @@ def _source(run: Any, handle: str, kind: tuple[str, str], error: str) -> dict[st
 
 
 def check_sources(content: dict[str, Any], map_content: dict[str, Any] | None,
-                  annotation: dict[str, Any] | None, pocket_content: dict[str, Any] | None) -> None:
+                  annotation: dict[str, Any] | None, pocket_content: dict[str, Any] | None,
+                  catalytic_result: dict[str, Any] | None = None) -> None:
     """The validated set against the stored map, annotation and pocket set it names; raises ``EvidenceError``.
 
     Same structure for each; the copied numbering values equal the map row of the same residue (7 fields) or
-    ``not_in_map``; the KLIFS site counts and each position's site labels equal the stored annotation's sites.
+    ``not_in_map``; the KLIFS site counts and each position's site labels equal the stored annotation's sites. For a
+    v2 set with a ``catalytic_annotation``, the stored ``reaction_knowledge@1`` result must pass
+    ``reaction_knowledge.validated_result``, be of the same structure, and give exactly the set's catalytic check
+    (covered / uncovered chains, row counts, conflict and unmatched lists) and every ``protection.catalytic``.
     """
     try:
         structure = content["structure"]["handle"]
@@ -201,10 +237,33 @@ def check_sources(content: dict[str, Any], map_content: dict[str, Any] | None,
                     raise EvidenceError("mutation_klifs_site_label_mismatch")
         if pocket_content is not None and pocket_content["source_handle"] != structure:
             raise EvidenceError("mutation_pocket_set_structure_mismatch")
+        catalytic_handle = parameters.get("catalytic_annotation")   # a v1 set has no such parameter
+        if (catalytic_result is None) is not (catalytic_handle is None):
+            raise EvidenceError("mutation_sources_missing")
+        if catalytic_result is not None:
+            _check_catalytic(content, catalytic_result, catalytic_handle)
     except EvidenceError:
         raise
     except (KeyError, ValueError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_sources_unresolved") from exc
+
+
+def _check_catalytic(content: dict[str, Any], result: dict[str, Any], handle: str) -> None:
+    try:
+        rk.validated_result(result)
+    except rk.ResultInvalid as exc:
+        raise EvidenceError("mutation_catalytic_annotation_invalid") from exc
+    if result["structure"]["handle"] != content["structure"]["handle"]:
+        raise EvidenceError("mutation_catalytic_annotation_structure_mismatch")
+    positions = content["positions"]
+    try:
+        lists, check = mc.catalytic_protection([p["residue"] for p in positions], catalytic_input(result), handle)
+    except mc.MutationInvalid as exc:
+        raise EvidenceError("mutation_catalytic_value_mismatch") from exc
+    if canonical_json(check) != canonical_json(content["protection_checks"]["catalytic_residue_database"]) or any(
+            canonical_json(found) != canonical_json(p["protection"]["catalytic"])
+            for found, p in zip(lists, positions, strict=True)):
+        raise EvidenceError("mutation_catalytic_value_mismatch")
 
 
 def validated_mutation_set(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -226,7 +285,9 @@ def validated_mutation_set(run: Any, handle: str) -> tuple[dict[str, Any], dict[
             _source(run, parameters["numbering_map"], (nr.rn.KIND, nr.rn.SCHEMA), "mutation_numbering_map_kind"),
             None if parameters["annotation"] is None else
             _source(run, parameters["annotation"], (sa.KIND, sa.SCHEMA), "mutation_annotation_kind"),
-            None if pocket is None else _source(run, pocket["pocket_set"], POCKET_KIND, "mutation_pocket_set_kind"))
+            None if pocket is None else _source(run, pocket["pocket_set"], POCKET_KIND, "mutation_pocket_set_kind"),
+            None if parameters.get("catalytic_annotation") is None else
+            _source(run, parameters["catalytic_annotation"], CATALYTIC_KIND, "mutation_catalytic_annotation_kind"))
         return content, provenance
     except EvidenceError:
         raise
@@ -256,6 +317,7 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
     positions, candidates = content["positions"], content["candidates"]
     parameters, checks = content["parameters"], content["protection_checks"]
     subject = {"candidate_set_handle": handle}
+    v2 = content["method_version"] == METHOD_VERSION_V2
 
     def count(statement: str, path: str, selector: dict[str, Any] | None, quantity: str, value: int,
               condition: str) -> dict[str, Any]:
@@ -272,7 +334,8 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
     claims.append(count("candidate_count", "candidates[*]", None, "candidates", len(candidates), ""))
     claims.extend(count("exclusion_reason_count", "positions[*].exclusion_reasons", {"exclusion_reason": reason},
                         f"{reason}_positions", sum(reason in p["exclusion_reasons"] for p in positions),
-                        f"{reason} in exclusion_reasons") for reason in EXCLUSION_REASONS)
+                        f"{reason} in exclusion_reasons") for reason in (EXCLUSION_REASONS_V2 if v2
+                                                                         else EXCLUSION_REASONS))
     claims.extend(count("source_position_count", "positions[*].sources.kind", {"source": kind}, f"{kind}_positions",
                         sum(any(s["kind"] == kind for s in p["sources"]) for p in positions),
                         f"any sources.kind == {kind}") for kind in SOURCE_KINDS)
@@ -299,6 +362,12 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
             continue   # a check that was not done has no number (never 0)
         claims.append(_claim("protection_check_count", handle, f"protection_checks.{field}", {"check": key},
                              subject, f"{key}_{name}", "count", checks[key][name], "integer", None))
+    catalytic = checks["catalytic_residue_database"]
+    if v2 and catalytic["status"] == CHECKED:   # a not_checked catalytic check has the status claim only
+        path = "protection_checks.catalytic_residue_database.covered_chains"
+        claims.append(_claim("catalytic_covered_chain_count", handle, path, {"check": "catalytic_residue_database"},
+                             subject, "catalytic_residue_database_covered_chains", "count",
+                             len(catalytic["covered_chains"]), "integer", f"count({path})"))
     if parameters["numbering_map"] is not None:
         reference = {"note": REFERENCE_NOTE, "reference_object": parameters["numbering_map"]}
         seen: set[str] = set()
@@ -324,6 +393,20 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
                                      f"positions[{i}].protection.klifs_sites[{j}]", _row_selector(i, position),
                                      {**subject, "residue": position["residue"]}, "klifs_label", "identifier",
                                      label, "verbatim", None, reference))
+    if v2 and parameters["catalytic_annotation"] is not None:
+        reference = {"note": REFERENCE_NOTE, "reference_object": parameters["catalytic_annotation"]}
+        seen_ids: set[tuple[int, bool]] = set()
+        for position in positions:
+            released = position["protection"]["released"]
+            for j, entry in enumerate(position["protection"]["catalytic"] or []):
+                if (entry["mcsa_id"], released) in seen_ids:
+                    continue
+                seen_ids.add((entry["mcsa_id"], released))
+                i = position["index"]
+                claims.append(_claim("reference_mcsa_entry_id", handle,
+                                     f"positions[{i}].protection.catalytic[{j}].mcsa_id", _row_selector(i, position),
+                                     {**subject, "residue": position["residue"], "released": released},
+                                     "mcsa_entry_id", "identifier", entry["mcsa_id"], "integer", None, reference))
     return claims
 
 
@@ -388,7 +471,8 @@ def _expected(run: Any, handle: str) -> dict[str, Any]:
                 "claims": claims_for(handle, content),
                 "provenance": {key: provenance[key] for key in ("call_id", "tool", "tool_version",
                                                                 "created_event_seq", "completed_event_seq")},
-                "evidence_statement": EVIDENCE_STATEMENT}
+                "evidence_statement": (EVIDENCE_STATEMENT_V2 if content["method_version"] == METHOD_VERSION_V2
+                                       else EVIDENCE_STATEMENT)}
     except (KeyError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_report_evidence_unresolved") from exc
 
@@ -427,6 +511,8 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
     structure, parameters = manifest["structure"], manifest["parameters"]
     sources, ligand, checks = parameters["sources"], manifest["ligand"], manifest["protection_checks"]
     pocket, shell = sources["pocket"], sources["ligand_shell"]
+    v2 = manifest["method_version"] == METHOD_VERSION_V2
+    catalytic_given = parameters.get("catalytic_annotation")   # v2 only
     lines = ["# 변이 후보 보고서 (mutation candidates)", "", "Status: complete", "",
              f"Result: {md(manifest['result_handle'])}",
              (f"Structure: {md(structure['handle'])} ({md(structure['structure_kind'])}, "
@@ -443,6 +529,7 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
              f"- 이황화 Cys SG–SG 기준: {md(parameters['disulfide_sg_A'])} Å",
              f"- 번호 대응: {md(parameters['numbering_map']) if parameters['numbering_map'] else NOT_GIVEN}",
              f"- 주석: {md(parameters['annotation']) if parameters['annotation'] else NOT_GIVEN}",
+             *([f"- 촉매 잔기 주석: {md(catalytic_given) if catalytic_given else NOT_GIVEN}"] if v2 else []),
              "", "## 위치와 후보 수 (ProtView 계산: 저장된 행의 개수)", "",
              f"- 위치 (positions): {value('position_count')}"]
     for status in POSITION_STATUSES:
@@ -453,9 +540,11 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
         lines.append("- 후보가 없다. 유효한 빈 과학 결과(scientific\\_null)이며 실패가 아니다. 제외 사유별 위치 수는 "
                      "아래와 같다.")
     lines.extend(["", "## 제외 사유별 위치 수", ""])
-    for reason in EXCLUSION_REASONS:
+    for reason in (EXCLUSION_REASONS_V2 if v2 else EXCLUSION_REASONS):
+        note = (" — 촉매 잔기 검사 안 함(검사하지 않은 위치는 세지 않았다)"
+                if reason == "catalytic_residue" and checks["catalytic_residue_database"]["status"] != CHECKED else "")
         lines.append(f"- {REASON_KO[reason]} ({md(reason)}): "
-                     f"{value('exclusion_reason_count', {'exclusion_reason': reason})}")
+                     f"{value('exclusion_reason_count', {'exclusion_reason': reason})}{note}")
     lines.extend(["", "## 출처별 위치 수", ""])
     for kind in SOURCE_KINDS:
         lines.append(f"- {SOURCE_KO[kind]} ({md(kind)}): {value('source_position_count', {'source': kind})}")
@@ -489,6 +578,8 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
                       f"({md(names)})")
         elif key == "disulfide":
             detail = f"기준 {md(check['threshold_A'])} Å, SG–SG 쌍 {number('pairs')}"
+        elif v2:
+            detail = _catalytic_detail(check, md, value, number)
         else:
             detail = f"이유: {CHECK_REASON_KO[check['reason']]} ({md(check['reason'])}). 촉매 잔기를 판정하지 않았다."
         lines.append(f"| {CHECK_KO[key]} ({md(key)}) | {md(status)} | {detail} |")
@@ -506,6 +597,9 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
         labels = [c["rendered_value"] for c in claims if c["statement_id"] == "reference_klifs_site_label"]
         lines.append(f"- 보호된 위치의 KLIFS 주요 부위 이름표 ({REFERENCE_NOTE}): "
                      f"{md(', '.join(labels)) if labels else 'none'}")
+    if v2:
+        lines.extend(["", f"## M-CSA 촉매 잔기 주석 ({REFERENCE_NOTE})", ""])
+        lines.extend(_catalytic_reference_lines(parameters, checks["catalytic_residue_database"], claims, md))
     lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
@@ -514,6 +608,45 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
     template = "\n".join(lines)
     check_no_interpretation(_SLOT.sub("", template))
     return _SLOT.sub(lambda match: slots[int(match.group(1))], template)
+
+
+def _catalytic_detail(check: dict[str, Any], md: Any, value: Any, number: Any) -> str:
+    """The v2 catalytic row of the protection-check table: numbers only when the check is ``checked``."""
+    reason = check["reason"]
+    if check["annotation"] is None:
+        return f"이유: {CHECK_REASON_KO[reason]} ({md(reason)}). 촉매 잔기 보호를 판정하지 않았다."
+    if check["status"] == CHECKED:
+        return (f"주석 {md(check['annotation'])}, 검사한 체인 {value('catalytic_covered_chain_count')} "
+                f"({md(', '.join(check['covered_chains']))}), 대응됨 행 {number('matched_rows')}, 충돌 행 "
+                f"{number('conflict_rows')}, 대응 없음 행 {number('unmatched_rows')}. 충돌·대응 없음 행은 보호에 쓰지 "
+                "않았고 행 목록은 저장된 결과에 있다.")
+    parts = [f"주석 {md(check['annotation'])}. 이유: {CHECK_REASON_KO[reason]} ({md(reason)})."]
+    if check["covered_chains"]:
+        parts.append(f"M-CSA가 다룬 체인: {md(', '.join(check['covered_chains']))} (이 체인의 대응됨 행은 보호에 씀).")
+    if check["uncovered_chains"]:
+        parts.append("다루지 않은 체인: " + ", ".join(
+            f"{md(item['chain_auth'])} ({COVERAGE_KO[item['coverage']]}, {md(item['coverage'])})"
+            for item in check["uncovered_chains"]) + ".")
+    else:
+        parts.append("위치가 없어 촉매 잔기 보호를 판정하지 않았다.")
+    parts.append("모든 체인을 검사하지 않았으므로 이 칸에는 개수를 적지 않는다.")
+    return " ".join(parts)
+
+
+def _catalytic_reference_lines(parameters: dict[str, Any], check: dict[str, Any], claims: list[dict[str, Any]],
+                               md: Any) -> list[str]:
+    if parameters["catalytic_annotation"] is None:
+        return [f"- 촉매 잔기 주석: {NOT_GIVEN}. 위치별 M-CSA 항목 ID를 붙이지 않았다."]
+    if not check["covered_chains"]:
+        return ["- 보호된 위치의 M-CSA 항목 ID: 검사하지 않음 (위치가 있는 체인을 M-CSA 주석이 다루지 않았다)."]
+    found = [c for c in claims if c["statement_id"] == "reference_mcsa_entry_id"]
+    kept = [c["rendered_value"] for c in found if c["subject"]["released"] is False]
+    released = [c["rendered_value"] for c in found if c["subject"]["released"] is True]
+    lines = [(f"- M-CSA가 다룬 체인 위치에서 대응된 M-CSA 항목 ID ({REFERENCE_NOTE}, 결과 "
+              f"{md(parameters['catalytic_annotation'])}): {md(', '.join(kept)) if kept else 'none'}")]
+    if released:
+        lines.append(f"- 보호를 해제한 위치의 M-CSA 항목 ID (해제됨, {REFERENCE_NOTE}): {md(', '.join(released))}")
+    return lines
 
 
 def build_mutation_report(run: Any, result_handle: str) -> dict[str, Any]:

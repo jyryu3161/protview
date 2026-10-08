@@ -12,8 +12,13 @@ residue list (``tools.structural.structure_residues``) and the loaded pocket_set
   residues, the ligand shell (heavy-atom minimum distance <= radius) and the user list, in structure file order.
 * Protection (closed reasons, in order), release (all reasons at once), exclusion reasons and candidates as spec 4--5.
   Distances are float64 minima over the stored coordinates (hydrogen and deuterium skipped).
+* M26 v2 (every new set): ``catalytic_protection`` turns the plain per-chain values the tool layer took from a validated
+  ``reaction_knowledge@1`` result into ``positions[].protection.catalytic`` and
+  ``protection_checks.catalytic_residue_database`` (M26 spec 8.2-8.3). Only ``matched`` M-CSA rows of a ``covered``
+  chain protect, by the residue's exact 7 fields; conflict and unmatched rows are listed and never protect.
 * ``validated_set`` checks a stored result's content only (closed sets, counts, candidate/position consistency,
-  fixed sentences, identity shape); the caller checks the handle's kind and run.
+  fixed sentences, identity shape); it dispatches on ``method_version``: the v1 path is unchanged, the v2 path adds
+  the M26 spec 8.6 rules. The caller checks the handle's kind and run (and, for v2, the reaction result itself).
 """
 from __future__ import annotations
 
@@ -25,11 +30,31 @@ import numpy as np
 from .mutation_constants import (
     ANNOTATED_SITE_STATUS,
     ARG_KEYS,
+    CATALYTIC_CHECK_KEYS,
+    CATALYTIC_CONFLICT,
+    CATALYTIC_CONFLICT_REASONS,
+    CATALYTIC_COVERED,
+    CATALYTIC_ENTRY_KEYS,
+    CATALYTIC_ITEM_KEYS,
+    CATALYTIC_LIST_TOO_LONG,
+    CATALYTIC_LISTED_KEYS,
+    CATALYTIC_MATCHED,
     CATALYTIC_NOT_AVAILABLE_REASON,
+    CATALYTIC_NOT_COVERED_REASON,
+    CATALYTIC_NOT_GIVEN_KEYS,
+    CATALYTIC_NOT_GIVEN_REASON,
+    CATALYTIC_NOT_IN_ANNOTATION,
+    CATALYTIC_REASON,
+    CATALYTIC_UNCOVERED_COVERAGE,
+    CATALYTIC_UNCOVERED_KEYS,
+    CATALYTIC_UNMATCHED,
+    CATALYTIC_UNMATCHED_REASONS,
+    CATALYTIC_WITH_RESIDUE,
     CHECKED,
     CYSTEINE,
     DISULFIDE_SG_A,
     EXCLUSION_REASONS,
+    EXCLUSION_REASONS_V2,
     HYDROGEN_ELEMENTS,
     IDENTITY_FIELDS,
     KLIFS_NOT_CHECKED_REASON,
@@ -37,12 +62,15 @@ from .mutation_constants import (
     LIGAND_SHELL_RADIUS_DEFAULT_A,
     LIGAND_SHELL_RADIUS_RANGE_A,
     LIMITATIONS,
+    LIMITATIONS_V2,
     MAPPED_RESNAMES,
+    MAX_CATALYTIC_LIST,
     MAX_LIST,
     MAX_POSITIONS,
     METAL_CONTACT_DEFAULT_A,
     METAL_CONTACT_RANGE_A,
     METHOD_VERSION,
+    METHOD_VERSION_V2,
     NOT_AVAILABLE,
     NOT_CHECKED,
     NUMBERING_FIELDS,
@@ -52,6 +80,7 @@ from .mutation_constants import (
     POSITION_STATUSES,
     PROTECTION_CHECK_KEYS,
     PROTECTION_REASONS,
+    PROTECTION_REASONS_V2,
     REFERENCE_REQUIRED,
     RELEASE_EFFECTS,
     SCHEMA,
@@ -181,7 +210,8 @@ def normalize_request(args: dict[str, Any], residues: list[dict[str, Any]],
 
     ``residues``/``ligands`` are ``structure_residues(...)["residues"|"ligands"]`` of the requested structure; the
     caller has already checked ``unknown_field`` and ``structure_invalid``. Handle values (``pocket_set``,
-    ``numbering_map``, ``annotation``) are carried as given; their checks need the store.
+    ``numbering_map``, ``annotation``, ``catalytic_annotation``) are carried as given; their checks need the store.
+    ``catalytic_annotation`` is always in the result (null by default), so it is always part of the call key.
     """
     check_fields(args)
     sources = args.get("sources")
@@ -255,6 +285,7 @@ def normalize_request(args: dict[str, Any], residues: list[dict[str, Any]],
         "metal_contact_A": metal,
         "numbering_map": args.get("numbering_map"),
         "annotation": args.get("annotation"),
+        "catalytic_annotation": args.get("catalytic_annotation"),
     }
 
 
@@ -364,24 +395,86 @@ def _numbering(rows: dict[tuple[Any, ...], dict[str, Any]], residue: dict[str, A
     return {"status": row["status"], **{field: row[field] for field in NUMBERING_FIELDS}}
 
 
-def _exclusions(reasons: list[str], released: bool, one_letter: str | None, allowed: str) -> list[str]:
+def _exclusions(reasons: list[str], released: bool, one_letter: str | None, allowed: str,
+                closed: tuple[str, ...] = EXCLUSION_REASONS) -> list[str]:
     found = set() if released else set(reasons)
     if one_letter is None:
         found.add("non_standard_residue")
     elif not set(allowed) - {one_letter}:
         found.add("no_allowed_alternative")
-    return [reason for reason in EXCLUSION_REASONS if reason in found]
+    return [reason for reason in closed if reason in found]
+
+
+def _entry_key(entry: dict[str, Any]) -> tuple[Any, Any]:
+    return entry["mcsa_id"], entry["residue_index"]
+
+
+def _catalytic_item(chain_auth: str, row: dict[str, Any]) -> dict[str, Any]:
+    return {"chain_auth": chain_auth, "mcsa_id": row["mcsa_id"], "residue_index": row["residue_index"],
+            "reason": row["reason"], "residue": None if row["residue"] is None else seven(row["residue"]),
+            "listed": {key: row["listed"][key] for key in CATALYTIC_LISTED_KEYS}}
+
+
+def catalytic_protection(residues: list[dict[str, Any]], chains: dict[str, dict[str, Any]] | None,
+                         annotation: str | None) -> tuple[list[list[dict[str, Any]] | None], dict[str, Any]]:
+    """M26 spec 8.2-8.3: ``(protection.catalytic per position, protection_checks.catalytic_residue_database)``.
+
+    ``residues`` are the positions' 7-field residues in file order. ``chains`` is ``None`` (no annotation given) or the
+    plain values the tool layer took from a validated ``reaction_knowledge@1`` result: ``{chain_auth: {"coverage",
+    "counts", "rows"}}`` with ``coverage`` one of ``covered`` / ``chain_not_listed`` / ``pdb_not_in_snapshot`` /
+    ``not_checked`` and, for ``covered`` only, the M-CSA row counts and rows (``mcsa_id``, ``residue_index``,
+    ``is_reference``, ``status``, ``reason``, ``residue``, ``listed``). A chain of the positions the result does not
+    list is ``not_in_annotation``. A covered chain's positions get a list (``[]`` when no ``matched`` row names their 7
+    fields), every other position ``None`` (not checked). ``checked`` only when every chain with a position is covered
+    (so never for a set without positions). A conflict or unmatched list above ``MAX_CATALYTIC_LIST`` is
+    ``catalytic_list_too_long`` (nothing is truncated).
+    """
+    if chains is None:
+        return [None] * len(residues), {"status": NOT_CHECKED, "reason": CATALYTIC_NOT_GIVEN_REASON, "annotation": None}
+    order = list(dict.fromkeys(residue["chain_auth"] for residue in residues))
+    covered = [chain for chain in order if chain in chains and chains[chain]["coverage"] == CATALYTIC_COVERED]
+    uncovered = [{"chain_auth": chain, "coverage": chains[chain]["coverage"] if chain in chains
+                  else CATALYTIC_NOT_IN_ANNOTATION} for chain in order if chain not in covered]
+    entries: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    lists: dict[str, list[dict[str, Any]]] = {"conflicts": [], "unmatched": []}
+    for chain in covered:
+        for row in sorted(chains[chain]["rows"], key=_entry_key):   # stable: the result's order within a key
+            if row["status"] == CATALYTIC_MATCHED:
+                entries.setdefault(identity(row["residue"]), []).append({k: row[k] for k in CATALYTIC_ENTRY_KEYS})
+            elif row["status"] in (CATALYTIC_CONFLICT, CATALYTIC_UNMATCHED):
+                lists["conflicts" if row["status"] == CATALYTIC_CONFLICT else "unmatched"].append(
+                    _catalytic_item(chain, row))
+            else:
+                raise ValueError(f"unknown M-CSA row status {row['status']!r}")
+    for name, items in lists.items():
+        if len(items) > MAX_CATALYTIC_LIST:
+            raise MutationInvalid(CATALYTIC_LIST_TOO_LONG, f"{len(items)} catalytic {name} rows exceed the limit of "
+                                  f"{MAX_CATALYTIC_LIST}", list=name, count=len(items), limit=MAX_CATALYTIC_LIST)
+    checked = bool(covered) and not uncovered
+    check = {"status": CHECKED if checked else NOT_CHECKED, "reason": None if checked else CATALYTIC_NOT_COVERED_REASON,
+             "annotation": annotation, "covered_chains": covered, "uncovered_chains": uncovered,
+             **{f"{status}_rows": sum(chains[chain]["counts"][status] for chain in covered)
+                for status in (CATALYTIC_MATCHED, CATALYTIC_CONFLICT, CATALYTIC_UNMATCHED)},
+             "conflicts": lists["conflicts"], "unmatched": lists["unmatched"]}
+    per_position = [sorted(entries.get(identity(residue), []), key=_entry_key) if residue["chain_auth"] in covered
+                    else None for residue in residues]
+    return per_position, check
 
 
 def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
                         pocket_content: dict[str, Any] | None = None,
                         numbering_content: dict[str, Any] | None = None,
-                        annotation_content: dict[str, Any] | None = None) -> dict[str, Any]:
-    """The ``mutation_candidate_set@1`` content for normalized ``params`` (the output of ``normalize_request``).
+                        annotation_content: dict[str, Any] | None = None,
+                        catalytic_content: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    """The v2 ``mutation_candidate_set@1`` content for normalized ``params`` (the output of ``normalize_request``).
 
-    Raises ``MutationInvalid`` for ``pocket_rank_invalid`` / ``pocket_residue_mismatch`` and for more than
-    ``MAX_POSITIONS`` positions (``too_many_positions`` with ``positions`` and ``limit``; nothing is truncated).
+    ``catalytic_content`` is the plain per-chain dict of ``catalytic_protection`` (given exactly when
+    ``params["catalytic_annotation"]`` is a handle). Raises ``MutationInvalid`` for ``pocket_rank_invalid`` /
+    ``pocket_residue_mismatch``, for more than ``MAX_POSITIONS`` positions (``too_many_positions`` with ``positions``
+    and ``limit``) and for ``catalytic_list_too_long`` (``list``, ``count``, ``limit``); nothing is truncated.
     """
+    if (catalytic_content is None) != (params["catalytic_annotation"] is None):
+        raise ValueError("catalytic_content goes with a catalytic_annotation handle")
     walk = _walk(st)
     model_number = st[0].num
     residues = [{**entry["residue"], "category": entry["category"]} for entry in walk]
@@ -396,6 +489,8 @@ def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
     if len(gathered) > MAX_POSITIONS:
         raise MutationInvalid(TOO_MANY_POSITIONS, f"{len(gathered)} positions exceed the limit of {MAX_POSITIONS}",
                               positions=len(gathered), limit=MAX_POSITIONS)
+    catalytic_lists, catalytic_check = catalytic_protection([seven(entry["residue"]) for entry, _ in gathered],
+                                                            catalytic_content, params["catalytic_annotation"])
 
     allowed = params["allowed_residues"]
     threshold = params["metal_contact_A"]
@@ -438,8 +533,11 @@ def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
             if distances and min(distances) <= DISULFIDE_SG_A:
                 partner = seven(others[int(np.argmin(distances))]["residue"])
                 reasons.append("disulfide_cys")
+        catalytic = catalytic_lists[index]
+        if catalytic:
+            reasons.append(CATALYTIC_REASON)
         released = key in released_set and bool(reasons)
-        exclusions = _exclusions(reasons, released, one_letter, allowed)
+        exclusions = _exclusions(reasons, released, one_letter, allowed, EXCLUSION_REASONS_V2)
         made = [] if exclusions else [code for code in allowed if code != one_letter]
         for code in made:
             candidates.append({"index": len(candidates), "position_index": index, "from": one_letter, "to": code})
@@ -450,7 +548,7 @@ def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
                                       if ligand_heavy is not None and len(entry["heavy"]) else None),
             "numbering": None if rows is None else _numbering(rows, residue),
             "protection": {"reasons": reasons, "released": released, "klifs_sites": klifs_sites, "metal": metal,
-                           "disulfide_partner": partner},
+                           "disulfide_partner": partner, "catalytic": catalytic},
             "exclusion_reasons": exclusions, "status": "excluded" if exclusions else "candidate",
             "candidate_count": len(made),
         })
@@ -459,7 +557,7 @@ def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
     released_out = [{"residue": seven(item), "effect": ("released" if by_key.get(identity(item), {}).get(
         "protection", {}).get("released") else "none")} for item in params["released_residues"]]
     content = {
-        "schema": SCHEMA, "method_version": METHOD_VERSION,
+        "schema": SCHEMA, "method_version": METHOD_VERSION_V2,
         "structure": {"handle": structure, "model_number": model_number, "structure_kind": STRUCTURE_KIND},
         "parameters": {
             "sources": {"pocket": sources["pocket"], "ligand_shell": sources["ligand_shell"],
@@ -468,6 +566,7 @@ def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
             "protected_residues": params["protected_residues"], "released_residues": params["released_residues"],
             "metal_contact_A": threshold, "disulfide_sg_A": DISULFIDE_SG_A,
             "numbering_map": params["numbering_map"], "annotation": params["annotation"],
+            "catalytic_annotation": params["catalytic_annotation"],
         },
         "ligand": (None if ligand_entry is None else
                    {"residue": seven(ligand_entry["residue"]), "heavy_atom_count": len(ligand_entry["heavy"])}),
@@ -484,19 +583,20 @@ def build_candidate_set(structure: str, st: Any, params: dict[str, Any], *,
             "metal_contact": {"status": CHECKED, "threshold_A": threshold, "metal_residues": len(metals),
                               "metal_names": sorted({entry["residue"]["resname"] for entry in metals})},
             "disulfide": {"status": CHECKED, "threshold_A": DISULFIDE_SG_A, "pairs": pairs},
-            "catalytic_residue_database": {"status": NOT_AVAILABLE, "reason": CATALYTIC_NOT_AVAILABLE_REASON},
+            "catalytic_residue_database": catalytic_check,
         },
         "released_residues": released_out,
         "positions": positions,
         "candidates": candidates,
-        "counts": counts(positions, candidates),
+        "counts": counts(positions, candidates, EXCLUSION_REASONS_V2),
         "null_result": not candidates,
-        "limitations": list(LIMITATIONS),
+        "limitations": list(LIMITATIONS_V2[catalytic_check["status"]]),
     }
     return content
 
 
-def counts(positions: list[dict[str, Any]], candidates: list[dict[str, Any]]) -> dict[str, Any]:
+def counts(positions: list[dict[str, Any]], candidates: list[dict[str, Any]],
+           exclusion_reasons: tuple[str, ...] = EXCLUSION_REASONS) -> dict[str, Any]:
     return {
         "positions": len(positions),
         "candidate_positions": sum(p["status"] == "candidate" for p in positions),
@@ -504,7 +604,7 @@ def counts(positions: list[dict[str, Any]], candidates: list[dict[str, Any]]) ->
         "released_positions": sum(p["protection"]["released"] is True for p in positions),
         "candidates": len(candidates),
         "exclusion_reason_counts": {reason: sum(reason in p["exclusion_reasons"] for p in positions)
-                                    for reason in EXCLUSION_REASONS},
+                                    for reason in exclusion_reasons},
         "source_counts": {kind: sum(any(s["kind"] == kind for s in p["sources"]) for p in positions)
                           for kind in SOURCE_KINDS},
     }
@@ -517,6 +617,11 @@ _TOP_KEYS = {"schema", "method_version", "structure", "parameters", "ligand", "p
 _POSITION_KEYS = {"index", "residue", "standard_resname", "one_letter", "sources", "ligand_min_distance_A",
                   "numbering", "protection", "exclusion_reasons", "status", "candidate_count"}
 _PROTECTION_KEYS = {"reasons", "released", "klifs_sites", "metal", "disulfide_partner"}
+_PARAMETER_KEYS = {"sources", "ligand", "allowed_residues", "protected_residues", "released_residues",
+                   "metal_contact_A", "disulfide_sg_A", "numbering_map", "annotation"}
+# M26 spec 8.6: what v2 adds to the v1 key sets (everything else is the v1 rule)
+_PROTECTION_KEYS_V2 = _PROTECTION_KEYS | {"catalytic"}
+_PARAMETER_KEYS_V2 = _PARAMETER_KEYS | {"catalytic_annotation"}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -538,10 +643,9 @@ def _ordered_subset(values: Any, closed: tuple[str, ...]) -> bool:
             and values == [v for v in closed if v in values])
 
 
-def _validate_parameters(parameters: Any) -> None:
-    _require(isinstance(parameters, dict) and set(parameters) == {
-        "sources", "ligand", "allowed_residues", "protected_residues", "released_residues", "metal_contact_A",
-        "disulfide_sg_A", "numbering_map", "annotation"}, "parameters keys")
+def _validate_parameters(parameters: Any, v2: bool = False) -> None:
+    _require(isinstance(parameters, dict)
+             and set(parameters) == (_PARAMETER_KEYS_V2 if v2 else _PARAMETER_KEYS), "parameters keys")
     sources = parameters["sources"]
     _require(isinstance(sources, dict) and set(sources) == set(SOURCES_KEYS), "sources keys")
     pocket = sources["pocket"]
@@ -571,11 +675,11 @@ def _validate_parameters(parameters: Any) -> None:
              "metal_contact_A")
     _require(parameters["disulfide_sg_A"] == DISULFIDE_SG_A and type(parameters["disulfide_sg_A"]) is float,
              "disulfide_sg_A")
-    for key in ("numbering_map", "annotation"):
+    for key in ("numbering_map", "annotation", *(("catalytic_annotation",) if v2 else ())):
         _require(parameters[key] is None or type(parameters[key]) is str, key)
 
 
-def _validate_checks(checks: Any, parameters: dict[str, Any]) -> None:
+def _validate_checks(checks: Any, parameters: dict[str, Any], v2: bool = False, model_number: Any = None) -> None:
     _require(isinstance(checks, dict) and set(checks) == set(PROTECTION_CHECK_KEYS), "protection_checks keys")
     _require(checks["user_list"] == {"status": CHECKED, "protected": len(parameters["protected_residues"]),
                                      "released": len(parameters["released_residues"])}, "user_list")
@@ -602,11 +706,94 @@ def _validate_checks(checks: Any, parameters: dict[str, Any]) -> None:
     _require(isinstance(disulfide, dict) and set(disulfide) == {"status", "threshold_A", "pairs"}
              and disulfide["status"] == CHECKED and disulfide["threshold_A"] == DISULFIDE_SG_A
              and _is_int(disulfide["pairs"]) and disulfide["pairs"] >= 0, "disulfide check")
+    if v2:
+        _validate_catalytic_check(checks["catalytic_residue_database"], parameters, model_number)
+        return
     _require(checks["catalytic_residue_database"] == {"status": NOT_AVAILABLE,
                                                       "reason": CATALYTIC_NOT_AVAILABLE_REASON}, "catalytic")
 
 
-def _validate_position(position: Any, index: int, parameters: dict[str, Any]) -> None:
+def _optional_int(value: Any) -> bool:
+    return value is None or _is_int(value)
+
+
+def _validate_catalytic_items(check: dict[str, Any], key: str, closed: tuple[str, ...],
+                              model_number: Any) -> None:
+    """``conflicts`` / ``unmatched``: exact keys, closed reasons, residue only for the reasons that found one, covered
+    chains only, in covered-chain order then (``mcsa_id``, ``residue_index``), at most ``MAX_CATALYTIC_LIST``."""
+    items, covered = check[key], check["covered_chains"]
+    _require(isinstance(items, list) and len(items) <= MAX_CATALYTIC_LIST, f"catalytic {key} list")
+    previous = None
+    for item in items:
+        _require(isinstance(item, dict) and set(item) == set(CATALYTIC_ITEM_KEYS) and item["chain_auth"] in covered
+                 and _is_int(item["mcsa_id"]) and item["mcsa_id"] >= 0 and _is_int(item["residue_index"])
+                 and item["residue_index"] >= 0 and type(item["reason"]) is str and item["reason"] in closed,
+                 f"catalytic {key} item")
+        listed = item["listed"]
+        _require(isinstance(listed, dict) and set(listed) == set(CATALYTIC_LISTED_KEYS)
+                 and listed["chain_name"] == item["chain_auth"] and _optional_int(listed["resid"])
+                 and _optional_int(listed["auth_resid"]) and type(listed["code"]) is str, f"catalytic {key} listed")
+        residue = item["residue"]
+        if item["reason"] in CATALYTIC_WITH_RESIDUE:
+            _require(_is_seven(residue) and residue["chain_auth"] == item["chain_auth"]
+                     and residue["model_number"] == model_number and residue["seq_auth"] == listed["auth_resid"],
+                     f"catalytic {key} residue")
+        else:
+            _require(residue is None, f"catalytic {key} residue without a structure match")
+        order = (covered.index(item["chain_auth"]), item["mcsa_id"], item["residue_index"])
+        _require(previous is None or previous <= order, f"catalytic {key} order")
+        previous = order
+
+
+def _validate_catalytic_check(check: Any, parameters: dict[str, Any], model_number: Any) -> None:
+    """M26 spec 8.3 / 8.6 on the check alone; the chains-vs-positions rules run after the positions."""
+    if parameters["catalytic_annotation"] is None:
+        _require(isinstance(check, dict) and set(check) == set(CATALYTIC_NOT_GIVEN_KEYS)
+                 and check == {"status": NOT_CHECKED, "reason": CATALYTIC_NOT_GIVEN_REASON, "annotation": None},
+                 "catalytic not given")
+        return
+    _require(isinstance(check, dict) and set(check) == set(CATALYTIC_CHECK_KEYS), "catalytic keys")
+    _require(type(check["annotation"]) is str and check["annotation"] == parameters["catalytic_annotation"],
+             "catalytic annotation")
+    covered, uncovered = check["covered_chains"], check["uncovered_chains"]
+    _require(isinstance(covered, list) and all(type(c) is str and c for c in covered)
+             and len(set(covered)) == len(covered), "covered_chains")
+    _require(isinstance(uncovered, list)
+             and all(isinstance(u, dict) and set(u) == set(CATALYTIC_UNCOVERED_KEYS) and type(u["chain_auth"]) is str
+                     and u["chain_auth"] and type(u["coverage"]) is str
+                     and u["coverage"] in CATALYTIC_UNCOVERED_COVERAGE for u in uncovered), "uncovered_chains")
+    names = [u["chain_auth"] for u in uncovered]
+    _require(len(set(names)) == len(names) and not set(names) & set(covered), "covered/uncovered overlap")
+    checked = bool(covered) and not uncovered
+    _require([check["status"], check["reason"]] == ([CHECKED, None] if checked
+                                                    else [NOT_CHECKED, CATALYTIC_NOT_COVERED_REASON]),
+             "catalytic status")
+    rows = [check[f"{status}_rows"] for status in (CATALYTIC_MATCHED, CATALYTIC_CONFLICT, CATALYTIC_UNMATCHED)]
+    _require(all(_is_int(value) and value >= 0 for value in rows), "catalytic row counts")
+    _require(bool(covered) or rows == [0, 0, 0], "catalytic row counts without a covered chain")
+    _validate_catalytic_items(check, "conflicts", CATALYTIC_CONFLICT_REASONS, model_number)
+    _validate_catalytic_items(check, "unmatched", CATALYTIC_UNMATCHED_REASONS, model_number)
+    _require(check["conflict_rows"] == len(check["conflicts"])
+             and check["unmatched_rows"] == len(check["unmatched"]), "catalytic list lengths")
+
+
+def _validate_catalytic_entries(catalytic: Any, reasons: list[str], covered: bool) -> None:
+    """``protection.catalytic``: ``null`` unless the position's chain is covered, then a list (``[]`` allowed) of
+    ``{mcsa_id, residue_index, is_reference}`` strictly ascending; ``catalytic_residue`` iff the list is not empty."""
+    if not covered:
+        _require(catalytic is None and CATALYTIC_REASON not in reasons, "catalytic not checked")
+        return
+    _require(isinstance(catalytic, list)
+             and all(isinstance(e, dict) and set(e) == set(CATALYTIC_ENTRY_KEYS) and _is_int(e["mcsa_id"])
+                     and e["mcsa_id"] >= 0 and _is_int(e["residue_index"]) and e["residue_index"] >= 0
+                     and type(e["is_reference"]) is bool for e in catalytic), "catalytic entries")
+    keys = [_entry_key(e) for e in catalytic]
+    _require(keys == sorted(set(keys)), "catalytic entry order")
+    _require(bool(catalytic) == (CATALYTIC_REASON in reasons), "catalytic_residue")
+
+
+def _validate_position(position: Any, index: int, parameters: dict[str, Any], v2: bool = False,
+                       covered: frozenset[str] = frozenset()) -> None:
     _require(isinstance(position, dict) and set(position) == _POSITION_KEYS, "position keys")
     _require(_is_int(position["index"]) and position["index"] == index, "position index")
     residue = position["residue"]
@@ -652,9 +839,10 @@ def _validate_position(position: Any, index: int, parameters: dict[str, Any]) ->
         if numbering["status"] == "not_in_map":
             _require(all(numbering[f] is None for f in NUMBERING_FIELDS), "not_in_map fields")
     protection = position["protection"]
-    _require(isinstance(protection, dict) and set(protection) == _PROTECTION_KEYS, "protection keys")
+    _require(isinstance(protection, dict)
+             and set(protection) == (_PROTECTION_KEYS_V2 if v2 else _PROTECTION_KEYS), "protection keys")
     reasons = protection["reasons"]
-    _require(_ordered_subset(reasons, PROTECTION_REASONS), "protection reasons")
+    _require(_ordered_subset(reasons, PROTECTION_REASONS_V2 if v2 else PROTECTION_REASONS), "protection reasons")
     _require(type(protection["released"]) is bool, "released flag")
     released = {identity(i) for i in parameters["released_residues"]}
     _require(protection["released"] == (identity(residue) in released and bool(reasons)), "released")
@@ -680,23 +868,31 @@ def _validate_position(position: Any, index: int, parameters: dict[str, Any]) ->
                  and standard_name(partner["resname"]) == CYSTEINE, "disulfide partner")
     else:
         _require(partner is None, "partner without reason")
+    if v2:
+        _validate_catalytic_entries(protection["catalytic"], reasons, residue["chain_auth"] in covered)
     expected = _exclusions(reasons, protection["released"], position["one_letter"],
-                           parameters["allowed_residues"])
+                           parameters["allowed_residues"], EXCLUSION_REASONS_V2 if v2 else EXCLUSION_REASONS)
     _require(position["exclusion_reasons"] == expected, "exclusion reasons")
     _require(position["status"] in POSITION_STATUSES
              and position["status"] == ("excluded" if expected else "candidate"), "status")
 
 
 def validated_set(content: Any) -> dict[str, Any]:
-    """Return ``content`` if it is a well-formed ``mutation_candidate_set@1``; else ``MutationSetInvalid``."""
+    """Return ``content`` if it is a well-formed ``mutation_candidate_set@1``; else ``MutationSetInvalid``.
+
+    ``method_version`` picks the generation: ``mw.mutation_candidates/v2`` runs the M26 spec 8.6 rules, anything else
+    runs the unchanged v1 rules (which accept only ``mw.mutation_candidates/v1``).
+    """
     _require(isinstance(content, dict) and set(content) == _TOP_KEYS, "top-level keys")
-    _require(content["schema"] == SCHEMA and content["method_version"] == METHOD_VERSION, "schema")
+    v2 = type(content["method_version"]) is str and content["method_version"] == METHOD_VERSION_V2
+    _require(content["schema"] == SCHEMA
+             and content["method_version"] == (METHOD_VERSION_V2 if v2 else METHOD_VERSION), "schema")
     structure = content["structure"]
     _require(isinstance(structure, dict) and set(structure) == {"handle", "model_number", "structure_kind"}
              and type(structure["handle"]) is str and _is_int(structure["model_number"])
              and structure["structure_kind"] == STRUCTURE_KIND, "structure")
     parameters = content["parameters"]
-    _validate_parameters(parameters)
+    _validate_parameters(parameters, v2)
     model_number = structure["model_number"]
     ligand = content["ligand"]
     if parameters["ligand"] is None:
@@ -713,12 +909,15 @@ def validated_set(content: Any) -> dict[str, Any]:
         _require(isinstance(pockets, dict) and set(pockets) == {"pocket_set", "ranks", "lining_residue_count"}
                  and pockets["pocket_set"] == pocket["pocket_set"] and pockets["ranks"] == pocket["ranks"]
                  and _is_int(pockets["lining_residue_count"]) and pockets["lining_residue_count"] >= 0, "pockets")
-    _validate_checks(content["protection_checks"], parameters)
+    _validate_checks(content["protection_checks"], parameters, v2, model_number)
+    catalytic = content["protection_checks"]["catalytic_residue_database"]
+    covered = frozenset(catalytic["covered_chains"]) if v2 and parameters["catalytic_annotation"] is not None \
+        else frozenset()
 
     positions = content["positions"]
     _require(isinstance(positions, list) and len(positions) <= MAX_POSITIONS, "positions list")
     for index, position in enumerate(positions):
-        _validate_position(position, index, parameters)
+        _validate_position(position, index, parameters, v2, covered)
     every = [parameters["ligand"], *parameters["sources"]["residues"], *parameters["protected_residues"],
              *parameters["released_residues"], *(p["residue"] for p in positions)]
     _require(all(item is None or item["model_number"] == model_number for item in every), "model number")
@@ -747,7 +946,26 @@ def validated_set(content: Any) -> dict[str, Any]:
     for position in positions:
         made = sum(c["position_index"] == position["index"] for c in candidates)
         _require(_is_int(position["candidate_count"]) and position["candidate_count"] == made, "candidate_count")
-    _require(content["counts"] == counts(positions, candidates), "counts")
+    if v2:
+        _validate_catalytic_chains(catalytic, parameters, positions)
+    _require(content["counts"] == counts(positions, candidates, EXCLUSION_REASONS_V2 if v2 else EXCLUSION_REASONS),
+             "counts")
     _require(content["null_result"] is (not candidates), "null_result")
-    _require(content["limitations"] == list(LIMITATIONS), "limitations")
+    _require(content["limitations"] == list(LIMITATIONS_V2[catalytic["status"]] if v2 else LIMITATIONS),
+             "limitations")
     return content
+
+
+def _validate_catalytic_chains(check: dict[str, Any], parameters: dict[str, Any],
+                               positions: list[dict[str, Any]]) -> None:
+    """``covered_chains`` + ``uncovered_chains`` are exactly the chains with positions, disjoint, each in file order;
+    the protected entries never outnumber the ``matched`` rows of the covered chains."""
+    if parameters["catalytic_annotation"] is None:
+        return
+    order = list(dict.fromkeys(p["residue"]["chain_auth"] for p in positions))
+    covered = check["covered_chains"]
+    _require(covered == [chain for chain in order if chain in covered]
+             and [u["chain_auth"] for u in check["uncovered_chains"]] == [c for c in order if c not in covered],
+             "catalytic chains")
+    _require(sum(len(p["protection"]["catalytic"] or []) for p in positions) <= check["matched_rows"],
+             "catalytic entries outnumber the matched rows")
