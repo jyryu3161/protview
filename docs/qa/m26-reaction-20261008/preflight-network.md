@@ -160,5 +160,5 @@ T1의 (a) 실제 응답 모양, (b) 규모, (c) 실제 등록 구조를 공개 �
 
 ## 남긴 파일·재현
 
-- 저장소에 남긴 것: 이 문서, `network-ledger.txt`(46줄). 원본 응답·분석 스크립트(`net.py`, `analyze_mcsa.py`, `analyze_uni.py`, `size_estimate.py`)는 scratchpad(`/private/tmp/claude-501/.../scratchpad/m26_t1/`)에만 있고 저장소에 넣지 않았다.
+- 저장소에 남긴 것: 이 문서, `network-ledger.txt`(46줄). 원본 응답·분석 스크립트(`net.py`, `analyze_mcsa.py`, `analyze_uni.py`, `size_estimate.py`)는 scratchpad(저장소 밖 임시 폴더)에만 있고 저장소에 넣지 않았다.
 - 같은 측정을 다시 하면 요청이 다시 든다. 이후 형식 시험은 이 문서의 모양을 본뜬 합성 fixture로 한다(실제 응답 조각 커밋 없음).
