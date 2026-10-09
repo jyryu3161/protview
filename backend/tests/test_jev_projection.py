@@ -554,7 +554,8 @@ def test_mutation_wire_on_real_1mq4_matches_the_oracle_and_hides_reference_value
     assert wire["protection_checks"] == {key: content["protection_checks"][key]["status"]
                                          for key in J.PROTECTION_CHECK_KEYS}
     assert wire["protection_checks"]["klifs_key_sites"] == "checked"
-    assert wire["protection_checks"]["catalytic_residue_database"] == "not_available"
+    # the tool builds v2 sets since M26 (no catalytic annotation given here): the wire copies not_checked
+    assert wire["protection_checks"]["catalytic_residue_database"] == "not_checked"
     allowed = (set(J.ALLOWED_MUTATION_TOP) | set(J.ALLOWED_MUTATION_POSITION) | set(J.ALLOWED_RESIDUE)
                | set(J.ALLOWED_WINDOW) | set(J.ALLOWED_NEIGHBOR) | set(J.ALLOWED_MUTATION_CANDIDATE)
                | set(J.PROTECTION_CHECK_KEYS))
@@ -582,7 +583,7 @@ def test_mutation_wire_on_real_1ubq_matches_the_oracle(ubq):
         assert position["ligand_min_distance_A"] is None and position["sources"] == ["user"]
     assert wire["protection_checks"] == {"user_list": "checked", "klifs_key_sites": "not_checked",
                                          "metal_contact": "checked", "disulfide": "checked",
-                                         "catalytic_residue_database": "not_available"}
+                                         "catalytic_residue_database": "not_checked"}   # a v2 set since M26
     assert "pockets" not in wire
 
 
@@ -930,7 +931,9 @@ def test_mutation_projection_content(mutation_projection):
     content = mutation_projection
     assert content["kind"] == "mutation" and content["structure"] == STRUCTURE_REF and content["filter"] is None
     assert content["question"] == {"id": "mutation_candidate_choice@1", "key": "candidate_choice"}
-    assert content["limitations"] == J.limitations_for("mutation", False)
+    # a tool-built set is v2 since M26 (no catalytic annotation): the fifth sentence is J6N (M26 spec 9)
+    assert content["limitations"] == J.limitations_for("mutation", False, "not_checked")
+    assert content["limitations"][4] == J.J6N
     assert content["source"]["schema"] == "mutation_candidate_set@1"
     P.validated_projection(json.loads(json.dumps(content, sort_keys=True)))
 
@@ -1038,6 +1041,60 @@ def test_validated_projection_count_and_kind_rules(mutation_projection):
     for structure in ("obj://x", ["handle", 1], {"handle": STRUCTURE_REF["handle"]}):
         with pytest.raises(P.ProjectionInvalid):
             P.build_projection_content("mutation", SET_HANDLE["mutation"], wire, selection, structure=structure)
+
+
+# ---------------------------------------------------------------- M26 spec 9: J6 follows the catalytic check status
+# STORED sets: the v1 set of fixtures/reaction/t1 (made by the unmodified v1 tool; SYNTHETIC-PROVENANCE-t1.md) and the
+# two v2 sets of fixtures/reaction/t6 (made by the v2 tool, the checked one over the LABELLED SYNTHETIC 0SY8 reaction
+# set; SYNTHETIC-PROVENANCE-t6b.md). All three are public 1UBQ, path-loaded and default-prepared like ``ubq``.
+STORED_SETS = {"v1": json.loads((FIX / "reaction/t1/m20-v1-candidate-set-golden_m24_mutation.json").read_text()),
+               **{name: json.loads((FIX / f"reaction/t6/m20-candidate-set-v2-1ubq-{name}.json").read_text())
+                  for name in ("not_checked", "checked")}}
+STORED_STATUS = {"v1": "not_available", "not_checked": "not_checked", "checked": "checked"}
+
+
+def _stored_projection(name: str, st) -> dict:
+    stored = STORED_SETS[name]
+    content = stored["content"]
+    wire, selection = P.build_mutation_wire(content, _first_candidates(content), st)
+    return P.build_projection_content("mutation", stored["handle"], wire, selection,
+                                      structure={"handle": content["structure"]["handle"], "model_number": 1})
+
+
+@pytest.mark.parametrize("name", ["v1", "not_checked", "checked"])
+def test_the_fifth_sentence_is_the_j6_variant_of_the_stored_set(name, ubq):
+    content = STORED_SETS[name]["content"]
+    status = STORED_STATUS[name]
+    assert content["protection_checks"]["catalytic_residue_database"]["status"] == status
+    assert content["method_version"] == ("mw.mutation_candidates/v1" if name == "v1" else "mw.mutation_candidates/v2")
+    projection = _stored_projection(name, ubq["structure"])
+    assert projection["wire"]["protection_checks"]["catalytic_residue_database"] == status
+    expected = {"v1": J.STATEMENTS["J6"], "not_checked": J.J6N, "checked": J.J6C}[name]
+    assert projection["limitations"] == [J.J1, J.J2, J.J3, J.J4, expected]
+    assert set(projection) == set(J.PROJECTION_KEYS)        # no new field: the status is read from the wire
+    stored = json.loads(json.dumps(projection, sort_keys=True))
+    assert P.validated_projection(stored) == projection
+    if name == "v1":   # the v1 projection is the M24 one: J6 exactly, the default sentence list
+        assert projection["limitations"] == J.limitations_for("mutation", False)
+
+
+@pytest.mark.parametrize("name", ["v1", "not_checked", "checked"])
+def test_a_stored_projection_with_another_j6_variant_or_status_is_refused(name, ubq):
+    projection = _stored_projection(name, ubq["structure"])
+    status = STORED_STATUS[name]
+    for other in sorted(set(J.J6_BY_CATALYTIC_STATUS) - {status}):
+        wrong_sentence = copy.deepcopy(projection)   # SYNTHETIC tampering: the sentence of another status
+        wrong_sentence["limitations"][4] = J.J6_BY_CATALYTIC_STATUS[other]
+        with pytest.raises(P.ProjectionInvalid):
+            P.validated_projection(wrong_sentence)
+        wrong_status = copy.deepcopy(projection)     # SYNTHETIC tampering: the wire status alone, hashes recomputed
+        wrong_status["wire"]["protection_checks"]["catalytic_residue_database"] = other
+        with pytest.raises(P.ProjectionInvalid):
+            P.validated_projection(_rehash(wrong_status))
+    with pytest.raises(P.ProjectionInvalid):         # J6N / J6C never stand in for J5 on a ligand projection
+        content = copy.deepcopy(_ligand_projection())
+        content["limitations"][4] = J.J6N
+        P.validated_projection(content)
 
 
 def test_error_classes():
