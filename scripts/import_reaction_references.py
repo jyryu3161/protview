@@ -511,8 +511,13 @@ def _position(location: dict[str, Any], key: str, where: str) -> int:
     return point["value"]
 
 
-def uniprot_row(raw: Any, requested: set[str] | frozenset[str]) -> dict[str, Any]:
-    """One UniProt ``accessions`` result -> one ``uniprot_function/entries.jsonl`` row (spec 3.4)."""
+def uniprot_row(raw: Any, requested: set[str] | frozenset[str],
+                isoform_sites: list[str] | None = None) -> dict[str, Any]:
+    """One UniProt ``accessions`` result -> one ``uniprot_function/entries.jsonl`` row (spec 3.4).
+
+    A site whose ``location.sequence`` is ``<this accession>-<n>`` (an isoform of the same entry, not a canonical
+    position; user decision 2026-10-09) is not stored: its accession is appended to ``isoform_sites`` instead. Any
+    other ``sequence`` value or location key is a format error."""
     _obj(raw, "UniProt result", _UNIPROT_TOP, optional=_UNIPROT_TOP_OPTIONAL, dropped=_UNIPROT_TOP_DROPPED)
     accession = raw["primaryAccession"]
     if type(accession) is not str or accession not in requested:
@@ -536,6 +541,13 @@ def uniprot_row(raw: Any, requested: set[str] | frozenset[str]) -> dict[str, Any
         if feature.get("type") not in K.SITE_TYPES:
             continue  # only Active site, Binding site and Site are copied
         _obj(feature, fw, ("type", "location"), optional=_FEATURE_OPTIONAL, dropped=_FEATURE_DROPPED)
+        if type(feature["location"]) is dict and "sequence" in feature["location"]:
+            isoform = _obj(feature["location"], f"{fw}.location", ("start", "end", "sequence"))["sequence"]
+            if type(isoform) is not str or not re.fullmatch(re.escape(accession) + r"-[0-9]+", isoform):
+                raise FormatError(f"{fw}.location.sequence {isoform!r} is not an isoform of {accession}")
+            if isoform_sites is not None:
+                isoform_sites.append(accession)
+            continue  # an isoform position, not a canonical one: not stored (spec 3.4)
         location = _obj(feature["location"], f"{fw}.location", ("start", "end"))
         ligand_name = ligand_id = None
         if "ligand" in feature:
@@ -828,8 +840,9 @@ def _fetch_mcsa(requests: _Requests) -> list[dict[str, Any]]:
     return [rows[key] for key in sorted(rows)]
 
 
-def _fetch_uniprot(requests: _Requests, union: list[str]) -> tuple[list[dict[str, Any]], list[str]]:
+def _fetch_uniprot(requests: _Requests, union: list[str]) -> tuple[list[dict[str, Any]], list[str], int]:
     rows: dict[str, dict[str, Any]] = {}
+    isoform_sites: list[str] = []
     for start in range(0, len(union), UNIPROT_BATCH):
         chunk = union[start:start + UNIPROT_BATCH]
         what = f"UniProt batch {start // UNIPROT_BATCH + 1} ({len(chunk)} accessions)"
@@ -837,12 +850,12 @@ def _fetch_uniprot(requests: _Requests, union: list[str]) -> tuple[list[dict[str
         _obj(body, what, ("results",))
         wanted = frozenset(chunk)
         for raw in _list(body["results"], f"{what}.results"):
-            row = uniprot_row(raw, wanted)
+            row = uniprot_row(raw, wanted, isoform_sites)
             if row["accession"] in rows:
                 raise FormatError(f"{what}: {row['accession']} appears twice")
             rows[row["accession"]] = row
     missing = [a for a in union if a not in rows]
-    return [rows[key] for key in sorted(rows)], missing
+    return [rows[key] for key in sorted(rows)], missing, len(isoform_sites)
 
 
 def _inactive_reason(body: bytes, accession: str) -> tuple[str, list[str]]:
@@ -929,7 +942,7 @@ def _run_import(params: ImportParams, *, transport: Callable[[str], Any], sleep:
                                                    f"{params.max_accessions}; stopped after the M-CSA pages, before "
                                                    "any UniProt request")
 
-    uniprot, missing = _fetch_uniprot(requests, union)
+    uniprot, missing, isoform_sites_skipped = _fetch_uniprot(requests, union)
     named = set(user)
     user_missing = [a for a in missing if a in named]
     derived_missing = [a for a in missing if a not in named]
@@ -978,7 +991,8 @@ def _run_import(params: ImportParams, *, transport: Callable[[str], Any], sleep:
     set_hash, set_dir, warnings = install_set(ref, manifest, payloads)
     result = {"set_hash": set_hash, "set_dir": str(set_dir), "reference_dir": str(ref), "imported_at": imported_at,
               "rows": {s["source"]: s["files"][0]["rows"] for s in sources},
-              "skipped_accessions": skipped, "request_count": len(requests.rows),
+              "skipped_accessions": skipped, "isoform_sites_skipped": isoform_sites_skipped,
+              "request_count": len(requests.rows),
               "requested_accessions": requested, "previous_set": previous, "warnings": warnings}
     print(format_summary(result), flush=True)
     return result
@@ -1142,6 +1156,8 @@ def format_summary(result: dict[str, Any]) -> str:
         f"- 가져온 시각 / imported at: {result['imported_at']}",
         "- 행 수 / rows: " + ", ".join(f"{source} {count}" for source, count in rows.items()),
         f"- 건너뜀 / skipped: {len(skipped)}" + ("".join(f"\n    {_skip_text(item)}" for item in skipped)),
+        (f"- 동형체 위치라 저장하지 않은 부위 / isoform-located sites not stored: {result['isoform_sites_skipped']} "
+         "(세트에는 남기지 않음 / not recorded in the set)"),
         f"- 요청 수 / requests: {result['request_count']}",
         f"- 이번에 다시 주지 않은 이전 직접 지정 / previous user-named not given again: {', '.join(dropped) or '없음 / none'}",
         f"- M15 kinase list: {result['requested_accessions']['m15_kinase_list']}",

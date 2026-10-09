@@ -1,7 +1,8 @@
 """Tests for scripts/import_reaction_references.py (M26 T3, spec 4).
 
-Every server response here is a SYNTHETIC FIXTURE (backend/tests/fixtures/reaction/t3/, SYNTHETIC-PROVENANCE-t3.md)
-served by an in-process fake transport function. The real transport (``UrllibTransport``) is tested only against a
+Every server response here is a SYNTHETIC FIXTURE (backend/tests/fixtures/reaction/t3/, SYNTHETIC-PROVENANCE-t3.md;
+the isoform-located sites of T9a: reaction/t9a/, SYNTHETIC-PROVENANCE-t9a.md) served by an in-process fake transport
+function. The real transport (``UrllibTransport``) is tested only against a
 ``127.0.0.1`` server opened by these tests. An autouse guard makes every other socket connection and every name lookup
 fail, so no test can reach a public server.
 """
@@ -705,6 +706,77 @@ def test_dropped_raw_fields_never_reach_the_processed_files(tmp_path):
                     "synthetic note", "Synthetic isoform 2", "evidences", "ECO:9999999", "UPISYNTHETIC",
                     "taxonId", "synthetic fixture organism", "UniProtKB reviewed", "featureCrossReferences"):
         assert dropped not in text, dropped
+
+
+# --- isoform-located sites (T9a, user decision 2026-10-09; fixtures/reaction/t9a, SYNTHETIC-PROVENANCE-t9a.md) ----
+
+FIX_T9A = REPO / "backend" / "tests" / "fixtures" / "reaction" / "t9a"
+
+
+def _isoform_pair():
+    raw = json.loads((FIX_T9A / "uniprot_entry_isoform_raw.json").read_text(encoding="utf-8"))
+    want = json.loads((FIX_T9A / "uniprot_entry_isoform_processed.json").read_text(encoding="utf-8"))
+    return raw, want
+
+
+def _with_entry(world: World, raw, want=None) -> None:
+    """Replace the batch result of ``raw``'s accession by ``raw`` (and its expected row by ``want``)."""
+    def change(body):
+        (i,) = [n for n, r in enumerate(body["results"]) if r["primaryAccession"] == raw["primaryAccession"]]
+        body["results"][i] = raw
+
+    world.server.mutate(BATCH.format(",".join(world.union)), change)
+    if want is not None:
+        world.uniprot_rows = [want if r["accession"] == want["accession"] else r for r in world.uniprot_rows]
+
+
+def test_isoform_located_sites_of_the_same_accession_are_skipped_and_counted():
+    raw, want = _isoform_pair()
+    skipped: list[str] = []
+    assert imp.uniprot_row(copy.deepcopy(raw), {"Q0SYT1"}, skipped) == want
+    assert skipped == ["Q0SYT1", "Q0SYT1"]
+    assert imp.uniprot_row(raw, {"Q0SYT1"}) == want
+
+
+def test_an_import_with_isoform_located_sites_installs_the_rest_and_prints_only_the_count(tmp_path, capsys):
+    world = World(n_mcsa=2)
+    _with_entry(world, *_isoform_pair())
+    result = run(world, params(tmp_path))
+    assert result["isoform_sites_skipped"] == 2
+    set_dir = tmp_path / "reaction_reference" / "sets" / result["set_hash"]
+    data = (set_dir / "files" / "uniprot_function" / "entries.jsonl").read_bytes()
+    assert K.decode_jsonl("uniprot_function", data) == sorted(world.uniprot_rows, key=lambda r: r["accession"])
+    assert "isoform-located sites not stored: 2" in capsys.readouterr().out
+    K.validate_manifest(manifest_of(tmp_path / "reaction_reference", result["set_hash"]))  # fixed key set
+    text = b"".join(tree(set_dir).values()).decode()
+    for absent in ("Q0SYT1-2", "Q0SYT1-3", "isoform_sites", "Synthetic isoform-only site text"):
+        assert absent not in text, absent
+
+
+def test_the_isoform_count_is_printed_as_zero_when_nothing_is_skipped(tmp_path, capsys):
+    result = run(World(n_mcsa=2), params(tmp_path))
+    assert result["isoform_sites_skipped"] == 0
+    assert "isoform-located sites not stored: 0" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("index, change", [
+    pytest.param(1, lambda loc: loc.update(sequence="P0SYT2-2"), id="isoform_of_another_accession"),
+    pytest.param(1, lambda loc: loc.update(sequence="Q0SYT1"), id="no_isoform_number"),
+    pytest.param(1, lambda loc: loc.update(sequence="Q0SYT1-2a"), id="malformed_isoform"),
+    pytest.param(1, lambda loc: loc.update(sequence="q0syt1-2"), id="other_case"),
+    pytest.param(1, lambda loc: loc.update(sequence=2), id="not_a_string"),
+    pytest.param(1, lambda loc: loc.update(extra="x"), id="extra_key_beside_the_isoform"),
+    pytest.param(0, lambda loc: loc.update(extra="x"), id="extra_key_on_a_canonical_site"),
+])
+def test_other_isoform_values_and_unknown_location_keys_stay_format_errors(tmp_path, index, change):
+    world = World(n_mcsa=2)
+    raw, _ = _isoform_pair()
+    change(raw["features"][index]["location"])
+    _with_entry(world, raw)
+    with pytest.raises(imp.ImportRefused) as info:
+        run(world, params(tmp_path))
+    assert info.value.kind == "format_error", info.value
+    assert not (tmp_path / "reaction_reference").exists()
 
 
 # --- user-named accessions --------------------------------------------------------------------------------------------
