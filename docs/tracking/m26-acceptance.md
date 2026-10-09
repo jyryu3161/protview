@@ -1,6 +1,6 @@
 # M26 효소 반응 지식 연결 완료 기록
 
-- 판정: **완료** (2026-10-09 UTC). main 병합 전이다. 병합 해시는 병합 뒤 기록한다.
+- 판정: **완료** (2026-10-09 UTC). main에 병합했다(`8b95cc9`).
 - 브랜치: `dryforge/m26-reaction-knowledge` (`phase/m26-reaction-knowledge` = main `72f4d1e`에서 분기). M25는 시작 전에 main에 병합되어 있었다(`877d5cf`, 기록 `72f4d1e`).
 - 고정 소스: `3fcac53`(T10 독립 코드 검토 수정). 고정 뒤 제품 소스(`backend/mw`·`frontend/src`·`frontend/app`·`design`·`config`·`scripts`) 변경은 없다. 고정 뒤 커밋은 둘째 가져오기 기록(`06679e4`), M23 오프스크린 하네스 한 파일(`frontend/tests/offscreen/sequence-ga-flow.cjs`, `8964179`), 최종 수락·회귀 증거(`01b09b9`, 작업 중 예비 증거 폴더 `fixture-stage/`·`real-stage/`·`regression-prep/`를 대체하고 지움), 게이트 기록(`6430e2a`), 독립 증거 검토 메모(`61c9d20`), 이 기록 문서들뿐이다.
 - 해시 대응: 증거 장부·README의 `gitHead` 값은 역사 정리 전 해시다. `dac2755`는 지금 `06679e4`, `1735338`(소스 고정 당시)은 지금 `3fcac53`이다. 예비 증거 커밋에 들어 있던 실제 외부 자료 보고서 두 개를 빼려고 어디에도 올리지 않은 로컬 작업 브랜치의 끝 9개 커밋을 `git filter-branch`로 정리했고, 브랜치 끝의 트리 해시(`5f0c5c43…`)는 정리 전후 같다.
@@ -130,5 +130,4 @@
 실서버 가져오기를 다시 돌리는 것은 새 실서버 요청이므로 개발·검증 중에는 사용자가 새로 정해 줄 때만 한다.
 
 ## 남은 일
-- main 병합(사용자 승인 뒤). 병합 해시는 병합 뒤 이 기록과 `docs/tracking/status.md`에 적는다.
 - 새 미해결 문제(`docs/tracking/findings.md`): 위 "알려진 한계"의 항목들, 옛 실행기의 참조 폴더, 역사 정리 기록.
