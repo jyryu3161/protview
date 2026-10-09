@@ -1,0 +1,214 @@
+{
+  "buildCommands": {
+    "typecheck": 0,
+    "build": 0,
+    "sourceSha256": "0894fa63fc342ab88a5279a47b82f76caae05d816b02077c0352ce04eb555222"
+  },
+  "build": {
+    "buildId": "4-fB1d-vH135JEpv-hR4g",
+    "gitHead": "2bb3721ece450e513ce9634fd5c8c08d1398a7bb",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "3921dadfdb60cb5992ae683149ca1fc9e3e42055d897e996367850d566871fa4",
+    "dirtyFiles": [
+      " M .codex/hooks/stop.py",
+      " M frontend/tests/offscreen/mutation-flow.cjs",
+      "?? backend/tests/fixtures/reaction/t9/",
+      "?? frontend/tests/offscreen/reaction-knowledge-flow.cjs",
+      "?? scripts/m26_offscreen_acceptance.py",
+      "?? scripts/test_m26_offscreen_acceptance.py"
+    ],
+    "recordedAt": "2026-10-09T03:09:16.681996+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "reaction-knowledge-flow.cjs": "e64cc0171e4a5aded74d82996b3889097cdf13b853d33bb098e4003f6f9514d6",
+      "mutation-flow.cjs": "6216f31c9b8d10e4ee6f85f5908c7fcdefddd239b9da728b945c27f03bafbabc",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "670fdeaffb43f13eb7f21ef8aa5556a50a6b7212e068452c32d7a353b62ec7f5"
+  },
+  "services": [
+    {
+      "name": "backend-fixture",
+      "runs": "<repo>/runs/m26-acceptance-20261009-fixture-c/fixture/runs",
+      "reference": "<repo>/runs/m26-acceptance-20261009-fixture-c/fixture/reference",
+      "reactionReference": "<repo>/runs/m26-acceptance-20261009-fixture-c/fixture/reaction_reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-09T03:09:21.416490+00:00"
+    }
+  ],
+  "checks": {
+    "fixture": {
+      "reaction": {
+        "empty-at-start": {
+          "status": "pass",
+          "at": "2026-10-09T03:09:21.416802+00:00",
+          "served": {
+            "installed": false,
+            "reason": "not_installed",
+            "set_hash": null,
+            "imported_at": null
+          }
+        },
+        "set-a": {
+          "status": "pass",
+          "at": "2026-10-09T03:09:24.450810+00:00",
+          "setHash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+          "importedAt": "2026-10-08T00:00:00Z",
+          "rows": {
+            "mcsa": 8,
+            "uniprot_function": 5,
+            "rhea": 5
+          },
+          "builder": "backend/tests/fixtures/reaction/t9/build_qa_set.py",
+          "label": "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+          "served": {
+            "installed": true,
+            "reason": null,
+            "set_hash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+            "imported_at": "2026-10-08T00:00:00Z"
+          }
+        },
+        "unset": {
+          "status": "pass",
+          "at": "2026-10-09T03:10:00.506107+00:00",
+          "moved": "active.json -> active.json.qa-unset",
+          "served": {
+            "installed": false,
+            "reason": "not_installed",
+            "set_hash": null,
+            "imported_at": null
+          }
+        },
+        "tamper": {
+          "status": "pass",
+          "at": "2026-10-09T03:10:05.200856+00:00",
+          "restored": "active.json",
+          "tampered": "files/rhea/reactions.jsonl",
+          "sha256Before": "a1366677687289432754bf96a16bfbe1b676350ce3e8b8c7067a0d686fac103f",
+          "sha256After": "e19a43bf6337061261dcf1166b39aeb95ee09978f0c52fdf30236e769e30cf7f",
+          "served": {
+            "installed": false,
+            "reason": "snapshot_invalid",
+            "set_hash": null,
+            "imported_at": null
+          }
+        },
+        "set-b": {
+          "status": "pass",
+          "at": "2026-10-09T03:10:09.902524+00:00",
+          "setHash": "ba7768dd87a205d6ef5f02772b6cfec06767ce81ef11aa6a897cf17785f66b52",
+          "importedAt": "2026-10-08T00:00:01Z",
+          "rows": {
+            "mcsa": 8,
+            "uniprot_function": 5,
+            "rhea": 5
+          },
+          "builder": "backend/tests/fixtures/reaction/t9/build_qa_set.py",
+          "label": "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+          "served": {
+            "installed": true,
+            "reason": null,
+            "set_hash": "ba7768dd87a205d6ef5f02772b6cfec06767ce81ef11aa6a897cf17785f66b52",
+            "imported_at": "2026-10-08T00:00:01Z"
+          }
+        }
+      },
+      "m15": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "<repo>/scripts/import_reference_snapshots.py",
+          "--from",
+          "<home>/Projects/kbase_kinase",
+          "--dest",
+          "<repo>/runs/m26-acceptance-20261009-fixture-c/fixture/reference"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m26-acceptance/fixture-20261009c/services/fixture-m15-import.log",
+        "setHash": "89fe604f2c4ce2bdf1a5df8b1b08904e34c3d0d506502b29d6d241d346e0c09c",
+        "served": {
+          "available": true,
+          "set_hash": "89fe604f2c4ce2bdf1a5df8b1b08904e34c3d0d506502b29d6d241d346e0c09c",
+          "imported_at": "2026-10-09T03:09:24.568127Z",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      }
+    },
+    "real": {
+      "reaction": {},
+      "m15": {}
+    }
+  },
+  "reference": {
+    "fixture-m15-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m26-acceptance-20261009-fixture-c/fixture/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m26-acceptance/fixture-20261009c/services/fixture-m15-import.log",
+      "setHash": "89fe604f2c4ce2bdf1a5df8b1b08904e34c3d0d506502b29d6d241d346e0c09c",
+      "served": {
+        "available": true,
+        "set_hash": "89fe604f2c4ce2bdf1a5df8b1b08904e34c3d0d506502b29d6d241d346e0c09c",
+        "imported_at": "2026-10-09T03:09:24.568127Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  }
+}

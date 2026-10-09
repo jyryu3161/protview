@@ -1,0 +1,233 @@
+{
+  "schema": "m20_case_ledger_row@1",
+  "mode": "catalytic",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "C-uk2-none": "pass",
+    "R-no-zero": "pass",
+    "C-preselect": "pass",
+    "C-prediction": "pass",
+    "C-chains-not-covered": "pass",
+    "C-checked": "pass",
+    "C-lists": "pass",
+    "C-exclusion-seven": "pass",
+    "C-release": "pass",
+    "C-v1-set": "pass",
+    "C-limitation-variants": "pass",
+    "C-picker-marks": "pass",
+    "R-wording": "pass"
+  },
+  "runId": "run_6bde913f473f4f5e8cd60465ab736423",
+  "runs": {
+    "A": "run_6bde913f473f4f5e8cd60465ab736423"
+  },
+  "handles": {
+    "prepared": "obj://run_6bde913f473f4f5e8cd60465ab736423/prepared_structure/bf8a406917512ddfd644b05b79d59f656b8f356ad799ca961f0998ae271f6994",
+    "s0": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/bc6bc06af152f310d81e0c89270f4c411bf88ff2ed8117b0b456997c6a2b2428",
+    "rPartial": "obj://run_6bde913f473f4f5e8cd60465ab736423/reaction_knowledge/ebf0ff3deee6da6f0f5ec1dc9e6bcc04bb9db524c9ff0d06803965a39b2d45e7",
+    "rAll": "obj://run_6bde913f473f4f5e8cd60465ab736423/reaction_knowledge/7bed71e7438502b55e0a68d85c23f3ea5c809dfab84283f916f454bdc0e2d4ab",
+    "s1": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/da993c1ee93bcf6ca5bab0497a53923f07f85fa99b7ed1b86fa86b0ca062509a",
+    "s2": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/1a7685e3fc6d77049cab848de8f4a08b2a78c25fbed5162f083319381e117e9c",
+    "s3": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/5789aef29dc6fcfc0d9dba1937d2ee07c52452963a40c10ca7c81accc784cd28"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "fixtureLabels": [
+    "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results"
+  ],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_6bde913f473f4f5e8cd60465ab736423/prepared_structure/bf8a406917512ddfd644b05b79d59f656b8f356ad799ca961f0998ae271f6994"
+      },
+      {
+        "checked": "obj://run_6bde913f473f4f5e8cd60465ab736423/prepared_structure/bf8a406917512ddfd644b05b79d59f656b8f356ad799ca961f0998ae271f6994"
+      }
+    ],
+    "mutation-source-ligand-shell": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-radius": [
+      {
+        "value": "5"
+      },
+      {
+        "value": "5"
+      }
+    ],
+    "mutation-ligand": [
+      {
+        "chosen": "MK1 B:902 · label C:—"
+      },
+      {
+        "chosen": "MK1 B:902 · label C:—"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-catalytic-annotation": [
+      {
+        "value": "obj://run_6bde913f473f4f5e8cd60465ab736423/reaction_knowledge/ebf0ff3deee6da6f0f5ec1dc9e6bcc04bb9db524c9ff0d06803965a39b2d45e7"
+      },
+      {
+        "value": "obj://run_6bde913f473f4f5e8cd60465ab736423/reaction_knowledge/7bed71e7438502b55e0a68d85c23f3ea5c809dfab84283f916f454bdc0e2d4ab"
+      }
+    ],
+    "mutation-pick-release": [
+      {
+        "picked": "ASP A:25 · label A:25"
+      }
+    ],
+    "mutation-sets": [
+      {
+        "checked": "obj://run_m23_golden_keys/mutation_candidate_set/84f197b36aa8b4f70e4393f978bb153c6de35819634208d52732291d0502ecb3"
+      },
+      {
+        "checked": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/da993c1ee93bcf6ca5bab0497a53923f07f85fa99b7ed1b86fa86b0ca062509a"
+      },
+      {
+        "checked": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/1a7685e3fc6d77049cab848de8f4a08b2a78c25fbed5162f083319381e117e9c"
+      },
+      {
+        "checked": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/1a7685e3fc6d77049cab848de8f4a08b2a78c25fbed5162f083319381e117e9c"
+      }
+    ],
+    "mutation-candidate-model": [
+      {
+        "set": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/da993c1ee93bcf6ca5bab0497a53923f07f85fa99b7ed1b86fa86b0ca062509a"
+      },
+      {
+        "set": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/1a7685e3fc6d77049cab848de8f4a08b2a78c25fbed5162f083319381e117e9c"
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "chosen": "obj://run_6bde913f473f4f5e8cd60465ab736423/mutation_candidate_set/da993c1ee93bcf6ca5bab0497a53923f07f85fa99b7ed1b86fa86b0ca062509a"
+      }
+    ],
+    "jev-kind-mutation": [
+      {
+        "checked": true
+      }
+    ]
+  },
+  "repro": null,
+  "buildId": "4-fB1d-vH135JEpv-hR4g",
+  "harness": {
+    "mutation-flow.cjs": "6216f31c9b8d10e4ee6f85f5908c7fcdefddd239b9da728b945c27f03bafbabc",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": null,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 274,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-acceptance/fixture-20261009c/fixture-mutation/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 498,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 7,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m26-acceptance/fixture-20261009c/fixture-mutation/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 59,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_6bde913f473f4f5e8cd60465ab736423",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_m23_golden_keys",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "mutation-catalytic.jsonl",
+  "startedAt": "2026-10-09T03:09:50.688Z",
+  "finishedAt": "2026-10-09T03:10:00.481Z"
+}
