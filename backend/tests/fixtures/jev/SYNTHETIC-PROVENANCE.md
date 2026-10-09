@@ -45,6 +45,7 @@ Throw-away runs roots (`_work_*` next to the scripts) are deleted at the end of 
 - M25 T1 (2026-10-07): added `golden_science_m24.json` (SHA-256 `78d4cf12078c443b7525d16c6af3df7afcc3be135a49de431bf0f7616fee482c`,
   209,001 B) and its recorder `golden_science_m24.py`, recorded from the M24 code at main `b8866a8` with no `backend/mw`
   change. No existing file in this folder changed apart from this table and change log.
+- M26 T1 (2026-10-08): `golden_science_m24.py` no longer runs the M20 tool (which builds v2 sets since M26); it puts the STORED v1 candidate-set content of `../reaction/t1/m20-v1-candidate-set-<run id>.json` (made once by the unmodified v1 tool, see `../reaction/t1/SYNTHETIC-PROVENANCE-t1.md`) inside the same `Run.call` envelope, so `golden_science_m24.json` is unchanged and `--check` exits 0 before and after (`docs/qa/m26-reaction-20261008/v1-baseline/checks/`).
 
 ## Not claimed
 
