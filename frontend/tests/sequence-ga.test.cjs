@@ -947,9 +947,11 @@ const apiStub = { api: new Proxy({}, { get: () => noRequest }), ApiError: class 
 const modelPanel = compileTsx("../src/components/MutationModelPanel.tsx", { "@/lib/api": apiStub,
   "@/lib/docking": docking, "@/lib/ligand": ligandLib, "@/lib/mutation-model": mutationModel,
   "./primitives": primitives });
+// M26: the panel shows the shared "촉매 잔기 검사 안 함" mark of a candidate set (lib/mutations `catalyticBadge`).
+const mutationsLib = load("mutations", { "./site-annotation": siteAnnotation, "./event-model": load("event-model") });
 const gaPanel = compileTsx("../src/components/SequenceGaPanel.tsx", { "@/lib/api": apiStub, "@/lib/docking": docking,
-  "@/lib/ligand": ligandLib, "@/lib/sequence-ga": lib, "@/lib/site-annotation": siteAnnotation,
-  "./MutationModelPanel": modelPanel, "./primitives": primitives });
+  "@/lib/ligand": ligandLib, "@/lib/mutations": mutationsLib, "@/lib/sequence-ga": lib,
+  "@/lib/site-annotation": siteAnnotation, "./MutationModelPanel": modelPanel, "./primitives": primitives });
 const RUN = { run_id: "fixture-run", goal: "", context: [], dry_run: false, egress: "local_only", last_seq: 1 };
 const CAPABILITY = { schema: "sequence_ga_capability@1", protocol_id: "sequence_ga_dock_v1", tool_id: "sequence_ga_design",
   engine: "qvina", execution_lane: "expensive", result_schema: "sequence_ga_result@1", model_schema: "mutation_set_model@1",

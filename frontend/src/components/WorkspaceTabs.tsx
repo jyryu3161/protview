@@ -11,6 +11,7 @@ export interface WorkspaceTabsProps {
   structure: ReactNode;           // existing structure screen; stays mounted while another tab is shown
   reports?: ReactNode;            // 지식·보고서 tab report body (rendered only while that tab is shown)
   numbering?: ReactNode;          // 지식·보고서 tab residue numbering screen (rendered only while that tab is shown)
+  reaction?: ReactNode;           // 지식·보고서 tab enzyme reaction knowledge area (M26; below numbering, only while shown)
   jev?: ReactNode;                // 지식·보고서 tab JEV area (M24; between numbering and reports, only while shown)
   ligand?: ReactNode;             // 리간드 설계·탐색 tab body (M17; rendered only while that tab is shown)
   protein?: ReactNode;            // 단백질 공학 tab body (M20; rendered only while that tab is shown)
@@ -52,6 +53,7 @@ export function WorkspaceTabs(p: WorkspaceTabsProps) {
         </div>}
         {p.active === "knowledge" && <div role="tabpanel" id="mw-app-panel-knowledge" aria-labelledby="mw-app-tab-knowledge" className="mw-app-panel">
           {p.numbering != null && <div className="mw-app-numbering">{p.numbering}</div>}
+          {p.reaction != null && <div className="mw-app-reaction">{p.reaction}</div>}
           {p.jev != null && <div className="mw-app-jev">{p.jev}</div>}
           {p.reports != null && <div className="mw-app-reports">{p.reports}</div>}
         </div>}

@@ -21,6 +21,7 @@ import { AREA_TITLE, BUDGET_NOTE, candidateSetOptions, checkGaInput, CONFIRMATIO
   scoreCellText, scoreHeaderText, SEED_NOTE, sortIndividuals, SPACE_PENDING_TEXT, stateText, UNITS_PER_EVALUATION,
   type GaArea, type GaForm, type GaPreflightState, type GaRequestCounters, type GaStamp, type IndividualSort,
   type IndividualSortKey } from "@/lib/sequence-ga";
+import { catalyticBadge } from "@/lib/mutations";
 import { decimalHalfUp } from "@/lib/site-annotation";
 import { PairInputs } from "./MutationModelPanel";
 import { Button } from "./primitives";
@@ -441,6 +442,8 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
   const prereqValue = prereq.status === "ready" ? prereq.value : null;
   const ligandSdfs = prereqValue ? importsOfKind(prereqValue.imports, "ligand_sdf") : [];
   const options = setRows ? candidateSetOptions(setRows) : [];
+  // M26: the chosen set's "촉매 잔기 검사 안 함" mark from its stored catalytic check status (nothing for `checked`).
+  const chosenCatalytic = catalyticBadge(setRows?.find(row => row.handle === form.candidateSet)?.catalytic_status);
   // A `claimed` job blocked on a reason the queue's `start` accepts again (the first expensive-call approval, the
   // global concurrency / cleanup / ledger waits) waits for 작업 시작 like a saved job (lib `gaJobPhase`).
   const phase = gaJobPhase(job, approvalPending);
@@ -486,12 +489,18 @@ function GaWorkspace({ run, capability, onReportCreated }: { run: RunSummary; ca
           <select className="mw-select" data-testid="sequence-ga-candidate-set" value={form.candidateSet ?? ""}
             onChange={event => update({ candidateSet: event.target.value || null })}>
             <option value="">선택</option>
-            {options.map(option => <option key={option.handle} value={option.handle} disabled={!option.selectable}>
-              {`${shortHandle(option.handle)} · ${option.text}`}</option>)}
+            {options.map(option => {
+              const badge = catalyticBadge(setRows?.find(row => row.handle === option.handle)?.catalytic_status);
+              return <option key={option.handle} value={option.handle} disabled={!option.selectable}>
+                {`${shortHandle(option.handle)} · ${option.text}${badge ? ` · ${badge.text}` : ""}`}</option>;
+            })}
           </select></label>
         <Button size="sm" data-testid="sequence-ga-candidate-sets-refresh" disabled={sets.status === "loading"}
           onClick={() => setSetsReload(value => value + 1)}>후보 집합 목록 다시 읽기</Button>
       </div>
+      {chosenCatalytic && <p className="mw-catalytic-mark" data-testid="sequence-ga-catalytic">
+        <span className="mw-catalytic-badge">{chosenCatalytic.text}</span>
+        <span className="mw-catalytic-detail" data-testid="sequence-ga-catalytic-detail">{chosenCatalytic.detail}</span></p>}
       <p className="mw-mutation-note">집합이 하나뿐이어도 자동으로 고르지 않습니다. 위치·보호 잔기·허용 아미노산은 고른 집합 그대로 쓰며 여기서
         바꾸지 않습니다(바꾸려면 위 변이 후보 영역에서 새 집합을 만드세요).</p>
       {sets.status === "loading" && <p className="mw-mutation-note" aria-busy="true">변이 후보 집합 목록을 읽는 중</p>}

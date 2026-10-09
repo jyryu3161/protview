@@ -4,20 +4,25 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, type ResidueList, type RunSummary } from "@/lib/api";
 import type { ExactResidueRef, MutationCandidatePage, MutationCandidateRow, MutationCandidateSetDetail, MutationCandidateSetList,
   MutationExclusionReason, MutationPosition, MutationPositionPage, MutationPositionSort, MutationPositionStatus,
-  MutationReportArtifact, MutationSourceKind, RunEvent, SiteAnnotationListRow } from "@/lib/contracts";
+  MutationReportArtifact, MutationSourceKind, ReactionKnowledgeCounts, ReactionKnowledgeDetail, ReactionKnowledgeListItem,
+  RunEvent, SiteAnnotationListRow } from "@/lib/contracts";
 import type { NumberingMapListRow } from "@/lib/numbering";
 import type { PocketSetRow, PocketSummary } from "@/lib/pockets";
-import { annotationMapConflict, annotationsForStructure, candidateQuery, candidateText, CATALYTIC_NOTE, chainOptions,
-  countsText, disulfideText, draftForStructure, EMPTY_CANDIDATE_FILTERS, EMPTY_POSITION_FILTERS, EXCLUSION_REASON_LABEL,
-  EXCLUSION_REASONS, exactResidue, exclusionReasonsText, initialMutationDraft, klifsNotice, klifsSitesText,
-  LIGAND_SHELL_RADIUS_RANGE_A, ligandDistanceText, ligandOptions, LIST_LIMIT_MAX, LIST_ORDER_NOTE, mapsForStructure,
-  METAL_CONTACT_RANGE_A, metalText, MODELING_NOTE, mutationErrorText, mutationPanelState, mutationReasonText,
-  mutationReportMatches, mutationReportSavedForRun, mutationRequestArgs, mutationResponseCurrent, nextOffset, NULL_TEXT, numberingText,
-  ONE_LETTER_ORDER, ONE_LETTER_RESNAME, PANEL_TITLE, pageRangeText, pocketSetsForStructure, POSITION_SORT_LABEL,
-  POSITION_SORTS, POSITION_STATUS_LABEL, POSITION_STATUSES, positionQuery, preparedStructures, previousOffset, protectionCheckRows,
-  protectionText, proteinResidueOptions, releaseEffectText, residueKey, residueLabelText, residueText, setRowText,
-  SOURCE_KINDS, SOURCE_LABEL, sourcesText, toggleResidue, type CandidateFilters, type MutationDraft, type MutationStamp,
-  type PositionFilters } from "@/lib/mutations";
+import { annotationMapConflict, annotationsForStructure, candidateQuery, candidateText, CATALYTIC_NOTE,
+  catalyticAnnotationsForStructure, catalyticBadge, catalyticCheckView, catalyticProtectionText, catalyticRequestNotices,
+  chainOptions, countsText, disulfideText, draftForStructure, EMPTY_CANDIDATE_FILTERS, EMPTY_POSITION_FILTERS,
+  EXCLUSION_REASON_LABEL, exactResidue, exclusionReasonCount, exclusionReasonsOf, exclusionReasonsText,
+  initialMutationDraft, klifsNotice, klifsSitesText, LIGAND_SHELL_RADIUS_RANGE_A, ligandDistanceText, ligandOptions,
+  LIST_LIMIT_MAX, LIST_ORDER_NOTE, mapsForStructure, METAL_CONTACT_RANGE_A, metalText, MODELING_NOTE, mutationErrorText,
+  mutationPanelState, mutationReasonText, mutationReportMatches, mutationReportSavedForRun, mutationRequestArgs,
+  mutationResponseCurrent, nextOffset, NULL_TEXT, numberingText, ONE_LETTER_ORDER, ONE_LETTER_RESNAME, PANEL_TITLE,
+  pageRangeText, pocketSetsForStructure, POSITION_SORT_LABEL, POSITION_SORTS, POSITION_STATUS_LABEL, POSITION_STATUSES,
+  positionQuery, predictCatalyticCoverage, preparedStructures, previousOffset, protectionCheckRows, protectionText,
+  proteinResidueOptions, releaseEffectText, residueKey, residueLabelText, residueText, setRowText, SOURCE_KINDS,
+  SOURCE_LABEL, sourcesText, toggleResidue, uniprotSitesNotice, type CandidateFilters, type CatalyticBadge,
+  type CatalyticItemView, type MutationDraft, type MutationStamp, type PositionFilters } from "@/lib/mutations";
+import { CHAIN_LIMIT_MAX, DEFAULT_DETAIL_PAGING, reactionDetailMatches, reactionDetailQuery,
+  reactionListItemText } from "@/lib/reaction-knowledge";
 import { Button } from "./primitives";
 
 /**
@@ -35,8 +40,10 @@ export interface MutationPanelProps {
   onObjectsChanged: (runId: string) => void;
   /** After a report was created: the page re-reads the knowledge-tab report list (it drops another run's call). */
   onReportCreated: (runId: string) => void;
-  /** M21: "변이 구조 모델링" of a candidate row hands that candidate (by its integer index) to the model area. */
-  onModelCandidate?: (pick: { runId: string; candidateSet: string; candidate: MutationCandidateRow }) => void;
+  /** M21: "변이 구조 모델링" of a candidate row hands that candidate (by its integer index) to the model area, with the
+   * set's "촉매 잔기 검사 안 함" mark (M26, from the stored catalytic check status; null when checked). */
+  onModelCandidate?: (pick: { runId: string; candidateSet: string; candidate: MutationCandidateRow;
+    catalytic: CatalyticBadge | null }) => void;
 }
 
 const STATE_TEXT = { loading: "불러오는 중", ready: "준비", scientific_null: "빈 결과 (후보 0개)", failed: "실패",
@@ -44,11 +51,16 @@ const STATE_TEXT = { loading: "불러오는 중", ready: "준비", scientific_nu
 const TIMEOUT_MS = 30000;
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
-type Area = "events" | "pockets" | "maps" | "annotations" | "sets" | "create" | "detail" | "positions" | "excluded" |
-  "candidates" | "report";
-const AREAS: readonly Area[] = ["events", "pockets", "maps", "annotations", "sets", "create", "detail", "positions",
-  "excluded", "candidates", "report"];
+type Area = "events" | "pockets" | "maps" | "annotations" | "reactions" | "catalytic" | "sets" | "create" | "detail" |
+  "positions" | "excluded" | "candidates" | "report";
+const AREAS: readonly Area[] = ["events", "pockets", "maps", "annotations", "reactions", "catalytic", "sets", "create",
+  "detail", "positions", "excluded", "candidates", "report"];
 const SET_AREAS = new Set<Area>(["detail", "positions", "excluded", "candidates", "report"]);
+/** The chosen reaction knowledge result as the request area needs it: every chain's M-CSA status and the counts. */
+type CatalyticChoice = { structure: string; chains: ReactionKnowledgeDetail["chains"]; chainTotal: number;
+  counts: ReactionKnowledgeCounts };
+const CATALYTIC_SERVER_POSITIONS_NOTE = "포켓·리간드 껍질 출처의 위치는 서버가 정하므로, 아래는 이 구조의 체인마다 위치가 " +
+  "생기면 적용될 촉매 잔기 검사 상태입니다.";
 
 function errorText(e: unknown): string {
   if (e instanceof ApiError) return mutationErrorText({ message: e.message, code: e.code, detail: e.detail });
@@ -111,6 +123,10 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   const [mapsReload, setMapsReload] = useState(0);
   const [annotations, setAnnotations] = useState<Load<SiteAnnotationListRow[]>>({ status: "idle" });
   const [annotationsReload, setAnnotationsReload] = useState(0);
+  const [reactionResults, setReactionResults] = useState<Load<ReactionKnowledgeListItem[]>>({ status: "idle" });
+  const [reactionsReload, setReactionsReload] = useState(0);
+  const [catalytic, setCatalytic] = useState<{ handle: string; load: Load<CatalyticChoice> } | null>(null);
+  const [catalyticRetry, setCatalyticRetry] = useState(0);
   const [sets, setSets] = useState<Load<MutationCandidateSetList["rows"]>>({ status: "idle" });
   const [setsReload, setSetsReload] = useState(0);
   // Stored objects never change under a handle, so residue lists and pocket summaries are cached by handle.
@@ -137,14 +153,15 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   // Late responses: keyed by run (page key), opened result handle and the area's request number.
   const mounted = useRef(true);
   const seqs = useRef<Record<Area, number>>(Object.fromEntries(AREAS.map(area => [area, 0])) as Record<Area, number>);
-  const live = useRef({ set: selectedSet, run: runId });
-  live.current = { set: selectedSet, run: runId };
+  const live = useRef({ set: selectedSet, run: runId, catalytic: draft.catalyticAnnotation });
+  live.current = { set: selectedSet, run: runId, catalytic: draft.catalyticAnnotation };
   useEffect(() => {
     mounted.current = true;
     const counters = seqs.current;
     return () => { mounted.current = false; for (const area of AREAS) counters[area] += 1; };
   }, []);
-  const handleOf = (area: Area): string | null => SET_AREAS.has(area) ? live.current.set : null;
+  const handleOf = (area: Area): string | null => area === "catalytic" ? live.current.catalytic
+    : SET_AREAS.has(area) ? live.current.set : null;
   const stamp = (area: Area): MutationStamp => ({ runId, handle: handleOf(area), seq: ++seqs.current[area] });
   const current = (area: Area, captured: MutationStamp) => mounted.current &&
     mutationResponseCurrent(captured, { runId, handle: handleOf(area), seq: seqs.current[area] });
@@ -170,6 +187,9 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
     signal), "번호 대응"), "번호 대응 목록 읽기 실패"), [runId, mapsReload]);
   useEffect(() => listRead("annotations", setAnnotations, signal => allPages(offset => api.siteAnnotations(runId, null,
     offset, LIST_LIMIT_MAX, signal), "참조 주석"), "참조 주석 목록 읽기 실패"), [runId, annotationsReload]);
+  useEffect(() => listRead("reactions", setReactionResults, signal => allPages(offset => api.reactionKnowledgeResults(runId,
+    offset, LIST_LIMIT_MAX, signal).then(page => ({ total: page.total, rows: page.items })), "효소 반응 지식 결과"),
+    "효소 반응 지식 결과 목록 읽기 실패"), [runId, reactionsReload]);
   useEffect(() => listRead("sets", setSets, signal => allPages(offset => api.mutationCandidateSets(runId, offset,
     LIST_LIMIT_MAX, signal).then(page => {
     if (page.schema !== "mutation_candidate_set_list@1") throw new Error("변이 후보 결과 목록 형식이 다릅니다.");
@@ -202,7 +222,9 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   const pocketRows = pocketSets.status === "ready" ? pocketSets.value : [];
   const mapRows = maps.status === "ready" ? maps.value : [];
   const annotationRows = annotations.status === "ready" ? annotations.value : [];
-  const listsReady = maps.status === "ready" && annotations.status === "ready" && pocketSets.status === "ready";
+  const reactionRows = reactionResults.status === "ready" ? reactionResults.value : [];
+  const listsReady = maps.status === "ready" && annotations.status === "ready" && pocketSets.status === "ready" &&
+    reactionResults.status === "ready";
   const structureResidues = draft.structure ? residueCache[draft.structure] ?? null : null;
   const residueList = structureResidues?.status === "ready" ? structureResidues.value : null;
   const proteinOptions = residueList ? proteinResidueOptions(residueList) : [];
@@ -211,13 +233,57 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   const offeredMaps = mapsForStructure(mapRows, draft.structure);
   const offeredAnnotations = annotationsForStructure(annotationRows, draft.structure);
   const pocketSummary = draft.pocketSet ? pocketCache[draft.pocketSet] ?? null : null;
+  const offeredReactions = catalyticAnnotationsForStructure(reactionRows, draft.structure);
   const check = mutationRequestArgs(draft, { pocketSets: pocketRows, maps: mapRows, annotations: annotationRows,
-    ligands: ligandChoices });
+    ligands: ligandChoices, reactionResults: reactionRows });
   const conflict = annotationMapConflict(draft.annotation, draft.numberingMap, annotationRows);
   const notice = draft.structure ? klifsNotice(draft.annotation) : null;
 
+  // M26: the chosen reaction knowledge result's chain coverage (every chain page; rows and sites are not needed here).
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    const handle = draft.catalyticAnnotation;
+    if (handle === null) { setCatalytic(null); return; }
+    const captured = stamp("catalytic"), controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(TIMEOUT_MS)]);
+    setCatalytic({ handle, load: { status: "loading" } });
+    (async (): Promise<CatalyticChoice> => {
+      const chains: ReactionKnowledgeDetail["chains"] = [];
+      let first: ReactionKnowledgeDetail | null = null;
+      for (let offset = 0; first === null || offset < first.page.chain_total; offset += CHAIN_LIMIT_MAX) {
+        const value = await api.reactionKnowledgeResult(runId, handle, reactionDetailQuery({ ...DEFAULT_DETAIL_PAGING,
+          chain_offset: offset, chain_limit: CHAIN_LIMIT_MAX, row_limit: 1, feature_limit: 1 }), signal);
+        if (!reactionDetailMatches(value) || value.page.chain_offset !== offset ||
+            (first !== null && value.page.chain_total !== first.page.chain_total))
+          throw new Error("효소 반응 지식 결과가 읽는 동안 바뀌었거나 형식이 다릅니다.");
+        first = first ?? value;
+        chains.push(...value.chains);
+        if (!value.chains.length) break;
+      }
+      if (first === null) throw new Error("효소 반응 지식 결과를 읽지 못했습니다.");
+      return { structure: first.structure.handle, chains, chainTotal: first.page.chain_total, counts: first.counts };
+    })().then(value => { if (current("catalytic", captured)) setCatalytic({ handle, load: { status: "ready", value } }); })
+      .catch(e => { if (current("catalytic", captured) && !controller.signal.aborted)
+        setCatalytic({ handle, load: { status: "error", message: `효소 반응 지식 결과 읽기 실패: ${errorText(e)}` } }); });
+    return () => controller.abort();
+  }, [draft.catalyticAnnotation, catalyticRetry]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+  const catalyticLoad = catalytic && catalytic.handle === draft.catalyticAnnotation ? catalytic.load : null;
+  const catalyticValue = catalyticLoad?.status === "ready" && catalyticLoad.value.structure === draft.structure
+    ? catalyticLoad.value : null;
+  // Chains where positions can fall: the chosen residues' chains when only the direct source is on; otherwise (the
+  // server places pocket / ligand-shell positions) every protein chain of the structure.
+  const serverPlacesPositions = draft.pocketOn || draft.ligandShellOn;
+  const predictionChains = serverPlacesPositions ? chainOptions(proteinOptions)
+    : chainOptions(draft.userOn ? draft.residues : []);
+  const prediction = catalyticValue ? predictCatalyticCoverage({ chains: catalyticValue.chains,
+    page: { chain_total: catalyticValue.chainTotal } }, predictionChains) : null;
+  const catalyticNotices = draft.structure === null || (draft.catalyticAnnotation !== null && catalyticValue === null) ? []
+    : catalyticRequestNotices({ selected: draft.catalyticAnnotation, prediction,
+      uniprotNotice: uniprotSitesNotice(catalyticValue?.counts ?? null) });
+
   function chooseStructure(handle: string) {
-    setDraft(previous => draftForStructure(previous, handle, annotationRows, mapRows));
+    setDraft(previous => draftForStructure(previous, handle, annotationRows, mapRows, reactionRows));
     setCreateState({ status: "idle" });
     ensureResidues(handle);
   }
@@ -230,7 +296,7 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
 
   // ---- opened result: detail, position pages, excluded list, candidate pages ----
   function openSet(handle: string) {
-    setSelectedSet(handle); live.current = { set: handle, run: runId };
+    setSelectedSet(handle); live.current = { ...live.current, set: handle, run: runId };
     setPosFilters(EMPTY_POSITION_FILTERS); setPosSort("order"); setPosOffset(0); setExcludedOffset(0);
     setCandFilters(EMPTY_CANDIDATE_FILTERS); setCandOffset(0);
     setPositions(null); setExcluded(null); setCandidates(null); setReport(null);
@@ -328,10 +394,10 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
     ?? (positionsLoad?.status === "error" ? positionsLoad.message : null)
     ?? (excludedLoad?.status === "error" ? excludedLoad.message : null)
     ?? (candidatesLoad?.status === "error" ? candidatesLoad.message : null)
-    ?? [events, pocketSets, maps, annotations, sets].map(load => load.status === "error" ? load.message : null)
+    ?? [events, pocketSets, maps, annotations, reactionResults, sets].map(load => load.status === "error" ? load.message : null)
       .find(message => message !== null) ?? null;
   const panelState = mutationPanelState({ runId, capability, structures,
-    loading: [events, pocketSets, maps, annotations, sets].some(load => load.status === "loading" || load.status === "idle") ||
+    loading: [events, pocketSets, maps, annotations, reactionResults, sets].some(load => load.status === "loading" || load.status === "idle") ||
       detail?.load.status === "loading",
     error: readError, detail: opened ? { null_result: opened.result.null_result, counts: opened.result.counts } : null });
 
@@ -365,15 +431,16 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
     <Section area="request" title="① 요청">
       <fieldset className="mw-mutation-choices" data-testid="mutation-structures">
         <legend>전처리 구조 (이 run, 자동으로 고르지 않음)</legend>
-        {!listsReady && <p className="mw-mutation-note" aria-busy="true">포켓·번호 대응·참조 주석 목록을 읽은 뒤 고를 수 있습니다.</p>}
+        {!listsReady && <p className="mw-mutation-note" aria-busy="true">포켓·번호 대응·참조 주석·효소 반응 지식 결과 목록을 읽은 뒤 고를 수 있습니다.</p>}
         {structures.map(row => <label key={row.handle} data-mutation-structure={row.handle}>
           <input type="radio" name={`mutation-structure-${runId}`} checked={draft.structure === row.handle} disabled={!listsReady}
             aria-label={`전처리 구조 ${shortHandle(row.handle)}`} onChange={() => chooseStructure(row.handle)} />
           <span className="mw-mono">prepared_structure · 이벤트 #{row.seq} · {shortHandle(row.handle)}</span>
         </label>)}
       </fieldset>
-      {[pocketSets, maps, annotations].map((load, index) => load.status === "error" ? <ErrorLine key={index} message={load.message}
-        onRetry={() => [setPocketsReload, setMapsReload, setAnnotationsReload][index](value => value + 1)} /> : null)}
+      {[pocketSets, maps, annotations, reactionResults].map((load, index) => load.status === "error" ? <ErrorLine key={index}
+        message={load.message} onRetry={() => [setPocketsReload, setMapsReload, setAnnotationsReload,
+          setReactionsReload][index](value => value + 1)} /> : null)}
 
       {draft.structure && <>
         {structureResidues?.status === "loading" && <p className="mw-mutation-note" aria-busy="true">구조 잔기 목록을 읽는 중</p>}
@@ -459,6 +526,30 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
           <p className="mw-mutation-note">{CATALYTIC_NOTE}</p>
         </div>
 
+        <div className="mw-mutation-group" aria-label="M-CSA 촉매 잔기 주석" data-testid="mutation-catalytic-area">
+          <label className="mw-mutation-check">효소 반응 지식 결과 (같은 구조, 구조를 고르면 가장 최근 결과를 미리 고름 · 자동 제출 없음)
+            <select className="mw-select" data-testid="mutation-catalytic-annotation" aria-label="효소 반응 지식 결과 선택"
+              value={draft.catalyticAnnotation ?? ""} onChange={event => patch({ catalyticAnnotation: event.target.value || null })}>
+              <option value="">고르지 않음</option>
+              {offeredReactions.map(item => <option key={item.handle} value={item.handle}>
+                {shortHandle(item.handle)} · {reactionListItemText(item)}</option>)}
+            </select></label>
+          {!offeredReactions.length && <p className="mw-mutation-note" data-testid="mutation-no-catalytic">
+            이 구조의 효소 반응 지식 결과가 없습니다(지식·보고서 탭의 효소 반응 지식 영역에서 만들 수 있음).</p>}
+          {catalyticLoad?.status === "loading" && <p className="mw-mutation-note" aria-busy="true">고른 결과의 체인별 M-CSA 상태를 읽는 중</p>}
+          {catalyticLoad?.status === "error" && <ErrorLine message={catalyticLoad.message} testId="mutation-catalytic-error"
+            onRetry={() => setCatalyticRetry(value => value + 1)} />}
+          {catalyticNotices.length > 0 && <div className="mw-mutation-notice" role="status" data-testid="mutation-catalytic-notice"
+            data-catalytic-selected={draft.catalyticAnnotation ?? ""}>
+            {draft.catalyticAnnotation !== null && serverPlacesPositions && !!prediction?.uncovered.length &&
+              <p data-catalytic-notice="positions">{CATALYTIC_SERVER_POSITIONS_NOTE}</p>}
+            {catalyticNotices.map((line, index) => <p key={index} data-catalytic-notice={index}>{line}</p>)}
+          </div>}
+          {prediction && <p className="mw-mutation-note" data-testid="mutation-catalytic-covered"
+            data-covered-chains={prediction.covered.join(",")}>
+            M-CSA가 다룬 체인: {prediction.covered.length ? prediction.covered.join(", ") : `${NULL_TEXT} (위치가 생길 체인 중 없음)`}</p>}
+        </div>
+
         <div className="mw-mutation-group" aria-label="번호 대응과 참조 주석">
           <label className="mw-mutation-check">참조 주석 (같은 구조)
             <select className="mw-select" data-testid="mutation-annotation" aria-label="참조 주석 선택" value={draft.annotation ?? ""}
@@ -499,11 +590,13 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
         : <fieldset className="mw-mutation-choices" data-testid="mutation-sets">
           <legend>결과 선택 (최신 순, 자동으로 고르지 않음)</legend>
           {sets.value.map(row => <label key={row.handle} data-mutation-set={row.handle} data-valid={row.valid}
-            data-null-result={row.null_result ?? undefined} data-klifs-status={row.klifs_status ?? undefined}>
+            data-null-result={row.null_result ?? undefined} data-klifs-status={row.klifs_status ?? undefined}
+            data-catalytic-status={row.catalytic_status ?? undefined}>
             <input type="radio" name={`mutation-set-${runId}`} checked={selectedSet === row.handle} disabled={!row.valid}
               aria-label={`결과 ${shortHandle(row.handle)}`} onChange={() => openSet(row.handle)} />
             <span className="mw-mono">이벤트 #{row.created_seq} · 구조 {row.structure ? shortHandle(row.structure) : NULL_TEXT} · {setRowText(row)}
               {row.null_result ? " · 후보 0개 (빈 결과)" : ""} · {shortHandle(row.handle)}</span>
+            <CatalyticMark badge={catalyticBadge(row.catalytic_status)} testId="mutation-set-catalytic" />
           </label>)}
         </fieldset>)}
       {sets.status !== "loading" && <Button size="sm" data-testid="mutation-sets-refresh" onClick={() => setSetsReload(value => value + 1)}>결과 목록 다시 읽기</Button>}
@@ -526,7 +619,7 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
             options={SOURCE_KINDS.map(value => [value, SOURCE_LABEL[value]])}
             onChange={value => { setPosFilters(previous => ({ ...previous, source: value as MutationSourceKind | "" })); setPosOffset(0); }} />
           <FilterSelect testId="mutation-filter-reason" label="제외 사유" value={posFilters.exclusion_reason}
-            options={EXCLUSION_REASONS.map(value => [value, mutationReasonText(value)])}
+            options={exclusionReasonsOf(opened.result.counts).map(value => [value, mutationReasonText(value)])}
             onChange={value => { setPosFilters(previous => ({ ...previous, exclusion_reason: value as MutationExclusionReason | "" })); setPosOffset(0); }} />
           <FilterSelect testId="mutation-filter-chain" label="체인 (auth)" value={posFilters.chain_auth}
             options={chainChoices(residueCache[opened.result.structure.handle]).map(value => [value, value])}
@@ -587,12 +680,15 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
               <td className="mw-mono">{residueText(row.residue)}</td><td className="mw-mono">{candidateText(row)}</td>
               {onModelCandidate && <td><Button size="sm" data-testid="mutation-candidate-model" data-candidate-index={row.index}
                 aria-label={`후보 ${row.index} 변이 구조 모델링`}
-                onClick={() => onModelCandidate({ runId, candidateSet: opened.handle, candidate: row })}>변이 구조 모델링</Button></td>}
+                onClick={() => onModelCandidate({ runId, candidateSet: opened.handle, candidate: row,
+                  catalytic: catalyticBadge(opened.catalytic_status,
+                    opened.result.protection_checks.catalytic_residue_database.reason) })}>변이 구조 모델링</Button></td>}
             </tr>)}</tbody></table></div>)}
         {candidatesLoad?.status === "ready" && <Pager testId="mutation-candidates" page={candidatesLoad.value} onPage={setCandOffset} />}
       </div>
 
-      <div className="mw-mutation-group" aria-label="한계" data-testid="mutation-limitations">
+      <div className="mw-mutation-group" aria-label="한계" data-testid="mutation-limitations"
+        data-catalytic-status={opened.result.protection_checks.catalytic_residue_database.status}>
         <span className="mw-eyebrow">한계 (고정 문장)</span>
         {opened.result.limitations.map((sentence, index) => <p key={index} className="mw-mutation-note" data-limitation={index}>{sentence}</p>)}
       </div>
@@ -613,6 +709,56 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
 }
 
 function nullableCount(value: number | null): string { return value === null ? NULL_TEXT : String(value); }
+
+/** "촉매 잔기 검사 안 함" (UK2) of a set whose catalytic check is not `checked`, with its own detail; nothing for `checked`. */
+function CatalyticMark({ badge, testId }: { badge: CatalyticBadge | null; testId: string }) {
+  if (!badge) return null;
+  return <span className="mw-catalytic-mark" data-testid={testId}>
+    <span className="mw-catalytic-badge">{badge.text}</span>
+    <span className="mw-catalytic-detail" data-testid={`${testId}-detail`}>{badge.detail}</span>
+  </span>;
+}
+
+function CatalyticItems({ items, testId, title }: { items: CatalyticItemView[]; testId: string; title: string }) {
+  return <div className="mw-mutation-sub" data-testid={testId} data-count={items.length}>
+    <span className="mw-eyebrow">{title} ({items.length}개)</span>
+    {!items.length ? <p className="mw-mutation-note">빈 목록 ([])</p>
+      : <ul className="mw-mutation-list">{items.map(item => <li key={`${item.chainAuth}-${item.mcsaId}-${item.residueIndex}`}
+        data-chain={item.chainAuth} data-mcsa-id={item.mcsaId} data-residue-index={item.residueIndex}>
+        <span className="mw-mono">체인 {item.chainAuth} · M-CSA {item.mcsaId} 잔기 순번 {item.residueIndex}</span>
+        <b>{item.positionText}</b> · {item.residueText} · {item.reasonText}</li>)}</ul>}
+  </div>;
+}
+
+/** M26: the catalytic residue check of a stored set as stored (status, reason, chains, row counts, conflict / unmatched). */
+function CatalyticCheck({ check }: { check: MutationCandidateSetDetail["result"]["protection_checks"]["catalytic_residue_database"] }) {
+  const view = catalyticCheckView(check);
+  return <div className="mw-mutation-group" aria-label="M-CSA 촉매 잔기 보호 검사" data-testid="mutation-catalytic-check"
+    data-catalytic-status={view.status}>
+    <span className="mw-eyebrow">M-CSA 촉매 잔기 보호 검사 (촉매 잔기 데이터베이스)</span>
+    <p data-testid="mutation-catalytic-status">상태 {view.statusText}{view.reasonText ? ` · ${view.reasonText}` : ""}
+      {view.annotation ? ` · 효소 반응 지식 결과 ${shortHandle(view.annotation)}` : ""}</p>
+    {view.badge && <p className="mw-mutation-notice" role="status" data-testid="mutation-catalytic-check-badge">{view.badge.text}
+      {" "}<span className="mw-catalytic-detail">{view.badge.detail}</span></p>}
+    {view.note !== view.badge?.text && <p className="mw-mutation-note">{view.note}</p>}
+    <dl className="mw-mutation-facts" data-testid="mutation-catalytic-chains">
+      <dt>M-CSA가 다룬 체인 (covered)</dt><dd data-testid="mutation-catalytic-covered-chains">{view.coveredText}</dd>
+      <dt>다루지 않은 체인 (uncovered)</dt><dd data-testid="mutation-catalytic-uncovered-chains">{view.uncovered === null
+        ? `${NULL_TEXT} (${view.reasonText ?? NULL_TEXT})` : view.uncovered.length
+          ? view.uncovered.map(item => `${item.chainAuth} ${item.coverageText}`).join(", ") : "빈 목록 ([])"}</dd>
+      <dt>대응됨 행 (matched)</dt><dd data-testid="mutation-catalytic-matched">{view.rowCounts.matched}</dd>
+      <dt>충돌 행 (conflict)</dt><dd data-testid="mutation-catalytic-conflict">{view.rowCounts.conflict}</dd>
+      <dt>대응 없음 행 (unmatched)</dt><dd data-testid="mutation-catalytic-unmatched">{view.rowCounts.unmatched}</dd>
+    </dl>
+    {view.conflicts !== null && view.unmatched !== null && !!view.coveredChains?.length &&
+      (view.conflicts.length > 0 || view.unmatched.length > 0) && <div className="mw-mutation-notice" role="status"
+      data-testid="mutation-catalytic-lists">
+      <p>충돌·대응 없음 행은 보호하지 않았습니다. M-CSA가 적은 위치를 확인하세요(참조값, 계산 아님).</p>
+      <CatalyticItems items={view.conflicts} testId="mutation-catalytic-conflicts" title="충돌 (conflict)" />
+      <CatalyticItems items={view.unmatched} testId="mutation-catalytic-unmatched-list" title="대응 없음 (unmatched)" />
+    </div>}
+  </div>;
+}
 
 function chainChoices(load: Load<ResidueList> | undefined): string[] {
   return load?.status === "ready" ? chainOptions(proteinResidueOptions(load.value)) : [];
@@ -675,8 +821,8 @@ function SetSummary({ detail }: { detail: MutationCandidateSetDetail }) {
     <p data-testid="mutation-counts">{countsText(counts)}</p>
     <p className="mw-mutation-note" data-testid="mutation-source-counts">출처별 위치 수: {SOURCE_KINDS.map(kind =>
       `${SOURCE_LABEL[kind]} ${counts.source_counts[kind]}개`).join(" · ")}</p>
-    <p className="mw-mutation-note" data-testid="mutation-reason-counts">제외 사유별 위치 수: {EXCLUSION_REASONS.map(reason =>
-      `${EXCLUSION_REASON_LABEL[reason]} ${counts.exclusion_reason_counts[reason]}개`).join(" · ")}</p>
+    <p className="mw-mutation-note" data-testid="mutation-reason-counts">제외 사유별 위치 수: {exclusionReasonsOf(counts).map(reason =>
+      `${EXCLUSION_REASON_LABEL[reason]} ${exclusionReasonCount(counts, reason)}개`).join(" · ")}</p>
     <p className="mw-mutation-note" data-testid="mutation-ligand-summary">리간드: {result.ligand
       ? `${residueText(result.ligand.residue)} · ${residueLabelText(result.ligand.residue)} · 중원자 ${result.ligand.heavy_atom_count}개`
       : `${NULL_TEXT} (고르지 않음, 리간드까지 거리는 계산하지 않음)`}</p>
@@ -685,7 +831,9 @@ function SetSummary({ detail }: { detail: MutationCandidateSetDetail }) {
       {" · "}리간드 껍질: {parameters.sources.ligand_shell ? `반경 ${parameters.sources.ligand_shell.radius_A} Å` : `${NULL_TEXT} (쓰지 않음)`}
       {" · "}직접 고른 위치 {parameters.sources.residues.length}개</p>
     <p className="mw-mutation-note mw-mono">허용 잔기 {parameters.allowed_residues} · 금속 근접 {parameters.metal_contact_A} Å · 이황화 SG–SG {parameters.disulfide_sg_A} Å
-      · 번호 대응 {parameters.numbering_map ? shortHandle(parameters.numbering_map) : NULL_TEXT} · 참조 주석 {parameters.annotation ? shortHandle(parameters.annotation) : NULL_TEXT}</p>
+      · 번호 대응 {parameters.numbering_map ? shortHandle(parameters.numbering_map) : NULL_TEXT} · 참조 주석 {parameters.annotation ? shortHandle(parameters.annotation) : NULL_TEXT}
+      · 효소 반응 지식 결과 {parameters.catalytic_annotation === undefined ? `${NULL_TEXT} (촉매 잔기 검사 전 v1 집합)`
+        : parameters.catalytic_annotation ? shortHandle(parameters.catalytic_annotation) : `${NULL_TEXT} (고르지 않음)`}</p>
 
     <span className="mw-eyebrow">보호 검사 상태</span>
     <div className="mw-mutation-table-wrap"><table className="mw-mutation-table" data-testid="mutation-checks">
@@ -694,6 +842,7 @@ function SetSummary({ detail }: { detail: MutationCandidateSetDetail }) {
         data-check-status={result.protection_checks[row.key].status}>
         <td>{row.label}</td><td>{row.status}</td><td>{row.detail}</td></tr>)}</tbody>
     </table></div>
+    <CatalyticCheck check={result.protection_checks.catalytic_residue_database} />
     {result.released_residues.length > 0 && <ul className="mw-mutation-list" data-testid="mutation-released">
       {result.released_residues.map(item => <li key={residueKey(item.residue)} data-release-effect={item.effect}>{releaseEffectText(item)}</li>)}
     </ul>}
@@ -705,7 +854,8 @@ function PositionTable({ page, ligandGiven, onCandidates }: { page: MutationPosi
   if (!page.rows.length) return <p className="mw-mutation-note" data-testid="mutation-positions-empty">이 조건에 맞는 위치 없음</p>;
   return <div className="mw-mutation-table-wrap"><table className="mw-mutation-table" data-testid="mutation-positions">
     <thead><tr><th>파일 순서 번호</th><th>잔기 (auth)</th><th>label</th><th>표준 이름</th><th>출처</th><th>리간드까지 최소 거리</th>
-      <th>번호 대응 (참조값)</th><th>보호 사유</th><th>KLIFS 주요 부위</th><th>금속</th><th>이황화 짝</th><th>제외 사유</th><th>상태</th><th>후보 수</th><th /></tr></thead>
+      <th>번호 대응 (참조값)</th><th>보호 사유</th><th>KLIFS 주요 부위</th><th>금속</th><th>이황화 짝</th><th>제외 사유</th><th>상태</th><th>후보 수</th>
+      <th>M-CSA 촉매 잔기 (항목 ID, 참조값)</th><th /></tr></thead>
     <tbody>{page.rows.map((row: MutationPosition) => <tr key={row.index} data-mutation-position={row.index} data-status={row.status}
       data-exclusion-reasons={row.exclusion_reasons.join(",")} data-residue={residueText(row.residue)}
       data-ligand-distance={row.ligand_min_distance_A ?? ""}>
@@ -723,6 +873,10 @@ function PositionTable({ page, ligandGiven, onCandidates }: { page: MutationPosi
       <td>{exclusionReasonsText(row.exclusion_reasons)}</td>
       <td>{POSITION_STATUS_LABEL[row.status]}</td>
       <td className="mw-mono">{row.candidate_count}</td>
+      {/* M26: after the existing columns so earlier cell positions stay as they were. */}
+      <td data-cell="catalytic" data-catalytic={row.protection.catalytic === undefined ? "v1"
+        : row.protection.catalytic === null ? "not_checked" : row.protection.catalytic.length ? "matched" : "checked_empty"}
+        data-released={row.protection.released || undefined}>{catalyticProtectionText(row.protection)}</td>
       <td>{row.status === "candidate" && <Button size="sm" data-testid="mutation-position-candidates" data-position-index={row.index}
         aria-label={`${residueText(row.residue)} 위치의 후보 보기`} onClick={() => onCandidates(row.index)}>후보 보기</Button>}</td>
     </tr>)}</tbody>
