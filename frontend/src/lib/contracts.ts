@@ -665,12 +665,21 @@ export interface LigandGaReportArtifact { handle: string; markdown_handle: strin
   ga_status: LigandGaStatus; snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
 
 // ---- M20 mutation candidates (backend/mw/mutation_constants.py, mutation_candidates.py, mutation_reads.py) ----
+// M26 (spec 8): every new set is v2 (`mw.mutation_candidates/v2`); stored v1 sets stay valid byte for byte. The v2
+// additions are the `catalytic_residue` reason, `parameters.catalytic_annotation`, `protection.catalytic` and the
+// `catalytic_residue_database` check below; a v1 set has none of these keys (the check is `not_available`).
 export type MutationSourceKind = "pocket" | "ligand_shell" | "user";
-export type MutationProtectionReason = "user_protected" | "klifs_key_site" | "metal_contact" | "disulfide_cys";
+export type MutationProtectionReasonV1 = "user_protected" | "klifs_key_site" | "metal_contact" | "disulfide_cys";
+export type MutationProtectionReason = MutationProtectionReasonV1 | "catalytic_residue";
 export type MutationExclusionReason = "non_standard_residue" | MutationProtectionReason | "no_allowed_alternative";
+export type MutationExclusionReasonV1 = Exclude<MutationExclusionReason, "catalytic_residue">;
 export type MutationPositionStatus = "candidate" | "excluded";
 export type MutationNumberingStatus = "mapped" | "unmapped" | "conflict" | "not_in_map";
 export type MutationCheckStatus = "checked" | "not_checked" | "not_available";
+/** `catalytic_residue_database.status`: `not_available` only for v1 sets, `not_checked` / `checked` for v2. */
+export type MutationCatalyticStatus = "checked" | "not_checked" | "not_available";
+/** `uncovered_chains[].coverage` (closed, M26 spec 8.3). */
+export type MutationUncoveredCoverage = "chain_not_listed" | "pdb_not_in_snapshot" | "not_checked" | "not_in_annotation";
 export type MutationPositionSort = "order" | "ligand_distance";
 
 /**
@@ -689,6 +698,8 @@ export interface MutationRequestArgs {
   metal_contact_A: number;
   numbering_map: string | null;
   annotation: string | null;
+  /** M26: null or a same-run `reaction_knowledge@1` handle of the same structure (always sent; null = not given). */
+  catalytic_annotation: string | null;
 }
 
 export type MutationPositionSource = { kind: "pocket"; pocket_rank: number } | { kind: "ligand_shell"; radius_A: number } |
@@ -706,20 +717,41 @@ export interface MutationPosition {
     /** null = KLIFS key sites not checked (no annotation); [] = checked, none. */
     klifs_sites: string[] | null;
     metal: { min_distance_A: number; metal_residue: ExactResidueRef } | null;
-    disulfide_partner: ExactResidueRef | null };
+    disulfide_partner: ExactResidueRef | null;
+    /** v2 only (absent in v1): null = this chain was not checked; [] = checked, no `matched` M-CSA row names it. */
+    catalytic?: MutationCatalyticEntry[] | null };
   exclusion_reasons: MutationExclusionReason[]; status: MutationPositionStatus; candidate_count: number;
 }
 export interface MutationCandidate { index: number; position_index: number; from: string; to: string }
+/** One `matched` M-CSA row protecting a v2 position (reference identifiers, not computed). */
+export interface MutationCatalyticEntry { mcsa_id: number; residue_index: number; is_reference: boolean }
+/** One conflict / unmatched M-CSA row of a covered chain (`residue` null when the structure lookup found none). */
+export interface MutationCatalyticItem { chain_auth: string; mcsa_id: number; residue_index: number; reason: string;
+  residue: ExactResidueRef | null;
+  listed: { chain_name: string; resid: number | null; auth_resid: number | null; code: string } }
+/** v2 check with an annotation (`checked`, or `not_checked` / `chains_not_covered`). Row counts are the covered
+ * chains' M-CSA counts summed; the server stores 0 when no chain is covered (that 0 is never shown as a count). */
+export interface MutationCatalyticAnnotated { status: "checked" | "not_checked"; reason: "chains_not_covered" | null;
+  annotation: string; covered_chains: string[];
+  uncovered_chains: { chain_auth: string; coverage: MutationUncoveredCoverage }[];
+  matched_rows: number; conflict_rows: number; unmatched_rows: number;
+  conflicts: MutationCatalyticItem[]; unmatched: MutationCatalyticItem[] }
+export type MutationCatalyticCheck =
+  | { status: "not_available"; reason: "not_implemented" }
+  | { status: "not_checked"; reason: "annotation_not_given"; annotation: null }
+  | MutationCatalyticAnnotated;
 export interface MutationProtectionChecks {
   user_list: { status: "checked"; protected: number; released: number };
   klifs_key_sites: { status: "checked" | "not_checked"; reason: "annotation_not_given" | null; annotation: string | null;
     annotated_sites: number | null; absent_sites: number | null };
   metal_contact: { status: "checked"; threshold_A: number; metal_residues: number; metal_names: string[] };
   disulfide: { status: "checked"; threshold_A: number; pairs: number };
-  catalytic_residue_database: { status: "not_available"; reason: "not_implemented" };
+  catalytic_residue_database: MutationCatalyticCheck;
 }
 export interface MutationCounts { positions: number; candidate_positions: number; excluded_positions: number;
-  released_positions: number; candidates: number; exclusion_reason_counts: Record<MutationExclusionReason, number>;
+  released_positions: number; candidates: number;
+  /** v1: the six v1 reasons; v2: those plus `catalytic_residue`. */
+  exclusion_reason_counts: Record<MutationExclusionReasonV1, number> & { catalytic_residue?: number };
   source_counts: Record<MutationSourceKind, number> }
 /** `mutation_candidate_set@1` (spec 6). */
 export interface MutationCandidateSet {
@@ -729,7 +761,9 @@ export interface MutationCandidateSet {
       residues: ExactResidueRef[] };
     ligand: ExactResidueRef | null; allowed_residues: string; protected_residues: ExactResidueRef[];
     released_residues: ExactResidueRef[]; metal_contact_A: number; disulfide_sg_A: number;
-    numbering_map: string | null; annotation: string | null };
+    numbering_map: string | null; annotation: string | null;
+    /** v2 only (absent in v1). */
+    catalytic_annotation?: string | null };
   ligand: { residue: ExactResidueRef; heavy_atom_count: number } | null;
   pockets: { pocket_set: string; ranks: number[]; lining_residue_count: number } | null;
   protection_checks: MutationProtectionChecks;
@@ -744,13 +778,15 @@ export interface MutationCandidateSet {
 export interface MutationCandidateSetListRow { handle: string; created_seq: number; valid: boolean;
   structure: string | null; model_number: number | null; ligand: MutationCandidateSet["ligand"];
   sources_used: Record<MutationSourceKind, boolean> | null; klifs_status: "checked" | "not_checked" | null;
-  numbering_map: string | null; annotation: string | null; counts: MutationCounts | null; null_result: boolean | null }
+  numbering_map: string | null; annotation: string | null; counts: MutationCounts | null; null_result: boolean | null;
+  /** M26 spec 8.5: the stored catalytic check status (v1 `not_available`); null for a row that does not validate. */
+  catalytic_status: MutationCatalyticStatus | null }
 export interface MutationCandidateSetList { schema: "mutation_candidate_set_list@1"; total: number; offset: number;
   limit: number; rows: MutationCandidateSetListRow[] }
 /** `GET /runs/{id}/mutation_candidate_sets/{handle}`: the validated set without positions and candidates. */
 export interface MutationCandidateSetDetail { schema: "mutation_candidate_set_detail@1"; handle: string;
   result: Omit<MutationCandidateSet, "positions" | "candidates">; total_positions: number; total_candidates: number;
-  meta: Record<string, unknown> }
+  meta: Record<string, unknown>; catalytic_status: MutationCatalyticStatus }
 export interface MutationPositionPage { schema: "mutation_position_page@1"; handle: string;
   filters: { status: MutationPositionStatus | null; source: MutationSourceKind | null;
     exclusion_reason: MutationExclusionReason | null; chain_auth: string | null };
@@ -1190,4 +1226,132 @@ export interface JevLoopSendDetail extends JevLoopSendRecord { choice: JevLoopCh
   local_display: JevLocalDisplay | null }
 export interface JevLoopReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "jev_loop"; result_handle: string;
+  snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M26 reaction knowledge (backend/mw/reaction_knowledge_constants.py, reaction_knowledge.py,
+// reaction_knowledge_reads.py, tools/reaction_knowledge.py, reaction_knowledge_reports.py; `.dryforge/spec.md` 3, 5-7).
+// Every value inside M-CSA / UniProt / Rhea rows is a reference value copied verbatim from the pinned snapshot set
+// (never computed); the only computed values are the counts. A section that was not checked is null, never 0 or [].
+export type ReactionSnapshotReason = "not_installed" | "snapshot_invalid";
+export type ReactionSource = "mcsa" | "uniprot_function" | "rhea";
+export type ReactionSkipReason = "obsolete" | "merged" | "demerged" | "not_found" | "fetch_failed";
+export type ReactionSiteType = "Active site" | "Binding site" | "Site";
+export type ReactionMcsaCoverage = "covered" | "chain_not_listed" | "pdb_not_in_snapshot";
+export type ReactionRowStatus = "matched" | "unmatched" | "conflict";
+export type ReactionUnmatchedReason = "non_standard_code" | "no_author_number" | "residue_not_in_structure" |
+  "ambiguous_residue_number" | "insertion_code_present";
+export type ReactionConflictReason = "residue_name_differs" | "mcsa_rows_disagree";
+export type ReactionUniprotStatus = "checked" | "not_checked" | "not_available";
+export type ReactionUniprotReason = "accession_not_given" | "accession_not_in_snapshot" | "accession_skipped_at_import";
+export type ReactionLinkStatus = "mapped" | "not_in_map";
+export type ReactionLinkReason = "numbering_map_not_given" | "chain_not_in_map" | "map_accession_differs";
+export type ReactionAccessionSource = "user" | "numbering_map";
+export type ReactionChainFlag = "accession_differs_from_mcsa";
+
+/** `requested_accessions` of the set manifest, as stored (spec 3.2). */
+export interface ReactionRequestedAccessions { from_mcsa: number; from_m15_kinase_set: { set_hash: string | null;
+  count: number }; m15_kinase_list: "present" | "absent" | "disabled"; user_named: string[];
+  dropped_previous_user_named: string[]; union_count: number }
+export interface ReactionSkippedAccession { accession: string; reason: ReactionSkipReason; target_accessions: string[] }
+/** Per source: `rows` = the source's processed file rows summed (manifest values). */
+export interface ReactionSourceSummary { source: ReactionSource; date: string; license: string; origin: string;
+  rows: number }
+/** `GET /reaction_reference/status` (run independent). Not installed / invalid: `installed: false`, the reason, nulls. */
+export interface ReactionReferenceStatus { schema: "reaction_reference_status@1"; installed: boolean;
+  reason: ReactionSnapshotReason | null; set_hash: string | null; imported_at: string | null;
+  sources: ReactionSourceSummary[] | null; requested_accessions: ReactionRequestedAccessions | null;
+  skipped_accessions: ReactionSkippedAccession[] | null }
+/** `GET /reaction_reference/pdb/{pdb_id}`: M-CSA entries naming this PDB ID (a suggestion source; the person picks). */
+export interface ReactionPdbEntries { pdb_id: string; entries: { mcsa_id: number; enzyme_name: string;
+  reference_uniprot_id: string; chains: string[] }[] }
+/** `link_reaction_knowledge` arguments (spec 5.1; unknown keys refused), in the server's normalized key order. */
+export interface ReactionKnowledgeArgs { structure: string; pdb_id: string | null;
+  chains: { chain_auth: string; uniprot_accession: string | null }[]; numbering_map: string | null }
+/** `/capabilities` `methods.reaction_knowledge` (same five keys as `residue_numbering`). */
+export interface ReactionKnowledgeCapability { available: boolean; reason_code: ReactionSnapshotReason | null;
+  reason: string | null; set_hash: string | null; sources: ReactionSourceSummary[] }
+
+export interface ReactionMcsaRole { group_function: string; function_type: string; function: string; emo: string }
+/** One M-CSA row of a covered chain (spec 5.3). `listed` and `reference` are M-CSA values as written. */
+export interface ReactionMcsaRow { mcsa_id: number; residue_index: number; is_reference: boolean;
+  listed: { pdb_id: string; chain_name: string; resid: number | null; auth_resid: number | null; code: string;
+    assemblies: number[] };
+  status: ReactionRowStatus; reason: ReactionUnmatchedReason | ReactionConflictReason | null;
+  residue: ExactResidueRef | null; structure_resname: string | null;
+  reference: { roles_summary: string; function_location_abv: string; ptm: string; roles: ReactionMcsaRole[] | null } }
+export interface ReactionMcsaEntrySummary { mcsa_id: number; enzyme_name: string; reference_uniprot_id: string;
+  all_ecs: string[] }
+/** `not_checked` (no PDB ID) and an uncovered chain have null entries/rows/counts; `covered` has lists and counts. */
+export interface ReactionMcsaSection { status: "checked" | "not_checked"; reason: "pdb_id_not_given" | null;
+  coverage: ReactionMcsaCoverage | null; entries: ReactionMcsaEntrySummary[] | null; rows: ReactionMcsaRow[] | null;
+  counts: Record<ReactionRowStatus, number> | null }
+export interface ReactionUniprotLink { position: number; status: ReactionLinkStatus; residue: ExactResidueRef | null;
+  uniprot_residue: string | null; residue_match: boolean | null }
+/** A UniProt site (positions are UniProt sequence positions); `links` null when the chain is not linked. */
+export interface ReactionUniprotFeature { type: ReactionSiteType; start: number; end: number; description: string;
+  ligand_name: string | null; ligand_id: string | null; links: ReactionUniprotLink[] | null }
+export interface ReactionUniprotSection { status: ReactionUniprotStatus; reason: ReactionUniprotReason | null;
+  skipped: { reason: ReactionSkipReason; target_accessions: string[] } | null;
+  entry: { accession: string; entry_name: string; protein_name: string | null; organism: string;
+    sequence_length: number } | null;
+  linked_via: "numbering_map" | null; link_reason: ReactionLinkReason | null; features: ReactionUniprotFeature[] | null }
+export interface ReactionCompound { type: string; chebi_id: string; name: string }
+/** Each source list is null when that source did not contribute ([] when it contributed nothing). */
+export interface ReactionReactionsSection { status: "checked" | "not_checked"; reason: "no_source" | null;
+  ecs: { mcsa: string[] | null; uniprot: string[] | null } | null;
+  mcsa_compounds: { mcsa_id: number; ec: string | null; compounds: ReactionCompound[] }[] | null;
+  uniprot_activities: { reaction_name: string; ec_number: string | null;
+    rhea: { rhea_id: string; in_snapshot: boolean }[] }[] | null }
+export interface ReactionKnowledgeChain { chain_auth: string; polymer_residue_count: number; accession: string | null;
+  accession_source: ReactionAccessionSource | null; mcsa: ReactionMcsaSection; uniprot: ReactionUniprotSection;
+  reactions: ReactionReactionsSection; flags: ReactionChainFlag[] }
+/** Processed snapshot rows the result used, stored verbatim (spec 3.3). */
+export interface ReactionMcsaReferenceRow { mcsa_id: number; enzyme_name: string; reference_uniprot_id: string;
+  all_ecs: string[]; reaction: { ec: string | null; compounds: ReactionCompound[] };
+  residues: { roles_summary: string; function_location_abv: string; ptm: string; roles: ReactionMcsaRole[];
+    residue_chains: { pdb_id: string; chain_name: string; assembly_chain_name: string; assembly: number | null;
+      code: string; resid: number | null; auth_resid: number | null; is_reference: boolean }[];
+    residue_sequences: { uniprot_id: string; code: string; is_reference: boolean }[] }[] }
+export interface ReactionUniprotReferenceRow { accession: string; entry_name: string; protein_name: string | null;
+  organism: string; sequence_length: number; ec_numbers: string[];
+  catalytic_activities: { reaction_name: string; ec_number: string | null; rhea_ids: string[]; chebi_ids: string[] }[];
+  features: Omit<ReactionUniprotFeature, "links">[] }
+export interface ReactionRheaReferenceRow { rhea_id: string; equation: string; ec_numbers: string[];
+  participants: { chebi_id: string; name: string }[] }
+export interface ReactionSnapshotSetRecord { set_hash: string; imported_at: string; importer_version: string;
+  sources: { source: ReactionSource; date: string; license: string; origin: string;
+    files: { name: string; sha256: string; bytes: number; rows: number }[] }[];
+  requested_accessions: ReactionRequestedAccessions; skipped_accessions: ReactionSkippedAccession[] }
+/** Counts ProtView made; a part that was not checked is null (never 0). */
+export interface ReactionKnowledgeCounts { chains: number; covered_chains: number;
+  mcsa_rows: Record<ReactionRowStatus, number> | null; mcsa_entries: number | null;
+  uniprot_features: Record<ReactionSiteType, number> | null; linked_positions: Record<ReactionLinkStatus, number> | null;
+  rhea: { in_snapshot: number; not_in_snapshot: number } | null }
+/** `reaction_knowledge@1` (spec 5.6), immutable. */
+export interface ReactionKnowledgeResult { schema: "reaction_knowledge@1"; method_version: "mw.reaction_knowledge/v1";
+  structure: { handle: string; structure_kind: "structure" | "prepared_structure"; model_number: number };
+  pdb_id: string | null; numbering_map: { handle: string; pdb_id: string | null } | null;
+  snapshot_set: ReactionSnapshotSetRecord; chains: ReactionKnowledgeChain[];
+  reference_rows: { mcsa: ReactionMcsaReferenceRow[]; uniprot: ReactionUniprotReferenceRow[];
+    rhea: ReactionRheaReferenceRow[] };
+  counts: ReactionKnowledgeCounts; null_result: boolean; limitations: string[] }
+/** A chain of the detail read: rows and features cut to their page, with the full lengths (null when null). */
+export type ReactionKnowledgeDetailChain = Omit<ReactionKnowledgeChain, "mcsa" | "uniprot"> & {
+  mcsa: ReactionMcsaSection & { row_total: number | null };
+  uniprot: ReactionUniprotSection & { feature_total: number | null } };
+export interface ReactionKnowledgePage { chain_total: number; chain_offset: number; chain_limit: number;
+  row_offset: number; row_limit: number; feature_offset: number; feature_limit: number }
+/** `GET /runs/{id}/reaction_knowledge/{handle}?chain_offset=…`: the re-validated stored result, paged. */
+export interface ReactionKnowledgeDetail extends Omit<ReactionKnowledgeResult, "chains"> {
+  chains: ReactionKnowledgeDetailChain[]; page: ReactionKnowledgePage;
+  /** The active set now (null when none is usable) and whether it is the result's set. */
+  active_set: { set_hash: string | null; same: boolean } }
+/** `GET /runs/{id}/reaction_knowledge` item, newest first; `active` = same set as the active one now. */
+export interface ReactionKnowledgeListItem { handle: string; structure_handle: string;
+  structure_kind: "structure" | "prepared_structure"; pdb_id: string | null; chain_count: number;
+  covered_chain_count: number; mcsa_rows: Record<ReactionRowStatus, number> | null;
+  uniprot_feature_count: number | null; null_result: boolean; set_hash: string; active: boolean }
+export interface ReactionKnowledgeList { items: ReactionKnowledgeListItem[]; total: number }
+export interface ReactionKnowledgeReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "reaction_knowledge"; result_handle: string;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }

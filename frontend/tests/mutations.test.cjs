@@ -40,6 +40,22 @@ function backendLimitations() {
   const block = constantsSource.slice(start + "LIMITATIONS = (".length, end).replace(/"\s*\n\s*"/g, "");
   return [...block.matchAll(/"([^"]+)"/g)].map(item => item[1]);
 }
+/** `NAME = "..."` or a parenthesized concatenation `NAME = ("a"\n "b")`. */
+function backendSentence(name, source = constantsSource) {
+  const single = new RegExp(`^${name} = "([^"]*)"`, "m").exec(source);
+  if (single) return single[1];
+  const match = new RegExp(`^${name} = \\(([\\s\\S]*?)\\)\\n`, "m").exec(source);
+  assert.ok(match, `backend constant ${name} not found`);
+  return [...match[1].matchAll(/"([^"]*)"/g)].map(item => item[1]).join("");
+}
+// M26 screen notes UK2 / UK3 of backend/mw/reaction_knowledge_constants.py (SCREEN_NOTES), read as written
+const reactionConstants = fs.readFileSync(path.join(__dirname, "../../backend/mw/reaction_knowledge_constants.py"), "utf8");
+function reactionNote(key) {
+  const block = reactionConstants.slice(reactionConstants.indexOf("SCREEN_NOTES = {"));
+  const match = new RegExp(`"${key}": (\\((?:\\s*"[^"]*")+\\s*\\)|"[^"]*")`).exec(block);
+  assert.ok(match, `SCREEN_NOTES ${key} not found`);
+  return [...match[1].matchAll(/"([^"]*)"/g)].map(item => item[1]).join("");
+}
 
 const S = "obj://r1/prepared_structure/s1";
 const S2 = "obj://r1/prepared_structure/s2";
@@ -77,6 +93,29 @@ const CHECKED = { user_list: { status: "checked", protected: 1, released: 2 },
   catalytic_residue_database: { status: "not_available", reason: "not_implemented" } };
 const NOT_CHECKED = { ...CHECKED, klifs_key_sites: { status: "not_checked", reason: "annotation_not_given", annotation: null,
   annotated_sites: null, absent_sites: null } };
+// ---- M26 v2 catalytic checks (synthetic; handles are placeholders) ----
+const RK = "obj://r1/reaction_knowledge/rk1";
+const RK2 = "obj://r1/reaction_knowledge/rk2";
+const RK3 = "obj://r1/reaction_knowledge/rk3";
+const catItem = (chain, reason, residue, listed = {}) => ({ chain_auth: chain, mcsa_id: 282, residue_index: 3, reason,
+  residue, listed: { chain_name: chain, resid: 101, auth_resid: 99, code: "Asp", ...listed } });
+const V2_NOT_GIVEN = { status: "not_checked", reason: "annotation_not_given", annotation: null };
+const V2_CHECKED = { status: "checked", reason: null, annotation: RK, covered_chains: ["A"], uncovered_chains: [],
+  matched_rows: 4, conflict_rows: 1, unmatched_rows: 1,
+  conflicts: [catItem("A", "residue_name_differs", res("A", 99, "GLU"))],
+  unmatched: [catItem("A", "residue_not_in_structure", null, { resid: null, auth_resid: 250, code: "His" })] };
+const V2_NONE_COVERED = { status: "not_checked", reason: "chains_not_covered", annotation: RK, covered_chains: [],
+  uncovered_chains: [{ chain_auth: "A", coverage: "pdb_not_in_snapshot" }], matched_rows: 0, conflict_rows: 0,
+  unmatched_rows: 0, conflicts: [], unmatched: [] };
+const V2_PARTIAL = { status: "not_checked", reason: "chains_not_covered", annotation: RK, covered_chains: ["A"],
+  uncovered_chains: [{ chain_auth: "B", coverage: "chain_not_listed" }, { chain_auth: "C", coverage: "not_in_annotation" },
+    { chain_auth: "D", coverage: "not_checked" }], matched_rows: 2, conflict_rows: 0, unmatched_rows: 0, conflicts: [],
+  unmatched: [] };
+const rkItem = (handle, structure, over = {}) => ({ handle, structure_handle: structure, structure_kind: "prepared_structure",
+  pdb_id: "1S9I", chain_count: 2, covered_chain_count: 1, mcsa_rows: { matched: 4, unmatched: 1, conflict: 1 },
+  uniprot_feature_count: null, null_result: false, set_hash: "a".repeat(64), active: true, ...over });
+// newest first, as GET /runs/{id}/reaction_knowledge answers
+const RK_RESULTS = [rkItem(RK3, S2), rkItem(RK2, S), rkItem(RK, S)];
 
 test("closed sets, limits, defaults and fixed sentences equal backend/mw/mutation_constants.py", () => {
   assert.deepEqual(plain(lib.SOURCE_KINDS), backendTuple("SOURCE_KINDS"));
@@ -85,6 +124,39 @@ test("closed sets, limits, defaults and fixed sentences equal backend/mw/mutatio
   assert.deepEqual(plain(lib.POSITION_STATUSES), backendTuple("POSITION_STATUSES"));
   assert.deepEqual(plain(lib.PROTECTION_CHECK_KEYS), backendTuple("PROTECTION_CHECK_KEYS"));
   assert.deepEqual(plain(lib.ADMISSION_REASON_CODES), backendTuple("ADMISSION_REASON_CODES"));
+  // M26 v2: the catalytic reason closes the protection reasons; v1 keeps its six exclusion reasons
+  assert.deepEqual(plain(lib.PROTECTION_REASONS_V2), backendTuple("PROTECTION_REASONS_V2"));
+  assert.deepEqual(plain(lib.EXCLUSION_REASONS_V2), backendTuple("EXCLUSION_REASONS_V2"));
+  assert.equal(lib.EXCLUSION_REASONS.length, 6);
+  assert.equal(lib.EXCLUSION_REASONS_V2.length, 7);
+  assert.deepEqual(plain(lib.EXCLUSION_REASONS_V2.filter(reason => reason !== "catalytic_residue")), plain(lib.EXCLUSION_REASONS));
+  assert.equal(lib.ADMISSION_REASON_CODES.indexOf("catalytic_annotation_invalid"),
+    lib.ADMISSION_REASON_CODES.indexOf("annotation_invalid") + 1);
+  assert.deepEqual(plain(lib.CATALYTIC_UNCOVERED_COVERAGE), backendTuple("CATALYTIC_UNCOVERED_COVERAGE"));
+  assert.deepEqual(plain(Object.keys(lib.UNCOVERED_COVERAGE_LABEL)), backendTuple("CATALYTIC_UNCOVERED_COVERAGE"));
+  assert.deepEqual(plain(Object.keys(lib.CATALYTIC_ROW_REASON_LABEL).sort()),
+    [...backendTuple("CATALYTIC_CONFLICT_REASONS"), ...backendTuple("CATALYTIC_UNMATCHED_REASONS")].sort());
+  assert.equal(lib.CATALYTIC_LIST_TOO_LONG, JSON.parse(backendValue("CATALYTIC_LIST_TOO_LONG")));
+  assert.equal(lib.MAX_CATALYTIC_LIST, Number(backendValue("MAX_CATALYTIC_LIST")));
+  assert.equal(lib.CATALYTIC_REASON, JSON.parse(backendValue("CATALYTIC_REASON")));
+  assert.equal(lib.CATALYTIC_NOT_GIVEN_REASON, JSON.parse(backendValue("CATALYTIC_NOT_GIVEN_REASON")));
+  assert.equal(lib.CATALYTIC_NOT_COVERED_REASON, JSON.parse(backendValue("CATALYTIC_NOT_COVERED_REASON")));
+  assert.equal(lib.CATALYTIC_NOT_AVAILABLE_REASON, JSON.parse(backendValue("CATALYTIC_NOT_AVAILABLE_REASON")));
+  assert.deepEqual(plain(lib.CATALYTIC_STATUSES), [JSON.parse(backendValue("CHECKED")), JSON.parse(backendValue("NOT_CHECKED")),
+    JSON.parse(backendValue("NOT_AVAILABLE"))]);
+  assert.equal(lib.METHOD_VERSION, JSON.parse(backendValue("METHOD_VERSION")));
+  assert.equal(lib.METHOD_VERSION_V2, JSON.parse(backendValue("METHOD_VERSION_V2")));
+  // the third limitation sentence of v2 (spec 8.4), verbatim; v1 keeps its own third sentence
+  assert.equal(lib.MUTATION_LIMITATION_3_CHECKED, backendSentence("LIMITATION_3_CHECKED"));
+  assert.equal(lib.MUTATION_LIMITATION_3_NOT_CHECKED, backendSentence("LIMITATION_3_NOT_CHECKED"));
+  assert.equal(lib.MUTATION_LIMITATION_3_CHECKED,
+    "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다.");
+  assert.equal(lib.MUTATION_LIMITATION_3_NOT_CHECKED, "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 " +
+    "기준으로만 판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다).");
+  // UK2 / UK3 (M26 SCREEN_NOTES) verbatim
+  assert.equal(lib.CATALYTIC_NOT_CHECKED_BADGE, reactionNote("UK2"));
+  assert.equal(lib.UNIPROT_SITES_NOTE, reactionNote("UK3"));
+  assert.equal(lib.UNIPROT_SITES_NOTE, "UniProt 부위 정보는 지식 탭에서만 보이며 보호에 쓰지 않음.");
   assert.equal(lib.TOO_MANY_POSITIONS, JSON.parse(backendValue("TOO_MANY_POSITIONS")));
   assert.equal(lib.MUTATION_TOOL, JSON.parse(backendValue("TOOL")));
   assert.equal(lib.ONE_LETTER_ORDER, JSON.parse(backendValue("ONE_LETTER_ORDER")));
@@ -107,8 +179,9 @@ test("closed sets, limits, defaults and fixed sentences equal backend/mw/mutatio
 });
 
 test("every code the panel can show has a Korean name shown as \"한국어 (code)\"; unknown codes as is", () => {
-  const codes = [...lib.ADMISSION_REASON_CODES, lib.TOO_MANY_POSITIONS, ...lib.EXCLUSION_REASONS,
-    "annotation_not_given", "not_implemented", "method_evidence_invalid"];
+  const codes = [...lib.ADMISSION_REASON_CODES, lib.TOO_MANY_POSITIONS, ...lib.EXCLUSION_REASONS_V2,
+    "annotation_not_given", "not_implemented", "method_evidence_invalid", lib.CATALYTIC_LIST_TOO_LONG,
+    lib.CATALYTIC_NOT_COVERED_REASON];
   for (const code of codes) assert.match(lib.mutationReasonText(code), new RegExp(`^\\S.* \\(${code}\\)$`), code);
   assert.equal(lib.mutationReasonText("brand_new_code"), "brand_new_code");
   assert.equal(lib.mutationReasonText("toString"), "toString");
@@ -124,7 +197,8 @@ test("initial draft: no source on, radius 5, metal 3, all 20 residues allowed, n
   assert.equal(initial.metalText, "3");
   assert.equal(initial.allowed.join(""), "ACDEFGHIKLMNPQRSTVWY");
   assert.deepEqual([initial.residues, initial.protectedResidues, initial.releasedResidues], [[], [], []]);
-  assert.deepEqual([initial.ligand, initial.numberingMap, initial.annotation], [null, null, null]);
+  assert.deepEqual([initial.ligand, initial.numberingMap, initial.annotation, initial.catalyticAnnotation],
+    [null, null, null, null]);
   assert.deepEqual(errorsOf({}), ["위치 출처(포켓 검출·리간드 껍질·직접 선택)를 하나 이상 켜고 위치를 정하세요."]);
 });
 
@@ -137,7 +211,7 @@ test("request args: normalized order, 7 fields with null labels kept, off source
     structure: S,
     sources: { pocket: { pocket_set: "P1", ranks: [1, 3] }, ligand_shell: { radius_A: 12 }, residues: [] },
     ligand: LIG, allowed_residues: "ACW", protected_residues: [A5], released_residues: [CC11], metal_contact_A: 1,
-    numbering_map: "M1", annotation: "N1" } });
+    numbering_map: "M1", annotation: "N1", catalytic_annotation: null } });
   assert.equal(out.args.ligand.seq_label, null);
   const user = plain(lib.mutationRequestArgs(draft({ userOn: true, residues: [A10, CC11] }), OPTIONS));
   assert.deepEqual(user.args.sources, { pocket: null, ligand_shell: null, residues: [A10, CC11] });
@@ -145,7 +219,8 @@ test("request args: normalized order, 7 fields with null labels kept, off source
   assert.equal(user.args.metal_contact_A, 3);
   assert.equal(user.args.residues, undefined);
   assert.deepEqual(Object.keys(user.args), ["structure", "sources", "ligand", "allowed_residues", "protected_residues",
-    "released_residues", "metal_contact_A", "numbering_map", "annotation"]);
+    "released_residues", "metal_contact_A", "numbering_map", "annotation", "catalytic_annotation"]);
+  assert.equal(user.args.catalytic_annotation, null);
 });
 
 test("request checks: no source, structure, pocket choice of the same structure with pockets", () => {
@@ -456,6 +531,27 @@ function screenStrings() {
     lib.mutationPanelState({ runId: "r", capability: { available: true, reason: null }, structures: [] }),
     lib.mutationPanelState({ runId: "r", capability: { available: true, reason: null }, structures: [S],
       detail: { null_result: true, counts: counts() } }),
+    // M26 v2 catalytic texts
+    ...[V2_NOT_GIVEN, V2_CHECKED, V2_NONE_COVERED, V2_PARTIAL, CHECKED.catalytic_residue_database].map(check =>
+      [lib.catalyticCheckView(check), lib.catalyticCheckDetail(check)]),
+    lib.protectionCheckRows({ ...CHECKED, catalytic_residue_database: V2_PARTIAL }),
+    ...lib.CATALYTIC_STATUSES.map(status => [lib.catalyticBadge(status), lib.catalyticBadge(status, "chains_not_covered"),
+      lib.mutationLimitationsFor(status)]),
+    lib.catalyticBadge("brand_new"),
+    lib.catalyticProtectionText({ released: false }), lib.catalyticProtectionText({ catalytic: null, released: false }),
+    lib.catalyticProtectionText({ catalytic: [], released: false }),
+    lib.catalyticProtectionText({ catalytic: [{ mcsa_id: 282, residue_index: 3, is_reference: true }], released: true }),
+    lib.catalyticRequestNotices({ selected: null, prediction: null, uniprotNotice: null }),
+    lib.catalyticRequestNotices({ selected: RK, uniprotNotice: lib.UNIPROT_SITES_NOTE,
+      prediction: lib.predictCatalyticCoverage({ chains: [], page: { chain_total: 2 } }, ["A", "B"]) }),
+    lib.predictCatalyticCoverage({ chains: [{ chain_auth: "A", mcsa: { status: "not_checked", coverage: null } },
+      { chain_auth: "B", mcsa: { status: "checked", coverage: "chain_not_listed" } },
+      { chain_auth: "C", mcsa: { status: "checked", coverage: "pdb_not_in_snapshot" } }] }, ["A", "B", "C", "D"]),
+    lib.nullResultText(counts({ candidates: 0, exclusion_reason_counts: { ...counts().exclusion_reason_counts, catalytic_residue: 2 } })),
+    lib.mutationErrorText({ message: "x", code: "resource_exceeded",
+      detail: { reason_code: "catalytic_list_too_long", list: "conflicts", count: 401, limit: 400 } }),
+    lib.mutationReasonText("catalytic_annotation_invalid"), lib.catalyticReasonText("annotation_not_given"),
+    ...lib.CATALYTIC_UNCOVERED_COVERAGE.map(lib.uncoveredCoverageText),
   ]);
   const bad = [{}, { structure: null }, { pocketOn: true }, { pocketOn: true, pocketSet: "P2", pocketRanks: [1, 1] },
     { ligandShellOn: true, radiusText: "99" }, { userOn: true, residues: [A10, A10], metalText: "9", allowed: [] },
@@ -463,7 +559,8 @@ function screenStrings() {
     { userOn: true, residues: [A10], protectedResidues: [A5], releasedResidues: [A5] },
     { userOn: true, residues: Array.from({ length: 401 }, (_, i) => res("A", i + 1, "ALA")) },
     { userOn: true, residues: [A10], ligand: res("Z", 1, "XYZ"), numberingMap: "M3", annotation: "N3" },
-    { userOn: true, residues: [A10], annotation: "N2", numberingMap: "M1" }];
+    { userOn: true, residues: [A10], annotation: "N2", numberingMap: "M1" },
+    { userOn: true, residues: [A10], catalyticAnnotation: RK3 }];
   for (const over of bad) collect(plain(lib.mutationRequestArgs(draft(over), OPTIONS)).errors);
   return texts;
 }
@@ -474,4 +571,182 @@ test("every user-visible string of this module passes the wording check (fixed l
   for (const text of texts) assert.deepEqual(plain(lib.mutationForbiddenWords(text)), [], text);
   // nothing reads as a ranking: no "n위", "1등", "top", "#1 후보" style wording outside pocket numbers
   for (const text of texts) assert.doesNotMatch(text, /\d+\s*위(?!치)|\d+\s*등(?!록)|\btop\b|상위|하위/i, text);
+});
+
+// ---- M26: M20 v2 catalytic residue protection (spec 8-10) ----
+
+test("catalytic annotation: same structure only, newest (first in the newest-first list) pre-selected, none -> null", () => {
+  assert.deepEqual(plain(lib.catalyticAnnotationsForStructure(RK_RESULTS, S).map(item => item.handle)), [RK2, RK]);
+  assert.deepEqual(plain(lib.catalyticAnnotationsForStructure(RK_RESULTS, null)), []);
+  assert.equal(lib.defaultCatalyticAnnotation(RK_RESULTS, S), RK2);
+  assert.equal(lib.defaultCatalyticAnnotation(RK_RESULTS, S2), RK3);
+  assert.equal(lib.defaultCatalyticAnnotation(RK_RESULTS, "obj://r1/prepared_structure/other"), null);
+  assert.equal(lib.defaultCatalyticAnnotation([], S), null);
+  assert.equal(lib.defaultCatalyticAnnotation(RK_RESULTS, null), null);
+  // a new structure pre-selects that structure's newest result; without results nothing is chosen
+  const next = lib.draftForStructure(draft({ catalyticAnnotation: RK3 }), S, OPTIONS.annotations, OPTIONS.maps, RK_RESULTS);
+  assert.equal(next.catalyticAnnotation, RK2);
+  assert.equal(lib.draftForStructure(draft({ catalyticAnnotation: RK2 }), S, OPTIONS.annotations, OPTIONS.maps).catalyticAnnotation, null);
+  // the choice is only sent when the person presses the button (the args just carry it)
+  const withResults = { ...OPTIONS, reactionResults: RK_RESULTS };
+  const out = plain(lib.mutationRequestArgs(draft({ userOn: true, residues: [A10], catalyticAnnotation: RK }), withResults));
+  assert.equal(out.ok, true);
+  assert.equal(out.args.catalytic_annotation, RK);
+  assert.deepEqual(plain(lib.mutationRequestArgs(draft({ userOn: true, residues: [A10], catalyticAnnotation: RK3 }), withResults).errors),
+    ["고른 효소 반응 지식 결과가 이 구조의 것이 아닙니다."]);
+  assert.equal(lib.mutationRequestArgs(draft({ userOn: true, residues: [A10], catalyticAnnotation: RK }), OPTIONS).ok, false);
+  assert.equal(plain(lib.mutationRequestArgs(draft({ userOn: true, residues: [A10] }), withResults)).args.catalytic_annotation, null);
+});
+
+test("coverage prediction before the request: covered, the four uncovered coverage values and an unread chain page", () => {
+  const result = { chains: [
+    { chain_auth: "A", mcsa: { status: "checked", coverage: "covered" } },
+    { chain_auth: "B", mcsa: { status: "checked", coverage: "chain_not_listed" } },
+    { chain_auth: "C", mcsa: { status: "checked", coverage: "pdb_not_in_snapshot" } },
+    { chain_auth: "D", mcsa: { status: "not_checked", coverage: null } }], page: { chain_total: 4 } };
+  const out = plain(lib.predictCatalyticCoverage(result, ["A", "B", "C", "D", "E", "A"]));
+  assert.deepEqual(out.covered, ["A"]);
+  assert.deepEqual(out.uncovered.map(item => [item.chain_auth, item.coverage]),
+    [["B", "chain_not_listed"], ["C", "pdb_not_in_snapshot"], ["D", "not_checked"], ["E", "not_in_annotation"]]);
+  assert.equal(out.uncovered[0].text, "체인 B: 촉매 잔기를 검사하지 않음 — 이 체인은 M-CSA 행에 없음 (chain_not_listed)");
+  assert.equal(out.uncovered[3].text, "체인 E: 촉매 잔기를 검사하지 않음 — 고른 효소 반응 지식 결과에 이 체인이 없음 (not_in_annotation)");
+  // a detail page that does not hold every chain: a missing chain is "not read yet", never "not in the annotation"
+  const partial = plain(lib.predictCatalyticCoverage({ ...result, page: { chain_total: 12 } }, ["E"]));
+  assert.deepEqual(partial.uncovered.map(item => [item.chain_auth, item.coverage]), [["E", null]]);
+  assert.match(partial.uncovered[0].text, /아직 읽지 않은 체인/);
+  assert.deepEqual(plain(lib.predictCatalyticCoverage(result, [])), { covered: [], uncovered: [] });
+});
+
+test("request notices: UK2 when nothing is chosen or chains would be uncovered, then UK3 when UniProt sites are linked", () => {
+  assert.deepEqual(plain(lib.catalyticRequestNotices({ selected: null, prediction: null, uniprotNotice: null })),
+    [lib.CATALYTIC_NOT_SELECTED_NOTICE, lib.CATALYTIC_NOT_CHECKED_BADGE]);
+  assert.match(lib.CATALYTIC_NOT_SELECTED_NOTICE, /^M-CSA 촉매 잔기 보호를 검사하지 않음/);
+  const covered = { covered: ["A"], uncovered: [] };
+  assert.deepEqual(plain(lib.catalyticRequestNotices({ selected: RK, prediction: covered, uniprotNotice: null })), []);
+  const prediction = lib.predictCatalyticCoverage({ chains: [{ chain_auth: "A", mcsa: { status: "checked", coverage: "covered" } }] },
+    ["A", "B"]);
+  assert.deepEqual(plain(lib.catalyticRequestNotices({ selected: RK, prediction, uniprotNotice: lib.UNIPROT_SITES_NOTE })),
+    [lib.CATALYTIC_NOT_CHECKED_BADGE, prediction.uncovered[0].text, lib.UNIPROT_SITES_NOTE]);
+  // UK3 from the server's linked position counts only (nothing recounted)
+  assert.equal(lib.uniprotSitesNotice(null), null);
+  assert.equal(lib.uniprotSitesNotice({ linked_positions: null }), null);
+  assert.equal(lib.uniprotSitesNotice({ linked_positions: { mapped: 0, not_in_map: 3 } }), null);
+  assert.equal(lib.uniprotSitesNotice({ linked_positions: { mapped: 2, not_in_map: 0 } }), lib.UNIPROT_SITES_NOTE);
+});
+
+test("catalytic badge follows the check status: none for checked, UK2 with distinct details otherwise", () => {
+  assert.equal(lib.catalyticBadge("checked"), null);
+  assert.equal(lib.catalyticBadge(null), null);
+  assert.equal(lib.catalyticBadge(undefined), null);
+  const v1 = plain(lib.catalyticBadge("not_available"));
+  const v2 = plain(lib.catalyticBadge("not_checked"));
+  assert.equal(v1.text, lib.CATALYTIC_NOT_CHECKED_BADGE);
+  assert.equal(v2.text, lib.CATALYTIC_NOT_CHECKED_BADGE);
+  assert.notEqual(v1.detail, v2.detail);
+  assert.match(v1.detail, /촉매 잔기 검사가 생기기 전\(v1\)/);
+  assert.match(v2.detail, /보호 검사 칸/);
+  assert.equal(lib.catalyticBadge("not_checked", "chains_not_covered").detail,
+    "검사하지 않은 이유: 위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음 (chains_not_covered) (not_checked).");
+  assert.equal(lib.catalyticBadge("not_checked", "annotation_not_given").detail,
+    "검사하지 않은 이유: 효소 반응 지식 결과를 고르지 않음 (annotation_not_given) (not_checked).");
+  // a value outside the closed set is never shown as checked
+  assert.equal(lib.catalyticBadge("checked ").text, lib.CATALYTIC_NOT_CHECKED_BADGE);
+});
+
+test("catalytic check view: three statuses; row counts are numbers only with covered chains (a stored 0 is not a count)", () => {
+  const notGiven = plain(lib.catalyticCheckView(V2_NOT_GIVEN));
+  assert.deepEqual([notGiven.statusText, notGiven.coveredChains, notGiven.uncovered, notGiven.conflicts, notGiven.unmatched],
+    ["검사하지 않음 (not_checked)", null, null, null, null]);
+  assert.equal(notGiven.rowCounts.matched, "— (효소 반응 지식 결과를 고르지 않음 (annotation_not_given))");
+  assert.equal(notGiven.limitation3, lib.MUTATION_LIMITATION_3_NOT_CHECKED);
+  assert.equal(notGiven.badge.text, lib.CATALYTIC_NOT_CHECKED_BADGE);
+  const v1 = plain(lib.catalyticCheckView(CHECKED.catalytic_residue_database));
+  assert.equal(v1.statusText, "사용할 수 없음 (not_available)");
+  assert.equal(v1.note, lib.CATALYTIC_NOTE_V1);
+  assert.equal(v1.note, "촉매 잔기 데이터베이스는 사용할 수 없음(구현하지 않음). 촉매 잔기는 판정하지 않았습니다.");
+  assert.equal(v1.limitation3, lib.MUTATION_LIMITATIONS[2]);
+  for (const view of [notGiven, v1]) for (const text of Object.values(view.rowCounts)) assert.doesNotMatch(text, /\d/);
+  const none = plain(lib.catalyticCheckView(V2_NONE_COVERED));
+  assert.deepEqual(none.coveredChains, []);
+  assert.deepEqual(none.rowCounts, { matched: "— (M-CSA가 다룬 체인 없음)", conflict: "— (M-CSA가 다룬 체인 없음)",
+    unmatched: "— (M-CSA가 다룬 체인 없음)" });
+  assert.deepEqual(none.uncovered, [{ chainAuth: "A", coverage: "pdb_not_in_snapshot",
+    coverageText: "이 PDB ID는 스냅샷에 없음 (pdb_not_in_snapshot)" }]);
+  assert.equal(none.reasonText, "위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음 (chains_not_covered)");
+  const partial = plain(lib.catalyticCheckView(V2_PARTIAL));
+  assert.deepEqual(partial.rowCounts, { matched: "2개", conflict: "0개", unmatched: "0개" });
+  assert.deepEqual(partial.uncovered.map(item => item.coverageText), ["이 체인은 M-CSA 행에 없음 (chain_not_listed)",
+    "고른 효소 반응 지식 결과에 이 체인이 없음 (not_in_annotation)",
+    "결과가 이 체인의 M-CSA를 검사하지 않음(PDB ID 없음) (not_checked)"]);
+  assert.equal(partial.badge.text, lib.CATALYTIC_NOT_CHECKED_BADGE);
+  const checked = plain(lib.catalyticCheckView(V2_CHECKED));
+  assert.deepEqual([checked.statusText, checked.reasonText, checked.badge, checked.limitation3],
+    ["검사함 (checked)", null, null, lib.MUTATION_LIMITATION_3_CHECKED]);
+  assert.deepEqual(checked.rowCounts, { matched: "4개", conflict: "1개", unmatched: "1개" });
+  assert.equal(checked.note, lib.CATALYTIC_NOTE);
+  // conflict and unmatched rows carry the listed position prominently and the 7-field residue (or why there is none)
+  assert.deepEqual(checked.conflicts, [{ chainAuth: "A", mcsaId: 282, residueIndex: 3,
+    reasonText: "구조 잔기 이름이 M-CSA 잔기 이름과 다름 (residue_name_differs)",
+    positionText: "체인 A · M-CSA가 적은 번호 auth 99 (resid 101) · Asp",
+    residueText: "구조 잔기 GLU A:99 (label A:99, 모델 1)" }]);
+  assert.deepEqual(checked.unmatched[0].positionText, "체인 A · M-CSA가 적은 번호 auth 250 (resid —) · His");
+  assert.equal(checked.unmatched[0].residueText, "— (구조에서 이 잔기 하나로 정하지 못함)");
+  // protection check table rows: v1 detail unchanged, v2 details from the stored check
+  const rows = check => plain(lib.protectionCheckRows({ ...CHECKED, catalytic_residue_database: check }))[4];
+  assert.deepEqual(rows(CHECKED.catalytic_residue_database), { key: "catalytic_residue_database", label: "촉매 잔기 데이터베이스",
+    status: "사용할 수 없음 (not_available)", detail: "— (구현하지 않음 (not_implemented))" });
+  assert.equal(rows(V2_NOT_GIVEN).detail, "— (효소 반응 지식 결과를 고르지 않음 (annotation_not_given))");
+  assert.equal(rows(V2_NONE_COVERED).detail, `결과 ${RK} · 다룬 체인 — (M-CSA가 다룬 체인 없음) · 다루지 않은 체인 A 이 PDB ID는 ` +
+    "스냅샷에 없음 (pdb_not_in_snapshot) · 대응됨 — (M-CSA가 다룬 체인 없음) · 충돌 — (M-CSA가 다룬 체인 없음) · 대응 없음 — " +
+    "(M-CSA가 다룬 체인 없음)");
+  assert.doesNotMatch(rows(V2_NONE_COVERED).detail.replace(RK, ""), /\d/);
+  assert.equal(rows(V2_CHECKED).detail, `결과 ${RK} · 다룬 체인 A · 다루지 않은 체인 없음 · 대응됨 4개 · 충돌 1개 · 대응 없음 1개`);
+  assert.equal(rows(V2_CHECKED).status, "검사함 (checked)");
+});
+
+test("position catalytic cell: v1 and null are \"—\" with a reason, [] is checked-none, entries with 해제됨 when released", () => {
+  assert.equal(lib.catalyticProtectionText({ released: false }), "— (촉매 잔기 검사 전 v1 집합)");
+  assert.equal(lib.catalyticProtectionText({ catalytic: null, released: false }), "— (이 체인의 촉매 잔기를 검사하지 않음)");
+  assert.equal(lib.catalyticProtectionText({ catalytic: [], released: false }), "대응된 M-CSA 촉매 잔기 행 없음(검사함)");
+  const entries = [{ mcsa_id: 175, residue_index: 0, is_reference: true }, { mcsa_id: 175, residue_index: 2, is_reference: false }];
+  assert.equal(lib.catalyticProtectionText({ catalytic: entries, released: false }),
+    "M-CSA 175 잔기 순번 0 · 기준 구조, M-CSA 175 잔기 순번 2");
+  assert.equal(lib.catalyticProtectionText({ catalytic: entries, released: true }),
+    "M-CSA 175 잔기 순번 0 · 기준 구조, M-CSA 175 잔기 순번 2 · 해제됨");
+  // the reason name itself, also when released (the reason list stays)
+  assert.equal(lib.protectionText({ reasons: ["metal_contact", "catalytic_residue"], released: true, klifs_sites: [], metal: null,
+    disulfide_partner: null, catalytic: entries }), "금속 근접, M-CSA 촉매 잔기 주석 (보호 해제됨)");
+  assert.equal(lib.mutationReasonText("catalytic_residue"), "M-CSA 촉매 잔기 주석 (catalytic_residue)");
+});
+
+test("limitation sentence 3 follows the catalytic status; the other four are the v1 sentences", () => {
+  assert.equal(lib.mutationLimitationsFor("not_available"), lib.MUTATION_LIMITATIONS);
+  for (const [status, third] of [["checked", lib.MUTATION_LIMITATION_3_CHECKED], ["not_checked", lib.MUTATION_LIMITATION_3_NOT_CHECKED]]) {
+    const out = plain(lib.mutationLimitationsFor(status));
+    assert.deepEqual(out, [lib.MUTATION_LIMITATIONS[0], lib.MUTATION_LIMITATIONS[1], third, lib.MUTATION_LIMITATIONS[3],
+      lib.MUTATION_LIMITATIONS[4]]);
+  }
+  // the backend v2 tuples, sentence by sentence
+  assert.match(constantsSource, /CHECKED: \(LIMITATIONS\[0\], LIMITATIONS\[1\], LIMITATION_3_CHECKED, LIMITATIONS\[3\], LIMITATIONS\[4\]\)/);
+  assert.match(constantsSource, /NOT_CHECKED: \(LIMITATIONS\[0\], LIMITATIONS\[1\], LIMITATION_3_NOT_CHECKED, LIMITATIONS\[3\], LIMITATIONS\[4\]\)/);
+  for (const line of lib.MUTATION_FIXED_LINES) assert.deepEqual(plain(lib.mutationForbiddenWords(line)), [], line);
+  // the request-area note no longer says the database is unavailable; the v1 wording stays for v1 sets
+  assert.notEqual(lib.CATALYTIC_NOTE, lib.CATALYTIC_NOTE_V1);
+  assert.match(lib.CATALYTIC_NOTE, /대응됨인 잔기만 보호/);
+});
+
+test("v2 exclusion counts: seven keys shown in the closed order, v1 keeps six; the null-result text uses stored counts", () => {
+  const v1 = counts();
+  assert.deepEqual(plain(lib.exclusionReasonsOf(v1)), plain(lib.EXCLUSION_REASONS));
+  const v2 = counts({ exclusion_reason_counts: { ...v1.exclusion_reason_counts, catalytic_residue: 2 } });
+  assert.deepEqual(plain(lib.exclusionReasonsOf(v2)), plain(lib.EXCLUSION_REASONS_V2));
+  assert.equal(lib.exclusionReasonCount(v1, "catalytic_residue"), undefined);
+  assert.equal(lib.exclusionReasonCount(v2, "catalytic_residue"), 2);
+  assert.equal(lib.nullResultText({ ...v2, candidates: 0 }), "후보 0개(빈 결과, scientific_null): 위치 4개 중 제외 2개. " +
+    "제외 사유별 위치 수: 사용자 보호 1개, 금속 근접 1개, 이황화 Cys 1개, M-CSA 촉매 잔기 주석 2개.");
+  assert.equal(lib.mutationErrorText({ message: "x", code: "resource_exceeded",
+    detail: { reason_code: "catalytic_list_too_long", list: "unmatched", count: 401, limit: 400 } }),
+  "촉매 잔기 충돌·대응 없음 목록 상한 초과 (catalytic_list_too_long): 대응 없음 행 401개가 상한 400개를 넘어 저장하지 않았습니다(자르지 않음).");
+  assert.equal(lib.mutationErrorText({ message: "bad", code: "input_invalid", detail: { reason_code: "catalytic_annotation_invalid" } }),
+    "이 run의 효소 반응 지식 결과가 아니거나 검증되지 않음 (catalytic_annotation_invalid): bad");
 });

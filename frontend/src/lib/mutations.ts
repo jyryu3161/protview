@@ -8,11 +8,19 @@
  * its own numbering map, decides the five panel states, builds read queries, keeps late responses out, and gives
  * display text that keeps "not given", "not checked" and "not available" apart from 0. The list order is the
  * structure's file order (or the distance sort the person picked), never a ranking.
+ *
+ * M26 (spec 8-10): new sets are v2 (`mw.mutation_candidates/v2`) with the `catalytic_residue` protection reason and
+ * the `catalytic_residue_database` check; stored v1 sets keep the v1 wording (`not_available`). The badge and the
+ * check text follow `catalytic_residue_database.status`, never the generation: anything but `checked` is
+ * "촉매 잔기 검사 안 함" (UK2). The request may name a same-structure `reaction_knowledge@1` result
+ * (`catalytic_annotation`): the newest one is pre-selected, never submitted by itself.
  */
-import type { ExactResidueRef, MutationCandidateSet, MutationCandidateSetListRow, MutationCounts,
-  MutationExclusionReason, MutationNumbering, MutationPosition, MutationPositionSort, MutationPositionSource,
-  MutationPositionStatus, MutationProtectionChecks, MutationProtectionReason, MutationReportArtifact,
-  MutationRequestArgs, MutationSourceKind, RunEvent, SiteAnnotationListRow } from "./contracts";
+import type { ExactResidueRef, MutationCandidateSet, MutationCandidateSetListRow, MutationCatalyticCheck,
+  MutationCatalyticItem, MutationCatalyticStatus, MutationCounts, MutationExclusionReason, MutationNumbering,
+  MutationPosition, MutationPositionSort, MutationPositionSource, MutationPositionStatus, MutationProtectionChecks,
+  MutationProtectionReason, MutationReportArtifact, MutationRequestArgs, MutationSourceKind, MutationUncoveredCoverage,
+  ReactionKnowledgeCounts, ReactionKnowledgeListItem, ReactionMcsaSection, RunEvent,
+  SiteAnnotationListRow } from "./contracts";
 import type { NumberingMapListRow } from "./numbering";
 import type { PocketSetRow } from "./pockets";
 import { resultEvents } from "./event-model";
@@ -22,6 +30,8 @@ import { decimalHalfUp } from "./site-annotation";
 
 export const MUTATION_TOOL = "generate_mutation_candidates";
 export const MUTATION_REPORT_TYPE = "mutation_candidates";
+export const METHOD_VERSION = "mw.mutation_candidates/v1";
+export const METHOD_VERSION_V2 = "mw.mutation_candidates/v2";
 export const ONE_LETTER_ORDER = "ACDEFGHIKLMNPQRSTVWY";
 export const ONE_LETTER_RESNAME: Record<string, string> = {
   A: "ALA", C: "CYS", D: "ASP", E: "GLU", F: "PHE", G: "GLY", H: "HIS", I: "ILE", K: "LYS", L: "LEU", M: "MET",
@@ -34,10 +44,16 @@ export const METAL_CONTACT_DEFAULT_A = 3.0;
 export const METAL_CONTACT_RANGE_A: readonly [number, number] = [1.0, 5.0];
 export const DISULFIDE_SG_A = 2.5;
 export const SOURCE_KINDS: readonly MutationSourceKind[] = ["pocket", "ligand_shell", "user"];
+/** v1 reasons (stored v1 sets). */
 export const PROTECTION_REASONS: readonly MutationProtectionReason[] = ["user_protected", "klifs_key_site",
   "metal_contact", "disulfide_cys"];
 export const EXCLUSION_REASONS: readonly MutationExclusionReason[] = ["non_standard_residue", "user_protected",
   "klifs_key_site", "metal_contact", "disulfide_cys", "no_allowed_alternative"];
+/** v2 reasons (every new set, M26 spec 8.2): `catalytic_residue` last of the protection reasons. */
+export const PROTECTION_REASONS_V2: readonly MutationProtectionReason[] = ["user_protected", "klifs_key_site",
+  "metal_contact", "disulfide_cys", "catalytic_residue"];
+export const EXCLUSION_REASONS_V2: readonly MutationExclusionReason[] = ["non_standard_residue", "user_protected",
+  "klifs_key_site", "metal_contact", "disulfide_cys", "catalytic_residue", "no_allowed_alternative"];
 export const POSITION_STATUSES: readonly MutationPositionStatus[] = ["candidate", "excluded"];
 export const POSITION_SORTS: readonly MutationPositionSort[] = ["order", "ligand_distance"];
 export const PROTECTION_CHECK_KEYS: readonly (keyof MutationProtectionChecks)[] = ["user_list", "klifs_key_sites",
@@ -46,9 +62,19 @@ export const ADMISSION_REASON_CODES = [
   "unknown_field", "structure_invalid", "no_position_source", "argument_invalid", "allowed_residues_invalid",
   "residue_invalid", "duplicate_residue", "protect_release_conflict", "ligand_required", "ligand_invalid",
   "pocket_set_invalid", "structure_mismatch", "pocket_rank_invalid", "pocket_residue_mismatch",
-  "numbering_map_invalid", "annotation_invalid", "annotation_map_mismatch",
+  "numbering_map_invalid", "annotation_invalid", "catalytic_annotation_invalid", "annotation_map_mismatch",
 ] as const;
 export const TOO_MANY_POSITIONS = "too_many_positions";
+export const CATALYTIC_LIST_TOO_LONG = "catalytic_list_too_long";
+/** M26 spec 8.3: conflicts / unmatched lists, each at most this long (refused above, never truncated). */
+export const MAX_CATALYTIC_LIST = 400;
+export const CATALYTIC_STATUSES: readonly MutationCatalyticStatus[] = ["checked", "not_checked", "not_available"];
+export const CATALYTIC_REASON = "catalytic_residue";
+export const CATALYTIC_NOT_GIVEN_REASON = "annotation_not_given";
+export const CATALYTIC_NOT_COVERED_REASON = "chains_not_covered";
+export const CATALYTIC_NOT_AVAILABLE_REASON = "not_implemented";
+export const CATALYTIC_UNCOVERED_COVERAGE: readonly MutationUncoveredCoverage[] = ["chain_not_listed",
+  "pdb_not_in_snapshot", "not_checked", "not_in_annotation"];
 /** Read page limits (backend/mw/mutation_reads.py). */
 export const LIST_LIMIT_MAX = 100;
 export const POSITION_LIMIT_DEFAULT = 50;
@@ -65,6 +91,21 @@ export const MUTATION_LIMITATIONS: readonly string[] = [
   "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다.",
   "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다.",
 ];
+/** M26 spec 8.4: in v2 only the third sentence follows `catalytic_residue_database.status`. */
+export const MUTATION_LIMITATION_3_CHECKED = "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 " +
+  "잔기 주석 기준으로만 판정했다.";
+export const MUTATION_LIMITATION_3_NOT_CHECKED = "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 " +
+  "판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다).";
+/** Every fixed limitation line (v1 five + the two v2 third-sentence variants); exempt from the wording check. */
+export const MUTATION_FIXED_LINES: readonly string[] = [...MUTATION_LIMITATIONS, MUTATION_LIMITATION_3_CHECKED,
+  MUTATION_LIMITATION_3_NOT_CHECKED];
+
+/** The five limitation sentences of a set with this catalytic check status (`not_available` = the v1 sentences). */
+export function mutationLimitationsFor(status: MutationCatalyticStatus): readonly string[] {
+  if (status === "not_available") return MUTATION_LIMITATIONS;
+  const third = status === "checked" ? MUTATION_LIMITATION_3_CHECKED : MUTATION_LIMITATION_3_NOT_CHECKED;
+  return [MUTATION_LIMITATIONS[0], MUTATION_LIMITATIONS[1], third, MUTATION_LIMITATIONS[3], MUTATION_LIMITATIONS[4]];
+}
 
 // ---- fixed screen text ----
 
@@ -76,7 +117,19 @@ export const NO_PREPARED_REASON = "이 run에 전처리 구조가 없습니다. 
 export const CAPABILITY_REASON = "변이 후보 기능을 사용할 수 없습니다.";
 export const KLIFS_NOT_CHECKED_NOTICE = "KLIFS 주요 부위 보호를 검사하지 않음: 같은 구조의 참조 주석을 고르지 않았습니다. 이 요청에서는 KLIFS 주요 부위가 제외 목록에 들어가지 않습니다.";
 export const MAP_CONFLICT_TEXT = "고른 번호 대응이 고른 참조 주석이 기록한 번호 대응과 다릅니다. 주석의 번호 대응을 고르거나 번호 대응을 비우세요.";
-export const CATALYTIC_NOTE = "촉매 잔기 데이터베이스는 사용할 수 없음(구현하지 않음). 촉매 잔기는 판정하지 않았습니다.";
+/** Request-area note (v2): what the catalytic residue protection uses and what it does not. */
+export const CATALYTIC_NOTE = "M-CSA 촉매 잔기 보호는 같은 구조의 효소 반응 지식 결과를 고를 때만 검사합니다. M-CSA가 다룬 " +
+  "체인에서 대응됨인 잔기만 보호하고, 충돌·대응 없음 잔기는 보호하지 않고 목록으로 알립니다.";
+/** The v1 wording, unchanged: shown for a stored v1 set (`not_available`). */
+export const CATALYTIC_NOTE_V1 = "촉매 잔기 데이터베이스는 사용할 수 없음(구현하지 않음). 촉매 잔기는 판정하지 않았습니다.";
+/** UK2 (`backend/mw/reaction_knowledge_constants.py` SCREEN_NOTES), verbatim: every set whose check is not `checked`. */
+export const CATALYTIC_NOT_CHECKED_BADGE = "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 " +
+  "체인만 검사했다.";
+/** UK3, verbatim: the chosen result links UniProt sites to this structure (they are never protection evidence). */
+export const UNIPROT_SITES_NOTE = "UniProt 부위 정보는 지식 탭에서만 보이며 보호에 쓰지 않음.";
+export const CATALYTIC_NOT_SELECTED_NOTICE = "M-CSA 촉매 잔기 보호를 검사하지 않음: 같은 구조의 효소 반응 지식 결과를 " +
+  "고르지 않았습니다. 이 요청에서는 M-CSA 촉매 잔기가 제외 목록에 들어가지 않습니다.";
+export const CATALYTIC_RELEASED_TEXT = "해제됨";
 export const LIST_ORDER_NOTE = "표의 순서는 구조 파일 순서(또는 고른 거리 정렬)일 뿐 위치·후보의 우열을 뜻하지 않습니다.";
 export const NULL_TEXT = "—";
 
@@ -88,6 +141,7 @@ export const EXCLUSION_REASON_LABEL: Record<MutationExclusionReason, string> = {
   klifs_key_site: "KLIFS 주요 부위",
   metal_contact: "금속 근접",
   disulfide_cys: "이황화 Cys",
+  catalytic_residue: "M-CSA 촉매 잔기 주석",
   no_allowed_alternative: "허용 목록에 바꿀 잔기 없음",
 };
 export const POSITION_STATUS_LABEL: Record<MutationPositionStatus, string> = { candidate: "후보 위치", excluded: "제외" };
@@ -127,8 +181,11 @@ export const MUTATION_REASON_LABEL: Record<string, string> = {
   pocket_residue_mismatch: "포켓 안쪽 잔기가 구조 잔기와 맞지 않음",
   numbering_map_invalid: "이 run의 번호 대응이 아님",
   annotation_invalid: "이 run의 참조 주석이 아님",
+  catalytic_annotation_invalid: "이 run의 효소 반응 지식 결과가 아니거나 검증되지 않음",
   annotation_map_mismatch: "주석이 다른 번호 대응으로 만들어짐",
   too_many_positions: "위치 수 상한 초과",
+  catalytic_list_too_long: "촉매 잔기 충돌·대응 없음 목록 상한 초과",
+  chains_not_covered: "위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음",
   annotation_not_given: "참조 주석을 고르지 않음",
   not_implemented: "구현하지 않음",
   method_evidence_invalid: "저장된 결과가 검증되지 않음",
@@ -248,6 +305,73 @@ export function klifsNotice(annotation: string | null): string | null {
   return annotation === null ? KLIFS_NOT_CHECKED_NOTICE : null;
 }
 
+// ---- M26 catalytic annotation (a same-structure `reaction_knowledge@1` result; pre-selected, never auto-submitted) ----
+
+/** `reaction_knowledge@1` results made on this structure (list order kept: newest first, as the server gave). */
+export function catalyticAnnotationsForStructure(results: readonly ReactionKnowledgeListItem[],
+                                                structure: string | null): ReactionKnowledgeListItem[] {
+  return structure === null ? [] : results.filter(item => item.structure_handle === structure);
+}
+
+/** The pre-selection when a structure is chosen: the first (= newest) same-structure result, none -> null. */
+export function defaultCatalyticAnnotation(results: readonly ReactionKnowledgeListItem[],
+                                           structureHandle: string | null): string | null {
+  return catalyticAnnotationsForStructure(results, structureHandle)[0]?.handle ?? null;
+}
+
+export interface CatalyticCoveragePrediction {
+  /** Chains of the given list whose M-CSA section is `covered` (given order). */
+  covered: string[];
+  /** The other chains with the coverage the set would record; null = a chain on a detail page not read yet. */
+  uncovered: { chain_auth: string; coverage: MutationUncoveredCoverage | null; text: string }[];
+}
+
+/**
+ * Before the request: which of `chainsWithPositions` the chosen result covers and which would be `uncovered_chains`
+ * (the same rule as the server: `covered` -> covered; M-CSA not checked -> `not_checked`; `chain_not_listed` /
+ * `pdb_not_in_snapshot` as stored; a chain the result does not list -> `not_in_annotation`). `result` is a detail
+ * answer; when its chain page does not hold every chain, a chain missing from the page is "not read yet" (null).
+ */
+export function predictCatalyticCoverage(result: { chains: readonly { chain_auth: string;
+    mcsa: Pick<ReactionMcsaSection, "status" | "coverage"> }[]; page?: { chain_total: number } },
+                                         chainsWithPositions: readonly string[]): CatalyticCoveragePrediction {
+  const complete = result.page === undefined || result.page.chain_total === result.chains.length;
+  const covered: string[] = [];
+  const uncovered: CatalyticCoveragePrediction["uncovered"] = [];
+  for (const chain of new Set(chainsWithPositions)) {
+    const found = result.chains.find(item => item.chain_auth === chain);
+    const coverage: MutationUncoveredCoverage | "covered" | null = found === undefined
+      ? (complete ? "not_in_annotation" : null)
+      : found.mcsa.status === "not_checked" ? "not_checked"
+        : (found.mcsa.coverage as "covered" | "chain_not_listed" | "pdb_not_in_snapshot");
+    if (coverage === "covered") covered.push(chain);
+    else uncovered.push({ chain_auth: chain, coverage,
+      text: `체인 ${chain}: 촉매 잔기를 검사하지 않음 — ${coverage === null ? "결과 상세에서 아직 읽지 않은 체인"
+        : uncoveredCoverageText(coverage)}` });
+  }
+  return { covered, uncovered };
+}
+
+/** UK3 when the chosen result links UniProt sites to structure residues (the server's `linked_positions.mapped`). */
+export function uniprotSitesNotice(counts: Pick<ReactionKnowledgeCounts, "linked_positions"> | null): string | null {
+  return counts !== null && counts.linked_positions !== null && counts.linked_positions.mapped > 0
+    ? UNIPROT_SITES_NOTE : null;
+}
+
+/**
+ * Request-area notices of the catalytic choice, in order: none chosen -> the not-selected notice and UK2; chosen with
+ * chains that would not be covered -> UK2 and one line per such chain; then UK3 when UniProt sites are linked.
+ */
+export function catalyticRequestNotices(input: { selected: string | null; prediction: CatalyticCoveragePrediction | null;
+  uniprotNotice: string | null }): string[] {
+  if (input.selected === null) return [CATALYTIC_NOT_SELECTED_NOTICE, CATALYTIC_NOT_CHECKED_BADGE];
+  const notices: string[] = [];
+  if (input.prediction && input.prediction.uncovered.length)
+    notices.push(CATALYTIC_NOT_CHECKED_BADGE, ...input.prediction.uncovered.map(item => item.text));
+  if (input.uniprotNotice) notices.push(input.uniprotNotice);
+  return notices;
+}
+
 // ---- request draft ----
 
 export interface MutationDraft {
@@ -263,6 +387,8 @@ export interface MutationDraft {
   metalText: string;
   numberingMap: string | null;
   annotation: string | null;
+  /** M26: a same-structure `reaction_knowledge@1` handle, or null (the catalytic residue check is not done). */
+  catalyticAnnotation: string | null;
 }
 
 /** Defaults: no source on, radius 5, metal 3, all 20 residues allowed, nothing protected or released. */
@@ -270,15 +396,20 @@ export function initialMutationDraft(structure: string | null = null): MutationD
   return { structure, pocketOn: false, pocketSet: null, pocketRanks: [], ligandShellOn: false,
     radiusText: String(LIGAND_SHELL_RADIUS_DEFAULT_A), userOn: false, residues: [], ligand: null,
     allowed: [...ONE_LETTER_ORDER], protectedResidues: [], releasedResidues: [],
-    metalText: String(METAL_CONTACT_DEFAULT_A), numberingMap: null, annotation: null };
+    metalText: String(METAL_CONTACT_DEFAULT_A), numberingMap: null, annotation: null, catalyticAnnotation: null };
 }
 
-/** A new structure clears everything tied to the old one and pre-selects that structure's newest annotation. */
+/**
+ * A new structure clears everything tied to the old one and pre-selects that structure's newest annotation and
+ * (M26) its newest reaction knowledge result (`reactionResults` newest first; absent -> none).
+ */
 export function draftForStructure(draft: MutationDraft, structure: string | null,
-                                  annotations: readonly SiteAnnotationListRow[], maps: readonly NumberingMapListRow[]): MutationDraft {
+                                  annotations: readonly SiteAnnotationListRow[], maps: readonly NumberingMapListRow[],
+                                  reactionResults: readonly ReactionKnowledgeListItem[] = []): MutationDraft {
   const picked = preselectAnnotation(annotations, maps, structure);
   return { ...draft, structure, pocketSet: null, pocketRanks: [], residues: [], ligand: null, protectedResidues: [],
-    releasedResidues: [], annotation: picked.annotation, numberingMap: picked.numbering_map };
+    releasedResidues: [], annotation: picked.annotation, numberingMap: picked.numbering_map,
+    catalyticAnnotation: defaultCatalyticAnnotation(reactionResults, structure) };
 }
 
 /** Number typed by the person: plain decimal only (no exponent, sign, hex, Infinity or NaN). */
@@ -319,7 +450,9 @@ function listErrors(list: readonly ExactResidueRef[], name: string): string[] {
 }
 
 export interface DraftOptions { pocketSets: readonly PocketSetRow[]; maps: readonly NumberingMapListRow[];
-  annotations: readonly SiteAnnotationListRow[]; ligands: readonly ExactResidueRef[] }
+  annotations: readonly SiteAnnotationListRow[]; ligands: readonly ExactResidueRef[];
+  /** M26: this run's reaction knowledge results (absent = none read). */
+  reactionResults?: readonly ReactionKnowledgeListItem[] }
 export type MutationArgsCheck = { ok: true; args: MutationRequestArgs } | { ok: false; errors: string[] };
 
 /**
@@ -363,6 +496,10 @@ export function mutationRequestArgs(draft: MutationDraft, options: DraftOptions)
     errors.push("고른 참조 주석이 이 구조의 것이 아닙니다.");
   const conflict = annotationMapConflict(draft.annotation, draft.numberingMap, options.annotations);
   if (conflict) errors.push(conflict);
+  if (draft.catalyticAnnotation !== null &&
+      !catalyticAnnotationsForStructure(options.reactionResults ?? [], structure)
+        .some(item => item.handle === draft.catalyticAnnotation))
+    errors.push("고른 효소 반응 지식 결과가 이 구조의 것이 아닙니다.");
   if (errors.length || structure === null || !allowed.ok) return { ok: false, errors };
   return { ok: true, args: {
     structure,
@@ -379,6 +516,7 @@ export function mutationRequestArgs(draft: MutationDraft, options: DraftOptions)
     metal_contact_A: parseDistance(draft.metalText) as number,
     numbering_map: draft.numberingMap,
     annotation: draft.annotation,
+    catalytic_annotation: draft.catalyticAnnotation,
   } };
 }
 
@@ -390,6 +528,9 @@ export function mutationErrorText(error: unknown): string {
   if (reason === TOO_MANY_POSITIONS && typeof detail?.positions === "number" && typeof detail?.limit === "number")
     return `${mutationReasonText(reason)}: 위치 ${detail.positions}개가 상한 ${detail.limit}개를 넘어 저장하지 않았습니다. ` +
       "출처를 줄여 다시 요청하세요.";
+  if (reason === CATALYTIC_LIST_TOO_LONG && typeof detail?.count === "number" && typeof detail?.limit === "number")
+    return `${mutationReasonText(reason)}: ${detail.list === "unmatched" ? "대응 없음" : "충돌"} 행 ${detail.count}개가 ` +
+      `상한 ${detail.limit}개를 넘어 저장하지 않았습니다(자르지 않음).`;
   const head = reason ? mutationReasonText(reason) : typeof code === "string" ? mutationReasonText(code) : "요청 실패";
   return typeof message === "string" && message ? `${head}: ${message}` : head;
 }
@@ -423,10 +564,21 @@ export function mutationPanelState(input: { runId: string | null;
   return { state: "ready" };
 }
 
+/** The stored exclusion reason count of one reason; undefined when the set's generation has no such key (v1). */
+export function exclusionReasonCount(counts: MutationCounts, reason: MutationExclusionReason): number | undefined {
+  const table = counts.exclusion_reason_counts as Partial<Record<MutationExclusionReason, number>>;
+  return Object.prototype.hasOwnProperty.call(table, reason) ? table[reason] : undefined;
+}
+
+/** The exclusion reasons a stored set has counts for (v1: six, v2: seven), in the closed order. */
+export function exclusionReasonsOf(counts: MutationCounts): MutationExclusionReason[] {
+  return EXCLUSION_REASONS_V2.filter(reason => exclusionReasonCount(counts, reason) !== undefined);
+}
+
 /** Empty result text with the stored exclusion reason counts (nothing counted here). */
 export function nullResultText(counts: MutationCounts): string {
-  const reasons = EXCLUSION_REASONS.filter(reason => counts.exclusion_reason_counts[reason] > 0)
-    .map(reason => `${EXCLUSION_REASON_LABEL[reason]} ${counts.exclusion_reason_counts[reason]}개`);
+  const reasons = exclusionReasonsOf(counts).filter(reason => (exclusionReasonCount(counts, reason) ?? 0) > 0)
+    .map(reason => `${EXCLUSION_REASON_LABEL[reason]} ${exclusionReasonCount(counts, reason)}개`);
   return `후보 0개(빈 결과, scientific_null): 위치 ${counts.positions}개 중 제외 ${counts.excluded_positions}개. ` +
     (reasons.length ? `제외 사유별 위치 수: ${reasons.join(", ")}.` : "제외 사유가 있는 위치 없음.");
 }
@@ -582,8 +734,138 @@ export function protectionCheckRows(checks: MutationProtectionChecks): { key: ke
       detail: `SG–SG 기준 ${checks.disulfide.threshold_A} Å 이하 · 짝 ${checks.disulfide.pairs}개` },
     { key: "catalytic_residue_database", label: PROTECTION_CHECK_LABEL.catalytic_residue_database,
       status: status(checks.catalytic_residue_database.status),
-      detail: `${NULL_TEXT} (${mutationReasonText(checks.catalytic_residue_database.reason)})` },
+      detail: catalyticCheckDetail(checks.catalytic_residue_database) },
   ];
+}
+
+// ---- M26 catalytic residue check display (status, reason, chains, rows; nothing recounted) ----
+
+/** Catalytic check reasons ("annotation_not_given" means the reaction knowledge result here, not the KLIFS one). */
+export const CATALYTIC_REASON_LABEL: Record<string, string> = {
+  annotation_not_given: "효소 반응 지식 결과를 고르지 않음",
+  chains_not_covered: "위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음",
+  not_implemented: "구현하지 않음",
+};
+/** `uncovered_chains[].coverage` (closed, four values). */
+export const UNCOVERED_COVERAGE_LABEL: Record<MutationUncoveredCoverage, string> = {
+  chain_not_listed: "이 체인은 M-CSA 행에 없음",
+  pdb_not_in_snapshot: "이 PDB ID는 스냅샷에 없음",
+  not_checked: "결과가 이 체인의 M-CSA를 검사하지 않음(PDB ID 없음)",
+  not_in_annotation: "고른 효소 반응 지식 결과에 이 체인이 없음",
+};
+/** M-CSA row reasons of the conflict / unmatched lists (same names as the reaction knowledge area). */
+export const CATALYTIC_ROW_REASON_LABEL: Record<string, string> = {
+  residue_name_differs: "구조 잔기 이름이 M-CSA 잔기 이름과 다름", mcsa_rows_disagree: "M-CSA 행끼리 잔기 이름이 다름",
+  non_standard_code: "M-CSA 잔기 이름이 표준 20종이 아님", no_author_number: "M-CSA에 저자 번호가 없음",
+  residue_not_in_structure: "이 번호의 사슬 잔기가 구조에 없음", ambiguous_residue_number: "같은 번호의 사슬 잔기가 여럿",
+  insertion_code_present: "구조 잔기에 삽입 코드가 있음",
+};
+
+function labelled(table: Record<string, string>, code: string): string {
+  const label = own(table, code);
+  return label ? `${label} (${code})` : code;
+}
+
+export function catalyticReasonText(code: string): string { return labelled(CATALYTIC_REASON_LABEL, code); }
+export function uncoveredCoverageText(code: string): string { return labelled(UNCOVERED_COVERAGE_LABEL, code); }
+
+export interface CatalyticBadge { text: string; detail: string }
+
+/**
+ * The "촉매 잔기 검사 안 함" badge of a candidate set wherever a set is picked (M20 list, M21, M23, M24, M25): none for
+ * `checked`; UK2 for `not_available` (made before the check existed) and `not_checked` (see the reason), each with its
+ * own detail; any other non-null value is also not `checked`. `null` (a row that does not validate) has no badge.
+ */
+export function catalyticBadge(status: string | null | undefined, reason: string | null = null): CatalyticBadge | null {
+  if (status === null || status === undefined || status === "checked") return null;
+  if (status === "not_available")
+    return { text: CATALYTIC_NOT_CHECKED_BADGE,
+      detail: "이 집합은 촉매 잔기 검사가 생기기 전(v1)에 만들어졌습니다 (not_available)." };
+  if (status === "not_checked")
+    return { text: CATALYTIC_NOT_CHECKED_BADGE,
+      detail: reason ? `검사하지 않은 이유: ${catalyticReasonText(reason)} (not_checked).`
+        : "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)." };
+  return { text: CATALYTIC_NOT_CHECKED_BADGE, detail: `목록에 없는 상태 (${status})` };
+}
+
+/**
+ * Stored row count of the catalytic check: a number only when `covered_chains` is not empty; otherwise "—" (the
+ * server stores 0 when no chain was covered, and that 0 is not a count of anything).
+ */
+export function catalyticRowCountText(check: MutationCatalyticCheck, key: "matched_rows" | "conflict_rows" |
+  "unmatched_rows"): string {
+  if (!("covered_chains" in check)) return `${NULL_TEXT} (${catalyticReasonText(check.reason)})`;
+  return check.covered_chains.length ? `${check[key]}개` : `${NULL_TEXT} (M-CSA가 다룬 체인 없음)`;
+}
+
+export interface CatalyticItemView { chainAuth: string; mcsaId: number; residueIndex: number; reasonText: string;
+  /** Prominent: where M-CSA lists the residue (author number, M-CSA residue number, name as written). */
+  positionText: string; residueText: string }
+
+export function catalyticItemView(item: MutationCatalyticItem): CatalyticItemView {
+  return { chainAuth: item.chain_auth, mcsaId: item.mcsa_id, residueIndex: item.residue_index,
+    reasonText: labelled(CATALYTIC_ROW_REASON_LABEL, item.reason),
+    positionText: `체인 ${item.listed.chain_name} · M-CSA가 적은 번호 auth ${item.listed.auth_resid ?? NULL_TEXT} ` +
+      `(resid ${item.listed.resid ?? NULL_TEXT}) · ${item.listed.code}`,
+    residueText: item.residue === null ? `${NULL_TEXT} (구조에서 이 잔기 하나로 정하지 못함)`
+      : `구조 잔기 ${residueText(item.residue)} (${residueLabelText(item.residue)}, 모델 ${item.residue.model_number})` };
+}
+
+export interface CatalyticCheckView {
+  status: MutationCatalyticStatus | string; statusText: string; reasonText: string | null; annotation: string | null;
+  /** null = no annotation given or v1 (nothing checked); [] = an annotation covering none of the chains. */
+  coveredChains: string[] | null; coveredText: string;
+  uncovered: { chainAuth: string; coverage: string; coverageText: string }[] | null;
+  rowCounts: { matched: string; conflict: string; unmatched: string };
+  conflicts: CatalyticItemView[] | null; unmatched: CatalyticItemView[] | null;
+  note: string; badge: CatalyticBadge | null; limitation3: string;
+}
+
+/** The catalytic part of a set's protection checks, as stored (M26 spec 8.3, 10.2). */
+export function catalyticCheckView(check: MutationCatalyticCheck): CatalyticCheckView {
+  const annotated = "covered_chains" in check;
+  const base = { status: check.status, statusText: `${CHECK_STATUS_LABEL[check.status] ?? check.status} (${check.status})`,
+    reasonText: check.reason === null ? null : catalyticReasonText(check.reason),
+    badge: catalyticBadge(check.status, check.reason),
+    limitation3: mutationLimitationsFor(check.status)[2] };
+  if (!annotated) {
+    const why = `${NULL_TEXT} (${catalyticReasonText(check.reason)})`;
+    return { ...base, annotation: null, coveredChains: null, coveredText: why, uncovered: null,
+      rowCounts: { matched: why, conflict: why, unmatched: why }, conflicts: null, unmatched: null,
+      note: check.status === "not_available" ? CATALYTIC_NOTE_V1 : CATALYTIC_NOT_CHECKED_BADGE };
+  }
+  return { ...base, annotation: check.annotation, coveredChains: [...check.covered_chains],
+    coveredText: check.covered_chains.length ? check.covered_chains.join(", ") : `${NULL_TEXT} (M-CSA가 다룬 체인 없음)`,
+    uncovered: check.uncovered_chains.map(item => ({ chainAuth: item.chain_auth, coverage: item.coverage,
+      coverageText: uncoveredCoverageText(item.coverage) })),
+    rowCounts: { matched: catalyticRowCountText(check, "matched_rows"),
+      conflict: catalyticRowCountText(check, "conflict_rows"), unmatched: catalyticRowCountText(check, "unmatched_rows") },
+    conflicts: check.conflicts.map(catalyticItemView), unmatched: check.unmatched.map(catalyticItemView),
+    note: check.status === "checked" ? CATALYTIC_NOTE : CATALYTIC_NOT_CHECKED_BADGE };
+}
+
+/** Detail cell of the catalytic row in the protection check table. */
+export function catalyticCheckDetail(check: MutationCatalyticCheck): string {
+  if (!("covered_chains" in check)) return `${NULL_TEXT} (${catalyticReasonText(check.reason)})`;
+  const view = catalyticCheckView(check);
+  const uncovered = view.uncovered?.length
+    ? view.uncovered.map(item => `${item.chainAuth} ${item.coverageText}`).join(", ") : "없음";
+  return `결과 ${check.annotation} · 다룬 체인 ${view.coveredText} · 다루지 않은 체인 ${uncovered} · ` +
+    `대응됨 ${view.rowCounts.matched} · 충돌 ${view.rowCounts.conflict} · 대응 없음 ${view.rowCounts.unmatched}`;
+}
+
+/**
+ * The catalytic cell of a position row: v1 (no key) and null are "—" with the reason (never "없음"); [] = checked, no
+ * matched row; entries = the M-CSA entry IDs (reference identifiers), plus "해제됨" when the position is released.
+ */
+export function catalyticProtectionText(protection: Pick<MutationPosition["protection"], "catalytic" | "released">): string {
+  const catalytic = protection.catalytic;
+  if (catalytic === undefined) return `${NULL_TEXT} (촉매 잔기 검사 전 v1 집합)`;
+  if (catalytic === null) return `${NULL_TEXT} (이 체인의 촉매 잔기를 검사하지 않음)`;
+  if (!catalytic.length) return "대응된 M-CSA 촉매 잔기 행 없음(검사함)";
+  const entries = catalytic.map(entry => `M-CSA ${entry.mcsa_id} 잔기 순번 ${entry.residue_index}` +
+    (entry.is_reference ? " · 기준 구조" : "")).join(", ");
+  return protection.released ? `${entries} · ${CATALYTIC_RELEASED_TEXT}` : entries;
 }
 
 /** Stored counts of one set as text (positions, candidates, exclusions, releases). */
@@ -613,11 +895,11 @@ export function mutationReportMatches(artifact: MutationReportArtifact, setHandl
 
 const FORBIDDEN = /친화|ΔΔG|안정성|순위|추천|최적|개선|활성|예측|좋은|유망|안전|\brank|\bbest|optimal|improv|recommend|affinity|stabili|predict/gi;
 
-/** Forbidden words found in screen text, line by line; a line equal to a fixed limitation sentence is exempt. */
+/** Forbidden words found in screen text, line by line; a line equal to a fixed limitation line is exempt. */
 export function mutationForbiddenWords(text: string): string[] {
   const found: string[] = [];
   for (const line of text.split("\n")) {
-    if (MUTATION_LIMITATIONS.includes(line)) continue;
+    if (MUTATION_FIXED_LINES.includes(line)) continue;
     for (const match of line.matchAll(FORBIDDEN)) found.push(match[0]);
   }
   return found;
