@@ -603,7 +603,7 @@
 - **진행 중이던 M25 단백질 루프**: 계산 단계(모델 단계와 이미 만든 모델의 도킹 단계 모두)가 `jev_loop_store.step_capability`의 pin 비교로 412 `capability_unavailable`(`capability.reason_code: "missing_configuration"`)이고 아무것도 쓰지 않는다. 막힘은 계산 단추를 누를 때 응답으로만 보이고 루프 읽기 바이트는 같다. 끝난 루프는 끝 이벤트 시점으로 동결이라 보이는 값이 바뀌지 않고, 리간드 루프는 M18 pin만 쓰므로 영향이 없다. 그 루프를 끝내고 새 루프를 만들어 이어 간다(새 루프 풀은 v1·v2 집합을 모두 받음).
 
 ### git worktree에서 `-I`로 띄운 작업 모듈은 주 체크아웃의 `mw`를 import한다 (M26)
-- **원인**: M21·M23 작업 모듈과 guardian은 `<python> -I <작업 모듈>`로 뜬다. `-I`는 `PYTHONPATH`를 무시하므로 worktree에서 `PYTHONPATH=<worktree>/backend`를 줘도 자식 프로세스의 `mw`는 editable 설치가 가리키는 주 체크아웃의 `backend/mw`에서 온다(이 문서를 쓰며 확인: `PYTHONPATH=<worktree>/backend .venv/bin/python -I -c 'import mw'`가 주 체크아웃 경로를 출력, `-I` 없이는 worktree 경로). 그래서 worktree에서 고친 `mw` 코드(예: `mutation_candidates.py`)는 작업 모듈 자식 프로세스에 반영되지 않고, 서버 프로세스와 자식이 서로 다른 `mw`를 쓴다.
+- **원인**: M21·M23 작업 모듈과 guardian은 `<python> -I <작업 모듈>`로 뜬다. `-I`는 `PYTHONPATH`를 무시하므로 worktree에서 `PYTHONPATH=<worktree>/backend`를 줘도 자식 프로세스의 `mw`는 editable 설치가 가리키는 주 체크아웃의 `backend/mw`에서 온다(2026-10-09 확인: `PYTHONPATH=<worktree>/backend .venv/bin/python -I -c 'import mw'`가 주 체크아웃 경로를 출력, `-I` 없이는 worktree 경로). 그래서 worktree에서 고친 `mw` 코드(예: `mutation_candidates.py`)는 작업 모듈 자식 프로세스에 반영되지 않고, 서버 프로세스와 자식이 서로 다른 `mw`를 쓴다.
 - **대응**: 작업 모듈 자식 프로세스를 띄우는 시험·QA·실서버 가져오기는 주 체크아웃의 작업 브랜치에서 돌린다(위 "git worktree에서 테스트가 주 체크아웃의 코드를 돌린다"와 같은 원인의 다른 경로). 가져오기 명령 시험은 반대로 `-I`와 `mw`·네트워크 차단으로 그 스크립트가 `mw` 없이 도는지 확인한다.
 
 ### 옛 오프스크린 하네스·실행기의 v1 기대가 v2 집합에서 깨졌다 (M26)
@@ -624,7 +624,7 @@
 - 그룹을 동시에 돌릴 때 부하로 흔들리는 프로세스 시험 둘(`test_pocket_jobs.py::test_running_engine_is_stopped_with_its_process_group[output_files]`, `test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)이 최종 게이트에서 실패했고 단독 재실행에서 7 passed였다. 독립 증거 검토의 재실행도 단독 7 passed, 다른 Stop 훅 pytest와 겹치면 `[qvina-worker]` 변형이 다시 실패했다(`gate.txt` 보충). 실패하면 코드 문제로 단정하지 말고 그 시험만 단독으로 다시 돌려 기록한다.
 
 ### 증거 장부의 커밋 해시는 역사 정리 전 값이다 (M26)
-- 실제 외부 자료 보고서 두 개가 든 예비 증거 커밋을 로컬 작업 브랜치(어디에도 올리지 않음)에서 `git filter-branch`로 빼면서 브랜치 끝 8개 커밋의 해시가 바뀌었다. 증거 안의 `gitHead`·고정 해시는 정리 전 값이다: `dac2755` = 지금 `06679e4`, 소스 고정 `1735338` = 지금 `3fcac53`. 트리는 전후 같다(트리 해시 `5f0c5c43…`). 대응표는 `docs/tracking/m26-acceptance.md`에도 있다.
+- 실제 외부 자료 보고서 두 개가 든 예비 증거 커밋을 로컬 작업 브랜치(어디에도 올리지 않음)에서 `git filter-branch`로 빼면서 브랜치 끝 9개 커밋의 해시가 바뀌었다. 증거 안의 `gitHead`·고정 해시는 정리 전 값이다: `dac2755` = 지금 `06679e4`, 소스 고정 `1735338` = 지금 `3fcac53`. 트리는 전후 같다(트리 해시 `5f0c5c43…`). 대응표는 `docs/tracking/m26-acceptance.md`에도 있다.
 
 ## 동작 원리
 

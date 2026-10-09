@@ -3,7 +3,7 @@
 - 판정: **완료** (2026-10-09 UTC). main 병합 전이다. 병합 해시는 병합 뒤 기록한다.
 - 브랜치: `dryforge/m26-reaction-knowledge` (`phase/m26-reaction-knowledge` = main `72f4d1e`에서 분기). M25는 시작 전에 main에 병합되어 있었다(`877d5cf`, 기록 `72f4d1e`).
 - 고정 소스: `3fcac53`(T10 독립 코드 검토 수정). 고정 뒤 제품 소스(`backend/mw`·`frontend/src`·`frontend/app`·`design`·`config`·`scripts`) 변경은 없다. 고정 뒤 커밋은 둘째 가져오기 기록(`06679e4`), M23 오프스크린 하네스 한 파일(`frontend/tests/offscreen/sequence-ga-flow.cjs`, `8964179`), 최종 수락·회귀 증거(`01b09b9`, 작업 중 예비 증거 폴더 `fixture-stage/`·`real-stage/`·`regression-prep/`를 대체하고 지움), 게이트 기록(`6430e2a`), 독립 증거 검토 메모(`61c9d20`), 이 기록 문서들뿐이다.
-- 해시 대응: 증거 장부·README의 `gitHead` 값은 역사 정리 전 해시다. `dac2755`는 지금 `06679e4`, `1735338`(소스 고정 당시)은 지금 `3fcac53`이다. 예비 증거 커밋에 들어 있던 실제 외부 자료 보고서 두 개를 빼려고 어디에도 올리지 않은 로컬 작업 브랜치의 끝 8개 커밋을 `git filter-branch`로 정리했고, 브랜치 끝의 트리 해시(`5f0c5c43…`)는 정리 전후 같다.
+- 해시 대응: 증거 장부·README의 `gitHead` 값은 역사 정리 전 해시다. `dac2755`는 지금 `06679e4`, `1735338`(소스 고정 당시)은 지금 `3fcac53`이다. 예비 증거 커밋에 들어 있던 실제 외부 자료 보고서 두 개를 빼려고 어디에도 올리지 않은 로컬 작업 브랜치의 끝 9개 커밋을 `git filter-branch`로 정리했고, 브랜치 끝의 트리 해시(`5f0c5c43…`)는 정리 전후 같다.
 - 수락 증거: `docs/qa/m26-reaction-20261008/`(`preflight-network.md`·`preflight-local.md` 착수 확인, `v1-baseline/` v1 기준선, `import1.md`·`import2.md` 실서버 가져오기, `network-ledger.txt` 요청 장부 95줄, `gate.txt` 게이트, `acceptance/` 새 기능 수락, `regression/m25/` 회귀 사슬, `regression/m23/` M23 단독 재실행, `regression-chain.txt` 사슬 기록). 256 KiB를 넘는 텍스트 증거 53개(`m13-regression` 51개 331,913,811 B, `m14-regression` 1개 1,191,724 B, `m15-regression` 1개 590,107 B)는 결정 0020에 따라 Git 제외 `frontend/tests/offscreen/artifacts/m26-final/export-full/<폴더>/`로 옮겼다(해시는 각 증거 폴더의 `ARCHIVED-EVIDENCE.sha256`, 이 기록을 쓸 때 `shasum -a 256 -c` 53개 모두 OK).
 - 외부 요청: 수락·회귀 QA의 브라우저 비-loopback 요청 0, 제공자 호출 0, OpenRouter 호출 0. 가져오기 명령 시험은 가짜 전송과 `127.0.0.1` 로컬 서버만 쓴다. 실서버 요청은 사용자 한도 안의 개발·검증 요청뿐이다: 탐색 48/100, 전체 가져오기 2/2(각 22요청), RCSB mmCIF 3/3(장부 95줄). 가져오기 요청에는 키·쿠키·인증 헤더가 없고, 두 세트 폴더와 명령 출력에서 그런 문자열은 0건이다(`import1.md`·`import2.md`).
 
@@ -32,7 +32,7 @@
 - 테스트: 백엔드 새 파일 여섯(`test_reaction_constants`·`test_reaction_snapshots`·`test_reaction_knowledge`·`test_reaction_knowledge_tool`·`test_reaction_knowledge_api`·`test_reaction_knowledge_reports`) 449개, 스크립트 `test_import_reaction_references.py` 213개·`test_m26_offscreen_acceptance.py` 45개(Stop 훅 `SCRIPT_TESTS`에 추가), 프런트 `tests/reaction-knowledge.test.cjs`·`tests/reaction-knowledge-panel.test.cjs`. Fixture: `backend/tests/fixtures/reaction/`(작업별 하위 폴더 `t1`·`t2`·`t3`·`t6`·`t9`·`t9a`, 합성 표시와 `SYNTHETIC-PROVENANCE-<작업>.md`, 실제 응답 조각 없음), 세트 만들기 도우미 `tests/reaction_fixture.py`, M20 v2 도우미 `tests/m20_catalytic_fixture.py`·`tests/m20_v2_fixture.py`, 공개 구조 `public_1s9i.cif`·`public_1a30.cif`·`public_1a4i.cif`(+ `.provenance.json`).
 
 ## 사용자 결정 (2026-10-08·09)
-근거는 결정 0034. 사용자는 모든 질문에서 추천안을 골랐다(자유 입력 없음): ① 공개 서버에서 가져오는 명령 ② M-CSA에 적힌 PDB 항목 기준 ③ M20 촉매 칸 켬 ④ 뷰어 표시 없음 ⑤ 역할 문구 원문 ⑥ 대응됨만 보호 근거 ⑦ 실서버 한도(가져오기 2·탐색 100·RCSB 3) ⑧ 수집 범위 ⑨ v1·v2 모두 받음 ⑩ 원자적 + 파생 건너뜀 기록 ⑪ 대응됨 행 전부 보호 ⑫ 다루지 않은 체인은 검사하지 않음 ⑬ 직접 지정 실패는 전체 거절. 착수 확인 뒤 ⑭ `main_annotation` 저장 안 함 ⑮ `demerged`와 대상 목록 ⑯ Rhea 대표 반응 전부 ⑰ QA 구조 `1S9I`·`1A30`·`1A4I`, 실데이터 사전 검증 뒤 ⑱ 동형체 위치 부위만 건너뜀. 세션이 정한 세부(검사 범위 규칙, 미리 고르기, 상태 기준 표시, 닫힌 이름, 실측 반영)는 결정 0034의 "이 세션이 정한 것"이다. 고정 문장 RK1–RK6·UK1–UK4·M20 셋째 문장 변형 둘·J6n·J6c 문구는 초안이다(승인 대기: 사용자 최종 확인).
+근거는 결정 0034. 사용자는 모든 질문에서 추천안을 골랐다(자유 입력 없음): ① 공개 서버에서 가져오는 명령 ② M-CSA에 적힌 PDB 항목 기준 ③ M20 촉매 칸 켬 ④ 뷰어 표시 없음 ⑤ 역할 문구 원문 ⑥ 대응됨만 보호 근거 ⑦ 실서버 한도(가져오기 2·탐색 100·RCSB 3) ⑧ 수집 범위 ⑨ v1·v2 모두 받음 ⑩ 원자적 + 파생 건너뜀 기록 ⑪ 대응됨 행 전부 보호 ⑫ 다루지 않은 체인은 검사하지 않음 ⑬ 직접 지정 실패는 전체 거절. 착수 확인 뒤 ⑭ `main_annotation` 저장 안 함 ⑮ `demerged`와 대상 목록 ⑯ Rhea 대표 반응 전부 ⑰ QA 구조 `1S9I`·`1A30`·`1A4I`, 실데이터 사전 검증 뒤 ⑱ 동형체 위치 부위만 건너뜀. 세션이 정한 세부(검사 범위 규칙, 미리 고르기, 상태 기준 표시, 닫힌 이름, 실측 반영)는 결정 0034의 "조율 세션이 정한 것"이다. 고정 문장 RK1–RK6·UK1–UK4·M20 셋째 문장 변형 둘·J6n·J6c 문구는 초안이다(승인 대기: 사용자 최종 확인).
 
 ## 착수 확인 (`preflight-network.md`·`preflight-local.md`, 기준 `72f4d1e`)
 - 실제 응답: M-CSA API는 항목 1,003개·11쪽이고 `page_size` 상한 100(더 크게 주면 조용히 100으로 자름), `chain_name`은 저자 체인, `resid`는 label 번호·`auth_resid`가 저자 번호, 잔기마다 `residue_chains` 0 또는 1개, `is_reference`는 모두 참. UniProt `/uniprotkb/accessions`는 한 요청 1,000개이고 비활성·없는 accession을 이유 없이 빼므로 하나씩 분류한다. Rhea는 REST 한 요청으로 대표 반응 전부(5열 TSV). 허용 호스트는 셋으로 정했다.
@@ -42,7 +42,7 @@
 
 ## 검토 (Opus 5.5, 구현하지 않은 서브에이전트)
 - 독립 의도 감사(고정 전): 여덟 항목과 재점검 다섯 항목을 사용자 결정이나 사용자 원칙·선례로 닫았다(결정 0034).
-- 독립 명세 대조 4건: T2·T4·T6a 통과, 작은 결함 하나는 T4에서 고쳤다.
+- 독립 명세 대조 3건: T2·T4·T6a 통과, 작은 결함 하나는 T4에서 고쳤다.
 - 독립 코드 검토 2건(T10, 고정 전): 백엔드·가져오기·보안 **approved**, 프런트·하네스 막는 지적 셋 → `3fcac53`에서 F1–F6으로 반영했다(실패 단계 패널 HTML·보고서 내려받기를 해시만 남김, 하네스·화면 금지어에 효과·중요·핵심·필수, 덮인 체인이 없을 때 `catalytic_residue` 제외 수를 "—"로, 반응 결과 목록·상세 읽기가 실패해도 M20 요청 영역이 쓸 수 있음, UK2 표시 문구·상세 확인과 real 단계 사례가 헛되이 통과하지 않게).
 - **독립 증거 검토(T12, 고정 뒤): 막는 지적 하나**(예비 증거 커밋에 실제 외부 자료 보고서 두 개가 들어 있음 → 위 "해시 대응"의 역사 정리), 조언 다섯을 `61c9d20`에서 증거 메모로 반영했다(200 상태 주장의 범위, 회귀 사슬 기록, 게이트 세부 등).
 
