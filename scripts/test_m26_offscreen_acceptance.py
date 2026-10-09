@@ -221,6 +221,20 @@ def test_real_plan_names_the_public_structures_and_needs_no_synthetic_label():
     assert entries["a4i"]["A"]["entries"] == [389, 458]
     assert entries["s9i-derived"]["A"]["rowsInclude"] == {"282/A194": "conflict:residue_name_differs"}
     assert entries["ubq"]["A"]["coverage"] == "pdb_not_in_snapshot"
+    # spec §12: 1HSG / 1MQ4 / 1UBQ not in the snapshot, both real M15 maps (1S9I and 1MQ4) link UniProt sites
+    assert {entries[key]["A"]["coverage"] for key in ("hsg", "mq4-linked")} == {"pdb_not_in_snapshot"}
+    assert {spec["pdbId"] for spec in plan["maps"]} == {"1S9I", "1MQ4"}
+    assert all(entries[key]["A"]["link"] is None for key in ("s9i-linked", "mq4-linked"))
+    # the M20 flow: a structure whose two chains are covered, so the all-chains result gives a checked set and the
+    # chain-A result chains_not_covered; then the labelled derived 1S9I gives a checked set with a conflict row
+    mutation = plan["mutation"]
+    assert mutation["structure"]["name"] == "public_1a30.cif" and mutation["expect"]["allUncovered"] == []
+    assert mutation["expect"]["partialUncovered"] == [{"chain_auth": "B", "coverage": "not_in_annotation"}]
+    assert {residue["chain"] for residue in mutation["positions"]["residues"]} == set(mutation["chainsAll"])
+    derived = mutation["derived"]
+    assert "SYNTHETIC" in derived["structure"]["provenance"] and derived["expect"]["status"] == "checked"
+    assert derived["expect"]["conflicts"] == [["A", 282, 0]]
+    assert "SYNTHETIC" in plan["structures"]["s9i_derived"]["provenance"]
 
 
 # ---------------------------------------------------------------------------------------------- judgement

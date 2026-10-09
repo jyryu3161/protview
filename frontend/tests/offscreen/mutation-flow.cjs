@@ -47,6 +47,9 @@ const LIMITATIONS = [
   "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다.",
   "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다.",
 ];
+// M26: sets the tool builds now are v2; without an M-CSA annotation sentence 3 is its not_checked variant (LIMIT3 below,
+// M26 spec §8.4); LIMITATIONS stays the v1 text of stored v1 sets.
+const limitationsNotChecked = () => [LIMITATIONS[0], LIMITATIONS[1], LIMIT3.not_checked, LIMITATIONS[3], LIMITATIONS[4]];
 const NO_RUN_REASON = "run이 없습니다. 구조 분석 탭에서 run을 먼저 고르세요.";
 const NO_PREPARED_REASON = "이 run에 전처리 구조가 없습니다. 구조 분석 탭에서 구조를 먼저 전처리하세요.";
 const KLIFS_NOTICE = "KLIFS 주요 부위 보호를 검사하지 않음";
@@ -421,8 +424,9 @@ async function openReady(page) {
 async function chooseStructure(page, prepared) {
   await panel(page).locator(`label[data-mutation-structure="${prepared}"] input`).check();
   control(evidenceRef.value, "mutation-structures", { checked: prepared });
-  await waitFor(page, async () => (await testId(page, "mutation-ligand").locator("option").count()) > 1 ? true : null,
-    "structure residues read (ligand options)", 60000);
+  // residues read: ligand options listed, or the no-ligand note (a structure without ligands, e.g. 1A30 in the M26 run)
+  await waitFor(page, async () => (await testId(page, "mutation-ligand").locator("option").count()) > 1 ||
+    (await testId(page, "mutation-no-ligands").count()) > 0 ? true : null, "structure residues read (ligand options)", 60000);
 }
 const evidenceRef = { value: null };
 async function selectOptions(locator) {
@@ -718,7 +722,8 @@ async function modeMain(session, input, rec_, evidence, log) {
         assert.ok(value.klifsCells.length > 0 && value.klifsCells.every(text => text === "— (검사하지 않음)"), value.klifsCells.join("|"));
         assert.equal(value.listStatus, "not_checked");
         assert.ok(value.listText.includes("KLIFS 주요 부위 검사하지 않음"), value.listText);
-        assert.equal(value.catalytic, "not_available");
+        // M26: the tool builds v2 sets; without an M-CSA annotation the catalytic check is not_checked (v1: not_available)
+        assert.equal(value.catalytic, "not_checked");
         const positions = await storedPositions(page, runA, s0.handle);
         assert.ok(positions.every(row => row.protection.klifs_sites === null && !row.exclusion_reasons.includes("klifs_key_site")));
         return { klifs, rowText: value.rowText };
@@ -754,7 +759,7 @@ async function modeMain(session, input, rec_, evidence, log) {
         assert.equal(shownCounts, `위치 ${counts.positions}개 · 후보 위치 ${counts.candidate_positions}개 · 제외 ${counts.excluded_positions}개 · ` +
           `해제 ${counts.released_positions}개 · 후보 ${counts.candidates}개`);
         const seen = await checkWording("S0 opened");
-        assert.deepEqual(seen.limits, LIMITATIONS);
+        assert.deepEqual(seen.limits, limitationsNotChecked());
         return { maxDelta, counts, metal: metalRows.map(row => [resKey(row.residue), row.protection.metal.min_distance_A]) };
       });
   });
@@ -1273,7 +1278,7 @@ async function modeMain(session, input, rec_, evidence, log) {
       assert.equal(value.kind, "변이 후보 보고서");
       const saved = await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`);
       assert.equal(value.text, saved.markdown);
-      for (const sentence of LIMITATIONS) assert.ok(value.text.includes(sentence), `report lacks ${sentence}`);
+      for (const sentence of limitationsNotChecked()) assert.ok(value.text.includes(sentence), `report lacks ${sentence}`);
       return { kind: value.kind, markdownSha256: sha(Buffer.from(value.text)) };
     });
     for (const [label, format] of [["Markdown 다운로드", "markdown"], ["JSON 다운로드", "json"]]) {
@@ -1588,6 +1593,7 @@ async function verifyCatalyticSet(page, run, handle, want) {
     limitStatus: await testId(page, "mutation-limitations").getAttribute("data-catalytic-status"),
     reasonCounts: clean(await testId(page, "mutation-reason-counts").textContent()),
     reasonFilter: (await selectOptions(testId(page, "mutation-filter-reason"))).map(item => item.value).filter(Boolean),
+    lists: await testId(page, "mutation-catalytic-lists").count(),
     cells: await catalyticCells(page) };
   assert.equal(check.status, want.status, `${handle} catalytic status`);
   assert.equal(check.reason, want.reason, `${handle} catalytic reason`);
@@ -1620,6 +1626,7 @@ async function verifyCatalyticSet(page, run, handle, want) {
     for (const [key, text] of [["matched_rows", ui.matched], ["conflict_rows", ui.conflict], ["unmatched_rows", ui.unmatched]])
       assert.equal(text, check.covered_chains.length ? `${check[key]}개` : "— (M-CSA가 다룬 체인 없음)", key);
     if (check.covered_chains.length && (check.conflicts.length || check.unmatched.length)) {
+      assert.equal(ui.lists, 1, "the conflict / unmatched lists are not shown");
       assert.deepEqual(ui.conflicts.map(item => [item.chain, item.id, item.index]),
         check.conflicts.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]));
       assert.deepEqual(ui.unmatchedList.map(item => [item.chain, item.id, item.index]),
@@ -1630,9 +1637,13 @@ async function verifyCatalyticSet(page, run, handle, want) {
         assert.ok(shown.text.includes(`auth ${item.listed.auth_resid ?? "—"}`) && shown.text.includes(item.listed.code) &&
           shown.text.includes(`(${item.reason})`), shown.text);
       });
-      if (want.conflicts) assert.deepEqual(check.conflicts.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]), want.conflicts);
-      if (want.unmatched) assert.deepEqual(check.unmatched.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]), want.unmatched);
+    } else {
+      // empty stored lists (real rows without conflict / unmatched): no list block, the counts read 0개 (checked)
+      assert.equal(ui.lists, 0, "a list block is shown for empty stored lists");
+      assert.deepEqual([ui.conflicts, ui.unmatchedList], [[], []]);
     }
+    if (want.conflicts) assert.deepEqual(check.conflicts.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]), want.conflicts);
+    if (want.unmatched) assert.deepEqual(check.unmatched.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]), want.unmatched);
     for (const row of positions) {
       const covered = check.covered_chains.includes(row.residue.chain_auth);
       if (!covered) { assert.equal(row.protection.catalytic, null, `${rkey(row.residue)} not covered`); continue; }
@@ -1839,6 +1850,42 @@ async function modeCatalytic(session, input, rec_, evidence, log) {
       return { handle: value.handle, cell, effects };
     });
     handles.s3 = s3.handle;
+  });
+
+  // ---- a second prepared structure whose result has a conflict row (plan.mutation.derived, real stage: the labelled
+  // synthetic derived 1S9I): the set is checked and the conflict row is in the prominent list, not protected
+  if (M.derived) await rec_.part("derived", [K("C-lists"), K("C-checked")], async () => {
+    const D = M.derived;
+    if (D.structure.provenance.includes("SYNTHETIC")) evidence.fixtureLabels.push(D.structure.provenance);
+    const second = await rec_.step("K10b-derived-upload", [], `Click 구조 분석, choose ${D.structure.name}, 구조 불러오기, 전처리; ` +
+      `지식·보고서 효소 반응 지식: PDB ID ${D.pdbId}, chains ${D.chains.join(",")} → 연결하기`, async () => {
+      await selectTab(page, "구조 분석");
+      const value = await uploadLoad(page, D.structure.file, D.structure.provenance);
+      await selectTab(page, "구조 분석");
+      const prepared = (await prepareManual(page)).prepared;
+      return { ...value, prepared, result: await linkReaction(page, run, prepared, D.pdbId, D.chains) };
+    }, async value => { assert.equal(value.file.sha256, D.structure.sha256); return value; });
+    evidence.inputs.push(second.file);
+    handles.derivedPrepared = second.prepared;
+    handles.rDerived = second.result;
+    const s4 = await rec_.step("K10c-derived-set", [K("C-lists"), K("C-checked")], "Click 단백질 공학, choose the second prepared " +
+      "structure: its result is pre-selected; set the plan's positions, click 후보 만들기 → the check status, the conflict row in " +
+      "the conflict list (not protected), the matched row protecting its position", async () => {
+      await openReady(page);
+      await chooseStructure(page, second.prepared);
+      const select = testId(page, "mutation-catalytic-annotation");
+      await waitFor(page, async () => await select.inputValue() === second.result ? true : null, "derived result pre-selected", 30000);
+      await setPositions(page, D.positions);
+      return create(page, run);
+    }, async value => {
+      assert.equal(value.ok, true, JSON.stringify(value.body).slice(0, 400));
+      assert.equal(value.args.catalytic_annotation, second.result);
+      const verified = await verifyCatalyticSet(page, run, value.handle, D.expect);
+      assert.ok(verified.protectedPositions.length > 0, "no position protected by a matched M-CSA row");
+      await checkWording("S4");
+      return { handle: value.handle, verified };
+    });
+    handles.s4 = s4.handle;
   });
 
   // ---- the stored v1 run (copied T1 fixture): v1 wording and mark

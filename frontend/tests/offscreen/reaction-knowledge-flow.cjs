@@ -676,6 +676,19 @@ function checkChainExpectation(chain, want, api) {
   if (want.linkStatuses) assert.deepEqual(chain.uniprot.features.map(feature => (feature.links ?? []).map(link => link.status)),
     want.linkStatuses, `${where} link statuses`);
   if (want.minLinked !== undefined) assert.ok((api.counts.linked_positions?.mapped ?? 0) >= want.minLinked, `${where} linked`);
+  if (want.linkedPositions) assert.deepEqual(api.counts.linked_positions, want.linkedPositions, `${where} linked positions`);
+  for (const [key, value] of Object.entries(want.isReference ?? {}))
+    assert.equal(mcsa.rows.find(row => rowKey(row) === key).is_reference, value, `${where} ${key} is_reference`);
+  for (const key of want.rolesGiven ?? []) {
+    const reference = mcsa.rows.find(row => rowKey(row) === key).reference;
+    assert.ok(reference.roles_summary !== "" && Array.isArray(reference.roles) && reference.roles.length > 0,
+      `${where} ${key}: no role text to compare verbatim`);
+  }
+  if (want.reactionsFilled) {
+    const value = chain.reactions;
+    assert.ok(value.ecs?.mcsa?.length && value.ecs?.uniprot?.length && value.mcsa_compounds?.length &&
+      value.uniprot_activities?.length, `${where} reaction section: a part is empty or not given`);
+  }
   if (want.rheaInSnapshot) {
     const seen = new Set((chain.reactions.uniprot_activities ?? []).flatMap(activity => activity.rhea.map(link => link.in_snapshot)));
     for (const value of want.rheaInSnapshot) assert.ok(seen.has(value), `${where} Rhea in_snapshot ${value}`);
@@ -864,7 +877,8 @@ function checkSnapshotReady(value, setHash) {
 // Built-in parts of the main mode → the case ids of the real stage (scripts/m26_offscreen_acceptance.py CASE_PLAN);
 // an id without a real-stage counterpart stays as it is (recorded, not judged in that stage).
 const REAL_CASE = { "R-snapshot-ready": "X-snapshot-real", "R-report": "X-report", "R-tabs": "X-tabs",
-  "R-wording": "X-wording", "R-no-zero": "X-no-zero", "R-uniprot-link": "X-uniprot-link" };
+  "R-wording": "X-wording", "R-no-zero": "X-no-zero", "R-uniprot-link": "X-uniprot-link",
+  "R-request-defaults": "X-request-defaults", "R-results-list": "X-results-list", "R-m20-uk3": "X-m20-uk3" };
 
 async function modeMain(session, input, rec_, evidence, log) {
   const { page, app } = session;
@@ -875,6 +889,8 @@ async function modeMain(session, input, rec_, evidence, log) {
   evidence.handles.maps = ctx.maps;
   evidence.handles.links = ctx.links;
   if (plan.synthetic) evidence.fixtureLabels.push(plan.synthetic);
+  // labelled synthetic inputs (e.g. the derived 1S9I of the real stage) are named in the ledger as well
+  for (const item of Object.values(plan.structures)) if (item.provenance.includes("SYNTHETIC")) evidence.fixtureLabels.push(item.provenance);
   const runA = await rec_.step("M01-new-run", [], "Click 구조 분석, 새 run (run A)", () => newRun(page), async id => ({ run: id }));
   evidence.runs.A = runA;
   // ---- every planned structure through the structure screen (prepared ones with 전처리), then the numbering maps
@@ -1148,7 +1164,7 @@ async function modeMain(session, input, rec_, evidence, log) {
   });
 
   // ---- M20 request area: newest same-structure result pre-selected (never submitted), UK3 for linked sites
-  if (plan.uk3 && ctx.links[plan.uk3.link]) await rec_.part("m20-uk3", ["R-m20-uk3"], () => rec_.step("M15-m20-uk3", ["R-m20-uk3"],
+  if (plan.uk3 && ctx.links[plan.uk3.link]) await rec_.part("m20-uk3", [C("R-m20-uk3")], () => rec_.step("M15-m20-uk3", [C("R-m20-uk3")],
     "Click 단백질 공학, choose the prepared structure in 변이 후보: the newest same-structure reaction knowledge result is " +
     "pre-selected; its sites are linked, so UK3 is shown; nothing is posted", async () => {
       const started = Date.now();

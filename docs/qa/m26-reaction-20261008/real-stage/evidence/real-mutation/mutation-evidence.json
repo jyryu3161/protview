@@ -1,0 +1,217 @@
+{
+  "schema": "m20_mutation_evidence@1",
+  "mode": "catalytic",
+  "runs": {
+    "A": "run_66d02af79a0541089ac5bfdb617a24b7"
+  },
+  "inputs": [
+    {
+      "name": "public_1a30.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, T9a download)"
+    },
+    {
+      "name": "derived_1s9i_A194_asp_to_glu.cif",
+      "path": "<repo>/backend/tests/fixtures/reaction/t9/derived_1s9i_A194_asp_to_glu.cif",
+      "bytes": 565129,
+      "sha256": "c7ffea5813ae8b74d8e457a9e04ab97d16d2d2d023f0eabdef958d31251969ad",
+      "provenance": "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+    }
+  ],
+  "handles": {
+    "prepared": "obj://run_66d02af79a0541089ac5bfdb617a24b7/prepared_structure/96cd9d72096e45f088d23bf67ead8c735470622287aaf39c073df48dcc940b25",
+    "s0": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/a527719910ca0941cf6cd143ef474018cdd6a49bbb250db95e76fdd6a20be785",
+    "rPartial": "obj://run_66d02af79a0541089ac5bfdb617a24b7/reaction_knowledge/e5c95935cb5114e516f4d9cf8a7529a5ded86b42d397659590908af5d1b9ba94",
+    "rAll": "obj://run_66d02af79a0541089ac5bfdb617a24b7/reaction_knowledge/a5c90719beeada58b3d37fdf3fbbf3c34e5ad19080367d1523ea45f83aff78e2",
+    "s1": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411",
+    "s2": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde",
+    "s3": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/af486aaa705a4ee59e0105ecc9e7ac2e4e52451b84a6a075dbd1a05d604a6331",
+    "derivedPrepared": "obj://run_66d02af79a0541089ac5bfdb617a24b7/prepared_structure/e6f0b84058face8fb9ade82c477ba849e39f4075291bd13ac78bad17027a13e9",
+    "rDerived": "obj://run_66d02af79a0541089ac5bfdb617a24b7/reaction_knowledge/5cdda0bced5776f05861c6cd63fe6102a0d6c923fb84578fecaec8b18ec66f81",
+    "s4": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/9120cf38844bf2846110e8135111c42903c8b96f8830df52377c98f18fc369f0"
+  },
+  "repro": null,
+  "fixtureLabels": [
+    "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_66d02af79a0541089ac5bfdb617a24b7",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_66d02af79a0541089ac5bfdb617a24b7/prepared_structure/96cd9d72096e45f088d23bf67ead8c735470622287aaf39c073df48dcc940b25"
+      },
+      {
+        "checked": "obj://run_66d02af79a0541089ac5bfdb617a24b7/prepared_structure/96cd9d72096e45f088d23bf67ead8c735470622287aaf39c073df48dcc940b25"
+      },
+      {
+        "checked": "obj://run_66d02af79a0541089ac5bfdb617a24b7/prepared_structure/e6f0b84058face8fb9ade82c477ba849e39f4075291bd13ac78bad17027a13e9"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ARG A:8 · label A:8"
+      },
+      {
+        "picked": "ASP A:25 · label A:25"
+      },
+      {
+        "picked": "THR A:26 · label A:26"
+      },
+      {
+        "picked": "ASP B:25 · label B:25"
+      },
+      {
+        "picked": "GLY B:27 · label B:27"
+      },
+      {
+        "picked": "ARG A:8 · label A:8"
+      },
+      {
+        "picked": "ASP A:25 · label A:25"
+      },
+      {
+        "picked": "THR A:26 · label A:26"
+      },
+      {
+        "picked": "ASP B:25 · label B:25"
+      },
+      {
+        "picked": "GLY B:27 · label B:27"
+      },
+      {
+        "picked": "GLU A:194 · label A:140"
+      },
+      {
+        "picked": "ASP A:221 · label A:167"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-catalytic-annotation": [
+      {
+        "value": "obj://run_66d02af79a0541089ac5bfdb617a24b7/reaction_knowledge/e5c95935cb5114e516f4d9cf8a7529a5ded86b42d397659590908af5d1b9ba94"
+      },
+      {
+        "value": "obj://run_66d02af79a0541089ac5bfdb617a24b7/reaction_knowledge/a5c90719beeada58b3d37fdf3fbbf3c34e5ad19080367d1523ea45f83aff78e2"
+      }
+    ],
+    "mutation-pick-release": [
+      {
+        "picked": "ASP A:25 · label A:25"
+      }
+    ],
+    "mutation-sets": [
+      {
+        "checked": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411"
+      },
+      {
+        "checked": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde"
+      },
+      {
+        "checked": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde"
+      }
+    ],
+    "mutation-candidate-model": [
+      {
+        "set": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411"
+      },
+      {
+        "set": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde"
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "chosen": "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411"
+      }
+    ],
+    "jev-kind-mutation": [
+      {
+        "checked": true
+      }
+    ]
+  },
+  "startedAt": "2026-10-09T03:32:35.169Z",
+  "pickers": {
+    "m20": {
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/a527719910ca0941cf6cd143ef474018cdd6a49bbb250db95e76fdd6a20be785": {
+        "status": "not_checked",
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411": {
+        "status": "not_checked",
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde": {
+        "status": "checked",
+        "mark": null,
+        "detail": null
+      }
+    },
+    "m21": {
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411": {
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유: 위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음 (chains_not_covered) (not_checked)."
+      },
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde": {
+        "mark": null,
+        "detail": null
+      }
+    },
+    "m23": {
+      "partial": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+      "all": 0
+    },
+    "m25": {
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/a527719910ca0941cf6cd143ef474018cdd6a49bbb250db95e76fdd6a20be785": 1,
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411": 1,
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde": 0
+    },
+    "m24": {
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/a527719910ca0941cf6cd143ef474018cdd6a49bbb250db95e76fdd6a20be785": 1,
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/62e558ada8ebeac541b5fef5c3643643639dacd7c7450137c5be273dabc25411": 1,
+      "obj://run_66d02af79a0541089ac5bfdb617a24b7/mutation_candidate_set/f9be9baafbfb62e06321afbded6be8a4a11c60d684ee38384c72ab17687e6bde": 0
+    }
+  },
+  "finishedAt": "2026-10-09T03:32:49.976Z",
+  "error": null,
+  "requestCount": 466
+}

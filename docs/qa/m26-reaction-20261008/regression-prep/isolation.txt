@@ -1,0 +1,30 @@
+M26 T9c 회귀 준비 — 반응 참조 폴더 격리와 실호출 대장 (2026-10-09)
+
+1. 기존 회귀 실행기(M13–M25)는 MW_REACTION_REFERENCE_DIR를 넘기지 않으므로(child_env 허용 목록) 그 백엔드는
+   코드 루트 기본값 <repo>/.deps/reaction_reference를 읽는다(preflight-local.md (h)).
+   선택: (1) 회귀 동안 이 폴더를 두지 않는다. 실행기 env는 바꾸지 않았다(선택지 (2) 미적용).
+   확인(이 작업 시작 때와 아래 실행들 뒤, 각각 `ls -d .deps/reaction_reference`):
+     ls: .deps/reaction_reference: No such file or directory
+   .deps 아래에 있는 반응 세트는 Git 제외 .deps/reaction_qa/import1/ 하나뿐이며 서버 기본 위치가 아니다.
+   그래서 기존 실행기의 백엔드에서 지식 탭 "효소 반응 지식" 영역은 not_installed(사용할 수 없음 + 가져오기 명령)를
+   보인다. 이 상태에서 아래 M20·M24 실행기와 M26 fixture 재확인이 모두 통과했다.
+
+2. 실행(8000·3000 포트 비움, 새 --root/--artifacts/--out, 차례로):
+   - M20: .venv/bin/python scripts/m20_offscreen_acceptance.py --root runs/m26-t9c-m20-a
+       --artifacts frontend/tests/offscreen/artifacts/m26-t9c/m20-a --kbase <home>/Projects/kbase_kinase
+       --out docs/qa/m26-reaction-20261008/regression-prep/m20-acceptance
+     → 종료 0, verdict pass, acceptance true (--regressions 없음)
+   - M24 fixture 단계(실호출 0, fixture 서버): .venv/bin/python scripts/m24_offscreen_acceptance.py
+       --root runs/m26-t9c-m24-a --artifacts frontend/tests/offscreen/artifacts/m26-t9c/m24-a
+       --out docs/qa/m26-reaction-20261008/regression-prep/m24-acceptance-fixture
+     → 종료 0, verdict pass, acceptance true, fixture-proof realProviderCalls 0 (--regressions 없음)
+   - M26 fixture 단계 재확인(공유 하네스 수정 뒤): .venv/bin/python scripts/m26_offscreen_acceptance.py
+       --root runs/m26-acceptance-20261009-fixture-recheck-a
+       --artifacts frontend/tests/offscreen/artifacts/m26-acceptance/fixture-recheck-20261009a
+       --kbase <home>/Projects/kbase_kinase --stages fixture
+       --out docs/qa/m26-reaction-20261008/regression-prep/m26-fixture-recheck
+     → 종료 0, 사례 39/39 통과 (acceptance false: real 단계를 같은 실행에서 돌리지 않음)
+
+3. M24 실호출 대장 runs/m24-live-ledger.json(Git 제외)은 fixture 단계가 열지도 쓰지도 않는다.
+   SHA-256 전후 같음: 8f1dbff704c3189d93cb6e28dd4542c6ae887c5f974d5013830a9dda96891a1b
+   (M24 fixture 단계 실행 전과 후, 개발 시도 포함 두 번 모두)

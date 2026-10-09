@@ -1,0 +1,412 @@
+{
+  "schema": "m26_reaction_evidence@1",
+  "mode": "main",
+  "stage": "real",
+  "runs": {
+    "A": "run_b2d8ab82085f4cb5894384171d302dfd",
+    "D": "run_7cbb1d99d74246bea29e26782d9915f8"
+  },
+  "inputs": [
+    {
+      "name": "public_1s9i.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1s9i.cif",
+      "bytes": 565105,
+      "sha256": "3db038cdfa23f9d2b8d88e552162fa153c915402827cb4ebb24936171ef08810",
+      "provenance": "public PDB entry 1S9I (RCSB CC0, T9a download)"
+    },
+    {
+      "name": "public_1a30.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, T9a download)"
+    },
+    {
+      "name": "public_1a4i.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1a4i.cif",
+      "bytes": 530681,
+      "sha256": "afa6bd62e3183d1e574ef4c61139148fe4d92c0a5bbac7575b5a418cd664e712",
+      "provenance": "public PDB entry 1A4I (RCSB CC0, T9a download)"
+    },
+    {
+      "name": "derived_1s9i_A194_asp_to_glu.cif",
+      "path": "<repo>/backend/tests/fixtures/reaction/t9/derived_1s9i_A194_asp_to_glu.cif",
+      "bytes": 565129,
+      "sha256": "c7ffea5813ae8b74d8e457a9e04ab97d16d2d2d023f0eabdef958d31251969ad",
+      "provenance": "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+    },
+    {
+      "name": "public_1ubq.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "provenance": "public PDB entry 1UBQ (repository fixture)"
+    },
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)"
+    }
+  ],
+  "handles": {
+    "structures": {
+      "s9i": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/cda9cbcad3297d53f1b5876df15143cdba8bb295a3988bb0fe6d5d8554184932",
+        "prepared": "obj://run_b2d8ab82085f4cb5894384171d302dfd/prepared_structure/e136fc284ea6895a11d2e887a61aa401ffebeea78c646f7f0057ef2ef0820bba"
+      },
+      "a30": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/1c2218048f2f5f63066660d65bb8c8bba089a6b5db0a5029149c38d3126fea3e",
+        "prepared": null
+      },
+      "a4i": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/cee8a9a65881fbfa661dff6c9685d0460848293d2e5bb6830829f37808b0d32e",
+        "prepared": null
+      },
+      "s9i_derived": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/5d1a326a0091c2d2bdcc250406f9fd9fb8d6884268a88f81e6133801f079b3bf",
+        "prepared": null
+      },
+      "ubq": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/0fb1cbce7fcc2468820ff24e96a87a6beaf4c3f89fd0296099dd99112220eb5f",
+        "prepared": null
+      },
+      "hsg": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/c9e1ad4755722fbcf51ad230eae03cdf7cbfab2c758d4fd6d16ffa58d78e6ec9",
+        "prepared": null
+      },
+      "mq4": {
+        "loaded": "obj://run_b2d8ab82085f4cb5894384171d302dfd/structure/b35d428254c691588a4214734c976ea09eb3348f16006b72238ea234d849ec34",
+        "prepared": "obj://run_b2d8ab82085f4cb5894384171d302dfd/prepared_structure/30cb469c74782910d29ad1f173a713ae45a40def89b113468716d7dea49cb151"
+      }
+    },
+    "maps": {
+      "s9i-map": "obj://run_b2d8ab82085f4cb5894384171d302dfd/residue_numbering_map/707f3a7be963bfcf5567596bbb7317539a243c81a516aa353ec9c9c4488d185c",
+      "mq4-map": "obj://run_b2d8ab82085f4cb5894384171d302dfd/residue_numbering_map/4bed8aaa969fc01f4d72fc0d59b6ac3bfabe307ec51fdc2f9814509a49abe340"
+    },
+    "links": {
+      "s9i": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/9b7e7d0db8f01f66af44b7a9f75d4a5c446cfce4c44ee7cf2dad5de00e0eaf96",
+      "a30": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/d9089ffd4797d6353b3458dc9eb00a36d0febfdb52f246ad1cb366a3a08b851c",
+      "a4i": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/b1de367fe64ec51161c4b2608771212ed133b2b09b6676bc88a193edc7e10d2c",
+      "s9i-derived": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/2cb1ee9463a6336635787757b2e3bf5c16cd5b26ce44b1ff0066690b3a80a026",
+      "ubq": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/b589329dd3d00b35d183feab3f7fd767a672676a909b4c460e4db954754d930a",
+      "hsg": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/fa789eadaa7d7098d49931b9b24209f643704f663a14191bc48b6bafed54963a",
+      "mq4-linked": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/2909077d7258cbaebc1132c74bbbf9db886ba5366cf680e34e8d4b6f19760765",
+      "s9i-linked": "obj://run_b2d8ab82085f4cb5894384171d302dfd/reaction_knowledge/5d2938252996da9246c624e3d921a41cc47952a0796ac62cb706b92386887cdb",
+      "dry-ubq": "obj://run_7cbb1d99d74246bea29e26782d9915f8/reaction_knowledge/eefa2a8c2088f45f6729e8a82ce6d47ee8fc6d2dd8df334f2f6d82225c3bbc9d"
+    },
+    "report": "obj://run_b2d8ab82085f4cb5894384171d302dfd/method_report_manifest/615f835caf8dfed1340548bb6c9e2ec6c14e6afd7cc5e75a9da52e1a7c40da2f"
+  },
+  "fixtureLabels": [
+    "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)",
+    "QA setup record: the dry-run run was made through POST /runs by the runner (the UI has no dry-run control); every step on it here is a real click"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_7cbb1d99d74246bea29e26782d9915f8",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_b2d8ab82085f4cb5894384171d302dfd",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "reaction-skipped-list": [
+      {
+        "opened": true
+      }
+    ],
+    "reaction-pdb-confirm": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "reaction-chain": [
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "B"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "B"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "B"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "B"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "A"
+      },
+      {
+        "checked": "A"
+      }
+    ],
+    "reaction-use-accession": [
+      {
+        "chain": "A",
+        "accession": "P36507"
+      }
+    ],
+    "reaction-link": [
+      {
+        "clicked": "s9i"
+      },
+      {
+        "clicked": "a30"
+      },
+      {
+        "clicked": "a4i"
+      },
+      {
+        "clicked": "s9i-derived"
+      },
+      {
+        "clicked": "ubq"
+      },
+      {
+        "clicked": "hsg"
+      },
+      {
+        "clicked": "mq4-linked"
+      },
+      {
+        "clicked": "s9i-linked"
+      },
+      {
+        "clicked": "dry-ubq"
+      }
+    ],
+    "reaction-numbering-map": [
+      {
+        "chosen": "obj://run_b2d8ab82085f4cb5894384171d302dfd/residue_numbering_map/4bed8aaa969fc01f4d72fc0d59b6ac3bfabe307ec51fdc2f9814509a49abe340"
+      },
+      {
+        "chosen": "obj://run_b2d8ab82085f4cb5894384171d302dfd/residue_numbering_map/707f3a7be963bfcf5567596bbb7317539a243c81a516aa353ec9c9c4488d185c"
+      }
+    ],
+    "reaction-results-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "reaction-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-structures": [
+      {
+        "checked": "obj://run_b2d8ab82085f4cb5894384171d302dfd/prepared_structure/e136fc284ea6895a11d2e887a61aa401ffebeea78c646f7f0057ef2ef0820bba"
+      }
+    ]
+  },
+  "observations": {
+    "X-uniprot-link": [
+      {
+        "step": "M03-map-s9i-map",
+        "description": "지식·보고서 잔기 번호 대응: choose the prepared s9i, chain A, tick 이 PDB ID가 맞습니다 (1S9I), SIFTS P36507, 실행"
+      },
+      {
+        "step": "M03-map-mq4-map",
+        "description": "지식·보고서 잔기 번호 대응: choose the prepared mq4, chain A, tick 이 PDB ID가 맞습니다 (1MQ4), SIFTS O14965, 실행"
+      },
+      {
+        "step": "L-mq4-linked",
+        "description": "Link mq4-linked: mq4 (prepared), PDB ID 1MQ4 (suggested) confirmed, chains A:O14965, map mq4-map; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "L-s9i-linked",
+        "description": "Link s9i-linked: s9i (prepared), PDB ID 1S9I (suggested) confirmed, chains A:P36507, map s9i-map; 연결하기 → the opened result equals the stored result"
+      }
+    ],
+    "X-tabs": [
+      {
+        "step": "M04-tabs-before",
+        "description": "Click 단백질 공학 and 리간드 설계·탐색: record their areas and digit-masked text before any link"
+      },
+      {
+        "step": "M16-tabs",
+        "description": "Click 지식·보고서: 구조 분석 hidden and inert, no run choice here; click 단백질 공학 and 리간드 설계·탐색: areas and masked text equal the record before the reaction work"
+      }
+    ],
+    "X-snapshot-real": [
+      {
+        "step": "M05-snapshot",
+        "description": "Click 지식·보고서: the snapshot block of the active set (hash, sources, license, rows, processed label, counts, skipped list via its summary, RK1 / UK1 / RK6)"
+      }
+    ],
+    "X-request-defaults": [
+      {
+        "step": "M06-defaults",
+        "description": "Nothing chosen by itself: structure select empty; choose a structure → the file's PDB ID in the field unconfirmed, no chain ticked, no numbering map, 연결하기 disabled"
+      }
+    ],
+    "X-matched-real": [
+      {
+        "step": "L-s9i",
+        "description": "Link s9i: s9i (loaded), PDB ID 1S9I (suggested) confirmed, chains A:P36507 B; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "L-s9i-linked",
+        "description": "Link s9i-linked: s9i (prepared), PDB ID 1S9I (suggested) confirmed, chains A:P36507, map s9i-map; 연결하기 → the opened result equals the stored result"
+      }
+    ],
+    "X-no-zero": [
+      {
+        "step": "L-s9i",
+        "description": "Link s9i: s9i (loaded), PDB ID 1S9I (suggested) confirmed, chains A:P36507 B; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "L-ubq",
+        "description": "Link ubq: ubq (loaded), PDB ID 1UBQ (suggested) confirmed, chains A; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "L-hsg",
+        "description": "Link hsg: hsg (loaded), PDB ID 1HSG (suggested) confirmed, chains A B; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "M10-results",
+        "description": "Click 결과 목록 다시 읽기: the list equals the stored list (newest first); counts not made are — with the reason"
+      }
+    ],
+    "X-two-chains": [
+      {
+        "step": "L-a30",
+        "description": "Link a30: a30 (loaded), PDB ID 1A30 (suggested) confirmed, chains A B; 연결하기 → the opened result equals the stored result"
+      }
+    ],
+    "X-two-entries": [
+      {
+        "step": "L-a4i",
+        "description": "Link a4i: a4i (loaded), PDB ID 1A4I (suggested) confirmed, chains A B; 연결하기 → the opened result equals the stored result"
+      }
+    ],
+    "X-conflict-derived": [
+      {
+        "step": "L-s9i-derived",
+        "description": "Link s9i-derived: s9i_derived (loaded), PDB ID 1S9I (suggested) confirmed, chains A; 연결하기 → the opened result equals the stored result"
+      }
+    ],
+    "X-pdb-not-in-snapshot": [
+      {
+        "step": "L-ubq",
+        "description": "Link ubq: ubq (loaded), PDB ID 1UBQ (suggested) confirmed, chains A; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "L-hsg",
+        "description": "Link hsg: hsg (loaded), PDB ID 1HSG (suggested) confirmed, chains A B; 연결하기 → the opened result equals the stored result"
+      },
+      {
+        "step": "L-mq4-linked",
+        "description": "Link mq4-linked: mq4 (prepared), PDB ID 1MQ4 (suggested) confirmed, chains A:O14965, map mq4-map; 연결하기 → the opened result equals the stored result"
+      }
+    ],
+    "X-results-list": [
+      {
+        "step": "M10-results",
+        "description": "Click 결과 목록 다시 읽기: the list equals the stored list (newest first); counts not made are — with the reason"
+      }
+    ],
+    "X-report": [
+      {
+        "step": "M12-report",
+        "description": "Open the result, click 보고서 만들기"
+      },
+      {
+        "step": "M13-download-markdown",
+        "description": "Click reaction-report-markdown: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M13-download-json",
+        "description": "Click reaction-report-json: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M14-library",
+        "description": "The knowledge-tab report list shows 효소 반응 지식 보고서; click it; content = stored Markdown"
+      }
+    ],
+    "X-m20-uk3": [
+      {
+        "step": "M15-m20-uk3",
+        "description": "Click 단백질 공학, choose the prepared structure in 변이 후보: the newest same-structure reaction knowledge result is pre-selected; its sites are linked, so UK3 is shown; nothing is posted"
+      }
+    ],
+    "X-wording": [
+      {
+        "step": "M17-wording",
+        "description": "Open each stored result: no rank / importance / activity / effect wording outside the fixed sentences and the verbatim reference strings"
+      }
+    ],
+    "X-dry-run": [
+      {
+        "step": "M19-dry-run-link",
+        "description": "In the dry-run run: link the same way (real clicks); the result is stored and opens"
+      }
+    ]
+  },
+  "startedAt": "2026-10-09T03:32:02.524Z",
+  "finishedAt": "2026-10-09T03:32:34.962Z",
+  "error": null,
+  "requestCount": 602
+}

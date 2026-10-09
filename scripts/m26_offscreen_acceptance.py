@@ -104,9 +104,10 @@ CASE_PLAN: dict[str, dict[str, list[str]]] = {
         "R-unset": ["fixture-unset"], "R-invalid": ["fixture-invalid"], "R-stale": ["fixture-stale"],
     },
     "real": {
-        "X-snapshot-real": ["real-main"], "X-matched-real": ["real-main"], "X-two-chains": ["real-main"],
-        "X-two-entries": ["real-main"], "X-conflict-derived": ["real-main"], "X-pdb-not-in-snapshot": ["real-main"],
-        "X-uniprot-link": ["real-main"], "X-report": ["real-main"], "X-dry-run": ["real-main"],
+        "X-snapshot-real": ["real-main"], "X-request-defaults": ["real-main"], "X-matched-real": ["real-main"],
+        "X-two-chains": ["real-main"], "X-two-entries": ["real-main"], "X-conflict-derived": ["real-main"],
+        "X-pdb-not-in-snapshot": ["real-main"], "X-uniprot-link": ["real-main"], "X-report": ["real-main"],
+        "X-dry-run": ["real-main"], "X-results-list": ["real-main"], "X-m20-uk3": ["real-main"],
         "X-no-zero": ["real-main", "real-mutation"], "X-wording": ["real-main", "real-mutation"],
         "X-tabs": ["real-main"], "X-m20": ["real-mutation"], "X-picker-marks": ["real-mutation"],
     },
@@ -176,19 +177,35 @@ CASE_TEXT = {
     "R-stale": "set B active: the new hash; every earlier result shows 이전 스냅샷 기준 (list and detail), nothing "
                "recomputed",
     "X-snapshot-real": "the copied real set: hash, three sources with dates, CC BY 4.0, row counts, skipped list",
-    "X-matched-real": "1S9I chain A covered: matched rows, verbatim role text, reference flag, reaction section",
-    "X-two-chains": "1A30: both chains covered",
-    "X-two-entries": "1A4I: one chain with two M-CSA entries",
-    "X-conflict-derived": "synthetic derived 1S9I (ASP A194 renamed GLU): the A194 row is 충돌 (residue_name_differs)",
-    "X-pdb-not-in-snapshot": "1UBQ: pdb_not_in_snapshot and the empty result",
-    "X-uniprot-link": "an M15 numbering map (1S9I or 1MQ4): UniProt sites linked to structure residues",
-    "X-report": "report + downloads, fixed sentences, no forbidden word",
-    "X-dry-run": "a dry-run run links",
+    "X-request-defaults": "nothing chosen by itself on 1S9I: the file's PDB ID suggestion unconfirmed, no chain ticked, "
+                          "no numbering map, 연결하기 disabled",
+    "X-matched-real": "1S9I chain A covered by M-CSA 282 (loaded and prepared): rows 0 and 1 matched with the 7-field "
+                      "identity, the role text verbatim in \"M-CSA 원문, 계산 아님\", the reference-structure flag, the "
+                      "reaction section (EC of both sources, M-CSA compounds, UniProt activities with Rhea equations); "
+                      "chain B chain_not_listed with UK4",
+    "X-two-chains": "1A30: chains A and B both covered by M-CSA 175, three matched rows each",
+    "X-two-entries": "1A4I chain A: M-CSA entries 389 and 458 both listed (none chosen), six matched rows",
+    "X-conflict-derived": "labelled synthetic derived 1S9I (ASP A194 renamed GLU): the A194 row is 충돌 "
+                          "(residue_name_differs) with the structure name GLU, the A221 row matched",
+    "X-pdb-not-in-snapshot": "1UBQ and 1HSG: pdb_not_in_snapshot, the empty result; prepared 1MQ4: pdb_not_in_snapshot "
+                             "with the UniProt part only",
+    "X-uniprot-link": "the real M15 numbering maps of prepared 1S9I (P36507) and 1MQ4 (O14965) in the isolated folder: "
+                      "UniProt sites linked through the map (mapped 11 / not_in_map 2 and 9 / 0, the stored counts)",
+    "X-report": "report of the 1S9I result + Markdown / JSON downloads equal to the backend bytes, RK1–RK6, no forbidden "
+                "word outside fixed sentences and reference strings, the library entry",
+    "X-dry-run": "a dry-run run (record over the loopback API) links 1UBQ by real clicks and stores the result",
+    "X-results-list": "the result list equals the stored list; counts not made are — with the reason",
+    "X-m20-uk3": "M20 request area on prepared 1S9I: the newest same-structure result (linked through the map) is "
+                 "pre-selected, UK3 shown, nothing posted",
     "X-no-zero": "not checked / not available / not computed values are — with the reason, never 0",
     "X-wording": "no rank / importance / activity wording outside fixed sentences and reference strings",
     "X-tabs": "구조 분석 hidden and inert, run selection only there, other tabs unchanged",
-    "X-m20": "M20 v2 on the real result: pre-selection, prediction, protection status and lists",
-    "X-picker-marks": "marks on the pickers for not-checked sets",
+    "X-m20": "M20 v2 on prepared 1A30 with the real results: UK2 without a result, pre-selection of the newest, the "
+             "chain-A result → chains_not_covered (B not_in_annotation), the A+B result → checked with M-CSA 175 rows "
+             "protecting the matched positions (ARG A8 checked, none), empty conflict / unmatched lists, release → "
+             "해제됨; labelled derived 1S9I → checked with its conflict row in the conflict list",
+    "X-picker-marks": "\"촉매 잔기 검사 안 함\" on not-checked sets and none on the checked 1A30 set: M20 list, M21 handoff, "
+                      "M23 select, M24 sources, M25 protein loop pool",
 }
 NOT_OBSERVED = {
     "fixture": {
@@ -200,7 +217,14 @@ NOT_OBSERVED = {
         "C-list-too-long": "the 400-item conflict / unmatched cap is covered by backend/tests/test_mutation_tool.py "
                            "(m20_catalytic_fixture long_unmatched).",
     },
-    "real": {},
+    "real": {
+        "X-unmatched-reasons": "the real set gave no unmatched row and no conflict row on the public structures "
+                               "(import1.md §4); the one conflict here is the labelled derived 1S9I. The five unmatched and "
+                               "two conflict reasons, refusals, field errors, paging, link reasons and the unset / invalid "
+                               "/ stale snapshot states are observed on synthetic rows in the fixture stage.",
+        "X-v1-set": "the stored v1 run and the three limitation variants are the fixture stage's (C-v1-set, "
+                    "C-limitation-variants); this stage makes v2 sets only.",
+    },
 }
 
 
@@ -356,44 +380,85 @@ def fixture_plan(code: Path, set_hash: str, dry_run_run: str | None) -> dict:
 
 
 def real_plan(code: Path, set_hash: str, dry_run_run: str | None) -> dict:
-    """The real stage plan (T9c runs and tunes it): structures and entries named from the shape of the installed set
-    (M-CSA 282 → 1S9I chain A, 175 → 1A30 chains A and B, 389 and 458 → 1A4I chain A); row statuses are not
-    pre-judged beyond the coverage, the entry ids and the derived conflict, and the screen must equal the stored rows."""
+    """The real stage plan: structures and entries named from the installed set (import1, docs/qa/m26-reaction-20261008/
+    import1.md §4: M-CSA 282 → 1S9I chain A rows 0 and 1 (Asp194, Asp221), 175 → 1A30 rows 1, 2, 4 on chain A and 0, 3,
+    5 on chain B (Asp25, Thr26, Gly27), 389 and 458 → 1A4I chain A three rows each; no unmatched or conflict row on the
+    public structures; 1HSG, 1MQ4 and 1UBQ are not in the snapshot; the M15 maps link 11 / 2 (1S9I) and 9 / 0 (1MQ4)
+    positions). The expectations are those plain observations of the stored set (statuses, ids, counts); the screen must
+    equal the stored rows and the verbatim reference text is compared field by field. The M20 flow uses 1A30 (both chains
+    covered, so the all-chains result gives a checked set and the chain-A result chains_not_covered) and then the labelled
+    synthetic derived 1S9I (its renamed Asp194 gives the one conflict row of this stage, in the M20 conflict list)."""
+    def matched(*keys: str) -> dict:
+        return {key: "matched" for key in keys}
+
+    def reference(*keys: str) -> dict:
+        """Every listed row: is_reference true in the set, and role text to compare verbatim (both seen in import1)."""
+        return {"isReference": {key: True for key in keys}, "rolesGiven": list(keys)}
     links = [
         {"id": "s9i", "structure": "s9i", "use": "loaded", "pdbId": {"suggested": "1S9I"}, "lookupEntries": [282],
          "chains": [{"chain": "A", "accession": {"suggestion": "P36507"}}, {"chain": "B", "accession": None}],
          "map": None, "cases": ["X-matched-real", "X-no-zero"],
          "expect": {"nullResult": False, "chains": {
-             "A": {"coverage": "covered", "entries": [282], "minMatched": 1, "uniprot": ["checked", None],
-                   "link": "numbering_map_not_given", "flags": [], "reactions": "checked"},
+             "A": {"coverage": "covered", "entries": [282], "rows": matched("282/0", "282/1"),
+                   **reference("282/0", "282/1"), "uniprot": ["checked", None], "link": "numbering_map_not_given", "flags": [], "reactions": "checked",
+                   "reactionsFilled": True, "rheaInSnapshot": [True]},
              "B": {"coverage": "chain_not_listed", "uniprot": ["not_checked", "accession_not_given"], "flags": [],
                    "reactions": "not_checked"}}}},
         {"id": "a30", "structure": "a30", "use": "loaded", "pdbId": {"suggested": "1A30"}, "lookupEntries": [175],
          "chains": [{"chain": "A", "accession": None}, {"chain": "B", "accession": None}], "map": None,
          "cases": ["X-two-chains"],
          "expect": {"nullResult": False, "chains": {
-             "A": {"coverage": "covered", "entries": [175], "minMatched": 1, "reactions": "checked"},
-             "B": {"coverage": "covered", "entries": [175], "minMatched": 1, "reactions": "checked"}}}},
+             "A": {"coverage": "covered", "entries": [175], "rows": matched("175/1", "175/2", "175/4"),
+                   **reference("175/1", "175/2", "175/4"),
+                   "uniprot": ["not_checked", "accession_not_given"], "flags": [], "reactions": "checked"},
+             "B": {"coverage": "covered", "entries": [175], "rows": matched("175/0", "175/3", "175/5"),
+                   **reference("175/0", "175/3", "175/5"),
+                   "uniprot": ["not_checked", "accession_not_given"], "flags": [], "reactions": "checked"}}}},
         {"id": "a4i", "structure": "a4i", "use": "loaded", "pdbId": {"suggested": "1A4I"}, "lookupEntries": [389, 458],
-         "chains": [{"chain": "A", "accession": None}], "map": None, "cases": ["X-two-entries"],
+         "chains": [{"chain": "A", "accession": None}, {"chain": "B", "accession": None}], "map": None,
+         "cases": ["X-two-entries"],
          "expect": {"nullResult": False, "chains": {
-             "A": {"coverage": "covered", "entries": [389, 458], "minMatched": 1, "reactions": "checked"}}}},
+             "A": {"coverage": "covered", "entries": [389, 458],
+                   "rows": matched("389/0", "389/1", "389/2", "458/0", "458/1", "458/2"),
+                   **reference("389/0", "389/1", "389/2", "458/0", "458/1", "458/2"),
+                   "uniprot": ["not_checked", "accession_not_given"], "flags": [], "reactions": "checked"},
+             "B": {"coverage": "chain_not_listed", "uniprot": ["not_checked", "accession_not_given"], "flags": [],
+                   "reactions": "not_checked"}}}},
         {"id": "s9i-derived", "structure": "s9i_derived", "use": "loaded", "pdbId": {"suggested": "1S9I"},
          "lookupEntries": [282], "chains": [{"chain": "A", "accession": None}], "map": None,
          "cases": ["X-conflict-derived"],
          "expect": {"nullResult": False, "chains": {
-             "A": {"coverage": "covered", "entries": [282], "rowsInclude": {"282/A194": "conflict:residue_name_differs"},
-                   "reactions": "checked"}}}},
+             "A": {"coverage": "covered", "entries": [282],
+                   "rows": {"282/0": "conflict:residue_name_differs", "282/1": "matched"},
+                   "rowsInclude": {"282/A194": "conflict:residue_name_differs"}, "structureResname": {"282/0": "GLU"},
+                   "uniprot": ["not_checked", "accession_not_given"], "flags": [], "reactions": "checked"}}}},
         {"id": "ubq", "structure": "ubq", "use": "loaded", "pdbId": {"suggested": "1UBQ"}, "lookupEntries": [],
          "chains": [{"chain": "A", "accession": None}], "map": None, "cases": ["X-pdb-not-in-snapshot", "X-no-zero"],
-         "expect": {"nullResult": True, "chains": {"A": {"coverage": "pdb_not_in_snapshot", "reactions": "not_checked"}}}},
+         "expect": {"nullResult": True, "chains": {"A": {"coverage": "pdb_not_in_snapshot",
+                                                         "uniprot": ["not_checked", "accession_not_given"],
+                                                         "flags": [], "reactions": "not_checked"}}}},
+        {"id": "hsg", "structure": "hsg", "use": "loaded", "pdbId": {"suggested": "1HSG"}, "lookupEntries": [],
+         "chains": [{"chain": "A", "accession": None}, {"chain": "B", "accession": None}], "map": None,
+         "cases": ["X-pdb-not-in-snapshot", "X-no-zero"],
+         "expect": {"nullResult": True, "chains": {
+             chain: {"coverage": "pdb_not_in_snapshot", "uniprot": ["not_checked", "accession_not_given"], "flags": [],
+                     "reactions": "not_checked"} for chain in ("A", "B")}}},
+        {"id": "mq4-linked", "structure": "mq4", "use": "prepared", "pdbId": {"suggested": "1MQ4"}, "lookupEntries": [],
+         "chains": [{"chain": "A", "accession": {"map": "O14965"}}], "map": "mq4-map",
+         "cases": ["X-uniprot-link", "X-pdb-not-in-snapshot"],
+         "expect": {"nullResult": False, "chains": {
+             "A": {"coverage": "pdb_not_in_snapshot", "uniprot": ["checked", None], "link": None, "flags": [],
+                   "linkedPositions": {"mapped": 9, "not_in_map": 0}, "reactions": "checked",
+                   "rheaInSnapshot": [True]}}}},
         {"id": "s9i-linked", "structure": "s9i", "use": "prepared", "pdbId": {"suggested": "1S9I"},
          "lookupEntries": [282], "chains": [{"chain": "A", "accession": {"map": "P36507"}}], "map": "s9i-map",
-         "cases": ["X-uniprot-link"],
+         "cases": ["X-uniprot-link", "X-matched-real"],
          "expect": {"nullResult": False, "chains": {
-             "A": {"coverage": "covered", "entries": [282], "uniprot": ["checked", None], "link": None,
-                   "minLinked": 1, "reactions": "checked"}}}},
+             "A": {"coverage": "covered", "entries": [282], "rows": matched("282/0", "282/1"),
+                   "uniprot": ["checked", None], "link": None, "flags": [],
+                   "linkedPositions": {"mapped": 11, "not_in_map": 2}, "reactions": "checked"}}}},
     ]
+    derived_1s9i = "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
     return {
         "schema": "m26_qa_plan@1", "stage": "real", "setHash": set_hash, "synthetic": None,
         "structures": {
@@ -401,12 +466,16 @@ def real_plan(code: Path, set_hash: str, dry_run_run: str | None) -> dict:
                              prepare=True),
             "a30": structure(code, FIXTURES / "public_1a30.cif", "public PDB entry 1A30 (RCSB CC0, T9a download)"),
             "a4i": structure(code, FIXTURES / "public_1a4i.cif", "public PDB entry 1A4I (RCSB CC0, T9a download)"),
-            "s9i_derived": structure(code, T9 / "derived_1s9i_A194_asp_to_glu.cif",
-                                     "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"),
+            "s9i_derived": structure(code, T9 / "derived_1s9i_A194_asp_to_glu.cif", derived_1s9i),
             "ubq": structure(code, FIXTURES / "public_1ubq.cif", "public PDB entry 1UBQ (repository fixture)"),
+            "hsg": structure(code, FIXTURES / "public_1hsg.cif", "public PDB entry 1HSG (repository fixture)"),
+            "mq4": structure(code, FIXTURES / "public_1mq4.cif", "public PDB entry 1MQ4 (repository fixture)",
+                             prepare=True),
         },
         "maps": [{"id": "s9i-map", "structure": "s9i", "use": "prepared", "pdbId": "1S9I", "chain": "A",
-                  "accession": "P36507"}],
+                  "accession": "P36507"},
+                 {"id": "mq4-map", "structure": "mq4", "use": "prepared", "pdbId": "1MQ4", "chain": "A",
+                  "accession": "O14965"}],
         "links": links, "fieldErrors": None, "refusals": None, "paging": None, "report": "s9i",
         "uk3": {"structure": "s9i", "link": "s9i-linked"},
         "dryRun": {"run": dry_run_run, "structure": "ubq", "link": {
@@ -415,14 +484,30 @@ def real_plan(code: Path, set_hash: str, dry_run_run: str | None) -> dict:
             "expect": {"nullResult": True, "chains": {"A": {"coverage": "pdb_not_in_snapshot",
                                                             "reactions": "not_checked"}}}}},
         "mutation": {
-            "structure": structure(code, FIXTURES / "public_1s9i.cif", "public PDB entry 1S9I (RCSB CC0, T9a download)"),
-            "pdbId": "1S9I", "chainsPartial": ["A"], "chainsAll": ["A", "B"],
-            "positions": {"residues": [{"resname": "ASP", "chain": "A", "seq": 194},
-                                       {"resname": "ASP", "chain": "A", "seq": 221},
-                                       {"resname": "ASP", "chain": "B", "seq": 194}]},
-            "release": {"resname": "ASP", "chain": "A", "seq": 194},
-            "expect": {"partialUncovered": [{"chain_auth": "B", "coverage": "not_in_annotation"}],
-                       "allUncovered": [{"chain_auth": "B", "coverage": "chain_not_listed"}]},
+            "structure": structure(code, FIXTURES / "public_1a30.cif", "public PDB entry 1A30 (RCSB CC0, T9a download)"),
+            "pdbId": "1A30", "chainsPartial": ["A"], "chainsAll": ["A", "B"],
+            "positions": {"residues": [{"resname": "ARG", "chain": "A", "seq": 8},
+                                       {"resname": "ASP", "chain": "A", "seq": 25},
+                                       {"resname": "THR", "chain": "A", "seq": 26},
+                                       {"resname": "ASP", "chain": "B", "seq": 25},
+                                       {"resname": "GLY", "chain": "B", "seq": 27}]},
+            "release": {"resname": "ASP", "chain": "A", "seq": 25},
+            "expect": {
+                "partialUncovered": [{"chain_auth": "B", "coverage": "not_in_annotation"}], "allUncovered": [],
+                "catalytic": {"ARG A:8": [], "ASP A:25": [[175, 1, True]], "THR A:26": [[175, 2, True]],
+                              "ASP B:25": [[175, 5, True]], "GLY B:27": [[175, 0, True]]},
+                "partialCounts": {"matched_rows": 3, "conflict_rows": 0, "unmatched_rows": 0},
+                "allCounts": {"matched_rows": 6, "conflict_rows": 0, "unmatched_rows": 0},
+                "conflicts": [], "unmatched": []},
+            "derived": {
+                "structure": structure(code, T9 / "derived_1s9i_A194_asp_to_glu.cif", derived_1s9i),
+                "pdbId": "1S9I", "chains": ["A"],
+                "positions": {"residues": [{"resname": "GLU", "chain": "A", "seq": 194},
+                                           {"resname": "ASP", "chain": "A", "seq": 221}]},
+                "expect": {"status": "checked", "reason": None, "covered": ["A"], "uncovered": [],
+                           "counts": {"matched_rows": 1, "conflict_rows": 1, "unmatched_rows": 0},
+                           "catalytic": {"GLU A:194": [], "ASP A:221": [[282, 1, True]]},
+                           "conflicts": [["A", 282, 0]], "unmatched": []}},
             "v1Run": None,
             "pickers": ["m20", "m21", "m23", "m24", "m25"],
         },
@@ -851,6 +936,13 @@ class Runner(m15.Runner):
                        "(`SYNTHETIC-PROVENANCE-t2.md`·`-t6.md`·`-t9.md`), 지어낸 PDB ID(0T91·0T92·0SY6·0SY2 등)를 사람이 "
                        "구조에 준 것으로 보고 입력했다. 관찰은 화면이 저장된 값을 그대로 보이는지에 대한 것이며 과학 결과가 "
                        "아니다. 촉매 잔기·부위·반응에 대한 사실이나 변이의 효과를 뜻하지 않는다."), ""]
+        if "real" in ledger["stagesRequested"]:
+            lines += [("**real 단계의 반응 참조값은 설치된 실제 세트를 격리 폴더로 복사한 것이다**(`--reaction-set`, M-CSA·"
+                       "UniProt·Rhea 공개 서버에서 가져온 가공본, CC BY 4.0, 세트 해시는 대장 `checks.real.reaction.copy`). "
+                       "구조는 공개 PDB 항목 1S9I·1A30·1A4I(RCSB CC0)와 저장소의 1HSG·1MQ4·1UBQ이고, 1S9I 파생 구조"
+                       "(ASP A194 → GLU, `derived_1s9i_A194_asp_to_glu.cif`)만 합성(SYNTHETIC)이다. 관찰은 화면이 저장된 "
+                       "값을 그대로 보이는지에 대한 것이며 숫자는 개수, 상태는 닫힌 집합 값이다. 잔기의 역할·활성이나 변이의 "
+                       "효과를 판정하지 않는다."), ""]
         lines += [("스크린숏·paint 프레임·다운로드 원본은 Git 제외 artifacts 폴더에 있고 여기에는 `binary-artifacts.json`의 "
                    "SHA-256만 기록한다. 절대 경로는 `<repo>`/`<home>`으로 바꿨다. 실패한 시도의 증거도 그대로 남긴다."), ""]
         for stage in STAGES:
@@ -878,6 +970,10 @@ class Runner(m15.Runner):
                   ".venv/bin/python scripts/m26_offscreen_acceptance.py --root runs/m26-acceptance-<date> \\",
                   "    --artifacts frontend/tests/offscreen/artifacts/m26-acceptance/<label> --kbase <abs>/kbase_kinase \\",
                   "    --stages fixture --out docs/qa/m26-reaction-<YYYYMMDD>/fixture-stage",
+                  "# real 단계만 (실서버 요청 0, 설치된 실제 세트 폴더를 격리 폴더로 복사)",
+                  ".venv/bin/python scripts/m26_offscreen_acceptance.py --root runs/m26-acceptance-<date> \\",
+                  "    --artifacts frontend/tests/offscreen/artifacts/m26-acceptance/<label> --kbase <abs>/kbase_kinase \\",
+                  "    --stages real --reaction-set <installed set folder> --out docs/qa/m26-reaction-<YYYYMMDD>/real-stage",
                   "# 두 단계 (수락: 설치된 실제 세트 폴더를 격리 폴더로 복사)",
                   ".venv/bin/python scripts/m26_offscreen_acceptance.py --root runs/m26-acceptance-<date> \\",
                   "    --artifacts frontend/tests/offscreen/artifacts/m26-acceptance/<label> --kbase <abs>/kbase_kinase \\",

@@ -61,6 +61,17 @@ const U = {
   U3: "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다.",
 };
 const FIXED_LINES = [...Object.values(J), ...Object.values(U)];
+// M26 spec 9 verbatim: a mutation projection's fifth sentence follows its wire's catalytic_residue_database status (J6
+// for not_available = every v1 set; J6n / J6c for the v2 sets the M20 tool builds since M26). Not in FIXED_LINES.
+const J6_BY_CATALYTIC = {
+  not_available: J.J6,
+  not_checked: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 " +
+    "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 " +
+    "했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.",
+  checked: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 " +
+    "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 " +
+    "잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다.",
+};
 // Forbidden expressions (spec 2 and 8, plus 최고, 가장 높/낮 and highest; "비활성" is not "활성"): the same pattern and
 // line rule as the product's jevForbiddenWords (frontend/src/lib/jev.ts JEV_FORBIDDEN) and the acceptance runner
 // (scripts/m24_offscreen_acceptance.py FORBIDDEN); frontend/tests/jev.test.cjs and scripts/test_m24_offscreen_acceptance.py
@@ -125,8 +136,13 @@ function halfUp(value, places) {
   const out = places ? `${whole}.${all.slice(all.length - places)}` : whole;
   return negative && /[1-9]/.test(out) ? `-${out}` : out;
 }
-function expectedLimitations(kind, late) {
-  return [J.J1, J.J2, J.J3, J.J4, kind === "ligand" ? J.J5 : J.J6, ...(late ? [J.J7] : [])];
+function expectedLimitations(kind, late, catalytic = "not_available") {
+  assert.ok(catalytic in J6_BY_CATALYTIC, `catalytic status ${catalytic}`);
+  return [J.J1, J.J2, J.J3, J.J4, kind === "ligand" ? J.J5 : J6_BY_CATALYTIC[catalytic], ...(late ? [J.J7] : [])];
+}
+/** The catalytic_residue_database status of a stored projection's wire (not_available for a ligand projection). */
+function catalyticStatus(projection) {
+  return projection.kind === "ligand" ? "not_available" : projection.wire.protection_checks.catalytic_residue_database;
 }
 /** Forbidden expressions in text, line by line; a line exactly equal to a fixed sentence or note is exempt. */
 function forbiddenWords(text) {
@@ -580,7 +596,7 @@ function cardMatches(shown, record, choice, projection) {
     }
   }
   const late = choice.arrival.late;
-  assert.deepEqual(shown.limitations, expectedLimitations(projection.kind, late));
+  assert.deepEqual(shown.limitations, expectedLimitations(projection.kind, late, catalyticStatus(projection)));
   assert.equal(shown.lateAttr, String(late));
   assert.equal(shown.late === null, !late);
   if (late) assert.ok(shown.late.includes(LATE_TEXT[choice.arrival.late_reason]), shown.late);
@@ -667,13 +683,15 @@ async function makeReport(page, run, choiceHandle, evidence, button = null) {
   return { status: response.status(), handle: body.handle, request: response.request().postDataJSON(), manifest: body.manifest,
     kind, text: await pre.textContent(), saved };
 }
-function reportMatches(report, choice, choiceHandle, evidence) {
+function reportMatches(report, choice, choiceHandle, evidence, projection) {
   assert.equal(report.kind, "JEV 판정 보고서");
   assert.deepEqual(report.request, { result_handle: choiceHandle });
   assert.equal(report.manifest.analysis_type, "jev_choice");
   assert.equal(report.manifest.result_handle, choiceHandle);
   assert.equal(report.text, report.saved.markdown);
-  for (const sentence of expectedLimitations(choice.answer.local_display.smiles ? "ligand" : "mutation", choice.arrival.late))
+  assert.equal(choice.projection.wire_sha256, projection.wire_sha256, "the choice is not of this projection");
+  for (const sentence of expectedLimitations(choice.answer.local_display.smiles ? "ligand" : "mutation", choice.arrival.late,
+    catalyticStatus(projection)))
     assert.ok(report.text.includes(sentence), "report lacks a fixed sentence");
   // per-candidate values stay out of the report: no other sent alias appears and no probabilities field is stored
   for (const item of choice.selection) {
@@ -963,7 +981,7 @@ async function modeFixture(session, input, setup, rec_, evidence, log) {
       "보고서; clicking it shows the saved Markdown (fixed sentences, no per-candidate values)", async () =>
       makeReport(page, A.run, first.sent.record.choice_handle, evidence), async value =>
       reportMatches(value, storedObject(runsDir, A.run, first.sent.record.choice_handle), first.sent.record.choice_handle,
-        evidence));
+        evidence, storedObject(runsDir, A.run, first.built.made.handle)));
     void again;
   });
 
@@ -1423,7 +1441,7 @@ async function modeLive(session, input, setup, rec_, evidence, log) {
           probabilityCount: choice.answer.probabilities === null ? 0 : Object.keys(choice.answer.probabilities).length };
         row.card = cardMatches(value.shown, record, choice, value.stored);
         assert.equal(row.card.foldedBefore, true);
-        if (value.report) row.report = reportMatches(value.report, choice, record.choice_handle, evidence);
+        if (value.report) row.report = reportMatches(value.report, choice, record.choice_handle, evidence, value.stored);
       } else {
         reasonOnlyMatches(value.reason, record);
       }

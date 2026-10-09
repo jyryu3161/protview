@@ -1,0 +1,60 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "4-fB1d-vH135JEpv-hR4g",
+    "gitHead": "b3131fd74c174b6cda84418fb53b00cc08dac03a",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "11adad347e7d34735507fbaf47e53838871226575a4dbb2801eae3df637124b4",
+    "dirtyFiles": [
+      " M frontend/tests/offscreen/jev-flow.cjs",
+      " M frontend/tests/offscreen/mutation-flow.cjs",
+      " M frontend/tests/offscreen/reaction-knowledge-flow.cjs",
+      " M scripts/m26_offscreen_acceptance.py",
+      " M scripts/test_m26_offscreen_acceptance.py",
+      "?? docs/qa/m26-reaction-20261008/real-stage/",
+      "?? docs/qa/m26-reaction-20261008/regression-prep/"
+    ],
+    "recordedAt": "2026-10-09T03:33:50.823227+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "03b316c610c567af6c1c13b8069577b4c264bd2c007c426d625fdc21b3a96455",
+    "runnerSha256": "9e839455a10619d2d770ead97501445b193c7aa8864c23f94d50ad33a31e0a38"
+  },
+  "services": [
+    {
+      "name": "fixture-backend",
+      "runs": "<repo>/runs/m26-t9c-m24-a/runs",
+      "control": "<repo>/runs/m26-t9c-m24-a/fixture-control",
+      "startedAt": "2026-10-09T03:33:55.629041+00:00"
+    }
+  ],
+  "environment": {
+    "workerPython": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m24_jev_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "scripts": [
+        "good",
+        "good_no_extras",
+        "alias_outside",
+        "http_500",
+        "no_usage",
+        "model_mismatch",
+        "slow"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "jevAvailable": true,
+    "setup": true
+  }
+}
