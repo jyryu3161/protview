@@ -1,0 +1,261 @@
+{
+  "schema": "m23_sequence_ga_evidence@1",
+  "mode": "main",
+  "runs": {
+    "A": "run_52e072dc72aa41828918a56ca47d7570"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+      "bytes": 1240,
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-planar-z0.sdf",
+      "bytes": 6829,
+      "sha256": "ad531eae2446c0baebf1f8d0ddb648677c0b1d6c4053d2224d404f7f1c7b4573"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-implicit-h.sdf",
+      "bytes": 3857,
+      "sha256": "eca0d17066a3f00075805b79a1864782a5e11b721d28a341bda2da78a7d2e387"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/m20-candidate-set-1ubq-tiny.json",
+      "bytes": 4741,
+      "sha256": "e591b1b947a45983e681b4297b0b680964385497f7b296227e434ceee1c7aa78"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/expected.json",
+      "bytes": 331744,
+      "sha256": "6872587e87b784ace709d17f8ec4d09d71be945ef863209b0e84946ea0156d95"
+    }
+  ],
+  "handles": {
+    "structure": "obj://run_52e072dc72aa41828918a56ca47d7570/structure/b492a7ee1b9b2b84914493a568904df856a6dca4d160be496efa337250d5470c",
+    "prepared": "obj://run_52e072dc72aa41828918a56ca47d7570/prepared_structure/ef482b5c21576ad3ad76e742c956c4541a7f7a880d8964ee62640d665b342ad1"
+  },
+  "fixtureLabels": [],
+  "providerCalls": [],
+  "partFailures": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_52e072dc72aa41828918a56ca47d7570/prepared_structure/ef482b5c21576ad3ad76e742c956c4541a7f7a880d8964ee62640d665b342ad1"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      }
+    ],
+    "mutation-add-user": [
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      }
+    ],
+    "mutation-pick-protect": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      }
+    ],
+    "mutation-add-protect": [
+      {
+        "count": 1
+      }
+    ],
+    "mutation-allowed-none": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-allowed": [
+      {
+        "checked": "AW"
+      },
+      {
+        "checked": "W"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-remove-user": [
+      {
+        "removed": "ILE A:3",
+        "count": 3
+      },
+      {
+        "removed": "LYS A:6",
+        "count": 2
+      },
+      {
+        "removed": "GLY A:76",
+        "count": 1
+      }
+    ],
+    "mutation-remove-protect": [
+      {
+        "removed": "ILE A:3",
+        "count": 0
+      }
+    ]
+  },
+  "startedAt": "2026-10-09T10:15:39.819Z",
+  "notObserved": [
+    {
+      "case": "SG-individual-without-score",
+      "reason": "every individual of the 1UBQ + phenol GAs is scored (T1: all 26 keys and the reference row scored), so no individual row without a score (null_result/failed) is shown; nothing is forged. The reference row without a score (—, never 0) is observed (SG-reference-failed). Covered by frontend/tests/sequence-ga.test.cjs ('individuals table: score-less rows last…', 'space lines and score cells…') and backend/tests/test_sequence_ga_api.py::test_rows_without_a_score_are_null_never_zero."
+    },
+    {
+      "case": "SG-heavy-atom-warning",
+      "reason": "1UBQ projects 602 heavy atoms (< 4,890), so the server flag is false and the warning line is absent (asserted on every preflight); no local public structure passing M7 exceeds it. Covered by backend/tests/test_sequence_ga_inputs.py (heavy_atom_warning 4890/4891) and frontend/tests/sequence-ga.test.cjs ('preflight lines: …')."
+    },
+    {
+      "case": "SG-other-stop-reasons",
+      "reason": "generations_complete, space_exhausted, time_exhausted, worker_failed, resource_exceeded and repeated_failure need other scores, hours, a killed worker, oversized output or five failing models; covered by backend/tests/test_sequence_ga_worker.py (oracle vectors, clock, output bound, failures) and test_sequence_ga_jobs.py (time_exhausted, worker_failed, recovery)."
+    },
+    {
+      "case": "SG-model-conditional-sentences",
+      "reason": "SL5 (HIS/CYS state differing from the reference outside the mutated residues) and L6 (a new disulfide) need such a difference; the observed 1UBQ tiny-set models have none (no Cys; the flow asserts each stored condition against the shown sentences and the empty difference text). Covered by backend/tests/test_sequence_model_bundle.py (…_adds_sl5, …_adds_both_rows_and_l6) and test_sequence_model_worker.py::test_protonation_and_disulfide_records_are_against_the_reference."
+    },
+    {
+      "case": "SG-dry-run",
+      "reason": "a dry-run run plans only and has no limit to raise; covered by backend/tests/test_sequence_ga_jobs.py::test_dry_run_plans_only and frontend/tests/sequence-ga.test.cjs."
+    }
+  ],
+  "capability": {
+    "available": true,
+    "engine": "qvina",
+    "versions": {
+      "model": {
+        "openmm": "8.6.0",
+        "openmm_engine_build": "8.6.0.dev-c6173db",
+        "pdbfixer": "1.12.0"
+      },
+      "docking": {
+        "MDAnalysis": "2.10.0",
+        "gemmi": "0.7.5",
+        "meeko": "0.8.0",
+        "rdkit": "2026.03.6"
+      }
+    },
+    "ga_ranges": {
+      "seed": {
+        "min": 0,
+        "max": 2147483647,
+        "default": null
+      },
+      "population_size": {
+        "min": 4,
+        "max": 16,
+        "default": 8
+      },
+      "generations": {
+        "min": 1,
+        "max": 8,
+        "default": 5
+      },
+      "elite_count": {
+        "min": 0,
+        "max": 4,
+        "default": 2
+      },
+      "tournament_size": {
+        "min": 2,
+        "max": 4,
+        "default": 2
+      },
+      "crossover_fraction": {
+        "min": 0,
+        "max": 1,
+        "default": 0.5
+      },
+      "random_fraction": {
+        "min": 0,
+        "max": 0.5,
+        "default": 0.2
+      },
+      "max_mutations": {
+        "min": 1,
+        "max": 4,
+        "default": 3
+      },
+      "patience": {
+        "min": 1,
+        "max": 8,
+        "default": 3
+      },
+      "max_new_evaluations": {
+        "min": 4,
+        "max": 64,
+        "default": 32
+      },
+      "total_s": {
+        "min": 600,
+        "max": 14400,
+        "default": 7200
+      }
+    },
+    "limits": {
+      "positions": 400,
+      "candidates": 7600,
+      "population": 16,
+      "generations": 8,
+      "new_evaluations": 64,
+      "max_mutations": 4,
+      "model_step_s": 240,
+      "docking_step_s": 300,
+      "total_s_max": 14400,
+      "model_object_bytes": 16777216,
+      "output_bytes": 268435456,
+      "summary_bytes": 1048576,
+      "staged_bytes": 16777216,
+      "m18_heavy_atom_estimate": 4890,
+      "consecutive_failures": 5
+    },
+    "timeout_s": {
+      "max": 15000,
+      "finish_margin": 600
+    }
+  },
+  "finishedAt": "2026-10-09T10:15:45.218Z",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    candidate_positions: 3,\n    candidates: 6,\n    excluded_positions: 1,\n    exclusion_reason_counts: {\n+     catalytic_residue: 0,\n      disulfide_cys: 0,\n      klifs_key_site: 0,\n      metal_contact: 0,\n      no_allowed_alternative: 0,\n      non_standard_residue: 0,\n\n    at <repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:1449:12\n    at Object.step (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:395:31)\n    at async Object.modeMain [as main] (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:1435:16)\n    at async main (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:2386:5)",
+  "requestCount": 133
+}

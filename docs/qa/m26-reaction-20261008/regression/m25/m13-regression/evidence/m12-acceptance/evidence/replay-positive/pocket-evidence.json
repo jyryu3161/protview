@@ -1,0 +1,294 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "replay",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "Dikedmz3G0FMeEOWwIdzo",
+  "startedAt": "2026-10-09T11:13:46.595Z",
+  "run": "run_dbe6aa0ac4f84c929e3934e6a74064c8",
+  "handles": {
+    "set": "obj://run_dbe6aa0ac4f84c929e3934e6a74064c8/pocket_set/f132407be90c872851c76364ec73cd1b24c1a680a04a55ea9c670de554d0da25",
+    "report": "obj://run_dbe6aa0ac4f84c929e3934e6a74064c8/method_report_manifest/c310e6a244a424774b055676a53887dbd8b3e24747413e3e0b2a26031b818118"
+  },
+  "inputs": [],
+  "fixtureLabels": [
+    "labeled runtime layout: byte-identical backend/mw and config copy; .deps/fpocket absent"
+  ],
+  "expectCapability": "not_installed",
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 8,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m13/m12-acceptance/evidence/replay-positive/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 85,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "overlays": [
+    {
+      "rank": 1,
+      "spheres": {
+        "lining": {
+          "visible": true,
+          "sites": 238,
+          "liningAtomsMapped": 83,
+          "rule": "sorted(native lining sourceIndex) === sorted(catalog viewer_source_index of rows in stored lining residues)"
+        },
+        "sphereCount": 157,
+        "comparedSpheres": 157,
+        "maxCenterDeltaFloat32_A": 9.460449206244448e-7,
+        "maxRadiusDelta_A": 0,
+        "radiiExactlyAtStoredPrecision": 157,
+        "liningAtoms": 83,
+        "liningResidues": 33,
+        "liningSitesInMolstar": 238,
+        "rule": "center === Math.fround(stored); radius === round(stored*100)/100"
+      },
+      "focus": {
+        "displayCenter": [
+          13.552184713375798,
+          21.834299363057326,
+          6.35915923566879
+        ],
+        "focusedTarget": [
+          13.552184713375798,
+          21.834299363057326,
+          6.35915923566879
+        ],
+        "deltaA": 0,
+        "cameraPosition": [
+          13.552184713375798,
+          21.834299363057326,
+          57.72817074364295
+        ]
+      },
+      "liningVisible": "true",
+      "spheresVisible": "true",
+      "geometrySha256": "6140f780f6a83d25a7bc0be113b1b26ba90c8fe400b1b93df91d7312283da1c0"
+    }
+  ],
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 73,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m13/m12-acceptance/evidence/replay-positive/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 137,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/pockets/result",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/pockets/geometry",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/reports/selected",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/reports/download",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_dbe6aa0ac4f84c929e3934e6a74064c8/reports/download",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-10-09T11:13:50.241Z",
+  "externalRequestCount": 0
+}

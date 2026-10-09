@@ -1,0 +1,126 @@
+{
+  "schema": "m26_case_ledger_row@1",
+  "mode": "stale",
+  "stage": "fixture",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "R-stale": "pass"
+  },
+  "runId": "run_818b6d9013a8416e9d3b65ab4f9baded",
+  "runs": {
+    "A": "run_818b6d9013a8416e9d3b65ab4f9baded",
+    "D": "run_e8b21b9fe85346da9704621f6f2a6cfc"
+  },
+  "handles": {},
+  "inputs": [],
+  "fixtureLabels": [],
+  "controls": {},
+  "observations": {
+    "R-stale": [
+      {
+        "step": "STALE-01",
+        "description": "Choose run run_818b6d9013a8416e9d3b65ab4f9baded in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+      },
+      {
+        "step": "STALE-02",
+        "description": "Choose run run_e8b21b9fe85346da9704621f6f2a6cfc in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+      }
+    ]
+  },
+  "buildId": "Dikedmz3G0FMeEOWwIdzo",
+  "harness": {
+    "reaction-knowledge-flow.cjs": "6ee3b14cbdc2b15034c2bc11b01aaa76cd2203699bb4349cad841b73047eef6e",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "ba7768dd87a205d6ef5f02772b6cfec06767ce81ef11aa6a897cf17785f66b52",
+  "plan": "<repo>/frontend/tests/offscreen/artifacts/m26-final/acceptance/fixture-plan.json",
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 117,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/acceptance/fixture-stale/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 253,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 7,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/acceptance/fixture-stale/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 59,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "blockedHosts": [],
+  "providerCalls": [
+    {
+      "run": "run_818b6d9013a8416e9d3b65ab4f9baded",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_e8b21b9fe85346da9704621f6f2a6cfc",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "reaction-stale.jsonl",
+  "startedAt": "2026-10-09T10:11:24.068Z",
+  "finishedAt": "2026-10-09T10:11:28.759Z"
+}

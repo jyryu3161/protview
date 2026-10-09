@@ -1,0 +1,241 @@
+{
+  "schema": "m20_mutation_evidence@1",
+  "mode": "catalytic",
+  "runs": {
+    "A": "run_95e10fbc0a8b440186436c30a2b64e8f"
+  },
+  "inputs": [
+    {
+      "name": "public_1a30.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, T9a download)"
+    },
+    {
+      "name": "derived_1s9i_A194_asp_to_glu.cif",
+      "path": "<repo>/backend/tests/fixtures/reaction/t9/derived_1s9i_A194_asp_to_glu.cif",
+      "bytes": 565129,
+      "sha256": "c7ffea5813ae8b74d8e457a9e04ab97d16d2d2d023f0eabdef958d31251969ad",
+      "provenance": "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+    }
+  ],
+  "handles": {
+    "prepared": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/prepared_structure/73b65851e1992645f91c8433d3d6d68c6dbc774f5a9294d912f2fb6635b18866",
+    "s0": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/5c3be2b41f6a7c8ed55c57a6b140c61045cd9e183d0058a6c068012d30e456d4",
+    "rPartial": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/reaction_knowledge/1ace41cef71b46229371ba32d8494fa5df636b941fe6ddd21b91eca88c01e141",
+    "rAll": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/reaction_knowledge/35710dd92a0a9c40a1b2f5c0f01dd418c17bf4a513cab459cf49f35ef57741bf",
+    "s1": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb",
+    "s2": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef",
+    "s3": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/baca1ecba0f29f91e3a08186610c79d2a12b21ccd3308d70390c5fef4a9c74a2",
+    "derivedPrepared": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/prepared_structure/02a4a80967ef9a428b5a2e02d64b8032e1323f426496cdc2f1c9353849b8e983",
+    "rDerived": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/reaction_knowledge/3debe72c5f53041b41f8e8e40409b072aadbbf33855533e63c278dfb0ed5c291",
+    "s4": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/6f015a10c39878e07e24ec0a3248f6d84678a7e3cb3448400df5e47e23f9e52a"
+  },
+  "repro": null,
+  "fixtureLabels": [
+    "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_95e10fbc0a8b440186436c30a2b64e8f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/prepared_structure/73b65851e1992645f91c8433d3d6d68c6dbc774f5a9294d912f2fb6635b18866"
+      },
+      {
+        "checked": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/prepared_structure/73b65851e1992645f91c8433d3d6d68c6dbc774f5a9294d912f2fb6635b18866"
+      },
+      {
+        "checked": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/prepared_structure/02a4a80967ef9a428b5a2e02d64b8032e1323f426496cdc2f1c9353849b8e983"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ARG A:8 · label A:8"
+      },
+      {
+        "picked": "ASP A:25 · label A:25"
+      },
+      {
+        "picked": "THR A:26 · label A:26"
+      },
+      {
+        "picked": "ASP B:25 · label B:25"
+      },
+      {
+        "picked": "GLY B:27 · label B:27"
+      },
+      {
+        "picked": "ARG A:8 · label A:8"
+      },
+      {
+        "picked": "ASP A:25 · label A:25"
+      },
+      {
+        "picked": "THR A:26 · label A:26"
+      },
+      {
+        "picked": "ASP B:25 · label B:25"
+      },
+      {
+        "picked": "GLY B:27 · label B:27"
+      },
+      {
+        "picked": "GLU A:194 · label A:140"
+      },
+      {
+        "picked": "ASP A:221 · label A:167"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-catalytic-annotation": [
+      {
+        "value": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/reaction_knowledge/1ace41cef71b46229371ba32d8494fa5df636b941fe6ddd21b91eca88c01e141"
+      },
+      {
+        "value": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/reaction_knowledge/35710dd92a0a9c40a1b2f5c0f01dd418c17bf4a513cab459cf49f35ef57741bf"
+      }
+    ],
+    "mutation-pick-release": [
+      {
+        "picked": "ASP A:25 · label A:25"
+      }
+    ],
+    "mutation-sets": [
+      {
+        "checked": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb"
+      },
+      {
+        "checked": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef"
+      },
+      {
+        "checked": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef"
+      }
+    ],
+    "mutation-candidate-model": [
+      {
+        "set": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb"
+      },
+      {
+        "set": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef"
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "chosen": "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb"
+      }
+    ],
+    "jev-kind-mutation": [
+      {
+        "checked": true
+      }
+    ]
+  },
+  "startedAt": "2026-10-09T10:12:06.664Z",
+  "pickers": {
+    "m20": {
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/5c3be2b41f6a7c8ed55c57a6b140c61045cd9e183d0058a6c068012d30e456d4": {
+        "status": "not_checked",
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb": {
+        "status": "not_checked",
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef": {
+        "status": "checked",
+        "mark": null,
+        "detail": null
+      }
+    },
+    "m21": {
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb": {
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유: 위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음 (chains_not_covered) (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef": {
+        "mark": null,
+        "detail": null
+      }
+    },
+    "m23": {
+      "partial": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+      "all": 0
+    },
+    "m25": {
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/5c3be2b41f6a7c8ed55c57a6b140c61045cd9e183d0058a6c068012d30e456d4": {
+        "count": 1,
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb": {
+        "count": 1,
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef": {
+        "count": 0,
+        "mark": null,
+        "detail": null
+      }
+    },
+    "m24": {
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/5c3be2b41f6a7c8ed55c57a6b140c61045cd9e183d0058a6c068012d30e456d4": {
+        "count": 1,
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/0b00ff71d518659662465166d4a7f4c20bfbd562073f467efe81f9edd5a4b1bb": {
+        "count": 1,
+        "mark": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.",
+        "detail": "검사하지 않은 이유는 집합 상세의 보호 검사 칸에 있습니다 (not_checked)."
+      },
+      "obj://run_95e10fbc0a8b440186436c30a2b64e8f/mutation_candidate_set/46b975745126bd40aab6da32510a9c65516f2ec01eb0be25c0d4e8eddc0e1aef": {
+        "count": 0,
+        "mark": null,
+        "detail": null
+      }
+    }
+  },
+  "finishedAt": "2026-10-09T10:12:21.349Z",
+  "error": null,
+  "requestCount": 466
+}

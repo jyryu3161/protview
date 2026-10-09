@@ -1,0 +1,747 @@
+{
+  "schema": "m26_qa_plan@1",
+  "stage": "fixture",
+  "setHash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+  "synthetic": "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+  "structures": {
+    "hsg": {
+      "file": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "name": "public_1hsg.cif",
+      "provenance": "public PDB entry 1HSG (repository fixture)",
+      "prepare": false,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268"
+    },
+    "hsg_derived": {
+      "file": "<repo>/backend/tests/fixtures/reaction/t9/derived_1hsg_A25_asp_to_glu.cif",
+      "name": "derived_1hsg_A25_asp_to_glu.cif",
+      "provenance": "SYNTHETIC derived from public 1HSG: ASP A25 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)",
+      "prepare": false,
+      "sha256": "a0e5aa06b6f1dc91e3b52e9c9fe82329d7c9232ff3ce025038dbceff01eef920"
+    },
+    "ubq": {
+      "file": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "name": "public_1ubq.cif",
+      "provenance": "public PDB entry 1UBQ (repository fixture)",
+      "prepare": false,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    "syn": {
+      "file": "<repo>/backend/tests/fixtures/mutation/synthetic-mutation-fixture.cif",
+      "name": "synthetic-mutation-fixture.cif",
+      "provenance": "SYNTHETIC M20 fixture structure (fixtures/mutation/SYNTHETIC-PROVENANCE.md)",
+      "prepare": false,
+      "sha256": "fc4e6d899a498419d51beaa8172da0cc8117021cfe2097c668d6bac85aeb3a20"
+    },
+    "beta": {
+      "file": "<repo>/backend/tests/fixtures/reaction/t2/structure_beta.pdb",
+      "name": "structure_beta.pdb",
+      "provenance": "SYNTHETIC M26 T2 structure (fixtures/reaction/t2/SYNTHETIC-PROVENANCE-t2.md)",
+      "prepare": false,
+      "sha256": "662f8fd1fbca80e7526c96eb2c590181ed600cd9adde61ed145e0abe619051ff"
+    },
+    "mq4": {
+      "file": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "name": "public_1mq4.cif",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)",
+      "prepare": true,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    }
+  },
+  "maps": [
+    {
+      "id": "mq4-map",
+      "structure": "mq4",
+      "use": "prepared",
+      "pdbId": "1MQ4",
+      "chain": "A",
+      "accession": "O14965"
+    }
+  ],
+  "links": [
+    {
+      "id": "hsg-0t91",
+      "structure": "hsg",
+      "use": "loaded",
+      "pdbId": {
+        "type": "0T91"
+      },
+      "lookupEntries": [
+        691
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "type": "Q0SYN1"
+          }
+        },
+        {
+          "chain": "B",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-matched-row",
+        "R-reaction-section",
+        "R-accession-states",
+        "R-no-zero"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              691
+            ],
+            "rows": {
+              "691/0": "matched",
+              "691/2": "matched",
+              "691/4": "conflict:residue_name_differs",
+              "691/5": "unmatched:residue_not_in_structure",
+              "691/6": "unmatched:no_author_number"
+            },
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": "numbering_map_not_given",
+            "flags": [
+              "accession_differs_from_mcsa"
+            ],
+            "reactions": "checked",
+            "rheaInSnapshot": [
+              true,
+              false
+            ]
+          },
+          "B": {
+            "coverage": "covered",
+            "entries": [
+              691
+            ],
+            "rows": {
+              "691/1": "matched",
+              "691/3": "matched"
+            },
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "hsg-0t92",
+      "structure": "hsg",
+      "use": "loaded",
+      "pdbId": {
+        "type": "0T92"
+      },
+      "lookupEntries": [
+        692
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-paging"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              692
+            ],
+            "rowCount": 60,
+            "allRows": "matched",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "derived-0t91",
+      "structure": "hsg_derived",
+      "use": "loaded",
+      "pdbId": {
+        "type": "0T91"
+      },
+      "lookupEntries": [
+        691
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-conflict-derived"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              691
+            ],
+            "rows": {
+              "691/0": "conflict:residue_name_differs",
+              "691/2": "matched",
+              "691/4": "conflict:residue_name_differs",
+              "691/5": "unmatched:residue_not_in_structure",
+              "691/6": "unmatched:no_author_number"
+            },
+            "structureResname": {
+              "691/0": "GLU"
+            },
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "ubq-1ubq",
+      "structure": "ubq",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1UBQ"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-pdb-not-in-snapshot",
+        "R-uk4",
+        "R-no-zero"
+      ],
+      "expect": {
+        "nullResult": true,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "syn-0sy6",
+      "structure": "syn",
+      "use": "loaded",
+      "pdbId": {
+        "type": "0SY6"
+      },
+      "lookupEntries": [
+        601,
+        602
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "suggestion": "Q0SYN1"
+          }
+        },
+        {
+          "chain": "B",
+          "accession": {
+            "type": "P0SYN6"
+          }
+        },
+        {
+          "chain": "CC",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-unmatched-reasons",
+        "R-two-entries",
+        "R-uk4",
+        "R-accession-states",
+        "R-no-zero"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              601,
+              602
+            ],
+            "rows": {
+              "601/0": "matched",
+              "601/1": "matched",
+              "601/2": "conflict:residue_name_differs",
+              "601/3": "unmatched:ambiguous_residue_number",
+              "601/4": "unmatched:residue_not_in_structure",
+              "601/5": "unmatched:no_author_number",
+              "601/6": "matched",
+              "601/7": "matched",
+              "601/11": "unmatched:non_standard_code",
+              "602/0": "matched",
+              "602/1": "matched"
+            },
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": "numbering_map_not_given",
+            "flags": [],
+            "reactions": "checked"
+          },
+          "B": {
+            "coverage": "covered",
+            "entries": [
+              601,
+              602
+            ],
+            "rows": {
+              "601/8": "matched",
+              "601/9": "matched",
+              "601/10": "conflict:mcsa_rows_disagree",
+              "602/2": "matched"
+            },
+            "uniprot": [
+              "not_available",
+              "accession_skipped_at_import"
+            ],
+            "skipped": {
+              "reason": "demerged",
+              "target_accessions": [
+                "P0SYN1",
+                "P0SYN2"
+              ]
+            },
+            "flags": [
+              "accession_differs_from_mcsa"
+            ],
+            "reactions": "checked"
+          },
+          "CC": {
+            "coverage": "chain_not_listed",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "beta-0sy2",
+      "structure": "beta",
+      "use": "loaded",
+      "pdbId": {
+        "type": "0SY2"
+      },
+      "lookupEntries": [
+        101,
+        103
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "type": "Q0SZZ1"
+          }
+        },
+        {
+          "chain": "B",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-unmatched-reasons",
+        "R-accession-states",
+        "R-no-zero"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              101,
+              103
+            ],
+            "rows": {
+              "101/14": "matched",
+              "103/0": "matched",
+              "103/1": "unmatched:ambiguous_residue_number",
+              "103/2": "unmatched:insertion_code_present",
+              "103/4": "unmatched:residue_not_in_structure"
+            },
+            "insertionCode": {
+              "103/2": "A"
+            },
+            "nullLabels": [
+              "101/14",
+              "103/0",
+              "103/2"
+            ],
+            "uniprot": [
+              "not_available",
+              "accession_not_in_snapshot"
+            ],
+            "flags": [
+              "accession_differs_from_mcsa"
+            ],
+            "reactions": "checked"
+          },
+          "B": {
+            "coverage": "covered",
+            "entries": [
+              103
+            ],
+            "rows": {
+              "103/3": "matched",
+              "103/5": "matched"
+            },
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "mq4-nomap",
+      "structure": "mq4",
+      "use": "prepared",
+      "pdbId": {
+        "suggested": "1MQ4"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "map": "O14965"
+          }
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-link-reasons"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": "numbering_map_not_given",
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "mq4-differs",
+      "structure": "mq4",
+      "use": "prepared",
+      "pdbId": {
+        "suggested": "1MQ4"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "type": "Q0SYN1"
+          }
+        }
+      ],
+      "map": "mq4-map",
+      "cases": [
+        "R-link-reasons"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": "map_accession_differs",
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "mq4-linked",
+      "structure": "mq4",
+      "use": "prepared",
+      "pdbId": {
+        "suggested": "1MQ4"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "map": "O14965"
+          }
+        }
+      ],
+      "map": "mq4-map",
+      "refusals": true,
+      "cases": [
+        "R-uniprot-link",
+        "R-uk4"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": null,
+            "flags": [],
+            "reactions": "checked",
+            "linkStatuses": [
+              [
+                "not_in_map"
+              ],
+              [
+                "mapped"
+              ],
+              [
+                "mapped",
+                "mapped",
+                "mapped"
+              ]
+            ],
+            "rheaInSnapshot": [
+              true,
+              false
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "fieldErrors": {
+    "structure": "hsg",
+    "badPdbId": "ABCD",
+    "chain": "A",
+    "badAccession": "p0syn1"
+  },
+  "refusals": {
+    "case": "mq4-linked",
+    "otherStructure": "hsg"
+  },
+  "paging": "hsg-0t92",
+  "report": "hsg-0t91",
+  "uk3": {
+    "structure": "mq4",
+    "link": "mq4-linked"
+  },
+  "dryRun": {
+    "run": "run_e8b21b9fe85346da9704621f6f2a6cfc",
+    "structure": "hsg",
+    "link": {
+      "id": "dry-hsg-0t91",
+      "structure": "hsg",
+      "use": "loaded",
+      "pdbId": {
+        "type": "0T91"
+      },
+      "lookupEntries": [
+        691
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "R-dry-run"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              691
+            ],
+            "rows": {
+              "691/0": "matched",
+              "691/2": "matched",
+              "691/4": "conflict:residue_name_differs",
+              "691/5": "unmatched:residue_not_in_structure",
+              "691/6": "unmatched:no_author_number"
+            },
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    }
+  },
+  "mutation": {
+    "structure": {
+      "file": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "name": "public_1hsg.cif",
+      "provenance": "public PDB entry 1HSG (repository fixture)",
+      "prepare": false,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268"
+    },
+    "pdbId": "0T91",
+    "chainsPartial": [
+      "A"
+    ],
+    "chainsAll": [
+      "A",
+      "B"
+    ],
+    "positions": {
+      "ligandShell": {
+        "resname": "MK1",
+        "chain": "B",
+        "seq": 902,
+        "radius": "5"
+      }
+    },
+    "release": {
+      "resname": "ASP",
+      "chain": "A",
+      "seq": 25
+    },
+    "expect": {
+      "partialUncovered": [
+        {
+          "chain_auth": "B",
+          "coverage": "not_in_annotation"
+        }
+      ],
+      "catalytic": {
+        "ASP A:25": [
+          [
+            691,
+            0,
+            true
+          ]
+        ],
+        "GLY A:27": [
+          [
+            691,
+            2,
+            true
+          ]
+        ],
+        "ASP B:25": [
+          [
+            691,
+            1,
+            false
+          ]
+        ],
+        "GLY B:27": [
+          [
+            691,
+            3,
+            true
+          ]
+        ]
+      },
+      "partialCounts": {
+        "matched_rows": 2,
+        "conflict_rows": 1,
+        "unmatched_rows": 2
+      },
+      "allCounts": {
+        "matched_rows": 4,
+        "conflict_rows": 1,
+        "unmatched_rows": 2
+      },
+      "conflicts": [
+        [
+          "A",
+          691,
+          4
+        ]
+      ],
+      "unmatched": [
+        [
+          "A",
+          691,
+          5
+        ],
+        [
+          "A",
+          691,
+          6
+        ]
+      ]
+    },
+    "v1Run": "run_m23_golden_keys",
+    "pickers": [
+      "m20",
+      "m21",
+      "m23",
+      "m24",
+      "m25"
+    ]
+  }
+}

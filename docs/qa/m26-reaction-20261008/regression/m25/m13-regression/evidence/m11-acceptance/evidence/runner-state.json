@@ -1,0 +1,88 @@
+{
+  "build": {
+    "buildId": "Dikedmz3G0FMeEOWwIdzo",
+    "gitHead": "dac2755a00e0139b0ce25085a82a1ed08caf3e71",
+    "gitStatusPorcelainSha256": "4c7db47848caae952fc83dc3b03001d06f0c2563e9cfc4137656949eaebf54de",
+    "dirtyFiles": [
+      "?? docs/qa/m26-reaction-20261008/acceptance/",
+      "?? docs/qa/m26-reaction-20261008/regression/"
+    ],
+    "recordedAt": "2026-10-09T10:43:29.524567+00:00",
+    "harnessSha256": {
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "m11-case-ledger.cjs": "445666ab975a4db5abcbec7f86be95bf33b09c94a051f83a87855d1464a86f43",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "runnerSha256": "476c41bf3b088fd5d1067717b145986a0b27c55bdbbb0f8cedf5e1a9dee54227"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-09T10:43:34.513562+00:00"
+    },
+    {
+      "name": "backend-replay-worker-missing",
+      "runs": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/replay-runs",
+      "code": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/layout-worker-missing",
+      "mw": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-09T11:00:32.366432+00:00"
+    },
+    {
+      "name": "backend-worker-mismatch",
+      "runs": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/capability-mismatch-runs",
+      "code": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/layout-worker-mismatch",
+      "mw": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/layout-worker-mismatch/backend/mw/__init__.py",
+      "startedAt": "2026-10-09T11:05:51.393546+00:00"
+    }
+  ],
+  "create": {
+    "run": "run_7555003a09464298858405b2351f3a1a",
+    "result": "obj://run_7555003a09464298858405b2351f3a1a/chemical_interaction_set/99ed8925d37ae3b595846b9db12098e0bf34447353df72593b150e69a4f76ab9",
+    "report": "obj://run_7555003a09464298858405b2351f3a1a/method_report_manifest/035a3b6793ab6a9f895999093b11c52972d40c112be3d7ae4d3096a8a0e6bd3c",
+    "md": "75d95099f1ed5fb84b94b460e2a3ddb61b874df338454d0bc00bb5983e7c988a",
+    "json": "abf6aecf026850f4f8f33425c22fe77c67a883c5afe8d90a241b7217c2106df9"
+  },
+  "empty": {
+    "run": "run_1d3e1ffe850d4a9c8be4e2e362683b99",
+    "result": "obj://run_1d3e1ffe850d4a9c8be4e2e362683b99/chemical_interaction_set/3e97d5c69c76b0a5bc09f5c0263716feae1b3648d9657d156cf5a1e5ca2f894b",
+    "report": "obj://run_1d3e1ffe850d4a9c8be4e2e362683b99/method_report_manifest/1b4e212c297d8c0028ea757c548855edd0b61631290129fca00cf521dcb47f91",
+    "md": "e5287003ae22fde1aa3c0e164684bcd66c7697acec22b7091ecf9275e8a99f02",
+    "json": "3b2ca2b7dd28f97ecd9b01d5782d01a76933ce6ee8d604f8b6354787b07f5b4f"
+  },
+  "prepared": {
+    "run": "run_71a6b05cc0c944e28ccfd78f54fdd98f",
+    "graph": "obj://run_71a6b05cc0c944e28ccfd78f54fdd98f/chemical_graph/a8674c6f6fa23b3d3cf5c747d1b5ed019e9798d628155f0647afba1179078d6e"
+  },
+  "attach": {
+    "run": "run_758651facc7346e9a20f992d40fb241d",
+    "complex": "obj://run_758651facc7346e9a20f992d40fb241d/structure/d4497d4ce4907a156fcefe008a4b0ba5ee11f642f2f156fbc93d18e2b00638fa",
+    "dir": "<repo>/runs/m26-m25-regression-20261009-m13-regression/m11-acceptance/inputs/attach-setup",
+    "sdfImport": "obj://run_758651facc7346e9a20f992d40fb241d/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+    "mapResult": "obj://run_758651facc7346e9a20f992d40fb241d/chemical_interaction_set/17379c114d7716613b6eea8194293841c36e8df4d07d439caffe2467698575d8",
+    "mapReport": "obj://run_758651facc7346e9a20f992d40fb241d/method_report_manifest/3ffa31b59f83e5ab01b552f3af4b32afabafa2dd815c6e71f60c6ecab847b539",
+    "mapMd": "26d1ee498fed3392e4530fe6260d493e65f4f64c7be3de2b4e6eab164438784e",
+    "mapJson": "f38ddaa8c1e874bf38b0f284e6eb4c0070524024e0ca574f88c25084ea9c89a9",
+    "replaceResult": "obj://run_758651facc7346e9a20f992d40fb241d/chemical_interaction_set/7d74f539ef831a9ba4fd24c121898a5ff78d6483cb419d8eed5b558ffa159f98",
+    "replaceReport": "obj://run_758651facc7346e9a20f992d40fb241d/method_report_manifest/415124e50a0d7f02a449047783ae0cf2c03b11c368acb2a3b9798c00536c0f26",
+    "replaceReport2": "obj://run_758651facc7346e9a20f992d40fb241d/method_report_manifest/a3b24f0aff6a412c47ff3bc9b3ce7885a76c4d63a5bfa135bd285aa9db3d0ac1"
+  },
+  "normalRun": "run_7d5ecb26fe004ad6b67ced2d93a6b53c",
+  "scenesRun": "run_e535e8fa44814223a309dc5d057a766a",
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent",
+      "files": 145,
+      "treeSha256": "137e15da976bb50fbfc7a1b5347003cfe7b76142547b4dc00d9a4928f08f3aa4"
+    },
+    "layout-worker-mismatch": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path points at a non-pinned interpreter <repo>/.venv/bin/python",
+      "files": 145,
+      "treeSha256": "137e15da976bb50fbfc7a1b5347003cfe7b76142547b4dc00d9a4928f08f3aa4"
+    }
+  }
+}
