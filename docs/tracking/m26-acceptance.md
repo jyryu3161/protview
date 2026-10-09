@@ -32,7 +32,7 @@
 - 테스트: 백엔드 새 파일 여섯(`test_reaction_constants`·`test_reaction_snapshots`·`test_reaction_knowledge`·`test_reaction_knowledge_tool`·`test_reaction_knowledge_api`·`test_reaction_knowledge_reports`) 449개, 스크립트 `test_import_reaction_references.py` 213개·`test_m26_offscreen_acceptance.py` 45개(Stop 훅 `SCRIPT_TESTS`에 추가), 프런트 `tests/reaction-knowledge.test.cjs`·`tests/reaction-knowledge-panel.test.cjs`. Fixture: `backend/tests/fixtures/reaction/`(작업별 하위 폴더 `t1`·`t2`·`t3`·`t6`·`t9`·`t9a`, 합성 표시와 `SYNTHETIC-PROVENANCE-<작업>.md`, 실제 응답 조각 없음), 세트 만들기 도우미 `tests/reaction_fixture.py`, M20 v2 도우미 `tests/m20_catalytic_fixture.py`·`tests/m20_v2_fixture.py`, 공개 구조 `public_1s9i.cif`·`public_1a30.cif`·`public_1a4i.cif`(+ `.provenance.json`).
 
 ## 사용자 결정 (2026-10-08·09)
-근거는 결정 0034. 사용자는 모든 질문에서 추천안을 골랐다(자유 입력 없음): ① 공개 서버에서 가져오는 명령 ② M-CSA에 적힌 PDB 항목 기준 ③ M20 촉매 칸 켬 ④ 뷰어 표시 없음 ⑤ 역할 문구 원문 ⑥ 대응됨만 보호 근거 ⑦ 실서버 한도(가져오기 2·탐색 100·RCSB 3) ⑧ 수집 범위 ⑨ v1·v2 모두 받음 ⑩ 원자적 + 파생 건너뜀 기록 ⑪ 대응됨 행 전부 보호 ⑫ 다루지 않은 체인은 검사하지 않음 ⑬ 직접 지정 실패는 전체 거절. 착수 확인 뒤 ⑭ `main_annotation` 저장 안 함 ⑮ `demerged`와 대상 목록 ⑯ Rhea 대표 반응 전부 ⑰ QA 구조 `1S9I`·`1A30`·`1A4I`, 실데이터 사전 검증 뒤 ⑱ 동형체 위치 부위만 건너뜀. 세션이 정한 세부(검사 범위 규칙, 미리 고르기, 상태 기준 표시, 닫힌 이름, 실측 반영)는 결정 0034의 "조율 세션이 정한 것"이다. 고정 문장 RK1–RK6·UK1–UK4·M20 셋째 문장 변형 둘·J6n·J6c 문구는 초안이다(승인 대기: 사용자 최종 확인).
+근거는 결정 0034. 사용자는 모든 질문에서 추천안을 골랐다(자유 입력 없음): ① 공개 서버에서 가져오는 명령 ② M-CSA에 적힌 PDB 항목 기준 ③ M20 촉매 칸 켬 ④ 뷰어 표시 없음 ⑤ 역할 문구 원문 ⑥ 대응됨만 보호 근거 ⑦ 실서버 한도(가져오기 2·탐색 100·RCSB 3) ⑧ 수집 범위 ⑨ v1·v2 모두 받음 ⑩ 원자적 + 파생 건너뜀 기록 ⑪ 대응됨 행 전부 보호 ⑫ 다루지 않은 체인은 검사하지 않음 ⑬ 직접 지정 실패는 전체 거절. 착수 확인 뒤 ⑭ `main_annotation` 저장 안 함 ⑮ `demerged`와 대상 목록 ⑯ Rhea 대표 반응 전부 ⑰ QA 구조 `1S9I`·`1A30`·`1A4I`, 실데이터 사전 검증 뒤 ⑱ 동형체 위치 부위만 건너뜀. 세션이 정한 세부(검사 범위 규칙, 미리 고르기, 상태 기준 표시, 닫힌 이름, 실측 반영)는 결정 0034의 "조율 세션이 정한 것"이다. 고정 문장 RK1–RK6·UK1–UK4·M20 셋째 문장 변형 둘·J6n·J6c 문구는 조율 세션이 쓴 초안이었고 2026-10-09 사용자 최종 확인으로 승인했다.
 
 ## 착수 확인 (`preflight-network.md`·`preflight-local.md`, 기준 `72f4d1e`)
 - 실제 응답: M-CSA API는 항목 1,003개·11쪽이고 `page_size` 상한 100(더 크게 주면 조용히 100으로 자름), `chain_name`은 저자 체인, `resid`는 label 번호·`auth_resid`가 저자 번호, 잔기마다 `residue_chains` 0 또는 1개, `is_reference`는 모두 참. UniProt `/uniprotkb/accessions`는 한 요청 1,000개이고 비활성·없는 accession을 이유 없이 빼므로 하나씩 분류한다. Rhea는 REST 한 요청으로 대표 반응 전부(5열 TSV). 허용 호스트는 셋으로 정했다.
@@ -131,5 +131,4 @@
 
 ## 남은 일
 - main 병합(사용자 승인 뒤). 병합 해시는 병합 뒤 이 기록과 `docs/tracking/status.md`에 적는다.
-- 고정 문장 초안의 사용자 최종 확인(결정 0034).
 - 새 미해결 문제(`docs/tracking/findings.md`): 위 "알려진 한계"의 항목들, 옛 실행기의 참조 폴더, 역사 정리 기록.
