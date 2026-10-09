@@ -41,6 +41,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import shutil
 import subprocess
@@ -611,6 +612,29 @@ def browser_hosts(rows: list[dict]) -> list[str]:
     return sorted(hosts)
 
 
+TEXT_SUFFIXES = {".json", ".jsonl", ".log", ".md", ".txt", ".html"}
+
+
+@contextlib.contextmanager
+def held_downloads(artifacts: Path):
+    """Report downloads quote third-party reference text (CC BY 4.0): evidence keeps only their hashes.
+
+    The shared export writes every text artifact into the evidence folder; a file renamed to ``*.held`` has no text
+    suffix, so it is recorded like a binary (path, bytes, sha256) and its content stays in the git-ignored artifacts."""
+    held: list[tuple[Path, Path]] = []
+    try:
+        for path in sorted(Path(artifacts).rglob("*")):
+            if (path.is_file() and "downloads" in path.relative_to(artifacts).parts
+                    and path.suffix in TEXT_SUFFIXES):
+                target = path.with_name(path.name + ".held")
+                path.rename(target)
+                held.append((target, path))
+        yield held
+    finally:
+        for target, path in held:
+            target.rename(path)
+
+
 # ---------------------------------------------------------------------------------------------------- runner
 class Runner(m15.Runner):
     """The M15 runner's protections (fresh root outside /tmp, git-ignored artifacts, free ports, build stamp, mw path
@@ -619,6 +643,10 @@ class Runner(m15.Runner):
 
     api = m18.Runner.api
     provider_zero = m18.Runner.provider_zero
+
+    def export(self, ledger: dict) -> None:
+        with held_downloads(self.artifacts):
+            super().export(ledger)
 
     def __init__(self, args: argparse.Namespace) -> None:
         stamp = datetime.now(timezone.utc).astimezone().strftime("%Y%m%d")

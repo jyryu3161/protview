@@ -412,3 +412,25 @@ def test_runner_never_imports_mw_and_never_names_a_limit_route():
 
 def test_stop_hook_runs_this_test():
     assert '"scripts/test_m26_offscreen_acceptance.py"' in (REPO / ".codex/hooks/stop.py").read_text()
+
+
+def test_report_downloads_are_held_out_of_the_text_evidence_and_restored(tmp_path):
+    (tmp_path / "real-main" / "downloads").mkdir(parents=True)
+    report = tmp_path / "real-main" / "downloads" / "r.md"
+    report.write_text("quoted third-party text")
+    other = tmp_path / "real-main" / "ledger.json"
+    other.write_text("{}")
+    with m26.held_downloads(tmp_path) as held:
+        assert not report.exists() and (report.parent / "r.md.held").is_file()
+        assert other.is_file()
+        assert [target.name for target, _ in held] == ["r.md.held"]
+    assert report.read_text() == "quoted third-party text" and not (report.parent / "r.md.held").exists()
+
+
+def test_held_downloads_restores_even_when_the_export_fails(tmp_path):
+    (tmp_path / "downloads").mkdir()
+    report = tmp_path / "downloads" / "r.json"
+    report.write_text("{}")
+    with pytest.raises(RuntimeError), m26.held_downloads(tmp_path):
+        raise RuntimeError("export failed")
+    assert report.is_file() and not (tmp_path / "downloads" / "r.json.held").exists()
