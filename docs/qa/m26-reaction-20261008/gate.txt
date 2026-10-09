@@ -1,0 +1,48 @@
+M26 완료 게이트 기록 (소스 고정 1735338, 2026-10-09)
+
+실행: scratchpad의 gate_full.py가 Stop 훅의 pytest 열여섯 그룹을 한 번에(제한 시간 없이) 돌리고 ruff, node --check, 두 골든 --check,
+골든 호출 키 재기록 비교, 프런트엔드 test:events -> typecheck -> build를 이어서 돌렸다. 이 실행은 Stop 훅 자체의 pytest와 겹쳐
+부하가 두 배였으므로 그룹 시간은 부풀려져 있다(기준 시간은 아래 '나머지 그룹 단독').
+
+== 그룹별 pytest (종료 코드 / 초 / 마지막 줄) ==
+pytest-group-01: exit=0 659.9s  24 passed in 659.53s (0:10:59)
+pytest-group-02: exit=0 659.9s  25 passed, 1 warning in 567.58s (0:09:27)
+pytest-group-03: exit=1 661.7s  1 failed, 219 passed, 1 warning in 661.06s (0:11:01)
+pytest-group-04: exit=0 661.7s  120 passed, 1 warning in 649.26s (0:10:49)
+pytest-group-05: exit=0 661.7s  390 passed, 1 warning in 645.67s (0:10:45)
+pytest-group-06: exit=0 665.9s  12 passed, 1 warning in 665.42s (0:11:05)
+pytest-group-07: exit=0 665.9s  15 passed in 628.77s (0:10:28)
+pytest-group-08: exit=0 665.9s  2 passed, 1 warning in 600.98s (0:10:00)
+pytest-group-09: exit=0 665.9s  12 passed, 1 warning in 504.31s (0:08:24)
+pytest-group-10: exit=0 665.9s  24 passed, 1 warning in 592.15s (0:09:52)
+pytest-group-11: exit=0 665.9s  20 passed, 1 warning in 627.07s (0:10:27)
+pytest-group-12: exit=1 665.9s  1 failed, 417 passed, 1 warning in 624.43s (0:10:24)
+pytest-group-13: exit=0 665.9s  247 passed, 1 warning in 556.92s (0:09:16)
+pytest-group-14: exit=0 665.9s  202 passed, 1 warning in 358.71s (0:05:58)
+pytest-group-15: exit=0 665.9s  43 passed, 1 warning in 452.99s (0:07:32)
+pytest-group-16: exit=0 806.0s  3553 passed, 1 warning in 805.31s (0:13:25)
+
+실패 2건(둘 다 여러 그룹이 동시에 돌 때 흔들리는 프로세스 시험, 같은 종류의 흔들림이 이 단계 이전에도 기록됨(test_pocket_jobs의 [cancel] 변형, 서열 GA 작업자의 SIGTERM 시험)):
+  FAILED backend/tests/test_pocket_jobs.py::test_running_engine_is_stopped_with_its_process_group[output_files]
+  FAILED backend/tests/test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]
+단독 재실행: .venv/bin/python -m pytest -q backend/tests/test_pocket_jobs.py::test_running_engine_is_stopped_with_its_process_group
+            backend/tests/test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process -> 7 passed (149 s, exit 0)
+
+== 나머지 그룹(그룹 16) 단독 ==
+같은 인자로 다른 부하 없이 혼자: 3553 passed, 416.8 s (제한 480 s). 여유가 약 63초뿐이므로 테스트가 더 늘면 그룹을 나눠야 한다.
+
+== 그 밖의 명령 ==
+frontend-build: exit=0 34.8s
+frontend-test-events: exit=0 2.4s
+frontend-typecheck: exit=0 6.6s
+golden-call-keys-equal: exit=0 0s
+golden-call-keys-record: exit=0 117.6s
+golden-egress: exit=0 1.2s
+golden-science-m24: exit=0 9.1s
+ruff: exit=0 0.0s
+node --check frontend/tests/offscreen/*.cjs: 30개 파일, 실패 0개
+npm --prefix frontend run test:events: tests 496 pass 496 fail 0
+typecheck 다음 build를 차례로(동시 아님) 돌렸다.
+golden_call_keys.json: prototype_golden_call_keys.py 재기록과 커밋된 파일이 cmp로 같다(exit 0).
+두 골든 --check(golden_science_m24.json, golden_egress_events.json): exit 0.
+ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py: exit 0.
