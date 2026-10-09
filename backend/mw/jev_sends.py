@@ -549,7 +549,7 @@ def build_choice(projection_handle: str, projection: dict[str, Any], source: dic
                    "probabilities": copy.deepcopy(answer["probabilities"])},
         "usage": None if usage is None else {key: usage[key] for key in USAGE_KEYS},
         "arrival": {"late": late, "late_reason": late_reason},
-        "limitations": J.limitations_for(kind, late),
+        "limitations": J.limitations_for(kind, late, J.catalytic_status(kind, projection["wire"])),
     }
 
 
@@ -614,7 +614,9 @@ def _check_choice(content: Any, projection: dict[str, Any], source: dict[str, An
     _require(type(arrival) is dict and set(arrival) == {"late", "late_reason"} and type(arrival["late"]) is bool
              and (arrival["late_reason"] in J.LATE_REASONS if arrival["late"] else arrival["late_reason"] is None),
              "arrival")
-    _require(content["limitations"] == J.limitations_for(kind, arrival["late"]), "limitations")
+    _require(content["limitations"] == J.limitations_for(kind, arrival["late"],
+                                                         J.catalytic_status(kind, projection["wire"])),
+             "limitations")
     _require(len(canonical_json(content)) <= J.MAX_OBJECT_BYTES, "object size")
 
 

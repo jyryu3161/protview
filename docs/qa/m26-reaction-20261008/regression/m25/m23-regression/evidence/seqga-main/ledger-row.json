@@ -1,0 +1,252 @@
+{
+  "schema": "m23_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "fail",
+  "cases": {
+    "SG-no-run": "pass",
+    "SG-load-prepare": "pass",
+    "SG-no-candidate-set": "pass",
+    "SG-candidate-sets": "fail",
+    "SG-wording": "fail"
+  },
+  "runId": "run_52e072dc72aa41828918a56ca47d7570",
+  "runs": {
+    "A": "run_52e072dc72aa41828918a56ca47d7570"
+  },
+  "handles": {
+    "structure": "obj://run_52e072dc72aa41828918a56ca47d7570/structure/b492a7ee1b9b2b84914493a568904df856a6dca4d160be496efa337250d5470c",
+    "prepared": "obj://run_52e072dc72aa41828918a56ca47d7570/prepared_structure/ef482b5c21576ad3ad76e742c956c4541a7f7a880d8964ee62640d665b342ad1"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+      "bytes": 1240,
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-planar-z0.sdf",
+      "bytes": 6829,
+      "sha256": "ad531eae2446c0baebf1f8d0ddb648677c0b1d6c4053d2224d404f7f1c7b4573"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-implicit-h.sdf",
+      "bytes": 3857,
+      "sha256": "eca0d17066a3f00075805b79a1864782a5e11b721d28a341bda2da78a7d2e387"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/m20-candidate-set-1ubq-tiny.json",
+      "bytes": 4741,
+      "sha256": "e591b1b947a45983e681b4297b0b680964385497f7b296227e434ceee1c7aa78"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/expected.json",
+      "bytes": 331744,
+      "sha256": "6872587e87b784ace709d17f8ec4d09d71be945ef863209b0e84946ea0156d95"
+    }
+  ],
+  "fixtureLabels": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_52e072dc72aa41828918a56ca47d7570/prepared_structure/ef482b5c21576ad3ad76e742c956c4541a7f7a880d8964ee62640d665b342ad1"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      }
+    ],
+    "mutation-add-user": [
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      }
+    ],
+    "mutation-pick-protect": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      }
+    ],
+    "mutation-add-protect": [
+      {
+        "count": 1
+      }
+    ],
+    "mutation-allowed-none": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-allowed": [
+      {
+        "checked": "AW"
+      },
+      {
+        "checked": "W"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-remove-user": [
+      {
+        "removed": "ILE A:3",
+        "count": 3
+      },
+      {
+        "removed": "LYS A:6",
+        "count": 2
+      },
+      {
+        "removed": "GLY A:76",
+        "count": 1
+      }
+    ],
+    "mutation-remove-protect": [
+      {
+        "removed": "ILE A:3",
+        "count": 0
+      }
+    ]
+  },
+  "gaArgs": null,
+  "gaRuns": null,
+  "repro": null,
+  "budget": null,
+  "notObserved": [
+    {
+      "case": "SG-individual-without-score",
+      "reason": "every individual of the 1UBQ + phenol GAs is scored (T1: all 26 keys and the reference row scored), so no individual row without a score (null_result/failed) is shown; nothing is forged. The reference row without a score (—, never 0) is observed (SG-reference-failed). Covered by frontend/tests/sequence-ga.test.cjs ('individuals table: score-less rows last…', 'space lines and score cells…') and backend/tests/test_sequence_ga_api.py::test_rows_without_a_score_are_null_never_zero."
+    },
+    {
+      "case": "SG-heavy-atom-warning",
+      "reason": "1UBQ projects 602 heavy atoms (< 4,890), so the server flag is false and the warning line is absent (asserted on every preflight); no local public structure passing M7 exceeds it. Covered by backend/tests/test_sequence_ga_inputs.py (heavy_atom_warning 4890/4891) and frontend/tests/sequence-ga.test.cjs ('preflight lines: …')."
+    },
+    {
+      "case": "SG-other-stop-reasons",
+      "reason": "generations_complete, space_exhausted, time_exhausted, worker_failed, resource_exceeded and repeated_failure need other scores, hours, a killed worker, oversized output or five failing models; covered by backend/tests/test_sequence_ga_worker.py (oracle vectors, clock, output bound, failures) and test_sequence_ga_jobs.py (time_exhausted, worker_failed, recovery)."
+    },
+    {
+      "case": "SG-model-conditional-sentences",
+      "reason": "SL5 (HIS/CYS state differing from the reference outside the mutated residues) and L6 (a new disulfide) need such a difference; the observed 1UBQ tiny-set models have none (no Cys; the flow asserts each stored condition against the shown sentences and the empty difference text). Covered by backend/tests/test_sequence_model_bundle.py (…_adds_sl5, …_adds_both_rows_and_l6) and test_sequence_model_worker.py::test_protonation_and_disulfide_records_are_against_the_reference."
+    },
+    {
+      "case": "SG-dry-run",
+      "reason": "a dry-run run plans only and has no limit to raise; covered by backend/tests/test_sequence_ga_jobs.py::test_dry_run_plans_only and frontend/tests/sequence-ga.test.cjs."
+    }
+  ],
+  "buildId": "Dikedmz3G0FMeEOWwIdzo",
+  "harness": {
+    "sequence-ga-flow.cjs": "ea89a85851adec8bcfd1526109a1c4d355f4f22cbe0f61872164ad25b72558c1",
+    "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 107,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m23/seqga-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 210,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m23/seqga-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [],
+  "providerCallsZero": false,
+  "partFailures": [],
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    candidate_positions: 3,\n    candidates: 6,\n    excluded_positions: 1,\n    exclusion_reason_counts: {\n+     catalytic_residue: 0,\n      disulfide_cys: 0,\n      klifs_key_site: 0,\n      metal_contact: 0,\n      no_allowed_alternative: 0,\n      non_standard_residue: 0,\n\n    at <repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:1449:12\n    at Object.step (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:395:31)\n    at async Object.modeMain [as main] (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:1435:16)\n    at async main (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:2386:5)",
+  "evidenceFile": "sequence-ga-main.jsonl",
+  "startedAt": "2026-10-09T10:15:39.819Z",
+  "finishedAt": "2026-10-09T10:15:45.218Z"
+}

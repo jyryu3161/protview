@@ -7,6 +7,11 @@ through ``Run.call``) on the SYNTHETIC fixture in ``fixtures/mutation/`` and on 
 reference FIXTURE set from ``fixtures/reference`` for the M15 map and M16 annotation), as in ``test_mutation_api.py``.
 The minimum-distance value is checked against the independent brute-force oracle ``fixtures/mutation/expected.json``
 and an independent ``Decimal`` half-up rendering. Tampered reports and objects are LABELED TEST FABRICATIONS.
+
+M26 v2 (spec 8.5): every new set is v2, so a set without a catalytic annotation reports the catalytic check as
+"검사하지 않음 (not_checked)" with no number. Sets with an annotation use ``reaction_knowledge@1`` results made by the
+product tool over the LABELLED SYNTHETIC reaction reference set of ``m20_catalytic_fixture``. The v1 report bytes of
+stored v1 sets are compared with the T1 baseline in ``test_mutation_api.py``.
 """
 from __future__ import annotations
 
@@ -15,6 +20,7 @@ import json
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
+import m20_catalytic_fixture as CF
 import pytest
 from fastapi.testclient import TestClient
 from reference_fixture_set import build_fixture_set
@@ -22,6 +28,7 @@ from reference_fixture_set import build_fixture_set
 from mw import mutation_candidates as mc
 from mw import mutation_constants as K
 from mw import mutation_reports as mr
+from mw import reaction_knowledge as rk
 from mw import reference_snapshots as rs
 from mw.api import app as api_module
 from mw.reports import EvidenceError
@@ -74,6 +81,21 @@ def world(tmp_path_factory):
         made.update(mq=run.call(K.TOOL, _args(mq, ligand_shell={"radius_A": 5.0}, ligand=res("A", 2001, "ADP"),
                                               numbering_map=numbering_map, annotation=annotation)).handle,
                     map=numbering_map, annotation=annotation)
+        CF.activate(base / "reaction_reference", patch)
+        cat_residues = [res("A", 2, "ALA"), res("A", 6, "HID"), res("A", 10, "LEU"), res("A", 26, "ASP"),
+                        res("B", 6, "HID")]
+        made["knowledge"] = CF.link(run, syn, ["A", "B"])
+        made["cat"] = run.call(K.TOOL, _args(syn, residues=cat_residues, released_residues=[res("A", 26, "ASP")],
+                                             catalytic_annotation=made["knowledge"])).handle
+        made["knowledge_cc"] = CF.link(run, syn, ["A", "B", "CC"])
+        made["cat_partial"] = run.call(K.TOOL, _args(syn, residues=[*cat_residues, res("CC", 1, "HIE")],
+                                                     catalytic_annotation=made["knowledge_cc"])).handle
+        made["knowledge_none"] = CF.link(run, syn, ["A", "B"], pdb_id=CF.OTHER_PDB_ID)
+        made["cat_none"] = run.call(K.TOOL, _args(syn, residues=cat_residues,
+                                                  catalytic_annotation=made["knowledge_none"])).handle
+        loaded_mq = run.call("load_structure", {"source": str(CIF_1MQ4), "model_index": 0}).handle
+        made["knowledge_mq_raw"] = CF.link(run, loaded_mq, ["A"], pdb_id=CF.OTHER_PDB_ID)   # another structure
+        CF.reset_caches()
         other = new_run(root, run_id=OTHER, dry_run=False)
         made["other"] = other.call(K.TOOL, _args(_prepared(other, CIF), residues=[res("A", 2, "ALA")])).handle
     return {"root": root, **made}
@@ -140,6 +162,13 @@ def test_distance_rendering_is_decimal_half_up(value, text):
 def test_forbidden_words_with_the_five_fixed_limitation_lines_exempt():
     text = "\n".join(["# x", *K.LIMITATIONS, "ok", "촉매 잔기 데이터베이스 | 사용할 수 없음 (not_available)"])
     assert mr.check_no_interpretation(text) == text
+    # M26 8.4: both v2 third-sentence variants are fixed sentences too (they say "이황화 결합")
+    for variant in (K.LIMITATION_3_CHECKED, K.LIMITATION_3_NOT_CHECKED):
+        assert variant in mr.FIXED_LIMITATIONS and "결합" in variant
+        assert mr.check_no_interpretation(f"ok\n{variant}") == f"ok\n{variant}"
+        with pytest.raises(EvidenceError, match="interpretive_statement"):
+            mr.check_no_interpretation(f"- {variant}")
+    assert mr.FIXED_LIMITATIONS == frozenset(K.LIMITATIONS) | {K.LIMITATION_3_CHECKED, K.LIMITATION_3_NOT_CHECKED}
     # The fixed sentences themselves contain 안정성·결합·활성 and 순위나 추천.
     assert any("활성" in line for line in K.LIMITATIONS) and any("추천" in line for line in K.LIMITATIONS)
     for bad in ("친화도 높음", "ΔΔG 예상", "ddG", "안정성 향상", "순위 1", "추천 후보", "최적 위치", "개선된 변이",
@@ -187,22 +216,33 @@ def test_report_with_ligand_counts_minimum_and_not_checked_klifs(client, world):
     assert minimum["exact_value"] == pytest.approx(low, abs=1e-9)
     assert minimum["rendered_value"] == _half_up(minimum["exact_value"]) and minimum["unit"] == "angstrom"
     assert f"{minimum['rendered_value']} Å" in markdown
-    # KLIFS not checked: a status claim, no number; catalytic database unavailable, no number
+    # KLIFS not checked: a status claim, no number; the v2 catalytic check without an annotation: the same
     klifs = _claim(manifest, "protection_check_status", check="klifs_key_sites")
     assert klifs["exact_value"] == "not_checked" and klifs["rendered_value"] == "검사하지 않음 (not_checked)"
     catalytic = _claim(manifest, "protection_check_status", check="catalytic_residue_database")
-    assert catalytic["rendered_value"] == "사용할 수 없음 (not_available)"
+    assert catalytic["rendered_value"] == "검사하지 않음 (not_checked)"
     counted = {c["field_path"] for c in manifest["claims"] if c["statement_id"] == "protection_check_count"}
     assert not any("klifs" in path or "catalytic" in path for path in counted)
+    assert not [c for c in manifest["claims"] if c["statement_id"] == "catalytic_covered_chain_count"]
     assert "protection_checks.metal_contact.metal_residues" in counted
     klifs_line = next(line for line in markdown.splitlines() if "(klifs\\_key\\_sites)" in line)
     assert "검사하지 않음" in klifs_line and not any(ch.isdigit() for ch in klifs_line)
-    assert "사용할 수 없음 \\(not\\_available\\)" in markdown
+    catalytic_line = next(line for line in markdown.splitlines() if "(catalytic\\_residue\\_database)" in line)
+    assert "검사하지 않음 \\(not\\_checked\\)" in catalytic_line and not any(ch.isdigit() for ch in catalytic_line)
+    assert "사용할 수 없음" not in markdown and "- 촉매 잔기 주석: 주지 않음" in markdown
+    # no annotation: the stored catalytic_residue count 0 counts nothing -> no claim, "—" with the reason, never 0
+    assert content["counts"]["exclusion_reason_counts"]["catalytic_residue"] == 0
+    assert not [c for c in manifest["claims"] if c["row_selector"] == {"exclusion_reason": "catalytic_residue"}]
+    excluded = _line(markdown, "- M-CSA 촉매 잔기 주석 (catalytic\\_residue):")
+    assert excluded == ("- M-CSA 촉매 잔기 주석 (catalytic\\_residue): — (촉매 잔기 검사 안 함: 주석을 주지 않음 "
+                        "(annotation\\_not\\_given). M-CSA가 다룬 체인이 없어 이 사유의 위치를 세지 않았다)")
+    assert not any(ch.isdigit() for ch in excluded)
     # no reference value without a map or annotation; no per-position table
     assert not [c for c in manifest["claims"] if c["evidence_kind"] == "reference_value"]
     assert all(c["evidence_kind"] == "computed" for c in manifest["claims"])
     assert "| index |" not in markdown and markdown.count("\n| ") <= len(K.PROTECTION_CHECK_KEYS) + 2
-    for sentence in K.LIMITATIONS:
+    assert manifest["limitations"] == list(K.LIMITATIONS_V2["not_checked"])
+    for sentence in K.LIMITATIONS_V2["not_checked"]:
         assert f"\n{sentence}\n" in markdown
     # reopen, list and download read the same bytes
     assert _selected(client, created["handle"]).json()["markdown"] == markdown
@@ -437,3 +477,172 @@ def test_identifiers_containing_forbidden_words_do_not_fail_a_report(tmp_path):
     with pytest.raises(EvidenceError, match="interpretive_statement"):
         mr.check_no_interpretation(created["markdown"])   # a whole-line check would have refused this report
     assert mr.saved_mutation_report(run, created["handle"])["markdown"] == created["markdown"]
+
+
+# --- M26 v2: the catalytic part (spec 8.5) ------------------------------------------------------------------------------
+
+def _line(markdown, marker):
+    return next(line for line in markdown.splitlines() if marker in line)
+
+
+def test_checked_catalytic_report_counts_and_mcsa_reference_values(client, world):
+    handle = world["cat"]
+    created = _report(client, handle)
+    manifest, markdown = created["manifest"], created["markdown"]
+    content = _run().store.load(handle)
+    check = content["protection_checks"]["catalytic_residue_database"]
+    assert check["status"] == "checked" and manifest["evidence_statement"] == mr.EVIDENCE_STATEMENT_V2
+    assert _claim(manifest, "protection_check_status", check="catalytic_residue_database")["rendered_value"] == \
+        "검사함 (checked)"
+    chains = _claim(manifest, "catalytic_covered_chain_count")
+    assert chains["exact_value"] == len(check["covered_chains"]) == 2 and chains["evidence_kind"] == "computed"
+    for field, value in (("matched_rows", 9), ("conflict_rows", 2), ("unmatched_rows", 4)):
+        claim = next(c for c in manifest["claims"]
+                     if c["field_path"] == f"protection_checks.catalytic_residue_database.{field}")
+        assert claim["exact_value"] == check[field] == value and claim["statement_id"] == "protection_check_count"
+    assert _claim(manifest, "exclusion_reason_count", exclusion_reason="catalytic_residue")["exact_value"] == \
+        sum("catalytic_residue" in p["exclusion_reasons"] for p in content["positions"]) == 3   # A2 A6 B6
+    ids = [c for c in manifest["claims"] if c["statement_id"] == "reference_mcsa_entry_id"]
+    assert all(c["evidence_kind"] == "reference_value" and c["reference"] == {
+        "note": mr.REFERENCE_NOTE, "reference_object": world["knowledge"]} for c in ids)
+    expected = {(e["mcsa_id"], p["protection"]["released"]) for p in content["positions"]
+                for e in p["protection"]["catalytic"] or []}
+    assert {(c["exact_value"], c["subject"]["released"]) for c in ids} == expected == {
+        (601, False), (602, False), (601, True)}                     # ASP A26 (601/1) is released
+    line = _line(markdown, "(catalytic\\_residue\\_database)")
+    assert "검사함 \\(checked\\)" in line and "검사한 체인 2" in line and "대응됨 행 9" in line
+    assert "충돌 행 2" in line and "대응 없음 행 4" in line
+    assert "- M-CSA가 다룬 체인 위치에서 대응된 M-CSA 항목 ID" in markdown and "601, 602" in markdown
+    assert "- 보호를 해제한 위치의 M-CSA 항목 ID (해제됨, 참조 스냅샷 값, 계산 아님): 601" in markdown
+    assert _line(markdown, "- M-CSA 촉매 잔기 주석 (catalytic\\_residue):").endswith(": 3")   # checked: no note
+    assert manifest["limitations"][2] == K.LIMITATION_3_CHECKED and f"\n{K.LIMITATION_3_CHECKED}\n" in markdown
+    assert _selected(client, created["handle"]).json()["markdown"] == markdown
+    assert mr.validate_mutation_claim(_run(), handle, copy.deepcopy(chains)) == chains
+
+
+@pytest.mark.parametrize("name", ["cat_partial", "cat_none"])
+def test_not_checked_catalytic_report_has_a_status_claim_and_no_number(client, world, name):
+    created = _report(client, world[name])
+    manifest, markdown = created["manifest"], created["markdown"]
+    check = _run().store.load(world[name])["protection_checks"]["catalytic_residue_database"]
+    assert (check["status"], check["reason"]) == ("not_checked", "chains_not_covered")
+    assert _claim(manifest, "protection_check_status", check="catalytic_residue_database")["rendered_value"] == \
+        "검사하지 않음 (not_checked)"
+    catalytic_paths = [c["field_path"] for c in manifest["claims"] if "catalytic_residue_database" in c["field_path"]]
+    assert catalytic_paths == ["protection_checks.catalytic_residue_database.status"]   # the status claim only
+    line = _line(markdown, "(catalytic\\_residue\\_database)")
+    assert "검사하지 않음 \\(not\\_checked\\)" in line and "chains\\_not\\_covered" in line
+    knowledge = world["knowledge_cc" if name == "cat_partial" else "knowledge_none"]
+    assert not any(ch.isdigit() for ch in line.replace(knowledge.rsplit("/", 1)[-1], ""))   # no number but the hash
+    if name == "cat_partial":
+        assert "CC (체인이 M-CSA 행에 없음, chain\\_not\\_listed)" in line and "M-CSA가 다룬 체인: A, B" in line
+        assert [c["exact_value"] for c in manifest["claims"] if c["statement_id"] == "reference_mcsa_entry_id"] == \
+            [601, 602]
+    else:
+        assert "pdb\\_not\\_in\\_snapshot" in line and "M-CSA가 다룬 체인" not in line
+        assert "- 보호된 위치의 M-CSA 항목 ID: 검사하지 않음" in markdown and "none" not in _line(markdown, "M-CSA 항목 ID")
+        assert not [c for c in manifest["claims"] if c["statement_id"] == "reference_mcsa_entry_id"]
+    assert manifest["limitations"][2] == K.LIMITATION_3_NOT_CHECKED
+    excluded = _line(markdown, "- M-CSA 촉매 잔기 주석 (catalytic\\_residue):")
+    assert "촉매 잔기 검사 안 함" in excluded
+    content = _run().store.load(world[name])
+    reason_claims = [c for c in manifest["claims"] if c["row_selector"] == {"exclusion_reason": "catalytic_residue"}]
+    if name == "cat_partial":   # A and B covered: the count of those chains, with the note
+        counted = sum("catalytic_residue" in p["exclusion_reasons"] for p in content["positions"])
+        assert [c["exact_value"] for c in reason_claims] == [counted] and counted > 0
+        assert excluded.endswith(f": {counted} — 촉매 잔기 검사 안 함(검사하지 않은 위치는 세지 않았다)")
+    else:                       # no chain covered: the stored 0 is no count -> no claim, "—" with the reason
+        assert content["counts"]["exclusion_reason_counts"]["catalytic_residue"] == 0 and reason_claims == []
+        assert excluded == ("- M-CSA 촉매 잔기 주석 (catalytic\\_residue): — (촉매 잔기 검사 안 함: 위치가 있는 체인을 M-CSA "
+                            "주석이 모두 다루지는 않음 (chains\\_not\\_covered). M-CSA가 다룬 체인이 없어 이 사유의 위치를 세지 "
+                            "않았다)")
+        assert not any(ch.isdigit() for ch in excluded)
+        # a proposed 0 for it is refused (no such claim exists)
+        zero = {**_claim(manifest, "exclusion_reason_count", exclusion_reason="no_allowed_alternative"),
+                "row_selector": {"exclusion_reason": "catalytic_residue"}, "quantity": "catalytic_residue_positions",
+                "exact_value": 0, "rendered_value": "0",
+                "operation": "count_where(catalytic_residue in exclusion_reasons; stored rows)"}
+        with pytest.raises(EvidenceError, match="field_not_allowed"):
+            mr.validate_mutation_claim(_run(), world[name], zero)
+    assert _selected(client, created["handle"]).status_code == 200
+    assert _selected(client, created["handle"]).json()["markdown"] == markdown
+
+
+def test_catalytic_values_must_agree_with_the_reaction_result(client, world):
+    # LABELED TEST FABRICATIONS of the stored v2 set's catalytic values, checked against the stored result.
+    run = _run()
+    content = run.store.load(world["cat"])
+    result = run.store.load(world["knowledge"])
+    mr.check_sources(content, None, None, None, result)
+    edits = {
+        "covered_chains": lambda c: c["protection_checks"]["catalytic_residue_database"]["covered_chains"].pop(),
+        "row_count": lambda c: c["protection_checks"]["catalytic_residue_database"].update(matched_rows=8),
+        "conflicts": lambda c: c["protection_checks"]["catalytic_residue_database"]["conflicts"].pop(),
+        "protection": lambda c: c["positions"][1]["protection"].update(catalytic=[]),
+        "entry": lambda c: c["positions"][1]["protection"]["catalytic"][0].update(is_reference=False),
+    }
+    for edit in edits.values():
+        forged = copy.deepcopy(content)
+        edit(forged)
+        with pytest.raises(EvidenceError, match="catalytic_value_mismatch"):
+            mr.check_sources(forged, None, None, None, result)
+    with pytest.raises(EvidenceError, match="catalytic_value_mismatch"):        # another (valid) result
+        mr.check_sources(content, None, None, None, run.store.load(world["knowledge_none"]))
+    with pytest.raises(EvidenceError, match="catalytic_annotation_structure_mismatch"):
+        mr.check_sources(content, None, None, None, run.store.load(world["knowledge_mq_raw"]))
+    broken = copy.deepcopy(result)
+    broken["counts"]["chains"] = 3
+    with pytest.raises(EvidenceError, match="catalytic_annotation_invalid"):
+        mr.check_sources(content, None, None, None, broken)
+    with pytest.raises(EvidenceError, match="sources_missing"):
+        mr.check_sources(content, None, None, None, None)
+    v1 = json.loads((FIX / "sequence_ga" / "m20-candidate-set-1ubq-8pos.json").read_text())["content"]
+    mr.check_sources(v1, None, None, None)                                       # v1: no catalytic source
+    with pytest.raises(EvidenceError, match="sources_missing"):
+        mr.check_sources(v1, None, None, None, result)
+
+
+def test_a_v2_set_valid_on_its_own_but_not_matching_its_result_is_refused(client, world):
+    # LABELED TEST FABRICATION: one M-CSA entry of HID A6 dropped. validated_set alone cannot see it (the set stays
+    # internally consistent); only the comparison with the stored reaction_knowledge@1 result refuses it.
+    run = _run()
+    content = copy.deepcopy(run.store.load(world["cat"]))
+    hid = content["positions"][1]
+    assert (hid["residue"]["seq_auth"], len(hid["protection"]["catalytic"])) == (6, 2)
+    hid["protection"]["catalytic"].pop()
+    mc.validated_set(content)
+    with pytest.raises(EvidenceError, match="catalytic_value_mismatch"):
+        mr.check_sources(content, None, None, None, run.store.load(world["knowledge"]))
+
+
+def test_reopen_re_validates_the_reaction_result(client, world, monkeypatch):
+    created = _report(client, world["cat"])
+    assert _selected(client, created["handle"]).status_code == 200
+    calls = []
+    real = rk.validated_result
+
+    def counted(obj):
+        calls.append(obj["schema"])
+        return real(obj)
+
+    monkeypatch.setattr(rk, "validated_result", counted)
+    api_module.RUNS.clear()
+    assert _selected(client, created["handle"]).status_code == 200 and calls == ["reaction_knowledge@1"]
+
+    def refuse(obj):
+        raise rk.ResultInvalid("LABELED TEST FABRICATION: the stored result no longer validates")
+
+    monkeypatch.setattr(rk, "validated_result", refuse)
+    api_module.RUNS.clear()
+    response = _selected(client, created["handle"])
+    assert response.status_code == 422 and "catalytic_annotation_invalid" in response.text
+    response = client.post(f"/runs/{RID}/method_reports", json={"result_handle": world["cat"]})
+    assert response.status_code == 422 and response.json()["detail"]["error"] == "report_evidence_invalid"
+
+
+def test_v2_report_template_has_no_interpretive_wording(client, world):
+    for name in ("cat", "cat_partial", "cat_none", "shell"):
+        markdown = _report(client, world[name])["markdown"]
+        lines = [line for line in markdown.splitlines() if line not in mr.FIXED_LIMITATIONS]
+        for word in ("점수", "순위", "추천", "활성", "중요", "핵심", "필수", "안정성", "효과"):
+            assert not any(word in line for line in lines), (name, word)

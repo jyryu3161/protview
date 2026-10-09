@@ -1,0 +1,21 @@
+{"argv": ["node", "<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs", "--url", "http://127.0.0.1:3000", "--mode", "main", "--artifacts", "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m23/seqga-main", "--runs-dir", "<repo>/runs/m26-m25-regression-20261009-m23-regression/runs"], "startedAt": "2026-10-09T10:15:39.650148+00:00"}
+{"ok":false,"mode":"main","runs":{"A":"run_52e072dc72aa41828918a56ca47d7570"},"cases":{"SG-no-run":"pass","SG-load-prepare":"pass","SG-no-candidate-set":"pass","SG-candidate-sets":"fail","SG-wording":"fail"}}
+sequence-ga-flow main failed: AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
+    candidate_positions: 3,
+    candidates: 6,
+    excluded_positions: 1,
+    exclusion_reason_counts: {
++     catalytic_residue: 0,
+      disulfide_cys: 0,
+      klifs_key_site: 0,
+      metal_contact: 0,
+      no_allowed_alternative: 0,
+      non_standard_residue: 0,
+
+    at <repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:1449:12
+    at Object.step (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:395:31)
+    at async Object.modeMain [as main] (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:1435:16)
+    at async main (<repo>/frontend/tests/offscreen/sequence-ga-flow.cjs:2386:5)

@@ -563,6 +563,69 @@
 ### Stop 훅 동시 실행 중의 간헐 실패 셋 (M25 기간, 환경·우연)
 - 그룹을 동시에 돌릴 때 한 번씩 실패하고 따로 돌리면 통과한 테스트가 셋 있었다: 부하 때 psutil `proc_cmdline`의 `SystemError`(`test_sequence_ga_worker`), M23 SIGTERM 타이밍 테스트, M24 `test_jev_reports.py`의 `'0.1234' not in dumped`가 보고서의 `time_utc` 숫자와 우연히 겹친 경우. 제품 동작과 무관하며 고정 게이트(`gate-backend.txt`)에서는 재현되지 않았다. 기록은 `docs/tracking/findings.md`.
 
+### M-CSA API는 `page_size`를 조용히 100으로 자르고 `next`는 요청 값을 되풀이한다 (M26)
+- **증상**: 착수 확인에서 `page_size=1003`을 보내도 오류 없이 100개만 오고, `next` URL에는 요청한 `page_size=1003`이 그대로 있었다(`docs/qa/m26-reaction-20261008/preflight-network.md` (a-1)). `next`를 따라가거나 큰 쪽 크기를 믿으면 항목을 빠뜨린 채 "전부 받음"이 된다.
+- **대응**: 가져오기 명령은 `page_size=100`을 고정하고 첫 쪽의 `count`로 쪽 수를 계산해 `page=1..ceil(count/100)`을 직접 돈다(`next`는 형만 검사하고 따르지 않음). 모든 쪽의 `count`가 같고, 쪽마다 정확히 제 몫의 항목이 오고, 받은 항목 수 = `count`, `mcsa_id` 중복 없음을 확인한다(2026-10-09: 1,003개, 11쪽).
+
+### UniProt 여러 accession 요청은 받지 못한 accession을 이유 없이 뺀다 (M26)
+- **증상**: `/uniprotkb/accessions`(한 요청 최대 1,000개, 1,001개는 400)는 삭제·분할·보조·없는 accession을 오류 없이 결과에서 빼고 `X-Total-Results`는 요청한 개수를 보인다. 대표 accession으로 바꿔 주지도 않는다.
+- **대응**: 빠진 accession마다 `/uniprotkb/{accession}.json?fields=accession` 한 건으로 분류한다: 200 + `entryType: "Inactive"`이면 `inactiveReasonType` `DELETED` → `obsolete`, `MERGED` → `merged`(대상 하나), `DEMERGED` → `demerged`(`mergeDemergeTo` 1–3개), 404 → `not_found`, 그 밖 → `fetch_failed`. 빠진 파생 accession이 `MAX_SKIPPED`(50)보다 많으면 분류 요청 없이 멈춘다. 실측 받지 못한 8개는 `DELETED` 4·`DEMERGED` 4였고 `MERGED`는 관찰하지 못해 합성 시험으로만 덮는다. 보조 accession(P02023)도 `DEMERGED`로 대표 셋을 돌려줬다.
+
+### UniProt 부위 일부는 같은 accession의 동형체 위치다 (M26)
+- **증상**: 첫 실서버 가져오기 전 오프라인 재생에서 형식 오류로 멈췄다. 활성 1,622개 중 P12821의 Binding site 3개가 `location.sequence`(= `<같은 accession>-<n>`) 키를 가졌다(`import1.md` 1절).
+- **대응(사용자 결정 2026-10-09)**: 그 모양의 부위만 정규 서열 위치가 아니므로 저장하지 않고 건너뛰며 개수는 명령 출력에만 보인다(매니페스트 키 집합이 고정이라 세트에는 남지 않음). 다른 `sequence` 값이나 알 수 없는 위치 키, `EXACT` 정수가 아닌 위치는 여전히 형식 오류로 설치를 중단한다. 실서버 가져오기 전에 명령 수정과 합성 회귀 시험(`backend/tests/fixtures/reaction/t9a/`)을 커밋했다(`075e38e`).
+
+### UniProt 촉매 활동의 Rhea 교차참조에 `RHEA-COMP:`가 섞인다 (M26)
+- `reactionCrossReferences`의 `database: "Rhea"` ID는 반응 `RHEA:<n>`과 고분자 화합물 `RHEA-COMP:<n>`이 섞여 있다(착수 확인 표본에서 592·527개). `rhea_ids`에는 `^RHEA:[0-9]+$`만 넣는다. `physiologicalReactions`의 방향 있는 Rhea ID는 필드가 없어 버린다. 연결된 `RHEA:` ID는 모두 방향 없는 대표 반응이라 Rhea는 대표 반응만 받는다(REST 한 요청 18,611행, `limit=20000`. 전체 개수 헤더가 없어 받은 행 수가 `limit` 이상이면 잘림으로 보고 형식 오류). FTP `txt/rhea-reactions.txt.gz`는 README가 옛 호환 형식이라 적어 쓰지 않는다.
+
+### M-CSA 목록 응답의 `main_annotation`은 늘 빈 문자열이고 `residue_sequences[].resid`는 UniProt 위치다 (M26)
+- entries 끝점의 `main_annotation`은 5,248개 잔기 모두 빈 문자열이고 같은 문구는 `residues` 끝점에만 있다. 사용자 결정으로 저장하지 않는다(요청을 더하지 않음). `residue_sequences[].resid`는 UniProt 서열 위치(4,918/4,932 일치)이지만 구조 연결에 쓰지 않으므로 버린다.
+- 그 밖의 실측 모양: `reference_uniprot_id`는 74개 항목에서 accession 여럿을 `", "`로 이은 문자열이라 accession 집합은 `,`로 나눠 공백을 지워 만들고(원문은 그대로 저장), `residue_sequences[].uniprot_id` 279행은 빈 문자열이라 accession이 아니다. `assembly`는 정수 또는 빈 문자열(783행)이라 빈 문자열을 null로 바꾼다. M-CSA 화합물 `chebi_id`는 `CHEBI:` 접두 없는 숫자 문자열이거나 ChEBI가 아닌 `X006nn` 모양이라 원문 그대로 두고 Rhea와 잇지 않는다.
+
+### M-CSA 번호는 `auth_resid`(저자)와 `resid`(label) 둘이고, 체인은 저자 체인이다 (M26)
+- **원인**: `chain_name`은 저자 체인 ID다(숫자 `1`, `L`·`S` 같은 서브유닛 이름이 있고 87개 항목은 `A` 없이 이런 이름만 씀). `resid`는 mmCIF `label_seq_id`, `auth_resid`는 저자 번호다(1,612행에서 다름, 1S9I는 `resid` 140·`auth_resid` 194, 7행은 `auth_resid` null). `assembly_chain_name`은 289행에서 `chain_name`과 다르다(조립체 파일 이름).
+- **대응**: 대응은 `auth_resid`와 구조 `seq_auth`로만 하고(삽입 코드 무시) `resid`는 `seq_label`과 비교하지 않고 값으로만 보인다. 체인은 `chain_name` = `chain_auth`로만 맞추고 조립체 이름은 무시한다. 같은 번호의 사슬 잔기가 둘 이상(삽입 코드 변형·같은 번호 이질 잔기)이면 고르지 않고 `ambiguous_residue_number`, 하나뿐인데 삽입 코드가 있으면 `insertion_code_present`(잔기 7필드는 담음), `auth_resid` null이면 `no_author_number`, `code`가 `Sec`·`X`이면 `non_standard_code`다. 구조 이름은 M20 `standard_name`(표준 20종 + HID·HIE·HIP·HSD·HSE·HSP·CYX·ASH·GLH·LYN)으로 비교하므로 HID 구조의 His 행은 `matched`, MSE는 `residue_name_differs`다.
+- 저장소 안 구조(1HSG·1MQ4·1UBQ)는 M-CSA에 없어 모두 `pdb_not_in_snapshot`이다. 1HSG는 M-CSA 175(PDB 1A30)와 같은 단백질이고 같은 저자 번호에 같은 잔기 이름이 있지만, 다른 PDB에 서열로 잇는 것은 범위 밖이라 연결하지 않는다. 그래서 수락 QA용 공개 구조 셋(1S9I·1A30·1A4I, 사용자 결정)을 받았다.
+
+### v1·v2 후보 집합을 함께 받는 곳은 `validated_set`의 세대 분기 하나에 기댄다 (M26)
+- `validated_set`은 `method_version`이 `mw.mutation_candidates/v2`일 때만 v2 규칙을 돌리고 그 밖은 v1 경로 그대로다. 이름 없는 상수(`EXCLUSION_REASONS`·`LIMITATIONS`·`CATALYTIC_NOT_AVAILABLE_REASON` 등)는 v1 값을 바이트 그대로 지키고 v2는 `_V2` 이름과 촉매 블록을 쓴다. 이름 없는 상수를 v2 값으로 바꾸면 저장된 v1 집합(M23 fixture `m20-candidate-set-*.json`, `fixtures/reaction/t1/`)이 읽히지 않는다. M21·M23 작업 모듈이 `mutation_candidates`를 통해 `mutation_constants`를 간접 import하므로 v1 경로의 값은 바꾸지 않는다(해시 집합 밖이라 바꿔도 호출 키는 그대로인데 결과가 바뀔 수 있음).
+- v2 `catalytic_residue_database.annotation`은 반응 결과 handle 문자열이다(KLIFS 칸의 `annotation` 선례). 아무 체인도 덮이지 않았으면 `exclusion_reason_counts.catalytic_residue`가 0(주석을 주지 않은 경우 포함), 주석을 주었으면 행 수도 0, 목록이 `[]`로 저장된다(명세 형식 그대로). 화면·M20 보고서는 이 경우 "—"와 이유를 보이고 숫자 주장을 만들지 않지만(독립 코드 검토 F4) 집합 상세 읽기의 원본 `result`에는 0이 있으므로 읽는 쪽은 `status`·`covered_chains`를 함께 본다.
+- `validated_set`은 반응 결과 객체와 교차 대조하지 않는다(도구 시점과 보고서 만들기·다시 열기가 한다). 사용자가 확인한 PDB ID를 번호 대응·주석의 PDB ID와 서로 비교하지 않는다. v1 집합에 `exclusion_reason=catalytic_residue` 필터를 주면 422가 아니라 빈 목록이다.
+
+### 골든 기록기는 M20 도구 대신 저장된 v1 집합을 넣는다 (M26)
+- **증상**: `golden_science_m24.py`·`prototype_golden_call_keys.py`는 M20 도구로 후보 집합을 만들었으므로 M20이 v2가 되면 골든 바이트(v1 J6·`not_available`)가 바뀐다. 계획대로 저장된 v1 내용을 맨 `store.put`으로 넣으면 M20 `Run.call`의 이벤트 5개가 1개가 되어 `golden_science_m24.json`의 절대 이벤트 순번 네 곳이 −4 달라졌다.
+- **대응**(M20 v2 전에 커밋, `5672200`): `golden_science_m24.py`는 M20 `Run.call` 봉투를 그대로 두고 그 run 레지스트리의 구현만 `backend/tests/fixtures/reaction/t1/`의 v1 내용을 `store.put`하게 바꿨다(인자·구조 handle 대조, handle 단언). `prototype_golden_call_keys.py`는 순번이 없어 맨 `store.put`이다. 옛 `--check` 둘이 바꾸기 전후 exit 0, 골든 JSON 불변(`docs/qa/m26-reaction-20261008/v1-baseline/`). `golden_call_keys.json`은 M20 v2 뒤 다시 기록했고 차이는 세 값뿐이다(`hashed_files`의 `mutation_candidates.py` SHA, M21 의존 pin, M21 호출 키. 모델·도킹 handle은 그대로).
+- `backend/tests/fixtures/sequence_ga/build_sequence_ga_fixtures.py --check`는 이제 설계상 실패한다(도구가 v2를 만든다). `--write`로 다시 쓰면 M23 테스트가 쓰는 v1 fixture를 덮으므로 하지 않는다.
+
+### `mutation_candidates.py` 변경으로 업그레이드 전 큐 작업과 진행 중 M25 단백질 루프가 막힌다 (M26)
+- **원인**: `mutation_candidates.py`의 SHA-256이 M21 `DEPENDENCIES`로 M21·M23 호출 키와 시작 때 pin 확인에 들어간다(M26 해시 파일 변경은 이것 하나). 그래서 M26 전 M21 변이 모델·M23 서열 GA 저장 결과의 자동 재사용이 끝났다(사용자 수용, 저장 결과·읽기는 그대로).
+- **업그레이드 전에 큐에 있던 M21·M23 작업**: 시작 때 과금 전 412 `worker_version_invalid`로 거절되고 `failed`가 아니라 `claimed`로 남는다(예약 0, 착수 확인 `preflight-local.md` (d)). 그 작업을 취소하고 다시 제출한다(새 호출 키 = 새 작업).
+- **진행 중이던 M25 단백질 루프**: 계산 단계(모델 단계와 이미 만든 모델의 도킹 단계 모두)가 `jev_loop_store.step_capability`의 pin 비교로 412 `capability_unavailable`(`capability.reason_code: "missing_configuration"`)이고 아무것도 쓰지 않는다. 막힘은 계산 단추를 누를 때 응답으로만 보이고 루프 읽기 바이트는 같다. 끝난 루프는 끝 이벤트 시점으로 동결이라 보이는 값이 바뀌지 않고, 리간드 루프는 M18 pin만 쓰므로 영향이 없다. 그 루프를 끝내고 새 루프를 만들어 이어 간다(새 루프 풀은 v1·v2 집합을 모두 받음).
+
+### git worktree에서 `-I`로 띄운 작업 모듈은 주 체크아웃의 `mw`를 import한다 (M26)
+- **원인**: M21·M23 작업 모듈과 guardian은 `<python> -I <작업 모듈>`로 뜬다. `-I`는 `PYTHONPATH`를 무시하므로 worktree에서 `PYTHONPATH=<worktree>/backend`를 줘도 자식 프로세스의 `mw`는 editable 설치가 가리키는 주 체크아웃의 `backend/mw`에서 온다(2026-10-09 확인: `PYTHONPATH=<worktree>/backend .venv/bin/python -I -c 'import mw'`가 주 체크아웃 경로를 출력, `-I` 없이는 worktree 경로). 그래서 worktree에서 고친 `mw` 코드(예: `mutation_candidates.py`)는 작업 모듈 자식 프로세스에 반영되지 않고, 서버 프로세스와 자식이 서로 다른 `mw`를 쓴다.
+- **대응**: 작업 모듈 자식 프로세스를 띄우는 시험·QA·실서버 가져오기는 주 체크아웃의 작업 브랜치에서 돌린다(위 "git worktree에서 테스트가 주 체크아웃의 코드를 돌린다"와 같은 원인의 다른 경로). 가져오기 명령 시험은 반대로 `-I`와 `mw`·네트워크 차단으로 그 스크립트가 `mw` 없이 도는지 확인한다.
+
+### 옛 오프스크린 하네스·실행기의 v1 기대가 v2 집합에서 깨졌다 (M26)
+- **증상**: 도구로 새로 만드는 집합이 v2 `not_checked`가 되자 v1 값을 단언하던 하네스가 실패했다: `mutation-flow.cjs`의 `main` 모드(`catalytic == "not_available"`), `jev-flow.cjs`(J6 고정 기대), 최종 회귀 사슬의 `sequence-ga-flow.cjs` C02(도구로 만든 작은 집합의 제외 사유를 v1 fixture의 여섯 키로 기대).
+- **대응**: 제품 결함이 아니라 하네스 기대였다. `mutation-flow.cjs` `main`과 `jev-flow.cjs`는 도구가 만든 v2 집합이 보이는 값(`not_checked`, 셋째 문장 변형, 와이어에서 고른 J6n·J6c)을 기대하도록 고쳤고, `sequence-ga-flow.cjs`는 저장된 v1 fixture와의 비교는 두고 v2 추가분(`mw.mutation_candidates/v2`, 촉매 검사 `not_checked`, `catalytic_residue` 0)만 따로 단언하게 고친 뒤 M23 실행기를 단독으로 다시 돌렸다(35/35, 실패한 사슬 증거는 그대로 둠, `regression-chain.txt`). 도구가 만드는 집합의 모양을 바꾸는 단계는 M20·M21·M23·M24·M25 하네스의 기대를 함께 확인한다.
+- M13–M25 실행기는 `MW_REACTION_REFERENCE_DIR`를 넘기지 않아(`m13.child_env` 허용 목록) 백엔드가 기본 폴더 `.deps/reaction_reference`를 읽는다. 회귀 동안 그 폴더를 없는 채로 둔다(2026-10-09 회귀 사슬, `regression-chain.txt`).
+
+### 제3자 참조 원문과 실제 응답 조각은 저장소·증거에 넣지 않는다 (M26)
+- M-CSA 역할 문구·UniProt 설명·Rhea 반응식은 CC BY 4.0 원문이다. 실제 공개 응답 조각은 커밋하지 않고 형식 시험은 합성 fixture(`backend/tests/fixtures/reaction/`, 출처 파일 `SYNTHETIC-PROVENANCE-*.md`)로 한다. 착수 확인의 원본 응답과 분석 스크립트는 저장소 밖에만 두었고, 가져오기 기록(`import1.md`·`import2.md`)은 숫자·해시·상태만 적는다.
+- 수락 증거 내보내기는 보고서 다운로드(Markdown·JSON)와 실패한 단계의 화면 HTML(`*-failure.panel.html`)을 경로·크기·SHA-256으로만 남긴다(`scripts/m26_offscreen_acceptance.py` `held_downloads`). 처음에는 공용 내보내기가 모든 텍스트 산출물을 증거 폴더에 써서 예비 real 단계의 보고서 다운로드가 증거 커밋에 들어갔다. 실행기를 해시만 남기게 고치고 그 다운로드를 지웠으며 역사에서도 뺐다(아래 "증거 장부의 커밋 해시는 역사 정리 전 값이다"). 독립 코드 검토 뒤에는 실패 화면 HTML도 막고 하네스의 보고서 목록 단계·탭 서명이 글자 대신 길이 + SHA-256을 돌려주게 했다(소스 고정 `3fcac53`에 포함).
+
+### 가져오기 명령의 알려진 한계 (M26)
+- 요청 전체 제한 시간(120초)은 64 KiB 읽기 사이에서만 확인하므로 한 번의 읽기는 소켓 제한 시간 안에서 길어질 수 있다. 전송이 `ssl` 기본 문맥이라 `SSL_CERT_FILE`·`SSL_CERT_DIR`가 신뢰 CA를 바꿀 수 있다(호스트·스킴은 못 바꿈). 설치 중 프로세스가 죽으면 `sets/.staging-*`·`.active.json.*.tmp`가 남고 서버는 무시하며 명령은 청소하지 않는다. `--reference-dir`가 포인터 없는 M15 폴더면 그 폴더에 설치한다(포인터 스키마만 검사함). 응답 없음(전송 오류)은 다시 시도하지 않고 429·5xx만 최대 2회 다시 시도한다.
+- 명세는 재현 비교를 수락 실행기가 한다고 적었지만 실제로는 가져오기 스크립트의 라이브러리 함수 `compare_manifests`를 직접 불러 두 매니페스트를 비교했다(독립 증거 검토가 같은 결과를 다시 계산함, `import2.md` 3절).
+
+### Stop 훅 나머지 그룹의 여유는 약 63초다 (M26)
+- M26 백엔드 테스트는 모두 이름 없는 나머지 그룹에 들어갔다. 소스 고정 `3fcac53`에서 나머지 그룹 단독 3,553개 416.8초(제한 480초)였다. 다음에 테스트를 더하면 그룹을 나누고 `scripts/test_codex_hooks.py`의 그룹 수 기대(`CHECKS` 17)를 함께 고친다. 실행기 단위 테스트 두 파일은 `SCRIPT_TESTS`에 손으로 넣었다.
+- 그룹을 동시에 돌릴 때 부하로 흔들리는 프로세스 시험 둘(`test_pocket_jobs.py::test_running_engine_is_stopped_with_its_process_group[output_files]`, `test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)이 최종 게이트에서 실패했고 단독 재실행에서 7 passed였다. 독립 증거 검토의 재실행도 단독 7 passed, 다른 Stop 훅 pytest와 겹치면 `[qvina-worker]` 변형이 다시 실패했다(`gate.txt` 보충). 실패하면 코드 문제로 단정하지 말고 그 시험만 단독으로 다시 돌려 기록한다.
+
+### 증거 장부의 커밋 해시는 역사 정리 전 값이다 (M26)
+- 실제 외부 자료 보고서 두 개가 든 예비 증거 커밋을 로컬 작업 브랜치(어디에도 올리지 않음)에서 `git filter-branch`로 빼면서 브랜치 끝 9개 커밋의 해시가 바뀌었다. 증거 안의 `gitHead`·고정 해시는 정리 전 값이다: `dac2755` = 지금 `06679e4`, 소스 고정 `1735338` = 지금 `3fcac53`. 트리는 전후 같다(트리 해시 `5f0c5c43…`). 대응표는 `docs/tracking/m26-acceptance.md`에도 있다.
+
 ## 동작 원리
 
 ### handle과 복구
@@ -610,6 +673,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 ### JEV 설계 루프 경로 (M25)
 루프 기록은 저장하지 않는다. `jev_loop_store`가 이벤트 로그를 한 번 읽은 `LoopReadView` 하나로 만들기 이벤트(`jev_loops.parse_created`), 작업 기록(`JobQueue(view)`), 단독 M18·M21 요청 빌더와 만들 때의 pin으로 낸 후보별 호출 키, 저장 결과(`published_m18_results`·`model_index` → `validated_result` + 입력 대조), 루프 제안(`validated_loop_choice` + `proposal_matches_send`), 남은 예산을 모아 순수 함수 `jev_loops.derive_loop`에 넘기고, 나온 `jev_loop@1`을 `validated_loop_record`로 검사한다(읽기는 아무것도 쓰지 않음). 만들기는 실행 잠금 안에서 입장 검사 뒤 `jev_loop_created` 하나를 쓴다. 투영은 값싼 도구다: `build_jev_loop_projection`의 사전 검사 훅이 루프 기록에서 선택 거절(`jev_loops.selection_refusal`)·소스·구조·와이어를 보고 기록 입력을 `bound`로 고정하며, 구현은 수정하지 않은 M24 빌더의 출력을 `jev_loop_projection`이 섞은 순서로 다시 늘어놓고 별칭·`goal`·`computed`·`values_note`를 더해 `validated_loop_projection`을 통과할 때만 저장한다. 미리보기·전송은 M24 라우트 그대로이고 `jev_sends`가 `jev_loop_projection@1`을 받아(`accept_loop`) 미리보기에 `loop`·`loop_blocks`를 더하며, 전송은 승인 콜백 안에서 `jev_loop_store.loop_send_check` 뒤 승인 이벤트를 쓰고 게이트(`egress/science.py`)가 스키마로 루프 검증·본문·`parse_loop_choice`를 고른다. `_finish`는 루프 투영의 답을 `jev_loop_choice@1`로 만들어 검증한 뒤 저장한다. 계산 시작 라우트(`app.py`)는 실행 잠금 안에서 `compute_decision`(거절·멱등·승인) → `step_job`(단독 M18·M21 작업 입장, 호출 키가 승인과 같은지 확인) → `write_approval`(전이 잠금 안 재확인 뒤 `jev_loop_compute_approved`) → `JobQueue.submit`을 하고 잠금을 놓은 뒤 `JobQueue.start`를 부른다. 작업은 기존 큐·guardian·작업 모듈이 그대로 돌리고 루프는 그 기록을 읽기만 한다(단계 결과 = 승인 뒤 그 작업이 처음 맞은 상태 변화, 귀속은 `job_owners`). 도킹 포기는 이벤트 하나, 끝내기는 실행 잠금 + 전이 잠금 안에서 기록을 다시 읽어 `jev_loop_result.build_loop_result` → `validated_loop_result` → 저장 → `jev_loop_ended`다. 보고서(`jev_loop_reports.py`)는 요약을 `stored_result`로 확인하고 끝 이벤트 시점의 저장 M18 결과·제안과 대조하며 아무것도 계산·전송하지 않는다. M21 짝 읽기는 `job_owners`로 루프 도킹 짝에 `loop` 키만 더한다.
 
+### 효소 반응 지식 경로 (M26)
+반응 참조 세트는 사용자가 실행하는 가져오기 명령만 쓴다: 명령은 `reaction_knowledge_constants.py`를 파일 경로로 불러(`mw` import 없음) M-CSA 쪽 순회 → accession 합집합(`MAX_ACCESSIONS` 확인) → UniProt 일괄 요청과 빠진 accession 분류 → Rhea 한 요청을 하고, 모든 응답을 `SOURCE_FORMATS`로 가공·검사한 뒤에만 임시 폴더에 쓰고 검증해 `sets/<set_hash>/`로 옮기고 `active.json`을 바꾼다. 서버의 값싼 도구 `link_reaction_knowledge`는 `Run._validated_bound`가 모든 호출 경로에서 부르는 사전 검사 훅(`tools/reaction_knowledge.precheck`)이 `reaction_knowledge.pin_and_index()`로 세트를 고정·해석하고(412) 입장 아홉 단계를 한 뒤(422) 세트·색인·체인 잔기·번호 대응 내용을 `ReactionBound`로 고정하고 `key_fields`로 세트 해시를 호출 키에 더한다. 구현은 그 `bound`로 `build_reaction_knowledge`를 부르고 `validated_result`를 통과할 때만 저장한다(1 MiB·연결 위치 2,000 초과는 429). 읽기(`reaction_knowledge_reads.py`)는 결과 객체를 매번 `validated_result`로 다시 검증하고 지금 활성 세트와 비교만 한다. 보고서(`reaction_knowledge_reports.py`)는 저장 결과에서 주장을 다시 만들어 대조한다. M20 v2는 도구 층(`tools/mutations.py`)이 반응 결과를 검증해 `catalytic_input`으로 평범한 체인별 값만 만들고 `mutation_candidates.catalytic_protection`이 보호 목록과 검사 칸을 만든다. 같은 함수를 M20 보고서가 다시 불러 저장 집합과 대조한다.
+
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
 
@@ -626,7 +692,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 8. 참조 데이터를 읽는 도구(M15 번호 대응 등)는 호출 시작 때 참조 세트를 고정하고, 그 세트 해시를 호출 키에 넣고(사전 검사 훅의 `key_fields`), 결과 객체에 세트 해시와 계산에 쓴 참조 행을 담아 참조 폴더 없이 다시 열리게 한다. 참조 값과 계산 값은 보고서에서 다른 증거 종류로 둔다.
 9. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
 10. 기존 결과를 여러 개 묶는 작업(M19 일괄 등)은 행 계산을 복제하지 않고 기존 작업 모듈 함수를 불러 쓰며, 행 결과가 단독 실행과 같은 handle인지 실제 엔진으로 바이트 비교한다. 900초보다 긴 작업 시간 한도가 필요하면 `JobQueue.submit`과 API `JobSubmit.timeout_s` 두 곳을 그 프로토콜에만 넓힌다. 작업 하나가 결과 여러 개를 내면 게시 증거 이벤트·재사용 색인·`producer()`·보고서 입력 검사가 그 결과를 받아들이는지, 시도 1회·예약 단위·환불 없음이 재생과 맞는지 확인한다. 검증: 실제 엔진 테스트, events-only 복구, 기존 프로토콜 테스트 전부.
-11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳, M25도 같은 네 파일·`report-library.test.cjs`와 Stop 훅 그룹 수 기대(`scripts/test_codex_hooks.py`)를 고쳤다): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
+11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳, M25도 같은 네 파일·`report-library.test.cjs`와 Stop 훅 그룹 수 기대(`scripts/test_codex_hooks.py`)를 고쳤고, M26도 같은 네 파일·`report-library.test.cjs`를 고쳤다): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
 
 ### UI 컨트롤 변경
 1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.

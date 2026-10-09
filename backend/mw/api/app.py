@@ -40,6 +40,7 @@ from .. import (
     mutation_model_reads,
     mutation_reads,
     numbering_reads,
+    reaction_knowledge_reads,
     sequence_ga_jobs,
     sequence_ga_reads,
 )
@@ -79,6 +80,7 @@ from ..pocket_bundle import list_sets as list_pocket_sets
 from ..pocket_bundle import preflight as pocket_preflight
 from ..pocket_bundle import result_summary as pocket_result_summary
 from ..pocket_reports import build_pocket_report, saved_pocket_report
+from ..reaction_knowledge_reports import build_reaction_report, saved_reaction_report
 from ..reports import EvidenceError, build_inspection_report, saved_report
 from ..runtime.guards import LoopStop
 from ..runtime.orchestrator import ApprovalRequired, Run, RunCancelled
@@ -132,7 +134,7 @@ UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmci
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
                    "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
                    "annotate_reference_sites", "generate_mutation_candidates", "build_jev_projection",
-                   "build_jev_loop_projection"}
+                   "build_jev_loop_projection", "link_reaction_knowledge"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -665,6 +667,8 @@ def capabilities() -> dict[str, Any]:
                "chemical_interactions": chemical_capability(), "pocket_detection": pocket_capability()}
     methods["analysis_workflows"] = analysis_plans.capability(methods)
     methods["residue_numbering"] = numbering_reads.capability()
+    # M26: the pinned + decoded local reaction reference set (no network); same five keys as residue_numbering.
+    methods["reaction_knowledge"] = reaction_knowledge_reads.capability()
     # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
     # M20: reads only the run's own stored objects (no engine, reference folder or network): always available.
@@ -1319,6 +1323,11 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # M25: reads the stored loop summary, its candidates' docking results and its proposals only; nothing is
             # computed or sent. A loop proposal (jev_loop_choice) is no report input: wrong_method_result_kind below.
             return build_jev_loop_report(run, body.result_handle)
+        if kind == reaction_knowledge_reads.KIND:
+            # M26: reads the stored result only (re-validated); the linking is not run again. The active reaction
+            # reference set at creation is recorded in the report snapshot only.
+            return build_reaction_report(run, body.result_handle,
+                                         active_set_hash=reaction_knowledge_reads.capability()["set_hash"])
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1346,7 +1355,8 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        {"chemical_interactions", "pocket_detection", "residue_numbering",
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
-                                        "ligand_ga", "sequence_ga", "jev_choice", "jev_loop"}
+                                        "ligand_ga", "sequence_ga", "jev_choice", "jev_loop",
+                                        "reaction_knowledge"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1364,7 +1374,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "reference_site_annotation", "ligand_candidates",
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
-                                                              "sequence_ga", "jev_choice", "jev_loop"}
+                                                              "sequence_ga", "jev_choice", "jev_loop",
+                                                              "reaction_knowledge"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1399,6 +1410,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_jev_report(run, handle)
         if report.get("analysis_type") == "jev_loop":
             return saved_jev_loop_report(run, handle)
+        if report.get("analysis_type") == "reaction_knowledge":
+            return saved_reaction_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
@@ -1673,6 +1686,71 @@ def site_annotation_detail(rid: str, request: Request, handle: str) -> dict[str,
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid reference site annotation"}) from exc
     return {"meta": meta, "annotation": content}
+
+
+# ----------------------------------------------------------------- M26 reaction knowledge reads (no event, job or tool)
+@app.get("/reaction_reference/status")
+def reaction_reference_status(request: Request) -> dict[str, Any]:
+    """The active reaction reference set, or ``installed: false`` and the reason; reads the local folder only."""
+    _only_query(request, set())
+    return reaction_knowledge_reads.status()
+
+
+@app.get("/reaction_reference/pdb/{pdb_id}")
+def reaction_reference_pdb(pdb_id: str, request: Request) -> Any:
+    """M-CSA entries naming this PDB ID (a prefill suggestion for the request form; the choice stays human)."""
+    _only_query(request, set())
+    try:
+        return reaction_knowledge_reads.pdb_entries(pdb_id)
+    except reaction_knowledge_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except reaction_knowledge_reads.SnapshotUnavailable as exc:   # the tool's own 412 body and reason
+        return _tool_error(ToolFailure(FailureClass.precondition, exc.reason, detail={"reason_code": exc.reason_code}))
+
+
+@app.get("/runs/{rid}/reaction_knowledge")
+def reaction_knowledge_list(rid: str, request: Request, offset: int = Query(0, ge=0),
+                            limit: int = Query(reaction_knowledge_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                               le=reaction_knowledge_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's reaction knowledge results, newest first, each re-validated; ``active`` = same set as now."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return reaction_knowledge_reads.list_results(run, offset, limit)
+    except (reaction_knowledge_reads.ResultEvidenceError, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt",
+                                         "message": "invalid reaction knowledge object record"}) from exc
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: any sub-resource route goes before this detail route.
+@app.get("/runs/{rid}/reaction_knowledge/{handle:path}")
+def reaction_knowledge_detail(
+        rid: str, handle: str, request: Request, chain_offset: int = Query(0, ge=0),
+        chain_limit: int = Query(reaction_knowledge_reads.CHAIN_LIMIT_DEFAULT, ge=1,
+                                 le=reaction_knowledge_reads.CHAIN_LIMIT_MAX),
+        row_offset: int = Query(0, ge=0),
+        row_limit: int = Query(reaction_knowledge_reads.ROW_LIMIT_DEFAULT, ge=1,
+                               le=reaction_knowledge_reads.ROW_LIMIT_MAX),
+        feature_offset: int = Query(0, ge=0),
+        feature_limit: int = Query(reaction_knowledge_reads.FEATURE_LIMIT_DEFAULT, ge=1,
+                                   le=reaction_knowledge_reads.FEATURE_LIMIT_MAX)) -> dict[str, Any]:
+    """One stored result, re-validated, with chains / M-CSA rows / UniProt sites paged; other run or kind -> 404."""
+    _only_query(request, {"chain_offset", "chain_limit", "row_offset", "row_limit", "feature_offset",
+                          "feature_limit"})
+    run = _run(rid)
+    try:
+        meta = run.store.meta(handle)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown run handle"}) from exc
+    if (meta["kind"], meta["schema"]) != (reaction_knowledge_reads.KIND, reaction_knowledge_reads.SCHEMA):
+        raise HTTPException(404, detail={"error": "not_found", "message": "handle is not a reaction knowledge result"})
+    try:
+        return reaction_knowledge_reads.detail(run, handle, chain_offset=chain_offset, chain_limit=chain_limit,
+                                               row_offset=row_offset, row_limit=row_limit,
+                                               feature_offset=feature_offset, feature_limit=feature_limit)
+    except reaction_knowledge_reads.ResultEvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid",
+                                         "message": "invalid reaction knowledge result"}) from exc
 
 
 # ----------------------------------------------------------------- M17 ligand reads (no event, job, tool or RDKit)

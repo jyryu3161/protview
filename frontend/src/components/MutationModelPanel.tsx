@@ -36,7 +36,9 @@ import { Button } from "./primitives";
  * Late responses are dropped on two layers: abort on unmount, and run + model handle + per-area request number.
  * Nothing is chosen or approved automatically; there is no viewer display.
  */
-export interface ModelStartRequest { runId: string; candidateSet: string; candidate: MutationCandidateRow; seq: number }
+export interface ModelStartRequest { runId: string; candidateSet: string; candidate: MutationCandidateRow; seq: number;
+  /** M26: the set's "촉매 잔기 검사 안 함" mark (UK2 and its detail) as the M20 area made it; null / absent = checked. */
+  catalytic?: { text: string; detail: string } | null }
 
 export interface MutationModelPanelProps {
   /** Current run of the structure analysis screen (run selection lives only there); null when none. */
@@ -114,6 +116,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
   // ---- model request and job ----
   const [form, setForm] = useState<ModelForm>(initialModelForm);
   const [picked, setPicked] = useState<MutationCandidateRow | null>(null);
+  const [pickedCatalytic, setPickedCatalytic] = useState<{ text: string; detail: string } | null>(null);
   const [job, setJob] = useState<MutationModelJob | null>(null);
   const [jobFocus, setJobFocus] = useState(false);
   const [approvalPending, setApprovalPending] = useState(false);
@@ -240,6 +243,7 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
     seenStart.current = startRequest.seq;
     setForm(previous => modelFormForCandidate(previous, startRequest.candidateSet, startRequest.candidate.index));
     setPicked(startRequest.candidate);
+    setPickedCatalytic(startRequest.catalytic ?? null);
     setJobError(null); setNotice("");
     document.querySelector('[data-testid="mutation-model-panel"] [data-mutation-model-area="request"]')
       ?.scrollIntoView({ block: "start" });
@@ -595,7 +599,11 @@ function ModelWorkspace({ run, capability, dockingCapability, startRequest, onOb
         ? <p className="mw-mono" data-testid="mutation-model-candidate" data-candidate-set={form.candidateSet}
           data-candidate-index={form.candidateIndex}>
           후보 번호 {picked.index} · {residueShortText(picked.residue)} · {picked.from} → {picked.to} · 위치{" "}
-          {residueFieldsText(picked.residue)} · 후보 집합 {shortHandle(form.candidateSet)}</p>
+          {residueFieldsText(picked.residue)} · 후보 집합 {shortHandle(form.candidateSet)}
+          {pickedCatalytic && <span className="mw-catalytic-mark" data-testid="mutation-model-catalytic">
+            <span className="mw-catalytic-badge">{pickedCatalytic.text}</span>
+            <span className="mw-catalytic-detail" data-testid="mutation-model-catalytic-detail">{pickedCatalytic.detail}</span>
+          </span>}</p>
         : <p className="mw-mutation-note" data-testid="mutation-model-no-candidate">
           위 변이 후보 표의 후보 행에서 &quot;변이 구조 모델링&quot;을 누르면 그 후보가 여기에 들어옵니다(자동으로 고르지 않음).</p>}
       <div className="mw-mutation-inline">

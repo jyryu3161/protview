@@ -1,0 +1,1210 @@
+{
+  "schema": "m25_case_ledger_row@1",
+  "mode": "fixture",
+  "rehearsal": false,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "L-tab-entry": "pass",
+    "L-create-fields": "pass",
+    "L-create": "pass",
+    "L-loop-active": "pass",
+    "L-consent-off-block": "pass",
+    "L-preview-match": "pass",
+    "L-order-oracle": "pass",
+    "L-consent-toggle": "pass",
+    "L-confirm-required": "pass",
+    "L-failed-model": "pass",
+    "L-ordinal-refused": "pass",
+    "L-bytes-equal": "pass",
+    "L-send-good": "pass",
+    "L-choice-card": "pass",
+    "L-compute-jev": "pass",
+    "L-real-engine": "pass",
+    "L-failed-computed-alias": "pass",
+    "L-late": "pass",
+    "L-designate": "pass",
+    "L-designate-no-send": "pass",
+    "L-candidate-table": "pass",
+    "L-end-summary": "pass",
+    "L-report": "pass",
+    "L-reuse": "pass",
+    "L-no-usage-stop": "pass",
+    "L-send-cap-display": "pass",
+    "L-knowledge-rows": "pass",
+    "L-other-tabs": "pass",
+    "P-tab-entry": "pass",
+    "P-pool-limit": "pass",
+    "P-create-fields": "pass",
+    "P-create-refused": "pass",
+    "P-create": "pass",
+    "P-send-good": "pass",
+    "P-bytes-equal": "pass",
+    "P-order-oracle": "pass",
+    "P-first-approval": "pass",
+    "P-end-refused-job": "pass",
+    "P-end-refused-docking": "pass",
+    "P-dock": "pass",
+    "P-real-engine": "pass",
+    "P-abandon": "pass",
+    "P-candidate-table": "pass",
+    "P-end-summary": "pass",
+    "P-report": "pass",
+    "P-reuse": "pass",
+    "P-failed-http": "pass",
+    "P-pair-loop": "pass",
+    "P-knowledge-rows": "pass",
+    "P-other-tabs": "pass",
+    "X-fixture-proof": "pass",
+    "X-wording": "pass",
+    "X-no-egress-browser": "pass"
+  },
+  "runs": {
+    "L": "run_4d15d1aed4a64952a4379b71b2763d3e",
+    "P": "run_087850cc5f5a4f468d9e52073cc70089"
+  },
+  "sends": [
+    {
+      "sendId": "f221853e-bd64-42de-9461-78a613480c5a",
+      "status": "failed",
+      "reasonCode": "model_mismatch",
+      "late": false,
+      "loop": {
+        "loop_id": "63cdfac4-192f-4f15-babf-ca9be45b41ee",
+        "iteration": 1,
+        "send_ordinal": 0
+      }
+    },
+    {
+      "sendId": "c070527f-835f-480d-91c7-594885726e75",
+      "status": "completed",
+      "reasonCode": null,
+      "late": false,
+      "loop": {
+        "loop_id": "63cdfac4-192f-4f15-babf-ca9be45b41ee",
+        "iteration": 1,
+        "send_ordinal": 1
+      }
+    },
+    {
+      "sendId": "60b760f7-e238-4b1c-af88-a0b74e1ebf89",
+      "status": "failed",
+      "reasonCode": "response_invalid",
+      "late": false,
+      "loop": {
+        "loop_id": "63cdfac4-192f-4f15-babf-ca9be45b41ee",
+        "iteration": 2,
+        "send_ordinal": 0
+      }
+    },
+    {
+      "sendId": "d668b661-ac72-4028-ba57-a9165b41e8d7",
+      "status": "completed",
+      "reasonCode": null,
+      "late": true,
+      "loop": {
+        "loop_id": "63cdfac4-192f-4f15-babf-ca9be45b41ee",
+        "iteration": 2,
+        "send_ordinal": 1
+      }
+    },
+    {
+      "sendId": "82780e7b-43b4-4554-a311-726c9a57cb0f",
+      "status": "completed",
+      "reasonCode": null,
+      "late": false,
+      "loop": {
+        "loop_id": "0f1a6c45-71ec-4ffe-b1f2-c91c6cc0cb2e",
+        "iteration": 1,
+        "send_ordinal": 0
+      }
+    },
+    {
+      "sendId": "a5ef9b8e-4d6a-4396-9bf4-fde3bb738daa",
+      "status": "completed",
+      "reasonCode": null,
+      "late": false,
+      "loop": {
+        "loop_id": "8d3bc355-39b2-4a02-b418-b7efc3d094ac",
+        "iteration": 1,
+        "send_ordinal": 0
+      }
+    },
+    {
+      "sendId": "86a3c7c4-4540-45e6-ba42-768c53fb9b3a",
+      "status": "failed",
+      "reasonCode": "provider_http_error",
+      "late": false,
+      "loop": {
+        "loop_id": "fa337f04-6fc1-4532-8fa3-49a179187812",
+        "iteration": 1,
+        "send_ordinal": 0
+      }
+    }
+  ],
+  "fixture": {
+    "calls": 7,
+    "scripts": [
+      "model_mismatch",
+      "good_second",
+      "computed_alias",
+      "slow",
+      "no_usage",
+      "good_second",
+      "http_500"
+    ],
+    "statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      500
+    ],
+    "sentinelAuthorization": true,
+    "bodySha256": [
+      "442690c06abac3f454bb86c772966d47c95cacf23179571bde66e4f38653d6fc",
+      "ca4db287d605c5e45ee2da0f7d303d51a3ba16ea45c3624d1d32a9d993b0a185",
+      "4d7e722814503ffb21aac15604313a20a05bb934ccfeb5d92e9b67bb82274f23",
+      "01ac75d764e0f1bea462b9c5e9e519e58ba2128f18f82b43d90b885be00fae1e",
+      "a373bafa53a7c639801872b947ddd2d949f8ba09238defe5396a67d1468de6f9",
+      "28659f46950428c5e6062cda9734069488f816c491266c245ee2b9b21c2e1552",
+      "5e6496f9242c42a7e4afe04d64fb99a0f6bd4ee0a870c77ae6166c3035c98c16"
+    ],
+    "credentialReads": {
+      "productResolverReads": 0,
+      "sentinelReads": 7,
+      "updatedAt": "2026-10-09T10:14:32.192658+00:00"
+    },
+    "dispatchCounts": {
+      "run_087850cc5f5a4f468d9e52073cc70089": 2,
+      "run_4d15d1aed4a64952a4379b71b2763d3e": 5
+    },
+    "dispatched": 7
+  },
+  "bytes": 7,
+  "plan": null,
+  "preChecks": null,
+  "loops": null,
+  "shuffle": null,
+  "dispatchCounts": null,
+  "fixtureLabels": [
+    "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_loop_fixture/server.py)"
+  ],
+  "controls": {
+    "jev-loop-source-ligand": [
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/ligand_candidate_set/d8038fefaf5c10d713d5436937acd89c4e4aca68da72c540be46f2eaac474046"
+      },
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/ligand_candidate_set/d8038fefaf5c10d713d5436937acd89c4e4aca68da72c540be46f2eaac474046"
+      },
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/ligand_candidate_set/d8038fefaf5c10d713d5436937acd89c4e4aca68da72c540be46f2eaac474046"
+      }
+    ],
+    "jev-loop-candidate": [
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_c42a53803595e440"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_71188fcf0e6703c9"
+      },
+      {
+        "key": "c_21d6c6f0d07e3759"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_14271764afae517b"
+      },
+      {
+        "key": "c_5d474f8db1578d8d"
+      },
+      {
+        "key": "c_da033b82807ffbe7"
+      },
+      {
+        "key": "c_2c7a25e0cc0ad3f2"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "4"
+      }
+    ],
+    "jev-loop-iteration-cap": [
+      {
+        "value": "9"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "0"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-goal": [
+      {
+        "goal": "exploit"
+      },
+      {
+        "goal": "explore"
+      },
+      {
+        "goal": "exploit"
+      },
+      {
+        "goal": "explore"
+      },
+      {
+        "goal": "exploit"
+      }
+    ],
+    "jev-loop-seed": [
+      {
+        "value": "7"
+      },
+      {
+        "value": "99"
+      },
+      {
+        "value": "5"
+      },
+      {
+        "value": "11"
+      },
+      {
+        "value": "13"
+      }
+    ],
+    "jev-loop-parent-sdf": [
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      },
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      }
+    ],
+    "jev-loop-receptor": [
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      },
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      }
+    ],
+    "jev-loop-model": [
+      {
+        "model": "1"
+      },
+      {
+        "model": "1"
+      }
+    ],
+    "jev-loop-instance": [
+      {
+        "instance": "none"
+      },
+      {
+        "instance": "none"
+      }
+    ],
+    "jev-loop-connectivity": [
+      {
+        "kind": "pdb_conect"
+      },
+      {
+        "kind": "pdb_conect"
+      }
+    ],
+    "jev-loop-box": [
+      {
+        "source": "manual"
+      },
+      {
+        "source": "manual"
+      }
+    ],
+    "jev-loop-center-x": [
+      {
+        "value": "3.41"
+      },
+      {
+        "value": "3.41"
+      }
+    ],
+    "jev-loop-size-x": [
+      {
+        "value": "12"
+      },
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-center-y": [
+      {
+        "value": "0.72"
+      },
+      {
+        "value": "0.72"
+      }
+    ],
+    "jev-loop-size-y": [
+      {
+        "value": "12"
+      },
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-center-z": [
+      {
+        "value": "11.31"
+      },
+      {
+        "value": "11.31"
+      }
+    ],
+    "jev-loop-size-z": [
+      {
+        "value": "12"
+      },
+      {
+        "value": "12"
+      }
+    ],
+    "jev-loop-docking-seed": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-exhaustiveness": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-num-modes": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "jev-loop-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "jev-loop-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-create": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "branch": "protein"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "branch": "protein"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "branch": "protein"
+      }
+    ],
+    "jev-loop-build": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "branch": "protein"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "branch": "protein"
+      }
+    ],
+    "jev-loop-consent": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "enabled": true
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "enabled": false
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "enabled": true
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "enabled": true
+      }
+    ],
+    "jev-loop-confirm": [
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-send": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "script": "model_mismatch"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "script": "good_second"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "script": "computed_alias"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "script": "slow"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "script": "no_usage"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "script": "good_second"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "script": "http_500"
+      }
+    ],
+    "jev-loop-compute-proposal": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "loopId": "63cdfac4-192f-4f15-babf-ca9be45b41ee"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "loopId": "0f1a6c45-71ec-4ffe-b1f2-c91c6cc0cb2e"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "loopId": "8d3bc355-39b2-4a02-b418-b7efc3d094ac"
+      }
+    ],
+    "jev-loop-designate-option": [
+      {
+        "ref": "c_21d6c6f0d07e3759"
+      },
+      {
+        "ref": "c_1afb7cd3e603456c"
+      },
+      {
+        "ref": "10"
+      }
+    ],
+    "jev-loop-designate": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "loopId": "63cdfac4-192f-4f15-babf-ca9be45b41ee"
+      },
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "loopId": "63cdfac4-192f-4f15-babf-ca9be45b41ee"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "loopId": "8d3bc355-39b2-4a02-b418-b7efc3d094ac"
+      }
+    ],
+    "jev-loop-sort-pool": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-sort-candidate": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-sort-score": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-sort-iteration": [
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      },
+      {
+        "want": "ascending"
+      },
+      {
+        "want": "descending"
+      }
+    ],
+    "jev-loop-end": [
+      {
+        "loopId": "63cdfac4-192f-4f15-babf-ca9be45b41ee"
+      },
+      {
+        "loopId": "0f1a6c45-71ec-4ffe-b1f2-c91c6cc0cb2e"
+      },
+      {
+        "loopId": "898587c8-d88f-491d-b33e-8d2055295811"
+      },
+      {
+        "loopId": "8d3bc355-39b2-4a02-b418-b7efc3d094ac"
+      },
+      {
+        "loopId": "fa337f04-6fc1-4532-8fa3-49a179187812"
+      }
+    ],
+    "jev-loop-report": [
+      {
+        "run": "run_4d15d1aed4a64952a4379b71b2763d3e",
+        "branch": "ligand"
+      },
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "branch": "protein"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_4d15d1aed4a64952a4379b71b2763d3e/method_report_manifest/71c719f9660fa35ab980fa1fc57e3fe8021875f8d594b96d7bc655472b557b87"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/method_report_manifest/7645636eb30e81568e2e595173d0401181b34c03fb7fe5ab450024234820dfee"
+      }
+    ],
+    "jev-loop-candidate-uncheck": [
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_14271764afae517b"
+      },
+      {
+        "key": "c_5d474f8db1578d8d"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      }
+    ],
+    "jev-loop-source-protein": [
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/mutation_candidate_set/99f835db860ef33128b409310f358a6b42b5eff41f67a974da3c6487106887e4"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/mutation_candidate_set/fe80f21ae19f8853382e2d42fe3b2dd3ce67ec81da7b8c5632fc2df9b1379aab"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/mutation_candidate_set/99f835db860ef33128b409310f358a6b42b5eff41f67a974da3c6487106887e4"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/mutation_candidate_set/99f835db860ef33128b409310f358a6b42b5eff41f67a974da3c6487106887e4"
+      }
+    ],
+    "jev-loop-candidate-21st": [
+      {
+        "key": "20"
+      }
+    ],
+    "jev-loop-cutoff": [
+      {
+        "value": "7"
+      },
+      {
+        "value": "4.0"
+      },
+      {
+        "value": "4.0"
+      }
+    ],
+    "jev-loop-setup-sdf": [
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      }
+    ],
+    "jev-loop-setup-box": [
+      {
+        "source": "ligand_range"
+      },
+      {
+        "source": "ligand_range"
+      },
+      {
+        "source": "ligand_range"
+      }
+    ],
+    "jev-loop-setup-margin": [
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      }
+    ],
+    "jev-loop-setup-seed": [
+      {
+        "value": "20261007"
+      },
+      {
+        "value": "20261007"
+      },
+      {
+        "value": "20261007"
+      }
+    ],
+    "jev-loop-setup-exhaustiveness": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "jev-loop-setup-num-modes": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "jev-loop-setup-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "jev-loop-setup-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-setup-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-setup-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-confirmations": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "jev-loop-approve-first": [
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089"
+      }
+    ],
+    "jev-loop-job-start": [
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089"
+      }
+    ],
+    "jev-loop-dock": [
+      {
+        "run": "run_087850cc5f5a4f468d9e52073cc70089",
+        "loopId": "8d3bc355-39b2-4a02-b418-b7efc3d094ac"
+      }
+    ],
+    "jev-loop-abandon": [
+      {
+        "loopId": "8d3bc355-39b2-4a02-b418-b7efc3d094ac"
+      }
+    ],
+    "mutation-model-open": [
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/mutation_model/a31cfa2cb84caad4e1a865b58c6564a2ff79359fecc5e37892fa82d7d4482bc6"
+      },
+      {
+        "handle": "obj://run_087850cc5f5a4f468d9e52073cc70089/mutation_model/7fec5d26d43821fd803b094ccdc17cc8fe00f28bf8404ed21ebf830956c16e1a"
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "good card",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "late card",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "candidate table",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report 63cdfac4-192f-4f15-babf-ca9be45b41ee",
+      "kind": "report",
+      "found": 0
+    },
+    {
+      "label": "loop B table",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "knowledge JEV area (run L)",
+      "kind": "screen-m24",
+      "found": 0
+    },
+    {
+      "label": "protein good card",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "protein table",
+      "kind": "screen",
+      "found": 0
+    },
+    {
+      "label": "report 8d3bc355-39b2-4a02-b418-b7efc3d094ac",
+      "kind": "report",
+      "found": 0
+    },
+    {
+      "label": "knowledge JEV area (run P)",
+      "kind": "screen-m24",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 1",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 2",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 3",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 4",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 5",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 6",
+      "kind": "reply",
+      "found": 0
+    },
+    {
+      "label": "fixture reply 7",
+      "kind": "reply",
+      "found": 0
+    }
+  ],
+  "buildId": "Dikedmz3G0FMeEOWwIdzo",
+  "harness": {
+    "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+    "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 579,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/jev-loop-fixture/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 641,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 11,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/jev-loop-fixture/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 85,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "jev-loop-fixture.jsonl",
+  "startedAt": "2026-10-09T10:12:28.997Z",
+  "finishedAt": "2026-10-09T10:14:39.212Z"
+}

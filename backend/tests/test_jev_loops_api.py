@@ -27,6 +27,7 @@ import uuid
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 
+import m20_v2_fixture as V2
 import pytest
 from fastapi.testclient import TestClient
 from jev_send_fixture import Fake
@@ -307,6 +308,35 @@ def test_a_protein_loop_records_the_structure_both_pins_and_the_m21_default_cuto
     assert (record["branch"], record["goal"], record["effective_cap"], record["current"]["step"]) == (
         "protein", "exploit", 3, "model")
     assert record["current"]["needs"]["expensive_units"] == 2 and record["current"]["needs"]["wall_clock_s"] == 420
+    assert record["limitations"] == [L.LJ1, L.LJ2, L.LJ3, L.LJ4, L.LJ7]
+
+
+def test_a_protein_loop_pool_takes_a_v2_set_with_a_checked_catalytic_annotation(base, tmp_path, monkeypatch):
+    """M26 spec 9: a v2 set built by the M20 tool with a catalytic annotation (``link_reaction_knowledge`` over the
+    LABELLED SYNTHETIC 0SY8 reaction set of ``m20_v2_fixture``) is a protein pool like any M20 set (the template's
+    tool-built sets are v2 ``not_checked``); the loop sentences stay LJ1-LJ8 (no J6 variant)."""
+    world = _open(base, tmp_path, monkeypatch)
+    run = world["run"]
+    assert run.store.load(world["ubq_set"])["protection_checks"]["catalytic_residue_database"]["status"] == \
+        "not_checked"
+    V2.activate_ubq(tmp_path / "reaction_reference", monkeypatch)
+    try:
+        knowledge = V2.link_ubq(run, world["ubq_structure"])
+        checked = run.call("generate_mutation_candidates", {"structure": world["ubq_structure"], **V2.TINY_ARGS,
+                                                            "catalytic_annotation": knowledge}).handle
+    finally:
+        V2.CF.reset_caches()
+    content = run.store.load(checked)
+    assert content["protection_checks"]["catalytic_residue_database"]["status"] == "checked"
+    refs = [row["index"] for row in content["candidates"]][:3]
+    before = _log(world)
+    record = _created(world, protein_body(world, pool={"source": checked, "candidates": refs, "filter": None}))
+    added = _events(world)[len(before.splitlines()):]
+    assert [event["type"] for event in added] == [L.EVENT_CREATED]
+    payload = jev_loops.parse_created(added[0])
+    assert payload["pool"]["source"] == {"handle": checked, "schema": "mutation_candidate_set@1"}
+    assert payload["pool"]["candidates"] == refs
+    assert [item["ref"] for item in record["pool"]["candidates"]] == refs
     assert record["limitations"] == [L.LJ1, L.LJ2, L.LJ3, L.LJ4, L.LJ7]
 
 

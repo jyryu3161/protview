@@ -1,0 +1,344 @@
+{
+  "schema": "m24_jev_evidence@1",
+  "mode": "live",
+  "rehearsal": true,
+  "runs": {
+    "L1": "run_f9be66c0840c45a3914e242660a88343",
+    "L2": "run_ced73e9574b64eeca01f74d1125525e3"
+  },
+  "sends": [
+    {
+      "entry": "L1-ligand-5",
+      "run": "run_f9be66c0840c45a3914e242660a88343",
+      "kind": "ligand",
+      "aliases": 5,
+      "bodyBytes": 3539,
+      "bodySha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+      "reservation": {
+        "external_tokens": 6456,
+        "usd": 0.1
+      },
+      "dispatchedBefore": {
+        "total": 12,
+        "inRun": 0
+      },
+      "sendId": "bb5b998d-3f78-4c11-9273-60ff1bf32099",
+      "status": "completed",
+      "reasonCode": null,
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 155,
+        "input_tokens": 135,
+        "output_tokens": 20
+      },
+      "late": false,
+      "egressStop": null,
+      "statusUsed": 1,
+      "budgetAfter": {
+        "external_tokens": {
+          "used": 155,
+          "limit": 120000,
+          "remaining": 119845
+        },
+        "usd": {
+          "used": 0.00010000000000000286,
+          "limit": 2,
+          "remaining": 1.9999
+        }
+      },
+      "preparedSha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+      "fixtureCall": 13,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true,
+        "probabilityCount": 5
+      },
+      "card": {
+        "alias": "c02",
+        "confidence": "0.620",
+        "reported": "true",
+        "late": false,
+        "usage": {
+          "input_tokens": "135",
+          "output_tokens": "20",
+          "external_tokens": "155",
+          "cost": "0.0001"
+        },
+        "foldedBefore": true
+      },
+      "report": {
+        "handle": "obj://run_f9be66c0840c45a3914e242660a88343/method_report_manifest/4702f852680be7414f37d849f9c957f05719290152261e453c5c861edea4e1cc",
+        "markdownSha256": "c8b9b33620256dd43410659c3d98610786ce3bb6a26bba70fe964e4d81dde4e6",
+        "kind": "JEV 판정 보고서"
+      }
+    }
+  ],
+  "fixtureLabels": [
+    "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_fixture/server.py)"
+  ],
+  "partFailures": [],
+  "controls": {
+    "jev-consent": [
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "enabled": true
+      },
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "enabled": false
+      },
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "enabled": true
+      }
+    ],
+    "jev-source-mutation": [
+      {
+        "handle": "obj://run_f9be66c0840c45a3914e242660a88343/mutation_candidate_set/30b5fcf25f02914b91f92b84facf4c81474148a788a7badf3f5fef8e80f3c532"
+      }
+    ],
+    "jev-candidate": [
+      {
+        "key": "0"
+      },
+      {
+        "key": "1"
+      },
+      {
+        "key": "2"
+      },
+      {
+        "key": "3"
+      },
+      {
+        "key": "4"
+      },
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      },
+      {
+        "key": "c_1afb7cd3e603456c"
+      },
+      {
+        "key": "c_c42a53803595e440"
+      },
+      {
+        "key": "c_f1f6983d23c3009f"
+      },
+      {
+        "key": "c_71188fcf0e6703c9"
+      },
+      {
+        "key": "c_21d6c6f0d07e3759"
+      }
+    ],
+    "jev-candidate-21st": [
+      {
+        "key": "20"
+      }
+    ],
+    "jev-candidate-uncheck": [
+      {
+        "key": "5"
+      },
+      {
+        "key": "6"
+      },
+      {
+        "key": "7"
+      },
+      {
+        "key": "8"
+      },
+      {
+        "key": "9"
+      },
+      {
+        "key": "10"
+      },
+      {
+        "key": "11"
+      },
+      {
+        "key": "12"
+      },
+      {
+        "key": "13"
+      },
+      {
+        "key": "14"
+      },
+      {
+        "key": "15"
+      },
+      {
+        "key": "16"
+      },
+      {
+        "key": "17"
+      },
+      {
+        "key": "18"
+      },
+      {
+        "key": "19"
+      }
+    ],
+    "jev-build": [
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "projection": "obj://run_f9be66c0840c45a3914e242660a88343/jev_projection/532c2f7666740e96cd8fd023fb6cde805e33ec56fff31188ebf93be5b44b5b13",
+        "count": 5
+      },
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "projection": "obj://run_f9be66c0840c45a3914e242660a88343/jev_projection/f807a572b9993d381883a7574cc1acbb73fa32e4b97c8eb022684a81f5c23f69",
+        "count": 5
+      }
+    ],
+    "jev-confirm": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "jev-source-ligand": [
+      {
+        "handle": "obj://run_f9be66c0840c45a3914e242660a88343/ligand_candidate_set/3af54f473df029e45519c38d946b76b2b93342014edeb79bd7a56ade4e2b1cfa"
+      }
+    ],
+    "jev-send": [
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "script": "good"
+      }
+    ],
+    "jev-send-report": [
+      {
+        "run": "run_f9be66c0840c45a3914e242660a88343",
+        "choice": "obj://run_f9be66c0840c45a3914e242660a88343/jev_choice/7c5b13a637afc199d756ea1d705f044df38bc58da580862e95f491e78f08737e"
+      }
+    ],
+    "report-library-open": [
+      {
+        "handle": "obj://run_f9be66c0840c45a3914e242660a88343/method_report_manifest/4702f852680be7414f37d849f9c957f05719290152261e453c5c861edea4e1cc"
+      }
+    ]
+  },
+  "wording": [
+    {
+      "label": "pre-checks",
+      "kind": "screen",
+      "found": []
+    },
+    {
+      "label": "after L1-ligand-5",
+      "kind": "screen",
+      "found": []
+    },
+    {
+      "label": "report markdown",
+      "kind": "report",
+      "found": []
+    }
+  ],
+  "startedAt": "2026-10-09T10:15:07.748Z",
+  "plan": {
+    "entries": [
+      "L1-ligand-5"
+    ],
+    "maxDispatch": 13,
+    "maxPerRun": 3,
+    "preChecks": {
+      "run": "L1",
+      "kind": "mutation",
+      "set": "ubq",
+      "keep": 5
+    },
+    "rehearsal": true
+  },
+  "preChecks": {
+    "set": "ubq",
+    "kind": "mutation",
+    "refused": "후보는 20개까지 고를 수 있습니다. 더 고르려면 먼저 다른 후보의 체크를 해제하세요.",
+    "kept": 5,
+    "identity": {
+      "bodySha256": "0f6dfa7778d519483ca0209b4b27c4bac18a57f1f31ecf7291a127ca2a055c8e",
+      "bodyBytes": 7028,
+      "aliases": 5,
+      "reservation": {
+        "external_tokens": 8782,
+        "usd": 0.1
+      }
+    },
+    "blockedOff": [
+      "consent_off"
+    ],
+    "unconfirmed": "보낼 수 없는 이유확인 체크를 켜세요: \"이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다\".",
+    "offConfirmed": "보낼 수 없는 이유과학 전송 동의가 꺼져 있음 (consent_off)",
+    "back": "보낼 수 없는 이유확인 체크를 켜세요: \"이 본문 그대로 외부 서비스(JEV)로 보내는 데 동의합니다\".",
+    "sendRequests": 0,
+    "dispatched": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "dispatchCounts": {
+    "run_9773c940b2e84ba0b65a47b758025511": 1,
+    "run_c85a6daccf5f499f85a3e33a1160f070": 1,
+    "run_ced73e9574b64eeca01f74d1125525e3": 0,
+    "run_da77c946187c4ffcad1e31b50eb495ca": 10,
+    "run_f9be66c0840c45a3914e242660a88343": 1
+  },
+  "fixture": {
+    "calls": 13
+  },
+  "finishedAt": "2026-10-09T10:15:16.069Z",
+  "error": null,
+  "requestCount": 158
+}

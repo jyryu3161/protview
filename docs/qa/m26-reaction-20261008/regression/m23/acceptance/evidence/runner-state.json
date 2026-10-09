@@ -1,0 +1,161 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "Dikedmz3G0FMeEOWwIdzo",
+    "gitHead": "dac2755a00e0139b0ce25085a82a1ed08caf3e71",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "4a412c131189b33f2f8e108ca1ed5b53a87a61ded1683127f948a33aa07260bc",
+    "dirtyFiles": [
+      " M frontend/tests/offscreen/sequence-ga-flow.cjs",
+      "?? docs/qa/m26-reaction-20261008/acceptance/",
+      "?? docs/qa/m26-reaction-20261008/regression/"
+    ],
+    "recordedAt": "2026-10-09T11:19:45.454535+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "sequence-ga-flow.cjs": "54e3e15c9a64f19b65113b098adaee69bbec12b5094e3d1f97d0182893a3e7d2",
+      "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "runnerSha256": "e5bb4fbcebfad06623bde434e3e21d2f89a9189500e3f5a1e7ef69543c0ca559"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m26-m23-final-20261009/runs",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-09T11:19:50.731494+00:00"
+    },
+    {
+      "name": "backend-worker-missing",
+      "runs": "<repo>/runs/m26-m23-final-20261009/unavailable-runs",
+      "code": "<repo>/runs/m26-m23-final-20261009/layout-worker-missing",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/runs/m26-m23-final-20261009/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-09T11:30:39.873010+00:00"
+    }
+  ],
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)",
+      "files": 145,
+      "treeSha256": "137e15da976bb50fbfc7a1b5347003cfe7b76142547b4dc00d9a4928f08f3aa4"
+    }
+  },
+  "environment": {
+    "dockingPython": true,
+    "dockingPythonPath": ".deps/docking/venv-locked/bin/python",
+    "qvina": true,
+    "qvinaPath": ".deps/qvina/env/bin/qvina2",
+    "projectPython": true,
+    "projectPythonPath": ".venv/bin/python",
+    "mainAvailable": true,
+    "modelAvailable": true,
+    "candidatesAvailable": true,
+    "dockingAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "versions": {
+        "model": {
+          "openmm": "8.6.0",
+          "openmm_engine_build": "8.6.0.dev-c6173db",
+          "pdbfixer": "1.12.0"
+        },
+        "docking": {
+          "MDAnalysis": "2.10.0",
+          "gemmi": "0.7.5",
+          "meeko": "0.8.0",
+          "rdkit": "2026.03.6"
+        }
+      },
+      "ga_ranges": {
+        "seed": {
+          "min": 0,
+          "max": 2147483647,
+          "default": null
+        },
+        "population_size": {
+          "min": 4,
+          "max": 16,
+          "default": 8
+        },
+        "generations": {
+          "min": 1,
+          "max": 8,
+          "default": 5
+        },
+        "elite_count": {
+          "min": 0,
+          "max": 4,
+          "default": 2
+        },
+        "tournament_size": {
+          "min": 2,
+          "max": 4,
+          "default": 2
+        },
+        "crossover_fraction": {
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5
+        },
+        "random_fraction": {
+          "min": 0.0,
+          "max": 0.5,
+          "default": 0.2
+        },
+        "max_mutations": {
+          "min": 1,
+          "max": 4,
+          "default": 3
+        },
+        "patience": {
+          "min": 1,
+          "max": 8,
+          "default": 3
+        },
+        "max_new_evaluations": {
+          "min": 4,
+          "max": 64,
+          "default": 32
+        },
+        "total_s": {
+          "min": 600,
+          "max": 14400,
+          "default": 7200
+        }
+      },
+      "timeout_s": {
+        "max": 15000,
+        "finish_margin": 600
+      },
+      "limits": {
+        "positions": 400,
+        "candidates": 7600,
+        "population": 16,
+        "generations": 8,
+        "new_evaluations": 64,
+        "max_mutations": 4,
+        "model_step_s": 240,
+        "docking_step_s": 300,
+        "total_s_max": 14400,
+        "model_object_bytes": 16777216,
+        "output_bytes": 268435456,
+        "summary_bytes": 1048576,
+        "staged_bytes": 16777216,
+        "m18_heavy_atom_estimate": 4890,
+        "consecutive_failures": 5
+      }
+    },
+    "layoutReason": "worker_missing"
+  }
+}

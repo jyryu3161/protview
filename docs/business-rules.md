@@ -9,7 +9,7 @@ ProtView의 결과는 연구실 구성원이 논문·보고서의 근거로 쓸 
 - **scientific_null**: 입력이 유효하고 계산도 성공했지만 조건을 만족하는 결과가 없는 상태(`null_result=true`). 실패가 아니며 재시도하지 않는다.
 - **geometric contact**: 원자 좌표 사이 거리만으로 정한 접촉. 두 원자가 모두 N/O이면 `polar_contact`, 모두 C이면 `hydrophobic_contact`, 나머지는 `contact`로 분류한다. 원소만 보고 나눈 것이며 수소결합·염다리 판정이 아니다.
 - **chemical interaction assignment**(M11): ProLIF가 사용자가 제공한 수소·연결 정보·화학 그래프로 판정한 상호작용 범주. geometric contact와는 다른 결과 종류이며, 둘 중 하나로 다른 하나를 덮어쓰지 않는다.
-- **참조 스냅샷 값**(M15): UniProt accession·위치·잔기 글자, KLIFS 포켓 번호처럼 참조 스냅샷에서 그대로 가져온 값. ProtView가 계산한 값이 아니며, 화면·보고서에서 계산값과 다른 종류로 표시한다("참조 스냅샷 값, 계산 아님").
+- **참조 스냅샷 값**(M15): UniProt accession·위치·잔기 글자, KLIFS 포켓 번호처럼 참조 스냅샷에서 그대로 가져온 값. ProtView가 계산한 값이 아니며, 화면·보고서에서 계산값과 다른 종류로 표시한다("참조 스냅샷 값, 계산 아님"). M26의 촉매 잔기·부위·반응(M-CSA·UniProt·Rhea 반응 참조 스냅샷의 값)도 같은 종류다("효소 반응 지식 (M26)").
 - **JEV 판정(모델 선택)**(M24): 외부 모델 JEV가 보낸 후보 목록에서 고른 하나와 모델이 보고한 확신도·확률. 계산 결과가 아닌 제안이며 과학 값 칸·점수·보고서 계산값에 넣지 않는다("JEV 과학 전송 (M24)"). M25 루프의 제안(`jev_loop_choice@1`)도 같은 이름이며 바퀴의 계산 대기열에 먼저 둘 후보 하나일 뿐이다("JEV 설계 루프 (M25)").
 
 ## 식별자
@@ -572,18 +572,18 @@ M18의 "의미하지 않는 것" 전부. 그에 더해 이어받음·부모 선�
 
 ## 변이 후보 (M20, `generate_mutation_candidates`)
 
-한 전처리 구조에서 위치(단백질 잔기)를 모으고, 근거 있는 보호 잔기를 기본으로 뺀 뒤, 남은 위치마다 단일 아미노산 치환 후보를 만든다(결정 0028). 후보는 위치와 바꿀 잔기의 조합일 뿐이다. 구조 모델링·에너지·점수·순위는 만들지 않는다(구조 모델링은 M21). 모든 거리는 저장된 전처리 좌표에서, 번호·KLIFS 부위는 저장된 번호 대응·주석 객체에서, 포켓 안쪽 잔기는 저장된 포켓 결과에서 온다. 닫힌 집합·상한·문장은 `backend/mw/mutation_constants.py`에 있고 바꾸려면 사용자 결정이 필요하다.
+한 전처리 구조에서 위치(단백질 잔기)를 모으고, 근거 있는 보호 잔기를 기본으로 뺀 뒤, 남은 위치마다 단일 아미노산 치환 후보를 만든다(결정 0028). 후보는 위치와 바꿀 잔기의 조합일 뿐이다. 구조 모델링·에너지·점수·순위는 만들지 않는다(구조 모델링은 M21). 모든 거리는 저장된 전처리 좌표에서, 번호·KLIFS 부위는 저장된 번호 대응·주석 객체에서, 포켓 안쪽 잔기는 저장된 포켓 결과에서 온다. 닫힌 집합·상한·문장은 `backend/mw/mutation_constants.py`에 있고 바꾸려면 사용자 결정이 필요하다. M26부터 도구가 만드는 새 집합은 모두 v2(`mw.mutation_candidates/v2`, M-CSA 촉매 잔기 보호, 아래 "v2 세대: M-CSA 촉매 잔기 보호 (M26)")이고, 이전에 저장된 v1 집합(`mw.mutation_candidates/v1`)은 바이트 그대로 유효하다. 이 절의 나머지 규칙은 두 세대에 같고, 세대마다 다른 곳은 그 자리에 적었다.
 
 ### 입력
-- 도구 인자(알 수 없는 키는 최상위·`sources`·`pocket`·`ligand_shell`에서 거부): `structure`(같은 run의 `prepared_structure`, 필수), `sources{pocket, ligand_shell, residues}`(필수), `ligand`(null | 리간드 선택자), `allowed_residues`(한 글자 코드 문자열 또는 목록, 기본 표준 20종 전부), `protected_residues`, `released_residues`, `metal_contact_A`(기본 3.0, 1.0–5.0, 양끝 포함), `numbering_map`(null | 같은 run의 `residue_numbering_map`), `annotation`(null | 같은 run의 `reference_site_annotation`).
+- 도구 인자(알 수 없는 키는 최상위·`sources`·`pocket`·`ligand_shell`에서 거부): `structure`(같은 run의 `prepared_structure`, 필수), `sources{pocket, ligand_shell, residues}`(필수), `ligand`(null | 리간드 선택자), `allowed_residues`(한 글자 코드 문자열 또는 목록, 기본 표준 20종 전부), `protected_residues`, `released_residues`, `metal_contact_A`(기본 3.0, 1.0–5.0, 양끝 포함), `numbering_map`(null | 같은 run의 `residue_numbering_map`), `annotation`(null | 같은 run의 `reference_site_annotation`), `catalytic_annotation`(M26, null | 같은 run의 `reaction_knowledge@1`, 기본 null).
 - `pocket` = null | `{pocket_set, ranks}`(순번 1개 이상), `ligand_shell` = null | `{radius_A}`(기본 5.0, 1.0–12.0, 양끝 포함), `residues` = 잔기 참조 목록(비어 있어도 됨). 세 출처 중 하나 이상이 실제로 위치를 요청해야 한다.
 - **잔기 참조** = `{model_number, chain_auth, seq_auth, icode, resname}` 필수 + `chain_label`·`seq_label` 선택(주면 일치해야 하고 null도 값이다, 타입까지 비교). 구조 첫(유일) 모델의 단백질 잔기(`category == "polymer"`, ATOM 레코드) 정확히 하나로 해석되어야 하고 결과에는 해석한 7필드를 저장한다. 이름·표시 문자열로 잔기를 찾지 않는다.
 - **리간드 선택자**는 같은 모양이며 물·`METALS`가 아닌 HETATM 잔기(`structure_residues`의 `ligands`, MSE HETATM 포함) 정확히 하나로 해석되어야 한다. 그 인스턴스에 중원자가 없으면(수소만) `ligand_invalid`다. 리간드가 여럿이어도 첫 번째를 고르지 않는다.
 - 목록(직접·보호·해제)과 포켓 순번은 각각 최대 400개이며 한 목록 안의 같은 잔기는 거부한다. 같은 잔기를 보호와 해제에 모두 넣으면 거부한다.
-- 호출 키 = 정규화한 인자: 목록은 구조 파일 순서·7필드 전체, `ranks` 오름차순, `allowed_residues`는 `ACDEFGHIKLMNPQRSTVWY` 순서의 문자열, 기본값 채움. 같은 집합이면 순서·표기와 상관없이 같은 호출·같은 handle이다.
+- 호출 키 = 정규화한 인자: 목록은 구조 파일 순서·7필드 전체, `ranks` 오름차순, `allowed_residues`는 `ACDEFGHIKLMNPQRSTVWY` 순서의 문자열, 기본값 채움(`catalytic_annotation`은 null이어도 늘 들어가므로 v2 집합은 같은 입력이어도 v1과 handle이 다르다). 같은 집합이면 순서·표기와 상관없이 같은 호출·같은 handle이다.
 
 ### 입장 검사 (사전 검사 훅, 모든 호출 경로에서 도구 구현보다 먼저, 이 순서)
-`unknown_field` → `structure_invalid` → `no_position_source` → `argument_invalid`(형식·범위, NaN·Infinity·bool, 400 초과 목록, 빈 `ranks`) → `allowed_residues_invalid`(비었음·20종 밖·중복) → `residue_invalid`(없음·둘 이상·비폴리머) → `duplicate_residue` → `protect_release_conflict` → `ligand_required`(`ligand_shell`이 켜졌는데 `ligand`가 null, 리간드 수와 무관, 자동 선택 없음) → `ligand_invalid` → `pocket_set_invalid`(handle 아님·다른 run·다른 종류, 게시되지 않은 결과, 포켓 없음 결과) → `numbering_map_invalid`·`annotation_invalid`(handle·run·종류) → `structure_mismatch`(포켓 결과의 `source_handle`, 번호 대응·주석의 `structure.handle`이 요청 구조와 다름) → `pocket_rank_invalid`(결과에 없는 순번·중복) → `pocket_residue_mismatch`(안쪽 잔기 7필드가 구조 단백질 잔기와 다름) → `annotation_map_mismatch`(둘 다 줬는데 주석이 기록한 `numbering_map`이 다름). 모두 `input_invalid`(422)이고 구현을 부르지 않는다. 포켓 결과는 훅이 받은 store(이벤트 로그·run ID 있음)로 만든 RunView에서 `pocket_bundle.validated_pocket_set`을 불러 게시가 끝난 결과인지까지 확인한다. fpocket을 다시 돌리지 않는다.
+`unknown_field` → `structure_invalid` → `no_position_source` → `argument_invalid`(형식·범위, NaN·Infinity·bool, 400 초과 목록, 빈 `ranks`) → `allowed_residues_invalid`(비었음·20종 밖·중복) → `residue_invalid`(없음·둘 이상·비폴리머) → `duplicate_residue` → `protect_release_conflict` → `ligand_required`(`ligand_shell`이 켜졌는데 `ligand`가 null, 리간드 수와 무관, 자동 선택 없음) → `ligand_invalid` → `pocket_set_invalid`(handle 아님·다른 run·다른 종류, 게시되지 않은 결과, 포켓 없음 결과) → `numbering_map_invalid`·`annotation_invalid`(handle·run·종류) → `catalytic_annotation_invalid`(M26: handle 아님·다른 run·다른 종류, 또는 종류는 맞는데 `reaction_knowledge.validated_result`를 통과하지 못함) → `structure_mismatch`(포켓 결과의 `source_handle`, 번호 대응·주석·반응 결과의 `structure.handle`이 요청 구조와 다름) → `pocket_rank_invalid`(결과에 없는 순번·중복) → `pocket_residue_mismatch`(안쪽 잔기 7필드가 구조 단백질 잔기와 다름) → `annotation_map_mismatch`(둘 다 줬는데 주석이 기록한 `numbering_map`이 다름). 모두 `input_invalid`(422)이고 구현을 부르지 않는다. 상수 `ADMISSION_REASON_CODES` 튜플의 순서는 이 실행 순서와 다르며, M26은 그 튜플의 `annotation_invalid` 바로 뒤에 `catalytic_annotation_invalid`를 넣었다(나머지 이유와 순서는 그대로). 포켓 결과는 훅이 받은 store(이벤트 로그·run ID 있음)로 만든 RunView에서 `pocket_bundle.validated_pocket_set`을 불러 게시가 끝난 결과인지까지 확인한다. fpocket을 다시 돌리지 않는다.
 
 ### 위치
 - 위치 = 구조 첫 모델의 단백질 잔기 하나. 체인마다 따로이며 같은 서열의 체인도 합치지 않는다. 세 출처의 합집합이고, 여러 출처에 있는 잔기는 위치 행 하나에 출처 목록(`pocket`은 순번마다, 오름차순 → `ligand_shell` → `user`)으로 남는다.
@@ -599,27 +599,27 @@ M18의 "의미하지 않는 것" 전부. 그에 더해 이어받음·부모 선�
 표준 20종 이름이거나 M12 이름 대응 10개(`HID`·`HIE`·`HIP`·`HSD`·`HSE`·`HSP`→`HIS`, `CYX`→`CYS`, `ASH`→`ASP`, `GLH`→`GLU`, `LYN`→`LYS`)면 `standard_resname`·`one_letter`가 정해진다. 그 밖(MSE·SEP 등)은 둘 다 null이고 제외 사유 `non_standard_residue`다. 원래 `resname`은 식별자에 그대로 남는다.
 
 ### 보호, 해제, 제외
-- 보호 사유(닫힌 집합, 이 순서): `user_protected`(보호 목록에 있음), `klifs_key_site`(주석의 `status == "annotated"` 부위 잔기와 7필드가 같음. 해당 부위의 `klifs_label`을 KLIFS 번호 순으로 `klifs_sites`에), `metal_contact`(금속 잔기(`het_flag == "H"`, 물 아님, 이름이 `METALS`(ZN MG CA MN FE CU CO NI NA K))의 원자와 이 잔기 중원자 사이 최소 거리 ≤ `metal_contact_A`. 가장 가까운 금속 잔기 7필드와 거리를 `metal`에), `disulfide_cys`(CYS·CYX이고 다른 CYS·CYX의 `SG`와 SG–SG ≤ 2.5 Å, 모든 체인. 가장 가까운 짝을 `disulfide_partner`에, 동점이면 파일 순서 먼저).
+- 보호 사유(닫힌 집합, 이 순서): `user_protected`(보호 목록에 있음), `klifs_key_site`(주석의 `status == "annotated"` 부위 잔기와 7필드가 같음. 해당 부위의 `klifs_label`을 KLIFS 번호 순으로 `klifs_sites`에), `metal_contact`(금속 잔기(`het_flag == "H"`, 물 아님, 이름이 `METALS`(ZN MG CA MN FE CU CO NI NA K))의 원자와 이 잔기 중원자 사이 최소 거리 ≤ `metal_contact_A`. 가장 가까운 금속 잔기 7필드와 거리를 `metal`에), `disulfide_cys`(CYS·CYX이고 다른 CYS·CYX의 `SG`와 SG–SG ≤ 2.5 Å, 모든 체인. 가장 가까운 짝을 `disulfide_partner`에, 동점이면 파일 순서 먼저), v2만 `catalytic_residue`(아래 v2 절).
 - 주석을 주지 않으면 KLIFS 보호를 검사하지 않는다: 위치의 `klifs_sites`는 null(검사했는데 해당 없으면 `[]`). 주석의 `absent` 부위는 보호하지 않는다.
 - 해제: `released_residues`의 잔기에 보호 사유가 하나라도 있으면 모든 보호 사유가 한꺼번에 풀리고 `protection.released: true`다(사유별 해제 없음, 사유 목록은 그대로 남음). 사유가 없는 잔기의 해제는 오류가 아니라 `released_residues[].effect: "none"`이다(위치가 아닌 잔기도 `none`). 해제는 `non_standard_residue`·`no_allowed_alternative`에 영향이 없다.
-- 제외 사유(닫힌 집합, 저장 순서): `non_standard_residue`, `user_protected`, `klifs_key_site`, `metal_contact`, `disulfide_cys`, `no_allowed_alternative`. 위치의 제외 사유 = 해제되지 않은 보호 사유 + 비표준이면 `non_standard_residue` + 표준이고 허용 목록에서 원래 잔기를 뺀 것이 비면 `no_allowed_alternative`. 하나라도 있으면 `status: "excluded"`(후보 없음, 이유와 함께 남음), 없으면 `"candidate"`.
-- 촉매 잔기는 판정하지 않는다(데이터베이스 없음, M26).
+- 제외 사유(닫힌 집합, 저장 순서): `non_standard_residue`, `user_protected`, `klifs_key_site`, `metal_contact`, `disulfide_cys`, (v2만 `catalytic_residue`), `no_allowed_alternative`. v1은 여섯, v2는 일곱이다. 위치의 제외 사유 = 해제되지 않은 보호 사유 + 비표준이면 `non_standard_residue` + 표준이고 허용 목록에서 원래 잔기를 뺀 것이 비면 `no_allowed_alternative`. 하나라도 있으면 `status: "excluded"`(후보 없음, 이유와 함께 남음), 없으면 `"candidate"`.
+- v1 집합은 촉매 잔기를 판정하지 않았다(그때는 데이터베이스가 없었음). v2는 M-CSA가 적은 촉매 잔기 중 이 구조에 "대응됨"인 잔기만 보호 근거로 쓰며, 잔기의 역할을 판정하지 않는다(아래 v2 절).
 
 ### 보호 검사 상태 `protection_checks` (결과에 항상)
-- `user_list {status: "checked", protected, released}`(목록 길이), `klifs_key_sites {status: "checked"|"not_checked", reason: null|"annotation_not_given", annotation, annotated_sites, absent_sites}`(검사하지 않았으면 handle·개수 null), `metal_contact {status: "checked", threshold_A, metal_residues, metal_names}`, `disulfide {status: "checked", threshold_A: 2.5, pairs}`, `catalytic_residue_database {status: "not_available", reason: "not_implemented"}`.
+- `user_list {status: "checked", protected, released}`(목록 길이), `klifs_key_sites {status: "checked"|"not_checked", reason: null|"annotation_not_given", annotation, annotated_sites, absent_sites}`(검사하지 않았으면 handle·개수 null), `metal_contact {status: "checked", threshold_A, metal_residues, metal_names}`, `disulfide {status: "checked", threshold_A: 2.5, pairs}`, `catalytic_residue_database`(v1은 `{status: "not_available", reason: "not_implemented"}` 그대로이며 `not_available`은 v1 전용 상태다. v2는 `not_checked`·`checked`, 아래 v2 절).
 - 하지 않은 검사를 한 것처럼 보이지 않는다: `not_checked`·`not_available`은 0이나 "없음"과 다르며 화면·보고서 어디서도 숫자로 보이지 않는다.
 
 ### 후보
 제외되지 않은 위치마다 허용 목록에서 원래 `one_letter`를 뺀 코드를 `ACDEFGHIKLMNPQRSTVWY` 순서로 하나씩 후보 `{index, position_index, from, to}`로 만든다(단일 변이, 위치당 최대 19개). 번호는 위치 순서, 그 안에서 코드 순서다. 후보 0개(모든 위치 제외 등)는 실패가 아니라 `null_result: true`인 유효한 빈 결과다.
 
 ### 결과 객체 `mutation_candidate_set@1`
-- 최상위 키: `schema`, `method_version`(`mw.mutation_candidates/v1`), `structure{handle, model_number, structure_kind: "prepared_structure"}`, `parameters`(정규화한 요청 + `disulfide_sg_A: 2.5`), `ligand`(null | `{residue, heavy_atom_count}`), `pockets`(null | `{pocket_set, ranks, lining_residue_count}`), `protection_checks`, `released_residues[{residue, effect}]`, `positions`, `candidates`, `counts{positions, candidate_positions, excluded_positions, released_positions, candidates, exclusion_reason_counts(여섯 사유 전부), source_counts{pocket, ligand_shell, user}}`, `null_result`, `limitations`.
+- 최상위 키: `schema`, `method_version`(`mw.mutation_candidates/v1` | v2 `mw.mutation_candidates/v2`), `structure{handle, model_number, structure_kind: "prepared_structure"}`, `parameters`(정규화한 요청 + `disulfide_sg_A: 2.5`), `ligand`(null | `{residue, heavy_atom_count}`), `pockets`(null | `{pocket_set, ranks, lining_residue_count}`), `protection_checks`, `released_residues[{residue, effect}]`, `positions`, `candidates`, `counts{positions, candidate_positions, excluded_positions, released_positions, candidates, exclusion_reason_counts(v1 여섯·v2 일곱 사유 전부), source_counts{pocket, ligand_shell, user}}`, `null_result`, `limitations`. v2가 더하거나 바꾼 키는 아래 v2 절이 전부다.
 - 위치 필드: `index`, `residue`(7필드), `standard_resname`, `one_letter`, `sources`, `ligand_min_distance_A`, `numbering`, `protection{reasons, released, klifs_sites, metal, disulfide_partner}`, `exclusion_reasons`, `status`, `candidate_count`.
 - 객체 내용에 시각·호출 ID가 없어 같은 입력은 같은 handle이다. 이벤트가 전체 payload를 담아 events-only로 다시 열린다(위치 400 × 후보 19 결과 내용 약 0.90 MiB, 이벤트 한 줄 약 1.20 MiB).
-- `validated_set`(순수 함수): 스키마, 닫힌 집합, 개수와 목록 일치, 후보↔위치 일관성, 제외 사유와 상태 일치, 해제 효과, `null_result`, 고정 문장 5개, 7필드 모양을 검사한다. 도구는 저장 전에 이것을 돌려 통과하지 못하면 저장하지 않고 `input_invalid` `candidate_set_invalid`로 실패한다. 읽기·보고서는 저장 객체를 매번 이것으로 다시 검증한다.
+- `validated_set`(순수 함수): 스키마, 닫힌 집합, 개수와 목록 일치, 후보↔위치 일관성, 제외 사유와 상태 일치, 해제 효과, `null_result`, 고정 문장 5개, 7필드 모양을 검사한다. `method_version`으로 세대를 갈라 v1 경로의 동작은 그대로 두고 v2에는 v2 규칙을 더 검사한다(M21·M23·M24·M25 소비자는 이 함수로 두 세대를 모두 받는다). 도구는 저장 전에 이것을 돌려 통과하지 못하면 저장하지 않고 `input_invalid` `candidate_set_invalid`로 실패한다. 읽기·보고서는 저장 객체를 매번 이것으로 다시 검증한다.
 
 ### 실행 경로
-값싼 도구(`Run.call`, `cost_class: cheap`)다. 작업 큐·승인·예산 단위를 쓰지 않고 외부 엔진·네트워크·참조 폴더를 쓰지 않는다. 입력은 이 run의 저장 객체(구조 바이트, 포켓 결과, 번호 대응, 주석)만이다. dry-run run에서도 실행해 결과를 저장한다(다른 값싼 도구와 같음). capability `methods.mutation_candidates`는 항상 사용 가능이다. M13 분석 흐름은 이 도구를 부르지 않는다.
+값싼 도구(`Run.call`, `cost_class: cheap`)다. 작업 큐·승인·예산 단위를 쓰지 않고 외부 엔진·네트워크·참조 폴더를 쓰지 않는다. 입력은 이 run의 저장 객체(구조 바이트, 포켓 결과, 번호 대응, 주석, v2의 반응 결과)만이다. dry-run run에서도 실행해 결과를 저장한다(다른 값싼 도구와 같음). capability `methods.mutation_candidates`는 항상 사용 가능이다. M13 분석 흐름은 이 도구를 부르지 않는다.
 
 ### 고정 한계 문장 (결과 `limitations`, 보고서, 화면에 문자 그대로, 순서 고정)
   1. "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
@@ -628,12 +628,14 @@ M18의 "의미하지 않는 것" 전부. 그에 더해 이어받음·부모 선�
   4. "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
   5. "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
 
+  위 셋째 문장은 v1(`not_available`)의 것이다. v2는 셋째 문장만 `catalytic_residue_database.status`에 따라 갈리고(아래 v2 절) 나머지 넷은 같다.
+
 ### 상한과 기본값 (`mutation_constants.py`)
-위치 400, 목록·순번 각 400(넘으면 거절, 자르지 않음). 껍질 반경 기본 5.0 Å(1.0–12.0), 금속 거리 기본 3.0 Å(1.0–5.0), 이황화 SG–SG 2.5 Å(요청 필드가 아닌 상수). 읽기 페이지: 목록 1–100(기본 50), 위치 1–100(기본 50), 후보 1–200(기본 100).
+위치 400, 목록·순번 각 400, v2 촉매 충돌·대응 없음 목록 각 400(넘으면 거절, 자르지 않음). 껍질 반경 기본 5.0 Å(1.0–12.0), 금속 거리 기본 3.0 Å(1.0–5.0), 이황화 SG–SG 2.5 Å(요청 필드가 아닌 상수). 읽기 페이지: 목록 1–100(기본 50), 위치 1–100(기본 50), 후보 1–200(기본 100).
 
 ### 보고서
 - `method_report_manifest@1`, `analysis_type: "mutation_candidates"`, 렌더 `mutation_candidates_markdown@1`. 입력은 후보 집합 handle 하나. 만들기·다시 열기·다운로드는 후보를 다시 만들지 않는다.
-- **계산값**(`computed`, 저장 행을 다시 셈): 위치 수, 상태별 위치 수, 해제된 위치 수, 후보 수, 제외 사유별 위치 수(여섯 개), 출처별 위치 수(셋), 번호 상태별 위치 수(번호 대응을 줬을 때만), 리간드까지 최소 거리의 최솟값(리간드가 있고 거리가 있는 위치가 있을 때만, Å, 그 최솟값을 가진 첫 위치 인용, `Decimal(str(v))` 0.01 `ROUND_HALF_UP`), 보호 검사 다섯 개의 상태, 검사한 항목의 개수(보호·해제 목록 길이, 주석된·없는 부위, 금속 잔기, SG–SG 쌍). 검사하지 않은 KLIFS 항목은 "검사하지 않음" 상태 주장만 있고 숫자가 없다. 촉매 잔기 데이터베이스는 "사용할 수 없음"이며 숫자가 없다.
+- **계산값**(`computed`, 저장 행을 다시 셈): 위치 수, 상태별 위치 수, 해제된 위치 수, 후보 수, 제외 사유별 위치 수(v1 여섯 개, v2 일곱 개. v2의 `catalytic_residue`는 아래 v2 절), 출처별 위치 수(셋), 번호 상태별 위치 수(번호 대응을 줬을 때만), 리간드까지 최소 거리의 최솟값(리간드가 있고 거리가 있는 위치가 있을 때만, Å, 그 최솟값을 가진 첫 위치 인용, `Decimal(str(v))` 0.01 `ROUND_HALF_UP`), 보호 검사 다섯 개의 상태, 검사한 항목의 개수(보호·해제 목록 길이, 주석된·없는 부위, 금속 잔기, SG–SG 쌍). 검사하지 않은 KLIFS 항목은 "검사하지 않음" 상태 주장만 있고 숫자가 없다. v1의 촉매 잔기 데이터베이스는 "사용할 수 없음"이며 숫자가 없다(v1 보고서 바이트는 그대로).
 - **참조값**(`reference_value`, "참조 스냅샷 값, 계산 아님" + 참조 객체 handle): 위치들의 서로 다른 UniProt accession(번호 대응 행에서 복사), 보호된 위치의 서로 다른 KLIFS 부위 이름표(주석에서 복사). 계산값 주장이 참조 필드를 인용하면 거부한다.
 - 위치 행 전체 목록은 보고서에 넣지 않는다(저장 객체에 있음). 리간드를 주지 않았거나 거리가 있는 위치가 없으면 거리 절에 "계산하지 않음"과 이유를 쓰고 숫자를 쓰지 않는다.
 - 만들고 다시 열 때 저장된 집합을 검증하고, 그것이 이름 붙인 번호 대응·주석·포켓 결과가 같은 구조인지, 복사한 번호 값과 KLIFS 부위 개수·이름표가 저장 객체와 같은지 대조하고, manifest·주장·Markdown 바이트를 다시 만든 것과 비교한다. 틀린 개수·반올림, 검사하지 않은 항목을 검사했다거나 0으로 쓰는 주장, 섞인 증거 종류, 다른 구조·다른 run의 증거는 `report_evidence_invalid`다.
@@ -645,8 +647,22 @@ M18의 "의미하지 않는 것" 전부. 그에 더해 이어받음·부모 선�
 - 값은 서버 응답만 보이고 브라우저에서 계산하지 않는다. 거리는 소수 둘째 자리 `decimalHalfUp`, null은 "—"와 이유(예: "— (리간드를 고르지 않아 계산하지 않음)", "— (중원자 없음)", "— (검사하지 않음)"). 보호 판정을 "안전", 후보를 "추천·좋은·유망", 목록 순서를 순위로 부르지 않는다. 점수·순위 열·막대 그래픽 없음. 이유 코드는 "한국어 (code)".
 - 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음). 후보 0개는 저장된 제외 사유별 개수와 함께 빈 결과다. 늦은 응답은 run + 결과 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 보고서 생성이 늦게 끝나도 run이 같으면 보고서 목록을 다시 읽게 한다.
 
+### v2 세대: M-CSA 촉매 잔기 보호 (M26)
+M20의 "촉매 잔기 데이터베이스" 칸을 M26 반응 지식 결과로 켠다(결정 0034). 상수·문장은 `mutation_constants.py`의 `_V2` 이름과 촉매 블록이고, 이름 없는 상수는 v1 값을 바이트 그대로 지킨다(저장된 v1 집합을 그것으로 검증).
+- **입력과 검증 위치**: `catalytic_annotation`(null | 같은 run의 `reaction_knowledge@1`)은 도구 층(`tools/mutations.py`)이 `reaction_knowledge.validated_result`로 검증하고, 보호에 필요한 값(체인별 `coverage`, `covered` 체인의 행 수와 `matched`·`conflict`·`unmatched` 행)만 평범한 dict로 `mutation_candidates.py`의 순수 함수에 넘긴다. M20 두 파일(`mutation_candidates.py`·`mutation_constants.py`)은 새 import를 더하지 않았다. UniProt 부위·반응 절은 보호에 쓰지 않는다(UK3).
+- **보호 판정**: 위치(체인 c)의 `protection.catalytic` = 결과에 체인 c가 있고 그 M-CSA 절이 `covered`이면 그 체인의 `matched` 행 중 `residue`가 위치 잔기와 7필드가 모두 같은 행들의 `{mcsa_id, residue_index, is_reference}`(`mcsa_id`·`residue_index` 순, 없으면 `[]`), 그 밖(결과에 그 체인이 없음, `chain_not_listed`, `pdb_not_in_snapshot`, M-CSA 절 `not_checked`, 주석을 주지 않음)이면 null(검사하지 않음)이다. 목록이 비어 있지 않으면 보호 사유 `catalytic_residue`가 붙는다. 모든 `matched` 행이 보호한다(기준 구조 여부·역할·PTM으로 거르지 않음). `conflict`·`unmatched` 행은 보호하지 않고 목록으로 눈에 띄게 알린다. 해제는 기존 잔기 단위 규칙 그대로이며(사유 목록은 남음) 해제된 위치의 `catalytic_residue`는 화면·보고서에서 "해제됨"이다.
+- **`protection_checks.catalytic_residue_database`**(v2, 항상 있음, 키 집합 정확히): 주석을 주지 않으면 `{status: "not_checked", reason: "annotation_not_given", annotation: null}`(숫자 없음). 주었으면 `status`, `reason`, `annotation`(결과 handle 문자열, KLIFS 칸 선례), `covered_chains`(위치가 있는 체인 중 결과의 그 체인이 `covered`인 `chain_auth`, 구조 파일 순서), `uncovered_chains[{chain_auth, coverage}]`(위치가 있는 나머지 체인, `coverage` ∈ `chain_not_listed`·`pdb_not_in_snapshot`·`not_checked`·`not_in_annotation`(결과에 그 체인이 없음)), `matched_rows`·`conflict_rows`·`unmatched_rows`(`covered_chains`의 결과 행 수 합), `conflicts`·`unmatched`(같은 체인들의 행 목록, 원소 키 `chain_auth`, `mcsa_id`, `residue_index`, `reason`, `residue`(7필드|null), `listed{chain_name, resid, auth_resid, code}`)이다. `covered_chains`가 비어 있지 않고 `uncovered_chains`가 비었을 때만 `checked`(`reason: null`), 그 밖(덮이지 않은 체인이 있거나, 위치가 없어 아무 체인도 덮이지 않음)은 `not_checked`·`chains_not_covered`다. 위치가 없는 집합은 `checked`가 되지 않는다. `not_checked`여도 `covered_chains`의 `matched` 행은 위치를 보호한다. `conflicts`·`unmatched`가 각각 400개를 넘으면 429 `resource_exceeded` `catalytic_list_too_long`이고 저장하지 않는다(자르지 않음).
+- **저장 형식(v1 대비 변경 전부)**: `method_version` `mw.mutation_candidates/v2`, `parameters.catalytic_annotation`, `positions[].protection.catalytic`(null | 목록), 위 `catalytic_residue_database`, `counts.exclusion_reason_counts` 일곱 키, `limitations` 셋째 문장 변형. 나머지 키와 값 규칙은 v1과 같다. `validated_set`의 v2 경로는 키 집합 정확 일치, 닫힌 집합, `covered_chains`와 `uncovered_chains`가 겹치지 않고 합이 위치를 가진 체인 전체, `covered` 체인 위치는 목록·나머지와 주석 없음은 null, 사유 `catalytic_residue` ↔ 비어 있지 않은 목록, 상태·이유 ↔ 체인 목록, 개수 ↔ 목록 길이, 제외 사유 순서와 일곱 키, 한계 문장 변형 ↔ 상태를 검사한다. 반응 결과 객체와의 대조는 하지 않는다(도구 시점과 보고서 만들기·다시 열기에서 한다).
+- **0 저장 주의**: 아무 체인도 덮이지 않았을 때 `exclusion_reason_counts.catalytic_residue`는 0으로 저장되고(주석을 주지 않은 경우 포함), 주석을 주었으면 `matched_rows`·`conflict_rows`·`unmatched_rows`도 0, 목록은 `[]`로 저장된다(위 형식 그대로). 화면과 M20 보고서는 이 경우 그 칸을 "—"와 이유로 보이고 숫자 주장을 만들지 않지만, 집합 상세 읽기의 `result`에는 0이 상태와 함께 그대로 있으므로 읽는 쪽은 `status`·`covered_chains`를 함께 본다.
+- **고정 한계 문장 셋째의 변형**(문자 그대로, 바꾸려면 사용자 결정, 사용자 최종 확인으로 승인 2026-10-09): `checked` "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다." / `not_checked` "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다)." v1(`not_available`)은 위 셋째 문장 그대로다.
+- **보고서**: v2 집합만 촉매 부분이 있다(v1 manifest·주장·Markdown 바이트는 그대로). 촉매 검사 상태는 상태 주장, `checked`일 때만 덮인 체인 수(`catalytic_covered_chain_count`)와 `matched`·`conflict`·`unmatched` 행 수가 계산값이고 `not_checked`는 상태 주장만 있다. `catalytic_residue` 제외 위치 수는 덮인 체인이 있을 때만 주장이다(없으면 "—"와 이유). 위치들의 `protection.catalytic`에 나오는 서로 다른 M-CSA 항목 ID는 참조값(`reference_mcsa_entry_id`, 반응 결과 handle 인용)이다. 만들고 다시 열 때 반응 결과를 `validated_result`로 검증하고 같은 구조인지, 그 결과로 다시 만든 촉매 검사 칸과 모든 `protection.catalytic`이 집합과 같은지 대조한다(다르면 `report_evidence_invalid`).
+- **읽기**: 목록·상세에 `catalytic_status`(`not_available`(v1)·`not_checked`·`checked`, 저장값)를 더할 뿐 기존 키·값은 그대로다. 위치 필터 `exclusion_reason`은 일곱 사유를 받는다(v1 집합에 `catalytic_residue`를 주면 빈 목록).
+- **화면(단백질 공학 탭 M20 영역)**: 요청 영역에 반응 지식 결과 선택 칸(같은 전처리 구조의 결과만, 구조를 고르면 같은 구조의 가장 최근 결과를 미리 고름. 결정 0028의 KLIFS 미리 고르기 예외와 같은 확장이며 자동 제출 없음). 결과가 없거나 고르지 않으면 "M-CSA 촉매 잔기 보호를 검사하지 않음"과 UK2를 눈에 띄게 알리고, 고른 결과에 덮이지 않을 체인이 있으면 요청 전에 체인별로 보이며, 고른 결과에 구조에 연결된 UniProt 부위가 있으면 UK3을 더한다. 결과 영역은 위치 행의 `catalytic_residue` 사유와 M-CSA 항목 ID(해제되면 "해제됨"), 보호 검사 칸의 상태·이유·체인별 덮임·행 수, 충돌·대응 없음 목록(위치 포함)을 눈에 띄게, 셋째 문장 변형을 보인다. 덮인 체인이 없으면 `catalytic_residue` 개수와 행 수는 "—"와 이유다.
+- **후보 집합을 고르는 다른 곳**(M20 목록, M21 요청 영역, M23 패널, M24 `JevPanel` 변이 소스, M25 루프 패널 변이 풀): `catalytic_status`가 `checked`가 아닌 집합에 "촉매 잔기 검사 안 함" 표시와 UK2를 단다. 배지와 문구는 세대가 아니라 `catalytic_residue_database.status`로 정한다(`not_available`(v1)과 `not_checked`(v2)는 같은 표시이고 상세 이유는 따로). 계산·전송·루프 규칙은 그대로다.
+- **소비자와 호출 키**: M21·M23·M25 계산과 M24 전송은 두 세대를 모두 받고, 이미 저장된 계산 결과·보고서·제안·루프 기록은 바뀌지 않는다. `mutation_candidates.py`는 M21·M23 호출 키에 해시가 들어가는 파일이라 M26의 변경으로 M26 전 M21 변이 모델·M23 서열 GA 저장 결과의 자동 재사용이 끝났다(사용자 수용, 영향은 `docs/engineering-notes.md`의 M26 함정).
+
 ### 의미하지 않는 것
-변이의 효과(안정성·결합·활성·특이성), ΔΔG·친화도·에너지, 순위·추천·우선순위, 보호 판정의 "안전", 촉매 잔기 여부, 변이 구조의 형태·양성자 상태. 리간드·금속까지 거리는 기하 사실이며 결합·상호작용을 뜻하지 않는다. KLIFS 부위 이름표·UniProt 번호는 참조값이다.
+변이의 효과(안정성·결합·활성·특이성), ΔΔG·친화도·에너지, 순위·추천·우선순위, 보호 판정의 "안전", 촉매 잔기 여부(v2의 `catalytic_residue`는 M-CSA가 적은 PDB·체인·번호·잔기 이름이 맞는 행이 있다는 뜻뿐이며 잔기의 역할을 판정하지 않는다), 변이 구조의 형태·양성자 상태. 리간드·금속까지 거리는 기하 사실이며 결합·상호작용을 뜻하지 않는다. KLIFS 부위 이름표·UniProt 번호·M-CSA 항목 ID는 참조값이다.
 
 ## 변이 구조 모델링 (M21, `openmm_mutation_model_v1`)
 
@@ -800,7 +816,7 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 - 구현은 같은 읽기를 반복해 투영을 만들고 저장 형태로 `validated_projection`을 통과할 때만 저장한다. 본문이 64 KiB를 넘으면 429 `resource_exceeded` `payload_too_large`, 검증 실패는 422 `projection_invalid`이고 둘 다 아무것도 저장하지 않는다(자르지 않음).
 
 ### 투영 객체 `jev_projection@1`
-- 키: `schema`, `method_version`(`mw.jev_projection/v1`), `kind`(`ligand`|`mutation`), `source{handle, schema}`, `structure{handle, model_number}`(변이만, 리간드는 null), `question{id, key: "candidate_choice"}`, `filter`(리간드만, 변이는 null), `selection`(리간드 `[{alias, candidate_id}]`, 변이 `[{alias, candidate_index, position_index}]`. 로컬 전용이며 보내지 않음), `wire`(외부로 나가는 `state` 그대로), `wire_sha256`(와이어의 정규 JSON), `body_sha256`, `body_bytes`, `limitations`(J1–J4 + 리간드 J5 | 변이 J6).
+- 키: `schema`, `method_version`(`mw.jev_projection/v1`), `kind`(`ligand`|`mutation`), `source{handle, schema}`, `structure{handle, model_number}`(변이만, 리간드는 null), `question{id, key: "candidate_choice"}`, `filter`(리간드만, 변이는 null), `selection`(리간드 `[{alias, candidate_id}]`, 변이 `[{alias, candidate_index, position_index}]`. 로컬 전용이며 보내지 않음), `wire`(외부로 나가는 `state` 그대로), `wire_sha256`(와이어의 정규 JSON), `body_sha256`, `body_bytes`, `limitations`(J1–J4 + 리간드 J5 | 변이는 와이어의 `catalytic_residue_database` 상태별 J6·J6n·J6c, 아래 고정 문장).
 - 내용에 시각·호출 ID가 없어 같은 입력은 같은 handle이다. 이벤트가 전체 payload를 담아 events-only로 다시 열린다. 1 MiB 한도.
 - `validated_projection`(순수)은 읽을 때마다 키·스키마·닫힌 집합, 선택 ↔ 와이어 별칭 일치, 후보 ≤ 20, 와이어 규칙, 와이어 해시·본문 해시·길이 재계산, 64 KiB 이하, 한계 문장을 검사한다. 통과하지 못하면 `projection_invalid`.
 
@@ -819,7 +835,7 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 
 ### 변이 와이어 `jev_mutation_candidates@1`
 - `schema`, `task: "choose_one_candidate"`, `positions[{pos, residue, one_letter, sources, ligand_min_distance_A, protection_released, window, neighbors}]`, `candidates[{alias, pos, from, to}]`, `protection_checks`, `pockets`(집합이 포켓 출처를 썼을 때만), `values_note`.
-- `residue`는 7필드 그대로(null 포함), `ligand_min_distance_A`는 저장값(null 유지). `sources`는 저장 객체 목록(`{kind, pocket_rank | radius_A}`)의 `kind`에서 닫힌 이름 `pocket`·`ligand_shell`·`user`를 이 순서로 만든다(포켓 순위가 여럿이어도 `pocket` 하나, 순위·반경 값은 보내지 않음). `protection_released`는 `protection.released` 불리언뿐이다. `protection_checks`는 다섯 검사 `user_list`·`klifs_key_sites`·`metal_contact`·`disulfide`·`catalytic_residue_database`마다 저장된 `status` 문자열(`checked`·`not_checked`·`not_available`) 하나뿐이고(개수·handle·이름표 없음) 검사하지 않은 항목이 "보호 없음"으로 읽히지 않게 한다. `pockets`는 `{ranks, lining_residue_count}`(`pocket_set` handle 없음).
+- `residue`는 7필드 그대로(null 포함), `ligand_min_distance_A`는 저장값(null 유지). `sources`는 저장 객체 목록(`{kind, pocket_rank | radius_A}`)의 `kind`에서 닫힌 이름 `pocket`·`ligand_shell`·`user`를 이 순서로 만든다(포켓 순위가 여럿이어도 `pocket` 하나, 순위·반경 값은 보내지 않음). `protection_released`는 `protection.released` 불리언뿐이다. `protection_checks`는 다섯 검사 `user_list`·`klifs_key_sites`·`metal_contact`·`disulfide`·`catalytic_residue_database`마다 저장된 `status` 문자열(`checked`·`not_checked`·`not_available`) 하나뿐이고(개수·handle·이름표 없음) 검사하지 않은 항목이 "보호 없음"으로 읽히지 않게 한다. M26 v2 집합의 `catalytic_residue_database`는 `not_checked`·`checked`이며 이미 허용 값이라 와이어 모양은 바뀌지 않았다. M-CSA 항목 ID·역할 문구·UniProt 부위·Rhea 같은 M26 반응 자료는 와이어에 들어가지 않는다. `pockets`는 `{ranks, lining_residue_count}`(`pocket_set` handle 없음).
 - 기하는 값싼 도구 안에서 저장된 전처리 구조의 첫 모델 좌표로만 계산한다. 단백질 잔기 = 물이 아닌 ATOM 레코드 잔기(`het_flag == "A"`), 중원자 = 원소 H·D 제외.
   - `window{chain_auth, first_seq_auth, residues, contiguous}`: 같은 `chain_auth`의 단백질 잔기를 구조 순서로 앞뒤 5개씩(`WINDOW_FLANK`, 대상 포함 최대 11개, 체인 끝에서 잘림). 한 글자는 M20 `one_letter` 규칙(표준 20종과 이름 대응 10개: HID → H, CYX → C …), 그 밖의 이름은 `X`. HETATM 변형 잔기(MSE 등)는 단백질 잔기가 아니므로 구간에서 빠진다. `contiguous`는 구간 잔기가 모두 삽입 코드 없음이고 `seq_auth`가 1씩 이어질 때만 true. `chain_auth`가 null이면 `window: null`.
   - `neighbors[{chain_auth, seq_auth, icode, resname}]`: 대상과 중원자 최소 거리(float64) ≤ 5.0 Å(`NEIGHBOR_RADIUS_A`, 경계 포함)인 다른 단백질 잔기, 모든 체인, 구조 순서. 물·리간드·금속은 들어가지 않는다. 대상에 중원자가 없으면 `neighbors: null`(계산하지 않음, 빈 목록이 아님).
@@ -858,13 +874,13 @@ S1 항상: "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·
 - 검증을 통과한 늦은 응답은 버리지 않고 제안을 저장하며 `completed` + `late: true`와 `late_reason`(`run_cancelled`·`consent_off`, 둘 다면 `run_cancelled`)과 J7을 객체·기록·화면·보고서에 보인다. 검증을 통과하지 못하면 늦었어도 평소처럼 `failed`이고 제안이 없다(전송 기록에는 `late`·`late_reason`이 함께 남는다. 거절된 전송은 늘 `late: false`). 늦은 응답도 어떤 로컬 작업도 일으키지 않는다.
 
 ### 제안 객체 `jev_choice@1`
-- 서버(전송 결과 처리)만 만든다. 키: `schema`, `method_version`(`mw.jev_choice/v1`), `label: "JEV 판정(모델 선택)"`, `scientific_result: false`, `send{send_id, audit_id}`, `source{handle, schema}`, `projection{handle, wire_sha256, body_sha256, body_bytes}`, `question{id, key, instructions_sha256}`, `requested_model`, `served_model`, `selection`(투영에서 복사), `answer{choice_alias, local_ref, local_display, confidence | null, probabilities | null}`, `usage{input_tokens, output_tokens, external_tokens, cost} | null`, `arrival{late, late_reason}`, `limitations`(J1–J4 + J5 | J6, 늦으면 + J7).
+- 서버(전송 결과 처리)만 만든다. 키: `schema`, `method_version`(`mw.jev_choice/v1`), `label: "JEV 판정(모델 선택)"`, `scientific_result: false`, `send{send_id, audit_id}`, `source{handle, schema}`, `projection{handle, wire_sha256, body_sha256, body_bytes}`, `question{id, key, instructions_sha256}`, `requested_model`, `served_model`, `selection`(투영에서 복사), `answer{choice_alias, local_ref, local_display, confidence | null, probabilities | null}`, `usage{input_tokens, output_tokens, external_tokens, cost} | null`, `arrival{late, late_reason}`, `limitations`(J1–J4 + J5 | J6 변형(투영 와이어의 촉매 상태로 고름), 늦으면 + J7).
 - 별칭·확신도·확률은 받은 그대로다(변환·정렬·반올림 없음). `local_ref`는 리간드 `{candidate_id}`, 변이 `{candidate_index, position_index}`이고, `local_display`(고른 후보 하나)는 저장 소스 집합에서 복사한 표기다(리간드 `{smiles}`, 변이 `{residue(7필드), from, to}`).
 - 내용에 시각이 없고 `send_id`·`audit_id`가 들어 있어 전송마다 하나다. 1 MiB 한도, events-only 복구.
 - `validated_choice`는 읽을 때마다 투영·소스 집합과 대조한다: 키 집합(순위·점수·best·recommended 같은 다른 키 거부), `scientific_result` false, 고른 별칭 ∈ 선택, `local_ref`·`local_display`가 선택·소스 집합에서 다시 만든 것과 같음, 확률 키 ⊂ 별칭·값 0–1, `arrival` 일관성, 투영 해시, 응답 모델, 한계 문장. 계산 객체가 아니며 도구 결과·과학 값 칸에 나오지 않는다.
 
 ### 고정 문장 (문자 그대로, 순서 고정, `jev_constants.STATEMENTS`·`SCREEN_NOTES`, 바꾸려면 사용자 결정)
-J1 항상: "JEV 판정은 외부 모델이 보낸 후보 목록에서 고른 하나일 뿐이며 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니다." J2 항상: "고른 이유는 알 수 없다. 응답에는 선택과 모델이 보고한 확신도·확률만 있으며 과학 값이 아니다." J3 항상: "외부로 나간 내용은 승인한 미리보기 본문과 바이트가 같고(해시로 확인) 그 본문이 이 기록의 근거 전부이다." J4 항상: "모델 선택은 후보 목록의 순서(로컬 저장 순서)의 영향을 받을 수 있다." J5 리간드: "후보는 2D 그래프이고 속성값은 RDKit 추정값이며 결합·활성·합성 가능성을 계산하지 않았고 수용체 정보 없이 고른 것이다." J6 변이: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다." J7 늦은 응답: "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다." 화면 안내(제안이 아니라 화면 문구): U1 "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다." U2 "과학 전송은 뷰어 모델 명령과 같은 외부 토큰·USD 예산과 '사용량 모름' 중지 상태를 쓰며, 한쪽이 예산을 다 쓰거나 사용량을 모르면 이 run에서 다른 쪽도 멈춘다." U3 "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다."
+J1 항상: "JEV 판정은 외부 모델이 보낸 후보 목록에서 고른 하나일 뿐이며 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니다." J2 항상: "고른 이유는 알 수 없다. 응답에는 선택과 모델이 보고한 확신도·확률만 있으며 과학 값이 아니다." J3 항상: "외부로 나간 내용은 승인한 미리보기 본문과 바이트가 같고(해시로 확인) 그 본문이 이 기록의 근거 전부이다." J4 항상: "모델 선택은 후보 목록의 순서(로컬 저장 순서)의 영향을 받을 수 있다." J5 리간드: "후보는 2D 그래프이고 속성값은 RDKit 추정값이며 결합·활성·합성 가능성을 계산하지 않았고 수용체 정보 없이 고른 것이다." J6 변이: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다." 변이의 다섯째 문장은 M26부터 와이어 `protection_checks.catalytic_residue_database` 상태로 고른다(별도 상수 `J6_BY_CATALYTIC_STATUS`, `STATEMENTS`는 J1–J7 그대로, `jev_reports.FIXED_LIMITATIONS`에 J6n·J6c를 더함, 투영 객체에 새 필드 없음): `not_available`(v1 집합)은 위 J6을 바이트 그대로(v1 투영·본문·감사 열·`jev_choice@1`·읽기 바이트 불변), `not_checked`는 J6n "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.", `checked`는 J6c "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다." J6n·J6c 문구는 구현된 그대로이며 사용자 최종 확인으로 승인했다(2026-10-09). M25 문장 LJ1–LJ8·UL1–UL3은 바뀌지 않았다. J7 늦은 응답: "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다." 화면 안내(제안이 아니라 화면 문구): U1 "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다." U2 "과학 전송은 뷰어 모델 명령과 같은 외부 토큰·USD 예산과 '사용량 모름' 중지 상태를 쓰며, 한쪽이 예산을 다 쓰거나 사용량을 모르면 이 run에서 다른 쪽도 멈춘다." U3 "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다."
 
 ### 보고서
 - `method_report_manifest@1`, `analysis_type: "jev_choice"`, 렌더 `jev_choice_markdown@1`("JEV 판정 보고서"). 입력은 제안 handle 하나, `generation_mode: "local_rules_no_egress"`(저장 객체·이벤트만 읽고 보내지 않음), `external_response{kind: "jev_choice", scientific_evidence: false}`.
@@ -998,6 +1014,98 @@ LJ1 항상: "JEV 루프는 사람이 바퀴마다 보낼 내용과 계산 시작
 
 ### 의미하지 않는 것
 JEV 판정은 후보의 순위·추천·예측·점수가 아니며 결합·활성·친화도·안정성·ΔΔG·합성 가능성·변이 효과에 대한 판단이 아니다. 고른 이유는 알 수 없다. 탐색형·활용형 목표는 JEV에게 고를 기준을 알리는 고정 문장일 뿐이고 루프가 더 나은 후보를 찾는다는 주장이 아니다. 목록 위치는 관찰값이며 섞기의 효과·무효과·편향의 증거가 아니다(LJ3). 바퀴 순서·표 정렬·선택 표시는 순위나 개선이 아니고, 루프는 최솟값·최댓값·평균·차이·증감·"지금까지 최저"를 만들지 않는다. 단백질 루프의 점수는 후보마다 다른 변이 구조에 도킹한 값이라 같은 수용체 안의 비교가 아니며 변이 효과나 친화도가 아니고(LJ7), 서열이 다른 구조의 OpenMM 전위는 점수·선택·표에 쓰지 않는다. 점수 없음(계산하지 않음·모드 없음·실패·도킹하지 않음)은 0이 아니다.
+
+## 효소 반응 지식 (M26, `link_reaction_knowledge`)
+
+효소 구조의 체인에 M-CSA가 적어 둔 촉매 잔기, UniProt가 적어 둔 부위(Active site·Binding site·Site)와 촉매 활동, Rhea 반응식을 **참조값("참조값, 계산 아님")**으로 출처·스냅샷 날짜·세트 해시·라이선스(CC BY 4.0)와 함께 붙여 지식 탭에서 보이고, M-CSA 행 중 이 구조에 "대응됨"인 잔기를 변이 후보(M20 v2)의 기본 보호 근거로 쓴다(결정 0034). 사람이 반응 정보를 보며 바꿀 서열 위치를 정하는 일을 돕는 것이 목적이며, 변이의 효과나 효소 활성·속도·특이성·반응 메커니즘이 유지된다는 주장은 하지 않는다. ProtView가 계산하는 값은 저장 행에서 센 개수뿐이다. 뷰어 표시·저장된 보기·그림 형식(`viewer_scene@2`·`viewer_figure@2`)은 바뀌지 않았고, M24·M25 JEV 전송에 M26 자료를 보내지 않으며, M13 분석 흐름은 이 도구를 부르지 않는다. 닫힌 집합·상한·고정 문장·가공 행 형식(`SOURCE_FORMATS`)·가져오기 허용 호스트는 `backend/mw/reaction_knowledge_constants.py`(표준 라이브러리만, `mw` import 없음)에 있고 바꾸려면 사용자 결정이 필요하다. 고정 문장 RK1–RK6·UK1–UK4, M20 셋째 문장 변형, J6n·J6c와 닫힌 이름은 구현된 그대로이며 사용자의 최종 확인으로 승인했다(2026-10-09). `MAX_ACCESSIONS`(20,000)·`MAX_SKIPPED`(50)·요청 제한 시간·응답 크기·요청 간격·재시도·읽기 페이지 크기는 조정 가능한 기본값이다.
+
+### 말하는 방식
+- 촉매 잔기·부위·반응은 참조값이며 ProtView가 잔기의 역할을 판정하거나 주장하지 않는다. M-CSA 역할 문구(`roles_summary`·`function_location_abv`·`ptm`·`roles[]`)는 영어 원문 그대로(번역·요약·해석 없음, 빈 문자열도 빈 문자열 그대로) 참조값 칸에만 쓰고, 기준 구조 여부(`is_reference`)도 값 그대로 함께 보인다.
+- "대응됨"(`matched`)은 M-CSA가 적은 PDB·체인·번호와 이 구조의 잔기 이름이 모두 같다는 뜻뿐이다. 대응 없음·충돌·검사하지 않음·사용할 수 없음은 "이 스냅샷과 방법으로 확실하지 않음"이며 촉매 잔기가 없다는 뜻이 아니고, 0이나 "없음"으로 보이지 않는다.
+- 순위·추천·중요도·활성·안정성·ΔΔG·효과·"필수"·"핵심"이라고 부르지 않는다. 역할 문구로 행을 거르지 않고, 한 체인에 M-CSA 항목이 여럿이면 하나를 고르지 않고 모두 보인다.
+
+### 참조 스냅샷 `reaction_reference` (M15와 별개 가족)
+- 위치: `.deps/reaction_reference/`(Git 제외), 관리자 환경변수 `MW_REACTION_REFERENCE_DIR`로만 바꾼다(상대 경로는 저장소 루트 기준). M15 가족(`.deps/reference/`, `MW_REFERENCE_DIR`)과 폴더·포인터 스키마·서버 모듈·캐시가 모두 따로이고 M15 폴더·형식·코드·세트 해시는 바꾸지 않았다. `../kbase_kinase`는 읽지 않는다.
+- 구조: `active.json`(`{"schema": "reaction_active@1", "set_hash": <hex64>}`), `sets/<set_hash>/manifest.json`(정규 JSON, 세트 해시 = 이 바이트의 SHA-256), 가공 파일 `sets/<set_hash>/files/<source>/<name>`(`mcsa/entries.jsonl`, `uniprot_function/entries.jsonl`, `rhea/reactions.jsonl`), 요청 기록 `sets/<set_hash>/files/request_log.jsonl`. 쓰는 주체는 사용자가 실행하는 가져오기 명령 하나다(아래, 네트워크 규칙은 `docs/security.md`).
+- 서버(`reaction_snapshots.py`, 표준 라이브러리 + 상수 모듈만)는 읽기만 한다: 호출마다 `active.json`을 한 번 읽어 그 세트 폴더에만 묶인 세트를 고정하고, `O_NOFOLLOW`·일반 파일·크기 상한(포인터 4 KiB, 매니페스트 1 MiB, 파일 512 MiB)으로 열며 세트 폴더 밖을 가리키는 파일과 링크인 세트 폴더를 거부한다. 파일 해시·바이트·행 수는 서버 시작 뒤 첫 고정 때와 세트·파일 stat이 바뀔 때 검증하고 성공만 캐시한다(세트 폴더당 하나). 내용 해석·색인은 `reaction_knowledge.py`가 세트 해시 + 파일 stat 정체를 키로 세트 하나(가장 최근)만, 성공한 것만 캐시한다(캐시 없이는 호출당 0.17–1.7초·RSS 최대 648 MB였다, 착수 확인).
+- 이유(닫힌 집합): `not_installed`(활성 세트 없음), `snapshot_invalid`(매니페스트·파일 해시·행 수가 맞지 않거나 내용 형식을 해석할 수 없음). 화면은 숫자·컨트롤 없이 이유와 가져오기 명령만 보이고, 도구는 캐시 조회 전에 `precondition`(412)으로 실패한다.
+- 결과는 쓴 세트 기록과 실제로 쓴 참조 행을 담아 참조 폴더 없이 이벤트만으로 다시 열린다. 결과의 세트가 활성 세트와 다르면 "이전 스냅샷 기준", 활성 세트가 없으면(가져오기 전·손상) "사용 중 스냅샷 없음"으로 표시하고 다시 계산하지 않는다.
+
+### 세트 매니페스트 `reaction_reference_set@1`
+- 최상위 키는 정확히 `schema`, `imported_at`(UTC `YYYY-MM-DDTHH:MM:SSZ`), `importer_version`(`reaction_import/1`), `sources`, `requested_accessions`, `skipped_accessions`, `request_log`다. `imported_at`이 들어가므로 같은 내용을 다시 가져와도 세트 해시가 새로 생긴다.
+- `sources[]`: 정확히 `mcsa`·`uniprot_function`·`rhea` 순서, 키 `source`, `date`(가져온 날, UTC), `license`(`CC-BY-4.0`), `license_url`, `origin`(`public server import`), `files[{name, path, sha256, bytes, rows}]`, `raw_response_count`, `raw_sha256_digest`(그 출처의 원본 응답 본문 SHA-256을 요청 순서대로 줄바꿈으로 이은 문자열의 SHA-256). 원본 응답 바이트는 저장하지 않는다.
+- `requested_accessions{from_mcsa, from_m15_kinase_set{set_hash, count}, m15_kinase_list, user_named, dropped_previous_user_named, union_count}`. `m15_kinase_list`는 `present`·`absent`(M15 세트 없음·읽을 수 없음)·`disabled`(`--no-kinases`)이고 `absent`·`disabled`면 `{set_hash: null, count: 0}`이다. 직접 지정은 다음 가져오기에 이어지지 않으며, 이전 활성 세트의 직접 지정 중 이번에 다시 주지 않은 것이 `dropped_previous_user_named`다.
+- `skipped_accessions[{accession, reason, target_accessions}]`(accession 오름차순): 이유는 닫힌 다섯 `obsolete`(UniProt `DELETED`)·`merged`(대상 1개)·`demerged`(대상 1–3개)·`not_found`(404)·`fetch_failed`이고 대상 accession은 UniProt가 알려 준 그대로다(자동으로 바꾸지 않음). 파생 accession(M-CSA·M15 kinase 목록)만 들어간다.
+- `request_log`: 파일 기록 하나. 행 키는 정확히 `seq`·`source`·`method`(`GET`)·`url`·`status`·`bytes`·`sha256`(응답 본문)이고 헤더·쿠키·키는 없다.
+
+### 가공 파일과 결정성 (허용 필드만 복사하고 나머지는 버림)
+- `mcsa/entries.jsonl`(항목 하나당 한 행): `mcsa_id`, `enzyme_name`, `reference_uniprot_id`(응답 문자열 그대로, 여러 accession을 `, `로 이은 값일 수 있음 — 실측 74개 항목), `all_ecs`, `reaction{ec, compounds[{type, chebi_id, name}]}`, `residues[{roles_summary, function_location_abv, ptm, roles[{group_function, function_type, function, emo}], residue_chains[{pdb_id, chain_name, assembly_chain_name, assembly, code, resid, auth_resid, is_reference}], residue_sequences[{uniprot_id, code, is_reference}]}]`. `assembly`의 빈 문자열은 null로 바꾸고 역할 문구의 빈 문자열은 그대로 둔다. 메커니즘·단계·그림·`marvin_xml`, `main_annotation`(목록 응답에서 늘 빈 문자열, 사용자 결정), `residue_sequences[].resid`(UniProt 서열 위치, 쓰지 않음)는 저장하지 않는다.
+- `uniprot_function/entries.jsonl`(accession 하나당): `accession`, `entry_name`, `protein_name`(`recommendedName`, 없으면 `submissionNames[0]`, 그것도 없으면 null), `organism`, `sequence_length`, `ec_numbers`(`proteinDescription` 안 모든 `ecNumbers` 값의 합집합), `catalytic_activities[{reaction_name, ec_number|null, rhea_ids, chebi_ids}]`(`rhea_ids`는 `RHEA:<n>`만, `RHEA-COMP:`는 버림), `features[{type, start, end, description, ligand_name|null, ligand_id|null}]`(`type`은 셋뿐, 위치는 UniProt 서열 1-기반). 위치가 `EXACT` 정수가 아니면 그 accession을 건너뛰지 않고 설치를 중단한다. 예외로 같은 accession의 동형체 위치(`location.sequence` = `<같은 accession>-<n>`)인 부위만 저장하지 않고 건너뛰며(사용자 결정 2026-10-09, 실측 3개), 건너뛴 개수는 명령 출력에만 있다.
+- `rhea/reactions.jsonl`: 방향 없는 대표 반응 전부(사용자 결정, 실측 18,611개) `{rhea_id, equation, ec_numbers, participants[{chebi_id, name}]}`. 받은 행 수가 요청의 `limit` 이상이면 조용히 잘렸을 수 있으므로 형식 오류다.
+- 각 줄은 정규 JSON 한 줄 + 줄바꿈이고 행 순서는 `mcsa_id`(정수)·accession(문자열)·Rhea ID 정수 부분 오름차순, 스칼라 목록은 오름차순, 객체 목록은 응답 순서다. 같은 응답이면 같은 바이트다. 허용 필드가 없거나 형식이 다르면 가져오기를 중단한다.
+
+### 가져오기 (사용자가 실행하는 명령 `scripts/import_reaction_references.py`)
+- 가져올 accession = M-CSA 항목의 모든 accession(`reference_uniprot_id`를 `,`로 나눠 앞뒤 공백을 지운 값 ∪ 빈 문자열이 아닌 `residue_sequences[].uniprot_id`) ∪ 로컬 M15 활성 세트의 `status: ok` UniProt accession(`--no-kinases`면 뺌, 2026-10-09 실측 541개) ∪ 직접 지정한 accession(UniProt accession 형식이어야 함). 합집합이 `MAX_ACCESSIONS`를 넘으면 UniProt 요청 전에 멈춘다.
+- M-CSA 전체 쪽과 Rhea 표가 모두 받아져 형식 검사를 통과할 때만 새 세트를 설치한다(원자적: 임시 폴더에 쓰고 다시 읽어 검증 → `sets/<set_hash>/`로 rename → `active.json`을 rename 한 번으로 교체). 실패하면 `active.json`과 이전 세트는 그대로이고, 이전 세트는 지우지 않는다.
+- UniProt에서 받지 못한 **파생** accession은 건너뛰고 이유와 함께 기록한다(`MAX_SKIPPED`를 넘으면 분류 요청 없이 설치하지 않음). **직접 지정한** accession을 하나라도 받지 못하면(오타·폐기·병합·분할 포함) 명령 전체를 거절하고 이유와 대상 accession을 출력한다(대체 없음, 건너뜀 한도에 세지 않음).
+- 재현: 같은 입력의 두 가져오기는 가공 파일 SHA-256(`files[].sha256`)이 모두 같으면 재현이다. 원본 응답 요약(`raw_sha256_digest`) 차이는 실패가 아니라 보고만 한다(가져오기 스크립트의 `compare_manifests`). 2026-10-09의 두 실제 가져오기(세트 `fbeed900…cb52`·`1a7b131a…cf47`, 행 M-CSA 1,003·UniProt 1,622·Rhea 18,611, 건너뜀 8: `obsolete` 4·`demerged` 4)는 재현이었고 `imported_at`만 달라 세트 해시만 다르다(`docs/qa/m26-reaction-20261008/import2.md`).
+- 네트워크 규칙(허용 호스트 셋, HTTPS GET만, 리다이렉트·프록시·쿠키·키 없음)은 `docs/security.md`, 사용법은 `docs/operations.md`, CLI 계약은 `docs/contracts.md`.
+
+### 도구와 입력
+- 값싼 도구(`Run.call`, L2, version `'1'`, `cost_class: cheap`, `POST /runs/{id}/commands`). 작업 큐·승인·예산 단위가 없고 dry-run run에서도 실행해 저장한다. 읽는 것은 고정한 반응 세트, 같은 run의 구조 바이트, 선택한 번호 대응 객체뿐이다(네트워크·M15 참조 폴더·`../kbase_kinase` 없음).
+- 인자(그 밖은 `unknown_field`): `structure`(같은 run의 `structure`·`prepared_structure`, 필수), `pdb_id`(null | `[0-9][A-Za-z0-9]{3}`, 대문자로 정규화. 사용자가 확인한 값이며 구조 파일에서는 제안만 한다. null이면 M-CSA 절을 검사하지 않음), `chains`(`[{chain_auth, uniprot_accession|null}]`, 1개 이상, `chain_auth` 중복 없음), `numbering_map`(null | 같은 run·같은 구조의 `residue_numbering_map@1`).
+- 호출 키 = 정규화 인자 + 고정한 세트 해시. 같은 입력·같은 세트면 같은 handle, 다른 세트면 다른 handle이다.
+
+### 입장 검사 (사전 검사 훅, 모든 호출 경로에서 구현보다 먼저, 이 순서)
+0. 활성 세트 고정·내용 해석: `not_installed`·`snapshot_invalid`는 `precondition`(412)이고 입장 검사·캐시 조회보다 먼저다.
+1–9. 모두 `input_invalid`(422, `detail.reason_code`, 체인 문제는 `detail.chain_auth`)이고 구현을 부르지 않는다: `unknown_field` → `structure_invalid`(handle 아님·다른 run·허용되지 않은 종류·읽을 수 없음) → `pdb_id_invalid` → `chains_invalid`(비었음·모양·중복·알 수 없는 키) → `chain_not_found`(구조가 가리키는 모델에 그 `chain_auth`의 사슬 잔기가 없음) → `accession_invalid`(UniProt accession 형식 아님) → `numbering_map_invalid`(handle 아님·다른 run·다른 종류·필요한 필드 모양이 아님) → `structure_mismatch`(번호 대응의 `structure.handle` ≠ 요청 구조) → `map_pdb_mismatch`(둘 다 PDB ID가 있는데 다름).
+- 스냅샷에 없는 accession, 번호 대응이 그 체인에 가진 accession과 다른 체인 accession은 입장 거절이 아니라 결과의 상태다.
+
+### M-CSA 절 (체인마다, M-CSA가 적은 PDB 항목 기준)
+- 사슬 잔기는 M15와 같은 규칙(구조가 가리키는 모델, polymer 엔티티 또는 ATOM 레코드 잔기, 파일 순서)이고 7필드를 null까지 보존한다. 체인은 M-CSA `chain_name`(저자 체인)과 `chain_auth`로만 맞춘다(조립체 이름·`assembly` 무시, 형제 체인으로 옮기지 않음). PDB가 M-CSA에 없는 구조를 서열 정렬로 다른 PDB 항목에 잇지 않는다.
+- `pdb_id`가 null이면 `{status: "not_checked", reason: "pdb_id_not_given"}`이고 `coverage`·`entries`·`rows`·`counts`는 null이다. 그 밖에는 `status: "checked"`이고 `coverage`는 `covered`(이 PDB(대소문자 무시)·이 체인을 가진 M-CSA 행이 있음) | `chain_not_listed`(PDB는 스냅샷에 있으나 이 체인은 없음) | `pdb_not_in_snapshot`이다. `covered`가 아니면 `entries`·`rows`·`counts`는 null이다(빈 목록이 아니라 검사하지 않음과 같은 취급).
+- 행: 항목의 잔기(항목 안 0-기반 순번 `residue_index`)의 `residue_chains` 중 이 PDB·체인인 것을 (`mcsa_id`, `residue_index`, `chain_name`, `auth_resid`)로 한 그룹씩 합쳐 행 하나를 만든다(`assemblies` = null이 아닌 `assembly`의 서로 다른 값 오름차순, `is_reference` = 하나라도 참이면 참). 상태는 이 순서의 첫 해당 규칙이다:
+  1. 그룹 안 `code`가 둘 이상 다름 → `conflict`(`mcsa_rows_disagree`, `listed.code`는 서로 다른 값을 `/`로 이은 것).
+  2. `auth_resid`가 null → `unmatched`(`no_author_number`).
+  3. `code` 대문자가 표준 20종이 아님(실측 `Sec`·`X`) → `unmatched`(`non_standard_code`).
+  4. 구조 체인에서 `seq_auth == auth_resid`인 사슬 잔기(삽입 코드 무시)가 0개면 `unmatched`(`residue_not_in_structure`), 2개 이상이면 `unmatched`(`ambiguous_residue_number`), 1개인데 삽입 코드가 있으면 `unmatched`(`insertion_code_present`).
+  5. 1개이고 삽입 코드가 없으면 구조 이름의 표준 이름(표준 20종 + M12 이름 대응 10개, M20 `standard_name`)과 `code` 대문자를 비교해 같으면 `matched`, 다르거나 표준이 아니면 `conflict`(`residue_name_differs`).
+  - `matched`·`residue_name_differs`·`insertion_code_present`만 찾은 잔기 7필드(`residue`)와 그 이름(`structure_resname`)을 담고 나머지는 null이다. M-CSA `resid`(label 번호)는 구조 `seq_label`과 비교하지 않고 값으로만 보인다.
+- 행 키는 정확히 `mcsa_id`, `residue_index`, `is_reference`, `listed{pdb_id, chain_name, resid, auth_resid, code, assemblies}`(M-CSA 원문), `status`, `reason`, `residue`, `structure_resname`, `reference{roles_summary, function_location_abv, ptm, roles}`(원문, 값이 없는 목록은 null)이고, 순서는 (`mcsa_id`, `residue_index`, `auth_resid`(null은 맨 뒤), `listed.code`)다. `entries[{mcsa_id, enzyme_name, reference_uniprot_id, all_ecs}]`는 이 체인에서 행을 만든 항목 전부이고, `counts{matched, unmatched, conflict}`는 검사했으므로 0을 허용한다.
+- 실제 자료에서는 잔기 하나의 `residue_chains`가 0개 또는 1개이고 `is_reference`가 모두 참이라 그룹 합침·`mcsa_rows_disagree`는 합성 fixture로만 시험했다.
+
+### UniProt 절 (체인마다, accession 기준)
+- 체인 accession: 요청의 `uniprot_accession`(`accession_source: "user"`), 없으면 번호 대응에서 도출한 것(`"numbering_map"`: 그 체인의 `requested_uniprot_accession`, 없으면 그 체인 `mapped` 행의 accession이 정확히 하나일 때 그것), 아니면 null.
+- 상태: accession이 null이면 `not_checked`(`accession_not_given`). 스냅샷 기능 파일에 없으면 `not_available`이고, 가져올 때 건너뛴 accession이면 `accession_skipped_at_import`와 `skipped{reason, target_accessions}`(매니페스트 값 그대로, 대체하지 않음), 아니면 `accession_not_in_snapshot`이다. 있으면 `checked`, `entry{accession, entry_name, protein_name, organism, sequence_length}`와 `features`(저장 순서, 비어도 됨).
+- 구조 잔기 연결은 번호 대응을 주었고 그 대응에 이 체인이 있고 도출한 대응 accession이 체인 accession과 같을 때만 한다(`linked_via: "numbering_map"`). 아니면 `link_reason`이 `numbering_map_not_given`·`chain_not_in_map`·`map_accession_differs` 중 하나이고 모든 부위의 `links`가 null이며 부위는 UniProt 서열 위치로만 보인다(RK4). 연결된 부위는 `start..end` 위치마다 번호 대응의 같은 체인·accession·위치인 `mapped` 행을 그대로 복사하고(`{position, status: "mapped", residue, uniprot_residue, residue_match}`), 그런 행이 없으면 `not_in_map` 하나다(연결 상태는 이 둘뿐).
+- 체인 `flags`의 `accession_differs_from_mcsa`: 체인 accession이 `covered` 체인의 M-CSA 항목 accession 집합 어디에도 없을 때 붙는 비차단 표시다. 보호 판정은 PDB 경로 그대로이고, UniProt 부위는 M20 보호에 쓰지 않는다(UK3).
+
+### 반응 절 (체인마다)
+- 출처 둘: M-CSA(`covered` 체인의 항목), UniProt(`checked` 항목). 둘 다 기여하지 않으면 `{status: "not_checked", reason: "no_source"}`이고 `ecs`·`mcsa_compounds`·`uniprot_activities`는 null이다.
+- `ecs{mcsa, uniprot}`(기여한 출처만 서로 다른 EC 오름차순 목록, 아니면 null), `mcsa_compounds[{mcsa_id, ec, compounds}]`, `uniprot_activities[{reaction_name, ec_number, rhea[{rhea_id, in_snapshot}]}]`. Rhea는 UniProt 촉매 활동의 Rhea ID로만 잇고 EC 번호에서 넓게 잇지 않는다. 스냅샷에 없는 Rhea ID는 `in_snapshot: false`일 뿐 대체·추정하지 않는다.
+
+### 결과 객체 `reaction_knowledge@1` (불변, 객체 종류 `reaction_knowledge`)
+- 최상위 키는 정확히 `schema`, `method_version`(`mw.reaction_knowledge/v1`), `structure{handle, structure_kind, model_number}`, `pdb_id`, `numbering_map`(null | `{handle, pdb_id}`), `snapshot_set{set_hash, imported_at, importer_version, sources, requested_accessions, skipped_accessions}`, `chains`(요청 순서, 키 `chain_auth`, `polymer_residue_count`, `accession`, `accession_source`, `mcsa`, `uniprot`, `reactions`, `flags`), `reference_rows{mcsa, uniprot, rhea}`(결과가 실제로 쓴 저장 행 그대로), `counts`, `null_result`, `limitations`(RK1–RK5)다. 내용에 시각·호출 ID가 없다.
+- `counts{chains, covered_chains, mcsa_rows{matched, unmatched, conflict}, mcsa_entries, uniprot_features{"Active site", "Binding site", "Site"}, linked_positions{mapped, not_in_map}, rhea{in_snapshot, not_in_snapshot}}`. 검사하지 않은 쪽(덮인 체인 없음, `checked` UniProt 없음, 연결된 부위 없음, 촉매 활동 없음)은 0이 아니라 null이다.
+- `null_result`: 어느 체인도 `covered`가 아니고 UniProt 부위·반응 내용이 모두 null이거나 비었을 때 참이다(유효한 빈 결과, 실패 아님).
+- 정규 JSON이 1 MiB를 넘으면 429 `resource_exceeded`/`result_too_large`, 연결 위치(`links` 원소)가 2,000개를 넘으면 429 `resource_exceeded`/`too_many_links`이고 아무것도 저장하지 않는다(자르지 않음). `validated_result`(순수)가 키 집합·닫힌 집합·null과 `[]` 구분·개수·행↔체인 일관성·참조값↔`reference_rows`·고정 문장을 검사하며, 도구는 저장 전에 이것을 돌려 통과하지 못하면 저장하지 않고 422 `input_invalid`/`result_invalid`로 실패한다. 읽기·보고서·M20은 저장 객체를 매번 다시 검증한다.
+
+### 보고서 `reaction_knowledge`
+- `method_report_manifest@1`, `analysis_type: "reaction_knowledge"`, 렌더 `reaction_knowledge_markdown@1`("효소 반응 지식 보고서"). 입력은 결과 handle 하나이고 만들기·다시 열기·다운로드는 연결을 다시 계산하지 않는다.
+- **계산값**(`computed`, 저장 행을 다시 셈): 체인 수, 체인별 세 절 상태와 M-CSA `coverage`(상태 주장, 숫자 없음), 상태별 M-CSA 행 수, 서로 다른 M-CSA 항목 수, 종류별 UniProt 부위 수, 상태별 연결 위치 수, Rhea `in_snapshot` 참·거짓 수, 나열하지 않은 줄 수. 검사하지 않은 절은 "검사하지 않음" 상태 주장만 있고 숫자가 없다.
+- **참조값**(`reference_value`, "참조 스냅샷 값, 계산 아님" + 세트 해시 + 출처별 날짜·라이선스): M-CSA 항목 ID·효소 이름·EC·역할 문구 원문·기준 구조 여부·M-CSA가 적은 PDB/체인/번호/잔기 이름, UniProt accession·부위 종류·위치·설명, 촉매 활동 반응 이름·EC, Rhea ID·반응식, 세트의 가공 파일 행 수. 계산값 주장이 참조 필드를 인용하면 값 비교 전에 거부한다. 잔기 단위 참조 줄은 `matched`·`conflict` 행을 먼저, 체인·절당 최대 200줄이고 넘는 개수는 숫자로만 쓴다(전체는 결과 객체). 잔기는 이름이 아니라 7필드로 쓴다.
+- 스냅샷 출처 표(출처·날짜·세트 해시·행 수·CC BY 4.0·"공개 서버에서 가져온 가공본")와 RK6을 항상 담고, 충돌·대응 없음·검사하지 않음 개수를 숨기지 않는다. 스냅숏에 보고서 생성 때의 활성 세트 해시(없으면 null)를 기록한다.
+- 만들고 다시 열 때 저장 결과를 `validated_result`로 검증하고 manifest·주장·Markdown 바이트를 다시 만든 것과 비교한다. 틀린 개수, 검사하지 않은 절을 검사했다거나 0으로 쓰는 주장, 섞인 증거 종류, 다른 구조·다른 run의 증거는 `report_evidence_invalid`다. 해석 금지어는 M15·M20 목록에 `필수`·`핵심`·`중요`·`메커니즘이 유지`(영문 대응 포함)를 더한 것이며, 식별자·참조 문자열(역할 문구·반응식·설명)을 빈 자리로 둔 고정 템플릿 줄에 검사하고 RK1–RK5와 문자 그대로 같은 줄만 뺀다. "촉매"는 금지어가 아니다.
+
+### 고정 문장 (문자 그대로, 순서 고정, `reaction_knowledge_constants.STATEMENTS`·`SCREEN_NOTES`, 바꾸려면 사용자 결정)
+RK1 "촉매 잔기·부위·반응은 참조 스냅샷(M-CSA·UniProt·Rhea)에 적힌 값이며 ProtView가 계산하거나 판정한 것이 아니다." RK2 "대응됨은 M-CSA가 적은 PDB·체인·번호와 이 구조의 잔기 이름이 모두 같다는 뜻이며 잔기의 역할이나 활성을 뜻하지 않는다." RK3 "대응 없음·충돌·검사하지 않음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이며 촉매 잔기가 없다는 뜻이 아니다." RK4 "UniProt 부위는 번호 대응이 있는 체인에서만 구조 잔기에 연결했고 그 밖에는 단백질 서열 위치로만 보여 준다." RK5 "반응 정보는 효소 활성·속도·특이성이나 반응 메커니즘이 유지된다는 뜻이 아니다." (RK1–RK5는 결과 `limitations`.) RK6(화면·보고서) "M-CSA·UniProt·Rhea 자료는 CC BY 4.0이며 출처·스냅샷 날짜는 아래에 있다." 화면 안내: UK1(스냅샷 블록) "촉매 잔기·부위·반응은 M-CSA·UniProt·Rhea가 적은 참조값이며 ProtView가 계산한 값이 아니다. 가져온 스냅샷 날짜 기준이다." UK2(후보 집합을 고르는 곳·M20 요청 영역) "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다." UK3(M20 요청 영역) "UniProt 부위 정보는 지식 탭에서만 보이며 보호에 쓰지 않음." UK4(지식 탭 결과에서 M-CSA가 다루지 않은 체인 이름표 옆) "이 체인을 M-CSA가 다루지 않았다는 것은 촉매 잔기가 없다는 뜻이 아니다."
+
+### 화면 규칙
+- 지식·보고서 탭에서 번호 대응 화면과 별도인 "효소 반응 지식" 영역(`ReactionKnowledgePanel`, 선택된 동안에만 렌더링, run마다 `key`로 새로, 탭에 들어올 때마다 스냅샷 상태·run 객체·결과 목록을 GET으로 다시 읽음). 순서: 스냅샷 블록(설치 안 됨·손상이면 숫자·컨트롤 없이 이유와 가져오기 명령만, 정상이면 세트 해시 앞 12자, 출처별 날짜·라이선스·행 수, 직접 지정·건너뜀 개수, "공개 서버에서 가져온 가공본", RK1·UK1·RK6) → 요청 블록(구조는 자동 선택 없음, PDB ID는 구조 파일 제안을 사용자가 확인, 같은 구조의 가장 최근 번호 대응이 있으면 그 PDB ID·체인 accession을 미리 채움, M-CSA 제안은 `GET /reaction_reference/pdb/{pdb_id}` 결과를 "이 accession 쓰기" 단추로만, 번호 대응은 같은 구조 것만·선택 사항, 연결 단추는 승인·예산 없음, 입장 거절 이유는 칸 옆에 "한국어 (code)") → 결과 블록(체인마다 M-CSA 절 상태·`coverage` 이름표와 UK4, 행 표의 역할 문구 열 이름표 "M-CSA 원문, 계산 아님", UniProt 절 부위 표와 구조 연결 칸, 반응 절의 EC·M-CSA 화합물·촉매 활동과 Rhea 반응식·`in_snapshot`) → 보고서 만들기·다운로드.
+- 검사하지 않음·사용할 수 없음·계산하지 않음은 숫자 없이 이유와 함께 "—"로 보이고 0으로 보이지 않는다. 점수·순위·막대·색 우열·"중요"·"핵심"·"활성" 표시가 없고 행·부위·항목은 서버 저장 순서다. 늦은 응답은 run + 연 결과 handle + 영역별 요청 번호가 모두 같을 때만 반영한다. 다섯 상태(불러오는 중·준비·빈 결과·실패·사용할 수 없음)를 구분하고, 결과가 활성 세트와 다르면 "이전 스냅샷 기준"이다. 뷰어 강조·저장된 보기 형식 변경은 없고 구조 분석 탭은 숨긴 채 유지된다. M20 영역과 후보 집합을 고르는 곳의 표시는 "변이 후보 (M20)"의 v2 절.
+
+### 의미하지 않는 것
+잔기의 역할·활성·필수성, 변이의 효과, 효소 활성·속도·특이성·반응 메커니즘의 유지. 대응 없음·충돌·검사하지 않음과 `chain_not_listed`·`pdb_not_in_snapshot`은 촉매 잔기가 없다는 뜻이 아니다(RK3·UK4). M-CSA 역할 문구와 UniProt 설명은 그 데이터베이스의 원문이며 ProtView의 판정이 아니다. 공개 구조 점검(1S9I 체인 A `matched` 2, 1A30 체인 A·B 각 3, 1A4I 체인 A 항목 389·458의 `matched` 6, `docs/qa/m26-reaction-20261008/import1.md`)은 M-CSA가 적은 번호·이름이 이 구조와 맞는지 센 것뿐이다.
 
 ## PyRosetta와 에너지 표시
 

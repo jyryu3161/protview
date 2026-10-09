@@ -8,7 +8,9 @@ cheap tools, ``JobQueue`` for jobs, the real engines; a missing engine FAILS) an
   docking example ``fixtures/chemical/prolif-vina-rec.pdb`` + public-derived parent SDF, see
   ``fixtures/docking/SYNTHETIC-PROVENANCE.md``),
 * ``m21_mutation_model``: the M21 ``openmm_mutation_model_v1`` job for 1UBQ I44W (public structure, not experimental
-  validation) from the M20 candidate set of this folder (user-selected 1UBQ positions, allowed ``AFHWY``),
+  validation) from the M20 candidate set of this folder (user-selected 1UBQ positions, allowed ``AFHWY``; since M26 T1
+  the stored v1 content of ``fixtures/reaction/t1/m20-v1-candidate-set-run_m23_golden_keys-8pos.json`` put with
+  ``store.put``, so M20 v2 does not change the recorded set),
 * ``m18_mutation_model_source``: a standalone ``qvina_dock_v1`` on the M21 mutant side (``receptor_source``) with the
   labeled synthetic phenol ``fixtures/mutation_model/synthetic-phenol-ligand.sdf``,
 * ``m19_batch_row``: a one-row ``qvina_batch_dock_v1`` (real M17 inspect + enumerate first),
@@ -42,6 +44,7 @@ from mw.runtime.guards import BudgetLimits
 
 RUN_ID = "run_m23_golden_keys"
 FIX = TESTS / "fixtures"
+V1_SET = FIX / "reaction/t1/m20-v1-candidate-set-run_m23_golden_keys-8pos.json"   # SYNTHETIC-PROVENANCE-t1.md
 UBQ = (FIX / "public_1ubq.cif").read_bytes()
 PHENOL = (FIX / "mutation_model/synthetic-phenol-ligand.sdf").read_bytes()
 REC = (FIX / "chemical/prolif-vina-rec.pdb").read_bytes()
@@ -55,7 +58,6 @@ ACK = {key: True for key in C.ACKNOWLEDGEMENT_KEYS}
 # 1UBQ chain A positions chosen by the user list (N terminus, adjacent pairs, the M21 I44, the C terminus).
 POSITIONS = [(1, "MET"), (2, "GLN"), (3, "ILE"), (6, "LYS"), (8, "LEU"), (44, "ILE"), (75, "GLY"), (76, "GLY")]
 ALLOWED = "AFHWY"
-M20_ARGS_EXTRA = {"allowed_residues": ALLOWED}
 HASHED = ("backend/mw/jobs/docking_worker.py", "backend/mw/docking_constants.py",
           "backend/mw/jobs/openmm_mutation_worker.py", "backend/mw/mutation_model_constants.py",
           "backend/mw/mutation_model_math.py", "backend/mw/mutation_candidates.py")
@@ -87,11 +89,24 @@ def structure_and_candidates(client: TestClient) -> dict:
     prepared = _command(client, "prepare_structure", {
         "structure": source, "altloc": "highest_occupancy", "waters": "strip_all", "hydrogens": "strip",
         "missing_residues": "leave_gaps", "symmetry_mates": "ignore"})
-    candidate_set = _command(client, "generate_mutation_candidates", {
-        "structure": prepared, "sources": {"pocket": None, "ligand_shell": None,
-                                           "residues": [residue(seq, name) for seq, name in POSITIONS]},
-        **M20_ARGS_EXTRA})
-    return {"structure": prepared, "candidate_set": candidate_set}
+    return {"structure": prepared}
+
+
+def stored_v1_candidates(run, structure: str) -> str:
+    """The M20 v1 set for ``POSITIONS`` / ``ALLOWED`` on ``structure``: stored content, not a new tool call."""
+    fixture = json.loads(V1_SET.read_text())
+    content = fixture["content"]
+    params = content["parameters"]
+    assert content["structure"]["handle"] == structure and params["allowed_residues"] == ALLOWED
+    assert [(r["seq_auth"], r["resname"]) for r in params["sources"]["residues"]] == POSITIONS
+    with run._owner(), run._transition():
+        run.store.rebuild_from_events()
+        handle = run.store.put("mutation_candidate_set", "mutation_candidate_set@1", content,
+                               summary={"structure": structure, **content["counts"],
+                                        "null_result": content["null_result"]},
+                               null_result=content["null_result"]).handle
+    assert handle == fixture["handle"], handle
+    return handle
 
 
 def candidate_index(content: dict, seq: int, to: str) -> int:
@@ -129,6 +144,7 @@ def build(root: Path) -> dict:
     with run._owner():
         run.store.rebuild_from_events()
         run._refresh()
+    world["candidate_set"] = stored_v1_candidates(run, world["structure"])
     cset = run.store.load(world["candidate_set"])
     i44w = candidate_index(cset, 44, "W")
     phenol = import_file(run, "ligand_sdf", "phenol.sdf", PHENOL)

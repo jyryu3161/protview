@@ -1,0 +1,67 @@
+{
+  "mcsa_id": 7,
+  "enzyme_name": "SYNTHETIC fixture enzyme T3",
+  "is_reference_uniprot_id": true,
+  "reference_uniprot_id": "Q0SYT1, P0SYT2",
+  "url": "https://fixture.invalid/m-csa/entry/7",
+  "description": "SYNTHETIC fixture description (dropped by the importer).",
+  "protein": {"sequences": [{"uniprot_id": "Q0SYT1"}]},
+  "all_ecs": ["9.99.3.2", "9.99.3.1"],
+  "residues": [
+    {
+      "mcsa_id": 7,
+      "roles_summary": "synthetic fixture role summary",
+      "function_location_abv": "",
+      "main_annotation": "",
+      "ptm": "",
+      "roles": [
+        {"group_function": "", "function_type": "interaction", "function": "synthetic fixture function one",
+         "emo": "EMO_99001"},
+        {"group_function": "synthetic group", "function_type": "spectator", "function": "synthetic fixture function two",
+         "emo": "EMO_99002"}
+      ],
+      "residue_chains": [
+        {"chain_name": "A", "pdb_id": "0sy7", "assembly_chain_name": "A", "assembly": 1, "code": "Asp", "resid": 30,
+         "auth_resid": 40, "is_reference": true, "domain_name": "A01", "domain_cath_id": "9.99.99.99"}
+      ],
+      "residue_sequences": [{"uniprot_id": "Q0SYT1", "code": "Asp", "is_reference": true, "resid": 77}]
+    },
+    {
+      "mcsa_id": 7,
+      "roles_summary": "",
+      "function_location_abv": "main-N",
+      "main_annotation": "",
+      "ptm": "Llp",
+      "roles": [],
+      "residue_chains": [
+        {"chain_name": "B", "pdb_id": "0sy7", "assembly_chain_name": "BB", "assembly": "", "code": "Lys", "resid": 31,
+         "auth_resid": null, "is_reference": true, "domain_name": "", "domain_cath_id": ""}
+      ],
+      "residue_sequences": [{"uniprot_id": "", "code": "Lys", "is_reference": true, "resid": 78}]
+    },
+    {
+      "mcsa_id": 7,
+      "roles_summary": "synthetic fixture second summary",
+      "function_location_abv": "ptm",
+      "main_annotation": "",
+      "ptm": "",
+      "roles": [
+        {"group_function": "", "function_type": "reactant", "function": "synthetic fixture function three",
+         "emo": "EMO_99003"}
+      ],
+      "residue_chains": [],
+      "residue_sequences": [{"uniprot_id": "Q0SYT3", "code": "Sec", "is_reference": true, "resid": 79}]
+    }
+  ],
+  "reaction": {
+    "ec": "9.99.3.1",
+    "compounds": [
+      {"count": 1, "type": "reactant", "chebi_id": "993001", "name": "synthetic substrate",
+       "mol_file": "SYNTHETIC mol block (dropped)"},
+      {"count": 2, "type": "product", "chebi_id": "X00699", "name": "", "mol_file": ""},
+      {"count": 1, "type": "reactant", "chebi_id": "993001", "name": "synthetic substrate", "mol_file": "x"}
+    ],
+    "mechanisms": [{"synthetic": "mechanism (dropped)"}],
+    "is_polymeric": false
+  }
+}

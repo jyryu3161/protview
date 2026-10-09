@@ -1,0 +1,224 @@
+{
+  "schema": "m16_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "A-load-prepare-contacts": "pass",
+    "A-numbering-prepared": "pass",
+    "A-panel-create": "pass",
+    "A-site-table": "pass",
+    "A-show-readback": "pass",
+    "A-figure-legend": "pass",
+    "A-figure-no-legend": "pass",
+    "A-scene-v1-unchanged": "pass",
+    "A-figure-pixels": "pass",
+    "A-restore-redraw": "pass",
+    "A-blocked-m8": "pass",
+    "A-report": "pass",
+    "A-no-contacts": "pass",
+    "A-blocked-pocket": "pass",
+    "A-blocked-comparison": "pass",
+    "A-run-switch-late": "pass",
+    "A-read-retry": "pass"
+  },
+  "runId": "run_b18e812ceb9b4b07b5cf2e6f82c8b823",
+  "runs": {
+    "A": "run_b18e812ceb9b4b07b5cf2e6f82c8b823",
+    "B": "run_67ff410b3ad54db7b742a86febefd8d5"
+  },
+  "handles": {
+    "structure": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/structure/a78b17f180e1d3ac4062ddde1fa7fe4b474a690fbac73400ef964b9466cd9427",
+    "prepared": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/prepared_structure/d97c76ae623966612af91f448dadcc9579bba02ca13888dc1203b3c5cc12b836",
+    "contacts": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/interaction_set/9df0cd38b80884f9c1f3588a51ff0ba57378f16ba1b43114e245f760cbd7375a",
+    "map": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/residue_numbering_map/9f3f167334ab7e3c50e104b8ad5d357bfcfd7a772671ef86b0ce8622ae087b3a",
+    "annotation": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/reference_site_annotation/7dcaf6aa31b2468bb21020546ff65e04ea38fb7fd1ac169a4e3e456c6fe6baf6",
+    "report": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/method_report_manifest/b1f2b2f8cd0517c70575ffae338016866042cf0dcceb68284f10b72dbfa5771a",
+    "noContacts": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/reference_site_annotation/b64c08d468cd5af3c5a09a6cf4e2e68b8586ea74a3f66bce1da3a858c617107f",
+    "runBStructure": "obj://run_67ff410b3ad54db7b742a86febefd8d5/structure/997d5fe036f50c74436cbd05db0a4767ecdc2402be20433ded752b661004169a"
+  },
+  "inputs": [
+    {
+      "name": "preflight.txt",
+      "path": "<repo>/docs/qa/m16-annotations-20261001/preflight.txt",
+      "bytes": 10404,
+      "sha256": "c9b2a2a84d1164d7e30e87777e220f972b626eefb4e6f3982efe165529cdb033",
+      "provenance": "M16 T1 independent numpy oracle (committed QA text)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP)"
+    }
+  ],
+  "fixtureLabels": [
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)",
+    "QA fault fixture (labeled renderer route, not a scientific value): site annotation read failure"
+  ],
+  "controls": {
+    "site-annotation-maps": [
+      {
+        "checked": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/residue_numbering_map/9f3f167334ab7e3c50e104b8ad5d357bfcfd7a772671ef86b0ce8622ae087b3a"
+      }
+    ],
+    "site-annotation-contacts:set": [
+      {
+        "checked": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/interaction_set/9df0cd38b80884f9c1f3588a51ff0ba57378f16ba1b43114e245f760cbd7375a"
+      }
+    ],
+    "site-annotation-create": [
+      {
+        "created": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/reference_site_annotation/7dcaf6aa31b2468bb21020546ff65e04ea38fb7fd1ac169a4e3e456c6fe6baf6",
+        "listed": 1
+      }
+    ],
+    "site-annotation-toggle:show": [
+      {
+        "data": "applied",
+        "lines": "10"
+      }
+    ],
+    "site-annotation-legend": [
+      {
+        "checked": false,
+        "readbackLegend": false,
+        "lines": 10
+      },
+      {
+        "checked": true,
+        "shown": false
+      }
+    ],
+    "site-annotation-toggle:off": [
+      {
+        "data": "none"
+      }
+    ],
+    "site-annotation-report": [
+      {
+        "handle": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/method_report_manifest/b1f2b2f8cd0517c70575ffae338016866042cf0dcceb68284f10b72dbfa5771a",
+        "text": "보고서를 저장했습니다 · b1f2b2f8cd05. 지식·보고서 탭의 보고서 목록에서 열고 받을 수 있습니다."
+      }
+    ],
+    "site-annotation-contacts:none": [
+      {
+        "checked": "none"
+      }
+    ],
+    "site-annotation-maps-retry": [
+      {
+        "maps": 1
+      }
+    ],
+    "site-annotation-list-retry": [
+      {
+        "rows": 2
+      }
+    ],
+    "site-annotation-list": [
+      {
+        "checked": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/reference_site_annotation/7dcaf6aa31b2468bb21020546ff65e04ea38fb7fd1ac169a4e3e456c6fe6baf6"
+      }
+    ],
+    "site-annotation-detail-retry": [
+      {
+        "table": "obj://run_b18e812ceb9b4b07b5cf2e6f82c8b823/reference_site_annotation/7dcaf6aa31b2468bb21020546ff65e04ea38fb7fd1ac169a4e3e456c6fe6baf6"
+      }
+    ]
+  },
+  "buildId": "Dikedmz3G0FMeEOWwIdzo",
+  "harness": {
+    "annotation-flow.cjs": "8f670b8262fa02ca11c29625fb3be563e305d475df43935f7f31f1cf61fd5d85",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "a228de309abd35c537b9083d68c3737679a4be73b53649881544fd2823afa945",
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 678,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m16/annotation-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 524,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 9,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m26-final/m25/regressions/m16/annotation-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 59,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_b18e812ceb9b4b07b5cf2e6f82c8b823",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_67ff410b3ad54db7b742a86febefd8d5",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "annotation-main.jsonl",
+  "startedAt": "2026-10-09T10:31:56.280Z",
+  "finishedAt": "2026-10-09T10:32:33.882Z"
+}

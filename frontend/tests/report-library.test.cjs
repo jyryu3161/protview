@@ -50,6 +50,12 @@ test("report rows keep every kind, expose target handle, and order by created_se
     "JEV 판정 보고서");
   assert.equal(reportKindLabel({ kind: "jev_loop", handle: "h", target_handle: "l", created_seq: 9 }),
     "JEV 루프 보고서");
+  assert.equal(reportKindLabel({ kind: "reaction_knowledge", handle: "h", target_handle: "k", created_seq: 10 }),
+    "효소 반응 지식 보고서");
+  // the M26 report kind keeps its analysis_type and target like the other method reports
+  assert.deepEqual(plain(buildReportRows([{ handle: "rep-k", result_handle: "res-k", analysis_type: "reaction_knowledge",
+    markdown_handle: "md-k", created_seq: 40, snapshot_event_seq: 39 }])),
+  [{ kind: "reaction_knowledge", handle: "rep-k", target_handle: "res-k", created_seq: 40 }]);
   assert.deepEqual(plain(buildReportRows([])), []);
 });
 

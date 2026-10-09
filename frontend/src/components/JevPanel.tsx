@@ -17,7 +17,7 @@ import { ALIAS_TABLE_NOTE, BUILD_BUTTON_TEXT, CONFIRM_CHECK_TEXT, CONSENT_NOTICE
   type JevSendAttempt, type JevStamp } from "@/lib/jev";
 import { CANDIDATE_PAGE_LIMIT, candidateCountText, candidateRowsQuery, checkFilterInput, emptyAppliedFilter,
   emptyFilterInput, passText, type AppliedFilter, type LigandFilterInput } from "@/lib/ligand";
-import { candidateQuery, EMPTY_CANDIDATE_FILTERS, pageRangeText } from "@/lib/mutations";
+import { candidateQuery, catalyticBadge, EMPTY_CANDIDATE_FILTERS, pageRangeText } from "@/lib/mutations";
 import { FilterForm } from "./LigandPanel";
 import { Button, shortSha } from "./primitives";
 
@@ -492,14 +492,22 @@ function JevWorkspace({ run, onReportCreated, onStatus, sendHistoryMark }: { run
         {sourceLoad?.status === "ready" && (!sourceOptions.length ? <p className="mw-jev-note">{JEV_TEXT.noSets}</p>
           : <fieldset className="mw-jev-choices" data-testid="jev-sources">
             <legend>{JEV_TEXT.sourceLegend}</legend>
-            {sourceOptions.map(option => <label key={option.handle} data-jev-source={option.handle}
-              data-disabled-reason={option.disabledReason ?? undefined}>
-              <input type="radio" name={`jev-source-${runId}`} data-testid="jev-source" data-jev-source={option.handle}
-                checked={selection?.source === option.handle} disabled={option.disabledReason !== null}
-                onChange={() => chooseSource(option.handle)} />
-              <span className="mw-mono" title={option.handle}>{option.text} · {shortSha(option.handle)}</span>
-              {option.disabledReason && <span className="mw-jev-note">{option.disabledReason}</span>}
-            </label>)}
+            {sourceOptions.map(option => {
+              // M26: a mutation set whose catalytic check is not `checked` carries the shared mark and its own detail.
+              const badge = kind === "mutation" && mutationSets.status === "ready"
+                ? catalyticBadge(mutationSets.value.find(row => row.handle === option.handle)?.catalytic_status) : null;
+              return <label key={option.handle} data-jev-source={option.handle}
+                data-disabled-reason={option.disabledReason ?? undefined}>
+                <input type="radio" name={`jev-source-${runId}`} data-testid="jev-source" data-jev-source={option.handle}
+                  checked={selection?.source === option.handle} disabled={option.disabledReason !== null}
+                  onChange={() => chooseSource(option.handle)} />
+                <span className="mw-mono" title={option.handle}>{option.text} · {shortSha(option.handle)}</span>
+                {option.disabledReason && <span className="mw-jev-note">{option.disabledReason}</span>}
+                {badge && <span className="mw-catalytic-mark" data-testid="jev-source-catalytic">
+                  <span className="mw-catalytic-badge">{badge.text}</span>
+                  <span className="mw-catalytic-detail" data-testid="jev-source-catalytic-detail">{badge.detail}</span></span>}
+              </label>;
+            })}
           </fieldset>)}
       </>}
       {sourceLoad?.status !== "loading" && <Button size="sm" data-testid="jev-sources-reload" onClick={readSources}>

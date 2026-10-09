@@ -1,0 +1,45 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "chemical-error",
+  "run": "run_82a7ea86fea94d33932b800b878feae5",
+  "inputs": [
+    {
+      "name": "prolif-vina-rec.pdb",
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+      "bytes": 504575,
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "provenance": "public ProLIF tutorial prepared receptor (prepared docking example; not experimental validation)",
+      "handle": "obj://run_82a7ea86fea94d33932b800b878feae5/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+    },
+    {
+      "name": "synthetic-pentavalent-carbon.sdf",
+      "path": "<repo>/backend/tests/fixtures/chemical/synthetic-pentavalent-carbon.sdf",
+      "bytes": 659,
+      "sha256": "8e049f31b45954570e16612288810015d16daebcfdf8b67dceae42c80b557a56",
+      "provenance": "labeled synthetic failure-control SDF (impossible valence; no scientific output)",
+      "handle": "obj://run_82a7ea86fea94d33932b800b878feae5/chemical_raw_input/af826d00aab4bb1a72d0d9c7a200866f603933d6ac6cef36b75298ce55108b27"
+    }
+  ],
+  "handles": {
+    "chemicalError": {
+      "plan": "obj://run_82a7ea86fea94d33932b800b878feae5/analysis_plan/f33f1deb45477228ac4d9e3463b7861a0635fcfbd9085660028cf2082d37d2c2",
+      "execution": "exec_be8145b0f9584202bbc71a876ae3eb93"
+    }
+  },
+  "fixtureLabels": [
+    "labeled synthetic failure-control SDF (impossible valence); the real native preparation refuses it"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_82a7ea86fea94d33932b800b878feae5",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-09T10:40:39.487Z",
+  "finishedAt": "2026-10-09T10:41:03.811Z",
+  "error": null
+}

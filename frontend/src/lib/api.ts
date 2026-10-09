@@ -18,7 +18,9 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   SequenceGaArgs, SequenceGaCapability, SequenceGaDetail, SequenceGaIndividualRead, SequenceGaJob,
   SequenceGaLimitApproval, SequenceGaList, SequenceGaPreflight, SequenceGaReportArtifact, SequenceGaSubmission,
   ToolError, JevLoopAbandonRequest, JevLoopCapability, JevLoopComputeRequest, JevLoopCreateRequest, JevLoopListRow,
-  JevLoopProjectionArgs, JevLoopReportArtifact, JevLoopV1 } from "./contracts";
+  JevLoopProjectionArgs, JevLoopReportArtifact, JevLoopV1, ReactionKnowledgeArgs, ReactionKnowledgeCapability,
+  ReactionKnowledgeDetail, ReactionKnowledgeList, ReactionKnowledgeReportArtifact, ReactionPdbEntries,
+  ReactionReferenceStatus } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
@@ -68,7 +70,9 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     /** M24: local conditions only (projection tool, model pins); no key and no run consent is read. */
     jev_choice?: { available: boolean; reason_code: string | null; reason: string | null };
     /** M25: per branch (projection tool, science pins, then the branch's engines); reasons only. */
-    jev_loop?: JevLoopCapability } }
+    jev_loop?: JevLoopCapability;
+    /** M26: the pinned + decoded local reaction reference set (no network); same five keys as residue_numbering. */
+    reaction_knowledge?: ReactionKnowledgeCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -90,7 +94,7 @@ export interface MethodReportArtifact { handle: string; markdown_handle: string;
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
     | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking" | "ligand_docking_batch"
-    | "mutation_candidates" | "jev_choice";
+    | "mutation_candidates" | "jev_choice" | "reaction_knowledge";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -258,7 +262,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection" | "build_jev_loop_projection", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection" | "build_jev_loop_projection" | "link_reaction_knowledge", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -530,6 +534,27 @@ export const api = {
   /** Report `analysis_type: "jev_loop"` of one stored `jev_loop_result@1` (nothing is computed or sent again). */
   createJevLoopReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
     request<JevLoopReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
+  // ---- M26 reaction knowledge (reads write no event and run no tool; the result handle goes in the path) ----
+  /** The active local reaction reference set, or `installed: false` and the reason (run independent). */
+  reactionReferenceStatus: (signal?: AbortSignal) =>
+    request<ReactionReferenceStatus>("/reaction_reference/status", { signal }),
+  /** M-CSA entries naming this PDB ID (422 for a malformed ID, 412 without a usable set); a suggestion source only. */
+  reactionReferencePdb: (pdbId: string, signal?: AbortSignal) =>
+    request<ReactionPdbEntries>(`/reaction_reference/pdb/${encodeURIComponent(pdbId)}`, { signal }),
+  /** Runs `link_reaction_knowledge` through the ordinary Run.call command route (no job, approval or budget). */
+  linkReactionKnowledge: (id: string, args: ReactionKnowledgeArgs, signal?: AbortSignal) =>
+    api.command(id, "link_reaction_knowledge", args as unknown as Record<string, unknown>, signal),
+  /** This run's results, newest first; `limit` 1–100 (default 50). */
+  reactionKnowledgeResults: (id: string, offset = 0, limit = 50, signal?: AbortSignal) =>
+    request<ReactionKnowledgeList>(runPath(id, `/reaction_knowledge?offset=${offset}&limit=${limit}`), { signal }),
+  /** `query` comes from `reactionDetailQuery` (reaction-knowledge.ts): the six chain / row / feature page values. */
+  reactionKnowledgeResult: (id: string, handle: string, query: string, signal?: AbortSignal) =>
+    request<ReactionKnowledgeDetail>(runPath(id, `/reaction_knowledge/${encodeURIComponent(handle)}?${query}`),
+      { signal }),
+  /** Method report `analysis_type: "reaction_knowledge"` of one stored result through the method report route
+   * (`POST /method_reports`, the same body as `createMethodReport`); the linking is not run again. */
+  createReactionKnowledgeReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
+    request<ReactionKnowledgeReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>

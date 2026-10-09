@@ -12,6 +12,7 @@ import copy
 import json
 import shutil
 import uuid
+from pathlib import Path
 
 import httpx
 import pytest
@@ -30,6 +31,7 @@ from jev_send_fixture import (
     reply,
     run_bytes,
     send,
+    stored_set_world,
     templates,
 )
 
@@ -53,6 +55,9 @@ PREVIEW_KEYS = {"schema", "projection_handle", "kind", "source", "question", "bo
                 "blocked_by", "previous_sends"}
 CHOICE_KEYS = {"schema", "method_version", "label", "scientific_result", "send", "source", "projection", "question",
                "requested_model", "served_model", "selection", "answer", "usage", "arrival", "limitations"}
+# The templates' M20 set is tool-built, so v2 since M26 with no catalytic annotation: its wire status is not_checked
+# and the proposal's fifth sentence is J6N (M26 spec 9). Stored v1 sets keep J6 (test_a_stored_m20_set_is_sent_...).
+CATALYTIC = {"mutation": "not_checked", "ligand": "not_available"}
 
 
 @pytest.fixture(scope="module")
@@ -250,7 +255,8 @@ def test_an_approved_send_records_approval_outcome_and_one_choice(which, mut, li
         "answer": {"choice_alias": answer["choice"], "local_ref": local_ref, "local_display": display,
                    "confidence": answer.get("confidence"), "probabilities": answer.get("probabilities")},
         "usage": usage, "arrival": {"late": False, "late_reason": None},
-        "limitations": J.limitations_for(which, False)}
+        "limitations": J.limitations_for(which, False, CATALYTIC[which])}
+    assert choice["limitations"][4] == (J.J6N if which == "mutation" else J.J5)
     if which == "mutation":   # the reply's floats, unchanged: no rounding, no re-formatting, also after JSON
         replied = json.loads(replies[0])["answers"][J.QUESTION_KEY]
         sha = record["choice_handle"].rsplit("/", 1)[1]
@@ -480,7 +486,8 @@ def test_a_valid_reply_after_cancel_or_consent_off_is_kept_and_marked_late(mut, 
         "completed", None, True, reason)
     choice = S.load_choice(run, record["choice_handle"])
     assert choice["arrival"] == {"late": True, "late_reason": reason}
-    assert choice["limitations"] == J.limitations_for("mutation", True) and choice["limitations"][-1] == J.J7
+    assert choice["limitations"] == J.limitations_for("mutation", True, CATALYTIC["mutation"])
+    assert choice["limitations"][-1] == J.J7
     dispatched = events(run, J.EVENT_DISPATCH)[-1]["seq"]
     later = {e["type"] for e in events(run) if e["seq"] > dispatched}
     assert not later & {"tool_called", "job_submitted", "proposal_rejected", "approval_requested"}
@@ -584,6 +591,9 @@ CHOICE_TAMPER = {   # SYNTHETIC edits of a stored proposal
     "usage_negative": lambda c, s: c.update(usage={**c["usage"], "input_tokens": -1}),
     "send_id": lambda c, s: c["send"].update(send_id="x"),
     "instructions_hash": lambda c, s: c["question"].update(instructions_sha256="0" * 64),
+    # M26 spec 9: the fifth sentence must be the J6 variant of the projection wire's catalytic status (not_checked)
+    "j6_original_for_a_v2_set": lambda c, s: c["limitations"].__setitem__(4, J.J6),
+    "j6_checked_for_a_not_checked_set": lambda c, s: c["limitations"].__setitem__(4, J.J6C),
 }
 
 
@@ -613,9 +623,44 @@ def test_a_late_proposal_with_j7_is_valid(stored_choice):
     _, _, choice, content, source = stored_choice
     late = copy.deepcopy(choice)
     late["arrival"] = {"late": True, "late_reason": "run_cancelled"}
-    late["limitations"] = J.limitations_for("mutation", True)
+    late["limitations"] = J.limitations_for("mutation", True, CATALYTIC["mutation"])
     assert S.validated_choice(late, content, source) == late
     refused(lambda: S.load_choice(stored_choice[0]["run"], stored_choice[0]["projection"]), "input_invalid", 422)
+
+
+# ---------------------------------------------------------------- M26 spec 9: stored v1 and v2 sets
+GOLDEN_M24 = json.loads((Path(__file__).resolve().parent / "fixtures/jev/golden_science_m24.json").read_text())
+
+
+@pytest.mark.parametrize("name", ["v1", "checked"])
+def test_a_stored_m20_set_is_sent_with_the_j6_variant_of_its_catalytic_status(name, tmp_path):
+    world = stored_set_world(tmp_path / "runs", name)
+    run = world["run"]
+    content = projection_of(world)
+    status = {"v1": "not_available", "checked": "checked"}[name]
+    assert run.store.load(world["source"])["protection_checks"]["catalytic_residue_database"]["status"] == status
+    assert content["wire"]["protection_checks"]["catalytic_residue_database"] == status
+    S.set_consent(run, True)
+    fake = Fake(lambda request: reply("m02", confidence=0.5))
+    record = send(world, fake)
+    assert record["status"] == "completed" and fake.requests[0].content == body_of(world)
+    assert json.loads(fake.requests[0].content)["state"]["protection_checks"] == content["wire"]["protection_checks"]
+    [prepared] = [e for e in events(run, "egress") if e["audit_id"] == record["audit_id"] and e["stage"] == "prepared"]
+    assert prepared["payload_sha256"] == content["body_sha256"] == record["body_sha256"]
+    choice = S.load_choice(run, record["choice_handle"])
+    expected = {"v1": J.STATEMENTS["J6"], "checked": J.J6C}[name]
+    assert content["limitations"][4] == choice["limitations"][4] == expected
+    assert choice["limitations"] == J.limitations_for("mutation", False, status)
+    if name == "v1":   # the M24 bytes: the proposal sentences recorded by the golden (unmodified M24, same v1 set)
+        golden = GOLDEN_M24["cases"]["mutation_completed_and_conflicts"]["exchanges"][6]["response"]["choice"]
+        assert choice["limitations"] == golden["limitations"] == J.limitations_for("mutation", False)
+    tampered = copy.deepcopy(choice)   # SYNTHETIC: the sentence of another status is refused on every read
+    tampered["limitations"][4] = J.J6N
+    with pytest.raises(S.ChoiceInvalid):
+        S.validated_choice(tampered, content, S.source_content(run, content))
+    reopened = reopen(world, tmp_path / "replayed")
+    assert S.load_choice(reopened, record["choice_handle"]) == choice
+    assert S.list_sends(current(reopened)) == S.list_sends(current(run))
 
 
 # ---------------------------------------------------------------- status and preview reads

@@ -131,6 +131,27 @@ def test_httpx_is_imported_and_clients_are_built_only_inside_egress():
         assert not {m for m in modules if m.split(".")[0] in {"urllib", "http", "requests", "socket", "aiohttp"}}, rel
 
 
+def test_urllib_request_and_http_client_are_imported_nowhere_in_backend_mw_outside_egress():
+    """Spec M26 §12: only the user-run import script (outside ``backend/mw``) may use ``urllib``; the server tree must
+    not import ``urllib.request`` or ``http.client`` (``from urllib import request`` and aliases included)."""
+    banned = {"urllib.request", "http.client"}
+    found = []
+    for rel, tree in _sources():
+        if rel.startswith("egress/"):
+            continue
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                base = node.module or ""
+                names = [base, *(f"{base}.{alias.name}" for alias in node.names)]
+            for name in names:
+                if any(name == b or name.startswith(b + ".") for b in banned):
+                    found.append((rel, name))
+    assert not found, found
+
+
 # ---------------------------------------------------------------- (c) no new limit-raise name
 
 

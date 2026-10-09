@@ -96,6 +96,7 @@ export function reportKindLabel(row: ReportLibraryRow): string {
   if (row.kind === "sequence_ga") return "서열 GA 보고서";
   if (row.kind === "jev_choice") return "JEV 판정 보고서";
   if (row.kind === "jev_loop") return "JEV 루프 보고서";
+  if (row.kind === "reaction_knowledge") return "효소 반응 지식 보고서";
   return row.kind === "reference_site_annotation" ? "참조 주석 보고서" : row.kind;
 }
 

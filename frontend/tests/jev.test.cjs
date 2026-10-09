@@ -1171,3 +1171,52 @@ test("page: JevPanel keyed by run in the knowledge tab; report reload and the gl
   const index = fs.readFileSync(path.join(__dirname, "../src/components/index.ts"), "utf8");
   assert.ok(!/Panel/.test(index));
 });
+
+// ---- M26 spec 9: J6 variants of a mutation projection by the wire's catalytic_residue_database status ----
+
+const SPEC_J6N = "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 " +
+  "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 이 " +
+  "집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.";
+const SPEC_J6C = "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 " +
+  "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 잔기 " +
+  "주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다.";
+
+test("J6n / J6c equal backend J6N / J6C and the spec text; J6 by catalytic status as in J6_BY_CATALYTIC_STATUS", () => {
+  assert.equal(pySentence("J6N"), SPEC_J6N);
+  assert.equal(pySentence("J6C"), SPEC_J6C);
+  assert.deepEqual(plain(lib.JEV_J6_VARIANTS), { J6n: SPEC_J6N, J6c: SPEC_J6C });
+  const mapping = /^J6_BY_CATALYTIC_STATUS = \{([^}]*)\}/m.exec(constantsSource);
+  assert.ok(mapping, "J6_BY_CATALYTIC_STATUS not found");
+  const names = { J6: SPEC_J.J6, J6N: SPEC_J6N, J6C: SPEC_J6C };
+  const backend = Object.fromEntries([...mapping[1].matchAll(/"(\w+)": (\w+)/g)].map(([, status, name]) => [status, names[name]]));
+  assert.deepEqual(plain(lib.JEV_J6_BY_CATALYTIC_STATUS), backend);
+  assert.deepEqual(Object.keys(backend), ["not_available", "not_checked", "checked"]);
+  // J1-J7 stay as they were; the original J6 is the v1 (not_available) sentence byte for byte
+  assert.deepEqual(Object.keys(lib.JEV_STATEMENTS), ["J1", "J2", "J3", "J4", "J5", "J6", "J7"]);
+  assert.equal(lib.JEV_J6_BY_CATALYTIC_STATUS.not_available, SPEC_J.J6);
+  // the variants carry no forbidden wording without any exemption (JEV_FIXED_LINES is unchanged)
+  for (const sentence of [SPEC_J6N, SPEC_J6C]) {
+    assert.deepEqual(plain(lib.jevForbiddenWords(sentence)), []);
+    assert.equal(lib.JEV_FIXED_LINES.includes(sentence), false);
+  }
+});
+
+test("projection sentences mirror limitations_for: J5 for ligand, the J6 variant of the wire status, J7 when late", () => {
+  const s = SPEC_J;
+  assert.equal(lib.jevCatalyticStatus("ligand", null), "not_available");
+  assert.equal(lib.jevCatalyticStatus("mutation", { protection_checks: { catalytic_residue_database: "checked" } }), "checked");
+  assert.equal(lib.jevCatalyticStatus("mutation", { protection_checks: { catalytic_residue_database: "not_checked" } }),
+    "not_checked");
+  assert.equal(lib.jevCatalyticStatus("mutation", { protection_checks: { catalytic_residue_database: "not_available" } }),
+    "not_available");
+  for (const bad of [null, {}, { protection_checks: {} }, { protection_checks: { catalytic_residue_database: "toString" } },
+    { protection_checks: { catalytic_residue_database: 1 } }])
+    assert.equal(lib.jevCatalyticStatus("mutation", bad), null);
+  assert.deepEqual(plain(lib.jevLimitationsFor("ligand", false)), [s.J1, s.J2, s.J3, s.J4, s.J5]);
+  assert.deepEqual(plain(lib.jevLimitationsFor("mutation", false)), [s.J1, s.J2, s.J3, s.J4, s.J6]);
+  assert.deepEqual(plain(lib.jevLimitationsFor("mutation", false, "not_checked")), [s.J1, s.J2, s.J3, s.J4, SPEC_J6N]);
+  assert.deepEqual(plain(lib.jevLimitationsFor("mutation", true, "checked")), [s.J1, s.J2, s.J3, s.J4, SPEC_J6C, s.J7]);
+  assert.equal(lib.jevLimitationsFor("ligand", false, "checked"), null);
+  assert.equal(lib.jevLimitationsFor("mutation", false, "unknown"), null);
+  assert.equal(lib.jevLimitationsFor("other", false), null);
+});

@@ -7,14 +7,22 @@ insertion code, null label, multi-letter chain, two same-sequence chains, metals
 mmCIF (+ ADP; a reference FIXTURE set from ``fixtures/reference`` for the M15 map and M16 annotation). Expected read
 values are the stored object's own values; ligand-distance order is checked against the independent brute-force
 oracle ``fixtures/mutation/expected.json``. Fault injections (edited / forged stored objects) are labelled.
+
+M26 (spec 8.5): every new set is v2; list rows and the detail carry ``catalytic_status``. One set uses a
+``reaction_knowledge@1`` result made by the product tool over the LABELLED SYNTHETIC reaction reference set of
+``m20_catalytic_fixture``. The stored v1 sets keep every existing read key and value: the T1 v1 baseline
+(``docs/qa/m26-reaction-20261008/v1-baseline/``) is re-recorded here and compared byte for byte, the only allowed
+difference being the added ``catalytic_status: "not_available"`` keys.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 from pathlib import Path
 from urllib.parse import quote
 
+import m20_catalytic_fixture as CF
 import pytest
 from fastapi.testclient import TestClient
 from reference_fixture_set import build_fixture_set
@@ -35,7 +43,9 @@ ORACLE = json.loads((MUT / "expected.json").read_text())["files"]
 TOOL = K.TOOL
 RID, OTHER = "run_mutreads", "run_mutother"
 LIST_KEYS = {"handle", "created_seq", "valid", "structure", "model_number", "ligand", "sources_used", "klifs_status",
-             "numbering_map", "annotation", "counts", "null_result"}
+             "numbering_map", "annotation", "counts", "null_result", "catalytic_status"}
+REPO = Path(__file__).resolve().parents[2]
+BASELINE = REPO / "docs" / "qa" / "m26-reaction-20261008" / "v1-baseline"
 
 
 def res(chain_auth: str, seq_auth: int, resname: str, icode: str = "") -> dict:
@@ -85,9 +95,14 @@ def world(tmp_path_factory):
                                           released_residues=[res("A", 261, "ASN")], numbering_map=numbering_map,
                                           annotation=annotation)).handle
         made["wide"] = run.call(TOOL, _args(mq, ligand_shell={"radius_A": 12.0}, ligand=adp)).handle
+        CF.activate(base / "reaction_reference", patch)
+        knowledge = CF.link(run, syn, ["A", "B"])
+        made["cat"] = run.call(TOOL, _args(syn, residues=[res("A", 2, "ALA"), res("A", 6, "HID"), res("A", 10, "LEU"),
+                                                          res("B", 6, "HID")], catalytic_annotation=knowledge)).handle
+        CF.reset_caches()
         other = new_run(root, run_id=OTHER, dry_run=False)
         made["other"] = other.call(TOOL, _args(_prepared(other, CIF), residues=[res("A", 6, "HID")])).handle
-        made["order"] = ["shell", "plain", "zero", "nolabel", "mq", "wide"]
+        made["order"] = ["shell", "plain", "zero", "nolabel", "mq", "wide", "cat"]
         made["stored"] = {name: run.store.load(made[name]) for name in made["order"]}
     return {"root": root, **made}
 
@@ -150,7 +165,7 @@ def test_list_is_newest_first_with_creating_event_sequence(client, world):
     response = client.get(_base())
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["schema"] == "mutation_candidate_set_list@1" and body["total"] == 6
+    assert body["schema"] == "mutation_candidate_set_list@1" and body["total"] == 7
     assert (body["offset"], body["limit"]) == (0, 50)
     handles = [world[name] for name in world["order"]]
     assert [row["handle"] for row in body["rows"]] == handles[::-1]
@@ -173,7 +188,10 @@ def test_list_is_newest_first_with_creating_event_sequence(client, world):
         assert (row["numbering_map"], row["annotation"]) == (stored["parameters"]["numbering_map"],
                                                              stored["parameters"]["annotation"])
         assert row["counts"] == stored["counts"] and row["null_result"] == stored["null_result"]
+        assert row["catalytic_status"] == stored["protection_checks"]["catalytic_residue_database"]["status"]
     by = {row["handle"]: row for row in body["rows"]}
+    assert by[world["cat"]]["catalytic_status"] == "checked"
+    assert {by[world[name]]["catalytic_status"] for name in world["order"] if name != "cat"} == {"not_checked"}
     assert by[world["mq"]]["klifs_status"] == "checked" and by[world["shell"]]["klifs_status"] == "not_checked"
     assert by[world["wide"]]["sources_used"] == {"pocket": False, "ligand_shell": True, "user": False}
     assert by[world["zero"]]["null_result"] is True and by[world["zero"]]["counts"]["candidates"] == 0
@@ -183,8 +201,8 @@ def test_list_is_newest_first_with_creating_event_sequence(client, world):
 def test_list_pagination_and_limit_bounds(client, world):
     newest = [world[name] for name in world["order"]][::-1]
     page = client.get(_base(), params={"offset": 2, "limit": 3}).json()
-    assert page["total"] == 6 and [row["handle"] for row in page["rows"]] == newest[2:5]
-    assert client.get(_base(), params={"offset": 6}).json()["rows"] == []
+    assert page["total"] == 7 and [row["handle"] for row in page["rows"]] == newest[2:5]
+    assert client.get(_base(), params={"offset": 7}).json()["rows"] == []
     assert client.get(_base(), params={"limit": 100}).status_code == 200
     assert client.get(_base(), params={"limit": 1}).json()["rows"][0]["handle"] == newest[0]
     for params in ({"limit": 0}, {"limit": 101}, {"offset": -1}, {"handle": world["shell"]}):
@@ -207,6 +225,7 @@ def test_detail_is_the_stored_set_without_rows(client, world):
             assert body["result"] == {k: v for k, v in stored.items() if k not in ("positions", "candidates")}
             assert (body["total_positions"], body["total_candidates"]) == (len(stored["positions"]),
                                                                            len(stored["candidates"]))
+            assert body["catalytic_status"] == stored["protection_checks"]["catalytic_residue_database"]["status"]
             assert body["meta"]["kind"] == K.KIND and body["meta"]["schema"] == K.SCHEMA
     assert _get(client, world["shell"], verbose="1").status_code == 422
 
@@ -242,7 +261,7 @@ def test_position_filters_and_totals(client, world):
     combos = [{}, {"status": "candidate"}, {"status": "excluded"}, {"source": "ligand_shell"}, {"source": "user"},
               {"source": "pocket"}, {"chain_auth": "CC"}, {"chain_auth": "B"}, {"chain_auth": "Z"},
               {"status": "excluded", "source": "user"}]
-    combos += [{"exclusion_reason": reason} for reason in K.EXCLUSION_REASONS]
+    combos += [{"exclusion_reason": reason} for reason in K.EXCLUSION_REASONS_V2]
     nonzero = set()
     for name in world["order"]:
         stored = world["stored"][name]
@@ -257,7 +276,8 @@ def test_position_filters_and_totals(client, world):
             if expected:
                 nonzero.add(tuple(sorted(params.items())))
     # the fixtures give a nonzero total for these reasons (klifs_key_site from the annotated 1MQ4 set)
-    for reason in ("non_standard_residue", "user_protected", "klifs_key_site", "metal_contact", "disulfide_cys"):
+    for reason in ("non_standard_residue", "user_protected", "klifs_key_site", "metal_contact", "disulfide_cys",
+                   "catalytic_residue"):
         assert (("exclusion_reason", reason),) in nonzero, reason
     for params in ({"status": "protected"}, {"source": "fpocket"}, {"exclusion_reason": "catalytic"},
                    {"sort": "rank"}, {"sort": "score"}, {"limit": 0}, {"limit": 101}, {"offset": -1},
@@ -428,3 +448,65 @@ def test_forged_object_with_a_matching_hash_is_refused_by_validation(world, tmp_
     handle = run.store.put(K.KIND, K.SCHEMA, forged, summary={"forged": True}).handle
     assert run.store.load(handle) == forged
     _assert_refused(client, root, handle, '"forged"')
+
+
+# --- M26: catalytic_status and the unchanged v1 reads ------------------------------------------------------------------
+
+def test_catalytic_set_reads_its_status_and_protected_positions(client, world):
+    stored = world["stored"]["cat"]
+    detail = _get(client, world["cat"]).json()
+    assert detail["catalytic_status"] == "checked"
+    assert detail["result"]["protection_checks"]["catalytic_residue_database"]["covered_chains"] == ["A", "B"]
+    rows = _get(client, world["cat"], "positions", exclusion_reason="catalytic_residue").json()["rows"]
+    assert [(p["residue"]["chain_auth"], p["residue"]["seq_auth"]) for p in rows] == [("A", 2), ("A", 6), ("B", 6)]
+    assert rows == [p for p in stored["positions"] if "catalytic_residue" in p["exclusion_reasons"]]
+    leu = _get(client, world["cat"], "positions", chain_auth="A").json()["rows"][2]
+    assert leu["residue"]["seq_auth"] == 10 and leu["protection"]["catalytic"] == []   # checked: none protects it
+
+
+def _baseline_recorder():
+    spec = importlib.util.spec_from_file_location("m26_record_v1_baseline", BASELINE / "record_v1_baseline.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _without_catalytic_status(case: dict) -> tuple[dict, list[str]]:
+    """The case with the M26 ``catalytic_status`` keys of the list rows and the detail bodies removed (the only keys
+    M26 adds to a v1 read), and where each one was found with its value."""
+    found = []
+
+    def strip(value, at):
+        if isinstance(value, dict):
+            if (at.endswith("/detail/body") or "/list/body/rows/" in at) and "catalytic_status" in value:
+                found.append(f"{at}={value['catalytic_status']}")
+                value = {k: v for k, v in value.items() if k != "catalytic_status"}
+            return {k: strip(v, f"{at}/{k}") for k, v in value.items()}
+        if isinstance(value, list):
+            return [strip(v, f"{at}/{i}") for i, v in enumerate(value)]
+        return value
+
+    return strip(case, ""), found
+
+
+def test_stored_v1_sets_keep_the_t1_baseline_reads_validation_and_report_bytes(tmp_path):
+    """The T1 v1 baseline re-recorded from the committed v1 fixtures (no M20 tool call): every file is byte-identical
+    once the added ``catalytic_status`` keys (all ``not_available``) are removed; report bytes are identical as is."""
+    recorder = _baseline_recorder()
+    fresh = recorder.record(tmp_path / "work")
+    on_disk = {path.name: path.read_bytes() for path in (BASELINE / "baseline").iterdir() if path.is_file()}
+    assert set(fresh) == set(on_disk)
+    added = []
+    for name, raw in fresh.items():
+        if name == "SHA256SUMS":
+            continue
+        if name.endswith((".md", ".manifest.json")):
+            assert raw == on_disk[name], name                       # saved v1 report manifest and Markdown bytes
+            continue
+        case, found = _without_catalytic_status(json.loads(raw))
+        added += [f"{name}{item}" for item in found]
+        assert (json.dumps(case, ensure_ascii=False, indent=1, sort_keys=True) + "\n").encode() == on_disk[name], name
+    assert added and all(item.endswith("=not_available") for item in added), added
+    lists = [item for item in added if "/list/body/rows/" in item]
+    details = [item for item in added if "/detail/body=" in item]
+    assert len(lists) + len(details) == len(added) and len(details) == 7   # five stored sets + two frozen sets

@@ -417,6 +417,32 @@ def test_events_only_reopen_gives_the_same_records_without_any_engine(ligand, pr
         assert response.json() == record
 
 
+def test_protein_loop_reads_keep_their_bytes_when_the_m20_module_hash_changes(protein, tmp_path, monkeypatch):
+    """M26 spec 9 (T1 preflight (k)): a loop record comes from its created-event pins, never the current ones, so
+    after ``mutation_candidates.py`` changes (the M26 upgrade) the in-progress protein loop and the same loop once
+    ended (run cancel) read the same bytes; only the compute press is refused (test_jev_loops_compute)."""
+    _root, client = _clone(tmp_path, monkeypatch, {PRID: protein["logs"]["final"]})
+    real = mutation_model_bundle.require_ready()
+    changed = {**real, "dependency_sha256": {**real["dependency_sha256"], "mw/mutation_candidates.py": "d" * 64}}
+
+    def reads():
+        answers = [client.get(f"/runs/{PRID}/jev_loops/{LOOP_P}"), client.get(f"/runs/{PRID}/jev_loops")]
+        assert all(answer.status_code == 200 for answer in answers), [answer.text for answer in answers]
+        return [answer.content for answer in answers]
+
+    in_progress = reads()
+    assert json.loads(in_progress[0]) == protein["records"]["final"]
+    with monkeypatch.context() as patch:   # fault injection: another mutation_candidates.py SHA-256
+        patch.setattr(mutation_model_bundle, "require_ready", lambda: changed)
+        assert reads() == in_progress
+    api_module._run(PRID).cancel()
+    ended = reads()
+    assert json.loads(ended[0])["status"] == "ended"
+    with monkeypatch.context() as patch:
+        patch.setattr(mutation_model_bundle, "require_ready", lambda: changed)
+        assert reads() == ended
+
+
 # ---------------------------------------------------------------- not found, other runs, cancel, corrupt, size
 
 

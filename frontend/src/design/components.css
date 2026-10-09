@@ -526,6 +526,16 @@
 .mw-mutation-table { border-collapse: collapse; font-size: 12px; color: var(--ink); }
 .mw-mutation-table th, .mw-mutation-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
 .mw-mutation-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
+.mw-mutation-facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0; }
+.mw-mutation-facts dt { color: var(--ink-muted); }
+.mw-mutation-facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+
+/* M26 "촉매 잔기 검사 안 함" mark (UK2) wherever an M20 candidate set is picked (M20 list and detail, M21 request, M23,
+   M24 mutation source, M25 protein pool): one neutral framed mark with its own detail beside it, the same for v1
+   (`not_available`) and v2 `not_checked`; no colour ranking and nothing for `checked`. */
+.mw-catalytic-mark { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); margin: 0; min-width: 0; font-family: var(--font-sans); }
+.mw-catalytic-badge { display: inline-block; padding: 0 var(--space-1); border: 1px solid var(--fail-precondition); border-radius: var(--radius-xs); background: var(--surface-200); font-size: 11px; line-height: 16px; color: var(--ink); overflow-wrap: anywhere; }
+.mw-catalytic-detail { font-size: 11px; line-height: 16px; color: var(--ink-muted); overflow-wrap: anywhere; }
 
 /* M23 sequence GA design area (SequenceGaPanel, protein engineering tab, below the M21 modeling area). Stored values
    in tables and lists only: no bars, rank marks, arrows or colour comparisons; the wild-type reference block is a
@@ -589,3 +599,59 @@
 .mw-jev-loop-button { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; }
 .mw-jev-loop .mw-jev-check { flex-wrap: wrap; }
 .mw-jev-loop .mw-jev-check select.mw-select { max-width: 100%; }
+
+/* M26 enzyme reaction knowledge area (ReactionKnowledgePanel, 지식·보고서 tab, below the numbering screen). Reference
+   values of the pinned snapshot shown as stored, in tables and lists only: no bars, scores, rank marks, highlights or
+   colour comparisons between rows or statuses. Verbatim M-CSA / UniProt / Rhea text keeps its whitespace in a neutral
+   reference cell; an empty string stays visible as "". */
+.mw-app-reaction { margin: var(--space-3); }
+.mw-reaction { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); min-width: 0; font-size: 12px; color: var(--ink); }
+.mw-reaction p { margin: 0; overflow-wrap: anywhere; }
+.mw-reaction code { font-family: var(--font-mono); overflow-wrap: anywhere; word-break: break-all; }
+.mw-reaction-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mw-reaction-heading { margin: 0; font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.mw-reaction-section { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-000); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-reaction-title { margin: 0; font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.mw-reaction-note { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+.mw-reaction-notice { margin: 0; padding: var(--space-2); border-left: 3px solid var(--line-strong); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-reaction-unavailable { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-reaction-unavailable p { margin: 0; }
+.mw-reaction-command { margin: 0; padding: var(--space-2); background: var(--surface-100); border: 1px solid var(--line); font: 400 12px/16px var(--font-mono); overflow-x: auto; }
+.mw-reaction-null { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-precondition); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-reaction-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
+.mw-reaction-errors { margin: 0; padding-left: var(--space-4); font-size: 12px; color: var(--fail-input); overflow-wrap: anywhere; }
+.mw-reaction-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-reaction-check { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--ink); }
+.mw-reaction-check select.mw-select { max-width: 100%; }
+.mw-reaction-input { width: 84px; height: var(--control-sm); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-200); color: var(--ink); font: 400 12px/16px var(--font-mono); padding: 0 var(--space-2); min-width: 0; }
+.mw-reaction-input--accession { width: 120px; }
+.mw-reaction-form, .mw-reaction-snapshot, .mw-reaction-detail { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-reaction-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.mw-reaction-choices { margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-height: 360px; overflow: auto; }
+.mw-reaction-choices legend { padding: 0 var(--space-1); color: var(--ink-muted); }
+.mw-reaction-choices label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.mw-reaction-choices .mw-mono { overflow-wrap: anywhere; word-break: break-all; }
+.mw-reaction-chain-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding: var(--space-1) 0; border-bottom: 1px solid var(--line); }
+.mw-reaction-facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0; }
+.mw-reaction-facts dt { color: var(--ink-muted); }
+.mw-reaction-facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.mw-reaction-fact { display: contents; }
+.mw-reaction-badge { display: inline-block; padding: 0 var(--space-1); border: 1px solid var(--line-strong); border-radius: var(--radius-xs); font-size: 11px; line-height: 16px; color: var(--ink); background: var(--surface-200); overflow-wrap: anywhere; }
+.mw-reaction-badge--stale { border-color: var(--fail-transient); }
+.mw-reaction-group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.mw-reaction-chain { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--surface-100); }
+.mw-reaction-chain-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-reaction-chain-head h4 { margin: 0; font: 600 12px/16px var(--font-sans); }
+.mw-reaction-list { margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-wrap: anywhere; }
+.mw-reaction-table-wrap { overflow: auto; max-height: 480px; min-width: 0; max-width: 100%; }
+.mw-reaction-table { border-collapse: collapse; font-size: 12px; color: var(--ink); }
+.mw-reaction-table th, .mw-reaction-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
+.mw-reaction-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
+.mw-reaction-ref-cell { min-width: 240px; border-left: 1px solid var(--line-strong); }
+.mw-reaction-ref-list { display: grid; grid-template-columns: max-content 1fr; gap: 0 var(--space-2); margin: 0; }
+.mw-reaction-ref-list dt { color: var(--ink-muted); font: 400 11px/16px var(--font-mono); }
+.mw-reaction-ref-list dd { margin: 0; min-width: 0; }
+.mw-reaction-ref { white-space: pre-wrap; overflow-wrap: anywhere; }
+.mw-reaction-ref--empty { font-family: var(--font-mono); color: var(--ink-muted); }
+.mw-reaction-details summary { cursor: pointer; overflow-wrap: anywhere; }
+.mw-reaction-details summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

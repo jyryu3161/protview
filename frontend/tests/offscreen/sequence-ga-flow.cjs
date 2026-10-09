@@ -11,7 +11,8 @@
 //
 // Inputs: public 1UBQ (backend/tests/fixtures/public_1ubq.cif; the only local public structure that passes the M7
 // preflight), the M20 tiny set made through the M20 screen (I3 protected, K6, I44, G76; allowed A W: 6 candidates, 26
-// combinations at max_mutations 3; content = backend/tests/fixtures/sequence_ga/m20-candidate-set-1ubq-tiny.json), an
+// combinations at max_mutations 3; candidates and positions = backend/tests/fixtures/sequence_ga/
+// m20-candidate-set-1ubq-tiny.json, a stored v1 set; the tool now builds it as v2 (M26: catalytic check not_checked)), an
 // I44W-only set (1 combination), and three labeled synthetic ligand SDFs imported through the M18 docking area: the
 // phenol (mutation_model/synthetic-phenol-ligand.sdf), a planar one (docking/synthetic-ligand-planar-z0.sdf,
 // ligand_not_3d) and an implicit-H one (docking/synthetic-ligand-implicit-h.sdf, refused by the worker's RDKit/Meeko
@@ -1446,7 +1447,14 @@ async function modeMain(session, input, rec_, evidence, log) {
       candidate_count: position.candidate_count, exclusion_reasons: position.exclusion_reasons });
     assert.deepEqual(tiny.candidates, o.tiny.candidates, "tiny set candidates differ from the T1 fixture");
     assert.deepEqual(tiny.positions.map(pick), o.tiny.positions.map(pick), "tiny set positions differ from the T1 fixture");
-    assert.deepEqual(tiny.counts, o.tiny.counts);
+    // M26 spec 8: the M20 tool now builds v2 sets; made without an M-CSA annotation the catalytic check is not_checked
+    // (annotation_not_given) and the counts gain the v2 key catalytic_residue 0, which counts nothing (the M20 screen
+    // shows "—", never 0). The T1 fixture is a stored v1 set and stays the expectation for every other count.
+    assert.equal(tiny.method_version, "mw.mutation_candidates/v2");
+    assert.deepEqual(tiny.protection_checks.catalytic_residue_database,
+      { status: "not_checked", reason: "annotation_not_given", annotation: null });
+    assert.deepEqual(tiny.counts, { ...o.tiny.counts,
+      exclusion_reason_counts: { ...o.tiny.counts.exclusion_reason_counts, catalytic_residue: 0 } });
     const alts = {};
     for (const candidate of tiny.candidates) (alts[String(candidate.position_index)] ??= []).push(candidate.index);
     assert.deepEqual(alts, o.space.alts, "the set is not the oracle's combination space");

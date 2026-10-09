@@ -215,6 +215,7 @@ tools:
       metal_contact_A: { type: float, default: 3.0 }
       numbering_map: { default: null }                   # residue_numbering_map handle of the same structure | null
       annotation: { default: null }                      # reference_site_annotation handle of the same structure | null
+      catalytic_annotation: { default: null }            # M26 reaction_knowledge handle of the same structure | null
     description: 전처리 구조의 포켓 안쪽·리간드 주변·직접 고른 위치에서 보호 잔기(사용자 지정·KLIFS 주요 부위·금속 근접·이황화 Cys)를 이유와 함께 빼고 남은 위치마다 단일 아미노산 치환 후보 목록을 만든다(위치와 바꿀 잔기의 조합 목록이며 구조 모델링을 하지 않음)
 
   # M24: local projection only (no egress); the JEV send is a separate human-approved route.
@@ -243,6 +244,23 @@ tools:
       loop_id: { type: str, required: true }            # the loop's client UUID (jev_loop_created)
       iteration: { type: int, required: true }          # the loop's current iteration (counts.started + 1)
     description: 같은 run의 JEV 루프 기록(풀·목표·루프 seed·계산 여부와 저장된 qvina 값)에서 이번 바퀴·전송 순번으로 섞은 후보 목록을 외부 모델에 보낼 수 있는 허용 목록 모양과 정확한 요청 본문의 바이트 수·SHA-256으로 만들어 저장한다(이 도구는 아무것도 보내지 않으며 좌표·handle·루프 ID·seed를 보낼 내용에 넣지 않음)
+
+  # M26: M-CSA catalytic residue rows, UniProt sites and reactions of the pinned local reaction reference set
+  # (MW_REACTION_REFERENCE_DIR, default .deps/reaction_reference; no network) attached to one structure's chains.
+  # A registry pre-check pins the set (precondition) and runs the closed admission checks (input_invalid) before the
+  # cache key; the call key adds the pinned set hash. Reads only the set, this run's structure and numbering map.
+  - name: link_reaction_knowledge
+    level: L2
+    version: '1'
+    accepts: { structure: [structure, prepared_structure] }
+    emits: reaction_knowledge
+    cost_class: cheap
+    typical_runtime_s: 1
+    params:
+      pdb_id: { default: null }                          # user-confirmed 4-char PDB ID (normalized upper case) | null
+      chains: { type: list, required: true }             # [{chain_auth, uniprot_accession | null}], unique chain_auth
+      numbering_map: { default: null }                   # residue_numbering_map handle of the same structure | null
+    description: 구조의 체인에 반응 참조 스냅샷(M-CSA·UniProt·Rhea)이 적은 촉매 잔기·부위·반응 정보를 참조값으로 붙인다(대응됨은 M-CSA가 적은 PDB·체인·번호와 잔기 이름이 같다는 뜻뿐이며 잔기의 역할을 판정하지 않음; 값은 참조 스냅샷 값, 계산 아님)
 
   - name: align
     level: L2

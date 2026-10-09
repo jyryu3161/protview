@@ -36,7 +36,7 @@ import { BRANCH_LABEL, CANCEL_BEFORE_START_NOTE, FREE_DOCKING_NOTE, GOAL_LABEL, 
   type ProteinLoopSetupForm } from "@/lib/jev-loop";
 import { CANDIDATE_PAGE_LIMIT, candidateCountText, candidateRowsQuery, checkFilterInput, emptyAppliedFilter,
   emptyFilterInput, LIGAND_APPROVAL_NOTICE, passText, type AppliedFilter, type LigandFilterInput } from "@/lib/ligand";
-import { candidateQuery, EMPTY_CANDIDATE_FILTERS, pageRangeText } from "@/lib/mutations";
+import { candidateQuery, catalyticBadge, EMPTY_CANDIDATE_FILTERS, pageRangeText } from "@/lib/mutations";
 import { CONFIRMATION_LABEL, CONTACT_CUTOFF_DEFAULT_A, CONTACT_CUTOFF_RANGE_A } from "@/lib/mutation-model";
 import { FilterForm } from "./LigandPanel";
 import { PairInputs } from "./MutationModelPanel";
@@ -850,14 +850,22 @@ function LoopWorkspace({ branch, run, capability, title, onReportCreated, onStat
               : "이 run에 변이 후보 집합이 없습니다. 위 변이 후보 영역에서 먼저 만드세요."}</p>
           : <fieldset className="mw-jev-choices" data-testid="jev-loop-sources">
             <legend>{SOURCE_KIND_LABEL[kind]} (자동으로 고르지 않음)</legend>
-            {sourceOptions.map(option => <label key={option.handle} data-jev-loop-source={option.handle}
-              data-disabled-reason={option.disabledReason ?? undefined}>
-              <input type="radio" name={`jev-loop-source-${branch}-${runId}`} data-testid="jev-loop-source"
-                data-jev-loop-source={option.handle} checked={selection?.source === option.handle}
-                disabled={option.disabledReason !== null} onChange={() => chooseSource(option.handle)} />
-              <span className="mw-mono" title={option.handle}>{option.text} · {shortSha(option.handle)}</span>
-              {option.disabledReason && <span className="mw-jev-note">{option.disabledReason}</span>}
-            </label>)}
+            {sourceOptions.map(option => {
+              // M26: a mutation set whose catalytic check is not `checked` carries the shared mark and its own detail.
+              const badge = branch === "protein" && sets.status === "ready"
+                ? catalyticBadge(sets.value.find(row => row.handle === option.handle)?.catalytic_status) : null;
+              return <label key={option.handle} data-jev-loop-source={option.handle}
+                data-disabled-reason={option.disabledReason ?? undefined}>
+                <input type="radio" name={`jev-loop-source-${branch}-${runId}`} data-testid="jev-loop-source"
+                  data-jev-loop-source={option.handle} checked={selection?.source === option.handle}
+                  disabled={option.disabledReason !== null} onChange={() => chooseSource(option.handle)} />
+                <span className="mw-mono" title={option.handle}>{option.text} · {shortSha(option.handle)}</span>
+                {option.disabledReason && <span className="mw-jev-note">{option.disabledReason}</span>}
+                {badge && <span className="mw-catalytic-mark" data-testid="jev-loop-source-catalytic">
+                  <span className="mw-catalytic-badge">{badge.text}</span>
+                  <span className="mw-catalytic-detail" data-testid="jev-loop-source-catalytic-detail">{badge.detail}</span></span>}
+              </label>;
+            })}
           </fieldset>)}
         {sourceLoad.status !== "loading" && <Button size="sm" data-testid="jev-loop-sources-reload"
           onClick={() => branch === "ligand" ? setPrereqReload(value => value + 1) : setSetsReload(value => value + 1)}>

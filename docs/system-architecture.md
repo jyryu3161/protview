@@ -16,6 +16,9 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   ├─ ObjectStore + EventLog (core/) ─ runs/<run_id>/ 아래 불변 객체·이벤트·SQLite 색인
   ├─ 참조 스냅샷 읽기 (reference_snapshots.py) ─ .deps/reference/ (MW_REFERENCE_DIR, 읽기 전용)
   │     └─ 쓰는 쪽: scripts/import_reference_snapshots.py ← ../kbase_kinase/ref (사용자가 실행, 서버는 kbase를 읽지 않음)
+  ├─ 반응 참조 스냅샷 읽기 (reaction_snapshots.py) ─ .deps/reaction_reference/ (MW_REACTION_REFERENCE_DIR, 읽기 전용)
+  │     └─ 쓰는 쪽: scripts/import_reaction_references.py ← HTTPS GET만: www.ebi.ac.uk(M-CSA)·rest.uniprot.org·www.rhea-db.org
+  │          (사용자가 터미널에서 실행, mw를 import하지 않음. 서버·도구·작업은 이 명령을 부르지 않음)
   ├─ JobQueue + guardian (jobs/) ─ POSIX 프로세스 그룹으로 작업 프로세스 감독
   │     ├─ OpenMM 작업 프로세스 (프로젝트 .venv 인터프리터)
   │     ├─ ProLIF 작업 프로세스 (.deps/prolif/venv-locked 별도 인터프리터)
@@ -25,7 +28,7 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   │     ├─ qvina 일괄 도킹 작업 프로세스 (M19 docking_batch_worker.py, 같은 인터프리터, docking_worker.py를
   │     │    파일 경로로 불러 행마다 같은 계산, 자식 qvina2)
   │     └─ fpocket 작업 프로세스 (프로젝트 .venv, .deps/fpocket/env/bin/fpocket 고정 실행 파일)
-  └─ EgressGate (egress/) ─ 유일한 외부 HTTP 출구
+  └─ EgressGate (egress/) ─ 외부 HTTP 출구 (예외는 위 반응 참조 가져오기 명령 하나, 결정 0034)
         └─ OpenRouter Decisions API (POST https://openrouter.ai/api/alpha/decisions)
            — 뷰어 의도·M3: 해당 run에서 온라인 모드를 명시적으로 켰을 때만 (VIEWER_GATE)
            — M24 과학 전송: 과학 전송 동의가 켜진 run에서 사람이 미리보기 본문을 승인했을 때만 (SCIENCE_GATE)
@@ -81,13 +84,18 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/jev_loop_constants.py`, `jev_loop_projection.py`, `jev_loops.py`, `jev_loop_result.py` | M25 JEV 설계 루프의 순수 모듈: 닫힌 상수·질문 지시문·고정 문장(표준 라이브러리만), 섞기 `sha256_order_v1`·루프 와이어·본문·`parse_loop_choice`·제안 `jev_loop_choice@1`과 검증(M24 빌더·인코더를 바꾸지 않고 불러 씀), 이벤트·작업 기록·저장 결과 요약에서 `jev_loop@1`을 도출하는 `derive_loop`·입장 판정·작업 귀속 `job_owners`, 요약 `jev_loop_result@1` 만들기·검증. 저장소·로그·네트워크를 읽지 않는다 | jev_constants(`EVENT_*` 속성), jev_projection, `docking_constants`·`mutation_model_constants`, core |
 | `backend/mw/jev_loop_store.py`, `tools/jev_loop.py`, `jev_loop_reports.py` | M25 run을 읽고 쓰는 층: 한 번 읽기 보기(`LoopReadView`), 만들기 입장과 `jev_loop_created`, 단독 M18·M21 요청·호출 키, 저장 결과·제안 읽기, 계산 판정·`jev_loop_compute_approved`·도킹 포기·끝내기, `methods.jev_loop`, 값싼 도구 `build_jev_loop_projection`(사전 검사 훅 + `jev_loop_projection@1` 저장), 보고서 `jev_loop`. `jev_sends`·게이트를 import하지 않고 작업을 제출·시작하지 않는다(계산 시작 라우트가 `JobQueue`로) | 위 순수 모듈, `docking_batch_inputs`·`docking_bundle`·`mutation_model_bundle`·`ligand_bundle`(검증 읽기·입장), jobs(작업 기록 읽기), reports, core |
 | `frontend/src/components/JevLoopPanel.tsx` | M25 리간드 설계·탐색 탭(M22 GA 영역 다음)과 단백질 공학 탭(M23 서열 GA 영역 다음)의 "JEV 루프" 영역(갈래 prop): 동의, 만들기, 보낼 내용 만들기·미리보기·승인·전송, JEV 판정 카드, 계산 시작·직접 지정·도킹 시작·포기, 후보 표·바퀴 표, 끝내기·요약·보고서 | `src/lib/jev-loop.ts`, `src/lib/jev.ts`, `src/lib/docking.ts`, `api.ts`, `LigandPanel`의 `FilterForm`, `MutationModelPanel`의 `PairInputs` |
+| `backend/mw/reaction_knowledge_constants.py`, `reaction_snapshots.py` | M26 표준 라이브러리 모듈: 닫힌 집합·상한·고정 문장·가공 행 형식(`SOURCE_FORMATS`)·허용 호스트(`ALLOWED_HOSTS`)·정규 JSON·매니페스트 검사(`mw` import 없음, 가져오기 명령도 파일 경로로 읽음), 반응 참조 폴더의 사용 중 세트를 호출마다 한 번 고정(`PinnedReactionSet`)하고 파일 해시·바이트·행 수를 확인. 내용은 해석하지 않는다. M15 스냅샷 모듈과 폴더·포인터·캐시가 따로다 | 표준 라이브러리(`reaction_snapshots`는 상수 모듈만) |
+| `backend/mw/reaction_knowledge.py`, `tools/reaction_knowledge.py` | M26 `link_reaction_knowledge`: 고정한 세트의 가공 파일 해석·색인(세트 하나 캐시), 체인마다 M-CSA 절(M-CSA가 적은 PDB 항목 기준 대응)·UniProt 절(번호 대응이 있는 체인만 구조 잔기에 연결)·반응 절, `reaction_knowledge@1`과 `validated_result`. 도구 모듈의 사전 검사 훅이 세트 고정·입장 검사를 구현 전에 한다. M20 v2 도구(`tools/mutations.py`)와 M20 보고서도 `validated_result`로 이 결과를 읽는다 | reaction 상수·스냅샷 모듈, `residue_numbering`(사슬 잔기 규칙), `mutation_candidates`·`mutation_constants`(표준 이름), tools(structural 파서), core |
+| `backend/mw/reaction_knowledge_reads.py`, `reaction_knowledge_reports.py` | M26 읽기 API(스냅샷 상태·PDB ID의 M-CSA 항목·결과 목록·상세, 이벤트 없음)와 계산값(저장 행 개수)·참조값을 분리한 보고서 | reaction_knowledge, `mutation_reports`(공용 한도·금지어), reports, core |
+| `frontend/src/components/ReactionKnowledgePanel.tsx` | M26 지식·보고서 탭의 "효소 반응 지식" 영역(번호 대응 화면과 JEV 영역 사이): 스냅샷 상태, 연결 요청(구조·확인한 PDB ID·체인 accession·선택적 번호 대응, M-CSA 제안), 체인별 M-CSA·UniProt·반응 절 표, 보고서 만들기. 뷰어 표시 없음 | `src/lib/reaction-knowledge.ts`(→ `src/lib/numbering.ts`), `api.ts` |
+| `scripts/import_reaction_references.py` | M26 반응 참조 가져오기 명령(사용자가 터미널에서 실행): 허용 호스트 셋에 HTTPS GET만 보내 받은 응답을 가공하고, 검증 뒤 새 세트를 원자적으로 설치하며 요청마다 기록한다. 제품 런타임과는 분리 | 표준 라이브러리(`urllib`), `reaction_knowledge_constants.py`(파일 경로로만), 로컬 M15 사용 중 세트(kinase accession 목록). `mw`를 import하지 않음 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
 | `backend/mw/analysis_executions.py` | M13 실행 driver: 실행 기록 접기, 계획 승인·철회, 한 단계 진행, 재시도, 범위 한정 중지, 충돌 복구, `workflow_summary@1`. 과학은 `ExecutionLink`를 단 `Run.call`·`JobQueue`·기존 보고서 함수로만 실행 | analysis_plans, runtime, jobs, 보고서 모듈 |
 | `frontend/src/components/AnalysisWorkflowPanel.tsx` | M13 분석 흐름 패널(메인 화면과 화학 작업 화면 공용): 화면 선택 가져오기, 계획 미리보기, 두 승인, 단계 목록, 결과 열기, 요약 | `src/lib/analysis.ts`, `api.ts`, PocketPanel·페이지의 결과 열기 콜백 |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
-의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈(의 함수)만 자식 프로세스로 실행한다. M19 일괄 작업 모듈은 같은 인터프리터에서 `docking_worker.py`와 의존성 없는 `docking_batch_constants.py`만 파일 경로로 불러 쓴다.
+의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈(의 함수)만 자식 프로세스로 실행한다. M19 일괄 작업 모듈은 같은 인터프리터에서 `docking_worker.py`와 의존성 없는 `docking_batch_constants.py`만 파일 경로로 불러 쓴다. M26 가져오기 명령은 `mw`를 import하지 않고 의존성 없는 `reaction_knowledge_constants.py`만 파일 경로로 불러 쓰며, 서버·도구·작업은 이 명령을 부르지 않는다. 둘은 반응 참조 폴더의 파일로만 이어지고, 서버 쪽 M26 모듈은 네트워크 모듈을 import하지 않는다.
 
 ## 대표 흐름: 업로드부터 보고서까지
 
@@ -135,14 +143,21 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간�
 
 리간드 탭 또는 단백질 공학 탭의 JEV 루프 영역에서 사용자가 게시된 후보 집합 하나에서 풀(2–20)·목표·루프 seed·반복 상한·계산 조건을 정하면 `POST /jev_loops`가 입장 검사 뒤 `jev_loop_created` 하나를 쓴다. 루프 기록 `jev_loop@1`은 저장하지 않고 `GET /jev_loops/{loop_id}`가 이벤트 로그를 한 번 읽어 작업 기록·저장 결과·제안에서 도출한다. 바퀴마다 사람이 "보낼 내용 만들기"를 누르면 `POST /commands`의 `build_jev_loop_projection`이 루프 기록으로 전송마다 섞은 순서의 `jev_loop_projection@1`을 저장하고(외부 요청 없음), 미리보기·전송은 M24 `/jev/preview`·`/jev/sends` 그대로다(승인 콜백 안에서 루프 검사 뒤 승인 이벤트, 게이트는 스키마로 루프 검증·본문·응답 해석만 가름, 답은 `jev_loop_choice@1`). 사람이 JEV의 선택이나 직접 지정한 후보로 `POST /jev_loops/{loop_id}/compute`를 누르면 라우트가 run 실행 잠금 안에서 `jev_loop_compute_approved`를 쓰고 단독 M18(리간드)·M21(단백질 모델링) 작업과 같은 인자·호출 키의 작업을 `JobQueue`에 제출한 뒤, 잠금을 놓고 기존 시작 라우트처럼 시작한다(첫 비싼 계산 승인은 기존 `/jobs/approve`). 단백질은 모델이 게시되면 사람이 같은 라우트로 변이 구조 도킹을 시작하거나 `abandon_docking`으로 포기한다. 작업은 기존 큐·guardian·작업 모듈이 돌리고 루프는 그 기록을 읽기만 한다. `POST /jev_loops/{loop_id}/end`가 요약 `jev_loop_result@1`을 저장한 뒤 `jev_loop_ended`를 쓰고, 보고서는 기존 `method_reports` 경로(`analysis_type: "jev_loop"`)다. 백그라운드·자동 다음 바퀴·자동 계산 시작은 없고 새 한도 증액 경로도 없다.
 
+## 효소 반응 지식 (M26)
+
+반응 참조 데이터는 사용자가 터미널에서 실행하는 가져오기 명령 `scripts/import_reaction_references.py`만 쓴다. 이 명령이 M-CSA API(`www.ebi.ac.uk`)·UniProt REST(`rest.uniprot.org`)·Rhea(`www.rhea-db.org`)에 HTTPS GET만 보내 받은 응답에서 허용 필드만 가공하고, 모든 형식 검사를 통과했을 때만 `.deps/reaction_reference/sets/<set_hash>/`에 원자적으로 설치한 뒤 `active.json`(`reaction_active@1`)을 rename으로 바꾼다. 요청 시도는 설치된 세트의 `files/request_log.jsonl`에 남는다. 서버는 이 폴더만 읽고, M15 참조 폴더와는 따로다. 지식·보고서 탭의 "효소 반응 지식" 영역에서 사용자가 같은 run의 구조, 확인한 PDB ID, 체인과 accession, 선택적으로 같은 구조의 번호 대응을 고르면(M-CSA 제안은 `GET /reaction_reference/pdb/{pdb_id}`), `POST /commands`의 `link_reaction_knowledge`가 `Run.call` 값싼 도구로 돈다. 사전 검사 훅이 사용 중 세트를 고정하고(없거나 손상이면 412) 입장을 검사한 뒤(세트 해시가 호출 키에 들어감), 구현이 같은 세트로 체인마다 M-CSA 절(M-CSA가 적은 PDB·저자 체인·번호와 구조 잔기 이름 대조)·UniProt 절·반응 절을 만들어 `reaction_knowledge@1`을 저장한다. 결과는 쓴 세트 기록과 참조 행을 담으므로 참조 폴더 없이 이벤트만으로 다시 열린다. 읽기는 `/reaction_reference/*`·`/reaction_knowledge*`(이벤트 없음)이고, 보고서는 기존 `method_reports` 경로(`analysis_type: "reaction_knowledge"`)다. 뷰어 표시는 없고 M13 흐름은 이 도구를 부르지 않는다.
+
+기존 흐름에서 바뀐 것: M20 `generate_mutation_candidates`는 선택 입력 `catalytic_annotation`(같은 run의 `reaction_knowledge@1`)을 받아 v2 집합(`mw.mutation_candidates/v2`)을 만든다. 도구 층이 결과를 `validated_result`로 검증해 보호에 필요한 값만 `mutation_candidates.py`의 순수 함수에 넘기고, 그중 M-CSA "대응됨" 행만 보호 근거(`catalytic_residue`)가 되며 검사 칸 `protection_checks.catalytic_residue_database`가 함께 저장된다. 이 단계 뒤 새 집합은 모두 v2이고 저장된 v1 집합은 바이트 그대로 유효하다. M21·M23·M24·M25는 두 세대를 모두 받고, 후보 집합을 고르는 곳은 `catalytic_residue_database.status`로 "촉매 잔기 검사 안 함"을 표시한다. M24 변이 투영·제안(`jev_choice@1`)·보고서의 다섯째 한계 문장은 와이어의 이 상태에 따라 J6(`not_available`, 바이트 그대로)·J6n·J6c(`J6_BY_CATALYTIC_STATUS`)이고, M26 반응 자료는 JEV 와이어에 들어가지 않는다. `mutation_candidates.py`가 바뀌어 M21·M23 호출 키가 달라졌다(영향은 `docs/engineering-notes.md`의 M26 함정).
+
 ## 외부 경계
 
 - 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다. M24 과학 전송은 과학 전송 동의가 켜진 run에서 사람이 승인한 투영 본문 하나씩만 간다: 리간드 후보(정규 SMILES, RDKit 추정 속성, PAINS 일치, 생성 방식 종류) 또는 변이 후보(잔기 7필드, 서열 구간 앞뒤 5개, 5.0 Å 이웃 잔기 이름, 리간드까지 거리, 보호 검사 상태, 포켓 요약), 고정 질문. M25 루프 전송은 같은 경로로 같은 종류의 후보 필드에 목표(`goal`)·계산된 후보 표시(`computed`, 활용형만 저장된 qvina 점수)·목표별 지시문을 더하고 후보 순서·별칭을 전송마다 섞는다. 서열 구간·이웃 잔기 이름으로 단백질이 알려질 수 있다.
-- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, 로컬 경로, handle, run ID, 후보 id, 루프 ID·루프 seed·바퀴 번호, 자격 증명, 이전 대화.
+- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, M26 반응 자료(M-CSA·UniProt·Rhea 값), 로컬 경로, handle, run ID, 후보 id, 루프 ID·루프 seed·바퀴 번호, 자격 증명, 이전 대화.
 - 정책(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 실제로 보내는 과학 데이터는 M24의 두 투영과 M25의 두 루프 투영뿐이며, 새 종류는 게이트 투영·미리보기·예산·감사를 함께 만들어야 보낸다. 자격 증명은 계속 전송 금지다.
+- 게이트 밖 예외(결정 0034): 사용자가 터미널에서 실행하는 M26 반응 참조 가져오기 명령 `scripts/import_reaction_references.py` 하나가 허용 호스트 셋(`www.ebi.ac.uk`·`rest.uniprot.org`·`www.rhea-db.org`)에 HTTPS GET만 보낸다. 보내는 것은 URL 질의(쪽 번호·accession 목록·열 이름)뿐이고 키·쿠키·사용자 데이터는 없으며, 리다이렉트·환경 프록시를 따르지 않고 호스트·스킴을 바꾸는 옵션도 없다. 서버·도구·작업·보고서·화면은 이 명령을 부르지 않는다. 고정 규칙과 요청 기록은 `docs/security.md`.
 - 브라우저의 글꼴·스크립트·Mol* 자산·예시 구조는 모두 로컬 번들이다. 오프스크린 QA는 loopback이 아닌 요청을 전부 차단하고 기록한다.
-- 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)에만 네트워크가 필요하다. 실행 중에는 다운로드하지 않는다. 참조 스냅샷 가져오기도 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
+- 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)와 위 M26 가져오기 명령에만 네트워크가 필요하다. 서버와 작업 프로세스는 실행 중에 다운로드하지 않는다. M15 참조 스냅샷 가져오기 명령(`scripts/import_reference_snapshots.py`)은 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
 
 ## 저장소 배치
 
-`runs/<run_id>/`에는 `events.jsonl`(원본 데이터), 불변 객체 파일, 없애도 되는 SQLite 색인, 작업 시도 디렉터리가 있다. 위치는 `MW_RUNS_DIR`로 바꿀 수 있다. 참조 스냅샷은 run 밖의 `.deps/reference/`(`MW_REFERENCE_DIR`)에 있고, 세트 폴더는 지우지 않는다. 객체와 색인을 지워도 이벤트만으로 전부 다시 만들 수 있다. 이 복구 방식은 작은 구조 작업을 전제로 하며, 큰 궤적 데이터는 다루지 않는다.
+`runs/<run_id>/`에는 `events.jsonl`(원본 데이터), 불변 객체 파일, 없애도 되는 SQLite 색인, 작업 시도 디렉터리가 있다. 위치는 `MW_RUNS_DIR`로 바꿀 수 있다. 참조 스냅샷은 run 밖의 `.deps/reference/`(M15, `MW_REFERENCE_DIR`)와 `.deps/reaction_reference/`(M26, `MW_REACTION_REFERENCE_DIR`, 세트마다 요청 기록 `files/request_log.jsonl`)에 따로 있고, 두 가져오기 명령 모두 이전 세트 폴더를 지우지 않는다. 객체와 색인을 지워도 이벤트만으로 전부 다시 만들 수 있다. 이 복구 방식은 작은 구조 작업을 전제로 하며, 큰 궤적 데이터는 다루지 않는다.

@@ -60,6 +60,48 @@ export const JEV_STATEMENTS = {
     "했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.",
   J7: "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다.",
 } as const;
+/**
+ * M26 spec 9: the fifth sentence of a mutation projection follows its wire's `catalytic_residue_database` status.
+ * `not_available` (every v1 candidate set) keeps J6 byte for byte; J6n / J6c are the v2 variants. They are not in
+ * `JEV_STATEMENTS` (J1–J7 stay fixed) and pass the wording check without an exemption.
+ */
+export const JEV_J6_VARIANTS = {
+  J6n: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 " +
+    "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 " +
+    "했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.",
+  J6c: "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 " +
+    "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 " +
+    "잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다.",
+} as const;
+export type JevCatalyticStatus = "not_available" | "not_checked" | "checked";
+export const JEV_J6_BY_CATALYTIC_STATUS: Record<JevCatalyticStatus, string> = {
+  not_available: JEV_STATEMENTS.J6, not_checked: JEV_J6_VARIANTS.J6n, checked: JEV_J6_VARIANTS.J6c };
+
+/**
+ * The `catalytic_residue_database` status of a projection wire (`backend/mw/jev_constants.catalytic_status`): a
+ * ligand wire has no protection checks (`not_available`); a mutation wire's value outside the closed set is null.
+ */
+export function jevCatalyticStatus(kind: JevKind, wire: { protection_checks?: Record<string, unknown> } | null):
+  JevCatalyticStatus | null {
+  if (kind === "ligand") return "not_available";
+  const value = wire?.protection_checks?.catalytic_residue_database;
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(JEV_J6_BY_CATALYTIC_STATUS, value)
+    ? value as JevCatalyticStatus : null;
+}
+
+/**
+ * The fixed sentences of a projection (`backend/mw/jev_constants.limitations_for`): J1–J4, then J5 (ligand) or the J6
+ * variant of `catalytic`, then J7 when late. Null for an input the server would refuse (no sentence is guessed).
+ */
+export function jevLimitationsFor(kind: JevKind, late: boolean, catalytic: string = "not_available"): string[] | null {
+  if ((kind !== "ligand" && kind !== "mutation") ||
+      !Object.prototype.hasOwnProperty.call(JEV_J6_BY_CATALYTIC_STATUS, catalytic) ||
+      (kind === "ligand" && catalytic !== "not_available")) return null;
+  const s = JEV_STATEMENTS;
+  return [s.J1, s.J2, s.J3, s.J4, kind === "ligand" ? s.J5 : JEV_J6_BY_CATALYTIC_STATUS[catalytic as JevCatalyticStatus],
+    ...(late ? [s.J7] : [])];
+}
+
 /** Fixed screen notes U1–U3 (spec 6), verbatim: U1 beside the send history, U2 and U3 beside the consent switch. */
 export const JEV_SCREEN_NOTES = {
   U1: "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다.",

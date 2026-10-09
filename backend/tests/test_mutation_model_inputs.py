@@ -18,6 +18,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import m20_v2_fixture as V2
 import pytest
 
 from mw import mutation_model_constants as K
@@ -282,6 +283,33 @@ def test_residue_mismatch_when_from_differs_from_the_structure_residue():
     mse = {**residue, "resname": "MSE"}
     _rejected("residue_mismatch", mi.check_residue, {"from": "M", "to": "A"}, {"residue": mse},
               [{**mse, "category": "polymer", "atom_count": 8}])
+
+
+@pytest.mark.parametrize(("name", "index", "excluded"), [("not_checked", 3, []), ("checked", 1, [6])])
+def test_admission_takes_stored_v2_candidate_sets(name, index, excluded, tmp_path):
+    """M26 spec 9: a STORED v2 set (fixtures/reaction/t6, SYNTHETIC-PROVENANCE-t6b.md) is admitted like a v1 set; the
+    checked one names K6 a catalytic_residue position (no candidate), I44W is a candidate of both."""
+    world = V2.stored_world(tmp_path / "runs")
+    run = world["run"]
+    content = run.store.load(world[name])
+    assert content["method_version"] == "mw.mutation_candidates/v2"
+    assert content["protection_checks"]["catalytic_residue_database"]["status"] == name
+    assert [p["residue"]["seq_auth"] for p in content["positions"] if "catalytic_residue" in p["exclusion_reasons"]] \
+        == excluded
+
+    def meta(handle):
+        try:
+            return run.store.meta(handle)
+        except (KeyError, ValueError, TypeError):
+            return None
+
+    admitted = mi.admit(_args(candidate_set=world[name], candidate_index=index), meta=meta, load=run.store.load,
+                        residues=lambda handle: structure_residues(run.store, handle)["residues"])
+    assert admitted["candidate_set_content"] == content and admitted["structure"] == world["prepared"]
+    assert (admitted["candidate"]["from"], admitted["candidate"]["to"], admitted["mutant_resname"]) == ("I", "W",
+                                                                                                    "TRP")
+    assert admitted["residue"] == {"model_number": 1, "chain_auth": "A", "chain_label": "A", "seq_auth": 44,
+                                   "seq_label": 44, "icode": "", "resname": "ILE"}
 
 
 def test_admission_check_order_is_arguments_first(ubq):

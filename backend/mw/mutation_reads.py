@@ -3,6 +3,9 @@
 * ``list_sets()``: this run's sets, newest first; each page row is re-validated and a row that does not validate shows
   ``valid: false`` with null fields (never stale numbers), as the M18 result list does.
 * ``set_detail()``: one validated set without ``positions``/``candidates`` plus ``total_positions``/``total_candidates``.
+* M26 spec 8.5: list rows and the detail also carry ``catalytic_status``, the stored
+  ``protection_checks.catalytic_residue_database.status`` (``not_available`` for a v1 set, ``not_checked`` /
+  ``checked`` for v2). It is only a new key: every other key and value is what it was for v1.
 * ``position_page()``: stored position rows filtered by status / source / exclusion reason / ``chain_auth``, in stored
   order or by ``ligand_min_distance_A`` (ascending, null rows always last, ties by order); ``total`` after the filter.
 * ``candidate_page()``: stored candidate rows filtered by ``position_index`` / ``to``, each with the residue and
@@ -16,14 +19,14 @@ from __future__ import annotations
 from typing import Any
 
 from . import mutation_candidates as mc
-from .mutation_constants import EXCLUSION_REASONS, KIND, ONE_LETTER_ORDER, POSITION_STATUSES, SCHEMA, SOURCE_KINDS
+from .mutation_constants import EXCLUSION_REASONS_V2, KIND, ONE_LETTER_ORDER, POSITION_STATUSES, SCHEMA, SOURCE_KINDS
 
 LIST_LIMIT_DEFAULT, LIST_LIMIT_MAX = 50, 100
 POSITION_LIMIT_DEFAULT, POSITION_LIMIT_MAX = 50, 100
 CANDIDATE_LIMIT_DEFAULT, CANDIDATE_LIMIT_MAX = 100, 200
 SORTS = ("order", "ligand_distance")
 _LIST_FIELDS = ("structure", "model_number", "ligand", "sources_used", "klifs_status", "numbering_map", "annotation",
-                "counts", "null_result")
+                "counts", "null_result", "catalytic_status")
 
 
 class ReadInvalid(ValueError):
@@ -68,7 +71,8 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
                                      "user": bool(sources["residues"])},
                        klifs_status=content["protection_checks"]["klifs_key_sites"]["status"],
                        numbering_map=parameters["numbering_map"], annotation=parameters["annotation"],
-                       counts=content["counts"], null_result=content["null_result"])
+                       counts=content["counts"], null_result=content["null_result"],
+                       catalytic_status=catalytic_status(content))
         except MutationEvidenceError:
             row.update(valid=False, **dict.fromkeys(_LIST_FIELDS))
         rows.append(row)
@@ -76,11 +80,17 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
             "rows": rows}
 
 
+def catalytic_status(content: dict[str, Any]) -> str:
+    """``not_available`` (v1), ``not_checked`` or ``checked`` (v2), as stored in the validated set."""
+    return content["protection_checks"]["catalytic_residue_database"]["status"]
+
+
 def set_detail(run: Any, handle: str) -> dict[str, Any]:
     content = validated(run, handle)
     return {"schema": "mutation_candidate_set_detail@1", "handle": handle,
             "result": {key: value for key, value in content.items() if key not in ("positions", "candidates")},
-            "total_positions": len(content["positions"]), "total_candidates": len(content["candidates"])}
+            "total_positions": len(content["positions"]), "total_candidates": len(content["candidates"]),
+            "catalytic_status": catalytic_status(content)}
 
 
 def _closed(value: str | None, closed: tuple[str, ...], name: str) -> None:
@@ -100,7 +110,7 @@ def position_page(run: Any, handle: str, *, status: str | None, source: str | No
                   chain_auth: str | None, sort: str, offset: int, limit: int) -> dict[str, Any]:
     _closed(status, POSITION_STATUSES, "status")
     _closed(source, SOURCE_KINDS, "source")
-    _closed(exclusion_reason, EXCLUSION_REASONS, "exclusion_reason")
+    _closed(exclusion_reason, EXCLUSION_REASONS_V2, "exclusion_reason")   # v2 closed set (a superset of v1)
     _closed(sort, SORTS, "sort")
     content = validated(run, handle)
     rows = [row for row in content["positions"]

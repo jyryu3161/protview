@@ -1,0 +1,39 @@
+{
+  "entryType": "UniProtKB reviewed (Swiss-Prot)",
+  "primaryAccession": "Q0SYT1",
+  "uniProtkbId": "SYT9_SYNTH",
+  "organism": {"scientificName": "Synthetica fixturae", "taxonId": 999999991},
+  "proteinDescription": {
+    "recommendedName": {"fullName": {"value": "SYNTHETIC fixture protein T9a isoform sites"},
+                        "ecNumbers": [{"value": "9.99.9.1"}]}
+  },
+  "sequence": {"length": 150},
+  "features": [
+    {"type": "Active site",
+     "location": {"start": {"value": 40, "modifier": "EXACT"}, "end": {"value": 40, "modifier": "EXACT"}},
+     "description": "Synthetic canonical active site text"},
+    {"type": "Binding site",
+     "location": {"start": {"value": 61, "modifier": "EXACT"}, "end": {"value": 61, "modifier": "EXACT"},
+                  "sequence": "Q0SYT1-2"},
+     "description": "", "evidences": [{"evidenceCode": "ECO:9999999"}],
+     "ligand": {"name": "synthetic isoform ligand", "id": "ChEBI:CHEBI:993901"}},
+    {"type": "Binding site",
+     "location": {"start": {"value": 12, "modifier": "EXACT"}, "end": {"value": 14, "modifier": "EXACT"}},
+     "description": "", "ligand": {"name": "synthetic isoform ligand", "id": "ChEBI:CHEBI:993901"}},
+    {"type": "Site",
+     "location": {"start": {"value": 140, "modifier": "UNKNOWN"}, "end": {"value": 141, "modifier": "EXACT"},
+                  "sequence": "Q0SYT1-3"},
+     "description": "Synthetic isoform-only site text"},
+    {"type": "Site",
+     "location": {"start": {"value": 88, "modifier": "EXACT"}, "end": {"value": 89, "modifier": "EXACT"}},
+     "description": "Synthetic canonical site text"}
+  ],
+  "comments": [
+    {"commentType": "CATALYTIC ACTIVITY",
+     "reaction": {"name": "synthetic F = synthetic G",
+                  "reactionCrossReferences": [{"database": "Rhea", "id": "RHEA:93901"},
+                                              {"database": "ChEBI", "id": "CHEBI:993902"}],
+                  "ecNumber": "9.99.9.1"}}
+  ],
+  "extraAttributes": {"uniParcId": "UPISYNTHETIC0009"}
+}

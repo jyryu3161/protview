@@ -123,6 +123,7 @@ from .jev_constants import (
     WINDOW_FLANK,
     WIRE_SCHEMAS,
     WIRE_TASK,
+    catalytic_status,
     limitations_for,
 )
 
@@ -605,7 +606,7 @@ def build_projection_content(kind: str, source_handle: str, wire: dict[str, Any]
         "wire": wire,
         "wire_sha256": hashlib.sha256(canonical_ascii(wire)).hexdigest(),
         "body_sha256": body_sha256(body), "body_bytes": len(body),
-        "limitations": limitations_for(kind, False),
+        "limitations": limitations_for(kind, False, catalytic_status(kind, wire)),
     }
     return validated_projection(content)
 
@@ -682,7 +683,7 @@ def _validate_projection(content: Any) -> None:
     body = encode_body(wire, question["id"], aliases)
     _require(content["body_sha256"] == body_sha256(body) and _is_int(content["body_bytes"])
              and content["body_bytes"] == len(body) and len(body) <= MAX_BODY_BYTES, "body hash and length")
-    _require(content["limitations"] == limitations_for(kind, False), "limitations")
+    _require(content["limitations"] == limitations_for(kind, False, catalytic_status(kind, wire)), "limitations")
     stored = json.dumps(content, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
     _require(len(stored.encode("utf-8")) <= MAX_OBJECT_BYTES, "object size")
 

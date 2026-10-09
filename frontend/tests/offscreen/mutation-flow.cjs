@@ -15,6 +15,12 @@
 //         않음) → numbering map + annotation → direct + ligand shell with protection/release → allowed residues shrunk →
 //         same request again (same handle) → real fpocket → pocket source → filters/sort/paging → zero candidates →
 //         server refusals → report + library → late responses (result switch, run switch) → tab state → wording
+//   catalytic  (M26, --plan from scripts/m26_offscreen_acceptance.py) M20 v2 with M-CSA catalytic annotations made in the
+//         지식·보고서 "효소 반응 지식" area by real clicks: UK2 without a result, newest result pre-selected (never
+//         submitted), per-chain prediction, chains_not_covered and checked sets, conflict / unmatched lists, release
+//         ("해제됨"), seven exclusion reasons, limitation sentence 3 variants (with a stored v1 run), and the
+//         "촉매 잔기 검사 안 함" mark on the M20 / M21 / M23 / M24 / M25 pickers. Reaction reference values of the
+//         fixture stage are SYNTHETIC (the plan says so); the screen is compared with the stored sets.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -25,7 +31,7 @@ const { waitForViewer } = require("./normal-flow.cjs");
 const REPO = path.resolve(__dirname, "../../..");
 const STRUCTURE = path.join(REPO, "backend/tests/fixtures/public_1mq4.cif");
 const PREFLIGHT = path.join(REPO, "docs/qa/m20-mutations-20261003/preflight.txt");
-const MODES = ["main"];
+const MODES = ["main", "catalytic"];
 const TAB = "단백질 공학";
 const ACCESSION = "O14965";
 const TOOL = "generate_mutation_candidates";
@@ -41,6 +47,9 @@ const LIMITATIONS = [
   "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다.",
   "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다.",
 ];
+// M26: sets the tool builds now are v2; without an M-CSA annotation sentence 3 is its not_checked variant (LIMIT3 below,
+// M26 spec §8.4); LIMITATIONS stays the v1 text of stored v1 sets.
+const limitationsNotChecked = () => [LIMITATIONS[0], LIMITATIONS[1], LIMIT3.not_checked, LIMITATIONS[3], LIMITATIONS[4]];
 const NO_RUN_REASON = "run이 없습니다. 구조 분석 탭에서 run을 먼저 고르세요.";
 const NO_PREPARED_REASON = "이 run에 전처리 구조가 없습니다. 구조 분석 탭에서 구조를 먼저 전처리하세요.";
 const KLIFS_NOTICE = "KLIFS 주요 부위 보호를 검사하지 않음";
@@ -54,12 +63,17 @@ const REFUSALS = {
   ligand_required: "리간드 껍질에는 리간드 선택이 필요함",
 };
 const FORBIDDEN = /친화|ΔΔG|안정성|순위|추천|최적|개선|활성|예측|좋은|유망|안전|\brank|\bbest|optimal|improv|recommend|affinity|stabili|predict/gi;
+// M26 (spec §2, §7): the catalytic mode also refuses importance and effect wording in the M20 panel, the M26 text
+// included; the fixed limitation sentences (sentence 2 says "효과") stay outside the check as in the main mode.
+const FORBIDDEN_CATALYTIC = new RegExp(`${FORBIDDEN.source}|중요|핵심|필수|효과|\\beffect|essential|critical|important`, "gi");
 const ALTER_LABEL = "QA refusal fixture (labeled renderer route): the generate_mutation_candidates request body is altered " +
   "in flight so that the real server refuses it; the server reply is shown unchanged";
 const HOLD_LABEL = "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)";
 const PROVIDER_EVENT_TYPES = new Set(["egress", "egress_budget_settled", "viewer_dispatch_started"]);
 
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
+/** Length and SHA-256 of a text that may quote reference values: what a step returns instead of the text itself. */
+const textDigest = text => ({ chars: (text ?? "").length, sha256: sha(Buffer.from(text ?? "", "utf8")) });
 const fileRecord = file => file && fs.existsSync(file)
   ? { path: file, bytes: fs.statSync(file).size, sha256: sha(fs.readFileSync(file)) } : { path: file ?? null, missing: true };
 const enc = encodeURIComponent;
@@ -69,7 +83,7 @@ const sameResidue = (a, b) => !!a && !!b && RESIDUE_FIELDS.every(field => a[fiel
 const resKey = ref => `${ref.resname}${ref.seq_auth}`;
 
 function options(argv) {
-  const value = { url: "http://127.0.0.1:3000", artifacts: null, mode: null, "set-hash": null };
+  const value = { url: "http://127.0.0.1:3000", artifacts: null, mode: null, "set-hash": null, plan: null };
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
     if (!key.startsWith("--")) throw new Error(`Unknown argument ${key}`);
@@ -77,14 +91,17 @@ function options(argv) {
     if (!(name in value)) throw new Error(`Unknown argument ${key}`);
     value[name] = argv[++i];
   }
-  if (!value.artifacts || !MODES.includes(value.mode) || !value["set-hash"]) throw new Error(
-    `Usage: mutation-flow.cjs --mode ${MODES.join("|")} --artifacts <dir> --set-hash <active reference set hash> ` +
-    "[--url http://127.0.0.1:3000]. Needs a fresh runs root. Full sequence: scripts/m20_offscreen_acceptance.py.");
+  if (!value.artifacts || !MODES.includes(value.mode) || (value.mode === "main" && !value["set-hash"]) ||
+      (value.mode === "catalytic" && !value.plan)) throw new Error(
+    `Usage: mutation-flow.cjs --mode ${MODES.join("|")} --artifacts <dir> (main: --set-hash <active reference set hash>; ` +
+    "catalytic: --plan <m26 plan.json>) [--url http://127.0.0.1:3000]. Needs a fresh runs root. Full sequences: " +
+    "scripts/m20_offscreen_acceptance.py, scripts/m26_offscreen_acceptance.py.");
   const url = new URL(value.url);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) || !["http:", "https:"].includes(url.protocol))
     throw new Error("Only a loopback service is permitted");
   value.artifacts = path.resolve(value.artifacts);
   value.url = new URL("/", value.url).toString();
+  value.planData = value.plan ? JSON.parse(fs.readFileSync(value.plan, "utf8")) : null;
   return value;
 }
 
@@ -412,8 +429,9 @@ async function openReady(page) {
 async function chooseStructure(page, prepared) {
   await panel(page).locator(`label[data-mutation-structure="${prepared}"] input`).check();
   control(evidenceRef.value, "mutation-structures", { checked: prepared });
-  await waitFor(page, async () => (await testId(page, "mutation-ligand").locator("option").count()) > 1 ? true : null,
-    "structure residues read (ligand options)", 60000);
+  // residues read: ligand options listed, or the no-ligand note (a structure without ligands, e.g. 1A30 in the M26 run)
+  await waitFor(page, async () => (await testId(page, "mutation-ligand").locator("option").count()) > 1 ||
+    (await testId(page, "mutation-no-ligands").count()) > 0 ? true : null, "structure residues read (ligand options)", 60000);
 }
 const evidenceRef = { value: null };
 async function selectOptions(locator) {
@@ -579,7 +597,7 @@ async function panelWording(page) {
     return { text: copy.textContent, limits };
   });
 }
-function forbiddenIn(text) { return [...text.matchAll(FORBIDDEN)].map(match => match[0]); }
+function forbiddenIn(text, pattern = FORBIDDEN) { return [...text.matchAll(pattern)].map(match => match[0]); }
 async function noControls(page) {
   return { state: await panelState(page), text: clean(await panel(page).textContent()),
     controls: await panel(page).locator("button, input, select, textarea, a, table").count() };
@@ -709,7 +727,8 @@ async function modeMain(session, input, rec_, evidence, log) {
         assert.ok(value.klifsCells.length > 0 && value.klifsCells.every(text => text === "— (검사하지 않음)"), value.klifsCells.join("|"));
         assert.equal(value.listStatus, "not_checked");
         assert.ok(value.listText.includes("KLIFS 주요 부위 검사하지 않음"), value.listText);
-        assert.equal(value.catalytic, "not_available");
+        // M26: the tool builds v2 sets; without an M-CSA annotation the catalytic check is not_checked (v1: not_available)
+        assert.equal(value.catalytic, "not_checked");
         const positions = await storedPositions(page, runA, s0.handle);
         assert.ok(positions.every(row => row.protection.klifs_sites === null && !row.exclusion_reasons.includes("klifs_key_site")));
         return { klifs, rowText: value.rowText };
@@ -745,7 +764,7 @@ async function modeMain(session, input, rec_, evidence, log) {
         assert.equal(shownCounts, `위치 ${counts.positions}개 · 후보 위치 ${counts.candidate_positions}개 · 제외 ${counts.excluded_positions}개 · ` +
           `해제 ${counts.released_positions}개 · 후보 ${counts.candidates}개`);
         const seen = await checkWording("S0 opened");
-        assert.deepEqual(seen.limits, LIMITATIONS);
+        assert.deepEqual(seen.limits, limitationsNotChecked());
         return { maxDelta, counts, metal: metalRows.map(row => [resKey(row.residue), row.protection.metal.min_distance_A]) };
       });
   });
@@ -1259,13 +1278,15 @@ async function modeMain(session, input, rec_, evidence, log) {
       await row.click();
       const pre = content.getByLabel(`저장된 보고서 ${created.handle}`, { exact: true });
       await pre.waitFor({ timeout: 30000 });
-      return { kind, text: await pre.textContent() };
+      // only the length, the hash and the missing fixed sentences leave this action (never the report text itself)
+      const text = (await pre.textContent()) ?? "";
+      return { kind, ...textDigest(text), missing: limitationsNotChecked().filter(sentence => !text.includes(sentence)) };
     }, async value => {
       assert.equal(value.kind, "변이 후보 보고서");
-      const saved = await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`);
-      assert.equal(value.text, saved.markdown);
-      for (const sentence of LIMITATIONS) assert.ok(value.text.includes(sentence), `report lacks ${sentence}`);
-      return { kind: value.kind, markdownSha256: sha(Buffer.from(value.text)) };
+      const saved = textDigest((await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`)).markdown);
+      assert.deepEqual([value.chars, value.sha256], [saved.chars, saved.sha256], "shown report differs from the stored Markdown");
+      assert.deepEqual(value.missing, [], `report lacks ${value.missing.join(" | ")}`);
+      return { kind: value.kind, markdownSha256: value.sha256 };
     });
     for (const [label, format] of [["Markdown 다운로드", "markdown"], ["JSON 다운로드", "json"]]) {
       const route = `/runs/${runA}/reports/download?handle=${enc(created.handle)}&format=${format}`;
@@ -1446,8 +1467,621 @@ async function modeMain(session, input, rec_, evidence, log) {
   for (const id of [runA, runB].filter(Boolean)) evidence.providerCalls.push(await providerCalls(page, id));
 }
 
+// ------------------------------------------------------------------ mode catalytic (M26, spec §8, §10.2, §10.3)
+// Spec §11.1 UK2 and §8.4 sentence 3, verbatim; the v1 third sentence is LIMITATIONS[2] above (unchanged).
+const UK2 = "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다.";
+const UK3 = "UniProt 부위 정보는 지식 탭에서만 보이며 보호에 쓰지 않음.";
+const LIMIT3 = {
+  checked: "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다.",
+  not_checked: "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 주석은 " +
+    "주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다).",
+  not_available: LIMITATIONS[2],
+};
+// Screen text of the M20 area (the product's wording, copied here as the expectation).
+const CATALYTIC_NOT_SELECTED = "M-CSA 촉매 잔기 보호를 검사하지 않음: 같은 구조의 효소 반응 지식 결과를 고르지 않았습니다. " +
+  "이 요청에서는 M-CSA 촉매 잔기가 제외 목록에 들어가지 않습니다.";
+const SERVER_POSITIONS_NOTE = "포켓·리간드 껍질 출처의 위치는 서버가 정하므로, 아래는 이 구조의 체인마다 위치가 생기면 적용될 " +
+  "촉매 잔기 검사 상태입니다.";
+const UNCOVERED_LABEL = { not_in_annotation: "고른 효소 반응 지식 결과에 이 체인이 없음", chain_not_listed: "이 체인은 M-CSA 행에 없음",
+  pdb_not_in_snapshot: "이 PDB ID는 스냅샷에 없음", not_checked: "결과가 이 체인의 M-CSA를 검사하지 않음(PDB ID 없음)" };
+const EXCLUSION_V1 = ["non_standard_residue", "user_protected", "klifs_key_site", "metal_contact", "disulfide_cys",
+  "no_allowed_alternative"];
+const EXCLUSION_V2 = ["non_standard_residue", "user_protected", "klifs_key_site", "metal_contact", "disulfide_cys",
+  "catalytic_residue", "no_allowed_alternative"];
+const EXCLUSION_LABEL = { non_standard_residue: "표준 잔기가 아님", user_protected: "사용자 보호", klifs_key_site: "KLIFS 주요 부위",
+  metal_contact: "금속 근접", disulfide_cys: "이황화 Cys", catalytic_residue: "M-CSA 촉매 잔기 주석",
+  no_allowed_alternative: "허용 목록에 바꿀 잔기 없음" };
+const CATALYTIC_REASON_LABEL = { annotation_not_given: "효소 반응 지식 결과를 고르지 않음",
+  chains_not_covered: "위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음", not_implemented: "구현하지 않음" };
+/** One entry of the 제외 사유별 위치 수 line: catalytic_residue is "—" with the reason unless the check covered a chain
+ * (no annotation / no chain covered: the stored 0 counts nothing); partly covered names the covered chains. */
+function reasonCountText(reason, value, check) {
+  const label = EXCLUSION_LABEL[reason];
+  if (reason !== "catalytic_residue") return `${label} ${value}개`;
+  if (!("covered_chains" in check)) return `${label} — (${CATALYTIC_REASON_LABEL[check.reason]} (${check.reason}), 세지 않음)`;
+  if (!check.covered_chains.length) return `${label} — (M-CSA가 다룬 체인 없음, 세지 않음)`;
+  return check.uncovered_chains.length ? `${label} ${value}개 (검사한 체인 ${check.covered_chains.join(", ")}만)`
+    : `${label} ${value}개`;
+}
+const REACTION_TOOL = "link_reaction_knowledge";
+const posted = (log, since) => log.filter(row => row.at >= since && row.method === "POST" && row.api)
+  .map(row => `${row.path}${row.tool ? ` ${row.tool}` : ""}`);
+const rkey = ref => `${ref.resname} ${ref.chain_auth}:${ref.seq_auth}${ref.icode}`;
+
+async function chooseLigandAt(page, spec) {
+  const select = testId(page, "mutation-ligand");
+  const found = (await selectOptions(select)).filter(item => item.text.startsWith(`${spec.resname} ${spec.chain}:${spec.seq} ·`));
+  assert.equal(found.length, 1, `ligand option ${spec.resname} ${spec.chain}:${spec.seq}`);
+  await select.selectOption(found[0].value);
+  control(evidenceRef.value, "mutation-ligand", { chosen: found[0].text });
+}
+async function pickResidueAt(page, picker, spec) {
+  const select = testId(page, `mutation-pick-${picker}`);
+  const found = (await selectOptions(select)).filter(item => item.text.startsWith(`${spec.resname} ${spec.chain}:${spec.seq} ·`));
+  assert.equal(found.length, 1, `${picker} option ${spec.resname} ${spec.chain}:${spec.seq}: ${found.length}`);
+  const before = Number(await testId(page, `mutation-picker-${picker}`).getAttribute("data-count"));
+  await select.selectOption(found[0].value);
+  await testId(page, `mutation-add-${picker}`).click();
+  await waitFor(page, async () => Number(await testId(page, `mutation-picker-${picker}`).getAttribute("data-count")) === before + 1
+    ? true : null, `${picker} count +1`, 10000);
+  control(evidenceRef.value, `mutation-pick-${picker}`, { picked: found[0].text });
+}
+/** The plan's position sources on the request form (ligand shell around a chosen ligand, or direct residues). */
+async function setPositions(page, positions) {
+  if (positions.ligandShell) {
+    await setCheck(page, "mutation-source-ligand-shell", true);
+    await fillText(page, "mutation-radius", positions.ligandShell.radius);
+    await chooseLigandAt(page, positions.ligandShell);
+  } else {
+    await setCheck(page, "mutation-source-user", true);
+    for (const residue of positions.residues) await pickResidueAt(page, "user", residue);
+  }
+}
+
+// The 효소 반응 지식 area (지식·보고서), driven the same way as reaction-knowledge-flow.cjs.
+const rpanel = page => page.locator('#mw-app-panel-knowledge [data-testid="reaction-panel"]');
+const rt = (page, id) => rpanel(page).locator(`[data-testid="${id}"]`);
+async function linkReaction(page, run, structure, pdbId, chains) {
+  await selectTab(page, "지식·보고서");
+  await rpanel(page).waitFor({ timeout: 15000 });
+  await rt(page, "reaction-request-form").waitFor({ timeout: 60000 });
+  const select = rt(page, "reaction-structure");
+  if (await select.inputValue() !== "") await select.selectOption("");
+  await select.selectOption(structure);
+  for (const chain of chains)
+    await waitFor(page, async () => await rt(page, `reaction-chain-${chain}`).count() === 1 ? true : null, `chain ${chain}`, 60000);
+  await waitFor(page, async () => { const hint = clean(await rt(page, "reaction-pdb-hint").textContent());
+    return hint && !hint.includes("읽는 중") ? hint : null; }, "PDB ID suggestion", 30000);
+  await rt(page, "reaction-pdb-id").fill(pdbId);
+  await rt(page, "reaction-pdb-confirm").check();
+  for (const chain of chains) await rt(page, `reaction-chain-${chain}`).check();
+  const button = rt(page, "reaction-link");
+  await waitFor(page, async () => await button.isEnabled() ? true : null, "연결하기 enabled", 15000);
+  const response = page.waitForResponse(item => item.request().method() === "POST" &&
+    new URL(item.url()).pathname === `/api/runs/${run}/commands` && item.request().postDataJSON()?.tool === REACTION_TOOL,
+  { timeout: 180000 });
+  await button.click();
+  const body = await (await response).json();
+  assert.equal(body.ok, true, `link failed: ${JSON.stringify(body).slice(0, 400)}`);
+  await rpanel(page).locator(`[data-testid="reaction-link-done"][data-reaction-new-result="${body.handle.handle}"]`)
+    .waitFor({ timeout: 30000 });
+  return body.handle.handle;
+}
+async function catalyticCells(page) {
+  if (!await testId(page, "mutation-positions").count()) return [];
+  return testId(page, "mutation-positions").locator("tr[data-mutation-position]").evaluateAll(items => items.map(item => {
+    const cell = item.querySelector('[data-cell="catalytic"]');
+    return { residue: item.getAttribute("data-residue"), status: item.getAttribute("data-status"),
+      reasons: item.getAttribute("data-exclusion-reasons"), kind: cell?.getAttribute("data-catalytic") ?? null,
+      released: cell?.getAttribute("data-released") ?? null, text: cell?.textContent.trim() ?? null };
+  }));
+}
+function catalyticCellText(protection) {
+  const value = protection.catalytic;
+  if (value === undefined) return "— (촉매 잔기 검사 전 v1 집합)";
+  if (value === null) return "— (이 체인의 촉매 잔기를 검사하지 않음)";
+  if (!value.length) return "대응된 M-CSA 촉매 잔기 행 없음(검사함)";
+  const entries = value.map(entry => `M-CSA ${entry.mcsa_id} 잔기 순번 ${entry.residue_index}${entry.is_reference ? " · 기준 구조" : ""}`)
+    .join(", ");
+  return protection.released ? `${entries} · 해제됨` : entries;
+}
+/** The stored set's catalytic check, positions and limitations versus the screen (one opened set). */
+async function verifyCatalyticSet(page, run, handle, want) {
+  const detail = await storedSet(page, run, handle);
+  const result = detail.result;
+  const check = result.protection_checks.catalytic_residue_database;
+  const positions = await storedPositions(page, run, handle);
+  await waitPositions(page, run, handle, "sort=order&offset=0&limit=50", result.ligand !== null, handle.slice(-8));
+  const block = testId(page, "mutation-catalytic-check");
+  const ui = { status: await block.getAttribute("data-catalytic-status"),
+    statusText: clean(await testId(page, "mutation-catalytic-status").textContent()),
+    covered: clean(await testId(page, "mutation-catalytic-covered-chains").textContent()),
+    uncovered: clean(await testId(page, "mutation-catalytic-uncovered-chains").textContent()),
+    matched: clean(await testId(page, "mutation-catalytic-matched").textContent()),
+    conflict: clean(await testId(page, "mutation-catalytic-conflict").textContent()),
+    unmatched: clean(await testId(page, "mutation-catalytic-unmatched").textContent()),
+    badge: await testId(page, "mutation-catalytic-check-badge").count() ? clean(await testId(page, "mutation-catalytic-check-badge")
+      .textContent()) : null,
+    conflicts: await testId(page, "mutation-catalytic-conflicts").locator("li").evaluateAll(items => items.map(item =>
+      ({ chain: item.getAttribute("data-chain"), id: Number(item.getAttribute("data-mcsa-id")),
+        index: Number(item.getAttribute("data-residue-index")), text: item.textContent.replace(/\s+/g, " ").trim() }))),
+    unmatchedList: await testId(page, "mutation-catalytic-unmatched-list").locator("li").evaluateAll(items => items.map(item =>
+      ({ chain: item.getAttribute("data-chain"), id: Number(item.getAttribute("data-mcsa-id")),
+        index: Number(item.getAttribute("data-residue-index")), text: item.textContent.replace(/\s+/g, " ").trim() }))),
+    limits: await testId(page, "mutation-limitations").locator("[data-limitation]").allInnerTexts(),
+    limitStatus: await testId(page, "mutation-limitations").getAttribute("data-catalytic-status"),
+    reasonCounts: clean(await testId(page, "mutation-reason-counts").textContent()),
+    reasonFilter: (await selectOptions(testId(page, "mutation-filter-reason"))).map(item => item.value).filter(Boolean),
+    lists: await testId(page, "mutation-catalytic-lists").count(),
+    cells: await catalyticCells(page) };
+  assert.equal(check.status, want.status, `${handle} catalytic status`);
+  assert.equal(check.reason, want.reason, `${handle} catalytic reason`);
+  assert.equal(ui.status, check.status);
+  assert.ok(ui.statusText.includes(`(${check.status})`), ui.statusText);
+  if (check.reason) assert.ok(ui.statusText.includes(`(${check.reason})`), ui.statusText);
+  assert.equal(ui.limitStatus, check.status);
+  assert.deepEqual(ui.limits, result.limitations);
+  assert.equal(result.limitations[2], LIMIT3[check.status], "limitation sentence 3 variant");
+  const v1 = check.status === "not_available";
+  assert.equal(result.method_version, v1 ? "mw.mutation_candidates/v1" : "mw.mutation_candidates/v2");
+  const order = v1 ? EXCLUSION_V1 : EXCLUSION_V2;
+  // stored objects are canonical JSON (sorted keys): the key set, not its order, is the stored fact
+  assert.deepEqual(Object.keys(result.counts.exclusion_reason_counts).sort(), [...order].sort(), "exclusion reason keys");
+  assert.deepEqual(ui.reasonFilter, order, "reason filter options");
+  for (const reason of order) assert.ok(ui.reasonCounts.includes(reasonCountText(reason,
+    result.counts.exclusion_reason_counts[reason], check)), `${reason}: ${ui.reasonCounts}`);
+  // no chain covered: the stored catalytic_residue 0 counts nothing and is never shown as a number (spec §2)
+  if (order.includes("catalytic_residue") && !(check.covered_chains ?? []).length)
+    assert.ok(!/M-CSA 촉매 잔기 주석 \d/.test(ui.reasonCounts), `not checked shown as a count: ${ui.reasonCounts}`);
+  if (!("covered_chains" in check)) {
+    for (const text of [ui.covered, ui.uncovered, ui.matched, ui.conflict, ui.unmatched])
+      assert.ok(text.startsWith("—") && !/\d/.test(text), `not checked shown with a number: ${text}`);
+    assert.ok(positions.every(row => v1 ? row.protection.catalytic === undefined : row.protection.catalytic === null));
+  } else {
+    assert.deepEqual(check.covered_chains, want.covered, "covered chains");
+    assert.deepEqual(check.uncovered_chains, want.uncovered, "uncovered chains");
+    if (want.counts) assert.deepEqual({ matched_rows: check.matched_rows, conflict_rows: check.conflict_rows,
+      unmatched_rows: check.unmatched_rows }, want.counts, "row counts");
+    assert.equal(ui.covered, check.covered_chains.length ? check.covered_chains.join(", ") : "— (M-CSA가 다룬 체인 없음)");
+    assert.equal(ui.uncovered, check.uncovered_chains.length ? check.uncovered_chains.map(item =>
+      `${item.chain_auth} ${UNCOVERED_LABEL[item.coverage]} (${item.coverage})`).join(", ") : "빈 목록 ([])");
+    for (const [key, text] of [["matched_rows", ui.matched], ["conflict_rows", ui.conflict], ["unmatched_rows", ui.unmatched]])
+      assert.equal(text, check.covered_chains.length ? `${check[key]}개` : "— (M-CSA가 다룬 체인 없음)", key);
+    if (check.covered_chains.length && (check.conflicts.length || check.unmatched.length)) {
+      assert.equal(ui.lists, 1, "the conflict / unmatched lists are not shown");
+      assert.deepEqual(ui.conflicts.map(item => [item.chain, item.id, item.index]),
+        check.conflicts.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]));
+      assert.deepEqual(ui.unmatchedList.map(item => [item.chain, item.id, item.index]),
+        check.unmatched.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]));
+      [...check.conflicts, ...check.unmatched].forEach(item => {
+        const shown = [...ui.conflicts, ...ui.unmatchedList].find(row => row.chain === item.chain_auth && row.id === item.mcsa_id &&
+          row.index === item.residue_index);
+        assert.ok(shown.text.includes(`auth ${item.listed.auth_resid ?? "—"}`) && shown.text.includes(item.listed.code) &&
+          shown.text.includes(`(${item.reason})`), shown.text);
+      });
+    } else {
+      // empty stored lists (real rows without conflict / unmatched): no list block, the counts read 0개 (checked)
+      assert.equal(ui.lists, 0, "a list block is shown for empty stored lists");
+      assert.deepEqual([ui.conflicts, ui.unmatchedList], [[], []]);
+    }
+    if (want.conflicts) assert.deepEqual(check.conflicts.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]), want.conflicts);
+    if (want.unmatched) assert.deepEqual(check.unmatched.map(item => [item.chain_auth, item.mcsa_id, item.residue_index]), want.unmatched);
+    for (const row of positions) {
+      const covered = check.covered_chains.includes(row.residue.chain_auth);
+      if (!covered) { assert.equal(row.protection.catalytic, null, `${rkey(row.residue)} not covered`); continue; }
+      const expected = (want.catalytic ?? {})[rkey(row.residue)];
+      if (want.catalytic) assert.deepEqual(row.protection.catalytic.map(item => [item.mcsa_id, item.residue_index, item.is_reference]),
+        expected ?? [], `${rkey(row.residue)} catalytic`);
+      assert.equal(row.protection.reasons.includes("catalytic_residue"), row.protection.catalytic.length > 0);
+      if (row.protection.catalytic.length && !row.protection.released) {
+        assert.equal(row.status, "excluded");
+        assert.ok(row.exclusion_reasons.includes("catalytic_residue"));
+      }
+    }
+  }
+  if (check.status === "checked") assert.equal(ui.badge, null, "a checked set carries the not-checked mark");
+  else assert.ok(ui.badge?.startsWith(UK2), `badge ${ui.badge}`);
+  const byResidue = new Map(positions.map(row => [rkey(row.residue), row]));
+  assert.ok(ui.cells.length > 0);
+  for (const cell of ui.cells) {
+    const row = byResidue.get(cell.residue);
+    assert.ok(row, `shown position ${cell.residue} not stored`);
+    assert.equal(cell.text, catalyticCellText(row.protection), `${cell.residue} catalytic cell`);
+    assert.equal(cell.released, row.protection.released ? "true" : null);
+    // not checked is "—" with the reason, never a number ("v1" names the set generation, not a count)
+    if (row.protection.catalytic === null || row.protection.catalytic === undefined)
+      assert.ok(!/\d/.test(cell.text.replace("v1 집합", "")), cell.text);
+  }
+  return { handle, status: check.status, reason: check.reason, covered: check.covered_chains ?? null,
+    uncovered: check.uncovered_chains ?? null, counts: "covered_chains" in check ? { matched: check.matched_rows,
+      conflict: check.conflict_rows, unmatched: check.unmatched_rows } : null, limitation3: result.limitations[2],
+    protectedPositions: positions.filter(row => row.protection.catalytic?.length).map(row => [rkey(row.residue), row.status,
+      row.protection.released]) };
+}
+/** The "촉매 잔기 검사 안 함" mark inside one picker row (M24 sources, M25 pool): how many, its badge text and detail. */
+async function pickerMark(row, testId) {
+  const count = await row.locator(`[data-testid="${testId}"]`).count();
+  return { count, mark: count === 1 ? clean(await row.locator(`[data-testid="${testId}"] .mw-catalytic-badge`).textContent()) : null,
+    detail: count === 1 ? clean(await row.locator(`[data-testid="${testId}-detail"]`).textContent()) : null };
+}
+function checkPickerMark(seen, handle) {
+  assert.equal(seen.count, 1, `${handle}: mark count`);
+  assert.equal(seen.mark, UK2, `${handle}: mark text`);
+  assert.ok(seen.detail?.includes("(not_checked)"), `${handle}: mark detail ${seen.detail}`);
+}
+async function setMark(page, handle) {
+  const label = panel(page).locator(`label[data-mutation-set="${handle}"]`);
+  await label.waitFor({ timeout: 30000 });
+  return { status: await label.getAttribute("data-catalytic-status"),
+    mark: await label.locator('[data-testid="mutation-set-catalytic"]').count()
+      ? clean(await label.locator('[data-testid="mutation-set-catalytic"] .mw-catalytic-badge').textContent()) : null,
+    detail: await label.locator('[data-testid="mutation-set-catalytic-detail"]').count()
+      ? clean(await label.locator('[data-testid="mutation-set-catalytic-detail"]').textContent()) : null };
+}
+
+async function modeCatalytic(session, input, rec_, evidence, log) {
+  const { page } = session;
+  const plan = input.planData;
+  const M = plan.mutation;
+  const K = id => plan.stage !== "real" ? id : id === "C-picker-marks" ? "X-picker-marks" : id.startsWith("C-") ? "X-m20"
+    : ({ "R-no-zero": "X-no-zero", "R-wording": "X-wording" })[id] ?? id;
+  if (plan.synthetic) evidence.fixtureLabels.push(plan.synthetic);
+  const handles = evidence.handles;
+  const wording = [];
+  const checkWording = async label => {
+    const seen = await panelWording(page);
+    const found = forbiddenIn(seen.text, FORBIDDEN_CATALYTIC);
+    wording.push({ label, found, chars: seen.text.length });
+    assert.deepEqual(found, [], `${label}: forbidden wording ${found.join(", ")}`);
+  };
+  const run = await rec_.step("K01-new-run", [], "Click 구조 분석, 새 run (run M)", () => newRun(page), async id => ({ run: id }));
+  evidence.runs.A = run;
+  const loaded = await rec_.step("K02-upload-prepare", [], `Choose ${M.structure.name}, 구조 불러오기, 전처리`, async () => {
+    const value = await uploadLoad(page, M.structure.file, M.structure.provenance);
+    await selectTab(page, "구조 분석");
+    return { ...value, prepared: (await prepareManual(page)).prepared };
+  }, async value => { assert.equal(value.file.sha256, M.structure.sha256); return value; });
+  evidence.inputs.push(loaded.file);
+  handles.prepared = loaded.prepared;
+  const P = loaded.prepared;
+
+  // ---- no result yet: UK2; a set without an annotation
+  await rec_.part("none", [K("C-uk2-none"), K("R-no-zero")], async () => {
+    await rec_.step("K03-uk2-none", [K("C-uk2-none")], "Click 단백질 공학, choose the prepared structure: no same-structure result → " +
+      "the not-selected notice and UK2 in the request area; 고르지 않음 selected", async () => {
+      await openReady(page);
+      await chooseStructure(page, P);
+      return { value: await testId(page, "mutation-catalytic-annotation").inputValue(),
+        none: clean(await testId(page, "mutation-no-catalytic").textContent()),
+        notice: (await testId(page, "mutation-catalytic-notice").locator("p").allInnerTexts()).map(clean) };
+    }, async value => {
+      assert.equal(value.value, "");
+      assert.ok(value.none.includes("효소 반응 지식 결과가 없습니다"), value.none);
+      assert.deepEqual(value.notice, [CATALYTIC_NOT_SELECTED, UK2]);
+      return value;
+    });
+    const s0 = await rec_.step("K04-set-none", [K("C-uk2-none"), K("R-no-zero")], "Set the plan's positions, click 후보 만들기 → " +
+      "catalytic check not_checked (annotation_not_given); every catalytic cell — (not checked)", async () => {
+      await setPositions(page, M.positions);
+      return create(page, run);
+    }, async value => {
+      assert.equal(value.ok, true, JSON.stringify(value.body).slice(0, 400));
+      assert.equal(value.args.catalytic_annotation, null);
+      const verified = await verifyCatalyticSet(page, run, value.handle, { status: "not_checked", reason: "annotation_not_given" });
+      await checkWording("S0");
+      return { handle: value.handle, verified };
+    });
+    handles.s0 = s0.handle;
+  });
+
+  // ---- two results on the prepared structure through the 효소 반응 지식 area (real clicks)
+  await rec_.step("K05-results", [K("C-preselect")], `Click 지식·보고서, 효소 반응 지식: the prepared structure, PDB ID ${M.pdbId}, ` +
+    `chains ${M.chainsPartial.join(",")} → 연결하기; again with chains ${M.chainsAll.join(",")} → 연결하기`, async () => ({
+    partial: await linkReaction(page, run, P, M.pdbId, M.chainsPartial),
+    all: await linkReaction(page, run, P, M.pdbId, M.chainsAll) }), async value => {
+    const list = (await readApi(page, `/runs/${run}/reaction_knowledge?offset=0&limit=100`)).items;
+    assert.deepEqual(list.map(item => item.handle), [value.all, value.partial], "newest first");
+    return value;
+  }).then(value => { handles.rPartial = value.partial; handles.rAll = value.all; });
+
+  // ---- the newest result pre-selected (never submitted); per-chain prediction with the partial one
+  await rec_.part("preselect", [K("C-preselect"), K("C-prediction")], async () => {
+    await rec_.step("K06-preselect", [K("C-preselect")], "Click 단백질 공학, choose the prepared structure: the newest result is " +
+      "pre-selected (options: the two same-structure results, newest first); nothing is posted", async () => {
+      const started = Date.now();
+      await openReady(page);
+      await chooseStructure(page, P);
+      const select = testId(page, "mutation-catalytic-annotation");
+      await waitFor(page, async () => await select.inputValue() !== "" ? true : null, "pre-selected", 30000);
+      return { value: await select.inputValue(), options: (await selectOptions(select)).map(item => item.value).filter(Boolean),
+        posts: posted(log, started) };
+    }, async value => {
+      assert.equal(value.value, handles.rAll);
+      assert.deepEqual(value.options, [handles.rAll, handles.rPartial]);
+      assert.deepEqual(value.posts, [], "the request was submitted by itself");
+      return value;
+    });
+    await rec_.step("K07-prediction", [K("C-prediction")], "Set the plan's positions; with the newest result the covered chains " +
+      "line lists every chain; choose the partial result → UK2 and one line per chain it does not cover", async () => {
+      await setPositions(page, M.positions);
+      const covered = testId(page, "mutation-catalytic-covered");
+      await covered.waitFor({ timeout: 30000 });
+      const full = { covered: await covered.getAttribute("data-covered-chains"),
+        notice: await testId(page, "mutation-catalytic-notice").count() ? (await testId(page, "mutation-catalytic-notice")
+          .locator("p").allInnerTexts()).map(clean) : [] };
+      await selectFilter(page, "mutation-catalytic-annotation", handles.rPartial);
+      await waitFor(page, async () => await testId(page, "mutation-catalytic-covered").getAttribute("data-covered-chains")
+        === M.chainsPartial.join(",") ? true : null, "partial prediction", 30000);
+      return { full, partial: { covered: await testId(page, "mutation-catalytic-covered").getAttribute("data-covered-chains"),
+        notice: (await testId(page, "mutation-catalytic-notice").locator("p").allInnerTexts()).map(clean) } };
+    }, async value => {
+      const fullUncovered = M.expect.allUncovered ?? [];
+      assert.equal(value.full.covered, M.chainsAll.filter(chain => !fullUncovered.some(item => item.chain_auth === chain)).join(","));
+      if (!fullUncovered.length) assert.ok(!value.full.notice.includes(UK2), value.full.notice.join(" | "));
+      assert.ok(value.partial.notice.includes(UK2), value.partial.notice.join(" | "));
+      for (const item of M.expect.partialUncovered)
+        assert.ok(value.partial.notice.includes(`체인 ${item.chain_auth}: 촉매 잔기를 검사하지 않음 — ${UNCOVERED_LABEL[item.coverage]} ` +
+          `(${item.coverage})`), value.partial.notice.join(" | "));
+      if (M.positions.ligandShell) assert.ok(value.partial.notice.includes(SERVER_POSITIONS_NOTE));
+      assert.ok(!value.partial.notice.includes(UK3) || M.expect.uk3 === true);
+      return value;
+    });
+  });
+
+  // ---- sets: partial (chains_not_covered), full (checked), full + release
+  await rec_.part("sets", [K("C-chains-not-covered"), K("C-checked"), K("C-lists"), K("C-release"), K("C-exclusion-seven"),
+    K("R-no-zero")], async () => {
+    const s1 = await rec_.step("K08-set-partial", [K("C-chains-not-covered"), K("R-no-zero")], "Click 후보 만들기 with the partial " +
+      "result → not_checked (chains_not_covered): covered / uncovered chains, protected positions, — for the uncovered chain",
+    () => create(page, run), async value => {
+      assert.equal(value.ok, true, JSON.stringify(value.body).slice(0, 400));
+      assert.equal(value.args.catalytic_annotation, handles.rPartial);
+      const verified = await verifyCatalyticSet(page, run, value.handle, { status: "not_checked", reason: "chains_not_covered",
+        covered: M.chainsPartial, uncovered: M.expect.partialUncovered, counts: M.expect.partialCounts,
+        catalytic: M.expect.catalytic });
+      await checkWording("S1");
+      return { handle: value.handle, verified };
+    });
+    handles.s1 = s1.handle;
+    const allUncovered = M.expect.allUncovered ?? [];
+    const allStatus = allUncovered.length ? ["not_checked", "chains_not_covered"] : ["checked", null];
+    const s2 = await rec_.step("K09-set-all", [K("C-checked"), K("C-lists"), K("C-exclusion-seven")], "Choose the newest (all " +
+      "chains) result, click 후보 만들기 → the check status, row counts, catalytic_residue positions with M-CSA ids, conflict and " +
+      "unmatched lists, seven exclusion reasons, the limitation variant", async () => {
+      await selectFilter(page, "mutation-catalytic-annotation", handles.rAll);
+      return create(page, run);
+    }, async value => {
+      assert.equal(value.ok, true, JSON.stringify(value.body).slice(0, 400));
+      assert.equal(value.args.catalytic_annotation, handles.rAll);
+      const verified = await verifyCatalyticSet(page, run, value.handle, { status: allStatus[0], reason: allStatus[1],
+        covered: M.chainsAll.filter(chain => !allUncovered.some(item => item.chain_auth === chain)), uncovered: allUncovered,
+        counts: M.expect.allCounts, catalytic: M.expect.catalytic, conflicts: M.expect.conflicts, unmatched: M.expect.unmatched });
+      assert.ok(verified.protectedPositions.length > 0, "no position protected by a matched M-CSA row");
+      await checkWording("S2");
+      return { handle: value.handle, verified };
+    });
+    handles.s2 = s2.handle;
+    const s3 = await rec_.step("K10-release", [K("C-release")], `Pick ${M.release.resname} ${M.release.chain}:${M.release.seq} in ` +
+      "해제 목록, click 후보 만들기 → that position is a candidate, its M-CSA entries stay and the cell says 해제됨", async () => {
+      await pickResidueAt(page, "release", M.release);
+      return create(page, run);
+    }, async value => {
+      assert.equal(value.ok, true, JSON.stringify(value.body).slice(0, 400));
+      const verified = await verifyCatalyticSet(page, run, value.handle, { status: allStatus[0], reason: allStatus[1],
+        covered: M.chainsAll.filter(chain => !allUncovered.some(item => item.chain_auth === chain)), uncovered: allUncovered,
+        counts: M.expect.allCounts, catalytic: M.expect.catalytic });
+      const key = `${M.release.resname} ${M.release.chain}:${M.release.seq}`;
+      const row = (await storedPositions(page, run, value.handle)).find(item => rkey(item.residue) === key);
+      assert.ok(row && row.protection.released === true && row.status === "candidate" && row.protection.catalytic.length > 0,
+        JSON.stringify(row?.protection));
+      assert.ok(row.protection.reasons.includes("catalytic_residue"));
+      const cell = (await catalyticCells(page)).find(item => item.residue === key);
+      assert.ok(cell.text.endsWith("· 해제됨") && cell.released === "true", cell.text);
+      const effects = (await storedSet(page, run, value.handle)).result.released_residues.map(item => [rkey(item.residue), item.effect]);
+      assert.deepEqual(effects, [[key, "released"]]);
+      await checkWording("S3");
+      return { handle: value.handle, cell, effects };
+    });
+    handles.s3 = s3.handle;
+  });
+
+  // ---- a second prepared structure whose result has a conflict row (plan.mutation.derived, real stage: the labelled
+  // synthetic derived 1S9I): the set is checked and the conflict row is in the prominent list, not protected
+  if (M.derived) await rec_.part("derived", [K("C-lists"), K("C-checked")], async () => {
+    const D = M.derived;
+    if (D.structure.provenance.includes("SYNTHETIC")) evidence.fixtureLabels.push(D.structure.provenance);
+    const second = await rec_.step("K10b-derived-upload", [], `Click 구조 분석, choose ${D.structure.name}, 구조 불러오기, 전처리; ` +
+      `지식·보고서 효소 반응 지식: PDB ID ${D.pdbId}, chains ${D.chains.join(",")} → 연결하기`, async () => {
+      await selectTab(page, "구조 분석");
+      const value = await uploadLoad(page, D.structure.file, D.structure.provenance);
+      await selectTab(page, "구조 분석");
+      const prepared = (await prepareManual(page)).prepared;
+      return { ...value, prepared, result: await linkReaction(page, run, prepared, D.pdbId, D.chains) };
+    }, async value => { assert.equal(value.file.sha256, D.structure.sha256); return value; });
+    evidence.inputs.push(second.file);
+    handles.derivedPrepared = second.prepared;
+    handles.rDerived = second.result;
+    const s4 = await rec_.step("K10c-derived-set", [K("C-lists"), K("C-checked")], "Click 단백질 공학, choose the second prepared " +
+      "structure: its result is pre-selected; set the plan's positions, click 후보 만들기 → the check status, the conflict row in " +
+      "the conflict list (not protected), the matched row protecting its position", async () => {
+      await openReady(page);
+      await chooseStructure(page, second.prepared);
+      const select = testId(page, "mutation-catalytic-annotation");
+      await waitFor(page, async () => await select.inputValue() === second.result ? true : null, "derived result pre-selected", 30000);
+      await setPositions(page, D.positions);
+      return create(page, run);
+    }, async value => {
+      assert.equal(value.ok, true, JSON.stringify(value.body).slice(0, 400));
+      assert.equal(value.args.catalytic_annotation, second.result);
+      const verified = await verifyCatalyticSet(page, run, value.handle, D.expect);
+      assert.ok(verified.protectedPositions.length > 0, "no position protected by a matched M-CSA row");
+      await checkWording("S4");
+      return { handle: value.handle, verified };
+    });
+    handles.s4 = s4.handle;
+  });
+
+  // ---- the stored v1 run (copied T1 fixture): v1 wording and mark
+  const limitationSeen = {};
+  for (const name of ["s0", "s1", "s2"]) if (handles[name])
+    limitationSeen[name] = (await storedSet(page, run, handles[name])).result.limitations[2];
+  if (M.v1Run) await rec_.part("v1", [K("C-v1-set"), K("C-limitation-variants")], () => rec_.step("K11-v1", [K("C-v1-set"),
+    K("C-limitation-variants")], `Choose the stored v1 run ${M.v1Run} in 저장된 run, click 단백질 공학: its sets carry the mark ` +
+    "with the v1 detail; open one: not_available, the v1 limitation sentence, — (v1) cells, six exclusion reasons", async () => {
+    await chooseRun(page, M.v1Run);
+    await openReady(page);
+    const sets = (await readApi(page, `/runs/${M.v1Run}/mutation_candidate_sets?offset=0&limit=100`)).rows;
+    const marks = [];
+    for (const row of sets) marks.push({ handle: row.handle, ...await setMark(page, row.handle) });
+    await openSet(page, sets[0].handle);
+    return { sets, marks, verified: await verifyCatalyticSet(page, M.v1Run, sets[0].handle, { status: "not_available",
+      reason: "not_implemented" }) };
+  }, async value => {
+    assert.ok(value.sets.length >= 1);
+    for (const item of value.marks) {
+      assert.equal(item.status, "not_available");
+      assert.equal(item.mark, UK2);
+      assert.ok(item.detail.includes("(not_available)") && item.detail.includes("v1"), item.detail);
+    }
+    limitationSeen.v1 = value.verified.limitation3;
+    assert.deepEqual([...new Set(Object.values(limitationSeen))].sort(), [LIMIT3.checked, LIMIT3.not_available,
+      LIMIT3.not_checked].sort(), "the three limitation sentence 3 variants");
+    return { marks: value.marks, verified: value.verified, limitationSeen };
+  }));
+
+  // ---- the shared mark on every place a set is picked
+  if (handles.s1 && handles.s2) await rec_.part("pickers", [K("C-picker-marks")], async () => {
+    const notChecked = [handles.s0, handles.s1].filter(Boolean);
+    const checkedSet = (await storedSet(page, run, handles.s2)).result.protection_checks.catalytic_residue_database.status === "checked"
+      ? handles.s2 : null;
+    const picker = {};
+    await rec_.step("K12-m20-list", [K("C-picker-marks")], "Choose run M, click 단백질 공학: the M20 result list marks the not-checked " +
+      "sets (UK2 + their own detail) and not the checked one", async () => {
+      await chooseRun(page, run);
+      await openReady(page);
+      const marks = {};
+      for (const handle of [...notChecked, handles.s2]) marks[handle] = await setMark(page, handle);
+      return marks;
+    }, async value => {
+      for (const handle of notChecked) {
+        assert.equal(value[handle].mark, UK2);
+        assert.ok(value[handle].detail.includes("(not_checked)"), value[handle].detail);
+      }
+      if (checkedSet) assert.equal(value[checkedSet].mark, null);
+      picker.m20 = value;
+      return value;
+    });
+    if (M.pickers.includes("m21")) await rec_.step("K13-m21", [K("C-picker-marks")], "Open the partial set, click 변이 구조 모델링 on a " +
+      "candidate: the M21 request area shows the mark; then a candidate of the all-chains set", async () => {
+      const started = Date.now();
+      const out = {};
+      for (const handle of [handles.s1, handles.s2]) {
+        await openSet(page, handle);
+        const button = testId(page, "mutation-candidate-model").first();
+        await button.waitFor({ timeout: 30000 });
+        await button.click();
+        control(evidence, "mutation-candidate-model", { set: handle });
+        const model = page.locator('[data-testid="mutation-model-panel"]');
+        await model.locator(`[data-testid="mutation-model-candidate"][data-candidate-set="${handle}"]`).waitFor({ timeout: 30000 });
+        out[handle] = { mark: await model.locator('[data-testid="mutation-model-catalytic"]').count()
+          ? clean(await model.locator('[data-testid="mutation-model-catalytic"] .mw-catalytic-badge').textContent()) : null,
+        detail: await model.locator('[data-testid="mutation-model-catalytic-detail"]').count()
+          ? clean(await model.locator('[data-testid="mutation-model-catalytic-detail"]').textContent()) : null };
+      }
+      return { out, posts: posted(log, started) };
+    }, async value => {
+      assert.equal(value.out[handles.s1].mark, UK2);
+      assert.ok(value.out[handles.s1].detail.includes("(not_checked)"), value.out[handles.s1].detail);
+      if (checkedSet) assert.equal(value.out[handles.s2].mark, null);
+      assert.deepEqual(value.posts, [], "the M21 handoff posted");
+      picker.m21 = value.out;
+      return value;
+    });
+    if (M.pickers.includes("m23")) await rec_.step("K14-m23", [K("C-picker-marks")], "서열 GA: the candidate set options name the mark " +
+      "for not-checked sets; choose the partial set → the mark; choose the all-chains set → none", async () => {
+      const started = Date.now();
+      const ga = page.locator('[data-testid="sequence-ga-panel"]');
+      const select = ga.locator('[data-testid="sequence-ga-candidate-set"]');
+      await select.waitFor({ timeout: 30000 });
+      const options = await selectOptions(select);
+      await select.selectOption(handles.s1);
+      control(evidence, "sequence-ga-candidate-set", { chosen: handles.s1 });
+      await ga.locator('[data-testid="sequence-ga-catalytic"]').waitFor({ timeout: 15000 });
+      const partial = clean(await ga.locator('[data-testid="sequence-ga-catalytic"] .mw-catalytic-badge').textContent());
+      await select.selectOption(handles.s2);
+      await page.waitForTimeout(500);
+      const all = await ga.locator('[data-testid="sequence-ga-catalytic"]').count();
+      await select.selectOption("");
+      return { options, partial, all, posts: posted(log, started) };
+    }, async value => {
+      for (const handle of notChecked) assert.ok(value.options.find(item => item.value === handle).text.endsWith(UK2));
+      if (checkedSet) assert.ok(!value.options.find(item => item.value === checkedSet).text.includes(UK2));
+      assert.equal(value.partial, UK2);
+      if (checkedSet) assert.equal(value.all, 0);
+      assert.deepEqual(value.posts, [], "choosing a set posted");
+      picker.m23 = { partial: value.partial, all: value.all };
+      return value;
+    });
+    if (M.pickers.includes("m25")) await rec_.step("K15-m25", [K("C-picker-marks")], "JEV 루프 (단백질): the pool sources carry the mark " +
+      "(UK2 + its not_checked detail) for not-checked sets and none for the checked set; nothing is posted", async () => {
+      const started = Date.now();
+      const loop = page.locator('#mw-app-panel-protein [data-testid="jev-loop-panel"][data-branch="protein"]');
+      await loop.locator('[data-testid="jev-loop-sources"]').waitFor({ timeout: 60000 });
+      const out = {};
+      for (const handle of [...notChecked, handles.s2])
+        out[handle] = await pickerMark(loop.locator(`label[data-jev-loop-source="${handle}"]`), "jev-loop-source-catalytic");
+      return { out, posts: posted(log, started) };
+    }, async value => {
+      for (const handle of notChecked) checkPickerMark(value.out[handle], handle);
+      if (checkedSet) assert.equal(value.out[checkedSet].count, 0, "the checked set carries the mark");
+      assert.deepEqual(value.posts, [], "the JEV loop pool posted");
+      picker.m25 = value.out;
+      return value;
+    });
+    if (M.pickers.includes("m24")) await rec_.step("K16-m24", [K("C-picker-marks")], "Click 지식·보고서, JEV 판정: choose 변이 후보 as the " +
+      "source kind → the sources carry the mark (UK2 + its not_checked detail) for not-checked sets and none for the checked " +
+      "set; nothing is sent", async () => {
+      const started = Date.now();
+      await selectTab(page, "지식·보고서");
+      const jev = page.locator('#mw-app-panel-knowledge [data-testid="jev-panel"]');
+      await jev.locator('[data-testid="jev-kind-mutation"]').waitFor({ timeout: 60000 });
+      await jev.locator('[data-testid="jev-kind-mutation"]').check();
+      control(evidence, "jev-kind-mutation", { checked: true });
+      await jev.locator('[data-testid="jev-sources"]').waitFor({ timeout: 60000 });
+      const out = {};
+      for (const handle of [...notChecked, handles.s2])
+        out[handle] = await pickerMark(jev.locator(`label[data-jev-source="${handle}"]`), "jev-source-catalytic");
+      return { out, posts: posted(log, started) };
+    }, async value => {
+      for (const handle of notChecked) checkPickerMark(value.out[handle], handle);
+      if (checkedSet) assert.equal(value.out[checkedSet].count, 0, "the checked set carries the mark");
+      assert.deepEqual(value.posts, [], "the JEV area posted");
+      picker.m24 = value.out;
+      return value;
+    });
+    evidence.pickers = picker;
+  });
+
+  await rec_.part("wording", [K("R-wording")], () => rec_.step("K17-wording", [K("R-wording")], "No rank / recommendation / " +
+    "importance / activity / effect wording in the M20 panel outside the fixed limitation sentences (every check of this " +
+    "mode)", async () => {
+    await selectTab(page, "구조 분석");
+    await chooseRun(page, run);
+    await openReady(page);
+    if (handles.s2) await openSet(page, handles.s2);
+    await checkWording("final");
+    return wording;
+  }, async value => {
+    assert.ok(value.length >= 2, `wording checks: ${value.length}`);
+    assert.ok(value.every(item => item.found.length === 0));
+    return value;
+  }));
+  evidence.providerCalls.push(await providerCalls(page, run));
+  if (M.v1Run) evidence.providerCalls.push(await providerCalls(page, M.v1Run));
+}
+
 // ------------------------------------------------------------------ main
-const RUNNERS = { main: modeMain };
+const RUNNERS = { main: modeMain, catalytic: modeCatalytic };
 
 function buildId() {
   const file = path.join(REPO, "frontend/.next/BUILD_ID");
@@ -1504,4 +2138,5 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, preflightOracle, halfUp2 };
+module.exports = { options, main, preflightOracle, halfUp2, forbiddenIn, FORBIDDEN, FORBIDDEN_CATALYTIC, reasonCountText,
+  UK2, LIMITATIONS, LIMIT3 };
