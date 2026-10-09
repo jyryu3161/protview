@@ -981,6 +981,14 @@ def test_changed_m21_pins_and_an_m21_admission_refusal_write_nothing(protein, se
         patch.setattr(mutation_model_bundle, "require_ready", lambda: {**real, "worker_sha256": "e" * 64})
         got = refused(served.compute(loop_id, iteration=1, candidate=a), "capability_unavailable")
     assert got["capability"]["reason_code"] == "missing_configuration"
+    # M26 spec 9: the M20 module the M21 call key hashes changed after the loop was created (the M26 upgrade):
+    # the in-progress protein loop's compute press is refused the same way and writes nothing
+    changed = {**real, "dependency_sha256": {**real["dependency_sha256"], "mw/mutation_candidates.py": "d" * 64}}
+    with monkeypatch.context() as patch:   # fault injection: another mutation_candidates.py SHA-256
+        patch.setattr(mutation_model_bundle, "require_ready", lambda: changed)
+        got = refused(served.compute(loop_id, iteration=1, candidate=a), "capability_unavailable")
+    assert got["capability"]["reason_code"] == "missing_configuration" and got["capability"]["reason"]
+    unchanged(served, log)
     with monkeypatch.context() as patch:   # fault injection: the M7 preflight of the M21 submission refuses
         def refuse(run, admitted):
             raise ToolFailure(FailureClass.input_invalid, "M7 preflight failed",

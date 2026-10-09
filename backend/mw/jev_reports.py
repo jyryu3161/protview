@@ -22,7 +22,8 @@ or an edited value is ``report_evidence_invalid``.
 The proposal is re-validated on every build and reopen (``jev_sends.load_choice``: its projection and candidate set
 again) and bound to its send events (approval, dispatch, the one completed outcome naming it, the late flag derived
 from event order up to that outcome). The renderer refuses interpretive wording on the fixed template text with every
-identifier and value slot left empty, except the lines that are exactly a fixed sentence J1-J7.
+identifier and value slot left empty, except the lines that are exactly a fixed sentence J1-J7 or one of the M26
+J6 variants J6N / J6C.
 """
 from __future__ import annotations
 
@@ -45,7 +46,7 @@ EXTERNAL_RESPONSE = {"kind": "jev_choice", "scientific_evidence": False}
 MODEL_RESPONSE_NOTE = "외부 모델의 응답, 제안이며 과학 증거가 아니다"
 NOT_KNOWN = "알 수 없음"
 NOT_REPORTED = "보고 없음"
-FIXED_LIMITATIONS = frozenset(J.STATEMENTS.values())
+FIXED_LIMITATIONS = frozenset(J.STATEMENTS.values()) | frozenset(J.J6_BY_CATALYTIC_STATUS.values())  # + J6N, J6C
 KIND_FOR_SOURCE_SCHEMA = {schema: kind for kind, schema in J.SOURCE_SCHEMAS.items()}
 EVIDENCE_STATEMENT = ("ProtView counted the stored selection and copied the body size and the reported usage of this "
                       "send. The chosen alias, the model-reported confidence, the served model and the arrival are the "
@@ -108,7 +109,7 @@ def _render(value: Any, rounding: str) -> str:
 
 
 def check_no_interpretation(text: str) -> str:
-    """Refuse interpretive wording on any line that is not exactly one of the fixed sentences J1-J7."""
+    """Refuse interpretive wording on any line that is not exactly one of the fixed sentences J1-J7, J6N, J6C."""
     for line in text.split("\n"):
         if line in FIXED_LIMITATIONS:
             continue

@@ -23,6 +23,7 @@ import time
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 
+import m20_v2_fixture as V2
 import psutil
 import pytest
 from fastapi.testclient import TestClient
@@ -336,6 +337,46 @@ def test_same_input_same_job_and_handle_other_seed_new_key(real, monkeypatch):
     assert job["parameters"] == {"candidate_set": world["candidate_set"], "candidate_index": TRP, "seed": SEED,
                                  "contact_cutoff_A": 4.0, "selection_policy": "protein_only",
                                  "hydrogen_policy": "rebuild_pH7"}
+
+
+def test_v2_candidate_sets_are_modeled_by_the_same_job_lane(real, tmp_path, monkeypatch):
+    """M26 spec 9: the shared world's set is tool-built, so v2 ``not_checked`` (it was modeled above); a v2 set built
+    with a catalytic annotation (the LABELLED SYNTHETIC 0SY8 reaction set of ``m20_v2_fixture``, made-up rows naming
+    1UBQ chain A) is modeled by the real worker the same way."""
+    client = _client(real["root"], monkeypatch)
+    shared = api_module._run(real["world"]["rid"]).store.load(real["world"]["candidate_set"])
+    assert shared["method_version"] == "mw.mutation_candidates/v2"
+    assert shared["protection_checks"]["catalytic_residue_database"]["status"] == "not_checked"
+    assert real["done"]["status"] == "done"
+    root = tmp_path / "runs"
+    client = _client(root, monkeypatch)
+    V2.activate_ubq(tmp_path / "reaction_reference", monkeypatch)
+    try:
+        world = _world(client, "M26 v2 checked set (public 1UBQ, synthetic reaction rows; not experimental validation)")
+        rid = world["rid"]
+        knowledge = _command(client, rid, "link_reaction_knowledge", {
+            "structure": world["structure"], "pdb_id": V2.PDB_ID,
+            "chains": [{"chain_auth": "A", "uniprot_accession": None}], "numbering_map": None})
+        checked = _command(client, rid, "generate_mutation_candidates", {
+            "structure": world["structure"], **V2.TINY_ARGS, "catalytic_annotation": knowledge})
+    finally:
+        V2.CF.reset_caches()
+    run = api_module._run(rid)
+    content = run.store.load(checked)
+    assert content["method_version"] == "mw.mutation_candidates/v2"
+    assert content["protection_checks"]["catalytic_residue_database"]["status"] == "checked"
+    index = next(c["index"] for c in content["candidates"] if (c["from"], c["to"]) == ("I", "W"))
+    try:
+        done = _run_job(client, rid, _args(checked, index=index))
+    finally:
+        _kill_leftovers(root, rid)
+    assert done["status"] == "done", done
+    assert done["input_handles"] == [checked, world["structure"]]
+    model = bundle.validated_result(run, done["artifacts"]["mutation_model"])
+    assert model["candidate"] == {"candidate_set": checked, "candidate_index": index, "position_index": 2,
+                                  "from": "I", "to": "W", "residue": {**I44, "chain_label": "A", "seq_label": 44},
+                                  "mutant_resname": "TRP"}
+    _workers_gone(root, rid)
 
 
 def test_events_only_recovery_without_engines_or_processes(real, tmp_path, monkeypatch):

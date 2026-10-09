@@ -12,7 +12,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
-from jev_send_fixture import Fake, clone, no_secret, reopen, reply, run_bytes, send, templates
+from jev_send_fixture import Fake, clone, no_secret, reopen, reply, run_bytes, send, stored_set_world, templates
 
 from mw import jev_constants as J
 from mw import jev_reports as R
@@ -98,7 +98,10 @@ def test_the_report_cites_the_proposal_with_two_evidence_kinds_and_no_probabilit
                                               "jev_choice_markdown@1", "local_rules_no_egress")
     assert manifest["external_response"] == {"kind": "jev_choice", "scientific_evidence": False}
     assert (manifest["result_handle"], manifest["result_schema"], manifest["kind"]) == (handle, J.CHOICE_SCHEMA, which)
-    assert manifest["limitations"] == choice["limitations"] == J.limitations_for(which, False)
+    # the mutation template's M20 set is tool-built (v2 since M26, no catalytic annotation): J6N (M26 spec 9)
+    catalytic = "not_checked" if which == "mutation" else "not_available"
+    assert manifest["limitations"] == choice["limitations"] == J.limitations_for(which, False, catalytic)
+    assert f"\n{manifest['limitations'][4]}\n" in markdown
     assert manifest["chosen"] == {"local_ref": choice["answer"]["local_ref"],
                                   "local_display": choice["answer"]["local_display"]}
     claims = _claims(manifest)
@@ -186,6 +189,26 @@ def test_the_fixed_sentences_are_exempt_and_slot_values_are_not_checked(base, tm
     edited["evidence_statement"] += " This is the best candidate."
     with pytest.raises(EvidenceError, match="interpretive"):
         R.render_jev_report(edited)
+
+
+def test_the_fixed_limitations_are_j1_to_j7_and_the_two_m26_j6_variants():
+    assert R.FIXED_LIMITATIONS == frozenset(J.STATEMENTS.values()) | {J.J6N, J.J6C}
+    assert len(R.FIXED_LIMITATIONS) == 9 and set(J.STATEMENTS) == {f"J{n}" for n in range(1, 8)}
+    for sentence in (J.J6N, J.J6C):
+        R.check_no_interpretation(sentence)
+
+
+@pytest.mark.parametrize("name", ["v1", "checked"])
+def test_a_report_of_a_stored_set_carries_its_j6_variant_verbatim(name, tmp_path):
+    world = stored_set_world(tmp_path / "runs", name)
+    run = world["run"]
+    S.set_consent(run, True)
+    record = send(world, Fake(lambda request: reply("m01")))
+    assert record["status"] == "completed", record
+    built = R.build_jev_report(run, record["choice_handle"])
+    expected = {"v1": J.STATEMENTS["J6"], "checked": J.J6C}[name]
+    assert built["manifest"]["limitations"][4] == expected and f"\n{expected}\n" in built["markdown"]
+    assert R.saved_jev_report(run, built["handle"]) == built
 
 
 # ---------------------------------------------------------------- evidence kinds never mix

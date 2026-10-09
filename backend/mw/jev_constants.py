@@ -203,6 +203,15 @@ J6 = ("후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·
       "했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.")
 J7 = "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다."
 STATEMENTS = {"J1": J1, "J2": J2, "J3": J3, "J4": J4, "J5": J5, "J6": J6, "J7": J7}
+# M26 spec 9: a mutation projection's fifth sentence follows the wire's ``catalytic_residue_database`` status. J6 is
+# kept byte for byte for ``not_available`` (every v1 candidate set); J6N / J6C are the v2 variants (not in STATEMENTS).
+J6N = ("후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 "
+       "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 "
+       "했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.")
+J6C = ("후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 "
+       "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 "
+       "잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다.")
+J6_BY_CATALYTIC_STATUS = {"not_available": J6, "not_checked": J6N, "checked": J6C}
 U1 = "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다."
 U2 = ("과학 전송은 뷰어 모델 명령과 같은 외부 토큰·USD 예산과 '사용량 모름' 중지 상태를 쓰며, 한쪽이 예산을 다 쓰거나 "
       "사용량을 모르면 이 run에서 다른 쪽도 멈춘다.")
@@ -210,8 +219,18 @@ U3 = "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백�
 SCREEN_NOTES = {"U1": U1, "U2": U2, "U3": U3}
 
 
-def limitations_for(kind: str, late: bool) -> list[str]:
-    """J1-J4 always, then J5 (ligand) or J6 (mutation), then J7 when ``late`` (a fresh list, order fixed)."""
-    if kind not in KINDS or type(late) is not bool:
-        raise ValueError("kind must be ligand or mutation and late a boolean")
-    return [J1, J2, J3, J4, J5 if kind == "ligand" else J6, *([J7] if late else [])]
+def limitations_for(kind: str, late: bool, catalytic: str = "not_available") -> list[str]:
+    """J1-J4 always, then J5 (ligand) or the J6 variant of ``catalytic`` (mutation: the wire's
+    ``catalytic_residue_database`` status, see ``catalytic_status``), then J7 when ``late`` (a fresh list, order fixed).
+    The default gives the original J6."""
+    if kind not in KINDS or type(late) is not bool or type(catalytic) is not str \
+            or catalytic not in J6_BY_CATALYTIC_STATUS or (kind == "ligand" and catalytic != "not_available"):
+        raise ValueError("kind must be ligand or mutation, late a boolean and catalytic a check status "
+                         "(not_available for ligand)")
+    return [J1, J2, J3, J4, J5 if kind == "ligand" else J6_BY_CATALYTIC_STATUS[catalytic], *([J7] if late else [])]
+
+
+def catalytic_status(kind: str, wire: dict) -> str:
+    """The ``catalytic_residue_database`` status of a mutation wire's ``protection_checks``; ``not_available`` for a
+    ligand wire (which has no protection checks)."""
+    return wire["protection_checks"]["catalytic_residue_database"] if kind == "mutation" else "not_available"

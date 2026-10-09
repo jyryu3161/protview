@@ -20,6 +20,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import m20_v2_fixture as V2
 import pytest
 import sequence_ga_fixture as SF
 
@@ -696,7 +697,14 @@ def _admit(world, timeout_s=1200, **changes):
 def test_admission_of_a_valid_request(world):
     admitted = _admit(world)
     content = admitted["candidate_set"]
-    assert content["positions"] == TINY["positions"] and content["candidates"] == TINY["candidates"]
+    # the world's set is tool-built, so v2 since M26 (no catalytic annotation): it equals the stored v1 TINY set
+    # except the v2 position field protection.catalytic, which is null (not checked) on every position
+    assert (content["method_version"], TINY["method_version"]) == ("mw.mutation_candidates/v2",
+                                                                    "mw.mutation_candidates/v1")
+    assert all(position["protection"]["catalytic"] is None for position in content["positions"])
+    assert [{**p, "protection": {k: v for k, v in p["protection"].items() if k != "catalytic"}}
+            for p in content["positions"]] == TINY["positions"]
+    assert content["candidates"] == TINY["candidates"]
     assert admitted["structure"] == {"handle": world["structure"], "model_number": 1,
                                      "structure_kind": "prepared_structure"}
     assert admitted["ligand"] == {"sdf_handle": world["phenol"], "sdf_sha256": hashlib.sha256(SF.PHENOL).hexdigest()}
@@ -705,6 +713,37 @@ def test_admission_of_a_valid_request(world):
     assert admitted["space"]["size"] == 26 and admitted["space"]["positions"] == [1, 2, 3]
     assert admitted["arguments"]["parameters"] == {"seed": 42, "exhaustiveness": 4, "num_modes": 5,
                                                    "energy_range": 3.0, "conformers": None}
+
+
+@pytest.fixture(scope="module")
+def checked_world(tmp_path_factory):
+    """M26 spec 9: a fresh world plus a v2 set of the TINY positions built by the M20 tool with a catalytic annotation
+    (``link_reaction_knowledge`` over the LABELLED SYNTHETIC 0SY8 reaction set of ``m20_v2_fixture``: made-up rows
+    naming 1UBQ chain A, K6 matched)."""
+    root = tmp_path_factory.mktemp("seqga_inputs_v2")
+    world = SF.real_world(root / "runs")
+    run = world["run"]
+    with pytest.MonkeyPatch.context() as patch:
+        V2.activate_ubq(root / "reaction_reference", patch)
+        try:
+            knowledge = V2.link_ubq(run, world["structure"])
+            world["checked"] = run.call("generate_mutation_candidates", {
+                "structure": world["structure"], **V2.TINY_ARGS, "catalytic_annotation": knowledge}).handle
+        finally:
+            V2.CF.reset_caches()
+    return world
+
+
+def test_admission_of_a_v2_set_with_a_checked_catalytic_annotation(checked_world):
+    admitted = _admit(checked_world, candidate_set=checked_world["checked"])
+    content = admitted["candidate_set"]
+    assert content["method_version"] == "mw.mutation_candidates/v2"
+    assert content["protection_checks"]["catalytic_residue_database"]["status"] == "checked"
+    by = {p["residue"]["seq_auth"]: p for p in content["positions"]}
+    assert (by[6]["status"], by[6]["protection"]["reasons"]) == ("excluded", ["catalytic_residue"])
+    # the GA space is the positions with candidates: I3 (user_protected) and K6 (catalytic_residue) are not in it
+    assert admitted["space"]["positions"] == [2, 3]
+    assert admitted["structure"]["handle"] == checked_world["structure"]
 
 
 class _HidingStore:

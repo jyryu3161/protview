@@ -64,6 +64,28 @@ def _ligand_template(root: Path, run_id: str) -> dict[str, Any]:
             "prepared": None, "projection": projection, "other_projection": other}
 
 
+# M26 T6b: STORED M20 sets (no M20 tool call; ``store.put`` after the same public 1UBQ load and default preparation in
+# a run of the fixture's own id): the v1 set of the M24 golden (fixtures/reaction/t1, SYNTHETIC-PROVENANCE-t1.md) and
+# the v2 ``checked`` set of fixtures/reaction/t6 (SYNTHETIC-PROVENANCE-t6b.md), each with a real projection.
+STORED_SETS = {"v1": (FIX / "reaction/t1/m20-v1-candidate-set-golden_m24_mutation.json", [30, 3, 0]),
+               "checked": (FIX / "reaction/t6/m20-candidate-set-v2-1ubq-checked.json", [3, 0])}
+
+
+def stored_set_world(root: Path, name: str) -> dict[str, Any]:
+    path, candidates = STORED_SETS[name]
+    fixture = json.loads(path.read_text(encoding="utf-8"))
+    run_id = fixture["handle"].split("/")[2]
+    run = new_run(root, run_id=run_id, dry_run=False)
+    loaded = run.call("load_structure", {"source": str(FIX / "public_1ubq.cif"), "model_index": 0}).handle
+    prepared = run.call("prepare_structure", {"structure": loaded}).handle
+    assert prepared == fixture["content"]["structure"]["handle"], prepared
+    source = run.store.put("mutation_candidate_set", "mutation_candidate_set@1", fixture["content"]).handle
+    assert source == fixture["handle"], source
+    projection = run.call(J.TOOL, {"source": source, "candidates": candidates}).handle
+    return {"root": root, "run_id": run_id, "dry_run": False, "kind": "mutation", "source": source,
+            "prepared": prepared, "projection": projection, "other_projection": None, "run": run}
+
+
 def templates(base: Path) -> dict[str, dict[str, Any]]:
     """Build (once per process) the mutation, dry-run mutation and ligand template runs."""
     key = str(base)

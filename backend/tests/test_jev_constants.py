@@ -41,6 +41,14 @@ SPEC_J = {
           "했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.",
     "J7": "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다.",
 }
+# M26 spec 9: the J6 variants of a v2 candidate set (by the wire's catalytic_residue_database status), typed from the
+# spec text; they are not members of STATEMENTS (J1-J7 stay fixed).
+SPEC_J6N = ("후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 "
+            "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 "
+            "했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다.")
+SPEC_J6C = ("후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 "
+            "상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 "
+            "잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다.")
 SPEC_U = {
     "U1": "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다.",
     "U2": "과학 전송은 뷰어 모델 명령과 같은 외부 토큰·USD 예산과 '사용량 모름' 중지 상태를 쓰며, 한쪽이 예산을 다 쓰거나 "
@@ -223,6 +231,37 @@ def test_limitations_for_order_and_conditions():
     for kind, late in (("protein", False), ("ligand", 1), ("ligand", None)):
         with pytest.raises(ValueError):
             J.limitations_for(kind, late)
+
+
+def test_j6_variants_verbatim_and_outside_the_fixed_statements():
+    assert (J.J6N, J.J6C) == (SPEC_J6N, SPEC_J6C)
+    assert J.J6_BY_CATALYTIC_STATUS == {"not_available": SPEC_J["J6"], "not_checked": SPEC_J6N, "checked": SPEC_J6C}
+    assert set(J.J6_BY_CATALYTIC_STATUS) == set(J.PROTECTION_CHECK_STATUSES)
+    assert SPEC_J6N not in J.STATEMENTS.values() and SPEC_J6C not in J.STATEMENTS.values()
+    assert len({SPEC_J["J6"], SPEC_J6N, SPEC_J6C}) == 3
+
+
+def test_limitations_for_picks_the_j6_variant_of_the_catalytic_status():
+    common = [SPEC_J["J1"], SPEC_J["J2"], SPEC_J["J3"], SPEC_J["J4"]]
+    # the default and not_available (every v1 set) give the original J6 bytes
+    assert J.limitations_for("mutation", False) == J.limitations_for("mutation", False, "not_available") == [
+        *common, SPEC_J["J6"]]
+    assert J.limitations_for("mutation", False, "not_checked") == [*common, SPEC_J6N]
+    assert J.limitations_for("mutation", False, "checked") == [*common, SPEC_J6C]
+    assert J.limitations_for("mutation", True, "not_checked") == [*common, SPEC_J6N, SPEC_J["J7"]]
+    assert J.limitations_for("mutation", True, "checked") == [*common, SPEC_J6C, SPEC_J["J7"]]
+    assert J.limitations_for("ligand", True, "not_available") == [*common, SPEC_J["J5"], SPEC_J["J7"]]
+    for kind, status in (("mutation", "unknown"), ("mutation", None), ("mutation", "Checked"),
+                         ("ligand", "checked"), ("ligand", "not_checked")):
+        with pytest.raises(ValueError):
+            J.limitations_for(kind, False, status)
+
+
+def test_catalytic_status_reads_the_wire_check():
+    for status in ("checked", "not_checked", "not_available"):
+        wire = {"protection_checks": {"user_list": "checked", "catalytic_residue_database": status}}
+        assert J.catalytic_status("mutation", wire) == status
+    assert J.catalytic_status("ligand", {"schema": "jev_ligand_candidates@1"}) == "not_available"
 
 
 REQUIRED_MEANING = (
