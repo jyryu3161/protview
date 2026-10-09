@@ -769,9 +769,13 @@ test("the screen check is at least the M26 report check (M15 + M20 + M26 words) 
   assert.equal(lib.REACTION_FORBIDDEN.flags, "gi");
   for (const word of ["순위", "추천", "최고", "우수", "중요", "핵심", "필수", "활성", "점수", "ΔΔG", "안정성", "친화도", "개선",
     "rank", "best", "recommend", "important", "essential", "critical", "key residue", "active", "activity", "score", "affinity",
-    "stability", "stabilize", "improve", "predicted", "highest", "winner", "메커니즘이 유지", "mechanism is preserved"])
+    "stability", "stabilize", "improve", "predicted", "highest", "winner", "메커니즘이 유지", "mechanism is preserved",
+    "효과", "변이 효과", "effect", "effects"])
     assert.ok(lib.reactionForbiddenWords(`이 잔기는 ${word}`).length, word);
   assert.deepEqual(plain(lib.reactionForbiddenWords("촉매 잔기 · 반응 · 효소")), []);
+  // spec §2 "효과": none of the fixed sentences RK1–RK6 / UK1–UK4 says it, so the exemption is not what keeps them clean
+  for (const line of lib.REACTION_FIXED_LINES) assert.doesNotMatch(line, /효과|effect/i, line);
+  assert.deepEqual(plain(lib.reactionForbiddenWords("Active site 1 · Binding site 2 · Site 0 · side effect")), ["effect"]);
 });
 
 test("fixed sentences are exempt only verbatim on their own line; UniProt site type names are quoted reference terms", () => {

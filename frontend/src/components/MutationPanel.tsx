@@ -9,9 +9,10 @@ import type { ExactResidueRef, MutationCandidatePage, MutationCandidateRow, Muta
 import type { NumberingMapListRow } from "@/lib/numbering";
 import type { PocketSetRow, PocketSummary } from "@/lib/pockets";
 import { annotationMapConflict, annotationsForStructure, candidateQuery, candidateText, CATALYTIC_NOTE,
-  catalyticAnnotationsForStructure, catalyticBadge, catalyticCheckView, catalyticProtectionText, catalyticRequestNotices,
+  catalyticAnnotationsForStructure, catalyticBadge, catalyticCheckView, catalyticChoices, catalyticProtectionText,
+  catalyticRequestNotices,
   chainOptions, countsText, disulfideText, draftForStructure, EMPTY_CANDIDATE_FILTERS, EMPTY_POSITION_FILTERS,
-  EXCLUSION_REASON_LABEL, exactResidue, exclusionReasonCount, exclusionReasonsOf, exclusionReasonsText,
+  exactResidue, exclusionReasonCountText, exclusionReasonsOf, exclusionReasonsText,
   initialMutationDraft, klifsNotice, klifsSitesText, LIGAND_SHELL_RADIUS_RANGE_A, ligandDistanceText, ligandOptions,
   LIST_LIMIT_MAX, LIST_ORDER_NOTE, mapsForStructure, METAL_CONTACT_RANGE_A, metalText, MODELING_NOTE, mutationErrorText,
   mutationPanelState, mutationReasonText, mutationReportMatches, mutationReportSavedForRun, mutationRequestArgs,
@@ -222,9 +223,11 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   const pocketRows = pocketSets.status === "ready" ? pocketSets.value : [];
   const mapRows = maps.status === "ready" ? maps.value : [];
   const annotationRows = annotations.status === "ready" ? annotations.value : [];
-  const reactionRows = reactionResults.status === "ready" ? reactionResults.value : [];
+  // M26: a failed reaction knowledge list read is "no result to choose" (shown beside the catalytic select), never a block
+  const reactionChoices = catalyticChoices(reactionResults);
+  const reactionRows = reactionChoices.rows;
   const listsReady = maps.status === "ready" && annotations.status === "ready" && pocketSets.status === "ready" &&
-    reactionResults.status === "ready";
+    reactionChoices.settled;
   const structureResidues = draft.structure ? residueCache[draft.structure] ?? null : null;
   const residueList = structureResidues?.status === "ready" ? structureResidues.value : null;
   const proteinOptions = residueList ? proteinResidueOptions(residueList) : [];
@@ -278,8 +281,10 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
     : chainOptions(draft.userOn ? draft.residues : []);
   const prediction = catalyticValue ? predictCatalyticCoverage({ chains: catalyticValue.chains,
     page: { chain_total: catalyticValue.chainTotal } }, predictionChains) : null;
-  const catalyticNotices = draft.structure === null || (draft.catalyticAnnotation !== null && catalyticValue === null) ? []
-    : catalyticRequestNotices({ selected: draft.catalyticAnnotation, prediction,
+  const catalyticFailed = catalyticLoad?.status === "error";
+  const catalyticNotices = draft.structure === null ||
+    (draft.catalyticAnnotation !== null && catalyticValue === null && !catalyticFailed) ? []
+    : catalyticRequestNotices({ selected: draft.catalyticAnnotation, prediction, detailFailed: catalyticFailed,
       uniprotNotice: uniprotSitesNotice(catalyticValue?.counts ?? null) });
 
   function chooseStructure(handle: string) {
@@ -394,7 +399,7 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
     ?? (positionsLoad?.status === "error" ? positionsLoad.message : null)
     ?? (excludedLoad?.status === "error" ? excludedLoad.message : null)
     ?? (candidatesLoad?.status === "error" ? candidatesLoad.message : null)
-    ?? [events, pocketSets, maps, annotations, reactionResults, sets].map(load => load.status === "error" ? load.message : null)
+    ?? [events, pocketSets, maps, annotations, sets].map(load => load.status === "error" ? load.message : null)
       .find(message => message !== null) ?? null;
   const panelState = mutationPanelState({ runId, capability, structures,
     loading: [events, pocketSets, maps, annotations, reactionResults, sets].some(load => load.status === "loading" || load.status === "idle") ||
@@ -438,9 +443,9 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
           <span className="mw-mono">prepared_structure · 이벤트 #{row.seq} · {shortHandle(row.handle)}</span>
         </label>)}
       </fieldset>
-      {[pocketSets, maps, annotations, reactionResults].map((load, index) => load.status === "error" ? <ErrorLine key={index}
-        message={load.message} onRetry={() => [setPocketsReload, setMapsReload, setAnnotationsReload,
-          setReactionsReload][index](value => value + 1)} /> : null)}
+      {[pocketSets, maps, annotations].map((load, index) => load.status === "error" ? <ErrorLine key={index}
+        message={load.message} onRetry={() => [setPocketsReload, setMapsReload, setAnnotationsReload][index](value => value + 1)} />
+        : null)}
 
       {draft.structure && <>
         {structureResidues?.status === "loading" && <p className="mw-mutation-note" aria-busy="true">구조 잔기 목록을 읽는 중</p>}
@@ -534,7 +539,9 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
               {offeredReactions.map(item => <option key={item.handle} value={item.handle}>
                 {shortHandle(item.handle)} · {reactionListItemText(item)}</option>)}
             </select></label>
-          {!offeredReactions.length && <p className="mw-mutation-note" data-testid="mutation-no-catalytic">
+          {reactionChoices.error && <ErrorLine message={reactionChoices.error} testId="mutation-catalytic-list-error"
+            onRetry={() => setReactionsReload(value => value + 1)} />}
+          {!offeredReactions.length && !reactionChoices.error && <p className="mw-mutation-note" data-testid="mutation-no-catalytic">
             이 구조의 효소 반응 지식 결과가 없습니다(지식·보고서 탭의 효소 반응 지식 영역에서 만들 수 있음).</p>}
           {catalyticLoad?.status === "loading" && <p className="mw-mutation-note" aria-busy="true">고른 결과의 체인별 M-CSA 상태를 읽는 중</p>}
           {catalyticLoad?.status === "error" && <ErrorLine message={catalyticLoad.message} testId="mutation-catalytic-error"
@@ -822,7 +829,7 @@ function SetSummary({ detail }: { detail: MutationCandidateSetDetail }) {
     <p className="mw-mutation-note" data-testid="mutation-source-counts">출처별 위치 수: {SOURCE_KINDS.map(kind =>
       `${SOURCE_LABEL[kind]} ${counts.source_counts[kind]}개`).join(" · ")}</p>
     <p className="mw-mutation-note" data-testid="mutation-reason-counts">제외 사유별 위치 수: {exclusionReasonsOf(counts).map(reason =>
-      `${EXCLUSION_REASON_LABEL[reason]} ${exclusionReasonCount(counts, reason)}개`).join(" · ")}</p>
+      exclusionReasonCountText(counts, reason, result.protection_checks.catalytic_residue_database)).join(" · ")}</p>
     <p className="mw-mutation-note" data-testid="mutation-ligand-summary">리간드: {result.ligand
       ? `${residueText(result.ligand.residue)} · ${residueLabelText(result.ligand.residue)} · 중원자 ${result.ligand.heavy_atom_count}개`
       : `${NULL_TEXT} (고르지 않음, 리간드까지 거리는 계산하지 않음)`}</p>

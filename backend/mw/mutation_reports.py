@@ -25,8 +25,10 @@ byte with a re-render. The renderer refuses interpretive wording on every line e
 M26 v2 sets (spec 8.5) add a catalytic part, and only v2 sets do: a v1 set's manifest, claims and Markdown are the
 v1 bytes. For v2 the catalytic check status is a status claim; when it is ``checked`` the covered chain count and the
 ``matched`` / ``conflict`` / ``unmatched`` row counts are computed claims, and a ``not_checked`` check has the status
-claim only (no number). The distinct M-CSA entry IDs of the positions' ``protection.catalytic`` are reference values
-citing the ``reaction_knowledge@1`` result. Creating and reopening re-validate that result
+claim only (no number). The ``catalytic_residue`` exclusion count is a claim only when the check covered a chain; with
+no covered chain (no annotation, or none covered) the stored 0 counts nothing and its line has no number. The
+distinct M-CSA entry IDs of the positions' ``protection.catalytic`` are reference values citing the
+``reaction_knowledge@1`` result. Creating and reopening re-validate that result
 (``reaction_knowledge.validated_result``) and compare the set's catalytic check and every ``protection.catalytic``
 with the ones the result gives (``mutation_catalytic_value_mismatch`` otherwise).
 """
@@ -312,6 +314,13 @@ def _row_selector(index: int, row: dict[str, Any]) -> dict[str, Any]:
     return {"row_index": index, "row_sha256": hashlib.sha256(canonical_json({"index": index, "row": row})).hexdigest()}
 
 
+def counted_reason(reason: str, checks: dict[str, Any]) -> bool:
+    """Whether the report counts the positions of one exclusion reason. ``catalytic_residue`` (v2 only) is counted only
+    where the catalytic check covered a chain: with no covered chain (no annotation, or ``chains_not_covered`` with none
+    covered) the stored 0 counts nothing, so there is no claim and the line is "—" with the reason (never 0)."""
+    return reason != "catalytic_residue" or bool(checks["catalytic_residue_database"].get("covered_chains"))
+
+
 def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
     """Every value statement of the report; each count is recounted from the stored rows."""
     positions, candidates = content["positions"], content["candidates"]
@@ -335,7 +344,8 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
     claims.extend(count("exclusion_reason_count", "positions[*].exclusion_reasons", {"exclusion_reason": reason},
                         f"{reason}_positions", sum(reason in p["exclusion_reasons"] for p in positions),
                         f"{reason} in exclusion_reasons") for reason in (EXCLUSION_REASONS_V2 if v2
-                                                                         else EXCLUSION_REASONS))
+                                                                         else EXCLUSION_REASONS)
+                  if counted_reason(reason, checks))
     claims.extend(count("source_position_count", "positions[*].sources.kind", {"source": kind}, f"{kind}_positions",
                         sum(any(s["kind"] == kind for s in p["sources"]) for p in positions),
                         f"any sources.kind == {kind}") for kind in SOURCE_KINDS)
@@ -541,6 +551,11 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
                      "아래와 같다.")
     lines.extend(["", "## 제외 사유별 위치 수", ""])
     for reason in (EXCLUSION_REASONS_V2 if v2 else EXCLUSION_REASONS):
+        if not counted_reason(reason, checks):   # no chain covered: no number, never 0
+            why = checks["catalytic_residue_database"]["reason"]
+            lines.append(f"- {REASON_KO[reason]} ({md(reason)}): — (촉매 잔기 검사 안 함: {CHECK_REASON_KO[why]} "
+                         f"({md(why)}). M-CSA가 다룬 체인이 없어 이 사유의 위치를 세지 않았다)")
+            continue
         note = (" — 촉매 잔기 검사 안 함(검사하지 않은 위치는 세지 않았다)"
                 if reason == "catalytic_residue" and checks["catalytic_residue_database"]["status"] != CHECKED else "")
         lines.append(f"- {REASON_KO[reason]} ({md(reason)}): "

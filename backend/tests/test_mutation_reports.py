@@ -230,6 +230,13 @@ def test_report_with_ligand_counts_minimum_and_not_checked_klifs(client, world):
     catalytic_line = next(line for line in markdown.splitlines() if "(catalytic\\_residue\\_database)" in line)
     assert "검사하지 않음 \\(not\\_checked\\)" in catalytic_line and not any(ch.isdigit() for ch in catalytic_line)
     assert "사용할 수 없음" not in markdown and "- 촉매 잔기 주석: 주지 않음" in markdown
+    # no annotation: the stored catalytic_residue count 0 counts nothing -> no claim, "—" with the reason, never 0
+    assert content["counts"]["exclusion_reason_counts"]["catalytic_residue"] == 0
+    assert not [c for c in manifest["claims"] if c["row_selector"] == {"exclusion_reason": "catalytic_residue"}]
+    excluded = _line(markdown, "- M-CSA 촉매 잔기 주석 (catalytic\\_residue):")
+    assert excluded == ("- M-CSA 촉매 잔기 주석 (catalytic\\_residue): — (촉매 잔기 검사 안 함: 주석을 주지 않음 "
+                        "(annotation\\_not\\_given). M-CSA가 다룬 체인이 없어 이 사유의 위치를 세지 않았다)")
+    assert not any(ch.isdigit() for ch in excluded)
     # no reference value without a map or annotation; no per-position table
     assert not [c for c in manifest["claims"] if c["evidence_kind"] == "reference_value"]
     assert all(c["evidence_kind"] == "computed" for c in manifest["claims"])
@@ -536,8 +543,29 @@ def test_not_checked_catalytic_report_has_a_status_claim_and_no_number(client, w
         assert "- 보호된 위치의 M-CSA 항목 ID: 검사하지 않음" in markdown and "none" not in _line(markdown, "M-CSA 항목 ID")
         assert not [c for c in manifest["claims"] if c["statement_id"] == "reference_mcsa_entry_id"]
     assert manifest["limitations"][2] == K.LIMITATION_3_NOT_CHECKED
-    assert "촉매 잔기 검사 안 함" in _line(markdown, "- M-CSA 촉매 잔기 주석 (catalytic\\_residue):")
+    excluded = _line(markdown, "- M-CSA 촉매 잔기 주석 (catalytic\\_residue):")
+    assert "촉매 잔기 검사 안 함" in excluded
+    content = _run().store.load(world[name])
+    reason_claims = [c for c in manifest["claims"] if c["row_selector"] == {"exclusion_reason": "catalytic_residue"}]
+    if name == "cat_partial":   # A and B covered: the count of those chains, with the note
+        counted = sum("catalytic_residue" in p["exclusion_reasons"] for p in content["positions"])
+        assert [c["exact_value"] for c in reason_claims] == [counted] and counted > 0
+        assert excluded.endswith(f": {counted} — 촉매 잔기 검사 안 함(검사하지 않은 위치는 세지 않았다)")
+    else:                       # no chain covered: the stored 0 is no count -> no claim, "—" with the reason
+        assert content["counts"]["exclusion_reason_counts"]["catalytic_residue"] == 0 and reason_claims == []
+        assert excluded == ("- M-CSA 촉매 잔기 주석 (catalytic\\_residue): — (촉매 잔기 검사 안 함: 위치가 있는 체인을 M-CSA "
+                            "주석이 모두 다루지는 않음 (chains\\_not\\_covered). M-CSA가 다룬 체인이 없어 이 사유의 위치를 세지 "
+                            "않았다)")
+        assert not any(ch.isdigit() for ch in excluded)
+        # a proposed 0 for it is refused (no such claim exists)
+        zero = {**_claim(manifest, "exclusion_reason_count", exclusion_reason="no_allowed_alternative"),
+                "row_selector": {"exclusion_reason": "catalytic_residue"}, "quantity": "catalytic_residue_positions",
+                "exact_value": 0, "rendered_value": "0",
+                "operation": "count_where(catalytic_residue in exclusion_reasons; stored rows)"}
+        with pytest.raises(EvidenceError, match="field_not_allowed"):
+            mr.validate_mutation_claim(_run(), world[name], zero)
     assert _selected(client, created["handle"]).status_code == 200
+    assert _selected(client, created["handle"]).json()["markdown"] == markdown
 
 
 def test_catalytic_values_must_agree_with_the_reaction_result(client, world):

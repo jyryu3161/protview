@@ -23,7 +23,7 @@
 ## 2. 실서버 가져오기 첫 회 (import1)
 
 - 명령(메인 체크아웃, 작업 브랜치 `dryforge/m26-reaction-knowledge`, `MW_REACTION_REFERENCE_DIR`·`MW_REFERENCE_DIR` 미설정):
-  `.venv/bin/python scripts/import_reaction_references.py --yes --reference-dir /Users/jaeyongryu/Projects/protview/.deps/reaction_qa/import1`
+  `.venv/bin/python scripts/import_reaction_references.py --yes --reference-dir <repo>/.deps/reaction_qa/import1`
 - 시작 2026-10-09T01:58:27Z, 끝 02:00:24Z, **벽시계 117초**, 종료 코드 0. 확인 화면의 M15 kinase 목록: 541개(M15 세트 `aa21ead9930f82ebea3a2acf976449d9b1c6280ed17206d74d8cb9dc3f923317`), 이전 활성 세트 없음.
 - **세트 해시 `fbeed900ef01b68e00b874ca923abcdbd683f0f2caf2eea117eb3037300fcb52`**, `imported_at` 2026-10-09T02:00:23Z, `importer_version` `reaction_import/1`, 매니페스트 2,505 B(정규 JSON, SHA-256 = 세트 해시), `active.json`은 정규 `reaction_active@1` 포인터. 폴더의 세트는 이것 하나.
 

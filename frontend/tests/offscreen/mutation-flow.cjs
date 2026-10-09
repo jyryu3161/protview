@@ -63,12 +63,17 @@ const REFUSALS = {
   ligand_required: "리간드 껍질에는 리간드 선택이 필요함",
 };
 const FORBIDDEN = /친화|ΔΔG|안정성|순위|추천|최적|개선|활성|예측|좋은|유망|안전|\brank|\bbest|optimal|improv|recommend|affinity|stabili|predict/gi;
+// M26 (spec §2, §7): the catalytic mode also refuses importance and effect wording in the M20 panel, the M26 text
+// included; the fixed limitation sentences (sentence 2 says "효과") stay outside the check as in the main mode.
+const FORBIDDEN_CATALYTIC = new RegExp(`${FORBIDDEN.source}|중요|핵심|필수|효과|\\beffect|essential|critical|important`, "gi");
 const ALTER_LABEL = "QA refusal fixture (labeled renderer route): the generate_mutation_candidates request body is altered " +
   "in flight so that the real server refuses it; the server reply is shown unchanged";
 const HOLD_LABEL = "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)";
 const PROVIDER_EVENT_TYPES = new Set(["egress", "egress_budget_settled", "viewer_dispatch_started"]);
 
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
+/** Length and SHA-256 of a text that may quote reference values: what a step returns instead of the text itself. */
+const textDigest = text => ({ chars: (text ?? "").length, sha256: sha(Buffer.from(text ?? "", "utf8")) });
 const fileRecord = file => file && fs.existsSync(file)
   ? { path: file, bytes: fs.statSync(file).size, sha256: sha(fs.readFileSync(file)) } : { path: file ?? null, missing: true };
 const enc = encodeURIComponent;
@@ -592,7 +597,7 @@ async function panelWording(page) {
     return { text: copy.textContent, limits };
   });
 }
-function forbiddenIn(text) { return [...text.matchAll(FORBIDDEN)].map(match => match[0]); }
+function forbiddenIn(text, pattern = FORBIDDEN) { return [...text.matchAll(pattern)].map(match => match[0]); }
 async function noControls(page) {
   return { state: await panelState(page), text: clean(await panel(page).textContent()),
     controls: await panel(page).locator("button, input, select, textarea, a, table").count() };
@@ -1273,13 +1278,15 @@ async function modeMain(session, input, rec_, evidence, log) {
       await row.click();
       const pre = content.getByLabel(`저장된 보고서 ${created.handle}`, { exact: true });
       await pre.waitFor({ timeout: 30000 });
-      return { kind, text: await pre.textContent() };
+      // only the length, the hash and the missing fixed sentences leave this action (never the report text itself)
+      const text = (await pre.textContent()) ?? "";
+      return { kind, ...textDigest(text), missing: limitationsNotChecked().filter(sentence => !text.includes(sentence)) };
     }, async value => {
       assert.equal(value.kind, "변이 후보 보고서");
-      const saved = await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`);
-      assert.equal(value.text, saved.markdown);
-      for (const sentence of limitationsNotChecked()) assert.ok(value.text.includes(sentence), `report lacks ${sentence}`);
-      return { kind: value.kind, markdownSha256: sha(Buffer.from(value.text)) };
+      const saved = textDigest((await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`)).markdown);
+      assert.deepEqual([value.chars, value.sha256], [saved.chars, saved.sha256], "shown report differs from the stored Markdown");
+      assert.deepEqual(value.missing, [], `report lacks ${value.missing.join(" | ")}`);
+      return { kind: value.kind, markdownSha256: value.sha256 };
     });
     for (const [label, format] of [["Markdown 다운로드", "markdown"], ["JSON 다운로드", "json"]]) {
       const route = `/runs/${runA}/reports/download?handle=${enc(created.handle)}&format=${format}`;
@@ -1484,6 +1491,18 @@ const EXCLUSION_V2 = ["non_standard_residue", "user_protected", "klifs_key_site"
 const EXCLUSION_LABEL = { non_standard_residue: "표준 잔기가 아님", user_protected: "사용자 보호", klifs_key_site: "KLIFS 주요 부위",
   metal_contact: "금속 근접", disulfide_cys: "이황화 Cys", catalytic_residue: "M-CSA 촉매 잔기 주석",
   no_allowed_alternative: "허용 목록에 바꿀 잔기 없음" };
+const CATALYTIC_REASON_LABEL = { annotation_not_given: "효소 반응 지식 결과를 고르지 않음",
+  chains_not_covered: "위치가 있는 체인 중 M-CSA가 다루지 않은 체인이 있거나 위치가 없음", not_implemented: "구현하지 않음" };
+/** One entry of the 제외 사유별 위치 수 line: catalytic_residue is "—" with the reason unless the check covered a chain
+ * (no annotation / no chain covered: the stored 0 counts nothing); partly covered names the covered chains. */
+function reasonCountText(reason, value, check) {
+  const label = EXCLUSION_LABEL[reason];
+  if (reason !== "catalytic_residue") return `${label} ${value}개`;
+  if (!("covered_chains" in check)) return `${label} — (${CATALYTIC_REASON_LABEL[check.reason]} (${check.reason}), 세지 않음)`;
+  if (!check.covered_chains.length) return `${label} — (M-CSA가 다룬 체인 없음, 세지 않음)`;
+  return check.uncovered_chains.length ? `${label} ${value}개 (검사한 체인 ${check.covered_chains.join(", ")}만)`
+    : `${label} ${value}개`;
+}
 const REACTION_TOOL = "link_reaction_knowledge";
 const posted = (log, since) => log.filter(row => row.at >= since && row.method === "POST" && row.api)
   .map(row => `${row.path}${row.tool ? ` ${row.tool}` : ""}`);
@@ -1609,8 +1628,11 @@ async function verifyCatalyticSet(page, run, handle, want) {
   // stored objects are canonical JSON (sorted keys): the key set, not its order, is the stored fact
   assert.deepEqual(Object.keys(result.counts.exclusion_reason_counts).sort(), [...order].sort(), "exclusion reason keys");
   assert.deepEqual(ui.reasonFilter, order, "reason filter options");
-  for (const reason of order) assert.ok(ui.reasonCounts.includes(`${EXCLUSION_LABEL[reason]} ${result.counts.exclusion_reason_counts[reason]}개`),
-    ui.reasonCounts);
+  for (const reason of order) assert.ok(ui.reasonCounts.includes(reasonCountText(reason,
+    result.counts.exclusion_reason_counts[reason], check)), `${reason}: ${ui.reasonCounts}`);
+  // no chain covered: the stored catalytic_residue 0 counts nothing and is never shown as a number (spec §2)
+  if (order.includes("catalytic_residue") && !(check.covered_chains ?? []).length)
+    assert.ok(!/M-CSA 촉매 잔기 주석 \d/.test(ui.reasonCounts), `not checked shown as a count: ${ui.reasonCounts}`);
   if (!("covered_chains" in check)) {
     for (const text of [ui.covered, ui.uncovered, ui.matched, ui.conflict, ui.unmatched])
       assert.ok(text.startsWith("—") && !/\d/.test(text), `not checked shown with a number: ${text}`);
@@ -1676,6 +1698,17 @@ async function verifyCatalyticSet(page, run, handle, want) {
     protectedPositions: positions.filter(row => row.protection.catalytic?.length).map(row => [rkey(row.residue), row.status,
       row.protection.released]) };
 }
+/** The "촉매 잔기 검사 안 함" mark inside one picker row (M24 sources, M25 pool): how many, its badge text and detail. */
+async function pickerMark(row, testId) {
+  const count = await row.locator(`[data-testid="${testId}"]`).count();
+  return { count, mark: count === 1 ? clean(await row.locator(`[data-testid="${testId}"] .mw-catalytic-badge`).textContent()) : null,
+    detail: count === 1 ? clean(await row.locator(`[data-testid="${testId}-detail"]`).textContent()) : null };
+}
+function checkPickerMark(seen, handle) {
+  assert.equal(seen.count, 1, `${handle}: mark count`);
+  assert.equal(seen.mark, UK2, `${handle}: mark text`);
+  assert.ok(seen.detail?.includes("(not_checked)"), `${handle}: mark detail ${seen.detail}`);
+}
 async function setMark(page, handle) {
   const label = panel(page).locator(`label[data-mutation-set="${handle}"]`);
   await label.waitFor({ timeout: 30000 });
@@ -1697,7 +1730,7 @@ async function modeCatalytic(session, input, rec_, evidence, log) {
   const wording = [];
   const checkWording = async label => {
     const seen = await panelWording(page);
-    const found = forbiddenIn(seen.text);
+    const found = forbiddenIn(seen.text, FORBIDDEN_CATALYTIC);
     wording.push({ label, found, chars: seen.text.length });
     assert.deepEqual(found, [], `${label}: forbidden wording ${found.join(", ")}`);
   };
@@ -1990,21 +2023,24 @@ async function modeCatalytic(session, input, rec_, evidence, log) {
       return value;
     });
     if (M.pickers.includes("m25")) await rec_.step("K15-m25", [K("C-picker-marks")], "JEV 루프 (단백질): the pool sources carry the mark " +
-      "for not-checked sets and none for the checked set", async () => {
+      "(UK2 + its not_checked detail) for not-checked sets and none for the checked set; nothing is posted", async () => {
+      const started = Date.now();
       const loop = page.locator('#mw-app-panel-protein [data-testid="jev-loop-panel"][data-branch="protein"]');
       await loop.locator('[data-testid="jev-loop-sources"]').waitFor({ timeout: 60000 });
       const out = {};
-      for (const handle of [...notChecked, handles.s2]) out[handle] = await loop.locator(`label[data-jev-loop-source="${handle}"] ` +
-        '[data-testid="jev-loop-source-catalytic"]').count();
-      return out;
+      for (const handle of [...notChecked, handles.s2])
+        out[handle] = await pickerMark(loop.locator(`label[data-jev-loop-source="${handle}"]`), "jev-loop-source-catalytic");
+      return { out, posts: posted(log, started) };
     }, async value => {
-      for (const handle of notChecked) assert.equal(value[handle], 1);
-      if (checkedSet) assert.equal(value[checkedSet], 0);
-      picker.m25 = value;
+      for (const handle of notChecked) checkPickerMark(value.out[handle], handle);
+      if (checkedSet) assert.equal(value.out[checkedSet].count, 0, "the checked set carries the mark");
+      assert.deepEqual(value.posts, [], "the JEV loop pool posted");
+      picker.m25 = value.out;
       return value;
     });
     if (M.pickers.includes("m24")) await rec_.step("K16-m24", [K("C-picker-marks")], "Click 지식·보고서, JEV 판정: choose 변이 후보 as the " +
-      "source kind → the sources carry the mark for not-checked sets and none for the checked set; nothing is sent", async () => {
+      "source kind → the sources carry the mark (UK2 + its not_checked detail) for not-checked sets and none for the checked " +
+      "set; nothing is sent", async () => {
       const started = Date.now();
       await selectTab(page, "지식·보고서");
       const jev = page.locator('#mw-app-panel-knowledge [data-testid="jev-panel"]');
@@ -2013,12 +2049,12 @@ async function modeCatalytic(session, input, rec_, evidence, log) {
       control(evidence, "jev-kind-mutation", { checked: true });
       await jev.locator('[data-testid="jev-sources"]').waitFor({ timeout: 60000 });
       const out = {};
-      for (const handle of [...notChecked, handles.s2]) out[handle] = await jev.locator(`label[data-jev-source="${handle}"] ` +
-        '[data-testid="jev-source-catalytic"]').count();
+      for (const handle of [...notChecked, handles.s2])
+        out[handle] = await pickerMark(jev.locator(`label[data-jev-source="${handle}"]`), "jev-source-catalytic");
       return { out, posts: posted(log, started) };
     }, async value => {
-      for (const handle of notChecked) assert.equal(value.out[handle], 1);
-      if (checkedSet) assert.equal(value.out[checkedSet], 0);
+      for (const handle of notChecked) checkPickerMark(value.out[handle], handle);
+      if (checkedSet) assert.equal(value.out[checkedSet].count, 0, "the checked set carries the mark");
       assert.deepEqual(value.posts, [], "the JEV area posted");
       picker.m24 = value.out;
       return value;
@@ -2027,7 +2063,8 @@ async function modeCatalytic(session, input, rec_, evidence, log) {
   });
 
   await rec_.part("wording", [K("R-wording")], () => rec_.step("K17-wording", [K("R-wording")], "No rank / recommendation / " +
-    "effect wording in the M20 panel outside the fixed sentences (every check of this mode)", async () => {
+    "importance / activity / effect wording in the M20 panel outside the fixed limitation sentences (every check of this " +
+    "mode)", async () => {
     await selectTab(page, "구조 분석");
     await chooseRun(page, run);
     await openReady(page);
@@ -2101,4 +2138,5 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, preflightOracle, halfUp2 };
+module.exports = { options, main, preflightOracle, halfUp2, forbiddenIn, FORBIDDEN, FORBIDDEN_CATALYTIC, reasonCountText,
+  UK2, LIMITATIONS, LIMIT3 };

@@ -72,13 +72,14 @@ const REFUSALS = {
   map_pdb_mismatch: ["번호 대응의 PDB ID가 요청 PDB ID와 다름", "numbering_map"],
 };
 const ROW_LABEL = { matched: "대응됨", unmatched: "대응 없음", conflict: "충돌" };
-// Spec §7 interpretive wording (M15 + M20 lists, 필수·핵심·중요·메커니즘이 유지, English counterparts), checked after
-// removing the fixed sentences and every string of the stored result (verbatim reference values and codes).
+// Spec §7 interpretive wording (M15 + M20 lists, 필수·핵심·중요·메커니즘이 유지, English counterparts) and spec §2's
+// 효과 / effect, checked after removing the fixed sentences and every string of the stored result (verbatim reference
+// values and codes).
 const FORBIDDEN = new RegExp(["안정성", "ΔΔG", "순위", "추천", "최적", "개선", "활성", "예측", "유망", "좋은", "나쁜",
-  "안전", "점수", "에너지", "수소\\s*결합", "친화", "필수", "핵심", "중요", "메커니즘이\\s*유지", "\\brank", "\\bbest\\b",
-  "optimal", "improv", "recommend", "predict", "promising", "\\bgood\\b", "\\bsafe", "\\bactiv(?:e|ity)\\b",
+  "안전", "점수", "에너지", "수소\\s*결합", "친화", "필수", "핵심", "중요", "효과", "메커니즘이\\s*유지", "\\brank",
+  "\\bbest\\b", "optimal", "improv", "recommend", "predict", "promising", "\\bgood\\b", "\\bsafe", "\\bactiv(?:e|ity)\\b",
   "\\bscor(?:e|ing)\\b", "energ", "hydrogen[\\s_-]?bond", "stabili", "affinity", "essential", "critical", "important",
-  "\\bkey\\b"].join("|"), "gi");
+  "\\bkey\\b", "\\beffect"].join("|"), "gi");
 const ALTER_LABEL = "QA refusal fixture (labeled renderer route): the link_reaction_knowledge request body is altered in " +
   "flight so that the real server refuses it; the server reply is shown unchanged";
 const DRY_RUN_LABEL = "QA setup record: the dry-run run was made through POST /runs by the runner (the UI has no dry-run " +
@@ -86,6 +87,8 @@ const DRY_RUN_LABEL = "QA setup record: the dry-run run was made through POST /r
 const PROVIDER_EVENT_TYPES = new Set(["egress", "egress_budget_settled", "viewer_dispatch_started"]);
 
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
+/** Length and SHA-256 of a text that may quote reference values: what a step returns instead of the text itself. */
+const textDigest = text => ({ chars: (text ?? "").length, sha256: sha(Buffer.from(text ?? "", "utf8")) });
 const fileRecord = file => file && fs.existsSync(file)
   ? { path: file, bytes: fs.statSync(file).size, sha256: sha(fs.readFileSync(file)) } : { path: file ?? null, missing: true };
 const enc = encodeURIComponent;
@@ -353,8 +356,10 @@ async function tabSignature(page, label, id) {
     const b = masked(await panel.innerText());
     return a === b && !(await panel.locator('[aria-busy="true"]').count()) ? b : null;
   }, `${label} settled`, 60000);
+  // the tab text itself never reaches the step record (it is compared by length and hash)
+  const digest = textDigest(text);
   return { label, areas: await panel.locator("[data-testid$='-panel']").evaluateAll(items =>
-    items.map(item => item.getAttribute("data-testid"))), textSha256: sha(Buffer.from(text)), text };
+    items.map(item => item.getAttribute("data-testid"))), textSha256: digest.sha256, chars: digest.chars };
 }
 
 // ------------------------------------------------------------------ M15 numbering map (as mutation-flow.cjs)
@@ -1154,12 +1159,13 @@ async function modeMain(session, input, rec_, evidence, log) {
         await row.click();
         const pre = content.getByLabel(`저장된 보고서 ${created.handle}`, { exact: true });
         await pre.waitFor({ timeout: 30000 });
-        return { kind, text: await pre.textContent() };
+        // the report quotes reference text (CC BY 4.0): only its length and hash leave this action, even on failure
+        return { kind, ...textDigest(await pre.textContent()) };
       }, async value => {
         assert.equal(value.kind, "효소 반응 지식 보고서");
-        const saved = await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`);
-        assert.equal(value.text, saved.markdown);
-        return { kind: value.kind, markdownSha256: sha(Buffer.from(value.text)) };
+        const saved = textDigest((await readApi(page, `/runs/${runA}/reports/selected?handle=${enc(created.handle)}`)).markdown);
+        assert.deepEqual([value.chars, value.sha256], [saved.chars, saved.sha256], "shown report differs from the stored Markdown");
+        return { kind: value.kind, markdownSha256: value.sha256 };
       });
   });
 
@@ -1215,7 +1221,8 @@ async function modeMain(session, input, rec_, evidence, log) {
       for (const name of ["protein", "ligand"]) {
         assert.ok(beforeSignatures[name], `${name} signature before was not recorded`);
         assert.deepEqual(value.after[name].areas, beforeSignatures[name].areas, `${name} areas`);
-        assert.equal(value.after[name].text, beforeSignatures[name].text, `${name} text changed`);
+        assert.deepEqual([value.after[name].chars, value.after[name].textSha256],
+          [beforeSignatures[name].chars, beforeSignatures[name].textSha256], `${name} text changed`);
       }
       return { hidden: value.hidden, areas: { protein: value.after.protein.areas, ligand: value.after.ligand.areas },
         textSha256: { protein: value.after.protein.textSha256, ligand: value.after.ligand.textSha256 } };
@@ -1451,4 +1458,4 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, forbiddenIn, identityText, checkChainExpectation };
+module.exports = { options, main, forbiddenIn, identityText, checkChainExpectation, textDigest, FIXED };

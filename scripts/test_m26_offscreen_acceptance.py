@@ -3,6 +3,7 @@
 import argparse
 import ast
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -93,13 +94,116 @@ def test_every_planned_case_is_observed_by_a_harness(stage):
         harness = {m26.FLOW_OF[step][0] for step in steps}
         found = case in _plan_cases(plan) or any(f'"{case}"' in (reaction if name == m26.FLOW else mutation)
                                                  for name in harness)
-        if stage == "real":  # the harnesses map their built-in fixture ids onto the real ids
-            found = found or f'"{case}"' in reaction + mutation or case in ("X-m20", "X-picker-marks")
+        if stage == "real":  # every covering harness maps its built-in fixture ids onto the real id (REAL_CASE / K)
+            found = found or all(f'"{case}"' in (reaction if name == m26.FLOW else mutation) for name in harness)
         assert found, f"{stage}: {case} is observed by no harness step"
     for step in m26.STEPS[stage]:
         script, mode = m26.FLOW_OF[step]
         text = reaction if script == m26.FLOW else mutation
         assert f'"{mode}"' in text, (step, mode)
+
+
+def test_real_m20_cases_are_the_catalytic_steps_mapped_by_the_harness():
+    """X-m20 and X-picker-marks are not named in the real plan: the catalytic mode's K() maps its C- case ids onto them.
+    Each must be reached by real-stage steps of that mode (no vacuous pass): the mapping is in the harness, the C- cases
+    it maps are each observed by a step that runs without the v1 run (the real plan has none), and the pickers run."""
+    mutation = MUTATION_FLOW.read_text()
+    assert 'id === "C-picker-marks" ? "X-picker-marks" : id.startsWith("C-") ? "X-m20"' in mutation
+    real = m26.real_plan(REPO, "a" * 64, "run_dry")["mutation"]
+    assert real["v1Run"] is None and set(real["pickers"]) == {"m20", "m21", "m23", "m24", "m25"}
+    v1_only = {"C-v1-set", "C-limitation-variants"}   # step K11 runs only with a stored v1 run
+    mapped = {case for case in m26.CASE_PLAN["fixture"] if case.startswith("C-")} - v1_only
+    for case in mapped:
+        assert f'K("{case}")' in mutation, case
+    # X-m20's text names what those steps observe; X-picker-marks the five pickers (K12–K16)
+    for step in ("K03-uk2-none", "K06-preselect", "K07-prediction", "K08-set-partial", "K09-set-all", "K10-release",
+                 "K10c-derived-set", "K12-m20-list", "K13-m21", "K14-m23", "K15-m25", "K16-m24"):
+        assert f'"{step}"' in mutation, step
+    for step in ("K12-m20-list", "K13-m21", "K14-m23", "K15-m25", "K16-m24"):
+        call = mutation[mutation.index(f'"{step}"'):]
+        assert call[:200].count('K("C-picker-marks")') == 1, step
+    assert {"X-m20", "X-picker-marks"} <= set(m26.CASE_PLAN["real"]) and not {"X-m20", "X-picker-marks"} & set(
+        m26.NOT_OBSERVED["real"])
+
+
+def _node(script, *args):
+    done = subprocess.run(["node", "-e", script, *args], capture_output=True, text=True, check=True, cwd=REPO / "frontend")
+    return json.loads(done.stdout)
+
+
+REACTION_PROBES = ["효과", "변이 효과가 있다", "side effect", "effects", "중요 잔기", "핵심", "필수", "important", "critical",
+                   "촉매 잔기 · 반응 · 효소", "효소 반응 지식 (M-CSA 원문, 계산 아님)"]
+
+
+def test_reaction_harness_wording_covers_effect_and_keeps_its_exemptions():
+    """spec §2 / §7: 효과 and effect are refused by the reaction harness; the fixed RK / UK sentences and quoted stored
+    reference strings (even ones saying "effect") stay exempt, as designed."""
+    script = (f"const f=require({json.dumps(str(FLOW))});const p=JSON.parse(process.argv[1]);"
+              "const ref={rows:[{reference:{roles_summary:'electrostatic effect on the substrate'}}]};"
+              "console.log(JSON.stringify({probes:p.map(t=>f.forbiddenIn(t)),"
+              "quoted:f.forbiddenIn('역할 원문: electrostatic effect on the substrate',[ref]),"
+              "unquoted:f.forbiddenIn('역할 원문: electrostatic effect on the substrate')}))")
+    out = _node(script, json.dumps(REACTION_PROBES))
+    assert out["probes"][:9] == [["효과"], ["효과"], ["effect"], ["effect"], ["중요"], ["핵심"], ["필수"], ["important"],
+                                 ["critical"]]
+    assert out["probes"][9:] == [[], []]   # 효소 / 촉매 / the reference column label are not interpretive
+    assert out["quoted"] == [] and out["unquoted"] == ["effect"]
+    fixed = _node(f"const f=require({json.dumps(str(FLOW))});console.log(JSON.stringify({{fixed:f.FIXED,"
+                  "found:f.FIXED.map(s=>f.forbiddenIn(s)),own:f.FIXED.filter(s=>/효과|effect/i.test(s))}))")
+    assert len(fixed["fixed"]) == 10 and fixed["found"] == [[]] * 10
+    assert fixed["own"] == []   # RK1–RK6 / UK1–UK4 never say 효과: the new words do not lean on the exemption
+
+
+def test_m20_catalytic_wording_and_counts_line_expectations():
+    """The catalytic mode refuses 중요·핵심·필수·효과 (the main M20 mode's pattern is unchanged); limitation sentence 2
+    (it says 효과) is outside the check as the panel wording removes the limitation block. The counts-line expectation:
+    catalytic_residue is — with the reason when no chain was covered, the number otherwise (partly: covered chains)."""
+    script = (f"const f=require({json.dumps(str(MUTATION_FLOW))});"
+              "const not_given={status:'not_checked',reason:'annotation_not_given',annotation:null};"
+              "const none={status:'not_checked',reason:'chains_not_covered',annotation:'h',covered_chains:[],"
+              "uncovered_chains:[{chain_auth:'A',coverage:'pdb_not_in_snapshot'}]};"
+              "const part={...none,covered_chains:['A'],uncovered_chains:[{chain_auth:'B',coverage:'not_in_annotation'}]};"
+              "const all={...none,status:'checked',reason:null,covered_chains:['A','B'],uncovered_chains:[]};"
+              "console.log(JSON.stringify({catalytic:['중요','핵심','필수','효과','effect','순위'].map(w=>f.forbiddenIn(w,"
+              "f.FORBIDDEN_CATALYTIC)),main:f.forbiddenIn('중요 핵심 필수 효과'),limit2:f.forbiddenIn(f.LIMITATIONS[1],"
+              "f.FORBIDDEN_CATALYTIC),uk2:f.forbiddenIn(f.UK2,f.FORBIDDEN_CATALYTIC),"
+              "variants:Object.values(f.LIMIT3).map(s=>f.forbiddenIn(s,f.FORBIDDEN_CATALYTIC)),"
+              "counts:[not_given,none,part,all].map(c=>f.reasonCountText('catalytic_residue',0,c)),"
+              "metal:f.reasonCountText('metal_contact',0,not_given)}))")
+    out = _node(script)
+    assert out["catalytic"] == [["중요"], ["핵심"], ["필수"], ["효과"], ["effect"], ["순위"]]
+    assert out["main"] == []
+    assert "효과" in out["limit2"] and out["uk2"] == []   # sentence 2 is fixed text, exempt by removal, not by pattern
+    assert out["variants"][:2] == [[], []]
+    assert out["counts"] == ["M-CSA 촉매 잔기 주석 — (효소 반응 지식 결과를 고르지 않음 (annotation_not_given), 세지 않음)",
+                             "M-CSA 촉매 잔기 주석 — (M-CSA가 다룬 체인 없음, 세지 않음)",
+                             "M-CSA 촉매 잔기 주석 0개 (검사한 체인 A만)", "M-CSA 촉매 잔기 주석 0개"]
+    assert out["metal"] == "금속 근접 0개"
+    panel = mutation_panel_wording()
+    assert "[data-testid=\"mutation-limitations\"]" in panel   # the limitation block is removed before the check
+
+
+def test_harness_steps_return_digests_of_report_and_tab_text_never_the_text():
+    """A step's return value is kept in the jsonl (actionResult, up to 6000 characters, on a failed check): the library
+    report Markdown (M14-library, Q02-listed) and the tab text (M04 / M16) leave their actions as length + SHA-256."""
+    import hashlib
+    import re
+
+    for path in (FLOW, MUTATION_FLOW):
+        source = path.read_text()
+        assert not re.findall(r"text: await (?:pre|panel)\.(?:textContent|innerText)\(\)", source), path.name
+        assert "...textDigest(" in source, path.name
+    reaction = FLOW.read_text()
+    signature = reaction[reaction.index("async function tabSignature"):reaction.index("// ---", reaction.index(
+        "async function tabSignature"))]
+    assert "textSha256: digest.sha256, chars: digest.chars }" in signature and ", text }" not in signature
+    out = _node(f"const f=require({json.dumps(str(FLOW))});console.log(JSON.stringify(f.textDigest('촉매 abc')))")
+    assert out == {"chars": len("촉매 abc"), "sha256": hashlib.sha256("촉매 abc".encode()).hexdigest()}
+
+
+def mutation_panel_wording():
+    source = MUTATION_FLOW.read_text()
+    return source[source.index("async function panelWording"):source.index("function forbiddenIn")]
 
 
 def test_fixture_plan_names_existing_inputs_and_consistent_references():
@@ -425,6 +529,46 @@ def test_report_downloads_are_held_out_of_the_text_evidence_and_restored(tmp_pat
         assert other.is_file()
         assert [target.name for target, _ in held] == ["r.md.held"]
     assert report.read_text() == "quoted third-party text" and not (report.parent / "r.md.held").exists()
+
+
+def test_failure_panel_html_is_held_too_in_every_stage(tmp_path):
+    """A failed step saves the panel HTML (it can quote M-CSA role text, UniProt descriptions, Rhea equations)."""
+    files = {"real-main/L-s9i-failure.panel.html": "<td>role text</td>",
+             "fixture-mutation/K09-set-all-failure.panel.html": "<td>x</td>",
+             "real-mutation/downloads/report.md": "quoted",
+             "real-main/reaction-main.jsonl": "{}\n", "real-main/K01-new-run.png": "png",
+             "real-main/notes.panel.html": "<p>not a failure panel</p>"}
+    for rel, text in files.items():
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text(text)
+    with m26.held_downloads(tmp_path) as held:
+        assert sorted(str(path.relative_to(tmp_path)) for _, path in held) == [
+            "fixture-mutation/K09-set-all-failure.panel.html", "real-main/L-s9i-failure.panel.html",
+            "real-mutation/downloads/report.md"]
+        texts = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file()
+                       and p.suffix in m26.TEXT_SUFFIXES)
+        assert texts == ["real-main/notes.panel.html", "real-main/reaction-main.jsonl"]   # what the export copies as text
+    for rel, text in files.items():
+        assert (tmp_path / rel).read_text() == text
+    assert not list(tmp_path.rglob("*.held"))
+
+
+def test_runner_export_holds_failure_panels_and_downloads(kbase, tmp_path, monkeypatch):
+    runner = m26.Runner(_args(kbase))
+    runner.artifacts = tmp_path / "artifacts"
+    (runner.artifacts / "real-main" / "downloads").mkdir(parents=True)
+    (runner.artifacts / "real-main" / "downloads" / "r.md").write_text("quoted")
+    (runner.artifacts / "real-main" / "M14-library-failure.panel.html").write_text("<pre>report</pre>")
+    seen = {}
+
+    def export(self, ledger):
+        seen["text"] = sorted(p.name for p in self.artifacts.rglob("*") if p.suffix in m26.TEXT_SUFFIXES)
+        seen["held"] = sorted(p.name for p in self.artifacts.rglob("*.held"))
+
+    monkeypatch.setattr(m26.m15.Runner, "export", export)
+    runner.export({})
+    assert seen == {"text": [], "held": ["M14-library-failure.panel.html.held", "r.md.held"]}
+    assert (runner.artifacts / "real-main" / "M14-library-failure.panel.html").read_text() == "<pre>report</pre>"
 
 
 def test_held_downloads_restores_even_when_the_export_fails(tmp_path):

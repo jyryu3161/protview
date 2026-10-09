@@ -187,6 +187,18 @@ test("M20 area: catalytic choice is offered, pre-selected only by the lib rule, 
     /catalyticProtectionText\(row\.protection\)/.test(source));
   for (const id of ["mutation-set-catalytic", "mutation-catalytic-notice", "mutation-catalytic-check",
     "mutation-catalytic-check-badge"]) assert.ok(source.includes(id), id);
+  // A failed reaction knowledge list read never blocks M20: no result to choose (lib catalyticChoices), its error beside
+  // the catalytic select, not the panel's failure; a failed detail read keeps the UK2 notices and the request possible.
+  assert.ok(source.includes("const reactionChoices = catalyticChoices(reactionResults);"));
+  assert.ok(/const reactionRows = reactionChoices\.rows;/.test(source) && /reactionChoices\.settled;/.test(source));
+  assert.ok(!/reactionResults\.status === "ready"/.test(source));
+  const readError = source.slice(source.indexOf("const readError ="), source.indexOf("const panelState ="));
+  assert.ok(readError.includes("[events, pocketSets, maps, annotations, sets]") && !readError.includes("reactionResults"));
+  assert.ok(/reactionChoices\.error && <ErrorLine message=\{reactionChoices\.error\} testId="mutation-catalytic-list-error"/
+    .test(source));
+  assert.ok(/detailFailed: catalyticFailed/.test(source));
+  assert.ok(/<p className="mw-mutation-note" data-testid="mutation-reason-counts">[^]*?exclusionReasonCountText\(counts, reason, /
+    .test(source));
 });
 
 test("other candidate-set pickers carry only the shared mark from catalyticBadge (M21, M23, M24, M25)", () => {

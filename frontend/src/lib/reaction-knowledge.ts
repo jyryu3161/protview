@@ -915,7 +915,8 @@ export const REACTION_FIXED_LINES: readonly string[] = [...Object.values(REACTIO
 export const REACTION_EXEMPT_TERMS: readonly string[] = SITE_TYPES;
 /**
  * The interpretive wording of the M26 report check (M15 + M20 lists and `필수`·`핵심`·`중요`·"메커니즘이 유지", with
- * their English counterparts) plus `최고`·`우수`·winner·highest·stability. "촉매" is not forbidden.
+ * their English counterparts) plus `최고`·`우수`·winner·highest·stability and spec §2's `효과` / effect. "촉매" is not
+ * forbidden.
  */
 export const REACTION_FORBIDDEN = new RegExp([
   "important", "critical", "essential", "key residue", "binding", "binds", "affinity", "stabili[sz]", "druggab",
@@ -924,7 +925,7 @@ export const REACTION_FORBIDDEN = new RegExp([
   "점수", "에너지", "수소\\s*결합", "\\brank", "\\bbest\\b", "recommend", "optimal", "improv", "predict", "promising",
   "\\bgood\\b", "\\bsafe", "\\bactiv(?:e|ity)\\b", "\\bscor(?:e|ing)\\b", "energ", "hydrogen[\\s_-]?bond", "\\bh-?bond",
   "필수", "메커니즘이\\s*유지", "mechanism\\W+(?:is\\W+)?(?:preserved|maintained|retained|conserved)",
-  "최고", "우수", "\\bwinner", "highest", "stabilit",
+  "최고", "우수", "\\bwinner", "highest", "stabilit", "효과", "\\beffect",
 ].join("|"), "gi");
 
 /** Forbidden words in screen text, line by line; fixed lines are exempt, quoted reference terms are removed first. */

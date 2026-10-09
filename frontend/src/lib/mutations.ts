@@ -129,6 +129,12 @@ export const CATALYTIC_NOT_CHECKED_BADGE = "촉매 잔기 검사 안 함: 이 �
 export const UNIPROT_SITES_NOTE = "UniProt 부위 정보는 지식 탭에서만 보이며 보호에 쓰지 않음.";
 export const CATALYTIC_NOT_SELECTED_NOTICE = "M-CSA 촉매 잔기 보호를 검사하지 않음: 같은 구조의 효소 반응 지식 결과를 " +
   "고르지 않았습니다. 이 요청에서는 M-CSA 촉매 잔기가 제외 목록에 들어가지 않습니다.";
+/** Beside the catalytic select when the result list could not be read (M20 itself stays usable). */
+export const CATALYTIC_LIST_FAILED_NOTE = "효소 반응 지식 결과를 고를 수 없습니다. M-CSA 촉매 잔기 주석 없이 요청할 수 " +
+  "있고, 그 집합은 촉매 잔기를 검사하지 않습니다.";
+/** Request-area notice when the chosen result's chain coverage could not be read (the server validates the handle). */
+export const CATALYTIC_DETAIL_UNREAD_NOTE = "고른 효소 반응 지식 결과의 체인별 M-CSA 상태를 읽지 못해 어느 체인을 검사할지 " +
+  "미리 알 수 없습니다. 요청은 할 수 있고, 서버가 요청 때 결과를 다시 검증합니다.";
 export const CATALYTIC_RELEASED_TEXT = "해제됨";
 export const LIST_ORDER_NOTE = "표의 순서는 구조 파일 순서(또는 고른 거리 정렬)일 뿐 위치·후보의 우열을 뜻하지 않습니다.";
 export const NULL_TEXT = "—";
@@ -363,13 +369,37 @@ export function uniprotSitesNotice(counts: Pick<ReactionKnowledgeCounts, "linked
  * chains that would not be covered -> UK2 and one line per such chain; then UK3 when UniProt sites are linked.
  */
 export function catalyticRequestNotices(input: { selected: string | null; prediction: CatalyticCoveragePrediction | null;
-  uniprotNotice: string | null }): string[] {
+  uniprotNotice: string | null; detailFailed?: boolean }): string[] {
   if (input.selected === null) return [CATALYTIC_NOT_SELECTED_NOTICE, CATALYTIC_NOT_CHECKED_BADGE];
+  // the chosen result's chains could not be read: nothing is known before the request (the server validates it)
+  if (input.detailFailed) return [CATALYTIC_NOT_CHECKED_BADGE, CATALYTIC_DETAIL_UNREAD_NOTE];
   const notices: string[] = [];
   if (input.prediction && input.prediction.uncovered.length)
     notices.push(CATALYTIC_NOT_CHECKED_BADGE, ...input.prediction.uncovered.map(item => item.text));
   if (input.uniprotNotice) notices.push(input.uniprotNotice);
   return notices;
+}
+
+export type ListLoad<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } |
+  { status: "error"; message: string };
+export interface CatalyticChoices {
+  /** Results to offer (none while loading or after a failed read). */
+  rows: ReactionKnowledgeListItem[];
+  /** The list read is over (ready or failed): the M20 request area does not wait for it any more. */
+  settled: boolean;
+  /** Shown beside the catalytic select when the list could not be read; null otherwise. */
+  error: string | null;
+}
+
+/**
+ * The reaction knowledge result list as the M20 request area uses it. A failed read (the server re-validates every
+ * stored result and refuses the whole list on a bad one) never blocks M20: it counts as no result to choose, the
+ * error is shown beside the catalytic select, and the request without `catalytic_annotation` stays possible (UK2).
+ */
+export function catalyticChoices(load: ListLoad<readonly ReactionKnowledgeListItem[]>): CatalyticChoices {
+  if (load.status === "ready") return { rows: [...load.value], settled: true, error: null };
+  if (load.status === "error") return { rows: [], settled: true, error: `${load.message} — ${CATALYTIC_LIST_FAILED_NOTE}` };
+  return { rows: [], settled: false, error: null };
 }
 
 // ---- request draft ----
@@ -568,6 +598,21 @@ export function mutationPanelState(input: { runId: string | null;
 export function exclusionReasonCount(counts: MutationCounts, reason: MutationExclusionReason): number | undefined {
   const table = counts.exclusion_reason_counts as Partial<Record<MutationExclusionReason, number>>;
   return Object.prototype.hasOwnProperty.call(table, reason) ? table[reason] : undefined;
+}
+
+/**
+ * One entry of the "제외 사유별 위치 수" line. `catalytic_residue` is a count only where the catalytic check covered a
+ * chain: when no chain was covered (no annotation, `chains_not_covered` with no covered chain, v1) the stored 0 counts
+ * nothing and is shown as "—" with the reason; when only some chains were covered the number names those chains.
+ */
+export function exclusionReasonCountText(counts: MutationCounts, reason: MutationExclusionReason,
+                                         check: MutationCatalyticCheck): string {
+  const label = EXCLUSION_REASON_LABEL[reason];
+  if (reason !== CATALYTIC_REASON) return `${label} ${nullableText(exclusionReasonCount(counts, reason))}개`;
+  if (!("covered_chains" in check)) return `${label} ${NULL_TEXT} (${catalyticReasonText(check.reason)}, 세지 않음)`;
+  if (!check.covered_chains.length) return `${label} ${NULL_TEXT} (M-CSA가 다룬 체인 없음, 세지 않음)`;
+  const value = `${label} ${nullableText(exclusionReasonCount(counts, reason))}개`;
+  return check.uncovered_chains.length ? `${value} (검사한 체인 ${check.covered_chains.join(", ")}만)` : value;
 }
 
 /** The exclusion reasons a stored set has counts for (v1: six, v2: seven), in the closed order. */
@@ -893,7 +938,8 @@ export function mutationReportMatches(artifact: MutationReportArtifact, setHandl
 
 // ---- wording check (screen text never claims effect, rank, recommendation or safety) ----
 
-const FORBIDDEN = /친화|ΔΔG|안정성|순위|추천|최적|개선|활성|예측|좋은|유망|안전|\brank|\bbest|optimal|improv|recommend|affinity|stabili|predict/gi;
+// M26 (spec §2): importance and effect wording too (중요·핵심·필수·효과); limitation sentence 2 says "효과" and stays exempt.
+const FORBIDDEN = /친화|ΔΔG|안정성|순위|추천|최적|개선|활성|예측|좋은|유망|안전|\brank|\bbest|optimal|improv|recommend|affinity|stabili|predict|중요|핵심|필수|효과|\beffect|essential|critical|important/gi;
 
 /** Forbidden words found in screen text, line by line; a line equal to a fixed limitation line is exempt. */
 export function mutationForbiddenWords(text: string): string[] {

@@ -485,10 +485,16 @@ test("report: kind label in the report library and manifest match of the opened 
 
 test("wording check finds forbidden words; only a line equal to a fixed limitation sentence is exempt", () => {
   for (const word of ["친화도", "ΔΔG", "안정성", "순위", "추천", "최적", "개선", "활성", "예측", "좋은", "유망", "안전",
-    "rank", "best", "optimal", "improved", "recommended", "affinity", "stability", "predicted"])
+    "rank", "best", "optimal", "improved", "recommended", "affinity", "stability", "predicted",
+    // M26 (spec §2): importance and effect wording
+    "중요", "핵심", "필수", "효과", "effect", "essential", "critical", "important"])
     assert.ok(lib.mutationForbiddenWords(`이 후보는 ${word}`).length, word);
+  // "KLIFS 주요 부위" (a label) is not importance wording
+  assert.deepEqual(plain(lib.mutationForbiddenWords("KLIFS 주요 부위 · M-CSA 촉매 잔기 주석")), []);
   // the fixed sentences do contain checked words, and are exempt only verbatim on their own line
   assert.ok(lib.mutationForbiddenWords(`${lib.MUTATION_LIMITATIONS[1]} `).length);
+  assert.ok(lib.MUTATION_LIMITATIONS[1].includes("효과"));
+  assert.deepEqual(plain(lib.mutationForbiddenWords(lib.MUTATION_LIMITATIONS[1])), []);
   for (const sentence of lib.MUTATION_LIMITATIONS) assert.deepEqual(plain(lib.mutationForbiddenWords(sentence)), []);
   assert.deepEqual(plain(lib.mutationForbiddenWords(lib.MUTATION_LIMITATIONS.join("\n"))), []);
 });
@@ -749,4 +755,61 @@ test("v2 exclusion counts: seven keys shown in the closed order, v1 keeps six; t
   "촉매 잔기 충돌·대응 없음 목록 상한 초과 (catalytic_list_too_long): 대응 없음 행 401개가 상한 400개를 넘어 저장하지 않았습니다(자르지 않음).");
   assert.equal(lib.mutationErrorText({ message: "bad", code: "input_invalid", detail: { reason_code: "catalytic_annotation_invalid" } }),
     "이 run의 효소 반응 지식 결과가 아니거나 검증되지 않음 (catalytic_annotation_invalid): bad");
+});
+
+test("counts line: the catalytic_residue count is — with the reason unless a chain was covered (a stored 0 counts nothing)", () => {
+  // the stored v2 counts carry catalytic_residue: 0 whenever no chain was covered (spec 8.3/8.6, storage unchanged)
+  const zero = counts({ exclusion_reason_counts: { ...counts().exclusion_reason_counts, catalytic_residue: 0 } });
+  const line = check => plain(lib.exclusionReasonsOf(zero).map(reason => lib.exclusionReasonCountText(zero, reason, check)));
+  const catalytic = check => lib.exclusionReasonCountText(zero, "catalytic_residue", check);
+  assert.equal(catalytic(V2_NOT_GIVEN),
+    "M-CSA 촉매 잔기 주석 — (효소 반응 지식 결과를 고르지 않음 (annotation_not_given), 세지 않음)");
+  assert.equal(catalytic(V2_NONE_COVERED), "M-CSA 촉매 잔기 주석 — (M-CSA가 다룬 체인 없음, 세지 않음)");
+  assert.equal(catalytic(CHECKED.catalytic_residue_database), "M-CSA 촉매 잔기 주석 — (구현하지 않음 (not_implemented), 세지 않음)");
+  for (const check of [V2_NOT_GIVEN, V2_NONE_COVERED, CHECKED.catalytic_residue_database]) {
+    assert.doesNotMatch(catalytic(check), /\d/);
+    assert.ok(!line(check).join(" · ").includes("M-CSA 촉매 잔기 주석 0"), JSON.stringify(check));
+  }
+  // checked: the number; partly covered: the number of the covered chains only, with those chains named
+  const three = counts({ exclusion_reason_counts: { ...counts().exclusion_reason_counts, catalytic_residue: 3 } });
+  assert.equal(lib.exclusionReasonCountText(three, "catalytic_residue", V2_CHECKED), "M-CSA 촉매 잔기 주석 3개");
+  assert.equal(lib.exclusionReasonCountText(zero, "catalytic_residue", V2_CHECKED), "M-CSA 촉매 잔기 주석 0개");
+  assert.equal(lib.exclusionReasonCountText(three, "catalytic_residue", V2_PARTIAL), "M-CSA 촉매 잔기 주석 3개 (검사한 체인 A만)");
+  // the other reasons are their stored numbers, also 0, whatever the catalytic check (v1: six entries)
+  assert.deepEqual(line(V2_NOT_GIVEN), ["표준 잔기가 아님 0개", "사용자 보호 1개", "KLIFS 주요 부위 0개", "금속 근접 1개",
+    "이황화 Cys 1개", "M-CSA 촉매 잔기 주석 — (효소 반응 지식 결과를 고르지 않음 (annotation_not_given), 세지 않음)",
+    "허용 목록에 바꿀 잔기 없음 0개"]);
+  const v1 = counts();
+  assert.deepEqual(plain(lib.exclusionReasonsOf(v1).map(reason => lib.exclusionReasonCountText(v1, reason,
+    CHECKED.catalytic_residue_database))), ["표준 잔기가 아님 0개", "사용자 보호 1개", "KLIFS 주요 부위 0개", "금속 근접 1개",
+    "이황화 Cys 1개", "허용 목록에 바꿀 잔기 없음 0개"]);
+  for (const check of [V2_NOT_GIVEN, V2_NONE_COVERED, V2_PARTIAL, V2_CHECKED])
+    assert.deepEqual(plain(lib.mutationForbiddenWords(line(check).join(" · "))), []);
+});
+
+test("a failed reaction knowledge list read is no result to choose, never a block; a failed detail read keeps UK2", () => {
+  assert.deepEqual(plain(lib.catalyticChoices({ status: "idle" })), { rows: [], settled: false, error: null });
+  assert.deepEqual(plain(lib.catalyticChoices({ status: "loading" })), { rows: [], settled: false, error: null });
+  assert.deepEqual(plain(lib.catalyticChoices({ status: "ready", value: RK_RESULTS })),
+    { rows: plain(RK_RESULTS), settled: true, error: null });
+  const failed = plain(lib.catalyticChoices({ status: "error", message: "효소 반응 지식 결과 목록 읽기 실패: 409" }));
+  assert.deepEqual([failed.rows, failed.settled], [[], true]);
+  assert.equal(failed.error, `효소 반응 지식 결과 목록 읽기 실패: 409 — ${lib.CATALYTIC_LIST_FAILED_NOTE}`);
+  // with no result to choose: nothing is pre-selected, UK2 is shown, and the request without an annotation is valid
+  const next = lib.draftForStructure(draft({}), S, OPTIONS.annotations, OPTIONS.maps, failed.rows);
+  assert.equal(next.catalyticAnnotation, null);
+  assert.deepEqual(plain(lib.catalyticRequestNotices({ selected: next.catalyticAnnotation, prediction: null, uniprotNotice: null })),
+    [lib.CATALYTIC_NOT_SELECTED_NOTICE, lib.CATALYTIC_NOT_CHECKED_BADGE]);
+  const out = plain(lib.mutationRequestArgs({ ...next, userOn: true, residues: [A10] }, { ...OPTIONS, reactionResults: failed.rows }));
+  assert.equal(out.ok, true);
+  assert.equal(out.args.catalytic_annotation, null);
+  // the chosen result's detail could not be read: UK2 and why nothing is known before the request (no prediction, no UK3)
+  assert.deepEqual(plain(lib.catalyticRequestNotices({ selected: RK, prediction: null, uniprotNotice: lib.UNIPROT_SITES_NOTE,
+    detailFailed: true })), [lib.CATALYTIC_NOT_CHECKED_BADGE, lib.CATALYTIC_DETAIL_UNREAD_NOTE]);
+  assert.equal(lib.CATALYTIC_NOT_CHECKED_BADGE, reactionNote("UK2"));
+  // the request with the chosen handle stays possible (the server validates it)
+  assert.equal(lib.mutationRequestArgs(draft({ userOn: true, residues: [A10], catalyticAnnotation: RK }),
+    { ...OPTIONS, reactionResults: RK_RESULTS }).ok, true);
+  for (const text of [failed.error, lib.CATALYTIC_DETAIL_UNREAD_NOTE])
+    assert.deepEqual(plain(lib.mutationForbiddenWords(text)), [], text);
 });

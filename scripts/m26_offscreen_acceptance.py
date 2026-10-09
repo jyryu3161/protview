@@ -199,7 +199,8 @@ CASE_TEXT = {
     "X-m20-uk3": "M20 request area on prepared 1S9I: the newest same-structure result (linked through the map) is "
                  "pre-selected, UK3 shown, nothing posted",
     "X-no-zero": "not checked / not available / not computed values are — with the reason, never 0",
-    "X-wording": "no rank / importance / activity wording outside fixed sentences and reference strings",
+    "X-wording": "no rank / recommendation / importance / activity / effect wording outside fixed sentences and reference "
+                 "strings",
     "X-tabs": "구조 분석 hidden and inert, run selection only there, other tabs unchanged",
     "X-m20": "M20 v2 on prepared 1A30 with the real results: UK2 without a result, pre-selection of the newest, the "
              "chain-A result → chains_not_covered (B not_in_annotation), the A+B result → checked with M-CSA 175 rows "
@@ -613,19 +614,26 @@ def browser_hosts(rows: list[dict]) -> list[str]:
 
 
 TEXT_SUFFIXES = {".json", ".jsonl", ".log", ".md", ".txt", ".html"}
+FAILURE_PANEL_SUFFIX = "-failure.panel.html"
+
+
+def held_text(artifacts: Path, path: Path) -> bool:
+    """A text artifact that may quote third-party reference text: a download, or the panel HTML a failed step saved."""
+    return (path.suffix in TEXT_SUFFIXES and
+            ("downloads" in path.relative_to(artifacts).parts or path.name.endswith(FAILURE_PANEL_SUFFIX)))
 
 
 @contextlib.contextmanager
 def held_downloads(artifacts: Path):
-    """Report downloads quote third-party reference text (CC BY 4.0): evidence keeps only their hashes.
+    """Report downloads and failure panel HTML quote third-party reference text (CC BY 4.0, M-CSA role text, UniProt
+    descriptions, Rhea equations): evidence keeps only their hashes.
 
     The shared export writes every text artifact into the evidence folder; a file renamed to ``*.held`` has no text
     suffix, so it is recorded like a binary (path, bytes, sha256) and its content stays in the git-ignored artifacts."""
     held: list[tuple[Path, Path]] = []
     try:
         for path in sorted(Path(artifacts).rglob("*")):
-            if (path.is_file() and "downloads" in path.relative_to(artifacts).parts
-                    and path.suffix in TEXT_SUFFIXES):
+            if path.is_file() and held_text(Path(artifacts), path):
                 target = path.with_name(path.name + ".held")
                 path.rename(target)
                 held.append((target, path))
