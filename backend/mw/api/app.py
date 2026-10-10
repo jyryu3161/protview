@@ -32,6 +32,7 @@ from .. import (
     jev_loops,
     jev_projection,
     jev_sends,
+    kinase_precedents_reads,
     ligand_bundle,
     ligand_ga_jobs,
     ligand_ga_reads,
@@ -134,7 +135,7 @@ UPLOAD_RE = re.compile(r"upload://([A-Za-z0-9_-]+)/([0-9a-f]{64})\.(pdb|cif|mmci
 SUPPORTED_TOOLS = {"load_structure", "prepare_structure", "compute_interactions", "compute_interface_sasa",
                    "measure_distance", "align_structures", "compile_state", "map_residue_numbering",
                    "annotate_reference_sites", "generate_mutation_candidates", "build_jev_projection",
-                   "build_jev_loop_projection", "link_reaction_knowledge"}
+                   "build_jev_loop_projection", "link_reaction_knowledge", "link_kinase_precedents"}
 SCENE_BODY_LIMIT = 64 * 1024
 FIGURE_BODY_LIMIT = (8 * 1024 * 1024 * 4 // 3) + 64 * 1024
 CHEMICAL_IMPORT_LIMIT = 10 * 1024 * 1024
@@ -669,6 +670,8 @@ def capabilities() -> dict[str, Any]:
     methods["residue_numbering"] = numbering_reads.capability()
     # M26: the pinned + decoded local reaction reference set (no network); same five keys as residue_numbering.
     methods["reaction_knowledge"] = reaction_knowledge_reads.capability()
+    # M27: the pinned local precedent reference set with its records decoded (no network); same five keys as M26.
+    methods["kinase_precedents"] = kinase_precedents_reads.capability()
     # M16: reads only the run's own objects (no reference folder, no network), so it is always available.
     methods["reference_site_annotation"] = {"available": True, "reason_code": None, "reason": None}
     # M20: reads only the run's own stored objects (no engine, reference folder or network): always available.
@@ -1751,6 +1754,54 @@ def reaction_knowledge_detail(
     except reaction_knowledge_reads.ResultEvidenceError as exc:
         raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                          "message": "invalid reaction knowledge result"}) from exc
+
+
+# ----------------------------------------------------------------- M27 kinase precedent reads (no event, job or tool)
+@app.get("/precedent_reference/status")
+def precedent_reference_status(request: Request) -> dict[str, Any]:
+    """The active precedent reference set, or ``installed: false`` and the reason; reads the local folder only."""
+    _only_query(request, set())
+    return kinase_precedents_reads.status()
+
+
+@app.get("/runs/{rid}/kinase_precedents")
+def kinase_precedents_list(rid: str, request: Request, offset: int = Query(0, ge=0),
+                           limit: int = Query(kinase_precedents_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                              le=kinase_precedents_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's kinase precedent results, newest first, each re-validated; ``active`` = same set as now."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return kinase_precedents_reads.list_results(run, offset, limit)
+    except (kinase_precedents_reads.ResultEvidenceError, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt",
+                                         "message": "invalid kinase precedents object record"}) from exc
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: any sub-resource route goes before this detail route.
+@app.get("/runs/{rid}/kinase_precedents/{handle:path}")
+def kinase_precedents_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One stored result, re-validated, with one target's records filtered, sorted and paged on the server (spec 6);
+    other run or kind -> 404, unknown query key or value -> 422."""
+    try:
+        query = kinase_precedents_reads.parse_detail_query(
+            {key: request.query_params.getlist(key) for key in request.query_params})
+    except kinase_precedents_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    run = _run(rid)
+    try:
+        meta = run.store.meta(handle)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise HTTPException(404, detail={"error": "not_found", "message": "unknown run handle"}) from exc
+    if (meta["kind"], meta["schema"]) != (kinase_precedents_reads.KIND, kinase_precedents_reads.SCHEMA):
+        raise HTTPException(404, detail={"error": "not_found", "message": "handle is not a kinase precedents result"})
+    try:
+        return kinase_precedents_reads.detail(run, handle, query)
+    except kinase_precedents_reads.ResultEvidenceError as exc:
+        raise HTTPException(422, detail={"error": "method_evidence_invalid",
+                                         "message": "invalid kinase precedents result"}) from exc
+    except kinase_precedents_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
 
 
 # ----------------------------------------------------------------- M17 ligand reads (no event, job, tool or RDKit)
