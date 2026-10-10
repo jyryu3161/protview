@@ -32,8 +32,10 @@ the current frontend source and no worker or 8000/3000 listener remains.
 
 Committed evidence (--out) holds text only: hashes, IDs, counts and the synthetic fixture stage. Screenshots, paint
 frames, report downloads, failure panels, text above 256 KiB (decision 0020) and any text that contains a real kbase
-string (quote, observation, tradeoff, change description, bibliography title) stay in the git-ignored artifacts folder
-and are listed with their SHA-256 only. The root must be fresh and outside /tmp; the artifacts folder must be
+string (quote, observation, tradeoff, change description, assay, bibliography title or journal, reference field: any
+40-character piece of one, or the whole of one of 24–39 characters, compared with whitespace collapsed and case
+ignored, also inside JSON \\uXXXX / Markdown / HTML escapes; held in memory only) stay in the git-ignored artifacts
+folder and are listed with their SHA-256 only. The root must be fresh and outside /tmp; the artifacts folder must be
 git-ignored. Child processes get an allowlisted environment (no secrets). This script never imports mw and never calls
 a limit-raising route; the set builder, the derived-map builder and the importer run as subprocesses.
 
@@ -46,11 +48,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import re
 import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -84,7 +89,13 @@ TEXT_SUFFIXES = {".json", ".jsonl", ".log", ".md", ".txt", ".html"}
 LEDGER_NAMES = {"case-ledger.json", "ledger-row.json"}
 MAX_TEXT_BYTES = 256 * 1024
 FAILURE_PANEL_SUFFIX = "-failure.panel.html"
-REAL_TEXT_MIN_CHARS = 16
+# Real kbase text in committed evidence: any REAL_TEXT_FRAGMENT_CHARS-character piece of a source string, or the whole
+# of a shorter one from REAL_TEXT_MIN_CHARS on (normalized: whitespace collapsed, case folded). The harness keeps a
+# string in a real-stage step record only below REAL_TEXT_MIN_CHARS (kinase-precedents-flow.cjs realSafe).
+REAL_TEXT_MIN_CHARS = 24
+REAL_TEXT_FRAGMENT_CHARS = 40
+REAL_TEXT_DECODE_ROUNDS = 3
+REFERENCE_TEXT_FIELDS = ("gene", "klifs_name", "group", "family", "coverage")
 SYNTHETIC_NOTE = ("every precedent value of the fixture stage is SYNTHETIC (made up, labelled): "
                   "backend/tests/fixtures/precedent/t8/build_qa_set.py with precedent_fixture.py "
                   "(SYNTHETIC-PROVENANCE-t8.md); the derived numbering maps are LABELLED SYNTHETIC variants of a real "
@@ -322,6 +333,8 @@ def fixture_main_plan(base: dict, run: str, maps: dict[str, str], derived: dict,
         link("l-m1", "m1", None, False, ["P-target-states", "P-no-zero", "P-fixed-notes"]),
         link("l-m2", "m2", None, False, ["P-chain-states"]),
         link("l-m2-a", "m2", ["A"], False, ["P-chain-select"]),
+        # only the chain without mapped residues: no linked target, the empty result says so (not "no records")
+        link("l-m2-b", "m2", ["B"], False, ["P-chain-states", "P-no-zero"]),
         link("l-two", "d-two", None, False, ["P-target-states", "P-no-zero", "P-fixed-notes"]),
         link("l-two-incl", "d-two", None, True, ["P-flagged-toggle", "P-no-zero"]),
         link("l-fusion", "d-fusion", None, False, ["P-chain-states", "P-target-states"]),
@@ -537,20 +550,28 @@ def browser_hosts(rows: list[dict]) -> list[str]:
 
 
 # ---------------------------------------------------------------------------------------------------- evidence rules
+def normalize_text(text: str) -> str:
+    """The form real kbase strings and evidence text are compared in: whitespace collapsed, trimmed, case folded."""
+    return " ".join(text.split()).casefold()
+
+
 def real_text_strings(set_dir: Path, min_chars: int = REAL_TEXT_MIN_CHARS) -> set[str]:
-    """Strings of an installed precedent set that committed evidence must never contain: observation text and quote,
-    tradeoff text and quote, change description, effect assay text and bibliography titles (at least ``min_chars``)."""
+    """Normalized strings of an installed precedent set that committed evidence must never contain (at least
+    ``min_chars`` once normalized): observation text and quote, tradeoff text and quote, change description, effect
+    assay, assay context and comparability reason, bibliography title and journal, and the reference fields a result
+    carries (``REFERENCE_TEXT_FIELDS``). Identifiers, hashes and closed codes are not taken."""
     found: set[str] = set()
 
     def keep(value) -> None:
-        if isinstance(value, str) and len(value.strip()) >= min_chars:
-            found.add(value)
-    for name in ("moves.jsonl", "moves_flagged.jsonl"):
-        path = set_dir / "files" / "dist" / name
+        if isinstance(value, str) and len(normalize_text(value)) >= min_chars:
+            found.add(normalize_text(value))
+
+    def lines(path: Path):
         for line in path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            record = json.loads(line)
+            if line.strip():
+                yield json.loads(line)
+    for name in ("moves.jsonl", "moves_flagged.jsonl"):
+        for record in lines(set_dir / "files" / "dist" / name):
             observation = record.get("observation") or {}
             keep(observation.get("text"))
             keep(observation.get("quote"))
@@ -566,18 +587,82 @@ def real_text_strings(set_dir: Path, min_chars: int = REAL_TEXT_MIN_CHARS) -> se
                     keep(effect.get("assay"))
                     keep(effect.get("assay_context"))
                     keep(effect.get("comparability_reason"))
+    for reference in lines(set_dir / "files" / "dist" / "references.jsonl"):
+        for key in REFERENCE_TEXT_FIELDS:
+            keep(reference.get(key))
     for path in sorted((set_dir / "files" / "pubmed").glob("*/documents.jsonl")):
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                keep((json.loads(line).get("data") or {}).get("title"))
+        for row in lines(path):
+            data = row.get("data") or {}
+            keep(data.get("title"))
+            keep(data.get("journal"))
     return found
 
 
-def contains_any(text: str, strings: set[str]) -> bool:
-    return any(item in text for item in strings)
+_JSON_ESCAPE = re.compile(r"\\(u[0-9a-fA-F]{4}|[\"\\/bfnrt])")
+_JSON_SIMPLE = {"b": "\b", "f": "\f", "n": "\n", "r": "\r", "t": "\t"}
+_MARKDOWN_ESCAPE = re.compile(r"\\([\\`*_{}\[\]()#+.!|>~-])")
 
 
-def hold_reason(artifacts: Path, path: Path, strings: set[str]) -> str | None:
+def _json_unescape(text: str) -> str:
+    """One level of JSON string escapes undone (``\\uXXXX`` with surrogate pairs, ``\\"``, ``\\n`` …)."""
+    def one(match: re.Match) -> str:
+        token = match.group(1)
+        return chr(int(token[1:], 16)) if token[0] == "u" else _JSON_SIMPLE.get(token, token)
+    return _JSON_ESCAPE.sub(one, text).encode("utf-16", "surrogatepass").decode("utf-16", "replace")
+
+
+def text_views(text: str) -> list[str]:
+    """A text as written, with up to ``REAL_TEXT_DECODE_ROUNDS`` levels of JSON escapes undone, and each of those with
+    the report's Markdown escape (backslash before Markdown syntax, then HTML entities) undone; all normalized."""
+    views = [text]
+    for _ in range(REAL_TEXT_DECODE_ROUNDS):
+        decoded = _json_unescape(views[-1])
+        if decoded == views[-1]:
+            break
+        views.append(decoded)
+    views += [html.unescape(_MARKDOWN_ESCAPE.sub(r"\1", view)) for view in list(views)]
+    return list(dict.fromkeys(normalize_text(view) for view in views))
+
+
+class RealText:
+    """The normalized real kbase strings of one installed set, in memory only (never written): every
+    ``REAL_TEXT_FRAGMENT_CHARS``-character window of the long ones, and the ones of ``REAL_TEXT_MIN_CHARS`` up to the
+    fragment length whole (indexed by their first ``REAL_TEXT_MIN_CHARS`` characters)."""
+
+    def __init__(self, strings: Iterable[str] = ()) -> None:
+        self.strings = frozenset(item for item in map(normalize_text, strings) if len(item) >= REAL_TEXT_MIN_CHARS)
+        size = REAL_TEXT_FRAGMENT_CHARS
+        self.fragments = frozenset(item[i:i + size] for item in self.strings if len(item) >= size
+                                   for i in range(len(item) - size + 1))
+        whole: dict[str, set[str]] = {}
+        for item in self.strings:
+            if len(item) < size:
+                whole.setdefault(item[:REAL_TEXT_MIN_CHARS], set()).add(item)
+        self.whole = {key: tuple(sorted(items)) for key, items in whole.items()}
+
+    def __len__(self) -> int:
+        return len(self.strings)
+
+    def _in_view(self, view: str) -> bool:
+        size, head = REAL_TEXT_FRAGMENT_CHARS, REAL_TEXT_MIN_CHARS
+        for i in range(len(view) - head + 1):
+            if view[i:i + size] in self.fragments:
+                return True
+            for item in self.whole.get(view[i:i + head], ()):
+                if view.startswith(item, i):
+                    return True
+        return False
+
+    def found_in(self, text: str) -> bool:
+        return bool(self.strings) and any(self._in_view(view) for view in text_views(text))
+
+
+def contains_any(text: str, strings: RealText) -> bool:
+    """Whether ``text`` holds a real kbase string by the rule of ``RealText`` (pieces, whole short ones, escapes)."""
+    return strings.found_in(text)
+
+
+def hold_reason(artifacts: Path, path: Path, strings: RealText) -> str | None:
     """Why a text artifact stays out of the committed evidence (hash only), or None to export it."""
     rel = path.relative_to(artifacts)
     if "downloads" in rel.parts:
@@ -628,7 +713,7 @@ class Runner(m15.Runner):
                                         for stage in STAGES}
         self.plans: dict[str, dict] = {}
         self.setup: dict[str, dict] = {stage: {} for stage in STAGES}
-        self.real_strings: set[str] = set()
+        self.real_strings = RealText()
         self.held: dict[str, str] = {}
 
     # ----- folders and services --------------------------------------------------------------------
@@ -828,7 +913,7 @@ class Runner(m15.Runner):
                     reproducible=info["reproducible"])
         self.save()
         if ok:
-            self.real_strings = real_text_strings(self.precedent / "sets" / imports[1]["setHash"])
+            self.real_strings = RealText(real_text_strings(self.precedent / "sets" / imports[1]["setHash"]))
         return info
 
     # ----- derived maps (backend stopped; a subprocess stores them in the run) --------------------------------------

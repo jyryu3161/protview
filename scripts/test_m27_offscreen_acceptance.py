@@ -2,6 +2,7 @@
 
 import argparse
 import ast
+import html
 import importlib.util
 import json
 import subprocess
@@ -165,8 +166,9 @@ def test_harness_wording_check_and_digest_rules():
               "fixed: h.forbiddenIn(h.LIMITATIONS.join('\\n') + '\\n' + h.UP5(396) + '\\n' + h.UP2(0)), "
               "words: h.forbiddenIn('추천 순위 검증됨 성공률 효과 best effect verified'), "
               "stored: h.forbiddenIn('potency selectivity', [{t: 'potency selectivity'}]), "
-              "zero: h.bareZeroOrNone('a\\n0\\t없음\\n0개\\n없음 (x)'), "
-              "safe: h.realSafe({n: 3, id: 'MOVE-0001', long: 'x'.repeat(41), "
+              "zero: h.bareZeroOrNone('a\\n0\\t없음\\n0개\\n없음 (x)'), min: h.REAL_TEXT_MIN_CHARS, "
+              "safe: h.realSafe({n: 3, id: 'MOVE-0001', long: 'x'.repeat(41), at24: 'x'.repeat(24), at23: 'x'.repeat(23), "
+              "spaced: 'ab  '.repeat(7), code: 'not_in_kbase_references', "
               "handle: 'obj://run_a/kinase_precedents/' + 'a'.repeat(64)})}));")
     proc = subprocess.run(["node", "-e", script, str(FLOW)], cwd=REPO / "frontend", capture_output=True, text=True,
                           timeout=60, check=False)
@@ -176,8 +178,49 @@ def test_harness_wording_check_and_digest_rules():
     assert sorted(out["words"]) == sorted(["추천", "순위", "검증됨", "성공률", "효과", "best", "effect", "verified"])
     assert out["stored"] == []
     assert out["zero"] == ["0", "없음"]
-    assert out["safe"]["n"] == 3 and out["safe"]["id"] == "MOVE-0001" and out["safe"]["handle"].startswith("obj://")
-    assert set(out["safe"]["long"]) == {"textDigest"}
+    # the harness keeps a real-stage string by the runner's leak measure: below REAL_TEXT_MIN_CHARS once whitespace is
+    # collapsed (or a handle); 24 characters and up become a digest
+    assert out["min"] == m27.REAL_TEXT_MIN_CHARS == 24
+    safe = out["safe"]
+    assert safe["n"] == 3 and safe["id"] == "MOVE-0001" and safe["handle"].startswith("obj://")
+    assert safe["at23"] == "x" * 23 and safe["code"] == "not_in_kbase_references"
+    assert safe["spaced"] == "ab  " * 7                      # 27 characters written, 20 once collapsed: kept
+    for key in ("long", "at24"):
+        assert set(safe[key]) == {"textDigest"}, key
+
+
+def test_harness_kbase_field_check_compares_each_entry_with_the_stored_record():
+    record = {"move_id": "MOVE-0001", "content_hash": "sha256:" + "e" * 64,
+              "observation": {"text": "SYNTHETIC", "quote": "SYNTHETIC q", "quote_truncated": False, "evidence": {}},
+              "tradeoffs": [{"text": "t", "quote": None, "quote_truncated": False, "evidence": {"p": 1}}],
+              "effects": [{"metric": "IC50", "assay_context": "SYNTHETIC context", "chembl_crosscheck": None,
+                           "evidence": {"s": "x"}}],
+              "extraction": {"model": "m", "dropped_effects": 0}}
+    rows = [{"path": p, "dt": p, "value": v} for p, v in (
+        ("effects[0].assay_context", '"SYNTHETIC context"'), ("effects[0].chembl_crosscheck", "null"),
+        ("effects[0].evidence", '{"s":"x"}'), ("extraction.dropped_effects", "0"), ("observation.evidence", "{}"),
+        ("tradeoffs[0].evidence", '{"p":1}'))]
+    good = {"open": True, "summary": "그 밖의 kbase 필드(원본 값 그대로)", "rows": rows}
+    bad = {
+        "closed": {**good, "open": False},
+        "zero_for_null": {**good, "rows": [{**rows[1], "value": "0"}, *rows[:1], *rows[2:]]},
+        "twice": {**good, "rows": [*rows, rows[0]]},
+        "shown_elsewhere": {**good, "rows": [*rows, {"path": "move_id", "dt": "move_id", "value": '"MOVE-0001"'}]},
+        "left_out": {**good, "rows": [*rows, {"path": "source.parser", "dt": "source.parser", "value": "null"}]},
+        "missing_evidence": {**good, "rows": rows[:2] + rows[3:]},
+        "status": {**good, "rows": [*rows, {"path": "checks.schema.status", "dt": "checks.schema.status", "value": '"x"'}]},
+    }
+    script = ("const h = require(process.argv[1]); const input = JSON.parse(process.argv[2]); const out = {};"
+              "for (const [name, block] of Object.entries(input.blocks)) {"
+              "  try { out[name] = h.checkKbaseFields(block, input.record); } catch (e) { out[name] = 'refused'; } }"
+              "console.log(JSON.stringify(out));")
+    payload = json.dumps({"record": record, "blocks": {"good": good, **bad}})
+    proc = subprocess.run(["node", "-e", script, str(FLOW), payload], cwd=REPO / "frontend", capture_output=True,
+                          text=True, timeout=60, check=False)
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out.pop("good") == len(rows)
+    assert out == {name: "refused" for name in bad}
 
 
 def test_harness_markdown_escape_is_the_report_escape():
@@ -231,6 +274,10 @@ def test_fixture_plans_follow_the_synthetic_records(made):
     assert links["l-m1"]["expect"]["nullResult"] is True
     assert links["l-m2"]["expect"]["chains"]["B"] == ["not_linked", "no_mapped_residues", None]
     assert links["l-m2-a"]["chains"] == ["A"] and list(links["l-m2-a"]["expect"]["chains"]) == ["A"]
+    # a link whose only chain is not linked: no target at all, an empty result (the "no linked target" sentence)
+    no_target = links["l-m2-b"]
+    assert no_target["chains"] == ["B"] and no_target["expect"] == {
+        "chains": {"B": ["not_linked", "no_mapped_residues", None]}, "targets": {}, "nullResult": True}
     fusion = links["l-fusion"]["expect"]
     assert fusion["chains"]["A"] == ["not_linked", "multiple_accessions", None]
     assert fusion["targets"]["P0QA03"]["status"] == "not_in_kbase_references"
@@ -370,15 +417,77 @@ def test_browser_hosts_are_collected_from_rows():
 
 
 # ---------------------------------------------------------------------------------------------- evidence rules
-def test_real_text_strings_collect_quotes_observations_and_titles(made):
+def test_real_text_strings_collect_quotes_observations_titles_and_journals(made):
     root = Path(made["root"])
     set_dir = root / "sets" / made["set_hash"]
     strings = m27.real_text_strings(set_dir)
-    assert "합성 SYNTHETIC fixture observation 1 of P0QA01." in strings      # observation text
-    assert "SYNTHETIC tradeoff quote words" in strings                      # tradeoff quote
-    assert "합성 SYNTHETIC QA fixture title 91000001" in strings             # bibliography title
-    assert all(len(item.strip()) >= m27.REAL_TEXT_MIN_CHARS for item in strings)
-    assert "P0QA01" not in strings and "SYN-QA-KINASE-1" not in strings     # IDs and short names are not text
+    norm = m27.normalize_text
+    assert norm("합성 SYNTHETIC fixture observation 1 of P0QA01.") in strings      # observation text
+    assert norm("SYNTHETIC tradeoff quote words") in strings                      # tradeoff quote
+    assert norm("합성 SYNTHETIC QA fixture title 91000001") in strings             # bibliography title
+    assert norm("Synthetic Fixture Journal") in strings                           # bibliography journal (25)
+    assert all(item == norm(item) and len(item) >= m27.REAL_TEXT_MIN_CHARS for item in strings)
+    # IDs, short names, reference codes and hashes are not text
+    assert not [item for item in strings if item in {"p0qa01", "syn-qa-kinase-1", "syngroup", "synfamily", "partial"}]
+    assert not [item for item in strings if item.startswith(("sha256:", "move-"))]
+
+
+# A LABELLED SYNTHETIC stand-in for real kbase strings (made-up sentences; no kbase record).
+SOURCE_LONG = "SYNTHETIC observation: the made-up compound 12a's α-helix contact stayed at 3.1 μM in the fixture assay."
+SOURCE_SHORT = "SYNTHETIC assay type XYZ-30 b"        # 29 characters: matched whole only
+SOURCE_TINY = "SYNTHETIC 23 characters"               # 23 characters: never a source string
+
+
+def _md(value: str) -> str:
+    code = "import sys; sys.path.insert(0, sys.argv[1]); from mw.reports import _md; sys.stdout.write(_md(sys.argv[2]))"
+    proc = subprocess.run([sys.executable, "-c", code, str(REPO / "backend"), value], capture_output=True, text=True,
+                          timeout=120, check=False)
+    assert proc.returncode == 0, proc.stderr
+    return proc.stdout
+
+
+def test_real_text_matcher_finds_pieces_whole_short_strings_and_escaped_or_recased_forms():
+    real = m27.RealText([SOURCE_LONG, SOURCE_SHORT, SOURCE_TINY])
+    assert len(real) == 2 and m27.normalize_text(SOURCE_TINY) not in real.strings
+    piece = SOURCE_LONG[17:57]                                  # a 40-character piece from the middle
+    assert len(piece) == m27.REAL_TEXT_FRAGMENT_CHARS
+    found = {
+        "whole": SOURCE_LONG,
+        "piece": f'{{"error": "x {piece} y"}}',
+        "piece_upper": f"log: {piece.upper()}",
+        "piece_whitespace": "log: " + piece.replace(" ", " \n\t  "),
+        "json_ascii": json.dumps({"text": SOURCE_LONG}),          # ensure_ascii: α and μ as \\uXXXX
+        "json_twice": json.dumps(json.dumps({"text": SOURCE_LONG})),
+        "json_quotes": json.dumps({"t": 'say "' + SOURCE_LONG + '"'}),
+        "markdown": f"| row | {_md(SOURCE_LONG)} |",
+        "markdown_in_json": json.dumps({"markdown": _md(SOURCE_LONG)}, ensure_ascii=True),
+        "html": "<td>" + html.escape(SOURCE_LONG) + "</td>",      # ' as &#x27;
+        "short_whole": f"assay={SOURCE_SHORT.lower()};",
+        "short_escaped": json.dumps(SOURCE_SHORT),
+    }
+    assert "\\u03b1" in found["json_ascii"] and "\\." in found["markdown"]
+    for name, text in found.items():
+        assert m27.contains_any(text, real), name
+    passed = {
+        "piece_39": SOURCE_LONG[17:56],                        # one character short of a piece
+        "short_prefix": SOURCE_SHORT[:-1],                     # a short string is matched only whole
+        "tiny": SOURCE_TINY,                                   # below the minimum: never a source string
+        "ids_codes_accessions": ("MOVE-0001 PMID 91000001 P00533 Q06187 precedents_found none_in_included_files "
+                                 "not_in_kbase_references kbase_record_minus_2_paths@1 moves_flagged multiple_accessions "
+                                 "obj://run_a/kinase_precedents/" + "a" * 64 + " sha256:" + "b" * 64),
+        "hashes_only": json.dumps({"textDigest": {"chars": 104, "sha256": "c" * 64}}),
+    }
+    for name, text in passed.items():
+        assert not m27.contains_any(text, real), name
+    # an empty matcher finds nothing (fixture-only runs)
+    assert not m27.contains_any(SOURCE_LONG, m27.RealText())
+
+
+def test_real_text_matcher_identifiers_and_codes_inside_source_text_still_pass():
+    # the source sentence mentions identifiers and a closed code; evidence carrying only those passes
+    real = m27.RealText(["SYNTHETIC: P00533 and MOVE-0001 were recorded as precedents_found by a made-up rule."])
+    assert not m27.contains_any('{"accession": "P00533", "move": "MOVE-0001", "status": "precedents_found"}', real)
+    assert m27.contains_any("…P00533 and MOVE-0001 were recorded as precedents_found…", real)
 
 
 def test_hold_reasons(tmp_path):
@@ -389,7 +498,7 @@ def test_hold_reasons(tmp_path):
     for rel, text in files.items():
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / rel).write_text(text)
-    strings = {"a real observation sentence here"}
+    strings = m27.RealText({"a real observation sentence here"})
     reasons = {rel: m27.hold_reason(tmp_path, tmp_path / rel, strings) for rel in files}
     assert reasons == {"real-main/downloads/r.md": "download", "real-main/L-x-failure.panel.html": "failure_panel",
                        "real-main/big.json": "over_256KiB", "real-main/ledger-row.json": None,
@@ -414,10 +523,10 @@ def test_runner_export_holds_real_text_downloads_and_large_files(kbase, m15_refe
     runner = m27.Runner(_args(kbase, m15_reference))
     runner.artifacts = tmp_path / "artifacts"
     runner.out = tmp_path / "out"
-    runner.real_strings = {"a real observation sentence here"}
+    runner.real_strings = m27.RealText({"a real observation sentence here"})
     files = {"real-main/downloads/r.md": "a real observation sentence here",
              "real-main/precedent-main.jsonl": '{"ok": true}\n', "real-main/x.page.png": "png",
-             "real-main/leak.log": "error: a real observation sentence here"}
+             "real-main/leak.log": "error: A REAL OBSERVATION\nsentence here"}
     for rel, text in files.items():
         (runner.artifacts / rel).parent.mkdir(parents=True, exist_ok=True)
         (runner.artifacts / rel).write_text(text)

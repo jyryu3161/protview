@@ -59,6 +59,9 @@ const IMPORT_COMMAND = ".venv/bin/python scripts/import_precedent_snapshots.py -
 const STALE_TEXT = "이전 스냅샷 기준";
 const NO_ACTIVE_TEXT = "사용 중 스냅샷 없음";
 const NO_RESULTS_TEXT = "이 run에 키나아제 전례 결과가 없습니다.";
+const NULL_NO_TARGET_TEXT = "빈 결과: 연결된 표적이 없습니다(체인이 연결되지 않음 — 체인 표의 이유 참조).";
+const NO_PDB_TEXT = "PDB ID — (번호 대응에 PDB ID가 없음)";
+const KBASE_FIELDS_HEADER = "그 밖의 kbase 필드(원본 값 그대로)";
 const EFFECTS_HEADER = "측정 변화(kbase 추출 effects)";
 // Removed before the wording check (case-insensitive, CSS may upper-case a heading): the spec's measured-change heading
 // (it names the kbase field `effects`) and the kbase version key effect_rules_version, plain and Markdown-escaped.
@@ -235,9 +238,16 @@ const posts = (log, since) => log.filter(row => row.at >= since && row.method ==
 
 // ------------------------------------------------------------------ evidence
 const HANDLE_RE = /^(?:obj:\/\/[\w./-]+|[0-9a-f]{12,64}|run_[\w]+)$/;
-/** Real stage: a value kept in step records only when it cannot quote kbase text (numbers, codes, IDs, handles). */
+// The leak check of scripts/m27_offscreen_acceptance.py (REAL_TEXT_MIN_CHARS there): real kbase strings from this many
+// characters on (whitespace collapsed) must never reach committed evidence, so a step record keeps only shorter strings.
+const REAL_TEXT_MIN_CHARS = 24;
+/** Real stage: a value kept in step records only when it cannot quote kbase text by the runner's measure (numbers,
+ * strings shorter than REAL_TEXT_MIN_CHARS after collapsing whitespace, handles, hashes, run IDs); longer text becomes
+ * its length and SHA-256. */
 function realSafe(value) {
-  if (typeof value === "string") return value.length <= 40 || HANDLE_RE.test(value) ? value : { textDigest: textDigest(value) };
+  if (typeof value === "string")
+    return value.replace(/\s+/g, " ").trim().length < REAL_TEXT_MIN_CHARS || HANDLE_RE.test(value) ? value
+      : { textDigest: textDigest(value) };
   if (Array.isArray(value)) return value.map(realSafe);
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, realSafe(v)]));
   return value;
@@ -472,7 +482,19 @@ async function openKnowledge(page) {
   await waitFor(page, async () => ["ready", "unavailable", "failed"].includes(await areaState(page, "snapshot")) &&
     ["ready", "empty", "failed"].includes(await areaState(page, "results")) ? true : null, "precedent area read", 60000);
 }
-async function panelText(page) { return panel(page).evaluate(node => node.innerText); }
+/** The panel text for the wording check. The entries of "그 밖의 kbase 필드" are kbase paths and values as JSON text
+ * (a path such as effects[0].evidence names the kbase field): removed like the other stored strings; the block's
+ * summary and note stay checked. */
+async function panelText(page) {
+  return panel(page).evaluate(node => {
+    let text = node.innerText;
+    for (const item of node.querySelectorAll('[data-testid="kinase-precedents-kbase-fields"] dl')) {
+      const entries = item.innerText;
+      if (entries) text = text.split(entries).join("\n");
+    }
+    return text;
+  });
+}
 /** The area's own wording: the panel text without expanded record details, whose fields are kbase values shown as
  * written (a kbase 0 there is a value, not a missing one; those "—" cells are checked one by one instead). */
 async function productText(page) {
@@ -575,6 +597,48 @@ function bibliographyText(record, books) {
     : [book.title, book.journal, book.year].map(value => value ?? NULL).join(" · "));
 }
 
+/** Independent reader of a "a.b[2].c" path on a stored record (undefined when absent). */
+function valueAtPath(value, pathText) {
+  let node = value;
+  for (const [, key, index] of pathText.matchAll(/([^.[\]]+)|\[(\d+)\]/g)) {
+    if (node === null || typeof node !== "object") return undefined;
+    node = index !== undefined ? node[Number(index)] : node[key];
+  }
+  return node;
+}
+const withinPath = (inner, outer) => inner === outer || inner.startsWith(`${outer}.`) || inner.startsWith(`${outer}[`);
+// Paths the rest of the detail shows (spec §8 상세), independent of the product: never listed again.
+const SHOWN_ELSEWHERE = ["move_id", "content_hash", "target", "source.pmid", "source.locations", "change", "structure_ref",
+  "structure_link_reason", "structure_ref_from", "observation.text", "observation.quote", "observation.quote_truncated",
+  "tags.site", "tags.goal", "tags.tactic", "review_status", "schema_version", "mutations", "proposed_tags", "figures",
+  "extraction.model", "extraction.provider", "extraction.prompt_version", "extraction.run_at"];
+const SHOWN_EFFECT_RE = /^effects\[\d+\]\.(metric|assay|target_ref|target_role|direction|direction_basis|magnitude_bucket|comparable|comparability_reason|fold_change)$/;
+/** "그 밖의 kbase 필드" opened by a click versus the stored record: each entry is the stored value at its path as JSON
+ * text, no path twice, never a left-out path or one the detail shows elsewhere, and the effect / observation / tradeoff
+ * fields shown nowhere else are listed. Returns the entry count only (paths and values may quote kbase). */
+function checkKbaseFields(block, record) {
+  assert.ok(block && block.open === true, "그 밖의 kbase 필드 not opened");
+  assert.equal(block.summary, KBASE_FIELDS_HEADER);
+  const paths = block.rows.map(row => row.path);
+  assert.equal(new Set(paths).size, paths.length, "a kbase field path listed twice");
+  for (const row of block.rows) {
+    assert.equal(row.dt, row.path, "kbase field label");
+    assert.equal(row.value, JSON.stringify(valueAtPath(record, row.path)), `kbase field value at ${row.path}`);
+    for (const outer of ["source.parser", "checks.cross_parser_numbers.measurements", ...SHOWN_ELSEWHERE])
+      assert.ok(!withinPath(row.path, outer), `${row.path} is shown elsewhere or left out`);
+    assert.ok(!SHOWN_EFFECT_RE.test(row.path) && !/^checks\.\w+\.status$/.test(row.path), `${row.path} is shown elsewhere`);
+  }
+  record.effects.forEach((effect, i) => {
+    for (const key of ["assay_context", "chembl_crosscheck", "evidence"])
+      if (key in effect) assert.ok(paths.includes(`effects[${i}].${key}`), `effects[${i}].${key} not listed`);
+  });
+  if ("evidence" in record.observation) assert.ok(paths.includes("observation.evidence"), "observation.evidence not listed");
+  record.tradeoffs.forEach((tradeoff, i) => {
+    if ("evidence" in tradeoff) assert.ok(paths.includes(`tradeoffs[${i}].evidence`), `tradeoffs[${i}].evidence not listed`);
+  });
+  return block.rows.length;
+}
+
 /** The opened result on screen versus the detail answer it received; the plan's expectation; returns IDs / counts. */
 async function verifyDetail(page, body, expect, opts = {}) {
   const detail = panel(page).locator(`[data-testid="kinase-precedents-detail"][data-precedent-detail="${body.handle}"]`);
@@ -620,7 +684,10 @@ async function verifyDetail(page, body, expect, opts = {}) {
   assert.deepEqual(shown.marks, badge ? [badge] : [], "detail snapshot mark");
   if (opts.badge !== undefined) assert.equal(badge, opts.badge, "expected snapshot mark");
   assert.deepEqual(shown.counts, countTexts(body.counts), "count rows");
-  if (body.null_result) assert.ok((shown.nullText ?? "").includes("선행 연구가 없다는 뜻이 아닙니다"), "null result text");
+  // an empty result with linked targets says "no record in the included files"; with no linked target it says that
+  if (body.null_result && body.targets_overview.length)
+    assert.ok((shown.nullText ?? "").includes("선행 연구가 없다는 뜻이 아닙니다"), "null result text");
+  else if (body.null_result) assert.equal(shown.nullText, NULL_NO_TARGET_TEXT, "null result text without a linked target");
   else assert.equal(shown.nullText, null);
   // chain table (stored order)
   assert.deepEqual(shown.chains.map(row => row.chain), body.chains.map(chain => chain.chain_auth), "chain order");
@@ -661,7 +728,8 @@ async function verifyDetail(page, body, expect, opts = {}) {
     assert.equal(ui.bases, `표적 해석 근거별 ${target.counts.resolution_basis.map(item => `${item.basis} ${item.count}건`).join(" · ") || EMPTY_LIST}`);
     assert.equal(ui.up3, UP3);
   }
-  assert.equal(shown.pageText, pageText(body.page, body.records.length), "page text");
+  // no linked target: the no-target sentence stands in for the whole records area (no pager)
+  assert.equal(shown.pageText, body.page.target === null ? null : pageText(body.page, body.records.length), "page text");
   assert.deepEqual(shown.records.map(row => row.moveId), body.records.map(item => item.record.move_id), "record order");
   body.records.forEach((item, i) => {
     const row = shown.records[i];
@@ -940,6 +1008,8 @@ async function modeMain(session, input, rec_, evidence, log) {
       await waitFor(page, async () => await t(page, "numbering-map").inputValue() !== "" ? true : null, "map pre-selected", 30000);
       await t(page, "chains").waitFor({ timeout: 30000 });
       return { selected: await t(page, "numbering-map").inputValue(), maps: await mapList(page),
+        options: await t(page, "numbering-map").locator("option").evaluateAll(items =>
+          items.map(item => [item.value, item.textContent.replace(/\s+/g, " ").trim()])),
         chains: await panel(page).locator('input[data-testid^="kinase-precedents-chain-"]').evaluateAll(items =>
           items.map(item => [item.getAttribute("data-testid"), item.checked])),
         toggle: await t(page, "include-flagged").isChecked(), note: await t(page, "flagged-note").count(),
@@ -947,12 +1017,20 @@ async function modeMain(session, input, rec_, evidence, log) {
     }, async value => {
       const newest = [...value.maps.rows].sort((a, b) => b.created_seq - a.created_seq)[0];
       assert.equal(value.selected, newest.handle, "not the newest map");
+      // every map choice names its PDB ID, or "—" with the reason when the map recorded none (never a bare "PDB —")
+      const options = Object.fromEntries(value.options);
+      for (const row of value.maps.rows) {
+        const label = options[row.handle] ?? "";
+        assert.ok(label.includes(row.pdb_id === null ? NO_PDB_TEXT : `PDB ${row.pdb_id} `), `map choice ${label}`);
+        assert.ok(!label.includes("PDB — "), `bare PDB — in ${label}`);
+      }
       assert.ok(value.chains.length >= 1 && value.chains.every(([, checked]) => checked), "a chain not ticked by default");
       assert.equal(value.toggle, false);
       assert.equal(value.note, 0);
       assert.equal(value.link, true);
       assert.deepEqual(value.posts, [], "entering the tab posted");
-      return { selected: value.selected, chains: value.chains.length };
+      return { selected: value.selected, chains: value.chains.length,
+        mapsWithoutPdbId: value.maps.rows.filter(row => row.pdb_id === null).length };
     }));
   // ---- chain previews (server decides; the screen names what it will decide)
   for (const preview of plan.previews ?? []) await rec_.part(`preview-${preview.map}`, ["P-chain-previews"], () =>
@@ -1354,11 +1432,13 @@ async function detailPart(page, rec_, run, ctx, plan, C) {
   const wanted = spec.expand ? Object.entries(spec.expand) : opened.body.records.slice(0, spec.expandFirst).map(item => [item.record.move_id, null]);
   for (const [moveId, want] of wanted) {
     await rec_.step(`M23-expand-${moveId}`, [C("P-detail"), "P-fixed-notes"], `Click 상세 펼치기 on ${moveId}: every stored field ` +
-      "as written, the two check channels apart, UP1, UP4", async () => {
+      "as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy", async () => {
       await panel(page).locator(`button[data-testid="kinase-precedents-record-toggle"][data-move-id="${moveId}"]`).click();
       control(ctx.evidence, "kinase-precedents-record-toggle", { opened: moveId });
       const node = panel(page).locator(`[data-testid="kinase-precedents-record-detail"][data-move-id="${moveId}"]`);
       await node.waitFor({ timeout: 15000 });
+      await node.locator('[data-testid="kinase-precedents-kbase-fields"] > summary').click();
+      control(ctx.evidence, "kinase-precedents-kbase-fields", { opened: moveId });
       return node.evaluate(el => {
         const text = item => item ? item.textContent.replace(/\s+/g, " ").trim() : null;
         const one = id => text(el.querySelector(`[data-testid="kinase-precedents-${id}"]`));
@@ -1380,7 +1460,11 @@ async function detailPart(page, rec_, run, ctx, plan, C) {
           kp3: one("kp3"),
           integrity: Object.fromEntries([...el.querySelectorAll('[data-testid="kinase-precedents-integrity"] dd[data-integrity]')].map(dd =>
             [dd.getAttribute("data-integrity"), text(dd)])),
-          contentHash: text(el.querySelector('[data-testid="kinase-precedents-content-hash"] code')) };
+          contentHash: text(el.querySelector('[data-testid="kinase-precedents-content-hash"] code')),
+          kbaseFields: (block => block && { open: block.open, summary: text(block.querySelector("summary")),
+            rows: [...block.querySelectorAll("dd[data-kbase-path]")].map(dd => ({ path: dd.getAttribute("data-kbase-path"),
+              dt: text(dd.previousElementSibling), value: dd.textContent })) })(
+            el.querySelector('[data-testid="kinase-precedents-kbase-fields"]')) };
       });
     }, async ui => {
       const item = opened.body.records.find(entry => entry.record.move_id === moveId);
@@ -1425,6 +1509,7 @@ async function detailPart(page, rec_, run, ctx, plan, C) {
         : "25단어를 넘는 인용 있음 (quotes_within_limit false)");
       assert.equal(ui.integrity.locations_have_page, "논문 쪽 위치 있음 (locations_have_page true)");
       assert.equal(ui.contentHash, record.content_hash);
+      const kbaseFields = checkKbaseFields(ui.kbaseFields, record);
       if (want) {
         assert.equal(!!book, want.bibliography, "bibliography presence");
         assert.equal(integrity.quotes_within_limit, want.quotesWithinLimit, "quotes_within_limit");
@@ -1440,7 +1525,8 @@ async function detailPart(page, rec_, run, ctx, plan, C) {
       assert.deepEqual(bareZeroOrNone(await productText(page)), []);
       assert.deepEqual(forbiddenIn(await panelText(page), [opened.body]), []);
       return { moveId, bibliography: !!book, quotesWithinLimit: integrity.quotes_within_limit, effects: record.effects.length,
-        foldNull: record.effects.map(effect => effect.fold_change === null), roles: record.effects.map(effect => effect.target_role) };
+        foldNull: record.effects.map(effect => effect.fold_change === null), roles: record.effects.map(effect => effect.target_role),
+        kbaseFields };
     });
   }
   const [firstId] = wanted[0];
@@ -1678,4 +1764,4 @@ if (require.main === module) main().catch(error => {
 });
 
 module.exports = { options, main, forbiddenIn, mdEscape, bareZeroOrNone, realSafe, textDigest, countTexts, chainCells, pageText,
-  LIMITATIONS, KT1, UP1, UP2, UP3, UP4, UP5 };
+  checkKbaseFields, REAL_TEXT_MIN_CHARS, LIMITATIONS, KT1, UP1, UP2, UP3, UP4, UP5 };

@@ -694,7 +694,7 @@ test("no target (page.target === null): no records, no facets, \"—\" with the 
   assert.equal(view.noTargetText, lib.NO_TARGET_TEXT);
   assert.deepEqual([view.records, view.targets], [[], []]);
   assert.equal(view.pageText, "— (연결된 표적 없음)");
-  assert.deepEqual([view.nullResult, view.nullResultText], [true, lib.NULL_RESULT_TEXT]);
+  assert.deepEqual([view.nullResult, view.nullResultText], [true, lib.NULL_RESULT_NO_TARGET_TEXT]);
   assert.equal(view.pdbIdText, "— (번호 대응에 PDB ID가 없음)");
   assert.deepEqual([view.badge, view.badgeText], ["no_active_set", "사용 중 스냅샷 없음"]);
   assert.equal(lib.filterOptions(DETAIL_NO_TARGET.facets), null);
@@ -817,6 +817,183 @@ test("two check channels stay apart: all ten kbase checks, ProtView integrity, \
     lib.PRECEDENT_FIXED_LINES.includes(text), text);
 });
 
+// ---- "그 밖의 kbase 필드": the rest of the stored copy (decision ⑬ "kbase 필드 전부") ----
+
+/** Independent path reader of the test: "a.b[2].c" on a JSON value (undefined when absent). */
+function atPath(value, pathText) {
+  let node = value;
+  for (const [, key, index] of pathText.matchAll(/([^.[\]]+)|\[(\d+)\]/g)) {
+    if (node === null || typeof node !== "object") return undefined;
+    node = index !== undefined ? node[Number(index)] : node[key];
+  }
+  return node;
+}
+/** Independent leaf walk of the test: every primitive or empty list / object with its path. */
+function leafPaths(value, prefix = "") {
+  if (value !== null && typeof value === "object") {
+    const entries = Array.isArray(value) ? value.map((item, i) => [`${prefix}[${i}]`, item])
+      : Object.entries(value).map(([key, item]) => [prefix ? `${prefix}.${key}` : key, item]);
+    if (entries.length) return entries.flatMap(([at, item]) => leafPaths(item, at));
+  }
+  return [prefix];
+}
+const under = (leaf, top) => leaf === top || leaf.startsWith(`${top}.`) || leaf.startsWith(`${top}[`);
+
+test("remaining kbase fields: every path of the stored copy not shown above, in path order, values as JSON text", () => {
+  const rec = R1.record;
+  const shown = plain(lib.shownRecordPaths(rec));
+  const fields = plain(lib.remainingRecordFields(rec, shown));
+  const json = value => JSON.stringify(value);
+  const effectRest = i => [
+    { path: `effects[${i}].assay_context`, value: json(rec.effects[i].assay_context) },
+    { path: `effects[${i}].chembl_crosscheck`, value: json(rec.effects[i].chembl_crosscheck) },
+    { path: `effects[${i}].evidence`, value: json(rec.effects[i].evidence) }];
+  assert.deepEqual(fields, [
+    { path: "checks.duplicate.candidate_ids", value: "[]" },
+    { path: "checks.pmid_exists.reason", value: "\"r\"" },
+    { path: "checks.quote_in_source.missing_paths", value: "[]" },
+    { path: "checks.quote_in_source.quote_assembled", value: json(rec.checks.quote_in_source.quote_assembled) },
+    { path: "checks.schema.error_paths", value: "[]" },
+    ...effectRest(0),
+    // a measure without a value shows "—" only, so its qualifier and unit are listed here (null stays null)
+    { path: "effects[1].after.qualifier", value: "null" }, { path: "effects[1].after.unit", value: "\"nM\"" },
+    effectRest(1)[0],
+    { path: "effects[1].before.qualifier", value: "null" }, { path: "effects[1].before.unit", value: "null" },
+    ...effectRest(1).slice(1),
+    { path: "extraction.chunks", value: "[]" }, { path: "extraction.dropped_effects", value: "0" },
+    { path: "extraction.notes", value: json(["SYNTHETIC note not shown"]) },
+    { path: "observation.evidence", value: "{}" },
+    { path: "tradeoffs[0].evidence", value: "{}" }, { path: "tradeoffs[1].evidence", value: "{}" }]);
+  // nothing shown above is listed again, and nothing listed hides a shown path below it
+  for (const field of fields) for (const top of shown)
+    assert.ok(!under(field.path, top) && !under(top, field.path), `${field.path} / ${top}`);
+  // nothing is lost: every leaf of the stored copy is under exactly one shown or listed path
+  for (const leaf of leafPaths(rec)) {
+    const owners = [...shown, ...fields.map(field => field.path)].filter(top => under(leaf, top));
+    assert.equal(owners.length, 1, `${leaf}: ${owners.join(", ")}`);
+  }
+  // values are the stored values as JSON text (no number made, null / 0 / [] / {} kept, nested objects whole)
+  for (const field of fields) assert.equal(field.value, json(atPath(rec, field.path)), field.path);
+  // the detail model uses the same two functions (one place)
+  assert.deepEqual(plain(lib.recordDetailView(R1, BIBLIOGRAPHY)).kbaseFields, fields);
+  assert.equal(lib.KBASE_FIELDS_HEADER, "그 밖의 kbase 필드(원본 값 그대로)");
+  const view = plain(lib.recordDetailView(R1, BIBLIOGRAPHY));
+  assert.deepEqual([view.kbaseFieldsHeader, view.kbaseFieldsNote, view.kbaseFieldsText],
+    [lib.KBASE_FIELDS_HEADER, lib.KBASE_FIELDS_NOTE, null]);
+});
+
+test("remaining kbase fields: the two left-out paths never appear; list positions in number order; empties listed", () => {
+  const rec = R2.record;
+  const withRemoved = { ...rec, source: { ...rec.source, parser: { engine: "SYNTHETIC" } },
+    checks: { ...rec.checks, cross_parser_numbers: { status: "pass", measurements: [{ v: 1 }], agreement: null } } };
+  const fields = plain(lib.remainingRecordFields(withRemoved, lib.shownRecordPaths(withRemoved)));
+  for (const removed of lib.REMOVED_PATHS) assert.ok(!fields.some(field => under(field.path, removed)), removed);
+  // a sibling of a left-out path is still listed
+  assert.ok(fields.some(field => field.path === "checks.cross_parser_numbers.agreement" && field.value === "null"));
+  // effects[2] before effects[10] (positions are numbers, not text)
+  const many = { ...rec, effects: Array.from({ length: 11 }, (_, i) => effect({ assay_context: `SYNTHETIC context ${i}` })) };
+  const contexts = plain(lib.remainingRecordFields(many, lib.shownRecordPaths(many)))
+    .filter(field => field.path.endsWith(".assay_context")).map(field => field.path);
+  assert.deepEqual(contexts, Array.from({ length: 11 }, (_, i) => `effects[${i}].assay_context`));
+  // empty lists shown above as "빈 목록 ([])" are not listed again; an empty object that is not shown is listed as {}
+  assert.ok(!fields.some(field => ["tradeoffs", "structure_links", "interactions"].includes(field.path)));
+  const odd = { ...rec, observation: { ...rec.observation, evidence: {} }, extraction: { ...rec.extraction, notes: [] } };
+  const listed = Object.fromEntries(plain(lib.remainingRecordFields(odd, lib.shownRecordPaths(odd)))
+    .map(field => [field.path, field.value]));
+  assert.equal(listed["observation.evidence"], "{}");
+  assert.equal(listed["extraction.notes"], "[]");
+  // a measure that is not an object is shown whole in the table, so it is not listed
+  const plainMeasure = { ...rec, effects: [effect({ before: "SYNTHETIC text measure", after: null })] };
+  assert.ok(!plain(lib.remainingRecordFields(plainMeasure, lib.shownRecordPaths(plainMeasure)))
+    .some(field => /effects\[0\]\.(before|after)/.test(field.path)));
+  // a record copy with nothing else left -> no entry and "빈 목록 ([])"
+  const bare = record("MOVE-0200", { observation: { text: "SYNTHETIC", quote: "SYNTHETIC q", quote_truncated: false },
+    effects: [{ metric: "IC50", assay: "SYNTHETIC", target_ref: "SYN", target_role: "on_target",
+      before: { qualifier: "=", value: 1, unit: "nM" }, after: { qualifier: "=", value: 2, unit: "nM" }, direction: "unknown",
+      direction_basis: "none", magnitude_bucket: "unknown", comparable: false, comparability_reason: null, fold_change: null }],
+    extraction: { model: "m", provider: "p", prompt_version: "v", run_at: "t" } });
+  const bareView = plain(lib.recordDetailView(item("moves", bare), BIBLIOGRAPHY));
+  assert.deepEqual([bareView.kbaseFields, bareView.kbaseFieldsText], [[], "빈 목록 ([])"]);
+});
+
+test("shown paths are the ones the table row and the detail display (their string values are on screen)", () => {
+  for (const entry of [R1, R2, R3]) {
+    const screen = JSON.stringify([lib.recordDetailView(entry, BIBLIOGRAPHY), lib.recordRowView(entry, BIBLIOGRAPHY)]
+      .map(view => ({ ...plain(view), kbaseFields: [] })));
+    for (const top of lib.shownRecordPaths(entry.record))
+      for (const leaf of leafPaths(atPath(entry.record, top) ?? null, top)) {
+        const value = atPath(entry.record, leaf);
+        if (typeof value === "string" && value) assert.ok(screen.includes(JSON.stringify(value).slice(1, -1)), `${leaf}`);
+      }
+  }
+});
+
+test("empty result: no linked target says so (chains not linked), apart from targets without an included record", () => {
+  assert.equal(lib.NULL_RESULT_NO_TARGET_TEXT, "빈 결과: 연결된 표적이 없습니다(체인이 연결되지 않음 — 체인 표의 이유 참조).");
+  assert.equal(plain(lib.precedentResultView(DETAIL_NO_TARGET)).nullResultText, lib.NULL_RESULT_NO_TARGET_TEXT);
+  assert.doesNotMatch(lib.NULL_RESULT_NO_TARGET_TEXT, /전례|선행 연구/);
+  // targets linked, none with an included record: the "no record in the included files" sentence and the status phrases
+  const noRecords = { ...DETAIL_EXCLUDED, null_result: true, targets_overview: TARGETS_EX.slice(1),
+    counts: { ...DETAIL_EXCLUDED.counts, targets: 2, records: { moves: 0, moves_flagged: null } },
+    page: { target: "Q0SYN2", total: 0, filtered_total: 0, offset: 0, limit: 25 }, records: [], bibliography: {} };
+  const view = plain(lib.precedentResultView(noRecords));
+  assert.equal(view.nullResultText, lib.NULL_RESULT_TEXT);
+  assert.deepEqual(view.targets.map(item => item.statusText), ["포함한 파일에 이 표적의 전례 기록 없음",
+    "kbase에 이 표적 참조가 없음(전례 없음과 다름)"]);
+  assert.notEqual(lib.NULL_RESULT_TEXT, lib.NULL_RESULT_NO_TARGET_TEXT);
+  assert.equal(lib.nullResultText(DETAIL), null);
+  assert.equal(lib.nullResultText(DETAIL_NO_TARGET), lib.NULL_RESULT_NO_TARGET_TEXT);
+  assert.equal(lib.nullResultText(noRecords), lib.NULL_RESULT_TEXT);
+});
+
+test("numbering map choices: no PDB ID is \"—\" with the reason, never a bare \"PDB —\"", () => {
+  assert.equal(lib.mapPdbText(null), "PDB ID — (번호 대응에 PDB ID가 없음)");
+  assert.equal(lib.mapPdbText("0SY5"), "PDB 0SY5");
+  assert.equal(lib.mapChoiceText(MAPS[1]), "prepared_structure · 체인 A, B, C · PDB 0SY5 · 이벤트 #9");
+  assert.equal(lib.mapChoiceText({ ...MAPS[1], pdb_id: null }),
+    "prepared_structure · 체인 A, B, C · PDB ID — (번호 대응에 PDB ID가 없음) · 이벤트 #9");
+  assert.equal(lib.mapChoiceText(MAPS[2]), "prepared_structure · 체인 빈 목록 ([]) · PDB 0SY5 · 이벤트 #2");
+});
+
+// ---- the panel's own strings (KinasePrecedentsPanel.tsx) ----
+
+const PANEL_FILE = path.join(__dirname, "../src/components/KinasePrecedentsPanel.tsx");
+/** Every string the panel source can render: JSX text, string literals (imports aside) and template literal parts. */
+function panelLiterals(source) {
+  const file = ts.createSourceFile(PANEL_FILE, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
+  const texts = [];
+  const visit = node => {
+    if (ts.isJsxText(node) && node.text.trim()) texts.push(node.text.trim());
+    else if (ts.isStringLiteral(node) && !ts.isImportDeclaration(node.parent)) texts.push(node.text);
+    else if (ts.isNoSubstitutionTemplateLiteral(node)) texts.push(node.text);
+    else if (ts.isTemplateExpression(node)) texts.push(node.head.text, ...node.templateSpans.map(span => span.literal.text));
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return texts;
+}
+
+test("every string literal of the panel passes the wording check (the measured-change heading exempt as before)", () => {
+  const source = fs.readFileSync(PANEL_FILE, "utf8");
+  const texts = panelLiterals(source);
+  assert.ok(texts.length > 150, String(texts.length));
+  for (const text of texts) assert.deepEqual(plain(lib.precedentForbiddenWords(text)), [], text);
+  // the panel-only guidance, headings and error prefixes are among the checked strings
+  for (const part of ["보고서는 저장된 결과로만 만들며", "① 전례 참조 스냅샷", "키나아제 전례 결과 읽기 실패",
+    "보고서 만들기 실패", "번호 대응 행이 읽는 동안 바뀌었습니다", "결과 선택 (최신 순, 자동으로 고르지 않음)",
+    "개수 (ProtView가 센 계산값)", "한계 (고정 문장, 저장된 그대로)"])
+    assert.ok(texts.some(text => text.includes(part)), part);
+  // the check reaches the panel literals (a forbidden word put into one is found)
+  const tampered = panelLiterals(source.replace("보고서 만들기 실패", "추천 보고서 만들기 실패"));
+  assert.ok(tampered.some(text => lib.precedentForbiddenWords(text).includes("추천")));
+  // the measured-change heading comes from the lib (exempt term), never retyped; kbase values are text only
+  assert.ok(!source.includes(lib.EFFECTS_HEADER) && source.includes("view.effectsHeader"));
+  assert.ok(!/dangerouslySetInnerHTML|innerHTML/.test(source));
+  // the map choice names a missing PDB ID with its reason (lib), and the remaining kbase fields are rendered as text
+  assert.ok(source.includes("mapChoiceText(row)") && !/pdb_id \?\? NULL_TEXT/.test(source));
+  assert.ok(/<Verbatim text=\{field\.value\} \/>/.test(source) && source.includes('data-testid="kinase-precedents-kbase-fields"'));
+});
+
 test("five area states: no run and no capability record are unavailable; a missing snapshot is not; empty result is not a failure", () => {
   const base = { runId: "r1", capability: { available: true, reason: null } };
   const state = over => plain(lib.precedentPanelState({ ...base, ...over }));
@@ -827,9 +1004,13 @@ test("five area states: no run and no capability record are unavailable; a missi
   assert.deepEqual(state({ error: "실패함" }), { state: "failed", message: "실패함" });
   assert.deepEqual(state({}), { state: "ready" });
   assert.deepEqual(state({ capability: { available: false, reason: "not installed" } }), { state: "ready" });
-  assert.deepEqual(state({ detail: { null_result: true } }), { state: "empty", message: lib.NULL_RESULT_TEXT });
-  assert.deepEqual(state({ detail: { null_result: false } }), { state: "ready" });
-  for (const text of [lib.NO_RUN_REASON, lib.CAPABILITY_REASON, lib.NULL_RESULT_TEXT]) assert.doesNotMatch(text, /\d/);
+  assert.deepEqual(state({ detail: { null_result: true, targets_overview: TARGETS_EX.slice(1) } }),
+    { state: "empty", message: lib.NULL_RESULT_TEXT });
+  assert.deepEqual(state({ detail: { null_result: true, targets_overview: [] } }),
+    { state: "empty", message: lib.NULL_RESULT_NO_TARGET_TEXT });
+  assert.deepEqual(state({ detail: { null_result: false, targets_overview: TARGETS_IN } }), { state: "ready" });
+  for (const text of [lib.NO_RUN_REASON, lib.CAPABILITY_REASON, lib.NULL_RESULT_TEXT, lib.NULL_RESULT_NO_TARGET_TEXT])
+    assert.doesNotMatch(text, /\d/);
 });
 
 test("one area's state is one of the five: unavailable, then failed, then loading, then empty, else ready", () => {
@@ -929,7 +1110,9 @@ function screenStrings() {
     [...lib.ADMISSION_REASON_CODES, ...lib.SNAPSHOT_REASON_CODES, ...lib.CHAIN_REASONS, "result_invalid", "result_too_large",
       "cancelled", "not_found", "run_corrupt"].map(lib.precedentReasonText),
     [DETAIL, DETAIL_EXCLUDED, DETAIL_NO_TARGET].map(lib.precedentResultView),
-    [R1, R2, R3].map(entry => lib.recordDetailView(entry, BIBLIOGRAPHY)),
+    // the remaining kbase fields are kbase paths and values as written (a path such as effects[0].evidence names the
+    // kbase field), not this module's wording: their header and note are checked, the entries are not
+    [R1, R2, R3].map(entry => ({ ...lib.recordDetailView(entry, BIBLIOGRAPHY), kbaseFields: [] })),
     [STATUS_OK, STATUS_NONE, STATUS_BAD].map(lib.precedentSnapshotView),
     lib.setSummaryView({ ...SET_SUMMARY, unresolved_names_total: 130 }),
     ["stale", "no_active_set"].map(lib.snapshotBadgeText),
@@ -949,8 +1132,12 @@ function screenStrings() {
       filters: { ...lib.emptyFilters(), file: "z", q: "q".repeat(101) } }),
     lib.filterOptions(FACETS), lib.recordPageText(DETAIL.page, 3), lib.recordPageText(DETAIL_NO_TARGET.page, 0),
     lib.precedentPanelState({ runId: null }), lib.precedentPanelState({ runId: "r", capability: null }),
-    lib.precedentPanelState({ runId: "r", capability: { available: true, reason: null }, detail: { null_result: true } }),
+    lib.precedentPanelState({ runId: "r", capability: { available: true, reason: null },
+      detail: { null_result: true, targets_overview: [] } }),
+    lib.precedentPanelState({ runId: "r", capability: { available: true, reason: null },
+      detail: { null_result: true, targets_overview: TARGETS_EX.slice(1) } }),
     lib.screenNote("UP2", 7), lib.screenNote("UP5", 9),
+    MAPS.map(lib.mapChoiceText), lib.mapChoiceText({ ...MAPS[1], pdb_id: null }), lib.mapPdbText(null),
   ]);
   return texts;
 }
@@ -966,9 +1153,15 @@ test("every user-visible string of this module passes the wording check (fixed l
 });
 
 test("the module never sorts or aggregates precedent values: no sort calls, arithmetic only in the spec-defined counts", () => {
+  // The one sort orders the field paths of "그 밖의 kbase 필드" (path segments only, never a value).
+  const PATH_SORT = ".sort((a, b) => comparePaths(a.segments, b.segments))";
+  assert.equal(LIB_CODE.split(PATH_SORT).length, 2, "the path sort");
+  const compare = LIB_CODE.slice(LIB_CODE.indexOf("function comparePaths("), LIB_CODE.indexOf("\n}\n", LIB_CODE.indexOf("function comparePaths(")));
+  assert.ok(compare.length > 0 && !/value|record|count/i.test(compare.replace("function comparePaths(", "")), compare);
+  const code = LIB_CODE.split(PATH_SORT).join("");
   for (const pattern of [/\.sort\(/, /\.reverse\(/, /\.toSorted\(/, /\?\?\s*0\b/, /\|\|\s*0\b/, /reduce\([^)]*\+/,
     /innerHTML|dangerouslySetInnerHTML/, /\b(rank|best|score|delta|difference|improv|average|mean)\w*\s*[:=]/i])
-    assert.ok(!pattern.test(LIB_CODE), String(pattern));
+    assert.ok(!pattern.test(code), String(pattern));
   // arithmetic on stored counts lives only in the named helpers (UP5's N, "전례 N건", "그 밖 N개", page positions)
   const allowed = ["unresolvedRecordTotal", "includedRecordCount", "unlistedNameCount", "recordPageText", "nextOffset",
     "previousOffset"];

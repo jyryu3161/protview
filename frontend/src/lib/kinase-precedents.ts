@@ -16,9 +16,9 @@
 import type { CommandResult } from "./api";
 import type { KinasePrecedentsArgs, KinasePrecedentsCounts, KinasePrecedentsDetail, KinasePrecedentsListItem,
   KinasePrecedentsTargetOverview, PrecedentBibliographyEntry, PrecedentChain, PrecedentEffect, PrecedentFacets,
-  PrecedentFileCounts, PrecedentJsonValue, PrecedentMeasure, PrecedentRecordItem, PrecedentReferenceStatus,
-  PrecedentSetSummary, PrecedentSortKey, PrecedentSortOrder, PrecedentTagAxis, PrecedentTargetCounts,
-  PrecedentTooLargeDetail } from "./contracts";
+  PrecedentFileCounts, PrecedentJsonValue, PrecedentMeasure, PrecedentRecord, PrecedentRecordItem,
+  PrecedentReferenceStatus, PrecedentSetSummary, PrecedentSortKey, PrecedentSortOrder, PrecedentTagAxis,
+  PrecedentTargetCounts, PrecedentTooLargeDetail } from "./contracts";
 import type { NumberingMapListRow, NumberingRow } from "./numbering";
 import { reasonText as numberingReasonText } from "./numbering";
 
@@ -138,8 +138,14 @@ export const RESPONSE_SHAPE_TEXT = "응답 형식이나 대상이 요청과 다�
 export const NOT_A_RESULT_TEXT = "도구 결과가 키나아제 전례 결과(kinase_precedents@1)가 아닙니다.";
 export const REQUEST_FAILED_TEXT = "요청 실패";
 export const NO_TARGET_TEXT = "연결된 표적이 없어 전례 목록이 없습니다(연결한 체인이 없음).";
+/** The empty result with linked targets, none of which has a record in the included files. */
 export const NULL_RESULT_TEXT = "빈 결과: 포함한 파일에 연결된 표적의 전례 기록이 없습니다. 선행 연구가 없다는 뜻이 " +
   "아닙니다.";
+/** The empty result with no linked target at all (every chain not linked): not a statement about precedents. */
+export const NULL_RESULT_NO_TARGET_TEXT = "빈 결과: 연결된 표적이 없습니다(체인이 연결되지 않음 — 체인 표의 이유 참조).";
+export const KBASE_FIELDS_HEADER = "그 밖의 kbase 필드(원본 값 그대로)";
+export const KBASE_FIELDS_NOTE = "위에 보인 항목을 뺀 저장된 사본(kbase_record_minus_2_paths@1)의 나머지 경로 전부입니다. " +
+  "경로 오름차순이고 값은 kbase 기록을 JSON 텍스트로 그대로 보입니다(null·0·빈 목록도 그대로).";
 export const PREVIEW_PENDING_TEXT = "번호 대응 행을 다 읽은 뒤 미리 보입니다(연결 여부는 서버가 결과로 정함).";
 /** The five area states (spec 8). */
 export const AREA_STATE_LABEL = { loading: "불러오는 중", ready: "준비", empty: "빈 결과", failed: "실패",
@@ -243,6 +249,18 @@ export interface PrecedentForm { numberingMap: string | null; chains: PrecedentC
 
 export function emptyPrecedentForm(): PrecedentForm {
   return { numberingMap: null, chains: [], includeFlagged: false };
+}
+
+/** "PDB <id>", or "PDB ID — (번호 대응에 PDB ID가 없음)" when the numbering map recorded none (never a bare "—"). */
+export function mapPdbText(pdbId: string | null): string {
+  return pdbId === null ? `PDB ID ${notShownText("번호 대응에 PDB ID가 없음")}` : `PDB ${pdbId}`;
+}
+
+/** One numbering map choice of the request block (the handle is appended by the screen). */
+export function mapChoiceText(row: Pick<NumberingMapListRow, "structure_kind" | "chains" | "pdb_id" | "created_seq">):
+  string {
+  return `${row.structure_kind} · 체인 ${listOrEmpty(row.chains)} · ${mapPdbText(row.pdb_id)} · ` +
+    `이벤트 #${row.created_seq}`;
 }
 
 /** The newest numbering map of this run (highest `created_seq`), or null; a preselection only (never submitted). */
@@ -660,9 +678,8 @@ function recordsText(records: { moves: number; moves_flagged: number | null }): 
 
 /** One stored result in the list; a file that was not included is "—" with the reason (never 0). */
 export function precedentListItemText(item: KinasePrecedentsListItem): string {
-  const pdb = item.pdb_id === null ? `PDB ID ${notShownText("번호 대응에 PDB ID가 없음")}` : `PDB ${item.pdb_id}`;
-  return [pdb, `체인 ${item.chain_count}개(연결 ${item.linked_chain_count}개)`, `표적 ${item.target_count}개`,
-    recordsText(item.records), item.null_result ? AREA_STATE_LABEL.empty : null]
+  return [mapPdbText(item.pdb_id), `체인 ${item.chain_count}개(연결 ${item.linked_chain_count}개)`,
+    `표적 ${item.target_count}개`, recordsText(item.records), item.null_result ? AREA_STATE_LABEL.empty : null]
     .filter((part): part is string => part !== null).join(" · ");
 }
 
@@ -801,11 +818,18 @@ export interface RecordDetailView {
   extraction: FieldView[];
   contentHash: string; contentHashNote: string; recordFormat: string;
   otherFields: FieldView[];
+  /** "그 밖의 kbase 필드": every path of the stored copy not shown above (`remainingRecordFields`), "빈 목록 ([])" when
+   * none is left. */
+  kbaseFieldsHeader: string; kbaseFieldsNote: string; kbaseFields: KbaseFieldView[]; kbaseFieldsText: string | null;
   /** UP1 ("원문 대조 안 함: …"). */
   sourceNote: string;
 }
+/** One remaining kbase field: its path in the stored copy ("a.b[2].c") and its value as JSON text. */
+export interface KbaseFieldView { path: string; value: string }
 
 type JsonObject = { [key: string]: PrecedentJsonValue };
+const isJsonObject = (value: PrecedentJsonValue | undefined): value is JsonObject =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** Every key of a kbase object: the listed keys first (in that order, when present), then the rest as stored. */
 function fieldViews(value: PrecedentJsonValue | undefined, order: readonly string[], skip: readonly string[] = []):
@@ -879,6 +903,82 @@ const INTERACTION_ORDER = ["interaction", "aa", "uniprot_resnum", "klifs_positio
   "after_distance_a", "anchor", "anchor_basis", "vocabulary", "source"];
 const EXTRACTION_KEYS = ["model", "provider", "prompt_version", "run_at"];
 const OTHER_KEYS = ["review_status", "schema_version", "mutations", "proposed_tags", "figures"];
+const EFFECT_SHOWN_KEYS = ["metric", "assay", "target_ref", "target_role", "direction", "direction_basis",
+  "magnitude_bucket", "comparable", "comparability_reason", "fold_change"];
+const QUOTE_SHOWN_KEYS = ["text", "quote", "quote_truncated"];
+
+/** The paths one measure cell shows (`measureText`): a non-object whole, a missing value only, else its three parts. */
+function measurePaths(value: PrecedentMeasure | PrecedentJsonValue, at: string): string[] {
+  if (!isJsonObject(value as PrecedentJsonValue)) return [at];
+  const measure = value as PrecedentMeasure;
+  if (measure.value === null || measure.value === undefined) return [`${at}.value`];
+  return ["qualifier", "value", "unit"].map(key => `${at}.${key}`);
+}
+
+/**
+ * The concrete paths of one stored record that the table row (`recordRowView`) and the expanded detail
+ * (`recordDetailView`) already show; a path covers its whole subtree. Kept next to the views it mirrors: an empty list
+ * the detail shows as "빈 목록 ([])" counts as shown, a list entry the detail cannot show as fields does not.
+ */
+export function shownRecordPaths(record: PrecedentRecord): string[] {
+  const shown = ["move_id", "target", "source.pmid", "source.locations", "change", "structure_ref",
+    "structure_link_reason", "structure_ref_from", "content_hash", ...QUOTE_SHOWN_KEYS.map(key => `observation.${key}`),
+    ...TAG_AXES.map(axis => `tags.${axis}`), ...CHECK_NAMES.map(name => `checks.${name}.status`),
+    ...EXTRACTION_KEYS.map(key => `extraction.${key}`), ...OTHER_KEYS];
+  const each = <T>(name: string, list: readonly T[], paths: (entry: T, at: string) => string[]) => {
+    if (!list.length) shown.push(name);
+    list.forEach((entry, i) => shown.push(...paths(entry, `${name}[${i}]`)));
+  };
+  each("effects", record.effects, (effect, at) => [...EFFECT_SHOWN_KEYS.map(key => `${at}.${key}`),
+    ...measurePaths(effect.before, `${at}.before`), ...measurePaths(effect.after, `${at}.after`)]);
+  each("tradeoffs", record.tradeoffs, (_, at) => QUOTE_SHOWN_KEYS.map(key => `${at}.${key}`));
+  each("structure_links", record.structure_links, (link, at) => isJsonObject(link) ? [at] : []);
+  each("interactions", record.interactions, (entry, at) => isJsonObject(entry) ? [at] : []);
+  return shown;
+}
+
+type PathSegment = string | number;
+
+function pathText(segments: readonly PathSegment[]): string {
+  return segments.map((segment, i) => typeof segment === "number" ? `[${segment}]` : i ? `.${segment}` : segment)
+    .join("");
+}
+
+/** Ascending path order: keys by code unit, list positions by number (so [2] comes before [10]). */
+function comparePaths(a: readonly PathSegment[], b: readonly PathSegment[]): number {
+  for (let i = 0; i < a.length && i < b.length; i++) {
+    if (a[i] === b[i]) continue;
+    if (typeof a[i] === "number" && typeof b[i] === "number") return a[i] < b[i] ? -1 : 1;
+    return String(a[i]) < String(b[i]) ? -1 : 1;
+  }
+  return a.length === b.length ? 0 : a.length < b.length ? -1 : 1;
+}
+
+/**
+ * Every field of the stored record copy that `shown` (concrete paths, each covering its subtree) leaves out, as
+ * `{path, value}` in ascending path order. A list or object is opened only when a shown path lies below it, otherwise
+ * it is one entry; an empty one that is not shown is an entry too. Values are the kbase values as JSON text (strings
+ * quoted, null, numbers, empty lists and objects as written; nothing is computed and nothing becomes 0). The two
+ * paths the copy leaves out (`REMOVED_PATHS`) are never listed.
+ */
+export function remainingRecordFields(record: PrecedentJsonValue, shown: readonly string[]): KbaseFieldView[] {
+  const covered = new Set<string>([...shown, ...REMOVED_PATHS]);
+  const below = (at: string) => [...covered].some(item => item.startsWith(`${at}.`) || item.startsWith(`${at}[`));
+  const found: { segments: PathSegment[]; path: string; value: string }[] = [];
+  const visit = (value: PrecedentJsonValue, segments: PathSegment[]) => {
+    const at = pathText(segments);
+    if (segments.length && covered.has(at)) return;
+    const children: [PathSegment, PrecedentJsonValue][] | null = Array.isArray(value)
+      ? value.map((entry, i) => [i, entry]) : isJsonObject(value) ? Object.entries(value) : null;
+    if (children !== null && children.length && (!segments.length || below(at))) {
+      for (const [key, entry] of children) visit(entry, [...segments, key]);
+      return;
+    }
+    found.push({ segments, path: at, value: JSON.stringify(value) });
+  };
+  visit(record, []);
+  return found.sort((a, b) => comparePaths(a.segments, b.segments)).map(({ path, value }) => ({ path, value }));
+}
 
 /** The expanded precedent: every kbase field shown as written, the two check channels apart, UP1 and UP4. */
 export function recordDetailView(item: PrecedentRecordItem, bibliography: KinasePrecedentsDetail["bibliography"]):
@@ -886,6 +986,7 @@ export function recordDetailView(item: PrecedentRecordItem, bibliography: Kinase
   const record = item.record;
   const integrity = item.integrity;
   const book = bibliographyOf(bibliography, record.source.pmid);
+  const kbaseFields = remainingRecordFields(record as unknown as PrecedentJsonValue, shownRecordPaths(record));
   return {
     moveId: record.move_id, fileText: fileText(item.file),
     bibliography: book === null ? null : fieldViews(book as unknown as JsonObject, BIBLIOGRAPHY_ORDER),
@@ -925,6 +1026,8 @@ export function recordDetailView(item: PrecedentRecordItem, bibliography: Kinase
       .filter(field => EXTRACTION_KEYS.includes(field.key)),
     contentHash: record.content_hash, contentHashNote: CONTENT_HASH_NOTE, recordFormat: PRECEDENT_RECORD_FORMAT,
     otherFields: fieldViews(record as unknown as JsonObject, OTHER_KEYS).filter(field => OTHER_KEYS.includes(field.key)),
+    kbaseFieldsHeader: KBASE_FIELDS_HEADER, kbaseFieldsNote: KBASE_FIELDS_NOTE, kbaseFields,
+    kbaseFieldsText: kbaseFields.length ? null : EMPTY_LIST_TEXT,
     sourceNote: PRECEDENT_SCREEN_NOTES.UP1,
   };
 }
@@ -959,6 +1062,16 @@ function countRows(counts: KinasePrecedentsCounts): { key: string; label: string
   ];
 }
 
+/**
+ * The empty-result sentence (null when the result is not empty): no linked target at all is said as such (the chain
+ * table names why), never as "no precedent records"; linked targets without an included record keep that sentence.
+ */
+export function nullResultText(detail: Pick<KinasePrecedentsDetail, "null_result" | "targets_overview">):
+  string | null {
+  if (!detail.null_result) return null;
+  return detail.targets_overview.length ? NULL_RESULT_TEXT : NULL_RESULT_NO_TARGET_TEXT;
+}
+
 /** Display model of one detail answer. Numbers are the server's stored counts; nothing is recounted or sorted. */
 export function precedentResultView(detail: KinasePrecedentsDetail): PrecedentResultView {
   const badge = resultSnapshotBadge(detail.active_set);
@@ -978,7 +1091,7 @@ export function precedentResultView(detail: KinasePrecedentsDetail): PrecedentRe
     unresolvedNote: screenNote("UP5", unresolvedRecordTotal(detail.set_summary)),
     targets: detail.targets_overview.map(targetView), selectedTarget: detail.page.target,
     noTargetText: noTarget ? NO_TARGET_TEXT : null,
-    nullResult: detail.null_result, nullResultText: detail.null_result ? NULL_RESULT_TEXT : null,
+    nullResult: detail.null_result, nullResultText: nullResultText(detail),
     pageText: recordPageText(detail.page, detail.records.length),
     records: detail.records.map(item => recordRowView(item, detail.bibliography)),
     limitations: detail.limitations,
@@ -998,12 +1111,13 @@ export type PrecedentPanelState =
  */
 export function precedentPanelState(input: { runId: string | null;
   capability?: { available: boolean; reason: string | null } | null; loading?: boolean; error?: string | null;
-  detail?: { null_result: boolean } | null }): PrecedentPanelState {
+  detail?: Pick<KinasePrecedentsDetail, "null_result" | "targets_overview"> | null }): PrecedentPanelState {
   if (input.runId === null) return { state: "unavailable", reason: NO_RUN_REASON };
   if (input.capability === null) return { state: "unavailable", reason: CAPABILITY_REASON };
   if (input.error) return { state: "failed", message: input.error };
   if (input.loading || input.capability === undefined) return { state: "loading" };
-  if (input.detail?.null_result) return { state: "empty", message: NULL_RESULT_TEXT };
+  const empty = input.detail ? nullResultText(input.detail) : null;
+  if (empty !== null) return { state: "empty", message: empty };
   return { state: "ready" };
 }
 

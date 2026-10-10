@@ -674,7 +674,8 @@
 .mw-precedent-unavailable { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); font-size: 12px; color: var(--ink); }
 .mw-precedent-unavailable p { margin: 0; }
 .mw-precedent-command { margin: 0; padding: var(--space-2); background: var(--surface-100); border: 1px solid var(--line); font: 400 12px/16px var(--font-mono); overflow-x: auto; }
-.mw-precedent-null { margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-precondition); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+/* A valid empty result is not a failure: the neutral notice frame, never a failure colour. */
+.mw-precedent-null { margin: 0; padding: var(--space-2); border-left: 3px solid var(--line-strong); background: var(--surface-200); font-size: 12px; color: var(--ink); }
 .mw-precedent-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
 .mw-precedent-errors { margin: 0; padding-left: var(--space-4); font-size: 12px; color: var(--fail-input); overflow-wrap: anywhere; }
 .mw-precedent-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
@@ -718,3 +719,4 @@
 .mw-precedent-ref { white-space: pre-wrap; overflow-wrap: anywhere; }
 .mw-precedent-details summary { cursor: pointer; overflow-wrap: anywhere; }
 .mw-precedent-details summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.mw-precedent-details[open] > summary { margin-bottom: var(--space-1); }

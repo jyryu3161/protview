@@ -8,8 +8,8 @@ import type { KinasePrecedentsCapability, KinasePrecedentsDetail, KinasePreceden
 import { ROW_PAGE_LIMIT, type NumberingMapListRow, type NumberingRow } from "@/lib/numbering";
 import { AREA_STATE_LABEL, CHAIN_NOTE, chainPreviews, checkPrecedentForm, checkPrecedentQuery, defaultPrecedentQuery,
   EMPTY_LIST_TEXT, emptyFilters, emptyPrecedentForm, filterOptions, FLAGGED_TOGGLE_LABEL, FLAGGED_TOGGLE_NOTE,
-  formForMap, isSortKey, LINK_BUTTON_TEXT, LINK_NOTE, listSnapshotBadge, MAP_NOTE, newestMap, nextOffset, NULL_TEXT,
-  ORDER_LABEL, PAGE_LIMIT_MAX, PANEL_TITLE, PRECEDENT_AREAS, precedentAreaState, precedentCommandOutcome,
+  formForMap, isSortKey, LINK_BUTTON_TEXT, LINK_NOTE, listSnapshotBadge, mapChoiceText, MAP_NOTE, newestMap, nextOffset,
+  NULL_TEXT, ORDER_LABEL, PAGE_LIMIT_MAX, PANEL_TITLE, PRECEDENT_AREAS, precedentAreaState, precedentCommandOutcome,
   precedentDetailMatches, precedentListItemText, precedentPanelState, precedentRefusal, precedentReportMatches,
   precedentReportSavedForRun, precedentResponseCurrent, precedentResultView, precedentSnapshotView,
   precedentStatusMatches, previousOffset, recordDetailView, reportSnapshotBadge, requestUnavailableReason,
@@ -44,8 +44,9 @@ import { Button } from "./primitives";
  * records, record-row / record-toggle / record-detail ([data-move-id]), check-badge, detail-bibliography,
  * detail-no-bibliography, detail-target, detail-locations, detail-observation, detail-tradeoffs, detail-change,
  * measures, measures-note, detail-structure, up4, detail-interactions, kbase-checks, kp3, integrity, extraction,
- * content-hash, other-fields, up1, limitations; report: report, report-done, report-mark, report-markdown, report-json,
- * report-error. Areas: `[data-precedent-area=snapshot|request|results|detail|report]` with `data-state` one of the five.
+ * content-hash, other-fields, kbase-fields (closed `details`, rows `dd[data-kbase-path]`), up1, limitations; report:
+ * report, report-done, report-mark, report-markdown, report-json, report-error. Areas:
+ * `[data-precedent-area=snapshot|request|results|detail|report]` with `data-state` one of the five.
  */
 export interface KinasePrecedentsPanelProps {
   /** Current run of the structure analysis screen (run selection lives only there); null when none. */
@@ -529,8 +530,7 @@ function RequestForm(p: { form: PrecedentForm; maps: readonly NumberingMapListRo
           value={form.numberingMap ?? ""} onChange={event => p.onMap(event.target.value || null)}>
           <option value="">고르지 않음</option>
           {p.maps.map(row => <option key={row.handle} value={row.handle} title={row.handle}>
-            {row.structure_kind} · 체인 {row.chains.join(", ")} · PDB {row.pdb_id ?? NULL_TEXT} · 이벤트 #{row.created_seq} ·{" "}
-            {shortHandle(row.handle)}</option>)}
+            {mapChoiceText(row)} · {shortHandle(row.handle)}</option>)}
         </select></label>
       <p className="mw-precedent-note">{MAP_NOTE}</p>
       <FieldErrors errors={p.errorsFor("numbering_map")} refusal={p.refusedAt("numbering_map")} />
@@ -902,6 +902,17 @@ function RecordDetail({ view, change }: { view: RecordDetailView; change: Preced
     <div className="mw-precedent-group">
       <span className="mw-eyebrow">그 밖의 필드 (kbase 기록 그대로)</span>
       <Fields fields={view.otherFields} testId="kinase-precedents-other-fields" />
+    </div>
+    <div className="mw-precedent-group">
+      <details className="mw-precedent-details" data-testid="kinase-precedents-kbase-fields">
+        <summary>{view.kbaseFieldsHeader}</summary>
+        <p className="mw-precedent-note">{view.kbaseFieldsNote}</p>
+        {view.kbaseFieldsText ? <p className="mw-precedent-note">{view.kbaseFieldsText}</p>
+          : <dl className="mw-precedent-fields">
+            {view.kbaseFields.map(field => <Fragment key={field.path}><dt>{field.path}</dt>
+              <dd data-kbase-path={field.path}><Verbatim text={field.value} /></dd></Fragment>)}
+          </dl>}
+      </details>
     </div>
   </div>;
 }
