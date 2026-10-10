@@ -1,0 +1,1067 @@
+{
+  "schema": "m24_case_ledger@1",
+  "phase": "fixture",
+  "acceptanceScope": "fixture",
+  "liveCalls": 0,
+  "generatedAt": "2026-10-10T13:33:06.546724+00:00",
+  "build": {
+    "buildId": "wbonjE7nah2kMcCTup7fP",
+    "gitHead": "e595ca404b2ffa210eb6d372d8983c86fc7538b4",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "151e9f6f2346add9c4d499b08749474564601c2fc6dcaab1ceb580ea07a505fd",
+    "dirtyFiles": [
+      "?? docs/qa/m27-precedents-20261010/regression/"
+    ],
+    "recordedAt": "2026-10-10T13:32:14.496064+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "03b316c610c567af6c1c13b8069577b4c264bd2c007c426d625fdc21b3a96455",
+    "runnerSha256": "9e839455a10619d2d770ead97501445b193c7aa8864c23f94d50ad33a31e0a38"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "J-tab-entry": {
+      "text": "지식·보고서 탭 진입: GET 읽기만, 동의 꺼짐, 자동 선택·작성·전송 없음, 고정 안내와 U2·U3, run당 10회 중 0회 사용, 구조 분석 패널은 숨김·inert로 유지, 전역 표시 없음",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-source-choice": {
+      "text": "후보 집합 종류와 집합을 사람이 직접 고름(두 변이 집합이 보이고 아무것도 미리 고르지 않음)",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-consent-off-block": {
+      "text": "동의 꺼짐: 미리보기 차단 이유 consent_off, 확인 체크를 해도 전송 단추가 닫힘",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-consent-toggle": {
+      "text": "동의 켬: 차단 이유 없음, 전역 줄 run id 바로 뒤에 \"과학 전송 허용\"; 끔: 표시가 사라지고 consent_off가 돌아옴",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-candidate-limit": {
+      "text": "20개까지 체크, 21번째 클릭은 체크되지 않고 이유가 보임(20개 유지)",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-preview-match": {
+      "text": "보낼 내용 만들기: <pre> 본문 = 서버 미리보기 문자열, 여기서 계산한 SHA-256·바이트 = 표시 = 저장 투영, 별칭 표 = 저장 선택",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-confirm-required": {
+      "text": "확인 체크 없이는 전송 단추가 닫히고 이유가 보임; 체크하면 열림",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-send-good": {
+      "text": "fixture good: completed, 결과 카드 = 저장된 제안(별칭·로컬 표기·확신도·모델·사용량·접힌 후보별 값은 보낸 순서 그대로·J1–J4와 J6), 정렬·막대·색 비교 요소 없음",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-bytes-equal": {
+      "text": "transport가 받은 바이트의 SHA-256 = 미리보기 = 감사 prepared 본문(같은 내용)과 payload_sha256",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-resend": {
+      "text": "같은 본문 다시 보내기(good_no_extras): 미리보기의 이전 전송 1회, 별도의 두 번째 제안, 기록에 시간순 두 줄과 U1, 합친 줄 없음, 받지 않은 값은 \"보고 없음\"",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-report": {
+      "text": "보고서 만들기: 보고서 목록에 \"JEV 판정 보고서\", 클릭하면 저장된 Markdown(고정 문장 포함, 후보별 값 없음)",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-ligand-filter": {
+      "text": "리간드 집합: 필터를 통과하지 못한 후보는 체크할 수 없고 \"필터 통과만 보기\"는 통과 행만, 필터가 요청과 투영에 실림",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-failed-alias": {
+      "text": "fixture alias_outside: failed response_invalid, 이유만(카드·숫자 없음)",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-failed-model": {
+      "text": "fixture model_mismatch: failed model_mismatch, 이유만",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-late": {
+      "text": "fixture slow 중 동의 끄기: completed + 늦은 응답(동의 끈 뒤 도착)과 J7, 기록 줄 표시, 전역 표시 사라짐",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-send-cap": {
+      "text": "1MQ4 20개 후보로 열 번째 전송까지: 사용 10회·남은 0회, 미리보기 send_cap_exhausted, 전송 단추 닫힘",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-other-tabs": {
+      "text": "단백질 공학·리간드 설계·탐색 탭의 영역과 숫자를 가린 글자가 JEV 동작 전후로 같고 JEV 요소·POST 없음, 구조 분석 뷰어는 같은 세션·소스",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-no-usage-stop": {
+      "text": "run B fixture no_usage: completed, 사용량 네 칸 모두 \"알 수 없음\", 외부 전송 멈춤(usage_unknown), 미리보기 egress_stopped, 전송 단추 닫힘",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-failed-http": {
+      "text": "run C fixture HTTP 500: failed provider_http_error, 이유만",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-wording": {
+      "text": "금지 표현 검사(고정 문장 J1–J7·U1–U3 제외): 화면 여러 시점, 보고서 Markdown, fixture 응답",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-no-egress-browser": {
+      "text": "브라우저의 비-loopback 요청 0건",
+      "modes": {
+        "jev-fixture": "pass"
+      },
+      "status": "pass"
+    },
+    "J-live-rehearsal": {
+      "text": "실호출 계획(여섯 전송, run당 셋 이하)을 같은 화면 경로로 fixture 서버에 대고 calibrate·live 두 번으로 나눠 미리 돌림: calibrate 리허설은 첫 전송 전에 전송 없이 사전 확인(L1의 1UBQ 집합: 동의 끔 → 미리보기 consent_off·확인 체크해도 전송 단추 닫힘 → 다시 켬, 20개 체크 뒤 21번째 거절 → 5개로 줄임, 확인 체크 전 전송 단추 닫힘, 전송 요청·dispatch 0) 뒤 한 전송, live 리허설은 새 화면에서 나머지 다섯 전송; 모두 completed, 결과 카드의 후보별 값은 처음에 접힘, 전송 전 계수 확인, 보고서 하나, 다른 탭 불변",
+      "modes": {
+        "jev-rehearsal-calibrate": "pass",
+        "jev-rehearsal-live": "pass"
+      },
+      "status": "pass"
+    },
+    "S-browser-egress-zero": {
+      "text": "모든 흐름 행의 브라우저 비-loopback 요청 0건",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-key-absent": {
+      "text": "증거 폴더·QA 루트·내보낸 증거에서 API 키 문자열과 fixture placeholder 문자열 0건",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-wording-evidence": {
+      "text": "증거 텍스트에 금지 표현 0건(고정 문장 제외)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-real-calls-zero": {
+      "text": "fixture 단계 실호출 0회: 서버 기록이 MockTransport 게이트이고 dispatch·response_received 감사 수가 fixture transport 호출 기록과 같으며 모든 호출의 인증 값이 placeholder였음(불리언)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "jev-fixture": {
+      "status": "pass",
+      "latest": "jev-fixture",
+      "problems": [],
+      "attempts": 1
+    },
+    "jev-rehearsal-calibrate": {
+      "status": "pass",
+      "latest": "jev-rehearsal-calibrate",
+      "problems": [],
+      "attempts": 1
+    },
+    "jev-rehearsal-live": {
+      "status": "pass",
+      "latest": "jev-rehearsal-live",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "JL-calibrate-send": "관찰하지 않음 — 실호출 할당은 T10. 이 실행은 가짜 transport fixture 서버만 썼다(OpenRouter 실호출 0회). 실호출은 --phase calibrate --live-calls N, 이어서 같은 --root로 --phase live --live-calls N.",
+    "JL-live-sends": "관찰하지 않음 — 실호출 할당은 T10. 이 실행은 가짜 transport fixture 서버만 썼다(OpenRouter 실호출 0회). 실호출은 --phase calibrate --live-calls N, 이어서 같은 --root로 --phase live --live-calls N.",
+    "J-late-run-cancelled": "run 취소 뒤 도착한 응답: HTTP 취소 경로가 없어 화면에서 만들 수 없다. backend/tests/test_jev_sends.py::test_a_valid_reply_after_cancel_or_consent_off_is_kept_and_marked_late 가 덮는다.",
+    "J-timeout-transport": "external_timeout·transport_error: backend/tests/test_jev_science_gate.py::test_transport_timeout_is_external_timeout_and_usage_unknown, test_other_transport_errors_are_transport_error 가 덮는다.",
+    "J-missing-credential": "키 없음(missing_credential): backend/tests/test_jev_science_gate.py::test_missing_or_unusable_key_is_missing_credential_after_one_read 가 덮는다.",
+    "J-restart-derivation": "재시작 뒤 delivery_unknown·outcome_not_recorded 도출: backend/tests/test_jev_sends.py::test_restart_without_an_outcome_derives_delivery_unknown_or_outcome_not_recorded 가 덮는다.",
+    "J-send-in-progress": "다른 전송 진행 중(send_in_progress): 화면이 한 번에 한 전송만 열어 두 번째 전송을 만들 수 없다. backend/tests/test_jev_sends.py::test_a_send_in_flight_blocks_other_sends_and_reads_as_in_progress 가 덮는다.",
+    "J-dry-run": "dry-run run: backend/tests/test_jev_sends.py::test_dry_run_cannot_enable_consent_and_rejects_sends 가 덮는다."
+  },
+  "environment": {
+    "workerPython": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m24_jev_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "scripts": [
+        "good",
+        "good_no_extras",
+        "alias_outside",
+        "http_500",
+        "no_usage",
+        "model_mismatch",
+        "slow"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "jevAvailable": true,
+    "setup": true
+  },
+  "checks": {
+    "events": {
+      "run_46d622a6ea29436ca05d303c9f820d7b": {
+        "dispatch": 3,
+        "responseReceived": 3,
+        "scienceResponses": 3
+      },
+      "run_59ef2a9d839c4b66acff405044fe6f16": {
+        "dispatch": 1,
+        "responseReceived": 1,
+        "scienceResponses": 1
+      },
+      "run_7f5d8d82915140d3a979f99c0f971e94": {
+        "dispatch": 10,
+        "responseReceived": 10,
+        "scienceResponses": 10
+      },
+      "run_9ae06d02c59d44a399479281cf943f44": {
+        "dispatch": 3,
+        "responseReceived": 3,
+        "scienceResponses": 3
+      },
+      "run_d83f3c2232e5477c87b1237ad0f80acf": {
+        "dispatch": 1,
+        "responseReceived": 1,
+        "scienceResponses": 1
+      }
+    },
+    "fixtureProof": {
+      "ok": true,
+      "dispatchEvents": 18,
+      "fixtureTransportCalls": 18,
+      "responseAudits": 18,
+      "answeredCalls": 18,
+      "realProviderCalls": 0
+    },
+    "keyScan": {
+      "ok": true,
+      "keyAvailable": true,
+      "files": 730,
+      "keyHits": [],
+      "sentinelHits": [],
+      "roots": [
+        "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m24",
+        "<repo>/runs/m27-reg-m25-m24-regression"
+      ]
+    },
+    "wordingScan": {}
+  },
+  "finalize": null,
+  "dispatchCapExceeded": null,
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "jev-fixture",
+      "mode": "fixture",
+      "rehearsal": false,
+      "status": "pass",
+      "cases": {
+        "J-tab-entry": "pass",
+        "J-source-choice": "pass",
+        "J-consent-off-block": "pass",
+        "J-consent-toggle": "pass",
+        "J-candidate-limit": "pass",
+        "J-preview-match": "pass",
+        "J-confirm-required": "pass",
+        "J-send-good": "pass",
+        "J-bytes-equal": "pass",
+        "J-resend": "pass",
+        "J-report": "pass",
+        "J-ligand-filter": "pass",
+        "J-failed-alias": "pass",
+        "J-failed-model": "pass",
+        "J-late": "pass",
+        "J-send-cap": "pass",
+        "J-other-tabs": "pass",
+        "J-no-usage-stop": "pass",
+        "J-failed-http": "pass",
+        "J-wording": "pass",
+        "J-no-egress-browser": "pass"
+      },
+      "runs": {
+        "A": "run_7f5d8d82915140d3a979f99c0f971e94",
+        "B": "run_59ef2a9d839c4b66acff405044fe6f16",
+        "C": "run_d83f3c2232e5477c87b1237ad0f80acf"
+      },
+      "sends": [],
+      "plan": null,
+      "fixture": {
+        "calls": 12,
+        "scripts": [
+          "good",
+          "good_no_extras",
+          "alias_outside",
+          "model_mismatch",
+          "slow",
+          "good",
+          "good",
+          "good",
+          "good",
+          "good",
+          "no_usage",
+          "http_500"
+        ],
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          500
+        ],
+        "sentinelAuthorization": true,
+        "bodySha256": [
+          "27f90993fe3f488c17f9ddf41d76d58165d25deaf48847f75eca84b13e90d945",
+          "27f90993fe3f488c17f9ddf41d76d58165d25deaf48847f75eca84b13e90d945",
+          "be939434f5ff0f1bfd50445ff85fc9822a28934e594d6f754f566ffc4b23d5a0",
+          "be939434f5ff0f1bfd50445ff85fc9822a28934e594d6f754f566ffc4b23d5a0",
+          "be939434f5ff0f1bfd50445ff85fc9822a28934e594d6f754f566ffc4b23d5a0",
+          "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "b5d35d7bb6e35f6c9ec5f5108f8b0d83f07de9e139a57ff4e347dad24cd2e76b",
+          "cbf5606bbd9a093f42e3895da02df5e61f371c089aa1bcd1179511af522a43c5"
+        ]
+      },
+      "dispatchCounts": {
+        "run_46d622a6ea29436ca05d303c9f820d7b": 0,
+        "run_59ef2a9d839c4b66acff405044fe6f16": 1,
+        "run_7f5d8d82915140d3a979f99c0f971e94": 10,
+        "run_9ae06d02c59d44a399479281cf943f44": 0,
+        "run_d83f3c2232e5477c87b1237ad0f80acf": 1
+      },
+      "evidenceKind": "real_electron_offscreen",
+      "fixtureLabels": [
+        "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_fixture/server.py)"
+      ],
+      "controls": [
+        "jev-build",
+        "jev-candidate",
+        "jev-candidate-21st",
+        "jev-confirm",
+        "jev-consent",
+        "jev-filter-apply",
+        "jev-passes-only",
+        "jev-preview-body-details",
+        "jev-send",
+        "jev-send-report",
+        "jev-source-ligand",
+        "jev-source-mutation",
+        "report-library-open"
+      ],
+      "wording": [
+        {
+          "label": "good card",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "same body again",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "report markdown",
+          "kind": "report",
+          "found": 0
+        },
+        {
+          "label": "late card",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "no usage, egress stopped",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "HTTP 500 reason",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 1",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 2",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 3",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 4",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 5",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 6",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 7",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 8",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 9",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 10",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 11",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "fixture reply 12",
+          "kind": "reply",
+          "found": 0
+        },
+        {
+          "label": "end of fixture mode",
+          "kind": "screen",
+          "found": 0
+        }
+      ],
+      "externalRequestCount": 0,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:32:40.110Z"
+    },
+    {
+      "step": "jev-rehearsal-calibrate",
+      "mode": "live",
+      "rehearsal": true,
+      "status": "pass",
+      "cases": {
+        "J-live-rehearsal": "pass"
+      },
+      "runs": {
+        "L1": "run_46d622a6ea29436ca05d303c9f820d7b",
+        "L2": "run_9ae06d02c59d44a399479281cf943f44"
+      },
+      "sends": [
+        {
+          "entry": "L1-ligand-5",
+          "run": "run_46d622a6ea29436ca05d303c9f820d7b",
+          "kind": "ligand",
+          "aliases": 5,
+          "bodyBytes": 3539,
+          "bodySha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+          "reservation": {
+            "external_tokens": 6456,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 12,
+            "inRun": 0
+          },
+          "sendId": "5fd61844-ef51-41b3-8ed2-91d3aba685cc",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 0.0001,
+            "external_tokens": 155,
+            "input_tokens": 135,
+            "output_tokens": 20
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 1,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 155,
+              "limit": 120000,
+              "remaining": 119845
+            },
+            "usd": {
+              "used": 0.00010000000000000286,
+              "limit": 2,
+              "remaining": 1.9999
+            }
+          },
+          "preparedSha256": "696483d1bfa4b0577459a6a780e924af786942dd28e80f215ec73a54388d2ebd",
+          "fixtureCall": 13,
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 5
+          },
+          "card": {
+            "alias": "c02",
+            "confidence": "0.620",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "135",
+              "output_tokens": "20",
+              "external_tokens": "155",
+              "cost": "0.0001"
+            },
+            "foldedBefore": true
+          },
+          "report": {
+            "handle": "obj://run_46d622a6ea29436ca05d303c9f820d7b/method_report_manifest/0ca0555f7b13721d4716681167c40fb9f3f13eb687b1bb458c2452f723323997",
+            "markdownSha256": "c7ac52e529bd9130d4d948757aec8d7302aab2bc2ead700436f0ffa243f9cbdc",
+            "kind": "JEV 판정 보고서"
+          }
+        }
+      ],
+      "plan": {
+        "entries": [
+          "L1-ligand-5"
+        ],
+        "maxDispatch": 13,
+        "maxPerRun": 3,
+        "preChecks": {
+          "run": "L1",
+          "kind": "mutation",
+          "set": "ubq",
+          "keep": 5
+        },
+        "rehearsal": true
+      },
+      "fixture": {
+        "calls": 13
+      },
+      "dispatchCounts": {
+        "run_46d622a6ea29436ca05d303c9f820d7b": 1,
+        "run_59ef2a9d839c4b66acff405044fe6f16": 1,
+        "run_7f5d8d82915140d3a979f99c0f971e94": 10,
+        "run_9ae06d02c59d44a399479281cf943f44": 0,
+        "run_d83f3c2232e5477c87b1237ad0f80acf": 1
+      },
+      "evidenceKind": "real_electron_offscreen",
+      "fixtureLabels": [
+        "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_fixture/server.py)"
+      ],
+      "controls": [
+        "jev-build",
+        "jev-candidate",
+        "jev-candidate-21st",
+        "jev-candidate-uncheck",
+        "jev-confirm",
+        "jev-consent",
+        "jev-send",
+        "jev-send-report",
+        "jev-source-ligand",
+        "jev-source-mutation",
+        "report-library-open"
+      ],
+      "wording": [
+        {
+          "label": "pre-checks",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "after L1-ligand-5",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "report markdown",
+          "kind": "report",
+          "found": 0
+        }
+      ],
+      "externalRequestCount": 0,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:32:48.985Z"
+    },
+    {
+      "step": "jev-rehearsal-live",
+      "mode": "live",
+      "rehearsal": true,
+      "status": "pass",
+      "cases": {
+        "J-live-rehearsal": "pass"
+      },
+      "runs": {
+        "L1": "run_46d622a6ea29436ca05d303c9f820d7b",
+        "L2": "run_9ae06d02c59d44a399479281cf943f44"
+      },
+      "sends": [
+        {
+          "entry": "L1-mutation-1ubq-5",
+          "run": "run_46d622a6ea29436ca05d303c9f820d7b",
+          "kind": "mutation",
+          "aliases": 5,
+          "bodyBytes": 7028,
+          "bodySha256": "0f6dfa7778d519483ca0209b4b27c4bac18a57f1f31ecf7291a127ca2a055c8e",
+          "reservation": {
+            "external_tokens": 8782,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 13,
+            "inRun": 1
+          },
+          "sendId": "21962e0d-3058-4679-842b-a57812d2b9c8",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 0.0001,
+            "external_tokens": 190,
+            "input_tokens": 170,
+            "output_tokens": 20
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 2,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 345,
+              "limit": 120000,
+              "remaining": 119655
+            },
+            "usd": {
+              "used": 0.00020000000000000573,
+              "limit": 2,
+              "remaining": 1.9998
+            }
+          },
+          "preparedSha256": "0f6dfa7778d519483ca0209b4b27c4bac18a57f1f31ecf7291a127ca2a055c8e",
+          "fixtureCall": 14,
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 5
+          },
+          "card": {
+            "alias": "m02",
+            "confidence": "0.620",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "170",
+              "output_tokens": "20",
+              "external_tokens": "190",
+              "cost": "0.0001"
+            },
+            "foldedBefore": true
+          }
+        },
+        {
+          "entry": "L1-ligand-10",
+          "run": "run_46d622a6ea29436ca05d303c9f820d7b",
+          "kind": "ligand",
+          "aliases": 10,
+          "bodyBytes": 5607,
+          "bodySha256": "147c185e41b927c23a5090214c97ff3c95ba39f22d4fbb1bf16121ae6f9f80bd",
+          "reservation": {
+            "external_tokens": 7834,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 14,
+            "inRun": 2
+          },
+          "sendId": "dff217c3-4516-4d05-9471-f300b96a7876",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 0.0001,
+            "external_tokens": 176,
+            "input_tokens": 156,
+            "output_tokens": 20
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 3,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 521,
+              "limit": 120000,
+              "remaining": 119479
+            },
+            "usd": {
+              "used": 0.0003000000000000086,
+              "limit": 2,
+              "remaining": 1.9997
+            }
+          },
+          "preparedSha256": "147c185e41b927c23a5090214c97ff3c95ba39f22d4fbb1bf16121ae6f9f80bd",
+          "fixtureCall": 15,
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 10
+          },
+          "card": {
+            "alias": "c02",
+            "confidence": "0.620",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "156",
+              "output_tokens": "20",
+              "external_tokens": "176",
+              "cost": "0.0001"
+            },
+            "foldedBefore": true
+          }
+        },
+        {
+          "entry": "L2-mutation-1mq4-20",
+          "run": "run_9ae06d02c59d44a399479281cf943f44",
+          "kind": "mutation",
+          "aliases": 20,
+          "bodyBytes": 29149,
+          "bodySha256": "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "reservation": {
+            "external_tokens": 23529,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 15,
+            "inRun": 0
+          },
+          "sendId": "9a7775a0-d02e-4b75-81d3-25f359ff0d5b",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 0.0001,
+            "external_tokens": 411,
+            "input_tokens": 391,
+            "output_tokens": 20
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 1,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 411,
+              "limit": 120000,
+              "remaining": 119589
+            },
+            "usd": {
+              "used": 0.00010000000000000286,
+              "limit": 2,
+              "remaining": 1.9999
+            }
+          },
+          "preparedSha256": "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "fixtureCall": 16,
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 20
+          },
+          "card": {
+            "alias": "m02",
+            "confidence": "0.620",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "391",
+              "output_tokens": "20",
+              "external_tokens": "411",
+              "cost": "0.0001"
+            },
+            "foldedBefore": true
+          }
+        },
+        {
+          "entry": "L2-mutation-1mq4-20-again",
+          "run": "run_9ae06d02c59d44a399479281cf943f44",
+          "kind": "mutation",
+          "aliases": 20,
+          "bodyBytes": 29149,
+          "bodySha256": "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "reservation": {
+            "external_tokens": 23529,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 16,
+            "inRun": 1
+          },
+          "sendId": "824345e1-d8c0-43c5-ba59-229d4d82a4da",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 0.0001,
+            "external_tokens": 411,
+            "input_tokens": 391,
+            "output_tokens": 20
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 2,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 822,
+              "limit": 120000,
+              "remaining": 119178
+            },
+            "usd": {
+              "used": 0.00020000000000000573,
+              "limit": 2,
+              "remaining": 1.9998
+            }
+          },
+          "preparedSha256": "e3083ae2a1e4e64a40a79a437c2afd3ebe6841994a64d7abcb49640920a3e118",
+          "fixtureCall": 17,
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 20
+          },
+          "card": {
+            "alias": "m02",
+            "confidence": "0.620",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "391",
+              "output_tokens": "20",
+              "external_tokens": "411",
+              "cost": "0.0001"
+            },
+            "foldedBefore": true
+          }
+        },
+        {
+          "entry": "L2-mutation-1ubq-20",
+          "run": "run_9ae06d02c59d44a399479281cf943f44",
+          "kind": "mutation",
+          "aliases": 20,
+          "bodyBytes": 25426,
+          "bodySha256": "27f90993fe3f488c17f9ddf41d76d58165d25deaf48847f75eca84b13e90d945",
+          "reservation": {
+            "external_tokens": 21047,
+            "usd": 0.1
+          },
+          "dispatchedBefore": {
+            "total": 17,
+            "inRun": 2
+          },
+          "sendId": "2d76b0a2-c8f3-4ed1-8171-10f52e1b5d6d",
+          "status": "completed",
+          "reasonCode": null,
+          "servedModel": "typesafe/jev-1.13-20260917",
+          "usage": {
+            "cost": 0.0001,
+            "external_tokens": 374,
+            "input_tokens": 354,
+            "output_tokens": 20
+          },
+          "late": false,
+          "egressStop": null,
+          "statusUsed": 3,
+          "budgetAfter": {
+            "external_tokens": {
+              "used": 1196,
+              "limit": 120000,
+              "remaining": 118804
+            },
+            "usd": {
+              "used": 0.0003000000000000086,
+              "limit": 2,
+              "remaining": 1.9997
+            }
+          },
+          "preparedSha256": "27f90993fe3f488c17f9ddf41d76d58165d25deaf48847f75eca84b13e90d945",
+          "fixtureCall": 18,
+          "responseShape": {
+            "confidence": true,
+            "probabilities": true,
+            "probabilityCount": 20
+          },
+          "card": {
+            "alias": "m02",
+            "confidence": "0.620",
+            "reported": "true",
+            "late": false,
+            "usage": {
+              "input_tokens": "354",
+              "output_tokens": "20",
+              "external_tokens": "374",
+              "cost": "0.0001"
+            },
+            "foldedBefore": true
+          }
+        }
+      ],
+      "plan": {
+        "entries": [
+          "L1-mutation-1ubq-5",
+          "L1-ligand-10",
+          "L2-mutation-1mq4-20",
+          "L2-mutation-1mq4-20-again",
+          "L2-mutation-1ubq-20"
+        ],
+        "maxDispatch": 18,
+        "maxPerRun": 3,
+        "preChecks": null,
+        "rehearsal": true
+      },
+      "fixture": {
+        "calls": 18
+      },
+      "dispatchCounts": {
+        "run_46d622a6ea29436ca05d303c9f820d7b": 3,
+        "run_59ef2a9d839c4b66acff405044fe6f16": 1,
+        "run_7f5d8d82915140d3a979f99c0f971e94": 10,
+        "run_9ae06d02c59d44a399479281cf943f44": 3,
+        "run_d83f3c2232e5477c87b1237ad0f80acf": 1
+      },
+      "evidenceKind": "real_electron_offscreen",
+      "fixtureLabels": [
+        "fixture: replies are scripted labeled fixtures (backend/tests/offscreen_jev_fixture/server.py)"
+      ],
+      "controls": [
+        "jev-build",
+        "jev-candidate",
+        "jev-consent",
+        "jev-send",
+        "jev-source-ligand",
+        "jev-source-mutation"
+      ],
+      "wording": [
+        {
+          "label": "after L1-mutation-1ubq-5",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "after L1-ligand-10",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "after L2-mutation-1mq4-20",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "after L2-mutation-1mq4-20-again",
+          "kind": "screen",
+          "found": 0
+        },
+        {
+          "label": "after L2-mutation-1ubq-20",
+          "kind": "screen",
+          "found": 0
+        }
+      ],
+      "externalRequestCount": 0,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:33:05.404Z"
+    }
+  ]
+}

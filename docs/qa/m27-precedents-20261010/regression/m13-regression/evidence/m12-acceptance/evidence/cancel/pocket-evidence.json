@@ -1,0 +1,582 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "cancel",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "wbonjE7nah2kMcCTup7fP",
+  "startedAt": "2026-10-10T14:32:16.866Z",
+  "run": "run_8edb549f7aa04e17a35b31fbd10158c4",
+  "handles": {
+    "set": "obj://run_8edb549f7aa04e17a35b31fbd10158c4/pocket_set/50bdda4428449782c353984c8bd0f8f4e08289477cb6931eb13a633b77f43d9c",
+    "cancelledJob": "job_5f332487e7c443a3a16f9b5510f59339"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture); fpocket candidates on it are not binding-site evidence"
+    }
+  ],
+  "fixtureLabels": [],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 8,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m13/m12-acceptance/evidence/cancel/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 85,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 101,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m13/m12-acceptance/evidence/cancel/paint-first.png",
+      "paintOrdinal": 2,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 208,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_f0091fdda97948478f051dd1df0f157a/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/job_5f332487e7c443a3a16f9b5510f59339/start",
+      "status": 409
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/job_5f332487e7c443a3a16f9b5510f59339",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/job_5f332487e7c443a3a16f9b5510f59339/cancel",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/pockets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/job_1eb492e0435f4397bd11f0693149d320/start",
+      "status": 409
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/job_1eb492e0435f4397bd11f0693149d320",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/approve",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/jobs/job_1eb492e0435f4397bd11f0693149d320/start",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_8edb549f7aa04e17a35b31fbd10158c4/pockets/result",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-10-10T14:32:21.206Z",
+  "externalRequestCount": 0
+}

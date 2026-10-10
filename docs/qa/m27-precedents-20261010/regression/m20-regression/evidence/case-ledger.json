@@ -1,0 +1,765 @@
+{
+  "schema": "m20_case_ledger@1",
+  "generatedAt": "2026-10-10T13:52:15.664955+00:00",
+  "build": {
+    "buildId": "wbonjE7nah2kMcCTup7fP",
+    "gitHead": "e595ca404b2ffa210eb6d372d8983c86fc7538b4",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "151e9f6f2346add9c4d499b08749474564601c2fc6dcaab1ceb580ea07a505fd",
+    "dirtyFiles": [
+      "?? docs/qa/m27-precedents-20261010/regression/"
+    ],
+    "recordedAt": "2026-10-10T13:51:36.683996+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "mutation-flow.cjs": "e971c3571d4a26b0584ddd29c58df76730e08a9d1d7385fb9992514fae200165",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "8ebd1be88e14dcc0c90072012a17af92fbb9021fa72df6e675143d477047a3ff"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "reference": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "M-no-run": {
+      "text": "fresh root, no run: the protein tab shows 사용할 수 없음 + the no-run reason only (no numbers, no controls, no mutation reads)",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-load-prepare": {
+      "text": "public_1mq4.cif loaded and prepared through the structure screen",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-unprepared": {
+      "text": "a run with a loaded but not prepared structure (run A before 전처리, run B): 사용할 수 없음 with the reason, no numbers, no controls, no tool call",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-ligand-explicit": {
+      "text": "ADP and PO4 offered, none chosen automatically; ligand shell blocked until ADP is chosen; the request carries the 7 ADP fields",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-not-checked": {
+      "text": "no annotation: the KLIFS 검사하지 않음 notice in the request area; stored and shown check row not_checked (annotation_not_given), KLIFS cells — (검사하지 않음), list row status not_checked",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-shell-oracle": {
+      "text": "ADP 5.0 Å shell: 20 positions, distances (≤1e-9 Å) and ROUND_HALF_UP cells, MG contact exclusions ASN261/ASP274 (MG A2088) equal the T1 numpy oracle; 342 candidates",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-numbering-annotation": {
+      "text": "numbering map (지식·보고서, PDB ID 1MQ4) and annotation without contacts (구조 분석) through the existing screens; annotated sites equal the T1 list",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-reread-on-entry": {
+      "text": "entering the tab re-reads events, pockets, maps, annotations and results (GET only); choosing the structure pre-selects the newest annotation and its map",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-protect-release": {
+      "text": "protect/release conflict blocked on screen; KLIFS key sites excluded with labels, ASP274 KLIFS + metal, LEU139 user protected, ASN261 released (candidate), ARG126 release effect none; excluded list = stored",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-allowed-shrink": {
+      "text": "allowed A/G/W: request AGW, a new handle, per-position candidate counts and targets",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-same-handle": {
+      "text": "the S1 request sent again returns S1's handle and stores nothing new",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-request-controls": {
+      "text": "annotation/map selects (the 검사하지 않음 notice follows the annotation choice), metal distance 5.0 Å → MG contacts in the shell equal the T1 oracle, 빼기 on the direct and protect lists, 결과 목록 다시 읽기 (GET only)",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-pocket": {
+      "text": "real fpocket on the prepared structure (approval), then pocket source with every stored pocket number + shell 12 Å: pocket positions = union of the stored lining residues",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-tab-state": {
+      "text": "the structure screen keeps its prepared source across protein-tab trips",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-filters-sort": {
+      "text": "four position filters and the distance sort equal the stored pages (rows without a value last); candidate position and target filters",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-paging": {
+      "text": "position and candidate pagers (다음/이전) equal the stored pages",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-zero": {
+      "text": "zero candidates (ALA A:160, allowed A): 빈 결과 state with the stored exclusion counts, not 실패",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-refused": {
+      "text": "labeled in-flight request alterations → the real server refuses structure_invalid, annotation_invalid, protect_release_conflict, ligand_required (422); the screen shows the Korean name and code; nothing stored",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-report": {
+      "text": "보고서 만들기 → 변이 후보 보고서 in the knowledge-tab library; content = stored Markdown with the five fixed sentences; Markdown/JSON downloads equal the backend bytes",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-late-result": {
+      "text": "held detail / position responses of another result released after switching are not applied",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-late-run": {
+      "text": "a held run A result-list response released after switching to run B is not applied",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-wording": {
+      "text": "no rank/recommendation/effect wording in the panel outside the five fixed sentences",
+      "modes": {
+        "mutation-main": "pass"
+      },
+      "status": "pass"
+    },
+    "M-reproducible": {
+      "text": "the flow's request without annotation made twice in each of two fresh runs: the same handle twice per run and the stored content (obj:// handles replaced) equal to the flow's set",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "mutation-main": {
+      "status": "pass",
+      "latest": "mutation-main",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "M-map-conflict": "only one numbering map exists per structure in this flow, so the screen's map/annotation conflict notice is not reached; covered by frontend/tests/mutations.test.cjs (annotationMapConflict) and backend annotation_map_mismatch in backend/tests/test_mutation_tool.py.",
+    "M-too-many-positions": "1MQ4 has 261 protein residues, below the 400-position cap; covered by backend/tests/test_mutation_tool.py::test_too_many_positions_is_429_and_nothing_is_stored.",
+    "M-nonstandard-disulfide": "1MQ4 has no modified-name residue and no SG–SG pair within 2.5 Å (T1 preflight); covered by the synthetic fixture tests in backend/tests/test_mutation_candidates.py."
+  },
+  "reproducibility": {
+    "flowArgs": {
+      "structure": "<prepared structure>",
+      "sources": {
+        "pocket": null,
+        "ligand_shell": {
+          "radius_A": 5
+        },
+        "residues": []
+      },
+      "ligand": {
+        "model_number": 1,
+        "chain_auth": "A",
+        "chain_label": "E",
+        "seq_auth": 2001,
+        "seq_label": null,
+        "icode": "",
+        "resname": "ADP"
+      },
+      "allowed_residues": "ACDEFGHIKLMNPQRSTVWY",
+      "protected_residues": [],
+      "released_residues": [],
+      "metal_contact_A": 3,
+      "numbering_map": null,
+      "annotation": null,
+      "catalytic_annotation": null
+    },
+    "reference": {
+      "run": "run_7bf50a4734da4b04a567f8ee70896c6d",
+      "handle": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/e1ba70a3861f266eed04f4487eb29f4fa4ff41709c476ab4d0b6514439657000",
+      "contentSha256": "b2f1b003ea06c34006478c21a7e5012ea476d6d1c930d87e79feed312d92be76",
+      "candidates": 342
+    },
+    "reruns": [
+      {
+        "run": "run_e2ef134ac6ae4e1fb04cbcc76e8bba51",
+        "status": "done",
+        "handles": [
+          "obj://run_e2ef134ac6ae4e1fb04cbcc76e8bba51/mutation_candidate_set/cd08e8108ac91efda1d4e612c638e71963fd34756a7f7b65fffde5721b50e32e",
+          "obj://run_e2ef134ac6ae4e1fb04cbcc76e8bba51/mutation_candidate_set/cd08e8108ac91efda1d4e612c638e71963fd34756a7f7b65fffde5721b50e32e"
+        ],
+        "sameHandle": true,
+        "contentSha256": "b2f1b003ea06c34006478c21a7e5012ea476d6d1c930d87e79feed312d92be76",
+        "candidates": 342,
+        "providerCallsZero": true
+      },
+      {
+        "run": "run_45c0ad457e904aa495c7373fa87cfb25",
+        "status": "done",
+        "handles": [
+          "obj://run_45c0ad457e904aa495c7373fa87cfb25/mutation_candidate_set/13c37075fb5c6e25b6f0da67ffc7f61d933baba8c52915efd00d8010d85c52b9",
+          "obj://run_45c0ad457e904aa495c7373fa87cfb25/mutation_candidate_set/13c37075fb5c6e25b6f0da67ffc7f61d933baba8c52915efd00d8010d85c52b9"
+        ],
+        "sameHandle": true,
+        "contentSha256": "b2f1b003ea06c34006478c21a7e5012ea476d6d1c930d87e79feed312d92be76",
+        "candidates": 342,
+        "providerCallsZero": true
+      }
+    ]
+  },
+  "environment": {
+    "mutationAvailable": true,
+    "pocketAvailable": true,
+    "pocketCapability": {
+      "available": true,
+      "status": "ready",
+      "engine": "fpocket",
+      "release": "4.2.3",
+      "build": "hb88c64c_2"
+    }
+  },
+  "reference": {
+    "kbase": "<home>/Projects/kbase_kinase",
+    "folder": "<repo>/runs/m27-reg-m25-m20-regression/reference",
+    "emptyAtStart": {
+      "available": false,
+      "reason_code": "not_installed",
+      "reason": "참조 스냅샷 세트가 설치되어 있지 않습니다(가져오기 명령 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+    },
+    "changes": {
+      "reference-import": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "<repo>/scripts/import_reference_snapshots.py",
+          "--from",
+          "<home>/Projects/kbase_kinase",
+          "--dest",
+          "<repo>/runs/m27-reg-m25-m20-regression/reference"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m20/services/reference-import.log",
+        "setHash": "a97b251df112eb9503deb7c74a4c7711bbb4f060949d5f2df913c9f58525113f",
+        "served": {
+          "available": true,
+          "set_hash": "a97b251df112eb9503deb7c74a4c7711bbb4f060949d5f2df913c9f58525113f",
+          "imported_at": "2026-10-10T13:51:41.436591Z",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      }
+    }
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "mutation-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "M-no-run": "pass",
+        "M-load-prepare": "pass",
+        "M-unprepared": "pass",
+        "M-ligand-explicit": "pass",
+        "M-not-checked": "pass",
+        "M-shell-oracle": "pass",
+        "M-numbering-annotation": "pass",
+        "M-reread-on-entry": "pass",
+        "M-protect-release": "pass",
+        "M-allowed-shrink": "pass",
+        "M-same-handle": "pass",
+        "M-request-controls": "pass",
+        "M-pocket": "pass",
+        "M-tab-state": "pass",
+        "M-paging": "pass",
+        "M-filters-sort": "pass",
+        "M-zero": "pass",
+        "M-refused": "pass",
+        "M-report": "pass",
+        "M-late-result": "pass",
+        "M-late-run": "pass",
+        "M-wording": "pass"
+      },
+      "runs": {
+        "A": "run_7bf50a4734da4b04a567f8ee70896c6d",
+        "B": "run_c26cd59d5acb41da9eedf21ec877a82f"
+      },
+      "runId": "run_7bf50a4734da4b04a567f8ee70896c6d",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "structure": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/structure/a1f633d487254016a1e455a2e3167816b5f02003b79a8f1a124dcb2cd32deda5",
+        "prepared": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/prepared_structure/13d6445628473d2df1ed9eee9c0d2bd882e4131597a7f27d3a2d3fbcca1ff5ee",
+        "s0": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/e1ba70a3861f266eed04f4487eb29f4fa4ff41709c476ab4d0b6514439657000",
+        "map": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/residue_numbering_map/a90955a877648465f33e33cb90093da56839c6cea47a3d75faa2c98c45373ba7",
+        "annotation": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/reference_site_annotation/6a5a7b470162be9864110dda06d7b9dbfb81f4009d999bfe452315248463fba5",
+        "s1": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/45513d10d6eeffee7ba6b00f14b7bac08ffaebeca29097b839629fbe1bd0e29a",
+        "s3": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/942ebc31537a753ec73ac410316f2b2112a3ffb8f6e129f8b145962f67a0aaad",
+        "s5": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/a8eab81982c4fd8adea4f92295888723b6b9593e1436b7df15e66e5f98eb678e",
+        "pocketSet": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/pocket_set/bf77bc7d2e71bdf2d100a4cc6bbad506f8fe40cd24c2e19dee384f06ab188298",
+        "s2": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/5ce327bf2cb66adfc9cd9656793ef98d17ed9e323571c85fe40f15ba3b499c8a",
+        "s4": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/782cc9144e01c006155d9b168f58084545b40131582e3ebeb60bc362d855030d",
+        "report": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/method_report_manifest/ef1327b4cddb2f5951c5e1469b1fb39e558f4d0af164ecd36dcc5fa178803aa8"
+      },
+      "inputs": [
+        {
+          "name": "preflight.txt",
+          "path": "<repo>/docs/qa/m20-mutations-20261003/preflight.txt",
+          "bytes": 23816,
+          "sha256": "fd917d662155a751963c614a951d3b3769bff6b74ff2f6f3b097a55ee0e8703c",
+          "provenance": "M20 T1 independent numpy oracle (committed QA text)"
+        },
+        {
+          "name": "public_1mq4.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+          "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain with ADP, PO4, 2 MG)"
+        }
+      ],
+      "fixtureLabels": [
+        "QA refusal fixture (labeled renderer route): the generate_mutation_candidates request body is altered in flight so that the real server refuses it; the server reply is shown unchanged",
+        "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+      ],
+      "controls": {
+        "mutation-structures": [
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/prepared_structure/13d6445628473d2df1ed9eee9c0d2bd882e4131597a7f27d3a2d3fbcca1ff5ee"
+          },
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/prepared_structure/13d6445628473d2df1ed9eee9c0d2bd882e4131597a7f27d3a2d3fbcca1ff5ee"
+          },
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/prepared_structure/13d6445628473d2df1ed9eee9c0d2bd882e4131597a7f27d3a2d3fbcca1ff5ee"
+          }
+        ],
+        "mutation-source-ligand-shell": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": false
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-ligand": [
+          {
+            "chosen": "ADP A:2001 · label E:—"
+          },
+          {
+            "chosen": "ADP A:2001 · label E:—"
+          },
+          {
+            "chosen": "ADP A:2001 · label E:—"
+          }
+        ],
+        "mutation-create": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-source-user": [
+          {
+            "checked": true
+          },
+          {
+            "checked": false
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-pick-user": [
+          {
+            "picked": "ARG A:126 · label A:7"
+          },
+          {
+            "picked": "ALA A:160 · label A:41"
+          }
+        ],
+        "mutation-add-user": [
+          {
+            "count": 1
+          },
+          {
+            "count": 1
+          }
+        ],
+        "mutation-pick-protect": [
+          {
+            "picked": "LEU A:139 · label A:20"
+          },
+          {
+            "picked": "LEU A:139 · label A:20"
+          }
+        ],
+        "mutation-add-protect": [
+          {
+            "count": 1
+          },
+          {
+            "count": 1
+          }
+        ],
+        "mutation-pick-release": [
+          {
+            "picked": "LEU A:139 · label A:20"
+          },
+          {
+            "picked": "ASN A:261 · label A:142"
+          },
+          {
+            "picked": "ARG A:126 · label A:7"
+          }
+        ],
+        "mutation-add-release": [
+          {
+            "count": 1
+          },
+          {
+            "count": 1
+          },
+          {
+            "count": 2
+          }
+        ],
+        "mutation-remove-release": [
+          {
+            "removed": "LEU A:139",
+            "count": 0
+          }
+        ],
+        "mutation-allowed-none": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-allowed": [
+          {
+            "checked": "WAG"
+          },
+          {
+            "checked": "A"
+          }
+        ],
+        "mutation-allowed-all": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-annotation": [
+          {
+            "value": ""
+          },
+          {
+            "value": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/reference_site_annotation/6a5a7b470162be9864110dda06d7b9dbfb81f4009d999bfe452315248463fba5"
+          }
+        ],
+        "mutation-numbering-map": [
+          {
+            "value": ""
+          },
+          {
+            "value": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/residue_numbering_map/a90955a877648465f33e33cb90093da56839c6cea47a3d75faa2c98c45373ba7"
+          }
+        ],
+        "mutation-metal": [
+          {
+            "value": "5.0"
+          }
+        ],
+        "mutation-remove-user": [
+          {
+            "removed": "ARG A:126",
+            "count": 0
+          }
+        ],
+        "mutation-remove-protect": [
+          {
+            "removed": "LEU A:139",
+            "count": 0
+          }
+        ],
+        "mutation-sets-refresh": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-source-pocket": [
+          {
+            "checked": true
+          },
+          {
+            "checked": false
+          }
+        ],
+        "mutation-pocket-sets": [
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/pocket_set/bf77bc7d2e71bdf2d100a4cc6bbad506f8fe40cd24c2e19dee384f06ab188298"
+          }
+        ],
+        "mutation-pocket-numbers": [
+          {
+            "checked": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15
+            ]
+          }
+        ],
+        "mutation-radius": [
+          {
+            "value": "12.0"
+          },
+          {
+            "value": "5"
+          }
+        ],
+        "mutation-positions-next": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-positions-prev": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-filter-status": [
+          {
+            "value": "excluded"
+          },
+          {
+            "value": ""
+          }
+        ],
+        "mutation-filter-source": [
+          {
+            "value": "pocket"
+          },
+          {
+            "value": ""
+          }
+        ],
+        "mutation-filter-reason": [
+          {
+            "value": "klifs_key_site"
+          },
+          {
+            "value": ""
+          }
+        ],
+        "mutation-filter-chain": [
+          {
+            "value": "A"
+          },
+          {
+            "value": ""
+          }
+        ],
+        "mutation-sort": [
+          {
+            "value": "ligand_distance"
+          },
+          {
+            "value": "ligand_distance"
+          }
+        ],
+        "mutation-candidates-next": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-candidates-prev": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-position-candidates": [
+          {
+            "position": 100
+          }
+        ],
+        "mutation-candidate-to": [
+          {
+            "value": "W"
+          },
+          {
+            "value": ""
+          }
+        ],
+        "mutation-candidate-position-clear": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-sets": [
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/45513d10d6eeffee7ba6b00f14b7bac08ffaebeca29097b839629fbe1bd0e29a"
+          },
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/45513d10d6eeffee7ba6b00f14b7bac08ffaebeca29097b839629fbe1bd0e29a"
+          },
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/5ce327bf2cb66adfc9cd9656793ef98d17ed9e323571c85fe40f15ba3b499c8a"
+          },
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/45513d10d6eeffee7ba6b00f14b7bac08ffaebeca29097b839629fbe1bd0e29a"
+          },
+          {
+            "checked": "obj://run_7bf50a4734da4b04a567f8ee70896c6d/mutation_candidate_set/942ebc31537a753ec73ac410316f2b2112a3ffb8f6e129f8b145962f67a0aaad"
+          }
+        ],
+        "mutation-report": [
+          {
+            "clicked": true
+          }
+        ]
+      },
+      "setHash": "a97b251df112eb9503deb7c74a4c7711bbb4f060949d5f2df913c9f58525113f",
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:52:14.876Z"
+    }
+  ]
+}

@@ -1,0 +1,1472 @@
+{
+  "schema": "m26_case_ledger@1",
+  "generatedAt": "2026-10-10T13:29:42.533422+00:00",
+  "build": {
+    "buildId": "wbonjE7nah2kMcCTup7fP",
+    "gitHead": "e595ca404b2ffa210eb6d372d8983c86fc7538b4",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-10T13:28:44.983377+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "reaction-knowledge-flow.cjs": "6ee3b14cbdc2b15034c2bc11b01aaa76cd2203699bb4349cad841b73047eef6e",
+      "mutation-flow.cjs": "e971c3571d4a26b0584ddd29c58df76730e08a9d1d7385fb9992514fae200165",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "51e3ea61d46eb8b32e0ff078b58615abccea1294b516f51d2b6d9dba8c94a352"
+  },
+  "stagesRequested": [
+    "fixture"
+  ],
+  "missingStages": [
+    "real"
+  ],
+  "verdict": "pass",
+  "acceptance": false,
+  "acceptanceRule": "both stages ran in this invocation and passed, nothing left, build stamped",
+  "verdictParts": {
+    "stagesRan": true,
+    "bothStages": false,
+    "leftoverProcesses": true
+  },
+  "counts": {
+    "cases": 39,
+    "passed": 39,
+    "failed": 0
+  },
+  "stages": {
+    "fixture": {
+      "status": "pass",
+      "steps": {
+        "fixture-empty": {
+          "status": "pass",
+          "latest": "fixture-empty",
+          "problems": [],
+          "attempts": 1
+        },
+        "fixture-main": {
+          "status": "pass",
+          "latest": "fixture-main",
+          "problems": [],
+          "attempts": 1
+        },
+        "fixture-mutation": {
+          "status": "pass",
+          "latest": "fixture-mutation",
+          "problems": [],
+          "attempts": 1
+        },
+        "fixture-unset": {
+          "status": "pass",
+          "latest": "fixture-unset",
+          "problems": [],
+          "attempts": 1
+        },
+        "fixture-invalid": {
+          "status": "pass",
+          "latest": "fixture-invalid",
+          "problems": [],
+          "attempts": 1
+        },
+        "fixture-stale": {
+          "status": "pass",
+          "latest": "fixture-stale",
+          "problems": [],
+          "attempts": 1
+        }
+      },
+      "parts": {
+        "steps": true,
+        "cases": true
+      },
+      "notObserved": {
+        "R-late-response": "late responses of another run / result are covered by the pure guard tests (frontend/tests/reaction-knowledge.test.cjs reactionResponseCurrent) and the M15/M20 flows' held-response checks of the same pattern; this flow does not hold responses.",
+        "R-too-many-links": "the 2,000-link and 1 MiB caps need inputs far larger than the QA structures; covered by backend/tests/test_reaction_knowledge_tool.py (429, nothing stored).",
+        "C-list-too-long": "the 400-item conflict / unmatched cap is covered by backend/tests/test_mutation_tool.py (m20_catalytic_fixture long_unmatched)."
+      }
+    },
+    "real": {
+      "status": "missing",
+      "reason": "stage real was not run in this invocation (--stages fixture)"
+    }
+  },
+  "cases": {
+    "R-no-snapshot": {
+      "stage": "fixture",
+      "text": "no reaction set: the snapshot block shows 사용할 수 없음, the not_installed reason and the import command only (no numbers, no controls); the request block shows a reason only",
+      "steps": {
+        "fixture-empty": "pass"
+      },
+      "status": "pass"
+    },
+    "R-snapshot-ready": {
+      "stage": "fixture",
+      "text": "set A: hash (12 + full in title), three sources with date, CC BY 4.0 and row counts, the processed-copy label, user-named and skipped counts, the skipped list, RK1 / UK1 / RK6 verbatim",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-request-defaults": {
+      "stage": "fixture",
+      "text": "nothing chosen by itself: no structure, the file's PDB ID suggestion unconfirmed, no chain ticked, no numbering map, 연결하기 disabled",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-field-errors": {
+      "stage": "fixture",
+      "text": "typed values the screen refuses (PDB ID ABCD confirmed, accession p0syn1): the reason beside the field, 연결하기 disabled, nothing posted",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-refusals": {
+      "stage": "fixture",
+      "text": "nine labelled in-flight request alterations → the real server refuses each admission reason; the screen shows \"한국어 (code)\" beside its field; nothing stored",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-matched-row": {
+      "stage": "fixture",
+      "text": "1HSG with PDB ID 0T91 (synthetic rows): both chains covered; matched rows with the 7-field identity, the verbatim text in the column \"M-CSA 원문, 계산 아님\" (\"\" for an empty string) and the reference-structure flag; the screen equals the stored rows",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-reaction-section": {
+      "stage": "fixture",
+      "text": "chain A with accession Q0SYN1: EC of both sources, M-CSA compounds, UniProt activities with Rhea in_snapshot true and false (equation or — with the reason)",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-conflict-derived": {
+      "stage": "fixture",
+      "text": "the synthetic derived 1HSG (ASP A25 renamed GLU): the A25 row is 충돌 (residue_name_differs) with the structure name GLU",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-unmatched-reasons": {
+      "stage": "fixture",
+      "text": "synthetic 0SY6 and 0SY2 structures: all five 대응 없음 reasons and both 충돌 reasons, the insertion-code identity and null label fields as —",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-two-entries": {
+      "stage": "fixture",
+      "text": "one chain with two M-CSA entries (601, 602): both listed, none chosen",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-uk4": {
+      "stage": "fixture",
+      "text": "chains M-CSA does not cover (chain_not_listed, pdb_not_in_snapshot) carry UK4 beside the chain label",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-pdb-not-in-snapshot": {
+      "stage": "fixture",
+      "text": "1UBQ (file suggestion confirmed): pdb_not_in_snapshot, the area's 빈 결과 state, the PDB lookup sentence without a number",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-accession-states": {
+      "stage": "fixture",
+      "text": "이 accession 쓰기 (lookup suggestion), an accession skipped at import (demerged + targets), an accession not in the snapshot, the accession_differs_from_mcsa flag",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-uniprot-link": {
+      "stage": "fixture",
+      "text": "prepared 1MQ4 + M15 numbering map (real kbase snapshot in the isolated folder): sites linked through the map, mapped links with the 7 fields and not_in_map links",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-link-reasons": {
+      "stage": "fixture",
+      "text": "without the map: numbering_map_not_given; map with another accession: map_accession_differs",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-paging": {
+      "stage": "fixture",
+      "text": "60 rows on one chain: M-CSA 행 다음 / 이전 equal the stored pages; chain and site pagers disabled",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-report": {
+      "stage": "fixture",
+      "text": "보고서 만들기 → 효소 반응 지식 보고서 in the library; Markdown / JSON downloads non-empty and equal to the backend bytes; RK1–RK6 present; no forbidden word outside fixed lines and reference strings",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-dry-run": {
+      "stage": "fixture",
+      "text": "a dry-run run (record made over the loopback API; every later step a real click) still links and stores the result",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-results-list": {
+      "stage": "fixture",
+      "text": "the result list equals the stored list; counts that were not made are — with the reason; 결과 목록 다시 읽기 reads (GET only)",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-no-zero": {
+      "stage": "fixture",
+      "text": "values that were not checked, not available or not computed are — with the reason, never 0",
+      "steps": {
+        "fixture-main": "pass",
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "R-wording": {
+      "stage": "fixture",
+      "text": "no rank / recommendation / importance / activity / effect wording outside the fixed sentences and the verbatim reference strings",
+      "steps": {
+        "fixture-main": "pass",
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "R-m20-uk3": {
+      "stage": "fixture",
+      "text": "M20 request area: the newest same-structure result is pre-selected (no POST) and, its sites being linked, UK3 is shown",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "R-tabs": {
+      "stage": "fixture",
+      "text": "구조 분석 hidden and inert while 지식·보고서 shows, run selection only in 구조 분석, the 단백질 공학 and 리간드 tabs' areas and text unchanged by the reaction work",
+      "steps": {
+        "fixture-main": "pass"
+      },
+      "status": "pass"
+    },
+    "C-uk2-none": {
+      "stage": "fixture",
+      "text": "M20 with no same-structure result: the not-selected notice and UK2 in the request area",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-preselect": {
+      "stage": "fixture",
+      "text": "two results on the prepared 1HSG: choosing the structure pre-selects the newest; nothing is posted",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-prediction": {
+      "stage": "fixture",
+      "text": "the partial result chosen: UK2 and one line per uncovered chain (B not_in_annotation) before the request; the covered chains line",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-chains-not-covered": {
+      "stage": "fixture",
+      "text": "set from the partial result: not_checked (chains_not_covered), covered A, uncovered B not_in_annotation, chain B positions — (not checked)",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-checked": {
+      "stage": "fixture",
+      "text": "set from the full result: checked, row counts, catalytic_residue on matched positions with the M-CSA entry id, the checked limitation sentence",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-lists": {
+      "stage": "fixture",
+      "text": "conflict and unmatched lists with the M-CSA positions, prominent",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-release": {
+      "stage": "fixture",
+      "text": "the released matched position: candidate, its entries kept, \"해제됨\"",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-exclusion-seven": {
+      "stage": "fixture",
+      "text": "seven exclusion reasons in the counts line and the reason filter",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-limitation-variants": {
+      "stage": "fixture",
+      "text": "limitation sentence 3: v1 (stored v1 set), not_checked and checked variants verbatim",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-v1-set": {
+      "stage": "fixture",
+      "text": "the stored v1 run (copied T1 fixture, events only): not_available, the v1 mark detail, — (v1) cells",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "C-picker-marks": {
+      "stage": "fixture",
+      "text": "\"촉매 잔기 검사 안 함\" on not-checked sets and none on the checked set: M20 list, M21 handoff, M23 select, M24 sources, M25 protein loop pool",
+      "steps": {
+        "fixture-mutation": "pass"
+      },
+      "status": "pass"
+    },
+    "R-unset": {
+      "stage": "fixture",
+      "text": "active.json moved aside: not_installed with the import command, the request block closed, stored results open from events with 사용 중 스냅샷 없음",
+      "steps": {
+        "fixture-unset": "pass"
+      },
+      "status": "pass"
+    },
+    "R-invalid": {
+      "stage": "fixture",
+      "text": "one set file tampered: snapshot_invalid, the request block closed, stored results open with 사용 중 스냅샷 없음",
+      "steps": {
+        "fixture-invalid": "pass"
+      },
+      "status": "pass"
+    },
+    "R-stale": {
+      "stage": "fixture",
+      "text": "set B active: the new hash; every earlier result shows 이전 스냅샷 기준 (list and detail), nothing recomputed",
+      "steps": {
+        "fixture-stale": "pass"
+      },
+      "status": "pass"
+    },
+    "S-fixture-no-egress": {
+      "stage": "fixture",
+      "text": "every flow row: 0 non-loopback browser requests (no host contacted) and zero provider calls",
+      "status": "pass"
+    },
+    "S-fixture-references": {
+      "stage": "fixture",
+      "text": "the reaction set changes (set A, active.json aside, one file tampered, set B) and the M15 import into the isolated folders, read back over the API",
+      "status": "pass"
+    }
+  },
+  "checks": {
+    "fixture": {
+      "reaction": {
+        "empty-at-start": {
+          "status": "pass",
+          "at": "2026-10-10T13:28:49.551738+00:00",
+          "served": {
+            "installed": false,
+            "reason": "not_installed",
+            "set_hash": null,
+            "imported_at": null
+          }
+        },
+        "set-a": {
+          "status": "pass",
+          "at": "2026-10-10T13:28:52.636858+00:00",
+          "setHash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+          "importedAt": "2026-10-08T00:00:00Z",
+          "rows": {
+            "mcsa": 8,
+            "uniprot_function": 5,
+            "rhea": 5
+          },
+          "builder": "backend/tests/fixtures/reaction/t9/build_qa_set.py",
+          "label": "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+          "served": {
+            "installed": true,
+            "reason": null,
+            "set_hash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+            "imported_at": "2026-10-08T00:00:00Z"
+          }
+        },
+        "unset": {
+          "status": "pass",
+          "at": "2026-10-10T13:29:28.190122+00:00",
+          "moved": "active.json -> active.json.qa-unset",
+          "served": {
+            "installed": false,
+            "reason": "not_installed",
+            "set_hash": null,
+            "imported_at": null
+          }
+        },
+        "tamper": {
+          "status": "pass",
+          "at": "2026-10-10T13:29:32.789877+00:00",
+          "restored": "active.json",
+          "tampered": "files/rhea/reactions.jsonl",
+          "sha256Before": "a1366677687289432754bf96a16bfbe1b676350ce3e8b8c7067a0d686fac103f",
+          "sha256After": "e19a43bf6337061261dcf1166b39aeb95ee09978f0c52fdf30236e769e30cf7f",
+          "served": {
+            "installed": false,
+            "reason": "snapshot_invalid",
+            "set_hash": null,
+            "imported_at": null
+          }
+        },
+        "set-b": {
+          "status": "pass",
+          "at": "2026-10-10T13:29:37.432318+00:00",
+          "setHash": "ba7768dd87a205d6ef5f02772b6cfec06767ce81ef11aa6a897cf17785f66b52",
+          "importedAt": "2026-10-08T00:00:01Z",
+          "rows": {
+            "mcsa": 8,
+            "uniprot_function": 5,
+            "rhea": 5
+          },
+          "builder": "backend/tests/fixtures/reaction/t9/build_qa_set.py",
+          "label": "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+          "served": {
+            "installed": true,
+            "reason": null,
+            "set_hash": "ba7768dd87a205d6ef5f02772b6cfec06767ce81ef11aa6a897cf17785f66b52",
+            "imported_at": "2026-10-08T00:00:01Z"
+          }
+        }
+      },
+      "m15": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "<repo>/scripts/import_reference_snapshots.py",
+          "--from",
+          "<home>/Projects/kbase_kinase",
+          "--dest",
+          "<repo>/runs/m27-reg-m26/fixture/reference"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m26/services/fixture-m15-import.log",
+        "setHash": "3c03f45e91c661e712a931eb745a15be7b8380b9176ffcc9f7610eb0cd136070",
+        "served": {
+          "available": true,
+          "set_hash": "3c03f45e91c661e712a931eb745a15be7b8380b9176ffcc9f7610eb0cd136070",
+          "imported_at": "2026-10-10T13:28:52.779973Z",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      }
+    },
+    "real": {
+      "reaction": {},
+      "m15": {}
+    }
+  },
+  "setup": {
+    "fixture": {
+      "dryRunRun": {
+        "status": 201,
+        "run": "run_4f4c59e9dfdb4f60ac92ab6cc28bc44b",
+        "label": "QA setup record: dry-run run made through POST /runs (the UI has no dry-run control)"
+      },
+      "v1Run": {
+        "run": "run_m23_golden_keys",
+        "source": "backend/tests/fixtures/reaction/t1/v1-run-run_m23_golden_keys.events.jsonl",
+        "sha256": "1980fbc305a769eeee6d5915931b19edf51a92fb6dabe8d16829c186960e56c3",
+        "label": "stored M20 v1 run (T1 fixture, SYNTHETIC-PROVENANCE-t1.md) copied into the isolated runs folder; opened from events only"
+      }
+    },
+    "real": {}
+  },
+  "plans": {
+    "fixture": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m26/fixture-plan.json"
+  },
+  "syntheticNote": "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+  "reference": {
+    "kbase": "<home>/Projects/kbase_kinase",
+    "reactionSet": null,
+    "changes": {
+      "fixture-m15-import": {
+        "status": "pass",
+        "exitCode": 0,
+        "argv": [
+          "<repo>/.venv/bin/python",
+          "<repo>/scripts/import_reference_snapshots.py",
+          "--from",
+          "<home>/Projects/kbase_kinase",
+          "--dest",
+          "<repo>/runs/m27-reg-m26/fixture/reference"
+        ],
+        "log": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m26/services/fixture-m15-import.log",
+        "setHash": "3c03f45e91c661e712a931eb745a15be7b8380b9176ffcc9f7610eb0cd136070",
+        "served": {
+          "available": true,
+          "set_hash": "3c03f45e91c661e712a931eb745a15be7b8380b9176ffcc9f7610eb0cd136070",
+          "imported_at": "2026-10-10T13:28:52.779973Z",
+          "reason_code": null
+        },
+        "sources": [
+          {
+            "source": "uniprot",
+            "snapshot_id": "SNAP-uniprot-2026-09-15",
+            "date": "2026-09-15",
+            "license": "CC-BY-4.0",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "sifts",
+            "snapshot_id": "SNAP-sifts-2026-09-20",
+            "date": "2026-09-20",
+            "license": "EMBL-EBI-terms",
+            "origin": "kbase_kinase processed snapshot"
+          },
+          {
+            "source": "klifs",
+            "snapshot_id": "SNAP-klifs-2026-09-19",
+            "date": "2026-09-19",
+            "license": "none-stated",
+            "origin": "kbase_kinase processed snapshot"
+          }
+        ]
+      }
+    }
+  },
+  "leftoverProcesses": [],
+  "browserHostsContacted": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "fixture-empty",
+      "mode": "empty",
+      "status": "pass",
+      "cases": {
+        "R-no-snapshot": "pass"
+      },
+      "runs": {
+        "E": "run_f54936676ee74797896f8abe72811f1a"
+      },
+      "runId": "run_f54936676ee74797896f8abe72811f1a",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [
+        {
+          "name": "public_1ubq.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+          "bytes": 103220,
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture)"
+        }
+      ],
+      "fixtureLabels": [],
+      "controls": {},
+      "setHash": null,
+      "observations": {
+        "R-no-snapshot": [
+          {
+            "step": "E03-no-snapshot",
+            "description": "Click 지식·보고서 with no reaction set: snapshot block 사용할 수 없음 + not_installed + import command; request block a reason only; no numbers, no controls"
+          }
+        ]
+      },
+      "externalRequestCount": 0,
+      "blockedHosts": [],
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:28:52.597Z"
+    },
+    {
+      "step": "fixture-invalid",
+      "mode": "invalid",
+      "status": "pass",
+      "cases": {
+        "R-invalid": "pass"
+      },
+      "runs": {
+        "A": "run_8e8c85d77c7d4578836d8b311724a212",
+        "D": "run_4f4c59e9dfdb4f60ac92ab6cc28bc44b"
+      },
+      "runId": "run_8e8c85d77c7d4578836d8b311724a212",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "controls": {},
+      "setHash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+      "observations": {
+        "R-invalid": [
+          {
+            "step": "INVALID-01",
+            "description": "Choose run run_8e8c85d77c7d4578836d8b311724a212 in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+          },
+          {
+            "step": "INVALID-02",
+            "description": "Choose run run_4f4c59e9dfdb4f60ac92ab6cc28bc44b in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+          }
+        ]
+      },
+      "externalRequestCount": 0,
+      "blockedHosts": [],
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:29:37.377Z"
+    },
+    {
+      "step": "fixture-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "R-uniprot-link": "pass",
+        "R-tabs": "pass",
+        "R-snapshot-ready": "pass",
+        "R-request-defaults": "pass",
+        "R-field-errors": "pass",
+        "R-matched-row": "pass",
+        "R-reaction-section": "pass",
+        "R-accession-states": "pass",
+        "R-no-zero": "pass",
+        "R-paging": "pass",
+        "R-conflict-derived": "pass",
+        "R-pdb-not-in-snapshot": "pass",
+        "R-uk4": "pass",
+        "R-unmatched-reasons": "pass",
+        "R-two-entries": "pass",
+        "R-link-reasons": "pass",
+        "R-refusals": "pass",
+        "R-results-list": "pass",
+        "R-report": "pass",
+        "R-m20-uk3": "pass",
+        "R-wording": "pass",
+        "R-dry-run": "pass"
+      },
+      "runs": {
+        "A": "run_8e8c85d77c7d4578836d8b311724a212",
+        "D": "run_4f4c59e9dfdb4f60ac92ab6cc28bc44b"
+      },
+      "runId": "run_8e8c85d77c7d4578836d8b311724a212",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "structures": {
+          "hsg": {
+            "loaded": "obj://run_8e8c85d77c7d4578836d8b311724a212/structure/68d39fe485868109eecb92379ee564b94c503ef6d26c369bb60a9db8bad2f969",
+            "prepared": null
+          },
+          "hsg_derived": {
+            "loaded": "obj://run_8e8c85d77c7d4578836d8b311724a212/structure/e2e81a4683a86edcefe7c211d1c4dce645fe08c4cdf16e4ac7c728cf7effe197",
+            "prepared": null
+          },
+          "ubq": {
+            "loaded": "obj://run_8e8c85d77c7d4578836d8b311724a212/structure/400247b2b163c6605f0453398e838b0b5b07f373c1767f52acb3744b74debb96",
+            "prepared": null
+          },
+          "syn": {
+            "loaded": "obj://run_8e8c85d77c7d4578836d8b311724a212/structure/e58b96187502df7ee0eedb213ded6bc100efdc88acd38ab11b6d9534bfa165a4",
+            "prepared": null
+          },
+          "beta": {
+            "loaded": "obj://run_8e8c85d77c7d4578836d8b311724a212/structure/49598f5a32d5432c10db1a4ac5df342044433c5c5e15c5a28e63c665651699dd",
+            "prepared": null
+          },
+          "mq4": {
+            "loaded": "obj://run_8e8c85d77c7d4578836d8b311724a212/structure/f3aaef5a51bec91fdd9075dca17ea7c265c10b88bc69e2925cd311090a828866",
+            "prepared": "obj://run_8e8c85d77c7d4578836d8b311724a212/prepared_structure/f2a945ad8a4fc5c3b1ff845f69c78b15ddfd1b09b367218ebcefb4ae71fd526c"
+          }
+        },
+        "maps": {
+          "mq4-map": "obj://run_8e8c85d77c7d4578836d8b311724a212/residue_numbering_map/1e9ca5372fbe017101adbfafa56382c445b9c883c6b1472cc4d41130eba67467"
+        },
+        "links": {
+          "hsg-0t91": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/34d66a6f00294d66a72f997905f45ae9a1882e0caf0d4ccf202ec14a8e86bb13",
+          "hsg-0t92": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/647553f76ab7dd643db5b627aa5f7e2b7e0a89af699b61b84521f36b0f4cdb8c",
+          "derived-0t91": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/966b1537b95e39b38a81fddf79b8a337a0bb69ddd2bab926ee636d8601338408",
+          "ubq-1ubq": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/4b474a07c3ec6c7371fbd22ac566dd2f643a0d2a05e716b1199090f819516325",
+          "syn-0sy6": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/ec49da0d2e52602bddd4f64f2acafb078ec62ffcdfb4bdaa6295d295c64af846",
+          "beta-0sy2": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/df2d33ad622ae061c2eb2ce669c120429d0a8f68ea381f2faf9f85f6a0ab81a9",
+          "mq4-nomap": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/f8d8542038a7fa6490acf7c0709b85d0c567191f0d718fdc798a2e70a3c90e0e",
+          "mq4-differs": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/f88dbc43d06004e3cc47b40b86c659358824cf00cb7dfc22693277444fb9d1f4",
+          "mq4-linked": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/23e050f005c0d013a7c0e3b9ae5f9ad0c10318a315d771b2b152c3df7e38c5a8",
+          "dry-hsg-0t91": "obj://run_4f4c59e9dfdb4f60ac92ab6cc28bc44b/reaction_knowledge/150a9ec5a1d586ef482c052a3e823512116100528c36adf407767d80df12d168"
+        },
+        "report": "obj://run_8e8c85d77c7d4578836d8b311724a212/method_report_manifest/ea1a6ab8d47c7c926647a6fc4bd7419f9a3b36a41ef8ab123f2cb529992d8b9c"
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+          "bytes": 212124,
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture)"
+        },
+        {
+          "name": "derived_1hsg_A25_asp_to_glu.cif",
+          "path": "<repo>/backend/tests/fixtures/reaction/t9/derived_1hsg_A25_asp_to_glu.cif",
+          "bytes": 212147,
+          "sha256": "a0e5aa06b6f1dc91e3b52e9c9fe82329d7c9232ff3ce025038dbceff01eef920",
+          "provenance": "SYNTHETIC derived from public 1HSG: ASP A25 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)"
+        },
+        {
+          "name": "public_1ubq.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+          "bytes": 103220,
+          "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+          "provenance": "public PDB entry 1UBQ (repository fixture)"
+        },
+        {
+          "name": "synthetic-mutation-fixture.cif",
+          "path": "<repo>/backend/tests/fixtures/mutation/synthetic-mutation-fixture.cif",
+          "bytes": 27208,
+          "sha256": "fc4e6d899a498419d51beaa8172da0cc8117021cfe2097c668d6bac85aeb3a20",
+          "provenance": "SYNTHETIC M20 fixture structure (fixtures/mutation/SYNTHETIC-PROVENANCE.md)"
+        },
+        {
+          "name": "structure_beta.pdb",
+          "path": "<repo>/backend/tests/fixtures/reaction/t2/structure_beta.pdb",
+          "bytes": 658,
+          "sha256": "662f8fd1fbca80e7526c96eb2c590181ed600cd9adde61ed145e0abe619051ff",
+          "provenance": "SYNTHETIC M26 T2 structure (fixtures/reaction/t2/SYNTHETIC-PROVENANCE-t2.md)"
+        },
+        {
+          "name": "public_1mq4.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+          "bytes": 301781,
+          "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+          "provenance": "public PDB entry 1MQ4 (repository fixture)"
+        }
+      ],
+      "fixtureLabels": [
+        "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results",
+        "SYNTHETIC derived from public 1HSG: ASP A25 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)",
+        "SYNTHETIC M20 fixture structure (fixtures/mutation/SYNTHETIC-PROVENANCE.md)",
+        "SYNTHETIC M26 T2 structure (fixtures/reaction/t2/SYNTHETIC-PROVENANCE-t2.md)",
+        "QA refusal fixture (labeled renderer route): the link_reaction_knowledge request body is altered in flight so that the real server refuses it; the server reply is shown unchanged",
+        "QA setup record: the dry-run run was made through POST /runs by the runner (the UI has no dry-run control); every step on it here is a real click"
+      ],
+      "controls": {
+        "reaction-skipped-list": [
+          {
+            "opened": true
+          }
+        ],
+        "reaction-pdb-id": [
+          {
+            "typed": "0T91"
+          },
+          {
+            "typed": "0T92"
+          },
+          {
+            "typed": "0T91"
+          },
+          {
+            "typed": "0SY6"
+          },
+          {
+            "typed": "0SY2"
+          },
+          {
+            "typed": "0T91"
+          }
+        ],
+        "reaction-pdb-confirm": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "reaction-chain": [
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "B"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "B"
+          },
+          {
+            "checked": "CC"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "B"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "A"
+          },
+          {
+            "checked": "A"
+          }
+        ],
+        "reaction-accession": [
+          {
+            "typed": "Q0SYN1"
+          },
+          {
+            "typed": "P0SYN6"
+          },
+          {
+            "typed": "Q0SZZ1"
+          },
+          {
+            "typed": "Q0SYN1"
+          }
+        ],
+        "reaction-link": [
+          {
+            "clicked": "hsg-0t91"
+          },
+          {
+            "clicked": "hsg-0t92"
+          },
+          {
+            "clicked": "derived-0t91"
+          },
+          {
+            "clicked": "ubq-1ubq"
+          },
+          {
+            "clicked": "syn-0sy6"
+          },
+          {
+            "clicked": "beta-0sy2"
+          },
+          {
+            "clicked": "mq4-nomap"
+          },
+          {
+            "clicked": "mq4-differs"
+          },
+          {
+            "clicked": "mq4-linked"
+          },
+          {
+            "clicked": "dry-hsg-0t91"
+          }
+        ],
+        "reaction-use-accession": [
+          {
+            "chain": "A",
+            "accession": "Q0SYN1"
+          }
+        ],
+        "reaction-numbering-map": [
+          {
+            "chosen": "obj://run_8e8c85d77c7d4578836d8b311724a212/residue_numbering_map/1e9ca5372fbe017101adbfafa56382c445b9c883c6b1472cc4d41130eba67467"
+          },
+          {
+            "chosen": "obj://run_8e8c85d77c7d4578836d8b311724a212/residue_numbering_map/1e9ca5372fbe017101adbfafa56382c445b9c883c6b1472cc4d41130eba67467"
+          }
+        ],
+        "reaction-results-refresh": [
+          {
+            "clicked": true
+          }
+        ],
+        "reaction-result": [
+          {
+            "checked": "obj://run_8e8c85d77c7d4578836d8b311724a212/reaction_knowledge/647553f76ab7dd643db5b627aa5f7e2b7e0a89af699b61b84521f36b0f4cdb8c"
+          }
+        ],
+        "reaction-rows-next": [
+          {
+            "clicked": true
+          }
+        ],
+        "reaction-rows-prev": [
+          {
+            "clicked": true
+          }
+        ],
+        "reaction-report": [
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-structures": [
+          {
+            "checked": "obj://run_8e8c85d77c7d4578836d8b311724a212/prepared_structure/f2a945ad8a4fc5c3b1ff845f69c78b15ddfd1b09b367218ebcefb4ae71fd526c"
+          }
+        ]
+      },
+      "setHash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+      "observations": {
+        "R-uniprot-link": [
+          {
+            "step": "M03-map-mq4-map",
+            "description": "지식·보고서 잔기 번호 대응: choose the prepared mq4, chain A, tick 이 PDB ID가 맞습니다 (1MQ4), SIFTS O14965, 실행"
+          },
+          {
+            "step": "L-mq4-linked",
+            "description": "Link mq4-linked: mq4 (prepared), PDB ID 1MQ4 (suggested) confirmed, chains A:O14965, map mq4-map; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-tabs": [
+          {
+            "step": "M04-tabs-before",
+            "description": "Click 단백질 공학 and 리간드 설계·탐색: record their areas and digit-masked text before any link"
+          },
+          {
+            "step": "M16-tabs",
+            "description": "Click 지식·보고서: 구조 분석 hidden and inert, no run choice here; click 단백질 공학 and 리간드 설계·탐색: areas and masked text equal the record before the reaction work"
+          }
+        ],
+        "R-snapshot-ready": [
+          {
+            "step": "M05-snapshot",
+            "description": "Click 지식·보고서: the snapshot block of the active set (hash, sources, license, rows, processed label, counts, skipped list via its summary, RK1 / UK1 / RK6)"
+          }
+        ],
+        "R-request-defaults": [
+          {
+            "step": "M06-defaults",
+            "description": "Nothing chosen by itself: structure select empty; choose a structure → the file's PDB ID in the field unconfirmed, no chain ticked, no numbering map, 연결하기 disabled"
+          }
+        ],
+        "R-field-errors": [
+          {
+            "step": "M07-field-errors",
+            "description": "Type PDB ID ABCD and tick 이 PDB ID가 맞습니다, tick chain A, type accession p0syn1: reasons beside the fields, 연결하기 disabled, nothing posted"
+          }
+        ],
+        "R-matched-row": [
+          {
+            "step": "L-hsg-0t91",
+            "description": "Link hsg-0t91: hsg (loaded), PDB ID 0T91 confirmed, chains A:Q0SYN1 B; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-reaction-section": [
+          {
+            "step": "L-hsg-0t91",
+            "description": "Link hsg-0t91: hsg (loaded), PDB ID 0T91 confirmed, chains A:Q0SYN1 B; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-accession-states": [
+          {
+            "step": "L-hsg-0t91",
+            "description": "Link hsg-0t91: hsg (loaded), PDB ID 0T91 confirmed, chains A:Q0SYN1 B; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-syn-0sy6",
+            "description": "Link syn-0sy6: syn (loaded), PDB ID 0SY6 confirmed, chains A:Q0SYN1 B:P0SYN6 CC; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-beta-0sy2",
+            "description": "Link beta-0sy2: beta (loaded), PDB ID 0SY2 confirmed, chains A:Q0SZZ1 B; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-no-zero": [
+          {
+            "step": "L-hsg-0t91",
+            "description": "Link hsg-0t91: hsg (loaded), PDB ID 0T91 confirmed, chains A:Q0SYN1 B; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-ubq-1ubq",
+            "description": "Link ubq-1ubq: ubq (loaded), PDB ID 1UBQ (suggested) confirmed, chains A; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-syn-0sy6",
+            "description": "Link syn-0sy6: syn (loaded), PDB ID 0SY6 confirmed, chains A:Q0SYN1 B:P0SYN6 CC; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-beta-0sy2",
+            "description": "Link beta-0sy2: beta (loaded), PDB ID 0SY2 confirmed, chains A:Q0SZZ1 B; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "M10-results",
+            "description": "Click 결과 목록 다시 읽기: the list equals the stored list (newest first); counts not made are — with the reason"
+          }
+        ],
+        "R-paging": [
+          {
+            "step": "L-hsg-0t92",
+            "description": "Link hsg-0t92: hsg (loaded), PDB ID 0T92 confirmed, chains A; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "M11-paging",
+            "description": "Open the 60-row result: M-CSA 행 다음 → rows 51–60 equal the stored page; 이전 → back; chain and site pagers disabled"
+          }
+        ],
+        "R-conflict-derived": [
+          {
+            "step": "L-derived-0t91",
+            "description": "Link derived-0t91: hsg_derived (loaded), PDB ID 0T91 confirmed, chains A; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-pdb-not-in-snapshot": [
+          {
+            "step": "L-ubq-1ubq",
+            "description": "Link ubq-1ubq: ubq (loaded), PDB ID 1UBQ (suggested) confirmed, chains A; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-uk4": [
+          {
+            "step": "L-ubq-1ubq",
+            "description": "Link ubq-1ubq: ubq (loaded), PDB ID 1UBQ (suggested) confirmed, chains A; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-syn-0sy6",
+            "description": "Link syn-0sy6: syn (loaded), PDB ID 0SY6 confirmed, chains A:Q0SYN1 B:P0SYN6 CC; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-mq4-linked",
+            "description": "Link mq4-linked: mq4 (prepared), PDB ID 1MQ4 (suggested) confirmed, chains A:O14965, map mq4-map; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-unmatched-reasons": [
+          {
+            "step": "L-syn-0sy6",
+            "description": "Link syn-0sy6: syn (loaded), PDB ID 0SY6 confirmed, chains A:Q0SYN1 B:P0SYN6 CC; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-beta-0sy2",
+            "description": "Link beta-0sy2: beta (loaded), PDB ID 0SY2 confirmed, chains A:Q0SZZ1 B; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-two-entries": [
+          {
+            "step": "L-syn-0sy6",
+            "description": "Link syn-0sy6: syn (loaded), PDB ID 0SY6 confirmed, chains A:Q0SYN1 B:P0SYN6 CC; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-link-reasons": [
+          {
+            "step": "L-mq4-nomap",
+            "description": "Link mq4-nomap: mq4 (prepared), PDB ID 1MQ4 (suggested) confirmed, chains A:O14965; 연결하기 → the opened result equals the stored result"
+          },
+          {
+            "step": "L-mq4-differs",
+            "description": "Link mq4-differs: mq4 (prepared), PDB ID 1MQ4 (suggested) confirmed, chains A:Q0SYN1, map mq4-map; 연결하기 → the opened result equals the stored result"
+          }
+        ],
+        "R-refusals": [
+          {
+            "step": "F-unknown_field",
+            "description": "Click 연결하기 with the labeled alteration for unknown_field: the refusal \"알 수 없는 요청 항목 (unknown_field)\" shows beside the request line; nothing stored"
+          },
+          {
+            "step": "F-structure_invalid",
+            "description": "Click 연결하기 with the labeled alteration for structure_invalid: the refusal \"이 run의 구조·전처리 구조가 아니거나 읽을 수 없음 (structure_invalid)\" shows beside structure; nothing stored"
+          },
+          {
+            "step": "F-pdb_id_invalid",
+            "description": "Click 연결하기 with the labeled alteration for pdb_id_invalid: the refusal \"PDB ID 형식 오류(숫자 하나와 영숫자 셋) (pdb_id_invalid)\" shows beside pdb_id; nothing stored"
+          },
+          {
+            "step": "F-chains_invalid",
+            "description": "Click 연결하기 with the labeled alteration for chains_invalid: the refusal \"체인 목록 오류(비었음·모양·중복·알 수 없는 키) (chains_invalid)\" shows beside chains; nothing stored"
+          },
+          {
+            "step": "F-chain_not_found",
+            "description": "Click 연결하기 with the labeled alteration for chain_not_found: the refusal \"구조가 가리키는 모델에 이 체인의 사슬 잔기가 없음 (chain_not_found)\" shows beside chains; nothing stored"
+          },
+          {
+            "step": "F-accession_invalid",
+            "description": "Click 연결하기 with the labeled alteration for accession_invalid: the refusal \"UniProt accession 형식이 아님 (accession_invalid)\" shows beside chains; nothing stored"
+          },
+          {
+            "step": "F-numbering_map_invalid",
+            "description": "Click 연결하기 with the labeled alteration for numbering_map_invalid: the refusal \"이 run의 번호 대응이 아님 (numbering_map_invalid)\" shows beside numbering_map; nothing stored"
+          },
+          {
+            "step": "F-structure_mismatch",
+            "description": "Click 연결하기 with the labeled alteration for structure_mismatch: the refusal \"다른 구조의 번호 대응 (structure_mismatch)\" shows beside numbering_map; nothing stored"
+          },
+          {
+            "step": "F-map_pdb_mismatch",
+            "description": "Click 연결하기 with the labeled alteration for map_pdb_mismatch: the refusal \"번호 대응의 PDB ID가 요청 PDB ID와 다름 (map_pdb_mismatch)\" shows beside numbering_map; nothing stored"
+          }
+        ],
+        "R-results-list": [
+          {
+            "step": "M10-results",
+            "description": "Click 결과 목록 다시 읽기: the list equals the stored list (newest first); counts not made are — with the reason"
+          }
+        ],
+        "R-report": [
+          {
+            "step": "M12-report",
+            "description": "Open the result, click 보고서 만들기"
+          },
+          {
+            "step": "M13-download-markdown",
+            "description": "Click reaction-report-markdown: bytes non-empty and equal the backend bytes"
+          },
+          {
+            "step": "M13-download-json",
+            "description": "Click reaction-report-json: bytes non-empty and equal the backend bytes"
+          },
+          {
+            "step": "M14-library",
+            "description": "The knowledge-tab report list shows 효소 반응 지식 보고서; click it; content = stored Markdown"
+          }
+        ],
+        "R-m20-uk3": [
+          {
+            "step": "M15-m20-uk3",
+            "description": "Click 단백질 공학, choose the prepared structure in 변이 후보: the newest same-structure reaction knowledge result is pre-selected; its sites are linked, so UK3 is shown; nothing is posted"
+          }
+        ],
+        "R-wording": [
+          {
+            "step": "M17-wording",
+            "description": "Open each stored result: no rank / importance / activity / effect wording outside the fixed sentences and the verbatim reference strings"
+          }
+        ],
+        "R-dry-run": [
+          {
+            "step": "M19-dry-run-link",
+            "description": "In the dry-run run: link the same way (real clicks); the result is stored and opens"
+          }
+        ]
+      },
+      "externalRequestCount": 0,
+      "blockedHosts": [],
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:29:18.367Z"
+    },
+    {
+      "step": "fixture-mutation",
+      "mode": "catalytic",
+      "status": "pass",
+      "cases": {
+        "C-uk2-none": "pass",
+        "R-no-zero": "pass",
+        "C-preselect": "pass",
+        "C-prediction": "pass",
+        "C-chains-not-covered": "pass",
+        "C-checked": "pass",
+        "C-lists": "pass",
+        "C-exclusion-seven": "pass",
+        "C-release": "pass",
+        "C-v1-set": "pass",
+        "C-limitation-variants": "pass",
+        "C-picker-marks": "pass",
+        "R-wording": "pass"
+      },
+      "runs": {
+        "A": "run_b527977286ce4ad1a3336267c3105720"
+      },
+      "runId": "run_b527977286ce4ad1a3336267c3105720",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "prepared": "obj://run_b527977286ce4ad1a3336267c3105720/prepared_structure/8eb426bce0e6c14a47cc64115543a8f276f322beb351083120c661f5c3f204b7",
+        "s0": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/d8615f434bf0785ad5a1cf13686b669405d53c77e3b156f5888422322b195d2d",
+        "rPartial": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/06c0d1188d7eb70c7c2bb56b56d91047dc4bf672f539a1889fa16130c0df016f",
+        "rAll": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/ca74012ad6d0c49abeba02d1b21baef1c868f5d2087aeffd9f079385f9641ace",
+        "s1": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5",
+        "s2": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650",
+        "s3": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e97cd9e1d575a55c81e28d95f6cad12b79ef4b0ace269229d823458d13b413cd"
+      },
+      "inputs": [
+        {
+          "name": "public_1hsg.cif",
+          "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+          "bytes": 212124,
+          "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+          "provenance": "public PDB entry 1HSG (repository fixture)"
+        }
+      ],
+      "fixtureLabels": [
+        "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results"
+      ],
+      "controls": {
+        "mutation-structures": [
+          {
+            "checked": "obj://run_b527977286ce4ad1a3336267c3105720/prepared_structure/8eb426bce0e6c14a47cc64115543a8f276f322beb351083120c661f5c3f204b7"
+          },
+          {
+            "checked": "obj://run_b527977286ce4ad1a3336267c3105720/prepared_structure/8eb426bce0e6c14a47cc64115543a8f276f322beb351083120c661f5c3f204b7"
+          }
+        ],
+        "mutation-source-ligand-shell": [
+          {
+            "checked": true
+          },
+          {
+            "checked": true
+          }
+        ],
+        "mutation-radius": [
+          {
+            "value": "5"
+          },
+          {
+            "value": "5"
+          }
+        ],
+        "mutation-ligand": [
+          {
+            "chosen": "MK1 B:902 · label C:—"
+          },
+          {
+            "chosen": "MK1 B:902 · label C:—"
+          }
+        ],
+        "mutation-create": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "mutation-catalytic-annotation": [
+          {
+            "value": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/06c0d1188d7eb70c7c2bb56b56d91047dc4bf672f539a1889fa16130c0df016f"
+          },
+          {
+            "value": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/ca74012ad6d0c49abeba02d1b21baef1c868f5d2087aeffd9f079385f9641ace"
+          }
+        ],
+        "mutation-pick-release": [
+          {
+            "picked": "ASP A:25 · label A:25"
+          }
+        ],
+        "mutation-sets": [
+          {
+            "checked": "obj://run_m23_golden_keys/mutation_candidate_set/84f197b36aa8b4f70e4393f978bb153c6de35819634208d52732291d0502ecb3"
+          },
+          {
+            "checked": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5"
+          },
+          {
+            "checked": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650"
+          },
+          {
+            "checked": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650"
+          }
+        ],
+        "mutation-candidate-model": [
+          {
+            "set": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5"
+          },
+          {
+            "set": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650"
+          }
+        ],
+        "sequence-ga-candidate-set": [
+          {
+            "chosen": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5"
+          }
+        ],
+        "jev-kind-mutation": [
+          {
+            "checked": true
+          }
+        ]
+      },
+      "setHash": null,
+      "observations": {},
+      "externalRequestCount": 0,
+      "blockedHosts": [],
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:29:28.162Z"
+    },
+    {
+      "step": "fixture-stale",
+      "mode": "stale",
+      "status": "pass",
+      "cases": {
+        "R-stale": "pass"
+      },
+      "runs": {
+        "A": "run_8e8c85d77c7d4578836d8b311724a212",
+        "D": "run_4f4c59e9dfdb4f60ac92ab6cc28bc44b"
+      },
+      "runId": "run_8e8c85d77c7d4578836d8b311724a212",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "controls": {},
+      "setHash": "ba7768dd87a205d6ef5f02772b6cfec06767ce81ef11aa6a897cf17785f66b52",
+      "observations": {
+        "R-stale": [
+          {
+            "step": "STALE-01",
+            "description": "Choose run run_8e8c85d77c7d4578836d8b311724a212 in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+          },
+          {
+            "step": "STALE-02",
+            "description": "Choose run run_4f4c59e9dfdb4f60ac92ab6cc28bc44b in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+          }
+        ]
+      },
+      "externalRequestCount": 0,
+      "blockedHosts": [],
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:29:41.950Z"
+    },
+    {
+      "step": "fixture-unset",
+      "mode": "unset",
+      "status": "pass",
+      "cases": {
+        "R-unset": "pass"
+      },
+      "runs": {
+        "A": "run_8e8c85d77c7d4578836d8b311724a212",
+        "D": "run_4f4c59e9dfdb4f60ac92ab6cc28bc44b"
+      },
+      "runId": "run_8e8c85d77c7d4578836d8b311724a212",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [],
+      "controls": {},
+      "setHash": "7112c26ba4c3fb2509a8f7a780522736f7767771e3fc447d24db6ad3f10f4ddb",
+      "observations": {
+        "R-unset": [
+          {
+            "step": "UNSET-01",
+            "description": "Choose run run_8e8c85d77c7d4578836d8b311724a212 in 저장된 run, click 지식·보고서: snapshot block not_installed; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+          },
+          {
+            "step": "UNSET-02",
+            "description": "Choose run run_4f4c59e9dfdb4f60ac92ab6cc28bc44b in 저장된 run, click 지식·보고서: snapshot block not_installed; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+          }
+        ]
+      },
+      "externalRequestCount": 0,
+      "blockedHosts": [],
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-10T13:29:32.763Z"
+    }
+  ]
+}

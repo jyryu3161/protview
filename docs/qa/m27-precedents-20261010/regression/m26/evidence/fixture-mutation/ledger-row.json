@@ -1,0 +1,233 @@
+{
+  "schema": "m20_case_ledger_row@1",
+  "mode": "catalytic",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "C-uk2-none": "pass",
+    "R-no-zero": "pass",
+    "C-preselect": "pass",
+    "C-prediction": "pass",
+    "C-chains-not-covered": "pass",
+    "C-checked": "pass",
+    "C-lists": "pass",
+    "C-exclusion-seven": "pass",
+    "C-release": "pass",
+    "C-v1-set": "pass",
+    "C-limitation-variants": "pass",
+    "C-picker-marks": "pass",
+    "R-wording": "pass"
+  },
+  "runId": "run_b527977286ce4ad1a3336267c3105720",
+  "runs": {
+    "A": "run_b527977286ce4ad1a3336267c3105720"
+  },
+  "handles": {
+    "prepared": "obj://run_b527977286ce4ad1a3336267c3105720/prepared_structure/8eb426bce0e6c14a47cc64115543a8f276f322beb351083120c661f5c3f204b7",
+    "s0": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/d8615f434bf0785ad5a1cf13686b669405d53c77e3b156f5888422322b195d2d",
+    "rPartial": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/06c0d1188d7eb70c7c2bb56b56d91047dc4bf672f539a1889fa16130c0df016f",
+    "rAll": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/ca74012ad6d0c49abeba02d1b21baef1c868f5d2087aeffd9f079385f9641ace",
+    "s1": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5",
+    "s2": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650",
+    "s3": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e97cd9e1d575a55c81e28d95f6cad12b79ef4b0ace269229d823458d13b413cd"
+  },
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "fixtureLabels": [
+    "every reaction reference value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/reaction/t9/build_qa_set.py with the T2, T6 and T9 rows (SYNTHETIC-PROVENANCE-t2.md, -t6.md, -t9.md); observations are of the screen, never results"
+  ],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_b527977286ce4ad1a3336267c3105720/prepared_structure/8eb426bce0e6c14a47cc64115543a8f276f322beb351083120c661f5c3f204b7"
+      },
+      {
+        "checked": "obj://run_b527977286ce4ad1a3336267c3105720/prepared_structure/8eb426bce0e6c14a47cc64115543a8f276f322beb351083120c661f5c3f204b7"
+      }
+    ],
+    "mutation-source-ligand-shell": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-radius": [
+      {
+        "value": "5"
+      },
+      {
+        "value": "5"
+      }
+    ],
+    "mutation-ligand": [
+      {
+        "chosen": "MK1 B:902 · label C:—"
+      },
+      {
+        "chosen": "MK1 B:902 · label C:—"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-catalytic-annotation": [
+      {
+        "value": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/06c0d1188d7eb70c7c2bb56b56d91047dc4bf672f539a1889fa16130c0df016f"
+      },
+      {
+        "value": "obj://run_b527977286ce4ad1a3336267c3105720/reaction_knowledge/ca74012ad6d0c49abeba02d1b21baef1c868f5d2087aeffd9f079385f9641ace"
+      }
+    ],
+    "mutation-pick-release": [
+      {
+        "picked": "ASP A:25 · label A:25"
+      }
+    ],
+    "mutation-sets": [
+      {
+        "checked": "obj://run_m23_golden_keys/mutation_candidate_set/84f197b36aa8b4f70e4393f978bb153c6de35819634208d52732291d0502ecb3"
+      },
+      {
+        "checked": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5"
+      },
+      {
+        "checked": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650"
+      },
+      {
+        "checked": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650"
+      }
+    ],
+    "mutation-candidate-model": [
+      {
+        "set": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5"
+      },
+      {
+        "set": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/e5b88740713cc9c7452c9f20bd91b6bf19633d3005d1bad0e8a51c28bc1c3650"
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "chosen": "obj://run_b527977286ce4ad1a3336267c3105720/mutation_candidate_set/3ee4e821573c0119f0561031837bbe95f6855c53f1b4bbab825cd1f2562983c5"
+      }
+    ],
+    "jev-kind-mutation": [
+      {
+        "checked": true
+      }
+    ]
+  },
+  "repro": null,
+  "buildId": "wbonjE7nah2kMcCTup7fP",
+  "harness": {
+    "mutation-flow.cjs": "e971c3571d4a26b0584ddd29c58df76730e08a9d1d7385fb9992514fae200165",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": null,
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 270,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m26/fixture-mutation/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 504,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 6,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m26/fixture-mutation/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 66,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_b527977286ce4ad1a3336267c3105720",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_m23_golden_keys",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "mutation-catalytic.jsonl",
+  "startedAt": "2026-10-10T13:29:18.592Z",
+  "finishedAt": "2026-10-10T13:29:28.162Z"
+}
