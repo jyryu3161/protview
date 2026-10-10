@@ -14,6 +14,7 @@ from __future__ import annotations
 import copy
 import shutil
 import socket
+import sys
 
 import precedent_fixture as PF
 import pytest
@@ -510,6 +511,23 @@ def test_unknown_keys_and_values_are_422(client, designed, params):
     response = _detail(client, designed["rid"], designed["flagged"], params)
     assert response.status_code == 422, response.text
     assert response.json()["detail"]["error"] == "input_invalid"
+
+
+def test_oversized_limit_and_offset_digits_are_422_not_500(client, designed):
+    """A decimal string longer than the interpreter's int digit limit (4300 by default) cannot be read as an int."""
+    digits = sys.get_int_max_str_digits()
+    rid, handle = designed["rid"], designed["flagged"]
+    for params in ({"offset": "9" * 5000}, {"limit": "1" * 5000}, {"offset": "9" * (digits + 1)},
+                   {"limit": "0" * digits + "5"}):
+        response = _detail(client, rid, handle, params)
+        assert response.status_code == 422, (len(next(iter(params.values()))), response.text)
+        assert response.json()["detail"]["error"] == "input_invalid"
+    at_limit = _detail(client, rid, handle, {"offset": "9" * digits})       # exactly the limit: readable, past the end
+    assert at_limit.status_code == 200
+    assert at_limit.json()["records"] == [] and at_limit.json()["page"]["filtered_total"] == 6
+    padded = _detail(client, rid, handle, {"limit": "0" * (digits - 1) + "5"})
+    assert padded.status_code == 200 and padded.json()["page"]["limit"] == 5
+    assert _detail(client, rid, handle, {"limit": "1" * digits}).status_code == 422   # readable, above 100
 
 
 def test_query_of_exactly_100_characters_is_accepted(client, designed):

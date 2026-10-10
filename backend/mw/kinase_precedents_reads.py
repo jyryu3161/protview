@@ -145,7 +145,10 @@ def _integer(text: str | None, key: str, default: int, low: int, high: int | Non
         return default
     if not _DIGITS.fullmatch(text):
         raise ReadInvalid(f"{key} must be an integer")
-    value = int(text)
+    try:
+        value = int(text)
+    except ValueError as exc:   # beyond the interpreter's digit limit: not readable as an integer
+        raise ReadInvalid(f"{key} must be an integer") from exc
     if value < low or (high is not None and value > high):
         raise ReadInvalid(f"{key} must be between {low} and {high}" if high is not None else f"{key} must be >= {low}")
     return value
