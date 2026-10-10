@@ -558,6 +558,7 @@
 - **지금 해결하지 못하는 이유**: 환경 부하와 우연에 달린 실패라 M25 범위에서 재현·고정할 근거가 없고, 해당 테스트는 M23·M24 파일이다.
 - **방향**: (1)·(2)는 동시 실행 부하에서의 타이밍 여유를 다시 재고, (3)은 단언이 `time_utc` 같은 가변 숫자와 겹치지 않는 표지 값을 쓰도록 고친다.
 - **M27 관찰**: M27 기간에도 (2)에 해당하는 서열 GA SIGTERM 시험(`test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)이 Stop 훅이 다른 작업과 겹칠 때 실패했고 단독 재실행은 3 passed(143.8초)였다. 고정 게이트(`b414728`, 열여덟 그룹 동시 실행)에서는 통과했다(`docs/qa/m27-precedents-20261010/gate.txt`).
+- **M27 관찰(psutil)**: M27 기간에 한 번, 서열 GA 작업자 시험 `test_a_failed_reference_row_ends_the_run_before_any_individual[reference_size_bound-status9-False]`가 Stop 훅 실행 중 `SystemError: <built-in function proc_cmdline> returned a result with an exception set`(`psutil._psosx.Process.cmdline`)로 실패했다. macOS에서 psutil이 명령줄을 읽는 동안 그 프로세스가 끝나는 경쟁으로 보이며(`NoSuchProcess`가 아닌 `SystemError`), 같은 시험은 단독으로 10 passed(177.8초)였다. M27 코드가 아니라 기존 프로세스 신원 확인 경로이며 고치지 않았다. 원인(`SystemError`를 잡지 않는 곳이 제품 코드인지 시험 보조 코드인지)은 확인하지 못했다.
 
 ## M24 오프스크린 하네스의 다른 탭 검사가 `jev-` 선택자 접두사에 묶여 있다 (M25)
 - **현상**: M24 `jev-flow.cjs`는 다른 탭에 `[data-testid^="jev-"]` 요소가 0개이고 탭 글자 서명이 같아야 한다고 단언한다. M25 루프 영역(`jev-loop-*`)이 리간드·단백질 탭에 생기자 고정 소스에서 M24 회귀가 실패했고(단백질 공학 탭 41개·리간드 탭 35개), `tabSignature`가 루프 영역을 빼도록 고쳤다(`9a9a625`, `docs/qa/m25-jev-loop-20261007/regression-harness-changes.txt`).

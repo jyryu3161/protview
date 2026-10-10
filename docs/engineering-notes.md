@@ -630,7 +630,7 @@
 - 착수 확인(`docs/qa/m27-precedents-20261010/preflight.md` (a))에서 실제 `dist/`(HEAD `77354f9`, dist 커밋 `43a935e`)는 명세 형식을 그대로 통과했다: 전례 레코드의 최상위 키 집합은 두 파일 모두 한 종류이고 정확히 21개, 모든 레코드 `review_status: "unreviewed"`, `move_id` 1,776개 유일, 레코드 해시 재계산 891·885·555 일치. 명세 필수 목록 밖의 중첩 키(`source.parser`, `extraction.chunks`·`dropped_effects`·`notes`, 선택 키 `target.resolution_evidence`)는 보존 대상이고, 참조 레코드는 필수 10개 + 8개 키(18개)다.
 - **표적 미해석 396건**: `moves` 193 + `moves_flagged` 203이 `target.uniprot` null이다(해석 근거 `unmapped` 272·`absent` 122·`ambiguous` 2, 서로 다른 이름은 문자열 34개 + null). 어떤 체인에도 연결하지 않고 UP5와 이름별 표로만 알린다. 해석된 `moves` 698건 중 75건은 추정 근거(`name_token` 38·`pubmed_title` 20·`alias` 14·`notation` 3)라 연결하되 근거를 보인다.
 - 그 밖의 실측: 측정 변화 3,832개 중 `off_target` 888개(약 23%), `fold_change` null 1,904개, 관찰 인용 `quote_truncated` 136건(`moves` 83 + `moves_flagged` 53)과 교환 인용 `quote_truncated` 27건(8 + 19)은 따로 센다(합치면 163). 표적별 `moves`/`moves_flagged`: EGFR `P00533` 76/66, BTK `Q06187` 70/97, CDK2 `P24941` 32/24, Aurora A `O14965` 0/0(참조 있음). `moves`에는 없고 `moves_flagged`에만 있는 표적이 17개(모두 참조 있음)라 `none_in_included_files` + UP2(N > 0)가 실제로 나온다.
-- **실데이터에 없는 닫힌 값**: 25단어 초과 인용(그래서 `quotes_within_limit` 거짓), `direction_basis` `none`, 위치 `kind` `figure`, `structure_links.basis` `sole_candidate`, `resolution_basis` `klifs_gene_name`, 체인 상태 `multiple_accessions`. 닫힌 집합은 명세 그대로 두고 합성 fixture(`backend/tests/fixtures/precedent/`, 출처 `SYNTHETIC-PROVENANCE-*.md`)로만 시험한다. 실제 레코드·서지 조각은 fixture로 커밋하지 않는다.
+- **실데이터에 없는 닫힌 값**: 25단어 초과 인용(그래서 `quotes_within_limit` 거짓), `direction_basis` `none`, 위치 `kind` `figure`, `structure_links.basis` `sole_candidate`, `resolution_basis` `klifs_gene_name`, 체인 상태 `multiple_accessions`(이번 QA 구조로는 만들 수 없었다. M15 SIFTS 스냅샷에는 융합 체인이 있지만 저장소에 그 구조가 없고 내려받기 한도 밖이다). 닫힌 집합은 명세 그대로 두고 합성 fixture(`backend/tests/fixtures/precedent/`, 출처 `SYNTHETIC-PROVENANCE-*.md`)로만 시험한다. 실제 레코드·서지 조각은 fixture로 커밋하지 않는다.
 
 ### `checks.duplicate` 실패는 전례 중복이 아니다 (M27)
 - **증상**: `moves`(통과 파일처럼 보이는 이름)에도 `duplicate` 검사 실패가 61건 있다(`moves_flagged` 129건). 이름만 보면 "같은 전례가 두 번 있다"로 읽힌다.
@@ -642,7 +642,7 @@
 - 읽기·보고서·화면이 사본으로 해시를 다시 확인하려 하면 안 된다. 화면 상세는 "해시는 원본 레코드의 것" 안내를 붙이고, "그 밖의 kbase 필드" 블록은 뺀 두 경로를 나열하지 않는다. `validated_result`는 사본에 두 경로가 없는지와 `integrity`가 사본에서 다시 계산한 단어 수·쪽 검사와 같은지를 본다.
 
 ### 서로 다른 accession 두 체인은 1 MiB를 넘을 수 있다 (M27)
-- **증상**: 단일 표적 결과는 최악(BTK `moves_flagged` 포함)도 855,798 B로 상한 안이지만, 서로 다른 accession 두 체인(실데이터 구조로는 만들 수 없어 1FIN 번호 대응에 `P00533`·`Q06187`을 준 합성 변형)에 `moves_flagged`를 포함하면 1,605,026 B로 1 MiB를 넘는다(끄면 737,133 B).
+- **증상**: 단일 표적 결과는 최악(BTK `moves_flagged` 포함)도 상한 안이지만(착수 확인 시제품 측정 855,798 B, 제품 도구로 잰 값은 수락 증거의 855,943 B), 서로 다른 accession 두 체인(실데이터 구조로는 만들 수 없어 1FIN 번호 대응에 `P00533`·`Q06187`을 준 합성 변형)에 `moves_flagged`를 포함하면 1,605,026 B로 1 MiB를 넘는다(끄면 737,133 B).
 - **대응**: 자르지 않고 429 `result_too_large`로 거절하고 아무것도 저장하지 않는다. 거절 상세 `size_without_flagged`·`target_sizes`가 표적별 단독 크기와 `include_flagged`를 끈 크기를 알려 화면이 "체인을 나누거나 포함을 끄라"고 안내한다(두 경우를 모두 계산하므로 거절 응답이 결과 만들기를 몇 번 더 한다).
 
 ### `move_id` 숫자 부분 정렬과 정수 변환 자릿수 제한 (M27)
@@ -684,7 +684,7 @@
 
 ### Stop 훅 나머지 그룹이 다시 480초에 닿아 그룹 둘을 더했다 (M27)
 - **증상**: M27 전 나머지 그룹 단독 3,554개 408.77초(여유 약 71초)에 M27 테스트(백엔드 557개 + 스크립트 152개)가 더해지면 한도를 넘는다(착수 확인 (e)). M27 백엔드 일곱 파일을 이름 있는 그룹으로 나눈 첫 고정 후보(`7e33951`)에서도 모든 그룹을 동시에 시작하면 나머지 그룹이 3,706개 476초(단독 423.9초)로 480초에 거의 닿았다.
-- **대응**: 가장 무거운 남은 두 파일 `test_analysis_workflows.py`·`test_jev_loop_reports.py`(129개, 단독 197초)를 또 한 그룹으로 나눴다(`b414728`, `PYTEST_GROUPS` 열일곱 + 나머지 = 열여덟 그룹, `CHECKS` 19, `scripts/test_codex_hooks.py`의 기대 19). 고정 `b414728` 게이트에서 열여덟 그룹을 동시에 시작하면 나머지 그룹 3,577개 323.2초, 전체 357.5초, 합계 6,037 passed였다(`gate.txt`). 새 스크립트 테스트 둘은 `SCRIPT_TESTS`에 손으로 넣었다.
+- **대응**: 가장 무거운 남은 두 파일 `test_analysis_workflows.py`·`test_jev_loop_reports.py`(129개, 나머지 그룹과 둘만 함께 돌렸을 때 197초, 열여덟 그룹 전부 함께는 231.6초)를 또 한 그룹으로 나눴다(`b414728`, `PYTEST_GROUPS` 열일곱 + 나머지 = 열여덟 그룹, `CHECKS` 19, `scripts/test_codex_hooks.py`의 기대 19). 고정 `b414728` 게이트에서 열여덟 그룹을 동시에 시작하면 나머지 그룹 3,577개 323.2초, 전체 357.5초, 합계 6,037 passed였다(`gate.txt`). 새 스크립트 테스트 둘은 `SCRIPT_TESTS`에 손으로 넣었다.
 - 서열 GA SIGTERM 프로세스 시험(`test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)은 훅이 다른 작업과 겹치면 흔들리는 알려진 현상이 이 단계에서도 재현됐고 단독 3 passed 143.8초였다. 고정 게이트에서는 통과했다. 실패하면 그 시험만 단독으로 다시 돌려 기록한다.
 
 ### 하네스 문구 검사는 "그 밖의 kbase 필드" 항목을 뺀다 (M27)
