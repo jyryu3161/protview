@@ -65,6 +65,7 @@ from ..egress.gate import EgressGate
 from ..jev_loop_reports import build_jev_loop_report, saved_jev_loop_report
 from ..jev_reports import build_jev_report, saved_jev_report
 from ..jobs.queue import CHEMICAL_DERIVED_KINDS, JobQueue, chemical_capability, require_completed_chemical_handle
+from ..kinase_precedents_reports import build_precedent_report, saved_precedent_report
 from ..ligand_ga_constants import PROTOCOL as GA_PROTOCOL
 from ..ligand_ga_reports import build_ligand_ga_report, saved_ligand_ga_report
 from ..ligand_reports import build_ligand_report, saved_ligand_report
@@ -1331,6 +1332,11 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # reference set at creation is recorded in the report snapshot only.
             return build_reaction_report(run, body.result_handle,
                                          active_set_hash=reaction_knowledge_reads.capability()["set_hash"])
+        if kind == kinase_precedents_reads.KIND:
+            # M27: reads the stored result only (re-validated); the linking is not run again. The active precedent
+            # reference set at creation is recorded in the report snapshot only.
+            return build_precedent_report(run, body.result_handle,
+                                          active_set_hash=kinase_precedents_reads.capability()["set_hash"])
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1359,7 +1365,7 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
                                         "ligand_ga", "sequence_ga", "jev_choice", "jev_loop",
-                                        "reaction_knowledge"}
+                                        "reaction_knowledge", "kinase_precedents"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1378,7 +1384,7 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
                                                               "sequence_ga", "jev_choice", "jev_loop",
-                                                              "reaction_knowledge"}
+                                                              "reaction_knowledge", "kinase_precedents"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1415,6 +1421,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_jev_loop_report(run, handle)
         if report.get("analysis_type") == "reaction_knowledge":
             return saved_reaction_report(run, handle)
+        if report.get("analysis_type") == "kinase_precedents":
+            return saved_precedent_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
