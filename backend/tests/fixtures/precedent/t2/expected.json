@@ -1,0 +1,5165 @@
+{
+ "_oracle": "합성(SYNTHETIC) fixture의 ORACLE output of independent_match.py (not product output); see SYNTHETIC-PROVENANCE-t2.md",
+ "cases": {
+  "main_all_excluded": {
+   "chains": null,
+   "include_flagged": false,
+   "map": "main",
+   "result": {
+    "bibliography": {
+     "90000001": {
+      "doi": "10.0000/synthetic.1",
+      "journal": "Synthetic Fixture Journal",
+      "pmc": "PMC0000001",
+      "title": "합성 SYNTHETIC fixture title 90000001",
+      "year": "2020"
+     },
+     "90000002": null,
+     "90000003": null
+    },
+    "chains": [
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "C",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 3,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 4
+     },
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "A",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 3
+     },
+     {
+      "accession": "Q0SYN2",
+      "accessions": [
+       "Q0SYN2"
+      ],
+      "chain_auth": "B",
+      "cross_check": false,
+      "cross_check_absent_reason": "pdb_id_not_given",
+      "mapped_residue_count": 1,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 3
+     },
+     {
+      "accession": null,
+      "accessions": [],
+      "chain_auth": "D",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 0,
+      "reason": "no_mapped_residues",
+      "status": "not_linked",
+      "total_residue_count": 3
+     },
+     {
+      "accession": null,
+      "accessions": [
+       "P0SYN3",
+       "Q0SYN4"
+      ],
+      "chain_auth": "E",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 3,
+      "reason": "multiple_accessions",
+      "status": "not_linked",
+      "total_residue_count": 3
+     }
+    ],
+    "counts": {
+     "chains": 5,
+     "excluded_moves_flagged": 3,
+     "linked_chains": 3,
+     "not_linked_chains": 2,
+     "records": {
+      "moves": 4,
+      "moves_flagged": null
+     },
+     "targets": 2
+    },
+    "include_flagged": false,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": false,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "pdb_id": "0SY5",
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/prepared_structure/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "model_number": 1,
+     "structure_kind": "prepared_structure"
+    },
+    "targets": [
+     {
+      "accession": "P0SYN1",
+      "chains": [
+       "A",
+       "C"
+      ],
+      "counts": {
+       "moves": 4,
+       "moves_flagged": null,
+       "resolution_basis": [
+        {
+         "basis": "alias",
+         "count": 1
+        },
+        {
+         "basis": "gene",
+         "count": 1
+        },
+        {
+         "basis": "name_token",
+         "count": 1
+        },
+        {
+         "basis": "pubmed_title",
+         "count": 1
+        }
+       ],
+       "tags": {
+        "goal": [
+         {
+          "count": 1,
+          "term": "mutant_coverage"
+         },
+         {
+          "count": 3,
+          "term": "potency"
+         },
+         {
+          "count": 1,
+          "term": "selectivity"
+         }
+        ],
+        "site": [
+         {
+          "count": 2,
+          "term": "bp_I_A"
+         },
+         {
+          "count": 1,
+          "term": "front"
+         },
+         {
+          "count": 2,
+          "term": "gate"
+         }
+        ],
+        "tactic": [
+         {
+          "count": 1,
+          "term": "add_hydrophobic_bulk"
+         },
+         {
+          "count": 1,
+          "term": "covalent_warhead"
+         },
+         {
+          "count": 1,
+          "term": "ring_fusion"
+         },
+         {
+          "count": 1,
+          "term": "scaffold_hop"
+         }
+        ]
+       },
+       "variants": [
+        {
+         "count": 1,
+         "variant": "A10V"
+        },
+        {
+         "count": 1,
+         "variant": "T20M"
+        },
+        {
+         "count": 2,
+         "variant": "not_reported"
+        }
+       ]
+      },
+      "excluded_flagged": 1,
+      "records": [
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:026ace0878b79123eac48f8f892285a162f2babfae905f2477e07aa74c4105b6",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          },
+          {
+           "after": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": "SYNTHETIC different assay",
+           "comparable": false,
+           "direction": "worsened",
+           "direction_basis": "text",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": null,
+           "magnitude_bucket": "unknown",
+           "metric": "IC50",
+           "target_ref": "SYN-OFF-KINASE",
+           "target_role": "off_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0001",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote one",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           },
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "text",
+            "page": 4,
+            "panel": null,
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_I_A",
+           "front"
+          ],
+          "tactic": [
+           "add_hydrophobic_bulk"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "gene",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "reason": "SYNTHETIC lookup",
+           "status": "lookup_failed"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "candidate_ids": [],
+           "effect_conflicts": [
+            {
+             "synthetic": 1
+            }
+           ],
+           "status": "fail"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:593abec0a8a9994ae403cd1ca9f8581ecf09619586fe3844cafc3d82f2358666",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0007",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000003"
+         },
+         "structure_link_reason": null,
+         "structure_links": [
+          {
+           "basis": "pdb_title",
+           "candidates": [],
+           "chain": "A",
+           "confidence_note": "SYNTHETIC low",
+           "ligand": null,
+           "pdb_id": "0SY5",
+           "structure_id": "STRUCT-SYN-1"
+          }
+         ],
+         "structure_ref": "0SY5",
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "mutant_coverage"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "covalent_warhead"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "alias",
+          "uniprot": "P0SYN1",
+          "variant": "T20M"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 26,
+         "quotes_within_limit": false,
+         "tradeoff_quote_words": [
+          null,
+          4
+         ]
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:cfa30b5e27e1b2270f72774e697a1c25123acb93d81ccf3ad719f2301ea7916c",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-9999",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "synthetic1 synthetic2 synthetic3 synthetic4 synthetic5 synthetic6 synthetic7 synthetic8 synthetic9 synthetic10 synthetic11 synthetic12 synthetic13 synthetic14 synthetic15 synthetic16 synthetic17 synthetic18 synthetic19 synthetic20 synthetic21 synthetic22 synthetic23 synthetic24 synthetic25 synthetic26",
+          "quote_truncated": true,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000002"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "selectivity",
+           "potency"
+          ],
+          "site": [
+           "bp_I_A"
+          ],
+          "tactic": []
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "name_token",
+          "uniprot": "P0SYN1",
+          "variant": "A10V"
+         },
+         "tradeoffs": [
+          {
+           "evidence": null,
+           "quote": null,
+           "quote_truncated": false,
+           "text": "SYNTHETIC tradeoff without quote"
+          },
+          {
+           "evidence": {
+            "synthetic": true
+           },
+           "quote": "SYNTHETIC tradeoff quote words",
+           "quote_truncated": true,
+           "text": "SYNTHETIC tradeoff"
+          }
+         ]
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:1a6a85fca285ff135c6f8a8e54fca2509f5effeffc00de8685649d4f72c014ad",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-10000",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": [
+             0.1,
+             0.2,
+             0.3,
+             0.4
+            ],
+            "figure_id": "F2",
+            "kind": "figure",
+            "page": 7,
+            "panel": "b",
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "scaffold_hop",
+           "ring_fusion"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "pubmed_title",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       }
+      ],
+      "references": [
+       {
+        "content_hash": "sha256:5153df28fd639e368428696ef7538879b051cb32c0c41395cc8fc2577139d097",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-1",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-1",
+        "ref_id": "REF-SYN-0001"
+       },
+       {
+        "content_hash": "sha256:9a2a2fdc8fb47061a8bb02268056fd872535c3cdefc425b0a3f169e25c8bcbde",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-2",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-2",
+        "ref_id": "REF-SYN-0002"
+       }
+      ],
+      "status": "precedents_found"
+     },
+     {
+      "accession": "Q0SYN2",
+      "chains": [
+       "B"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": null,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": 2,
+      "records": [],
+      "references": [
+       {
+        "content_hash": "sha256:2f8d26d7afa9331b7daff6d29ff285d156c95419b63f802abd1c734c69be7885",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-3",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-3",
+        "ref_id": "REF-SYN-0003"
+       }
+      ],
+      "status": "none_in_included_files"
+     }
+    ]
+   }
+  },
+  "main_all_included": {
+   "chains": null,
+   "include_flagged": true,
+   "map": "main",
+   "result": {
+    "bibliography": {
+     "90000001": {
+      "doi": "10.0000/synthetic.1",
+      "journal": "Synthetic Fixture Journal",
+      "pmc": "PMC0000001",
+      "title": "합성 SYNTHETIC fixture title 90000001",
+      "year": "2020"
+     },
+     "90000002": null,
+     "90000003": null,
+     "90000004": null,
+     "90000005": {
+      "doi": null,
+      "journal": "Synthetic Fixture Journal",
+      "pmc": null,
+      "title": "합성 SYNTHETIC fixture title 90000005",
+      "year": "2021"
+     }
+    },
+    "chains": [
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "C",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 3,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 4
+     },
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "A",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 3
+     },
+     {
+      "accession": "Q0SYN2",
+      "accessions": [
+       "Q0SYN2"
+      ],
+      "chain_auth": "B",
+      "cross_check": false,
+      "cross_check_absent_reason": "pdb_id_not_given",
+      "mapped_residue_count": 1,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 3
+     },
+     {
+      "accession": null,
+      "accessions": [],
+      "chain_auth": "D",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 0,
+      "reason": "no_mapped_residues",
+      "status": "not_linked",
+      "total_residue_count": 3
+     },
+     {
+      "accession": null,
+      "accessions": [
+       "P0SYN3",
+       "Q0SYN4"
+      ],
+      "chain_auth": "E",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 3,
+      "reason": "multiple_accessions",
+      "status": "not_linked",
+      "total_residue_count": 3
+     }
+    ],
+    "counts": {
+     "chains": 5,
+     "excluded_moves_flagged": null,
+     "linked_chains": 3,
+     "not_linked_chains": 2,
+     "records": {
+      "moves": 4,
+      "moves_flagged": 3
+     },
+     "targets": 2
+    },
+    "include_flagged": true,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": false,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "pdb_id": "0SY5",
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/prepared_structure/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "model_number": 1,
+     "structure_kind": "prepared_structure"
+    },
+    "targets": [
+     {
+      "accession": "P0SYN1",
+      "chains": [
+       "A",
+       "C"
+      ],
+      "counts": {
+       "moves": 4,
+       "moves_flagged": 1,
+       "resolution_basis": [
+        {
+         "basis": "alias",
+         "count": 1
+        },
+        {
+         "basis": "gene",
+         "count": 2
+        },
+        {
+         "basis": "name_token",
+         "count": 1
+        },
+        {
+         "basis": "pubmed_title",
+         "count": 1
+        }
+       ],
+       "tags": {
+        "goal": [
+         {
+          "count": 1,
+          "term": "mutant_coverage"
+         },
+         {
+          "count": 4,
+          "term": "potency"
+         },
+         {
+          "count": 1,
+          "term": "selectivity"
+         }
+        ],
+        "site": [
+         {
+          "count": 1,
+          "term": "bp_II_in"
+         },
+         {
+          "count": 2,
+          "term": "bp_I_A"
+         },
+         {
+          "count": 1,
+          "term": "front"
+         },
+         {
+          "count": 2,
+          "term": "gate"
+         }
+        ],
+        "tactic": [
+         {
+          "count": 1,
+          "term": "add_hydrophobic_bulk"
+         },
+         {
+          "count": 1,
+          "term": "covalent_warhead"
+         },
+         {
+          "count": 1,
+          "term": "hbond_engagement"
+         },
+         {
+          "count": 1,
+          "term": "ring_fusion"
+         },
+         {
+          "count": 1,
+          "term": "scaffold_hop"
+         }
+        ]
+       },
+       "variants": [
+        {
+         "count": 1,
+         "variant": "A10V"
+        },
+        {
+         "count": 1,
+         "variant": "T20M"
+        },
+        {
+         "count": 3,
+         "variant": "not_reported"
+        }
+       ]
+      },
+      "excluded_flagged": null,
+      "records": [
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:026ace0878b79123eac48f8f892285a162f2babfae905f2477e07aa74c4105b6",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          },
+          {
+           "after": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": "SYNTHETIC different assay",
+           "comparable": false,
+           "direction": "worsened",
+           "direction_basis": "text",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": null,
+           "magnitude_bucket": "unknown",
+           "metric": "IC50",
+           "target_ref": "SYN-OFF-KINASE",
+           "target_role": "off_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0001",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote one",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           },
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "text",
+            "page": 4,
+            "panel": null,
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_I_A",
+           "front"
+          ],
+          "tactic": [
+           "add_hydrophobic_bulk"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "gene",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "reason": "SYNTHETIC lookup",
+           "status": "lookup_failed"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "candidate_ids": [],
+           "effect_conflicts": [
+            {
+             "synthetic": 1
+            }
+           ],
+           "status": "fail"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:593abec0a8a9994ae403cd1ca9f8581ecf09619586fe3844cafc3d82f2358666",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0007",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000003"
+         },
+         "structure_link_reason": null,
+         "structure_links": [
+          {
+           "basis": "pdb_title",
+           "candidates": [],
+           "chain": "A",
+           "confidence_note": "SYNTHETIC low",
+           "ligand": null,
+           "pdb_id": "0SY5",
+           "structure_id": "STRUCT-SYN-1"
+          }
+         ],
+         "structure_ref": "0SY5",
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "mutant_coverage"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "covalent_warhead"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "alias",
+          "uniprot": "P0SYN1",
+          "variant": "T20M"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves_flagged",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:3b5b44ea6236a710006e72526797280292d934d224ef1ddf6333e18a92eec17f",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0101",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000004"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_II_in"
+          ],
+          "tactic": [
+           "hbond_engagement"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "gene",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 26,
+         "quotes_within_limit": false,
+         "tradeoff_quote_words": [
+          null,
+          4
+         ]
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:cfa30b5e27e1b2270f72774e697a1c25123acb93d81ccf3ad719f2301ea7916c",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-9999",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "synthetic1 synthetic2 synthetic3 synthetic4 synthetic5 synthetic6 synthetic7 synthetic8 synthetic9 synthetic10 synthetic11 synthetic12 synthetic13 synthetic14 synthetic15 synthetic16 synthetic17 synthetic18 synthetic19 synthetic20 synthetic21 synthetic22 synthetic23 synthetic24 synthetic25 synthetic26",
+          "quote_truncated": true,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000002"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "selectivity",
+           "potency"
+          ],
+          "site": [
+           "bp_I_A"
+          ],
+          "tactic": []
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "name_token",
+          "uniprot": "P0SYN1",
+          "variant": "A10V"
+         },
+         "tradeoffs": [
+          {
+           "evidence": null,
+           "quote": null,
+           "quote_truncated": false,
+           "text": "SYNTHETIC tradeoff without quote"
+          },
+          {
+           "evidence": {
+            "synthetic": true
+           },
+           "quote": "SYNTHETIC tradeoff quote words",
+           "quote_truncated": true,
+           "text": "SYNTHETIC tradeoff"
+          }
+         ]
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:1a6a85fca285ff135c6f8a8e54fca2509f5effeffc00de8685649d4f72c014ad",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-10000",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": [
+             0.1,
+             0.2,
+             0.3,
+             0.4
+            ],
+            "figure_id": "F2",
+            "kind": "figure",
+            "page": 7,
+            "panel": "b",
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "scaffold_hop",
+           "ring_fusion"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "pubmed_title",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       }
+      ],
+      "references": [
+       {
+        "content_hash": "sha256:5153df28fd639e368428696ef7538879b051cb32c0c41395cc8fc2577139d097",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-1",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-1",
+        "ref_id": "REF-SYN-0001"
+       },
+       {
+        "content_hash": "sha256:9a2a2fdc8fb47061a8bb02268056fd872535c3cdefc425b0a3f169e25c8bcbde",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-2",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-2",
+        "ref_id": "REF-SYN-0002"
+       }
+      ],
+      "status": "precedents_found"
+     },
+     {
+      "accession": "Q0SYN2",
+      "chains": [
+       "B"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": 2,
+       "resolution_basis": [
+        {
+         "basis": "klifs_name",
+         "count": 1
+        },
+        {
+         "basis": "notation",
+         "count": 1
+        }
+       ],
+       "tags": {
+        "goal": [
+         {
+          "count": 1,
+          "term": "solubility"
+         }
+        ],
+        "site": [
+         {
+          "count": 1,
+          "term": "front"
+         }
+        ],
+        "tactic": [
+         {
+          "count": 1,
+          "term": "polar_group_add"
+         }
+        ]
+       },
+       "variants": [
+        {
+         "count": 1,
+         "variant": "G30C"
+        },
+        {
+         "count": 1,
+         "variant": "not_reported"
+        }
+       ]
+      },
+      "excluded_flagged": null,
+      "records": [
+       {
+        "file": "moves_flagged",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:47a1e31278ff6b441581edbe9a48d333fdb3d9003ec780b23dd7a8fd616dcc56",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0102",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "solubility"
+          ],
+          "site": [
+           "front"
+          ],
+          "tactic": [
+           "polar_group_add"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "klifs_name",
+          "uniprot": "Q0SYN2",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves_flagged",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:ca8217f9ad075ef5a83c3121f6320b704a42a3e85b85c8cd2a4e302d4b1d3702",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0103",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000005"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [],
+          "site": [],
+          "tactic": []
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "notation",
+          "uniprot": "Q0SYN2",
+          "variant": "G30C"
+         },
+         "tradeoffs": []
+        }
+       }
+      ],
+      "references": [
+       {
+        "content_hash": "sha256:2f8d26d7afa9331b7daff6d29ff285d156c95419b63f802abd1c734c69be7885",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-3",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-3",
+        "ref_id": "REF-SYN-0003"
+       }
+      ],
+      "status": "precedents_found"
+     }
+    ]
+   }
+  },
+  "main_same_accession_included": {
+   "chains": [
+    "C",
+    "A"
+   ],
+   "include_flagged": true,
+   "map": "main",
+   "result": {
+    "bibliography": {
+     "90000001": {
+      "doi": "10.0000/synthetic.1",
+      "journal": "Synthetic Fixture Journal",
+      "pmc": "PMC0000001",
+      "title": "합성 SYNTHETIC fixture title 90000001",
+      "year": "2020"
+     },
+     "90000002": null,
+     "90000003": null,
+     "90000004": null
+    },
+    "chains": [
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "C",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 3,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 4
+     },
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "A",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 3
+     }
+    ],
+    "counts": {
+     "chains": 2,
+     "excluded_moves_flagged": null,
+     "linked_chains": 2,
+     "not_linked_chains": 0,
+     "records": {
+      "moves": 4,
+      "moves_flagged": 1
+     },
+     "targets": 1
+    },
+    "include_flagged": true,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": false,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "pdb_id": "0SY5",
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/prepared_structure/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "model_number": 1,
+     "structure_kind": "prepared_structure"
+    },
+    "targets": [
+     {
+      "accession": "P0SYN1",
+      "chains": [
+       "A",
+       "C"
+      ],
+      "counts": {
+       "moves": 4,
+       "moves_flagged": 1,
+       "resolution_basis": [
+        {
+         "basis": "alias",
+         "count": 1
+        },
+        {
+         "basis": "gene",
+         "count": 2
+        },
+        {
+         "basis": "name_token",
+         "count": 1
+        },
+        {
+         "basis": "pubmed_title",
+         "count": 1
+        }
+       ],
+       "tags": {
+        "goal": [
+         {
+          "count": 1,
+          "term": "mutant_coverage"
+         },
+         {
+          "count": 4,
+          "term": "potency"
+         },
+         {
+          "count": 1,
+          "term": "selectivity"
+         }
+        ],
+        "site": [
+         {
+          "count": 1,
+          "term": "bp_II_in"
+         },
+         {
+          "count": 2,
+          "term": "bp_I_A"
+         },
+         {
+          "count": 1,
+          "term": "front"
+         },
+         {
+          "count": 2,
+          "term": "gate"
+         }
+        ],
+        "tactic": [
+         {
+          "count": 1,
+          "term": "add_hydrophobic_bulk"
+         },
+         {
+          "count": 1,
+          "term": "covalent_warhead"
+         },
+         {
+          "count": 1,
+          "term": "hbond_engagement"
+         },
+         {
+          "count": 1,
+          "term": "ring_fusion"
+         },
+         {
+          "count": 1,
+          "term": "scaffold_hop"
+         }
+        ]
+       },
+       "variants": [
+        {
+         "count": 1,
+         "variant": "A10V"
+        },
+        {
+         "count": 1,
+         "variant": "T20M"
+        },
+        {
+         "count": 3,
+         "variant": "not_reported"
+        }
+       ]
+      },
+      "excluded_flagged": null,
+      "records": [
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:026ace0878b79123eac48f8f892285a162f2babfae905f2477e07aa74c4105b6",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          },
+          {
+           "after": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": "SYNTHETIC different assay",
+           "comparable": false,
+           "direction": "worsened",
+           "direction_basis": "text",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": null,
+           "magnitude_bucket": "unknown",
+           "metric": "IC50",
+           "target_ref": "SYN-OFF-KINASE",
+           "target_role": "off_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0001",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote one",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           },
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "text",
+            "page": 4,
+            "panel": null,
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_I_A",
+           "front"
+          ],
+          "tactic": [
+           "add_hydrophobic_bulk"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "gene",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "reason": "SYNTHETIC lookup",
+           "status": "lookup_failed"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "candidate_ids": [],
+           "effect_conflicts": [
+            {
+             "synthetic": 1
+            }
+           ],
+           "status": "fail"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:593abec0a8a9994ae403cd1ca9f8581ecf09619586fe3844cafc3d82f2358666",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0007",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000003"
+         },
+         "structure_link_reason": null,
+         "structure_links": [
+          {
+           "basis": "pdb_title",
+           "candidates": [],
+           "chain": "A",
+           "confidence_note": "SYNTHETIC low",
+           "ligand": null,
+           "pdb_id": "0SY5",
+           "structure_id": "STRUCT-SYN-1"
+          }
+         ],
+         "structure_ref": "0SY5",
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "mutant_coverage"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "covalent_warhead"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "alias",
+          "uniprot": "P0SYN1",
+          "variant": "T20M"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves_flagged",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:3b5b44ea6236a710006e72526797280292d934d224ef1ddf6333e18a92eec17f",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0101",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000004"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_II_in"
+          ],
+          "tactic": [
+           "hbond_engagement"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "gene",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 26,
+         "quotes_within_limit": false,
+         "tradeoff_quote_words": [
+          null,
+          4
+         ]
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:cfa30b5e27e1b2270f72774e697a1c25123acb93d81ccf3ad719f2301ea7916c",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-9999",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "synthetic1 synthetic2 synthetic3 synthetic4 synthetic5 synthetic6 synthetic7 synthetic8 synthetic9 synthetic10 synthetic11 synthetic12 synthetic13 synthetic14 synthetic15 synthetic16 synthetic17 synthetic18 synthetic19 synthetic20 synthetic21 synthetic22 synthetic23 synthetic24 synthetic25 synthetic26",
+          "quote_truncated": true,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000002"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "selectivity",
+           "potency"
+          ],
+          "site": [
+           "bp_I_A"
+          ],
+          "tactic": []
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "name_token",
+          "uniprot": "P0SYN1",
+          "variant": "A10V"
+         },
+         "tradeoffs": [
+          {
+           "evidence": null,
+           "quote": null,
+           "quote_truncated": false,
+           "text": "SYNTHETIC tradeoff without quote"
+          },
+          {
+           "evidence": {
+            "synthetic": true
+           },
+           "quote": "SYNTHETIC tradeoff quote words",
+           "quote_truncated": true,
+           "text": "SYNTHETIC tradeoff"
+          }
+         ]
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:1a6a85fca285ff135c6f8a8e54fca2509f5effeffc00de8685649d4f72c014ad",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-10000",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": [
+             0.1,
+             0.2,
+             0.3,
+             0.4
+            ],
+            "figure_id": "F2",
+            "kind": "figure",
+            "page": 7,
+            "panel": "b",
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "scaffold_hop",
+           "ring_fusion"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "pubmed_title",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       }
+      ],
+      "references": [
+       {
+        "content_hash": "sha256:5153df28fd639e368428696ef7538879b051cb32c0c41395cc8fc2577139d097",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-1",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-1",
+        "ref_id": "REF-SYN-0001"
+       },
+       {
+        "content_hash": "sha256:9a2a2fdc8fb47061a8bb02268056fd872535c3cdefc425b0a3f169e25c8bcbde",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-2",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-2",
+        "ref_id": "REF-SYN-0002"
+       }
+      ],
+      "status": "precedents_found"
+     }
+    ]
+   }
+  },
+  "main_subset_reordered": {
+   "chains": [
+    "B",
+    "C"
+   ],
+   "include_flagged": false,
+   "map": "main",
+   "result": {
+    "bibliography": {
+     "90000001": {
+      "doi": "10.0000/synthetic.1",
+      "journal": "Synthetic Fixture Journal",
+      "pmc": "PMC0000001",
+      "title": "합성 SYNTHETIC fixture title 90000001",
+      "year": "2020"
+     },
+     "90000002": null,
+     "90000003": null
+    },
+    "chains": [
+     {
+      "accession": "P0SYN1",
+      "accessions": [
+       "P0SYN1"
+      ],
+      "chain_auth": "C",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 3,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 4
+     },
+     {
+      "accession": "Q0SYN2",
+      "accessions": [
+       "Q0SYN2"
+      ],
+      "chain_auth": "B",
+      "cross_check": false,
+      "cross_check_absent_reason": "pdb_id_not_given",
+      "mapped_residue_count": 1,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 3
+     }
+    ],
+    "counts": {
+     "chains": 2,
+     "excluded_moves_flagged": 3,
+     "linked_chains": 2,
+     "not_linked_chains": 0,
+     "records": {
+      "moves": 4,
+      "moves_flagged": null
+     },
+     "targets": 2
+    },
+    "include_flagged": false,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": false,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "pdb_id": "0SY5",
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/prepared_structure/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "model_number": 1,
+     "structure_kind": "prepared_structure"
+    },
+    "targets": [
+     {
+      "accession": "P0SYN1",
+      "chains": [
+       "C"
+      ],
+      "counts": {
+       "moves": 4,
+       "moves_flagged": null,
+       "resolution_basis": [
+        {
+         "basis": "alias",
+         "count": 1
+        },
+        {
+         "basis": "gene",
+         "count": 1
+        },
+        {
+         "basis": "name_token",
+         "count": 1
+        },
+        {
+         "basis": "pubmed_title",
+         "count": 1
+        }
+       ],
+       "tags": {
+        "goal": [
+         {
+          "count": 1,
+          "term": "mutant_coverage"
+         },
+         {
+          "count": 3,
+          "term": "potency"
+         },
+         {
+          "count": 1,
+          "term": "selectivity"
+         }
+        ],
+        "site": [
+         {
+          "count": 2,
+          "term": "bp_I_A"
+         },
+         {
+          "count": 1,
+          "term": "front"
+         },
+         {
+          "count": 2,
+          "term": "gate"
+         }
+        ],
+        "tactic": [
+         {
+          "count": 1,
+          "term": "add_hydrophobic_bulk"
+         },
+         {
+          "count": 1,
+          "term": "covalent_warhead"
+         },
+         {
+          "count": 1,
+          "term": "ring_fusion"
+         },
+         {
+          "count": 1,
+          "term": "scaffold_hop"
+         }
+        ]
+       },
+       "variants": [
+        {
+         "count": 1,
+         "variant": "A10V"
+        },
+        {
+         "count": 1,
+         "variant": "T20M"
+        },
+        {
+         "count": 2,
+         "variant": "not_reported"
+        }
+       ]
+      },
+      "excluded_flagged": 1,
+      "records": [
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:026ace0878b79123eac48f8f892285a162f2babfae905f2477e07aa74c4105b6",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          },
+          {
+           "after": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": null,
+            "unit": null,
+            "value": null
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": "SYNTHETIC different assay",
+           "comparable": false,
+           "direction": "worsened",
+           "direction_basis": "text",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": null,
+           "magnitude_bucket": "unknown",
+           "metric": "IC50",
+           "target_ref": "SYN-OFF-KINASE",
+           "target_role": "off_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0001",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote one",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           },
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "text",
+            "page": 4,
+            "panel": null,
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_I_A",
+           "front"
+          ],
+          "tactic": [
+           "add_hydrophobic_bulk"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "gene",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "reason": "SYNTHETIC lookup",
+           "status": "lookup_failed"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "candidate_ids": [],
+           "effect_conflicts": [
+            {
+             "synthetic": 1
+            }
+           ],
+           "status": "fail"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:593abec0a8a9994ae403cd1ca9f8581ecf09619586fe3844cafc3d82f2358666",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0007",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000003"
+         },
+         "structure_link_reason": null,
+         "structure_links": [
+          {
+           "basis": "pdb_title",
+           "candidates": [],
+           "chain": "A",
+           "confidence_note": "SYNTHETIC low",
+           "ligand": null,
+           "pdb_id": "0SY5",
+           "structure_id": "STRUCT-SYN-1"
+          }
+         ],
+         "structure_ref": "0SY5",
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "mutant_coverage"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "covalent_warhead"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "alias",
+          "uniprot": "P0SYN1",
+          "variant": "T20M"
+         },
+         "tradeoffs": []
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 26,
+         "quotes_within_limit": false,
+         "tradeoff_quote_words": [
+          null,
+          4
+         ]
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:cfa30b5e27e1b2270f72774e697a1c25123acb93d81ccf3ad719f2301ea7916c",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-9999",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "synthetic1 synthetic2 synthetic3 synthetic4 synthetic5 synthetic6 synthetic7 synthetic8 synthetic9 synthetic10 synthetic11 synthetic12 synthetic13 synthetic14 synthetic15 synthetic16 synthetic17 synthetic18 synthetic19 synthetic20 synthetic21 synthetic22 synthetic23 synthetic24 synthetic25 synthetic26",
+          "quote_truncated": true,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000002"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "selectivity",
+           "potency"
+          ],
+          "site": [
+           "bp_I_A"
+          ],
+          "tactic": []
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "name_token",
+          "uniprot": "P0SYN1",
+          "variant": "A10V"
+         },
+         "tradeoffs": [
+          {
+           "evidence": null,
+           "quote": null,
+           "quote_truncated": false,
+           "text": "SYNTHETIC tradeoff without quote"
+          },
+          {
+           "evidence": {
+            "synthetic": true
+           },
+           "quote": "SYNTHETIC tradeoff quote words",
+           "quote_truncated": true,
+           "text": "SYNTHETIC tradeoff"
+          }
+         ]
+        }
+       },
+       {
+        "file": "moves",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:1a6a85fca285ff135c6f8a8e54fca2509f5effeffc00de8685649d4f72c014ad",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-10000",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": [
+             0.1,
+             0.2,
+             0.3,
+             0.4
+            ],
+            "figure_id": "F2",
+            "kind": "figure",
+            "page": 7,
+            "panel": "b",
+            "row": null,
+            "table_index": null
+           }
+          ],
+          "pmid": "90000001"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "gate"
+          ],
+          "tactic": [
+           "scaffold_hop",
+           "ring_fusion"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "pubmed_title",
+          "uniprot": "P0SYN1",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       }
+      ],
+      "references": [
+       {
+        "content_hash": "sha256:5153df28fd639e368428696ef7538879b051cb32c0c41395cc8fc2577139d097",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-1",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-1",
+        "ref_id": "REF-SYN-0001"
+       },
+       {
+        "content_hash": "sha256:9a2a2fdc8fb47061a8bb02268056fd872535c3cdefc425b0a3f169e25c8bcbde",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-2",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-2",
+        "ref_id": "REF-SYN-0002"
+       }
+      ],
+      "status": "precedents_found"
+     },
+     {
+      "accession": "Q0SYN2",
+      "chains": [
+       "B"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": null,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": 2,
+      "records": [],
+      "references": [
+       {
+        "content_hash": "sha256:2f8d26d7afa9331b7daff6d29ff285d156c95419b63f802abd1c734c69be7885",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-3",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-3",
+        "ref_id": "REF-SYN-0003"
+       }
+      ],
+      "status": "none_in_included_files"
+     }
+    ]
+   }
+  },
+  "refs_only_excluded": {
+   "chains": null,
+   "include_flagged": false,
+   "map": "refs_only",
+   "result": {
+    "bibliography": {},
+    "chains": [
+     {
+      "accession": "P0SYN3",
+      "accessions": [
+       "P0SYN3"
+      ],
+      "chain_auth": "F",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 2
+     },
+     {
+      "accession": "Q0SYN4",
+      "accessions": [
+       "Q0SYN4"
+      ],
+      "chain_auth": "G",
+      "cross_check": false,
+      "cross_check_absent_reason": "pdb_id_not_given",
+      "mapped_residue_count": 1,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 2
+     },
+     {
+      "accession": "O0SYN5",
+      "accessions": [
+       "O0SYN5"
+      ],
+      "chain_auth": "H",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 2
+     }
+    ],
+    "counts": {
+     "chains": 3,
+     "excluded_moves_flagged": 1,
+     "linked_chains": 3,
+     "not_linked_chains": 0,
+     "records": {
+      "moves": 0,
+      "moves_flagged": null
+     },
+     "targets": 3
+    },
+    "include_flagged": false,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": true,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "pdb_id": null,
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/structure/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "model_number": 1,
+     "structure_kind": "structure"
+    },
+    "targets": [
+     {
+      "accession": "O0SYN5",
+      "chains": [
+       "H"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": null,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": 1,
+      "records": [],
+      "references": [],
+      "status": "not_in_kbase_references"
+     },
+     {
+      "accession": "P0SYN3",
+      "chains": [
+       "F"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": null,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": 0,
+      "records": [],
+      "references": [
+       {
+        "content_hash": "sha256:8d0323d00b3f98c6eae0b37f2286ed440a88cc8a08b8b9a8b3a887778eb788d5",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-4",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-4",
+        "ref_id": "REF-SYN-0004"
+       }
+      ],
+      "status": "none_in_included_files"
+     },
+     {
+      "accession": "Q0SYN4",
+      "chains": [
+       "G"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": null,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": 0,
+      "records": [],
+      "references": [],
+      "status": "not_in_kbase_references"
+     }
+    ]
+   }
+  },
+  "refs_only_included": {
+   "chains": null,
+   "include_flagged": true,
+   "map": "refs_only",
+   "result": {
+    "bibliography": {
+     "90000007": null
+    },
+    "chains": [
+     {
+      "accession": "P0SYN3",
+      "accessions": [
+       "P0SYN3"
+      ],
+      "chain_auth": "F",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 2
+     },
+     {
+      "accession": "Q0SYN4",
+      "accessions": [
+       "Q0SYN4"
+      ],
+      "chain_auth": "G",
+      "cross_check": false,
+      "cross_check_absent_reason": "pdb_id_not_given",
+      "mapped_residue_count": 1,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 2
+     },
+     {
+      "accession": "O0SYN5",
+      "accessions": [
+       "O0SYN5"
+      ],
+      "chain_auth": "H",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 2,
+      "reason": null,
+      "status": "linked",
+      "total_residue_count": 2
+     }
+    ],
+    "counts": {
+     "chains": 3,
+     "excluded_moves_flagged": null,
+     "linked_chains": 3,
+     "not_linked_chains": 0,
+     "records": {
+      "moves": 0,
+      "moves_flagged": 1
+     },
+     "targets": 3
+    },
+    "include_flagged": true,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": false,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "pdb_id": null,
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/structure/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "model_number": 1,
+     "structure_kind": "structure"
+    },
+    "targets": [
+     {
+      "accession": "O0SYN5",
+      "chains": [
+       "H"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": 1,
+       "resolution_basis": [
+        {
+         "basis": "klifs_gene_name",
+         "count": 1
+        }
+       ],
+       "tags": {
+        "goal": [
+         {
+          "count": 1,
+          "term": "potency"
+         }
+        ],
+        "site": [
+         {
+          "count": 1,
+          "term": "bp_I_A"
+         }
+        ],
+        "tactic": [
+         {
+          "count": 1,
+          "term": "add_hydrophobic_bulk"
+         }
+        ]
+       },
+       "variants": [
+        {
+         "count": 1,
+         "variant": "not_reported"
+        }
+       ]
+      },
+      "excluded_flagged": null,
+      "records": [
+       {
+        "file": "moves_flagged",
+        "integrity": {
+         "hash_verified": true,
+         "locations_have_page": true,
+         "observation_quote_words": 4,
+         "quotes_within_limit": true,
+         "tradeoff_quote_words": []
+        },
+        "record": {
+         "change": {
+          "description": "합성 SYNTHETIC fixture change.",
+          "from_compound": "SYN-cpd-from",
+          "smiles_from": null,
+          "smiles_to": null,
+          "to_compound": "SYN-cpd-to"
+         },
+         "checks": {
+          "chembl_crosscheck": {
+           "status": "pass"
+          },
+          "cross_parser_numbers": {
+           "match_unit_unverified_count": 0,
+           "status": "pass"
+          },
+          "duplicate": {
+           "status": "pass"
+          },
+          "pmid_exists": {
+           "status": "pass"
+          },
+          "qualifier_consistency": {
+           "status": "pass"
+          },
+          "quote_in_source": {
+           "status": "pass"
+          },
+          "schema": {
+           "status": "pass"
+          },
+          "structure_ref_exists": {
+           "status": "pass"
+          },
+          "tag_vocab": {
+           "status": "pass"
+          },
+          "target_in_reference": {
+           "status": "pass"
+          }
+         },
+         "content_hash": "sha256:876b28a84260e99a0f213f0e130a0e4d4ada8c314f83845cfdd6be16c00c3b20",
+         "effects": [
+          {
+           "after": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 10
+           },
+           "assay": "SYNTHETIC fixture assay",
+           "assay_context": "synthetic fixture context",
+           "before": {
+            "qualifier": "=",
+            "unit": "nM",
+            "value": 100
+           },
+           "chembl_crosscheck": null,
+           "comparability_reason": null,
+           "comparable": true,
+           "direction": "improved",
+           "direction_basis": "numeric",
+           "evidence": {
+            "synthetic": "fixture evidence"
+           },
+           "fold_change": 10.0,
+           "magnitude_bucket": "large",
+           "metric": "IC50",
+           "target_ref": "SYN-KINASE",
+           "target_role": "on_target"
+          }
+         ],
+         "extraction": {
+          "model": "synthetic-fixture-model",
+          "notes": "SYNTHETIC nested key kept as is",
+          "prompt_version": "fixture-1",
+          "provider": "synthetic",
+          "run_at": "2026-10-01T00:00:00Z"
+         },
+         "figures": [],
+         "interactions": [],
+         "move_id": "MOVE-0104",
+         "mutations": [],
+         "observation": {
+          "evidence": {
+           "synthetic": "fixture evidence"
+          },
+          "quote": "SYNTHETIC fixture quote words",
+          "quote_truncated": false,
+          "text": "합성 SYNTHETIC fixture observation."
+         },
+         "proposed_tags": [],
+         "review_status": "unreviewed",
+         "schema_version": 1,
+         "source": {
+          "locations": [
+           {
+            "bbox": null,
+            "figure_id": null,
+            "kind": "table",
+            "page": 3,
+            "panel": null,
+            "row": 2,
+            "table_index": 1
+           }
+          ],
+          "pmid": "90000007"
+         },
+         "structure_link_reason": null,
+         "structure_links": [],
+         "structure_ref": null,
+         "structure_ref_from": null,
+         "tags": {
+          "goal": [
+           "potency"
+          ],
+          "site": [
+           "bp_I_A"
+          ],
+          "tactic": [
+           "add_hydrophobic_bulk"
+          ]
+         },
+         "target": {
+          "candidates": [],
+          "gene": "SYNG",
+          "name_as_written": "SYN-KINASE",
+          "resolution_basis": "klifs_gene_name",
+          "uniprot": "O0SYN5",
+          "variant": "not_reported"
+         },
+         "tradeoffs": []
+        }
+       }
+      ],
+      "references": [],
+      "status": "precedents_found"
+     },
+     {
+      "accession": "P0SYN3",
+      "chains": [
+       "F"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": 0,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": null,
+      "records": [],
+      "references": [
+       {
+        "content_hash": "sha256:8d0323d00b3f98c6eae0b37f2286ed440a88cc8a08b8b9a8b3a887778eb788d5",
+        "coverage": "partial",
+        "family": "SYNFAMILY",
+        "gene": "SYNG-4",
+        "group": "SYNGROUP",
+        "klifs_name": "SYN-4",
+        "ref_id": "REF-SYN-0004"
+       }
+      ],
+      "status": "none_in_included_files"
+     },
+     {
+      "accession": "Q0SYN4",
+      "chains": [
+       "G"
+      ],
+      "counts": {
+       "moves": 0,
+       "moves_flagged": 0,
+       "resolution_basis": [],
+       "tags": {
+        "goal": [],
+        "site": [],
+        "tactic": []
+       },
+       "variants": []
+      },
+      "excluded_flagged": null,
+      "records": [],
+      "references": [],
+      "status": "not_in_kbase_references"
+     }
+    ]
+   }
+  },
+  "unlinked_only": {
+   "chains": null,
+   "include_flagged": false,
+   "map": "unlinked",
+   "result": {
+    "bibliography": {},
+    "chains": [
+     {
+      "accession": null,
+      "accessions": [],
+      "chain_auth": "D",
+      "cross_check": true,
+      "cross_check_absent_reason": null,
+      "mapped_residue_count": 0,
+      "reason": "no_mapped_residues",
+      "status": "not_linked",
+      "total_residue_count": 2
+     }
+    ],
+    "counts": {
+     "chains": 1,
+     "excluded_moves_flagged": 0,
+     "linked_chains": 0,
+     "not_linked_chains": 1,
+     "records": {
+      "moves": 0,
+      "moves_flagged": null
+     },
+     "targets": 0
+    },
+    "include_flagged": false,
+    "limitations": [
+     "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다.",
+     "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다.",
+     "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다.",
+     "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다.",
+     "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다.",
+     "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    ],
+    "method_version": "mw.kinase_precedents/v1",
+    "null_result": true,
+    "numbering_map": {
+     "handle": "obj://run_syn/residue_numbering_map/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    "pdb_id": "0SY6",
+    "record_format": "kbase_record_minus_2_paths@1",
+    "schema": "kinase_precedents@1",
+    "set_summary": {
+     "records": {
+      "moves": 7,
+      "moves_flagged": 6
+     },
+     "references": 6,
+     "resolution_basis_counts": [
+      {
+       "basis": "alias",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "gene",
+       "moves": 2,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_gene_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "klifs_name",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "name_token",
+       "moves": 1,
+       "moves_flagged": 0
+      },
+      {
+       "basis": "notation",
+       "moves": 0,
+       "moves_flagged": 1
+      },
+      {
+       "basis": "pubmed_title",
+       "moves": 1,
+       "moves_flagged": 0
+      }
+     ],
+     "unresolved_names": [
+      {
+       "moves": 1,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-A"
+      },
+      {
+       "moves": 1,
+       "moves_flagged": 0,
+       "name_as_written": null
+      },
+      {
+       "moves": 0,
+       "moves_flagged": 1,
+       "name_as_written": "SYN-UNRESOLVED-B"
+      }
+     ],
+     "unresolved_names_total": 3,
+     "unresolved_target_records": {
+      "moves": 2,
+      "moves_flagged": 2
+     }
+    },
+    "structure": {
+     "handle": "obj://run_syn/prepared_structure/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+     "model_number": 1,
+     "structure_kind": "prepared_structure"
+    },
+    "targets": []
+   }
+  }
+ }
+}

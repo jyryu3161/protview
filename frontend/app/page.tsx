@@ -21,6 +21,7 @@ import { AnalysisWorkflowPanel, type AnalysisOpenRequest } from "@/components/An
 import { ReportLibraryPanel } from "@/components/ReportLibraryPanel";
 import { NumberingPanel } from "@/components/NumberingPanel";
 import { ReactionKnowledgePanel } from "@/components/ReactionKnowledgePanel";
+import { KinasePrecedentsPanel } from "@/components/KinasePrecedentsPanel";
 import { JevPanel } from "@/components/JevPanel";
 import { JevLoopPanel } from "@/components/JevLoopPanel";
 import { LigandPanel } from "@/components/LigandPanel";
@@ -2069,6 +2070,10 @@ export default function WorkspacePage() {
       onReportCreated={() => setReportsReloadToken(token => token + 1)} />}
     reaction={<ReactionKnowledgePanel key={`reaction-${run?.run_id ?? "none"}`} runId={run?.run_id ?? null}
       capability={capabilities ? capabilities.methods?.reaction_knowledge ?? null : undefined}
+      onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
+        setReportsReloadToken(token => token + 1); }} />}
+    precedents={<KinasePrecedentsPanel key={`kinase-precedents-${run?.run_id ?? "none"}`} runId={run?.run_id ?? null}
+      capability={capabilities ? capabilities.methods?.kinase_precedents ?? null : undefined}
       onReportCreated={reportRunId => { if (hostRequestAccepted({ runId: reportRunId }, analysisHostRef.current))
         setReportsReloadToken(token => token + 1); }} />}
     jev={<JevPanel key={`jev-${run?.run_id ?? "none"}`} run={run}

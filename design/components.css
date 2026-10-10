@@ -655,3 +655,68 @@
 .mw-reaction-ref--empty { font-family: var(--font-mono); color: var(--ink-muted); }
 .mw-reaction-details summary { cursor: pointer; overflow-wrap: anywhere; }
 .mw-reaction-details summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* M27 kinase precedents area (KinasePrecedentsPanel, 지식·보고서 tab, below the reaction knowledge area). kbase_kinase
+   records (machine-extracted, unreviewed) shown as stored, in tables and lists only: no bars, scores, rank marks,
+   highlights or colour comparisons between records, directions, files or check statuses. Verbatim kbase text keeps its
+   whitespace in a neutral cell. The selected target tab uses the ordinary selection colour only. */
+.mw-app-precedents { margin: var(--space-3); }
+.mw-precedent { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); min-width: 0; font-size: 12px; color: var(--ink); }
+.mw-precedent p { margin: 0; overflow-wrap: anywhere; }
+.mw-precedent code { font-family: var(--font-mono); overflow-wrap: anywhere; word-break: break-all; }
+.mw-precedent-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.mw-precedent-heading { margin: 0; font: 600 14px/20px var(--font-sans); color: var(--ink); }
+.mw-precedent-section { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-000); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-precedent-title { margin: 0; font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.mw-precedent-note { font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
+.mw-precedent-notice { margin: 0; padding: var(--space-2); border-left: 3px solid var(--line-strong); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-precedent-status { font-weight: 600; }
+.mw-precedent-unavailable { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; padding: var(--space-2); border-left: 3px solid var(--fail-transient); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-precedent-unavailable p { margin: 0; }
+.mw-precedent-command { margin: 0; padding: var(--space-2); background: var(--surface-100); border: 1px solid var(--line); font: 400 12px/16px var(--font-mono); overflow-x: auto; }
+/* A valid empty result is not a failure: the neutral notice frame, never a failure colour. */
+.mw-precedent-null { margin: 0; padding: var(--space-2); border-left: 3px solid var(--line-strong); background: var(--surface-200); font-size: 12px; color: var(--ink); }
+.mw-precedent-error { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--fail-fatal); overflow-wrap: anywhere; }
+.mw-precedent-errors { margin: 0; padding-left: var(--space-4); font-size: 12px; color: var(--fail-input); overflow-wrap: anywhere; }
+.mw-precedent-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.mw-precedent-check { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); font-size: 12px; color: var(--ink); }
+.mw-precedent-check select.mw-select { max-width: 100%; }
+.mw-precedent-input { width: 280px; max-width: 100%; height: var(--control-sm); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-200); color: var(--ink); font: 400 12px/16px var(--font-sans); padding: 0 var(--space-2); min-width: 0; }
+.mw-precedent-form, .mw-precedent-snapshot, .mw-precedent-detail, .mw-precedent-filters { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.mw-precedent-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.mw-precedent-choices { margin: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; max-height: 360px; overflow: auto; }
+.mw-precedent-choices legend { padding: 0 var(--space-1); color: var(--ink-muted); }
+.mw-precedent-choices label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
+.mw-precedent-choices .mw-mono { overflow-wrap: anywhere; word-break: break-all; }
+.mw-precedent-filters .mw-precedent-choices { flex-direction: row; flex-wrap: wrap; gap: var(--space-1) var(--space-3); max-height: 200px; }
+.mw-precedent-chain-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding: var(--space-1) 0; border-bottom: 1px solid var(--line); }
+.mw-precedent-facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0; }
+.mw-precedent-facts dt { color: var(--ink-muted); }
+.mw-precedent-facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.mw-precedent-fact { display: contents; }
+.mw-precedent-badge { display: inline-block; padding: 0 var(--space-1); border: 1px solid var(--line-strong); border-radius: var(--radius-xs); font-size: 11px; line-height: 16px; color: var(--ink); background: var(--surface-200); overflow-wrap: anywhere; }
+.mw-precedent-badge--stale { border-color: var(--fail-transient); }
+.mw-precedent-group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.mw-precedent-list { margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-wrap: anywhere; }
+.mw-precedent-axis { color: var(--ink-muted); font: 400 11px/16px var(--font-mono); }
+.mw-precedent-tabs { display: flex; flex-wrap: wrap; gap: var(--space-1); border-bottom: 1px solid var(--line); padding-bottom: var(--space-1); }
+.mw-precedent-tabs button { padding: var(--space-1) var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--surface-100); color: var(--ink); font: 400 12px/16px var(--font-sans); cursor: pointer; }
+.mw-precedent-tabs button[aria-selected="true"] { border-color: var(--brand); background: var(--brand-soft); }
+.mw-precedent-tabs button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.mw-precedent-target { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--surface-100); }
+.mw-precedent-table-wrap { overflow: auto; max-height: 480px; min-width: 0; max-width: 100%; }
+.mw-precedent-table-wrap--records { max-height: 720px; }
+.mw-precedent-table { border-collapse: collapse; font-size: 12px; color: var(--ink); }
+.mw-precedent-table th, .mw-precedent-table td { border-bottom: 1px solid var(--line); padding: var(--space-1) var(--space-2); text-align: left; vertical-align: top; }
+.mw-precedent-table th { color: var(--ink-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-000); }
+.mw-precedent-detail-row > td { background: var(--surface-100); }
+.mw-precedent-record { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; max-width: 960px; }
+.mw-precedent-fields { display: grid; grid-template-columns: max-content 1fr; gap: 0 var(--space-2); margin: 0; }
+.mw-precedent-fields dt { color: var(--ink-muted); font: 400 11px/16px var(--font-mono); }
+.mw-precedent-fields dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.mw-precedent-fields + .mw-precedent-fields { padding-top: var(--space-1); border-top: 1px dashed var(--line); }
+.mw-precedent-quote { padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--surface-000); }
+.mw-precedent-ref { white-space: pre-wrap; overflow-wrap: anywhere; }
+.mw-precedent-details summary { cursor: pointer; overflow-wrap: anywhere; }
+.mw-precedent-details summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.mw-precedent-details[open] > summary { margin-bottom: var(--space-1); }

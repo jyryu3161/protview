@@ -557,6 +557,8 @@
 - **영향**: 훅이 가끔 턴 종료를 막는다. 제품 동작·과학 값과 무관하며 M25 고정 게이트(`docs/qa/m25-jev-loop-20261007/gate-backend.txt`, 열여섯 그룹 4,500개)와 회귀에서는 재현되지 않았다.
 - **지금 해결하지 못하는 이유**: 환경 부하와 우연에 달린 실패라 M25 범위에서 재현·고정할 근거가 없고, 해당 테스트는 M23·M24 파일이다.
 - **방향**: (1)·(2)는 동시 실행 부하에서의 타이밍 여유를 다시 재고, (3)은 단언이 `time_utc` 같은 가변 숫자와 겹치지 않는 표지 값을 쓰도록 고친다.
+- **M27 관찰**: M27 기간에도 (2)에 해당하는 서열 GA SIGTERM 시험(`test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)이 Stop 훅이 다른 작업과 겹칠 때 실패했고 단독 재실행은 3 passed(143.8초)였다. 고정 게이트(`b414728`, 열여덟 그룹 동시 실행)에서는 통과했다(`docs/qa/m27-precedents-20261010/gate.txt`).
+- **M27 관찰(psutil)**: M27 기간에 한 번, 서열 GA 작업자 시험 `test_a_failed_reference_row_ends_the_run_before_any_individual[reference_size_bound-status9-False]`가 Stop 훅 실행 중 `SystemError: <built-in function proc_cmdline> returned a result with an exception set`(`psutil._psosx.Process.cmdline`)로 실패했다. macOS에서 psutil이 명령줄을 읽는 동안 그 프로세스가 끝나는 경쟁으로 보이며(`NoSuchProcess`가 아닌 `SystemError`), 같은 시험은 단독으로 10 passed(177.8초)였다. M27 코드가 아니라 기존 프로세스 신원 확인 경로이며 고치지 않았다. 원인(`SystemError`를 잡지 않는 곳이 제품 코드인지 시험 보조 코드인지)은 확인하지 못했다.
 
 ## M24 오프스크린 하네스의 다른 탭 검사가 `jev-` 선택자 접두사에 묶여 있다 (M25)
 - **현상**: M24 `jev-flow.cjs`는 다른 탭에 `[data-testid^="jev-"]` 요소가 0개이고 탭 글자 서명이 같아야 한다고 단언한다. M25 루프 영역(`jev-loop-*`)이 리간드·단백질 탭에 생기자 고정 소스에서 M24 회귀가 실패했고(단백질 공학 탭 41개·리간드 탭 35개), `tabSignature`가 루프 영역을 빼도록 고쳤다(`9a9a625`, `docs/qa/m25-jev-loop-20261007/regression-harness-changes.txt`).
@@ -654,11 +656,9 @@
 - **지금 해결하지 못하는 이유**: 흐름 하네스가 응답을 붙잡아 두는 장치를 갖지 않고, 상한은 QA 구조보다 훨씬 큰 입력이 필요하다.
 - **방향**: 하네스에 응답 지연 장치를 더하는 화면 단계에서 함께 관찰한다.
 
-## Stop 훅 나머지 pytest 그룹의 여유가 약 63초뿐이다 (M26)
+## (해결됨, M27) Stop 훅 나머지 pytest 그룹의 여유가 약 63초뿐이었다 (M26)
 - **현상**: M26 고정 게이트에서 나머지 그룹이 단독 3,553개·416.8초였다(제한 480초). 같은 게이트의 동시 실행에서 프로세스 시험 둘(`test_pocket_jobs.py::test_running_engine_is_stopped_with_its_process_group[output_files]`, `test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)이 부하로 실패했고 단독 재실행에서 7 passed였다(`docs/qa/m26-reaction-20261008/gate.txt`).
-- **영향**: 시험을 더하면 나머지 그룹이 480초를 넘어 훅이 실패할 수 있다. 동시 실행 실패는 위 M25 항목과 같은 종류의 흔들림이다.
-- **지금 해결하지 못하는 이유**: M26은 `SCRIPT_TESTS`에 두 파일만 더했고 그룹 구성은 바꾸지 않았다(그룹 수를 바꾸면 `scripts/test_codex_hooks.py`의 기대도 바꿔야 함).
-- **방향**: 다음에 시험을 더할 때 이름 있는 그룹을 새로 만들고 `scripts/test_codex_hooks.py`의 그룹 수 기대를 함께 고친다.
+- **해결**: M27 T10에서 이름 있는 그룹 둘을 더했다(그룹 16 = M27 백엔드 일곱 파일 557개, 그룹 17 = `test_analysis_workflows.py` + `test_jev_loop_reports.py` 129개, `CHECKS` 17 → 19, `scripts/test_codex_hooks.py` 기대도 고침). 첫 고정 후보(`7e33951`, 그룹 하나만 추가)에서 나머지 그룹은 3,706개·단독 423.9초·모든 그룹과 동시 476초였고, 고정 소스 `b414728`에서는 3,577개·모든 그룹과 동시 323.2초다(`docs/qa/m27-precedents-20261010/gate.txt`). 프로세스 시험의 동시 실행 흔들림은 위 M25 기간 항목에 남아 있다.
 
 ## 옛 수락 실행기는 기본 반응 참조 폴더 `.deps/reaction_reference`를 읽는다 (M26)
 - **현상**: M13–M25 실행기는 서비스 환경 허용 목록(`child_env`)에 `MW_REACTION_REFERENCE_DIR`를 넘기지 않으므로 그 실행기가 띄운 백엔드는 기본 폴더 `.deps/reaction_reference`를 읽는다.
@@ -683,3 +683,51 @@
 - **영향**: 증거의 해시를 지금 커밋과 대조할 때 위 대응을 써야 한다(`docs/tracking/m26-acceptance.md`).
 - **지금 해결하지 못하는 이유**: 증거 파일은 기록이라 해시를 고쳐 쓰지 않는다.
 - **방향**: 이후 수락 실행기는 보고서 내려받기·실패 단계 패널 HTML을 해시만 남긴다(`0df2167`, T10 F1). 같은 일이 생기지 않게 원문이 들어갈 수 있는 증거는 처음부터 Git 제외 artifacts에 둔다.
+
+## `not_in_kbase_references`는 실데이터로 시험하지 못했다 (M27)
+- **현상**: 표적 상태 `not_in_kbase_references`(전례 0건이고 그 accession의 kbase 참조가 없음)는 합성 세트·합성 번호 대응과 fixture 단계 화면(합성 세트에 없는 실제 accession `O14965`)으로만 시험했다. 명세는 "실데이터로 도달 불가"라고 적었지만 원리상 도달한다: M15 UniProt `ok` kinase 541개는 모두 kbase 참조에 있으나, M15가 SIFTS만으로 행을 `mapped`로 만드는 체인 2개(`7Z87` A → `P78527`, `8H7G` A → `Q15393`)의 accession은 kbase 참조에 없다(`docs/qa/m27-precedents-20261010/preflight.md` (d), `docs/tracking/m27-acceptance.md` N1).
+- **영향**: 실제 구조·실제 세트에서 이 상태의 화면을 본 적이 없다. 상태의 뜻("kbase가 이 표적을 모름이며 전례 없음과 다름")과 코드는 같다.
+- **지금 해결하지 못하는 이유**: 두 구조는 저장소에 없고 사용자가 허용한 RCSB 요청 2개는 `1M17`·`1FIN`에 썼다.
+- **방향**: 새 외부 요청 할당이 있을 때 `7Z87`이나 `8H7G`를 받아 실데이터 사례로 관찰한다.
+
+## 키나아제 전례 영역의 번호 대응 목록은 같은 탭 방문 중 저절로 다시 읽히지 않는다 (M27)
+- **현상**: 영역은 지식·보고서 탭에 들어올 때 스냅샷 상태·번호 대응 목록·결과 목록을 GET으로 다시 읽는다. 같은 탭 방문 중 번호 대응 영역에서 새 결과를 만들어도 전례 영역의 번호 대응 선택지는 바뀌지 않는다(M26 효소 반응 지식 영역과 같은 동작, T9 검토에서 수용).
+- **영향**: 방금 만든 번호 대응을 고르려면 탭을 나갔다 다시 들어와야 한다. 저장 결과·요청은 그대로다.
+- **지금 해결하지 못하는 이유**: 지식 탭 영역 사이 알림이 없고(공용화 범위, 결정 0021) 소스를 고정(`b414728`)한 뒤다.
+- **방향**: 다른 탭·영역 알림을 정하는 단계(M28)에서 번호 대응 결과가 생기면 전례·반응 영역이 목록을 다시 읽게 한다.
+
+## 전례 상세의 측정 변화 칸에서 null·빈 `qualifier`/`unit`은 어디에도 보이지 않는다 (M27)
+- **현상**: 측정 변화 표의 before/after 칸은 `qualifier`·`value`·`unit`을 이어 보이고 null이나 빈 문자열인 `qualifier`/`unit`은 칸에서 뺀다(`frontend/src/lib/kinase-precedents.ts`의 `measureText`). 그 경로는 "보인 경로"로 치므로(`measurePaths`) 상세 끝의 "그 밖의 kbase 필드" 블록에도 나오지 않는다. `value`가 null이면 칸 전체가 "—"와 이유다(T11 증거 검토 관찰).
+- **영향**: 0이나 "없음"으로 보이지는 않지만 kbase 기록에 그 칸이 null이었다는 사실이 화면에 없다. 결과 객체와 읽기 응답에는 값 그대로 있다.
+- **지금 해결하지 못하는 이유**: 소스를 고정한 뒤의 관찰이고 화면을 바꾸면 수락 QA를 다시 돌려야 한다.
+- **방향**: 다음 화면 변경 때 null `qualifier`/`unit`을 칸 안의 "—"와 이유로 두거나 블록에 넣을지 정한다(사용자 결정 ⑬ "kbase 필드 전부").
+
+## M27 수락 실행기의 유출 검사·기본 폴더 확인·소켓 차단에는 범위가 있다 (M27)
+- **현상**: (1) 커밋 증거의 실제 kbase 문구 검사(`scripts/m27_offscreen_acceptance.py`의 `RealText`)는 실제 문자열 중 24–39자는 전체를, 40자 이상은 40자 조각을 찾는다(공백 정규화·대소문자 무시, JSON `\uXXXX`·Markdown·HTML 이스케이프 안 포함). 24자보다 짧은 실제 문자열은 찾지 않는다. (2) `defaultFolderUntouched`는 기본 폴더 `.deps/precedent_reference`가 없음을 볼 뿐이다. (3) 가져오기 자식 프로세스의 소켓 차단은 `socket.socket.connect`·`connect_ex`·`socket.getaddrinfo`·`socket.create_connection`을 바꿔 시도를 세는 방식이다(T9 검토에서 수용).
+- **영향**: (1) 짧은 실제 문구 조각은 이 검사를 지날 수 있다(화면 캡처·보고서 내려받기·실패 패널은 처음부터 Git 제외 폴더에 둔다). (2) 기본 폴더가 이미 있는 체크아웃에서는 판정이 실패한다(통과로 잘못 나오지 않음). (3) 다른 송신 함수는 세지 않는다. 가져오기 명령이 네트워크 모듈을 import하지 않는다는 것은 따로 AST·자식 프로세스 시험이 덮는다.
+- **지금 해결하지 못하는 이유**: 소스를 고정(`b414728`)한 뒤이고 실행기를 바꾸면 수락을 다시 돌려야 한다.
+- **방향**: 다음 실행기 변경 때 기본 폴더의 전후 트리 해시 비교와 송신 함수 전체 차단을 더한다.
+
+## 서지 행 모양이 어긋나면 가져오기 거절이 아니라 "서지 없음"으로 보인다 (M27)
+- **현상**: 서지 스냅샷 행은 `status == "ok"`, `data.pmid == id`이고 다섯 필드(`title`·`journal`·`year`·`doi`·`pmc`)가 모두 있으며 문자열 또는 null일 때만 서지로 쓴다(`backend/mw/precedent_constants.py`의 `bibliography_entries`). 그렇지 않은 행의 PMID는 오류가 아니라 "서지 없음"이다(T9 검토의 거절 권고는 보류).
+- **영향**: kbase 서지 형식이 바뀌면 서지가 조용히 "서지 없음"으로 보일 수 있다. 지금 실제 스냅샷 252행은 모두 이 모양이다(착수 확인).
+- **지금 해결하지 못하는 이유**: 명세 §5.5가 서지 없음을 오류가 아니라고 정했다. 가져오기에서 거절하려면 명세·사용자 결정이 필요하다.
+- **방향**: kbase 서지 형식이 바뀔 때 가져오기 출력에 서지로 쓰지 못한 행 수를 보일지, 거절할지 사용자와 정한다.
+
+## 옛 수락 실행기는 기본 전례 참조 폴더 `.deps/precedent_reference`를 읽는다 (M27)
+- **현상**: M13–M26 실행기는 서비스 환경 허용 목록(`child_env`)에 `MW_PRECEDENT_REFERENCE_DIR`를 넘기지 않으므로 그 실행기가 띄운 백엔드는 기본 폴더 `.deps/precedent_reference`를 읽는다(위 M26 항목의 반응 참조 폴더와 같은 문제).
+- **영향**: 실제 세트가 설치된 체크아웃에서 옛 실행기를 돌리면 지식 탭의 상태가 기대와 달라질 수 있다. M27 회귀는 사슬 내내 이 폴더와 `.deps/reaction_reference`가 없는 채로 돌았다(`docs/qa/m27-precedents-20261010/regression-chain.txt`).
+- **지금 해결하지 못하는 이유**: 착수 확인 (f)가 옛 실행기를 바꾸지 않는 쪽(회귀 동안 폴더를 없는 채로 둠)을 골랐다(M26 선례, 고치면 실행기 일곱 곳과 그 회귀 증거가 바뀜).
+- **방향**: 옛 실행기를 고칠 일이 생기면 `child_env`에 빈 격리 폴더의 `MW_PRECEDENT_REFERENCE_DIR`(와 `MW_REACTION_REFERENCE_DIR`)를 넘긴다. 그 전에는 회귀 동안 두 기본 폴더를 없는 채로 둔다.
+
+## M27 수락 QA에서 만들 수 없는 사례는 테스트·fixture 단계로만 확인했다 (M27)
+- **현상**: 늦은 응답(`P-late-response`)과 호출 때 레코드 해시 불일치 412(`P-record-hash-412`)는 오프스크린으로 관찰하지 않았다. real 단계의 연결 안 함 체인(`no_mapped_residues`·`multiple_accessions`)·`not_in_kbase_references`·스냅샷 상태 변화는 fixture 단계에서만 관찰했다.
+- **영향**: 이 경로의 실제 화면 표시는 실데이터로 보지 않았다. 순수 가드 시험(`frontend/tests/kinase-precedents.test.cjs`의 `precedentResponseCurrent`)과 `backend/tests/test_kinase_precedents_tool.py`가 덮는다.
+- **지금 해결하지 못하는 이유**: 흐름 하네스는 응답을 붙잡아 두는 장치가 없고, 412는 고정과 호출 사이에 세트가 바뀌어야 하며, 허용 구조 2개는 연결되는 체인만 만든다.
+- **방향**: 하네스에 응답 지연 장치를 더하는 화면 단계에서 함께 관찰한다.
+
+## M27 코드 검토의 막지 않는 권고 둘을 보류했다 (M27)
+- **현상**: (1) 보고서 해석 금지어에 "최고"·"배수"·"평균"·"차이"·"악화"를 더하자는 권고는 명세 §7 목록 그대로 두어 보류했다(`kinase_precedents_reports.INTERPRETIVE`, 영어 `best`는 M20 목록에 이미 있음). (2) 상세 읽기 라우트는 질의 검사를 run 조회보다 먼저 하므로 다른 run의 handle과 잘못된 질의를 함께 주면 404가 아니라 422다.
+- **영향**: (1) 그 낱말이 보고서 템플릿 문장에 들어와도 보고서 검사가 막지 않는다(화면 쪽 금지 표현 검사는 따로 있음). (2) 오류 코드 순서만 다르고 아무것도 읽거나 쓰지 않는다.
+- **지금 해결하지 못하는 이유**: (1)은 명세 §7의 금지어 목록을 바꾸는 일이라 사용자 결정이 필요하다. (2)는 명세가 순서를 정하지 않았고 소스를 고정한 뒤다.
+- **방향**: 다음 보고서·읽기 변경 때 금지어 목록 추가를 사용자와 정하고 라우트 검사 순서를 다른 읽기와 맞출지 정한다.

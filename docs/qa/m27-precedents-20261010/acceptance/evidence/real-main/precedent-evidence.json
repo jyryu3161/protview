@@ -1,0 +1,285 @@
+{
+  "schema": "m27_precedent_evidence@1",
+  "mode": "main",
+  "stage": "real",
+  "runs": {
+    "A": "run_d9e2953f5f2145f7b40adfdbb7b9a30b"
+  },
+  "inputs": [],
+  "handles": {
+    "maps": {
+      "rm-mq4": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/13ef845aaec828c08c625357ebbc28662212bf194397befcbc5b6e9b47d28b73",
+      "rm-m17": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/89d647db2672744b8f591403005eaf2524980074ca813c705e3a2a46024e401a",
+      "rm-fin": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/d9ac7e56d647dfb3806eb1c6b1aa945e543831f05d5a2b79b710241b1556feac",
+      "d-size": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/86924209cbadf20ade4580c1b1c13506615777577bcb861ad37966850200c73b"
+    },
+    "links": {
+      "l-mq4": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/4d3ab3dbd88143f2ac75906319ad0a74eed204406b7b7078e3565474fae9ad26",
+      "l-m17": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/2dfb5efc22234d1934681388da1b89cfb508aa276c5cea8c34049a36260873af",
+      "l-m17-incl": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/8301eb408b1de8dced9554a64cbf5e2e4f358d0434b7e435d41ffb85a2fb923d",
+      "l-fin": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/8403e438a23a626c084988dda7798eb6af788b4a8c92431628f80e601739e72d",
+      "l-fin-incl": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/9a3e6595e08cdbdf6df62ee114ced8727fe1903e94afae67ba90151416681dd5"
+    },
+    "report": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/method_report_manifest/dbaaf0a3946b3e015180e60b4607e8729a8ecda903fa9cb792355d45f5bbb1c4"
+  },
+  "fixtureLabels": [
+    "SYNTHETIC derived from the real M15 map of public 1FIN chains A and C: chain A rows given P00533 and chain C rows Q06187 (no such structure; only to make a request above the 1 MiB cap, refused and never stored; M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_d9e2953f5f2145f7b40adfdbb7b9a30b",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "kinase-precedents-unresolved-names": [
+      {
+        "opened": true
+      }
+    ],
+    "kinase-precedents-numbering-map": [
+      {
+        "chosen": "rm-mq4"
+      },
+      {
+        "chosen": "rm-m17"
+      },
+      {
+        "chosen": "rm-fin"
+      },
+      {
+        "chosen": "d-size"
+      }
+    ],
+    "kinase-precedents-link": [
+      {
+        "clicked": "l-mq4"
+      },
+      {
+        "clicked": "l-m17"
+      },
+      {
+        "clicked": "l-m17-incl"
+      },
+      {
+        "clicked": "l-fin"
+      },
+      {
+        "clicked": "l-fin-incl"
+      },
+      {
+        "clicked": "too-large d-size"
+      }
+    ],
+    "kinase-precedents-include-flagged": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "kinase-precedents-filter-variant": [
+      {
+        "chosen": "L858R"
+      }
+    ],
+    "kinase-precedents-filters-clear": [
+      {}
+    ],
+    "kinase-precedents-page-next": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-page-prev": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-record-toggle": [
+      {
+        "opened": "MOVE-0162"
+      },
+      {
+        "opened": "MOVE-0163"
+      },
+      {
+        "closed": "MOVE-0162"
+      }
+    ],
+    "kinase-precedents-kbase-fields": [
+      {
+        "opened": "MOVE-0162"
+      },
+      {
+        "opened": "MOVE-0163"
+      }
+    ],
+    "kinase-precedents-results-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-report": [
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "observations": {
+    "X-tabs": [
+      {
+        "step": "M02-tabs-before",
+        "description": "Click 단백질 공학 and 리간드 설계·탐색: record their areas and digit-masked text before any link"
+      },
+      {
+        "step": "M50-tabs",
+        "description": "Click 지식·보고서: 구조 분석 hidden and inert, no run choice here; click 단백질 공학 and 리간드 설계·탐색: areas and masked text equal the record before the precedent work"
+      }
+    ],
+    "X-snapshot-real": [
+      {
+        "step": "M03-snapshot",
+        "description": "Click 지식·보고서: the snapshot block of the active set; open the unresolved-name table"
+      }
+    ],
+    "X-request-defaults": [
+      {
+        "step": "M04-defaults",
+        "description": "The newest numbering map is pre-selected, nothing posted; every chain ticked; the toggle off; 전례 연결 enabled"
+      }
+    ],
+    "X-1mq4-none": [
+      {
+        "step": "L-l-mq4",
+        "description": "Link l-mq4: map rm-mq4, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-no-zero": [
+      {
+        "step": "L-l-mq4",
+        "description": "Link l-mq4: map rm-mq4, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-m17",
+        "description": "Link l-m17: map rm-m17, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-m17-incl",
+        "description": "Link l-m17-incl: map rm-m17, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "M30-results",
+        "description": "Click 전례 결과 목록 다시 읽기: the list equals the stored list (newest first); a file not included is — with the reason"
+      }
+    ],
+    "X-1m17-found": [
+      {
+        "step": "L-l-m17",
+        "description": "Link l-m17: map rm-m17, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-1m17-flagged": [
+      {
+        "step": "L-l-m17-incl",
+        "description": "Link l-m17-incl: map rm-m17, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-fin-incl",
+        "description": "Link l-fin-incl: map rm-fin, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-1fin-one-target": [
+      {
+        "step": "L-l-fin",
+        "description": "Link l-fin: map rm-fin, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-too-large-real": [
+      {
+        "step": "M10-too-large",
+        "description": "Choose map d-size, tick the moves_flagged toggle, click 전례 연결: 429 result_too_large with the size advice; nothing stored"
+      }
+    ],
+    "X-records-real": [
+      {
+        "step": "M11-variant",
+        "description": "Choose 변이 표기 L858R: the server page equals the GET and the count"
+      },
+      {
+        "step": "M21-page-next",
+        "description": "Click 다음 쪽: the next server page"
+      },
+      {
+        "step": "M22-page-prev",
+        "description": "Click 이전 쪽: back to the first page"
+      }
+    ],
+    "X-detail-real": [
+      {
+        "step": "M23-expand-MOVE-0162",
+        "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M23-expand-MOVE-0163",
+        "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M24-collapse",
+        "description": "Click 상세 접기 on MOVE-0162"
+      }
+    ],
+    "P-fixed-notes": [
+      {
+        "step": "M23-expand-MOVE-0162",
+        "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M23-expand-MOVE-0163",
+        "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      }
+    ],
+    "X-results-list": [
+      {
+        "step": "M30-results",
+        "description": "Click 전례 결과 목록 다시 읽기: the list equals the stored list (newest first); a file not included is — with the reason"
+      }
+    ],
+    "X-report-real": [
+      {
+        "step": "M31-report",
+        "description": "Open the result, click 보고서 만들기"
+      },
+      {
+        "step": "M32-download-markdown",
+        "description": "Click report-markdown: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M32-download-json",
+        "description": "Click report-json: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M33-library",
+        "description": "The knowledge-tab report list shows 키나아제 전례 보고서; click it; content = stored Markdown"
+      }
+    ],
+    "X-wording": [
+      {
+        "step": "M51-wording",
+        "description": "Open each stored result: no rank / recommendation / verified / effect wording outside the fixed sentences and the stored strings"
+      }
+    ]
+  },
+  "startedAt": "2026-10-10T13:27:53.423Z",
+  "finishedAt": "2026-10-10T13:28:13.860Z",
+  "error": null,
+  "requestCount": 268
+}

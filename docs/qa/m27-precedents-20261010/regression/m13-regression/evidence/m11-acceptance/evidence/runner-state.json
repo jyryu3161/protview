@@ -1,0 +1,87 @@
+{
+  "build": {
+    "buildId": "wbonjE7nah2kMcCTup7fP",
+    "gitHead": "e595ca404b2ffa210eb6d372d8983c86fc7538b4",
+    "gitStatusPorcelainSha256": "151e9f6f2346add9c4d499b08749474564601c2fc6dcaab1ceb580ea07a505fd",
+    "dirtyFiles": [
+      "?? docs/qa/m27-precedents-20261010/regression/"
+    ],
+    "recordedAt": "2026-10-10T14:10:42.017800+00:00",
+    "harnessSha256": {
+      "chemical-flow.cjs": "c834569aed7e4f2a899293168a7587448e70f0625b13835b151bc322b051d967",
+      "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced",
+      "m11-case-ledger.cjs": "445666ab975a4db5abcbec7f86be95bf33b09c94a051f83a87855d1464a86f43",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "runnerSha256": "476c41bf3b088fd5d1067717b145986a0b27c55bdbbb0f8cedf5e1a9dee54227"
+  },
+  "services": [
+    {
+      "name": "backend-main",
+      "runs": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/runs",
+      "code": "<repo>",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-10T14:10:46.756282+00:00"
+    },
+    {
+      "name": "backend-replay-worker-missing",
+      "runs": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/replay-runs",
+      "code": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/layout-worker-missing",
+      "mw": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-10T14:26:45.515440+00:00"
+    },
+    {
+      "name": "backend-worker-mismatch",
+      "runs": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/capability-mismatch-runs",
+      "code": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/layout-worker-mismatch",
+      "mw": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/layout-worker-mismatch/backend/mw/__init__.py",
+      "startedAt": "2026-10-10T14:31:43.753912+00:00"
+    }
+  ],
+  "create": {
+    "run": "run_262c5b26994b407391c94337b8159be5",
+    "result": "obj://run_262c5b26994b407391c94337b8159be5/chemical_interaction_set/ef59741e59acfe3ae35b047287e6ab1e8b3fa8dc6c7e2f59b4fddc4835b3af44",
+    "report": "obj://run_262c5b26994b407391c94337b8159be5/method_report_manifest/ce6e80ec3c426a3aead7b95ebce9a14e33856606cc84ee61f4ade83ff579c484",
+    "md": "a4a5764ae8b2047e262fe2b616fff04d318c94737aa7ec5bb860edab612fe3eb",
+    "json": "4053a73349f91f739199bec329334e9bf983a98fad122cccdaa04e586724d3f9"
+  },
+  "empty": {
+    "run": "run_2cd6487bfb07400482b18065fc359987",
+    "result": "obj://run_2cd6487bfb07400482b18065fc359987/chemical_interaction_set/4a11cded7e02748b08126b05a7e19c6789e0a1dd37bc0926b68177b45d63bc7b",
+    "report": "obj://run_2cd6487bfb07400482b18065fc359987/method_report_manifest/6eef90504bc018631f21d9f1177a55c9492c40a0961295ad8f9b29b28de69f28",
+    "md": "9a44d9410b4c34a6ce82d407ec5ed500f6f4091005d67cbe1c1d9943971a4828",
+    "json": "4a9234bed14c6f43c370e7481034be4f6cae08c3c63120f94417247493e5a383"
+  },
+  "prepared": {
+    "run": "run_7d8ae73ce3d443fc8162049c86884b36",
+    "graph": "obj://run_7d8ae73ce3d443fc8162049c86884b36/chemical_graph/5a2ec884bf73514ad7dae5d8012075fde14de8d1d7347a33fea738f986b78357"
+  },
+  "attach": {
+    "run": "run_3e56dde636474d5d98cf1fffe04e122a",
+    "complex": "obj://run_3e56dde636474d5d98cf1fffe04e122a/structure/0c80f009ec1d6ed31c40a59ab67f8b1242008d19a4d564cf652bda31ef277a50",
+    "dir": "<repo>/runs/m27-reg-m25-m13-regression/m11-acceptance/inputs/attach-setup",
+    "sdfImport": "obj://run_3e56dde636474d5d98cf1fffe04e122a/chemical_raw_input/4c2c16261a3c6d3b7d66869e178baaf0c837a5bc877e442e05652db9c33881e9",
+    "mapResult": "obj://run_3e56dde636474d5d98cf1fffe04e122a/chemical_interaction_set/5898795f24c3895bf86f3e236f16bbf784cd4250c144609614ce046690767f4c",
+    "mapReport": "obj://run_3e56dde636474d5d98cf1fffe04e122a/method_report_manifest/fad9a1cab5554dda5c49aae19448cc9ad5a0b1426f2e3579324dea44db1c4980",
+    "mapMd": "df855f49d9106046d98fc29116c286dd351222c68c80563d298d2773342eac6e",
+    "mapJson": "249213fffaf438fac4196f5664cea6ee0674f1fd96865907a96293ff199ff753",
+    "replaceResult": "obj://run_3e56dde636474d5d98cf1fffe04e122a/chemical_interaction_set/2fe15b0000c82e4ee001514316ff080b75f0df3ad8442c4a5addec830ba0db1f",
+    "replaceReport": "obj://run_3e56dde636474d5d98cf1fffe04e122a/method_report_manifest/28765151b0336885f7df8bd0ad46b9cf08a274033a82b6304779cd2d35ce657b",
+    "replaceReport2": "obj://run_3e56dde636474d5d98cf1fffe04e122a/method_report_manifest/85908c08663b9fa221ed162058481006dd224ed4e3cacb31739d1525de7f077e"
+  },
+  "normalRun": "run_795dec0660d6422b8dd8fa7c3a86d713",
+  "scenesRun": "run_26d04dce53524d8c86fd80c934840312",
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path is absent",
+      "files": 151,
+      "treeSha256": "a077434e8512a5999d6a4276483b95dc1fb84c197251909d1a864cb7796ffad7"
+    },
+    "layout-worker-mismatch": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy; pinned worker path points at a non-pinned interpreter <repo>/.venv/bin/python",
+      "files": 151,
+      "treeSha256": "a077434e8512a5999d6a4276483b95dc1fb84c197251909d1a864cb7796ffad7"
+    }
+  }
+}

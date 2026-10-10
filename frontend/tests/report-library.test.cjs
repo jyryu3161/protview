@@ -56,6 +56,12 @@ test("report rows keep every kind, expose target handle, and order by created_se
   assert.deepEqual(plain(buildReportRows([{ handle: "rep-k", result_handle: "res-k", analysis_type: "reaction_knowledge",
     markdown_handle: "md-k", created_seq: 40, snapshot_event_seq: 39 }])),
   [{ kind: "reaction_knowledge", handle: "rep-k", target_handle: "res-k", created_seq: 40 }]);
+  assert.equal(reportKindLabel({ kind: "kinase_precedents", handle: "h", target_handle: "p", created_seq: 11 }),
+    "키나아제 전례 보고서");
+  // the M27 report kind keeps its analysis_type and target like the other method reports
+  assert.deepEqual(plain(buildReportRows([{ handle: "rep-p", result_handle: "res-p", analysis_type: "kinase_precedents",
+    markdown_handle: "md-p", created_seq: 41, snapshot_event_seq: 40 }])),
+  [{ kind: "kinase_precedents", handle: "rep-p", target_handle: "res-p", created_seq: 41 }]);
   assert.deepEqual(plain(buildReportRows([])), []);
 });
 

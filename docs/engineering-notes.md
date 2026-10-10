@@ -626,6 +626,71 @@
 ### 증거 장부의 커밋 해시는 역사 정리 전 값이다 (M26)
 - 실제 외부 자료 보고서 두 개가 든 예비 증거 커밋을 로컬 작업 브랜치(어디에도 올리지 않음)에서 `git filter-branch`로 빼면서 브랜치 끝 9개 커밋의 해시가 바뀌었다. 증거 안의 `gitHead`·고정 해시는 정리 전 값이다: `dac2755` = 지금 `06679e4`, 소스 고정 `1735338` = 지금 `3fcac53`. 트리는 전후 같다(트리 해시 `5f0c5c43…`). 대응표는 `docs/tracking/m26-acceptance.md`에도 있다.
 
+### 실제 kbase `dist/`의 모양과 실데이터에 없는 값 (M27)
+- 착수 확인(`docs/qa/m27-precedents-20261010/preflight.md` (a))에서 실제 `dist/`(HEAD `77354f9`, dist 커밋 `43a935e`)는 명세 형식을 그대로 통과했다: 전례 레코드의 최상위 키 집합은 두 파일 모두 한 종류이고 정확히 21개, 모든 레코드 `review_status: "unreviewed"`, `move_id` 1,776개 유일, 레코드 해시 재계산 891·885·555 일치. 명세 필수 목록 밖의 중첩 키(`source.parser`, `extraction.chunks`·`dropped_effects`·`notes`, 선택 키 `target.resolution_evidence`)는 보존 대상이고, 참조 레코드는 필수 10개 + 8개 키(18개)다.
+- **표적 미해석 396건**: `moves` 193 + `moves_flagged` 203이 `target.uniprot` null이다(해석 근거 `unmapped` 272·`absent` 122·`ambiguous` 2, 서로 다른 이름은 문자열 34개 + null). 어떤 체인에도 연결하지 않고 UP5와 이름별 표로만 알린다. 해석된 `moves` 698건 중 75건은 추정 근거(`name_token` 38·`pubmed_title` 20·`alias` 14·`notation` 3)라 연결하되 근거를 보인다.
+- 그 밖의 실측: 측정 변화 3,832개 중 `off_target` 888개(약 23%), `fold_change` null 1,904개, 관찰 인용 `quote_truncated` 136건(`moves` 83 + `moves_flagged` 53)과 교환 인용 `quote_truncated` 27건(8 + 19)은 따로 센다(합치면 163). 표적별 `moves`/`moves_flagged`: EGFR `P00533` 76/66, BTK `Q06187` 70/97, CDK2 `P24941` 32/24, Aurora A `O14965` 0/0(참조 있음). `moves`에는 없고 `moves_flagged`에만 있는 표적이 17개(모두 참조 있음)라 `none_in_included_files` + UP2(N > 0)가 실제로 나온다.
+- **실데이터에 없는 닫힌 값**: 25단어 초과 인용(그래서 `quotes_within_limit` 거짓), `direction_basis` `none`, 위치 `kind` `figure`, `structure_links.basis` `sole_candidate`, `resolution_basis` `klifs_gene_name`, 체인 상태 `multiple_accessions`(이번 QA 구조로는 만들 수 없었다. M15 SIFTS 스냅샷에는 융합 체인이 있지만 저장소에 그 구조가 없고 내려받기 한도 밖이다). 닫힌 집합은 명세 그대로 두고 합성 fixture(`backend/tests/fixtures/precedent/`, 출처 `SYNTHETIC-PROVENANCE-*.md`)로만 시험한다. 실제 레코드·서지 조각은 fixture로 커밋하지 않는다.
+
+### `checks.duplicate` 실패는 전례 중복이 아니다 (M27)
+- **증상**: `moves`(통과 파일처럼 보이는 이름)에도 `duplicate` 검사 실패가 61건 있다(`moves_flagged` 129건). 이름만 보면 "같은 전례가 두 번 있다"로 읽힌다.
+- **원인**: 이 kbase 검사는 한 전례 안 측정 변화 둘이 서로 충돌한다는 뜻이다. `move_id`는 두 파일을 합쳐 모두 유일하다.
+- **대응**: 검사 이름·상태를 kbase 원문 그대로 보이고("kbase 기계 검사") 해석 문장을 붙이지 않는다. 파일 이름 `moves`·`moves_flagged`를 "통과/실패"라 부르지 않는다(KP3).
+
+### 사본에서 뺀 두 경로와 원본 `content_hash` (M27)
+- 결과의 전례 사본은 `source.parser`와 `checks.cross_parser_numbers.measurements` 두 경로만 뺀 것이다(`kbase_record_minus_2_paths@1`). `content_hash`는 원본 전체 레코드의 해시를 그대로 두므로 **사본에서 다시 계산하면 맞지 않는다**. 이것은 변조가 아니다. 무결성 확인(`hash_verified`)은 도구가 호출 때 세트 바이트의 원본 레코드로 한다(불일치면 412 `snapshot_invalid`, 저장 안 함).
+- 읽기·보고서·화면이 사본으로 해시를 다시 확인하려 하면 안 된다. 화면 상세는 "해시는 원본 레코드의 것" 안내를 붙이고, "그 밖의 kbase 필드" 블록은 뺀 두 경로를 나열하지 않는다. `validated_result`는 사본에 두 경로가 없는지와 `integrity`가 사본에서 다시 계산한 단어 수·쪽 검사와 같은지를 본다.
+
+### 서로 다른 accession 두 체인은 1 MiB를 넘을 수 있다 (M27)
+- **증상**: 단일 표적 결과는 최악(BTK `moves_flagged` 포함)도 상한 안이지만(착수 확인 시제품 측정 855,798 B, 제품 도구로 잰 값은 수락 증거의 855,943 B), 서로 다른 accession 두 체인(실데이터 구조로는 만들 수 없어 1FIN 번호 대응에 `P00533`·`Q06187`을 준 합성 변형)에 `moves_flagged`를 포함하면 1,605,026 B로 1 MiB를 넘는다(끄면 737,133 B).
+- **대응**: 자르지 않고 429 `result_too_large`로 거절하고 아무것도 저장하지 않는다. 거절 상세 `size_without_flagged`·`target_sizes`가 표적별 단독 크기와 `include_flagged`를 끈 크기를 알려 화면이 "체인을 나누거나 포함을 끄라"고 안내한다(두 경우를 모두 계산하므로 거절 응답이 결과 만들기를 몇 번 더 한다).
+
+### `move_id` 숫자 부분 정렬과 정수 변환 자릿수 제한 (M27)
+- 전례 순서는 `move_id` 숫자 부분(정수) 오름차순이고 동점(`MOVE-0001`·`MOVE-00001`처럼 앞자리 0만 다름)은 `move_id` 문자열 오름차순이다(`kinase_precedents.move_key`). 문자열 정렬만 쓰면 `MOVE-10000`이 `MOVE-9999` 앞에 온다.
+- **증상(T9 검토 지적)**: 숫자 부분이 파이썬의 정수 문자열 변환 제한(기본 4,300자리)을 넘는 `move_id`는 정규식(`MOVE-[0-9]{4,}`)을 통과해 가져오기가 받았고 서버 정렬에서 `ValueError` → 500이었다.
+- **대응**: `validate_move`가 숫자 부분을 정수로 읽지 못하면 형식 오류로 거절한다(가져오기와 서버가 같은 함수). 읽기 질의의 `limit`·`offset`과 서지 `year`도 같은 제한을 넘으면 422이거나 "정수 아님"(늘 끝)으로 다룬다.
+
+### 서지 행 모양이 어긋나면 "서지 없음"이다 (M27)
+- 서지 파일의 `id`는 숫자 문자열이고 유일해야 하며 아니면 가져오기를 거절한다. 그러나 `status`가 `ok`가 아니거나 `data.pmid`가 `id`와 다르거나 `title`·`journal`·`year`·`doi`·`pmc` 중 하나가 없거나 문자열|null이 아닌 행은 거절하지 않고 그 PMID를 "서지 없음"(결과의 `bibliography[pmid] = null`)으로 둔다(T9 검토에서 보류로 기록한 선택). 스냅샷이 덮지 않는 PMID와 같은 취급이며 오류·0이 아니다. 실데이터 최신 스냅샷 252행은 모두 이 모양을 만족하고 전례 PMID 167개를 모두 덮는다.
+- 정렬 `year`는 서지 `year` 문자열을 정수로 읽을 수 있을 때만 값이고 서지 없음·정수 아님은 `order`와 무관하게 늘 끝이다.
+
+### 가져오기 명령의 git 호출과 `--from`은 저장소 루트 (M27)
+- 가져오기 명령은 읽기 전용 git 셋만 부른다. 상속한 `GIT_*` 환경을 지우고(`GIT_DIR` 등으로 다른 저장소를 읽지 않게) `GIT_CEILING_DIRECTORIES=<kbase 상위>`로 탐색을 kbase 폴더에서 멈추며, `-c core.fsmonitor=false`(설정된 fsmonitor 명령을 실행하지 않음)와 `-c protocol.allow=never`(부분 클론의 누락 객체 지연 가져오기가 원격에 닿지 않고 실패)를 준다(T9 검토 권고 반영). `status`는 `--untracked-files=normal`로 추적되지 않는 파일까지 `dirty`에 넣는다.
+- 그래서 `--from`은 `.git`이 있는 kbase 저장소 루트여야 한다. 그 폴더 자체에 `.git`이 없으면(git 없는 복사본 등) `dist/` 검사를 통과해도 마지막 git 단계에서 `git` 거절이다(저장소의 하위 폴더는 보통 `dist/manifest.json`이 없어 먼저 거절된다). `--from` 상대 경로는 현재 작업 폴더 기준, `--dest` 상대 경로는 저장소 루트 기준이다. git worktree에서는 주 체크아웃 기준 `../kbase_kinase`가 맞지 않으므로 절대 경로를 준다.
+- `dest`의 `active.json`이 다른 가족(M15 `reference_active`, M26 `reaction_active`)의 포인터면 거절한다(폴더를 잘못 준 경우). 가장 늦은 날짜의 pubmed 스냅샷이 둘이면 고르지 않고 거절한다. kbase 매니페스트의 `sha256:<hex>` 문자열은 소문자까지 정확히 같아야 한다.
+
+### 1FIN B·D를 번호 대응에 넣으면 호출 전체가 실패한다 (M27)
+- **증상**: 1FIN의 네 체인(A·C CDK2, B·D cyclin A)을 모두 `map_residue_numbering`에 넣으면 422 `no_usable_method`(`chain_auth: B`)로 호출 전체가 실패하고 객체가 생기지 않는다. B에 자기 SIFTS accession(`P20248`)을 주면 422 `accession_not_in_uniprot_snapshot`이다(M15 UniProt 스냅샷은 kinase만).
+- **원인**: M15 SIFTS 스냅샷의 1FIN 잔기 행은 A·C뿐이라 B·D에는 쓸 방법이 없다.
+- **대응**: 실데이터 QA는 번호 대응 체인을 A·C만 넣는다(한 표적 `P24941`에 체인 행 둘). 실데이터로 `no_mapped_residues`를 만드는 길은 B에 맞지 않는 kinase accession(`P24941`)을 직접 준 입력 실수뿐이라(mapped 0/260) 정상 사례로 쓰지 않고, `no_mapped_residues`·`multiple_accessions`는 합성 번호 대응 객체로 시험한다.
+
+### `not_in_kbase_references`는 원리상 실데이터로도 도달한다 (M27)
+- 명세는 "실데이터로 도달 불가"라고 적었지만 착수 확인 (d)에서 바로잡았다. M15 UniProt `ok` kinase 541개는 모두 kbase 참조에 있다. 그러나 M15는 SIFTS 체인의 단일 accession이 UniProt 스냅샷에 없으면 SIFTS만 쓰는 계획을 세우고 그 행을 `mapped`로 만든다. 활성 SIFTS 스냅샷에 그런 체인이 둘 있다: `7Z87` A → `P78527`, `8H7G` A → `Q15393`. 두 accession은 kbase 참조에 없으므로 그 구조를 올리고 PDB ID를 주면 체인이 `linked`가 되고 표적 상태가 `not_in_kbase_references`가 된다.
+- 두 구조는 저장소에 없고 이번 단계의 요청 한도(구조 2개) 밖이라 합성으로만 시험했다. 상태 정의("kbase가 이 표적을 모름, 전례 없음과 다름")는 이 경우에도 맞으므로 코드·상수는 그대로다. 융합(여러 accession) SIFTS 체인 5개(`4WTV` A·`4YC4` A·`5EZV` A·`5JGA` A·`6DC0` A)는 `multiple_accessions`가 될 체인이다.
+
+### 번호 대응 목록은 탭에 들어올 때만 다시 읽는다 (M27)
+- "키나아제 전례" 영역은 탭 진입 때 스냅샷 상태·번호 대응 목록·결과 목록을 GET으로 읽는다. 같은 탭 방문 중에 번호 대응 영역에서 새 대응을 만들어도 전례 영역의 선택지는 자동으로 갱신되지 않고 다음 탭 진입 때 보인다(M26 반응 지식 영역과 같은 동작, T9 검토 수용). 체인 미리 상태(`chainPreviews`)는 번호 대응 행을 다 읽은 뒤에만 정확하므로 그 전에는 "다 읽은 뒤 미리 보입니다"를 보이고, 연결 여부는 늘 서버가 결과로 정한다.
+
+### 상세 측정값 칸은 null·빈 qualifier·unit을 감춘다 (M27, 알려진 표시 한계)
+- 측정 변화 표의 before/after 칸은 `value`가 null이면 "— (kbase 기록에 값 없음)"이고, `value`가 있으면 `qualifier`·`value`·`unit` 중 null·빈 문자열을 빼고 잇는다. 이 세 경로는 칸이 "보인" 경로로 치므로 "그 밖의 kbase 필드" 블록에도 나오지 않는다. 0으로 보이지는 않지만 null `qualifier`·빈 `unit`이 있었다는 사실은 화면에서 보이지 않는다(T11 증거 검토 기록). 값 자체는 결과 객체·JSON 읽기에 그대로 있다.
+
+### 회귀 격리: 옛 실행기는 기본 참조 폴더를 읽는다 (M27)
+- M13–M26 수락 실행기의 백엔드 환경은 `m13.child_env` 허용 목록 + 실행기가 정한 변수뿐이고 `MW_PRECEDENT_REFERENCE_DIR`를 넘기지 않으므로, 옛 실행기의 백엔드는 코드 루트 기본 폴더 `.deps/precedent_reference`를 읽는다(M26의 `.deps/reaction_reference`와 같은 문제).
+- **대응(T1 결정)**: 실행기는 고치지 않고 회귀 동안 `.deps/precedent_reference`와 `.deps/reaction_reference`를 없는 채로 둔다. 설치되지 않은 상태의 새 영역은 숫자·컨트롤 없이 이유와 명령만 보이므로 옛 하네스가 다루는 컨트롤과 겹치지 않는다. 2026-10-10 회귀 사슬은 두 폴더가 시작 전·후 모두 없는 상태로 돌았다(`regression-chain.txt`). 새 영역은 "사용할 수 없음" 상태에 `section.mw-unavailable`을 쓰지 않는다(`tabs-flow.cjs`가 지식 탭의 그 요소 0개를 단언).
+
+### 수락 실행기의 실제 문구 유출 검사와 `/tmp` 금지 (M27)
+- 실제 kbase 문구가 커밋 증거에 새지 않게 실행기는 설치된 세트에서 관찰 문장·인용·교환 문장·인용·변형 설명·측정 조건(`assay`·`assay_context`·`comparability_reason`)·서지 제목·저널·참조 필드(`gene`·`klifs_name`·`group`·`family`·`coverage`)를 메모리에만 모은다. 공백을 접고 대소문자를 무시한 뒤(정규화) 24자 이상인 문자열에 대해 40자 조각 하나라도, 또는 24–39자 문자열 전체가 커밋 후보 텍스트에 있으면 그 파일을 Git 제외 artifacts 폴더로 보낸다. JSON `\uXXXX`·Markdown·HTML 이스케이프를 풀어서도 찾는다. 식별자·해시·닫힌 코드는 모으지 않으므로 증거에 남는다. 하네스는 real 단계 기록에 24자 미만 문자열만 남긴다(`realSafe`). 2026-10-10 수락 증거는 7,479개 문자열로 검사해 0개 파일이었다.
+- 이 조각·정규화·이스케이프 풀기 방식과 양성·음성 대조 시험은 T9 검토 권고로 강화한 것이다(`a0cc1b8`). 보고서 다운로드(Markdown·JSON)와 실패 화면 HTML은 처음부터 증거에 경로·크기·SHA-256만 남긴다(M26 교훈). 실행기 `--root`는 새 폴더여야 하고 `/tmp` 아래면 거절한다(저장소 `runs/` 아래 같은 격리 폴더를 쓴다).
+
+### Stop 훅 나머지 그룹이 다시 480초에 닿아 그룹 둘을 더했다 (M27)
+- **증상**: M27 전 나머지 그룹 단독 3,554개 408.77초(여유 약 71초)에 M27 테스트(백엔드 557개 + 스크립트 152개)가 더해지면 한도를 넘는다(착수 확인 (e)). M27 백엔드 일곱 파일을 이름 있는 그룹으로 나눈 첫 고정 후보(`7e33951`)에서도 모든 그룹을 동시에 시작하면 나머지 그룹이 3,706개 476초(단독 423.9초)로 480초에 거의 닿았다.
+- **대응**: 가장 무거운 남은 두 파일 `test_analysis_workflows.py`·`test_jev_loop_reports.py`(129개, 나머지 그룹과 둘만 함께 돌렸을 때 197초, 열여덟 그룹 전부 함께는 231.6초)를 또 한 그룹으로 나눴다(`b414728`, `PYTEST_GROUPS` 열일곱 + 나머지 = 열여덟 그룹, `CHECKS` 19, `scripts/test_codex_hooks.py`의 기대 19). 고정 `b414728` 게이트에서 열여덟 그룹을 동시에 시작하면 나머지 그룹 3,577개 323.2초, 전체 357.5초, 합계 6,037 passed였다(`gate.txt`). 새 스크립트 테스트 둘은 `SCRIPT_TESTS`에 손으로 넣었다.
+- 서열 GA SIGTERM 프로세스 시험(`test_sequence_ga_worker.py::test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`)은 훅이 다른 작업과 겹치면 흔들리는 알려진 현상이 이 단계에서도 재현됐고 단독 3 passed 143.8초였다. 고정 게이트에서는 통과했다. 실패하면 그 시험만 단독으로 다시 돌려 기록한다.
+
+### 하네스 문구 검사는 "그 밖의 kbase 필드" 항목을 뺀다 (M27)
+- **원인**: 금지어 목록에 `\beffects?\b`·`효과`가 있는데, 상세의 "그 밖의 kbase 필드" 블록은 kbase 경로를 그대로 보이므로(`effects[0].evidence` 같은 경로 이름) 그대로 검사하면 kbase 필드 이름을 ProtView의 효과 주장으로 잡는다. 표 머리말 "측정 변화(kbase 추출 effects)"와 버전 키 `effect_rules_version`도 같은 이유로 걸린다.
+- **대응**: `kinase-precedents-flow.cjs`는 문구 검사 전에 고정 문장, 그 머리말·버전 키(Markdown 이스케이프 형태 포함), 서버가 준 저장 문자열 전부, 그리고 "그 밖의 kbase 필드" 블록의 항목(경로와 JSON 값)을 지운다. 블록의 제목·안내 문장은 그대로 검사한다. 금지어는 ProtView가 쓴 템플릿 글자에만 건다(보고서 금지어 검사와 같은 원칙).
+
 ## 동작 원리
 
 ### handle과 복구
@@ -676,6 +741,9 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 ### 효소 반응 지식 경로 (M26)
 반응 참조 세트는 사용자가 실행하는 가져오기 명령만 쓴다: 명령은 `reaction_knowledge_constants.py`를 파일 경로로 불러(`mw` import 없음) M-CSA 쪽 순회 → accession 합집합(`MAX_ACCESSIONS` 확인) → UniProt 일괄 요청과 빠진 accession 분류 → Rhea 한 요청을 하고, 모든 응답을 `SOURCE_FORMATS`로 가공·검사한 뒤에만 임시 폴더에 쓰고 검증해 `sets/<set_hash>/`로 옮기고 `active.json`을 바꾼다. 서버의 값싼 도구 `link_reaction_knowledge`는 `Run._validated_bound`가 모든 호출 경로에서 부르는 사전 검사 훅(`tools/reaction_knowledge.precheck`)이 `reaction_knowledge.pin_and_index()`로 세트를 고정·해석하고(412) 입장 아홉 단계를 한 뒤(422) 세트·색인·체인 잔기·번호 대응 내용을 `ReactionBound`로 고정하고 `key_fields`로 세트 해시를 호출 키에 더한다. 구현은 그 `bound`로 `build_reaction_knowledge`를 부르고 `validated_result`를 통과할 때만 저장한다(1 MiB·연결 위치 2,000 초과는 429). 읽기(`reaction_knowledge_reads.py`)는 결과 객체를 매번 `validated_result`로 다시 검증하고 지금 활성 세트와 비교만 한다. 보고서(`reaction_knowledge_reports.py`)는 저장 결과에서 주장을 다시 만들어 대조한다. M20 v2는 도구 층(`tools/mutations.py`)이 반응 결과를 검증해 `catalytic_input`으로 평범한 체인별 값만 만들고 `mutation_candidates.catalytic_protection`이 보호 목록과 검사 칸을 만든다. 같은 함수를 M20 보고서가 다시 불러 저장 집합과 대조한다.
 
+### 키나아제 전례 경로 (M27)
+전례 참조 세트는 사용자가 실행하는 가져오기 명령만 쓴다: 명령은 `precedent_constants.py`를 파일 경로로 불러(`mw` import 없음) dist 매니페스트·`KBASE_PINS` → 세 dist 파일 대조 → `validate_dist_files`(형식·레코드 해시·`move_id` 유일) → pubmed 최신 스냅샷 대조·`parse_pubmed` → 읽기 전용 git 셋 순으로 검사하고, 확인 뒤에만 임시 폴더에 바이트 그대로 써 `sets/<set_hash>/`로 옮기고 `active.json`을 바꾼다(네트워크 없음). 서버의 값싼 도구 `link_kinase_precedents`는 `Run._validated_bound`가 모든 호출 경로에서 부르는 사전 검사 훅(`tools/kinase_precedents.precheck`)이 `kinase_precedents.pin_and_index()`로 세트를 고정·해석하고(412, 해석·색인은 세트 하나 캐시) 입장 다섯을 검사한 뒤(422, 번호 대응은 훅이 받은 store에서 읽어 `numbering_map_shape_ok`로 지역 모양 검사) 세트·색인·번호 대응 내용·정규화 인자를 `PrecedentBound`로 고정하고 `key_fields`로 세트 해시와 `method_version`을 호출 키에 더한다. 같은 호출을 다시 검증할 때는 이전 `bound`의 세트를 그대로 쓴다. 구현은 그 `bound`로 `build_kinase_precedents`를 부르고(체인 판정 → 표적 판정 → 포함할 원본 레코드마다 `content_hash` 재계산(불일치면 색인 캐시를 비우고 412) → 두 경로를 뺀 사본·무결성 값·서지 → 1 MiB 확인(넘으면 표적별·포함 끈 크기를 다시 재서 429)) `validated_result`를 통과할 때만 저장한다. 읽기(`kinase_precedents_reads.py`)는 질의를 먼저 검사하고(run 조회 전) 결과 객체를 매번 `validated_result`로 다시 검증하며, 한 표적의 전례를 서버에서 거르고 정렬해 한 쪽만 돌려주고 지금 활성 세트와 비교만 한다(목록은 이벤트 로그를 한 번 읽어 생성 순서를 찾음). 보고서(`kinase_precedents_reports.py`)는 저장 결과·도구 호출 기록·구조·번호 대응을 확인하고 주장과 Markdown을 다시 만들어 대조한다. 화면(`KinasePrecedentsPanel.tsx`)은 순수 판단 `lib/kinase-precedents.ts`(요청 가드·결과 모델·질의 구성·늦은 응답 가드·고정 문장 사본)를 쓰고 GET 질의로만 거르기·정렬·쪽을 바꾼다.
+
 ### 뷰어 세션과 세대
 뷰어 세션은 `(run_id, client_instance_id, viewer_session_id, scene_generation, structure_handle)`에 묶인다. 표시 구조, 모델, 기록, 최소화 구조 전환이 일어날 때마다 generation이 올라간다. 명령은 매 await 전후에 session·generation·source·action revision을 다시 확인하고, 하나라도 바뀌었으면 적용하지 않는다. 그래서 늦게 도착한 모델 응답이 더 최근의 사용자 조작을 덮어쓰지 못한다.
 
@@ -692,7 +760,7 @@ run 하나를 바꾸는 호출 전체는 run 디렉터리의 `execution.lock`(OS
 8. 참조 데이터를 읽는 도구(M15 번호 대응 등)는 호출 시작 때 참조 세트를 고정하고, 그 세트 해시를 호출 키에 넣고(사전 검사 훅의 `key_fields`), 결과 객체에 세트 해시와 계산에 쓴 참조 행을 담아 참조 폴더 없이 다시 열리게 한다. 참조 값과 계산 값은 보고서에서 다른 증거 종류로 둔다.
 9. 외부 실행 파일 엔진(fpocket 등)은 해시 잠금 설치 스크립트, 실행 파일 해시 확인, 요청으로 바꿀 수 없는 경로, 허용 목록 환경변수, 알려진 출력 파일만 읽는 파서를 함께 만든다.
 10. 기존 결과를 여러 개 묶는 작업(M19 일괄 등)은 행 계산을 복제하지 않고 기존 작업 모듈 함수를 불러 쓰며, 행 결과가 단독 실행과 같은 handle인지 실제 엔진으로 바이트 비교한다. 900초보다 긴 작업 시간 한도가 필요하면 `JobQueue.submit`과 API `JobSubmit.timeout_s` 두 곳을 그 프로토콜에만 넓힌다. 작업 하나가 결과 여러 개를 내면 게시 증거 이벤트·재사용 색인·`producer()`·보고서 입력 검사가 그 결과를 받아들이는지, 시도 1회·예약 단위·환불 없음이 재생과 맞는지 확인한다. 검증: 실제 엔진 테스트, events-only 복구, 기존 프로토콜 테스트 전부.
-11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳, M25도 같은 네 파일·`report-library.test.cjs`와 Stop 훅 그룹 수 기대(`scripts/test_codex_hooks.py`)를 고쳤고, M26도 같은 네 파일·`report-library.test.cjs`를 고쳤다): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
+11. 도구·capability·보고서 종류를 더하면 개수·집합을 고정한 기존 검사가 깨진다(M24에서 실제로 고친 곳, M25도 같은 네 파일·`report-library.test.cjs`와 Stop 훅 그룹 수 기대(`scripts/test_codex_hooks.py`)를 고쳤고, M26도 같은 네 파일·`report-library.test.cjs`를 고쳤으며, M27도 같은 네 파일·`report-library.test.cjs`와 Stop 훅 그룹 수 기대를 고쳤다): `backend/tests/test_api.py`의 `/tools` 이름 집합, 사전 검사 훅이 있는 도구 집합(`test_reference_site_annotation.py`·`test_residue_numbering.py`), `/capabilities` `methods` 집합(`test_ligand_api.py` 두 곳), `app.py`의 보고서 종류 집합 둘(`list_reports`·`_saved_any_report`)과 `create_method_report`·`_saved_any_report` 분기, 프런트 `report-library.ts`(목록 이름)·`api.ts`(명령 도구·보고서 종류·capability 유니언)·`contracts.ts`. 새 실행기 단위 테스트는 `.codex/hooks/stop.py`의 `SCRIPT_TESTS`와 `docs/standards.md` 게이트 목록에 손으로 넣는다. 새 이벤트 종류는 `core/events.py` `EventType`(타입 표기뿐)에 더한다. 새 `backend/mw` 모듈은 `raise_limits`·`limit_approval` 문자열을 쓰지 않는다. 바꾼 기존 검사는 최소로 고치고 이유를 주석에 남긴다.
 
 ### UI 컨트롤 변경
 1. 새 컨트롤이 MolstarViewer의 직렬화 브리지를 거치는지 확인한다. React state만 바꾸고 적용됐다고 표시하면 안 된다.

@@ -692,10 +692,11 @@ def test_duplicate_site_residue_through_run_call(tmp_path, ref):
 def test_only_the_new_tool_and_m15_have_prechecks():
     # M20 generate_mutation_candidates and M24 build_jev_projection add their own pre-checks (no key fields), M25
     # build_jev_loop_projection one with key fields (the hash of the loop-record inputs), M26
-    # link_reaction_knowledge one with key fields (the pinned reaction set hash); no other tool gains one.
+    # link_reaction_knowledge one with key fields (the pinned reaction set hash), M27 link_kinase_precedents one with
+    # key fields (the pinned precedent set hash and method version); no other tool gains one.
     assert set(build_registry().prechecks) == {"map_residue_numbering", TOOL, "generate_mutation_candidates",
                                                "build_jev_projection", "build_jev_loop_projection",
-                                               "link_reaction_knowledge"}
+                                               "link_reaction_knowledge", "link_kinase_precedents"}
 
 
 # --- recovery, dry run, API ---------------------------------------------------------------------------------------

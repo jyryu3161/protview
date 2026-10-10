@@ -1,0 +1,731 @@
+{
+  "schema": "m22_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "GA-run-panel": "pass",
+    "GA-no-candidate-set": "pass",
+    "GA-m17-set": "pass",
+    "GA-param-guards": "pass",
+    "GA-defaults": "pass",
+    "GA-pool-too-small": "pass",
+    "GA-preflight": "pass",
+    "GA-run": "pass",
+    "GA-progress": "pass",
+    "GA-results": "pass",
+    "GA-sort": "pass",
+    "GA-detail": "pass",
+    "GA-limit-approval": "pass",
+    "GA-dedupe": "pass",
+    "GA-reuse": "pass",
+    "GA-pool-exhausted": "pass",
+    "GA-partial": "pass",
+    "GA-cancel": "pass",
+    "GA-report": "pass",
+    "GA-processes": "pass",
+    "GA-wording": "pass"
+  },
+  "runId": "run_82cf5dd1fc964e559e8d9612179ab39f",
+  "runs": {
+    "A": "run_82cf5dd1fc964e559e8d9612179ab39f"
+  },
+  "handles": {
+    "A": {
+      "receptor": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "set": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_candidate_set/ad4f5c8620904b3170c928d890b98b99e2692d98d886031107ce69677b86f9b1",
+      "ga1": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/ac0b50a73b868e7d1b8cc2b1a530e660921394a7bc0176b870d75483080da564",
+      "ga2": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/dc1f36ddf7b2199bae0b7bfe9ba6a10d9b7abda5e92c6b7cd72233e532983241",
+      "partial": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/577e810bc84c3ce1054f10ca976593bee0a1d36c2e62c21c2cc9888d5928aaf2"
+    }
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+      "bytes": 504575,
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+      "bytes": 6816,
+      "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand_ga/synthetic-ga-small-blocks.smi",
+      "bytes": 268,
+      "sha256": "8ae10d0571871f1a6d400552567133706f3f44298ee04983867e3ba7d0a8a8aa"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand_ga/m17-candidate-set-small-pool.json",
+      "bytes": 8933,
+      "sha256": "fee5ff2dfa9c043f6d7ff5b9a51b69f30fa56f9277e34b66804273283350fe46"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand_ga/expected.json",
+      "bytes": 150043,
+      "sha256": "3676b155af64432cf25daddf0f03a5c8fa9de98c93dbf52067a01af2ad4e240f"
+    }
+  ],
+  "fixtureLabels": [],
+  "controls": {
+    "docking-import": [
+      {
+        "file": "prolif-vina-rec.pdb"
+      }
+    ],
+    "m17-candidate-set": [
+      {
+        "parent": "public-derived-parent-record0.sdf",
+        "blocks": "synthetic-ga-small-blocks.smi"
+      }
+    ],
+    "ligand-ga-prereq-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-ga-candidate-set": [
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_candidate_set/ad4f5c8620904b3170c928d890b98b99e2692d98d886031107ce69677b86f9b1"
+      }
+    ],
+    "ligand-ga-parent-sdf": [
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      }
+    ],
+    "ligand-ga-receptor": [
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      }
+    ],
+    "ligand-ga-model": [
+      {
+        "model": 1
+      }
+    ],
+    "ligand-ga-instance-radio": [
+      {
+        "instance": "none"
+      }
+    ],
+    "ligand-ga-connectivity-radio": [
+      {
+        "kind": "pdb_conect"
+      }
+    ],
+    "ligand-ga-box-radio": [
+      {
+        "source": "manual"
+      }
+    ],
+    "ligand-ga-manual-box": [
+      {
+        "center": [
+          "3.41",
+          "0.72",
+          "11.31"
+        ],
+        "size": [
+          "12",
+          "12",
+          "12"
+        ]
+      }
+    ],
+    "ligand-ga-docking-seed": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "ligand-ga-exhaustiveness": [
+      {}
+    ],
+    "ligand-ga-num-modes": [
+      {}
+    ],
+    "ligand-ga-energy-range": [
+      {}
+    ],
+    "ligand-ga-ack-keep_input_protonation": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-ga-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-ga-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-ga-param-seed": [
+      {
+        "value": "11"
+      },
+      {
+        "value": ""
+      },
+      {
+        "value": "11"
+      },
+      {
+        "value": "11"
+      },
+      {
+        "value": "12"
+      },
+      {
+        "value": "11"
+      },
+      {
+        "value": "12"
+      },
+      {
+        "value": "13"
+      },
+      {
+        "value": "11"
+      },
+      {
+        "value": "11"
+      }
+    ],
+    "ligand-ga-param-population_size": [
+      {
+        "value": "25"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "6"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "ligand-ga-param-random_fraction": [
+      {
+        "value": "0.6"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      }
+    ],
+    "ligand-ga-param-elite_count": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "0"
+      },
+      {
+        "value": "0"
+      },
+      {
+        "value": "0"
+      }
+    ],
+    "ligand-ga-param-max_new_dockings": [
+      {
+        "value": "5"
+      },
+      {
+        "value": "6"
+      },
+      {
+        "value": "6"
+      },
+      {
+        "value": "10"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "ligand-ga-defaults": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-ga-preflight": [
+      {
+        "status": 200,
+        "admitted": false
+      },
+      {
+        "status": 200,
+        "admitted": false
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      }
+    ],
+    "ligand-ga-filter-apply": [
+      {
+        "heavy_atoms_max": 44
+      }
+    ],
+    "ligand-ga-filter-clear": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-ga-param-generations": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "8"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "ligand-ga-param-tournament_size": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "ligand-ga-param-neighbor_count": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "ligand-ga-param-patience": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "8"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "ligand-ga-param-total_s": [
+      {
+        "value": "600"
+      },
+      {
+        "value": "600"
+      },
+      {
+        "value": "600"
+      },
+      {
+        "value": "600"
+      }
+    ],
+    "ligand-ga-start": [
+      {
+        "clicked": true
+      },
+      {
+        "identical": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-ga-summary-radio": [
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/ac0b50a73b868e7d1b8cc2b1a530e660921394a7bc0176b870d75483080da564"
+      },
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/dc1f36ddf7b2199bae0b7bfe9ba6a10d9b7abda5e92c6b7cd72233e532983241"
+      },
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/ad23761754aeb8b54c1ad80e31f89bb99178d96563bd854144a70d6d04d72059"
+      },
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/577e810bc84c3ce1054f10ca976593bee0a1d36c2e62c21c2cc9888d5928aaf2"
+      },
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/2bec1cea458bb48fa3610478f52ea74b21218ecd9f8a21e8c6d4837c13889001"
+      },
+      {
+        "handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/dc1f36ddf7b2199bae0b7bfe9ba6a10d9b7abda5e92c6b7cd72233e532983241"
+      }
+    ],
+    "ligand-ga-generation-tab": [
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 3
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 1
+      }
+    ],
+    "ligand-ga-sort-score": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "ligand-ga-sort-candidate": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "ligand-ga-sort-slot": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "ligand-ga-open": [
+      {
+        "generation": 1,
+        "position": 0
+      }
+    ],
+    "ligand-ga-limit-approve": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-ga-job-cancel": [
+      {
+        "finishedBefore": 1
+      }
+    ],
+    "ligand-ga-report": [
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "gaArgs": {
+    "run": "run_82cf5dd1fc964e559e8d9612179ab39f",
+    "job": "job_cbb04988f953426192452847fe6a6c93",
+    "summary": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_ga_result/ac0b50a73b868e7d1b8cc2b1a530e660921394a7bc0176b870d75483080da564",
+    "args": {
+      "receptor_handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "receptor_model_number": 1,
+      "connectivity": {
+        "kind": "pdb_conect",
+        "sidecar_handle": null
+      },
+      "receptor_instance": null,
+      "box": {
+        "source": "manual",
+        "center_A": [
+          3.41,
+          0.72,
+          11.31
+        ],
+        "size_A": [
+          12,
+          12,
+          12
+        ]
+      },
+      "parameters": {
+        "seed": 1,
+        "exhaustiveness": 1,
+        "num_modes": 2,
+        "energy_range": 3
+      },
+      "acknowledgement": {
+        "keep_input_protonation": true,
+        "tool_assigned_types_charges": true,
+        "rigid_no_optimization": true
+      },
+      "candidate_set_handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/ligand_candidate_set/ad4f5c8620904b3170c928d890b98b99e2692d98d886031107ce69677b86f9b1",
+      "parent_sdf_handle": "obj://run_82cf5dd1fc964e559e8d9612179ab39f/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+      "filter": {
+        "ranges": {},
+        "pains_exclude": false
+      },
+      "ga": {
+        "seed": 11,
+        "population_size": 4,
+        "generations": 2,
+        "elite_count": 2,
+        "tournament_size": 2,
+        "neighbor_count": 3,
+        "random_fraction": 0.5,
+        "patience": 1,
+        "max_new_dockings": 6,
+        "total_s": 600
+      }
+    },
+    "timeoutS": 1200
+  },
+  "budget": {
+    "wall_clock_s": {
+      "used": 151.63302095606923,
+      "limit": 1800
+    },
+    "expensive_calls": {
+      "used": 32,
+      "limit": 32
+    },
+    "external_tokens": {
+      "used": 0,
+      "limit": 120000
+    },
+    "usd": {
+      "used": 0,
+      "limit": 2
+    }
+  },
+  "notObserved": [
+    {
+      "case": "GA-null-result",
+      "reason": "qvina returns modes for every small-pool candidate (T1: all ten scored), so no individual without a score (null_result/failed) is shown; nothing is forged. The display rule (rows without a score last, never 0) is asserted on every sort here and covered by frontend/tests/ligand-ga.test.cjs and backend/tests/test_ligand_ga_worker.py."
+    },
+    {
+      "case": "GA-no-change",
+      "reason": "no_change depends on the engine's scores (the minimum not decreasing for patience generations); no input is chosen to force it. Covered by backend/tests/test_ligand_ga_worker.py."
+    },
+    {
+      "case": "GA-time-and-worker-limits",
+      "reason": "time_exhausted (600–14400 s), candidate_timeout (300 s), worker_failed and resource_exceeded need hours, a killed worker or oversized output; covered by backend/tests/test_ligand_ga_worker.py and test_ligand_ga_jobs.py with test-only reduced constants."
+    }
+  ],
+  "buildId": "wbonjE7nah2kMcCTup7fP",
+  "harness": {
+    "ligand-ga-flow.cjs": "9fa1ef37ddc4d31e26aef34a2da08d89b44f3b528bae25972d604793b3e73bbb",
+    "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 311,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m22/ga-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 297,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m22/ga-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_82cf5dd1fc964e559e8d9612179ab39f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "ligand-ga-main.jsonl",
+  "startedAt": "2026-10-10T13:44:01.059Z",
+  "finishedAt": "2026-10-10T13:47:41.660Z"
+}

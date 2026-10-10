@@ -34,6 +34,7 @@ SCRIPT_TESTS = [
     "scripts/test_m22_offscreen_acceptance.py", "scripts/test_m23_offscreen_acceptance.py",
     "scripts/test_m24_offscreen_acceptance.py", "scripts/test_m25_offscreen_acceptance.py",
     "scripts/test_import_reaction_references.py", "scripts/test_m26_offscreen_acceptance.py",
+    "scripts/test_import_precedent_snapshots.py", "scripts/test_m27_offscreen_acceptance.py",
 ]
 
 # test_sequence_ga_jobs.py alone takes about 540 s, more than one group's bound, so its tests are split by node id.
@@ -85,6 +86,10 @@ PYTEST_GROUPS = [
     [T + "test_jev_loops_read.py", T + "test_jev_loop_sends.py", T + "test_jev_loop_tool.py",
      T + "test_jev_loop_choice.py", T + "test_jev_loops_api.py"],
     [T + "test_jev_loops_compute.py"],
+    [T + "test_precedent_constants.py", T + "test_precedent_snapshots.py", T + "test_kinase_precedents.py",
+     T + "test_kinase_precedents_tool.py", T + "test_kinase_precedents_api.py",
+     T + "test_kinase_precedents_reports.py", T + "test_kinase_precedents_ast.py"],
+    [T + "test_analysis_workflows.py", T + "test_jev_loop_reports.py"],
 ]
 
 

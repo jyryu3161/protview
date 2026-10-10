@@ -1,0 +1,894 @@
+{
+  "schema": "m19_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "B-run-panel": "pass",
+    "B-m17-set": "pass",
+    "B-select": "pass",
+    "B-refusal": "pass",
+    "B-preflight": "pass",
+    "B-no-approval": "pass",
+    "B-run": "pass",
+    "B-table": "pass",
+    "B-sort": "pass",
+    "B-detail": "pass",
+    "B-dedupe": "pass",
+    "B-reuse": "pass",
+    "B-core-parent-disabled": "pass",
+    "B-limit-approval": "pass",
+    "B-core-fixed": "pass",
+    "B-report": "pass",
+    "B-fail-row": "pass",
+    "B-cancel": "pass",
+    "B-cap": "pass",
+    "B-dry-run": "pass",
+    "B-processes": "pass",
+    "B-wording": "pass"
+  },
+  "runId": "run_08c2b2fac630492eafe389fa005e931f",
+  "runs": {
+    "A": "run_08c2b2fac630492eafe389fa005e931f",
+    "B": "run_b3437b61be2f43c39d36ce5ec493e987",
+    "D": "run_41ca5ab1b4974c29b6dc6e16c934d121",
+    "C": "run_12451fb85a4045d98233f3f9d356e1e2"
+  },
+  "handles": {
+    "A": {
+      "receptor": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "waterZinc": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/895b09aae7fe3a9ad7b834f8fa0f6ae77e7566f858929398a5418b387b42028c",
+      "set": "obj://run_08c2b2fac630492eafe389fa005e931f/ligand_candidate_set/974bd00ab6a0ebfd47cae06d3ed6d914c339f5b6ef6d172635d1d0c52861288b",
+      "free": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/96b9f2176db333ff74df747b1405bdc81c47bc2ac5ba032a913eb5f3a513392b",
+      "subset": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/25fcd6b9215489608f1be69387ba6e94789de720ac046c9d23acd51ee3700643",
+      "core": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/f33cf71631b9b8272a194cb5291ed877616cc73d5e60837db1cbcca7dbf7348b"
+    },
+    "B": {
+      "set": "obj://run_b3437b61be2f43c39d36ce5ec493e987/ligand_candidate_set/1e7043293a84630126a3c4ba938968863666e10b9b00ee9a3ae5a2398620f4b2",
+      "summary": "obj://run_b3437b61be2f43c39d36ce5ec493e987/docking_batch_result/ff4895cfaa786bdaab629b8acb0feb8504d658a25ec4f616e6050b5ef5ef824b"
+    },
+    "C": {
+      "set": "obj://run_12451fb85a4045d98233f3f9d356e1e2/ligand_candidate_set/f78c53288aea30307dccb810269e6f6fbc2f499a1e9a65c36bc890e2c3c83db5",
+      "summary": "obj://run_12451fb85a4045d98233f3f9d356e1e2/docking_batch_result/a47c91c2ba267b49e726c5b80ae62fe78e764a648d00081d95064bbb5b3e33c3"
+    }
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+      "bytes": 504575,
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+      "bytes": 6816,
+      "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-planar-z0.sdf",
+      "bytes": 6829,
+      "sha256": "ad531eae2446c0baebf1f8d0ddb648677c0b1d6c4053d2224d404f7f1c7b4573"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-receptor-water-zinc.pdb",
+      "bytes": 504955,
+      "sha256": "affa0293ea815366c62fd576ce20090213ad3050e4e63e3877f2e4ac1e2e8f31"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-docking-blocks.smi",
+      "bytes": 160,
+      "sha256": "966f7a8607d3011fc3570a39f64e05ab284281fe0602c1cb18f847352d6392ec"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/expected.json",
+      "bytes": 9642,
+      "sha256": "a997053df1cf0e7c5314395b50cf4e5faeecc9f91531e4a7d51f27e054193df3"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/m19-batch-input.json",
+      "bytes": 7915,
+      "sha256": "4d5ab533c7a80825bfb17e440db25a4dbb96391f57df80edadb2be19aa7bc8ff"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/m17-enumerate-result-record0-nmethyl.json",
+      "bytes": 6328,
+      "sha256": "cfebdf81afb32fef2fb41af2a4e46268cc9261676f7b21882776fb651fbe3a60"
+    },
+    {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m19/batch-main/qa-generated-chain-blocks.smi",
+      "bytes": 2833,
+      "sha256": "2d528ed89de7de38e2213d63834ef2f42a2b55c0ac9c133ab2216ca78439cb1f"
+    }
+  ],
+  "fixtureLabels": [
+    "labeled loopback API fixture: dry-run run record (POST /runs dry_run true; the screen cannot create one)",
+    "QA-GENERATED SYNTHETIC building-block list (labeled; written by docking-batch-flow.cjs for the 50-candidate cap, not a scientific input): *C…C chains of 1–60 carbons"
+  ],
+  "controls": {
+    "docking-import": [
+      {
+        "file": "prolif-vina-rec.pdb"
+      },
+      {
+        "file": "synthetic-receptor-water-zinc.pdb"
+      },
+      {
+        "file": "prolif-vina-rec.pdb"
+      },
+      {
+        "file": "prolif-vina-rec.pdb"
+      }
+    ],
+    "m17-candidate-set": [
+      {
+        "parent": "public-derived-parent-record0.sdf",
+        "blocks": "synthetic-docking-blocks.smi"
+      },
+      {
+        "parent": "synthetic-ligand-planar-z0.sdf",
+        "blocks": "synthetic-docking-blocks.smi"
+      },
+      {
+        "parent": "public-derived-parent-record0.sdf",
+        "blocks": "qa-generated-chain-blocks.smi"
+      }
+    ],
+    "docking-batch-prereq-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "docking-batch-receptor": [
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/895b09aae7fe3a9ad7b834f8fa0f6ae77e7566f858929398a5418b387b42028c"
+      },
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      },
+      {
+        "handle": "obj://run_b3437b61be2f43c39d36ce5ec493e987/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      },
+      {
+        "handle": "obj://run_12451fb85a4045d98233f3f9d356e1e2/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+      }
+    ],
+    "docking-batch-model": [
+      {
+        "model": 1
+      },
+      {
+        "model": 1
+      },
+      {
+        "model": 1
+      },
+      {
+        "model": 1
+      }
+    ],
+    "docking-batch-instance-radio": [
+      {
+        "instance": "none"
+      },
+      {
+        "instance": "none"
+      },
+      {
+        "instance": "none"
+      },
+      {
+        "instance": "none"
+      }
+    ],
+    "docking-batch-connectivity-radio": [
+      {
+        "kind": "pdb_conect"
+      },
+      {
+        "kind": "pdb_conect"
+      },
+      {
+        "kind": "pdb_conect"
+      },
+      {
+        "kind": "pdb_conect"
+      }
+    ],
+    "docking-batch-candidate-set": [
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/ligand_candidate_set/974bd00ab6a0ebfd47cae06d3ed6d914c339f5b6ef6d172635d1d0c52861288b"
+      },
+      {
+        "handle": "obj://run_b3437b61be2f43c39d36ce5ec493e987/ligand_candidate_set/1e7043293a84630126a3c4ba938968863666e10b9b00ee9a3ae5a2398620f4b2"
+      },
+      {
+        "handle": "obj://run_12451fb85a4045d98233f3f9d356e1e2/ligand_candidate_set/f78c53288aea30307dccb810269e6f6fbc2f499a1e9a65c36bc890e2c3c83db5"
+      }
+    ],
+    "docking-batch-parent-sdf": [
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      },
+      {
+        "handle": "obj://run_b3437b61be2f43c39d36ce5ec493e987/chemical_raw_input/58b79a6299f2917d0bba92fe08219adf6091daf8a9cc1bc934bfcd31242fb086"
+      },
+      {
+        "handle": "obj://run_12451fb85a4045d98233f3f9d356e1e2/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+      }
+    ],
+    "docking-batch-filter-apply": [
+      {
+        "heavy_atoms_max": 45
+      }
+    ],
+    "docking-batch-passes-only": [
+      {
+        "checked": true
+      }
+    ],
+    "docking-batch-candidate": [
+      {
+        "id": "c_21d6c6f0d07e3759",
+        "checked": true
+      },
+      {
+        "id": "c_1afb7cd3e603456c",
+        "checked": true
+      },
+      {
+        "id": "c_2c7a25e0cc0ad3f2",
+        "checked": true
+      },
+      {
+        "id": "c_1afb7cd3e603456c",
+        "checked": true
+      },
+      {
+        "id": "c_2c7a25e0cc0ad3f2",
+        "checked": true
+      },
+      {
+        "id": "c_21d6c6f0d07e3759",
+        "checked": true
+      },
+      {
+        "id": "c_1afb7cd3e603456c",
+        "checked": true
+      },
+      {
+        "id": "c_c42a53803595e440",
+        "checked": true
+      },
+      {
+        "id": "c_71188fcf0e6703c9",
+        "checked": true
+      },
+      {
+        "id": "c_3299a8a0cfc5a46d",
+        "checked": true
+      },
+      {
+        "id": "c_7150d83081a0886d",
+        "checked": true
+      },
+      {
+        "id": "c_b2450af734c4ae34",
+        "checked": true
+      },
+      {
+        "id": "c_f567083d326698e8",
+        "checked": true
+      },
+      {
+        "id": "c_f6585d8e6f502158",
+        "checked": true
+      },
+      {
+        "id": "c_cfd726afb0d0e7cd",
+        "checked": true
+      },
+      {
+        "id": "c_17becb2f337433ca",
+        "checked": true
+      },
+      {
+        "id": "c_c8b704428f05778c",
+        "checked": true
+      },
+      {
+        "id": "c_c63adde400a92f80",
+        "checked": true
+      },
+      {
+        "id": "c_ee43636d497d151e",
+        "checked": true
+      },
+      {
+        "id": "c_94849dd726257970",
+        "checked": true
+      },
+      {
+        "id": "c_2fe13071c01e4c55",
+        "checked": true
+      },
+      {
+        "id": "c_4a05f8ac1082121b",
+        "checked": true
+      },
+      {
+        "id": "c_b50a90fbe3664629",
+        "checked": true
+      },
+      {
+        "id": "c_8a7c7f8ec7fce08d",
+        "checked": true
+      },
+      {
+        "id": "c_d9d0d21ce17db8a6",
+        "checked": true
+      },
+      {
+        "id": "c_25fa3fa3c76e2586",
+        "checked": true
+      },
+      {
+        "id": "c_9d8160361cd17fb9",
+        "checked": true
+      },
+      {
+        "id": "c_31862e3b59ab54fc",
+        "checked": true
+      },
+      {
+        "id": "c_295ff8fa517ba659",
+        "checked": true
+      },
+      {
+        "id": "c_f487223d425af26d",
+        "checked": true
+      },
+      {
+        "id": "c_797edfbe251a8813",
+        "checked": true
+      },
+      {
+        "id": "c_3c1afa004396b292",
+        "checked": true
+      },
+      {
+        "id": "c_835e82fa0060964a",
+        "checked": true
+      },
+      {
+        "id": "c_8cf277a5bc696494",
+        "checked": true
+      },
+      {
+        "id": "c_4bf893cffb7e3836",
+        "checked": true
+      },
+      {
+        "id": "c_1ef500fa40bf14f6",
+        "checked": true
+      },
+      {
+        "id": "c_97b14344a0608ff1",
+        "checked": true
+      },
+      {
+        "id": "c_f97e9928cc9f5202",
+        "checked": true
+      },
+      {
+        "id": "c_fd6c28f5ff390fb6",
+        "checked": true
+      },
+      {
+        "id": "c_93462b7a0e510d52",
+        "checked": true
+      },
+      {
+        "id": "c_9eaacd1a150fbd1a",
+        "checked": true
+      },
+      {
+        "id": "c_6e7a51409dc088b3",
+        "checked": true
+      },
+      {
+        "id": "c_fd43b6bfc8162041",
+        "checked": true
+      },
+      {
+        "id": "c_db41b63febc14df9",
+        "checked": true
+      },
+      {
+        "id": "c_cbeb22fcdfd3588f",
+        "checked": true
+      },
+      {
+        "id": "c_e85ba2e590a8a5e1",
+        "checked": true
+      },
+      {
+        "id": "c_0e28c060e2317520",
+        "checked": true
+      },
+      {
+        "id": "c_99cabee8411fddca",
+        "checked": true
+      },
+      {
+        "id": "c_09ab77fa67a47a18",
+        "checked": true
+      },
+      {
+        "id": "c_437b0c5200960ffe",
+        "checked": true
+      },
+      {
+        "id": "c_9d331f834856b6e0",
+        "checked": true
+      },
+      {
+        "id": "c_48a250e3d96edb36",
+        "checked": true
+      },
+      {
+        "id": "c_5a5ad734bbef9f56",
+        "checked": true
+      },
+      {
+        "id": "c_f2573b27ac4d1e01",
+        "checked": true
+      },
+      {
+        "id": "c_95b203a3020b4937",
+        "checked": true
+      },
+      {
+        "id": "c_ed0d589b0e0707d8",
+        "checked": true
+      }
+    ],
+    "docking-batch-filter-clear": [
+      {
+        "clicked": true
+      }
+    ],
+    "docking-batch-mode-radio": [
+      {
+        "mode": "free"
+      },
+      {
+        "mode": "core_fixed"
+      },
+      {
+        "mode": "core_fixed"
+      },
+      {
+        "mode": "free"
+      },
+      {
+        "mode": "free"
+      }
+    ],
+    "docking-batch-include-parent": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "docking-batch-box-radio": [
+      {
+        "source": "ligand_range"
+      },
+      {
+        "source": "ligand_range"
+      },
+      {
+        "source": "manual"
+      },
+      {
+        "source": "ligand_range"
+      }
+    ],
+    "docking-batch-margin": [
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      }
+    ],
+    "docking-batch-seed": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "docking-batch-exhaustiveness": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "docking-batch-num-modes": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "docking-batch-energy-range": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "docking-batch-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "docking-batch-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "docking-batch-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "docking-batch-preflight": [
+      {
+        "status": 200,
+        "admitted": false
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      },
+      {
+        "status": 200,
+        "admitted": true
+      }
+    ],
+    "docking-batch-start": [
+      {
+        "clicked": true
+      },
+      {
+        "identical": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "docking-batch-summary-radio": [
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/96b9f2176db333ff74df747b1405bdc81c47bc2ac5ba032a913eb5f3a513392b"
+      },
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/25fcd6b9215489608f1be69387ba6e94789de720ac046c9d23acd51ee3700643"
+      },
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/f33cf71631b9b8272a194cb5291ed877616cc73d5e60837db1cbcca7dbf7348b"
+      },
+      {
+        "handle": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/96b9f2176db333ff74df747b1405bdc81c47bc2ac5ba032a913eb5f3a513392b"
+      },
+      {
+        "handle": "obj://run_b3437b61be2f43c39d36ce5ec493e987/docking_batch_result/ff4895cfaa786bdaab629b8acb0feb8504d658a25ec4f616e6050b5ef5ef824b"
+      },
+      {
+        "handle": "obj://run_12451fb85a4045d98233f3f9d356e1e2/docking_batch_result/a47c91c2ba267b49e726c5b80ae62fe78e764a648d00081d95064bbb5b3e33c3"
+      }
+    ],
+    "docking-batch-sort-score": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      },
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "docking-batch-sort-candidate": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      },
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "docking-batch-sort-row": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      },
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "docking-batch-open": [
+      {
+        "row": 1
+      }
+    ],
+    "docking-batch-conformers": [
+      {}
+    ],
+    "docking-batch-limit-approve": [
+      {
+        "clicked": true
+      }
+    ],
+    "docking-batch-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "docking-batch-manual-box": [
+      {
+        "center": [
+          "3.41",
+          "0.72",
+          "11.31"
+        ],
+        "size": [
+          "22.32",
+          "27.51",
+          "27.60"
+        ]
+      }
+    ],
+    "docking-batch-job-cancel": [
+      {
+        "finishedBefore": 1
+      }
+    ]
+  },
+  "freeArgs": {
+    "run": "run_08c2b2fac630492eafe389fa005e931f",
+    "job": "job_bb6904e69b0f475ba6bda0424a1afb56",
+    "summary": "obj://run_08c2b2fac630492eafe389fa005e931f/docking_batch_result/96b9f2176db333ff74df747b1405bdc81c47bc2ac5ba032a913eb5f3a513392b",
+    "args": {
+      "receptor_handle": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "receptor_model_number": 1,
+      "connectivity": {
+        "kind": "pdb_conect",
+        "sidecar_handle": null
+      },
+      "receptor_instance": null,
+      "mode": "free",
+      "box": {
+        "source": "ligand_range",
+        "margin_A": 8
+      },
+      "parameters": {
+        "seed": 42,
+        "exhaustiveness": 1,
+        "num_modes": 3,
+        "energy_range": 3
+      },
+      "acknowledgement": {
+        "keep_input_protonation": true,
+        "tool_assigned_types_charges": true,
+        "rigid_no_optimization": true
+      },
+      "candidate_set_handle": "obj://run_08c2b2fac630492eafe389fa005e931f/ligand_candidate_set/974bd00ab6a0ebfd47cae06d3ed6d914c339f5b6ef6d172635d1d0c52861288b",
+      "parent_sdf_handle": "obj://run_08c2b2fac630492eafe389fa005e931f/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+      "candidate_ids": [
+        "c_1afb7cd3e603456c",
+        "c_2c7a25e0cc0ad3f2",
+        "c_21d6c6f0d07e3759"
+      ],
+      "include_parent": true
+    }
+  },
+  "notObserved": [
+    {
+      "case": "B-dry-run-shortfall",
+      "reason": "a dry-run run cannot hold a candidate set (M17 jobs only plan there), so an admitted preflight with a shortfall cannot be reached in one; the dry-run note and the absent approval control are observed. Covered by frontend/tests/docking-batch.test.cjs (limitApprovalOffered, batchStartBlockedReason dry-run) and backend/tests/test_docking_batch_budget.py (dry-run permits no raise)."
+    },
+    {
+      "case": "B-null-result",
+      "reason": "qvina returns modes for every valid input here; no zero-mode row is forged. Covered by the backend batch tests and frontend/tests/docking-batch.test.cjs."
+    },
+    {
+      "case": "B-time-limits",
+      "reason": "candidate_timeout (300 s), time_exhausted (7200 s), worker_failed and the 128 MiB output cap need hours or a killed worker; covered by backend/tests/test_docking_batch_worker.py and test_docking_batch_jobs.py with test-only reduced constants."
+    }
+  ],
+  "buildId": "wbonjE7nah2kMcCTup7fP",
+  "harness": {
+    "docking-batch-flow.cjs": "9598f058d5d6aa084416eba6c5a9c947eb39c80cca6ddee78c90b832f597497f",
+    "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 441,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m19/batch-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 430,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 11,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m27-reg/m25/regressions/m19/batch-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_08c2b2fac630492eafe389fa005e931f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_b3437b61be2f43c39d36ce5ec493e987",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_41ca5ab1b4974c29b6dc6e16c934d121",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_12451fb85a4045d98233f3f9d356e1e2",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "docking-batch-main.jsonl",
+  "startedAt": "2026-10-10T13:52:20.991Z",
+  "finishedAt": "2026-10-10T13:54:26.020Z"
+}

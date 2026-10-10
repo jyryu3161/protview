@@ -19,6 +19,9 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
   ├─ 반응 참조 스냅샷 읽기 (reaction_snapshots.py) ─ .deps/reaction_reference/ (MW_REACTION_REFERENCE_DIR, 읽기 전용)
   │     └─ 쓰는 쪽: scripts/import_reaction_references.py ← HTTPS GET만: www.ebi.ac.uk(M-CSA)·rest.uniprot.org·www.rhea-db.org
   │          (사용자가 터미널에서 실행, mw를 import하지 않음. 서버·도구·작업은 이 명령을 부르지 않음)
+  ├─ 전례 참조 스냅샷 읽기 (precedent_snapshots.py) ─ .deps/precedent_reference/ (MW_PRECEDENT_REFERENCE_DIR, 읽기 전용)
+  │     └─ 쓰는 쪽: scripts/import_precedent_snapshots.py ← ../kbase_kinase의 dist/ 세 파일·ref/pubmed 최신 서지
+  │          (사용자가 실행, 네트워크 없음: 로컬 파일과 읽기 전용 git만. mw를 import하지 않음, 서버는 kbase를 읽지 않음)
   ├─ JobQueue + guardian (jobs/) ─ POSIX 프로세스 그룹으로 작업 프로세스 감독
   │     ├─ OpenMM 작업 프로세스 (프로젝트 .venv 인터프리터)
   │     ├─ ProLIF 작업 프로세스 (.deps/prolif/venv-locked 별도 인터프리터)
@@ -89,13 +92,18 @@ FastAPI 백엔드 (backend/mw/api/app.py, 127.0.0.1:8000)
 | `backend/mw/reaction_knowledge_reads.py`, `reaction_knowledge_reports.py` | M26 읽기 API(스냅샷 상태·PDB ID의 M-CSA 항목·결과 목록·상세, 이벤트 없음)와 계산값(저장 행 개수)·참조값을 분리한 보고서 | reaction_knowledge, `mutation_reports`(공용 한도·금지어), reports, core |
 | `frontend/src/components/ReactionKnowledgePanel.tsx` | M26 지식·보고서 탭의 "효소 반응 지식" 영역(번호 대응 화면과 JEV 영역 사이): 스냅샷 상태, 연결 요청(구조·확인한 PDB ID·체인 accession·선택적 번호 대응, M-CSA 제안), 체인별 M-CSA·UniProt·반응 절 표, 보고서 만들기. 뷰어 표시 없음 | `src/lib/reaction-knowledge.ts`(→ `src/lib/numbering.ts`), `api.ts` |
 | `scripts/import_reaction_references.py` | M26 반응 참조 가져오기 명령(사용자가 터미널에서 실행): 허용 호스트 셋에 HTTPS GET만 보내 받은 응답을 가공하고, 검증 뒤 새 세트를 원자적으로 설치하며 요청마다 기록한다. 제품 런타임과는 분리 | 표준 라이브러리(`urllib`), `reaction_knowledge_constants.py`(파일 경로로만), 로컬 M15 사용 중 세트(kinase accession 목록). `mw`를 import하지 않음 |
+| `backend/mw/precedent_constants.py`, `precedent_snapshots.py` | M27 표준 라이브러리 모듈: 닫힌 집합·상한·고정 문장·`KBASE_PINS`·어휘·kbase 레코드 형식 검사(`validate_move`·`validate_reference`·`validate_dist_files`)·레코드 해시·정규 JSON·매니페스트 검사(`mw` import 없음, 가져오기 명령도 파일 경로로 읽음), 전례 참조 폴더의 사용 중 세트를 호출마다 한 번 고정(`PinnedPrecedentSet`)하고 파일 해시·바이트·행 수를 확인. 내용은 해석하지 않는다. M15·M26 스냅샷 모듈과 폴더·포인터·캐시가 따로다 | 표준 라이브러리(`precedent_snapshots`는 상수 모듈만) |
+| `backend/mw/kinase_precedents.py`, `tools/kinase_precedents.py` | M27 `link_kinase_precedents`: 고정한 세트의 형식 검사·색인(세트 하나 캐시), 번호 대응의 체인 판정, 같은 accession 표적의 전례 모음, 두 경로를 뺀 전례 사본과 무결성 확인 값, `kinase_precedents@1`과 `validated_result`, 1 MiB 초과 거절. 도구 모듈의 사전 검사 훅이 세트 고정·입장 검사(번호 대응은 저장소에서 읽어 지역 모양 검사)를 구현 전에 한다 | precedent 상수·스냅샷 모듈, core(handles·errors), tools 레지스트리 |
+| `backend/mw/kinase_precedents_reads.py`, `kinase_precedents_reports.py` | M27 읽기 API(스냅샷 상태·결과 목록·상세의 필터·검색·정렬·쪽·facets, 이벤트 없음)와 계산값(저장 결과 개수·무결성 확인 값)·참조값(kbase 가공본 값)을 분리한 보고서(요약 + 출처 목록, 인용문·측정 변화 값 없음) | kinase_precedents, precedent 상수·스냅샷 모듈, reports, core |
+| `frontend/src/components/KinasePrecedentsPanel.tsx` | M27 지식·보고서 탭의 "키나아제 전례" 영역(효소 반응 지식 영역과 JEV 영역 사이): 스냅샷 상태, 연결 요청(번호 대응·체인·`moves_flagged` 포함 토글), 결과 목록, 체인 표, 표적 탭, 서버가 거르고 정렬한 전례 표·상세, 보고서 만들기. 뷰어 표시 없음 | `src/lib/kinase-precedents.ts`, `api.ts` |
+| `scripts/import_precedent_snapshots.py` | M27 전례 참조 가져오기 명령(사용자가 터미널에서 실행): 로컬 `kbase_kinase` 체크아웃의 `dist/` 세 파일과 `ref/pubmed` 최신 서지 스냅샷을 핀·파일 해시·레코드 형식·레코드 해시 검사 뒤 바이트 그대로 새 세트로 원자적으로 설치한다. 네트워크 없음. 제품 런타임과는 분리 | 표준 라이브러리, 읽기 전용 `git -C` 하위 프로세스, `precedent_constants.py`(파일 경로로만). `mw`를 import하지 않음 |
 | `backend/mw/workflows.py` | 고정 파이프라인 `inspect_complex`를 `Run.call` 순서로 실행 | runtime |
 | `backend/mw/analysis_plans.py` | M13 템플릿 6개, 불변 계획 `analysis_plan@1` 컴파일·검증·저장, 계약 이름 ↔ 실제 도구·프로토콜·보고서 대응 표, `/capabilities`의 `analysis_workflows`. 과학 구현을 부르지 않는다 | core, tools(순수 검사), 방법별 읽기 전용 사전 검사 |
 | `backend/mw/analysis_executions.py` | M13 실행 driver: 실행 기록 접기, 계획 승인·철회, 한 단계 진행, 재시도, 범위 한정 중지, 충돌 복구, `workflow_summary@1`. 과학은 `ExecutionLink`를 단 `Run.call`·`JobQueue`·기존 보고서 함수로만 실행 | analysis_plans, runtime, jobs, 보고서 모듈 |
 | `frontend/src/components/AnalysisWorkflowPanel.tsx` | M13 분석 흐름 패널(메인 화면과 화학 작업 화면 공용): 화면 선택 가져오기, 계획 미리보기, 두 승인, 단계 목록, 결과 열기, 요약 | `src/lib/analysis.ts`, `api.ts`, PocketPanel·페이지의 결과 열기 콜백 |
 | `scripts/execute.py`, `phases/` | M0–M11 단계 기록과 과거 검증 도구. 제품 런타임과는 분리 | 없음 (제품 코드를 import하지 않음) |
 
-의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈(의 함수)만 자식 프로세스로 실행한다. M19 일괄 작업 모듈은 같은 인터프리터에서 `docking_worker.py`와 의존성 없는 `docking_batch_constants.py`만 파일 경로로 불러 쓴다. M26 가져오기 명령은 `mw`를 import하지 않고 의존성 없는 `reaction_knowledge_constants.py`만 파일 경로로 불러 쓰며, 서버·도구·작업은 이 명령을 부르지 않는다. 둘은 반응 참조 폴더의 파일로만 이어지고, 서버 쪽 M26 모듈은 네트워크 모듈을 import하지 않는다.
+의존은 위에서 아래로만 흐른다. `core/`는 다른 백엔드 모듈을 import하지 않고, 작업 프로세스는 API 서버 모듈을 import하지 않는다. ProLIF·RDKit 리간드 작업 프로세스는 서버와 다른 인터프리터에서 돌며, 서버와는 JSON 파일과 입력 바이트로만 주고받는다. 리간드 작업 모듈이 서버 쪽에서 가져오는 것은 의존성 없는 `ligand_constants.py`뿐이다. M18 도킹 작업 모듈도 서버와 다른 인터프리터(`.deps/docking/venv-locked`)에서 돌며, 서버 쪽에서 가져오는 것은 의존성 없는 `docking_constants.py`(파일 경로로 읽음)뿐이고 `qvina2`는 이 작업 모듈(의 함수)만 자식 프로세스로 실행한다. M19 일괄 작업 모듈은 같은 인터프리터에서 `docking_worker.py`와 의존성 없는 `docking_batch_constants.py`만 파일 경로로 불러 쓴다. M26 가져오기 명령은 `mw`를 import하지 않고 의존성 없는 `reaction_knowledge_constants.py`만 파일 경로로 불러 쓰며, 서버·도구·작업은 이 명령을 부르지 않는다. 둘은 반응 참조 폴더의 파일로만 이어지고, 서버 쪽 M26 모듈은 네트워크 모듈을 import하지 않는다. M27 가져오기 명령도 `mw`를 import하지 않고 의존성 없는 `precedent_constants.py`만 파일 경로로 불러 쓰며(네트워크 없음), 서버와는 전례 참조 폴더의 파일로만 이어진다. 서버 쪽 M27 모듈은 네트워크 모듈·`subprocess`·화학 패키지를 import하지 않고 kbase 경로를 모른다.
 
 ## 대표 흐름: 업로드부터 보고서까지
 
@@ -149,15 +157,21 @@ OpenMM 최소화, ProLIF 화학 계산, fpocket 포켓 검출, M17 RDKit 리간�
 
 기존 흐름에서 바뀐 것: M20 `generate_mutation_candidates`는 선택 입력 `catalytic_annotation`(같은 run의 `reaction_knowledge@1`)을 받아 v2 집합(`mw.mutation_candidates/v2`)을 만든다. 도구 층이 결과를 `validated_result`로 검증해 보호에 필요한 값만 `mutation_candidates.py`의 순수 함수에 넘기고, 그중 M-CSA "대응됨" 행만 보호 근거(`catalytic_residue`)가 되며 검사 칸 `protection_checks.catalytic_residue_database`가 함께 저장된다. 이 단계 뒤 새 집합은 모두 v2이고 저장된 v1 집합은 바이트 그대로 유효하다. M21·M23·M24·M25는 두 세대를 모두 받고, 후보 집합을 고르는 곳은 `catalytic_residue_database.status`로 "촉매 잔기 검사 안 함"을 표시한다. M24 변이 투영·제안(`jev_choice@1`)·보고서의 다섯째 한계 문장은 와이어의 이 상태에 따라 J6(`not_available`, 바이트 그대로)·J6n·J6c(`J6_BY_CATALYTIC_STATUS`)이고, M26 반응 자료는 JEV 와이어에 들어가지 않는다. `mutation_candidates.py`가 바뀌어 M21·M23 호출 키가 달라졌다(영향은 `docs/engineering-notes.md`의 M26 함정).
 
+## 키나아제 전례 (M27)
+
+전례 참조 데이터는 사용자가 터미널에서 실행하는 가져오기 명령 `scripts/import_precedent_snapshots.py`만 쓴다. 이 명령은 네트워크를 쓰지 않는다: 로컬 `kbase_kinase` 체크아웃의 `dist/moves.jsonl`·`dist/moves_flagged.jsonl`·`dist/references.jsonl`과 `ref/pubmed`의 가장 최근 서지 스냅샷을 읽어, `KBASE_PINS` 세 값·kbase 매니페스트의 SHA-256·바이트·행 수·모든 레코드의 형식과 `content_hash` 재계산이 맞을 때만 읽기 전용 `git -C`로 커밋·`dirty`를 기록하고 바이트 그대로 `.deps/precedent_reference/sets/<set_hash>/`에 원자적으로 설치한 뒤 `active.json`(`precedent_active@1`)을 rename으로 바꾼다. 서버는 이 폴더만 읽고, M15·M26 참조 폴더와는 따로다.
+
+흐름: 가져오기 → 로컬 참조 폴더 → 서버 고정 → 도구 → 이벤트·저장 객체 → 읽기·보고서 → 지식 탭 영역. 지식·보고서 탭의 "키나아제 전례" 영역에서 사용자가 같은 run의 번호 대응(M15 `residue_numbering_map@1`), 체인, `moves_flagged` 포함 여부를 고르고 "전례 연결"을 누르면, `POST /commands`의 `link_kinase_precedents`가 `Run.call` 값싼 도구로 돈다. 사전 검사 훅이 사용 중 세트를 고정·해석하고(없거나 손상이면 412) 번호 대응을 저장소에서 읽어 입장 다섯을 검사한 뒤(세트 해시가 호출 키에 들어감), 구현이 같은 세트로 체인 판정(accession 하나 + mapped ≥ 1) → 같은 accession 표적의 전례 모음 → 포함할 원본 레코드의 `content_hash` 재확인 → 두 경로를 뺀 사본·무결성 확인 값·서지 → `validated_result`를 거쳐 `kinase_precedents@1`을 저장한다(1 MiB 초과는 429, 자르지 않음). 결과는 세트 기록과 전례 사본을 담으므로 참조 폴더 없이 이벤트만으로 다시 열린다. 읽기는 `/precedent_reference/status`·`/runs/{id}/kinase_precedents*`(이벤트 없음)이고, 결과 상세는 서버가 한 표적의 전례를 거르고 정렬해 한 쪽씩 돌려준다. 보고서는 기존 `method_reports` 경로(`analysis_type: "kinase_precedents"`, 요약 + 출처 목록)다. 뷰어 표시는 없고 M13 흐름·M17·M19·M24·M25는 이 도구나 결과를 쓰지 않는다. 기존 흐름의 코드·형식·호출 키 해시 파일은 바뀌지 않았다.
+
 ## 외부 경계
 
 - 넘어가는 것: 해당 run에서 온라인 모드와 뷰어 전용 동의를 켠 뒤, 사용자가 입력한 뷰어 요청 문장(최대 512자)과 생성된 별칭 대상 카탈로그(최대 256개)만 OpenRouter로 간다. M3 경로에서는 접촉 집계 숫자 몇 개만 간다. M24 과학 전송은 과학 전송 동의가 켜진 run에서 사람이 승인한 투영 본문 하나씩만 간다: 리간드 후보(정규 SMILES, RDKit 추정 속성, PAINS 일치, 생성 방식 종류) 또는 변이 후보(잔기 7필드, 서열 구간 앞뒤 5개, 5.0 Å 이웃 잔기 이름, 리간드까지 거리, 보호 검사 상태, 포켓 요약), 고정 질문. M25 루프 전송은 같은 경로로 같은 종류의 후보 필드에 목표(`goal`)·계산된 후보 표시(`computed`, 활용형만 저장된 qvina 점수)·목표별 지시문을 더하고 후보 순서·별칭을 전송마다 섞는다. 서열 구간·이웃 잔기 이름으로 단백질이 알려질 수 있다.
-- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, M26 반응 자료(M-CSA·UniProt·Rhea 값), 로컬 경로, handle, run ID, 후보 id, 루프 ID·루프 seed·바퀴 번호, 자격 증명, 이전 대화.
+- 넘어가지 않는 것(현재 코드 기준): 좌표, 구조 파일, 전체 서열, 원자 이름, 리간드 인스턴스 이름, 번호 대응·KLIFS 값, M26 반응 자료(M-CSA·UniProt·Rhea 값), M27 전례 자료(kbase 전례·서지·참조), 로컬 경로, handle, run ID, 후보 id, 루프 ID·루프 seed·바퀴 번호, 자격 증명, 이전 대화.
 - 정책(결정 0015, 2026-09-29): 구조·좌표·서열·리간드·분석 결과는 외부 모델로 보내도 된다. 실제로 보내는 과학 데이터는 M24의 두 투영과 M25의 두 루프 투영뿐이며, 새 종류는 게이트 투영·미리보기·예산·감사를 함께 만들어야 보낸다. 자격 증명은 계속 전송 금지다.
 - 게이트 밖 예외(결정 0034): 사용자가 터미널에서 실행하는 M26 반응 참조 가져오기 명령 `scripts/import_reaction_references.py` 하나가 허용 호스트 셋(`www.ebi.ac.uk`·`rest.uniprot.org`·`www.rhea-db.org`)에 HTTPS GET만 보낸다. 보내는 것은 URL 질의(쪽 번호·accession 목록·열 이름)뿐이고 키·쿠키·사용자 데이터는 없으며, 리다이렉트·환경 프록시를 따르지 않고 호스트·스킴을 바꾸는 옵션도 없다. 서버·도구·작업·보고서·화면은 이 명령을 부르지 않는다. 고정 규칙과 요청 기록은 `docs/security.md`.
 - 브라우저의 글꼴·스크립트·Mol* 자산·예시 구조는 모두 로컬 번들이다. 오프스크린 QA는 loopback이 아닌 요청을 전부 차단하고 기록한다.
-- 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)와 위 M26 가져오기 명령에만 네트워크가 필요하다. 서버와 작업 프로세스는 실행 중에 다운로드하지 않는다. M15 참조 스냅샷 가져오기 명령(`scripts/import_reference_snapshots.py`)은 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다.
+- 초기 설치(`pip`, `npm ci`, ProLIF·도킹 wheelhouse, fpocket·qvina conda archive 준비)와 위 M26 가져오기 명령에만 네트워크가 필요하다. 서버와 작업 프로세스는 실행 중에 다운로드하지 않는다. M15 참조 스냅샷 가져오기 명령(`scripts/import_reference_snapshots.py`)과 M27 전례 가져오기 명령(`scripts/import_precedent_snapshots.py`)은 로컬 kbase 체크아웃에서 복사할 뿐 네트워크를 쓰지 않는다(M27 개발·검증 중 외부 요청은 사람이 허용한 RCSB 공개 구조 2개뿐이었다, `docs/security.md`).
 
 ## 저장소 배치
 
-`runs/<run_id>/`에는 `events.jsonl`(원본 데이터), 불변 객체 파일, 없애도 되는 SQLite 색인, 작업 시도 디렉터리가 있다. 위치는 `MW_RUNS_DIR`로 바꿀 수 있다. 참조 스냅샷은 run 밖의 `.deps/reference/`(M15, `MW_REFERENCE_DIR`)와 `.deps/reaction_reference/`(M26, `MW_REACTION_REFERENCE_DIR`, 세트마다 요청 기록 `files/request_log.jsonl`)에 따로 있고, 두 가져오기 명령 모두 이전 세트 폴더를 지우지 않는다. 객체와 색인을 지워도 이벤트만으로 전부 다시 만들 수 있다. 이 복구 방식은 작은 구조 작업을 전제로 하며, 큰 궤적 데이터는 다루지 않는다.
+`runs/<run_id>/`에는 `events.jsonl`(원본 데이터), 불변 객체 파일, 없애도 되는 SQLite 색인, 작업 시도 디렉터리가 있다. 위치는 `MW_RUNS_DIR`로 바꿀 수 있다. 참조 스냅샷은 run 밖의 `.deps/reference/`(M15, `MW_REFERENCE_DIR`), `.deps/reaction_reference/`(M26, `MW_REACTION_REFERENCE_DIR`, 세트마다 요청 기록 `files/request_log.jsonl`), `.deps/precedent_reference/`(M27, `MW_PRECEDENT_REFERENCE_DIR`)에 따로 있고, 세 가져오기 명령 모두 이전 세트 폴더를 지우지 않는다. M27 결과 객체는 실제 kbase 전례 문구를 run 이벤트에 담으므로 run 폴더는 공유하지 않는 자료다. 객체와 색인을 지워도 이벤트만으로 전부 다시 만들 수 있다. 이 복구 방식은 작은 구조 작업을 전제로 하며, 큰 궤적 데이터는 다루지 않는다.

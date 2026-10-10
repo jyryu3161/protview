@@ -1355,3 +1355,140 @@ export interface ReactionKnowledgeList { items: ReactionKnowledgeListItem[]; tot
 export interface ReactionKnowledgeReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "reaction_knowledge"; result_handle: string;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
+
+// ---- M27 kinase precedents (backend/mw/precedent_constants.py, kinase_precedents.py, kinase_precedents_reads.py,
+// tools/kinase_precedents.py, kinase_precedents_reports.py; `.dryforge/spec.md` 3, 5-7).
+// Every precedent field is a kbase_kinase value copied as it is (machine-extracted, unreviewed; never computed); the
+// only computed values are counts. A file that was not included has a null count (never 0) and the number of records
+// it was not including is the separate `excluded_flagged`.
+export type PrecedentJsonValue = string | number | boolean | null | PrecedentJsonValue[] |
+  { [key: string]: PrecedentJsonValue };
+export type PrecedentSnapshotReason = "not_installed" | "snapshot_invalid";
+export type PrecedentFile = "moves" | "moves_flagged";
+export type PrecedentChainStatus = "linked" | "not_linked";
+export type PrecedentChainReason = "no_mapped_residues" | "multiple_accessions";
+export type PrecedentTargetStatus = "precedents_found" | "none_in_included_files" | "not_in_kbase_references";
+export type PrecedentTagAxis = "site" | "goal" | "tactic";
+/** The detail read's five sort keys (spec 6): never an effect, direction or magnitude value. */
+export type PrecedentSortKey = "move_id" | "pmid" | "year" | "variant" | "file";
+export type PrecedentSortOrder = "asc" | "desc";
+export type PrecedentCheckName = "qualifier_consistency" | "tag_vocab" | "schema" | "target_in_reference" |
+  "quote_in_source" | "cross_parser_numbers" | "chembl_crosscheck" | "pmid_exists" | "structure_ref_exists" |
+  "duplicate";
+
+/** The set manifest `kbase` block (spec 3.2), as stored. */
+export interface PrecedentKbaseBlock { commit: string; dist_commit: string | null; dist_commit_date: string | null;
+  dirty: boolean; kb_version: string; schema_version: string; effect_rules_version: string; vocab_version: string;
+  source_snapshots: string[]; origin: string }
+export interface PrecedentFileCounts { moves: number; moves_flagged: number }
+/** Set-wide summary (spec 5.6), independent of any chain. */
+export interface PrecedentSetSummary { records: PrecedentFileCounts; references: number;
+  unresolved_target_records: PrecedentFileCounts;
+  unresolved_names: ({ name_as_written: string | null } & PrecedentFileCounts)[]; unresolved_names_total: number;
+  resolution_basis_counts: ({ basis: string } & PrecedentFileCounts)[] }
+/** `GET /precedent_reference/status` (run independent). Not installed / invalid: `installed: false`, the reason, nulls.
+ * `files` are the three dist files; the bibliography row count is `bibliography.rows`. */
+export interface PrecedentReferenceStatus { schema: "precedent_reference_status@1"; installed: boolean;
+  reason: PrecedentSnapshotReason | null; set_hash: string | null; imported_at: string | null;
+  importer_version: string | null; kbase: PrecedentKbaseBlock | null;
+  files: { name: string; rows: number; bytes: number }[] | null;
+  bibliography: { snapshot_id: string; date: string; license: string; rows: number } | null;
+  set_summary: PrecedentSetSummary | null }
+export interface PrecedentCapabilitySource { source: "kbase_dist" | "kbase_pubmed"; date: string | null; license: string;
+  origin: string; rows: number }
+/** `/capabilities` `methods.kinase_precedents` (same five keys as `reaction_knowledge`). */
+export interface KinasePrecedentsCapability { available: boolean; reason_code: PrecedentSnapshotReason | null;
+  reason: string | null; set_hash: string | null; sources: PrecedentCapabilitySource[] }
+/** `link_kinase_precedents` arguments (spec 5.1; unknown keys refused), in the server's normalized key order. */
+export interface KinasePrecedentsArgs { numbering_map: string; chains: string[] | null; include_flagged: boolean }
+/** 429 `resource_exceeded` detail of a result above 1 MiB (nothing stored, nothing truncated). */
+export interface PrecedentTooLargeDetail { reason_code: "result_too_large"; limit: number; actual: number;
+  size_without_flagged: number | null; target_sizes: { accession: string; chains: string[]; bytes: number }[] }
+
+export interface PrecedentSetFile { name: string; path: string; sha256: string; bytes: number; rows: number }
+/** The result's `precedent_set` (spec 5.6): reopens from events alone, without the reference folder. */
+export interface PrecedentSetRecord { set_hash: string; imported_at: string; importer_version: string;
+  kbase: PrecedentKbaseBlock; files: PrecedentSetFile[];
+  bibliography_snapshot: { snapshot_id: string; date: string; license: string; origin: string; file: PrecedentSetFile } }
+/** One chain of the numbering map (spec 5.3), in the map's order. */
+export interface PrecedentChain { chain_auth: string; total_residue_count: number; mapped_residue_count: number;
+  cross_check: boolean; cross_check_absent_reason: string | null; status: PrecedentChainStatus;
+  reason: PrecedentChainReason | null; accession: string | null; accessions: string[] }
+/** A kbase reference of the target (kbase values as written). */
+export interface PrecedentReference { ref_id: string; gene: PrecedentJsonValue; klifs_name: PrecedentJsonValue;
+  group: PrecedentJsonValue; family: PrecedentJsonValue; coverage: PrecedentJsonValue; content_hash: string | null }
+/** Counts ProtView made from the included records; `moves_flagged` is null when that file was not included. */
+export interface PrecedentTargetCounts { moves: number; moves_flagged: number | null;
+  variants: { variant: string; count: number }[];
+  tags: Record<PrecedentTagAxis, { term: string; count: number }[]>;
+  resolution_basis: { basis: string; count: number }[] }
+export interface PrecedentMeasure { qualifier: PrecedentJsonValue; value: PrecedentJsonValue; unit: PrecedentJsonValue }
+/** One measured change as kbase extracted it; direction / magnitude are kbase rule v1 values, never ProtView's. */
+export interface PrecedentEffect { metric: PrecedentJsonValue; assay: PrecedentJsonValue; assay_context: PrecedentJsonValue;
+  target_ref: PrecedentJsonValue; target_role: string; before: PrecedentMeasure | PrecedentJsonValue;
+  after: PrecedentMeasure | PrecedentJsonValue; direction: string; direction_basis: string; magnitude_bucket: string;
+  comparable: PrecedentJsonValue; comparability_reason: PrecedentJsonValue; fold_change: number | null;
+  chembl_crosscheck: PrecedentJsonValue; evidence: PrecedentJsonValue }
+export interface PrecedentLocation { kind: string; page: number; [key: string]: PrecedentJsonValue }
+export interface PrecedentCheck { status: string; [key: string]: PrecedentJsonValue }
+/** The stored record copy (`kbase_record_minus_2_paths@1`): the kbase record minus `source.parser` and
+ * `checks.cross_parser_numbers.measurements`; `content_hash` is the original record's hash. */
+export interface PrecedentRecord { review_status: string; schema_version: number; move_id: string;
+  source: { pmid: string; locations: PrecedentLocation[] };
+  target: { gene: PrecedentJsonValue; uniprot: string | null; name_as_written: string | null; resolution_basis: string;
+    candidates: PrecedentJsonValue; variant: string };
+  structure_ref: PrecedentJsonValue; structure_link_reason: PrecedentJsonValue; structure_ref_from: PrecedentJsonValue;
+  structure_links: { basis: string; [key: string]: PrecedentJsonValue }[];
+  interactions: { [key: string]: PrecedentJsonValue }[];
+  observation: { text: PrecedentJsonValue; quote: string; quote_truncated: PrecedentJsonValue;
+    evidence: PrecedentJsonValue };
+  change: PrecedentJsonValue; effects: PrecedentEffect[];
+  tradeoffs: { text: PrecedentJsonValue; quote: string | null; quote_truncated: PrecedentJsonValue;
+    evidence: PrecedentJsonValue }[];
+  mutations: PrecedentJsonValue; tags: Record<PrecedentTagAxis, string[]>; proposed_tags: PrecedentJsonValue;
+  figures: PrecedentJsonValue; checks: Record<PrecedentCheckName, PrecedentCheck>;
+  extraction: { model: PrecedentJsonValue; provider: PrecedentJsonValue; prompt_version: PrecedentJsonValue;
+    run_at: PrecedentJsonValue; [key: string]: PrecedentJsonValue };
+  content_hash: string }
+/** ProtView's own checks at link time (spec 5.5): not a comparison with the paper. */
+export interface PrecedentIntegrity { hash_verified: boolean; observation_quote_words: number;
+  tradeoff_quote_words: (number | null)[]; quotes_within_limit: boolean; locations_have_page: boolean }
+export interface PrecedentRecordItem { file: PrecedentFile; integrity: PrecedentIntegrity; record: PrecedentRecord }
+/** Bibliography snapshot row values as they are (null = no bibliography for that PMID). */
+export interface PrecedentBibliographyEntry { title: string | null; journal: string | null; year: string | null;
+  doi: string | null; pmc: string | null }
+export interface PrecedentFacetValue { value: string; count: number }
+/** Value counts of the selected target's records before any filter (server order). */
+export interface PrecedentFacets { file: PrecedentFacetValue[]; site: PrecedentFacetValue[]; goal: PrecedentFacetValue[];
+  tactic: PrecedentFacetValue[]; variant: PrecedentFacetValue[] }
+export interface KinasePrecedentsTargetOverview { accession: string; chains: string[]; status: PrecedentTargetStatus;
+  references: PrecedentReference[]; excluded_flagged: number | null; counts: PrecedentTargetCounts }
+/** Included counts are null when `moves_flagged` was not included; `excluded_moves_flagged` is null when it was. */
+export interface KinasePrecedentsCounts { chains: number; linked_chains: number; not_linked_chains: number;
+  targets: number; records: { moves: number; moves_flagged: number | null }; excluded_moves_flagged: number | null }
+/** No target: `target`, `total`, `filtered_total` null (offset / limit still carry the request's values). */
+export interface KinasePrecedentsPage { target: string | null; total: number | null; filtered_total: number | null;
+  offset: number; limit: number }
+/** `GET /runs/{id}/kinase_precedents/{handle}?target=&file=&site=…`: the re-validated stored result plus one target's
+ * filtered, sorted page (spec 6). */
+export interface KinasePrecedentsDetail { schema: "kinase_precedents_detail@1"; handle: string;
+  method_version: "mw.kinase_precedents/v1"; numbering_map: { handle: string };
+  structure: { handle: string; structure_kind: "structure" | "prepared_structure"; model_number: number };
+  pdb_id: string | null; include_flagged: boolean; record_format: "kbase_record_minus_2_paths@1";
+  precedent_set: PrecedentSetRecord; chains: PrecedentChain[]; targets_overview: KinasePrecedentsTargetOverview[];
+  set_summary: PrecedentSetSummary; counts: KinasePrecedentsCounts; null_result: boolean; limitations: string[];
+  page: KinasePrecedentsPage; facets: PrecedentFacets | null; records: PrecedentRecordItem[];
+  /** This page's PMIDs only. */
+  bibliography: Record<string, PrecedentBibliographyEntry | null>;
+  /** The active set now (null when none is usable) and whether it is the result's set. */
+  active_set: { set_hash: string | null; same: boolean } }
+/** `GET /runs/{id}/kinase_precedents` item, newest first; `active` = same set as the active one now. */
+export interface KinasePrecedentsListItem { handle: string; numbering_map_handle: string; pdb_id: string | null;
+  include_flagged: boolean; chain_count: number; linked_chain_count: number; target_count: number;
+  records: { moves: number; moves_flagged: number | null }; null_result: boolean; set_hash: string; active: boolean }
+export interface KinasePrecedentsList { items: KinasePrecedentsListItem[]; total: number }
+/** Report `analysis_type: "kinase_precedents"`; the snapshot records the active set at creation. */
+export interface KinasePrecedentsReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "kinase_precedents"; result_handle: string;
+  precedent_set: PrecedentSetRecord; snapshot: { event_seq: number; active_set_hash: string | null } } &
+  Record<string, unknown>; markdown: string }

@@ -1,0 +1,48 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "main",
+  "run": "run_b586054536104a539b9cd89f8da749dc",
+  "inputs": [
+    {
+      "name": "public_1hsg.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "bytes": 212124,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+      "provenance": "public PDB entry 1HSG (repository fixture)"
+    }
+  ],
+  "handles": {
+    "raw": "obj://run_b586054536104a539b9cd89f8da749dc/structure/d5bd4dec8f1341898db2000810d4b704cea4c1cb36e46935fed63455492607ad",
+    "stoppedBeforeApproval": "exec_0938be0f927947b58df3d62c12fd0645",
+    "inspectRaw": {
+      "plan": "obj://run_b586054536104a539b9cd89f8da749dc/analysis_plan/e4db70d70232c17567129961ba8fcb30564850155dc98598411900fa55ea6c23",
+      "execution": "exec_3f0d6dd26e3a4f18989d54d8399a3dfd",
+      "summary": "obj://run_b586054536104a539b9cd89f8da749dc/workflow_summary/9cec50e75b82361d5996f70dc64d61a7de48ddb3c26e710acfadff2f15c59ab5"
+    },
+    "prepared": "obj://run_b586054536104a539b9cd89f8da749dc/prepared_structure/902473d95d262b0685266654a46100825d6e0c8d432f0ea9c993d761918c15d4",
+    "displayedPrepared": "obj://run_b586054536104a539b9cd89f8da749dc/prepared_structure/902473d95d262b0685266654a46100825d6e0c8d432f0ea9c993d761918c15d4",
+    "inspectPrepared": {
+      "plan": "obj://run_b586054536104a539b9cd89f8da749dc/analysis_plan/494593872b085fd707846743734b8c973ca9063cf272cb9e10d249e428a229f8",
+      "execution": "exec_7124d482202f412f8cbab14bcf4d80bc",
+      "summary": "obj://run_b586054536104a539b9cd89f8da749dc/workflow_summary/c72aeb2de3f7992f6a30cfe38c606175826fdc9e5182c386e122526b947b7c1c"
+    },
+    "cavitiesMain": {
+      "plan": "obj://run_b586054536104a539b9cd89f8da749dc/analysis_plan/c72a8391715801882e602385ab3f95680de6a03675e55f890213e405a74bd3f2",
+      "execution": "exec_2c37ba615b874595a1aeee8d291a8f3a"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_b586054536104a539b9cd89f8da749dc",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-10T14:03:08.238Z",
+  "finishedAt": "2026-10-10T14:03:49.834Z",
+  "error": null
+}
