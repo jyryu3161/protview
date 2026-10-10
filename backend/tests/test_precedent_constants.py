@@ -600,3 +600,29 @@ def test_move_number_and_accession_pattern():
                                                                                    "MOVE-10000"]
     assert K.is_accession("P00533") and K.is_accession("A0A024R161") and K.is_accession("P0SYN1")
     assert not K.is_accession("p00533") and not K.is_accession("P00533-2") and not K.is_accession(None)
+
+
+@pytest.fixture
+def default_digit_limit():
+    """The interpreter's default integer-string digit limit (Python 3.11: 4,300 digits), restored afterwards."""
+    previous = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(4300)
+    yield 4300
+    sys.set_int_max_str_digits(previous)
+
+
+def test_move_id_digits_up_to_the_integer_limit_pass_and_longer_runs_are_refused(default_digit_limit):
+    """A ``MOVE-<digits>`` the interpreter cannot turn into an integer is a format violation of ``validate_move``
+    (so the import refuses it and the server reports ``snapshot_invalid``), never a later ``ValueError`` while the
+    record order is built. SYNTHETIC records; every ``content_hash`` matches."""
+    at_limit = PF.make_move("MOVE-" + "1" * default_digit_limit)
+    K.validate_move(at_limit)
+    assert K.move_number(at_limit["move_id"]) == int("1" * default_digit_limit)
+    _dist([at_limit], [], [])
+    for move_id in ("MOVE-" + "1" * (default_digit_limit + 1), "MOVE-" + "1" * 5000, "MOVE-" + "0" * 5000):
+        record = PF.make_move(move_id)
+        assert K.hash_matches(record) and K._MOVE_ID.fullmatch(move_id)   # the pattern alone admits it
+        with pytest.raises(K.FormatError, match="move_id"):
+            K.validate_move(record)
+        _rejects(_dist, [record], [], [])
+        _rejects(_dist, [], [record], [])

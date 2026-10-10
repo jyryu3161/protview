@@ -423,10 +423,13 @@ def test_git_runs_read_only_with_the_three_spec_commands(tmp_path, monkeypatch):
     monkeypatch.setenv("GIT_DIR", str(tmp_path / "elsewhere" / ".git"))  # must not redirect the repository
     run(kbase, tmp_path / "dest")
     kb = str(kbase.resolve())
+    # -c core.fsmonitor=false: no configured fsmonitor command runs; -c protocol.allow=never: no transport at all,
+    # so a partial clone's lazy fetch of a missing object fails instead of reaching a remote.
+    no_net = ["-c", "core.fsmonitor=false", "-c", "protocol.allow=never"]
     assert [cmd for cmd, _ in calls] == [
-        ["git", "-C", kb, "rev-parse", "HEAD"],
-        ["git", "-C", kb, "log", "-1", "--format=%H%n%cI", "--", "dist"],
-        ["git", "-C", kb, "status", "--porcelain", "--untracked-files=normal", "--", "dist", "ref/pubmed"],
+        ["git", "-C", kb, *no_net, "rev-parse", "HEAD"],
+        ["git", "-C", kb, *no_net, "log", "-1", "--format=%H%n%cI", "--", "dist"],
+        ["git", "-C", kb, *no_net, "status", "--porcelain", "--untracked-files=normal", "--", "dist", "ref/pubmed"],
     ]
     for _cmd, kwargs in calls:
         assert kwargs["timeout"] == 60 and kwargs["stdin"] == subprocess.DEVNULL and kwargs["check"] is False
@@ -590,6 +593,32 @@ def test_each_record_format_violation_is_refused(tmp_path, name):
 def test_a_non_json_line_is_refused(tmp_path):
     data = PF.t2_bytes()["moves_flagged"] + b"{not json}\n"
     assert_refused(tmp_path, build_kbase(tmp_path / "kbase", file_bytes={"moves_flagged": data}), "records")
+
+
+@pytest.fixture
+def default_digit_limit():
+    """The interpreter's default integer-string digit limit (Python 3.11: 4,300 digits), restored afterwards."""
+    previous = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(4300)
+    yield 4300
+    sys.set_int_max_str_digits(previous)
+
+
+@pytest.mark.parametrize("file", ["moves", "moves_flagged"])
+def test_a_move_id_whose_digits_exceed_the_integer_limit_is_refused(tmp_path, default_digit_limit, file):
+    """``MOVE-`` + 5,000 digits matches ``MOVE-[0-9]{4,}`` and its ``content_hash`` matches (SYNTHETIC record), but
+    the server could not order it: the import refuses it as a record format violation and writes nothing (a fresh
+    destination is not created; an installed one keeps active.json and its set byte for byte)."""
+    records = PF.t2_records()
+    planted = PF.make_move("MOVE-" + "1" * 5000, uniprot="P0SYN1")
+    assert PF.K.hash_matches(planted)
+    records[file].append(planted)
+    info = assert_refused(tmp_path, build_kbase(tmp_path / "kbase", records=records), "records")
+    assert "move_id" in str(info)
+    edge = PF.t2_records()
+    edge[file].append(PF.make_move("MOVE-" + "1" * default_digit_limit, uniprot="P0SYN1"))  # at the limit: kept
+    result = run(build_kbase(tmp_path / "edge-kbase", records=edge), tmp_path / "edge-dest")
+    assert result["verification"]["records_hash_verified"][file] == len(edge[file])
 
 
 def _pubmed_tie(manifest):

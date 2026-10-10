@@ -7,7 +7,9 @@ This user-run command copies, byte for byte, the three processed files ``dist/mo
 local kbase_kinase checkout into the precedent reference folder that the server reads (spec 3-4). It uses no network:
 only local file reads and three read-only ``git -C <kbase>`` subprocesses (``rev-parse HEAD``,
 ``log -1 --format=%H%n%cI -- dist``, ``status --porcelain -- dist ref/pubmed``; 60 s each, no optional locks, the
-inherited ``GIT_*`` variables dropped and discovery stopped at the kbase folder so another repository is never read).
+inherited ``GIT_*`` variables dropped and discovery stopped at the kbase folder so another repository is never read,
+and ``-c core.fsmonitor=false -c protocol.allow=never`` so no fsmonitor command runs and a partial clone's lazy fetch
+of a missing object fails instead of reaching a remote).
 No option or environment variable names a host or an address. The kbase code is never imported or run.
 
 Checks, in this order; any failure refuses the import and nothing is written (spec 4.2):
@@ -238,7 +240,8 @@ def _git(kbase: Path, command: str, *args: str) -> str:
     env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     env["GIT_OPTIONAL_LOCKS"] = "0"
     env["GIT_CEILING_DIRECTORIES"] = str(kbase.parent)  # the kbase folder itself must be the repository
-    cmd = ["git", "-C", str(kbase), command, *args]
+    # no configured fsmonitor command runs, and no transport is allowed (a partial clone's lazy fetch fails)
+    cmd = ["git", "-C", str(kbase), "-c", "core.fsmonitor=false", "-c", "protocol.allow=never", command, *args]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS, check=False,
                               stdin=subprocess.DEVNULL, env=env)

@@ -396,6 +396,34 @@ def test_set_with_invalid_records_is_snapshot_invalid_and_not_cached(ref, name, 
                                "reason": K.SNAPSHOT_REASONS["snapshot_invalid"], "set_hash": None, "sources": []}
 
 
+@pytest.fixture
+def default_digit_limit():
+    """The interpreter's default integer-string digit limit (Python 3.11: 4,300 digits), restored afterwards."""
+    previous = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(4300)
+    yield 4300
+    sys.set_int_max_str_digits(previous)
+
+
+@pytest.mark.parametrize("file", ["moves", "moves_flagged"])
+def test_a_planted_set_whose_move_id_digits_exceed_the_integer_limit_is_snapshot_invalid(ref, default_digit_limit,
+                                                                                        file):
+    """A set written straight into the folder (not by the import command) with one SYNTHETIC record whose
+    ``move_id`` has 5,000 digits and whose ``content_hash`` matches: pinning, indexing and the capability answer
+    ``snapshot_invalid``; building the record order never raises a bare ``ValueError``."""
+    records = PF.t2_records()
+    planted = PF.make_move("MOVE-" + "1" * 5000, uniprot="P0SYN1")
+    assert K.hash_matches(planted)
+    PF.build_set(ref, **{file: records[file] + [planted]})
+    assert ps.capability()["available"] is True  # the file hashes match: only decoding the records finds it
+    with pytest.raises(ps.SnapshotUnavailable) as err:
+        kp.pin_and_index()
+    assert err.value.reason_code == "snapshot_invalid"
+    assert kp._INDEX_CACHE == {}
+    assert kp.capability() == {"available": False, "reason_code": "snapshot_invalid",
+                               "reason": K.SNAPSHOT_REASONS["snapshot_invalid"], "set_hash": None, "sources": []}
+
+
 def test_verification_counts_must_match_the_records(ref):
     records = PF.t2_records()
     records["references"][0] = PF.make_reference("REF-SYN-0002", "P0SYN1", hashed=False)

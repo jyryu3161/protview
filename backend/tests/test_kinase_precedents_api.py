@@ -220,6 +220,40 @@ def test_capability_decodes_the_records_not_only_the_file_hashes(client, refdir)
                    "reason": K.SNAPSHOT_REASONS["snapshot_invalid"], "set_hash": None, "sources": []}
 
 
+@pytest.fixture
+def default_digit_limit():
+    """The interpreter's default integer-string digit limit (Python 3.11: 4,300 digits), restored afterwards."""
+    previous = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(4300)
+    yield 4300
+    sys.set_int_max_str_digits(previous)
+
+
+def test_a_planted_set_with_an_unconvertible_move_id_is_unavailable_not_a_server_error(client, refdir,
+                                                                                       default_digit_limit):
+    """A set written straight into the folder (not by the import command) with one SYNTHETIC record whose
+    ``move_id`` has 5,000 digits and whose ``content_hash`` matches: ``/capabilities`` and
+    ``/precedent_reference/status`` answer 200 with ``snapshot_invalid`` and the tool answers 412, never 500."""
+    records = PF.t2_records()
+    PF.build_set(refdir, moves=records["moves"] + [PF.make_move("MOVE-" + "1" * 5000, uniprot="P0SYN1")])
+    plain = TestClient(_app().app, base_url="http://127.0.0.1", raise_server_exceptions=False)
+    caps = plain.get("/capabilities")
+    assert caps.status_code == 200, caps.text
+    assert caps.json()["methods"]["kinase_precedents"] == {
+        "available": False, "reason_code": "snapshot_invalid", "reason": K.SNAPSHOT_REASONS["snapshot_invalid"],
+        "set_hash": None, "sources": []}
+    status = plain.get("/precedent_reference/status")
+    assert status.status_code == 200, status.text
+    assert status.json() == {**dict.fromkeys(STATUS_KEYS), "schema": K.STATUS_SCHEMA, "installed": False,
+                             "reason": "snapshot_invalid"}
+    rid = _new_run(plain)
+    nmap = _store_map(_app()._run(rid), _load(plain, rid), "main")
+    linked = _link(plain, rid, nmap)
+    assert linked.status_code == 412, linked.text
+    assert linked.json()["detail"] == {"reason_code": "snapshot_invalid"}
+    assert not [e for e in _events(rid) if e["type"] == "object_created" and e.get("kind") == K.KIND]
+
+
 def test_tool_is_listed_at_l2(client):
     names = {tool["name"] for tool in client.get("/tools", params={"levels": "L2"}).json()}
     assert TOOL in names
