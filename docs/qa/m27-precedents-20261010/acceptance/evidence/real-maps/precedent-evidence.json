@@ -1,0 +1,124 @@
+{
+  "schema": "m27_precedent_evidence@1",
+  "mode": "maps",
+  "stage": "real",
+  "runs": {
+    "A": "run_d6aae97a4dd54449bca1a5c300a3adb8"
+  },
+  "inputs": [
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)"
+    },
+    {
+      "name": "public_1m17.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1m17.cif",
+      "bytes": 307709,
+      "sha256": "849bd2548dffb7ddcb7229a05202c1e2e41019a1fd69ec39483654cf984fc4d0",
+      "provenance": "public PDB entry 1M17 (RCSB CC0, M27 T1 download)"
+    },
+    {
+      "name": "public_1fin.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1fin.cif",
+      "bytes": 999052,
+      "sha256": "dfe5da37b2e28d3d74eefa0edee97d57ea127538beead9e68a8a42a5c363a1ac",
+      "provenance": "public PDB entry 1FIN (RCSB CC0, M27 T1 download)"
+    }
+  ],
+  "handles": {
+    "structures": {
+      "mq4": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/structure/9c93b9fe5411695a02a8bcd654991333cfc06a32a125f0957a8e331b21459377",
+      "m17": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/structure/a14ef301e0e1d14f82e912b08879e3160d41b5bdcfc70178e28fa83ea7b06d18",
+      "fin": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/structure/51d78a4e6735ecd67095eba78e8f4d1afb2e09b855d98ac1f8f98ad6d09b4dca"
+    },
+    "maps": {
+      "rm-mq4": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/59353dfd41f0820af3c4091a8fa9d86806573b612958150328f0e1ab883fa96a",
+      "rm-m17": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/bd33f562e0524868c8bd789e52137c2b85f5313d2785493050a9c762d5e852ed",
+      "rm-fin": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/551f8d839a07249042bf80af20f9ceb4b15f801852f363acb7bb22dbcefa4ad5"
+    }
+  },
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_d6aae97a4dd54449bca1a5c300a3adb8",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "numbering-chain": [
+      {
+        "map": "rm-mq4",
+        "checked": "A"
+      },
+      {
+        "map": "rm-m17",
+        "checked": "A"
+      },
+      {
+        "map": "rm-fin",
+        "checked": "A"
+      },
+      {
+        "map": "rm-fin",
+        "checked": "C"
+      }
+    ],
+    "numbering-pdb-confirm": [
+      {
+        "map": "rm-mq4",
+        "pdbId": "1MQ4"
+      },
+      {
+        "map": "rm-m17",
+        "pdbId": "1M17"
+      },
+      {
+        "map": "rm-fin",
+        "pdbId": "1FIN"
+      }
+    ]
+  },
+  "observations": {
+    "X-maps": [
+      {
+        "step": "A01-new-run",
+        "description": "Click 구조 분석, 새 run (run A)"
+      },
+      {
+        "step": "A02-upload-mq4",
+        "description": "Choose public_1mq4.cif, click 구조 불러오기"
+      },
+      {
+        "step": "A02-upload-m17",
+        "description": "Choose public_1m17.cif, click 구조 불러오기"
+      },
+      {
+        "step": "A02-upload-fin",
+        "description": "Choose public_1fin.cif, click 구조 불러오기"
+      },
+      {
+        "step": "A03-map-rm-mq4",
+        "description": "지식·보고서 잔기 번호 대응: choose mq4, chains A:SIFTS O14965, tick 이 PDB ID가 맞습니다 (1MQ4), 실행"
+      },
+      {
+        "step": "A03-map-rm-m17",
+        "description": "지식·보고서 잔기 번호 대응: choose m17, chains A:SIFTS P00533, tick 이 PDB ID가 맞습니다 (1M17), 실행"
+      },
+      {
+        "step": "A03-map-rm-fin",
+        "description": "지식·보고서 잔기 번호 대응: choose fin, chains A:SIFTS P24941 C:SIFTS P24941, tick 이 PDB ID가 맞습니다 (1FIN), 실행"
+      }
+    ]
+  },
+  "startedAt": "2026-10-10T11:38:09.674Z",
+  "finishedAt": "2026-10-10T11:38:20.463Z",
+  "error": null,
+  "requestCount": 186
+}

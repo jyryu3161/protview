@@ -1,0 +1,213 @@
+{
+  "schema": "m27_case_ledger_row@1",
+  "mode": "maps",
+  "stage": "fixture",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "P-maps-real-m15": "pass"
+  },
+  "runId": "run_f1eb563052774de9976b1a96ae28ab4e",
+  "runs": {
+    "A": "run_f1eb563052774de9976b1a96ae28ab4e"
+  },
+  "handles": {
+    "structures": {
+      "mq4": "obj://run_f1eb563052774de9976b1a96ae28ab4e/structure/0b5d45c7b5a9739a16385c99a0d22ea060db03dcff5bc7482396e5a486f942f4",
+      "two": "obj://run_f1eb563052774de9976b1a96ae28ab4e/structure/8a605ade43c1c4acc6f2180fdbc19285a86d7eed0afb65416972ec86f51bbc0d"
+    },
+    "maps": {
+      "m1": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/e8ee9739031778bc226131fbb571c5a5cc6b031639f29e2cdb1a9d5d5644f26d",
+      "m2": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/556dc427e81ee2007de29971751eb1732b36083e06cdf158349cd3ad7962b43d",
+      "m3": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/a99c9e1f14b3bd0aadc598e86a1c02a08b84ed3df7116279631e6bd55b6bec0c"
+    }
+  },
+  "inputs": [
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)"
+    },
+    {
+      "name": "derived_1mq4_two_chain_fixture.pdb",
+      "path": "<repo>/backend/tests/fixtures/structures_m15/derived_1mq4_two_chain_fixture.pdb",
+      "bytes": 101947,
+      "sha256": "8fc31481440291553e4cec03c4966a97a46f8bec3264097fc29a9c6c982e72f3",
+      "provenance": "DERIVED M15 test fixture from public 1MQ4 (chain A = residues 200-285, chain B = residues 126-199; structures_m15/provenance_fixture.json)"
+    }
+  ],
+  "fixtureLabels": [
+    "every precedent value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/precedent/t8/build_qa_set.py with precedent_fixture.py (SYNTHETIC-PROVENANCE-t8.md); the derived numbering maps are LABELLED SYNTHETIC variants of a real M15 map; observations are of the screen, never results",
+    "DERIVED M15 test fixture from public 1MQ4 (chain A = residues 200-285, chain B = residues 126-199; structures_m15/provenance_fixture.json)"
+  ],
+  "controls": {
+    "numbering-chain": [
+      {
+        "map": "m1",
+        "checked": "A"
+      },
+      {
+        "map": "m2",
+        "checked": "A"
+      },
+      {
+        "map": "m2",
+        "checked": "B"
+      },
+      {
+        "map": "m3",
+        "checked": "A"
+      },
+      {
+        "map": "m3",
+        "checked": "B"
+      }
+    ],
+    "numbering-pdb-confirm": [
+      {
+        "map": "m1",
+        "pdbId": "1MQ4"
+      }
+    ],
+    "numbering-uniprot-pick": [
+      {
+        "map": "m2",
+        "chain": "A",
+        "accession": "O14965"
+      },
+      {
+        "map": "m2",
+        "chain": "B",
+        "accession": "Q8IU85"
+      },
+      {
+        "map": "m3",
+        "chain": "A",
+        "accession": "O14965"
+      },
+      {
+        "map": "m3",
+        "chain": "B",
+        "accession": "O14965"
+      }
+    ]
+  },
+  "observations": {
+    "P-maps-real-m15": [
+      {
+        "step": "A01-new-run",
+        "description": "Click 구조 분석, 새 run (run A)"
+      },
+      {
+        "step": "A02-upload-mq4",
+        "description": "Choose public_1mq4.cif, click 구조 불러오기"
+      },
+      {
+        "step": "A02-upload-two",
+        "description": "Choose derived_1mq4_two_chain_fixture.pdb, click 구조 불러오기"
+      },
+      {
+        "step": "A03-map-m1",
+        "description": "지식·보고서 잔기 번호 대응: choose mq4, chains A:SIFTS O14965, tick 이 PDB ID가 맞습니다 (1MQ4), 실행"
+      },
+      {
+        "step": "A03-map-m2",
+        "description": "지식·보고서 잔기 번호 대응: choose two, chains A:UniProt 검색 O14965 B:UniProt 검색 Q8IU85, PDB ID not confirmed, 실행"
+      },
+      {
+        "step": "A03-map-m3",
+        "description": "지식·보고서 잔기 번호 대응: choose two, chains A:UniProt 검색 O14965 B:UniProt 검색 O14965, PDB ID not confirmed, 실행"
+      }
+    ]
+  },
+  "buildId": "TJuLuk1Mu4VmNPtt72Xqg",
+  "harness": {
+    "kinase-precedents-flow.cjs": "f4d73bd72a45ef597fa15e83b19ce6a4a5718be341b9b3356bbea2569efea956",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "671e64067c6ecdc756001f9cd26df88e6672c7f34efcfd03559d18cb55817e7d",
+  "plan": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/fixture-plan.json",
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 119,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/fixture-maps/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 234,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 7,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/fixture-maps/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 79,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "blockedHosts": [],
+  "providerCalls": [
+    {
+      "run": "run_f1eb563052774de9976b1a96ae28ab4e",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "precedent-maps.jsonl",
+  "startedAt": "2026-10-10T11:37:22.623Z",
+  "finishedAt": "2026-10-10T11:37:27.036Z"
+}

@@ -1,0 +1,1272 @@
+{
+  "schema": "m27_qa_plan@1",
+  "stage": "fixture",
+  "setHash": "671e64067c6ecdc756001f9cd26df88e6672c7f34efcfd03559d18cb55817e7d",
+  "synthetic": "every precedent value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/precedent/t8/build_qa_set.py with precedent_fixture.py (SYNTHETIC-PROVENANCE-t8.md); the derived numbering maps are LABELLED SYNTHETIC variants of a real M15 map; observations are of the screen, never results",
+  "structures": {
+    "mq4": {
+      "file": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "name": "public_1mq4.cif",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)",
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    },
+    "two": {
+      "file": "<repo>/backend/tests/fixtures/structures_m15/derived_1mq4_two_chain_fixture.pdb",
+      "name": "derived_1mq4_two_chain_fixture.pdb",
+      "provenance": "DERIVED M15 test fixture from public 1MQ4 (chain A = residues 200-285, chain B = residues 126-199; structures_m15/provenance_fixture.json)",
+      "sha256": "8fc31481440291553e4cec03c4966a97a46f8bec3264097fc29a9c6c982e72f3"
+    }
+  },
+  "maps": [
+    {
+      "id": "m1",
+      "structure": "mq4",
+      "pdbConfirm": "1MQ4",
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "sifts",
+          "expect": "O14965"
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "structure": "two",
+      "pdbConfirm": null,
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "O14965"
+        },
+        {
+          "chain": "B",
+          "accession": "Q8IU85"
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "structure": "two",
+      "pdbConfirm": null,
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "O14965"
+        },
+        {
+          "chain": "B",
+          "accession": "O14965"
+        }
+      ]
+    }
+  ],
+  "derivedFrom": "m3",
+  "dryRunRun": "run_57abfd3b324e44789de26e40381226a5",
+  "expect": {
+    "label": "SYNTHETIC M27 T8 QA set (made-up records, accessions P0QA01-P0QA04, PMIDs 9100000n; SYNTHETIC-PROVENANCE-t8.md)",
+    "accessions": {
+      "P0QA01": {
+        "moves": 30,
+        "moves_flagged": 6,
+        "references": 2,
+        "variants_moves": {
+          "SYN-A1V": 6,
+          "SYN-G2C": 4,
+          "not_reported": 20
+        },
+        "variants_all": {
+          "SYN-A1V": 6,
+          "SYN-G2C": 7,
+          "not_reported": 23
+        },
+        "filters": {
+          "include_flagged_false": {
+            "all": {
+              "total": 30,
+              "move_ids": [
+                "MOVE-7001",
+                "MOVE-7002",
+                "MOVE-7003",
+                "MOVE-7004",
+                "MOVE-7005",
+                "MOVE-7006",
+                "MOVE-7007",
+                "MOVE-7008",
+                "MOVE-7009",
+                "MOVE-7010",
+                "MOVE-7011",
+                "MOVE-7012",
+                "MOVE-7013",
+                "MOVE-7014",
+                "MOVE-7015",
+                "MOVE-7016",
+                "MOVE-7017",
+                "MOVE-7018",
+                "MOVE-7019",
+                "MOVE-7020",
+                "MOVE-7021",
+                "MOVE-7022",
+                "MOVE-7023",
+                "MOVE-7024",
+                "MOVE-7025",
+                "MOVE-7026",
+                "MOVE-7027",
+                "MOVE-7028",
+                "MOVE-7029",
+                "MOVE-7030"
+              ]
+            },
+            "file:moves_flagged": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate": {
+              "total": 8,
+              "move_ids": [
+                "MOVE-7002",
+                "MOVE-7006",
+                "MOVE-7010",
+                "MOVE-7014",
+                "MOVE-7018",
+                "MOVE-7022",
+                "MOVE-7026",
+                "MOVE-7030"
+              ]
+            },
+            "site:gate|back": {
+              "total": 18,
+              "move_ids": [
+                "MOVE-7001",
+                "MOVE-7002",
+                "MOVE-7004",
+                "MOVE-7006",
+                "MOVE-7008",
+                "MOVE-7010",
+                "MOVE-7012",
+                "MOVE-7014",
+                "MOVE-7015",
+                "MOVE-7016",
+                "MOVE-7018",
+                "MOVE-7020",
+                "MOVE-7022",
+                "MOVE-7024",
+                "MOVE-7026",
+                "MOVE-7028",
+                "MOVE-7029",
+                "MOVE-7030"
+              ]
+            },
+            "site:gate|back&goal:potency": {
+              "total": 6,
+              "move_ids": [
+                "MOVE-7001",
+                "MOVE-7004",
+                "MOVE-7010",
+                "MOVE-7016",
+                "MOVE-7022",
+                "MOVE-7028"
+              ]
+            },
+            "variant:SYN-A1V": {
+              "total": 6,
+              "move_ids": [
+                "MOVE-7021",
+                "MOVE-7022",
+                "MOVE-7023",
+                "MOVE-7024",
+                "MOVE-7025",
+                "MOVE-7026"
+              ]
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 1,
+              "move_ids": [
+                "MOVE-7007"
+              ]
+            },
+            "q:qa-title-beta": {
+              "total": 3,
+              "move_ids": [
+                "MOVE-7003",
+                "MOVE-7013",
+                "MOVE-7023"
+              ]
+            }
+          },
+          "include_flagged_true": {
+            "all": {
+              "total": 36,
+              "move_ids": [
+                "MOVE-7001",
+                "MOVE-7002",
+                "MOVE-7003",
+                "MOVE-7004",
+                "MOVE-7005",
+                "MOVE-7006",
+                "MOVE-7007",
+                "MOVE-7008",
+                "MOVE-7009",
+                "MOVE-7010",
+                "MOVE-7011",
+                "MOVE-7012",
+                "MOVE-7013",
+                "MOVE-7014",
+                "MOVE-7015",
+                "MOVE-7016",
+                "MOVE-7017",
+                "MOVE-7018",
+                "MOVE-7019",
+                "MOVE-7020",
+                "MOVE-7021",
+                "MOVE-7022",
+                "MOVE-7023",
+                "MOVE-7024",
+                "MOVE-7025",
+                "MOVE-7026",
+                "MOVE-7027",
+                "MOVE-7028",
+                "MOVE-7029",
+                "MOVE-7030",
+                "MOVE-7201",
+                "MOVE-7202",
+                "MOVE-7203",
+                "MOVE-7204",
+                "MOVE-7205",
+                "MOVE-7206"
+              ]
+            },
+            "file:moves_flagged": {
+              "total": 6,
+              "move_ids": [
+                "MOVE-7201",
+                "MOVE-7202",
+                "MOVE-7203",
+                "MOVE-7204",
+                "MOVE-7205",
+                "MOVE-7206"
+              ]
+            },
+            "site:gate": {
+              "total": 14,
+              "move_ids": [
+                "MOVE-7002",
+                "MOVE-7006",
+                "MOVE-7010",
+                "MOVE-7014",
+                "MOVE-7018",
+                "MOVE-7022",
+                "MOVE-7026",
+                "MOVE-7030",
+                "MOVE-7201",
+                "MOVE-7202",
+                "MOVE-7203",
+                "MOVE-7204",
+                "MOVE-7205",
+                "MOVE-7206"
+              ]
+            },
+            "site:gate|back": {
+              "total": 24,
+              "move_ids": [
+                "MOVE-7001",
+                "MOVE-7002",
+                "MOVE-7004",
+                "MOVE-7006",
+                "MOVE-7008",
+                "MOVE-7010",
+                "MOVE-7012",
+                "MOVE-7014",
+                "MOVE-7015",
+                "MOVE-7016",
+                "MOVE-7018",
+                "MOVE-7020",
+                "MOVE-7022",
+                "MOVE-7024",
+                "MOVE-7026",
+                "MOVE-7028",
+                "MOVE-7029",
+                "MOVE-7030",
+                "MOVE-7201",
+                "MOVE-7202",
+                "MOVE-7203",
+                "MOVE-7204",
+                "MOVE-7205",
+                "MOVE-7206"
+              ]
+            },
+            "site:gate|back&goal:potency": {
+              "total": 6,
+              "move_ids": [
+                "MOVE-7001",
+                "MOVE-7004",
+                "MOVE-7010",
+                "MOVE-7016",
+                "MOVE-7022",
+                "MOVE-7028"
+              ]
+            },
+            "variant:SYN-A1V": {
+              "total": 6,
+              "move_ids": [
+                "MOVE-7021",
+                "MOVE-7022",
+                "MOVE-7023",
+                "MOVE-7024",
+                "MOVE-7025",
+                "MOVE-7026"
+              ]
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 1,
+              "move_ids": [
+                "MOVE-7007"
+              ]
+            },
+            "q:qa-title-beta": {
+              "total": 3,
+              "move_ids": [
+                "MOVE-7003",
+                "MOVE-7013",
+                "MOVE-7023"
+              ]
+            }
+          }
+        }
+      },
+      "P0QA02": {
+        "moves": 0,
+        "moves_flagged": 3,
+        "references": 1,
+        "variants_moves": {},
+        "variants_all": {
+          "not_reported": 3
+        },
+        "filters": {
+          "include_flagged_false": {
+            "all": {
+              "total": 0,
+              "move_ids": []
+            },
+            "file:moves_flagged": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back&goal:potency": {
+              "total": 0,
+              "move_ids": []
+            },
+            "variant:SYN-A1V": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:qa-title-beta": {
+              "total": 0,
+              "move_ids": []
+            }
+          },
+          "include_flagged_true": {
+            "all": {
+              "total": 3,
+              "move_ids": [
+                "MOVE-7301",
+                "MOVE-7302",
+                "MOVE-7303"
+              ]
+            },
+            "file:moves_flagged": {
+              "total": 3,
+              "move_ids": [
+                "MOVE-7301",
+                "MOVE-7302",
+                "MOVE-7303"
+              ]
+            },
+            "site:gate": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back&goal:potency": {
+              "total": 0,
+              "move_ids": []
+            },
+            "variant:SYN-A1V": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:qa-title-beta": {
+              "total": 0,
+              "move_ids": []
+            }
+          }
+        }
+      },
+      "P0QA03": {
+        "moves": 0,
+        "moves_flagged": 0,
+        "references": 0,
+        "variants_moves": {},
+        "variants_all": {},
+        "filters": {
+          "include_flagged_false": {
+            "all": {
+              "total": 0,
+              "move_ids": []
+            },
+            "file:moves_flagged": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back&goal:potency": {
+              "total": 0,
+              "move_ids": []
+            },
+            "variant:SYN-A1V": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:qa-title-beta": {
+              "total": 0,
+              "move_ids": []
+            }
+          },
+          "include_flagged_true": {
+            "all": {
+              "total": 0,
+              "move_ids": []
+            },
+            "file:moves_flagged": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back&goal:potency": {
+              "total": 0,
+              "move_ids": []
+            },
+            "variant:SYN-A1V": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:qa-title-beta": {
+              "total": 0,
+              "move_ids": []
+            }
+          }
+        }
+      },
+      "P0QA04": {
+        "moves": 2,
+        "moves_flagged": 40,
+        "references": 1,
+        "variants_moves": {
+          "not_reported": 2
+        },
+        "variants_all": {
+          "not_reported": 42
+        },
+        "filters": {
+          "include_flagged_false": {
+            "all": {
+              "total": 2,
+              "move_ids": [
+                "MOVE-7101",
+                "MOVE-7102"
+              ]
+            },
+            "file:moves_flagged": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back&goal:potency": {
+              "total": 0,
+              "move_ids": []
+            },
+            "variant:SYN-A1V": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:qa-title-beta": {
+              "total": 0,
+              "move_ids": []
+            }
+          },
+          "include_flagged_true": {
+            "all": {
+              "total": 42,
+              "move_ids": [
+                "MOVE-7101",
+                "MOVE-7102",
+                "MOVE-7401",
+                "MOVE-7402",
+                "MOVE-7403",
+                "MOVE-7404",
+                "MOVE-7405",
+                "MOVE-7406",
+                "MOVE-7407",
+                "MOVE-7408",
+                "MOVE-7409",
+                "MOVE-7410",
+                "MOVE-7411",
+                "MOVE-7412",
+                "MOVE-7413",
+                "MOVE-7414",
+                "MOVE-7415",
+                "MOVE-7416",
+                "MOVE-7417",
+                "MOVE-7418",
+                "MOVE-7419",
+                "MOVE-7420",
+                "MOVE-7421",
+                "MOVE-7422",
+                "MOVE-7423",
+                "MOVE-7424",
+                "MOVE-7425",
+                "MOVE-7426",
+                "MOVE-7427",
+                "MOVE-7428",
+                "MOVE-7429",
+                "MOVE-7430",
+                "MOVE-7431",
+                "MOVE-7432",
+                "MOVE-7433",
+                "MOVE-7434",
+                "MOVE-7435",
+                "MOVE-7436",
+                "MOVE-7437",
+                "MOVE-7438",
+                "MOVE-7439",
+                "MOVE-7440"
+              ]
+            },
+            "file:moves_flagged": {
+              "total": 40,
+              "move_ids": [
+                "MOVE-7401",
+                "MOVE-7402",
+                "MOVE-7403",
+                "MOVE-7404",
+                "MOVE-7405",
+                "MOVE-7406",
+                "MOVE-7407",
+                "MOVE-7408",
+                "MOVE-7409",
+                "MOVE-7410",
+                "MOVE-7411",
+                "MOVE-7412",
+                "MOVE-7413",
+                "MOVE-7414",
+                "MOVE-7415",
+                "MOVE-7416",
+                "MOVE-7417",
+                "MOVE-7418",
+                "MOVE-7419",
+                "MOVE-7420",
+                "MOVE-7421",
+                "MOVE-7422",
+                "MOVE-7423",
+                "MOVE-7424",
+                "MOVE-7425",
+                "MOVE-7426",
+                "MOVE-7427",
+                "MOVE-7428",
+                "MOVE-7429",
+                "MOVE-7430",
+                "MOVE-7431",
+                "MOVE-7432",
+                "MOVE-7433",
+                "MOVE-7434",
+                "MOVE-7435",
+                "MOVE-7436",
+                "MOVE-7437",
+                "MOVE-7438",
+                "MOVE-7439",
+                "MOVE-7440"
+              ]
+            },
+            "site:gate": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back": {
+              "total": 0,
+              "move_ids": []
+            },
+            "site:gate|back&goal:potency": {
+              "total": 0,
+              "move_ids": []
+            },
+            "variant:SYN-A1V": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:QA-SEARCH-ALPHA": {
+              "total": 0,
+              "move_ids": []
+            },
+            "q:qa-title-beta": {
+              "total": 0,
+              "move_ids": []
+            }
+          }
+        }
+      }
+    },
+    "searchToken": "QA-SEARCH-ALPHA",
+    "titleToken": "QA-TITLE-BETA",
+    "unresolved": {
+      "moves": 2,
+      "moves_flagged": 2,
+      "names_total": 3
+    },
+    "bibliographyPmids": [
+      "91000001",
+      "91000002",
+      "91000003",
+      "91000004",
+      "91000005",
+      "91000006",
+      "91000007"
+    ],
+    "files": {
+      "moves": 34,
+      "moves_flagged": 51,
+      "references": 4
+    }
+  },
+  "run": "run_f1eb563052774de9976b1a96ae28ab4e",
+  "mapHandles": {
+    "m1": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/e8ee9739031778bc226131fbb571c5a5cc6b031639f29e2cdb1a9d5d5644f26d",
+    "m2": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/556dc427e81ee2007de29971751eb1732b36083e06cdf158349cd3ad7962b43d",
+    "m3": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/a99c9e1f14b3bd0aadc598e86a1c02a08b84ed3df7116279631e6bd55b6bec0c",
+    "d-two": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/cad8273b7f29a51829b301630db13dafe36cb9dff36cd032c580fe73a315e316",
+    "d-fusion": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/3f556d41992d74bab5561e4bc60060b1b089a1ca028bf025b2b5bd71f4f2dfef",
+    "d-big": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/45fd3d2266cd40e9dbcb6be93e6af766786cb6fcee56bd939d4383635f80a35b"
+  },
+  "derived": {
+    "source": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/a99c9e1f14b3bd0aadc598e86a1c02a08b84ed3df7116279631e6bd55b6bec0c",
+    "maps": {
+      "d-two": {
+        "handle": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/cad8273b7f29a51829b301630db13dafe36cb9dff36cd032c580fe73a315e316",
+        "chains": {
+          "A": [
+            "P0QA01"
+          ],
+          "B": [
+            "P0QA02"
+          ]
+        },
+        "label": "SYNTHETIC derived from a real M15 map of the derived two-chain 1MQ4 fixture: the mapped rows' accession replaced by made-up accessions (M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
+      },
+      "d-fusion": {
+        "handle": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/3f556d41992d74bab5561e4bc60060b1b089a1ca028bf025b2b5bd71f4f2dfef",
+        "chains": {
+          "A": [
+            "P0QA01",
+            "P0QA03"
+          ],
+          "B": [
+            "P0QA03"
+          ]
+        },
+        "label": "SYNTHETIC derived from a real M15 map of the derived two-chain 1MQ4 fixture: the mapped rows' accession replaced by made-up accessions (M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
+      },
+      "d-big": {
+        "handle": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/45fd3d2266cd40e9dbcb6be93e6af766786cb6fcee56bd939d4383635f80a35b",
+        "chains": {
+          "A": [
+            "P0QA04"
+          ],
+          "B": [
+            "P0QA01"
+          ]
+        },
+        "label": "SYNTHETIC derived from a real M15 map of the derived two-chain 1MQ4 fixture: the mapped rows' accession replaced by made-up accessions (M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
+      }
+    }
+  },
+  "links": [
+    {
+      "id": "l-m1",
+      "map": "m1",
+      "chains": null,
+      "includeFlagged": false,
+      "cases": [
+        "P-target-states",
+        "P-no-zero",
+        "P-fixed-notes"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "linked",
+            null,
+            "O14965"
+          ]
+        },
+        "targets": {
+          "O14965": {
+            "status": "not_in_kbase_references",
+            "moves": 0,
+            "movesFlagged": null,
+            "excluded": 0,
+            "references": 0,
+            "chains": [
+              "A"
+            ]
+          }
+        },
+        "nullResult": true
+      }
+    },
+    {
+      "id": "l-m2",
+      "map": "m2",
+      "chains": null,
+      "includeFlagged": false,
+      "cases": [
+        "P-chain-states"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "linked",
+            null,
+            "O14965"
+          ],
+          "B": [
+            "not_linked",
+            "no_mapped_residues",
+            null
+          ]
+        },
+        "targets": {
+          "O14965": {
+            "status": "not_in_kbase_references",
+            "moves": 0,
+            "movesFlagged": null,
+            "excluded": 0,
+            "references": 0,
+            "chains": [
+              "A"
+            ]
+          }
+        },
+        "nullResult": true
+      }
+    },
+    {
+      "id": "l-m2-a",
+      "map": "m2",
+      "chains": [
+        "A"
+      ],
+      "includeFlagged": false,
+      "cases": [
+        "P-chain-select"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "linked",
+            null,
+            "O14965"
+          ]
+        },
+        "targets": {
+          "O14965": {
+            "status": "not_in_kbase_references",
+            "moves": 0,
+            "movesFlagged": null,
+            "excluded": 0,
+            "references": 0,
+            "chains": [
+              "A"
+            ]
+          }
+        },
+        "nullResult": true
+      }
+    },
+    {
+      "id": "l-two",
+      "map": "d-two",
+      "chains": null,
+      "includeFlagged": false,
+      "cases": [
+        "P-target-states",
+        "P-no-zero",
+        "P-fixed-notes"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "linked",
+            null,
+            "P0QA01"
+          ],
+          "B": [
+            "linked",
+            null,
+            "P0QA02"
+          ]
+        },
+        "targets": {
+          "P0QA01": {
+            "status": "precedents_found",
+            "moves": 30,
+            "movesFlagged": null,
+            "excluded": 6,
+            "references": 2,
+            "chains": [
+              "A"
+            ]
+          },
+          "P0QA02": {
+            "status": "none_in_included_files",
+            "moves": 0,
+            "movesFlagged": null,
+            "excluded": 3,
+            "references": 1,
+            "chains": [
+              "B"
+            ]
+          }
+        },
+        "nullResult": false
+      }
+    },
+    {
+      "id": "l-two-incl",
+      "map": "d-two",
+      "chains": null,
+      "includeFlagged": true,
+      "cases": [
+        "P-flagged-toggle",
+        "P-no-zero"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "linked",
+            null,
+            "P0QA01"
+          ],
+          "B": [
+            "linked",
+            null,
+            "P0QA02"
+          ]
+        },
+        "targets": {
+          "P0QA01": {
+            "status": "precedents_found",
+            "moves": 30,
+            "movesFlagged": 6,
+            "excluded": null,
+            "references": 2,
+            "chains": [
+              "A"
+            ]
+          },
+          "P0QA02": {
+            "status": "precedents_found",
+            "moves": 0,
+            "movesFlagged": 3,
+            "excluded": null,
+            "references": 1,
+            "chains": [
+              "B"
+            ]
+          }
+        },
+        "nullResult": false
+      }
+    },
+    {
+      "id": "l-fusion",
+      "map": "d-fusion",
+      "chains": null,
+      "includeFlagged": false,
+      "cases": [
+        "P-chain-states",
+        "P-target-states"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "not_linked",
+            "multiple_accessions",
+            null
+          ],
+          "B": [
+            "linked",
+            null,
+            "P0QA03"
+          ]
+        },
+        "targets": {
+          "P0QA03": {
+            "status": "not_in_kbase_references",
+            "moves": 0,
+            "movesFlagged": null,
+            "excluded": 0,
+            "references": 0,
+            "chains": [
+              "B"
+            ]
+          }
+        },
+        "nullResult": true
+      }
+    }
+  ],
+  "unresolvedTotal": 4,
+  "unresolvedNamesTotal": 3,
+  "previews": [
+    {
+      "map": "m2",
+      "chains": {
+        "A": [
+          "linked",
+          null
+        ],
+        "B": [
+          "not_linked",
+          "no_mapped_residues"
+        ]
+      }
+    },
+    {
+      "map": "d-fusion",
+      "chains": {
+        "A": [
+          "not_linked",
+          "multiple_accessions"
+        ],
+        "B": [
+          "linked",
+          null
+        ]
+      },
+      "accessions": {
+        "A": [
+          "P0QA01",
+          "P0QA03"
+        ]
+      }
+    }
+  ],
+  "refusals": {
+    "map": "m1"
+  },
+  "tooLarge": {
+    "map": "d-big",
+    "includeFlagged": true,
+    "cases": [
+      "P-too-large"
+    ],
+    "expect": {
+      "withoutFlaggedFits": true,
+      "targets": {
+        "P0QA01": true,
+        "P0QA04": false
+      }
+    }
+  },
+  "records": {
+    "link": "l-two-incl",
+    "target": "P0QA01",
+    "filters": {
+      "all": {
+        "total": 36,
+        "move_ids": [
+          "MOVE-7001",
+          "MOVE-7002",
+          "MOVE-7003",
+          "MOVE-7004",
+          "MOVE-7005",
+          "MOVE-7006",
+          "MOVE-7007",
+          "MOVE-7008",
+          "MOVE-7009",
+          "MOVE-7010",
+          "MOVE-7011",
+          "MOVE-7012",
+          "MOVE-7013",
+          "MOVE-7014",
+          "MOVE-7015",
+          "MOVE-7016",
+          "MOVE-7017",
+          "MOVE-7018",
+          "MOVE-7019",
+          "MOVE-7020",
+          "MOVE-7021",
+          "MOVE-7022",
+          "MOVE-7023",
+          "MOVE-7024",
+          "MOVE-7025",
+          "MOVE-7026",
+          "MOVE-7027",
+          "MOVE-7028",
+          "MOVE-7029",
+          "MOVE-7030",
+          "MOVE-7201",
+          "MOVE-7202",
+          "MOVE-7203",
+          "MOVE-7204",
+          "MOVE-7205",
+          "MOVE-7206"
+        ]
+      },
+      "file:moves_flagged": {
+        "total": 6,
+        "move_ids": [
+          "MOVE-7201",
+          "MOVE-7202",
+          "MOVE-7203",
+          "MOVE-7204",
+          "MOVE-7205",
+          "MOVE-7206"
+        ]
+      },
+      "site:gate": {
+        "total": 14,
+        "move_ids": [
+          "MOVE-7002",
+          "MOVE-7006",
+          "MOVE-7010",
+          "MOVE-7014",
+          "MOVE-7018",
+          "MOVE-7022",
+          "MOVE-7026",
+          "MOVE-7030",
+          "MOVE-7201",
+          "MOVE-7202",
+          "MOVE-7203",
+          "MOVE-7204",
+          "MOVE-7205",
+          "MOVE-7206"
+        ]
+      },
+      "site:gate|back": {
+        "total": 24,
+        "move_ids": [
+          "MOVE-7001",
+          "MOVE-7002",
+          "MOVE-7004",
+          "MOVE-7006",
+          "MOVE-7008",
+          "MOVE-7010",
+          "MOVE-7012",
+          "MOVE-7014",
+          "MOVE-7015",
+          "MOVE-7016",
+          "MOVE-7018",
+          "MOVE-7020",
+          "MOVE-7022",
+          "MOVE-7024",
+          "MOVE-7026",
+          "MOVE-7028",
+          "MOVE-7029",
+          "MOVE-7030",
+          "MOVE-7201",
+          "MOVE-7202",
+          "MOVE-7203",
+          "MOVE-7204",
+          "MOVE-7205",
+          "MOVE-7206"
+        ]
+      },
+      "site:gate|back&goal:potency": {
+        "total": 6,
+        "move_ids": [
+          "MOVE-7001",
+          "MOVE-7004",
+          "MOVE-7010",
+          "MOVE-7016",
+          "MOVE-7022",
+          "MOVE-7028"
+        ]
+      },
+      "variant:SYN-A1V": {
+        "total": 6,
+        "move_ids": [
+          "MOVE-7021",
+          "MOVE-7022",
+          "MOVE-7023",
+          "MOVE-7024",
+          "MOVE-7025",
+          "MOVE-7026"
+        ]
+      },
+      "q:QA-SEARCH-ALPHA": {
+        "total": 1,
+        "move_ids": [
+          "MOVE-7007"
+        ]
+      },
+      "q:qa-title-beta": {
+        "total": 3,
+        "move_ids": [
+          "MOVE-7003",
+          "MOVE-7013",
+          "MOVE-7023"
+        ]
+      }
+    },
+    "searchToken": "QA-SEARCH-ALPHA",
+    "titleToken": "QA-TITLE-BETA"
+  },
+  "paging": {
+    "link": "l-two",
+    "target": "P0QA01",
+    "total": 30
+  },
+  "targetTabs": {
+    "link": "l-two",
+    "to": "P0QA02"
+  },
+  "detail": {
+    "link": "l-two",
+    "target": "P0QA01",
+    "expand": {
+      "MOVE-7001": {
+        "bibliography": true,
+        "truncated": true,
+        "assembled": true,
+        "quotesWithinLimit": true,
+        "roles": [
+          "on_target",
+          "off_target",
+          "not_applicable"
+        ],
+        "foldNull": [
+          false,
+          true,
+          true
+        ],
+        "fail": [
+          "duplicate"
+        ],
+        "lookupFailed": [
+          "chembl_crosscheck"
+        ],
+        "structureLinks": 1,
+        "tradeoffNullQuote": true
+      },
+      "MOVE-7009": {
+        "bibliography": false,
+        "quotesWithinLimit": false
+      }
+    }
+  },
+  "report": {
+    "link": "l-two",
+    "cases": [
+      "P-report"
+    ]
+  },
+  "dryRun": {
+    "run": "run_57abfd3b324e44789de26e40381226a5",
+    "structure": "mq4",
+    "map": {
+      "id": "dm1",
+      "structure": "mq4",
+      "pdbConfirm": "1MQ4",
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "sifts",
+          "expect": "O14965"
+        }
+      ]
+    },
+    "link": {
+      "id": "l-dry",
+      "map": "dm1",
+      "chains": null,
+      "includeFlagged": false,
+      "cases": [
+        "P-dry-run"
+      ],
+      "expect": {
+        "chains": {
+          "A": [
+            "linked",
+            null,
+            "O14965"
+          ]
+        },
+        "targets": {
+          "O14965": {
+            "status": "not_in_kbase_references",
+            "moves": 0,
+            "movesFlagged": null,
+            "excluded": 0,
+            "references": 0,
+            "chains": [
+              "A"
+            ]
+          }
+        },
+        "nullResult": true
+      }
+    }
+  }
+}
