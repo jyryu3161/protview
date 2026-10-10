@@ -1,0 +1,51 @@
+M27 gate record (source freeze b414728, 2026-10-10)
+
+Source freeze: b414728 (Stop hook groups). Commits after it change only docs/qa evidence and documents; `git diff b414728..HEAD -- backend frontend scripts config design .codex` is empty.
+
+== pytest groups on b414728 (stop.py CHECKS[1:], 18 groups started together, no per-group time limit) ==
+group 01: exit=0 24 passed, 357.5 s  (backend/tests/test_chemical_interactions.py ...)
+group 02: exit=0 25 passed, 305.1 s  (backend/tests/test_m11_job_api.py ...)
+group 03: exit=0 220 passed, 342.7 s  (backend/tests/test_docking_inputs.py ...)
+group 04: exit=0 120 passed, 334.7 s  (backend/tests/test_docking_batch_worker.py ...)
+group 05: exit=0 390 passed, 340.0 s  (backend/tests/test_docking_batch_inputs.py ...)
+group 06: exit=0 12 passed, 352.8 s  (backend/tests/test_ligand_ga_jobs.py ...)
+group 07: exit=0 15 passed, 324.2 s  (backend/tests/test_ligand_ga_worker.py ...)
+group 08: exit=0 2 passed, 319.1 s  (backend/tests/test_sequence_ga_jobs.py::test_product_path_publication_m18_identity_reuse_duplicates_and_events_only ...)
+group 09: exit=0 12 passed, 280.3 s  (backend/tests/test_sequence_ga_jobs.py::test_registration_capability_and_protocol_timeout_bound ...)
+group 10: exit=0 24 passed, 326.1 s  (backend/tests/test_sequence_ga_api.py ...)
+group 11: exit=0 20 passed, 348.1 s  (backend/tests/test_sequence_ga_reports.py ...)
+group 12: exit=0 418 passed, 302.1 s  (backend/tests/test_sequence_ga_worker.py ...)
+group 13: exit=0 247 passed, 316.0 s  (backend/tests/test_mutation_model_worker.py ...)
+group 14: exit=0 202 passed, 195.0 s  (backend/tests/test_jev_loops_read.py ...)
+group 15: exit=0 43 passed, 238.9 s  (backend/tests/test_jev_loops_compute.py ...)
+group 16: exit=0 557 passed, 42.3 s  (backend/tests/test_precedent_constants.py ...)
+group 17: exit=0 129 passed, 231.6 s  (backend/tests/test_analysis_workflows.py ...)
+group 18: exit=0 3577 passed, 323.2 s  (backend/tests ...)
+total passed over 18 groups: 6037; wall time of the concurrent run: 357.5 s (limit per group 480 s)
+group 12 (sequence GA worker) includes test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]: passed.
+group 16 = the seven M27 backend test files (557 tests). group 17 = test_analysis_workflows.py + test_jev_loop_reports.py (129 tests). group 18 = the remaining backend tests + script tests (3577 tests).
+Before the second split (freeze 7e33951, 17 groups) the remaining group took 3706 tests, 423.9 s alone and 476 s with all groups started together; now 243 s together with group 17 only and 323 s with all groups started together.
+
+== other commands (run on 7e33951; b414728 only changes .codex/hooks/stop.py and scripts/test_codex_hooks.py) ==
+ruff: exit=0 0s
+golden-science-m24: exit=0 6s
+golden-egress: exit=0 1s
+node-check: files=31 fails=0
+frontend-test-events: exit=0 1s
+frontend-typecheck: exit=0 5s
+frontend-build: exit=0 15s
+golden-call-keys-record: exit=0 45s
+golden-call-keys-equal: exit=0
+npm --prefix frontend run test:events: tests 534 pass 534 fail 0
+typecheck then build were run one after the other, not at the same time.
+ruff command: ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py (also exit 0 on b414728 after the hook edit)
+scripts/test_codex_hooks.py on b414728: 25 passed (expects 19 checks)
+golden_call_keys.json: prototype_golden_call_keys.py re-record compared with the committed file by cmp (exit 0)
+golden_science_m24.json and golden_egress_events.json: --check exit 0
+call-key hash files: `git diff --name-only 6ac3a59 HEAD -- backend/mw` lists none of docking_*, openmm_mutation_worker, mutation_model_*, mutation_candidates, ligand_ga_*, sequence_ga_*, docking_batch_* (also checked by backend/tests/test_kinase_precedents_ast.py)
+
+== M27 offscreen acceptance on the frozen source ==
+scripts/m27_offscreen_acceptance.py --stages fixture,real: see docs/qa/m27-precedents-20261010/acceptance/summary.json (acceptance, case counts, gitHead, dirty files, external request counts).
+
+== regression runners (M26-M14, M13) ==
+see docs/qa/m27-precedents-20261010/regression/ (written by the next step)
