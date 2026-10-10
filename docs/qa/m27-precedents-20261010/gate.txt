@@ -47,9 +47,10 @@ call-key hash files: `git diff --name-only 6ac3a59 HEAD -- backend/mw` lists non
 == M27 offscreen acceptance on the frozen source ==
 scripts/m27_offscreen_acceptance.py --stages fixture,real: see docs/qa/m27-precedents-20261010/acceptance/summary.json (acceptance, case counts, gitHead, dirty files, external request counts).
 
-== regression runners (M26-M14, M13) on the source freeze (HEAD of the run: a81e0ee, docs/evidence-only commits after b414728) ==
+== regression runners (M26-M14, M13) on the source freeze (HEAD of the run: e595ca4 = the acceptance evidence commit; its source is identical to b414728, only docs/qa differs) ==
 .deps/precedent_reference and .deps/reaction_reference did not exist during the whole chain (T1 decision: the old runners do not pass MW_PRECEDENT_REFERENCE_DIR, so the folder stays absent).
 scripts/m26_offscreen_acceptance.py --stages fixture -> regression/m26/: 39/39 cases pass, no failed step (acceptance false only because the real stage was not requested), browser external requests 0.
 scripts/m25_offscreen_acceptance.py --phase fixture --regressions -> regression/m25/ and regression/m13-regression ... m24-regression: acceptance true, failedSteps empty;
   m25 fixture phase pass; regression-m24 (fixture phase, real calls 0), m23, m22, m21, m20, m19, m18, m17, m16, m15, m14, m13 (all phases): every step pass.
 Evidence larger than 256 KiB (54 text files, 334 MB: M13 regression 52, M14 1, M15 1) is archived under frontend/tests/offscreen/artifacts/m27-final/export-full/ with hashes in each folder's ARCHIVED-EVIDENCE.sha256 (decision 0020).
+The chain steps of the M25 runner (regression-m24 ... m13, each exit 0) are listed in regression-chain.txt.

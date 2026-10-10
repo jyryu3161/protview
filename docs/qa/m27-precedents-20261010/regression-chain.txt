@@ -1,0 +1,24 @@
+M27 regression chain record (source freeze b414728; run on commit e595ca4 = a81e0ee + acceptance evidence, source identical to b414728; 2026-10-10)
+
+New feature acceptance: scripts/m27_offscreen_acceptance.py --stages fixture,real -> acceptance/ (46/46 cases, acceptance true).
+The reference folders .deps/precedent_reference and .deps/reaction_reference did not exist before the chain started and still do not exist after it (the old runners do not pass MW_PRECEDENT_REFERENCE_DIR or MW_REACTION_REFERENCE_DIR).
+
+Older-stage regression 1: scripts/m26_offscreen_acceptance.py --stages fixture -> regression/m26/ (39/39 cases pass, no failed step, browser external requests 0).
+
+Older-stage regression 2: scripts/m25_offscreen_acceptance.py --phase fixture --regressions --kbase <kbase_kinase> -> regression/m25/ and regression/m13-regression ... m24-regression.
+The M25 runner exports its own evidence before it runs the chain, so the chain steps are listed here from the runner log (paths removed):
+  regression-m24: pass exit=0 at 2026-10-10T13:33:06.735367+00:00
+  regression-m23: pass exit=0 at 2026-10-10T13:43:55.676916+00:00
+  regression-m22: pass exit=0 at 2026-10-10T13:49:50.140300+00:00
+  regression-m21: pass exit=0 at 2026-10-10T13:51:36.321738+00:00
+  regression-m20: pass exit=0 at 2026-10-10T13:52:15.692523+00:00
+  regression-m19: pass exit=0 at 2026-10-10T13:55:23.432897+00:00
+  regression-m18: pass exit=0 at 2026-10-10T13:56:37.627797+00:00
+  regression-m17: pass exit=0 at 2026-10-10T13:59:34.964587+00:00
+  regression-m16: pass exit=0 at 2026-10-10T14:00:36.189422+00:00
+  regression-m15: pass exit=0 at 2026-10-10T14:01:10.044037+00:00
+  regression-m14: pass exit=0 at 2026-10-10T14:03:02.924676+00:00
+  regression-m13: pass exit=0 at 2026-10-10T14:39:30.214196+00:00
+  runner final line: failedSteps=[] acceptance=True
+
+Large text evidence (> 256 KiB, 54 files) moved to frontend/tests/offscreen/artifacts/m27-final/export-full/ (decision 0020); hashes in each folder's ARCHIVED-EVIDENCE.sha256.
