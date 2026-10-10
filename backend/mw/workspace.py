@@ -14,6 +14,7 @@ from .tools import (
     energetic,
     jev,
     jev_loop,
+    kinase_precedents,
     mutations,
     numbering,
     reaction_knowledge,
@@ -43,6 +44,7 @@ def build_registry(tools_yaml: Path | None = None) -> ToolRegistry:
     jev.register(reg)
     jev_loop.register(reg)
     reaction_knowledge.register(reg)
+    kinase_precedents.register(reg)
     return reg
 
 

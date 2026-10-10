@@ -262,6 +262,23 @@ tools:
       numbering_map: { default: null }                   # residue_numbering_map handle of the same structure | null
     description: 구조의 체인에 반응 참조 스냅샷(M-CSA·UniProt·Rhea)이 적은 촉매 잔기·부위·반응 정보를 참조값으로 붙인다(대응됨은 M-CSA가 적은 PDB·체인·번호와 잔기 이름이 같다는 뜻뿐이며 잔기의 역할을 판정하지 않음; 값은 참조 스냅샷 값, 계산 아님)
 
+  # M27: unreviewed, machine-extracted kbase_kinase precedent records of the pinned local precedent reference set
+  # (MW_PRECEDENT_REFERENCE_DIR, default .deps/precedent_reference; no network) attached to the chains of one
+  # residue_numbering_map by the same UniProt accession only. A registry pre-check pins the set (precondition) and
+  # runs the closed admission checks (input_invalid) before the cache key; the call key adds the pinned set hash and
+  # the method version. Reads only the set and this run's numbering map.
+  - name: link_kinase_precedents
+    level: L2
+    version: '1'
+    accepts: { numbering_map: [residue_numbering_map] }
+    emits: kinase_precedents
+    cost_class: cheap
+    typical_runtime_s: 1
+    params:
+      chains: { default: null }                          # null = every chain of the map | [chain_auth], non-empty, unique (normalized to the sorted list)
+      include_flagged: { type: bool, required: true }    # true also includes the records of the moves_flagged file
+    description: 번호 대응 체인의 표적(UniProt accession)과 같은 표적에 대해 kbase_kinase가 논문에서 기계로 추출한 미검수 전례 기록을 출처·검사 상태와 함께 붙인다(전례 필드는 kbase 값 그대로이고 ProtView가 센 개수만 계산값이며, 구조·변이·리간드와의 일치를 판단하지 않음)
+
   - name: align
     level: L2
     accepts: { mobile: [structure, prepared_structure, relaxed_structure], reference: [structure, prepared_structure, relaxed_structure] }

@@ -28,7 +28,8 @@ Interface (consumed by the tool, the read routes and the report; keep it stable)
   vs 0, counts recounted, order, record copies without the two removed paths, ``review_status``, integrity, fixed
   sentences); raises ``ResultInvalid`` (a ``ValueError`` whose message starts with ``"kinase_precedents@1"``).
 * helpers shared with reads / reports: ``record_copy``, ``integrity_values``, ``target_counts``,
-  ``precedent_set_record``, ``SnapshotUnavailable`` (= ``precedent_snapshots.SnapshotUnavailable``).
+  ``precedent_set_record``, ``move_key`` (the fixed record order), ``SnapshotUnavailable``
+  (= ``precedent_snapshots.SnapshotUnavailable``).
 
 Precedent fields are kbase values copied as they are; the only values computed here are counts, word counts and the
 integrity checks. A record whose target accession is null, or another accession, is never linked; names and
@@ -128,6 +129,12 @@ def clear_index_cache() -> None:
         _INDEX_CACHE.clear()
 
 
+def move_key(move_id: str) -> tuple[int, str]:
+    """The fixed record order: the integer part of ``MOVE-<digits>``, then the ``move_id`` string (``MOVE-00001`` and
+    ``MOVE-0001`` share the integer 1 and stay distinct records)."""
+    return K.move_number(move_id), move_id
+
+
 def _per_file() -> dict[str, int]:
     return {source: 0 for source in K.FILE_SOURCES}
 
@@ -179,7 +186,7 @@ def precedent_index(pinned: ps.PinnedPrecedentSet) -> PrecedentIndex:
     records_total = {"moves": len(dist.moves), "moves_flagged": len(dist.moves_flagged)}
     index = PrecedentIndex(
         set_hash=pinned.set_hash, key=key,
-        by_uniprot={acc: tuple(sorted(items, key=lambda item: K.move_number(item[1]["move_id"])))
+        by_uniprot={acc: tuple(sorted(items, key=lambda item: move_key(item[1]["move_id"])))
                     for acc, items in grouped.items()},
         references_by_uniprot={acc: tuple(sorted(items, key=lambda r: r["ref_id"])) for acc, items in references.items()},
         bibliography=K.bibliography_entries(pubmed),
@@ -592,7 +599,7 @@ def _validate_targets(targets: Any, groups: Mapping[str, list[str]], include_fla
             if move_id in seen:
                 _fail(f"{where}: move_id {move_id} repeats")
             seen.add(move_id)
-        if not _strictly_ascending([K.move_number(item["record"]["move_id"]) for item in records]):
+        if not _strictly_ascending([move_key(item["record"]["move_id"]) for item in records]):
             _fail(f"{where}.records: move_id order")
         status = ("precedents_found" if records else
                   "none_in_included_files" if target["references"] else "not_in_kbase_references")

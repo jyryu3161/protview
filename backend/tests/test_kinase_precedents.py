@@ -222,6 +222,25 @@ def test_records_are_in_move_number_order_and_references_by_ref_id(world):
     assert set(p1["references"][0]) == {"ref_id", "gene", "klifs_name", "group", "family", "coverage", "content_hash"}
 
 
+def test_move_ids_with_the_same_number_are_ordered_by_the_move_id_string(ref):
+    """``^MOVE-\\d{4,}$`` admits ``MOVE-0001`` and ``MOVE-00001`` (the same integer part, distinct move IDs): the fixed
+    record order is (integer part, ``move_id`` string), in the index, the result and ``validated_result``."""
+    moves = [PF.make_move("MOVE-0002"), PF.make_move("MOVE-0001"), PF.make_move("MOVE-00001")]  # SYNTHETIC records
+    PF.build_set(ref, moves=moves, moves_flagged=[])
+    world = kp.pin_and_index()
+    order = ["MOVE-00001", "MOVE-0001", "MOVE-0002"]
+    assert [r["move_id"] for _f, r in world[1].by_uniprot["P0SYN1"]] == order
+    result = build(world, chains=["A"])
+    assert [i["record"]["move_id"] for i in result["targets"][0]["records"]] == order
+    assert kp.validated_result(result) is result
+    assert kp.move_key("MOVE-00001") < kp.move_key("MOVE-0001") < kp.move_key("MOVE-0002") < kp.move_key("MOVE-10")
+    swapped = copy.deepcopy(result)
+    records = swapped["targets"][0]["records"]
+    records[0], records[1] = records[1], records[0]
+    with pytest.raises(kp.ResultInvalid):
+        kp.validated_result(swapped)
+
+
 def test_bibliography_present_or_null(world):
     books = build(world, include_flagged=True)["bibliography"]
     assert list(books) == ["90000001", "90000002", "90000003", "90000004", "90000005"]
