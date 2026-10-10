@@ -89,6 +89,7 @@ PYTEST_GROUPS = [
     [T + "test_precedent_constants.py", T + "test_precedent_snapshots.py", T + "test_kinase_precedents.py",
      T + "test_kinase_precedents_tool.py", T + "test_kinase_precedents_api.py",
      T + "test_kinase_precedents_reports.py", T + "test_kinase_precedents_ast.py"],
+    [T + "test_analysis_workflows.py", T + "test_jev_loop_reports.py"],
 ]
 
 
