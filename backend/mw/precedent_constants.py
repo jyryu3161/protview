@@ -342,6 +342,10 @@ def validate_move(record: Any) -> None:
     _require(set(record) == set(MOVE_KEYS), f"move: top-level keys {sorted(record)} differ from the 21 fixed keys")
     move_id = record["move_id"]
     _require(type(move_id) is str and _MOVE_ID.fullmatch(move_id), f"move: move_id {move_id!r} is not MOVE-<digits>")
+    try:
+        move_number(move_id)   # the record order needs the integer (above the interpreter's digit limit: refused)
+    except ValueError:
+        raise FormatError(f"move: move_id digits ({len(move_id) - 5}) cannot be read as an integer") from None
     where = f"move {move_id}"
     _require(record["review_status"] == "unreviewed", f"{where}: review_status must stay 'unreviewed'")
     _require(type(record["schema_version"]) is int and record["schema_version"] == 1, f"{where}: schema_version")
