@@ -832,6 +832,19 @@ test("five area states: no run and no capability record are unavailable; a missi
   for (const text of [lib.NO_RUN_REASON, lib.CAPABILITY_REASON, lib.NULL_RESULT_TEXT]) assert.doesNotMatch(text, /\d/);
 });
 
+test("one area's state is one of the five: unavailable, then failed, then loading, then empty, else ready", () => {
+  const state = input => lib.precedentAreaState(input);
+  assert.equal(state({}), "ready");
+  assert.equal(state({ empty: true }), "empty");
+  assert.equal(state({ loading: true, empty: true }), "loading");
+  assert.equal(state({ failed: true, loading: true, empty: true }), "failed");
+  assert.equal(state({ unavailable: true, failed: true, loading: true, empty: true }), "unavailable");
+  assert.equal(state({ unavailable: false, failed: false, loading: false, empty: false }), "ready");
+  // every state it can give has its label among the five (spec 8)
+  const given = new Set([{}, { empty: true }, { loading: true }, { failed: true }, { unavailable: true }].map(state));
+  assert.deepEqual([...given].sort(), Object.keys(lib.AREA_STATE_LABEL).sort());
+});
+
 test("late responses: applied only for the same run, result handle and request number; reports for the same run", () => {
   const live = { runId: "r1", handle: RESULT, seq: 4 };
   assert.equal(lib.precedentResponseCurrent({ ...live }, live), true);

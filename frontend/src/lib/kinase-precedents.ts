@@ -1007,6 +1007,21 @@ export function precedentPanelState(input: { runId: string | null;
   return { state: "ready" };
 }
 
+export type PrecedentAreaStateName = keyof typeof AREA_STATE_LABEL;
+
+/**
+ * One area's state of the five (spec 8): not usable (reason only) first, then a failed read, then a read in flight or
+ * not started, then a valid empty answer (not a failure), else ready.
+ */
+export function precedentAreaState(input: { unavailable?: boolean; failed?: boolean; loading?: boolean;
+  empty?: boolean }): PrecedentAreaStateName {
+  if (input.unavailable) return "unavailable";
+  if (input.failed) return "failed";
+  if (input.loading) return "loading";
+  if (input.empty) return "empty";
+  return "ready";
+}
+
 // ---- late responses (run + result handle + request number per area) ----
 
 export const PRECEDENT_AREAS = ["status", "maps", "rows", "command", "list", "detail", "report"] as const;
