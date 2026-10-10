@@ -20,7 +20,8 @@ import type { AnalysisAction, AnalysisEnvelope, AnalysisExecution, AnalysisExecu
   ToolError, JevLoopAbandonRequest, JevLoopCapability, JevLoopComputeRequest, JevLoopCreateRequest, JevLoopListRow,
   JevLoopProjectionArgs, JevLoopReportArtifact, JevLoopV1, ReactionKnowledgeArgs, ReactionKnowledgeCapability,
   ReactionKnowledgeDetail, ReactionKnowledgeList, ReactionKnowledgeReportArtifact, ReactionPdbEntries,
-  ReactionReferenceStatus } from "./contracts";
+  ReactionReferenceStatus, KinasePrecedentsArgs, KinasePrecedentsCapability, KinasePrecedentsDetail,
+  KinasePrecedentsList, KinasePrecedentsReportArtifact, PrecedentReferenceStatus } from "./contracts";
 import type { ViewerSource } from "@/components/MolstarViewer";
 import type { ViewerIntent, ViewerOnlineStatus, ViewerSession, ViewerRepresentationValue } from "./viewer-agent";
 import type { NativeSceneState, SavedFigureDetail, SavedPage, SavedSceneDetail } from "./saved-scene";
@@ -72,7 +73,9 @@ export interface Capabilities { mode: "local_only"; supported: Record<string, st
     /** M25: per branch (projection tool, science pins, then the branch's engines); reasons only. */
     jev_loop?: JevLoopCapability;
     /** M26: the pinned + decoded local reaction reference set (no network); same five keys as residue_numbering. */
-    reaction_knowledge?: ReactionKnowledgeCapability } }
+    reaction_knowledge?: ReactionKnowledgeCapability;
+    /** M27: the pinned local precedent reference set with its records decoded (no network); same five keys as M26. */
+    kinase_precedents?: KinasePrecedentsCapability } }
 export interface SavedReportRef { handle: string; interaction_handle?: string; result_handle?: string; analysis_type?: string;
   markdown_handle: string; created_seq: number; snapshot_event_seq: number }
 export interface ReportArtifact { handle: string; markdown_handle: string; manifest: {
@@ -94,7 +97,7 @@ export interface MethodReportArtifact { handle: string; markdown_handle: string;
   schema: "method_report_manifest@1";
   analysis_type: "interface_sasa" | "atom_distance" | "rigid_alignment" | "chemical_interactions" | "pocket_detection"
     | "residue_numbering" | "reference_site_annotation" | "ligand_candidates" | "ligand_docking" | "ligand_docking_batch"
-    | "mutation_candidates" | "jev_choice" | "reaction_knowledge";
+    | "mutation_candidates" | "jev_choice" | "reaction_knowledge" | "kinase_precedents";
   result_handle: string;
   prepared_handle: string; snapshot: { event_seq: number }; summary: SasaResult["summary"];
 }; markdown: string }
@@ -262,7 +265,7 @@ export const api = {
   run: (id: string) => request<RunSummary>(runPath(id)),
   createRun: () => request<RunSummary>("/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal: "로컬 구조 검사", context: [], dry_run: false, egress: "local_only" }) }),
   upload: (id: string, file: File) => request<UploadResult>(runPath(id, `/uploads?filename=${encodeURIComponent(file.name)}`), { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file }),
-  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection" | "build_jev_loop_projection" | "link_reaction_knowledge", args: Record<string, unknown>, signal?: AbortSignal) =>
+  command: (id: string, tool: "load_structure" | "prepare_structure" | "compute_interactions" | "compute_interface_sasa" | "measure_distance" | "align_structures" | "map_residue_numbering" | "annotate_reference_sites" | "generate_mutation_candidates" | "build_jev_projection" | "build_jev_loop_projection" | "link_reaction_knowledge" | "link_kinase_precedents", args: Record<string, unknown>, signal?: AbortSignal) =>
     request<CommandResult>(runPath(id, "/commands"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tool, args, decided_by: "human", execution_mode: "human" }), signal }),
   events: (id: string, after = 0, limit = 500, signal?: AbortSignal) => request<RunEvent[]>(runPath(id, `/events?after=${after}&limit=${limit}`), { signal }),
   async allEvents(id: string, signal?: AbortSignal): Promise<RunEvent[]> {
@@ -555,6 +558,25 @@ export const api = {
    * (`POST /method_reports`, the same body as `createMethodReport`); the linking is not run again. */
   createReactionKnowledgeReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
     request<ReactionKnowledgeReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
+  // ---- M27 kinase precedents (reads write no event and run no tool; the result handle goes in the path) ----
+  /** The active local precedent reference set, or `installed: false` and the reason (run independent). */
+  precedentReferenceStatus: (signal?: AbortSignal) =>
+    request<PrecedentReferenceStatus>("/precedent_reference/status", { signal }),
+  /** Runs `link_kinase_precedents` through the ordinary Run.call command route (no job, approval or budget). */
+  linkKinasePrecedents: (id: string, args: KinasePrecedentsArgs, signal?: AbortSignal) =>
+    api.command(id, "link_kinase_precedents", args as unknown as Record<string, unknown>, signal),
+  /** This run's results, newest first; `limit` 1–100 (default 50). */
+  kinasePrecedentsResults: (id: string, offset = 0, limit = 50, signal?: AbortSignal) =>
+    request<KinasePrecedentsList>(runPath(id, `/kinase_precedents?offset=${offset}&limit=${limit}`), { signal }),
+  /** `query` comes from `checkPrecedentQuery` (kinase-precedents.ts): target, filters, the five sort keys, page. The
+   * server filters, searches, sorts and pages the stored records. */
+  kinasePrecedentsResult: (id: string, handle: string, query: string, signal?: AbortSignal) =>
+    request<KinasePrecedentsDetail>(runPath(id, `/kinase_precedents/${encodeURIComponent(handle)}?${query}`),
+      { signal }),
+  /** Method report `analysis_type: "kinase_precedents"` of one stored result through the method report route
+   * (`POST /method_reports`); the linking is not run again. */
+  createKinasePrecedentsReport: (id: string, resultHandle: string, signal?: AbortSignal) =>
+    request<KinasePrecedentsReportArtifact>(runPath(id, "/method_reports"), jsonPost({ result_handle: resultHandle }, signal)),
   meta: (id: string, handle: string) => request<ObjectMeta>(runPath(id, `/objects/meta?${handleParam(handle)}`)),
   residues: (id: string, handle: string) => request<ResidueList>(runPath(id, `/structures/residues?${handleParam(handle)}`)),
   atoms: (id: string, handle: string, offset = 0, limit = 500, signal?: AbortSignal) =>
