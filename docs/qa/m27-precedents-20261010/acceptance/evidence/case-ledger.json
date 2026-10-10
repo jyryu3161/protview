@@ -1,21 +1,21 @@
 {
   "schema": "m27_case_ledger@1",
-  "generatedAt": "2026-10-10T11:38:46.896963+00:00",
+  "generatedAt": "2026-10-10T13:28:14.561837+00:00",
   "build": {
-    "buildId": "TJuLuk1Mu4VmNPtt72Xqg",
-    "gitHead": "37a00efb98f6ca015ef8ef4fba1244190d32e23f",
+    "buildId": "wbonjE7nah2kMcCTup7fP",
+    "gitHead": "a81e0eeca4aabebc9cba5bbb2eae8903eb82fcc3",
     "buildCurrentWithSource": true,
     "gitStatusPorcelainSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "dirtyFiles": [],
-    "recordedAt": "2026-10-10T11:37:15.247169+00:00",
+    "recordedAt": "2026-10-10T13:26:41.661787+00:00",
     "codeRoot": "<repo>",
     "harnessSha256": {
-      "kinase-precedents-flow.cjs": "f4d73bd72a45ef597fa15e83b19ce6a4a5718be341b9b3356bbea2569efea956",
+      "kinase-precedents-flow.cjs": "aa6267f1fc6b1a85c6e8a31a4706fb8d041cb6be4462319506d57a035f717a37",
       "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
       "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
       "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
     },
-    "runnerSha256": "fdeff9ba26e50803184ae2c65de4fe54afa0e05b6121d9bfc494fb0a0864719c",
+    "runnerSha256": "75f355633a266990a8d1e801b59be0cfac32e2bfe8e78520f471ee9d509c1504",
     "builderSha256": "4513d0a7ed9a6a025914b0bd34bfdab6adfb0fa6c98cd9d245c42e9e4943fa18"
   },
   "stagesRequested": [
@@ -474,7 +474,7 @@
       "precedent": {
         "empty-at-start": {
           "status": "pass",
-          "at": "2026-10-10T11:37:19.924974+00:00",
+          "at": "2026-10-10T13:26:46.394128+00:00",
           "served": {
             "installed": false,
             "reason": "not_installed",
@@ -484,7 +484,7 @@
         },
         "set-a": {
           "status": "pass",
-          "at": "2026-10-10T11:37:22.402082+00:00",
+          "at": "2026-10-10T13:26:48.971950+00:00",
           "setHash": "671e64067c6ecdc756001f9cd26df88e6672c7f34efcfd03559d18cb55817e7d",
           "importedAt": "2026-10-10T01:00:00Z",
           "rows": {
@@ -504,7 +504,7 @@
         },
         "unset": {
           "status": "pass",
-          "at": "2026-10-10T11:37:50.894708+00:00",
+          "at": "2026-10-10T13:27:18.086706+00:00",
           "moved": "active.json -> active.json.qa-unset",
           "served": {
             "installed": false,
@@ -515,7 +515,7 @@
         },
         "tamper": {
           "status": "pass",
-          "at": "2026-10-10T11:37:54.671112+00:00",
+          "at": "2026-10-10T13:27:21.987944+00:00",
           "restored": "active.json",
           "tampered": "files/dist/moves.jsonl",
           "sha256Before": "5a013d85bec23f006f10a4ed0e01d42aa2df2a0fc8f8db97f33cd7b6797e23c2",
@@ -529,7 +529,7 @@
         },
         "set-b": {
           "status": "pass",
-          "at": "2026-10-10T11:37:58.493461+00:00",
+          "at": "2026-10-10T13:27:25.883008+00:00",
           "setHash": "0b87a64732b8885b37938b802703b265e5aac8b1ee9d2bea3e6aceb1aef5a73b",
           "importedAt": "2026-10-10T02:00:00Z",
           "rows": {
@@ -563,12 +563,12 @@
       },
       "derive": {
         "status": "pass",
-        "run": "run_f1eb563052774de9976b1a96ae28ab4e",
-        "source": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/a99c9e1f14b3bd0aadc598e86a1c02a08b84ed3df7116279631e6bd55b6bec0c",
-        "at": "2026-10-10T11:37:27.076732+00:00",
+        "run": "run_feedecde24504a7fb8af1a9c5289a0c4",
+        "source": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/76025f6a49efc4510fdb1bed75e946a61dbd3d8b7bb4f24d58abc2bcd70b2914",
+        "at": "2026-10-10T13:26:53.722437+00:00",
         "maps": {
           "d-two": {
-            "handle": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/cad8273b7f29a51829b301630db13dafe36cb9dff36cd032c580fe73a315e316",
+            "handle": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/5798fe32951e7cc80cccbf39f30aa7cb323272797c76db3a414722ce52466537",
             "chains": {
               "A": [
                 "P0QA01"
@@ -580,7 +580,7 @@
             "label": "SYNTHETIC derived from a real M15 map of the derived two-chain 1MQ4 fixture: the mapped rows' accession replaced by made-up accessions (M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
           },
           "d-fusion": {
-            "handle": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/3f556d41992d74bab5561e4bc60060b1b089a1ca028bf025b2b5bd71f4f2dfef",
+            "handle": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/eb1af4682266c46af3e704533d3dc9f5283ba4dd4f6a0c38c079b61d78421678",
             "chains": {
               "A": [
                 "P0QA01",
@@ -593,7 +593,7 @@
             "label": "SYNTHETIC derived from a real M15 map of the derived two-chain 1MQ4 fixture: the mapped rows' accession replaced by made-up accessions (M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
           },
           "d-big": {
-            "handle": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/45fd3d2266cd40e9dbcb6be93e6af766786cb6fcee56bd939d4383635f80a35b",
+            "handle": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/72d3bfd1fb66fe79c6ad2deb94d6e6d69acdb7c33b1535e61a3593ae930cc01f",
             "chains": {
               "A": [
                 "P0QA04"
@@ -612,13 +612,13 @@
       "precedent": {
         "imported": {
           "status": "pass",
-          "at": "2026-10-10T11:38:09.518812+00:00",
-          "setHash": "2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf",
+          "at": "2026-10-10T13:27:37.320047+00:00",
+          "setHash": "8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc",
           "served": {
             "installed": true,
             "reason": null,
-            "set_hash": "2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf",
-            "imported_at": "2026-10-10T11:38:04Z"
+            "set_hash": "8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc",
+            "imported_at": "2026-10-10T13:27:32Z"
           }
         }
       },
@@ -637,12 +637,12 @@
       },
       "derive": {
         "status": "pass",
-        "run": "run_d6aae97a4dd54449bca1a5c300a3adb8",
-        "source": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/551f8d839a07249042bf80af20f9ceb4b15f801852f363acb7bb22dbcefa4ad5",
-        "at": "2026-10-10T11:38:20.499132+00:00",
+        "run": "run_d9e2953f5f2145f7b40adfdbb7b9a30b",
+        "source": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/d9ac7e56d647dfb3806eb1c6b1aa945e543831f05d5a2b79b710241b1556feac",
+        "at": "2026-10-10T13:27:48.356166+00:00",
         "maps": {
           "d-size": {
-            "handle": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/4c8861d0d752014143b637da713826e62ad9567b379e719804e69a5b0b69080f",
+            "handle": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/86924209cbadf20ade4580c1b1c13506615777577bcb861ad37966850200c73b",
             "chains": {
               "A": [
                 "P00533"
@@ -660,12 +660,12 @@
           {
             "number": 1,
             "exitCode": 0,
-            "log": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/services/import-1.log",
+            "log": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010-final2/services/import-1.log",
             "networkAttempts": 0,
             "loaded": [],
-            "setHash": "f662f3e9c49c2f83d20391ed20df8aebc27b6a05de065f4df9dc11d83a99c9c9",
-            "importedAt": "2026-10-10T11:38:03Z",
-            "manifestSha256": "f662f3e9c49c2f83d20391ed20df8aebc27b6a05de065f4df9dc11d83a99c9c9",
+            "setHash": "614f5ecd1e6233c55e56491d356216ebc8d448d589aef468e4fea82d7c04dd6a",
+            "importedAt": "2026-10-10T13:27:30Z",
+            "manifestSha256": "614f5ecd1e6233c55e56491d356216ebc8d448d589aef468e4fea82d7c04dd6a",
             "fileSha256": {
               "dist/moves.jsonl": "2ad983addd8ff3fe563a2b18bba553d84c7c90401310da65902f6832572435be",
               "dist/moves_flagged.jsonl": "0699270358cfb4b250f8278968383e73e6b0dc347723faca135c30628301d658",
@@ -702,12 +702,12 @@
           {
             "number": 2,
             "exitCode": 0,
-            "log": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/services/import-2.log",
+            "log": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010-final2/services/import-2.log",
             "networkAttempts": 0,
             "loaded": [],
-            "setHash": "2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf",
-            "importedAt": "2026-10-10T11:38:04Z",
-            "manifestSha256": "2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf",
+            "setHash": "8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc",
+            "importedAt": "2026-10-10T13:27:32Z",
+            "manifestSha256": "8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc",
             "fileSha256": {
               "dist/moves.jsonl": "2ad983addd8ff3fe563a2b18bba553d84c7c90401310da65902f6832572435be",
               "dist/moves_flagged.jsonl": "0699270358cfb4b250f8278968383e73e6b0dc347723faca135c30628301d658",
@@ -743,7 +743,7 @@
           }
         ],
         "kbase": "<home>/Projects/kbase_kinase",
-        "dest": "<repo>/runs/m27-acceptance-20261010/real/precedent_reference",
+        "dest": "<repo>/runs/m27-acceptance-20261010-final2/real/precedent_reference",
         "reproducible": true,
         "activeIsSecond": true,
         "defaultFolderUntouched": true,
@@ -777,17 +777,17 @@
       ],
       "dryRunRun": {
         "status": 201,
-        "run": "run_57abfd3b324e44789de26e40381226a5",
+        "run": "run_22c9ac238d5443c88324a2cb80266637",
         "label": "QA setup record: dry-run run made through POST /runs (the UI has no dry-run control)"
       }
     },
     "real": {}
   },
   "plans": {
-    "fixture": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/fixture-plan.json",
-    "fixture-main": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/fixture-main-plan.json",
-    "real": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/real-plan.json",
-    "real-main": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010/real-main-plan.json"
+    "fixture": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010-final2/fixture-plan.json",
+    "fixture-main": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010-final2/fixture-main-plan.json",
+    "real": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010-final2/real-plan.json",
+    "real-main": "<repo>/frontend/tests/offscreen/artifacts/m27-acceptance/20261010-final2/real-main-plan.json"
   },
   "syntheticNote": "every precedent value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/precedent/t8/build_qa_set.py with precedent_fixture.py (SYNTHETIC-PROVENANCE-t8.md); the derived numbering maps are LABELLED SYNTHETIC variants of a real M15 map; observations are of the screen, never results",
   "reference": {
@@ -796,7 +796,7 @@
     "defaultPrecedentFolderUntouched": true
   },
   "realTextLeaks": [],
-  "realTextStringsChecked": 7558,
+  "realTextStringsChecked": 7479,
   "leftoverProcesses": [],
   "browserHostsContacted": [],
   "externalRequestsTotal": 0,
@@ -811,9 +811,9 @@
         "P-no-snapshot": "pass"
       },
       "runs": {
-        "E": "run_30ce2a61fe2e42d58f920af1c4229224"
+        "E": "run_d04175872ffe4c9d8aa8f33ee13a2ca2"
       },
-      "runId": "run_30ce2a61fe2e42d58f920af1c4229224",
+      "runId": "run_d04175872ffe4c9d8aa8f33ee13a2ca2",
       "evidenceKind": "real_electron_offscreen",
       "handles": {},
       "inputs": [],
@@ -834,7 +834,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:37:22.370Z"
+      "finishedAt": "2026-10-10T13:26:48.905Z"
     },
     {
       "step": "fixture-invalid",
@@ -845,10 +845,10 @@
         "P-invalid": "pass"
       },
       "runs": {
-        "A": "run_f1eb563052774de9976b1a96ae28ab4e",
-        "D": "run_57abfd3b324e44789de26e40381226a5"
+        "A": "run_feedecde24504a7fb8af1a9c5289a0c4",
+        "D": "run_22c9ac238d5443c88324a2cb80266637"
       },
-      "runId": "run_f1eb563052774de9976b1a96ae28ab4e",
+      "runId": "run_feedecde24504a7fb8af1a9c5289a0c4",
       "evidenceKind": "real_electron_offscreen",
       "handles": {},
       "inputs": [],
@@ -859,11 +859,11 @@
         "P-invalid": [
           {
             "step": "INVALID-01",
-            "description": "Choose run run_f1eb563052774de9976b1a96ae28ab4e in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+            "description": "Choose run run_feedecde24504a7fb8af1a9c5289a0c4 in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
           },
           {
             "step": "INVALID-02",
-            "description": "Choose run run_57abfd3b324e44789de26e40381226a5 in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+            "description": "Choose run run_22c9ac238d5443c88324a2cb80266637 in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
           }
         ]
       },
@@ -873,7 +873,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:37:58.451Z"
+      "finishedAt": "2026-10-10T13:27:25.867Z"
     },
     {
       "step": "fixture-main",
@@ -904,30 +904,31 @@
         "P-wording": "pass"
       },
       "runs": {
-        "A": "run_f1eb563052774de9976b1a96ae28ab4e",
-        "D": "run_57abfd3b324e44789de26e40381226a5"
+        "A": "run_feedecde24504a7fb8af1a9c5289a0c4",
+        "D": "run_22c9ac238d5443c88324a2cb80266637"
       },
-      "runId": "run_f1eb563052774de9976b1a96ae28ab4e",
+      "runId": "run_feedecde24504a7fb8af1a9c5289a0c4",
       "evidenceKind": "real_electron_offscreen",
       "handles": {
         "maps": {
-          "m1": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/e8ee9739031778bc226131fbb571c5a5cc6b031639f29e2cdb1a9d5d5644f26d",
-          "m2": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/556dc427e81ee2007de29971751eb1732b36083e06cdf158349cd3ad7962b43d",
-          "m3": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/a99c9e1f14b3bd0aadc598e86a1c02a08b84ed3df7116279631e6bd55b6bec0c",
-          "d-two": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/cad8273b7f29a51829b301630db13dafe36cb9dff36cd032c580fe73a315e316",
-          "d-fusion": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/3f556d41992d74bab5561e4bc60060b1b089a1ca028bf025b2b5bd71f4f2dfef",
-          "d-big": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/45fd3d2266cd40e9dbcb6be93e6af766786cb6fcee56bd939d4383635f80a35b"
+          "m1": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/3761e545a7f9098a1b7f4b2cc9ce05ca77ecf0f44a86315c37f57682dcaeb6d7",
+          "m2": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/c302e8b085ad70d36c9b799ede6fe72bc3d818c831ffa23b20df0b5ad17466bc",
+          "m3": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/76025f6a49efc4510fdb1bed75e946a61dbd3d8b7bb4f24d58abc2bcd70b2914",
+          "d-two": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/5798fe32951e7cc80cccbf39f30aa7cb323272797c76db3a414722ce52466537",
+          "d-fusion": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/eb1af4682266c46af3e704533d3dc9f5283ba4dd4f6a0c38c079b61d78421678",
+          "d-big": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/72d3bfd1fb66fe79c6ad2deb94d6e6d69acdb7c33b1535e61a3593ae930cc01f"
         },
         "links": {
-          "l-m1": "obj://run_f1eb563052774de9976b1a96ae28ab4e/kinase_precedents/8e3a528d1e629ba1e366860ad3ae2a3bf7abe95249422996a036d8bf1c1f2415",
-          "l-m2": "obj://run_f1eb563052774de9976b1a96ae28ab4e/kinase_precedents/67685d44c3f2b3d4ae995caa03139feb2f4adcc3767c3b6a369799ee56188433",
-          "l-m2-a": "obj://run_f1eb563052774de9976b1a96ae28ab4e/kinase_precedents/0de36d420feec10c318f782daf69bb06ed240043177a4e6819dc9e0e6ce76fc6",
-          "l-two": "obj://run_f1eb563052774de9976b1a96ae28ab4e/kinase_precedents/7b0642eb23da2ef39148d5444f362bae1f30e517a61854204f2acfbf02cc3411",
-          "l-two-incl": "obj://run_f1eb563052774de9976b1a96ae28ab4e/kinase_precedents/46baed162dcac1be7e7b658f1fa78b430cc9f3dc2abf50270077033e3052091e",
-          "l-fusion": "obj://run_f1eb563052774de9976b1a96ae28ab4e/kinase_precedents/2b492d7e6176ef945a512624aa72e5fae7b4e1f7377bef4c69779ed24ed392ce",
-          "l-dry": "obj://run_57abfd3b324e44789de26e40381226a5/kinase_precedents/a89af307bb0a46fe6b778bf718c106990393c9f087ba35128e8cd52d47f603ba"
+          "l-m1": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/796ef41d472acdc49883d566c1d6c7726e60815c0b1d6402a3b060a80220c6e5",
+          "l-m2": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/8e8e63342c7d1fc607dd15980be8d1db30bf1a47383a6d0e8b88a07edf6ea4dd",
+          "l-m2-a": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/a9198a091c76fbdf53154ffe55567e28330d718aefd9a79ea5739dca32b3a8db",
+          "l-m2-b": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/d234a528fde6e8004a547f54d19c328c55decd3334614c6b8e9414b83f365b5e",
+          "l-two": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/c307c68659614f5c53f750cf37e2b40fafb47295dadc7e4372e495c9c9434b1f",
+          "l-two-incl": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/e643beb6ec641967344703b3136f29641f7460d405e3a3e04073cfbc278501ae",
+          "l-fusion": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/kinase_precedents/9e27277f7d9f1b0d0a6b1b12d97cecc8b25954a76a9faee81a949b153c82690a",
+          "l-dry": "obj://run_22c9ac238d5443c88324a2cb80266637/kinase_precedents/cd0ed901c1adccbf2fc65c32c01fa2e0b29e3d02c398f7f16454a433d78f8650"
         },
-        "report": "obj://run_f1eb563052774de9976b1a96ae28ab4e/method_report_manifest/a047dc6cc889515e85d2237d71cdf29a43d3f51cab32bda4ff97309c39716a4f"
+        "report": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/method_report_manifest/2ba3f062c0b175588a327edd217d313ca2f97da3eca157a68bf55ec7336e25cf"
       },
       "inputs": [],
       "fixtureLabels": [
@@ -976,6 +977,9 @@
             "clicked": "l-m2-a"
           },
           {
+            "clicked": "l-m2-b"
+          },
+          {
             "clicked": "l-two"
           },
           {
@@ -996,6 +1000,16 @@
             "map": "m2",
             "chain": "B",
             "checked": false
+          },
+          {
+            "map": "m2",
+            "chain": "A",
+            "checked": false
+          },
+          {
+            "map": "m2",
+            "chain": "B",
+            "checked": true
           }
         ],
         "kinase-precedents-include-flagged": [
@@ -1093,6 +1107,14 @@
           },
           {
             "closed": "MOVE-7001"
+          }
+        ],
+        "kinase-precedents-kbase-fields": [
+          {
+            "opened": "MOVE-7001"
+          },
+          {
+            "opened": "MOVE-7009"
           }
         ],
         "kinase-precedents-results-refresh": [
@@ -1194,6 +1216,10 @@
             "description": "Link l-m1: map m1, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
           },
           {
+            "step": "L-l-m2-b",
+            "description": "Link l-m2-b: map m2, chains B, moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+          },
+          {
             "step": "L-l-two",
             "description": "Link l-two: map d-two, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
           },
@@ -1217,17 +1243,21 @@
           },
           {
             "step": "M23-expand-MOVE-7001",
-            "description": "Click 상세 펼치기 on MOVE-7001: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-7001: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           },
           {
             "step": "M23-expand-MOVE-7009",
-            "description": "Click 상세 펼치기 on MOVE-7009: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-7009: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           }
         ],
         "P-chain-states": [
           {
             "step": "L-l-m2",
             "description": "Link l-m2: map m2, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+          },
+          {
+            "step": "L-l-m2-b",
+            "description": "Link l-m2-b: map m2, chains B, moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
           },
           {
             "step": "L-l-fusion",
@@ -1315,11 +1345,11 @@
         "P-detail": [
           {
             "step": "M23-expand-MOVE-7001",
-            "description": "Click 상세 펼치기 on MOVE-7001: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-7001: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           },
           {
             "step": "M23-expand-MOVE-7009",
-            "description": "Click 상세 펼치기 on MOVE-7009: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-7009: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           },
           {
             "step": "M24-collapse",
@@ -1377,7 +1407,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:37:50.828Z"
+      "finishedAt": "2026-10-10T13:27:18.070Z"
     },
     {
       "step": "fixture-maps",
@@ -1388,19 +1418,19 @@
         "P-maps-real-m15": "pass"
       },
       "runs": {
-        "A": "run_f1eb563052774de9976b1a96ae28ab4e"
+        "A": "run_feedecde24504a7fb8af1a9c5289a0c4"
       },
-      "runId": "run_f1eb563052774de9976b1a96ae28ab4e",
+      "runId": "run_feedecde24504a7fb8af1a9c5289a0c4",
       "evidenceKind": "real_electron_offscreen",
       "handles": {
         "structures": {
-          "mq4": "obj://run_f1eb563052774de9976b1a96ae28ab4e/structure/0b5d45c7b5a9739a16385c99a0d22ea060db03dcff5bc7482396e5a486f942f4",
-          "two": "obj://run_f1eb563052774de9976b1a96ae28ab4e/structure/8a605ade43c1c4acc6f2180fdbc19285a86d7eed0afb65416972ec86f51bbc0d"
+          "mq4": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/structure/91d40e746fdcf05a68c762e500e31712bdb9c1ef626455fddae3421e5d087ad8",
+          "two": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/structure/421ab2d62e3697f32627238980edfa8ef86a99c86284cbca129aa39012f16996"
         },
         "maps": {
-          "m1": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/e8ee9739031778bc226131fbb571c5a5cc6b031639f29e2cdb1a9d5d5644f26d",
-          "m2": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/556dc427e81ee2007de29971751eb1732b36083e06cdf158349cd3ad7962b43d",
-          "m3": "obj://run_f1eb563052774de9976b1a96ae28ab4e/residue_numbering_map/a99c9e1f14b3bd0aadc598e86a1c02a08b84ed3df7116279631e6bd55b6bec0c"
+          "m1": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/3761e545a7f9098a1b7f4b2cc9ce05ca77ecf0f44a86315c37f57682dcaeb6d7",
+          "m2": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/c302e8b085ad70d36c9b799ede6fe72bc3d818c831ffa23b20df0b5ad17466bc",
+          "m3": "obj://run_feedecde24504a7fb8af1a9c5289a0c4/residue_numbering_map/76025f6a49efc4510fdb1bed75e946a61dbd3d8b7bb4f24d58abc2bcd70b2914"
         }
       },
       "inputs": [
@@ -1510,7 +1540,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:37:27.036Z"
+      "finishedAt": "2026-10-10T13:26:53.710Z"
     },
     {
       "step": "fixture-stale",
@@ -1521,10 +1551,10 @@
         "P-stale": "pass"
       },
       "runs": {
-        "A": "run_f1eb563052774de9976b1a96ae28ab4e",
-        "D": "run_57abfd3b324e44789de26e40381226a5"
+        "A": "run_feedecde24504a7fb8af1a9c5289a0c4",
+        "D": "run_22c9ac238d5443c88324a2cb80266637"
       },
-      "runId": "run_f1eb563052774de9976b1a96ae28ab4e",
+      "runId": "run_feedecde24504a7fb8af1a9c5289a0c4",
       "evidenceKind": "real_electron_offscreen",
       "handles": {},
       "inputs": [],
@@ -1535,11 +1565,11 @@
         "P-stale": [
           {
             "step": "STALE-01",
-            "description": "Choose run run_f1eb563052774de9976b1a96ae28ab4e in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+            "description": "Choose run run_feedecde24504a7fb8af1a9c5289a0c4 in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
           },
           {
             "step": "STALE-02",
-            "description": "Choose run run_57abfd3b324e44789de26e40381226a5 in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+            "description": "Choose run run_22c9ac238d5443c88324a2cb80266637 in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
           }
         ]
       },
@@ -1549,7 +1579,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:38:02.332Z"
+      "finishedAt": "2026-10-10T13:27:29.954Z"
     },
     {
       "step": "fixture-unset",
@@ -1560,10 +1590,10 @@
         "P-unset": "pass"
       },
       "runs": {
-        "A": "run_f1eb563052774de9976b1a96ae28ab4e",
-        "D": "run_57abfd3b324e44789de26e40381226a5"
+        "A": "run_feedecde24504a7fb8af1a9c5289a0c4",
+        "D": "run_22c9ac238d5443c88324a2cb80266637"
       },
-      "runId": "run_f1eb563052774de9976b1a96ae28ab4e",
+      "runId": "run_feedecde24504a7fb8af1a9c5289a0c4",
       "evidenceKind": "real_electron_offscreen",
       "handles": {},
       "inputs": [],
@@ -1574,11 +1604,11 @@
         "P-unset": [
           {
             "step": "UNSET-01",
-            "description": "Choose run run_f1eb563052774de9976b1a96ae28ab4e in 저장된 run, click 지식·보고서: snapshot block not_installed; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+            "description": "Choose run run_feedecde24504a7fb8af1a9c5289a0c4 in 저장된 run, click 지식·보고서: snapshot block not_installed; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
           },
           {
             "step": "UNSET-02",
-            "description": "Choose run run_57abfd3b324e44789de26e40381226a5 in 저장된 run, click 지식·보고서: snapshot block not_installed; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+            "description": "Choose run run_22c9ac238d5443c88324a2cb80266637 in 저장된 run, click 지식·보고서: snapshot block not_installed; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
           }
         ]
       },
@@ -1588,7 +1618,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:37:54.636Z"
+      "finishedAt": "2026-10-10T13:27:21.936Z"
     },
     {
       "step": "real-main",
@@ -1613,25 +1643,25 @@
         "X-wording": "pass"
       },
       "runs": {
-        "A": "run_d6aae97a4dd54449bca1a5c300a3adb8"
+        "A": "run_d9e2953f5f2145f7b40adfdbb7b9a30b"
       },
-      "runId": "run_d6aae97a4dd54449bca1a5c300a3adb8",
+      "runId": "run_d9e2953f5f2145f7b40adfdbb7b9a30b",
       "evidenceKind": "real_electron_offscreen",
       "handles": {
         "maps": {
-          "rm-mq4": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/59353dfd41f0820af3c4091a8fa9d86806573b612958150328f0e1ab883fa96a",
-          "rm-m17": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/bd33f562e0524868c8bd789e52137c2b85f5313d2785493050a9c762d5e852ed",
-          "rm-fin": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/551f8d839a07249042bf80af20f9ceb4b15f801852f363acb7bb22dbcefa4ad5",
-          "d-size": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/4c8861d0d752014143b637da713826e62ad9567b379e719804e69a5b0b69080f"
+          "rm-mq4": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/13ef845aaec828c08c625357ebbc28662212bf194397befcbc5b6e9b47d28b73",
+          "rm-m17": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/89d647db2672744b8f591403005eaf2524980074ca813c705e3a2a46024e401a",
+          "rm-fin": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/d9ac7e56d647dfb3806eb1c6b1aa945e543831f05d5a2b79b710241b1556feac",
+          "d-size": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/86924209cbadf20ade4580c1b1c13506615777577bcb861ad37966850200c73b"
         },
         "links": {
-          "l-mq4": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/kinase_precedents/deba26d034ef6bef443d0acb3eac9c8fd85449c84fcd5820911d5f2bc6fb07bd",
-          "l-m17": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/kinase_precedents/775ac2766dea26a785b293458d34659a2e586b15e3c382f0375c6b5df71e3c23",
-          "l-m17-incl": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/kinase_precedents/068e327e9f85a17fab3d226a25c5b5765bdcd53677d4357150eef5ef6450ba90",
-          "l-fin": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/kinase_precedents/f5656ad429e568ea30804366b46c54381e7896ee2f770d3afd3133814140f8b2",
-          "l-fin-incl": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/kinase_precedents/b7a3e7a0a3b110b0a4ed410a62ae8740a37721cb72ab6ebd98fa6587457d53c4"
+          "l-mq4": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/4d3ab3dbd88143f2ac75906319ad0a74eed204406b7b7078e3565474fae9ad26",
+          "l-m17": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/2dfb5efc22234d1934681388da1b89cfb508aa276c5cea8c34049a36260873af",
+          "l-m17-incl": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/8301eb408b1de8dced9554a64cbf5e2e4f358d0434b7e435d41ffb85a2fb923d",
+          "l-fin": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/8403e438a23a626c084988dda7798eb6af788b4a8c92431628f80e601739e72d",
+          "l-fin-incl": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/kinase_precedents/9a3e6595e08cdbdf6df62ee114ced8727fe1903e94afae67ba90151416681dd5"
         },
-        "report": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/method_report_manifest/e2222d612fb54ebd6bf27256c3742dbb96d8a8c7d663cae7fc32295e7b7c996f"
+        "report": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/method_report_manifest/dbaaf0a3946b3e015180e60b4607e8729a8ecda903fa9cb792355d45f5bbb1c4"
       },
       "inputs": [],
       "fixtureLabels": [
@@ -1717,6 +1747,14 @@
             "closed": "MOVE-0162"
           }
         ],
+        "kinase-precedents-kbase-fields": [
+          {
+            "opened": "MOVE-0162"
+          },
+          {
+            "opened": "MOVE-0163"
+          }
+        ],
         "kinase-precedents-results-refresh": [
           {
             "clicked": true
@@ -1728,7 +1766,7 @@
           }
         ]
       },
-      "setHash": "2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf",
+      "setHash": "8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc",
       "observations": {
         "X-tabs": [
           {
@@ -1821,11 +1859,11 @@
         "X-detail-real": [
           {
             "step": "M23-expand-MOVE-0162",
-            "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           },
           {
             "step": "M23-expand-MOVE-0163",
-            "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           },
           {
             "step": "M24-collapse",
@@ -1835,11 +1873,11 @@
         "P-fixed-notes": [
           {
             "step": "M23-expand-MOVE-0162",
-            "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           },
           {
             "step": "M23-expand-MOVE-0163",
-            "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4"
+            "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
           }
         ],
         "X-results-list": [
@@ -1879,7 +1917,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:38:45.789Z"
+      "finishedAt": "2026-10-10T13:28:13.860Z"
     },
     {
       "step": "real-maps",
@@ -1890,20 +1928,20 @@
         "X-maps": "pass"
       },
       "runs": {
-        "A": "run_d6aae97a4dd54449bca1a5c300a3adb8"
+        "A": "run_d9e2953f5f2145f7b40adfdbb7b9a30b"
       },
-      "runId": "run_d6aae97a4dd54449bca1a5c300a3adb8",
+      "runId": "run_d9e2953f5f2145f7b40adfdbb7b9a30b",
       "evidenceKind": "real_electron_offscreen",
       "handles": {
         "structures": {
-          "mq4": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/structure/9c93b9fe5411695a02a8bcd654991333cfc06a32a125f0957a8e331b21459377",
-          "m17": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/structure/a14ef301e0e1d14f82e912b08879e3160d41b5bdcfc70178e28fa83ea7b06d18",
-          "fin": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/structure/51d78a4e6735ecd67095eba78e8f4d1afb2e09b855d98ac1f8f98ad6d09b4dca"
+          "mq4": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/structure/7ae0c3b0e7f51cbd516c987860ced0a8b6c6e8c9c814aae1b5b33b1518385705",
+          "m17": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/structure/9810adf2237212a3fe247b8e656e72c3e0290a99b202197d9cdf6e4bfb50e8f6",
+          "fin": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/structure/b975c5208767b64407f3c991221da571395767c3183b1f411586ffad6d2a84eb"
         },
         "maps": {
-          "rm-mq4": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/59353dfd41f0820af3c4091a8fa9d86806573b612958150328f0e1ab883fa96a",
-          "rm-m17": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/bd33f562e0524868c8bd789e52137c2b85f5313d2785493050a9c762d5e852ed",
-          "rm-fin": "obj://run_d6aae97a4dd54449bca1a5c300a3adb8/residue_numbering_map/551f8d839a07249042bf80af20f9ceb4b15f801852f363acb7bb22dbcefa4ad5"
+          "rm-mq4": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/13ef845aaec828c08c625357ebbc28662212bf194397befcbc5b6e9b47d28b73",
+          "rm-m17": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/89d647db2672744b8f591403005eaf2524980074ca813c705e3a2a46024e401a",
+          "rm-fin": "obj://run_d9e2953f5f2145f7b40adfdbb7b9a30b/residue_numbering_map/d9ac7e56d647dfb3806eb1c6b1aa945e543831f05d5a2b79b710241b1556feac"
         }
       },
       "inputs": [
@@ -1964,7 +2002,7 @@
           }
         ]
       },
-      "setHash": "2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf",
+      "setHash": "8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc",
       "observations": {
         "X-maps": [
           {
@@ -2003,7 +2041,7 @@
       "partFailures": [],
       "error": null,
       "artifacts": null,
-      "finishedAt": "2026-10-10T11:38:20.463Z"
+      "finishedAt": "2026-10-10T13:27:48.315Z"
     }
   ]
 }

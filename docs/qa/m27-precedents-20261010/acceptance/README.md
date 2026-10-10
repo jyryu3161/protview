@@ -1,11 +1,11 @@
 # M27 키나아제 전례 오프스크린 수락 QA 증거
 
-- 생성: 2026-10-10T11:38:46.896963+00:00 · verdict **pass** · acceptance **true** (두 단계가 이번 실행에서 모두 돌고 통과하고, 실제 kbase 문구가 커밋 증거에 없을 때만 true)
+- 생성: 2026-10-10T13:28:14.561837+00:00 · verdict **pass** · acceptance **true** (두 단계가 이번 실행에서 모두 돌고 통과하고, 실제 kbase 문구가 커밋 증거에 없을 때만 true)
 - 요청한 단계: fixture, real · 빠진 단계: 없음
 - 사례: 46/46 통과
 - 남은 프로세스/포트: 없음
 - 브라우저 비-loopback 요청 합계: 0 · 접촉한 외부 호스트: 없음
-- 커밋 증거에서 찾은 실제 kbase 문구: 0개 파일 (검사한 문자열 7558개)
+- 커밋 증거에서 찾은 실제 kbase 문구: 0개 파일 (검사한 문자열 7479개)
 
 **fixture 단계의 전례 값은 모두 합성(SYNTHETIC)이다.** `backend/tests/fixtures/precedent/t8/build_qa_set.py`가 `precedent_fixture.py`로 만든 세트(지어낸 accession P0QA01–P0QA04, PMID 9100000n, `MOVE-7xxx`, SYNTHETIC 문구; `SYNTHETIC-PROVENANCE-t8.md`)이고, 파생 번호 대응(d-two·d-fusion·d-big)은 M15 도구가 만든 실제 번호 대응의 mapped 행 accession만 지어낸 값으로 바꾼 합성 변형이다. 관찰은 화면이 저장된 값을 그대로 보이는지에 대한 것이며 과학 결과가 아니다.
 
@@ -25,8 +25,8 @@ Git 제외로 둔 텍스트 4개: download 4
 
 | 설치 | 종료 | 소켓 시도 | 세트 해시 | 행 수 | verification | dirty |
 |---|---|---|---|---|---|---|
-| 1 | 0 | 0 | `f662f3e9c49c2f83d20391ed20df8aebc27b6a05de065f4df9dc11d83a99c9c9` | {"files": {"dist/moves.jsonl": 891, "dist/moves_flagged.jsonl": 885, "dist/references.jsonl": 555}, "bibliography": 252} | {"records_hash_verified": {"moves": 891, "moves_flagged": 885, "references": 555}, "references_without_hash": 0} | False |
-| 2 | 0 | 0 | `2727fa0d2a19f018aef937a40e02096a5434d3aa797016e81f146e66fb80dbbf` | {"files": {"dist/moves.jsonl": 891, "dist/moves_flagged.jsonl": 885, "dist/references.jsonl": 555}, "bibliography": 252} | {"records_hash_verified": {"moves": 891, "moves_flagged": 885, "references": 555}, "references_without_hash": 0} | False |
+| 1 | 0 | 0 | `614f5ecd1e6233c55e56491d356216ebc8d448d589aef468e4fea82d7c04dd6a` | {"files": {"dist/moves.jsonl": 891, "dist/moves_flagged.jsonl": 885, "dist/references.jsonl": 555}, "bibliography": 252} | {"records_hash_verified": {"moves": 891, "moves_flagged": 885, "references": 555}, "references_without_hash": 0} | False |
+| 2 | 0 | 0 | `8ac7496b169c5adf62ab995855abb3dafce01925cd937c1d064d2c93afea8fbc` | {"files": {"dist/moves.jsonl": 891, "dist/moves_flagged.jsonl": 885, "dist/references.jsonl": 555}, "bibliography": 252} | {"records_hash_verified": {"moves": 891, "moves_flagged": 885, "references": 555}, "references_without_hash": 0} | False |
 
 - 두 설치의 파일 SHA-256 같음(재현): True · 활성 세트 = 두 번째 설치: True · 기본 폴더 `.deps/precedent_reference` 만들지 않음: True
 
