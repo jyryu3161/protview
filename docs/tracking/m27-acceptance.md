@@ -1,6 +1,6 @@
 # M27 kinase 전례·문헌 연결 완료 기록
 
-- 판정: **완료** (2026-10-10 UTC, 기록 2026-10-11). main 병합 `<병합 해시>`.
+- 판정: **완료** (2026-10-10 UTC, 기록 2026-10-11). main 병합 `b7d7f49`.
 - 브랜치: `dryforge/m27-kinase-precedents` (`phase/m27-kinase-precedents` = main `6ac3a59`에서 분기). M26은 시작 전에 main에 병합되어 있었다(`8b95cc9`, 기록 `6ac3a59`).
 - 고정 소스: `b414728`(T10 Stop 훅 그룹 두 번째 분할). 첫 고정 후보 `7e33951`(M27 백엔드 테스트의 이름 있는 그룹 하나)에서 나머지 그룹이 다른 그룹과 동시에 476초(제한 480초)였으므로 무거운 두 파일을 그룹 하나로 더 나눴다(`7e33951` → `b414728`은 `.codex/hooks/stop.py`·`scripts/test_codex_hooks.py`만 바꿈). 고정 뒤 제품 소스(`backend/mw`·`frontend/src`·`frontend/app`·`design`·`config`·`scripts`·`.codex`) 변경은 없다(`git diff b414728 fdad79c -- backend frontend scripts config design .codex`가 빔). 고정 뒤 커밋은 `docs/qa/m27-precedents-20261010/`만 바꾼 게이트 기록(`a81e0ee`), 수락 증거(`e595ca4`), 회귀 증거(`d9d5df7`), 게이트 기록 보충(`8110cc4`·`fdad79c`)과 이 기록 문서들뿐이다.
 - 결정: 0035(사용자 결정 2026-10-10, `docs/tracking/decisions/0035-m27-kinase-precedents.md`).
