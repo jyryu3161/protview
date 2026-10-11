@@ -1,0 +1,86 @@
+{
+  "schema": "m28_acceptance_summary@1",
+  "phase": "live",
+  "rehearsal": false,
+  "acceptance": true,
+  "rehearsalPassed": null,
+  "acceptanceParts": {
+    "allBranches": true,
+    "casesValid": true,
+    "requiredCases": true,
+    "trueCases": true,
+    "buildStamped": true,
+    "nothingLeft": true,
+    "external": true,
+    "exportChecks": true,
+    "runsClaimed": true
+  },
+  "branches": [
+    "b",
+    "c"
+  ],
+  "definitionItems": {
+    "1": null,
+    "2": null,
+    "3": null,
+    "4": null,
+    "5": "pass",
+    "6": null
+  },
+  "external": {
+    "browser_non_loopback_requests": 0,
+    "provider_calls": null,
+    "live_calls_counted": 2,
+    "dispatchEvents": 2,
+    "product_key_resolver_calls": 1
+  },
+  "leftover": {
+    "processes": [],
+    "ports": []
+  },
+  "traceAudit": {
+    "status": "pass",
+    "reportCount": 8,
+    "byKind": {
+      "jev_loop": 2,
+      "ligand_candidates": 1,
+      "ligand_docking": 1,
+      "ligand_docking_batch": 1,
+      "mutation_candidates": 1,
+      "mutation_model": 1,
+      "openmm_protein_minimize": 1
+    },
+    "checks": {
+      "reopen": {
+        "pass": 8,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "evidence_exists": {
+        "pass": 8,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "claim_fields": {
+        "pass": 8,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "reference_source": {
+        "pass": 8,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "no_mixing": {
+        "pass": 8,
+        "fail": 0,
+        "not_checked": 0
+      }
+    },
+    "partialProductRecheck": [],
+    "noReports": false,
+    "failures": 0
+  },
+  "unobserved": [],
+  "sourceHead": "ec21309dce08a59bc431cdb78e0969fca608eaec"
+}

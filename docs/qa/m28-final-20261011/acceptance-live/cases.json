@@ -1,0 +1,264 @@
+{
+  "schema": "m28_acceptance_cases@1",
+  "acceptance": true,
+  "cases": [
+    {
+      "id": "L-pre-B2",
+      "branch": "b",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-live/ledger-row.json",
+        "b-live/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-11T18:43:54.914Z",
+          "finishedAt": "2026-10-11T18:43:58.066Z"
+        },
+        "observed": {
+          "sdfBlocksSeen": 10,
+          "smilesBlocksSeen": 10,
+          "candidates": 14,
+          "idMismatches": 0,
+          "origins": [
+            "fixed",
+            "user_1",
+            "user_2"
+          ],
+          "filterMismatches": 0
+        }
+      }
+    },
+    {
+      "id": "L-pre-B3",
+      "branch": "b",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-live/ledger-row.json",
+        "b-live/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-11T18:43:58.066Z",
+          "finishedAt": "2026-10-11T18:44:10.840Z"
+        },
+        "observed": {
+          "scoreIsFirstMode": true,
+          "modes": 1,
+          "contactMismatches": 0,
+          "again": {
+            "sameJob": true,
+            "units": 0,
+            "httpStatus": 200
+          }
+        }
+      }
+    },
+    {
+      "id": "L-pre-B4",
+      "branch": "b",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-live/ledger-row.json",
+        "b-live/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-11T18:44:10.840Z",
+          "finishedAt": "2026-10-11T18:44:49.697Z"
+        },
+        "observed": {
+          "newRows": 4,
+          "rowScoreMismatches": 0,
+          "rows": 5
+        }
+      }
+    },
+    {
+      "id": "L-pre-C2",
+      "branch": "c",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-live/ledger-row.json",
+        "c-live/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "part": {
+          "status": "pass",
+          "startedAt": "2026-10-11T18:45:04.143Z",
+          "finishedAt": "2026-10-11T18:45:47.295Z"
+        },
+        "observed": {
+          "m7": {
+            "heavyAtoms": 602,
+            "excluded": 58,
+            "approvalSeen": true
+          },
+          "set": {
+            "positions": 4,
+            "candidates": [
+              "LYS A:6 K→A",
+              "LYS A:6 K→W",
+              "ILE A:44 I→A",
+              "ILE A:44 I→W",
+              "GLY A:76 G→A",
+              "GLY A:76 G→W"
+            ]
+          },
+          "model": {
+            "target": {
+              "residue": "ILE A:44",
+              "from": "I",
+              "to": "W"
+            },
+            "energyUnit": "kJ/mol",
+            "sideBySideMismatches": 0,
+            "differenceKeys": [],
+            "energies": {
+              "wild_type_reference": {
+                "before": -10184.213905790195,
+                "after": -12792.052911304538
+              },
+              "mutant": {
+                "before": -8045.996542151248,
+                "after": -12717.486975922548
+              }
+            },
+            "sasa": {
+              "wild_type_reference": 29.349771360160197,
+              "mutant": 88.12585960950504
+            },
+            "contacts": {
+              "wild_type_reference": 27,
+              "mutant": 21
+            },
+            "hisCys": {
+              "protonationDifferences": 0,
+              "variants": {
+                "wild_type_reference": [
+                  "HIS A:68:HID"
+                ],
+                "mutant": [
+                  "HIS A:68:HID"
+                ]
+              }
+            },
+            "limitations": 5,
+            "contactMismatches": 0,
+            "reportValueClaims": 6
+          },
+          "units": [
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "L-B7",
+      "branch": "b",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "b-live/ledger-row.json",
+        "b-live/endtoend-b-evidence.json",
+        "b/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "result": "completed"
+      }
+    },
+    {
+      "id": "L-C6",
+      "branch": "c",
+      "definition_items": [
+        5
+      ],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "c-live/ledger-row.json",
+        "c-live/endtoend-c-evidence.json",
+        "c/plan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "result": "completed"
+      }
+    },
+    {
+      "id": "L-X3",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [],
+      "covering_tests": [],
+      "detail": {
+        "browser_non_loopback_requests": 0,
+        "provider_calls": null,
+        "live_calls_counted": 2,
+        "dispatchEvents": 2,
+        "product_key_resolver_calls": 1,
+        "ledgerCount": 2
+      }
+    },
+    {
+      "id": "L-X4",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [
+        "x4-scan.json"
+      ],
+      "covering_tests": [],
+      "detail": {
+        "scanned": 26,
+        "hitTexts": [],
+        "withoutTabText": [],
+        "excepted": 4
+      }
+    },
+    {
+      "id": "L-X6",
+      "branch": "x",
+      "definition_items": [],
+      "status": "pass",
+      "reason": null,
+      "evidence_refs": [],
+      "covering_tests": [],
+      "detail": {
+        "leftover": {
+          "processes": [],
+          "ports": []
+        },
+        "defaultFoldersCreated": [],
+        "defaultFoldersPresent": []
+      }
+    }
+  ]
+}

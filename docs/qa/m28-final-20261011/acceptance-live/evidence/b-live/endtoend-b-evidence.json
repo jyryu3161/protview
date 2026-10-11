@@ -1,0 +1,325 @@
+{
+  "schema": "m28_branch_b_evidence@1",
+  "mode": "live",
+  "rehearsal": false,
+  "run": "run_d4ca51b5106345bea2c7644afab62e00",
+  "parts": {
+    "L-pre-B2": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:43:54.914Z",
+      "finishedAt": "2026-10-11T18:43:58.066Z"
+    },
+    "L-pre-B3": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:43:58.066Z",
+      "finishedAt": "2026-10-11T18:44:10.840Z"
+    },
+    "L-pre-B4": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:44:10.840Z",
+      "finishedAt": "2026-10-11T18:44:49.697Z"
+    },
+    "L-B7": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:44:49.697Z",
+      "finishedAt": "2026-10-11T18:45:03.131Z"
+    }
+  },
+  "observed": {
+    "L-pre-B2": {
+      "sdfBlocksSeen": 10,
+      "smilesBlocksSeen": 10,
+      "candidates": 14,
+      "idMismatches": 0,
+      "origins": [
+        "fixed",
+        "user_1",
+        "user_2"
+      ],
+      "filterMismatches": 0
+    },
+    "L-pre-B3": {
+      "scoreIsFirstMode": true,
+      "modes": 1,
+      "contactMismatches": 0,
+      "again": {
+        "sameJob": true,
+        "units": 0,
+        "httpStatus": 200
+      }
+    },
+    "L-pre-B4": {
+      "newRows": 4,
+      "rowScoreMismatches": 0,
+      "rows": 5
+    },
+    "B7": {
+      "exploit": {
+        "computedSent": 4,
+        "bodyScoresStored": true,
+        "computedRows": 4
+      }
+    }
+  },
+  "reportsCreated": 4,
+  "reportHandles": [
+    {
+      "case": "L-pre-B2",
+      "kind": "ligand_candidates",
+      "httpStatus": 201,
+      "handle": "obj://run_d4ca51b5106345bea2c7644afab62e00/method_report_manifest/7564dff419a36052b0362a08611d5fc4b1b8cb2aa5c53ef5822453d18944308c"
+    },
+    {
+      "case": "L-pre-B3",
+      "kind": "ligand_docking",
+      "httpStatus": 201,
+      "handle": "obj://run_d4ca51b5106345bea2c7644afab62e00/method_report_manifest/e6a654c1efac2a2685ce5dde9dd749ed8337b07276e9beaf1b6cd7193d5cd06b"
+    },
+    {
+      "case": "L-pre-B4",
+      "kind": "ligand_docking_batch",
+      "httpStatus": 201,
+      "handle": "obj://run_d4ca51b5106345bea2c7644afab62e00/method_report_manifest/925acf2186711c347fbd8035b57eddadeff0a4b58b8fa75899e4f4c86c06f2ff"
+    },
+    {
+      "case": "L-B7",
+      "kind": "jev_loop",
+      "httpStatus": 201,
+      "handle": "obj://run_d4ca51b5106345bea2c7644afab62e00/method_report_manifest/c02533745e4ee01ad602a4649a86af81cc2b1aff39e1673b4da63f98d5fc60c7"
+    }
+  ],
+  "x5": [
+    {
+      "ok": true,
+      "detail": "L-B7 pending row c_f1f6983d: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-B7 pending row c_71188fcf: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-B7 ended loop: LJ8 shown for the candidates left without a score (no score, not 0)"
+    }
+  ],
+  "texts": {
+    "ligand@L-B7": "texts/ligand_L-B7.tabtext"
+  },
+  "units": [
+    {
+      "label": "B2-inspect",
+      "before": {
+        "limit": 8,
+        "used": 0,
+        "wallLimit": 1800,
+        "wallUsed": 0
+      },
+      "remaining": 8,
+      "planned": 1,
+      "plannedRemaining": 8,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 0.3554928754456341
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B2-enumerate",
+      "before": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 0.3554928754456341
+      },
+      "remaining": 7,
+      "planned": 1,
+      "plannedRemaining": 7,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 0.7731914580799639
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B3",
+      "before": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 0.7731914580799639
+      },
+      "remaining": 6,
+      "planned": 1,
+      "plannedRemaining": 6,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 3,
+        "wallLimit": 1800,
+        "wallUsed": 11.066480458248407
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B3-again",
+      "before": {
+        "limit": 8,
+        "used": 3,
+        "wallLimit": 1800,
+        "wallUsed": 11.066480458248407
+      },
+      "remaining": 5,
+      "planned": 0,
+      "plannedRemaining": 5,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 3,
+        "wallLimit": 1800,
+        "wallUsed": 11.066480458248407
+      },
+      "usedUnits": 0
+    },
+    {
+      "label": "B4",
+      "before": {
+        "limit": 8,
+        "used": 3,
+        "wallLimit": 1800,
+        "wallUsed": 11.066480458248407
+      },
+      "remaining": 5,
+      "planned": 4,
+      "plannedRemaining": 5,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 7,
+        "wallLimit": 1800,
+        "wallUsed": 43.73215362522751
+      },
+      "usedUnits": 4
+    },
+    {
+      "label": "B7-exploit",
+      "before": {
+        "limit": 8,
+        "used": 7,
+        "wallLimit": 1800,
+        "wallUsed": 44.445008291397244
+      },
+      "remaining": 1,
+      "planned": 1,
+      "plannedRemaining": 1,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 8,
+        "wallLimit": 1800,
+        "wallUsed": 53.67674587434158
+      },
+      "usedUnits": 1
+    }
+  ],
+  "raises": [],
+  "sends": [
+    {
+      "case": "L-B7",
+      "sendId": "39faaf1c-8a0e-419a-9791-a79e9fcf9187",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "exploit",
+      "bodySha256": "6c1317db6cd92538588a09e579d0bc4b7cc888db67e4f011bc7579880bd3a163",
+      "transportSha256": null,
+      "bodyBytes": 4684
+    }
+  ],
+  "live": {
+    "rehearsal": false,
+    "sendAllowed": true,
+    "dispatchLimit": 1,
+    "send": {
+      "dispatched": true,
+      "status": "completed",
+      "reasonCode": null,
+      "sendId": "39faaf1c-8a0e-419a-9791-a79e9fcf9187",
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "listPosition": 2,
+      "listSize": 2,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true
+      },
+      "usage": {
+        "cost": 0.000107184,
+        "external_tokens": 2590,
+        "input_tokens": 2552,
+        "output_tokens": 38
+      },
+      "bodyBytes": 4684
+    },
+    "compute": {
+      "state": "scored",
+      "job": "done"
+    },
+    "guard": null,
+    "egressStop": null,
+    "budgetBeforeSend": {
+      "remaining": {
+        "expensive_units": 1,
+        "wall_clock_s": 1756.2353881248273
+      },
+      "need": {
+        "expensive_units": 1,
+        "wall_clock_s": 300
+      },
+      "short": []
+    },
+    "dispatchCounts": {
+      "run_d4ca51b5106345bea2c7644afab62e00": 1
+    }
+  },
+  "planSha256": "8674114a69b05ddc5d86dde6f2bef7a4c4657b5fd14888ab5bcd21d02557db79",
+  "inputs": {
+    "receptor": {
+      "name": "prolif-vina-rec.pdb",
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "syntheticLabeled": false
+    },
+    "pose": {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "syntheticLabeled": false
+    },
+    "parent": {
+      "name": "public-derived-parent-record0.sdf",
+      "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+      "syntheticLabeled": false
+    },
+    "blocksSmiles": {
+      "name": "synthetic-ga-small-blocks.smi",
+      "sha256": "8ae10d0571871f1a6d400552567133706f3f44298ee04983867e3ba7d0a8a8aa",
+      "syntheticLabeled": true
+    },
+    "blocksSdf": {
+      "name": "synthetic-blocks.sdf",
+      "sha256": "0bfeb73474ede8b1f372b69072774fc9e2fd1398e8d0b24b31768e69fc9bda11",
+      "syntheticLabeled": true
+    },
+    "rules": {
+      "name": "synthetic-ga-pool2000-rules.json",
+      "sha256": "035001795d24a1afe5220ad4b8b1e8762b54148fa50f32493fd2c39021a5fff1",
+      "syntheticLabeled": true
+    }
+  },
+  "startedAt": "2026-10-11T18:43:54.252Z",
+  "finishedAt": "2026-10-11T18:45:03.170Z",
+  "error": null,
+  "requestCount": 224
+}
