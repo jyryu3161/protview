@@ -37,7 +37,7 @@
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py scripts/test_m23_offscreen_acceptance.py scripts/test_m24_offscreen_acceptance.py scripts/test_m25_offscreen_acceptance.py scripts/test_import_reaction_references.py scripts/test_m26_offscreen_acceptance.py scripts/test_import_precedent_snapshots.py scripts/test_m27_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py scripts/test_m23_offscreen_acceptance.py scripts/test_m24_offscreen_acceptance.py scripts/test_m25_offscreen_acceptance.py scripts/test_import_reaction_references.py scripts/test_m26_offscreen_acceptance.py scripts/test_import_precedent_snapshots.py scripts/test_m27_offscreen_acceptance.py scripts/test_m28_offscreen_acceptance.py scripts/test_m28_branch_a.py scripts/test_m28_branch_b.py scripts/test_m28_branch_c.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
 node --check frontend/tests/offscreen/tabs-flow.cjs
@@ -54,13 +54,18 @@ node --check frontend/tests/offscreen/jev-flow.cjs
 node --check frontend/tests/offscreen/jev-loop-flow.cjs
 node --check frontend/tests/offscreen/reaction-knowledge-flow.cjs
 node --check frontend/tests/offscreen/kinase-precedents-flow.cjs
+node --check frontend/tests/offscreen/endtoend-a-flow.cjs
+node --check frontend/tests/offscreen/endtoend-b-flow.cjs
+node --check frontend/tests/offscreen/endtoend-c-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
 - typecheck와 build는 동시에 돌리지 않고 순서대로 실행한다. 둘 다 같은 프런트엔드 빌드 산출물(`tsconfig.tsbuildinfo`, `.next/`)을 쓴다.
-- 백엔드·실행기 pytest는 Stop 훅(`.codex/hooks/stop.py`)과 같은 그룹으로 나눠 돌릴 수 있다: ruff 다음 pytest 열여덟 그룹(`PYTEST_GROUPS` 열일곱 + 나머지 그룹, `CHECKS` 19개, M25에서 무거운 루프 테스트 두 그룹을 더함. M26은 그룹을 더하지 않고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다. M27은 M27 백엔드 일곱 파일 그룹과 `test_analysis_workflows.py`·`test_jev_loop_reports.py` 그룹을 더하고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다). 그룹 합집합은 위 백엔드 + 스크립트 pytest와 같다(목록은 `docs/operations.md`의 Stop 훅 문단).
+- 백엔드·실행기 pytest는 Stop 훅(`.codex/hooks/stop.py`)과 같은 그룹으로 나눠 돌릴 수 있다: ruff 다음 pytest 열여덟 그룹(`PYTEST_GROUPS` 열일곱 + 나머지 그룹, `CHECKS` 19개, M25에서 무거운 루프 테스트 두 그룹을 더함. M26은 그룹을 더하지 않고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다. M27은 M27 백엔드 일곱 파일 그룹과 `test_analysis_workflows.py`·`test_jev_loop_reports.py` 그룹을 더하고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다. M28은 그룹을 더하지 않고 종단 실행기·분기 단위 테스트 넷을 `SCRIPT_TESTS`에 넣었다). 그룹 합집합은 위 백엔드 + 스크립트 pytest와 같다(목록은 `docs/operations.md`의 Stop 훅 문단).
+- 게이트 기록은 위에 적은 하네스 말고도 `frontend/tests/offscreen/*.cjs` 전부를 `node --check`했다(M27 게이트 `docs/qa/m27-precedents-20261010/gate.txt`의 `node-check: files=31`, M28 종단 하네스 셋을 더하면 34개).
+- `scripts/test_m28_branch_a.py`는 저장소 옆 `../kbase_kinase/dist`와 `.deps/reaction_qa/import2`, `scripts/test_m28_branch_c.py`는 `.deps/reaction_qa/import2`를 읽고 없으면 skip이 아니라 실패한다. 그 자료가 있는 주 체크아웃에서 돌린다.
 - 사용 가능해야 하는 과학 엔진(FreeSASA, OpenMM, M11의 ProLIF 작업 프로세스, M12의 fpocket, M17의 RDKit 리간드 작업 프로세스, M18의 qvina 도킹 작업 프로세스, M19의 일괄 도킹 작업 프로세스, M22의 GA 작업 프로세스, M23의 서열 GA 작업 프로세스와 모델링 프로그램)의 네이티브 테스트는 엔진이 없을 때 조용히 skip하면 안 된다. 단계 수락 시점에는 실제 엔진으로 실행해야 한다.
 - UI를 바꾸면 실제 Electron 오프스크린 렌더러(`webContents.isOffscreen()===true`, GPU·WebGL 켜짐, paint 프레임 확인)에서 바뀐 컨트롤을 하나씩 실제 입력으로 눌러 보고 결과를 관찰해야 한다. 일반 headless 브라우저나 숨긴 탭은 이 증거로 인정하지 않는다. 계획만 세운 클릭을 테스트 완료로 부르지 않는다.
 - API와 프런트엔드 연동은 실제 입력 바이트로 확인한다. 공개 구조 fixture(`backend/tests/fixtures/public_1hsg.cif`, `public_1ubq.cif`, M15 번호 대응·M16 참조 주석용 `public_1mq4.cif`)나 표시된 합성 fixture를 쓴다.

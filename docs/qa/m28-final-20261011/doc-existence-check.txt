@@ -1,0 +1,464 @@
+# docs/system-architecture.md 모듈 이름 존재 확인 (M28 T17)
+
+- 대상 문서 SHA-256: 789b21418109bedbef1a2896d0e5faabe5023da960ea3d6254e1760e18173216
+- 확인 기준 HEAD(문서 수정 전 커밋, 작업 트리에 문서 변경만 있음): c1644221360be2792a455990077a15843c22db03
+- 방법: 문서 전체(표·도식·본문)에서 확장자 .py/.tsx/.ts/.cjs/.mjs/.yaml로 끝나는 이름을 모두 뽑아(중괄호 펼침, '<'·'*' 들어간 자리표시는 제외) 저장소 루트·backend/mw·backend/mw/jobs·tools·egress·frontend·frontend/src/components·lib·frontend/tests/offscreen·scripts 순서로 찾았다. 표 1은 반드시 모두 '있음'이어야 한다.
+- 표 2는 백틱 안의 확장자 없는 소문자 식별자 중 backend/mw 아래 모듈(파일·패키지)로 풀리는 것이다. 풀리지 않는 식별자는 함수·상수·필드·이벤트·라우트 조각 등 모듈이 아닌 이름이며 끝의 목록으로 따로 적었다(사람이 눈으로 확인).
+
+## 표 1. 확장자가 있는 이름
+
+| 이름(문서에 적힌 대로, 펼친 뒤) | 첫 줄 | 찾은 파일 | 결과 |
+|---|---|---|---|
+| `api.ts` | 57 | `frontend/src/lib/api.ts` | 있음 |
+| `backend/mw/analysis_executions.py` | 125 | `backend/mw/analysis_executions.py` | 있음 |
+| `backend/mw/analysis_plans.py` | 124 | `backend/mw/analysis_plans.py` | 있음 |
+| `backend/mw/api/app.py` | 14 | `backend/mw/api/app.py` | 있음 |
+| `backend/mw/docking_batch_constants.py` | 88 | `backend/mw/docking_batch_constants.py` | 있음 |
+| `backend/mw/docking_batch_jobs.py` | 89 | `backend/mw/docking_batch_jobs.py` | 있음 |
+| `backend/mw/docking_batch_reads.py` | 90 | `backend/mw/docking_batch_reads.py` | 있음 |
+| `backend/mw/docking_bundle.py` | 85 | `backend/mw/docking_bundle.py` | 있음 |
+| `backend/mw/docking_constants.py` | 84 | `backend/mw/docking_constants.py` | 있음 |
+| `backend/mw/docking_reads.py` | 86 | `backend/mw/docking_reads.py` | 있음 |
+| `backend/mw/jev_constants.py` | 108 | `backend/mw/jev_constants.py` | 있음 |
+| `backend/mw/jev_loop_constants.py` | 110 | `backend/mw/jev_loop_constants.py` | 있음 |
+| `backend/mw/jev_loop_store.py` | 111 | `backend/mw/jev_loop_store.py` | 있음 |
+| `backend/mw/jev_sends.py` | 109 | `backend/mw/jev_sends.py` | 있음 |
+| `backend/mw/kinase_precedents.py` | 119 | `backend/mw/kinase_precedents.py` | 있음 |
+| `backend/mw/kinase_precedents_reads.py` | 120 | `backend/mw/kinase_precedents_reads.py` | 있음 |
+| `backend/mw/ligand_bundle.py` | 81 | `backend/mw/ligand_bundle.py` | 있음 |
+| `backend/mw/ligand_constants.py` | 80 | `backend/mw/ligand_constants.py` | 있음 |
+| `backend/mw/ligand_ga_constants.py` | 99 | `backend/mw/ligand_ga_constants.py` | 있음 |
+| `backend/mw/ligand_ga_jobs.py` | 100 | `backend/mw/ligand_ga_jobs.py` | 있음 |
+| `backend/mw/ligand_ga_reads.py` | 101 | `backend/mw/ligand_ga_reads.py` | 있음 |
+| `backend/mw/ligand_reads.py` | 82 | `backend/mw/ligand_reads.py` | 있음 |
+| `backend/mw/mutation_constants.py` | 92 | `backend/mw/mutation_constants.py` | 있음 |
+| `backend/mw/mutation_model_bundle.py` | 96 | `backend/mw/mutation_model_bundle.py` | 있음 |
+| `backend/mw/mutation_model_constants.py` | 95 | `backend/mw/mutation_model_constants.py` | 있음 |
+| `backend/mw/mutation_model_reads.py` | 97 | `backend/mw/mutation_model_reads.py` | 있음 |
+| `backend/mw/mutation_reads.py` | 93 | `backend/mw/mutation_reads.py` | 있음 |
+| `backend/mw/mutation_reports.py` | 231 | `backend/mw/mutation_reports.py` | 있음 |
+| `backend/mw/numbering_reads.py` | 77 | `backend/mw/numbering_reads.py` | 있음 |
+| `backend/mw/pocket_input.py` | 72 | `backend/mw/pocket_input.py` | 있음 |
+| `backend/mw/precedent_constants.py` | 118 | `backend/mw/precedent_constants.py` | 있음 |
+| `backend/mw/reaction_knowledge.py` | 114 | `backend/mw/reaction_knowledge.py` | 있음 |
+| `backend/mw/reaction_knowledge_constants.py` | 113 | `backend/mw/reaction_knowledge_constants.py` | 있음 |
+| `backend/mw/reaction_knowledge_reads.py` | 115 | `backend/mw/reaction_knowledge_reads.py` | 있음 |
+| `backend/mw/reference_snapshots.py` | 74 | `backend/mw/reference_snapshots.py` | 있음 |
+| `backend/mw/residue_numbering.py` | 76 | `backend/mw/residue_numbering.py` | 있음 |
+| `backend/mw/runtime/orchestrator.py` | 64 | `backend/mw/runtime/orchestrator.py` | 있음 |
+| `backend/mw/sequence_ga_constants.py` | 103 | `backend/mw/sequence_ga_constants.py` | 있음 |
+| `backend/mw/sequence_ga_jobs.py` | 104 | `backend/mw/sequence_ga_jobs.py` | 있음 |
+| `backend/mw/sequence_ga_reads.py` | 105 | `backend/mw/sequence_ga_reads.py` | 있음 |
+| `backend/mw/sifts_mapping.py` | 75 | `backend/mw/sifts_mapping.py` | 있음 |
+| `backend/mw/site_annotation.py` | 78 | `backend/mw/site_annotation.py` | 있음 |
+| `backend/mw/site_annotation_reports.py` | 79 | `backend/mw/site_annotation_reports.py` | 있음 |
+| `backend/mw/viewer_intents.py` | 70 | `backend/mw/viewer_intents.py` | 있음 |
+| `backend/mw/workflows.py` | 123 | `backend/mw/workflows.py` | 있음 |
+| `backend/tests/offscreen_jev_loop_fixture/server.py` | 231 | `backend/tests/offscreen_jev_loop_fixture/server.py` | 있음 |
+| `config/tools.yaml` | 15 | `config/tools.yaml` | 있음 |
+| `docking_batch_bundle.py` | 88 | `backend/mw/docking_batch_bundle.py` | 있음 |
+| `docking_batch_constants.py` | 129 | `backend/mw/docking_batch_constants.py` | 있음 |
+| `docking_batch_inputs.py` | 88 | `backend/mw/docking_batch_inputs.py` | 있음 |
+| `docking_batch_reports.py` | 90 | `backend/mw/docking_batch_reports.py` | 있음 |
+| `docking_batch_worker.py` | 31 | `backend/mw/jobs/docking_batch_worker.py` | 있음 |
+| `docking_constants.py` | 129 | `backend/mw/docking_constants.py` | 있음 |
+| `docking_inputs.py` | 84 | `backend/mw/docking_inputs.py` | 있음 |
+| `docking_reports.py` | 86 | `backend/mw/docking_reports.py` | 있음 |
+| `docking_worker.py` | 29 | `backend/mw/jobs/docking_worker.py` | 있음 |
+| `endtoend-b-flow.cjs` | 227 | `frontend/tests/offscreen/endtoend-b-flow.cjs` | 있음 |
+| `endtoend-c-flow.cjs` | 227 | `frontend/tests/offscreen/endtoend-c-flow.cjs` | 있음 |
+| `frontend/app/page.tsx` | 55 | `frontend/app/page.tsx` | 있음 |
+| `frontend/src/components/AnalysisWorkflowPanel.tsx` | 126 | `frontend/src/components/AnalysisWorkflowPanel.tsx` | 있음 |
+| `frontend/src/components/ChemicalWorkspace.tsx` | 62 | `frontend/src/components/ChemicalWorkspace.tsx` | 있음 |
+| `frontend/src/components/DockingBatchPanel.tsx` | 91 | `frontend/src/components/DockingBatchPanel.tsx` | 있음 |
+| `frontend/src/components/DockingPanel.tsx` | 87 | `frontend/src/components/DockingPanel.tsx` | 있음 |
+| `frontend/src/components/JevLoopPanel.tsx` | 112 | `frontend/src/components/JevLoopPanel.tsx` | 있음 |
+| `frontend/src/components/JevPanel.tsx` | 59 | `frontend/src/components/JevPanel.tsx` | 있음 |
+| `frontend/src/components/KinasePrecedentsPanel.tsx` | 121 | `frontend/src/components/KinasePrecedentsPanel.tsx` | 있음 |
+| `frontend/src/components/LigandGaPanel.tsx` | 102 | `frontend/src/components/LigandGaPanel.tsx` | 있음 |
+| `frontend/src/components/LigandPanel.tsx` | 83 | `frontend/src/components/LigandPanel.tsx` | 있음 |
+| `frontend/src/components/MolstarViewer.tsx` | 60 | `frontend/src/components/MolstarViewer.tsx` | 있음 |
+| `frontend/src/components/MutationModelPanel.tsx` | 98 | `frontend/src/components/MutationModelPanel.tsx` | 있음 |
+| `frontend/src/components/MutationPanel.tsx` | 94 | `frontend/src/components/MutationPanel.tsx` | 있음 |
+| `frontend/src/components/NumberingPanel.tsx` | 58 | `frontend/src/components/NumberingPanel.tsx` | 있음 |
+| `frontend/src/components/PocketPanel.tsx` | 73 | `frontend/src/components/PocketPanel.tsx` | 있음 |
+| `frontend/src/components/ReactionKnowledgePanel.tsx` | 116 | `frontend/src/components/ReactionKnowledgePanel.tsx` | 있음 |
+| `frontend/src/components/ReportLibraryPanel.tsx` | 57 | `frontend/src/components/ReportLibraryPanel.tsx` | 있음 |
+| `frontend/src/components/SequenceGaPanel.tsx` | 106 | `frontend/src/components/SequenceGaPanel.tsx` | 있음 |
+| `frontend/src/components/SiteAnnotationPanel.tsx` | 107 | `frontend/src/components/SiteAnnotationPanel.tsx` | 있음 |
+| `frontend/src/components/ViewerAgentPanel.tsx` | 61 | `frontend/src/components/ViewerAgentPanel.tsx` | 있음 |
+| `frontend/src/components/WorkspaceTabs.tsx` | 56 | `frontend/src/components/WorkspaceTabs.tsx` | 있음 |
+| `frontend/tests/offscreen/endtoend-a-flow.cjs` | 227 | `frontend/tests/offscreen/endtoend-a-flow.cjs` | 있음 |
+| `gate.py` | 68 | `backend/mw/egress/gate.py` | 있음 |
+| `jev_loop_projection.py` | 110 | `backend/mw/jev_loop_projection.py` | 있음 |
+| `jev_loop_reports.py` | 111 | `backend/mw/jev_loop_reports.py` | 있음 |
+| `jev_loop_result.py` | 110 | `backend/mw/jev_loop_result.py` | 있음 |
+| `jev_loops.py` | 110 | `backend/mw/jev_loops.py` | 있음 |
+| `jev_projection.py` | 108 | `backend/mw/jev_projection.py` | 있음 |
+| `jev_reports.py` | 109 | `backend/mw/jev_reports.py` | 있음 |
+| `jobs/docking_batch_worker.py` | 89 | `backend/mw/jobs/docking_batch_worker.py` | 있음 |
+| `jobs/docking_worker.py` | 85 | `backend/mw/jobs/docking_worker.py` | 있음 |
+| `jobs/ligand_ga_worker.py` | 100 | `backend/mw/jobs/ligand_ga_worker.py` | 있음 |
+| `jobs/ligand_worker.py` | 81 | `backend/mw/jobs/ligand_worker.py` | 있음 |
+| `jobs/openmm_mutation_worker.py` | 96 | `backend/mw/jobs/openmm_mutation_worker.py` | 있음 |
+| `jobs/openmm_worker.py` | 96 | `backend/mw/jobs/openmm_worker.py` | 있음 |
+| `jobs/pocket_worker.py` | 72 | `backend/mw/jobs/pocket_worker.py` | 있음 |
+| `jobs/sequence_ga_worker.py` | 104 | `backend/mw/jobs/sequence_ga_worker.py` | 있음 |
+| `jobs/sequence_model_worker.py` | 104 | `backend/mw/jobs/sequence_model_worker.py` | 있음 |
+| `kinase_precedents_reports.py` | 120 | `backend/mw/kinase_precedents_reports.py` | 있음 |
+| `klifs_numbering.py` | 75 | `backend/mw/klifs_numbering.py` | 있음 |
+| `ligand_constants.py` | 129 | `backend/mw/ligand_constants.py` | 있음 |
+| `ligand_filters.py` | 80 | `backend/mw/ligand_filters.py` | 있음 |
+| `ligand_ga_bundle.py` | 99 | `backend/mw/ligand_ga_bundle.py` | 있음 |
+| `ligand_ga_constants.py` | 100 | `backend/mw/ligand_ga_constants.py` | 있음 |
+| `ligand_ga_inputs.py` | 99 | `backend/mw/ligand_ga_inputs.py` | 있음 |
+| `ligand_ga_jobs.py` | 179 | `backend/mw/ligand_ga_jobs.py` | 있음 |
+| `ligand_ga_reads.py` | 179 | `backend/mw/ligand_ga_reads.py` | 있음 |
+| `ligand_ga_reports.py` | 101 | `backend/mw/ligand_ga_reports.py` | 있음 |
+| `ligand_ga_worker.py` | 35 | `backend/mw/jobs/ligand_ga_worker.py` | 있음 |
+| `ligand_inputs.py` | 80 | `backend/mw/ligand_inputs.py` | 있음 |
+| `ligand_reports.py` | 82 | `backend/mw/ligand_reports.py` | 있음 |
+| `ligand_site.py` | 80 | `backend/mw/ligand_site.py` | 있음 |
+| `ligand_worker.py` | 28 | `backend/mw/jobs/ligand_worker.py` | 있음 |
+| `m28_branch_b.py` | 226 | `scripts/m28_branch_b.py` | 있음 |
+| `m28_branch_c.py` | 226 | `scripts/m28_branch_c.py` | 있음 |
+| `mutation_candidates.py` | 92 | `backend/mw/mutation_candidates.py` | 있음 |
+| `mutation_model_bundle.py` | 175 | `backend/mw/mutation_model_bundle.py` | 있음 |
+| `mutation_model_inputs.py` | 95 | `backend/mw/mutation_model_inputs.py` | 있음 |
+| `mutation_model_math.py` | 95 | `backend/mw/mutation_model_math.py` | 있음 |
+| `mutation_model_reports.py` | 97 | `backend/mw/mutation_model_reports.py` | 있음 |
+| `mutation_reads.py` | 171 | `backend/mw/mutation_reads.py` | 있음 |
+| `mutation_reports.py` | 93 | `backend/mw/mutation_reports.py` | 있음 |
+| `numbering_reports.py` | 77 | `backend/mw/numbering_reports.py` | 있음 |
+| `openmm_mutation_worker.py` | 33 | `backend/mw/jobs/openmm_mutation_worker.py` | 있음 |
+| `openmm_worker.py` | 34 | `backend/mw/jobs/openmm_worker.py` | 있음 |
+| `pocket_bundle.py` | 72 | `backend/mw/pocket_bundle.py` | 있음 |
+| `pocket_output.py` | 72 | `backend/mw/pocket_output.py` | 있음 |
+| `pocket_reports.py` | 72 | `backend/mw/pocket_reports.py` | 있음 |
+| `precedent_constants.py` | 122 | `backend/mw/precedent_constants.py` | 있음 |
+| `precedent_snapshots.py` | 22 | `backend/mw/precedent_snapshots.py` | 있음 |
+| `reaction_knowledge_constants.py` | 117 | `backend/mw/reaction_knowledge_constants.py` | 있음 |
+| `reaction_knowledge_reports.py` | 115 | `backend/mw/reaction_knowledge_reports.py` | 있음 |
+| `reaction_snapshots.py` | 19 | `backend/mw/reaction_snapshots.py` | 있음 |
+| `reference_snapshots.py` | 17 | `backend/mw/reference_snapshots.py` | 있음 |
+| `reports.py` | 69 | `backend/mw/reports.py` | 있음 |
+| `runtime/orchestrator.py` | 15 | `backend/mw/runtime/orchestrator.py` | 있음 |
+| `saved_scenes.py` | 70 | `backend/mw/saved_scenes.py` | 있음 |
+| `science.py` | 68 | `backend/mw/egress/science.py` | 있음 |
+| `scripts/execute.py` | 127 | `scripts/execute.py` | 있음 |
+| `scripts/import_precedent_snapshots.py` | 23 | `scripts/import_precedent_snapshots.py` | 있음 |
+| `scripts/import_reaction_references.py` | 20 | `scripts/import_reaction_references.py` | 있음 |
+| `scripts/import_reference_snapshots.py` | 18 | `scripts/import_reference_snapshots.py` | 있음 |
+| `scripts/m28_branch_a.py` | 226 | `scripts/m28_branch_a.py` | 있음 |
+| `scripts/m28_common.py` | 225 | `scripts/m28_common.py` | 있음 |
+| `scripts/m28_export_fixed_sentences.py` | 229 | `scripts/m28_export_fixed_sentences.py` | 있음 |
+| `scripts/m28_offscreen_acceptance.py` | 224 | `scripts/m28_offscreen_acceptance.py` | 있음 |
+| `scripts/m28_trace_audit.py` | 228 | `scripts/m28_trace_audit.py` | 있음 |
+| `sequence_alignment.py` | 75 | `backend/mw/sequence_alignment.py` | 있음 |
+| `sequence_ga_bundle.py` | 103 | `backend/mw/sequence_ga_bundle.py` | 있음 |
+| `sequence_ga_constants.py` | 104 | `backend/mw/sequence_ga_constants.py` | 있음 |
+| `sequence_ga_inputs.py` | 103 | `backend/mw/sequence_ga_inputs.py` | 있음 |
+| `sequence_ga_jobs.py` | 183 | `backend/mw/sequence_ga_jobs.py` | 있음 |
+| `sequence_ga_reads.py` | 183 | `backend/mw/sequence_ga_reads.py` | 있음 |
+| `sequence_ga_reports.py` | 105 | `backend/mw/sequence_ga_reports.py` | 있음 |
+| `sequence_ga_worker.py` | 37 | `backend/mw/jobs/sequence_ga_worker.py` | 있음 |
+| `sequence_model_bundle.py` | 103 | `backend/mw/sequence_model_bundle.py` | 있음 |
+| `sequence_model_worker.py` | 38 | `backend/mw/jobs/sequence_model_worker.py` | 있음 |
+| `src/lib/analysis.ts` | 126 | `frontend/src/lib/analysis.ts` | 있음 |
+| `src/lib/api.ts` | 55 | `frontend/src/lib/api.ts` | 있음 |
+| `src/lib/chemical.ts` | 62 | `frontend/src/lib/chemical.ts` | 있음 |
+| `src/lib/docking-batch.ts` | 91 | `frontend/src/lib/docking-batch.ts` | 있음 |
+| `src/lib/docking.ts` | 87 | `frontend/src/lib/docking.ts` | 있음 |
+| `src/lib/jev-loop.ts` | 112 | `frontend/src/lib/jev-loop.ts` | 있음 |
+| `src/lib/jev.ts` | 59 | `frontend/src/lib/jev.ts` | 있음 |
+| `src/lib/kinase-precedents.ts` | 121 | `frontend/src/lib/kinase-precedents.ts` | 있음 |
+| `src/lib/ligand-ga.ts` | 102 | `frontend/src/lib/ligand-ga.ts` | 있음 |
+| `src/lib/ligand.ts` | 83 | `frontend/src/lib/ligand.ts` | 있음 |
+| `src/lib/mutation-model.ts` | 98 | `frontend/src/lib/mutation-model.ts` | 있음 |
+| `src/lib/mutations.ts` | 94 | `frontend/src/lib/mutations.ts` | 있음 |
+| `src/lib/numbering.ts` | 58 | `frontend/src/lib/numbering.ts` | 있음 |
+| `src/lib/pockets.ts` | 73 | `frontend/src/lib/pockets.ts` | 있음 |
+| `src/lib/reaction-knowledge.ts` | 116 | `frontend/src/lib/reaction-knowledge.ts` | 있음 |
+| `src/lib/report-library.ts` | 57 | `frontend/src/lib/report-library.ts` | 있음 |
+| `src/lib/sequence-ga.ts` | 106 | `frontend/src/lib/sequence-ga.ts` | 있음 |
+| `src/lib/site-annotation.ts` | 107 | `frontend/src/lib/site-annotation.ts` | 있음 |
+| `src/lib/workspace-tabs.ts` | 56 | `frontend/src/lib/workspace-tabs.ts` | 있음 |
+| `tools/jev.py` | 108 | `backend/mw/tools/jev.py` | 있음 |
+| `tools/jev_loop.py` | 111 | `backend/mw/tools/jev_loop.py` | 있음 |
+| `tools/kinase_precedents.py` | 119 | `backend/mw/tools/kinase_precedents.py` | 있음 |
+| `tools/mutations.py` | 92 | `backend/mw/tools/mutations.py` | 있음 |
+| `tools/numbering.py` | 76 | `backend/mw/tools/numbering.py` | 있음 |
+| `tools/openmm_method.py` | 96 | `backend/mw/tools/openmm_method.py` | 있음 |
+| `tools/reaction_knowledge.py` | 114 | `backend/mw/tools/reaction_knowledge.py` | 있음 |
+| `tools/site_annotation.py` | 78 | `backend/mw/tools/site_annotation.py` | 있음 |
+| `viewer.py` | 68 | `backend/mw/egress/viewer.py` | 있음 |
+
+합계: 183개, 있음 183, 없음 0
+
+## 표 2. 확장자 없는 모듈 이름(backend/mw 아래로 풀린 것)
+
+| 이름 | 첫 줄 | 찾은 파일 |
+|---|---|---|
+| `chemical_inputs` | 84 | `backend/mw/chemical_inputs.py` |
+| `docking_batch_bundle` | 99 | `backend/mw/docking_batch_bundle.py` |
+| `docking_batch_constants` | 89 | `backend/mw/docking_batch_constants.py` |
+| `docking_batch_inputs` | 99 | `backend/mw/docking_batch_inputs.py` |
+| `docking_batch_jobs` | 129 | `backend/mw/docking_batch_jobs.py` |
+| `docking_bundle` | 88 | `backend/mw/docking_bundle.py` |
+| `docking_constants` | 85 | `backend/mw/docking_constants.py` |
+| `docking_inputs` | 88 | `backend/mw/docking_inputs.py` |
+| `docking_reads` | 101 | `backend/mw/docking_reads.py` |
+| `docking_reports` | 90 | `backend/mw/docking_reports.py` |
+| `jev_loop` | 111 | `backend/mw/tools/jev_loop.py` |
+| `jev_loops` | 97 | `backend/mw/jev_loops.py` |
+| `jev_projection` | 68 | `backend/mw/jev_projection.py` |
+| `jev_sends` | 68 | `backend/mw/jev_sends.py` |
+| `ligand_bundle` | 85 | `backend/mw/ligand_bundle.py` |
+| `ligand_constants` | 81 | `backend/mw/ligand_constants.py` |
+| `ligand_filters` | 99 | `backend/mw/ligand_filters.py` |
+| `ligand_ga_jobs` | 129 | `backend/mw/ligand_ga_jobs.py` |
+| `ligand_reports` | 86 | `backend/mw/ligand_reports.py` |
+| `method_reports` | 151 | `backend/mw/method_reports.py` |
+| `mutation_candidates` | 103 | `backend/mw/mutation_candidates.py` |
+| `mutation_constants` | 103 | `backend/mw/mutation_constants.py` |
+| `mutation_model_bundle` | 103 | `backend/mw/mutation_model_bundle.py` |
+| `mutation_model_constants` | 103 | `backend/mw/mutation_model_constants.py` |
+| `mutation_model_inputs` | 103 | `backend/mw/mutation_model_inputs.py` |
+| `mutation_model_math` | 103 | `backend/mw/mutation_model_math.py` |
+| `mutation_reports` | 97 | `backend/mw/mutation_reports.py` |
+| `numbering_reports` | 86 | `backend/mw/numbering_reports.py` |
+| `openmm_bundle` | 95 | `backend/mw/openmm_bundle.py` |
+| `openmm_method` | 96 | `backend/mw/tools/openmm_method.py` |
+| `pocket_bundle` | 92 | `backend/mw/pocket_bundle.py` |
+| `pocket_reports` | 86 | `backend/mw/pocket_reports.py` |
+| `precedent_snapshots` | 118 | `backend/mw/precedent_snapshots.py` |
+| `reaction_knowledge` | 92 | `backend/mw/reaction_knowledge.py` |
+| `reaction_knowledge_constants` | 92 | `backend/mw/reaction_knowledge_constants.py` |
+| `reaction_knowledge_reports` | 93 | `backend/mw/reaction_knowledge_reports.py` |
+| `reaction_snapshots` | 113 | `backend/mw/reaction_snapshots.py` |
+| `residue_numbering` | 114 | `backend/mw/residue_numbering.py` |
+| `sequence_ga_jobs` | 129 | `backend/mw/sequence_ga_jobs.py` |
+| `sequence_model_bundle` | 105 | `backend/mw/sequence_model_bundle.py` |
+| `site_annotation` | 93 | `backend/mw/site_annotation.py` |
+| `tools` | 96 | `backend/mw/tools/` |
+| `tools/mutations` | 93 | `backend/mw/tools/mutations.py` |
+| `tools/structural` | 84 | `backend/mw/tools/structural.py` |
+
+합계: 44개(모두 있음)
+
+주의: 표 2는 이름으로만 맞춘다. `jev_loop`(첫 줄 111)은 문서에서 보고서 종류 이름(`analysis_type`)으로 쓰였고 같은 이름의 모듈 `backend/mw/tools/jev_loop.py`가 있어 함께 잡혔다.
+
+## 모듈로 풀리지 않은 백틱 식별자(모듈이 아닌 이름, 눈으로 확인)
+
+`abandon_docking`, `analysis_workflows`, `annotate_reference_sites`, `backend/mw`, `batch`, `batch_input_sha256`, `budget_limit_updated`, `build_jev_loop_projection`, `build_jev_projection`, `catalytic_annotation`, `catalytic_residue`, `compute_interactions`, `computed`, `content_hash`, `count_where`, `derive_loop`, `dirty`, `dock_row`, `docking_batch_published`, `docking_batch_row_published`, `docking_pairs`, `durable_job`, `execution_link`, `finish`, `fixture`, `generate_mutation_candidates`, `goal`, `inspect_complex`, `interaction_handle`, `interaction_set`, `jev_loop_compute_approved`, `jev_loop_created`, `jev_loop_ended`, `jev_send_outcome`, `job_owners`, `kbase_kinase`, `ligand_docking`, `ligand_ga_individual_published`, `ligand_ga_published`, `ligand_sdf`, `limit_approval`, `link_kinase_precedents`, `link_reaction_knowledge`, `live`, `load_structure`, `local_only`, `map_residue_numbering`, `model_index`, `moves_flagged`, `mutation_model`, `mw`, `not_available`, `object_created`, `openmm_mutation_model_v1`, `parse_choice`, `parse_loop_choice`, `pip`, `preparation_manifest`, `prepare_structure`, `prepared`, `prepared_structure`, `qvina2`, `qvina_batch_dock_v1`, `qvina_dock_v1`, `qvina_ga_dock_v1`, `raise_limits`, `rdkit_enumerate_v1`, `rdkit_inspect_v1`, `receptor_source`, `ref/pubmed`, `report`, `reserved_units`, `run_call`, `run_send`, `run_started`, `sequence_ga_dock_v1`, `sequence_ga_individual_published`, `sequence_ga_published`, `set_model_receptor`, `sha256_order_v1`, `structure`, `subprocess`, `urllib`, `valid`, `validate_dist_files`, `validate_move`, `validate_reference`, `validated_model`, `validated_projection`, `validated_result`, `validated_set`
+
+## 부록: 생성 스크립트(표준 라이브러리만, 저장소 루트에서 실행)
+
+```python
+"""Existence check of the module names written in docs/system-architecture.md (M28 T17).
+
+Run from the repository root (cwd): python3 doc_existence_check.py > docs/qa/m28-final-20261011/doc-existence-check.txt
+Standard library only; reads files, writes nothing but stdout. Paths in the output are repository-relative.
+"""
+import hashlib
+import itertools
+import re
+import subprocess
+from pathlib import Path
+
+DOC = Path("docs/system-architecture.md")
+TEXT = DOC.read_text(encoding="utf-8")
+EXT = r"(?:py|tsx|ts|cjs|mjs|yaml)"
+FILE_TOKEN = re.compile(r"(?<![*A-Za-z0-9_./{},-])[A-Za-z0-9_./{},-]+\." + EXT + r"(?![A-Za-z0-9_])")
+SEARCH = ["", "backend/mw/", "backend/mw/jobs/", "backend/mw/tools/", "backend/mw/egress/", "backend/",
+          "frontend/", "frontend/src/components/", "frontend/src/lib/", "frontend/tests/offscreen/", "scripts/",
+          "backend/tests/"]
+MODULE_DIRS = ["backend/mw/", "backend/mw/jobs/", "backend/mw/tools/", "backend/mw/egress/", "backend/mw/core/",
+               "backend/mw/runtime/", "backend/mw/llm/", "backend/mw/api/"]
+
+
+def expand(token: str) -> list[str]:
+    """Brace expansion like the shell's: a_{x,y}.py -> a_x.py, a_y.py."""
+    parts = re.split(r"(\{[^{}]*\})", token)
+    choices = [p[1:-1].split(",") if p.startswith("{") else [p] for p in parts]
+    return ["".join(c) for c in itertools.product(*choices)]
+
+
+def resolve(name: str) -> str | None:
+    name = name.removeprefix("mw/") if name.startswith("mw/") else name
+    candidates = [name] if name.startswith(("backend/", "frontend/", "scripts/", "config/", ".")) else []
+    candidates += [prefix + name for prefix in SEARCH]
+    if name.startswith("jobs/") or name.startswith("tools/") or name.startswith("egress/"):
+        candidates.insert(0, "backend/mw/" + name)
+    for path in candidates:
+        if Path(path).is_file():
+            return path
+    return None
+
+
+lines = TEXT.splitlines()
+files: dict[str, tuple[int, str | None]] = {}
+for number, line in enumerate(lines, 1):
+    for raw in FILE_TOKEN.findall(line):
+        if "<" in raw or "*" in raw:
+            continue
+        for name in expand(raw.strip("./") if raw.startswith("./") else raw):
+            name = name.lstrip(",")
+            if name not in files:
+                files[name] = (number, resolve(name))
+
+bare: dict[str, tuple[int, str | None]] = {}
+for number, line in enumerate(lines, 1):
+    for span in re.findall(r"`([^`]+)`", line):
+        if re.fullmatch(r"[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)?", span) and span not in bare:
+            path = None
+            for prefix in MODULE_DIRS:
+                for candidate in (prefix + span + ".py", prefix + span.split("/")[-1] + ".py"):
+                    if span.count("/") and not candidate.endswith(span + ".py"):
+                        continue
+                    if Path(candidate).is_file():
+                        path = candidate
+                        break
+                if path:
+                    break
+            if path is None and Path("backend/mw/" + span).is_dir():
+                path = "backend/mw/" + span + "/"
+            bare[span] = (number, path)
+
+head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False).stdout.strip()
+doc_sha = hashlib.sha256(DOC.read_bytes()).hexdigest()
+print("# docs/system-architecture.md 모듈 이름 존재 확인 (M28 T17)")
+print()
+print(f"- 대상 문서 SHA-256: {doc_sha}")
+print(f"- 확인 기준 HEAD(문서 수정 전 커밋, 작업 트리에 문서 변경만 있음): {head}")
+print("- 방법: 문서 전체(표·도식·본문)에서 확장자 .py/.tsx/.ts/.cjs/.mjs/.yaml로 끝나는 이름을 모두 뽑아(중괄호 펼침, '<'·'*' 들어간"
+      " 자리표시는 제외) 저장소 루트·backend/mw·backend/mw/jobs·tools·egress·frontend·frontend/src/components·lib·"
+      "frontend/tests/offscreen·scripts 순서로 찾았다. 표 1은 반드시 모두 '있음'이어야 한다.")
+print("- 표 2는 백틱 안의 확장자 없는 소문자 식별자 중 backend/mw 아래 모듈(파일·패키지)로 풀리는 것이다. 풀리지 않는 식별자는 "
+      "함수·상수·필드·이벤트·라우트 조각 등 모듈이 아닌 이름이며 끝의 목록으로 따로 적었다(사람이 눈으로 확인).")
+print()
+print("## 표 1. 확장자가 있는 이름")
+print()
+print("| 이름(문서에 적힌 대로, 펼친 뒤) | 첫 줄 | 찾은 파일 | 결과 |")
+print("|---|---|---|---|")
+missing = 0
+for name, (number, path) in sorted(files.items()):
+    ok = path is not None
+    missing += not ok
+    print(f"| `{name}` | {number} | {('`' + path + '`') if ok else '—'} | {'있음' if ok else '없음'} |")
+print()
+print(f"합계: {len(files)}개, 있음 {len(files) - missing}, 없음 {missing}")
+print()
+print("## 표 2. 확장자 없는 모듈 이름(backend/mw 아래로 풀린 것)")
+print()
+print("| 이름 | 첫 줄 | 찾은 파일 |")
+print("|---|---|---|")
+resolved = {k: v for k, v in bare.items() if v[1]}
+for name, (number, path) in sorted(resolved.items()):
+    print(f"| `{name}` | {number} | `{path}` |")
+print()
+print(f"합계: {len(resolved)}개(모두 있음)")
+print()
+print("주의: 표 2는 이름으로만 맞춘다. `jev_loop`(첫 줄 111)은 문서에서 보고서 종류 이름(`analysis_type`)으로 쓰였고 같은 이름의 "
+      "모듈 `backend/mw/tools/jev_loop.py`가 있어 함께 잡혔다.")
+print()
+print("## 모듈로 풀리지 않은 백틱 식별자(모듈이 아닌 이름, 눈으로 확인)")
+print()
+print(", ".join(f"`{name}`" for name in sorted(k for k, v in bare.items() if not v[1])))
+
+print()
+print("## 부록: 생성 스크립트(표준 라이브러리만, 저장소 루트에서 실행)")
+print()
+print("```python")
+print(Path(__file__).read_text(encoding="utf-8").rstrip())
+print("```")
+```
+
+## 게이트 목록 대조 (`.codex/hooks/stop.py`·`frontend/package.json` ↔ 문서)
+
+- `SCRIPT_TESTS`(28개) = `scripts/test_*.py` 글롭(28개): True
+- `PYTEST_GROUPS` 17개 + 나머지 그룹 + ruff = `CHECKS` 19개 (문서의 19와 같음: True)
+- `docs/standards.md` 검증 블록: 스크립트 pytest 28개, `SCRIPT_TESTS`와 같은 순서·같은 목록 True; `node --check` 19줄, 없는 파일 없음, 종단 하네스 3줄 (endtoend-a-flow.cjs, endtoend-b-flow.cjs, endtoend-c-flow.cjs); npm 스크립트 test:events, typecheck, build 모두 `package.json`에 있음 True
+- `docs/operations.md` 검증 블록: 스크립트 pytest 28개, `SCRIPT_TESTS`와 같은 순서·같은 목록 True; `node --check` 19줄, 없는 파일 없음, 종단 하네스 3줄 (endtoend-a-flow.cjs, endtoend-b-flow.cjs, endtoend-c-flow.cjs); npm 스크립트 test:events, typecheck, build 모두 `package.json`에 있음 True
+- `scripts/AGENTS.md` 테스트 지침의 pytest 목록 28개, `SCRIPT_TESTS`와 같음 True
+- `frontend/package.json`에 `test:offscreen:endtoend` = `cd .. && .venv/bin/python scripts/m28_offscreen_acceptance.py`
+- `frontend/tests/offscreen/*.cjs` 34개(문서 `node --check` 목록은 그중 일부, 게이트 기록은 전부를 확인해 왔음)
+
+결과: 모두 일치
+(종료 코드 0)
+
+### 부록: 대조 스크립트(표준 라이브러리만, 저장소 루트에서 실행, stop.py는 ast로만 읽음)
+
+```python
+"""Gate list comparison (M28 T17): the documented gate against .codex/hooks/stop.py and frontend/package.json.
+
+Run from the repository root (cwd). Standard library only; reads files (stop.py is parsed with ast, never imported),
+prints a Markdown section to stdout; exit 0 only when every comparison matches.
+"""
+import ast
+import json
+import re
+import sys
+from pathlib import Path
+
+stop = ast.parse(Path(".codex/hooks/stop.py").read_text(encoding="utf-8"))
+values = {}
+for node in stop.body:
+    if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+        values[node.targets[0].id] = node.value
+script_tests = [elt.value for elt in values["SCRIPT_TESTS"].elts]
+pytest_groups = len(values["PYTEST_GROUPS"].elts)
+checks = 1 + pytest_groups + 1          # stop.py's CHECKS expression: ruff + PYTEST_GROUPS + REST_GROUP
+globbed = sorted(str(p) for p in Path("scripts").glob("test_*.py"))
+scripts = json.loads(Path("frontend/package.json").read_text(encoding="utf-8"))["scripts"]
+harnesses = sorted(str(p) for p in Path("frontend/tests/offscreen").glob("*.cjs"))
+
+
+def block(path: str, text: str) -> str:
+    match = re.search(r"## 검증 (게이트|명령)\n.*?```bash\n(.*?)```", text, re.S)
+    if not match:
+        raise SystemExit(f"no gate block in {path}")
+    return match.group(2)
+
+
+rows, ok = [], True
+for path in ("docs/standards.md", "docs/operations.md"):
+    code = block(path, Path(path).read_text(encoding="utf-8"))
+    pytest_line = next(line for line in code.splitlines() if line.startswith(".venv/bin/python -m pytest scripts/"))
+    listed = [tok for tok in pytest_line.split() if tok.startswith("scripts/test_")]
+    node = [line.split()[-1] for line in code.splitlines() if line.startswith("node --check ")]
+    npm = [line.split()[-1] for line in code.splitlines() if line.startswith("npm --prefix frontend run ")]
+    same = listed == script_tests
+    missing_files = [n for n in node if not Path(n).is_file()]
+    endtoend = [n for n in node if "/endtoend-" in n]
+    npm_ok = all(name in scripts for name in npm)
+    ok &= same and not missing_files and len(endtoend) == 3 and npm_ok
+    rows.append((path, len(listed), same, len(node), missing_files, endtoend, npm, npm_ok))
+
+agents = Path("scripts/AGENTS.md").read_text(encoding="utf-8")
+agents_line = next(line for line in agents.splitlines() if line.startswith("- `.venv/bin/python -m pytest scripts/"))
+agents_listed = [tok for tok in agents_line.replace("`", " ").split() if tok.startswith("scripts/test_")]
+agents_same = agents_listed == script_tests
+ok &= agents_same and sorted(script_tests) == globbed and checks == 19 and "test:offscreen:endtoend" in scripts
+
+print("## 게이트 목록 대조 (`.codex/hooks/stop.py`·`frontend/package.json` ↔ 문서)")
+print()
+print(f"- `SCRIPT_TESTS`({len(script_tests)}개) = `scripts/test_*.py` 글롭({len(globbed)}개): "
+      f"{sorted(script_tests) == globbed}")
+print(f"- `PYTEST_GROUPS` {pytest_groups}개 + 나머지 그룹 + ruff = `CHECKS` {checks}개 (문서의 19와 같음: {checks == 19})")
+for path, n, same, n_node, missing, endtoend, npm, npm_ok in rows:
+    print(f"- `{path}` 검증 블록: 스크립트 pytest {n}개, `SCRIPT_TESTS`와 같은 순서·같은 목록 {same}; "
+          f"`node --check` {n_node}줄, 없는 파일 {missing or '없음'}, 종단 하네스 {len(endtoend)}줄 "
+          f"({', '.join(Path(e).name for e in endtoend)}); npm 스크립트 {', '.join(npm)} 모두 `package.json`에 있음 {npm_ok}")
+print(f"- `scripts/AGENTS.md` 테스트 지침의 pytest 목록 {len(agents_listed)}개, `SCRIPT_TESTS`와 같음 {agents_same}")
+print(f"- `frontend/package.json`에 `test:offscreen:endtoend` = `{scripts.get('test:offscreen:endtoend')}`")
+print(f"- `frontend/tests/offscreen/*.cjs` {len(harnesses)}개(문서 `node --check` 목록은 그중 일부, 게이트 기록은 전부를 확인해 왔음)")
+print()
+print(f"결과: {'모두 일치' if ok else '불일치 있음'}")
+sys.exit(0 if ok else 1)
+```
+
+## 확인 전 금지 표현 검사
+
+- 명령 1: `git ls-files | grep -v '^\.dryforge/' | xargs grep -lE '<명세 §3.3 정규식>'` → 걸린 추적 파일 0개(작업 트리 기준. 이 파일은 아직 추적 전이라 따로 `grep -cE`로 검사해 0줄)
+- 명령 2: 이번에 고친 문서 여덟(`docs/system-architecture.md`·`operations.md`·`standards.md`·`business-rules.md`·`contracts.md`·`engineering-notes.md`·`scripts/AGENTS.md`·`frontend/AGENTS.md`)에 `grep -cE` → 합계 0줄
