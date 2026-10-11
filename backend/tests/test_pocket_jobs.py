@@ -15,8 +15,10 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -781,15 +783,49 @@ def test_validated_read_rechecks_stored_values_against_native_bytes(tmp_path, mo
 
 
 # ----------------------------------------------------------------- running engine: cancel, timeout, caps, restart
-def _engine_child(worker_pid: int, timeout: float = 20) -> psutil.Process:
+def _stopped(process: psutil.Process) -> bool:
+    """SIGSTOP ``process`` (again: one forked while its group was being stopped may have missed it) and wait until it
+    is stopped; False when it has already ended."""
+    try:
+        process.suspend()
+        end = time.monotonic() + 10
+        while (state := process.status()) != psutil.STATUS_STOPPED:
+            if state == psutil.STATUS_ZOMBIE:
+                return False
+            assert time.monotonic() < end, f"pid {process.pid} did not stop"
+            time.sleep(0.001)
+        return True
+    except psutil.NoSuchProcess:
+        return False
+
+
+def _held_engine(worker_pid: int, attempt_dir: Path, timeout: float = 60) -> psutil.Process:
+    """The worker's real fpocket, held stopped (M28 T2). fpocket on this input runs about 1.7 s; under Stop-hook load
+    it could finish, and the worker with it, before a fault was written and sampled, so the job completed instead
+    (the guardian samples the output only while the worker runs). The guardian's process group (guardian, worker,
+    fpocket) is stopped while fpocket is looked for (a look lists every system process, about a second under load), so
+    it cannot end between being seen and being held; then the guardian and the worker go on and only fpocket stays
+    stopped, the worker waiting on it. Polling starts when the worker has opened the engine's stream files, just
+    before it starts fpocket."""
+    pgid = os.getpgid(worker_pid)
+    guardian, worker = psutil.Process(pgid), psutil.Process(worker_pid)
     end = time.monotonic() + timeout
     while time.monotonic() < end:
-        try:
-            for child in psutil.Process(worker_pid).children():
-                if child.name() == "fpocket":
-                    return child
-        except psutil.NoSuchProcess:
-            break
+        if (attempt_dir / "engine.stderr").exists():
+            os.killpg(pgid, signal.SIGSTOP)
+            try:
+                assert _stopped(guardian) and _stopped(worker), "the guardian and the worker are stopped"
+                os.killpg(pgid, signal.SIGSTOP)   # again: an fpocket being forked when the first stop landed missed it
+                engine = next((child for child in worker.children() if child.name() == "fpocket"), None)
+                if engine is not None:
+                    assert _stopped(engine), "fpocket ended before it was held"
+                    guardian.resume()
+                    worker.resume()
+                    return engine
+            except BaseException:
+                os.killpg(pgid, signal.SIGCONT)   # a failure leaves no stopped guardian behind
+                raise
+            os.killpg(pgid, signal.SIGCONT)
         time.sleep(0.005)
     pytest.fail("the real fpocket process never started")
 
@@ -815,9 +851,9 @@ def test_running_engine_is_stopped_with_its_process_group(tmp_path, monkeypatch,
     def act_on_running_engine(self, message, job_id, attempt_id, nonce):
         done = original(self, message, job_id, attempt_id, nonce)
         if message and message.get("kind") == "STARTED" and not seen:
-            engine = _engine_child(message["pid"])
-            seen.append(engine)
             attempt_dir = self.run.run_dir / "jobs" / job_id / attempt_id
+            engine = _held_engine(message["pid"], attempt_dir)   # stopped, so the job is live for the fault
+            seen.append(engine)
             executed.append((Path(engine.exe()).resolve(), attempt_dir.resolve()))
             if fault == "cancel":
                 self.request_cancel(job_id)

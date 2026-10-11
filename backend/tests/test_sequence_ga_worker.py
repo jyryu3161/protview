@@ -691,9 +691,11 @@ def _assert_path(out: Out, expected: dict, *, stages: dict | None = None) -> Non
 
 
 def _engines_under(root: Path) -> list[int]:
-    """Live qvina2 / modeling children whose working directory is under ``root``."""
+    """Live qvina2 / modeling children whose working directory is under ``root``. No attributes are prefetched: a
+    prefetch runs inside ``process_iter`` outside this ``try`` (M28 T2: the unused ``cmdline`` prefetch let psutil's
+    ``SystemError`` from a process ending mid-read escape under load)."""
     found = []
-    for proc in psutil.process_iter(["name", "cmdline"]):
+    for proc in psutil.process_iter():
         try:
             if str(root) in proc.cwd() and proc.pid != os.getpid() and proc.status() != psutil.STATUS_ZOMBIE:
                 found.append(proc.pid)
@@ -1052,48 +1054,129 @@ def test_a_finished_docking_survives_a_late_sigterm(first, batch):
 
 
 # ------------------------------------------------------------------ SIGTERM (cancel) while a step runs
-def _wait_for(proc: subprocess.Popen, root: Path, what: str) -> list[int]:
-    """Pids of the running modeling child (``model``) or qvina2 (``qvina``) of the worker's first new evaluation."""
+# M28 T2: the signal used to be sent as soon as a polling pass had seen the step's process. Under Stop-hook load one
+# pass over every system process can outlast the short docking (qvina2 about 0.8 s), so the step had already finished
+# and the run went on to the next individual before the signal landed. The step is now held first: its process
+# group is stopped while it is looked for, so the signal reaches a step that cannot have finished, however late.
+def _stopped(process: psutil.Process) -> bool:
+    """SIGSTOP ``process`` (again: a child forked while its group was being stopped may have missed it) and wait until
+    it is stopped; False when it has already ended (a zombie or gone)."""
+    try:
+        process.suspend()
+        end = time.monotonic() + 10
+        while (state := process.status()) != psutil.STATUS_STOPPED:
+            if state == psutil.STATUS_ZOMBIE:
+                return False
+            assert time.monotonic() < end, f"pid {process.pid} did not stop"
+            time.sleep(0.001)
+        return True
+    except psutil.NoSuchProcess:
+        return False
+
+
+def _step_processes(worker: psutil.Process, what: str) -> list[psutil.Process]:
+    """The worker's live modeling child (``model``) or qvina2 (``qvina``)."""
+    found = []
+    for child in worker.children(recursive=True):
+        try:
+            if child.status() != psutil.STATUS_ZOMBIE and (
+                    (what == "qvina" and child.name() == "qvina2") or
+                    (what == "model" and str(SGW.MODEL_PROGRAM) in child.cmdline())):
+                found.append(child)
+        except (psutil.Error, SystemError):     # it ended while read (psutil's proc_cmdline race: SystemError)
+            continue
+    return found
+
+
+def _held_step(proc: subprocess.Popen, root: Path, what: str) -> list[psutil.Process]:
+    """The running modeling child (``model``) or qvina2 (``qvina``) of the worker's first new evaluation, held: the
+    worker's process group (the worker leads it; the modeling child and qvina2 share it) is stopped (SIGSTOP) while it
+    is looked for, so nothing ends between being seen and being held (a look lists every system process, about a
+    second under load). Returns with the whole group still stopped. Polling starts at a cheap file sign written just
+    before the step starts (``0.started``; the docking's ``ligand.pdbqt``) and lets the group run 10 ms between looks,
+    far shorter than either step."""
+    sign = root / ("individuals/0.started" if what == "model" else "model_work/qvina/ligand.pdbqt")
+    worker = psutil.Process(proc.pid)
     end = time.monotonic() + 300
     while time.monotonic() < end:
-        assert proc.poll() is None, "the worker exited before the step ran"
-        found = []
-        for child in psutil.Process(proc.pid).children(recursive=True):
-            try:
-                name, cmdline = child.name(), child.cmdline()
-            except psutil.Error:
-                continue
-            if (what == "qvina" and name == "qvina2") or (what == "model" and str(SGW.MODEL_PROGRAM) in cmdline):
-                found.append(child.pid)
-        if found and (root / "individuals/0.started").exists():
-            return found
+        assert proc.poll() is None, "the worker exited before the step was held"
+        if sign.exists():
+            os.killpg(proc.pid, signal.SIGSTOP)
+            assert _stopped(worker)
+            # again, now that the worker cannot fork: a child it was forking when the first stop landed is not
+            # stopped by it (seen under load: qvina2 then ran to its end during the look)
+            os.killpg(proc.pid, signal.SIGSTOP)
+            found = _step_processes(worker, what)
+            if found:
+                assert all(_stopped(process) for process in found), f"the {what} step ended before it was held"
+                # qvina2 is held only once it has run a while (see _blocked); the modeling step blocks SIGTERM, so
+                # its signal is a flag the worker's poll reads and has no such window
+                if what == "model" or sum(found[0].cpu_times()[:2]) >= 0.05:
+                    assert not (root / "individuals/0.status.json").exists(), "individual 0 ended before it was held"
+                    return found
+            os.killpg(proc.pid, signal.SIGCONT)
         time.sleep(0.01)
-    proc.kill()
     raise AssertionError(f"no {what} process appeared")
+
+
+def _blocked(worker: psutil.Process) -> None:
+    """Wait until the resumed ``worker`` is blocked (its CPU time the same over three looks 50 ms apart; macOS
+    reports a blocked process as running). With its qvina2 held stopped the worker can only block in ``communicate``
+    on qvina2's pipes, so its SIGTERM does not land inside ``Popen.__init__`` (after qvina2's exec, before the Popen
+    returns), where ``subprocess.run`` has no process to kill yet; holding qvina2 only after it has used 50 ms of CPU
+    already makes that unlikely."""
+    end = time.monotonic() + 60
+    seen: list[tuple[float, float]] = []
+    while time.monotonic() < end:
+        seen = [*seen[-2:], tuple(worker.cpu_times()[:2])]
+        if len(seen) == 3 and seen[0] == seen[2]:
+            return
+        time.sleep(0.05)
+    raise AssertionError("the resumed worker did not block on its held qvina2")
 
 
 @pytest.mark.parametrize(("what", "target"), [("model", "group"), ("model", "worker"), ("qvina", "worker")])
 def test_sigterm_cancels_the_running_step_and_leaves_no_process(world, first, tmp_path, what, target):
     """``group``: the guardian's cancel (SIGTERM to the whole process group: the worker and its modeling child);
-    ``worker``: SIGTERM to the worker only, which then ends its own child (the modeling program or qvina2)."""
+    ``worker``: SIGTERM to the worker only, which then ends its own child (the modeling program or qvina2). The step
+    is held (stopped) when the signal is sent; then the group goes on, except a held qvina2, which stays stopped so
+    its docking cannot finish and only the worker can end it."""
     _records, reference = _reuse(first["run"])
     root = tmp_path / "term"
     proc = _popen(root, {**world["base"], "reference_reuse": reference})
-    engines = _wait_for(proc, root, what)
-    if target == "group":
-        os.killpg(proc.pid, signal.SIGTERM)
-    else:
-        os.kill(proc.pid, signal.SIGTERM)
-    out = _finish(proc, root, timeout=5.0)          # within the guardian's grace period
-    assert out.code == 0 and out.result == _result("cancelled", 0)
-    assert out.files == {"0.started": b""}
-    assert out.gens == {1: {"index": 1, "complete": False, "individuals": []}}
-    deadline = time.monotonic() + 2.0
-    while time.monotonic() < deadline and any(psutil.pid_exists(pid) for pid in engines):
-        time.sleep(0.02)
-    assert not [pid for pid in engines if psutil.pid_exists(pid) and
-                psutil.Process(pid).status() != psutil.STATUS_ZOMBIE], "no engine process is left"
-    assert _engines_under(root) == []
+    held: list[psutil.Process] = []
+    try:
+        held = _held_step(proc, root, what)
+        worker = psutil.Process(proc.pid)
+        if what == "qvina":
+            os.kill(proc.pid, signal.SIGCONT)
+            _blocked(worker)
+        if target == "group":
+            os.killpg(proc.pid, signal.SIGTERM)
+        else:
+            os.kill(proc.pid, signal.SIGTERM)
+        if what == "model":
+            os.killpg(proc.pid, signal.SIGCONT)
+        out = _finish(proc, root, timeout=5.0)          # within the guardian's grace period
+    finally:
+        if proc.poll() is None:                         # a failure above leaves no stopped group behind
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
+    engines = [process.pid for process in held]
+    try:
+        assert out.code == 0 and out.result == _result("cancelled", 0)
+        assert out.files == {"0.started": b""}
+        assert out.gens == {1: {"index": 1, "complete": False, "individuals": []}}
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline and any(psutil.pid_exists(pid) for pid in engines):
+            time.sleep(0.02)
+        assert not [pid for pid in engines if psutil.pid_exists(pid) and
+                    psutil.Process(pid).status() != psutil.STATUS_ZOMBIE], "no engine process is left"
+        assert _engines_under(root) == []
+    finally:
+        for process in held:                            # a held engine the worker left must not stay stopped
+            if process.is_running():
+                process.kill()
 
 
 # ------------------------------------------------------------------ fatal inputs, handshake, isolation
