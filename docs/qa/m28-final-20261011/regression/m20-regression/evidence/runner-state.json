@@ -1,0 +1,96 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "rBBec44wIyXoIAtlHTe43",
+    "gitHead": "5a5ba3f2e9e2f4b572eb9e7dc27111598a52dbe3",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e515176ada09faba74882b98ed8fbcf588eb59a652a1066842f188e61f1e0b41",
+    "dirtyFiles": [
+      "?? docs/qa/m28-final-20261011/regression/"
+    ],
+    "recordedAt": "2026-10-11T17:51:04.813347+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "mutation-flow.cjs": "e971c3571d4a26b0584ddd29c58df76730e08a9d1d7385fb9992514fae200165",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "8ebd1be88e14dcc0c90072012a17af92fbb9021fa72df6e675143d477047a3ff"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m28-reg-m25-m20-regression/runs",
+      "reference": "<repo>/runs/m28-reg-m25-m20-regression/reference",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-11T17:51:09.417462+00:00"
+    }
+  ],
+  "emptyReference": {
+    "available": false,
+    "reason_code": "not_installed",
+    "reason": "\ucc38\uc870 \uc2a4\ub0c5\uc0f7 \uc138\ud2b8\uac00 \uc124\uce58\ub418\uc5b4 \uc788\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4(\uac00\uc838\uc624\uae30 \uba85\ub839 scripts/import_reference_snapshots.py). Reference snapshot set is not installed."
+  },
+  "reference": {
+    "reference-import": {
+      "status": "pass",
+      "exitCode": 0,
+      "argv": [
+        "<repo>/.venv/bin/python",
+        "<repo>/scripts/import_reference_snapshots.py",
+        "--from",
+        "<home>/Projects/kbase_kinase",
+        "--dest",
+        "<repo>/runs/m28-reg-m25-m20-regression/reference"
+      ],
+      "log": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m20/services/reference-import.log",
+      "setHash": "bb6c9ce159fec0b655f5a0539ed0421117ed554863bd87692c8b92664029bcf7",
+      "served": {
+        "available": true,
+        "set_hash": "bb6c9ce159fec0b655f5a0539ed0421117ed554863bd87692c8b92664029bcf7",
+        "imported_at": "2026-10-11T17:51:09.646915Z",
+        "reason_code": null
+      },
+      "sources": [
+        {
+          "source": "uniprot",
+          "snapshot_id": "SNAP-uniprot-2026-09-15",
+          "date": "2026-09-15",
+          "license": "CC-BY-4.0",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "sifts",
+          "snapshot_id": "SNAP-sifts-2026-09-20",
+          "date": "2026-09-20",
+          "license": "EMBL-EBI-terms",
+          "origin": "kbase_kinase processed snapshot"
+        },
+        {
+          "source": "klifs",
+          "snapshot_id": "SNAP-klifs-2026-09-19",
+          "date": "2026-09-19",
+          "license": "none-stated",
+          "origin": "kbase_kinase processed snapshot"
+        }
+      ]
+    }
+  },
+  "environment": {
+    "mutationAvailable": true,
+    "pocketAvailable": true,
+    "pocketCapability": {
+      "available": true,
+      "status": "ready",
+      "engine": "fpocket",
+      "release": "4.2.3",
+      "build": "hb88c64c_2"
+    }
+  }
+}

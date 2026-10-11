@@ -1,0 +1,1079 @@
+{
+  "schema": "m12_pocket_evidence@1",
+  "mode": "invalid",
+  "status": "pass",
+  "harnessSha256": "f8e0949a9fcc65a9a2071a5de657c20763f59b1fcd7ebbf706a3b29abd7586da",
+  "driverSha256": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+  "mainSha256": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+  "buildId": "rBBec44wIyXoIAtlHTe43",
+  "startedAt": "2026-10-11T18:31:59.383Z",
+  "run": "run_6a349c737e374cfbb8f8b7e3d326e32e,run_47f2c32094a1434c8fe64d4be4f4a27d",
+  "handles": {},
+  "inputs": [
+    {
+      "name": "m12-invalid-cases.json",
+      "path": "<repo>/runs/m28-reg-m25-m13-regression/m12-acceptance/inputs/m12-invalid/m12-invalid-cases.json",
+      "bytes": 1009,
+      "sha256": "4926d18be107400b4b6a0e76de16507908e8e175276bfa7a2795d7025e58e50d",
+      "provenance": "manifest of labeled synthetic M12 invalid-input controls (scripts/m12_qa_inputs.py)"
+    },
+    {
+      "name": "m12-synthetic-modified-residue.pdb",
+      "path": "<repo>/runs/m28-reg-m25-m13-regression/m12-acceptance/inputs/m12-invalid/m12-synthetic-modified-residue.pdb",
+      "bytes": 1867,
+      "sha256": "c3a91360c70438428335b292b89ae3d02dbe510172ea6c10add7118999185874",
+      "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+    },
+    {
+      "name": "m12-synthetic-degenerate-collinear.pdb",
+      "path": "<repo>/runs/m28-reg-m25-m13-regression/m12-acceptance/inputs/m12-invalid/m12-synthetic-degenerate-collinear.pdb",
+      "bytes": 490,
+      "sha256": "a25a960c543218056279e9da1cc00451a9706b9134d056ec225109643ed57f91",
+      "provenance": "labeled synthetic M12 invalid-input control (scripts/m12_qa_inputs.py); not an observed structure"
+    }
+  ],
+  "fixtureLabels": [],
+  "expectCapability": null,
+  "offscreenStart": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 6,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m13/m12-acceptance/evidence/invalid/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 59,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "cases": [
+    {
+      "file": "m12-synthetic-modified-residue.pdb",
+      "run": "run_6a349c737e374cfbb8f8b7e3d326e32e",
+      "prepared": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/prepared_structure/c58a90e33aa57c46ffb07a6106c9ba5c611868d42d16a00340a04c82e6460fc8",
+      "before": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/structure_source/c3ca2d2d3dd18ac2f18543b0bb74def8aec6ad6c827fb46927fa5a8e35c80425",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/structure/5dcd9eb5d23bc2238944f328c0276153bd3f8b176be391b46d11ca0fe01340c5",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/preparation_manifest/08575b7030830713cbb02a8b3aa46e8b37e3da73bb0c04abc4817ecaa18425de",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/prepared_coordinates/4312b73f38b51706f74f3fa3ce645a9940c101613f3957d8d62aae4d82d8c3d3",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/prepared_structure/c58a90e33aa57c46ffb07a6106c9ba5c611868d42d16a00340a04c82e6460fc8",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ],
+      "posts": [],
+      "forced": "clicked",
+      "after": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/structure_source/c3ca2d2d3dd18ac2f18543b0bb74def8aec6ad6c827fb46927fa5a8e35c80425",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/structure/5dcd9eb5d23bc2238944f328c0276153bd3f8b176be391b46d11ca0fe01340c5",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/preparation_manifest/08575b7030830713cbb02a8b3aa46e8b37e3da73bb0c04abc4817ecaa18425de",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/prepared_coordinates/4312b73f38b51706f74f3fa3ce645a9940c101613f3957d8d62aae4d82d8c3d3",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_6a349c737e374cfbb8f8b7e3d326e32e/prepared_structure/c58a90e33aa57c46ffb07a6106c9ba5c611868d42d16a00340a04c82e6460fc8",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ]
+    },
+    {
+      "file": "m12-synthetic-degenerate-collinear.pdb",
+      "run": "run_47f2c32094a1434c8fe64d4be4f4a27d",
+      "prepared": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/prepared_structure/b5b4e30c21ba29163308a60f60c20b5fdae8d6e8eaccb7f762e3b9c107a4ffa5",
+      "before": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/structure_source/ad62f140e96ca8499f67a38672e19fe705e7ed80bc88a477d97cb9172b2ec030",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/structure/3fb79140abcf0c202f53b7b64d3654fd6a7f15312bb0287a78156ac995865106",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/preparation_manifest/646418a905de418f2b790a85a70b290d9470fdb7f965e80bbb68c364c6b590f6",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/prepared_coordinates/de7efdeea6216dee76d72e55e30af3ac074338ed4dde2a8d28c9f703e8f263fd",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/prepared_structure/b5b4e30c21ba29163308a60f60c20b5fdae8d6e8eaccb7f762e3b9c107a4ffa5",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ],
+      "posts": [],
+      "forced": "clicked",
+      "after": [
+        {
+          "seq": 4,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 5,
+          "type": "object_created",
+          "kind": "structure_source",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/structure_source/ad62f140e96ca8499f67a38672e19fe705e7ed80bc88a477d97cb9172b2ec030",
+          "job_id": null
+        },
+        {
+          "seq": 6,
+          "type": "object_created",
+          "kind": "structure",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/structure/3fb79140abcf0c202f53b7b64d3654fd6a7f15312bb0287a78156ac995865106",
+          "job_id": null
+        },
+        {
+          "seq": 8,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 11,
+          "type": "tool_called",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        },
+        {
+          "seq": 12,
+          "type": "object_created",
+          "kind": "preparation_manifest",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/preparation_manifest/646418a905de418f2b790a85a70b290d9470fdb7f965e80bbb68c364c6b590f6",
+          "job_id": null
+        },
+        {
+          "seq": 13,
+          "type": "object_created",
+          "kind": "prepared_coordinates",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/prepared_coordinates/de7efdeea6216dee76d72e55e30af3ac074338ed4dde2a8d28c9f703e8f263fd",
+          "job_id": null
+        },
+        {
+          "seq": 14,
+          "type": "object_created",
+          "kind": "prepared_structure",
+          "handle": "obj://run_47f2c32094a1434c8fe64d4be4f4a27d/prepared_structure/b5b4e30c21ba29163308a60f60c20b5fdae8d6e8eaccb7f762e3b9c107a4ffa5",
+          "job_id": null
+        },
+        {
+          "seq": 16,
+          "type": "tool_succeeded",
+          "kind": null,
+          "handle": null,
+          "job_id": null
+        }
+      ]
+    }
+  ],
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 92,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m13/m12-acceptance/evidence/invalid/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 245,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    }
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_99341aca7069443f90d624b233a6b6c0/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_6a349c737e374cfbb8f8b7e3d326e32e/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/analysis/plans",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/analysis/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/jev/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/pockets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/figures",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/scenes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/numbering_maps",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/analysis/templates",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/uploads",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/sessions",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/commands",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/budget",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/events",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/reports",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/jobs",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/intents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/objects/meta",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/online",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/site_annotations",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/pockets/preflight",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/bytes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/residues",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/structures/atoms",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/run_47f2c32094a1434c8fe64d4be4f4a27d/viewer/sessions",
+      "status": 201
+    }
+  ],
+  "finishedAt": "2026-10-11T18:32:03.519Z",
+  "externalRequestCount": 0
+}

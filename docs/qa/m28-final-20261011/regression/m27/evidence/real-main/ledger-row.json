@@ -1,0 +1,379 @@
+{
+  "schema": "m27_case_ledger_row@1",
+  "mode": "main",
+  "stage": "real",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "X-tabs": "pass",
+    "X-snapshot-real": "pass",
+    "X-request-defaults": "pass",
+    "X-1mq4-none": "pass",
+    "X-no-zero": "pass",
+    "X-1m17-found": "pass",
+    "X-1m17-flagged": "pass",
+    "X-1fin-one-target": "pass",
+    "X-too-large-real": "pass",
+    "X-records-real": "pass",
+    "X-detail-real": "pass",
+    "P-fixed-notes": "pass",
+    "X-results-list": "pass",
+    "X-report-real": "pass",
+    "X-wording": "pass"
+  },
+  "runId": "run_c8f5fabd22514953974907418f92777f",
+  "runs": {
+    "A": "run_c8f5fabd22514953974907418f92777f"
+  },
+  "handles": {
+    "maps": {
+      "rm-mq4": "obj://run_c8f5fabd22514953974907418f92777f/residue_numbering_map/97286b857ade18d6a023bb7f8d9361d2cec8da5c6f7d52baba2b6e425699d522",
+      "rm-m17": "obj://run_c8f5fabd22514953974907418f92777f/residue_numbering_map/6827f3b50e9173f03a256510c80fe093c638ee48617c411d494f1693dceb8f4a",
+      "rm-fin": "obj://run_c8f5fabd22514953974907418f92777f/residue_numbering_map/d4c92742da3bcdb36f74363f3a2cc926e58d0b929e21d49a47a9aa1b8cdb2101",
+      "d-size": "obj://run_c8f5fabd22514953974907418f92777f/residue_numbering_map/1f21716905e77476b0406da5bda2f3d6701d777ff13a8cf4e0001ede7f59567b"
+    },
+    "links": {
+      "l-mq4": "obj://run_c8f5fabd22514953974907418f92777f/kinase_precedents/e1c3032247a75c12dd729330e36e03a5fbff8a5e8ccc15bfe73428bd55eeda99",
+      "l-m17": "obj://run_c8f5fabd22514953974907418f92777f/kinase_precedents/4f515ebe6e2ba0215c9b4d6c1821fc60f5cd291388baf265815005ba4b098bf0",
+      "l-m17-incl": "obj://run_c8f5fabd22514953974907418f92777f/kinase_precedents/371f43aa0f2b0c0a0b43b044ddc7f477d1e2f5a86a19810bd77cb10e049a8c39",
+      "l-fin": "obj://run_c8f5fabd22514953974907418f92777f/kinase_precedents/b1489ae9e2f0bd15dfd7b1589dd1d19e43cf01306ffea692d5852907babd07cd",
+      "l-fin-incl": "obj://run_c8f5fabd22514953974907418f92777f/kinase_precedents/54b82d8b2b7cf81961053ba593c78b4e81b21c7e3c2c5659f78cd9ad755e24d4"
+    },
+    "report": "obj://run_c8f5fabd22514953974907418f92777f/method_report_manifest/0b1b8601a733dbfe4fd6fe6c7411bd0e62b8f1107e28f00b2f49d68098311bef"
+  },
+  "inputs": [],
+  "fixtureLabels": [
+    "SYNTHETIC derived from the real M15 map of public 1FIN chains A and C: chain A rows given P00533 and chain C rows Q06187 (no such structure; only to make a request above the 1 MiB cap, refused and never stored; M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)"
+  ],
+  "controls": {
+    "kinase-precedents-unresolved-names": [
+      {
+        "opened": true
+      }
+    ],
+    "kinase-precedents-numbering-map": [
+      {
+        "chosen": "rm-mq4"
+      },
+      {
+        "chosen": "rm-m17"
+      },
+      {
+        "chosen": "rm-fin"
+      },
+      {
+        "chosen": "d-size"
+      }
+    ],
+    "kinase-precedents-link": [
+      {
+        "clicked": "l-mq4"
+      },
+      {
+        "clicked": "l-m17"
+      },
+      {
+        "clicked": "l-m17-incl"
+      },
+      {
+        "clicked": "l-fin"
+      },
+      {
+        "clicked": "l-fin-incl"
+      },
+      {
+        "clicked": "too-large d-size"
+      }
+    ],
+    "kinase-precedents-include-flagged": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "kinase-precedents-filter-variant": [
+      {
+        "chosen": "L858R"
+      }
+    ],
+    "kinase-precedents-filters-clear": [
+      {}
+    ],
+    "kinase-precedents-page-next": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-page-prev": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-record-toggle": [
+      {
+        "opened": "MOVE-0162"
+      },
+      {
+        "opened": "MOVE-0163"
+      },
+      {
+        "closed": "MOVE-0162"
+      }
+    ],
+    "kinase-precedents-kbase-fields": [
+      {
+        "opened": "MOVE-0162"
+      },
+      {
+        "opened": "MOVE-0163"
+      }
+    ],
+    "kinase-precedents-results-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-report": [
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "observations": {
+    "X-tabs": [
+      {
+        "step": "M02-tabs-before",
+        "description": "Click 단백질 공학 and 리간드 설계·탐색: record their areas and digit-masked text before any link"
+      },
+      {
+        "step": "M50-tabs",
+        "description": "Click 지식·보고서: 구조 분석 hidden and inert, no run choice here; click 단백질 공학 and 리간드 설계·탐색: areas and masked text equal the record before the precedent work"
+      }
+    ],
+    "X-snapshot-real": [
+      {
+        "step": "M03-snapshot",
+        "description": "Click 지식·보고서: the snapshot block of the active set; open the unresolved-name table"
+      }
+    ],
+    "X-request-defaults": [
+      {
+        "step": "M04-defaults",
+        "description": "The newest numbering map is pre-selected, nothing posted; every chain ticked; the toggle off; 전례 연결 enabled"
+      }
+    ],
+    "X-1mq4-none": [
+      {
+        "step": "L-l-mq4",
+        "description": "Link l-mq4: map rm-mq4, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-no-zero": [
+      {
+        "step": "L-l-mq4",
+        "description": "Link l-mq4: map rm-mq4, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-m17",
+        "description": "Link l-m17: map rm-m17, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-m17-incl",
+        "description": "Link l-m17-incl: map rm-m17, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "M30-results",
+        "description": "Click 전례 결과 목록 다시 읽기: the list equals the stored list (newest first); a file not included is — with the reason"
+      }
+    ],
+    "X-1m17-found": [
+      {
+        "step": "L-l-m17",
+        "description": "Link l-m17: map rm-m17, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-1m17-flagged": [
+      {
+        "step": "L-l-m17-incl",
+        "description": "Link l-m17-incl: map rm-m17, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-fin-incl",
+        "description": "Link l-fin-incl: map rm-fin, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-1fin-one-target": [
+      {
+        "step": "L-l-fin",
+        "description": "Link l-fin: map rm-fin, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "X-too-large-real": [
+      {
+        "step": "M10-too-large",
+        "description": "Choose map d-size, tick the moves_flagged toggle, click 전례 연결: 429 result_too_large with the size advice; nothing stored"
+      }
+    ],
+    "X-records-real": [
+      {
+        "step": "M11-variant",
+        "description": "Choose 변이 표기 L858R: the server page equals the GET and the count"
+      },
+      {
+        "step": "M21-page-next",
+        "description": "Click 다음 쪽: the next server page"
+      },
+      {
+        "step": "M22-page-prev",
+        "description": "Click 이전 쪽: back to the first page"
+      }
+    ],
+    "X-detail-real": [
+      {
+        "step": "M23-expand-MOVE-0162",
+        "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M23-expand-MOVE-0163",
+        "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M24-collapse",
+        "description": "Click 상세 접기 on MOVE-0162"
+      }
+    ],
+    "P-fixed-notes": [
+      {
+        "step": "M23-expand-MOVE-0162",
+        "description": "Click 상세 펼치기 on MOVE-0162: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M23-expand-MOVE-0163",
+        "description": "Click 상세 펼치기 on MOVE-0163: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      }
+    ],
+    "X-results-list": [
+      {
+        "step": "M30-results",
+        "description": "Click 전례 결과 목록 다시 읽기: the list equals the stored list (newest first); a file not included is — with the reason"
+      }
+    ],
+    "X-report-real": [
+      {
+        "step": "M31-report",
+        "description": "Open the result, click 보고서 만들기"
+      },
+      {
+        "step": "M32-download-markdown",
+        "description": "Click report-markdown: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M32-download-json",
+        "description": "Click report-json: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M33-library",
+        "description": "The knowledge-tab report list shows 키나아제 전례 보고서; click it; content = stored Markdown"
+      }
+    ],
+    "X-wording": [
+      {
+        "step": "M51-wording",
+        "description": "Open each stored result: no rank / recommendation / verified / effect wording outside the fixed sentences and the stored strings"
+      }
+    ]
+  },
+  "buildId": "rBBec44wIyXoIAtlHTe43",
+  "harness": {
+    "kinase-precedents-flow.cjs": "aa6267f1fc6b1a85c6e8a31a4706fb8d041cb6be4462319506d57a035f717a37",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "setHash": "2097469c382d3a6c478abe072db903e40fdd85a25e2ae68f668a88528813f886",
+  "plan": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m27/real-main-plan.json",
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 260,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m27/real-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 372,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 6,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m27/real-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 66,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "blockedHosts": [],
+  "providerCalls": [
+    {
+      "run": "run_c8f5fabd22514953974907418f92777f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "precedent-main.jsonl",
+  "startedAt": "2026-10-11T17:27:17.404Z",
+  "finishedAt": "2026-10-11T17:27:37.938Z"
+}

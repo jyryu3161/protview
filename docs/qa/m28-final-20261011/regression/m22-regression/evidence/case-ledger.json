@@ -1,0 +1,1478 @@
+{
+  "schema": "m22_case_ledger@1",
+  "generatedAt": "2026-10-11T17:49:18.198040+00:00",
+  "build": {
+    "buildId": "rBBec44wIyXoIAtlHTe43",
+    "gitHead": "5a5ba3f2e9e2f4b572eb9e7dc27111598a52dbe3",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e515176ada09faba74882b98ed8fbcf588eb59a652a1066842f188e61f1e0b41",
+    "dirtyFiles": [
+      "?? docs/qa/m28-final-20261011/regression/"
+    ],
+    "recordedAt": "2026-10-11T17:43:25.039024+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "ligand-ga-flow.cjs": "9fa1ef37ddc4d31e26aef34a2da08d89b44f3b528bae25972d604793b3e73bbb",
+      "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "runnerSha256": "c09b0a89e3b0e97fe19c6d2d1f72a32d6498eb19903089b1db7d2c8ab5bd067a"
+  },
+  "verdict": "pass",
+  "acceptance": true,
+  "verdictParts": {
+    "steps": true,
+    "cases": true,
+    "environment": true,
+    "leftoverProcesses": true
+  },
+  "cases": {
+    "GA-run-panel": {
+      "text": "ligand tab GA area uses the global run (no run choice), capability line, no summaries, start blocked",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-no-candidate-set": {
+      "text": "before any M17 set the pool area shows 사용할 수 없음 with the reason only (no number, no candidate set option, no GA request)",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-m17-set": {
+      "text": "receptor imported in the docking area; real M17 inspection (approval) + enumeration of the synthetic small pool at site 22 → the fixture's ten candidate ids in set order",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-param-guards": {
+      "text": "GA seed empty, population 25, random fraction 0.6, population − elite < 2, max new < population: each disables 시작 전 확인 and GA 시작 with the field's reason (invalid_job_arguments); no GA request is sent",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-defaults": {
+      "text": "기본값으로 restores every spec 2 default and keeps the GA seed; range/default text per field; effective summary with the job time limit; 끝까지 못 갈 수 있음 advice",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-pool-too-small": {
+      "text": "preflight refused ga_pool_too_small with the defaults (10 eligible < 12) and with the M17 filter (3 eligible < 4); start blocked; no job, no event",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-preflight": {
+      "text": "GA 1 preflight: pool, reusable 0, reserved_units 6 = expected, need 6 units / 1200 s, remaining = budget, shortfall 0, 끝까지 못 갈 수 있음 (reserved × 300 s > total_s), G1; the view shows the server numbers; no approval control without a shortfall",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-run": {
+      "text": "real qvina_ga_dock_v1 to done without a second approval, timeout total_s + 600, exactly reserved_units units, summary listed not opened",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-progress": {
+      "text": "while running, the progress line equals the stored job record's staged counts",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-results": {
+      "text": "status, stop reason, G sentences, summary lines, generation tabs and every individual row equal the stored summary; scores = each stored M18 result's first mode (ROUND_HALF_UP); carried = previous generation's lowest stored scores; slot counts; similarity = fixture Morgan Tanimoto; min/max as values only",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-sort": {
+      "text": "slot/candidate/score headers both ways follow the stored values; rows without a score always last; aria-sort; no rank column",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-detail": {
+      "text": "상세 열기 → the existing M18 detail of that individual's stored result; the individual read names it",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-limit-approval": {
+      "text": "shortfall → approval control shown, start blocked (ga_limit_raise_required); the screen's button raises the limit by the shortfall only (by human, GA context, no job/object), preflight re-read with no shortfall (GA 2, 3, 4, 5)",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-dedupe": {
+      "text": "GA 1 arguments again: preflight names the existing job; GA 시작 shows that job (no new job, no unit)",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-reuse": {
+      "text": "GA 2 (other GA seed, same docking seed): reused individuals cite GA 1's stored results (저장된 결과 재사용), new docking objects = new_dockings_used, reserved_units charged once, G1 + G3",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-pool-exhausted": {
+      "text": "GA 3 takes every eligible candidate, then complete / pool_exhausted",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-partial": {
+      "text": "GA 4 (max new 4, nothing reusable): partial / docking_limit after generation 1; G1 + G2; stopped generation marked; no number for uncomputed individuals",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-cancel": {
+      "text": "GA 5 cancelled from the screen while an individual is docking: cancelled job, partial / cancelled summary with the finished individuals, G2, no worker/qvina2 left, no refund",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-report": {
+      "text": "보고서 만들기 → 리간드 GA 설계 보고서 in the knowledge-tab list (G1, G3, score name); Markdown/JSON downloads equal the backend; the global budget equals the backend",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-processes": {
+      "text": "no GA worker, docking worker, M17 worker, guardian or qvina2 process under the runs folder",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-wording": {
+      "text": "no rank/best/improvement/affinity/winner/recommendation word in the GA area outside the fixed sentences and the score names",
+      "modes": {
+        "ga-main": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-no-run": {
+      "text": "no run: the GA area shows only the no-run reason (no numbers, no controls)",
+      "modes": {
+        "ga-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-unavailable": {
+      "text": "backend without the locked environments: 사용할 수 없음 with the capability reason (worker_missing), no numbers, no controls, no GA requests",
+      "modes": {
+        "ga-unavailable": "pass"
+      },
+      "status": "pass"
+    },
+    "GA-reproducible": {
+      "text": "the flow's GA 1 run again in two fresh runs: the summary and every evaluated individual's result (contents with the run-scoped obj:// handles and the hashes over them replaced) and the poses SDF bytes equal the flow's (cpu 1, GA and docking seeds fixed)",
+      "modes": {
+        "runner": "pass"
+      },
+      "status": "pass"
+    },
+    "S-no-egress": {
+      "text": "non-loopback requests 0 and zero provider calls on every flow row",
+      "status": "pass"
+    }
+  },
+  "steps": {
+    "ga-main": {
+      "status": "pass",
+      "latest": "ga-main",
+      "problems": [],
+      "attempts": 1
+    },
+    "ga-unavailable": {
+      "status": "pass",
+      "latest": "ga-unavailable",
+      "problems": [],
+      "attempts": 1
+    }
+  },
+  "notObserved": {
+    "GA-null-result": "qvina returns modes for every small-pool candidate (T1: all ten scored), so no individual without a score is shown; nothing is forged. Covered by frontend/tests/ligand-ga.test.cjs and backend/tests/test_ligand_ga_worker.py.",
+    "GA-no-change": "no_change depends on the engine's scores; no input is chosen to force it. Covered by backend/tests/test_ligand_ga_worker.py.",
+    "GA-time-and-worker-limits": "time_exhausted, candidate_timeout, worker_failed and resource_exceeded need hours, a killed worker or oversized output; covered by backend/tests/test_ligand_ga_worker.py and test_ligand_ga_jobs.py with test-only reduced constants."
+  },
+  "reproducibility": {
+    "flowArgs": {
+      "receptor_handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+      "receptor_model_number": 1,
+      "connectivity": {
+        "kind": "pdb_conect",
+        "sidecar_handle": null
+      },
+      "receptor_instance": null,
+      "box": {
+        "source": "manual",
+        "center_A": [
+          3.41,
+          0.72,
+          11.31
+        ],
+        "size_A": [
+          12,
+          12,
+          12
+        ]
+      },
+      "parameters": {
+        "seed": 1,
+        "exhaustiveness": 1,
+        "num_modes": 2,
+        "energy_range": 3
+      },
+      "candidate_set_handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_candidate_set/8569619c37a31b420a8bef824ba73c268205964e9833e84d97e653f90f27446e",
+      "parent_sdf_handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+      "filter": {
+        "ranges": {},
+        "pains_exclude": false
+      },
+      "ga": {
+        "seed": 11,
+        "population_size": 4,
+        "generations": 2,
+        "elite_count": 2,
+        "tournament_size": 2,
+        "neighbor_count": 3,
+        "random_fraction": 0.5,
+        "patience": 1,
+        "max_new_dockings": 6,
+        "total_s": 600
+      }
+    },
+    "reference": {
+      "run": "run_b71ed667fa964ddaa4dd8c43c68b5ec5",
+      "summary": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/88f20ea697b087c24d4d8d6b8f7f1137afcb6d382ed61560561d0c4ffe33efa0",
+      "summarySha256": "479ddc703b92a676fe858e22a1ecd064e258ef7ce71abfafe4eccbe8a219d63a",
+      "gaStatus": "complete",
+      "stopReason": "generations_complete",
+      "individuals": [
+        {
+          "generation": 1,
+          "position": 0,
+          "candidate_id": "c_da033b82807ffbe7",
+          "origin": "initial",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": "docked",
+          "eval_index": 0,
+          "state": "scored",
+          "reason_code": null,
+          "score": -9.1,
+          "resultSha256": "1906c49de1d69d3237fa023af1b813112ef65cbfbff5d4b3b7b473455abe6f42",
+          "posesSha256": "298335cb12e33b9f473cf0db9b6d462df560e5ad16fc3e34e9eed51b64533685"
+        },
+        {
+          "generation": 1,
+          "position": 1,
+          "candidate_id": "c_2c7a25e0cc0ad3f2",
+          "origin": "initial",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": "docked",
+          "eval_index": 1,
+          "state": "scored",
+          "reason_code": null,
+          "score": -8.7,
+          "resultSha256": "7889d671b2781032811329f5032478e17ddf89abed83a887fc2db6047699a358",
+          "posesSha256": "9debf80ff9e6a9fad6be46e842f3e2c862037c19e39a051a066676c2358f26fc"
+        },
+        {
+          "generation": 1,
+          "position": 2,
+          "candidate_id": "c_9d4897ac9ecdb2d4",
+          "origin": "initial",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": "docked",
+          "eval_index": 2,
+          "state": "scored",
+          "reason_code": null,
+          "score": -5.1,
+          "resultSha256": "f6eac06eebb7521e2da32b61f567cae8db81d8c79aa528653650471890997120",
+          "posesSha256": "1dcd6dc804b9df51317af6bb5e5a53bb9ee5022abde9a7c3a443f01c5e375dc8"
+        },
+        {
+          "generation": 1,
+          "position": 3,
+          "candidate_id": "c_71188fcf0e6703c9",
+          "origin": "initial",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": "docked",
+          "eval_index": 3,
+          "state": "scored",
+          "reason_code": null,
+          "score": 1.8,
+          "resultSha256": "adceca2a1315be7ec69da99bc982b39759ea16d3e5fa3184a466dd1b9d76961c",
+          "posesSha256": "f2592e8a82beda414635ec8f260b4cb4285d302426299a8a314ea91866d2384b"
+        },
+        {
+          "generation": 2,
+          "position": 0,
+          "candidate_id": "c_da033b82807ffbe7",
+          "origin": "carried",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": null,
+          "eval_index": null,
+          "state": "scored",
+          "reason_code": null,
+          "score": -9.1
+        },
+        {
+          "generation": 2,
+          "position": 1,
+          "candidate_id": "c_2c7a25e0cc0ad3f2",
+          "origin": "carried",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": null,
+          "eval_index": null,
+          "state": "scored",
+          "reason_code": null,
+          "score": -8.7
+        },
+        {
+          "generation": 2,
+          "position": 2,
+          "candidate_id": "c_c42a53803595e440",
+          "origin": "similar",
+          "parent_candidate_id": "c_da033b82807ffbe7",
+          "similarity": "0.882979",
+          "evaluation": "docked",
+          "eval_index": 4,
+          "state": "scored",
+          "reason_code": null,
+          "score": -3.9,
+          "resultSha256": "b4c2da81c839a9c7469101f250e829e364e7c4e8d55c39d1caedda7ce143c6f3",
+          "posesSha256": "06edcd5551da4c31df8a5a14cd177bba9d469f6711f2b4ff79c3bd5dfc046816"
+        },
+        {
+          "generation": 2,
+          "position": 3,
+          "candidate_id": "c_14271764afae517b",
+          "origin": "random",
+          "parent_candidate_id": null,
+          "similarity": null,
+          "evaluation": "docked",
+          "eval_index": 5,
+          "state": "scored",
+          "reason_code": null,
+          "score": -0.3,
+          "resultSha256": "bb2b42a70d09e474f9735a15185d8e024da48371ddaebaa3ceebf99256faebd8",
+          "posesSha256": "a2f00054a37ad8d8493bed4899fb224268402156e964b430c4838774e7cb5bdc"
+        }
+      ]
+    },
+    "reruns": [
+      {
+        "run": "run_dbbb4aa6e3c74de689f059535b4264d5",
+        "jobId": "job_7369f22667344c6ead443e73253c5c45",
+        "status": "done",
+        "failure": null,
+        "args": {
+          "receptor_handle": "obj://run_dbbb4aa6e3c74de689f059535b4264d5/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "receptor_model_number": 1,
+          "connectivity": {
+            "kind": "pdb_conect",
+            "sidecar_handle": null
+          },
+          "receptor_instance": null,
+          "box": {
+            "source": "manual",
+            "center_A": [
+              3.41,
+              0.72,
+              11.31
+            ],
+            "size_A": [
+              12,
+              12,
+              12
+            ]
+          },
+          "parameters": {
+            "seed": 1,
+            "exhaustiveness": 1,
+            "num_modes": 2,
+            "energy_range": 3
+          },
+          "candidate_set_handle": "obj://run_dbbb4aa6e3c74de689f059535b4264d5/ligand_candidate_set/736c5c5dde3134e63638eb834723017c62eacb451671c6edddf9e87e0e5a12ef",
+          "parent_sdf_handle": "obj://run_dbbb4aa6e3c74de689f059535b4264d5/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+          "filter": {
+            "ranges": {},
+            "pains_exclude": false
+          },
+          "ga": {
+            "seed": 11,
+            "population_size": 4,
+            "generations": 2,
+            "elite_count": 2,
+            "tournament_size": 2,
+            "neighbor_count": 3,
+            "random_fraction": 0.5,
+            "patience": 1,
+            "max_new_dockings": 6,
+            "total_s": 600
+          }
+        },
+        "summary": "obj://run_dbbb4aa6e3c74de689f059535b4264d5/ligand_ga_result/8036ef2783a8c0e0ed855a4344447b5531471318da8ea0657b66229c4d792636",
+        "summarySha256": "479ddc703b92a676fe858e22a1ecd064e258ef7ce71abfafe4eccbe8a219d63a",
+        "gaStatus": "complete",
+        "stopReason": "generations_complete",
+        "individuals": [
+          {
+            "generation": 1,
+            "position": 0,
+            "candidate_id": "c_da033b82807ffbe7",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 0,
+            "state": "scored",
+            "reason_code": null,
+            "score": -9.1,
+            "resultSha256": "1906c49de1d69d3237fa023af1b813112ef65cbfbff5d4b3b7b473455abe6f42",
+            "posesSha256": "298335cb12e33b9f473cf0db9b6d462df560e5ad16fc3e34e9eed51b64533685"
+          },
+          {
+            "generation": 1,
+            "position": 1,
+            "candidate_id": "c_2c7a25e0cc0ad3f2",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 1,
+            "state": "scored",
+            "reason_code": null,
+            "score": -8.7,
+            "resultSha256": "7889d671b2781032811329f5032478e17ddf89abed83a887fc2db6047699a358",
+            "posesSha256": "9debf80ff9e6a9fad6be46e842f3e2c862037c19e39a051a066676c2358f26fc"
+          },
+          {
+            "generation": 1,
+            "position": 2,
+            "candidate_id": "c_9d4897ac9ecdb2d4",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 2,
+            "state": "scored",
+            "reason_code": null,
+            "score": -5.1,
+            "resultSha256": "f6eac06eebb7521e2da32b61f567cae8db81d8c79aa528653650471890997120",
+            "posesSha256": "1dcd6dc804b9df51317af6bb5e5a53bb9ee5022abde9a7c3a443f01c5e375dc8"
+          },
+          {
+            "generation": 1,
+            "position": 3,
+            "candidate_id": "c_71188fcf0e6703c9",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 3,
+            "state": "scored",
+            "reason_code": null,
+            "score": 1.8,
+            "resultSha256": "adceca2a1315be7ec69da99bc982b39759ea16d3e5fa3184a466dd1b9d76961c",
+            "posesSha256": "f2592e8a82beda414635ec8f260b4cb4285d302426299a8a314ea91866d2384b"
+          },
+          {
+            "generation": 2,
+            "position": 0,
+            "candidate_id": "c_da033b82807ffbe7",
+            "origin": "carried",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": null,
+            "eval_index": null,
+            "state": "scored",
+            "reason_code": null,
+            "score": -9.1
+          },
+          {
+            "generation": 2,
+            "position": 1,
+            "candidate_id": "c_2c7a25e0cc0ad3f2",
+            "origin": "carried",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": null,
+            "eval_index": null,
+            "state": "scored",
+            "reason_code": null,
+            "score": -8.7
+          },
+          {
+            "generation": 2,
+            "position": 2,
+            "candidate_id": "c_c42a53803595e440",
+            "origin": "similar",
+            "parent_candidate_id": "c_da033b82807ffbe7",
+            "similarity": "0.882979",
+            "evaluation": "docked",
+            "eval_index": 4,
+            "state": "scored",
+            "reason_code": null,
+            "score": -3.9,
+            "resultSha256": "b4c2da81c839a9c7469101f250e829e364e7c4e8d55c39d1caedda7ce143c6f3",
+            "posesSha256": "06edcd5551da4c31df8a5a14cd177bba9d469f6711f2b4ff79c3bd5dfc046816"
+          },
+          {
+            "generation": 2,
+            "position": 3,
+            "candidate_id": "c_14271764afae517b",
+            "origin": "random",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 5,
+            "state": "scored",
+            "reason_code": null,
+            "score": -0.3,
+            "resultSha256": "bb2b42a70d09e474f9735a15185d8e024da48371ddaebaa3ceebf99256faebd8",
+            "posesSha256": "a2f00054a37ad8d8493bed4899fb224268402156e964b430c4838774e7cb5bdc"
+          }
+        ],
+        "providerCallsZero": true
+      },
+      {
+        "run": "run_84b69af7adc847ce864d2a4b90fab77e",
+        "jobId": "job_b2f9e8e5ee12419985eb9d12ed9931ca",
+        "status": "done",
+        "failure": null,
+        "args": {
+          "receptor_handle": "obj://run_84b69af7adc847ce864d2a4b90fab77e/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "receptor_model_number": 1,
+          "connectivity": {
+            "kind": "pdb_conect",
+            "sidecar_handle": null
+          },
+          "receptor_instance": null,
+          "box": {
+            "source": "manual",
+            "center_A": [
+              3.41,
+              0.72,
+              11.31
+            ],
+            "size_A": [
+              12,
+              12,
+              12
+            ]
+          },
+          "parameters": {
+            "seed": 1,
+            "exhaustiveness": 1,
+            "num_modes": 2,
+            "energy_range": 3
+          },
+          "candidate_set_handle": "obj://run_84b69af7adc847ce864d2a4b90fab77e/ligand_candidate_set/40217274678c311a6ce0405e85ae7145669ff75fc1ce9465a43d0801ffdb820c",
+          "parent_sdf_handle": "obj://run_84b69af7adc847ce864d2a4b90fab77e/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd",
+          "filter": {
+            "ranges": {},
+            "pains_exclude": false
+          },
+          "ga": {
+            "seed": 11,
+            "population_size": 4,
+            "generations": 2,
+            "elite_count": 2,
+            "tournament_size": 2,
+            "neighbor_count": 3,
+            "random_fraction": 0.5,
+            "patience": 1,
+            "max_new_dockings": 6,
+            "total_s": 600
+          }
+        },
+        "summary": "obj://run_84b69af7adc847ce864d2a4b90fab77e/ligand_ga_result/b017c32453b616aaf446d63cf78097a946d900f41479d42cd34439d254804d69",
+        "summarySha256": "479ddc703b92a676fe858e22a1ecd064e258ef7ce71abfafe4eccbe8a219d63a",
+        "gaStatus": "complete",
+        "stopReason": "generations_complete",
+        "individuals": [
+          {
+            "generation": 1,
+            "position": 0,
+            "candidate_id": "c_da033b82807ffbe7",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 0,
+            "state": "scored",
+            "reason_code": null,
+            "score": -9.1,
+            "resultSha256": "1906c49de1d69d3237fa023af1b813112ef65cbfbff5d4b3b7b473455abe6f42",
+            "posesSha256": "298335cb12e33b9f473cf0db9b6d462df560e5ad16fc3e34e9eed51b64533685"
+          },
+          {
+            "generation": 1,
+            "position": 1,
+            "candidate_id": "c_2c7a25e0cc0ad3f2",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 1,
+            "state": "scored",
+            "reason_code": null,
+            "score": -8.7,
+            "resultSha256": "7889d671b2781032811329f5032478e17ddf89abed83a887fc2db6047699a358",
+            "posesSha256": "9debf80ff9e6a9fad6be46e842f3e2c862037c19e39a051a066676c2358f26fc"
+          },
+          {
+            "generation": 1,
+            "position": 2,
+            "candidate_id": "c_9d4897ac9ecdb2d4",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 2,
+            "state": "scored",
+            "reason_code": null,
+            "score": -5.1,
+            "resultSha256": "f6eac06eebb7521e2da32b61f567cae8db81d8c79aa528653650471890997120",
+            "posesSha256": "1dcd6dc804b9df51317af6bb5e5a53bb9ee5022abde9a7c3a443f01c5e375dc8"
+          },
+          {
+            "generation": 1,
+            "position": 3,
+            "candidate_id": "c_71188fcf0e6703c9",
+            "origin": "initial",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 3,
+            "state": "scored",
+            "reason_code": null,
+            "score": 1.8,
+            "resultSha256": "adceca2a1315be7ec69da99bc982b39759ea16d3e5fa3184a466dd1b9d76961c",
+            "posesSha256": "f2592e8a82beda414635ec8f260b4cb4285d302426299a8a314ea91866d2384b"
+          },
+          {
+            "generation": 2,
+            "position": 0,
+            "candidate_id": "c_da033b82807ffbe7",
+            "origin": "carried",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": null,
+            "eval_index": null,
+            "state": "scored",
+            "reason_code": null,
+            "score": -9.1
+          },
+          {
+            "generation": 2,
+            "position": 1,
+            "candidate_id": "c_2c7a25e0cc0ad3f2",
+            "origin": "carried",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": null,
+            "eval_index": null,
+            "state": "scored",
+            "reason_code": null,
+            "score": -8.7
+          },
+          {
+            "generation": 2,
+            "position": 2,
+            "candidate_id": "c_c42a53803595e440",
+            "origin": "similar",
+            "parent_candidate_id": "c_da033b82807ffbe7",
+            "similarity": "0.882979",
+            "evaluation": "docked",
+            "eval_index": 4,
+            "state": "scored",
+            "reason_code": null,
+            "score": -3.9,
+            "resultSha256": "b4c2da81c839a9c7469101f250e829e364e7c4e8d55c39d1caedda7ce143c6f3",
+            "posesSha256": "06edcd5551da4c31df8a5a14cd177bba9d469f6711f2b4ff79c3bd5dfc046816"
+          },
+          {
+            "generation": 2,
+            "position": 3,
+            "candidate_id": "c_14271764afae517b",
+            "origin": "random",
+            "parent_candidate_id": null,
+            "similarity": null,
+            "evaluation": "docked",
+            "eval_index": 5,
+            "state": "scored",
+            "reason_code": null,
+            "score": -0.3,
+            "resultSha256": "bb2b42a70d09e474f9735a15185d8e024da48371ddaebaa3ceebf99256faebd8",
+            "posesSha256": "a2f00054a37ad8d8493bed4899fb224268402156e964b430c4838774e7cb5bdc"
+          }
+        ],
+        "providerCallsZero": true
+      }
+    ]
+  },
+  "environment": {
+    "dockingPython": true,
+    "dockingPythonPath": ".deps/docking/venv-locked/bin/python",
+    "qvina": true,
+    "qvinaPath": ".deps/qvina/env/bin/qvina2",
+    "ligandPython": true,
+    "ligandPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "singleAvailable": true,
+    "candidatesAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "qvina",
+        "qvina_sha256": "caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c",
+        "qvina_package": "qvina-2.1.0-h4a521e9_8",
+        "versions": {
+          "meeko": "0.8.0",
+          "rdkit": "2026.03.6",
+          "MDAnalysis": "2.10.0",
+          "gemmi": "0.7.5"
+        },
+        "worker_sha256": "52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706",
+        "constants_sha256": "5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf",
+        "lock_sha256": "ec38e8e80d5fc90c72324a45e36f60c47ca8a0e6381c2a25e146a537c8ea8c7f",
+        "qvina_lock_sha256": "f20e50c9240f53d4500ed1764d525b612c6e0603c11431283e7bb96bd7a32b53"
+      },
+      "ga_pins": {
+        "ga_worker_sha256": "0c001cae4866feb51e4ea13ddf657215336a8c486effcbf856b36620fd31a132",
+        "ga_constants_sha256": "bdbbe8c92865785e5a487771dc6f5c3ef70086443d6d0b6bcac1ba421ea9e812"
+      },
+      "ga_ranges": {
+        "seed": {
+          "min": 0,
+          "max": 2147483647,
+          "default": null
+        },
+        "population_size": {
+          "min": 4,
+          "max": 24,
+          "default": 12
+        },
+        "generations": {
+          "min": 1,
+          "max": 8,
+          "default": 5
+        },
+        "elite_count": {
+          "min": 0,
+          "max": 4,
+          "default": 2
+        },
+        "tournament_size": {
+          "min": 2,
+          "max": 4,
+          "default": 2
+        },
+        "neighbor_count": {
+          "min": 3,
+          "max": 30,
+          "default": 10
+        },
+        "random_fraction": {
+          "min": 0.0,
+          "max": 0.5,
+          "default": 0.2
+        },
+        "patience": {
+          "min": 1,
+          "max": 8,
+          "default": 3
+        },
+        "max_new_dockings": {
+          "min": 4,
+          "max": 100,
+          "default": 60
+        },
+        "total_s": {
+          "min": 600,
+          "max": 14400,
+          "default": 7200
+        }
+      },
+      "limits": {
+        "max_pool": 2000,
+        "per_candidate_s": 300,
+        "max_new_dockings": 100,
+        "total_s_max": 14400,
+        "output_bytes": 134217728,
+        "summary_bytes": 1048576,
+        "reuse_staging_bytes": 134217728
+      }
+    },
+    "layoutReason": "worker_missing"
+  },
+  "layout": {
+    "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)",
+    "files": 151,
+    "treeSha256": "d40ea990221efa0e3bdeefa7ba1f500d502ebba28a9321ee8467d0bee121a26e"
+  },
+  "leftoverProcesses": [],
+  "externalRequestsTotal": 0,
+  "rowsWithUnknownExternalCount": [],
+  "rows": [
+    {
+      "step": "ga-main",
+      "mode": "main",
+      "status": "pass",
+      "cases": {
+        "GA-run-panel": "pass",
+        "GA-no-candidate-set": "pass",
+        "GA-m17-set": "pass",
+        "GA-param-guards": "pass",
+        "GA-defaults": "pass",
+        "GA-pool-too-small": "pass",
+        "GA-preflight": "pass",
+        "GA-run": "pass",
+        "GA-progress": "pass",
+        "GA-results": "pass",
+        "GA-sort": "pass",
+        "GA-detail": "pass",
+        "GA-limit-approval": "pass",
+        "GA-dedupe": "pass",
+        "GA-reuse": "pass",
+        "GA-pool-exhausted": "pass",
+        "GA-partial": "pass",
+        "GA-cancel": "pass",
+        "GA-report": "pass",
+        "GA-processes": "pass",
+        "GA-wording": "pass"
+      },
+      "runs": {
+        "A": "run_b71ed667fa964ddaa4dd8c43c68b5ec5"
+      },
+      "runId": "run_b71ed667fa964ddaa4dd8c43c68b5ec5",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {
+        "A": {
+          "receptor": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633",
+          "set": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_candidate_set/8569619c37a31b420a8bef824ba73c268205964e9833e84d97e653f90f27446e",
+          "ga1": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/88f20ea697b087c24d4d8d6b8f7f1137afcb6d382ed61560561d0c4ffe33efa0",
+          "ga2": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/11dd9ac79c703d289db7d9679d02f77b7f376de0598a1f2970f176710d7914de",
+          "partial": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/6b608d9ae9809d88ceccd293a8fc65aecc8508e678220d8de19045dc9edc714d"
+        }
+      },
+      "inputs": [
+        {
+          "path": "<repo>/backend/tests/fixtures/chemical/prolif-vina-rec.pdb",
+          "bytes": 504575,
+          "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+          "bytes": 6816,
+          "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand_ga/synthetic-ga-small-blocks.smi",
+          "bytes": 268,
+          "sha256": "8ae10d0571871f1a6d400552567133706f3f44298ee04983867e3ba7d0a8a8aa"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand_ga/m17-candidate-set-small-pool.json",
+          "bytes": 8933,
+          "sha256": "fee5ff2dfa9c043f6d7ff5b9a51b69f30fa56f9277e34b66804273283350fe46"
+        },
+        {
+          "path": "<repo>/backend/tests/fixtures/ligand_ga/expected.json",
+          "bytes": 150043,
+          "sha256": "3676b155af64432cf25daddf0f03a5c8fa9de98c93dbf52067a01af2ad4e240f"
+        }
+      ],
+      "fixtureLabels": [],
+      "controls": {
+        "docking-import": [
+          {
+            "file": "prolif-vina-rec.pdb"
+          }
+        ],
+        "m17-candidate-set": [
+          {
+            "parent": "public-derived-parent-record0.sdf",
+            "blocks": "synthetic-ga-small-blocks.smi"
+          }
+        ],
+        "ligand-ga-prereq-refresh": [
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-ga-candidate-set": [
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_candidate_set/8569619c37a31b420a8bef824ba73c268205964e9833e84d97e653f90f27446e"
+          }
+        ],
+        "ligand-ga-parent-sdf": [
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/chemical_raw_input/d0b3d601d00033b074659a9aba17d28f27cda5c6378acf3d37af001a2a9c76fd"
+          }
+        ],
+        "ligand-ga-receptor": [
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/chemical_raw_input/8a6929ec77067470dd56c91f9a7ec0a28726c5f4ea8ac14e5265e53198e34633"
+          }
+        ],
+        "ligand-ga-model": [
+          {
+            "model": 1
+          }
+        ],
+        "ligand-ga-instance-radio": [
+          {
+            "instance": "none"
+          }
+        ],
+        "ligand-ga-connectivity-radio": [
+          {
+            "kind": "pdb_conect"
+          }
+        ],
+        "ligand-ga-box-radio": [
+          {
+            "source": "manual"
+          }
+        ],
+        "ligand-ga-manual-box": [
+          {
+            "center": [
+              "3.41",
+              "0.72",
+              "11.31"
+            ],
+            "size": [
+              "12",
+              "12",
+              "12"
+            ]
+          }
+        ],
+        "ligand-ga-docking-seed": [
+          {
+            "value": "1"
+          },
+          {
+            "value": "1"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": "3"
+          }
+        ],
+        "ligand-ga-exhaustiveness": [
+          {}
+        ],
+        "ligand-ga-num-modes": [
+          {}
+        ],
+        "ligand-ga-energy-range": [
+          {}
+        ],
+        "ligand-ga-ack-keep_input_protonation": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-ga-ack-tool_assigned_types_charges": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-ga-ack-rigid_no_optimization": [
+          {
+            "checked": true
+          }
+        ],
+        "ligand-ga-param-seed": [
+          {
+            "value": "11"
+          },
+          {
+            "value": ""
+          },
+          {
+            "value": "11"
+          },
+          {
+            "value": "11"
+          },
+          {
+            "value": "12"
+          },
+          {
+            "value": "11"
+          },
+          {
+            "value": "12"
+          },
+          {
+            "value": "13"
+          },
+          {
+            "value": "11"
+          },
+          {
+            "value": "11"
+          }
+        ],
+        "ligand-ga-param-population_size": [
+          {
+            "value": "25"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "6"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "4"
+          }
+        ],
+        "ligand-ga-param-random_fraction": [
+          {
+            "value": "0.6"
+          },
+          {
+            "value": "0.5"
+          },
+          {
+            "value": "0.5"
+          },
+          {
+            "value": "0.5"
+          },
+          {
+            "value": "0.5"
+          },
+          {
+            "value": "0.5"
+          }
+        ],
+        "ligand-ga-param-elite_count": [
+          {
+            "value": "3"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": "0"
+          },
+          {
+            "value": "0"
+          },
+          {
+            "value": "0"
+          }
+        ],
+        "ligand-ga-param-max_new_dockings": [
+          {
+            "value": "5"
+          },
+          {
+            "value": "6"
+          },
+          {
+            "value": "6"
+          },
+          {
+            "value": "10"
+          },
+          {
+            "value": "4"
+          },
+          {
+            "value": "4"
+          }
+        ],
+        "ligand-ga-defaults": [
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-ga-preflight": [
+          {
+            "status": 200,
+            "admitted": false
+          },
+          {
+            "status": 200,
+            "admitted": false
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          },
+          {
+            "status": 200,
+            "admitted": true
+          }
+        ],
+        "ligand-ga-filter-apply": [
+          {
+            "heavy_atoms_max": 44
+          }
+        ],
+        "ligand-ga-filter-clear": [
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-ga-param-generations": [
+          {
+            "value": "2"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": "2"
+          }
+        ],
+        "ligand-ga-param-tournament_size": [
+          {
+            "value": "2"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": "2"
+          }
+        ],
+        "ligand-ga-param-neighbor_count": [
+          {
+            "value": "3"
+          },
+          {
+            "value": "3"
+          },
+          {
+            "value": "3"
+          },
+          {
+            "value": "3"
+          }
+        ],
+        "ligand-ga-param-patience": [
+          {
+            "value": "1"
+          },
+          {
+            "value": "8"
+          },
+          {
+            "value": "1"
+          },
+          {
+            "value": "1"
+          }
+        ],
+        "ligand-ga-param-total_s": [
+          {
+            "value": "600"
+          },
+          {
+            "value": "600"
+          },
+          {
+            "value": "600"
+          },
+          {
+            "value": "600"
+          }
+        ],
+        "ligand-ga-start": [
+          {
+            "clicked": true
+          },
+          {
+            "identical": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-ga-summary-radio": [
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/88f20ea697b087c24d4d8d6b8f7f1137afcb6d382ed61560561d0c4ffe33efa0"
+          },
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/11dd9ac79c703d289db7d9679d02f77b7f376de0598a1f2970f176710d7914de"
+          },
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/f0fec9657f6eff2ea4c7452654c882fa7e8ef356adf23be70a14353bfb245f06"
+          },
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/6b608d9ae9809d88ceccd293a8fc65aecc8508e678220d8de19045dc9edc714d"
+          },
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/fdc128f7c398fddcf39b17a27db2735b9614ffed5fc0828b36b9ec6afdfd0771"
+          },
+          {
+            "handle": "obj://run_b71ed667fa964ddaa4dd8c43c68b5ec5/ligand_ga_result/11dd9ac79c703d289db7d9679d02f77b7f376de0598a1f2970f176710d7914de"
+          }
+        ],
+        "ligand-ga-generation-tab": [
+          {
+            "index": 1
+          },
+          {
+            "index": 2
+          },
+          {
+            "index": 2
+          },
+          {
+            "index": 1
+          },
+          {
+            "index": 1
+          },
+          {
+            "index": 2
+          },
+          {
+            "index": 1
+          },
+          {
+            "index": 2
+          },
+          {
+            "index": 1
+          },
+          {
+            "index": 2
+          },
+          {
+            "index": 3
+          },
+          {
+            "index": 1
+          },
+          {
+            "index": 2
+          },
+          {
+            "index": 1
+          }
+        ],
+        "ligand-ga-sort-score": [
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          }
+        ],
+        "ligand-ga-sort-candidate": [
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          }
+        ],
+        "ligand-ga-sort-slot": [
+          {
+            "direction": "asc"
+          },
+          {
+            "direction": "desc"
+          }
+        ],
+        "ligand-ga-open": [
+          {
+            "generation": 1,
+            "position": 0
+          }
+        ],
+        "ligand-ga-limit-approve": [
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          },
+          {
+            "clicked": true
+          }
+        ],
+        "ligand-ga-job-cancel": [
+          {
+            "finishedBefore": 1
+          }
+        ],
+        "ligand-ga-report": [
+          {
+            "clicked": true
+          }
+        ]
+      },
+      "notObserved": [
+        {
+          "case": "GA-null-result",
+          "reason": "qvina returns modes for every small-pool candidate (T1: all ten scored), so no individual without a score (null_result/failed) is shown; nothing is forged. The display rule (rows without a score last, never 0) is asserted on every sort here and covered by frontend/tests/ligand-ga.test.cjs and backend/tests/test_ligand_ga_worker.py."
+        },
+        {
+          "case": "GA-no-change",
+          "reason": "no_change depends on the engine's scores (the minimum not decreasing for patience generations); no input is chosen to force it. Covered by backend/tests/test_ligand_ga_worker.py."
+        },
+        {
+          "case": "GA-time-and-worker-limits",
+          "reason": "time_exhausted (600–14400 s), candidate_timeout (300 s), worker_failed and resource_exceeded need hours, a killed worker or oversized output; covered by backend/tests/test_ligand_ga_worker.py and test_ligand_ga_jobs.py with test-only reduced constants."
+        }
+      ],
+      "budget": {
+        "wall_clock_s": {
+          "used": 149.66893008491024,
+          "limit": 1800
+        },
+        "expensive_calls": {
+          "used": 32,
+          "limit": 32
+        },
+        "external_tokens": {
+          "used": 0,
+          "limit": 120000
+        },
+        "usd": {
+          "used": 0,
+          "limit": 2
+        }
+      },
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-11T17:47:09.364Z"
+    },
+    {
+      "step": "ga-unavailable",
+      "mode": "unavailable",
+      "status": "pass",
+      "cases": {
+        "GA-no-run": "pass",
+        "GA-unavailable": "pass"
+      },
+      "runs": {
+        "A": "run_b34506dabfdf41589016b41b3dfd9cf3"
+      },
+      "runId": "run_b34506dabfdf41589016b41b3dfd9cf3",
+      "evidenceKind": "real_electron_offscreen",
+      "handles": {},
+      "inputs": [],
+      "fixtureLabels": [
+        "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)"
+      ],
+      "controls": {},
+      "notObserved": [],
+      "budget": null,
+      "externalRequestCount": 0,
+      "providerCallsZero": true,
+      "partFailures": [],
+      "error": null,
+      "artifacts": null,
+      "finishedAt": "2026-10-11T17:49:17.602Z"
+    }
+  ]
+}
