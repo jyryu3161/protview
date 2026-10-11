@@ -12,6 +12,9 @@ M26 v2 (spec 8.5): every new set is v2, so a set without a catalytic annotation 
 "검사하지 않음 (not_checked)" with no number. Sets with an annotation use ``reaction_knowledge@1`` results made by the
 product tool over the LABELLED SYNTHETIC reaction reference set of ``m20_catalytic_fixture``. The v1 report bytes of
 stored v1 sets are compared with the T1 baseline in ``test_mutation_api.py``.
+
+M28 T3 (report format @2): reports citing reference values carry the snapshot source table; the stored @1 reports of
+``fixtures/mutation_report_v1`` (recorded before T3, see its SYNTHETIC-PROVENANCE.md) reopen byte for byte.
 """
 from __future__ import annotations
 
@@ -853,8 +856,10 @@ def test_report_version_follows_the_cited_reference_values(client, world, name, 
     as_v1 = {key: value for key, value in manifest.items() if key != "reference_snapshot_sets"}
     as_v1["render_version"] = mr.RENDER_VERSION
     v1_markdown = mr.render_mutation_report(as_v1)
-    assert markdown == v1_markdown if not families else v1_markdown.split("\n## Limitations\n")[0] == \
-        markdown.split("\n## 참조 스냅샷\n")[0]
+    if not families:
+        assert markdown == v1_markdown
+    else:
+        assert v1_markdown.split("\n## Limitations\n")[0] == markdown.split("\n## 참조 스냅샷\n")[0]
 
 
 def test_annotation_only_report_names_the_map_it_reached_through_the_annotation(client, world):
@@ -869,9 +874,6 @@ def test_tampered_v2_reports_are_rejected_on_reopen(client, world):
     created = _report(client, world["mq"])
     manifest, markdown = created["manifest"], created["markdown"]
     assert manifest["render_version"] == V2
-    other_set = next(h for h in run.store.handles() if "/reference_snapshot_set/" in h and
-                     h != manifest["reference_snapshot_sets"][0]["reference_set_handle"]) \
-        if sum("/reference_snapshot_set/" in h for h in run.store.handles()) > 1 else world["annotation"]
 
     def entry(forged):
         return forged["reference_snapshot_sets"][0]
@@ -881,7 +883,7 @@ def test_tampered_v2_reports_are_rejected_on_reopen(client, world):
         lambda f: entry(f)["snapshot_set"]["sources"][0].update(license="CC0-1.0"),
         lambda f: entry(f)["snapshot_set"]["sources"][-1].update(date="2026-01-01"),
         lambda f: entry(f).update(klifs_terms="CC-BY-4.0"),
-        lambda f: entry(f).update(reference_set_handle=other_set),
+        lambda f: entry(f).update(reference_set_handle=world["annotation"]),   # another stored object
         lambda f: entry(f).update(copied_from=world["annotation"]),
         lambda f: entry(f).update(note="extra"),
         lambda f: f["reference_snapshot_sets"].clear(),
@@ -920,7 +922,8 @@ def test_v2_table_template_is_checked_for_interpretive_wording(client, world, mo
     monkeypatch.setattr(nr, "PROCESSED_LABEL", "kbase_kinase 가공본 (추천)")
     response = client.post(f"/runs/{RID}/method_reports", json={"result_handle": world["mq"]})
     assert response.status_code == 422 and "interpretive_statement" in response.text
-    assert _selected(client, created["handle"]).status_code == 422
+    response = _selected(client, created["handle"])
+    assert response.status_code == 422 and "interpretive_statement" in response.text
     monkeypatch.undo()
     monkeypatch.setattr(api_module, "RUNS_DIR", world["root"])
     monkeypatch.setitem(rkc.STATEMENTS, "RK6", rkc.STATEMENTS["RK6"] + " 활성")
