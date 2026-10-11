@@ -101,6 +101,6 @@ npm --prefix frontend run build
 
 - 프로젝트 개요와 필수 규칙 요약: [CLAUDE.md](CLAUDE.md)(= [AGENTS.md](AGENTS.md)), 전체 규칙 [docs/standards.md](docs/standards.md)
 - 구조와 규칙: [시스템 구조](docs/system-architecture.md), [과학·도메인 규칙](docs/business-rules.md), [API 계약](docs/contracts.md), [보안 정책](docs/security.md), [운영](docs/operations.md), [알려진 함정](docs/engineering-notes.md)
-- 상태와 결정: [진행 현황](docs/tracking/status.md), [로드맵](docs/tracking/roadmap.md), [결정 기록](docs/tracking/decisions/index.md), [미해결 문제](docs/tracking/findings.md), 단계 완료 기록 `docs/tracking/m11-acceptance.md` … [`m27-acceptance.md`](docs/tracking/m27-acceptance.md)
+- 상태와 결정: [진행 현황](docs/tracking/status.md), [로드맵](docs/tracking/roadmap.md), [결정 기록](docs/tracking/decisions/index.md), [미해결 문제](docs/tracking/findings.md), 단계 완료 기록 `docs/tracking/m11-acceptance.md` … [`m27-acceptance.md`](docs/tracking/m27-acceptance.md), [`m28-acceptance.md`](docs/tracking/m28-acceptance.md)(M28 종단 검증, 판정 `검증 통과, 사용자 확인 대기`)
 - 모듈 안내: [backend/AGENTS.md](backend/AGENTS.md), [frontend/AGENTS.md](frontend/AGENTS.md), [scripts/AGENTS.md](scripts/AGENTS.md)
 - 과거 기록(수정·이동 금지): M0–M13 원본 설계·계약·검토(대문자 `docs/*.md`), 단계 실행기 기록 [phases/index.json](phases/index.json)(끝난 단계의 `--verify`는 운영 문서 "과거 단계 재검증"), 원본 참고 자료 `agent_protein_viewer_plan_v05.md`·`molecular-workspace.zip`·`references/molecular-workspace/`
