@@ -1,4 +1,4 @@
-M28 regression chain record (source freeze a18dd488; run on commit 5a5ba3f2 = the freeze + documents and evidence only; 2026-10-11 17:27Z .. 18:50Z)
+M28 regression chain record (source freeze a18dd488; run on commit 5a5ba3f2 = the freeze + documents and evidence only; 2026-10-11 17:26Z .. 18:40Z; the step end times are 17:27:39Z (m27), 17:29:28Z (m26), 18:39:39Z (m25), matching the durations 95 s, 109 s, 4211 s)
 
 Order (spec 8.1, one at a time, 8000/3000 free before each): M27 fixture,real -> M26 fixture,real -> M25 --phase fixture --regressions (M24 fixture, M23, M22, M21, M20, M19, M18, M17, M16, M15, M14, M13).
 Commands: scripts/m27_offscreen_acceptance.py --stages fixture,real --kbase <kbase_kinase>; scripts/m26_offscreen_acceptance.py --stages fixture,real --kbase <kbase_kinase> --reaction-set <archived real set, isolated copy made by the runner>; scripts/m25_offscreen_acceptance.py --phase fixture --regressions --kbase <kbase_kinase>.
