@@ -70,9 +70,10 @@ npm --prefix frontend run build
 - UI를 바꾸면 실제 Electron 오프스크린 렌더러(`webContents.isOffscreen()===true`, GPU·WebGL 켜짐, paint 프레임 확인)에서 바뀐 컨트롤을 하나씩 실제 입력으로 눌러 보고 결과를 관찰해야 한다. 일반 headless 브라우저나 숨긴 탭은 이 증거로 인정하지 않는다. 계획만 세운 클릭을 테스트 완료로 부르지 않는다.
 - API와 프런트엔드 연동은 실제 입력 바이트로 확인한다. 공개 구조 fixture(`backend/tests/fixtures/public_1hsg.cif`, `public_1ubq.cif`, M15 번호 대응·M16 참조 주석용 `public_1mq4.cif`)나 표시된 합성 fixture를 쓴다.
 - 오프라인 흐름을 검증할 때는 loopback이 아닌 요청이 0건임을 기록한다.
-- 제품이 OpenRouter를 실제로 호출하는 검증은 사용자가 그때마다 정해 준 횟수 안에서만 한다. M8의 4회 할당, M24의 6회 할당(2026-10-06, calibrate 1회 + live 5회), M25의 8회 할당(2026-10-07, calibrate 1회 + live 7회, 저장소 대장 `runs/m25-live-ledger.json`)은 모두 썼다. 이후 실호출은 사용자가 새로 정해 줄 때만 한다. fixture transport 테스트와 오프스크린 fixture 서버에는 이 제한이 없다.
+- 제품이 OpenRouter를 실제로 호출하는 검증은 사용자가 그때마다 정해 준 횟수 안에서만 한다. M8의 4회 할당, M24의 6회 할당(2026-10-06, calibrate 1회 + live 5회), M25의 8회 할당(2026-10-07, calibrate 1회 + live 7회, 저장소 대장 `runs/m25-live-ledger.json`), M28의 2회 할당(2026-10-11, 리간드 루프 활용형 한 바퀴 + 단백질 루프 탐색형 한 바퀴, 보정 호출 없음, 저장소 대장 `runs/m28-live-ledger.json`, 둘 다 `completed`)은 모두 썼다. 이후 실호출은 사용자가 새로 정해 줄 때만 한다. fixture transport 테스트와 오프스크린 fixture 서버에는 이 제한이 없다.
 - M26 가져오기 명령의 실서버 검증도 사용자가 정한 한도 안에서만 한다. M26 할당(2026-10-08, 전체 가져오기 2회·탐색 요청 100건 이하·RCSB mmCIF 3개)은 전체 가져오기 2/2·탐색 48/100·RCSB 3/3을 썼고 장부는 `docs/qa/m26-reaction-20261008/network-ledger.txt`다(`docs/security.md` "반응 참조 스냅샷 (M26)"). 가져오기 명령의 시험은 전송 함수를 주입한 가짜 전송과 `127.0.0.1` 로컬 서버로만 하고, 그 밖의 테스트·오프스크린 QA의 외부 요청은 0건이다.
 - M27 가져오기 명령은 네트워크를 쓰지 않는다(로컬 파일과 읽기 전용 git만). M27 개발·검증 중 외부 요청은 사람이 허용한 RCSB 공개 구조 mmCIF 2개(`1M17`·`1FIN`, 2026-10-10)뿐이었고 장부는 `docs/qa/m27-precedents-20261010/network-ledger.txt`다. 그 밖의 테스트·오프스크린 QA의 외부 요청은 0건이다.
+- M28은 새 외부 요청 0건 규칙으로 검증했다(사용자 결정 ①, 결정 0036). 예외는 위 실호출 2회와 새 컴퓨터 설치 시험의 패키지 저장소 내려받기(README 명령 그대로: `pypi.org`·`files.pythonhosted.org`·`registry.npmjs.org`, Electron 실행 파일은 캐시에 있어 `github.com` 0건)뿐이었고 장부는 `docs/qa/m28-final-20261011/network-ledger.txt`다. 종단 fixture 단계·연습·회귀 사슬·게이트·테스트의 외부 요청은 0건이다(브라우저 비-loopback 요청 0, fixture 단계 제공자 호출 0, 구조 새로 받기·M26 다시 가져오기 없음, `docs/security.md` "M28 종단 검증의 외부 요청").
 
 ## 모듈 경계
 

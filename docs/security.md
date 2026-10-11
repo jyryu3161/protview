@@ -21,7 +21,7 @@ ProtView 인스턴스 하나는 한 사람이 자기 컴퓨터나 혼자 쓰는 
 
 ## 외부 요청 권한
 
-외부 HTTP는 `EgressGate` 하나만 보낼 수 있다. 다른 모듈이 httpx 등으로 직접 외부에 요청하면 정책 위반이다(`httpx` import는 `backend/mw/egress/` 안, 클라이언트 생성은 `egress/gate.py`뿐임을 `backend/tests/test_jev_ast.py`가 확인). 예외는 하나다: 사용자가 터미널에서 직접 실행하는 M26 반응 참조 가져오기 명령 `scripts/import_reaction_references.py`가 공개 서버 셋에 읽기 요청(HTTPS GET)만 보낸다(사용자 결정, 결정 0034). 이 명령은 `backend/mw`에 속하지 않고 `mw`를 import하지 않으며 서버·도구·작업·M13 흐름·`Run.call`이 부르지 않는다. 키·자격 증명·사용자 데이터(구조·좌표·서열·리간드·분석 결과)를 보내지 않으므로 게이트의 투영·감사 대상이 아니고, 대신 아래 고정 규칙과 요청 기록을 따른다. M27 전례 가져오기 명령 `scripts/import_precedent_snapshots.py`는 외부 요청을 하지 않으므로(로컬 파일과 읽기 전용 git만, 결정 0035) 이 예외에 들지 않는다. `EgressGate`·`request_science` 호출자·`httpx` 위치·`Run.raise_limits` 호출자(M19·M22·M23)는 M26·M27에서 바뀌지 않았다.
+외부 HTTP는 `EgressGate` 하나만 보낼 수 있다. 다른 모듈이 httpx 등으로 직접 외부에 요청하면 정책 위반이다(`httpx` import는 `backend/mw/egress/` 안, 클라이언트 생성은 `egress/gate.py`뿐임을 `backend/tests/test_jev_ast.py`가 확인). 예외는 하나다: 사용자가 터미널에서 직접 실행하는 M26 반응 참조 가져오기 명령 `scripts/import_reaction_references.py`가 공개 서버 셋에 읽기 요청(HTTPS GET)만 보낸다(사용자 결정, 결정 0034). 이 명령은 `backend/mw`에 속하지 않고 `mw`를 import하지 않으며 서버·도구·작업·M13 흐름·`Run.call`이 부르지 않는다. 키·자격 증명·사용자 데이터(구조·좌표·서열·리간드·분석 결과)를 보내지 않으므로 게이트의 투영·감사 대상이 아니고, 대신 아래 고정 규칙과 요청 기록을 따른다. M27 전례 가져오기 명령 `scripts/import_precedent_snapshots.py`는 외부 요청을 하지 않으므로(로컬 파일과 읽기 전용 git만, 결정 0035) 이 예외에 들지 않는다. `EgressGate`·`request_science` 호출자·`httpx` 위치·`Run.raise_limits` 호출자(M19·M22·M23)는 M26·M27에서 바뀌지 않았다. M28에서도 바뀌지 않았다(M28이 바꾼 제품 코드는 M20 보고서 `mutation_reports.py` 하나이고, 종단 실행기·하네스는 제품 밖 QA 도구다. 아래 "M28 종단 검증의 외부 요청").
 
 | 주체 / 모드 | 외부 요청 | 조건 |
 |---|---|---|
@@ -45,6 +45,7 @@ ProtView 인스턴스 하나는 한 사람이 자기 컴퓨터나 혼자 쓰는 
 - 요청 한 번에 HTTP는 최대 1회만 보내고 라이브러리 재시도는 끈다. 제한 시간은 기본 15초이며 남은 run 활동 시간을 넘지 않는다. 응답 본문은 파싱하기 전에 64 KiB로 제한한다.
 - 과학 전송은 `app.py`의 모듈 전역 `SCIENCE_GATE`(뷰어의 `VIEWER_GATE`와 별개 인스턴스, 같은 목적지·pin)만 쓴다. 테스트와 오프스크린 fixture 서버는 이 전역을 가짜 transport 게이트로 바꾸며, 바꾸지 않은 서버만 실제 네트워크로 나간다.
 - M25에서도 `request_science`를 부르는 코드는 `jev_sends.run_send` 하나, `run_send`를 부르는 코드는 `POST /runs/{id}/jev/sends` 하나다. 게이트는 투영 `schema`로 검증·본문·응답 해석 함수만 가르고 새 호출 경로·전송 이벤트가 없다. 루프 모듈(`jev_loop_*.py`·`jev_loops.py`·`tools/jev_loop.py`)은 `jev_sends`·게이트·`httpx`를 import하지 않고 M24 이벤트 이름을 문자열로 쓰지 않는다(`jev_sends` 임포터 집합 `{api/app.py, egress/science.py, jev_reports.py}` 고정, `backend/tests/test_jev_ast.py`·루프 테스트의 AST 검사).
+- **M28 종단 검증의 외부 요청(2026-10-11, 장부 `docs/qa/m28-final-20261011/network-ledger.txt`)**: 사용자가 정한 실제 JEV 호출 2회를 모두 썼다. 리간드 루프 활용형 한 바퀴(`L-B7`)와 단백질 루프 탐색형 한 바퀴(`L-C6`)가 각각 위 사람 승인 라우트와 `SCIENCE_GATE`로 한 번씩 나갔고 둘 다 `completed`(응답 모델 `typesafe/jev-1.13-20260917`)였다. 저장소 대장 `runs/m28-live-ledger.json` 합계 2 = dispatch 이벤트 2이고 재시도·새 run이 없었다. 종단 실행기는 키가 있는지를 자식 프로세스의 제품 키 해석기로 불리언만 보고 루트 `.env`는 `os.lstat`로 모드(0600)만 확인했으며, 키·헤더·응답 본문은 증거에 없다. 새 컴퓨터 설치 시험(README 명령만)은 패키지 저장소 `pypi.org`·`files.pythonhosted.org`·`registry.npmjs.org`에만 닿았고 Electron 실행 파일은 캐시에 있어 `github.com` 요청은 0건이었다(키·쿠키·사용자 데이터 없음, 제품 실행 확인은 `127.0.0.1`만). 그 밖의 제품·도구·작업·보고서·화면·테스트·오프스크린 QA(종단 fixture 단계·연습·회귀 사슬·게이트)의 새 외부 요청은 0건이다(브라우저 비-loopback 요청 0, fixture 단계 제공자 호출 0, 구조 새로 받기·M26 다시 가져오기 없음). 이 할당은 끝났으며 이후 실제 JEV 호출은 사용자가 새로 정해 줄 때만 한다.
 
 ## 외부로 나가는 내용 (허용 목록)
 
