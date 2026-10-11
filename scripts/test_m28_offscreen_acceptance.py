@@ -947,9 +947,13 @@ def test_the_case_ledger_says_no_until_the_export_passed(inputs, tmp_path, monke
     assert written["acceptance"] is False and written["acceptanceParts"]["exportChecks"] is False
     exports = []
     monkeypatch.setattr(m28.Runner, "export", lambda self, ledger: exports.append(ledger["acceptance"]) or True)
+    runner.summary.clear()
     ledger = runner.finish(cases, passing, {"processes": [], "ports": []})
     assert exports == [False, True] and ledger["acceptance"] is True
     assert json.loads((runner.artifacts / "case-ledger.json").read_text())["acceptance"] is True
+    # the pessimistic first write is provisional, never a failed step of a passing phase
+    assert [(entry["step"], entry["status"]) for entry in runner.summary] == [("case-ledger", "provisional"),
+                                                                             ("case-ledger", "pass")]
 
 
 def test_remaining_short_reads_the_budget_and_the_send_status():

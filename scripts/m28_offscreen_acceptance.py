@@ -1295,7 +1295,7 @@ class Runner(m18.Runner):
         """The case ledger and the export (T11): the first ``case-ledger.json`` is written with the export not yet
         passed (an export that raises leaves a ledger that is not acceptance); only after the searches passed is it
         written again with them, and that final export is searched again."""
-        ledger = self.write_ledger(cases, external, leftover, export_ok=False)
+        ledger = self.write_ledger(cases, external, leftover, export_ok=False, provisional=True)
         if not self.export(ledger):
             return ledger
         ledger = self.write_ledger(cases, external, leftover, export_ok=True)
@@ -1304,7 +1304,8 @@ class Runner(m18.Runner):
             self.export(ledger)
         return ledger
 
-    def write_ledger(self, cases: dict[str, dict], external: dict, leftover: dict, export_ok: bool) -> dict:
+    def write_ledger(self, cases: dict[str, dict], external: dict, leftover: dict, export_ok: bool,
+                     provisional: bool = False) -> dict:
         build = self.state.get("build") or {}
         audit_summary = self.checks.get("traceAudit")
         x4 = self.x4_record or {}
@@ -1328,8 +1329,10 @@ class Runner(m18.Runner):
                                  extra=extra, runs_claimed=self.audited and not self.unclaimed)
         (self.artifacts / "case-ledger.json").write_text(json.dumps(ledger, indent=2, ensure_ascii=False,
                                                                     default=str) + "\n")
-        self.record("case-ledger", "pass" if ledger["acceptance"] or ledger["rehearsalPassed"] else "fail",
-                    acceptance=ledger["acceptance"], rehearsalPassed=ledger["rehearsalPassed"])
+        # the pessimistic first write (export not yet searched) is recorded as provisional, never as a failed step
+        passed = ledger["acceptance"] or ledger["rehearsalPassed"]
+        status = "provisional" if provisional else "pass" if passed else "fail"
+        self.record("case-ledger", status, acceptance=ledger["acceptance"], rehearsalPassed=ledger["rehearsalPassed"])
         return ledger
 
     # ----- evidence ----------------------------------------------------------------------------
