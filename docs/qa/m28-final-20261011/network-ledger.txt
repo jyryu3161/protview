@@ -5,3 +5,8 @@
 # 보관 반응 세트 해시 검증·M15 세트 조회·Stop 훅 그룹 동시 실행은 모두 로컬이다. `.env`는 열지 않았다(os.lstat 모드만).
 # 줄 형식(덧붙이는 작업이 따름): UTC 시각<TAB>작업<TAB>종류(install-host|jev-live)<TAB>호스트 또는 대상<TAB>요청 수 또는 결과<TAB>비고
 # 키·헤더·쿠키·응답 본문은 적지 않는다.
+2026-10-11T17:01:40Z	T13	install-host	pypi.org	index lookups (count not logged; pip -v shows 1 distinct URL)	pip install -e ./backend[dev] with no cache (PDBFixer 1.12.0 sdist build-isolation requirements included)
+2026-10-11T17:01:40Z	T13	install-host	files.pythonhosted.org	68 downloads (pip 'Downloading' lines, wheels and sdists)	same command; 42 distinct file URLs were also listed as skipped candidates
+2026-10-11T17:03:00Z	T13	install-host	registry.npmjs.org	262 fetches (cache miss) and 257 cache hits within the run (empty cache dir)	npm --prefix frontend ci
+2026-10-11T17:05:02Z	T13	install-host	github.com	0 (cache hit)	Electron executable: npm ci does not download it; node_modules/electron/install.js found electron-v44.4.5-darwin-arm64.zip in the machine cache; URL seen: github.com/electron/electron/releases/download/v44.4.5/ (redirect target not observed)
+# T13 total: external requests of the clean-install test = package registries above only; no other host; no key, cookie or user data sent; the product runtime check (uploads, inspect, report) used 127.0.0.1 only.

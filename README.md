@@ -26,7 +26,7 @@ M0–M27 단계를 마쳤습니다. 단계별 기능·검증 기록과 진행 �
 - Python 3.11 이상(`backend/pyproject.toml`). 설치는 `python3.11`로 가상환경을 만듭니다. 선택 작업 환경(아래)의 설치 스크립트는 `.venv`의 인터프리터가 CPython 3.11일 때만 동작하고, `python3`은 다른 버전을 가리킬 수 있습니다(3.10이면 백엔드 설치가 실패합니다).
 - Node.js 22 이상과 npm.
 - 검증한 환경: macOS arm64, CPython 3.11.11, Node.js 24.3.0, npm 11.4.2.
-- 설치할 때만 네트워크가 필요합니다(PyPI, npm 레지스트리, `npm ci` 중 Electron 설치 스크립트가 받는 실행 파일).
+- 설치할 때만 네트워크가 필요합니다(PyPI, npm 레지스트리). 오프스크린 QA에 쓰는 Electron 실행 파일은 제품 실행에 필요 없고 `npm ci`가 받지 않습니다. QA를 처음 돌릴 때나 `npx install-electron --no`가 GitHub의 Electron 릴리스에서 받습니다(이 컴퓨터에 캐시가 있으면 받지 않습니다).
 
 프로젝트 루트에서 순서대로 실행합니다.
 
