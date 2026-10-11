@@ -17,7 +17,10 @@ Checks per report (any miss fails the report; failures name the report handle an
   claim_fields      2b. field path non-empty (``[*]`` / collective paths only on aggregate claims with an
                        ``operation`` — the adapter's exemption), unit a non-empty string (a unit or an explicit unitless
                        marker), quantity named (comparison reports: exempt, the last field-path name is the quantity),
-                       a row index carries its row fingerprint.
+                       a row index carries its row fingerprint (a 64-hex ``row_fingerprint``; a missing key fails).
+  (2 and 4)            a report without claims fails checks 2a, 2b and 4 (nothing was checked) unless its adapter says
+                       claims may be empty (``claims_optional``; none of the 20 kinds does, T11: all 28 reports of the
+                       T9 fixture and rehearsal runs carry claims).
   reference_source  3. a kind citing reference values ("참조값, 계산 아님") carries the snapshot source and the set
                        identifier (hash or version) in the report itself (manifest) and every reference claim
                        names that set. Resolving the source only through the cited object (M20 ``reference_object``)
@@ -124,6 +127,7 @@ class Adapter:
     reference_note: str | None = None
     reopen: str = FULL                   # FULL or what the product reopen does not redo
     exemptions: str = ""
+    claims_optional: bool = False        # a report of this kind may carry no claim (checks 2 and 4 then see nothing)
 
 
 ADAPTERS: dict[str, Adapter] = {a.kind: a for a in (
@@ -277,7 +281,7 @@ def field_problems(adapter: Adapter, claim: dict) -> list[str]:
     if claim.get("row_index") is not None:
         if type(claim["row_index"]) is not int or claim["row_index"] < 0:
             problems.append("row_index is not a non-negative integer")
-        if "row_fingerprint" in claim and not HEX64.fullmatch(str(claim.get("row_fingerprint"))):
+        if not HEX64.fullmatch(str(claim.get("row_fingerprint"))):
             problems.append("row_index without a row_fingerprint")
     selector = claim.get("row_selector")
     if selector is not None and not (isinstance(selector, dict) and selector):
@@ -475,6 +479,9 @@ def audit_report(fetch: Callable[[str], tuple[int, object]], rid: str, event: di
 
     for check in ("evidence_exists", "claim_fields", "no_mixing"):
         result["checks"][check] = "pass"
+    if not claims and not adapter.claims_optional:
+        for check in ("evidence_exists", "claim_fields", "no_mixing"):
+            fail(check, "report", f"the report has no claims (the {adapter.kind} adapter does not allow none)")
     for index, claim in enumerate(claims):
         label = claim_label(index, claim)
         if not isinstance(claim, dict):

@@ -699,9 +699,21 @@ def _engines_under(root: Path) -> list[int]:
         try:
             if str(root) in proc.cwd() and proc.pid != os.getpid() and proc.status() != psutil.STATUS_ZOMBIE:
                 found.append(proc.pid)
-        except (psutil.Error, OSError):
+        except (psutil.Error, OSError, SystemError):     # SystemError: the process ended mid-read (spec §10.1)
             continue
     return found
+
+
+def test_engines_under_treats_a_process_ending_mid_read_as_gone(monkeypatch, tmp_path):
+    """M28 T11 (spec §10.1 item 1): psutil's ``SystemError`` from a process that ends while it is read means the
+    process is gone, as ``psutil.Error`` does (it is never counted as a live engine)."""
+    class Ending:
+        pid = 1
+
+        def cwd(self):
+            raise SystemError("<built-in function proc_cwd> returned a result with an exception set")
+    monkeypatch.setattr(psutil, "process_iter", lambda: iter([Ending()]))
+    assert _engines_under(tmp_path) == []
 
 
 def _reuse(first: Out) -> tuple[list[dict], dict]:

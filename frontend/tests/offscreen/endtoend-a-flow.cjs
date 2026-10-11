@@ -632,16 +632,39 @@ async function clickFilter(page, value) {
     `filter ${value}`, 10000);
   return filterCount(page);
 }
-/** Screen chain counts and filters of the opened map versus the stored map list row; KLIFS shown as reference. */
+/** Every stored row of a map (residue and status only, pages of 100 of /objects) counted per author chain and status
+ * (T11: the counts the screen and the list summary show are compared with the stored rows themselves). */
+async function storedMapRowCounts(page, run, handle) {
+  const counts = {};
+  let total = null;
+  let offset = 0;
+  while (total === null || offset < total) {
+    const chunk = await readApi(page, `/runs/${run}/objects?handle=${enc(handle)}&columns=residue,status&offset=${offset}&limit=100`);
+    total = chunk.total;
+    for (const row of chunk.rows) {
+      const chain = (counts[row.residue.chain_auth] ??= { mapped: 0, unmapped: 0, conflict: 0 });
+      chain[row.status] = (chain[row.status] ?? 0) + 1;
+    }
+    if (!chunk.rows.length) break;
+    offset += chunk.rows.length;
+  }
+  assert.equal(offset, total, "not every stored map row was read");
+  return counts;
+}
+/** Screen chain counts and filters of the opened map versus the stored map rows and list row; KLIFS shown as reference. */
 async function checkMapScreen(page, run, handle, spec) {
   const listed = (await readApi(page, `/runs/${run}/numbering_maps?offset=0&limit=100`)).rows.find(row => row.handle === handle);
   assert.ok(listed, "the new map is not listed");
   assert.deepEqual(listed.chains, spec.chains.map(chain => chain.chain), "map chains");
   assert.equal(listed.pdb_id, spec.pdbConfirm, "map PDB ID");
+  const rowCounts = await storedMapRowCounts(page, run, handle);
+  assert.deepEqual(Object.keys(rowCounts).sort(), spec.chains.map(chain => chain.chain).sort(), "stored row chains");
   const chains = {};
   for (const chain of spec.chains) {
     const detail = listed.chain_details.find(item => item.chain_auth === chain.chain);
     assert.ok((detail.sifts?.accessions ?? []).includes(chain.expect), `${chain.chain} SIFTS accession`);
+    assert.deepEqual(rowCounts[chain.chain], { mapped: detail.counts.mapped, unmapped: detail.counts.unmapped,
+      conflict: detail.counts.conflict }, `chain ${chain.chain}: the stored rows differ from the list counts`);
     const node = numbering(page).locator(`[data-chain-summary="${chain.chain}"]`);
     await node.waitFor({ timeout: 15000 });
     const shown = {};
@@ -652,7 +675,8 @@ async function checkMapScreen(page, run, handle, spec) {
     assert.deepEqual(shown, { mapped: detail.counts.mapped, unmapped: detail.counts.unmapped, conflict: detail.counts.conflict },
       `chain ${chain.chain} counts on screen differ from the stored map`);
     const klifs = await node.locator("[data-klifs-applied]").evaluateAll(items => items.map(item => item.getAttribute("data-klifs-applied")));
-    chains[chain.chain] = { ...shown, klifsApplied: klifs, crossCheck: await node.getAttribute("data-cross-check") };
+    chains[chain.chain] = { ...shown, klifsApplied: klifs, crossCheck: await node.getAttribute("data-cross-check"),
+      storedRows: rowCounts[chain.chain] };
   }
   const totals = { mapped: 0, unmapped: 0, conflict: 0 };
   for (const chain of Object.values(chains)) for (const key of Object.keys(totals)) totals[key] += chain[key];
@@ -1595,6 +1619,8 @@ async function modeFixture(session, input, rec, evidence) {
       assert.equal(value.readback.drawnLineCount, expectedLines.length, "drawn lines vs oracle polar pairs");
       assert.equal(value.readback.undrawnPairs.length, 0);
       assert.equal(value.readback.legend, true, "legend off by default");
+      // no viewer label names a hydrogen bond (copied from annotation-flow.cjs, T11 R4)
+      assert.ok(!value.readback.labelTexts.some(text => /수소\s*결합|hydrogen[\s-]+bond/i.test(text)), "a label names a hydrogen bond");
       assert.equal(value.readback.sourceHandle, h.m17.prepared);
       for (const want of expectedLines) {
         const protein = catalog.filter(row => sameResidue(row.ref.residue, want.residue) && row.ref.atom_name === want.protein_atom);

@@ -7,10 +7,10 @@ product action a click, every approval and limit raise a person's click on the s
 expectations are computed here from the input files and the coordinator's decisions, independently of the product.
 
 Inputs (repository fixtures and the archived M26 set; T1 preflight (b), (d)):
-  C1      public 1A30 (HIV-1 protease, chains A and B in M-CSA entry 175) and the archived M26 reaction set copied to the
-          phase's isolated reaction folder (the runner copies it; ``ctx.reaction_set`` is never written). Positions are
-          direct residues ARG A8, ASP A25, THR A26, ASP B25, GLY B27; the reaction knowledge result is linked twice on
-          the prepared structure (chain A only, then chains A and B); ASP A25 is released in a third set.
+  C1      public 1A30 (HIV-1 protease, chains A and B in M-CSA entry 175) and the archived M26 reaction set copied to
+          the phase's isolated reaction folder (the runner copies it; ``ctx.reaction_set`` is never written). Positions
+          are direct residues ARG A8, ASP A25, THR A26, ASP B25, GLY B27; the reaction knowledge result is linked twice
+          on the prepared structure (chain A only, then chains A and B); ASP A25 is released in a third set.
   C2–C6   public 1UBQ (the only local public structure that passes the M7 preflight, T1 (c)); one M20 set made on the
           screen: direct residues I3 (protected), K6, I44, G76 with allowed residues A and W (6 candidates, 26
           combinations at three mutations); M21 on I44W; the labeled synthetic phenol SDF for every docking.
@@ -27,6 +27,9 @@ round of the protein loop (L-C6: model + docking, 2 units): 4 units, no raise. T
 ``ctx.send_allowed`` and the dispatch events of the runs folder are below the limit given to the harness (one send);
 with ``ctx.rehearse`` the backend is the fixture server (no call). Result: ``live['L-C6']`` ∈ completed |
 provider_failed | product_failed (spec §6.3), or not_sent with its closed cause.
+The flow gets that limit too (the runner stops the harness past it) and the dispatch events are counted around the
+flow: a dispatch the harness left no send evidence for (it died, timed out or was stopped) is product_failed (T11 R2).
+Only the folder the harness ledger row names is read, and its evidence must carry this plan's SHA-256 and phase.
 
 Independent expectations (standard library only, nothing read from the product): the input files' SHA-256; the 1A30
 polymer residues and the archived set's ``mcsa/entries.jsonl`` rows naming 1A30 (per chain coverage, row states and,
@@ -63,11 +66,19 @@ EVIDENCE_FILE = "endtoend-c-evidence.json"
 SEQ_GA_CONSTANTS = Path("backend/mw/sequence_ga_constants.py")
 CASES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7")
 LIVE_PARTS = ("L-pre-C2", "L-C6")
-# Decision 1: the order the harness runs the parts in (the spec case IDs stay fixed).
+# Decision 1: the order the harness runs the parts in (the spec case IDs stay fixed); a topological order of
+# PART_NEEDS (the second pass of case_records follows it).
 FIXTURE_ORDER = ("C1", "C2", "C3", "C5", "C6", "C4", "C7")
-# What a part needs from earlier parts (m28_common.PREREQUISITES plus the live parts' chain).
-PART_NEEDS = {"C1": (), "C2": (), "C3": ("C2",), "C5": ("C2",), "C6": ("C2",), "C4": ("C2",), "C7": (),
-              "L-pre-C2": (), "L-C6": ("L-pre-C2",)}
+ORDER = {"fixture": FIXTURE_ORDER, "live": LIVE_PARTS}
+# What a part needs from earlier parts = m28_common.PREREQUISITES = the harness NEEDS table (T11): C6's explore round
+# reuses the C3 docking of the modelled candidate (fixture pool), C7 lists the reports of C1–C6.
+PART_NEEDS = {"C1": (), "C2": (), "C3": ("C2",), "C5": ("C2",), "C6": ("C2", "C3"), "C4": ("C2",),
+              "C7": ("C1", "C2", "C3", "C4", "C5", "C6"), "L-pre-C2": (), "L-C6": ("L-pre-C2",)}
+# The reports each part makes (analysis type and count; T11 R3): compared with the harness's reportHandles.
+REPORTS = {"fixture": {"C1": {"mutation_candidates": 1},
+                       "C2": {"openmm_protein_minimize": 1, "mutation_candidates": 1, "mutation_model": 1},
+                       "C3": {}, "C4": {"sequence_ga": 2}, "C5": {"jev_choice": 1}, "C6": {"jev_loop": 2}, "C7": {}},
+           "live": {"L-pre-C2": {"openmm_protein_minimize": 1, "mutation_candidates": 1, "mutation_model": 1}}}
 
 INPUTS = {
     "a30": ("public_1a30.cif", "public PDB entry 1A30 (RCSB CC0, M26 T9a download; HIV-1 protease, M-CSA entry 175)",
@@ -88,7 +99,6 @@ C1 = {"pdbId": "1A30", "chainsPartial": ["A"], "chainsAll": ["A", "B"],
                    {"resname": "GLY", "chain": "B", "seq": 27}],
       "release": {"resname": "ASP", "chain": "A", "seq": 25}}
 REPORT_V2 = "mutation_candidates_markdown@2"
-REPORT_V1 = "mutation_candidates_markdown@1"
 # Decision 4: the 1UBQ tiny set (sequence-ga-flow m20Create), keep_all water for the M7 run (openmm-flow pattern).
 C2 = {"waters": "keep_all", "residues": [["ILE", 3], ["LYS", 6], ["ILE", 44], ["GLY", 76]], "protect": [["ILE", 3]],
       "allowed": ["A", "W"], "model": {"residue": ["ILE", 44], "to": "W", "seed": "20261004", "cutoff": "4.0",
@@ -96,8 +106,11 @@ C2 = {"waters": "keep_all", "residues": [["ILE", 3], ["LYS", 6], ["ILE", 44], ["
 MAX_MUTATIONS = 3
 # One docking setting for every docking of the branch (C3 pairs, C4 individuals, C6 loop rounds): the M23 T1 values.
 DOCKING = {"margin": "8", "seed": "20261004", "exhaustiveness": "4", "numModes": "5", "energyRange": "3"}
-# The loop pools leave out the M21 target (already modelled in C2) and Gly / Pro / Cys positions (the M25 qa_setup
-# NOT_MODELLED_HERE choice of the harness; not a product limit), so every round computes a model and a docking.
+# The loop pools leave out Gly / Pro / Cys positions (the M25 qa_setup NOT_MODELLED_HERE choice of the harness; not a
+# product limit). The live pool also leaves out the M21 target (modelled in L-pre-C2, never docked there), so every
+# live round computes a model and a docking. The fixture pool keeps the target (T11): its C2 model and C3 mutant-side
+# docking are the loop's own requests (same set, seed, cutoff, policies, ligand, box and values), so the loop shows it
+# computed and reused (no unit) and the explore body has a computed candidate whose score must not be sent.
 LOOP_POOL_EXCLUDED_RESNAMES = ("GLY", "PRO", "CYS")
 # Decision 7: two GA settings (seed fixed; population, generations, elite, random fraction and the cap differ).
 GA_SETTING_1 = {"seed": 21, "population_size": 4, "generations": 3, "elite_count": 1, "tournament_size": 2,
@@ -235,16 +248,17 @@ def ubq_expectation(structure: Path, spec: dict[str, Any] = C2) -> dict[str, Any
               seq not in protected]
     model = spec["model"]
     target = f"{model['residue'][0]} A:{model['residue'][1]}"
-    pool = [f"{item['residue']} {item['from']}→{item['to']}" for item in candidates
-            if item["resname"] not in LOOP_POOL_EXCLUDED_RESNAMES
-            and not (item["residue"] == target and item["to"] == model["to"])]
+    with_target = [f"{item['residue']} {item['from']}→{item['to']}" for item in candidates
+                   if item["resname"] not in LOOP_POOL_EXCLUDED_RESNAMES]
+    target_text = f"{target} {STANDARD20[model['residue'][0]]}→{model['to']}"
+    pool = [text for text in with_target if text != target_text]
     return {"proteinHeavyAtoms": heavy, "waters": waters, "residueNames": names, "positions": len(spec["residues"]),
             "candidatePositions": len(counts), "candidates": candidates, "candidateCount": len(candidates),
             "space": {"positions": len(counts), "candidates": len(candidates),
                       "effective_max_mutations": min(MAX_MUTATIONS, len(counts)),
                       "size": space_size(counts, MAX_MUTATIONS)},
             "modelTarget": {"residue": target, "from": STANDARD20[model["residue"][0]], "to": model["to"]},
-            "loopPool": pool}
+            "loopPool": pool, "loopPoolFixture": with_target}
 
 
 def space_size(counts: Iterable[int], max_mutations: int) -> int:
@@ -364,7 +378,7 @@ def build_plan(code: Path, phase: str, reaction_set_dir: Path | None, *, send_al
         "ga": {"settings": settings, "need": {key: ga_need(value, constants) for key, value in settings.items()},
                "differ": differ, "ranges": {key: list(value) for key, value in constants["GA_RANGES"].items()}},
         "loops": LOOPS, "loopPoolExcludedResnames": list(LOOP_POOL_EXCLUDED_RESNAMES),
-        "send": {"script": SEND_SCRIPT, "pick": SEND_PICK}, "units": unit_plan(phase),
+        "send": {"script": SEND_SCRIPT, "pick": SEND_PICK}, "units": unit_plan(phase), "reports": REPORTS[phase],
         "structures": {"c1": "1A30", "c2": "1UBQ", "same": False},
         "live": {"sendAllowed": bool(send_allowed), "dispatchLimit": int(dispatch_limit)} if phase == "live" else None,
     }
@@ -373,7 +387,6 @@ def build_plan(code: Path, phase: str, reaction_set_dir: Path | None, *, send_al
 # ---------------------------------------------------------------------------------------------------- judgement
 # The part names of each phase → the case rules they follow (the live parts rebuild C2 with the same code).
 RULE_OF = {"fixture": {case: case for case in CASES}, "live": {"L-pre-C2": "C2"}}
-DIFFERENCE_KEYS = ("delta", "difference", "change", "diff")
 
 
 def _check_c1(seen: dict[str, Any], plan: dict[str, Any]) -> list[tuple[bool, str]]:
@@ -425,7 +438,8 @@ def _rule_problems(rule: str, seen: dict[str, Any], plan: dict[str, Any]) -> lis
         settings = seen.get("settings") or {}
         for key, setting in settings.items():
             need = plan["ga"]["need"][key]
-            checks.append((setting.get("reserved") == need["reserved"], f"setting {key} reserved {setting.get('reserved')}"))
+            checks.append((setting.get("reserved") == need["reserved"],
+                           f"setting {key} reserved {setting.get('reserved')}"))
             checks.append((setting.get("reservedEvaluations") == need["reservedEvaluations"],
                            f"setting {key} reserved evaluations {setting.get('reservedEvaluations')}"))
             checks.append((setting.get("space") == expect.get("space"), f"setting {key} space {setting.get('space')}"))
@@ -437,11 +451,16 @@ def _rule_problems(rule: str, seen: dict[str, Any], plan: dict[str, Any]) -> lis
     elif rule == "C6":
         checks = [(bool(seen.get("explore")) and seen["explore"].get("bodyHasScore") is False,
                    "the explore body carries a score"),
+                  (bool(seen.get("explore")) and seen["explore"].get("computedSent", 0) >= 1,
+                   "the explore body sent no computed candidate (the no-score check would be empty)"),
                   (bool(seen.get("exploit")) and seen["exploit"].get("bodyScoresStored") is True,
                    "exploit body scores differ from the stored ones")]
     elif rule == "C7":
+        made = sum(count for case, kinds in (plan.get("reports") or {}).items() if case != "C7"
+                   for count in kinds.values())
         checks = [(seen.get("listed") == seen.get("created") and seen.get("created", 0) > 0,
                    f"listed {seen.get('listed')} of {seen.get('created')}"),
+                  (seen.get("created") == made, f"{seen.get('created')} reports made, the plan expects {made}"),
                   (seen.get("downloadMismatches") == 0, "JSON downloads differ from the stored bytes")]
     return [message for ok, message in checks if not ok]
 
@@ -470,15 +489,20 @@ def harness_clean(row: dict[str, Any] | None, phase: str, rehearse: bool) -> boo
 
 def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, plan: dict[str, Any] | None,
                  refs: list[str], *, phase: str = "fixture", rehearse: bool = False,
-                 setup: dict[str, dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+                 setup: dict[str, dict[str, Any]] | None = None,
+                 evidence_problem: str | None = None) -> list[dict[str, Any]]:
     """The phase's case records from the harness row, its evidence and this module's own comparison. A part the
     harness did not run because an earlier part failed is not_observed prerequisite_failed:<that part>; a part it
-    did not report is a fail; a setup failure (the reaction set copy) fails its case."""
+    did not report is a fail; a setup failure (the reaction set copy) fails its case; a pass without the reports the
+    plan expects of it is a fail; then a part whose need (PART_NEEDS) is not pass is not_observed
+    prerequisite_failed:<that need> (m28_common.apply_needs). Evidence that is not of this step (another plan or
+    phase) fails every part with ``evidence_problem``."""
     parts = (evidence or {}).get("parts") or {}
     observed = (evidence or {}).get("observed") or {}
     mine = compare_observed(plan, observed) if plan else {}
     clean = harness_clean(row, phase, rehearse)
     names = CASES if phase == "fixture" else LIVE_PARTS
+    expected = (plan or {}).get("reports") or {}
     out = []
     for name in names:
         if name == "L-C6":
@@ -489,6 +513,9 @@ def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, pl
             out.append(c.case_record(name, "fail", setup[name].get("reason") or "setup_failed", evidence_refs=refs,
                                      detail={**detail, "setup": setup[name]}))
             continue
+        if evidence_problem:
+            out.append(c.case_record(name, "fail", evidence_problem, evidence_refs=refs, detail=detail))
+            continue
         if state.get("status") == "not_run":
             blocked = next(iter(state.get("blockedBy") or []), None)
             if blocked in c.CASE_BRANCH:
@@ -496,9 +523,13 @@ def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, pl
                                          evidence_refs=refs, detail=detail))
                 continue
         if state.get("status") == "pass":
+            reports = c.report_problems(expected.get(name), (evidence or {}).get("reportHandles"), name)
             if mine.get(name):
                 out.append(c.case_record(name, "fail", "independent_expectation_mismatch", evidence_refs=refs,
                                          detail={**detail, "problems": mine[name]}))
+            elif reports:
+                out.append(c.case_record(name, "fail", "expected_report_missing", evidence_refs=refs,
+                                         detail={**detail, "problems": reports}))
             elif not clean:
                 out.append(c.case_record(name, "fail", "harness_row_not_clean", evidence_refs=refs, detail=detail))
             else:
@@ -507,17 +538,21 @@ def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, pl
             out.append(c.case_record(name, "fail", "harness_assertion_failed", evidence_refs=refs, detail=detail))
         else:
             out.append(c.case_record(name, "fail", "case_not_completed", evidence_refs=refs, detail=detail))
-    return out
+    needed = c.apply_needs({record["id"]: record for record in out}, ORDER[phase], PART_NEEDS)
+    return [needed[record["id"]] for record in out]
 
 
 def live_result(evidence: dict[str, Any] | None, records: dict[str, dict[str, Any]],
-                send_allowed: bool) -> tuple[str | None, str | None]:
+                send_allowed: bool, dispatched: int = 0) -> tuple[str | None, str | None]:
     """Spec §6.3 result of the explore round and, for not_sent, its closed cause (None, None = leave it to the
     runner: the send was not allowed by the plan). Completed means the round's computation (model, then docking)
-    ended with a stored result after the compute approval."""
-    blocked = next((case for case in ("L-pre-C2",) if (records.get(case) or {}).get("status") != "pass"), None)
+    ended with a stored result after the compute approval. ``dispatched`` = the dispatch events the runs folder
+    gained while the harness ran (T11 R2): a dispatch without the harness's send evidence is product_failed."""
     live = (evidence or {}).get("live") or {}
     send = live.get("send") or {}
+    if dispatched and not send.get("dispatched"):
+        return "product_failed", None
+    blocked = next((case for case in ("L-pre-C2",) if (records.get(case) or {}).get("status") != "pass"), None)
     if not send.get("dispatched") and not send.get("status"):
         if blocked:
             return "not_sent", f"prerequisite_failed:{blocked}"
@@ -553,15 +588,10 @@ def tab_texts(step_dir: Path, evidence: dict[str, Any] | None) -> dict[str, str]
     return out
 
 
-def step_folder(row: dict[str, Any] | None, runner_artifacts: Path, step: str) -> Path | None:
-    """The harness step's artifacts folder: the one its ledger row names, else the newest ``<step>*`` folder of the
-    runner's artifacts holding the evidence file (the runner adds a time suffix when the folder exists)."""
-    named = (row or {}).get("artifacts")
-    if named and Path(named).is_dir():
-        return Path(named)
-    found = sorted((path for path in Path(runner_artifacts).glob(f"{step}*")
-                    if path.is_dir() and (path / EVIDENCE_FILE).is_file()), key=lambda path: path.stat().st_mtime)
-    return found[-1] if found else None
+def step_folder(row: dict[str, Any] | None) -> Path | None:
+    """The harness step's artifacts folder: the one its ledger row names and only that one (T11; no fallback to the
+    newest folder of another attempt)."""
+    return c.step_folder(row)
 
 
 def default_folders(code: Path) -> dict[str, bool]:
@@ -593,9 +623,10 @@ def run(ctx: c.BranchContext) -> c.BranchResult:
         else:
             setup["C1"] = {"status": "fail", "reason": "reaction_set_copy_failed"}
     dispatch_limit = 0
+    before = 0
     if ctx.phase == "live":
-        already = c.dispatch_total(c.count_dispatch(ctx.runs)) if Path(ctx.runs).is_dir() else 0
-        dispatch_limit = already + 1 if ctx.send_allowed and already < ctx.live_calls else already
+        before = c.dispatch_now(ctx.runs)
+        dispatch_limit = before + 1 if ctx.send_allowed and before < ctx.live_calls else before
     plan = build_plan(ctx.code, ctx.phase, reaction_dir, send_allowed=ctx.send_allowed, dispatch_limit=dispatch_limit)
     plan_file = ctx.artifacts / "plan.json"
     plan_file.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -603,33 +634,43 @@ def run(ctx: c.BranchContext) -> c.BranchResult:
     extra = ["--plan", str(plan_file)]
     if ctx.fixture:
         extra += ["--control", str(ctx.fixture["control"]), "--backend-pid", str(ctx.fixture["pid"])]
-    row = ctx.flow(step, HARNESS, ctx.phase, extra)
-    step_dir = step_folder(row, ctx.artifacts.parent, step)
+    # live: the runner stops the harness past this branch's own round (T11: already counted + its one send)
+    row = ctx.flow(step, HARNESS, ctx.phase, extra, limit=dispatch_limit if ctx.phase == "live" else None)
+    dispatched = c.dispatch_now(ctx.runs) - before if ctx.phase == "live" else 0
+    step_dir = step_folder(row)
     evidence = _load(step_dir / EVIDENCE_FILE) if step_dir else None
+    checked = c.evidence_check(evidence, plan_file, ctx.phase)
+    problem = "evidence_not_of_this_step" if checked is not None and not all(checked.values()) else None
     name = step_dir.name if step_dir else step
     refs = [f"{name}/ledger-row.json", f"{name}/{EVIDENCE_FILE}", f"{ctx.branch}/plan.json"]
-    cases = case_records(row, evidence, plan, refs, phase=ctx.phase, rehearse=ctx.rehearse, setup=setup)
+    cases = case_records(row, evidence, plan, refs, phase=ctx.phase, rehearse=ctx.rehearse, setup=setup,
+                         evidence_problem=problem)
+    if problem:
+        evidence = {"live": None}                  # nothing of another step's evidence is used below
     live: dict[str, str] = {}
     causes: dict[str, str] = {}
     if ctx.phase == "live":
-        result, cause = live_result(evidence, {record["id"]: record for record in cases}, ctx.send_allowed)
+        result, cause = live_result(evidence, {record["id"]: record for record in cases}, ctx.send_allowed,
+                                    dispatched)
         if result is not None:
             live["L-C6"] = result
             if result == "not_sent" and cause:
                 causes["L-C6"] = cause
             status, reason = c.live_case_status(result, not_sent_cause=cause if result == "not_sent" else None)
             cases.append(c.case_record("L-C6", status, reason, evidence_refs=refs,
-                                       detail={"result": result, "live": (evidence or {}).get("live")}))
+                                       detail={"result": result, "live": (evidence or {}).get("live"),
+                                               "dispatchedDuringFlow": dispatched}))
     return c.BranchResult(
         cases=cases, runs=[run_id for run_id in [(evidence or {}).get("run")] if run_id],
         reports_created=(evidence or {}).get("reportsCreated") if evidence else None,
-        texts=tab_texts(step_dir, evidence) if step_dir else {}, observations={"X5": observations(evidence)},
-        live=live, not_sent_causes=causes,
+        texts=tab_texts(step_dir, evidence) if step_dir and not problem else {},
+        observations={"X5": observations(evidence)}, live=live, not_sent_causes=causes,
         notes={"defaultFoldersBefore": folders_before, "defaultFoldersAfter": default_folders(ctx.code),
-               "reactionCopy": copy, "structures": plan["structures"],
+               "reactionCopy": copy, "structures": plan["structures"], "evidenceCheck": checked,
                "harness": {key: (row or {}).get(key) for key in ("status", "externalRequestCount", "fixtureProof",
                                                                  "offscreenComplete", "error")},
                "reportHandles": (evidence or {}).get("reportHandles"), "units": (evidence or {}).get("units"),
                "raises": (evidence or {}).get("raises"), "sends": (evidence or {}).get("sends"),
                "syntheticInputs": [key for key, value in plan["inputs"].items() if value["syntheticLabeled"]],
-               "dispatchLimit": dispatch_limit if ctx.phase == "live" else None})
+               "dispatchLimit": dispatch_limit if ctx.phase == "live" else None,
+               "dispatchedDuringFlow": dispatched if ctx.phase == "live" else None})

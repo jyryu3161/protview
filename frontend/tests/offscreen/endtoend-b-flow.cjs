@@ -89,6 +89,18 @@ const MAY_BE_PARTIAL = "끝까지 못 갈 수 있음";
 const GA_KEYS = ["seed", "population_size", "generations", "elite_count", "tournament_size", "neighbor_count",
   "random_fraction", "patience", "max_new_dockings", "total_s"];
 const UNKNOWN_USAGE = "알 수 없음";
+// What a part needs from earlier parts: the same table as scripts/m28_branch_b.py PART_NEEDS and
+// scripts/m28_common.py PREREQUISITES (T11 R3 / R5; a test compares them). B4 docks with B3's receptor, parent and
+// values and lists B3's and both B7 candidates as stored results; B5 uses B3's; B8 lists the reports of B1–B7.
+const NEEDS = { B1: [], B2: [], B3: ["B2"], B6: ["B2"], B7: ["B2", "B3"], B4: ["B2", "B3", "B7"], B5: ["B2", "B3"],
+  B8: ["B1", "B2", "B3", "B4", "B5", "B6", "B7"], "L-pre-B2": [], "L-pre-B3": ["L-pre-B2"], "L-pre-B4": ["L-pre-B3"],
+  "L-B7": ["L-pre-B2", "L-pre-B3", "L-pre-B4"] };
+// The batch result table columns of the M19 business rule (docs/business-rules.md M19 결과표 열; independent of the
+// product source): no difference, rank or change column may appear (T11 R4).
+const BATCH_HEADERS = ["행 번호", "후보 id", "상태", SCORE_COLUMN, "점수 대상", "이유", "재사용", "상세"];
+const SCORE_ROW_LABEL = { free: "모드 1(엔진 출력 순서)", core_fixed: "샘플 1(점수 오름차순 나열)" }; // copied from docking-batch-flow.cjs
+// The GA words of ligand-ga-flow.cjs (winner, recommendation, average comparison, partial completion; copied).
+const FORBIDDEN_GA = /승자|추천|평균\s*비교|부분\s*완료|\bwinner|recommend/gi;
 const LOOP_REPORT_KIND = "JEV 루프 보고서";
 const CONFIRMING_TEXT = "루프 기록이 이 전송의 완료를 아직 보이지 않습니다. 기록을 다시 읽어 이 바퀴의 선택인지 확인하는 중입니다.";
 const LIGAND_VALUES_NOTE = "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or " +
@@ -915,17 +927,19 @@ async function openBatchSummary(page, handle) {
   return batchResultTable(page);
 }
 /** Every displayed cell equals the stored summary row and each score its row's first mode (copied from
- * docking-batch-flow.cjs tableEquals). */
+ * docking-batch-flow.cjs tableEquals; T11 R4 restored its statement-id, state, score-target and reason assertions);
+ * the headers equal the M19 columns, so a difference, rank or change column fails. */
 function batchTableEquals(table, detail, stored, runsDir, run) {
   assert.equal(table.handle, detail.handle);
   assert.equal(table.status, stored.status);
   assert.equal(table.stopReason ?? null, stored.stop_reason);
   assert.equal(table.mode, stored.inputs.mode);
   assert.deepEqual(detail.summary, stored, "detail summary differs from the stored object");
-  assert.equal(table.headers[3], SCORE_COLUMN);
+  assert.deepEqual(table.headers.map(clean), BATCH_HEADERS, "the batch table columns are not the M19 columns");
   assert.equal(table.caption, SCORE_LABEL);
   const want = ["B1", ...(stored.status === "partial" ? ["B2"] : []), ...(stored.inputs.include_parent ? ["B3"] : [])];
   assert.deepEqual(table.statements, want.map(id => ({ id, text: B[id] })), "batch statements differ from spec 5.4");
+  assert.deepEqual(stored.limitations.batch_statements, want);
   const byIndex = Object.fromEntries(table.rows.map(row => [row.row, row]));
   assert.equal(table.rows.length, stored.rows.length);
   const reusedSet = new Set(detail.reused_rows);
@@ -934,23 +948,42 @@ function batchTableEquals(table, detail, stored, runsDir, run) {
     assert.ok(shown, `row ${row.row_index} not shown`);
     assert.equal(shown.kind, row.kind);
     assert.equal(shown.state, row.state);
+    assert.equal(shown.cells.length, BATCH_HEADERS.length, `row ${row.row_index}: an extra column`);
     assert.equal(shown.cells[0], String(row.row_index));
     assert.equal(shown.cells[1], row.kind === "parent" ? PARENT_LABEL : row.candidate_id);
+    assert.ok(shown.cells[2].endsWith(`(${row.state})`), shown.cells[2]);
     if (row.state === "scored") {
       const result = storedObject(runsDir, run, row.result_handle);
       assert.equal(row.score_kcal_mol, result.modes[0].score_kcal_mol, "summary score is not the stored first row");
       assert.equal(shown.cells[3], halfUp(row.score_kcal_mol, 1));
-      assert.equal(shown.cells[4], MODE_ROW);
+      assert.equal(shown.cells[4], SCORE_ROW_LABEL[stored.inputs.mode]);
+      assert.equal(row.score_row_label, SCORE_ROW_LABEL[stored.inputs.mode]);
+      assert.equal(result.inputs.mode, stored.inputs.mode);
       assert.deepEqual(result.parameters, stored.parameters);
       assert.deepEqual(result.box, stored.box);
     } else {
       assert.equal(row.score_kcal_mol, null);
       assert.equal(shown.cells[3], "", `row ${row.row_index} (${row.state}) shows a score`);
+      assert.equal(shown.cells[4], "");
     }
+    if (["failed", "cancelled", "not_run"].includes(row.state)) {
+      assert.ok(row.reason_code, `row ${row.row_index} without a reason`);
+      assert.ok(shown.cells[5].endsWith(`(${row.reason_code})`), shown.cells[5]);
+      assert.equal(row.result_handle, null);
+      assert.ok(!/\d/.test(shown.cells[3] + shown.cells[4]), "a number is shown for an uncomputed row");
+    } else assert.equal(shown.cells[5], "");
     assert.equal(shown.reused, reusedSet.has(row.row_index));
     assert.equal(shown.cells[6], shown.reused ? REUSED_LABEL : "");
     assert.equal(shown.openEnabled, !!row.result_handle);
   }
+  return { rows: stored.rows.map(row => ({ row: row.row_index, state: row.state, reason: row.reason_code,
+    score: row.score_kcal_mol, reused: reusedSet.has(row.row_index) })), counts: stored.counts };
+}
+/** The batch area's wording (copied from docking-batch-flow.cjs checkWording, T11 R4): the docking-flow words line by
+ * line, the B sentences and the M18 limitations exempt, the score names removed. */
+async function batchWording(page, capability) {
+  const text = await batch(page).evaluate(node => node.innerText);
+  return m18.forbiddenWords(text, [...Object.values(B), ...(capability?.limitations ?? [])], [SCORE_LABEL, SCORE_COLUMN]);
 }
 /** Each sortable header twice: the order follows the independent sort oracle (copied from docking-batch-flow.cjs). */
 async function batchSortChecks(page, stored) {
@@ -965,12 +998,28 @@ async function batchSortChecks(page, stored) {
     const column = { row: 0, candidate: 1, score: 3 }[key];
     assert.equal(table.aria[column], direction === "asc" ? "ascending" : "descending");
     assert.ok(!table.headers.some(text => /순위|rank/i.test(text)), "a rank column is shown");
-    seen.push({ key, direction, order: want });
+    const unscored = stored.rows.filter(row => row.state !== "scored").length;     // copied from docking-batch-flow.cjs
+    seen.push({ key, direction, order: want, unscoredLast: key === "score" && unscored ? want.slice(-unscored) : [] });
   }
   return seen;
 }
 
 // ------------------------------------------------------------------ GA area (copied from ligand-ga-flow.cjs)
+/** Forbidden words in the GA area, line by line (copied from ligand-ga-flow.cjs forbiddenWords, T11 R4): a line equal
+ * to a G sentence or an M18 limitation is exempt; the score names are removed; the M18 words and the GA words. */
+function gaForbiddenWords(text, exempt) {
+  const found = m18.forbiddenWords(text, exempt, [SCORE_LABEL, SCORE_COLUMN]);
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || exempt.includes(line)) continue;
+    for (const match of line.split(SCORE_LABEL).join("").matchAll(FORBIDDEN_GA))
+      found.push({ word: match[0], line: line.slice(0, 200) });
+  }
+  return found;
+}
+async function gaWording(page, capability) {
+  return gaForbiddenWords(await ga(page).evaluate(node => node.innerText), [...Object.values(G), ...(capability?.limitations ?? [])]);
+}
 async function gaFill(page, id, value) { const field = gt(page, id); await field.click(); await field.fill(String(value)); }
 async function gaStart(page) {
   return { enabled: await gt(page, "ligand-ga-start").isEnabled(),
@@ -1602,11 +1651,12 @@ function loopPreviewMatches({ shown, built, stored, record, iteration, ordinal, 
     order: oracle.order.map(row => `${row.alias}=${row.ref}:${row.state}`), criteria: oracle.criteria,
     computed: oracle.computed, reservation: built.preview.reservation };
 }
-async function loopConfirmAndSend(page, run, controlDir, script, log) {
+async function loopConfirmAndSend(page, run, controlDir, script, log, beforeClick = null) {
   if (controlDir) writeScript(controlDir, script);
   if (!(await lpt(page, "jev-loop-confirm").isChecked())) await lpt(page, "jev-loop-confirm").check();
   await waitFor(page, async () => await lpt(page, "jev-loop-send").isEnabled() ? true : null, "send enabled", 15000);
   const callsBefore = controlDir ? fixtureCalls(controlDir).length : 0;
+  if (beforeClick) await beforeClick();               // live: the last check right before the click (T11)
   const since = Date.now();
   await lpt(page, "jev-loop-send").click();
   const entry = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev/sends`, "send answer", 180000);
@@ -1764,7 +1814,7 @@ function dockingResultOf(runsDir, run, reference, candidate) {
 async function flowB1(ctx) {
   const { page, app, artifacts, plan, rec, evidence, units, input } = ctx;
   const S = ctx.state;
-  await rec.part("B1", [], async () => {
+  await rec.part("B1", NEEDS["B1"], async () => {
     S.run = await rec.step("B1-01", "구조 분석: click 새 run", () => newRun(page), async run => { assert.match(run, /^run_/); return run; });
     evidence.run = S.run;
     units.setRun(S.run);
@@ -1945,7 +1995,7 @@ async function flowB1(ctx) {
 async function flowB2(ctx, name) {
   const { page, plan, rec, evidence, units, artifacts } = ctx;
   const S = ctx.state;
-  await rec.part(name, [], async () => {
+  await rec.part(name, NEEDS[name], async () => {
     if (!S.run) {
       S.run = await rec.step(`${name}-00`, "구조 분석: click 새 run", () => newRun(page), async run => { assert.match(run, /^run_/); return run; });
       evidence.run = S.run;
@@ -2072,7 +2122,10 @@ async function flowB2(ctx, name) {
     }, async value => {
       let filterMismatches = 0;
       for (const row of value.body.rows) {
-        const want = row.candidate.properties.heavy_atoms <= value.bound;
+        // the expectation comes from the candidate values read before the filter (step 04), not from this answer
+        const stored = S.candidates.find(item => item.id === row.candidate.id);
+        if (!stored) { filterMismatches++; continue; }
+        const want = stored.heavy <= value.bound;
         if (row.passes_all !== want || row.filters.heavy_atoms !== want) filterMismatches++;
         const shown = value.table.rows.find(item => item.id === row.candidate.id);
         if (shown.passesAll !== String(want)) filterMismatches++;
@@ -2101,11 +2154,11 @@ async function flowB2(ctx, name) {
   });
 }
 
-async function flowB3(ctx, name, needs) {
+async function flowB3(ctx, name) {
   const { page, app, plan, rec, evidence, units, artifacts, input } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part(name, needs, async () => {
+  await rec.part(name, NEEDS[name], async () => {
     const run = S.run;
     const capability = (await readApi(page, "/capabilities")).methods?.ligand_docking;
     assert.ok(capability?.available === true, `docking capability unavailable: ${JSON.stringify(capability)}`);
@@ -2257,7 +2310,7 @@ async function flowB6(ctx) {
   const { page, rec, evidence, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("B6", ["B2"], async () => {
+  await rec.part("B6", NEEDS["B6"], async () => {
     const run = S.run;
     const built = await rec.step("B6-01", "지식·보고서 JEV area: switch the run's science consent on; 리간드 후보 집합 and the set; " +
       "check its first three candidates; 보낼 내용 만들기; open the exact body: its text = the server preview string, its " +
@@ -2387,9 +2440,10 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
     const identity = loopPreviewMatches({ shown: value.shown, built: value.made, stored: value.stored, record: value.record,
       iteration: 1, ordinal: value.made.summary.send_ordinal, runId: run });
     const body = JSON.parse(value.shown.body);
-    const observed = {};
+    const observed = { computedSent: body.state.computed.length };
     if (loop.goal === "explore") {
       observed.bodyHasScore = /score/i.test(value.shown.body);
+      observed.vacuous = observed.computedSent === 0;          // no computed candidate: the no-score check is empty
       assert.equal(observed.bodyHasScore, false, "the explore body carries a score");
       assert.ok(body.state.computed.every(item => JSON.stringify(Object.keys(item)) === '["alias"]'));
     } else {
@@ -2406,6 +2460,19 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
     (evidence.observed.B7 ??= {})[loop.goal] = observed;
     return { ...identity, body: value.shown.body, handle: value.made.handle };
   });
+  // live (T11): the guard (plan, dispatch limit) before the step and again right before the click, with the run's
+  // remaining units and activity time against the round's own need (the runner's LIVE_STEP["ligand"])
+  const beforeClick = guard ? async () => {
+    const verdict = guard();
+    if (verdict) { evidence.live.guard = verdict; throw new Error(`no send: ${verdict}`); }
+    const budget = await readApi(page, `/runs/${run}/budget`);
+    const remaining = { expensive_units: budget.expensive_calls.limit - budget.expensive_calls.used,
+      wall_clock_s: budget.wall_clock_s.limit - budget.wall_clock_s.used };
+    const need = plan.live.roundNeed;
+    const short = Object.keys(need).filter(axis => !(remaining[axis] >= need[axis]));
+    evidence.live.budgetBeforeSend = { remaining, need, short };
+    if (short.length) throw new Error(`no send: the run is short of ${short.join(", ")} for the round`);
+  } : null;
   if (guard) {
     const verdict = guard();
     if (verdict) { evidence.live.guard = verdict; throw new Error(`no send: ${verdict}`); }
@@ -2413,7 +2480,7 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
   const sent = await rec.step(`${id}-03`, "Check the confirmation and click 이 내용을 JEV로 보냅니다" +
     `${input.control ? ` (fixture ${loop.script})` : " (the real science gate)"}: the result as stored; a completed send ` +
     "shows the selection card JEV 판정(모델 선택) = the stored jev_loop_choice@1 (list position n/m as a value only)", async () => {
-    const result = await loopConfirmAndSend(page, run, input.control, loop.script, log);
+    const result = await loopConfirmAndSend(page, run, input.control, loop.script, log, beforeClick);
     const record = result.record;
     if (evidence.live) evidence.live.send = { dispatched: record.status !== "rejected", status: record.status, reasonCode: record.reason_code,
       sendId: record.send_id, servedModel: record.served_model ?? null };
@@ -2500,7 +2567,7 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
 async function flowB7(ctx) {
   const { rec, evidence, plan, artifacts, page } = ctx;
   const S = ctx.state;
-  await rec.part("B7", ["B2", "B3"], async () => {
+  await rec.part("B7", NEEDS["B7"], async () => {
     const ids = S.candidates.map(item => item.id);
     const pending = ids.filter(id => id !== S.X);
     assert.ok(pending.length >= 4, "fewer than five candidates for two loops");
@@ -2515,11 +2582,11 @@ async function flowB7(ctx) {
   });
 }
 
-async function flowB4(ctx, name, needs) {
+async function flowB4(ctx, name) {
   const { page, plan, rec, evidence, units, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part(name, needs, async () => {
+  await rec.part(name, NEEDS[name], async () => {
     const run = S.run;
     const docked = dockedCandidates(runsDir, run, S.dockStored);
     const ids = S.candidates.map(item => item.id);
@@ -2572,10 +2639,14 @@ async function flowB4(ctx, name, needs) {
       // the batch lists the ticked candidates in set order (M19 rows: the parent row first)
       assert.deepEqual(value.pf.body.rows.map(row => [row.kind, row.candidate_id]),
         [["parent", null], ...ids.filter(id => selection.includes(id)).map(id => ["candidate", id])]);
+      const wording = await batchWording(page, S.capability);
+      assert.deepEqual(wording, [], `batch area wording: ${JSON.stringify(wording)}`);
       S.batchEntry = value.entry;
       return { ...facts, request: value.pf.request };
     });
     if (pf.shortfall.expensive_calls > 0 || pf.shortfall.wall_clock_s > 0) {
+      // a live phase has no raise (RAISES.live is empty): a shortfall there ends the part with no click
+      if (plan.phase === "live") throw new Error(`a live phase never raises a limit: shortfall ${JSON.stringify(pf.shortfall)}`);
       await rec.step(`${name}-02`, "Click 이 일괄에 필요한 만큼 한도를 올림 (a person's click): the limit rises by the shortfall " +
         "only, by human; the preflight is read again with no shortfall", async () => {
         const budget = await readApi(page, `/runs/${run}/budget`);
@@ -2619,11 +2690,13 @@ async function flowB4(ctx, name, needs) {
       assert.equal(value.job.job.status, "done", JSON.stringify(value.job.job.failure));
       assert.equal(value.job.approved, false);
       const stored = storedObject(runsDir, run, value.job.handle);
-      batchTableEquals(value.table, value.detail, stored, runsDir, run);
+      const facts = batchTableEquals(value.table, value.detail, stored, runsDir, run);
+      const wording = await batchWording(page, S.capability);
+      assert.deepEqual(wording, [], `batch area wording: ${JSON.stringify(wording)}`);
       S.batchStored = stored;
       S.batchDetail = value.detail;
       return { handle: value.job.handle, rows: stored.rows.length, reused: value.detail.reused_rows.length,
-        units: S.batchEntry.usedUnits };
+        units: S.batchEntry.usedUnits, states: facts.rows.map(row => row.state) };
     });
     await rec.step(`${name}-04`, "Click 점수, 후보 id and 행 번호 headers twice each: the order follows the independent sort " +
       "rule (rows without a score always last), aria-sort follows", () => batchSortChecks(page, S.batchStored), async value => value);
@@ -2675,7 +2748,7 @@ async function flowB5(ctx) {
   const { page, plan, rec, evidence, units, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("B5", ["B2"], async () => {
+  await rec.part("B5", NEEDS["B5"], async () => {
     const run = S.run;
     const ids = S.candidates.map(item => item.id);
     const firstGenerations = {};
@@ -2696,6 +2769,8 @@ async function flowB5(ctx) {
           pool: { size: ids.length, eligible_count: ids.length, filter_excluded_count: 0 } });
         if (value.entry.onPlan)
           assert.equal(facts.shortfall.expensive_calls, plan.units.raises[label] ?? 0, "the unit shortfall differs from the plan");
+        const wording = await gaWording(page, S.capability);           // ligand-ga-flow.cjs: the preflight check
+        assert.deepEqual(wording, [], `GA area wording: ${JSON.stringify(wording)}`);
         S.gaEntry = value.entry;
         return { ...facts, request: value.pf.request, pf: value.pf };
       });
@@ -2725,6 +2800,8 @@ async function flowB5(ctx) {
         const stored = storedObject(runsDir, run, value.job.handle);
         const facts = await gaResultEquals(page, ids, value.header, value.detail, stored, runsDir, run);
         assert.equal(stored.reserved_units, plan.ga.need[key].reserved);
+        const wording = await gaWording(page, S.capability);           // ligand-ga-flow.cjs: the results check
+        assert.deepEqual(wording, [], `GA area wording: ${JSON.stringify(wording)}`);
         firstGenerations[key] = stored.generations[0].individuals.map(item => item.candidate_id);
         let reuseMismatches = 0;
         if (key === "2") {
@@ -2770,10 +2847,10 @@ async function flowB5(ctx) {
 }
 
 async function flowB8(ctx) {
-  const { page, app, rec, evidence, input, artifacts } = ctx;
+  const { page, app, plan, rec, evidence, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("B8", [], async () => {
+  await rec.part("B8", NEEDS["B8"], async () => {
     assert.ok(S.run, "no run");
     const run = S.run;
     const made = evidence.reportHandles.filter(item => item.httpStatus === 201);
@@ -2814,6 +2891,13 @@ async function flowB8(ctx) {
         assert.ok(item.markdownEqual, `${item.case} shown Markdown differs`);
         if (sha(item.download) !== sha(item.backend) || sha(item.download) !== sha(item.stored)) downloadMismatches++;
       }
+      // every report B1–B7 had to make (the plan's kinds and counts, T11 R3) is among the reports made
+      for (const [caseId, kinds] of Object.entries(plan.reports).filter(([caseId]) => caseId !== "B8"))
+        for (const [kind, count] of Object.entries(kinds))
+          assert.equal(made.filter(item => item.case === caseId && item.kind === kind).length, count,
+            `${caseId} made ${kind} reports other than the plan's ${count}`);
+      assert.equal(made.length, Object.entries(plan.reports).filter(([caseId]) => caseId !== "B8")
+        .reduce((sum, [, kinds]) => sum + Object.values(kinds).reduce((a, n) => a + n, 0), 0), "reports made ≠ the plan's");
       assert.equal(value.shown.length, value.handles.length, "the screen list is not the report events");
       assert.equal(value.handles.length, made.length, "report events ≠ the reports the cases made");
       assert.equal(downloadMismatches, 0, "a JSON download differs from the stored bytes");
@@ -2831,10 +2915,10 @@ async function modeFixture(ctx) {
   m25.fixtureServer(input.control, input["runs-dir"], input["backend-pid"]);
   await flowB1(ctx);
   await flowB2(ctx, "B2");
-  await flowB3(ctx, "B3", ["B2"]);
+  await flowB3(ctx, "B3");
   await flowB6(ctx);
   await flowB7(ctx);
-  await flowB4(ctx, "B4", ["B2"]);
+  await flowB4(ctx, "B4");
   await flowB5(ctx);
   await flowB8(ctx);
 }
@@ -2846,9 +2930,9 @@ async function modeLive(ctx) {
   evidence.live = { rehearsal: !!input.control, sendAllowed: plan.live.sendAllowed, dispatchLimit: plan.live.dispatchLimit,
     send: null, compute: null, guard: null, egressStop: null };
   await flowB2(ctx, "L-pre-B2");
-  await flowB3(ctx, "L-pre-B3", ["L-pre-B2"]);
-  await flowB4(ctx, "L-pre-B4", ["L-pre-B3"]);
-  await rec.part("L-B7", ["L-pre-B2", "L-pre-B3", "L-pre-B4"], async () => {
+  await flowB3(ctx, "L-pre-B3");
+  await flowB4(ctx, "L-pre-B4");
+  await rec.part("L-B7", NEEDS["L-B7"], async () => {
     const docked = dockedCandidates(input["runs-dir"], S.run, S.dockStored);
     const ids = S.candidates.map(item => item.id);
     const computed = ids.filter(id => docked.has(id));
@@ -2940,4 +3024,4 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, sdfAtoms, recomputeContacts, inputAtomOf };
+module.exports = { options, main, sdfAtoms, recomputeContacts, inputAtomOf, NEEDS, BATCH_HEADERS, gaForbiddenWords };

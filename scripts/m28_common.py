@@ -21,6 +21,11 @@ Case catalogue and judgement (pure functions, no I/O)
   cascade(records: dict[str, dict], order: Iterable[str], prerequisites=PREREQUISITES) -> dict[str, dict]
       a case whose prerequisite is not pass becomes not_observed with reason prerequisite_failed:<that prerequisite>
       (the case is not run); returns the completed records in ``order``
+  apply_needs(records, order, needs) -> dict[str, dict]
+      a branch module's part that did not fail and whose need is not pass becomes not_observed
+      prerequisite_failed:<the need> (its pass is not judged without the state it used)
+  report_problems(expected, handles, case_id) -> list[str]
+      the reports a case made (harness reportHandles, HTTP 201) against the kinds and counts its plan expects
   combine_statuses(statuses) -> "pass" | "fail" | "not_observed"
       any fail → fail; else any not_observed → not_observed; else pass (an empty list is not_observed)
   definition_items(statuses: dict[str, str], phase) -> dict[str, dict]
@@ -69,6 +74,9 @@ Loopback API and runs
   count_dispatch(runs_dir) -> dict[run_id, {"dispatch", "responseReceived", "scienceResponses"}]
   dispatch_total(counts) -> int
       (the M25 runner's event counter: a half-written last line is left for the next read)
+  dispatch_now(runs_dir) -> int             the dispatch events of every run now (0 without the folder)
+  step_folder(row) -> Path | None           the folder the harness ledger row names (no fallback)
+  evidence_check(evidence, plan_file, mode) -> {"planSha256": bool, "mode": bool} | None
   remaining_short(api, rid, needs) -> list[str]   the budget axes a run is short of before a computation or send
 
 Branch interface (the runner's registry calls ``run(ctx) -> BranchResult``)
@@ -155,11 +163,15 @@ def _items_of(case_id: str) -> list[int]:
 CASE_ITEMS = {case: _items_of(case) for case in (*FIXTURE_CASES, *LIVE_CASES)}
 
 # The stored state each case needs from an earlier case (the cascade of spec §3.1; T1 (d)): a case is not run, and is
-# not_observed prerequisite_failed:<ID>, when one of these is not pass. Branch modules may pass a stricter table.
+# not_observed prerequisite_failed:<ID>, when one of these is not pass. The branch modules' PART_NEEDS and the harness
+# NEEDS tables are the same (T11 R3 / R5: B4 docks with B3's receptor, parent and values and lists B3's and both B7
+# candidates as stored results; B5 uses B3's; C6 reuses the C3 docking of the modelled candidate; B8 / C7 list the
+# reports of every earlier case of the branch).
 PREREQUISITES: dict[str, tuple[str, ...]] = {
     "A2": ("A1",), "A3": ("A1",), "A4": ("A1",), "A5": ("A1",), "A6": ("A1", "A2", "A5"), "A7": ("A5",),
-    "B3": ("B2",), "B4": ("B2",), "B5": ("B2",), "B6": ("B2",), "B7": ("B2", "B3"),
-    "C3": ("C2",), "C4": ("C2",), "C5": ("C2",), "C6": ("C2",),
+    "B3": ("B2",), "B4": ("B2", "B3", "B7"), "B5": ("B2", "B3"), "B6": ("B2",), "B7": ("B2", "B3"),
+    "B8": ("B1", "B2", "B3", "B4", "B5", "B6", "B7"),
+    "C3": ("C2",), "C4": ("C2",), "C5": ("C2",), "C6": ("C2", "C3"), "C7": ("C1", "C2", "C3", "C4", "C5", "C6"),
     "L-pre-B3": ("L-pre-B2",), "L-pre-B4": ("L-pre-B3",), "L-B7": ("L-pre-B2", "L-pre-B3", "L-pre-B4"),
     "L-C6": ("L-pre-C2",),
 }
@@ -237,6 +249,44 @@ def cascade(records: dict[str, dict], order: Iterable[str],
         if blocked is not None:
             done[case_id] = case_record(case_id, "not_observed", f"prerequisite_failed:{blocked}")
     return done
+
+
+def apply_needs(records: dict[str, dict], order: Iterable[str],
+                needs: dict[str, tuple[str, ...]]) -> dict[str, dict]:
+    """A branch module's second pass over its part records (T11 R3 / R5), in ``order`` (a topological order of
+    ``needs``): a part that did not fail and one of whose needs is not pass becomes not_observed
+    ``prerequisite_failed:<the first such need>`` (a pass is not judged without the state it used); a fail stays a
+    fail. Parts absent from ``records`` stay absent."""
+    out = dict(records)
+    for name in order:
+        record = out.get(name)
+        if record is None or record.get("status") == "fail":
+            continue
+        blocked = next((need for need in needs.get(name, ()) if (out.get(need) or {}).get("status") != "pass"), None)
+        if blocked is None:
+            continue
+        reason = f"prerequisite_failed:{blocked}"
+        if record.get("status") == "not_observed" and record.get("reason") == reason:
+            continue
+        out[name] = case_record(name, "not_observed", reason, evidence_refs=record.get("evidence_refs") or [],
+                                detail={**(record.get("detail") or {}), "partStatus": record.get("status"),
+                                        "partReason": record.get("reason")})
+    return out
+
+
+def report_problems(expected: dict | None, handles: Iterable[dict] | None, case_id: str) -> list[str]:
+    """The reports one case made (its harness ``reportHandles`` with HTTP 201) against the kinds and counts the plan
+    expects of it (T11 R3): [] when they are equal or the plan names nothing for that case."""
+    if expected is None:
+        return []
+    made: dict[str, int] = {}
+    for item in handles or []:
+        if isinstance(item, dict) and item.get("case") == case_id and item.get("httpStatus") == 201:
+            made[str(item.get("kind"))] = made.get(str(item.get("kind")), 0) + 1
+    want = {kind: count for kind, count in expected.items() if count}
+    if made == want:
+        return []
+    return [f"{case_id} made reports {dict(sorted(made.items()))}, the plan expects {dict(sorted(want.items()))}"]
 
 
 def combine_statuses(statuses: Iterable[str | None]) -> str:
@@ -546,6 +596,27 @@ def count_dispatch(runs_dir: Path) -> dict[str, dict[str, int]]:
 
 def dispatch_total(counts: dict[str, dict[str, int]]) -> int:
     return m25.dispatch_total(counts)
+
+
+def dispatch_now(runs_dir: Path) -> int:
+    """The ``jev_science_dispatch_started`` events of every run of a runs folder now (0 without the folder)."""
+    return dispatch_total(count_dispatch(runs_dir)) if Path(runs_dir).is_dir() else 0
+
+
+def step_folder(row: dict | None) -> Path | None:
+    """The harness step's artifacts folder: the one its ledger row names and only that one (T11: never the newest
+    folder of another attempt); None without a row or a folder."""
+    named = (row or {}).get("artifacts")
+    return Path(named) if named and Path(named).is_dir() else None
+
+
+def evidence_check(evidence: dict | None, plan_file: Path, mode: str) -> dict[str, bool] | None:
+    """Whether the harness evidence belongs to this step: the SHA-256 of the plan file the branch module wrote and
+    the phase (None without evidence)."""
+    if not isinstance(evidence, dict):
+        return None
+    digest = hashlib.sha256(Path(plan_file).read_bytes()).hexdigest()
+    return {"planSha256": evidence.get("planSha256") == digest, "mode": evidence.get("mode") == mode}
 
 
 # ---------------------------------------------------------------------------------------------------- branch interface

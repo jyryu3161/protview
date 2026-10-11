@@ -16,28 +16,37 @@ Phases (``--phase``):
            scripted httpx.MockTransport and a placeholder credential; it never reads .env). Real calls 0.
   live     a NEW root: the branch modules rebuild the prerequisite state (L-pre-B2/B3/B4, L-pre-C2) with the same case
            code and send ONE exploit round of the ligand loop (L-B7) and ONE explore round of the protein loop (L-C6)
-           through the product backend (the real SCIENCE_GATE), runs B and C apart. --live-calls N (1..2) is required.
+           through the product backend (the real SCIENCE_GATE), runs B and C apart. --live-calls N (1..2) is required
+           and the real live phase always runs both branches (T11 R1: the plan is both rounds; --branches with fewer
+           is refused, a subset is for the rehearsal only).
            Before anything starts the repository ledger runs/m28-live-ledger.json (main checkout, git-ignored, found
            through the git common dir; the M24 and M25 ledgers are never read) must be readable and its total (every
            recorded root, recounted from the dispatch events) plus this plan must stay within 2, and --live-calls
            within what it leaves; every ledger read-and-write holds the lock file next to it; the ledger is never
-           deleted or rewound. While a harness runs the dispatch events are counted and it and the backend are stopped
-           at once past --live-calls. Results per round: completed | provider_failed | product_failed | not_sent
-           (spec §6.3, m28_common.live_outcome). No retry, no new run; a round that was dispatched and did not complete
-           ends the plan (the next branch gets ``send_allowed`` false and its harness is stopped at a new dispatch).
+           deleted or rewound (a lock file left without its ledger refuses the phase). An unfinished phase reserves
+           its planned calls, and the runtime cap of its harnesses is exactly that reservation (min(--live-calls,
+           planned)); each branch also passes its own round's limit (the dispatch events already counted + 1). While
+           a harness runs the dispatch events are counted and it and the backend are stopped at once past the cap.
+           Results per round: completed | provider_failed | product_failed | not_sent (spec §6.3,
+           m28_common.live_outcome). The dispatch events counted before and after each branch decide whether its round
+           was sent (T11 R2): a dispatch whose round has no completed result (the branch raised, the harness died or
+           was stopped, no evidence) is product_failed. No retry, no new run; a round that was dispatched and did not
+           complete ends the plan (the next branch gets ``send_allowed`` false and its harness is stopped at a new
+           dispatch).
   --rehearse (live only) the same live code path against the fixture server (the product backend is never started),
            the ledger is <root>/rehearsal-live-ledger.json, --live-calls defaults to 2, real calls 0, and the product
            key resolver is never run (the key-present step is skipped; the evidence search looks for the placeholders
            and key patterns only). A rehearsal ledger never says acceptance true (``rehearsalPassed`` says whether it
-           passed). The plan counts the rounds of the selected branches only (b → L-B7, c → L-C6).
+           passed). A rehearsal may run one branch (T7 / T8 rehearsed one at a time): its plan counts the rounds of the
+           selected branches only (b → L-B7, c → L-C6).
 
 ``acceptance`` (spec §3.1, §5): every required case of the phase is pass, or not_observed with a closed reason
 (no_public_input, unreachable_by_ui, engine_unavailable_by_design) and a named covering unit test; the true cases
 (fixture: X1-A/B/C, X2–X6; live: every L case) pass; all of the phase's branches ran (``--branches`` with fewer is
 never acceptance); the build was stamped from the current frontend source; nothing is left (workers, fixture server,
 Electron, 8000/3000 listeners); browser non-loopback requests 0 and provider calls 0 (fixture) / live calls within the
-ledger (live); and the searches over the exported evidence found no key string, placeholder, real kbase text or
-absolute path.
+ledger (live); every ``run_*`` of the phase's runs folder was claimed by a branch (T11: all are audited); and the
+searches over the exported evidence found no key string, placeholder, real kbase text or absolute path.
 
 Evidence (--out, text only, decision 0020): README, summary, cases, SHA256SUMS, binary-artifacts.json (git-ignored
 files with path, size and SHA-256 only), evidence/ (ledger, rows, plans). Screenshots, paint frames, downloads,
@@ -99,6 +108,7 @@ LEDGER_NAME = "m28-live-ledger.json"
 LEDGER_SCHEMA = "m28_live_ledger@1"
 REHEARSAL_LEDGER_NAME = "rehearsal-live-ledger.json"
 LIVE_RUNS = Path("live") / "runs"        # a root's live runs folder (the ledger recounts its dispatch events)
+LIVE_ROUND_OF = {"b": "L-B7", "c": "L-C6"}
 STEP_TIMEOUT_S = 7200
 EXPORTER = Path("scripts/m28_export_fixed_sentences.py")
 FIXTURE_SERVER = m25.FIXTURE_SERVER
@@ -269,8 +279,18 @@ def ledger_path(code: Path = REPO) -> Path:
     return path
 
 
+def ledger_precheck(path: Path) -> None:
+    """Before the lock is taken: a lock file without its ledger means the ledger was removed after a phase was
+    recorded (the lock file is made by the first read-and-write and never removed): LedgerError, so a deleted ledger
+    never rewinds the allocation (T11). Neither file = the first phase ever (fine)."""
+    lock = Path(path).with_name(f"{Path(path).name}.lock")
+    if lock.exists() and not Path(path).exists():
+        raise LedgerError(f"the ledger's lock file is there but the ledger is not (removed or damaged): {path}")
+
+
 def read_ledger(path: Path) -> dict:
-    """The ledger (absent = nothing recorded yet); unreadable or not exactly ``m28_live_ledger@1``: LedgerError."""
+    """The ledger (absent = nothing recorded yet; ledger_precheck runs before the lock); unreadable or not exactly
+    ``m28_live_ledger@1``: LedgerError."""
     if not Path(path).exists():
         return {"schema": LEDGER_SCHEMA, "roots": {}}
     try:
@@ -379,18 +399,23 @@ def audit_supplements(summary: dict | None, records: dict[str, dict]) -> list[di
     return out
 
 
-def x2_case(summary: dict | None, records: dict[str, dict] | None = None, refs: Iterable[str] = ()) -> dict:
-    """X2: the trace audit passed, and every kind it could check only partly (the product reopen does not recompute:
-    inspection, interface_sasa) is supplemented by a passing case with independent expectations (A2, A3)."""
+def x2_case(summary: dict | None, records: dict[str, dict] | None = None, refs: Iterable[str] = (),
+            unclaimed: Iterable[str] = ()) -> dict:
+    """X2: the trace audit passed over every run of the phase, every run was claimed by a branch (T11: an unclaimed
+    run is audited too and fails X2), and every kind the audit could check only partly (the product reopen does not
+    recompute: inspection, interface_sasa) is supplemented by a passing case with independent expectations (A2, A3)."""
     supplements = audit_supplements(summary, records or {})
     unsupported = [item["kind"] for item in supplements if item["caseStatus"] != "pass"]
-    ok = isinstance(summary, dict) and summary.get("status") == "pass" and not unsupported
-    reason = None if ok else ("trace_audit_failed" if not (isinstance(summary, dict) and summary.get("status") ==
-                                                           "pass") else "partial_recheck_not_supplemented")
+    unclaimed = sorted(unclaimed)
+    audited = isinstance(summary, dict) and summary.get("status") == "pass"
+    ok = audited and not unsupported and not unclaimed
+    reason = None if ok else ("trace_audit_failed" if not audited else "unclaimed_runs" if unclaimed
+                              else "partial_recheck_not_supplemented")
     return c.case_record("X2", "pass" if ok else "fail", reason, evidence_refs=list(refs),
                          detail={"status": (summary or {}).get("status"),
                                  "failures": len((summary or {}).get("failures") or []),
-                                 "partialProductRecheck": supplements, "notSupplemented": unsupported})
+                                 "partialProductRecheck": supplements, "notSupplemented": unsupported,
+                                 "unclaimedRuns": unclaimed})
 
 
 def fixture_provider_calls(server: dict | None, calls: list[dict], dispatched: int, reads: dict | None) -> int | None:
@@ -420,14 +445,17 @@ def x3_case(phase: str, external: dict, ledger_count: int | None = None, live_ca
                          evidence_refs=list(refs), detail={**external, "ledgerCount": ledger_count})
 
 
-def x4_case(phase: str, scans: dict[str, dict], refs: Iterable[str] = ()) -> dict:
-    """X4 / L-X4: no core forbidden word outside fixed sentences and reasoned line exceptions in any scanned text."""
+def x4_case(phase: str, scans: dict[str, dict], refs: Iterable[str] = (), without_texts: Iterable[str] = ()) -> dict:
+    """X4 / L-X4: no core forbidden word outside fixed sentences and reasoned line exceptions in any scanned text,
+    and every branch that ran handed over at least one tab-area text (T11: ``without_texts`` names those that did
+    not; their screens were never scanned)."""
     hits = {name: scan["hits"] for name, scan in scans.items() if scan["hits"]}
-    ok = bool(scans) and not hits
+    missing = sorted(without_texts)
+    ok = bool(scans) and not hits and not missing
     case_id = "X4" if phase == "fixture" else "L-X4"
-    return c.case_record(case_id, "pass" if ok else "fail", None if ok else
-                         ("no_text_scanned" if not scans else "forbidden_words"), evidence_refs=list(refs),
-                         detail={"scanned": len(scans), "hitTexts": sorted(hits),
+    reason = None if ok else ("no_text_scanned" if not scans else "forbidden_words" if hits else "no_tab_text")
+    return c.case_record(case_id, "pass" if ok else "fail", reason, evidence_refs=list(refs),
+                         detail={"scanned": len(scans), "hitTexts": sorted(hits), "withoutTabText": missing,
                                  "excepted": sum(len(scan["excepted"]) for scan in scans.values())})
 
 
@@ -466,9 +494,9 @@ def complete_cases(phase: str, records: dict[str, dict]) -> dict[str, dict]:
 
 
 def judge_phase(phase: str, cases: dict[str, dict], branches: list[str], *, build: dict | None, leftover: dict,
-                external: dict, export_ok: bool, rehearsal: bool = False) -> dict:
+                external: dict, export_ok: bool, rehearsal: bool = False, runs_claimed: bool = False) -> dict:
     """The acceptance of one phase ledger (spec §3.1, §5). A rehearsal is never acceptance (its result is
-    ``rehearsalPassed``)."""
+    ``rehearsalPassed``). ``runs_claimed``: every run of the phase's runs folder belongs to a branch (T11)."""
     required = c.FIXTURE_CASES if phase == "fixture" else c.LIVE_CASES
     problems = {case_id: c.case_problems(cases.get(case_id) or {"id": case_id}) for case_id in required}
     invalid = {case_id: found for case_id, found in problems.items() if found}
@@ -492,6 +520,7 @@ def judge_phase(phase: str, cases: dict[str, dict], branches: list[str], *, buil
                       and (not rehearsal or (external.get("provider_calls") == 0
                                              and external.get("product_key_resolver_calls") == 0)))),
         "exportChecks": bool(export_ok),
+        "runsClaimed": bool(runs_claimed),
     }
     passed = all(parts.values())
     return {"passed": passed, "acceptance": passed and not rehearsal, "rehearsalPassed": passed if rehearsal else None,
@@ -506,10 +535,11 @@ def unobserved(cases: dict[str, dict]) -> list[dict]:
 
 def assemble_ledger(phase: str, cases: dict[str, dict], branches: list[str], *, build: dict | None, leftover: dict,
                     external: dict, trace_audit: dict | None, export_ok: bool, rehearsal: bool = False,
-                    source_head: str | None = None, dirty_files: Iterable[str] = (), extra: dict | None = None) -> dict:
+                    source_head: str | None = None, dirty_files: Iterable[str] = (), extra: dict | None = None,
+                    runs_claimed: bool = False) -> dict:
     """``m28_case_ledger@1`` of one phase (spec §5)."""
     judged = judge_phase(phase, cases, branches, build=build, leftover=leftover, external=external,
-                         export_ok=export_ok, rehearsal=rehearsal)
+                         export_ok=export_ok, rehearsal=rehearsal, runs_claimed=runs_claimed)
     statuses = {case_id: record.get("status") for case_id, record in cases.items()}
     summary = None
     if isinstance(trace_audit, dict):
@@ -564,8 +594,11 @@ def leak_kinds(text: str, real: m27.RealText | None = None) -> list[str]:
     return kinds
 
 
-def hold_reason(artifacts: Path, path: Path, real: m27.RealText | None) -> str | None:
-    """Why a text artifact stays out of the committed evidence (hash only), or None to export it."""
+def hold_reason(artifacts: Path, path: Path, real: m27.RealText | None,
+                replacements: Iterable[tuple[str, str]] = ()) -> str | None:
+    """Why a text artifact stays out of the committed evidence (hash only), or None to export it. The leak search
+    runs on the text as it would be exported (after the ``replacements`` redaction, T11): an absolute path the
+    redaction does not cover (another user's /Users/…, a /home/… path) holds the file."""
     rel = path.relative_to(artifacts)
     if "downloads" in rel.parts:
         return "download"
@@ -575,8 +608,7 @@ def hold_reason(artifacts: Path, path: Path, real: m27.RealText | None) -> str |
         return "failure_panel"
     if path.stat().st_size > MAX_TEXT_BYTES and path.name not in LEDGER_NAMES:
         return "over_256KiB"
-    found = leak_kinds(path.read_text(encoding="utf-8", errors="replace"), real)
-    found = [kind for kind in found if kind != "absolute_path"]        # absolute paths are redacted on export
+    found = leak_kinds(m13.redact(path.read_text(encoding="utf-8", errors="replace"), list(replacements)), real)
     return found[0] if found else None
 
 
@@ -726,6 +758,12 @@ class Runner(m18.Runner):
         if stray:
             raise SystemExit(f"the {self.phase} phase has no branch {stray} (its branches: "
                              f"{','.join(PHASE_BRANCHES[self.phase])})")
+        if self.phase == "live" and not self.rehearse and self.branches != list(PHASE_BRANCHES["live"]):
+            raise SystemExit("a real live phase plans both rounds (spec §6.1: L-B7 then L-C6, the plan ends at a round "
+                             "that does not complete): --branches with fewer is for the rehearsal only")
+        # The calls this phase reserves in the ledger and the runtime cap of its harnesses: the same number (T11 R1).
+        self.live_cap = (min(self.live_calls, live_plan_budget(live_plan(self.branches))["planned"])
+                         if self.phase == "live" else 0)
         self.kbase = Path(args.kbase).resolve()
         self.m15_source = self.resolve_input(args.m15_reference)
         self.reaction_source = self.resolve_input(args.reaction_set)
@@ -755,6 +793,10 @@ class Runner(m18.Runner):
         self.markdowns: dict[str, str] = {}
         self.report_cases: dict[str, list[str]] = {}
         self.x4_record: dict | None = None
+        self.round_dispatch: dict[str, int | None] = {}     # live: dispatch events each branch's flow added
+        self.unclaimed: list[str] = []
+        self.without_texts: list[str] = []
+        self.audited = False                                 # the trace audit ran over the phase's runs
 
     # ----- inputs and folders ------------------------------------------------------------------
     def resolve_input(self, value: str) -> Path:
@@ -843,7 +885,7 @@ class Runner(m18.Runner):
         """One harness step (``node frontend/tests/offscreen/<harness_file> --mode <mode>``) with its ledger row; in the
         live phase the dispatch events are counted while it runs and it and the backend stop past ``limit``."""
         if self.phase == "live":                       # the runner's own cap; none at all once the plan ended
-            cap = self.live_calls if self.send_allowed else m25.dispatch_total(m25.count_events(self.runs))
+            cap = self.live_cap if self.send_allowed else m25.dispatch_total(m25.count_events(self.runs))
             limit = cap if limit is None else min(limit, cap)
         step_dir = self.fresh_dir(step)
         argv = ["node", str(self.offscreen / harness_file), "--url", m15.WEB, "--mode", mode, "--artifacts",
@@ -932,6 +974,7 @@ class Runner(m18.Runner):
             self.ledger_file = self.ledger_location()
             if self.rehearse:
                 self.ledger_file.parent.mkdir(parents=True, exist_ok=True)
+            ledger_precheck(self.ledger_file)
             with m25.ledger_lock(self.ledger_file):
                 ledger = read_ledger(self.ledger_file)
                 others = ledger_total(ledger, exclude=self.root)
@@ -941,7 +984,7 @@ class Runner(m18.Runner):
                     raise SystemExit(f"real calls refused, nothing started: {refusal}")
                 entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
                 entry["phases"].append({"phase": "live", "startedAt": now(), "finishedAt": None, "planned": planned,
-                                        "liveCalls": self.live_calls})
+                                        "liveCalls": self.live_calls, "runtimeCap": self.live_cap})
                 m25.write_ledger(self.ledger_file, ledger)
         except (LedgerError, m25.LedgerError) as exc:
             raise SystemExit(f"real calls refused, nothing started: {exc}") from exc
@@ -949,13 +992,19 @@ class Runner(m18.Runner):
             raise SystemExit(f"real calls refused, nothing started: the ledger cannot be written ({exc})") from exc
         self.ledger_open = True
         self.checks["liveLedger"] = {"ok": False, "path": str(self.ledger_file), "rehearsal": self.rehearse,
-                                     "before": others + mine, "planned": planned}
+                                     "before": others + mine, "planned": planned, "runtimeCap": self.live_cap}
 
     def ledger_close(self) -> int | None:
         """Record this root's dispatch counts (failed sends included), close its phase; returns this root's count."""
         if not self.ledger_open:
             return None
         self.ledger_open = False
+        try:
+            ledger_precheck(self.ledger_file)
+        except LedgerError as exc:                     # removed while the phase ran: never written back from here
+            self.checks["liveLedger"] = {**self.checks.get("liveLedger", {}), "ok": False, "error": str(exc)}
+            self.record("live-ledger", "fail", detail=self.checks["liveLedger"])
+            return None
         with m25.ledger_lock(self.ledger_file):
             ledger = read_ledger(self.ledger_file)
             entry = ledger["roots"].setdefault(str(self.root), {"phases": [], "dispatch": {}})
@@ -1020,7 +1069,7 @@ class Runner(m18.Runner):
             reaction=self.reaction, artifacts=self.artifacts / branch, kbase=self.kbase, m15_reference=self.m15_source,
             reaction_set=self.reaction_source, python=self.python, api=self.api_client, flow=self.flow,
             record=self.record, child_env=m13.child_env, fixture=fixture,
-            live_calls=self.live_calls if self.phase == "live" else 0, send_allowed=self.send_allowed)
+            live_calls=self.live_cap if self.phase == "live" else 0, send_allowed=self.send_allowed)
 
     def run_branch(self, branch: str) -> c.BranchResult:
         module = BRANCH_REGISTRY.get(branch)
@@ -1029,12 +1078,37 @@ class Runner(m18.Runner):
             return c.BranchResult(notes={"error": "branch_module_not_registered"})
         try:
             result = module(self.context(branch))
-        except (OSError, RuntimeError, ValueError, KeyError, TypeError, AttributeError, IndexError,
-                subprocess.SubprocessError) as exc:     # a branch failure is recorded, never hidden or retried
+        except Exception as exc:  # noqa: BLE001 - any branch failure is recorded (its round judged by the events)
             self.record(f"branch-{branch}", "fail", error=f"{type(exc).__name__}: {exc}")
             return c.BranchResult(notes={"error": f"{type(exc).__name__}: {exc}"})
         self.record(f"branch-{branch}", "pass", cases={item["id"]: item["status"] for item in result.cases})
         return result
+
+    def dispatch_count(self) -> int | None:
+        """The dispatch events of every run of the phase now (None when they cannot be counted)."""
+        try:
+            return m25.dispatch_total(m25.count_events(self.runs)) if self.runs.is_dir() else 0
+        except (OSError, ValueError):
+            return None
+
+    def run_branches(self) -> None:
+        """Every requested branch in turn. Live (T11 R2): the dispatch events are counted before and after each
+        branch; a branch whose flow added a dispatch (or whose count is unknown) and whose round has no completed
+        result (the branch raised, the harness died or was stopped, no evidence) ends the plan, as a round that was
+        dispatched and failed does (spec §6.1)."""
+        for branch in self.branches:
+            before = self.dispatch_count() if self.phase == "live" else 0
+            self.results[branch] = self.run_branch(branch)
+            if self.phase != "live":
+                continue
+            after = self.dispatch_count()
+            added = None if before is None or after is None else after - before
+            round_id = LIVE_ROUND_OF.get(branch)
+            if round_id is not None:
+                self.round_dispatch[round_id] = added
+            result = self.results[branch].live.get(round_id or "", "")
+            if (added != 0 and result != "completed") or c.next_round_cause(result) is not None:
+                self.send_allowed = False          # spec §6.1: a dispatched round did not complete
 
     def branch_records(self) -> dict[str, dict]:
         records: dict[str, dict] = {}
@@ -1045,6 +1119,10 @@ class Runner(m18.Runner):
         if self.phase == "live":
             results = {key: value for result in self.results.values() for key, value in result.live.items()}
             causes = {key: value for result in self.results.values() for key, value in result.not_sent_causes.items()}
+            for round_id, added in self.round_dispatch.items():   # T11 R2: the events decide whether it was sent
+                if added != 0 and results.get(round_id) not in ("completed", "provider_failed", "product_failed"):
+                    results[round_id] = "product_failed"
+                    causes.pop(round_id, None)
             for index, round_id in enumerate(c.LIVE_ROUNDS):
                 if round_id not in results and round_id not in causes:
                     earlier = c.next_round_cause(results.get(c.LIVE_ROUNDS[index - 1], "")) if index else None
@@ -1052,7 +1130,9 @@ class Runner(m18.Runner):
                         "status") != "pass"), None)
                     causes[round_id] = earlier or (f"prerequisite_failed:{need}" if need else "ledger_refused")
             outcome = c.live_outcome(results, causes)
-            self.checks["liveOutcome"] = {**outcome, "results": results, "causes": causes}
+            self.checks["liveOutcome"] = {**outcome, "results": results, "causes": causes,
+                                          "dispatched": {round_id: self.round_dispatch.get(round_id, 0)
+                                                         for round_id in c.LIVE_ROUNDS}}
             for round_id, (status, reason) in outcome["cases"].items():
                 refs = (records.get(round_id) or {}).get("evidence_refs") or []
                 records[round_id] = c.case_record(round_id, status, reason, evidence_refs=refs,
@@ -1060,12 +1140,24 @@ class Runner(m18.Runner):
         return records
 
     # ----- X cases -----------------------------------------------------------------------------
+    def audit_targets(self) -> tuple[list[str], list[str]]:
+        """Every ``run_*`` folder of the phase's runs folder (the branches' runs first, in branch order, then the
+        others) and the runs no branch claimed (T11: all are audited and X4-scanned; an unclaimed run fails X2 and
+        acceptance)."""
+        claimed = [rid for result in self.results.values() for rid in result.runs]
+        present = sorted(path.name for path in self.runs.glob("run_*") if path.is_dir()) if self.runs.is_dir() else []
+        unclaimed = [rid for rid in present if rid not in claimed]
+        return list(dict.fromkeys(claimed + unclaimed)), unclaimed
+
     def x1_and_audit(self, records: dict[str, dict]) -> None:
-        """X1-<branch> per branch and the trace audit (X2) over every branch run, while the backend still runs."""
+        """X1-<branch> per branch and the trace audit (X2) over every run of the phase, while the backend still
+        runs."""
         fetch = audit.http_fetch(m15.API)
         rules = (self.fixed or {}).get("reportRules")
-        runs = [rid for result in self.results.values() for rid in result.runs]
+        runs, self.unclaimed = self.audit_targets()
         summary = audit.audit_runs(fetch, runs, rules)
+        summary["unclaimedRuns"] = list(self.unclaimed)
+        self.audited = True
         self.markdowns = summary.pop("_markdown", {})
         branch_of = {rid: branch for branch, result in self.results.items() for rid in result.runs}
         self.report_cases = {report["handle"]: report_cases(self.phase, branch_of.get(report["run"]), report["kind"])
@@ -1074,7 +1166,7 @@ class Runner(m18.Runner):
         self.checks["traceAudit"] = summary
         if self.phase != "fixture":
             return
-        records["X2"] = x2_case(summary, records, ["trace-audit.json"])
+        records["X2"] = x2_case(summary, records, ["trace-audit.json"], unclaimed=self.unclaimed)
         for branch in self.branches:
             result = self.results.get(branch) or c.BranchResult()
             events = sum(1 for report in summary["reports"] if report["run"] in result.runs)
@@ -1090,6 +1182,7 @@ class Runner(m18.Runner):
         fixed = c.FixedText.from_export(self.fixed or {})
         scans: dict[str, dict] = {}
         origin: dict[str, tuple[str, list[str]]] = {}
+        self.without_texts = sorted(branch for branch, result in self.results.items() if not result.texts)
         for branch, result in self.results.items():
             for name, text in result.texts.items():
                 key = f"{branch}:screen:{name}"
@@ -1168,11 +1261,7 @@ class Runner(m18.Runner):
         try:
             self.start_frontend()
             if ready and self.start_phase_backend():
-                for branch in self.branches:
-                    self.results[branch] = self.run_branch(branch)
-                    if self.phase == "live" and c.next_round_cause(
-                            self.results[branch].live.get("L-B7", "")) is not None:
-                        self.send_allowed = False          # spec §6.1: a dispatched round did not complete
+                self.run_branches()
                 records = self.branch_records()
                 self.x1_and_audit(records)
             else:
@@ -1190,21 +1279,30 @@ class Runner(m18.Runner):
         observations = [item for result in self.results.values() for item in result.observations.get("X5", [])]
         prefix = "" if self.phase == "fixture" else "L-"
         records[f"{prefix}X3"] = x3_case(self.phase, external, root_calls, self.live_calls)
-        records[f"{prefix}X4"] = x4_case(self.phase, scans, ["x4-scan.json"])
+        records[f"{prefix}X4"] = x4_case(self.phase, scans, ["x4-scan.json"], without_texts=self.without_texts)
         if self.phase == "fixture":
             records["X5"] = x5_case(observations)
         records[f"{prefix}X6"] = x6_case(self.phase, leftover, folders_before, folders_after)
         cases = complete_cases(self.phase, records)
-        ledger = self.write_ledger(cases, external, leftover, export_ok=True)
-        export_ok = self.export(ledger)
-        if not export_ok:
-            ledger = self.write_ledger(cases, external, leftover, export_ok=False)
-            self.export(ledger)
+        ledger = self.finish(cases, external, leftover)
         failed = [entry["step"] for entry in self.summary if entry["status"] == "fail"]
         print(json.dumps({"failedSteps": failed, "acceptance": ledger["acceptance"],
                           "rehearsalPassed": ledger["rehearsalPassed"], "artifacts": str(self.artifacts)}), flush=True)
         passed = ledger["acceptance"] or (self.rehearse and ledger["rehearsalPassed"])
         return 0 if passed else 1
+
+    def finish(self, cases: dict[str, dict], external: dict, leftover: dict) -> dict:
+        """The case ledger and the export (T11): the first ``case-ledger.json`` is written with the export not yet
+        passed (an export that raises leaves a ledger that is not acceptance); only after the searches passed is it
+        written again with them, and that final export is searched again."""
+        ledger = self.write_ledger(cases, external, leftover, export_ok=False)
+        if not self.export(ledger):
+            return ledger
+        ledger = self.write_ledger(cases, external, leftover, export_ok=True)
+        if not self.export(ledger):
+            ledger = self.write_ledger(cases, external, leftover, export_ok=False)
+            self.export(ledger)
+        return ledger
 
     def write_ledger(self, cases: dict[str, dict], external: dict, leftover: dict, export_ok: bool) -> dict:
         build = self.state.get("build") or {}
@@ -1220,12 +1318,14 @@ class Runner(m18.Runner):
                  "checks": {key: value for key, value in self.checks.items() if key != "traceAudit"},
                  "flowRows": self.flow_rows, "fixedSentencesSha256": (self.fixed or {}).get("sha256"),
                  "liveCalls": self.live_calls if self.phase == "live" else None,
+                 "liveCap": self.live_cap if self.phase == "live" else None,
+                 "unclaimedRuns": list(self.unclaimed), "branchesWithoutTabText": list(self.without_texts),
                  "registry": sorted(BRANCH_REGISTRY),
                  "branchNotes": {branch: result.notes for branch, result in self.results.items()}}
         ledger = assemble_ledger(self.phase, cases, self.branches, build=build, leftover=leftover, external=external,
                                  trace_audit=audit_summary, export_ok=export_ok, rehearsal=self.rehearse,
                                  source_head=build.get("gitHead"), dirty_files=build.get("dirtyFiles") or [],
-                                 extra=extra)
+                                 extra=extra, runs_claimed=self.audited and not self.unclaimed)
         (self.artifacts / "case-ledger.json").write_text(json.dumps(ledger, indent=2, ensure_ascii=False,
                                                                     default=str) + "\n")
         self.record("case-ledger", "pass" if ledger["acceptance"] or ledger["rehearsalPassed"] else "fail",
@@ -1242,9 +1342,12 @@ class Runner(m18.Runner):
         return m27.RealText(m27.real_text_strings(self.precedent / "sets" / set_hash))
 
     def export(self, ledger: dict) -> bool:
-        """Text evidence (redacted) to --out; held files listed by path, size and SHA-256; then the searches over the
-        exported folder (key patterns, placeholders, absolute paths, real kbase text and, in a child, the key itself).
-        Returns whether the searches found nothing."""
+        """Text evidence (redacted) to --out; held files listed by path, size and SHA-256 (a file still holding a leak
+        after the redaction is held, T11); then the searches over the exported folder (key patterns, placeholders,
+        absolute paths, real kbase text and, in a child, the key itself). A file of --out the searches still find
+        (the summary, cases, README or listing the runner writes there itself) is moved back to the git-ignored
+        ``<artifacts>/held-from-out/`` and dropped from SHA256SUMS, so a failed export leaves no leak in the committed
+        folder. Returns whether the searches found nothing."""
         replacements = [(str(self.code), "<repo>"), (str(REPO), "<repo>"), (str(Path.home()), "<home>")]
         real = self.real_text()
         self.out.mkdir(parents=True, exist_ok=True)
@@ -1254,7 +1357,7 @@ class Runner(m18.Runner):
             if not path.is_file() or rel.parts[0] == "services" or "browser-profile" in rel.parts:
                 continue
             record = {"path": str(rel), "bytes": path.stat().st_size, "sha256": m13.sha_file(path)}
-            reason = hold_reason(self.artifacts, path, real) if path.suffix in TEXT_SUFFIXES else None
+            reason = hold_reason(self.artifacts, path, real, replacements) if path.suffix in TEXT_SUFFIXES else None
             if path.suffix in TEXT_SUFFIXES and reason is None:
                 target = self.out / "evidence" / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -1285,9 +1388,10 @@ class Runner(m18.Runner):
             sums.append(f"{m13.sha_file(self.out / name)}  {name}")
         (self.out / "SHA256SUMS").write_text("\n".join(sums) + "\n")
         found = scan_evidence(self.out, real)
+        moved = self.move_back(found, sums)
         key = self.key_scan([self.out, self.artifacts, self.root])     # spec §6.2: evidence, QA root, export
         ok = not found and key.get("ok") is True and not (self.rehearse and self.resolver_calls)
-        self.checks["exportScan"] = {"ok": ok, "files": found, "keyScanOk": key.get("ok"),
+        self.checks["exportScan"] = {"ok": ok, "files": found, "movedToArtifacts": moved, "keyScanOk": key.get("ok"),
                                      "keySearch": key.get("keySearch", "product resolver in a child"),
                                      "keyHits": key.get("keyHits", []), "sentinelHits": key.get("sentinelHits", []),
                                      "productKeyResolverCalls": self.resolver_calls}
@@ -1296,6 +1400,23 @@ class Runner(m18.Runner):
                     keyHits=len(key.get("keyHits", [])), sentinelHits=len(key.get("sentinelHits", [])),
                     productKeyResolverCalls=self.resolver_calls)
         return ok
+
+    def move_back(self, found: dict[str, list[str]], sums: list[str]) -> list[str]:
+        """Move every --out file the leak search found back to ``<artifacts>/held-from-out/`` (git-ignored) and write
+        SHA256SUMS without them (T11); returns the moved paths (relative to --out)."""
+        moved = []
+        for rel in sorted(found):
+            source = self.out / rel
+            if not source.is_file() or rel == "SHA256SUMS":
+                continue
+            target = self.artifacts / "held-from-out" / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(target))
+            moved.append(rel)
+        if moved:
+            kept = [line for line in sums if line.split("  ", 1)[-1] not in moved]
+            (self.out / "SHA256SUMS").write_text("\n".join(kept) + "\n")
+        return moved
 
     def readme(self, ledger: dict, held: list[dict]) -> str:
         scope = "연습(fixture 서버, 실호출 0)" if ledger["rehearsal"] else ledger["phase"]

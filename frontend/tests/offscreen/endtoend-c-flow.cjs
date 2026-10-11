@@ -135,6 +135,11 @@ const WIRE_TOP_MUTATION = ["candidates", "computed", "goal", "pockets", "positio
   "values_note"];
 const MUTATION_EXPLOIT_SUFFIX = "; each score belongs to the modelled structure of its own mutation";
 const CONFIRMING_TEXT = "루프 기록이 이 전송의 완료를 아직 보이지 않습니다. 기록을 다시 읽어 이 바퀴의 선택인지 확인하는 중입니다.";
+// What a part needs from earlier parts: the same table as scripts/m28_branch_c.py PART_NEEDS and
+// scripts/m28_common.py PREREQUISITES (T11; a test compares them). C6's fixture explore pool reuses the C3 docking of
+// the modelled candidate; C7 lists the reports of C1–C6.
+const NEEDS = { C1: [], C2: [], C3: ["C2"], C5: ["C2"], C6: ["C2", "C3"], C4: ["C2"],
+  C7: ["C1", "C2", "C3", "C4", "C5", "C6"], "L-pre-C2": [], "L-C6": ["L-pre-C2"] };
 const LOOP_WORDING_EXEMPT = '[data-testid="jev-loop-m18-area"], [data-testid="jev-loop-limitations"], ' +
   '[data-testid="jev-loop-choice-limitations"], [data-testid="jev-loop-preview-body"], ' +
   '[data-testid="jev-loop-preview-question"], .mw-ligand-filter';
@@ -1818,11 +1823,12 @@ function loopPreviewMatches({ shown, built, stored, record, iteration, ordinal, 
     order: oracle.order.map(row => `${row.alias}=${row.ref}:${row.state}`), criteria: oracle.criteria,
     computed: oracle.computed, reservation: built.preview.reservation };
 }
-async function loopConfirmAndSend(page, run, controlDir, script, log) {
+async function loopConfirmAndSend(page, run, controlDir, script, log, beforeClick = null) {
   if (controlDir) writeScript(controlDir, script);
   if (!(await lpt(page, "jev-loop-confirm").isChecked())) await lpt(page, "jev-loop-confirm").check();
   await waitFor(page, async () => await lpt(page, "jev-loop-send").isEnabled() ? true : null, "send enabled", 15000);
   const callsBefore = controlDir ? fixtureCalls(controlDir).length : 0;
+  if (beforeClick) await beforeClick();               // live: the last check right before the click (T11)
   const since = Date.now();
   await lpt(page, "jev-loop-send").click();
   const entry = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev/sends`, "send answer", 180000);
@@ -2021,7 +2027,7 @@ async function flowC1(ctx) {
   const { page, plan, rec, evidence, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("C1", [], async () => {
+  await rec.part("C1", NEEDS["C1"], async () => {
     assert.ok(plan.c1, "the plan has no C1 expectation (no reaction set copy)");
     const P1 = plan.c1;
     const E = P1.expect;
@@ -2164,7 +2170,7 @@ async function flowC2(ctx, name) {
   const runsDir = input["runs-dir"];
   const P2 = plan.c2;
   const E = P2.expect;
-  await rec.part(name, [], async () => {
+  await rec.part(name, NEEDS[name], async () => {
     const run = await ensureRun(ctx, name);
     const observed = (evidence.observed[name] = {});
     const loaded = await rec.step(`${name}-01`, "구조 분석: choose public_1ubq.cif (file chooser; its SHA-256 is the plan's), 구조 " +
@@ -2297,6 +2303,7 @@ async function flowC2(ctx, name) {
     const candidate = S.candidates.find(row => resShort(row.residue) === target.residue && row.from === target.from &&
       row.to === target.to);
     assert.ok(candidate, `no ${target.residue} ${target.from}→${target.to} candidate in the set`);
+    S.modelRef = candidate.index;
     const job = await rec.step(`${name}-07`, `변이 구조 모델링 on candidate ${target.residue} ${target.from}→${target.to}; seed ` +
       `${P2.model.seed}, cutoff ${P2.model.cutoff} Å, both confirmations; 모델링 작업 제출 → (no second approval) 작업 시작: the ` +
       "real PDBFixer + OpenMM job finishes with one unit", async () => {
@@ -2446,7 +2453,7 @@ async function flowC3(ctx) {
   const { page, plan, rec, evidence, units, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("C3", ["C2"], async () => {
+  await rec.part("C3", NEEDS["C3"], async () => {
     const run = S.run;
     await ensurePhenol(ctx, "C3");
     const submitted = await rec.step("C3-01", "단백질 공학: open the model, read the docking inputs again, 3D SDF = the phenol " +
@@ -2518,6 +2525,9 @@ async function flowC3(ctx) {
       const wording = await modelWording(page, []);
       assert.deepEqual(wording.found, [], JSON.stringify(wording.found));
       assert.ok(scoresFirstMode, "a pair score is not the first mode of its stored result");
+      // The mutant side is the C6 loop's own docking request for the modelled candidate (same model, phenol SDF,
+      // ligand-range box and values): the fixture explore round shows it computed, reused with this score (T11).
+      S.loopComputed[String(S.modelRef)] = { score: scores.mutant, result: pair.sides.mutant.result_handle, from: "C3" };
       evidence.observed.C3 = { scoresFirstMode, units: S.pairEntry.usedUnits, pair: pair.index,
         results: SIDES.map(side => pair.sides[side].result_handle) };
       await keepTabText(page, evidence, artifacts, "protein@C3", "protein");
@@ -2530,7 +2540,7 @@ async function flowC5(ctx) {
   const { page, plan, rec, evidence, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("C5", ["C2"], async () => {
+  await rec.part("C5", NEEDS["C5"], async () => {
     const run = S.run;
     const built = await rec.step("C5-01", "지식·보고서 JEV area: switch the run's science consent on; 변이 후보 and the 1UBQ set; " +
       `check its first ${plan.send.pick} candidates; 보낼 내용 만들기; open the exact body: its text = the server preview, its ` +
@@ -2670,9 +2680,14 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
     const identity = loopPreviewMatches({ shown: value.shown, built: value.made, stored: value.stored, record: value.record,
       iteration: 1, ordinal: value.made.summary.send_ordinal, runId: run });
     const body = JSON.parse(value.shown.body);
-    const observed = {};
+    const observed = { computedSent: body.state.computed.length };
     if (loop.goal === "explore") {
       observed.bodyHasScore = /score/i.test(value.shown.body);
+      observed.vacuous = observed.computedSent === 0;          // no computed candidate: the no-score check is empty
+      if (observed.vacuous) observed.vacuousReason = id.startsWith("L-")
+        ? "live: L-pre-C2 models the target but docks nothing, so no pool candidate is computed before this round " +
+          "(the fixture C6 checks the explore body on a computed candidate)"
+        : "no candidate of the pool was computed before this round";
       assert.equal(observed.bodyHasScore, false, "the explore body carries a score");
       assert.ok(body.state.computed.every(item => JSON.stringify(Object.keys(item)) === '["alias"]'));
     } else {
@@ -2689,6 +2704,11 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
     (evidence.observed[id.startsWith("L-") ? "L-C6" : "C6"] ??= {})[loop.goal] = observed;
     return { ...identity, body: value.shown.body, handle: value.made.handle };
   });
+  // live (T11): the guard (plan, dispatch limit) before the step and again right before the click
+  const beforeClick = guard ? async () => {
+    const verdict = guard();
+    if (verdict) { evidence.live.guard = verdict; throw new Error(`no send: ${verdict}`); }
+  } : null;
   if (guard) {
     const verdict = guard();
     if (verdict) { evidence.live.guard = verdict; throw new Error(`no send: ${verdict}`); }
@@ -2696,7 +2716,7 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
   const sent = await rec.step(`${id}-03`, "Check the confirmation and click 이 내용을 JEV로 보냅니다" +
     `${input.control ? ` (fixture ${loop.script})` : " (the real science gate)"}: the result as stored; a completed send ` +
     "shows the selection card JEV 판정(모델 선택) = the stored jev_loop_choice@1 (list position n/m as a value only)", async () => {
-    const result = await loopConfirmAndSend(page, run, input.control, loop.script, log);
+    const result = await loopConfirmAndSend(page, run, input.control, loop.script, log, beforeClick);
     const record = result.record;
     if (evidence.live) evidence.live.send = { dispatched: record.status !== "rejected", status: record.status, reasonCode: record.reason_code,
       sendId: record.send_id, servedModel: record.served_model ?? null };
@@ -2787,10 +2807,11 @@ async function loopRound(ctx, { id, pool, loop, unitLabel, guard = null }) {
   return { loopId, chosen: computed.ref, proposal: sent.proposal };
 }
 
-/** The loop pool of the plan rule from the stored set: candidates outside Gly / Pro / Cys positions and not the M21
- * target, in set order. */
-function loopPoolRefs(plan, candidates) {
-  const wanted = plan.c2.expect.loopPool;
+/** The loop pool of the plan rule from the stored set, in set order: candidates outside Gly / Pro / Cys positions and
+ * (``loopPool``, the live pool) not the M21 target, or (``loopPoolFixture``, T11) with the target, whose C2 model and
+ * C3 mutant-side docking are the loop's own requests (computed, reused, no unit). */
+function loopPoolRefs(plan, candidates, key = "loopPool") {
+  const wanted = plan.c2.expect[key];
   const refs = candidates.filter(row => wanted.includes(candidateText(row))).map(row => row.index);
   assert.deepEqual(candidates.filter(row => refs.includes(row.index)).map(candidateText), wanted, "loop pool differs from the plan");
   return refs;
@@ -2799,10 +2820,12 @@ function loopPoolRefs(plan, candidates) {
 async function flowC6(ctx) {
   const { rec, evidence, plan, artifacts, page } = ctx;
   const S = ctx.state;
-  await rec.part("C6", ["C2"], async () => {
+  await rec.part("C6", NEEDS["C6"], async () => {
     await ensurePhenol(ctx, "C6");
-    const refs = loopPoolRefs(plan, S.candidates);
+    const refs = loopPoolRefs(plan, S.candidates, "loopPoolFixture");
     assert.ok(refs.length >= 3, "fewer than three candidates for the loops");
+    assert.ok(refs.includes(S.modelRef) && S.loopComputed[String(S.modelRef)], "the modelled candidate is not in the " +
+      "pool with its C3 docking");
     const explore = await loopRound(ctx, { id: "C6-explore", pool: refs, loop: plan.loops.explore, unitLabel: "C6-explore" });
     const exploit = await loopRound(ctx, { id: "C6-exploit", pool: refs, loop: plan.loops.exploit, unitLabel: "C6-exploit" });
     evidence.observed.C6 = { ...(evidence.observed.C6 ?? {}), chosen: [explore.chosen, exploit.chosen], pool: refs };
@@ -2814,13 +2837,15 @@ async function flowC4(ctx) {
   const { page, plan, rec, evidence, units, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("C4", ["C2"], async () => {
+  await rec.part("C4", NEEDS["C4"], async () => {
     const run = S.run;
     await ensurePhenol(ctx, "C4");
     const space = plan.c2.expect.space;
     const gaCtx = { runsDir, run, setContent: S.setContent };
     const observed = (evidence.observed.C4 = { settings: {} });
     const exempt = new Set([...Object.values(S23), ...MODEL_LIMITATIONS]);
+    // the M18 limitations are exempt from the start (copied from sequence-ga-flow.cjs modeMain)
+    for (const text of (await readApi(page, "/capabilities")).methods?.ligand_docking?.limitations ?? []) exempt.add(text);
     let first = null;
     for (const key of ["1", "2"]) {
       const setting = plan.ga.settings[key];
@@ -2842,6 +2867,9 @@ async function flowC4(ctx) {
         assert.deepEqual(value.pf.request.box, { source: "ligand_range", margin_A: Number(plan.docking.margin) });
         if (value.entry.onPlan)
           assert.equal(facts.shortfall.expensive_calls, plan.units.raises[label] ?? 0, "the unit shortfall differs from the plan");
+        // the M23 wording check of the preflight (restored from sequence-ga-flow.cjs "GA 1 preflight", T11 R4)
+        const found = gaForbidden(await seqPanel(page).evaluate(node => node.innerText), exempt);
+        assert.deepEqual(found, [], JSON.stringify(found));
         S.gaEntry = value.entry;
         return { ...facts, request: value.pf.request, pf: value.pf };
       });
@@ -2949,10 +2977,10 @@ async function flowC4(ctx) {
 }
 
 async function flowC7(ctx) {
-  const { page, app, rec, evidence, input, artifacts } = ctx;
+  const { page, app, plan, rec, evidence, input, artifacts } = ctx;
   const S = ctx.state;
   const runsDir = input["runs-dir"];
-  await rec.part("C7", [], async () => {
+  await rec.part("C7", NEEDS["C7"], async () => {
     assert.ok(S.run, "no run");
     const run = S.run;
     const made = evidence.reportHandles.filter(item => item.httpStatus === 201);
@@ -2992,6 +3020,13 @@ async function flowC7(ctx) {
         assert.ok(item.markdownEqual, `${item.case} shown Markdown differs`);
         if (sha(item.download) !== sha(item.backend) || sha(item.download) !== sha(item.stored)) downloadMismatches++;
       }
+      // every report C1–C6 had to make (the plan's kinds and counts, T11 R3) is among the reports made
+      for (const [caseId, kinds] of Object.entries(plan.reports).filter(([caseId]) => caseId !== "C7"))
+        for (const [kind, count] of Object.entries(kinds))
+          assert.equal(made.filter(item => item.case === caseId && item.kind === kind).length, count,
+            `${caseId} made ${kind} reports other than the plan's ${count}`);
+      assert.equal(made.length, Object.entries(plan.reports).filter(([caseId]) => caseId !== "C7")
+        .reduce((sum, [, kinds]) => sum + Object.values(kinds).reduce((a, n) => a + n, 0), 0), "reports made ≠ the plan's");
       assert.equal(value.shown.length, value.handles.length, "the screen list is not the report events");
       assert.equal(value.handles.length, made.length, "report events ≠ the reports the cases made");
       assert.equal(downloadMismatches, 0, "a JSON download differs from the stored bytes");
@@ -3025,7 +3060,7 @@ async function modeLive(ctx) {
   evidence.live = { rehearsal: !!input.control, sendAllowed: plan.live.sendAllowed, dispatchLimit: plan.live.dispatchLimit,
     send: null, compute: null, guard: null, egressStop: null };
   await flowC2(ctx, "L-pre-C2");
-  await rec.part("L-C6", ["L-pre-C2"], async () => {
+  await rec.part("L-C6", NEEDS["L-C6"], async () => {
     await ensurePhenol(ctx, "L-C6");
     const refs = loopPoolRefs(plan, S.candidates);
     const guard = () => {
@@ -3116,4 +3151,4 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, expectedSideBySide, catalyticCellText, loopPoolRefs, candidateText };
+module.exports = { options, main, expectedSideBySide, catalyticCellText, loopPoolRefs, candidateText, NEEDS };

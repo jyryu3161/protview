@@ -29,6 +29,9 @@ three others plus the parent row: 4 new rows) with the same harness code, then O
 runs folder are below the limit given to the harness (one send); with ``ctx.rehearse`` the backend is the fixture
 server (no call). Result: ``live['L-B7']`` ∈ completed | provider_failed | product_failed (spec §6.3), or not_sent with
 its closed cause.
+The flow gets that limit too (the runner stops the harness past it) and the dispatch events are counted around the
+flow: a dispatch the harness left no send evidence for (it died, timed out or was stopped) is product_failed (T11 R2).
+Only the folder the harness ledger row names is read, and its evidence must carry this plan's SHA-256 and phase.
 
 Independent expectations (standard library only, nothing read from the product): the input files' SHA-256 and record
 counts; the receptor PDB atoms (identity, element, coordinates) and the pose SDF record-0 atoms, against which every
@@ -59,14 +62,25 @@ EVIDENCE_FILE = "endtoend-b-evidence.json"
 GA_CONSTANTS = Path("backend/mw/ligand_ga_constants.py")
 CASES = ("B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8")
 LIVE_PARTS = ("L-pre-B2", "L-pre-B3", "L-pre-B4", "L-B7")
-# Decision 1: the order the harness runs the parts in (the spec case IDs stay fixed).
+# Decision 1: the order the harness runs the parts in (the spec case IDs stay fixed); a topological order of
+# PART_NEEDS (the second pass of case_records follows it).
 FIXTURE_ORDER = ("B1", "B2", "B3", "B6", "B7", "B4", "B5", "B8")
-# What a part needs from earlier parts (m28_common.PREREQUISITES plus the live parts' chain).
-PART_NEEDS = {"B1": (), "B2": (), "B3": ("B2",), "B6": ("B2",), "B7": ("B2", "B3"), "B4": ("B2",), "B5": ("B2",),
-              "B8": (), "L-pre-B2": (), "L-pre-B3": ("L-pre-B2",), "L-pre-B4": ("L-pre-B3",),
-              "L-B7": ("L-pre-B2", "L-pre-B3", "L-pre-B4")}
+ORDER = {"fixture": FIXTURE_ORDER, "live": LIVE_PARTS}
+# What a part needs from earlier parts = m28_common.PREREQUISITES = the harness NEEDS table (T11 R3 / R5): B4 docks
+# with B3's receptor, parent and values and lists B3's and both B7 candidates as stored results; B5 uses B3's; B8
+# lists the reports of B1–B7.
+PART_NEEDS = {"B1": (), "B2": (), "B3": ("B2",), "B6": ("B2",), "B7": ("B2", "B3"), "B4": ("B2", "B3", "B7"),
+              "B5": ("B2", "B3"), "B8": ("B1", "B2", "B3", "B4", "B5", "B6", "B7"), "L-pre-B2": (),
+              "L-pre-B3": ("L-pre-B2",), "L-pre-B4": ("L-pre-B3",), "L-B7": ("L-pre-B2", "L-pre-B3", "L-pre-B4")}
+# The reports each part makes (analysis type and count; T11 R3): compared with the harness's reportHandles.
+REPORTS = {"fixture": {"B1": {"chemical_interactions": 1}, "B2": {"ligand_candidates": 1},
+                       "B3": {"ligand_docking": 1}, "B4": {"ligand_docking_batch": 1}, "B5": {"ligand_ga": 2},
+                       "B6": {"jev_choice": 1}, "B7": {"jev_loop": 2}, "B8": {}},
+           "live": {"L-pre-B2": {"ligand_candidates": 1}, "L-pre-B3": {"ligand_docking": 1},
+                    "L-pre-B4": {"ligand_docking_batch": 1}}}
 
-# Inputs: repository path, provenance label, whether the scope table calls it synthetic.
+# Inputs: repository path, provenance label, whether the scope table calls it synthetic (the parent is public-derived:
+# record 0 of the ProLIF example pose file, not synthetic).
 INPUTS = {
     "receptor": ("chemical/prolif-vina-rec.pdb", ("ProLIF 2.2.2 public example examples/vina prepared receptor "
                                                   "(chemical/PROVENANCE.json); a tutorial input, not experimental "
@@ -108,6 +122,9 @@ UNIT_PLAN = {
     "live": {"B2-inspect": 1, "B2-enumerate": 1, "B3": 1, "B3-again": 0, "B4": 4, "B7-exploit": 1},
 }
 RAISES = {"fixture": {"B4": 1, "B5-1": 6, "B5-2": 8}, "live": {}}
+# The live round's own need (the runner's LIVE_STEP["ligand"]): the harness reads /budget right before the send.
+LIVE_ROUND_NEED = {"expensive_units": 1, "wall_clock_s": 300}
+INPUT_LABELS = {"synthetic": "합성 표시", "public_derived": "공개 파생(합성 아님)"}
 # The new rows of the batch: fixture = the B3 and both loop candidates (reused) + one new candidate + the parent row;
 # live = the B3 candidate (reused) + three new candidates + the parent row.
 BATCH = {"fixture": {"computed": 3, "new": 1, "newRows": 2}, "live": {"computed": 1, "new": 3, "newRows": 4}}
@@ -281,8 +298,9 @@ def build_plan(code: Path, phase: str, *, send_allowed: bool = True, dispatch_li
         "docking": DOCKING, "contactCutoff_A": CONTACT_CUTOFF_A,
         "ga": {"settings": settings, "need": {key: ga_need(value, constants) for key, value in settings.items()},
                "differ": differ, "ranges": {key: list(value) for key, value in constants["GA_RANGES"].items()}},
-        "loops": LOOPS, "batch": BATCH[phase], "units": unit_plan(phase),
-        "live": {"sendAllowed": bool(send_allowed), "dispatchLimit": int(dispatch_limit)} if phase == "live" else None,
+        "loops": LOOPS, "batch": BATCH[phase], "units": unit_plan(phase), "reports": REPORTS[phase],
+        "live": {"sendAllowed": bool(send_allowed), "dispatchLimit": int(dispatch_limit),
+                 "roundNeed": dict(LIVE_ROUND_NEED)} if phase == "live" else None,
     }
 
 
@@ -357,12 +375,17 @@ def _rule_problems(rule: str, seen: dict[str, Any], plan: dict[str, Any]) -> lis
     elif rule == "B7":
         if seen.get("explore"):
             checks.append((seen["explore"].get("bodyHasScore") is False, "the explore body carries a score"))
+            checks.append((seen["explore"].get("computedSent", 0) >= 1,
+                           "the explore body sent no computed candidate (the no-score check would be empty)"))
         if seen.get("exploit"):
             checks.append((seen["exploit"].get("bodyScoresStored") is True,
                            "exploit body scores differ from the stored ones"))
     elif rule == "B8":
+        made = sum(count for case, kinds in (plan.get("reports") or {}).items() if case != "B8"
+                   for count in kinds.values())
         checks = [(seen.get("listed") == seen.get("created") and seen.get("created", 0) > 0,
                    f"listed {seen.get('listed')} of {seen.get('created')}"),
+                  (seen.get("created") == made, f"{seen.get('created')} reports made, the plan expects {made}"),
                   (seen.get("downloadMismatches") == 0, "JSON downloads differ from the stored bytes")]
     return [message for ok, message in checks if not ok]
 
@@ -390,21 +413,28 @@ def harness_clean(row: dict[str, Any] | None, phase: str, rehearse: bool) -> boo
 
 
 def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, plan: dict[str, Any] | None,
-                 refs: list[str], *, phase: str = "fixture", rehearse: bool = False) -> list[dict[str, Any]]:
+                 refs: list[str], *, phase: str = "fixture", rehearse: bool = False,
+                 evidence_problem: str | None = None) -> list[dict[str, Any]]:
     """The phase's case records from the harness row, its evidence and this module's own comparison. A part the
     harness did not run because an earlier part failed is not_observed prerequisite_failed:<that part>; a part it
-    did not report is a fail."""
+    did not report is a fail; a pass without the reports the plan expects of it is a fail; then a part whose need
+    (PART_NEEDS) is not pass is not_observed prerequisite_failed:<that need> (m28_common.apply_needs). Evidence that
+    is not of this step (another plan or phase) fails every part with ``evidence_problem``."""
     parts = (evidence or {}).get("parts") or {}
     observed = (evidence or {}).get("observed") or {}
     mine = compare_observed(plan, observed) if plan else {}
     clean = harness_clean(row, phase, rehearse)
     names = CASES if phase == "fixture" else LIVE_PARTS
+    expected = (plan or {}).get("reports") or {}
     out = []
     for name in names:
         state = parts.get(name) or {}
         detail = {"part": state, "observed": observed.get(name)}
         if name == "L-B7":
             continue                                   # the live outcome (run()) decides L-B7
+        if evidence_problem:
+            out.append(c.case_record(name, "fail", evidence_problem, evidence_refs=refs, detail=detail))
+            continue
         if state.get("status") == "not_run":
             blocked = next(iter(state.get("blockedBy") or []), None)
             if blocked in c.CASE_BRANCH:
@@ -412,9 +442,13 @@ def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, pl
                                          evidence_refs=refs, detail=detail))
                 continue
         if state.get("status") == "pass":
+            reports = c.report_problems(expected.get(name), (evidence or {}).get("reportHandles"), name)
             if mine.get(name):
                 out.append(c.case_record(name, "fail", "independent_expectation_mismatch", evidence_refs=refs,
                                          detail={**detail, "problems": mine[name]}))
+            elif reports:
+                out.append(c.case_record(name, "fail", "expected_report_missing", evidence_refs=refs,
+                                         detail={**detail, "problems": reports}))
             elif not clean:
                 out.append(c.case_record(name, "fail", "harness_row_not_clean", evidence_refs=refs, detail=detail))
             else:
@@ -423,17 +457,22 @@ def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, pl
             out.append(c.case_record(name, "fail", "harness_assertion_failed", evidence_refs=refs, detail=detail))
         else:
             out.append(c.case_record(name, "fail", "case_not_completed", evidence_refs=refs, detail=detail))
-    return out
+    needed = c.apply_needs({record["id"]: record for record in out}, ORDER[phase], PART_NEEDS)
+    return [needed[record["id"]] for record in out]
 
 
 def live_result(evidence: dict[str, Any] | None, records: dict[str, dict[str, Any]],
-                send_allowed: bool) -> tuple[str | None, str | None]:
+                send_allowed: bool, dispatched: int = 0) -> tuple[str | None, str | None]:
     """Spec §6.3 result of the exploit round and, for not_sent, its closed cause (None, None = leave it to the
-    runner: the send was not allowed by the plan)."""
-    blocked = next((case for case in ("L-pre-B2", "L-pre-B3", "L-pre-B4")
-                    if (records.get(case) or {}).get("status") != "pass"), None)
+    runner: the send was not allowed by the plan). ``dispatched`` = the dispatch events the runs folder gained while
+    the harness ran (T11 R2): a dispatch without the harness's send evidence (it died, timed out or was stopped after
+    the click) is product_failed (spec §6.3: when it is hard to tell, product_failed), never not_sent."""
     live = (evidence or {}).get("live") or {}
     send = live.get("send") or {}
+    if dispatched and not send.get("dispatched"):
+        return "product_failed", None
+    blocked = next((case for case in ("L-pre-B2", "L-pre-B3", "L-pre-B4")
+                    if (records.get(case) or {}).get("status") != "pass"), None)
     if not send.get("dispatched") and not send.get("status"):
         if blocked:
             return "not_sent", f"prerequisite_failed:{blocked}"
@@ -469,15 +508,10 @@ def tab_texts(step_dir: Path, evidence: dict[str, Any] | None) -> dict[str, str]
     return out
 
 
-def step_folder(row: dict[str, Any] | None, runner_artifacts: Path, step: str) -> Path | None:
-    """The harness step's artifacts folder: the one its ledger row names, else the newest ``<step>*`` folder of the
-    runner's artifacts holding the evidence file (the runner adds a time suffix when the folder exists)."""
-    named = (row or {}).get("artifacts")
-    if named and Path(named).is_dir():
-        return Path(named)
-    found = sorted((path for path in Path(runner_artifacts).glob(f"{step}*")
-                    if path.is_dir() and (path / EVIDENCE_FILE).is_file()), key=lambda path: path.stat().st_mtime)
-    return found[-1] if found else None
+def step_folder(row: dict[str, Any] | None) -> Path | None:
+    """The harness step's artifacts folder: the one its ledger row names and only that one (T11; no fallback to the
+    newest folder of another attempt)."""
+    return c.step_folder(row)
 
 
 def default_folders(code: Path) -> dict[str, bool]:
@@ -499,9 +533,10 @@ def run(ctx: c.BranchContext) -> c.BranchResult:
     ctx.artifacts.mkdir(parents=True, exist_ok=True)
     folders_before = default_folders(ctx.code)
     dispatch_limit = 0
+    before = 0
     if ctx.phase == "live":
-        already = c.dispatch_total(c.count_dispatch(ctx.runs)) if Path(ctx.runs).is_dir() else 0
-        dispatch_limit = already + 1 if ctx.send_allowed and already < ctx.live_calls else already
+        before = c.dispatch_now(ctx.runs)
+        dispatch_limit = before + 1 if ctx.send_allowed and before < ctx.live_calls else before
     plan = build_plan(ctx.code, ctx.phase, send_allowed=ctx.send_allowed, dispatch_limit=dispatch_limit)
     plan_file = ctx.artifacts / "plan.json"
     plan_file.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -509,32 +544,44 @@ def run(ctx: c.BranchContext) -> c.BranchResult:
     extra = ["--plan", str(plan_file)]
     if ctx.fixture:
         extra += ["--control", str(ctx.fixture["control"]), "--backend-pid", str(ctx.fixture["pid"])]
-    row = ctx.flow(step, HARNESS, ctx.phase, extra)
-    step_dir = step_folder(row, ctx.artifacts.parent, step)
+    # live: the runner stops the harness past this branch's own round (T11: already counted + its one send)
+    row = ctx.flow(step, HARNESS, ctx.phase, extra, limit=dispatch_limit if ctx.phase == "live" else None)
+    dispatched = c.dispatch_now(ctx.runs) - before if ctx.phase == "live" else 0
+    step_dir = step_folder(row)
     evidence = _load(step_dir / EVIDENCE_FILE) if step_dir else None
+    checked = c.evidence_check(evidence, plan_file, ctx.phase)
+    problem = "evidence_not_of_this_step" if checked is not None and not all(checked.values()) else None
     name = step_dir.name if step_dir else step
     refs = [f"{name}/ledger-row.json", f"{name}/{EVIDENCE_FILE}", f"{ctx.branch}/plan.json"]
-    cases = case_records(row, evidence, plan, refs, phase=ctx.phase, rehearse=ctx.rehearse)
+    cases = case_records(row, evidence, plan, refs, phase=ctx.phase, rehearse=ctx.rehearse, evidence_problem=problem)
+    if problem:
+        evidence = {"live": None}                  # nothing of another step's evidence is used below
     live: dict[str, str] = {}
     causes: dict[str, str] = {}
     if ctx.phase == "live":
-        result, cause = live_result(evidence, {record["id"]: record for record in cases}, ctx.send_allowed)
+        result, cause = live_result(evidence, {record["id"]: record for record in cases}, ctx.send_allowed,
+                                    dispatched)
         if result is not None:
             live["L-B7"] = result
             if result == "not_sent" and cause:
                 causes["L-B7"] = cause
             status, reason = c.live_case_status(result, not_sent_cause=cause if result == "not_sent" else None)
             cases.append(c.case_record("L-B7", status, reason, evidence_refs=refs,
-                                       detail={"result": result, "live": (evidence or {}).get("live")}))
+                                       detail={"result": result, "live": (evidence or {}).get("live"),
+                                               "dispatchedDuringFlow": dispatched}))
+    labels = {key: INPUT_LABELS["synthetic"] if value["syntheticLabeled"] else INPUT_LABELS["public_derived"]
+              for key, value in plan["inputs"].items() if value["syntheticLabeled"] or key == "parent"}
     return c.BranchResult(
         cases=cases, runs=[run_id for run_id in [(evidence or {}).get("run")] if run_id],
         reports_created=(evidence or {}).get("reportsCreated") if evidence else None,
-        texts=tab_texts(step_dir, evidence) if step_dir else {}, observations={"X5": observations(evidence)},
-        live=live, not_sent_causes=causes,
+        texts=tab_texts(step_dir, evidence) if step_dir and not problem else {},
+        observations={"X5": observations(evidence)}, live=live, not_sent_causes=causes,
         notes={"defaultFoldersBefore": folders_before, "defaultFoldersAfter": default_folders(ctx.code),
                "harness": {key: (row or {}).get(key) for key in ("status", "externalRequestCount", "fixtureProof",
                                                                  "offscreenComplete", "error")},
+               "evidenceCheck": checked,
                "reportHandles": (evidence or {}).get("reportHandles"), "units": (evidence or {}).get("units"),
                "raises": (evidence or {}).get("raises"), "sends": (evidence or {}).get("sends"),
-               "syntheticInputs": [key for key, value in plan["inputs"].items() if value["syntheticLabeled"]],
-               "dispatchLimit": dispatch_limit if ctx.phase == "live" else None})
+               "syntheticInputs": dict(sorted(labels.items(), key=lambda item: item[0] != "parent")),
+               "dispatchLimit": dispatch_limit if ctx.phase == "live" else None,
+               "dispatchedDuringFlow": dispatched if ctx.phase == "live" else None})

@@ -6,8 +6,10 @@ missing file is a failure, never a skip (.dryforge/spec.md R1, plan T8).
 """
 
 import ast
+import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -214,7 +216,8 @@ def _observed(plan):
                            "catalytic": e1["release"]["catalytic"]},
                "report": {"renderVersion": "mutation_candidates_markdown@2", "setHashes": [e1["setHash"]]}},
         "C2": {"m7": {"heavyAtoms": 602, "excluded": 58},
-               "set": {"positions": 4, "candidates": [f"{x['residue']} {x['from']}→{x['to']}" for x in e2["candidates"]]},
+               "set": {"positions": 4,
+                       "candidates": [f"{x['residue']} {x['from']}→{x['to']}" for x in e2["candidates"]]},
                "model": {"target": e2["modelTarget"], "sideBySideMismatches": 0, "contactMismatches": 0,
                          "differenceKeys": [], "energyUnit": "kJ/mol"}, "units": [1, 1]},
         "C3": {"scoresFirstMode": True, "units": 2},
@@ -222,7 +225,8 @@ def _observed(plan):
                                   "space": e2["space"]} for key, need in plan["ga"]["need"].items()},
                "reuseMismatches": 0},
         "C5": {"bodyHashEqual": True, "limitationsOk": True},
-        "C6": {"explore": {"bodyHasScore": False}, "exploit": {"bodyScoresStored": True}},
+        "C6": {"explore": {"bodyHasScore": False, "computedSent": 1, "vacuous": False},
+               "exploit": {"bodyScoresStored": True}},
         "C7": {"listed": 9, "created": 9, "downloadMismatches": 0}}
 
 
@@ -230,10 +234,15 @@ def _row(**change):
     return {"status": "pass", "offscreenComplete": True, "externalRequestCount": 0, "fixtureProof": True, **change}
 
 
+def _handles(reports, status=201):
+    return [{"case": case, "kind": kind, "httpStatus": status, "handle": f"obj://run_x/method_report_manifest/{n}"}
+            for case, kinds in reports.items() for kind, count in kinds.items() for n in range(count)]
+
+
 def _evidence(plan, **parts):
     states = {name: {"status": "pass"} for name in cc.CASES}
     states.update(parts)
-    return {"parts": states, "observed": _observed(plan)}
+    return {"parts": states, "observed": _observed(plan), "reportHandles": _handles(cc.REPORTS["fixture"])}
 
 
 def _by_id(records):
@@ -299,7 +308,8 @@ def test_case_records_fail_on_mismatch_unclean_row_and_missing_parts():
 
 def test_case_records_of_the_live_phase_leave_l_c6_to_the_live_outcome():
     plan = _plan("live")
-    evidence = {"parts": {name: {"status": "pass"} for name in cc.LIVE_PARTS}, "observed": {}}
+    evidence = {"parts": {name: {"status": "pass"} for name in cc.LIVE_PARTS}, "observed": {},
+                "reportHandles": _handles(cc.REPORTS["live"])}
     records = _by_id(cc.case_records(_row(fixtureProof=None), evidence, plan, [], phase="live"))
     assert list(records) == ["L-pre-C2"] and records["L-pre-C2"]["status"] == "pass"
     rehearsal = _by_id(cc.case_records(_row(fixtureProof=None), evidence, plan, [], phase="live", rehearse=True))
@@ -345,10 +355,9 @@ def test_observations_tab_texts_and_step_folder(tmp_path):
     for folder in (first, second):
         folder.mkdir()
         (folder / cc.EVIDENCE_FILE).write_text("{}")
-    assert cc.step_folder({"artifacts": str(first)}, tmp_path, "c-endtoend") == first
+    assert cc.step_folder({"artifacts": str(first)}) == first
     os.utime(first, (1, 1))
-    assert cc.step_folder({}, tmp_path, "c-endtoend") == second
-    assert cc.step_folder(None, tmp_path / "none", "c-endtoend") is None
+    assert cc.step_folder({}) is None and cc.step_folder(None) is None      # never another attempt's folder
 
 
 def _ctx(tmp_path, phase="fixture", flow=None, send_allowed=True, live_calls=0, rehearse=False):
@@ -382,22 +391,38 @@ def test_run_copies_the_set_and_reports_every_case_failed_without_a_row(tmp_path
     assert result.notes["structures"] == {"c1": "1A30", "c2": "1UBQ", "same": False}
 
 
+def _dispatch(runs, run="run_c1"):
+    folder = Path(runs) / run
+    folder.mkdir(parents=True, exist_ok=True)
+    with (folder / "events.jsonl").open("a") as out:
+        out.write(json.dumps({"type": "jev_science_dispatch_started"}) + "\n")
+
+
+def _harness_evidence(extra, mode, **content):
+    plan = Path(extra[extra.index("--plan") + 1])
+    return {"planSha256": hashlib.sha256(plan.read_bytes()).hexdigest(), "mode": mode, **content}
+
+
 def test_run_live_reads_the_harness_evidence_and_gives_the_round_result(tmp_path):
     (tmp_path / "runs").mkdir()
+    limits = []
 
     def flow(step, harness, mode, extra, limit=None):
+        limits.append(limit)
+        _dispatch(tmp_path / "runs")
         folder = tmp_path / "artifacts" / step
         folder.mkdir(parents=True)
-        (folder / cc.EVIDENCE_FILE).write_text(json.dumps({
-            "run": "run_c1", "reportsCreated": 5, "parts": {name: {"status": "pass"} for name in cc.LIVE_PARTS},
-            "observed": {}, "live": {"send": {"dispatched": True, "status": "completed"},
-                                     "compute": {"state": "scored"}}}))
+        (folder / cc.EVIDENCE_FILE).write_text(json.dumps(_harness_evidence(
+            extra, mode, run="run_c1", reportsCreated=5, reportHandles=_handles(cc.REPORTS["live"]),
+            parts={name: {"status": "pass"} for name in cc.LIVE_PARTS}, observed={},
+            live={"send": {"dispatched": True, "status": "completed"}, "compute": {"state": "scored"}})))
         return {"artifacts": str(folder), "offscreenComplete": True, "externalRequestCount": 0, "fixtureProof": True}
     result = cc.run(_ctx(tmp_path, phase="live", flow=flow, live_calls=1, rehearse=True))
     assert result.live == {"L-C6": "completed"} and result.not_sent_causes == {}
     records = _by_id(result.cases)
     assert records["L-C6"]["status"] == "pass" and records["L-pre-C2"]["status"] == "pass"
     assert result.runs == ["run_c1"] and result.reports_created == 5 and result.notes["dispatchLimit"] == 1
+    assert limits == [1] and result.notes["dispatchedDuringFlow"] == 1
     plan = json.loads((tmp_path / "artifacts/c/plan.json").read_text())
     assert plan["live"] == {"sendAllowed": True, "dispatchLimit": 1} and plan["c1"] is None
     assert not (tmp_path / "reaction").exists()             # the live phase has no C1 and copies no set
@@ -407,9 +432,9 @@ def test_run_live_without_the_send_allowed_leaves_the_cause_to_the_runner(tmp_pa
     def flow(step, harness, mode, extra, limit=None):
         folder = tmp_path / "artifacts" / step
         folder.mkdir(parents=True)
-        (folder / cc.EVIDENCE_FILE).write_text(json.dumps({
-            "run": "run_c1", "parts": {"L-pre-C2": {"status": "pass"}}, "observed": {},
-            "live": {"send": None, "guard": None}}))
+        (folder / cc.EVIDENCE_FILE).write_text(json.dumps(_harness_evidence(
+            extra, mode, run="run_c1", parts={"L-pre-C2": {"status": "pass"}}, observed={},
+            reportHandles=_handles(cc.REPORTS["live"]), live={"send": None, "guard": None})))
         return {"artifacts": str(folder), "offscreenComplete": True, "externalRequestCount": 0, "fixtureProof": None}
     result = cc.run(_ctx(tmp_path, phase="live", flow=flow, send_allowed=False, live_calls=2))
     assert result.live == {} and result.not_sent_causes == {}
@@ -454,3 +479,98 @@ def test_harness_loop_pool_follows_the_plan_rule():
     done = subprocess.run(["node", "-e", script, str(HARNESS)], input=json.dumps({"plan": plan, "rows": rows}),
                           capture_output=True, text=True, check=True, cwd=REPO / "frontend")
     assert json.loads(done.stdout) == [0, 1, 2]
+
+
+# ---------------------------------------------------------------------------------------------------- T11 (review)
+def test_live_result_counts_the_dispatch_events_not_the_harness_report():
+    ok = {"L-pre-C2": {"status": "pass"}}
+    blocked = {"L-pre-C2": {"status": "fail"}}
+    for evidence in (None, _live(), _live(guard="dispatch events 1 ≥ the limit 1")):
+        for records in (ok, blocked):
+            for allowed in (True, False):
+                assert cc.live_result(evidence, records, allowed, dispatched=1) == ("product_failed", None)
+    assert cc.live_result(_live(), blocked, True, dispatched=0) == ("not_sent", "prerequisite_failed:L-pre-C2")
+
+
+def test_run_live_gives_product_failed_when_the_harness_sent_and_left_no_evidence(tmp_path):
+    (tmp_path / "runs").mkdir()
+
+    def flow(step, harness, mode, extra, limit=None):
+        _dispatch(tmp_path / "runs")
+    result = cc.run(_ctx(tmp_path, phase="live", flow=flow, live_calls=1, rehearse=True))
+    assert result.live == {"L-C6": "product_failed"}
+
+
+def test_c7_is_not_observed_until_every_earlier_case_passed():
+    plan = _plan()
+    for failed in ("C1", "C3", "C4", "C6"):
+        records = _by_id(cc.case_records(_row(), _evidence(plan, **{failed: {"status": "fail"}}), plan, []))
+        assert (records["C7"]["status"], records["C7"]["reason"]) == ("not_observed", f"prerequisite_failed:{failed}")
+
+
+def test_a_case_whose_expected_report_is_missing_fails():
+    plan = _plan()
+    assert plan["reports"] == {"C1": {"mutation_candidates": 1}, "C2": {"openmm_protein_minimize": 1,
+                                                                        "mutation_candidates": 1, "mutation_model": 1},
+                               "C3": {}, "C4": {"sequence_ga": 2}, "C5": {"jev_choice": 1}, "C6": {"jev_loop": 2},
+                               "C7": {}}
+    evidence = _evidence(plan)
+    evidence["reportHandles"] = [item for item in evidence["reportHandles"] if item["kind"] != "mutation_model"]
+    records = _by_id(cc.case_records(_row(), evidence, plan, []))
+    assert (records["C2"]["status"], records["C2"]["reason"]) == ("fail", "expected_report_missing")
+    assert records["C7"]["reason"] == "prerequisite_failed:C2"
+    assert records["C3"]["reason"] == "prerequisite_failed:C2"
+    assert list(cc.compare_observed(plan, {"C7": {"listed": 8, "created": 8, "downloadMismatches": 0}})) == ["C7"]
+
+
+def test_c6_waits_for_the_pair_docking_it_reuses_and_its_explore_body_is_not_empty():
+    """The fixture explore round includes the modelled candidate whose C3 docking is stored (reused, no unit), so
+    "the explore body carries no score" is checked on a computed candidate (not vacuously)."""
+    plan = _plan()
+    records = _by_id(cc.case_records(_row(), _evidence(plan, C3={"status": "fail"}), plan, []))
+    assert (records["C6"]["status"], records["C6"]["reason"]) == ("not_observed", "prerequisite_failed:C3")
+    assert cc.PART_NEEDS["C6"] == ("C2", "C3")
+    pools = plan["c2"]["expect"]
+    assert pools["loopPoolFixture"] == ["LYS A:6 K→A", "LYS A:6 K→W", "ILE A:44 I→A", "ILE A:44 I→W"]
+    assert pools["loopPool"] == ["LYS A:6 K→A", "LYS A:6 K→W", "ILE A:44 I→A"]
+    empty = _observed(plan)
+    empty["C6"]["explore"] = {"bodyHasScore": False, "computedSent": 0, "vacuous": True}
+    assert list(cc.compare_observed(plan, empty)) == ["C6"]
+
+
+def _harness_export(name):
+    script = f"const h=require(process.argv[1]);process.stdout.write(JSON.stringify(h.{name}));"
+    done = subprocess.run(["node", "-e", script, str(HARNESS)], capture_output=True, text=True, check=True,
+                          cwd=REPO / "frontend")
+    return json.loads(done.stdout)
+
+
+def test_the_harness_needs_are_the_module_needs_and_the_cascade():
+    assert _harness_export("NEEDS") == {name: list(value) for name, value in cc.PART_NEEDS.items()}
+    for name, value in cc.PART_NEEDS.items():
+        assert tuple(value) == c.PREREQUISITES.get(name, ()), name
+    for order in (cc.FIXTURE_ORDER, cc.LIVE_PARTS):
+        for index, name in enumerate(order):
+            assert set(cc.PART_NEEDS[name]) <= set(order[:index]), name
+    calls = re.findall(r"rec\.part\(([^,]+), ([^,]+),", HARNESS.read_text())
+    assert calls and all(needs.startswith("NEEDS[") for _name, needs in calls), calls
+
+
+def test_the_harness_restores_the_sequence_ga_preflight_wording_check():
+    source = HARNESS.read_text()
+    c4 = source[source.index("async function flowC4"):source.index("async function flowC7")]
+    assert c4.count("gaForbidden(") >= 2                    # the preflight (sequence-ga-flow "GA 1 preflight") too
+
+
+def test_evidence_of_another_plan_or_mode_fails_every_case(tmp_path):
+    def flow(step, harness, mode, extra, limit=None):
+        folder = tmp_path / "artifacts" / step
+        folder.mkdir(parents=True)
+        plan = Path(extra[extra.index("--plan") + 1])
+        (folder / cc.EVIDENCE_FILE).write_text(json.dumps({
+            "planSha256": hashlib.sha256(plan.read_bytes()).hexdigest(), "mode": "live", "run": "run_c1",
+            "parts": {name: {"status": "pass"} for name in cc.CASES}}))
+        return {"artifacts": str(folder), "offscreenComplete": True, "externalRequestCount": 0, "fixtureProof": True}
+    result = cc.run(_ctx(tmp_path, flow=flow))
+    assert {(record["status"], record["reason"]) for record in result.cases} == {("fail", "evidence_not_of_this_step")}
+    assert result.notes["evidenceCheck"] == {"planSha256": True, "mode": False}

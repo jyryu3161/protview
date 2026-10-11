@@ -84,8 +84,9 @@ HYDROGENS = {"H", "D"}
 WATER_NAMES = {"HOH", "WAT", "H2O", "DOD", "D2O"}
 STANDARD20 = {"ALA", "CYS", "ASP", "GLU", "PHE", "GLY", "HIS", "ILE", "LYS", "LEU", "MET", "ASN", "PRO", "GLN", "ARG",
               "SER", "THR", "VAL", "TRP", "TYR"}
-# A5 maps (T6 coordinator decision 5): 1M17 A on the PREPARED structure (A6 needs the map and the contacts on the same
-# prepared structure, decision 0024), 1FIN A·C and 1MQ4 A on the loaded structures (1FIN B·D give no_usable_method).
+# A5 maps (T6 coordinator decision 5): 1M17 A on the PREPARED structure (A6 needs the map and the contacts on the
+# same prepared structure, decision 0024), 1FIN A·C and 1MQ4 A on the loaded structures (1FIN B·D give
+# no_usable_method).
 MAPS = (
     {"id": "m17", "structure": "m17", "use": "prepared", "pdbConfirm": "1M17",
      "chains": [{"chain": "A", "expect": "P00533"}]},
@@ -97,7 +98,8 @@ MAPS = (
 # A7 links (decision 7): 1M17 A → P00533, 1FIN A·C → P24941; default request (moves_flagged not included).
 PRECEDENT_LINKS = (
     {"id": "l-m17", "map": "m17", "chains": None, "includeFlagged": False, "accessions": {"A": "P00533"}},
-    {"id": "l-fin", "map": "fin", "chains": None, "includeFlagged": False, "accessions": {"A": "P24941", "C": "P24941"}},
+    {"id": "l-fin", "map": "fin", "chains": None, "includeFlagged": False,
+     "accessions": {"A": "P24941", "C": "P24941"}},
 )
 # A8 links (the inputs the M26 real stage used: chains A and B of each structure, 1S9I chain A with the M-CSA accession
 # suggestion, the other chains without an accession); every expectation is computed below.
@@ -626,10 +628,12 @@ def compare_observed(plan: dict[str, Any], observed: dict[str, Any]) -> dict[str
 
 
 def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, plan: dict[str, Any] | None,
-                 setup: dict[str, Any], refs: list[str]) -> list[dict[str, Any]]:
-    """A1–A8 records from the harness row, its evidence and this module's own comparison. A case the harness did not
-    run for want of an earlier case's state is left out (the runner's cascade makes it prerequisite_failed); a case it
-    did not report at all is a fail."""
+                 setup: dict[str, Any], refs: list[str], *,
+                 evidence_problem: str | None = None) -> list[dict[str, Any]]:
+    """A1–A8 records from the harness row, its evidence and this module's own comparison. A case one of whose parts
+    the harness did not run for want of an earlier part's state (and none of whose parts failed) is not_observed
+    prerequisite_failed:<the case of that part> (T11 R5: A5 when A1 failed and A5-others passed); a case it did not
+    report at all is a fail. Evidence that is not of this step fails every case with ``evidence_problem``."""
     parts = (evidence or {}).get("parts") or {}
     observed = (evidence or {}).get("observed") or {}
     mine = compare_observed(plan or {"a1": {}, "contacts": {"summary": {}}}, observed) if plan else {}
@@ -646,10 +650,16 @@ def case_records(row: dict[str, Any] | None, evidence: dict[str, Any] | None, pl
             out.append(c.case_record(case, "fail", setup[case].get("reason") or "setup_failed", evidence_refs=refs,
                                      detail=detail))
             continue
+        if evidence_problem:
+            out.append(c.case_record(case, "fail", evidence_problem, evidence_refs=refs, detail=detail))
+            continue
+        first = next((PART_CASE.get(need, need) for names_blocked in blocked for need in names_blocked or []
+                      if PART_CASE.get(need, need) in c.CASE_BRANCH), None)
         if "fail" in states:
             out.append(c.case_record(case, "fail", "harness_assertion_failed", evidence_refs=refs, detail=detail))
-        elif blocked and "pass" not in states and all(blocked):
-            continue                                           # the cascade names the missing prerequisite
+        elif first is not None:
+            out.append(c.case_record(case, "not_observed", f"prerequisite_failed:{first}", evidence_refs=refs,
+                                     detail=detail))
         elif states and all(state == "pass" for state in states):
             if mine.get(case):
                 out.append(c.case_record(case, "fail", "independent_expectation_mismatch", evidence_refs=refs,
@@ -679,15 +689,10 @@ def tab_texts(step_dir: Path, evidence: dict[str, Any] | None) -> dict[str, str]
     return out
 
 
-def step_folder(row: dict[str, Any] | None, runner_artifacts: Path) -> Path | None:
-    """The harness step's artifacts folder: the one its ledger row names, else the newest ``a-endtoend*`` folder of the
-    runner's artifacts holding the evidence file (the runner adds a time suffix when the folder exists)."""
-    named = (row or {}).get("artifacts")
-    if named and Path(named).is_dir():
-        return Path(named)
-    found = sorted((path for path in Path(runner_artifacts).glob(f"{STEP}*")
-                    if path.is_dir() and (path / EVIDENCE_FILE).is_file()), key=lambda path: path.stat().st_mtime)
-    return found[-1] if found else None
+def step_folder(row: dict[str, Any] | None) -> Path | None:
+    """The harness step's artifacts folder: the one its ledger row names and only that one (T11; no fallback to the
+    newest folder of another attempt)."""
+    return c.step_folder(row)
 
 
 def _load(path: Path) -> dict[str, Any] | None:
@@ -714,7 +719,8 @@ def run(ctx: c.BranchContext) -> c.BranchResult:
     else:
         setup["A7"] = {"status": "fail", "reason": "precedent_set_install_failed"}
     reaction = ensure_reaction_copy(ctx.reaction_set, ctx.reaction)
-    ctx.record("a-reaction-copy", reaction["status"], copiedBy=reaction.get("copiedBy"), setHash=reaction.get("setHash"))
+    ctx.record("a-reaction-copy", reaction["status"], copiedBy=reaction.get("copiedBy"),
+               setHash=reaction.get("setHash"))
     if reaction["status"] == "pass":
         reaction_dir = ctx.reaction / "sets" / reaction["setHash"]
     else:
@@ -723,17 +729,23 @@ def run(ctx: c.BranchContext) -> c.BranchResult:
     plan_file = ctx.artifacts / "plan.json"
     plan_file.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     row = ctx.flow(STEP, HARNESS, "fixture", ["--plan", str(plan_file)])
-    step_dir = step_folder(row, ctx.artifacts.parent)
+    step_dir = step_folder(row)
     evidence = _load(step_dir / EVIDENCE_FILE) if step_dir else None
+    checked = c.evidence_check(evidence, plan_file, ctx.phase)
+    problem = "evidence_not_of_this_step" if checked is not None and not all(checked.values()) else None
     folders_after = default_folders(ctx.code)
     name = step_dir.name if step_dir else STEP
     refs = [f"{name}/ledger-row.json", f"{name}/{EVIDENCE_FILE}", "a/plan.json"]
-    cases = case_records(row, evidence, plan, setup, refs)
+    cases = case_records(row, evidence, plan, setup, refs, evidence_problem=problem)
+    if problem:
+        evidence = {}                              # nothing of another step's evidence is used below
     return c.BranchResult(
         cases=cases, runs=[run_id for run_id in [(evidence or {}).get("run")] if run_id],
         reports_created=(evidence or {}).get("reportsCreated") if evidence else None,
-        texts=tab_texts(step_dir, evidence) if step_dir else {}, observations={"X5": observations(evidence)},
-        notes={"precedentImport": {key: value for key, value in install.items() if key != "fileSha256"},
+        texts=tab_texts(step_dir, evidence) if step_dir and not problem else {},
+        observations={"X5": observations(evidence)},
+        notes={"evidenceCheck": checked,
+               "precedentImport": {key: value for key, value in install.items() if key != "fileSha256"},
                "reactionCopy": reaction, "defaultFoldersBefore": folders_before, "defaultFoldersAfter": folders_after,
                "harness": {key: (row or {}).get(key) for key in ("status", "externalRequestCount", "providerCallsZero",
                                                                  "offscreenComplete", "error")},

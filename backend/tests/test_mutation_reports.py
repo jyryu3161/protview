@@ -660,7 +660,7 @@ def test_v2_report_template_has_no_interpretive_wording(client, world):
             assert not any(word in line for line in lines), (name, word)
 
 
-# --- M28 T3: report format @2 with the reference snapshot source table (spec M28 10.2) -------------------------------------
+# --- M28 T3: report format @2 with the reference snapshot source table (spec M28 10.2) --------------------------------
 
 V2 = "mutation_candidates_markdown@2"
 V1_LOG = FIX / "mutation_report_v1" / "v1-cited-reports.events.jsonl"
@@ -782,8 +782,8 @@ def test_v2_numbering_table_is_the_cited_map_set_in_the_m15_wording(frozen):
     set_handle = entry["reference_set_handle"]
     assert run.store.meta(set_handle)["kind"] == "reference_snapshot_set"
     assert hashlib.sha256(canonical_json(run.store.load(set_handle))).hexdigest() == snapshot_set["set_hash"]
-    assert entry == {"set_schema": "reference_snapshot_set@1", "copied_from": V1_MAP, "reference_set_handle": set_handle,
-                     "snapshot_set": snapshot_set, "klifs_terms": nr.KLIFS_TERMS}
+    assert entry == {"set_schema": "reference_snapshot_set@1", "copied_from": V1_MAP,
+                     "reference_set_handle": set_handle, "snapshot_set": snapshot_set, "klifs_terms": nr.KLIFS_TERMS}
     # the M15 report of the same map: the source table rows and the Origin line appear verbatim
     m15 = _report(frozen, V1_MAP, V1_RID)["markdown"]
     rows = _table(markdown, M15_HEADER)

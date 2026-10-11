@@ -123,7 +123,8 @@ def test_aq4_contacts_of_public_1m17_come_from_the_coordinates():
 
 def test_site_oracle_counts_kinds_minimum_and_polar_pairs():
     residue = dict(a.LIGAND, resname="LYS", chain_label="A", seq_auth=10, seq_label=5)
-    pairs = [{"residue": residue, "protein_atom": "NZ", "ligand_atom": "O1", "type": "polar_contact", "distance_A": 3.1},
+    pairs = [{"residue": residue, "protein_atom": "NZ", "ligand_atom": "O1", "type": "polar_contact",
+              "distance_A": 3.1},
              {"residue": residue, "protein_atom": "CE", "ligand_atom": "C2", "type": "hydrophobic_contact",
               "distance_A": 3.9},
              {"residue": residue, "protein_atom": "CD", "ligand_atom": "O1", "type": "contact", "distance_A": 2.9}]
@@ -180,8 +181,10 @@ def _entry(mcsa_id, residues, reference="P1"):
 
 def test_mcsa_expectation_follows_the_business_rule_order():
     structure = {"A": [{"seq_auth": 10, "icode": "", "resname": "ASP"}, {"seq_auth": 11, "icode": "", "resname": "GLU"},
-                       {"seq_auth": 12, "icode": "A", "resname": "SER"}, {"seq_auth": 13, "icode": "", "resname": "HIS"},
-                       {"seq_auth": 13, "icode": "B", "resname": "HIS"}, {"seq_auth": 14, "icode": "", "resname": "MSE"}],
+                       {"seq_auth": 12, "icode": "A", "resname": "SER"},
+                       {"seq_auth": 13, "icode": "", "resname": "HIS"},
+                       {"seq_auth": 13, "icode": "B", "resname": "HIS"},
+                       {"seq_auth": 14, "icode": "", "resname": "MSE"}],
                  "B": [{"seq_auth": 10, "icode": "", "resname": "ASP"}]}
     entries = [_entry(7, [[("9xyz", "A", 10, "Asp")], [("9XYZ", "A", 11, "Asp")], [("9xyz", "A", 12, "Ser")],
                           [("9xyz", "A", 13, "His")], [("9xyz", "A", 99, "Lys")], [("9xyz", "A", None, "Lys")],
@@ -292,7 +295,8 @@ def _observed():
                                                               "movesFlagged": None, "excluded": 66, "references": 1,
                                                               "variants": {"WT": 3}}}}}},
             "A8": {"links": {"s9i": {"chains": {"A": {"coverage": "covered", "counts": {
-                "matched": 2, "unmatched": 0, "conflict": 0}}, "B": {"coverage": "chain_not_listed", "counts": None}}}}}}
+                "matched": 2, "unmatched": 0, "conflict": 0}},
+                "B": {"coverage": "chain_not_listed", "counts": None}}}}}}
 
 
 def _row(**change):
@@ -331,9 +335,26 @@ def test_case_records_map_parts_to_spec_cases():
                                                         "A7": {"status": "not_run", "blockedBy": ["A5-others"]}}),
                                   _plan(), {}, []))
     assert split["A5"]["status"] == "fail" and split["A6"]["status"] == "pass"
-    assert "A7" not in split                                # left to the runner's cascade (prerequisite_failed:A5)
-    cascaded = c.cascade(split, c.FIXTURE_CASES)
-    assert cascaded["A7"]["reason"] == "prerequisite_failed:A5"
+    assert (split["A7"]["status"], split["A7"]["reason"]) == ("not_observed", "prerequisite_failed:A5")
+    assert c.cascade(split, c.FIXTURE_CASES)["A7"] == split["A7"]
+
+
+def test_a_case_with_one_part_blocked_by_an_earlier_case_is_not_observed():
+    """R5: A1 failed, A5-others (loaded 1FIN / 1MQ4) passed and A5-m17 (prepared 1M17) was not run for want of A1:
+    A5 is not_observed prerequisite_failed:A1, never a fail of its own."""
+    blocked = {name: {"status": "not_run", "blockedBy": ["A1"]} for name in ("A2", "A3", "A4", "A5-m17")}
+    records = _by_id(a.case_records(_row(), _evidence(A1={"status": "fail"}, **blocked,
+                                                      A6={"status": "not_run", "blockedBy": ["A1", "A5-m17"]},
+                                                      A7={"status": "not_run", "blockedBy": ["A5-m17"]}),
+                                    _plan(), {}, []))
+    assert records["A1"]["status"] == "fail"
+    for case in ("A2", "A3", "A4", "A5", "A6"):
+        assert (records[case]["status"], records[case]["reason"]) == ("not_observed", "prerequisite_failed:A1"), case
+    assert records["A7"]["reason"] == "prerequisite_failed:A5"           # the part name maps to its case
+    assert records["A8"]["status"] == "pass"
+    failed = _by_id(a.case_records(_row(), _evidence(**{"A5-m17": {"status": "not_run", "blockedBy": ["A1"]},
+                                                        "A5-others": {"status": "fail"}}), _plan(), {}, []))
+    assert failed["A5"]["status"] == "fail"                              # a part that failed is a fail
 
 
 def test_case_records_fail_on_mismatch_unclean_row_setup_and_missing_parts():
@@ -360,16 +381,32 @@ def test_observations_and_tab_texts(tmp_path):
     assert a.tab_texts(tmp_path, evidence) == {"knowledge@A5": "panel text"}
 
 
-def test_step_folder_from_the_row_or_the_newest_evidence_folder(tmp_path):
+def test_step_folder_is_the_folder_the_row_names_only(tmp_path):
     first, second = tmp_path / a.STEP, tmp_path / f"{a.STEP}-20261011T000000"
     for folder in (first, second):
         folder.mkdir()
         (folder / a.EVIDENCE_FILE).write_text("{}")
-    (tmp_path / f"{a.STEP}-empty").mkdir()
-    assert a.step_folder({"artifacts": str(first)}, tmp_path) == first
+    assert a.step_folder({"artifacts": str(first)}) == first
     os.utime(first, (1, 1))
-    assert a.step_folder({}, tmp_path) == second
-    assert a.step_folder(None, tmp_path / "none") is None
+    assert a.step_folder({}) is None and a.step_folder(None) is None     # never another attempt's folder
+    assert a.step_folder({"artifacts": str(tmp_path / "gone")}) is None
+
+
+def test_evidence_of_another_plan_fails_every_case(tmp_path, monkeypatch):
+    monkeypatch.setattr(a, "install_precedent_set", lambda ctx: {"status": "fail", "networkAttempts": 0})
+    monkeypatch.setattr(a, "ensure_reaction_copy", lambda source, target: {"status": "fail"})
+
+    def flow(step, harness, mode, extra, limit=None):
+        folder = tmp_path / "artifacts" / step
+        folder.mkdir(parents=True)
+        (folder / a.EVIDENCE_FILE).write_text(json.dumps({"planSha256": "0" * 64, "mode": mode, "run": "run_a",
+                                                          "parts": {name: {"status": "pass"} for name in a.PART_CASE}}))
+        return {"artifacts": str(folder), "offscreenComplete": True, "externalRequestCount": 0,
+                "providerCallsZero": True}
+    result = a.run(_ctx(tmp_path, flow=flow))
+    reasons = {record["id"]: record["reason"] for record in result.cases}
+    assert {reasons[case] for case in ("A1", "A2", "A3", "A4", "A5", "A6")} == {"evidence_not_of_this_step"}
+    assert result.notes["evidenceCheck"] == {"planSha256": False, "mode": True}
 
 
 def _ctx(tmp_path, phase="fixture", flow=None):

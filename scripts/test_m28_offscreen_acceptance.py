@@ -6,6 +6,7 @@ scripts/m28_export_fixed_sentences.py with synthetic input (.dryforge/spec.md §
 
 import argparse
 import ast
+import dataclasses
 import hashlib
 import json
 import os
@@ -44,6 +45,7 @@ def _all(status="pass", phase="fixture"):
 
 def _judge(cases=None, phase="fixture", branches=None, **override):
     values = {"build": {"buildCurrentWithSource": True}, "leftover": {"processes": [], "ports": []},
+              "runs_claimed": True,
               "external": ({"browser_non_loopback_requests": 0, "provider_calls": 0, "live_calls_counted": None}
                            if phase == "fixture" else
                            {"browser_non_loopback_requests": 0, "provider_calls": None, "live_calls_counted": 2}),
@@ -139,6 +141,27 @@ def test_cascade_marks_unrun_dependents_prerequisite_failed_and_keeps_reported_c
     assert live["L-pre-B3"]["reason"] == "prerequisite_failed:L-pre-B2"
     assert live["L-pre-B4"]["reason"] == "prerequisite_failed:L-pre-B3"
     assert live["L-B7"]["reason"] == "prerequisite_failed:L-pre-B2"
+
+
+def test_the_cascade_follows_the_stored_state_each_case_uses():
+    """R3 / R5: B4 uses B3's receptor, parent and docking values and B7's two docked candidates, B5 B3's values, C6
+    the C3 docking of the modelled candidate; B8 / C7 list the reports of every earlier case of the branch."""
+    assert c.PREREQUISITES["B4"] == ("B2", "B3", "B7") and c.PREREQUISITES["B5"] == ("B2", "B3")
+    assert c.PREREQUISITES["B8"] == ("B1", "B2", "B3", "B4", "B5", "B6", "B7")
+    assert c.PREREQUISITES["C6"] == ("C2", "C3") and c.PREREQUISITES["C7"] == ("C1", "C2", "C3", "C4", "C5", "C6")
+    passed = {case: c.case_record(case, "pass") for case in ("B1", "B2", "B4", "B5", "B6", "B8")}
+    done = c.cascade({**passed, "B3": c.case_record("B3", "fail")}, c.FIXTURE_CASES)
+    assert done["B4"]["status"] == "pass"                            # reported: it ran
+    done = c.cascade({"B1": passed["B1"], "B2": passed["B2"], "B3": c.case_record("B3", "fail")}, c.FIXTURE_CASES)
+    assert {case: done[case]["reason"] for case in ("B4", "B5", "B7", "B8")} == {
+        "B4": "prerequisite_failed:B3", "B5": "prerequisite_failed:B3", "B7": "prerequisite_failed:B3",
+        "B8": "prerequisite_failed:B3"}
+    done = c.cascade({case: c.case_record(case, "pass") for case in ("B1", "B2", "B3", "B5", "B6")}
+                     | {"B7": c.case_record("B7", "fail")}, c.FIXTURE_CASES)
+    assert done["B4"]["reason"] == "prerequisite_failed:B7" and done["B8"]["reason"] == "prerequisite_failed:B4"
+    done = c.cascade({"C2": c.case_record("C2", "pass"), "C3": c.case_record("C3", "fail")}, c.FIXTURE_CASES)
+    assert done["C6"]["reason"] == "prerequisite_failed:C3" and "C4" not in done   # C4 needs C2 only
+    assert done["C7"]["reason"] == "prerequisite_failed:C1"
 
 
 def test_complete_cases_fails_an_unreported_case_and_cascades():
@@ -271,7 +294,7 @@ def test_the_ledger_shape():
                                  external={"browser_non_loopback_requests": 0, "provider_calls": 0,
                                            "live_calls_counted": None},
                                  trace_audit={"status": "pass", "failures": [], "reportCount": 3, "_markdown": {}},
-                                 export_ok=True, source_head="abc", dirty_files=[" M x"])
+                                 export_ok=True, source_head="abc", dirty_files=[" M x"], runs_claimed=True)
     assert ledger["schema"] == "m28_case_ledger@1" and ledger["acceptance"] is True and ledger["phase"] == "fixture"
     assert {"source_head", "dirty_files", "cases", "definition_items", "external", "leftover", "trace_audit",
             "unobserved"} <= set(ledger)
@@ -714,6 +737,221 @@ def test_a_dispatched_round_that_did_not_complete_ends_the_plan(inputs, tmp_path
     assert runner.branch_records()["L-C6"]["reason"] == "not_sent:prerequisite_failed:L-pre-C2"
 
 
+# ---------------------------------------------------------------------------------------------------- T11 (review)
+@pytest.mark.parametrize("branches", [["b"], ["c"]])
+def test_a_real_live_phase_refuses_a_branch_subset(inputs, tmp_path, branches):
+    """R1: the real live phase always plans both rounds (spec §6.1); a subset is for the rehearsal only."""
+    with pytest.raises(SystemExit, match="rehearsal only"):
+        m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2, branches=branches))
+    with pytest.raises(SystemExit, match="rehearsal only"):
+        m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=1, branches=branches))
+    rehearsal = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, live_calls=1, branches=branches))
+    assert rehearsal.branches == branches and rehearsal.live_cap == 1
+    full = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2))
+    assert full.branches == ["b", "c"] and full.live_cap == 2
+
+
+@pytest.mark.parametrize("branches,live_calls", [(["b"], 2), (["c"], 2), (["b"], 1), (["b", "c"], 2)])
+def test_the_runtime_cap_is_the_reservation(inputs, tmp_path, monkeypatch, branches, live_calls):
+    """R1: the calls an unfinished phase reserves in the ledger are the calls its harnesses may make (a second runner
+    can never pass the allocation through the gap between the two)."""
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, branches=branches,
+                              live_calls=live_calls))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.ledger_guard()
+    reserved = json.loads((runner.root / m28.REHEARSAL_LEDGER_NAME).read_text())["roots"][str(runner.root)][
+        "phases"][0]["planned"]
+    seen = {}
+
+    def watch(proc, runs, limit, timeout):
+        seen["limit"] = limit
+        proc.wait()
+        return 0, None
+    real_popen = subprocess.Popen
+    monkeypatch.setattr(m28.m25, "watch_process", watch)
+    monkeypatch.setattr(m28.subprocess, "Popen", lambda *a, **k: real_popen([PYTHON, "-c", "0"]))
+    runner.flow("step", "x.cjs", "m", [], limit=None)
+    assert seen["limit"] == reserved == len(branches) == runner.live_cap
+    assert runner.context(branches[0]).live_calls == reserved
+    runner.ledger_close()
+
+
+def test_a_real_live_ledger_reserves_both_rounds(inputs, tmp_path, monkeypatch):
+    ledger = tmp_path / "ledger.json"
+    monkeypatch.setattr(m28.Runner, "ledger_location", lambda self: ledger)
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.ledger_guard()
+    phase = json.loads(ledger.read_text())["roots"][str(runner.root)]["phases"][0]
+    assert phase["planned"] == 2 == runner.live_cap and phase["liveCalls"] == 2
+
+
+def _dispatch(runs, run="run_aa", count=1):
+    folder = Path(runs) / run
+    folder.mkdir(parents=True, exist_ok=True)
+    with (folder / "events.jsonl").open("a") as out:
+        for _ in range(count):
+            out.write(json.dumps({"type": "jev_science_dispatch_started"}) + "\n")
+
+
+def _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.runs.mkdir(parents=True)
+    monkeypatch.setattr(m28, "BRANCH_REGISTRY", {"b": b_run, "c": c_run})
+    return runner
+
+
+def test_a_branch_that_raised_after_its_dispatch_is_product_failed_and_ends_the_plan(inputs, tmp_path, monkeypatch):
+    """R2: the dispatch events decide whether a round was sent, not the harness's own report."""
+    allowed = []
+
+    def b_run(ctx):
+        _dispatch(ctx.runs, "run_bb")
+        raise RuntimeError("the harness died after the send")
+
+    def c_run(ctx):
+        allowed.append(ctx.send_allowed)
+        return c.BranchResult(cases=[c.case_record("L-pre-C2", "pass")])
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run)
+    runner.run_branches()
+    assert allowed == [False] and runner.send_allowed is False
+    records = runner.branch_records()
+    assert (records["L-B7"]["status"], records["L-B7"]["reason"]) == ("fail", "product_failed")
+    assert records["L-C6"]["reason"] == "not_sent:earlier_product_failed"
+    assert runner.checks["liveOutcome"]["dispatched"] == {"L-B7": 1, "L-C6": 0}
+
+
+def test_a_dispatched_round_without_evidence_is_product_failed(inputs, tmp_path, monkeypatch):
+    pre = [c.case_record(case, "pass") for case in ("L-pre-B2", "L-pre-B3", "L-pre-B4")]
+    allowed = []
+
+    def b_run(ctx):
+        _dispatch(ctx.runs, "run_bb")
+        return c.BranchResult(cases=pre)                    # no live result although an event shows the send
+
+    def c_run(ctx):
+        allowed.append(ctx.send_allowed)
+        _dispatch(ctx.runs, "run_cc")                       # a harness that sent although the plan had ended
+        return c.BranchResult(cases=[c.case_record("L-pre-C2", "pass")], live={"L-C6": "not_sent"},
+                              not_sent_causes={"L-C6": "ledger_refused"})
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run)
+    runner.run_branches()
+    assert allowed == [False]
+    records = runner.branch_records()
+    assert (records["L-B7"]["status"], records["L-B7"]["reason"]) == ("fail", "product_failed")
+    assert (records["L-C6"]["status"], records["L-C6"]["reason"]) == ("fail", "product_failed")
+
+
+def test_no_dispatch_and_no_result_is_not_sent(inputs, tmp_path, monkeypatch):
+    allowed = []
+
+    def b_run(ctx):
+        raise RuntimeError("the harness died before the send")
+
+    def c_run(ctx):
+        allowed.append(ctx.send_allowed)
+        return c.BranchResult(cases=[c.case_record("L-pre-C2", "pass")], live={"L-C6": "completed"})
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run)
+    runner.run_branches()
+    assert allowed == [True] and runner.send_allowed is True
+    records = runner.branch_records()
+    assert (records["L-B7"]["status"], records["L-B7"]["reason"]) == ("not_observed",
+                                                                     "not_sent:prerequisite_failed:L-pre-B2")
+    assert records["L-C6"]["status"] == "pass"
+
+
+def test_a_lock_without_its_ledger_is_refused(inputs, tmp_path, monkeypatch):
+    """A removed ledger never rewinds the allocation: its lock file left behind refuses the phase."""
+    ledger = tmp_path / "gone" / "m28-live-ledger.json"
+    ledger.parent.mkdir()
+    ledger.with_name(ledger.name + ".lock").write_text("")
+    monkeypatch.setattr(m28.Runner, "ledger_location", lambda self: ledger)
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2))
+    with pytest.raises(SystemExit, match="refused, nothing started.*lock"):
+        runner.ledger_guard()
+    assert not ledger.exists()
+    with pytest.raises(m28.LedgerError, match="lock"):
+        m28.ledger_precheck(ledger)
+    fresh = tmp_path / "fresh" / "m28-live-ledger.json"
+    m28.ledger_precheck(fresh)                                 # neither file: the first phase ever
+    fresh.parent.mkdir()
+    fresh.write_text(json.dumps({"schema": "m28_live_ledger@1", "roots": {}}))
+    fresh.with_name(fresh.name + ".lock").write_text("")
+    m28.ledger_precheck(fresh)
+
+
+def test_the_branch_dispatch_limit_reaches_the_flow(inputs, tmp_path, monkeypatch):
+    """The runner's cap is min(its own cap, the limit a branch passes for its round)."""
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2))
+    runner.artifacts = tmp_path / "artifacts"
+    seen = []
+
+    def watch(proc, runs, limit, timeout):
+        seen.append(limit)
+        proc.wait()
+        return 0, None
+    real_popen = subprocess.Popen
+    monkeypatch.setattr(m28.m25, "watch_process", watch)
+    monkeypatch.setattr(m28.subprocess, "Popen", lambda *a, **k: real_popen([PYTHON, "-c", "0"]))
+    runner.flow("step", "x.cjs", "m", [], limit=1)
+    runner.flow("step", "x.cjs", "m", [], limit=5)
+    assert seen == [1, 2]
+
+
+def test_every_run_of_the_phase_is_audited_and_an_unclaimed_run_fails(inputs, tmp_path):
+    runner = m28.Runner(_args(inputs, tmp_path))
+    for name in ("run_a1", "run_b1", "run_zz"):
+        (runner.runs / name).mkdir(parents=True)
+    (runner.runs / "jobs.global.lock").write_text("")
+    runner.results = {"a": c.BranchResult(runs=["run_a1"]), "b": c.BranchResult(runs=["run_b1"])}
+    runs, unclaimed = runner.audit_targets()
+    assert runs == ["run_a1", "run_b1", "run_zz"] and unclaimed == ["run_zz"]
+    summary = {"status": "pass", "failures": [], "partialProductRecheck": []}
+    case = m28.x2_case(summary, {}, unclaimed=unclaimed)
+    assert (case["status"], case["reason"]) == ("fail", "unclaimed_runs") and case["detail"]["unclaimedRuns"] == [
+        "run_zz"]
+    assert m28.x2_case(summary, {}, unclaimed=[])["status"] == "pass"
+    assert _judge(runs_claimed=False)["parts"]["runsClaimed"] is False
+    assert _judge(runs_claimed=False)["acceptance"] is False and _judge()["parts"]["runsClaimed"] is True
+
+
+def test_x4_needs_tab_text_from_every_branch_that_ran():
+    clean = {"a:screen:structure@A1": {"hits": [], "excepted": []}}
+    assert m28.x4_case("fixture", clean, without_texts=[])["status"] == "pass"
+    case = m28.x4_case("fixture", clean, without_texts=["b"])
+    assert (case["status"], case["reason"]) == ("fail", "no_tab_text") and case["detail"]["withoutTabText"] == ["b"]
+    assert m28.x4_case("live", clean, without_texts=["c"])["status"] == "fail"
+
+
+def test_the_case_ledger_says_no_until_the_export_passed(inputs, tmp_path, monkeypatch):
+    """The first case-ledger.json is written with the export not yet passed: an export that raises leaves a ledger
+    that is not acceptance."""
+    runner = m28.Runner(_args(inputs, tmp_path))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    cases = m28.complete_cases("fixture", _all())
+    passing = {"browser_non_loopback_requests": 0, "provider_calls": 0, "live_calls_counted": None}
+    runner.state["build"] = {"buildCurrentWithSource": True}
+    runner.audited = True                                    # the trace audit ran and every run was claimed
+
+    def boom(ledger):
+        raise OSError("disk full")
+    monkeypatch.setattr(m28.Runner, "export", lambda self, ledger: boom(ledger))
+    with pytest.raises(OSError):
+        runner.finish(cases, passing, {"processes": [], "ports": []})
+    written = json.loads((runner.artifacts / "case-ledger.json").read_text())
+    assert written["acceptance"] is False and written["acceptanceParts"]["exportChecks"] is False
+    exports = []
+    monkeypatch.setattr(m28.Runner, "export", lambda self, ledger: exports.append(ledger["acceptance"]) or True)
+    ledger = runner.finish(cases, passing, {"processes": [], "ports": []})
+    assert exports == [False, True] and ledger["acceptance"] is True
+    assert json.loads((runner.artifacts / "case-ledger.json").read_text())["acceptance"] is True
+
+
 def test_remaining_short_reads_the_budget_and_the_send_status():
     class FakeApi:
         def __init__(self, budget, jev):
@@ -918,7 +1156,8 @@ def test_case_attribution_of_screen_texts_and_reports():
     assert m28.report_cases("fixture", "a", "interface_sasa") == ["A3"]
     assert m28.report_cases("fixture", "c", "mutation_candidates") == ["C1", "C2"]
     assert m28.report_cases("live", "c", "jev_loop") == ["L-C6"]
-    assert m28.report_cases("fixture", "b", "unknown_kind") == ["branch-b"] and m28.report_cases("live", None, "x") == []
+    assert m28.report_cases("fixture", "b", "unknown_kind") == ["branch-b"]
+    assert m28.report_cases("live", None, "x") == []
 
 
 def test_evidence_wording_scans_json_strings_and_skips_service_logs(tmp_path):
@@ -959,14 +1198,39 @@ def test_hold_reasons(tmp_path):
     (tmp_path / "step/downloads").mkdir(parents=True)
     files = {"step/downloads/r.json": "{}", "step/big.txt": "x" * (m28.MAX_TEXT_BYTES + 1),
              "step/a-failure.panel.html": "<p/>", "step/key.txt": "sk-or-v1-" + "b" * 40, "step/path.txt":
-             USER_PATH, "step/real.json": json.dumps({"t": REAL}), "step/ok.json": "{}"}
+             USER_PATH, "step/home.txt": "at /home/bob/data", "step/repo.txt": str(REPO / "x"),
+             "step/real.json": json.dumps({"t": REAL}), "step/ok.json": "{}"}
     for rel, text in files.items():
         (tmp_path / rel).write_text(text)
     real = m27.RealText([REAL])
-    reasons = {rel: m28.hold_reason(tmp_path, tmp_path / rel, real) for rel in files}
+    replacements = [(str(REPO), "<repo>")]
+    reasons = {rel: m28.hold_reason(tmp_path, tmp_path / rel, real, replacements) for rel in files}
+    # an absolute path the redaction does not cover (another user's /Users/x, a /home/… path) is held
     assert reasons == {"step/downloads/r.json": "download", "step/big.txt": "over_256KiB",
                        "step/a-failure.panel.html": "failure_panel", "step/key.txt": "key_pattern",
-                       "step/path.txt": None, "step/real.json": "real_kbase_text", "step/ok.json": None}
+                       "step/path.txt": "absolute_path", "step/home.txt": "absolute_path", "step/repo.txt": None,
+                       "step/real.json": "real_kbase_text", "step/ok.json": None}
+
+
+@pytest.mark.parametrize("leak", ["/home/bob/data/x.json", USER_PATH])
+def test_an_out_file_that_fails_the_search_goes_back_to_the_artifacts(inputs, tmp_path, leak):
+    """The files the runner writes into --out itself (summary, cases, README, listing) are searched too; one that
+    still holds a leak is moved back to the git-ignored artifacts and the export fails."""
+    runner = m28.Runner(_args(inputs, tmp_path))
+    runner.artifacts = tmp_path / "artifacts"
+    (runner.artifacts / "step").mkdir(parents=True)
+    (runner.artifacts / "step/ok.json").write_text("{}")
+    cases = m28.complete_cases("fixture", _all())
+    cases["B1"] = c.case_record("B1", "fail", "x", detail={"file": leak})
+    ledger = m28.assemble_ledger("fixture", cases, ["a", "b", "c"], build={"buildCurrentWithSource": True},
+                                 leftover={"processes": [], "ports": []}, external={}, trace_audit=None,
+                                 export_ok=False)
+    assert runner.export(ledger) is False
+    assert not (runner.out / "cases.json").exists() and (runner.artifacts / "held-from-out/cases.json").is_file()
+    assert runner.checks["exportScan"]["movedToArtifacts"] == ["cases.json"]
+    assert "cases.json" not in (runner.out / "SHA256SUMS").read_text()
+    assert m28.scan_evidence(runner.out) == {}
+    assert (runner.out / "evidence/step/ok.json").is_file()
 
 
 def test_export_holds_leaks_and_fails_on_an_unredacted_user_path(inputs, tmp_path):
@@ -988,7 +1252,13 @@ def test_export_holds_leaks_and_fails_on_an_unredacted_user_path(inputs, tmp_pat
     assert [item["held"] for item in listing["heldText"]] == ["key_pattern"]
     assert [item["path"] for item in listing["files"]] == ["step/shot.png"]
     (runner.artifacts / "step/other.txt").write_text("from /home/bob/data")
-    assert runner.export(ledger) is False and runner.checks["exportScan"]["files"]
+    (runner.artifacts / "step/user.txt").write_text("from " + USER_PATH)
+    assert runner.export(ledger) is True                   # held: never copied, path / size / SHA-256 listed only
+    assert not (runner.out / "evidence/step/other.txt").exists()
+    assert not (runner.out / "evidence/step/user.txt").exists()
+    listing = json.loads((runner.out / "binary-artifacts.json").read_text())
+    assert sorted(item["held"] for item in listing["heldText"]) == ["absolute_path", "absolute_path", "key_pattern"]
+    assert m28.scan_evidence(runner.out) == {}
 
 
 # ---------------------------------------------------------------------------------------------------- trace audit
@@ -1147,6 +1417,25 @@ def test_check_2b_comparison_quantity_exemption_and_row_fingerprint():
     summary, _ = _audit([inspection])
     problems = [f["problem"] for f in _fails(summary, "claim_fields")]
     assert any("row_fingerprint" in p for p in problems) and any("collection path" in p for p in problems)
+    unprinted = {"schema": "report_manifest@1", "render_version": "inspection_markdown@1",
+                 "claims": [_claim("interaction_set", "inter", "rows[0].distance_A", unit="angstrom",
+                                   operation="row_distance", row_index=0)]}          # no row_fingerprint key at all
+    summary, _ = _audit([unprinted])
+    assert any("row_fingerprint" in f["problem"] for f in _fails(summary, "claim_fields")), summary["failures"]
+
+
+def test_a_report_without_claims_passes_checks_2_and_4_only_when_its_adapter_allows_it(monkeypatch):
+    empty = _numbering(claims=[])
+    summary, _ = _audit([empty])
+    assert summary["status"] == "fail"
+    assert {f["check"] for f in summary["failures"]} == {"evidence_exists", "claim_fields", "no_mixing"}
+    assert all("no claims" in f["problem"] for f in summary["failures"])
+    assert not any(adapter.claims_optional for adapter in audit.ADAPTERS.values())   # none of the 20 kinds
+    assert all("claims_optional" in row for row in audit.adapter_table())
+    allowed = {**audit.ADAPTERS, "residue_numbering": dataclasses.replace(
+        audit.ADAPTERS["residue_numbering"], claims_optional=True)}
+    monkeypatch.setattr(audit, "ADAPTERS", allowed)
+    assert _audit([empty])[0]["status"] == "pass"
 
 
 def test_check_3_reference_source_must_be_in_the_report_itself():
