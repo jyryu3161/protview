@@ -1,0 +1,313 @@
+{
+  "schema": "m17_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "L-run-create": "pass",
+    "L-structure-kept": "pass",
+    "L-inputs-import": "pass",
+    "L-inspect-job": "pass",
+    "L-inspection-figure": "pass",
+    "L-atom-numbering": "pass",
+    "L-rules-status": "pass",
+    "L-invalid-rule": "pass",
+    "L-site-check": "pass",
+    "L-enumerate-job": "pass",
+    "L-candidates-oracle": "pass",
+    "L-filters": "pass",
+    "L-passes-only": "pass",
+    "L-sort": "pass",
+    "L-report": "pass",
+    "L-zero-candidates": "pass",
+    "L-paging": "pass",
+    "L-run-switch-late": "pass"
+  },
+  "runId": "run_0f62ad0d340d447db46f5a50c0a2e865",
+  "runs": {
+    "A": "run_0f62ad0d340d447db46f5a50c0a2e865",
+    "B": "run_172b18dea6224afe9318e9feaff02a8d"
+  },
+  "handles": {
+    "structureA": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/structure/61374a1b70689d98ad7d60766311400f546f07094f67cc0760cb18f17e86373d",
+    "imports": {
+      "ligand_sdf": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/chemical_raw_input/36ad998a130618e7065bfe1595bde32d4c0c516189cb96f2a7079725ce1d222f",
+      "building_blocks_sdf": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/chemical_raw_input/fa1727f4bf554aeeb6a89a6a94dab53b0af8c366d5ae1007ec418a4c12ab24b7",
+      "building_blocks_smiles": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/chemical_raw_input/18dfa16655b73a2115961fc1b338b3c50b1e1e6189fc233b50b972e10933b91c"
+    },
+    "inspection": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/ligand_inspection/604f741a6a5f39524f3d69f12cd5d80fdd0f10c3fcf5dd20a3c59ddc75936e41",
+    "candidateSet": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/ligand_candidate_set/316ddac0305af011f31e2565cc90b1a12a2cc81d3ddabf5f354a3c810eb93015",
+    "report": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/method_report_manifest/9d2ca99c49b2a5a3b0df1e9d4ba46834d9a694cdf122bdb2386621365ca3e68c",
+    "zeroSet": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/ligand_candidate_set/0ca7d8d2f23575353aac023fea61c8d85abf8a92c67fd05db249760cb4430a88",
+    "pagingSet": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/ligand_candidate_set/e6c8b75276a85bf636e6f92e072ac1ca0c9e5fc22944525cd52189088dbe7380"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-parent-methacetin-explicit-h.sdf",
+      "bytes": 2148,
+      "sha256": "2e4f5b395f92a12b6a3a15a898e18d744345f5203da76c2489ebb0e7ef463d8e"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.sdf",
+      "bytes": 3173,
+      "sha256": "0bfeb73474ede8b1f372b69072774fc9e2fd1398e8d0b24b31768e69fc9bda11"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.smi",
+      "bytes": 535,
+      "sha256": "fc603c4b9d2e3cf48ab0521963369a270f73a78b354977af6c4d4d452d85c976"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/expected.json",
+      "bytes": 35355,
+      "sha256": "5d6790aa0d2f9a4a91a1810fb766cd9c6e4e3fb63bdd3122a146ec0cea607606"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-reaction-rules.json",
+      "bytes": 8683,
+      "sha256": "cc27e69029c68d1481c1237cefaec5e6b6d8001dd6d0e08bcd0015ebca9bd66c"
+    },
+    {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m17/ligand-main/qa-generated-chain-blocks.smi",
+      "bytes": 2812,
+      "sha256": "2bc043b8522bac86e871dd26dd722f2197bf4690bcf99298729b541ceffa4c9f",
+      "label": "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons"
+    }
+  ],
+  "fixtureLabels": [
+    "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "controls": {
+    "ligand-import": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-file-parent": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-file-blockSdf": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-file-blockSmiles": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-rules": [
+      {
+        "lines": 6
+      }
+    ],
+    "ligand-inspect-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-job-approve": [
+      {
+        "phaseAfter": "saved",
+        "notice": "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다."
+      }
+    ],
+    "ligand-job-start": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-inspection-radio": [
+      {
+        "handle": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/ligand_inspection/604f741a6a5f39524f3d69f12cd5d80fdd0f10c3fcf5dd20a3c59ddc75936e41"
+      }
+    ],
+    "ligand-atom-checkbox": [
+      {
+        "serial": 19
+      }
+    ],
+    "ligand-rule-user_1": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-rule-user_2": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-rule-user_3": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-use-fixed": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "ligand-enumerate-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-candidate-set-radio": [
+      {
+        "handle": "obj://run_0f62ad0d340d447db46f5a50c0a2e865/ligand_candidate_set/316ddac0305af011f31e2565cc90b1a12a2cc81d3ddabf5f354a3c810eb93015"
+      }
+    ],
+    "ligand-filter-apply": [
+      {
+        "query": "?handle=obj%3A%2F%2Frun_0f62ad0d340d447db46f5a50c0a2e865%2Fligand_candidate_set%2F316ddac0305af011f31e2565cc90b1a12a2cc81d3ddabf5f354a3c810eb93015&heavy_atoms_min=12&heavy_atoms_max=14&sort=generation_order&direction=asc&offset=0&limit=50"
+      }
+    ],
+    "ligand-filter-pains": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-passes-only": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-sort": [
+      {
+        "value": "mol_weight"
+      }
+    ],
+    "ligand-direction": [
+      {
+        "value": "desc"
+      }
+    ],
+    "ligand-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-page-next": [
+      {
+        "offset": 50
+      }
+    ],
+    "ligand-page-prev": [
+      {
+        "offset": 0
+      }
+    ]
+  },
+  "buildId": "rBBec44wIyXoIAtlHTe43",
+  "harness": {
+    "ligand-flow.cjs": "61f6503a72b57d0255281afbda7b3c563edde0e6dbb5cc5d656adb27792c3000",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 307,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m17/ligand-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 417,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 7,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m17/ligand-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_0f62ad0d340d447db46f5a50c0a2e865",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_172b18dea6224afe9318e9feaff02a8d",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "ligand-main.jsonl",
+  "startedAt": "2026-10-11T17:56:08.989Z",
+  "finishedAt": "2026-10-11T17:58:55.900Z"
+}

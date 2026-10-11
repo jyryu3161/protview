@@ -1,0 +1,37 @@
+M28 regression chain record (source freeze a18dd488; run on commit 5a5ba3f2 = the freeze + documents and evidence only; 2026-10-11 17:26Z .. 18:40Z; the step end times are 17:27:39Z (m27), 17:29:28Z (m26), 18:39:39Z (m25), matching the durations 95 s, 109 s, 4211 s)
+
+Order (spec 8.1, one at a time, 8000/3000 free before each): M27 fixture,real -> M26 fixture,real -> M25 --phase fixture --regressions (M24 fixture, M23, M22, M21, M20, M19, M18, M17, M16, M15, M14, M13).
+Commands: scripts/m27_offscreen_acceptance.py --stages fixture,real --kbase <kbase_kinase>; scripts/m26_offscreen_acceptance.py --stages fixture,real --kbase <kbase_kinase> --reaction-set <archived real set, isolated copy made by the runner>; scripts/m25_offscreen_acceptance.py --phase fixture --regressions --kbase <kbase_kinase>.
+Exit codes: m27 exit=0 (95 s), m26 exit=0 (109 s), m25 exit=0 (4211 s, final line failedSteps=[] acceptance=true).
+.deps/precedent_reference and .deps/reaction_reference: absent before the chain, between m27 and m26, between m26 and m25 and after the chain (ls recorded each time). No default folder was created. 8000/3000 listeners after the chain: 0.
+
+Cases (baseline from the M27 record -> now), all pass, none unobserved:
+  m27 (fixture and real stages): 46 -> 46 pass
+  m26 (fixture 39 + real 19): 58 -> 58 pass
+  m25: 57 -> 57 pass
+  m24 (fixture phase): 26 -> 26 pass
+  m23: 35 -> 35 pass
+  m22: 25 -> 25 pass
+  m21: 23 -> 23 pass
+  m20: 24 -> 24 pass
+  m19: 26 -> 26 pass
+  m18: 24 -> 24 pass
+  m17: 21 -> 21 pass
+  m16: 19 -> 19 pass
+  m15: 14 -> 14 pass
+  m14: 15 -> 15 pass
+  m13 (M8-M12 included): 28 -> 28 pass
+Case counts equal the baseline for every runner, so no case was added or removed by the M20 report change (T3) or any other M28 change.
+M27: acceptance true, external requests total 0, import network attempts [0,0], browser hosts contacted none.
+M26: acceptance true, real-server requests 0 (the real stage copies the archived set), browser non-loopback requests 0.
+M25 chain: every regression step exit 0 (regression-m24 ... regression-m13), browser non-loopback requests 0, real calls 0 (fixture phase, --live-calls 0).
+Old-stage harness or runner changes needed: none. git diff --name-only a18dd488..HEAD lists only docs/**, README.md and scripts/AGENTS.md / frontend/AGENTS.md (documents); regression-harness-changes.txt was therefore not needed.
+Evidence larger than 256 KiB (53 text files, about 318 MB: M13 regression 51, M14 1, M15 1) is archived under frontend/tests/offscreen/artifacts/m28-final/export-full/ (decision 0020) with hashes in each folder's ARCHIVED-EVIDENCE.sha256. A leak search over the committed regression folder (absolute home-directory paths, key patterns) found nothing.
+The M13 README has no acceptance line of its own; the M13 regression step is listed by the M25 runner log (regression-m13 exit 0) and its 28/28 pass table.
+
+Literal ls lines of .deps/precedent_reference and .deps/reaction_reference (recorded by the chain script; its "start=" tag in the private log is the step end time):
+  before:  ls: .deps/precedent_reference: No such file or directory; ls: .deps/reaction_reference: No such file or directory
+  between m27 and m26: the same two lines
+  between m26 and m25: the same two lines
+  after:   the same two lines
+Committed download files: regression/ holds the exports of the older runners as they write them (report downloads 110: markdown 53, json 57, the same shape as the M27 regression evidence); spec 5 keeps report downloads of the M28 runner out of Git, the older runners' exports follow their own rules (decision 0020 for oversize text). No real kbase text is in them (searched).

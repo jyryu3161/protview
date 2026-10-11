@@ -1,0 +1,93 @@
+{
+  "schema": "m27_qa_plan@1",
+  "stage": "real",
+  "setHash": "2097469c382d3a6c478abe072db903e40fdd85a25e2ae68f668a88528813f886",
+  "synthetic": null,
+  "structures": {
+    "mq4": {
+      "file": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "name": "public_1mq4.cif",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)",
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    },
+    "m17": {
+      "file": "<repo>/backend/tests/fixtures/public_1m17.cif",
+      "name": "public_1m17.cif",
+      "provenance": "public PDB entry 1M17 (RCSB CC0, M27 T1 download)",
+      "sha256": "849bd2548dffb7ddcb7229a05202c1e2e41019a1fd69ec39483654cf984fc4d0"
+    },
+    "fin": {
+      "file": "<repo>/backend/tests/fixtures/public_1fin.cif",
+      "name": "public_1fin.cif",
+      "provenance": "public PDB entry 1FIN (RCSB CC0, M27 T1 download)",
+      "sha256": "dfe5da37b2e28d3d74eefa0edee97d57ea127538beead9e68a8a42a5c363a1ac"
+    }
+  },
+  "maps": [
+    {
+      "id": "rm-mq4",
+      "structure": "mq4",
+      "pdbConfirm": "1MQ4",
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "sifts",
+          "expect": "O14965"
+        }
+      ]
+    },
+    {
+      "id": "rm-m17",
+      "structure": "m17",
+      "pdbConfirm": "1M17",
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "sifts",
+          "expect": "P00533"
+        }
+      ]
+    },
+    {
+      "id": "rm-fin",
+      "structure": "fin",
+      "pdbConfirm": "1FIN",
+      "chains": [
+        {
+          "chain": "A",
+          "accession": "sifts",
+          "expect": "P24941"
+        },
+        {
+          "chain": "C",
+          "accession": "sifts",
+          "expect": "P24941"
+        }
+      ]
+    }
+  ],
+  "derivedFrom": "rm-fin",
+  "dryRunRun": null,
+  "expect": {
+    "files": {
+      "dist/moves.jsonl": 891,
+      "dist/moves_flagged.jsonl": 885,
+      "dist/references.jsonl": 555
+    },
+    "bibliographyRows": 252,
+    "unresolved": 396,
+    "unresolvedNamesTotal": 35,
+    "kbase": {
+      "commit": "77354f94b844a8c64e7cd47691ac20a2e96214b3",
+      "dist_commit": "43a935e4637d986700fa61a4deae8300e405edb7",
+      "dist_commit_date": "2026-09-21T00:05:28+09:00",
+      "dirty": false,
+      "kb_version": "kbv1:ae11f41d19e5bef9"
+    },
+    "verification": {
+      "moves": 891,
+      "moves_flagged": 885,
+      "references": 555
+    }
+  }
+}

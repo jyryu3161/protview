@@ -1,0 +1,654 @@
+{
+  "schema": "m28_branch_b_evidence@1",
+  "mode": "fixture",
+  "rehearsal": false,
+  "run": "run_f9526adf4d40493aa4d85825959f6384",
+  "parts": {
+    "B1": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:08:30.100Z",
+      "finishedAt": "2026-10-11T17:09:19.795Z"
+    },
+    "B2": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:09:19.795Z",
+      "finishedAt": "2026-10-11T17:09:42.983Z"
+    },
+    "B3": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:09:42.983Z",
+      "finishedAt": "2026-10-11T17:10:06.543Z"
+    },
+    "B6": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:10:06.544Z",
+      "finishedAt": "2026-10-11T17:10:21.409Z"
+    },
+    "B7": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:10:21.409Z",
+      "finishedAt": "2026-10-11T17:11:40.922Z"
+    },
+    "B4": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:11:40.922Z",
+      "finishedAt": "2026-10-11T17:12:39.911Z"
+    },
+    "B5": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:12:39.911Z",
+      "finishedAt": "2026-10-11T17:15:25.602Z"
+    },
+    "B8": {
+      "status": "pass",
+      "startedAt": "2026-10-11T17:15:25.602Z",
+      "finishedAt": "2026-10-11T17:16:56.031Z"
+    }
+  },
+  "observed": {
+    "B1": {
+      "rows": 36,
+      "rolesUnmatched": 0,
+      "distanceMismatches": 0,
+      "angleMismatches": 0,
+      "categories": [
+        "Cationic",
+        "HBAcceptor",
+        "HBDonor",
+        "Hydrophobic"
+      ],
+      "screenRows": 36,
+      "units": [
+        1,
+        1
+      ]
+    },
+    "B2": {
+      "sdfBlocksSeen": 10,
+      "smilesBlocksSeen": 10,
+      "candidates": 14,
+      "idMismatches": 0,
+      "origins": [
+        "fixed",
+        "user_1",
+        "user_2"
+      ],
+      "filterMismatches": 0
+    },
+    "B3": {
+      "scoreIsFirstMode": true,
+      "modes": 1,
+      "contactMismatches": 0,
+      "again": {
+        "sameJob": true,
+        "units": 0,
+        "httpStatus": 200
+      }
+    },
+    "B7": {
+      "explore": {
+        "computedSent": 1,
+        "bodyHasScore": false,
+        "vacuous": false
+      },
+      "exploit": {
+        "computedSent": 2,
+        "bodyScoresStored": true,
+        "computedRows": 2
+      },
+      "chosen": [
+        "c_196e9e1d9985566b",
+        "c_f1f6983d23c3009f"
+      ]
+    },
+    "B4": {
+      "newRows": 2,
+      "rowScoreMismatches": 0,
+      "rows": 5
+    },
+    "B5": {
+      "settings": {
+        "1": {
+          "reserved": 6,
+          "newDockings": 5,
+          "reused": 1,
+          "stopReason": "generations_complete",
+          "status": "complete",
+          "generations": 2
+        },
+        "2": {
+          "reserved": 8,
+          "newDockings": 2,
+          "reused": 6,
+          "stopReason": "generations_complete",
+          "status": "complete",
+          "generations": 3
+        }
+      },
+      "reuseMismatches": 0
+    },
+    "B8": {
+      "listed": 9,
+      "created": 9,
+      "events": 9,
+      "downloadMismatches": 0,
+      "kinds": [
+        "JEV 루프 보고서",
+        "JEV 판정 보고서",
+        "chemical_interactions",
+        "리간드 GA 설계 보고서",
+        "리간드 도킹 보고서",
+        "리간드 도킹 일괄 보고서",
+        "리간드 후보 보고서"
+      ],
+      "reports": [
+        {
+          "case": "B1",
+          "kind": "chemical_interactions",
+          "jsonSha256": "25ddbf47b39b067de3e295965c947775495515dfd7901e10db9c03cfe2c0adbb"
+        },
+        {
+          "case": "B2",
+          "kind": "리간드 후보 보고서",
+          "jsonSha256": "f16730e70b834c20e67e39e3334b7d0e1975c9dc21b7991a239d7574c9a18421"
+        },
+        {
+          "case": "B3",
+          "kind": "리간드 도킹 보고서",
+          "jsonSha256": "2660e6b2dbf4a0b0e502c55fd0646d85557656dc441d51a985389346246b9e5b"
+        },
+        {
+          "case": "B6",
+          "kind": "JEV 판정 보고서",
+          "jsonSha256": "fe5786503b9f227a40273b3ddd6dcda92624df5f0b5c7e90267515cf5aa0f0c8"
+        },
+        {
+          "case": "B7",
+          "kind": "JEV 루프 보고서",
+          "jsonSha256": "058af1c46afcde1b9fe29477ec468455f68b309883c84b5abdc1cd77683df2a2"
+        },
+        {
+          "case": "B7",
+          "kind": "JEV 루프 보고서",
+          "jsonSha256": "9c5e9c1bcb3a96f2e2480297b73b76630e29d1b0a09bc63c58be65614d0128d3"
+        },
+        {
+          "case": "B4",
+          "kind": "리간드 도킹 일괄 보고서",
+          "jsonSha256": "186b404822b3cd36a74448319956cafa289ac88dc307b1ac4a71d8271c8642bc"
+        },
+        {
+          "case": "B5",
+          "kind": "리간드 GA 설계 보고서",
+          "jsonSha256": "4d6f7b35f37495540c2d110d7d8a67d747ccbfc78ba8fcd835be23ec126a8fab"
+        },
+        {
+          "case": "B5",
+          "kind": "리간드 GA 설계 보고서",
+          "jsonSha256": "0d2793621ce84074cf788a416d46b3f82147f944dde03d12677ca48eaf5a3c00"
+        }
+      ]
+    }
+  },
+  "reportsCreated": 9,
+  "reportHandles": [
+    {
+      "case": "B1",
+      "kind": "chemical_interactions",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/c6573065f81909c1c0ab26f29ea09846764b2dc3bef82d5679133f37b80b5d7b"
+    },
+    {
+      "case": "B2",
+      "kind": "ligand_candidates",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/4aa0a13422c4a44c49fc756a87752c52f8a1d3d363cf76731b59597ce02c47b8"
+    },
+    {
+      "case": "B3",
+      "kind": "ligand_docking",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/f4d09d6b09c8b68c3392bd9d96b54af7027039b093268d23e608090486361827"
+    },
+    {
+      "case": "B6",
+      "kind": "jev_choice",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/92789bbdd498501455f462bcbb36f86c839dad9bf43dba8937ecbff014a0c215"
+    },
+    {
+      "case": "B7",
+      "kind": "jev_loop",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/513bbe1fbcf0834e9912cb86ac4a1aa458a27b4f68f24eb7714d6cd5c3ac75fd"
+    },
+    {
+      "case": "B7",
+      "kind": "jev_loop",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/60cb909b94e3669aae1160f3570ceaad376c25a385be1547259be7f07010d217"
+    },
+    {
+      "case": "B4",
+      "kind": "ligand_docking_batch",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/b3deb561d918924eb5c0e8adf6c3a8f838cbe89fef1c0658f863a80f97be6341"
+    },
+    {
+      "case": "B5",
+      "kind": "ligand_ga",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/6eaa843cab4fa4e08f97d89574d24f0872e6fdaf843cd231b3a315e8f525738f"
+    },
+    {
+      "case": "B5",
+      "kind": "ligand_ga",
+      "httpStatus": 201,
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/53c808f041401ab9f1452b3d756abc665c9172a812b378ebbec195ca1508de53"
+    }
+  ],
+  "x5": [
+    {
+      "ok": true,
+      "detail": "B7-explore pending row c_12c3612f: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "B7-explore pending row c_196e9e1d: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "B7-explore ended loop: LJ8 shown for the candidates left without a score (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "B7-exploit pending row c_c42a5380: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "B7-exploit pending row c_f1f6983d: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "B7-exploit ended loop: LJ8 shown for the candidates left without a score (no score, not 0)"
+    }
+  ],
+  "texts": {
+    "structure@B1": "texts/structure_B1.tabtext",
+    "ligand@B2": "texts/ligand_B2.tabtext",
+    "ligand@B3": "texts/ligand_B3.tabtext",
+    "knowledge@B6": "texts/knowledge_B6.tabtext",
+    "ligand@B7": "texts/ligand_B7.tabtext",
+    "ligand@B4": "texts/ligand_B4.tabtext",
+    "ligand@B5": "texts/ligand_B5.tabtext",
+    "knowledge@B8": "texts/knowledge_B8.tabtext"
+  },
+  "units": [
+    {
+      "label": "B1-prepare",
+      "before": {
+        "limit": 8,
+        "used": 0,
+        "wallLimit": 1800,
+        "wallUsed": 0
+      },
+      "remaining": 8,
+      "planned": 1,
+      "plannedRemaining": 8,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 15.342049250379205
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B1-detect",
+      "before": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 15.342049250379205
+      },
+      "remaining": 7,
+      "planned": 1,
+      "plannedRemaining": 7,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 28.195233625359833
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B2-inspect",
+      "before": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 28.195233625359833
+      },
+      "remaining": 6,
+      "planned": 1,
+      "plannedRemaining": 6,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 3,
+        "wallLimit": 1800,
+        "wallUsed": 28.195233625359833
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B2-enumerate",
+      "before": {
+        "limit": 8,
+        "used": 3,
+        "wallLimit": 1800,
+        "wallUsed": 32.14646433433518
+      },
+      "remaining": 5,
+      "planned": 1,
+      "plannedRemaining": 5,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 4,
+        "wallLimit": 1800,
+        "wallUsed": 36.03084775060415
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B3",
+      "before": {
+        "limit": 8,
+        "used": 4,
+        "wallLimit": 1800,
+        "wallUsed": 36.03084775060415
+      },
+      "remaining": 4,
+      "planned": 1,
+      "plannedRemaining": 4,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 5,
+        "wallLimit": 1800,
+        "wallUsed": 49.54708875063807
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B3-again",
+      "before": {
+        "limit": 8,
+        "used": 5,
+        "wallLimit": 1800,
+        "wallUsed": 49.54708875063807
+      },
+      "remaining": 3,
+      "planned": 0,
+      "plannedRemaining": 3,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 5,
+        "wallLimit": 1800,
+        "wallUsed": 49.54708875063807
+      },
+      "usedUnits": 0
+    },
+    {
+      "label": "B7-explore",
+      "before": {
+        "limit": 8,
+        "used": 5,
+        "wallLimit": 1800,
+        "wallUsed": 55.39341766666621
+      },
+      "remaining": 3,
+      "planned": 1,
+      "plannedRemaining": 3,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 6,
+        "wallLimit": 1800,
+        "wallUsed": 66.59523466648534
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B7-exploit",
+      "before": {
+        "limit": 8,
+        "used": 6,
+        "wallLimit": 1800,
+        "wallUsed": 69.25316895870492
+      },
+      "remaining": 2,
+      "planned": 1,
+      "plannedRemaining": 2,
+      "onPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 7,
+        "wallLimit": 1800,
+        "wallUsed": 81.55067370878533
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "B4",
+      "before": {
+        "limit": 8,
+        "used": 7,
+        "wallLimit": 1800,
+        "wallUsed": 81.55067370878533
+      },
+      "remaining": 1,
+      "planned": 2,
+      "plannedRemaining": 1,
+      "onPlan": true,
+      "after": {
+        "limit": 9,
+        "used": 9,
+        "wallLimit": 1800,
+        "wallUsed": 102.69568416662514
+      },
+      "usedUnits": 2
+    },
+    {
+      "label": "B5-1",
+      "before": {
+        "limit": 9,
+        "used": 9,
+        "wallLimit": 1800,
+        "wallUsed": 102.69568416662514
+      },
+      "remaining": 0,
+      "planned": 6,
+      "plannedRemaining": 0,
+      "onPlan": true,
+      "after": {
+        "limit": 15,
+        "used": 15,
+        "wallLimit": 1800,
+        "wallUsed": 158.82234916696325
+      },
+      "usedUnits": 6
+    },
+    {
+      "label": "B5-2",
+      "before": {
+        "limit": 15,
+        "used": 15,
+        "wallLimit": 1800,
+        "wallUsed": 158.82234916696325
+      },
+      "remaining": 0,
+      "planned": 8,
+      "plannedRemaining": 0,
+      "onPlan": true,
+      "after": {
+        "limit": 23,
+        "used": 23,
+        "wallLimit": 1800,
+        "wallUsed": 189.45563950156793
+      },
+      "usedUnits": 8
+    }
+  ],
+  "raises": [
+    {
+      "case": "B4",
+      "shortfall": {
+        "expensive_calls": 1,
+        "wall_clock_s": 0
+      },
+      "increase": {
+        "expensive_calls": 1,
+        "wall_clock_s": 0
+      },
+      "limitsBefore": {
+        "expensive_calls": 8,
+        "wall_clock_s": 1800
+      },
+      "limitsAfter": {
+        "expensive_calls": 9,
+        "wall_clock_s": 1800
+      },
+      "by": "human-click"
+    },
+    {
+      "case": "B5-1",
+      "shortfall": {
+        "expensive_calls": 6,
+        "wall_clock_s": 0
+      },
+      "increase": {
+        "expensive_calls": 6,
+        "wall_clock_s": 0
+      },
+      "limitsBefore": {
+        "expensive_calls": 9,
+        "wall_clock_s": 1800
+      },
+      "limitsAfter": {
+        "expensive_calls": 15,
+        "wall_clock_s": 1800
+      },
+      "by": "human-click"
+    },
+    {
+      "case": "B5-2",
+      "shortfall": {
+        "expensive_calls": 8,
+        "wall_clock_s": 0
+      },
+      "increase": {
+        "expensive_calls": 8,
+        "wall_clock_s": 0
+      },
+      "limitsBefore": {
+        "expensive_calls": 15,
+        "wall_clock_s": 1800
+      },
+      "limitsAfter": {
+        "expensive_calls": 23,
+        "wall_clock_s": 1800
+      },
+      "by": "human-click"
+    }
+  ],
+  "sends": [
+    {
+      "case": "B6",
+      "sendId": "a4ef7f1a-4bee-4115-8595-9e281b56920e",
+      "status": "completed",
+      "bodySha256": "7c54022e2258c4845279ef427b1c994afdeb5c694c3d71b9c0eb122bb594f42a",
+      "transportSha256": "7c54022e2258c4845279ef427b1c994afdeb5c694c3d71b9c0eb122bb594f42a",
+      "preparedSha256": "7c54022e2258c4845279ef427b1c994afdeb5c694c3d71b9c0eb122bb594f42a"
+    },
+    {
+      "case": "B7-explore",
+      "sendId": "531f8496-ce56-4973-8dea-60f039c0e788",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "explore",
+      "bodySha256": "388430d4bd7ca016409c02eb4f232ad9d1a01614d24ef4ff1c505b3a6d4d626c",
+      "transportSha256": "388430d4bd7ca016409c02eb4f232ad9d1a01614d24ef4ff1c505b3a6d4d626c",
+      "bodyBytes": 3062
+    },
+    {
+      "case": "B7-exploit",
+      "sendId": "1812ec8d-08e0-429b-bcc0-e6e0956bf1e1",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "exploit",
+      "bodySha256": "5b2a9f55855bfe5da5206630e5cf82f2927ca8bfecae715d1fea7b2fd617c96e",
+      "transportSha256": "5b2a9f55855bfe5da5206630e5cf82f2927ca8bfecae715d1fea7b2fd617c96e",
+      "bodyBytes": 3807
+    }
+  ],
+  "live": null,
+  "planSha256": "e74c623c9387b65bdfcf3fb6c43c178f778d067bd27256b09c9b58902e3ba83e",
+  "inputs": {
+    "receptor": {
+      "name": "prolif-vina-rec.pdb",
+      "sha256": "745bd4726ba956e27da5cf4da10189f2bbe937db59ff08f302bca9d2cdbc62cc",
+      "syntheticLabeled": false
+    },
+    "pose": {
+      "name": "prolif-vina-output.sdf",
+      "sha256": "810b8c714edd3140585664f980c8e6644ba9c76372029cb3abbfa4d13b5899e0",
+      "syntheticLabeled": false
+    },
+    "parent": {
+      "name": "public-derived-parent-record0.sdf",
+      "sha256": "34a5c499e612156ab2c3ae7abedc95922cc4990363bda5275e7da6acd64c5fd9",
+      "syntheticLabeled": false
+    },
+    "blocksSmiles": {
+      "name": "synthetic-ga-small-blocks.smi",
+      "sha256": "8ae10d0571871f1a6d400552567133706f3f44298ee04983867e3ba7d0a8a8aa",
+      "syntheticLabeled": true
+    },
+    "blocksSdf": {
+      "name": "synthetic-blocks.sdf",
+      "sha256": "0bfeb73474ede8b1f372b69072774fc9e2fd1398e8d0b24b31768e69fc9bda11",
+      "syntheticLabeled": true
+    },
+    "rules": {
+      "name": "synthetic-ga-pool2000-rules.json",
+      "sha256": "035001795d24a1afe5220ad4b8b1e8762b54148fa50f32493fd2c39021a5fff1",
+      "syntheticLabeled": true
+    }
+  },
+  "startedAt": "2026-10-11T17:08:29.362Z",
+  "fixture": {
+    "calls": 3,
+    "scripts": [
+      "good",
+      "good",
+      "good_second"
+    ],
+    "dispatched": 3,
+    "dispatchedBefore": 0,
+    "sentinelAuthorization": true,
+    "credentialReads": {
+      "productResolverReads": 0,
+      "sentinelReads": 3,
+      "updatedAt": "2026-10-11T17:11:10.155031+00:00"
+    }
+  },
+  "finishedAt": "2026-10-11T17:16:56.194Z",
+  "error": null,
+  "requestCount": 578
+}

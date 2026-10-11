@@ -1,0 +1,83 @@
+M28 clean-install test (spec 9), 2026-10-11T17:01Z..17:05Z (local time 2026-10-12 02:01..02:05)
+
+Procedure: git clone --no-hardlinks of the local repository at the commit below into a new folder under the git-ignored runs/ (no network for the clone), then ONLY the commands printed in README.md ("설치와 실행"), in that order, with empty package caches chosen by environment variables (PIP_NO_CACHE_DIR=1, npm_config_cache=<clone>/.npm-cache; the commands themselves are the README's). The clone has no .deps, .env, runs/, .venv or node_modules (checked below).
+
+start (UTC): 2026-10-11T17:01:30Z
+source commit: 6da1670a86fd1b6c5366eea24379866bd50a9d8c   freeze: a18dd488
+original checkout git status lines before:        0
+clone: exit=0 4s  (git clone --no-hardlinks --quiet <repo> <clone>)
+clone HEAD: 6da1670a86fd1b6c5366eea24379866bd50a9d8c
+clone has .deps: no; .env: no; runs: no; .venv: no; frontend/node_modules: no
+venv: exit=0 2s  (python3.11 -m venv .venv)
+pip-install: exit=0 52s  (.venv/bin/python -m pip install -e ./backend[dev])
+npm-ci: exit=0 79s  (npm --prefix frontend ci)
+npm-build: exit=0 20s  (npm --prefix frontend run build)
+python: Python 3.11.11; node: v24.3.0; npm: 11.4.2
+pip freeze lines:       41
+npm ls top-level lines:       15
+install-done (UTC): 2026-10-11T17:04:08Z
+
+== README run commands and the check of spec 9 (loopback only, standard library client) ==
+backend: .venv/bin/python -m uvicorn mw.api.app:app --host 127.0.0.1 --port 8000   (started in the clone root)
+frontend: npm --prefix frontend run start -- -p 3000                              (started in the clone root)
+GET /capabilities (backend 8000): 200
+GET /api/capabilities (frontend proxy 3000): 200
+GET / (frontend page): 200, 13302 bytes
+capabilities entries reported unavailable: 19
+  unavailable /energy_protocols/protocols/relax: reason=''
+  unavailable /energy_protocols/protocols/cartesian_ddg: reason=''
+  unavailable /energy_protocols/protocols/interface_analyzer: reason=''
+  unavailable /energy_protocols/protocols/residue_energies: reason=''
+  unavailable /methods/chemical_interactions: reason='pinned chemical worker unavailable'
+  unavailable /methods/pocket_detection: reason='fpocket 4.2.3 작업 환경이 설치되어 있지 않습니다(설정 명령 scripts/setup_fpocket.py).'
+  unavailable /methods/analysis_workflows/templates/chemical_interactions: reason='이 분석에 필요한 방법을 사용할 수 없습니다.'
+  unavailable /methods/analysis_workflows/templates/find_cavities: reason='이 분석에 필요한 방법을 사용할 수 없습니다.'
+  unavailable /methods/analysis_workflows/natural_language_planning: reason='자연어 계획과 모델 보조 실행은 과학 데이터 전송 통로(게이트 투영·전송 전 미리보기·예산, 로드맵 M24)와 새 실제 호출 할당이 없어 사용할 수 없습니다. M8 뷰어 동의는 워크플로·모델·과학 권한을 주지 않습니다.'
+  unavailable /methods/residue_numbering: reason='참조 스냅샷 세트가 설치되어 있지 않습니다(가져오기 명령 scripts/import_reference_snapshots.py). Reference snapshot set is not installed.'
+  unavailable /methods/reaction_knowledge: reason='반응 참조 스냅샷 세트가 설치되어 있지 않습니다(가져오기 명령 scripts/import_reaction_references.py). Reaction reference snapshot set is not installed.'
+  unavailable /methods/kinase_precedents: reason='키나아제 전례 참조 스냅샷 세트가 설치되어 있지 않습니다(가져오기 명령 scripts/import_precedent_snapshots.py). Kinase precedent reference snapshot set is not installed.'
+  unavailable /methods/ligand_candidates: reason='RDKit 작업 환경(.deps/prolif/venv-locked)이나 작업 모듈이 없습니다.'
+  unavailable /methods/ligand_docking: reason='도킹 작업 환경(.deps/docking/venv-locked)·설치 기록·잠금 파일이나 작업 모듈이 없습니다.'
+  unavailable /methods/ligand_docking_batch: reason='도킹 작업 환경(.deps/docking/venv-locked)·설치 기록·잠금 파일이나 작업 모듈이 없습니다.'
+  unavailable /methods/ligand_ga_design: reason='도킹 작업 환경(.deps/docking/venv-locked)·설치 기록·잠금 파일이나 작업 모듈이 없습니다.'
+  unavailable /methods/sequence_ga_design: reason='도킹 작업 환경(.deps/docking/venv-locked)·설치 기록·잠금 파일이나 작업 모듈이 없습니다.'
+  unavailable /methods/jev_loop/ligand: reason='도킹 작업 환경(.deps/docking/venv-locked)·설치 기록·잠금 파일이나 작업 모듈이 없습니다.'
+  unavailable /methods/jev_loop/protein: reason='도킹 작업 환경(.deps/docking/venv-locked)·설치 기록·잠금 파일이나 작업 모듈이 없습니다.'
+POST /runs: 201
+run id present: True
+POST uploads (public_1hsg.cif, 212124 bytes, sha256 d2ba73b5c4be…): 201
+POST inspect_complex: 200, status=complete
+outputs keys: ['interactions', 'load', 'prepare']
+interaction handle present: True
+POST reports: 201
+GET reports/selected (reopen, evidence verified by the server): 200
+GET reports/download markdown: 200, 9758 bytes, sha256 3779d92fe78b…
+GET reports/download json: 200, 181594 bytes
+GET reports (list): 200
+
+== after the test ==
+both servers stopped: no uvicorn/next process left, no listener on 8000/3000 (checked with pgrep and lsof)
+original checkout: git status --short lines after the test: 0 (same as before; the clone lives under the ignored runs/ folder)
+
+== findings of this test ==
+1. Core install passed with the README commands as written (python3.11 venv, pip install -e ./backend[dev], npm ci, build): all exit 0. PDBFixer 1.12.0 (a pyproject pin) was built from its sdist during the pip step, so the M21 modeling method is available in the clean install.
+2. Optional methods report unavailable with a reason and without a number: chemical interactions, pocket detection, the two analysis templates that need them, residue numbering, reaction knowledge, kinase precedents (reference sets not installed), ligand candidates, ligand docking, batch docking, ligand GA, sequence GA, both JEV loop branches (work environments not installed), natural-language planning (no science-transfer permission). The four Rosetta-named energy protocols are listed unavailable by design since M0 (not implemented).
+3. Documentation error found and fixed after the freeze (allowed: documents): README.md and docs/operations.md said that the Electron executable is downloaded by npm ci. With electron 44.4.5 npm ci downloads only the npm package from registry.npmjs.org; the executable (offscreen QA only, not needed for the product) is fetched by node_modules/electron/index.js on first use or by npx install-electron --no, from the Electron release URL on github.com (seen in the @electron/get debug line https://github.com/electron/electron/releases/download/v44.4.5/electron-v44.4.5-darwin-arm64.zip). On this machine install.js found the file in the global cache (cache hit), so no executable download was observed and its redirect target host was not observed.
+4. No pin or lock file needed a change.
+
+== static check of the optional work environments (not installed; spec 9) ==
+docs/operations.md install sections vs scripts and config (read-only commands: <script> --help):
+- scripts/setup_prolif_worker.py --wheelhouse/--destination; setup_fpocket.py and setup_qvina.py --pkgs/--prefix/--conda; setup_docking_worker.py --wheelhouse/--destination; import_reference_snapshots.py --from/--dest; import_reaction_references.py --accession/--accessions-file/--no-kinases/--reference-dir/--yes; import_precedent_snapshots.py --from/--dest/--yes: every flag in the documented commands exists in the script's argparse help; every script path exists.
+- archive counts in the documented commands equal the lock files: prolif wheels 33 (requirements 33, hash file 33), fpocket conda archives 35 (explicit list 35, hash file 35), qvina conda archives 8 (8, 8), docking wheels 26 (26, 26).
+- config/ file names named in the documents exist (config/chemical, config/pockets, config/docking listings checked).
+No document needed a fix from this check; the Electron statement fix is finding 3 above.
+
+== package and binary repository hosts (spec 9; counted from the step logs, not from a network capture) ==
+method: PIP_VERBOSE=1 (pip -v) for the pip step, npm_config_loglevel=http for npm ci, DEBUG=@electron/get:* for the manual Electron install.js check; hosts and counts are read from those logs. The logs are git-ignored under frontend/tests/offscreen/artifacts/m28-final/clean-install-logs/ (path, size, SHA-256 below).
+- pypi.org: pip index lookups; the pip -v log lists 1 distinct pypi.org URL (the number of lookups is not logged).
+- files.pythonhosted.org: 68 "Downloading ..." lines (wheels, sdists and the .metadata files pip fetches first; the build-isolation requirements of the PDBFixer 1.12.0 sdist are included). The log names 42 distinct files.pythonhosted.org URLs: 31 are the "Obtaining dependency information ... .metadata" lines (downloaded, already inside the 68), 11 are "Link requires a different Python" candidates that pip skipped.
+- registry.npmjs.org: 262 package GET fetches that missed the (empty) cache + 1 POST (npm ci's default audit, the bulk advisories endpoint; it sends package names and versions, no key, cookie or user data) = 263 requests, and 257 cache hits in the same run (the npm cache dir was empty at the start).
+- github.com: 0 requests. npm ci did not download the Electron executable (electron 44.4.5 downloads it on first use or by `npx install-electron --no`); the manual check of node_modules/electron/install.js found electron-v44.4.5-darwin-arm64.zip in the machine-wide cache ("Cache hit"), the URL it would have used is https://github.com/electron/electron/releases/download/v44.4.5/electron-v44.4.5-darwin-arm64.zip (redirect target host not observed).
+- no other host was contacted by the install steps; the runtime check used 127.0.0.1 only.
+step logs (git-ignored): pip-install.log 76646 B sha256 554ab23ea9d633ba028b05f690909de59bc71323236a759d1ad776f129300126; npm-ci.log 59086 B sha256 e0cec15c5961ad12b0e32d3d0a66b9e268f76408355c3adbf5ede5f782911d42; npm-build.log 1072 B sha256 fc82b61c8b6b24ca762824a0f0b97837f6fecda4efa559f4ad0c957f335e6437; electron-install.log 268 B sha256 4716e46adc19fd5a9ae1cddb289529d1211fe3e3625c8f9c43456a39e00f8009; backend.log 1806 B sha256 c36a5aeb32c6230706289aa9bbe5ec2d614a853f0045894b2b456b24c63b6f79; frontend.log 243 B sha256 b0c9952e7b51f98e9d70671f91bc01a089282401008b0bf4a7af91f1e3a32b3d.
+The clone was made from commit 6da1670a (the freeze a18dd488 plus documents; the only differences are documents and evidence: docs/business-rules.md, docs/contracts.md, docs/engineering-notes.md, docs/operations.md, docs/standards.md, docs/system-architecture.md, scripts/AGENTS.md, frontend/AGENTS.md and files of docs/qa/m28-final-20261011/; README.md is identical: git diff a18dd488 6da1670a -- README.md is empty), so the installed result equals a clone of the freeze.

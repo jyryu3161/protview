@@ -1,0 +1,209 @@
+{
+  "schema": "m28_branch_b_row@1",
+  "mode": "live",
+  "rehearsal": true,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "parts": {
+    "L-pre-B2": "pass",
+    "L-pre-B3": "pass",
+    "L-pre-B4": "pass",
+    "L-B7": "pass"
+  },
+  "runId": "run_8e98de2b360c43ed97422f9b50a3a733",
+  "reportsCreated": 4,
+  "buildId": "rBBec44wIyXoIAtlHTe43",
+  "harness": {
+    "endtoend-b-flow.cjs": "657f2aa5b7988eb15b45bc6d4d3dda2c8d86d7013675c1424fd6d5a1ecab8ed3",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+    "docking-batch-flow.cjs": "9598f058d5d6aa084416eba6c5a9c947eb39c80cca6ddee78c90b832f597497f",
+    "ligand-ga-flow.cjs": "9fa1ef37ddc4d31e26aef34a2da08d89b44f3b528bae25972d604793b3e73bbb",
+    "ligand-flow.cjs": "61f6503a72b57d0255281afbda7b3c563edde0e6dbb5cc5d656adb27792c3000",
+    "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+    "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+    "m11-ledger.cjs": "3fab0a386b1973eb88e387126620c27f327630aa29733d00a952e937423f3ced"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 309,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/live-rehearsal/b-live/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 309,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 9,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/live-rehearsal/b-live/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 59,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "offscreenComplete": true,
+  "externalRequestCount": 0,
+  "fixtureProof": true,
+  "fixture": {
+    "calls": 1,
+    "scripts": [
+      "good_second"
+    ],
+    "dispatched": 1,
+    "dispatchedBefore": 0,
+    "sentinelAuthorization": true,
+    "credentialReads": {
+      "productResolverReads": 0,
+      "sentinelReads": 1,
+      "updatedAt": "2026-10-11T18:41:52.851170+00:00"
+    }
+  },
+  "units": [
+    {
+      "label": "B2-inspect",
+      "remaining": 8,
+      "planned": 1,
+      "used": 1
+    },
+    {
+      "label": "B2-enumerate",
+      "remaining": 7,
+      "planned": 1,
+      "used": 1
+    },
+    {
+      "label": "B3",
+      "remaining": 6,
+      "planned": 1,
+      "used": 1
+    },
+    {
+      "label": "B3-again",
+      "remaining": 5,
+      "planned": 0,
+      "used": 0
+    },
+    {
+      "label": "B4",
+      "remaining": 5,
+      "planned": 4,
+      "used": 4
+    },
+    {
+      "label": "B7-exploit",
+      "remaining": 1,
+      "planned": 1,
+      "used": 1
+    }
+  ],
+  "raises": [],
+  "sends": [
+    {
+      "case": "L-B7",
+      "sendId": "19728e62-0818-4653-8148-5e33c9b714f1",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "exploit",
+      "bodySha256": "6c1317db6cd92538588a09e579d0bc4b7cc888db67e4f011bc7579880bd3a163",
+      "transportSha256": "6c1317db6cd92538588a09e579d0bc4b7cc888db67e4f011bc7579880bd3a163",
+      "bodyBytes": 4684
+    }
+  ],
+  "live": {
+    "rehearsal": true,
+    "sendAllowed": true,
+    "dispatchLimit": 1,
+    "send": {
+      "dispatched": true,
+      "status": "completed",
+      "reasonCode": null,
+      "sendId": "19728e62-0818-4653-8148-5e33c9b714f1",
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "listPosition": 2,
+      "listSize": 2,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true
+      },
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 166,
+        "input_tokens": 146,
+        "output_tokens": 20
+      },
+      "bodyBytes": 4684
+    },
+    "compute": {
+      "state": "scored",
+      "job": "done"
+    },
+    "guard": null,
+    "egressStop": null,
+    "budgetBeforeSend": {
+      "remaining": {
+        "expensive_units": 1,
+        "wall_clock_s": 1756.2702092495747
+      },
+      "need": {
+        "expensive_units": 1,
+        "wall_clock_s": 300
+      },
+      "short": []
+    },
+    "dispatchCounts": {
+      "run_8e98de2b360c43ed97422f9b50a3a733": 1
+    }
+  },
+  "error": null,
+  "evidenceFile": "endtoend-b-evidence.json",
+  "stepsFile": "endtoend-b.jsonl",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m28-final/live-rehearsal/b-live",
+  "startedAt": "2026-10-11T18:40:55.395Z",
+  "finishedAt": "2026-10-11T18:42:04.484Z"
+}

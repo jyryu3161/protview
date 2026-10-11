@@ -1,0 +1,306 @@
+{
+  "schema": "m28_branch_c_evidence@1",
+  "mode": "live",
+  "rehearsal": false,
+  "run": "run_fa1910ecc946418390974caee9d08a29",
+  "parts": {
+    "L-pre-C2": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:45:04.143Z",
+      "finishedAt": "2026-10-11T18:45:47.295Z"
+    },
+    "L-C6": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:45:47.295Z",
+      "finishedAt": "2026-10-11T18:46:23.140Z"
+    }
+  },
+  "observed": {
+    "L-pre-C2": {
+      "m7": {
+        "heavyAtoms": 602,
+        "excluded": 58,
+        "approvalSeen": true
+      },
+      "set": {
+        "positions": 4,
+        "candidates": [
+          "LYS A:6 K→A",
+          "LYS A:6 K→W",
+          "ILE A:44 I→A",
+          "ILE A:44 I→W",
+          "GLY A:76 G→A",
+          "GLY A:76 G→W"
+        ]
+      },
+      "model": {
+        "target": {
+          "residue": "ILE A:44",
+          "from": "I",
+          "to": "W"
+        },
+        "energyUnit": "kJ/mol",
+        "sideBySideMismatches": 0,
+        "differenceKeys": [],
+        "energies": {
+          "wild_type_reference": {
+            "before": -10184.213905790195,
+            "after": -12792.052911304538
+          },
+          "mutant": {
+            "before": -8045.996542151248,
+            "after": -12717.486975922548
+          }
+        },
+        "sasa": {
+          "wild_type_reference": 29.349771360160197,
+          "mutant": 88.12585960950504
+        },
+        "contacts": {
+          "wild_type_reference": 27,
+          "mutant": 21
+        },
+        "hisCys": {
+          "protonationDifferences": 0,
+          "variants": {
+            "wild_type_reference": [
+              "HIS A:68:HID"
+            ],
+            "mutant": [
+              "HIS A:68:HID"
+            ]
+          }
+        },
+        "limitations": 5,
+        "contactMismatches": 0,
+        "reportValueClaims": 6
+      },
+      "units": [
+        1,
+        1
+      ]
+    },
+    "L-C6": {
+      "explore": {
+        "computedSent": 0,
+        "bodyHasScore": false,
+        "vacuous": true,
+        "vacuousReason": "live: L-pre-C2 models the target but docks nothing, so no pool candidate is computed before this round (the fixture C6 checks the explore body on a computed candidate)"
+      }
+    }
+  },
+  "reportsCreated": 4,
+  "reportHandles": [
+    {
+      "case": "L-pre-C2",
+      "kind": "openmm_protein_minimize",
+      "httpStatus": 201,
+      "handle": "obj://run_fa1910ecc946418390974caee9d08a29/method_report_manifest/3bc2ba426b2ddbeb45ed6f3c3c76db94d7b37eb60ba3c8d0b3dce6e4e686a7c9"
+    },
+    {
+      "case": "L-pre-C2",
+      "kind": "mutation_candidates",
+      "httpStatus": 201,
+      "handle": "obj://run_fa1910ecc946418390974caee9d08a29/method_report_manifest/5b7ff1abcb6b2811c659d0305294e8856d8fbcac3fa76df3f7019ab2771e33bc"
+    },
+    {
+      "case": "L-pre-C2",
+      "kind": "mutation_model",
+      "httpStatus": 201,
+      "handle": "obj://run_fa1910ecc946418390974caee9d08a29/method_report_manifest/c4d30c498503f915ae94cad99e2f0a7c3846a3a2e1f595589a89b7ed4a11df14"
+    },
+    {
+      "case": "L-C6",
+      "kind": "jev_loop",
+      "httpStatus": 201,
+      "handle": "obj://run_fa1910ecc946418390974caee9d08a29/method_report_manifest/dcc3b71a312107298b585c239ef13f7fb9bc1e39e603477fe869c5532b9e11ef"
+    }
+  ],
+  "x5": [
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position ILE A:3 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position LYS A:6 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position ILE A:44 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position GLY A:76 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: the catalytic exclusion count reads \"M-CSA 촉매 잔기 주석 — (효소 반응 지식 결과를 고르지 않음 (annotation_not_given), 세지 않음)\" (not counted, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 pending row 0: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 pending row 1: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 pending row 2: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 ended loop: LJ8 shown for the candidates left without a score (no score, not 0)"
+    }
+  ],
+  "texts": {
+    "structure@L-pre-C2": "texts/structure_L-pre-C2.tabtext",
+    "protein@L-pre-C2": "texts/protein_L-pre-C2.tabtext",
+    "protein@L-C6": "texts/protein_L-C6.tabtext"
+  },
+  "units": [
+    {
+      "label": "C2-m7",
+      "before": {
+        "limit": 8,
+        "used": 0,
+        "wallLimit": 1800,
+        "wallUsed": 0.02179516665637493
+      },
+      "remaining": 8,
+      "planned": 1,
+      "plannedRemaining": 8,
+      "raisePlanned": 0,
+      "onPlan": true,
+      "remainingMatchesPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 10.85155712487176
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "C2-m21",
+      "before": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 10.921109582763165
+      },
+      "remaining": 7,
+      "planned": 1,
+      "plannedRemaining": 7,
+      "raisePlanned": 0,
+      "onPlan": true,
+      "remainingMatchesPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 32.02174591552466
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "C6-explore",
+      "before": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 32.71788287349045
+      },
+      "remaining": 6,
+      "planned": 2,
+      "plannedRemaining": 6,
+      "raisePlanned": 0,
+      "onPlan": true,
+      "remainingMatchesPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 4,
+        "wallLimit": 1800,
+        "wallUsed": 56.66668287338689
+      },
+      "usedUnits": 2
+    }
+  ],
+  "raises": [],
+  "sends": [
+    {
+      "case": "L-C6",
+      "sendId": "5a7df7e3-8c3a-45b5-bc5f-daa695af8fc2",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "explore",
+      "bodySha256": "e44d1156ed31efa86d7ab3fcb1ca251f7e6b2680424ee42eb1108682bc4294be",
+      "transportSha256": null,
+      "bodyBytes": 3736
+    }
+  ],
+  "live": {
+    "rehearsal": false,
+    "sendAllowed": true,
+    "dispatchLimit": 2,
+    "send": {
+      "dispatched": true,
+      "status": "completed",
+      "reasonCode": null,
+      "sendId": "5a7df7e3-8c3a-45b5-bc5f-daa695af8fc2",
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "listPosition": 1,
+      "listSize": 3,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true
+      },
+      "usage": {
+        "cost": 0.000080136,
+        "external_tokens": 1955,
+        "input_tokens": 1908,
+        "output_tokens": 47
+      },
+      "bodyBytes": 3736
+    },
+    "compute": {
+      "state": "scored",
+      "model": "done",
+      "dock": "done"
+    },
+    "guard": null,
+    "egressStop": null,
+    "dispatchCounts": {
+      "run_d4ca51b5106345bea2c7644afab62e00": 1,
+      "run_fa1910ecc946418390974caee9d08a29": 1
+    }
+  },
+  "structures": {
+    "c1": "1A30",
+    "c2": "1UBQ",
+    "same": false
+  },
+  "planSha256": "e792297037bb844403fda2e555c145c6d1af2938b53f491a94c9fb7fdcf0bd6e",
+  "inputs": {
+    "a30": {
+      "name": "public_1a30.cif",
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "syntheticLabeled": false
+    },
+    "ubq": {
+      "name": "public_1ubq.cif",
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "syntheticLabeled": false
+    },
+    "phenol": {
+      "name": "synthetic-phenol-ligand.sdf",
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3",
+      "syntheticLabeled": true
+    }
+  },
+  "startedAt": "2026-10-11T18:45:03.543Z",
+  "finishedAt": "2026-10-11T18:46:23.204Z",
+  "error": null,
+  "requestCount": 394
+}

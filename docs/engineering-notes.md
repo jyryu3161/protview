@@ -691,6 +691,46 @@
 - **원인**: 금지어 목록에 `\beffects?\b`·`효과`가 있는데, 상세의 "그 밖의 kbase 필드" 블록은 kbase 경로를 그대로 보이므로(`effects[0].evidence` 같은 경로 이름) 그대로 검사하면 kbase 필드 이름을 ProtView의 효과 주장으로 잡는다. 표 머리말 "측정 변화(kbase 추출 effects)"와 버전 키 `effect_rules_version`도 같은 이유로 걸린다.
 - **대응**: `kinase-precedents-flow.cjs`는 문구 검사 전에 고정 문장, 그 머리말·버전 키(Markdown 이스케이프 형태 포함), 서버가 준 저장 문자열 전부, 그리고 "그 밖의 kbase 필드" 블록의 항목(경로와 JSON 값)을 지운다. 블록의 제목·안내 문장은 그대로 검사한다. 금지어는 ProtView가 쓴 템플릿 글자에만 건다(보고서 금지어 검사와 같은 원칙).
 
+### 부하에서 흔들리던 시험은 단계를 붙잡은 뒤 신호를 보낸다 (M28)
+- **증상**: Stop 훅처럼 그룹을 동시에 돌릴 때 한 번씩 실패하고 따로 돌리면 통과하던 시험 넷: 서열 GA SIGTERM 시험 `test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker]`가 작업 폴더에 `0.model.cif` 등이 더 있는 채 실패, 포켓 `test_running_engine_is_stopped_with_its_process_group[output_files]`가 출력 상한 실패 대신 정상 완료, `test_a_failed_reference_row_ends_the_run_before_any_individual[…]`가 psutil `proc_cmdline`의 `SystemError`, M24 `test_jev_reports.py`의 `'0.1234' not in dumped` 실패(위 M25·M26 항목).
+- **원인(모두 시험 쪽, `docs/qa/m28-final-20261011/preflight.md` (f))**: (1) 시험이 단계 프로세스를 "본 뒤" 신호·결함을 넣었는데, 부하 중에는 시스템 전체 프로세스를 한 번 훑는 데 약 1초가 걸려 짧은 단계(qvina2 약 0.8초, 이 입력의 fpocket 약 1.7초)가 그 사이에 끝났다. guardian의 출력 상한 표본은 작업 프로세스가 살아 있는 동안에만 뜬다. (2) psutil 7.2.2 `process_iter(["name", "cmdline"])`의 미리 읽기는 생성기 안, 곧 시험의 `try` 밖에서 돌아 읽는 순간 끝난 아무 프로세스의 `SystemError`가 그대로 새어 나왔다(그 시험은 `cmdline`을 쓰지도 않았다). 제품 `backend/mw`에는 명령줄 읽기가 없다. (3) 부분 문자열 검사가 manifest 스냅숏의 `time_utc`·벽시계 부동소수 숫자와 우연히 겹쳤다.
+- **대응(M28 T2, 시험만 고침, 제품 코드·해시 파일 변경 없음)**: 단계 직전에 쓰이는 표지 파일(서열 GA `individuals/0.started`·`ligand.pdbqt`, 포켓 `engine.stderr`)을 본 뒤 작업 프로세스 그룹에 SIGSTOP을 보내고, 첫 멈춤이 닿는 동안 fork된 자식을 잡으려고 한 번 더 보낸 상태에서 단계 프로세스를 찾아 멈춰 둔 다음에만 신호·결함을 넣는다(qvina2는 CPU를 50 ms 쓴 뒤 붙잡고, 포켓 시험은 fpocket만 멈춘 채 guardian·작업 프로세스를 다시 돌린다). 중간에 실패하면 그룹에 SIGCONT를 보내 멈춘 프로세스를 남기지 않는다. `SystemError`는 `psutil.Error`와 같이 "이미 없는 프로세스"로 다루고 쓰지 않는 미리 읽기를 뺐다. 확률 표지는 앞뒤가 숫자·소수점이 아닌 온전한 숫자로만 찾는다(새는 값을 여전히 잡는지 보는 시험을 더함).
+- 같은 모양의 부분 문자열 검사(`str(value) not in dumped`)가 `backend/tests/test_jev_api.py`와 `test_jev_loop_reports.py`에는 남아 있다(T2 범위 밖). 이런 시험이 실패하면 코드 문제로 단정하지 말고 그 시험만 단독으로 다시 돌려 진단 기록으로 남긴다.
+
+### M20 보고서 형식 @2는 인용할 때만 쓰고, @1 경로는 출처표를 찾지 않는다 (M28)
+- **원인**: 저장된 M20 보고서는 다시 열 때 `render_version`·manifest 키 집합·Markdown 바이트를 다시 만들어 비교하므로, 출처표를 렌더에 그냥 더하면 이미 저장된 보고서가 모두 `report_evidence_invalid`가 된다. "새 보고서는 모두 @2"로 해도 인용 없는 보고서의 바이트가 바뀌어 수정 금지 기준선(`docs/qa/m26-reaction-20261008/v1-baseline/baseline/`)과 비교하는 `backend/tests/test_mutation_api.py::test_stored_v1_sets_keep_the_t1_baseline_reads_validation_and_report_bytes`가 깨진다(착수 확인 (g) ★A).
+- **대응(M28 T3)**: 형식 버전을 둘로 두고(`MANIFEST_KEYS_BY_VERSION`) 새 보고서는 참조값을 인용할 때만 `@2`다. 다시 열기는 저장된 `render_version`으로 갈라 `@1`은 `@1` 규칙만 쓰고 출처표 함수(`reference_snapshot_sets`)를 부르지 않는다. 참조값을 인용한 `@1` 보고서 두 개가 든 run 로그(`backend/tests/fixtures/mutation_report_v1/`, T3 전 코드로 기록)로 같은 바이트를 확인하고, 그 경로에서 M15 검증을 부르면 실패하도록 시험한다. 반응 표는 반응 지식 결과를 주었다는 사실이 아니라 M-CSA 항목 ID 주장이 있을 때만 싣는다(덮인 체인이 없으면 `@1` 그대로).
+- **순환 import**: `reaction_knowledge_reports.py`가 불러올 때 `mutation_reports`(공용 한도·금지어)를 import하므로, `mutation_reports.py`는 반응 표 문구(`SOURCE_LABELS`·`LICENSE_LABEL`·`PROCESSED_LABEL`)를 쓰는 `_reference_set_lines` 함수 안에서만 `reaction_knowledge_reports`를 import한다. 모듈 맨 위로 올리면 순환이 된다.
+- **더 엄격해진 만들기**: `@2`를 만들거나 다시 열 때 인용한 번호 대응을 M15 보고서 검증(`numbering_reports.validated_numbering_map`)으로 확인하고 주석의 세트 해시가 그 번호 대응의 세트와 같아야 한다(`mutation_reference_set_mismatch`). `@1`에는 없던 검사다.
+- 새 하위 제목·표 머리글은 템플릿 글자이고 고정 문장이 아니다(슬롯을 비운 금지어 검사 대상). `mutation_reports.py`는 호출 키 해시 집합 밖이라 바꿔도 M21·M23 재사용에 영향이 없다.
+
+### 보고서 목록 라우트는 모든 보고서를 다시 연다 (M28, 알려진 한계)
+- **증상**: M28 T7 개발 중 분기 B run에서 지식·보고서 탭 보고서 목록(`GET /runs/{rid}/reports`)이 보고서 9건에 처음 약 15초 걸렸고 GA 보고서는 한 건에 4–5초였다(구현 중 측정, 증거 파일 없음). 보고서가 더 쌓인 run에서는 Next.js `/api` 프록시의 30초 한도(위 "오래 걸리는 작업 시작이 화면에서 실패로 보인다")에 닿을 수 있다.
+- **원인**: 목록 라우트가 이벤트에 있는 모든 보고서를 종류별 다시 열기 검증(`_saved_any_report`)으로 연 뒤에야 목록을 돌려준다. 보고서 하나라도 검증에 실패하면 목록 전체가 422 `report_evidence_invalid`다.
+- **대응**: 제품은 바꾸지 않았다(M28은 새 기능 없음). 종단 수락은 보고서마다 `GET /runs/{rid}/reports/selected`로 열림을 판정하고 목록 라우트를 열림 판정에 쓰지 않는다(X1, 역추적 감사).
+
+### 점검 보고서와 `interface_sasa` 보고서는 다시 열 때 다시 만들지 않는다 (M28)
+- 점검 보고서(`report_manifest@1`, `reports.saved_report`)는 다시 열 때 종류·상태·Markdown 연결·`report_created` 이벤트만 보고 주장도 Markdown도 다시 만들지 않는다. `interface_sasa` 방법 보고서(`method_reports.saved_method_report`)는 결과 객체와 필드·주장을 대조하지만 Markdown은 다시 렌더하지 않는다.
+- 그래서 "다시 열기 200 = 제품이 값을 다시 확인함"은 이 두 종류에 그대로 성립하지 않는다. M28 역추적 감사는 두 종류를 `partialProductRecheck`로 표시하고, A2(점검 보고서)·A3(SASA 보고서) 사례가 입력 파일에서 독립으로 계산한 기대값으로 값을 대조한다.
+
+### 물 정책 기본값이 두 곳에서 다르다 (M28 확인)
+- 도구 명세(`config/tools.yaml`의 `prepare_structure`)와 `docs/business-rules.md` "구조 불러오기와 전처리"의 기본값은 `keep_all`이고, 화면(`frontend/app/page.tsx`의 물 선택 기본 "제거")과 고정 파이프라인(`backend/mw/workflows.py`의 `InspectionRequest`, `config/pipelines/inspect_complex.yaml`의 `preparation_defaults`)의 기본값은 `strip_all`이다.
+- 기대값을 계산하거나 "기본 정책"이라고 쓸 때 어느 기본값인지 밝힌다. M28 A1은 화면 기본값(`strip_all`)으로 클릭했고 1M17 기대 잔기·원자 수도 그 정책으로 셌다. 코드는 바꾸지 않았다.
+
+### M7 사전 검사를 통과하는 로컬 공개 구조는 1UBQ뿐이다 (M28 착수 확인)
+- 저장소의 공개 구조 8개를 물 정책 둘로 M7 사전 검사에 넣으면 1UBQ만 통과한다(중원자 602, 제외 58). 1M17·1S9I·1A4I는 `sequence_gap`, 1MQ4·1A30은 `heavy_template_mismatch`, 1HSG는 `missing_terminal_oxt`, 1FIN은 이유 코드 없는 `duplicate author chain identity`(`input_invalid`)다(`docs/qa/m28-final-20261011/preflight.md` (c), `m7-probe.txt`).
+- 변이 구조 모델링(M21·M23·M25 단백질 루프)은 M7 사전 검사를 거치므로 로컬 공개 자료로는 1UBQ에서만 돈다. 그래서 M28 분기 C는 촉매 보호(C1)를 M-CSA 효소 1A30에서, 모델링·같은 조건 도킹 짝·서열 GA·단백질 루프(C2–C6)를 1UBQ에서 보이고 두 반쪽은 같은 구조에서 이어지지 않는다. 1UBQ에는 리간드가 없어 도킹에는 합성 표시 페놀 SDF를 쓴다.
+
+### 종단 수락 실행기의 함정 (M28)
+- **실제 live 단계는 분기 둘을 함께 돌린다**: `--phase live`에서 `--branches`가 b·c 둘이 아니면 거절한다(계획이 두 바퀴이고 보낸 바퀴가 완료되지 않으면 다음 바퀴를 보내지 않아야 하므로). 한 분기만은 연습(`--rehearse`)에서만 돌리고 그때 계획은 고른 분기의 바퀴만 센다. fixture 단계에서 일부 분기만 돌리면 돌기는 하지만 `acceptance`는 늘 거짓이다.
+- **실호출 계수는 이벤트로 정한다**: 바퀴를 보냈는지는 하네스의 자기 보고가 아니라 분기 앞뒤의 `jev_science_dispatch_started` 이벤트 수로 정한다. 하네스가 죽거나 멈춰져 증거를 남기지 못해도 dispatch가 늘었으면 보낸 바퀴이고 완료 결과가 없으면 `product_failed`다(다음 바퀴는 보내지 않음). 대장 합계도 root의 runs 폴더 이벤트를 다시 세어 정한다.
+- **X4 줄 예외 키는 세 방식이다**: `X4_EXCEPTIONS`의 키는 정규화한 줄의 SHA-256(`line`), 숫자를 `#`로 바꾼 줄의 SHA-256(`template`, 실행마다 숫자가 다른 줄), 첫 ": " 앞 머리의 SHA-256(`label`, 머리만 예외이고 나머지는 계속 검사)이다. 예외마다 이유가 있어야 하고(없으면 오류) 줄 종류·사례·출처 코드를 적는다. 요청 본문처럼 JSON인 줄은 건너뛰지 않고 문자열마다 검사한다.
+- **`*.tabtext`·`*.held`는 커밋 증거에서 빠진다**: 실행기가 텍스트로 내보내는 확장자는 `.json`·`.jsonl`·`.log`·`.md`·`.txt`·`.html`뿐이라 하네스의 탭 글자(`texts/*.tabtext`, 지식 탭의 참조 원문이 들 수 있음)와 분기 A의 참조 오류 글자(`endtoend-a-real-errors.held`)는 `binary-artifacts.json`에 경로·크기·SHA-256만 남는다. 이 확장자를 텍스트 목록에 더하면 참조 원문이 커밋 증거에 들어간다.
+- **연습은 키를 건드리지 않는다**: 연습은 키 존재 확인을 건너뛰고 증거 검색도 placeholder·키 모양만 찾으며 제품 키 해석기를 부르지 않는다(연습에서 해석기를 부르면 증거 내보내기가 실패로 기록된다). 제품 키 해석기는 연습이 아닌 단계에서 자식 프로세스로만 부르고 불리언과 파일 경로만 받는다: fixture 단계는 끝의 증거 키 검색(`key_scan`) 1회, 실제 live 단계는 키 존재 확인 1회 + 증거 키 검색 1회(대장 `checks.exportScan.productKeyResolverCalls` fixture 1·live 2·연습 0). 대장의 `external.product_key_resolver_calls`는 증거 내보내기 전에 적히므로 fixture 0·live 1이다.
+- **기본 `--out`은 실행한 날짜 폴더다**: 기본값이 `docs/qa/m28-final-<실행한 날짜>/acceptance-<단계>`이므로 착수 날 폴더(`m28-final-20261011`)에 모으려면 `--out`을 준다.
+- **분기 시험은 로컬 자료가 있어야 한다**: `scripts/test_m28_branch_a.py`·`test_m28_branch_c.py`는 `../kbase_kinase/dist`·`.deps/reaction_qa/import2`를 시험 파일이 있는 저장소 루트 기준으로 찾고 없으면 실패한다(skip 아님). git worktree에서는 실패하므로 주 체크아웃에서 돌린다.
+- **기본 참조 폴더**: X6은 끝날 때 `.deps/precedent_reference`·`.deps/reaction_reference`가 없어야 통과다(실행 전부터 있었어도 실패). 실행기와 분기 모듈은 단계 격리 폴더에만 설치·복사한다.
+
 ## 동작 원리
 
 ### handle과 복구

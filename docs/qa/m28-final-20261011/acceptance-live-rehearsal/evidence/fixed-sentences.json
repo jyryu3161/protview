@@ -1,0 +1,3142 @@
+{
+  "schema": "m28_fixed_sentences@1",
+  "sentences": [
+    {
+      "id": "mw.chemical_reports.SDF_SCOPE_LIMITATION",
+      "text": "Ligand import supports SDF V2000 only; V3000 input is rejected."
+    },
+    {
+      "id": "mw.docking_batch_constants.BATCH_STATEMENTS[B1]",
+      "text": "이 일괄의 모든 행은 같은 수용체·상자·seed·방식·값으로 계산되어 점수를 같은 표에서 나란히 볼 수 있으며, 표의 정렬은 표시 순서일 뿐 순위가 아니다."
+    },
+    {
+      "id": "mw.docking_batch_constants.BATCH_STATEMENTS[B2]",
+      "text": "이 일괄은 일부만 계산되었다. 계산하지 않은 행은 점수가 없으며 0이 아니다."
+    },
+    {
+      "id": "mw.docking_batch_constants.BATCH_STATEMENTS[B3]",
+      "text": "부모 행은 후보와 같은 설정으로 도킹한 기준 입력이며, 점수 차이를 개선이나 악화로 해석하지 않는다."
+    },
+    {
+      "id": "mw.docking_batch_constants.SCORE_ROW_LABELS[core_fixed]",
+      "text": "샘플 1(점수 오름차순 나열)"
+    },
+    {
+      "id": "mw.docking_batch_constants.SCORE_ROW_LABELS[free]",
+      "text": "모드 1(엔진 출력 순서)"
+    },
+    {
+      "id": "mw.docking_batch_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 수치는 저장된 일괄 요약 객체의 값, 요약 행을 상태 조건으로 센 개수, 점수 행이 가리키는 후보별 도킹 결과 객체의 첫 행 점수다. 보고서는 도킹을 다시 하지 않았다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[0]",
+      "text": "점수는 qvina 2.1(Vina 계열 스코어링 함수)이 낸 값(kcal/mol)이며 결합 친화도·결합 자유 에너지가 아니다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[10]",
+      "text": "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[11]",
+      "text": "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로)."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[1]",
+      "text": "같은 수용체·상자·seed·방식(자유/코어 고정)·값에서 나온 점수끼리만 나란히 볼 수 있다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[2]",
+      "text": "수용체는 입력 그대로의 강체이며 수소·양성자화·토토머를 바꾸지 않았고, AutoDock4 원자 유형·부분 전하는 Meeko가 정한 값이다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[3]",
+      "text": "리간드 고리 형태는 입력 형태(후보는 RDKit이 만든 형태)로 고정되어 탐색하지 않았다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[4]",
+      "text": "접촉은 거리만으로 센 기하 접촉이며 수소결합 등 상호작용 판정이 아니다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[5]",
+      "text": "포즈는 엔진이 낸 배치이며 실험으로 확인한 결합 자세가 아니다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[6]",
+      "text": "후보의 3D 좌표와 수소는 RDKit이 만든 것이며 입력 구조가 아니다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[7]",
+      "text": "코어 중원자 좌표만 부모 값으로 고정했고 나머지는 RDKit 구속 형태 샘플이며, 점수만 매기고 구조는 최적화하지 않았다. 이 배치는 실험으로 확인한 결합 자세가 아니다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[8]",
+      "text": "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다."
+    },
+    {
+      "id": "mw.docking_batch_reports.LIMITATIONS[9]",
+      "text": "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다."
+    },
+    {
+      "id": "mw.docking_batch_reports.SCORE_COLUMN_LABEL",
+      "text": "qvina 점수(kcal/mol)"
+    },
+    {
+      "id": "mw.docking_batch_reports.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[0]",
+      "text": "점수는 qvina 2.1(Vina 계열 스코어링 함수)이 낸 값(kcal/mol)이며 결합 친화도·결합 자유 에너지가 아니다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[10]",
+      "text": "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[11]",
+      "text": "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로)."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[1]",
+      "text": "같은 수용체·상자·seed·방식(자유/코어 고정)·값에서 나온 점수끼리만 나란히 볼 수 있다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[2]",
+      "text": "수용체는 입력 그대로의 강체이며 수소·양성자화·토토머를 바꾸지 않았고, AutoDock4 원자 유형·부분 전하는 Meeko가 정한 값이다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[3]",
+      "text": "리간드 고리 형태는 입력 형태(후보는 RDKit이 만든 형태)로 고정되어 탐색하지 않았다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[4]",
+      "text": "접촉은 거리만으로 센 기하 접촉이며 수소결합 등 상호작용 판정이 아니다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[5]",
+      "text": "포즈는 엔진이 낸 배치이며 실험으로 확인한 결합 자세가 아니다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[6]",
+      "text": "후보의 3D 좌표와 수소는 RDKit이 만든 것이며 입력 구조가 아니다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[7]",
+      "text": "코어 중원자 좌표만 부모 값으로 고정했고 나머지는 RDKit 구속 형태 샘플이며, 점수만 매기고 구조는 최적화하지 않았다. 이 배치는 실험으로 확인한 결합 자세가 아니다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[8]",
+      "text": "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다."
+    },
+    {
+      "id": "mw.docking_constants.LIMITATIONS[9]",
+      "text": "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다."
+    },
+    {
+      "id": "mw.docking_constants.SCORE_COLUMN_LABEL",
+      "text": "qvina 점수(kcal/mol)"
+    },
+    {
+      "id": "mw.docking_constants.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.docking_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 수치는 저장된 qvina 작업 결과(도킹 결과 객체)의 값과, 저장된 모드 행의 접촉 행을 종류 조건으로 센 개수, 저장된 점수의 최솟값·최댓값이다. 보고서는 도킹을 다시 하지 않았다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[0]",
+      "text": "점수는 qvina 2.1(Vina 계열 스코어링 함수)이 낸 값(kcal/mol)이며 결합 친화도·결합 자유 에너지가 아니다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[10]",
+      "text": "미지정 입체 중심의 입체는 RDKit이 임의로 정한 것이다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[11]",
+      "text": "수용체는 변이 모델링으로 최소화한 구조이며 리간드 자세는 이 수용체에 맞춰 조정하지 않았다(리간드 좌표는 사용자가 준 SDF 그대로)."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[1]",
+      "text": "같은 수용체·상자·seed·방식(자유/코어 고정)·값에서 나온 점수끼리만 나란히 볼 수 있다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[2]",
+      "text": "수용체는 입력 그대로의 강체이며 수소·양성자화·토토머를 바꾸지 않았고, AutoDock4 원자 유형·부분 전하는 Meeko가 정한 값이다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[3]",
+      "text": "리간드 고리 형태는 입력 형태(후보는 RDKit이 만든 형태)로 고정되어 탐색하지 않았다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[4]",
+      "text": "접촉은 거리만으로 센 기하 접촉이며 수소결합 등 상호작용 판정이 아니다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[5]",
+      "text": "포즈는 엔진이 낸 배치이며 실험으로 확인한 결합 자세가 아니다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[6]",
+      "text": "후보의 3D 좌표와 수소는 RDKit이 만든 것이며 입력 구조가 아니다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[7]",
+      "text": "코어 중원자 좌표만 부모 값으로 고정했고 나머지는 RDKit 구속 형태 샘플이며, 점수만 매기고 구조는 최적화하지 않았다. 이 배치는 실험으로 확인한 결합 자세가 아니다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[8]",
+      "text": "수용체에서 지정한 리간드 인스턴스 하나만 뺐고 그 밖의 요소는 바꾸지 않았다."
+    },
+    {
+      "id": "mw.docking_reports.FIXED_LIMITATIONS[9]",
+      "text": "자유 도킹은 RDKit 형태 하나를 시작점으로 썼다."
+    },
+    {
+      "id": "mw.docking_reports.SCORE_COLUMN_LABEL",
+      "text": "qvina 점수(kcal/mol)"
+    },
+    {
+      "id": "mw.docking_reports.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.jev_constants.AUDIT_SCOPE",
+      "text": "science"
+    },
+    {
+      "id": "mw.jev_constants.CHOICE_LABEL",
+      "text": "JEV 판정(모델 선택)"
+    },
+    {
+      "id": "mw.jev_constants.INSTRUCTIONS[ligand_candidate_choice@1]",
+      "text": "Choose exactly one candidate from the list to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Property values are RDKit estimates, not measurements or interactions. The order of the candidate list is the local stored order only and carries no meaning."
+    },
+    {
+      "id": "mw.jev_constants.INSTRUCTIONS[mutation_candidate_choice@1]",
+      "text": "Choose exactly one candidate from the list to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Distances and neighbor lists are geometry from stored coordinates, not measurements or interactions. The order of the candidate list is the local stored order only and carries no meaning."
+    },
+    {
+      "id": "mw.jev_constants.J6_BY_CATALYTIC_STATUS[checked]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_constants.J6_BY_CATALYTIC_STATUS[not_available]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_constants.J6_BY_CATALYTIC_STATUS[not_checked]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_constants.LIGAND_VALUES_NOTE",
+      "text": "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included"
+    },
+    {
+      "id": "mw.jev_constants.MUTATION_VALUES_NOTE",
+      "text": "Distances and neighbor lists are geometry from stored coordinates, not interactions; protection_released=false means no performed check applied, not that a residue is unimportant; checks that are not_checked or not_available were not performed"
+    },
+    {
+      "id": "mw.jev_constants.SCREEN_NOTES[U1]",
+      "text": "같은 후보 목록을 다시 보내면 응답이 달라질 수 있다. 응답은 합치거나 다수결로 쓰지 않고 시간순으로 따로 보인다."
+    },
+    {
+      "id": "mw.jev_constants.SCREEN_NOTES[U2]",
+      "text": "과학 전송은 뷰어 모델 명령과 같은 외부 토큰·USD 예산과 '사용량 모름' 중지 상태를 쓰며, 한쪽이 예산을 다 쓰거나 사용량을 모르면 이 run에서 다른 쪽도 멈춘다."
+    },
+    {
+      "id": "mw.jev_constants.SCREEN_NOTES[U3]",
+      "text": "보내는 서열 구간과 이웃 잔기 이름만으로도 어떤 단백질인지 알려질 수 있다. 번호 대응·accession은 보내지 않는다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J1]",
+      "text": "JEV 판정은 외부 모델이 보낸 후보 목록에서 고른 하나일 뿐이며 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J2]",
+      "text": "고른 이유는 알 수 없다. 응답에는 선택과 모델이 보고한 확신도·확률만 있으며 과학 값이 아니다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J3]",
+      "text": "외부로 나간 내용은 승인한 미리보기 본문과 바이트가 같고(해시로 확인) 그 본문이 이 기록의 근거 전부이다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J4]",
+      "text": "모델 선택은 후보 목록의 순서(로컬 저장 순서)의 영향을 받을 수 있다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J5]",
+      "text": "후보는 2D 그래프이고 속성값은 RDKit 추정값이며 결합·활성·합성 가능성을 계산하지 않았고 수용체 정보 없이 고른 것이다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J6]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_constants.STATEMENTS[J7]",
+      "text": "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다."
+    },
+    {
+      "id": "mw.jev_constants.VALUES_NOTES[ligand]",
+      "text": "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included"
+    },
+    {
+      "id": "mw.jev_constants.VALUES_NOTES[mutation]",
+      "text": "Distances and neighbor lists are geometry from stored coordinates, not interactions; protection_released=false means no performed check applied, not that a residue is unimportant; checks that are not_checked or not_available were not performed"
+    },
+    {
+      "id": "mw.jev_loop_constants.CHOICE_LABEL",
+      "text": "JEV 판정(모델 선택)"
+    },
+    {
+      "id": "mw.jev_loop_constants.INSTRUCTIONS[('ligand', 'exploit')]",
+      "text": "Choose exactly one candidate from the candidates listed in the criteria to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Prefer the candidate whose structure (SMILES) is most similar to the one computed candidate with the lowest listed score; if no candidate has a listed score, choose any one. This is a judgment of structural similarity only, not a prediction of any score. Computed candidates are listed with their stored qvina score (Vina-family scoring function value in kcal/mol, not an affinity); a candidate without a score is listed without one, which is not zero. Property values are RDKit estimates, not measurements or interactions. The order of the candidate list and the alias numbers were shuffled for this request and carry no meaning."
+    },
+    {
+      "id": "mw.jev_loop_constants.INSTRUCTIONS[('ligand', 'explore')]",
+      "text": "Choose exactly one candidate from the candidates listed in the criteria to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Prefer the candidate whose structure (SMILES) is most different from all the computed candidates; if no candidate is computed, choose any one. The computed field lists the aliases of the candidates that have already been computed. Property values are RDKit estimates, not measurements or interactions. The order of the candidate list and the alias numbers were shuffled for this request and carry no meaning."
+    },
+    {
+      "id": "mw.jev_loop_constants.INSTRUCTIONS[('mutation', 'exploit')]",
+      "text": "Choose exactly one candidate from the candidates listed in the criteria to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Prefer the candidate whose position and substitution (from, to) are most similar to the one computed candidate with the lowest listed score; if no candidate has a listed score, choose any one. This is a judgment of similarity of position and substitution only, not a prediction of any score or of the effect of a mutation. Computed candidates are listed with their stored qvina score (Vina-family scoring function value in kcal/mol, not an affinity); a candidate without a score is listed without one, which is not zero. Each score belongs to the modelled structure of its own mutation, so scores are not like-for-like comparisons. Distances and neighbor lists are geometry from stored coordinates, not measurements or interactions. The order of the candidate list and the alias numbers were shuffled for this request and carry no meaning."
+    },
+    {
+      "id": "mw.jev_loop_constants.INSTRUCTIONS[('mutation', 'explore')]",
+      "text": "Choose exactly one candidate from the candidates listed in the criteria to place first in a local computation queue. This is a queue-order choice only; it is not a prediction of binding, activity, affinity, stability, synthesizability, safety or the effect of a substitution. Prefer the candidate whose position and substitution (from, to) are most different from all the computed candidates; if no candidate is computed, choose any one. The computed field lists the aliases of the candidates that have already been computed. Distances and neighbor lists are geometry from stored coordinates, not measurements or interactions. The order of the candidate list and the alias numbers were shuffled for this request and carry no meaning."
+    },
+    {
+      "id": "mw.jev_loop_constants.REPORT_LABEL",
+      "text": "JEV 루프 보고서"
+    },
+    {
+      "id": "mw.jev_loop_constants.SCREEN_NOTES[UL1]",
+      "text": "JEV 루프는 바퀴마다 보낼 내용 승인과 계산 시작 승인을 따로 받는다. JEV가 고른 후보도 사람이 승인해야 계산된다."
+    },
+    {
+      "id": "mw.jev_loop_constants.SCREEN_NOTES[UL2]",
+      "text": "한 바퀴에 JEV 응답이 한 번 완료되면 다시 묻지 않는다. 다른 후보를 원하면 직접 지정한다."
+    },
+    {
+      "id": "mw.jev_loop_constants.SCREEN_NOTES[UL3]",
+      "text": "루프 전송은 뷰어 모델 명령·지식·보고서 탭의 전송과 같은 외부 토큰·USD 예산, 같은 run 10회 전송 상한, 같은 '사용량 모름' 중지 상태를 쓴다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ1]",
+      "text": "JEV 루프는 사람이 바퀴마다 보낼 내용과 계산 시작을 승인하며, JEV 판정은 외부 모델이 계산 대기열에 먼저 둘 후보로 고른 하나일 뿐 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니고 고른 이유는 알 수 없다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ2]",
+      "text": "점수는 저장된 qvina 도킹 결과의 첫 모드 값(kcal/mol, Vina 계열 스코어링 함수 값, 친화도가 아님)이며, 점수 없음은 0이 아니다. 바퀴 순서·표 정렬·선택 표시는 순위나 개선이 아니다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ3]",
+      "text": "후보 순서와 별칭은 전송마다 기록된 seed로 섞은 것이며 의미가 없다. 모델 선택은 목록 위치의 영향을 받을 수 있어 고른 위치를 값으로 기록했고, 이 기록은 효과를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ4]",
+      "text": "활용형은 점수가 낮게 나온 후보와 구조가 비슷한 후보를 고르게 하는 질문이며 점수 예측이 아니고 후보를 줄 세우지 않는다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ5]",
+      "text": "탐색형은 이미 계산한 후보와 가장 다른 후보를 고르게 하는 질문이며 점수를 보내지 않았다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ6]",
+      "text": "후보는 2D 그래프이고 점수는 사용자가 정한 수용체·상자에서 자유 도킹한 qvina 값이며 결합·활성·합성 가능성이 아니다. JEV에는 수용체 정보를 보내지 않았다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ7]",
+      "text": "점수는 후보마다 다른 변이 구조(PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 단백질만의 모델)에 사용자 리간드를 자유 도킹한 값이라 같은 수용체 안의 비교가 아니며 변이의 효과나 친화도가 아니다. 야생형 기준은 계산하지 않았다."
+    },
+    {
+      "id": "mw.jev_loop_constants.STATEMENTS[LJ8]",
+      "text": "이 루프는 계산하지 않은 후보를 남기고 끝났으며 계산하지 않은 후보는 점수가 없다(0이 아니다)."
+    },
+    {
+      "id": "mw.jev_loop_constants.VALUES_NOTES[('ligand', 'exploit')]",
+      "text": "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included; scores are stored qvina values from one fixed receptor and box"
+    },
+    {
+      "id": "mw.jev_loop_constants.VALUES_NOTES[('ligand', 'explore')]",
+      "text": "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included"
+    },
+    {
+      "id": "mw.jev_loop_constants.VALUES_NOTES[('mutation', 'exploit')]",
+      "text": "Distances and neighbor lists are geometry from stored coordinates, not interactions; protection_released=false means no performed check applied, not that a residue is unimportant; checks that are not_checked or not_available were not performed; each score belongs to the modelled structure of its own mutation"
+    },
+    {
+      "id": "mw.jev_loop_constants.VALUES_NOTES[('mutation', 'explore')]",
+      "text": "Distances and neighbor lists are geometry from stored coordinates, not interactions; protection_released=false means no performed check applied, not that a residue is unimportant; checks that are not_checked or not_available were not performed"
+    },
+    {
+      "id": "mw.jev_loop_constants._LIGAND_NOTE",
+      "text": "RDKit estimates, not measurements; PAINS matches are structural alerts only; no receptor or pocket information is included"
+    },
+    {
+      "id": "mw.jev_loop_constants._MUTATION_NOTE",
+      "text": "Distances and neighbor lists are geometry from stored coordinates, not interactions; protection_released=false means no performed check applied, not that a residue is unimportant; checks that are not_checked or not_available were not performed"
+    },
+    {
+      "id": "mw.jev_loop_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 계산값은 저장된 루프 요약 객체의 값과, 그 요약이 가리키는 후보별 도킹 결과 객체의 첫 모드 값이다. JEV 판정은 루프가 저장한 제안 객체에서 읽은 외부 모델의 응답이며 과학 증거가 아니다. 이 보고서를 만들려고 계산하거나 보낸 것은 없다."
+    },
+    {
+      "id": "mw.jev_loop_reports.MODEL_RESPONSE_NOTE",
+      "text": "외부 모델의 응답, 제안이며 과학 증거가 아니다"
+    },
+    {
+      "id": "mw.jev_loop_reports.SCORE_ROW_LABEL",
+      "text": "모드 1(엔진 출력 순서)"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[arrival_late][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[arrival_late][2][0]",
+      "text": "jev_loop_choice"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[arrival_late][2][1]",
+      "text": "jev_loop_choice@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[candidate_result_score][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[candidate_result_score][2][0]",
+      "text": "docking_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[candidate_result_score][2][1]",
+      "text": "docking_result@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[candidate_score][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[candidate_score][2][0]",
+      "text": "jev_loop_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[candidate_score][2][1]",
+      "text": "jev_loop_result@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[confidence][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[confidence][2][0]",
+      "text": "jev_loop_choice"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[confidence][2][1]",
+      "text": "jev_loop_choice@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[count][2][0]",
+      "text": "jev_loop_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[count][2][1]",
+      "text": "jev_loop_result@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[list_position][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[list_position][2][0]",
+      "text": "jev_loop_choice"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[list_position][2][1]",
+      "text": "jev_loop_choice@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[list_size][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[list_size][2][0]",
+      "text": "jev_loop_choice"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[list_size][2][1]",
+      "text": "jev_loop_choice@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[loop_setting][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[loop_setting][2][0]",
+      "text": "jev_loop_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[loop_setting][2][1]",
+      "text": "jev_loop_result@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[pool_size][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[pool_size][2][0]",
+      "text": "jev_loop_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[pool_size][2][1]",
+      "text": "jev_loop_result@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[pool_source][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[pool_source][2][0]",
+      "text": "jev_loop_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[pool_source][2][1]",
+      "text": "jev_loop_result@1"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[setup_value][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[setup_value][2][0]",
+      "text": "jev_loop_result"
+    },
+    {
+      "id": "mw.jev_loop_reports.STATEMENTS[setup_value][2][1]",
+      "text": "jev_loop_result@1"
+    },
+    {
+      "id": "mw.jev_reports.EVIDENCE_STATEMENT",
+      "text": "ProtView counted the stored selection and copied the body size and the reported usage of this send. The chosen alias, the model-reported confidence, the served model and the arrival are the external model's reply kept as a proposal, not scientific evidence. Per-candidate probabilities stay in the stored proposal. No request was sent to make this report."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[0]",
+      "text": "JEV 판정은 외부 모델이 보낸 후보 목록에서 고른 하나일 뿐이며 계산 결과가 아니라 제안으로 따로 기록한 것이다. 순위·추천·예측이 아니다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[1]",
+      "text": "고른 이유는 알 수 없다. 응답에는 선택과 모델이 보고한 확신도·확률만 있으며 과학 값이 아니다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[2]",
+      "text": "모델 선택은 후보 목록의 순서(로컬 저장 순서)의 영향을 받을 수 있다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[3]",
+      "text": "외부로 나간 내용은 승인한 미리보기 본문과 바이트가 같고(해시로 확인) 그 본문이 이 기록의 근거 전부이다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[4]",
+      "text": "이 응답은 run 취소 또는 과학 전송 동의 끄기 뒤에 도착했으며 어떤 작업도 일으키지 않았다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[5]",
+      "text": "후보는 2D 그래프이고 속성값은 RDKit 추정값이며 결합·활성·합성 가능성을 계산하지 않았고 수용체 정보 없이 고른 것이다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[6]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 이 집합에서는 M-CSA 촉매 잔기 주석을 전부 검사하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[7]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화 기준으로만 했고 촉매 잔기 데이터베이스는 사용하지 않았으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_reports.FIXED_LIMITATIONS[8]",
+      "text": "후보는 위치와 바꿀 잔기의 조합이고 이웃 잔기·구간·거리는 준비된 구조의 저장 좌표에서 잰 기하이며 변이의 효과나 상호작용을 뜻하지 않는다. 보호 판정은 사용자 목록·KLIFS 주요 부위(주석이 있을 때)·금속 근접·이황화·M-CSA 촉매 잔기 주석 기준으로만 했으며, 검사하지 않은 항목은 '없음'이 아니다."
+    },
+    {
+      "id": "mw.jev_reports.MODEL_RESPONSE_NOTE",
+      "text": "외부 모델의 응답, 제안이며 과학 증거가 아니다"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late][1]",
+      "text": "arrival.late"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late][2]",
+      "text": "late"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late][3]",
+      "text": "flag"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late][4]",
+      "text": "late_flag"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late_reason][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late_reason][1]",
+      "text": "arrival.late_reason"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late_reason][2]",
+      "text": "late_reason"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late_reason][3]",
+      "text": "reason"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[arrival_late_reason][4]",
+      "text": "late_reason"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[body_bytes][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[body_bytes][1]",
+      "text": "projection.body_bytes"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[body_bytes][2]",
+      "text": "body_bytes"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[body_bytes][3]",
+      "text": "bytes"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[body_bytes][4]",
+      "text": "integer"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[choice_alias][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[choice_alias][1]",
+      "text": "answer.choice_alias"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[choice_alias][2]",
+      "text": "chosen_alias"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[choice_alias][3]",
+      "text": "identifier"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[choice_alias][4]",
+      "text": "verbatim"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[confidence][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[confidence][1]",
+      "text": "answer.confidence"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[confidence][2]",
+      "text": "model_reported_confidence"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[confidence][3]",
+      "text": "0-1"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[confidence][4]",
+      "text": "exact_number"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[selection_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[selection_count][1]",
+      "text": "selection[*]"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[selection_count][2]",
+      "text": "sent_candidates"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[selection_count][3]",
+      "text": "count"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[selection_count][4]",
+      "text": "integer"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[served_model][0]",
+      "text": "model_response"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[served_model][1]",
+      "text": "served_model"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[served_model][2]",
+      "text": "served_model"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[served_model][3]",
+      "text": "identifier"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[served_model][4]",
+      "text": "verbatim"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_cost][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_cost][1]",
+      "text": "usage.cost"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_cost][2]",
+      "text": "cost"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_cost][3]",
+      "text": "usd"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_cost][4]",
+      "text": "exact_number"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_input_tokens][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_input_tokens][1]",
+      "text": "usage.input_tokens"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_input_tokens][2]",
+      "text": "input_tokens"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_input_tokens][3]",
+      "text": "tokens"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_input_tokens][4]",
+      "text": "integer"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_output_tokens][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_output_tokens][1]",
+      "text": "usage.output_tokens"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_output_tokens][2]",
+      "text": "output_tokens"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_output_tokens][3]",
+      "text": "tokens"
+    },
+    {
+      "id": "mw.jev_reports.STATEMENTS[usage_output_tokens][4]",
+      "text": "integer"
+    },
+    {
+      "id": "mw.jev_reports.USAGE_STATEMENTS[0][0]",
+      "text": "usage_input_tokens"
+    },
+    {
+      "id": "mw.jev_reports.USAGE_STATEMENTS[0][1]",
+      "text": "input_tokens"
+    },
+    {
+      "id": "mw.jev_reports.USAGE_STATEMENTS[1][0]",
+      "text": "usage_output_tokens"
+    },
+    {
+      "id": "mw.jev_reports.USAGE_STATEMENTS[1][1]",
+      "text": "output_tokens"
+    },
+    {
+      "id": "mw.jev_reports.USAGE_STATEMENTS[2][0]",
+      "text": "usage_cost"
+    },
+    {
+      "id": "mw.jev_reports.USAGE_STATEMENTS[2][1]",
+      "text": "cost"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.BIBLIOGRAPHY_LABELS[doi]",
+      "text": "DOI"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.BIBLIOGRAPHY_LABELS[journal]",
+      "text": "저널"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.BIBLIOGRAPHY_LABELS[title]",
+      "text": "제목"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.BIBLIOGRAPHY_LABELS[year]",
+      "text": "연도"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.EVIDENCE_STATEMENT",
+      "text": "ProtView는 저장된 결과의 체인·표적·전례 개수만 다시 셌고, 무결성 확인 값(레코드 해시 일치·인용 25단어 이하·논문 쪽 위치 있음)은 연결할 때 ProtView가 한 확인을 그대로 적었다(ProtView 계산). 전례 필드(move_id·파일·해석 근거·변이 표기·PMID·서지·논문 위치·태그·원본 content_hash·kbase 기계 검사)와 kbase 참조는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록의 값(kbase 가공본 값, 계산 아님)이며 ProtView가 계산하거나 판정한 것이 아니다. 인용문(관찰·교환)과 측정 변화 값은 이 보고서에 담지 않았다(화면에서만 본다). 보고서를 만들 때 연결을 다시 계산하지 않았다."
+    },
+    {
+      "id": "mw.kinase_precedents_reports.INCLUSION_LABELS[False]",
+      "text": "포함하지 않음"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.INCLUSION_LABELS[True]",
+      "text": "포함함"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.INTEGRITY_LABELS[hash_verified]",
+      "text": "레코드 해시 일치"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.INTEGRITY_LABELS[locations_have_page]",
+      "text": "논문 쪽 위치 있음"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.INTEGRITY_LABELS[quotes_within_limit]",
+      "text": "인용 25단어 이하"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.LOCATION_LABELS[figure_id]",
+      "text": "그림"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.LOCATION_LABELS[kind]",
+      "text": "종류"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.LOCATION_LABELS[page]",
+      "text": "쪽"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.LOCATION_LABELS[panel]",
+      "text": "패널"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.LOCATION_LABELS[row]",
+      "text": "행"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.LOCATION_LABELS[table_index]",
+      "text": "표"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.PROCESSED_LABEL",
+      "text": "kbase_kinase 가공본 · 미검수 · 기계 추출"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.REFERENCE_NOTE",
+      "text": "kbase 가공본 값, 계산 아님"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[chain_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[chain_reason_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[chain_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[chain_status_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[flagged_inclusion][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[record_integrity][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[record_pass_check_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_bibliography][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_check][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_file][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_hash][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_id][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_location][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_pmid][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_tag][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_record_target][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_set_rows][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[reference_target_ref][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_basis_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_excluded_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_record_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_tag_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[target_variant_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[total_excluded_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[total_record_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[unlisted_record_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[unresolved_record_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENTS[unresolved_record_total][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[0]",
+      "text": "chain_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[10]",
+      "text": "target_status"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[11]",
+      "text": "target_record_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[12]",
+      "text": "target_excluded_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[13]",
+      "text": "target_variant_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[14]",
+      "text": "target_tag_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[15]",
+      "text": "target_basis_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[16]",
+      "text": "unlisted_record_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[17]",
+      "text": "record_pass_check_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[18]",
+      "text": "record_integrity"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[19]",
+      "text": "reference_set_rows"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[1]",
+      "text": "chain_status_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[20]",
+      "text": "reference_target_ref"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[21]",
+      "text": "reference_record_id"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[22]",
+      "text": "reference_record_file"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[23]",
+      "text": "reference_record_target"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[24]",
+      "text": "reference_record_pmid"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[25]",
+      "text": "reference_bibliography"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[26]",
+      "text": "reference_record_location"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[27]",
+      "text": "reference_record_tag"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[28]",
+      "text": "reference_record_hash"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[29]",
+      "text": "reference_record_check"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[2]",
+      "text": "chain_reason_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[3]",
+      "text": "chain_status"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[4]",
+      "text": "target_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[5]",
+      "text": "flagged_inclusion"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[6]",
+      "text": "total_record_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[7]",
+      "text": "total_excluded_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[8]",
+      "text": "unresolved_record_count"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATEMENT_IDS[9]",
+      "text": "unresolved_record_total"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[linked]",
+      "text": "연결함"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[multiple_accessions]",
+      "text": "mapped 잔기의 accession이 둘 이상"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[no_mapped_residues]",
+      "text": "번호 대응에 mapped 잔기 행이 없음"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[none_in_included_files]",
+      "text": "포함한 파일에 이 표적의 전례 기록 없음"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[not_in_kbase_references]",
+      "text": "kbase에 이 표적 참조가 없음(전례 없음과 다름)"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[not_linked]",
+      "text": "연결하지 않음"
+    },
+    {
+      "id": "mw.kinase_precedents_reports.STATUS_LABELS[precedents_found]",
+      "text": "포함한 파일에 전례 기록 있음"
+    },
+    {
+      "id": "mw.ligand_constants.LIMITATIONS[0]",
+      "text": "속성값은 RDKit 추정값이며 측정값·예측 활성이 아니다."
+    },
+    {
+      "id": "mw.ligand_constants.LIMITATIONS[1]",
+      "text": "PAINS 일치는 구조 경고일 뿐 화합물의 좋고 나쁨 판정이 아니다."
+    },
+    {
+      "id": "mw.ligand_constants.LIMITATIONS[2]",
+      "text": "후보는 2D 그래프이며 3D 배치·점수·합성 가능성은 계산하지 않았다."
+    },
+    {
+      "id": "mw.ligand_constants.LIMITATIONS[3]",
+      "text": "새로 생긴 입체 중심은 미지정이며 입체이성질체는 열거하지 않았다."
+    },
+    {
+      "id": "mw.ligand_constants.LIMITATIONS[4]",
+      "text": "수소·양성자화·토토머 상태는 입력 그대로이다."
+    },
+    {
+      "id": "mw.ligand_ga_constants.SCORE_ROW_LABEL",
+      "text": "모드 1(엔진 출력 순서)"
+    },
+    {
+      "id": "mw.ligand_ga_constants.STATEMENTS[G1]",
+      "text": "GA는 후보 풀에서 어디를 도킹할지 정하는 탐색 방법이며, 개체의 점수 정렬·선택 표시는 순위나 추천이 아니다. 부모·유사 후보 연결은 작업 모듈 기록이며 서버가 다시 계산하지 않았다."
+    },
+    {
+      "id": "mw.ligand_ga_constants.STATEMENTS[G2]",
+      "text": "이 실행은 시간·도킹 상한·취소 등으로 일부 세대만 계산되었다. 계산하지 않은 개체는 점수가 없으며 0이 아니고, 한도 도달로 멈춘 실행은 같은 설정으로 다시 해도 같은 경로를 보장하지 않는다."
+    },
+    {
+      "id": "mw.ligand_ga_constants.STATEMENTS[G3]",
+      "text": "재사용한 개체는 같은 수용체·상자·seed·방식·값으로 이전에 저장된 도킹 결과를 가져온 것이며, 저장된 결과 집합이 다르면 같은 GA seed도 다른 경로를 낼 수 있다."
+    },
+    {
+      "id": "mw.ligand_ga_reports.EVALUATION_LABELS[docked]",
+      "text": "새 도킹"
+    },
+    {
+      "id": "mw.ligand_ga_reports.EVALUATION_LABELS[reused]",
+      "text": "재사용"
+    },
+    {
+      "id": "mw.ligand_ga_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 수치는 저장된 GA 요약 객체의 값, 요약의 세대·개체를 조건으로 센 개수, 점수 있는 개체가 가리키는 개체별 도킹 결과 객체의 첫 행 점수다. 보고서는 도킹을 다시 하지 않았다."
+    },
+    {
+      "id": "mw.ligand_ga_reports.NO_CHANGE_LABEL",
+      "text": "점수 최솟값 변화 없음"
+    },
+    {
+      "id": "mw.ligand_ga_reports.ORIGIN_LABELS[carried]",
+      "text": "다음 세대로 이어받음"
+    },
+    {
+      "id": "mw.ligand_ga_reports.ORIGIN_LABELS[initial]",
+      "text": "초기"
+    },
+    {
+      "id": "mw.ligand_ga_reports.ORIGIN_LABELS[random]",
+      "text": "무작위"
+    },
+    {
+      "id": "mw.ligand_ga_reports.ORIGIN_LABELS[similar]",
+      "text": "유사"
+    },
+    {
+      "id": "mw.ligand_ga_reports.SCORE_COLUMN_LABEL",
+      "text": "qvina 점수(kcal/mol)"
+    },
+    {
+      "id": "mw.ligand_ga_reports.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.ligand_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 수치는 저장된 RDKit 작업 결과(후보 집합 객체)의 값과, 저장된 후보 행에 보고서 필터 조건을 적용해 센 개수이다. 보고서는 후보를 다시 생성하지 않았다."
+    },
+    {
+      "id": "mw.ligand_reports.FIXED_LIMITATIONS[0]",
+      "text": "속성값은 RDKit 추정값이며 측정값·예측 활성이 아니다."
+    },
+    {
+      "id": "mw.ligand_reports.FIXED_LIMITATIONS[1]",
+      "text": "PAINS 일치는 구조 경고일 뿐 화합물의 좋고 나쁨 판정이 아니다."
+    },
+    {
+      "id": "mw.ligand_reports.FIXED_LIMITATIONS[2]",
+      "text": "후보는 2D 그래프이며 3D 배치·점수·합성 가능성은 계산하지 않았다."
+    },
+    {
+      "id": "mw.ligand_reports.FIXED_LIMITATIONS[3]",
+      "text": "새로 생긴 입체 중심은 미지정이며 입체이성질체는 열거하지 않았다."
+    },
+    {
+      "id": "mw.ligand_reports.FIXED_LIMITATIONS[4]",
+      "text": "수소·양성자화·토토머 상태는 입력 그대로이다."
+    },
+    {
+      "id": "mw.ligand_reports.LIMITATIONS[0]",
+      "text": "속성값은 RDKit 추정값이며 측정값·예측 활성이 아니다."
+    },
+    {
+      "id": "mw.ligand_reports.LIMITATIONS[1]",
+      "text": "PAINS 일치는 구조 경고일 뿐 화합물의 좋고 나쁨 판정이 아니다."
+    },
+    {
+      "id": "mw.ligand_reports.LIMITATIONS[2]",
+      "text": "후보는 2D 그래프이며 3D 배치·점수·합성 가능성은 계산하지 않았다."
+    },
+    {
+      "id": "mw.ligand_reports.LIMITATIONS[3]",
+      "text": "새로 생긴 입체 중심은 미지정이며 입체이성질체는 열거하지 않았다."
+    },
+    {
+      "id": "mw.ligand_reports.LIMITATIONS[4]",
+      "text": "수소·양성자화·토토머 상태는 입력 그대로이다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS[0]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS[1]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS[2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 촉매 잔기 데이터베이스는 사용하지 않았다(없음)."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS[3]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS[4]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[checked][0]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[checked][1]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[checked][2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[checked][3]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[checked][4]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[not_checked][0]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[not_checked][1]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[not_checked][2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다)."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[not_checked][3]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATIONS_V2[not_checked][4]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATION_3_CHECKED",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다."
+    },
+    {
+      "id": "mw.mutation_constants.LIMITATION_3_NOT_CHECKED",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다)."
+    },
+    {
+      "id": "mw.mutation_model_constants.L1",
+      "text": "변이 구조는 PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 모델이며 회전이성질체 탐색과 수렴을 주장하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_constants.L2",
+      "text": "OpenMM 전위는 각 구조의 Amber14-all + GBn2 암시 용매 값(kJ/mol)이며 서열이 다른 두 구조의 값은 서로 비교할 수 없고 ΔΔG·안정성·친화도가 아니다."
+    },
+    {
+      "id": "mw.mutation_model_constants.L3",
+      "text": "모델은 단백질만 포함하며 리간드·금속 이온·물·보조인자는 제외했다."
+    },
+    {
+      "id": "mw.mutation_model_constants.L4",
+      "text": "SASA는 리간드가 없는 단백질 모델의 변이 위치 잔기 값이다."
+    },
+    {
+      "id": "mw.mutation_model_constants.L5",
+      "text": "변이한 잔기 밖에서 히스티딘·시스테인 양성자 상태가 두 구조에서 다르게 지정되었으므로 두 구조의 차이는 변이 하나만이 아니다."
+    },
+    {
+      "id": "mw.mutation_model_constants.L6",
+      "text": "변이형에는 야생형 기준에 없는 이황화 결합이 거리 기준으로 만들어졌다."
+    },
+    {
+      "id": "mw.mutation_model_constants.L7",
+      "text": "접촉은 중원자 사이 거리(Å)이며 수소결합이나 상호작용의 종류를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[0]",
+      "text": "변이 구조는 PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 모델이며 회전이성질체 탐색과 수렴을 주장하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[1]",
+      "text": "OpenMM 전위는 각 구조의 Amber14-all + GBn2 암시 용매 값(kJ/mol)이며 서열이 다른 두 구조의 값은 서로 비교할 수 없고 ΔΔG·안정성·친화도가 아니다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[2]",
+      "text": "모델은 단백질만 포함하며 리간드·금속 이온·물·보조인자는 제외했다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[3]",
+      "text": "SASA는 리간드가 없는 단백질 모델의 변이 위치 잔기 값이다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[4]",
+      "text": "접촉은 중원자 사이 거리(Å)이며 수소결합이나 상호작용의 종류를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[5]",
+      "text": "변이한 잔기 밖에서 히스티딘·시스테인 양성자 상태가 두 구조에서 다르게 지정되었으므로 두 구조의 차이는 변이 하나만이 아니다."
+    },
+    {
+      "id": "mw.mutation_model_constants.LIMITATION_ORDER[6]",
+      "text": "변이형에는 야생형 기준에 없는 이황화 결합이 거리 기준으로 만들어졌다."
+    },
+    {
+      "id": "mw.mutation_model_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 수치는 저장된 변이 구조 모델 결과의 OpenMM 전위·변이 위치 SASA 값과, 저장된 접촉 행·이황화 쌍·양성자 상태 차이 행·PDBFixer 추가 원자 행을 센 개수다. 보고서는 구조를 다시 만들거나 최소화하지 않았고, 두 구조의 값이나 최소화 전후 값을 서로 빼지 않았다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[0]",
+      "text": "OpenMM 전위는 각 구조의 Amber14-all + GBn2 암시 용매 값(kJ/mol)이며 서열이 다른 두 구조의 값은 서로 비교할 수 없고 ΔΔG·안정성·친화도가 아니다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[1]",
+      "text": "SASA는 리간드가 없는 단백질 모델의 변이 위치 잔기 값이다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[2]",
+      "text": "모델은 단백질만 포함하며 리간드·금속 이온·물·보조인자는 제외했다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[3]",
+      "text": "변이 구조는 PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 모델이며 회전이성질체 탐색과 수렴을 주장하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[4]",
+      "text": "변이한 잔기 밖에서 히스티딘·시스테인 양성자 상태가 두 구조에서 다르게 지정되었으므로 두 구조의 차이는 변이 하나만이 아니다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[5]",
+      "text": "변이형에는 야생형 기준에 없는 이황화 결합이 거리 기준으로 만들어졌다."
+    },
+    {
+      "id": "mw.mutation_model_reports.FIXED_LIMITATIONS[6]",
+      "text": "접촉은 중원자 사이 거리(Å)이며 수소결합이나 상호작용의 종류를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[0]",
+      "text": "변이 구조는 PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 모델이며 회전이성질체 탐색과 수렴을 주장하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[1]",
+      "text": "OpenMM 전위는 각 구조의 Amber14-all + GBn2 암시 용매 값(kJ/mol)이며 서열이 다른 두 구조의 값은 서로 비교할 수 없고 ΔΔG·안정성·친화도가 아니다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[2]",
+      "text": "모델은 단백질만 포함하며 리간드·금속 이온·물·보조인자는 제외했다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[3]",
+      "text": "SASA는 리간드가 없는 단백질 모델의 변이 위치 잔기 값이다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[4]",
+      "text": "접촉은 중원자 사이 거리(Å)이며 수소결합이나 상호작용의 종류를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[5]",
+      "text": "변이한 잔기 밖에서 히스티딘·시스테인 양성자 상태가 두 구조에서 다르게 지정되었으므로 두 구조의 차이는 변이 하나만이 아니다."
+    },
+    {
+      "id": "mw.mutation_model_reports.LIMITATION_ORDER[6]",
+      "text": "변이형에는 야생형 기준에 없는 이황화 결합이 거리 기준으로 만들어졌다."
+    },
+    {
+      "id": "mw.mutation_reports.EVIDENCE_STATEMENT",
+      "text": "ProtView counted the stored position and candidate rows, took the minimum of the stored ligand distances, and copied the protection check states. UniProt accessions and KLIFS site labels are reference snapshot values (참조 스냅샷 값, 계산 아님) copied into the set, not ProtView calculations. No structure was modelled and no candidate was regenerated."
+    },
+    {
+      "id": "mw.mutation_reports.EVIDENCE_STATEMENT_V2",
+      "text": "ProtView counted the stored position and candidate rows and the catalytic annotation rows, took the minimum of the stored ligand distances, and copied the protection check states. UniProt accessions, KLIFS site labels and M-CSA entry IDs are reference snapshot values (참조 스냅샷 값, 계산 아님) copied into the set, not ProtView calculations. No structure was modelled and no candidate was regenerated."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[0]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[1]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다)."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[3]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 촉매 잔기 데이터베이스는 사용하지 않았다(없음)."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[4]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[5]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_reports.FIXED_LIMITATIONS[6]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS[0]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS[1]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS[2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 촉매 잔기 데이터베이스는 사용하지 않았다(없음)."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS[3]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS[4]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[checked][0]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[checked][1]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[checked][2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합·M-CSA 촉매 잔기 주석 기준으로만 판정했다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[checked][3]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[checked][4]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[not_checked][0]",
+      "text": "후보는 위치와 바꿀 잔기의 조합 목록이며 구조 모델링·에너지·점수를 계산하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[not_checked][1]",
+      "text": "이 목록은 변이의 효과(안정성·결합·활성)를 뜻하지 않으며 순위나 추천이 아니다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[not_checked][2]",
+      "text": "보호 잔기는 사용자 지정·KLIFS 주요 부위·금속 근접·이황화 결합 기준으로만 판정했고 M-CSA 촉매 잔기 주석은 주지 않았거나 일부 체인만 다뤘다(검사하지 않은 부분은 '없음'이 아니다)."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[not_checked][3]",
+      "text": "거리는 준비된 구조의 저장 좌표에서 계산한 중원자 사이 최소 거리(Å)이며 결합이나 상호작용을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.mutation_reports.LIMITATIONS_V2[not_checked][4]",
+      "text": "바꿀 히스티딘의 양성자 상태와 변이 구조의 형태는 정하지 않았다."
+    },
+    {
+      "id": "mw.mutation_reports.REFERENCE_NOTE",
+      "text": "참조 스냅샷 값, 계산 아님"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[candidate_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[catalytic_covered_chain_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[exclusion_reason_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[ligand_min_distance_A][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[numbering_status_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[position_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[position_status_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[protection_check_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[protection_check_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[reference_klifs_site_label][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[reference_mcsa_entry_id][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[reference_uniprot_accession][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[released_position_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.mutation_reports.STATEMENTS[source_position_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.KLIFS_TERMS",
+      "text": "이용 조건 명시 없음(none-stated)"
+    },
+    {
+      "id": "mw.numbering_reports.LEGACY_REPORT_LIMITATIONS[0]",
+      "text": "This report states the numbering correspondence only; it makes no statement about function or structure."
+    },
+    {
+      "id": "mw.numbering_reports.LEGACY_REPORT_LIMITATIONS[1]",
+      "text": "Residue-level reference values are listed only for mapped rows with a KLIFS pocket number; every row (all statuses, both method answers and absent reasons) is in the numbering map object."
+    },
+    {
+      "id": "mw.numbering_reports.PROCESSED_LABEL",
+      "text": "kbase_kinase 가공본"
+    },
+    {
+      "id": "mw.numbering_reports.REFERENCE_NOTE",
+      "text": "참조 스냅샷 값, 계산 아님"
+    },
+    {
+      "id": "mw.numbering_reports.REFERENCE_STATEMENT",
+      "text": "Accessions, UniProt positions and residues, and KLIFS pocket numbers and labels in this report are reference snapshot values (참조 스냅샷 값, 계산 아님), not ProtView calculations. ProtView computed only the alignment identity and coverage and the counts."
+    },
+    {
+      "id": "mw.numbering_reports.REPORT_LIMITATIONS[0]",
+      "text": "This report states the numbering correspondence only; it makes no statement about function or structure."
+    },
+    {
+      "id": "mw.numbering_reports.REPORT_LIMITATIONS[1]",
+      "text": "Residue-level reference values are listed only for mapped rows with a KLIFS pocket number; every row (all statuses, both method answers and absent reasons) is in the numbering map object."
+    },
+    {
+      "id": "mw.numbering_reports.REPORT_LIMITATIONS[2]",
+      "text": "참조 스냅샷은 kbase_kinase가 가공한 kinase 한정 자료입니다(원출처 원본 바이트 아님). 스냅샷에 없는 PDB·단백질은 SIFTS 대응이나 KLIFS 번호가 없습니다."
+    },
+    {
+      "id": "mw.numbering_reports.SNAPSHOT_SCOPE",
+      "text": "참조 스냅샷은 kbase_kinase가 가공한 kinase 한정 자료입니다(원출처 원본 바이트 아님). 스냅샷에 없는 PDB·단백질은 SIFTS 대응이나 KLIFS 번호가 없습니다."
+    },
+    {
+      "id": "mw.numbering_reports.SOURCE_LABELS[klifs]",
+      "text": "KLIFS"
+    },
+    {
+      "id": "mw.numbering_reports.SOURCE_LABELS[sifts]",
+      "text": "SIFTS"
+    },
+    {
+      "id": "mw.numbering_reports.SOURCE_LABELS[uniprot]",
+      "text": "UniProt"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_ambiguous_residue_count]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_coverage_pct]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_identity_pct]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_modified_residue_count]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_residue_mismatch_count]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_residue_mismatch_kind_count]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[chain_status_count]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[reference_accession]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[reference_klifs_index]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[reference_klifs_label]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[reference_uniprot_position]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[reference_uniprot_residue]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENTS[status_count]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[0]",
+      "text": "status_count"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[10]",
+      "text": "reference_uniprot_residue"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[11]",
+      "text": "reference_klifs_index"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[12]",
+      "text": "reference_klifs_label"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[1]",
+      "text": "chain_status_count"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[2]",
+      "text": "chain_identity_pct"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[3]",
+      "text": "chain_coverage_pct"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[4]",
+      "text": "chain_residue_mismatch_count"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[5]",
+      "text": "chain_residue_mismatch_kind_count"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[6]",
+      "text": "chain_ambiguous_residue_count"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[7]",
+      "text": "chain_modified_residue_count"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[8]",
+      "text": "reference_accession"
+    },
+    {
+      "id": "mw.numbering_reports.STATEMENT_IDS[9]",
+      "text": "reference_uniprot_position"
+    },
+    {
+      "id": "mw.pocket_output.DETECTOR_SPECIFIC_NOTE",
+      "text": "fpocket 고유 점수이며 약물성 증거가 아님"
+    },
+    {
+      "id": "mw.pocket_output.LIMITATIONS[0]",
+      "text": "fpocket pocket candidates, ranks and scores are geometric detector output, not binding-site, affinity or druggability evidence."
+    },
+    {
+      "id": "mw.pocket_output.LIMITATIONS[1]",
+      "text": "Score and Druggability Score are fpocket regression scores min-max normalised across the pockets of the same execution; they are relative within one run and not comparable across runs or structures."
+    },
+    {
+      "id": "mw.pocket_output.LIMITATIONS[2]",
+      "text": "Volume is fpocket's Monte Carlo estimate with a clock-derived seed (seed control unsupported); fresh executions can differ, and it is not an analytical union-of-spheres volume."
+    },
+    {
+      "id": "mw.pocket_output.LIMITATIONS[3]",
+      "text": "Total SASA is fpocket's point-sampled surface of pocket-contacting atoms not covered by the pocket's alpha spheres; it is not whole-protein SASA or the result of the project's SASA tool."
+    },
+    {
+      "id": "mw.pocket_output.LIMITATIONS[4]",
+      "text": "display_center is the arithmetic mean of stored sphere centers computed by ProtView, not an fpocket value."
+    },
+    {
+      "id": "mw.pocket_output.LIMITATIONS[5]",
+      "text": "Coordinates refer to the projected protein-only transport input (standard-residue heavy atoms)."
+    },
+    {
+      "id": "mw.pocket_reports.DESCRIPTOR_LABELS[alpha_sphere_count]",
+      "text": "Alpha spheres"
+    },
+    {
+      "id": "mw.pocket_reports.DESCRIPTOR_LABELS[druggability_score]",
+      "text": "Druggability Score"
+    },
+    {
+      "id": "mw.pocket_reports.DESCRIPTOR_LABELS[score]",
+      "text": "Score"
+    },
+    {
+      "id": "mw.pocket_reports.DESCRIPTOR_LABELS[total_sasa_A2]",
+      "text": "Total SASA"
+    },
+    {
+      "id": "mw.pocket_reports.DESCRIPTOR_LABELS[volume_A3]",
+      "text": "Volume"
+    },
+    {
+      "id": "mw.pocket_reports.DETECTOR_SPECIFIC_NOTE",
+      "text": "fpocket 고유 점수이며 약물성 증거가 아님"
+    },
+    {
+      "id": "mw.pocket_reports.DISPLAY_CENTER_NOTE",
+      "text": "Display center: arithmetic mean of the stored alpha-sphere centers, computed by ProtView for display only; it is not an fpocket value."
+    },
+    {
+      "id": "mw.pocket_reports.DRUGGABILITY_WARNING",
+      "text": "Druggability Score is an fpocket-specific score, not druggability evidence (fpocket 고유 점수이며 약물성 증거가 아님)."
+    },
+    {
+      "id": "mw.pocket_reports.EVIDENCE_STATEMENT",
+      "text": "fpocket pocket candidates, ranks and scores are not binding-site, affinity or druggability evidence (결합 부위·친화도·druggability 증거 아님)."
+    },
+    {
+      "id": "mw.pocket_reports.MAPPING_LABELS[pocket_markdown@1]",
+      "text": "Histidine name mapping"
+    },
+    {
+      "id": "mw.pocket_reports.MAPPING_LABELS[pocket_markdown@2]",
+      "text": "Residue name mapping"
+    },
+    {
+      "id": "mw.pocket_reports.REPORT_LIMITATIONS[0]",
+      "text": "fpocket pocket candidates, ranks and scores are not binding-site, affinity or druggability evidence (결합 부위·친화도·druggability 증거 아님)."
+    },
+    {
+      "id": "mw.pocket_reports.REPORT_LIMITATIONS[1]",
+      "text": "Druggability Score is an fpocket-specific score, not druggability evidence (fpocket 고유 점수이며 약물성 증거가 아님)."
+    },
+    {
+      "id": "mw.pocket_reports.REPORT_LIMITATIONS[2]",
+      "text": "Display center: arithmetic mean of the stored alpha-sphere centers, computed by ProtView for display only; it is not an fpocket value."
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[0]",
+      "text": "pocket_count"
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[1]",
+      "text": "pocket_descriptor"
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[2]",
+      "text": "lining_residue_count"
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[3]",
+      "text": "display_center_coordinate"
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[4]",
+      "text": "excluded_site_count"
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[5]",
+      "text": "transport_count"
+    },
+    {
+      "id": "mw.pocket_reports.STATEMENT_IDS[6]",
+      "text": "quantization"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[0]",
+      "text": "potency"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[10]",
+      "text": "chemical_stability"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[11]",
+      "text": "synthetic_accessibility"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[1]",
+      "text": "selectivity"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[2]",
+      "text": "mutant_coverage"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[3]",
+      "text": "binding_kinetics"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[4]",
+      "text": "solubility"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[5]",
+      "text": "permeability"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[6]",
+      "text": "metabolic_stability"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[7]",
+      "text": "oral_exposure"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[8]",
+      "text": "cns_penetration"
+    },
+    {
+      "id": "mw.precedent_constants.GOAL_TERMS[9]",
+      "text": "safety_offtarget"
+    },
+    {
+      "id": "mw.precedent_constants.LIMITATIONS[0]",
+      "text": "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다."
+    },
+    {
+      "id": "mw.precedent_constants.LIMITATIONS[1]",
+      "text": "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다."
+    },
+    {
+      "id": "mw.precedent_constants.LIMITATIONS[2]",
+      "text": "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.precedent_constants.LIMITATIONS[3]",
+      "text": "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.LIMITATIONS[4]",
+      "text": "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.LIMITATIONS[5]",
+      "text": "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.precedent_constants.NUMBERED_NOTES[0]",
+      "text": "UP2"
+    },
+    {
+      "id": "mw.precedent_constants.NUMBERED_NOTES[1]",
+      "text": "UP5"
+    },
+    {
+      "id": "mw.precedent_constants.SCREEN_NOTES[UP1]",
+      "text": "원문 대조 안 함: ProtView에는 논문 원문이 없어 인용이 원문과 같은지 확인하지 않았다. 'ProtView 무결성 확인'은 가져온 파일과 레코드의 해시, 인용 길이, 논문 쪽 위치 존재만 뜻한다."
+    },
+    {
+      "id": "mw.precedent_constants.SCREEN_NOTES[UP2]",
+      "text": "moves_flagged 파일의 전례 N건은 포함하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.SCREEN_NOTES[UP3]",
+      "text": "변이 표기는 kbase 기록 그대로이며 이 구조의 서열과 대조하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.SCREEN_NOTES[UP4]",
+      "text": "PDB 언급은 kbase가 기록한 것(근거 수준 포함)이며 이 구조와의 일치를 판단하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.SCREEN_NOTES[UP5]",
+      "text": "표적이 해석되지 않은 전례 N건(세트 전체)이 있어 어느 체인에도 연결하지 못했다."
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[0]",
+      "text": "bp_I_A"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[10]",
+      "text": "fp_I"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[11]",
+      "text": "fp_II"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[12]",
+      "text": "front"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[13]",
+      "text": "back"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[14]",
+      "text": "gate"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[15]",
+      "text": "allosteric_non_atp"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[16]",
+      "text": "myristoyl_pocket"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[17]",
+      "text": "substrate_site"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[18]",
+      "text": "solvent_exposed"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[19]",
+      "text": "not_site_specific"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[1]",
+      "text": "bp_I_B"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[2]",
+      "text": "bp_II_in"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[3]",
+      "text": "bp_II_A_in"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[4]",
+      "text": "bp_II_B_in"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[5]",
+      "text": "bp_II_B"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[6]",
+      "text": "bp_II_out"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[7]",
+      "text": "bp_III"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[8]",
+      "text": "bp_IV"
+    },
+    {
+      "id": "mw.precedent_constants.SITE_TERMS[9]",
+      "text": "bp_V"
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KP1]",
+      "text": "전례는 kbase_kinase가 논문에서 기계로 추출한 미검수 기록이며 ProtView가 계산하거나 판정한 것이 아니다."
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KP2]",
+      "text": "방향과 크기는 kbase 규칙 v1이 숫자 또는 본문에서 산출한 값이며 논문의 결론도 ProtView의 판정도 아니고, 측정 변화마다 대상 역할(on_target·off_target·not_applicable)이 함께 있다."
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KP3]",
+      "text": "kbase 기계 검사는 kbase가 만들 때 한 결과를 그대로 보인 것이며 ProtView는 논문 원문과 대조하지 않았다. 파일 이름(moves·moves_flagged)은 모든 검사의 통과 여부를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KP4]",
+      "text": "전례가 없다는 표시는 포함한 파일에 기록이 없다는 뜻이며 선행 연구가 없다는 뜻이 아니다. 포함하지 않은 파일의 전례와 표적이 해석되지 않은 전례는 이 결과에 연결하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KP5]",
+      "text": "표적(UniProt)이 같은 전례만 연결했다. 다른 키나아제의 전례는 연결하지 않았고, 변이·리간드·구조와의 일치는 판단하지 않았다."
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KP6]",
+      "text": "전례 개수와 목록 순서는 순위·추천·유망도·성공률을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.precedent_constants.STATEMENTS[KT1]",
+      "text": "kbase_kinase 비공개 저장소 자료 · 이용 조건 명시 없음 · ChEMBL 유래 필드 포함 · 외부 공개 전 확인"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[0]",
+      "text": "add_hydrophobic_bulk"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[10]",
+      "text": "covalent_warhead"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[11]",
+      "text": "conformational_restriction"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[12]",
+      "text": "macrocyclization"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[13]",
+      "text": "stereochemistry_change"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[14]",
+      "text": "polar_group_add"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[15]",
+      "text": "lipophilicity_reduction"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[16]",
+      "text": "prodrug_masking"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[17]",
+      "text": "degrader_conversion"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[1]",
+      "text": "truncate_substituent"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[2]",
+      "text": "vector_extension"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[3]",
+      "text": "ring_fusion"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[4]",
+      "text": "scaffold_hop"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[5]",
+      "text": "heteroatom_swap"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[6]",
+      "text": "bioisostere_replacement"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[7]",
+      "text": "halogen_substitution"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[8]",
+      "text": "hbond_engagement"
+    },
+    {
+      "id": "mw.precedent_constants.TACTIC_TERMS[9]",
+      "text": "salt_bridge_engagement"
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.LIMITATIONS[0]",
+      "text": "촉매 잔기·부위·반응은 참조 스냅샷(M-CSA·UniProt·Rhea)에 적힌 값이며 ProtView가 계산하거나 판정한 것이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.LIMITATIONS[1]",
+      "text": "대응됨은 M-CSA가 적은 PDB·체인·번호와 이 구조의 잔기 이름이 모두 같다는 뜻이며 잔기의 역할이나 활성을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.LIMITATIONS[2]",
+      "text": "대응 없음·충돌·검사하지 않음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이며 촉매 잔기가 없다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.LIMITATIONS[3]",
+      "text": "UniProt 부위는 번호 대응이 있는 체인에서만 구조 잔기에 연결했고 그 밖에는 단백질 서열 위치로만 보여 준다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.LIMITATIONS[4]",
+      "text": "반응 정보는 효소 활성·속도·특이성이나 반응 메커니즘이 유지된다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.SCREEN_NOTES[UK1]",
+      "text": "촉매 잔기·부위·반응은 M-CSA·UniProt·Rhea가 적은 참조값이며 ProtView가 계산한 값이 아니다. 가져온 스냅샷 날짜 기준이다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.SCREEN_NOTES[UK2]",
+      "text": "촉매 잔기 검사 안 함: 이 집합은 M-CSA 촉매 잔기 주석 없이 만들었거나 일부 체인만 검사했다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.SCREEN_NOTES[UK3]",
+      "text": "UniProt 부위 정보는 지식 탭에서만 보이며 보호에 쓰지 않음."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.SCREEN_NOTES[UK4]",
+      "text": "이 체인을 M-CSA가 다루지 않았다는 것은 촉매 잔기가 없다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.STATEMENTS[RK1]",
+      "text": "촉매 잔기·부위·반응은 참조 스냅샷(M-CSA·UniProt·Rhea)에 적힌 값이며 ProtView가 계산하거나 판정한 것이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.STATEMENTS[RK2]",
+      "text": "대응됨은 M-CSA가 적은 PDB·체인·번호와 이 구조의 잔기 이름이 모두 같다는 뜻이며 잔기의 역할이나 활성을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.STATEMENTS[RK3]",
+      "text": "대응 없음·충돌·검사하지 않음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이며 촉매 잔기가 없다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.STATEMENTS[RK4]",
+      "text": "UniProt 부위는 번호 대응이 있는 체인에서만 구조 잔기에 연결했고 그 밖에는 단백질 서열 위치로만 보여 준다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.STATEMENTS[RK5]",
+      "text": "반응 정보는 효소 활성·속도·특이성이나 반응 메커니즘이 유지된다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_constants.STATEMENTS[RK6]",
+      "text": "M-CSA·UniProt·Rhea 자료는 CC BY 4.0이며 출처·스냅샷 날짜는 아래에 있다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.ACCESSION_SOURCE_LABELS[numbering_map]",
+      "text": "번호 대응에서 가져옴"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.ACCESSION_SOURCE_LABELS[user]",
+      "text": "사용자 입력"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.EVIDENCE_STATEMENT",
+      "text": "ProtView는 저장된 결과의 행·부위·연결 위치·Rhea ID 개수만 다시 셌다. M-CSA·UniProt·Rhea 값(항목 ID·효소 이름·EC 번호·역할 문구·기준 구조 여부·M-CSA가 적은 PDB/체인/번호/잔기 이름·accession·부위 종류·위치·설명·촉매 활동·Rhea 반응식)은 참조 스냅샷 값(참조 스냅샷 값, 계산 아님)이며 ProtView가 계산하거나 판정한 것이 아니다. 보고서를 만들 때 연결을 다시 계산하지 않았다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.FIXED_LIMITATIONS[0]",
+      "text": "UniProt 부위는 번호 대응이 있는 체인에서만 구조 잔기에 연결했고 그 밖에는 단백질 서열 위치로만 보여 준다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.FIXED_LIMITATIONS[1]",
+      "text": "대응 없음·충돌·검사하지 않음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이며 촉매 잔기가 없다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.FIXED_LIMITATIONS[2]",
+      "text": "대응됨은 M-CSA가 적은 PDB·체인·번호와 이 구조의 잔기 이름이 모두 같다는 뜻이며 잔기의 역할이나 활성을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.FIXED_LIMITATIONS[3]",
+      "text": "반응 정보는 효소 활성·속도·특이성이나 반응 메커니즘이 유지된다는 뜻이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.FIXED_LIMITATIONS[4]",
+      "text": "촉매 잔기·부위·반응은 참조 스냅샷(M-CSA·UniProt·Rhea)에 적힌 값이며 ProtView가 계산하거나 판정한 것이 아니다."
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.LICENSE_LABEL",
+      "text": "CC BY 4.0"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.LINK_LABELS[mapped]",
+      "text": "번호 대응 행 있음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.LINK_LABELS[not_in_map]",
+      "text": "번호 대응에 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.PROCESSED_LABEL",
+      "text": "공개 서버에서 가져온 가공본"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[accession_not_given]",
+      "text": "accession을 주지 않음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[accession_not_in_snapshot]",
+      "text": "스냅샷에 없는 accession"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[accession_skipped_at_import]",
+      "text": "가져올 때 건너뛴 accession"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[ambiguous_residue_number]",
+      "text": "같은 번호의 사슬 잔기가 여럿"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[insertion_code_present]",
+      "text": "구조 잔기에 삽입 코드가 있음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[mcsa_rows_disagree]",
+      "text": "M-CSA 행끼리 잔기 이름이 다름"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[no_author_number]",
+      "text": "M-CSA에 저자 번호가 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[no_source]",
+      "text": "반응 정보를 준 출처가 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[non_standard_code]",
+      "text": "M-CSA 잔기 이름이 표준 20종이 아님"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[pdb_id_not_given]",
+      "text": "PDB ID를 주지 않음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[residue_name_differs]",
+      "text": "구조 잔기 이름이 M-CSA 잔기 이름과 다름"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REASON_LABELS[residue_not_in_structure]",
+      "text": "이 번호의 사슬 잔기가 구조에 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.REFERENCE_NOTE",
+      "text": "참조 스냅샷 값, 계산 아님"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.RHEA_LABELS[False]",
+      "text": "스냅샷에 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.RHEA_LABELS[True]",
+      "text": "스냅샷에 있음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SKIP_LABELS[demerged]",
+      "text": "분할"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SKIP_LABELS[fetch_failed]",
+      "text": "받지 못함"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SKIP_LABELS[merged]",
+      "text": "병합"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SKIP_LABELS[not_found]",
+      "text": "찾지 못함"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SKIP_LABELS[obsolete]",
+      "text": "폐기"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SOURCE_LABELS[mcsa]",
+      "text": "M-CSA"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SOURCE_LABELS[rhea]",
+      "text": "Rhea"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.SOURCE_LABELS[uniprot_function]",
+      "text": "UniProt"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[chain_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[chain_flag][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[feature_link_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[mcsa_coverage][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[mcsa_entry_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[mcsa_row_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[mcsa_row_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[mcsa_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reactions_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_ec_number][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_mcsa_entry][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_mcsa_role][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_mcsa_row][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_rhea_equation][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_rhea_id][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_snapshot_rows][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_uniprot_activity][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_uniprot_entry][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[reference_uniprot_site][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[rhea_link_state][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[total_linked_position_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[total_mcsa_row_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[total_rhea_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[total_uniprot_feature_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[uniprot_feature_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[uniprot_link_state][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[uniprot_status][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENTS[unlisted_line_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[0]",
+      "text": "chain_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[10]",
+      "text": "uniprot_feature_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[11]",
+      "text": "total_uniprot_feature_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[12]",
+      "text": "feature_link_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[13]",
+      "text": "total_linked_position_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[14]",
+      "text": "reactions_status"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[15]",
+      "text": "rhea_link_state"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[16]",
+      "text": "total_rhea_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[17]",
+      "text": "unlisted_line_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[18]",
+      "text": "reference_snapshot_rows"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[19]",
+      "text": "reference_mcsa_entry"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[1]",
+      "text": "chain_flag"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[20]",
+      "text": "reference_ec_number"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[21]",
+      "text": "reference_mcsa_row"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[22]",
+      "text": "reference_mcsa_role"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[23]",
+      "text": "reference_uniprot_entry"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[24]",
+      "text": "reference_uniprot_site"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[25]",
+      "text": "reference_uniprot_activity"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[26]",
+      "text": "reference_rhea_id"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[27]",
+      "text": "reference_rhea_equation"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[2]",
+      "text": "mcsa_status"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[3]",
+      "text": "mcsa_coverage"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[4]",
+      "text": "mcsa_row_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[5]",
+      "text": "mcsa_row_status"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[6]",
+      "text": "total_mcsa_row_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[7]",
+      "text": "mcsa_entry_count"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[8]",
+      "text": "uniprot_status"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATEMENT_IDS[9]",
+      "text": "uniprot_link_state"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[accession_differs_from_mcsa]",
+      "text": "체인 accession이 M-CSA 항목이 적은 accession과 다름"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[chain_not_in_map]",
+      "text": "연결하지 않음: 번호 대응에 이 체인이 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[chain_not_listed]",
+      "text": "이 체인은 M-CSA 행에 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[checked]",
+      "text": "검사함"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[conflict]",
+      "text": "충돌"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[covered]",
+      "text": "M-CSA가 이 체인을 다룸"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[map_accession_differs]",
+      "text": "연결하지 않음: 번호 대응의 accession이 체인 accession과 다름"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[matched]",
+      "text": "대응됨"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[not_available]",
+      "text": "사용할 수 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[not_checked]",
+      "text": "검사하지 않음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[numbering_map]",
+      "text": "번호 대응으로 구조 잔기에 연결함"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[numbering_map_not_given]",
+      "text": "연결하지 않음: 번호 대응을 주지 않음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[pdb_not_in_snapshot]",
+      "text": "이 PDB ID는 스냅샷에 없음"
+    },
+    {
+      "id": "mw.reaction_knowledge_reports.STATUS_LABELS[unmatched]",
+      "text": "대응 없음"
+    },
+    {
+      "id": "mw.sequence_ga_constants.MODEL_LIMITATION_ORDER[0]",
+      "text": "변이 구조는 PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 모델이며 회전이성질체 탐색과 수렴을 주장하지 않는다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.MODEL_LIMITATION_ORDER[1]",
+      "text": "모델은 단백질만 포함하며 리간드·금속 이온·물·보조인자는 제외했다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.MODEL_LIMITATION_ORDER[2]",
+      "text": "변이한 잔기 밖에서 히스티딘·시스테인 양성자 상태가 야생형 기준 구조와 다르게 지정되었으므로 두 구조의 차이는 지정한 변이만이 아니다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.MODEL_LIMITATION_ORDER[3]",
+      "text": "변이형에는 야생형 기준에 없는 이황화 결합이 거리 기준으로 만들어졌다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.sequence_ga_constants.SCORE_ROW_LABEL",
+      "text": "모드 1(엔진 출력 순서)"
+    },
+    {
+      "id": "mw.sequence_ga_constants.STATEMENTS[S1]",
+      "text": "서열 GA는 변이 조합 공간에서 어떤 조합을 모델링·도킹할지 정하는 탐색 방법이며, 개체의 점수 정렬·선택 표시는 순위나 추천이 아니다. 교차·편집의 부모 선택은 작업 모듈 기록이며 서버가 다시 계산하지 않았고 변이 목록의 부모–자식 관계만 검증했다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.STATEMENTS[S2]",
+      "text": "이 실행은 시간·평가 상한·취소·기준 행 실패·연속 실패 등으로 일부만 계산되었다. 계산하지 않은 개체는 점수가 없으며 0이 아니고, 한도 도달로 멈춘 실행은 같은 설정으로 다시 해도 같은 경로를 보장하지 않는다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.STATEMENTS[S3]",
+      "text": "재사용한 개체는 같은 후보 집합·구조·리간드·상자·seed·값으로 이전에 저장된 모델링·도킹 결과를 가져온 것이며, 저장된 결과 집합이 다르면 같은 GA seed도 다른 경로를 낼 수 있다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.STATEMENTS[S4]",
+      "text": "점수는 각 개체의 변이 구조(PDBFixer가 곁사슬을 한 가지 형태로 만든 뒤 OpenMM으로 최대 50회 최소화한 단백질만의 모델)에 사용자가 준 리간드 좌표를 그대로 두고 자유 도킹한 qvina 점수이며, 변이의 효과나 결합 친화도를 뜻하지 않는다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.STATEMENTS[S5]",
+      "text": "OpenMM 전위는 각 구조의 Amber14-all + GBn2 값(kJ/mol)이며 서열이 다른 구조의 값은 서로 비교할 수 없고 ΔΔG·안정성이 아니다."
+    },
+    {
+      "id": "mw.sequence_ga_constants.STATEMENTS[S6]",
+      "text": "여러 곳 변이는 구조 순서대로 한 곳씩 PDBFixer로 연속 적용한 모델이며(앞 단계에서 놓은 원자 좌표는 다음 단계 전에 소수 넷째 자리로 반올림했다) 적용 순서와 곁사슬 크기에 따라 모델이 달라질 수 있다. 구조의 충돌·전위는 점수나 선택에 쓰지 않았고(전위가 늘거나 유한하지 않은 모델만 실패로 처리), 개체마다 수용체가 다르므로 개체 점수를 나란히 두는 것은 같은 수용체 안의 비교가 아니며(개체 도킹 결과의 M18 둘째 한계 문장이 말하는 조건과 다르다) 순위나 '더 잘 결합'을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.sequence_ga_reports.EDIT_LABELS[add]",
+      "text": "추가"
+    },
+    {
+      "id": "mw.sequence_ga_reports.EDIT_LABELS[change]",
+      "text": "바꿈"
+    },
+    {
+      "id": "mw.sequence_ga_reports.EDIT_LABELS[move]",
+      "text": "옮김"
+    },
+    {
+      "id": "mw.sequence_ga_reports.EDIT_LABELS[remove]",
+      "text": "뺌"
+    },
+    {
+      "id": "mw.sequence_ga_reports.EVALUATION_LABELS[computed]",
+      "text": "새 평가"
+    },
+    {
+      "id": "mw.sequence_ga_reports.EVALUATION_LABELS[reused]",
+      "text": "재사용"
+    },
+    {
+      "id": "mw.sequence_ga_reports.EVIDENCE_STATEMENT",
+      "text": "이 보고서의 수치는 저장된 서열 GA 요약 객체의 값, 요약의 세대·개체를 조건으로 센 개수, 점수 있는 개체와 야생형 기준 행이 가리키는 도킹 결과 객체의 첫 행 점수다. 보고서는 모델링·도킹을 다시 하지 않았다."
+    },
+    {
+      "id": "mw.sequence_ga_reports.NO_CHANGE_LABEL",
+      "text": "점수 최솟값 변화 없음"
+    },
+    {
+      "id": "mw.sequence_ga_reports.ORIGIN_LABELS[carried]",
+      "text": "다음 세대로 이어받음"
+    },
+    {
+      "id": "mw.sequence_ga_reports.ORIGIN_LABELS[crossover]",
+      "text": "교차"
+    },
+    {
+      "id": "mw.sequence_ga_reports.ORIGIN_LABELS[edit]",
+      "text": "편집"
+    },
+    {
+      "id": "mw.sequence_ga_reports.ORIGIN_LABELS[initial]",
+      "text": "초기"
+    },
+    {
+      "id": "mw.sequence_ga_reports.ORIGIN_LABELS[random]",
+      "text": "무작위"
+    },
+    {
+      "id": "mw.sequence_ga_reports.RESULT_STATEMENTS[0]",
+      "text": "individual_result_score"
+    },
+    {
+      "id": "mw.sequence_ga_reports.RESULT_STATEMENTS[1]",
+      "text": "reference_result_score"
+    },
+    {
+      "id": "mw.sequence_ga_reports.SCORE_COLUMN_LABEL",
+      "text": "qvina 점수(kcal/mol)"
+    },
+    {
+      "id": "mw.sequence_ga_reports.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.site_annotation.LIMITATIONS[0]",
+      "text": "기하 접촉은 중원자 사이 거리만으로 정한 것이며 수소결합이나 화학 상호작용 판정이 아니다."
+    },
+    {
+      "id": "mw.site_annotation.LIMITATIONS[1]",
+      "text": "KLIFS 번호는 참조 스냅샷 값이며 잔기의 역할을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.site_annotation.LIMITATIONS[2]",
+      "text": "없음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이다."
+    },
+    {
+      "id": "mw.site_annotation.LIMITATIONS[3]",
+      "text": "접촉 도구는 폴리머 레코드 잔기만 검사하므로 HETATM 변형 잔기는 검사하지 않는다."
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[17]",
+      "text": "III.17"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[24]",
+      "text": "αC.24"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[45]",
+      "text": "GK.45"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[46]",
+      "text": "hinge.46"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[47]",
+      "text": "hinge.47"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[48]",
+      "text": "hinge.48"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[80]",
+      "text": "xDFG.80"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[81]",
+      "text": "xDFG.81"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[82]",
+      "text": "xDFG.82"
+    },
+    {
+      "id": "mw.site_annotation.SITE_LABELS[83]",
+      "text": "xDFG.83"
+    },
+    {
+      "id": "mw.site_annotation_reports.LIMITATIONS[0]",
+      "text": "기하 접촉은 중원자 사이 거리만으로 정한 것이며 수소결합이나 화학 상호작용 판정이 아니다."
+    },
+    {
+      "id": "mw.site_annotation_reports.LIMITATIONS[1]",
+      "text": "KLIFS 번호는 참조 스냅샷 값이며 잔기의 역할을 뜻하지 않는다."
+    },
+    {
+      "id": "mw.site_annotation_reports.LIMITATIONS[2]",
+      "text": "없음은 이 스냅샷과 방법으로 확실하지 않다는 뜻이다."
+    },
+    {
+      "id": "mw.site_annotation_reports.LIMITATIONS[3]",
+      "text": "접촉 도구는 폴리머 레코드 잔기만 검사하므로 HETATM 변형 잔기는 검사하지 않는다."
+    },
+    {
+      "id": "mw.site_annotation_reports.REFERENCE_NOTE",
+      "text": "참조 스냅샷 값, 계산 아님"
+    },
+    {
+      "id": "mw.site_annotation_reports.REFERENCE_STATEMENT",
+      "text": "Accessions, UniProt positions, KLIFS pocket numbers and labels, and the structure residue a numbering map row assigns each number to are reference snapshot values (참조 스냅샷 값, 계산 아님), not ProtView calculations. ProtView computed only the per-site geometric contact counts and minimum distances from the stored contact rows, and the site counts."
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_accession][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_accession][1]",
+      "text": "residue_numbering_map"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_klifs_index][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_klifs_index][1]",
+      "text": "residue_numbering_map"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_klifs_label][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_klifs_label][1]",
+      "text": "residue_numbering_map"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_site_residue][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_site_residue][1]",
+      "text": "residue_numbering_map"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_uniprot_position][0]",
+      "text": "reference_value"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[reference_uniprot_position][1]",
+      "text": "residue_numbering_map"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_absent_reason_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_absent_reason_count][1]",
+      "text": "reference_site_annotation"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_contact_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_contact_count][1]",
+      "text": "interaction_set"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_min_distance_A][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_min_distance_A][1]",
+      "text": "interaction_set"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_status_count][0]",
+      "text": "computed"
+    },
+    {
+      "id": "mw.site_annotation_reports.STATEMENTS[site_status_count][1]",
+      "text": "reference_site_annotation"
+    }
+  ],
+  "inline": [
+    {
+      "id": "mw/chemical_bundle.py:748",
+      "text": "Native chemistry-dependent assignments; not experimental validation, affinity or energy."
+    },
+    {
+      "id": "mw/chemical_bundle.py:944",
+      "text": "Native chemistry-dependent assignments; not experimental validation, affinity or energy."
+    },
+    {
+      "id": "mw/chemical_reports.py:114",
+      "text": "These are chemistry-dependent native assignments, not experimental bond validation, affinity or energy."
+    },
+    {
+      "id": "mw/chemical_reports.py:152",
+      "text": "D···A hydrogen-bond distance ≤"
+    },
+    {
+      "id": "mw/openmm_reports.py:179",
+      "text": "Potential change under this fixed implicit-solvent model is not binding energy, ΔΔG, affinity, or experimental stability."
+    },
+    {
+      "id": "mw/pocket_reports.py:1",
+      "text": "Immutable, field-cited method reports for completed fpocket ``pocket_set@1`` results (``pocket_report@1``).\n\nThe report is a ``method_report_manifest@1`` with ``analysis_type: \"pocket_detection\"``. Every number it\nstates is a claim bound to one immutable field: source handle, allowed field path, row selector (native\nrank), unit, exact stored value and the rendered text. The only derived values are the pocket count\n(``count(pockets)``) and the lining-residue count (``count_distinct`` over the 7-field residue identity);\n``display_center`` is a ProtView display value (arithmetic mean of stored sphere centers), never an\nfpocket value. Creating, reopening and downloading never run fpocket or recompute a scientific quantity:\nsaved reads re-validate the stored pocket_set and compare every claim and the Markdown byte for byte.\n"
+    },
+    {
+      "id": "mw/pocket_reports.py:259",
+      "text": "## Pocket candidates (native rank order)"
+    },
+    {
+      "id": "mw/pocket_reports.py:264",
+      "text": "| Rank | "
+    },
+    {
+      "id": "mw/pocket_reports.py:276",
+      "text": "- Rank "
+    },
+    {
+      "id": "mw/pocket_reports.py:281",
+      "text": "Exact values, units, field paths and rank selectors for every number are in the JSON download ("
+    },
+    {
+      "id": "mw/pocket_reports.py:31",
+      "text": "fpocket pocket candidates, ranks and scores are not binding-site, affinity or druggability evidence (결합 부위·친화도·druggability 증거 아님)."
+    },
+    {
+      "id": "mw/reports.py:421",
+      "text": "Geometric proximity does not establish a hydrogen bond, affinity, stability, or energy."
+    },
+    {
+      "id": "mw/tools/comparison.py:205",
+      "text": "Original-source Euclidean geometry; no bond, affinity or stability inference."
+    },
+    {
+      "id": "mw/tools/comparison.py:284",
+      "text": "RMSD applies only to the explicit CA pairs; rigid fit is not affinity, stability or structural quality."
+    },
+    {
+      "id": "mw/tools/sasa.py:245",
+      "text": "Probe/radius/resolution-dependent two-partner solvent-accessible geometry; not affinity, energy or stability."
+    },
+    {
+      "id": "mw/tools/sasa.py:61",
+      "text": "selected two-partner solvent-accessible geometry; no affinity or energy claim"
+    }
+  ],
+  "phrases": [
+    {
+      "id": "mw.docking_constants.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    },
+    {
+      "id": "mw.docking_constants.SCORE_COLUMN_LABEL",
+      "text": "qvina 점수(kcal/mol)"
+    },
+    {
+      "id": "mw.sequence_ga_constants.SCORE_LABEL",
+      "text": "qvina 점수(kcal/mol, Vina 계열 스코어링 함수 값. 친화도가 아님)"
+    }
+  ],
+  "reportRules": {
+    "residue_numbering": {
+      "module": "mw.numbering_reports",
+      "renderVersion": "residue_numbering_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "reference_value"
+      ],
+      "fields": {
+        "computed": "rows\\.(status|residue_match|alignment\\.absent_reasons)|chains\\[\\d+\\]\\.(alignment\\.(identity_pct|coverage_pct)|counts\\.(mapped|unmapped|conflict)|residue_rule\\.modified_residue_count)",
+        "reference_value": "chains\\[\\d+\\]\\.(sifts\\.accessions\\[\\d+\\]|alignment\\.accession)|rows\\[\\d+\\]\\.(uniprot_accession|uniprot_position|uniprot_residue|klifs_index|klifs_label)"
+      },
+      "referenceNote": "참조 스냅샷 값, 계산 아님",
+      "modelResponseNote": null
+    },
+    "reference_site_annotation": {
+      "module": "mw.site_annotation_reports",
+      "renderVersion": "reference_site_annotation_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "reference_value"
+      ],
+      "fields": {
+        "computed": "groups\\.sites\\.(status|absent_reason)|rows\\.type|rows\\[\\d+\\]\\.distance_A",
+        "reference_value": "rows\\[\\d+\\]\\.(uniprot_accession|uniprot_position|klifs_index|klifs_label|residue)|chains\\[\\d+\\]\\.klifs\\[\\d+\\]\\.accession"
+      },
+      "referenceNote": "참조 스냅샷 값, 계산 아님",
+      "modelResponseNote": null
+    },
+    "ligand_candidates": {
+      "module": "mw.ligand_reports",
+      "renderVersion": "ligand_candidates_markdown@1",
+      "evidenceKinds": [
+        "computed"
+      ],
+      "fields": {
+        "computed": "(?:parent_properties\\.(mol_weight|crippen_logp|hbd|hba|tpsa|rotatable_bonds|heavy_atoms|formal_charge))|(?:counts\\.candidates)|(?:counts\\.(blocks_accepted|raw_products|duplicate_products))|(?:counts\\.rejected\\.(sanitize_failed|element_not_allowed|too_many_atoms|equals_parent|outside_site))|(?:counts\\.not_applicable\\.(fixed|user_[1-9][0-9]*))|(?:limit_reached|stop_reason|limits\\.(max_candidates|max_attempts))|(?:site_atoms)|(?:rules_used\\[\\d+\\]\\.text)|(?:candidates\\[\\*\\]\\.pains\\.matches)|(?:candidates\\[\\*\\]\\.stereo_flag)|(?:candidates\\[\\*\\]\\.(properties\\.(mol_weight|crippen_logp|hbd|hba|tpsa|rotatable_bonds|heavy_atoms|formal_charge)|pains\\.matches))|(?:candidates\\[\\*\\])"
+      },
+      "referenceNote": null,
+      "modelResponseNote": null
+    },
+    "ligand_docking": {
+      "module": "mw.docking_reports",
+      "renderVersion": "ligand_docking_markdown@1",
+      "evidenceKinds": [
+        "computed"
+      ],
+      "fields": {
+        "computed": "(?:counts\\.modes)|(?:counts\\.(samples_generated|samples_scored))|(?:modes\\[\\d+\\]\\.score_kcal_mol)|(?:modes\\[\\*\\]\\.score_kcal_mol)|(?:modes\\[\\*\\]\\.score_kcal_mol)|(?:modes\\[\\d+\\]\\.contacts)|(?:modes\\[\\d+\\]\\.contacts)|(?:modes\\[\\d+\\]\\.atoms_outside_box)|(?:modes\\[\\d+\\]\\.min_heavy_atom_distance_A)|(?:modes\\[\\d+\\]\\.core_max_deviation_A)|(?:box\\.(center_A|size_A)\\[[0-2]\\]|box\\.source|box\\.margin_A)|(?:parameters\\.(seed|exhaustiveness|num_modes|energy_range|conformers|cpu))|(?:engine\\.(name|version))|(?:preparation\\.(tool|version|rdkit_version))|(?:inputs\\.receptor\\.(handle|sha256|model_number))|(?:inputs\\.receptor\\.removed_instance\\.(residue\\.(model_number|chain_auth|chain_label|seq_auth|seq_label|icode|resname)|atom_count))|(?:inputs\\.ligand\\.(source|sdf_handle|sdf_sha256|candidate_set_handle|candidate_id|parent_sdf_handle|parent_sdf_sha256|generated\\.(hydrogens|coordinates)|stereo_flag|unspecified_stereo_centers))"
+      },
+      "referenceNote": null,
+      "modelResponseNote": null
+    },
+    "ligand_docking_batch": {
+      "module": "mw.docking_batch_reports",
+      "renderVersion": "ligand_docking_batch_markdown@1",
+      "evidenceKinds": [
+        "computed"
+      ],
+      "fields": {
+        "computed": "(?:inputs\\.receptor\\.(handle|sha256|model_number))|(?:inputs\\.receptor\\.removed_instance\\.(residue\\.(model_number|chain_auth|chain_label|seq_auth|seq_label|icode|resname)|atom_count))|(?:inputs\\.candidate_set\\.(handle|parent_sdf_handle|parent_sdf_sha256))|(?:box\\.(center_A|size_A)\\[[0-2]\\]|box\\.source|box\\.margin_A)|(?:parameters\\.(seed|exhaustiveness|num_modes|energy_range|conformers|cpu))|(?:engine\\.(name|version))|(?:preparation\\.(tool|version|rdkit_version))|(?:counts\\.(rows|scored|null_result|failed|cancelled|not_run))|(?:rows\\[\\d+\\]\\.score_kcal_mol)|(?:modes\\[0\\]\\.score_kcal_mol)"
+      },
+      "referenceNote": null,
+      "modelResponseNote": null
+    },
+    "ligand_ga": {
+      "module": "mw.ligand_ga_reports",
+      "renderVersion": "ligand_ga_markdown@1",
+      "evidenceKinds": [
+        "computed"
+      ],
+      "fields": {
+        "computed": "(?:receptor\\.(handle|sha256|model_number))|(?:receptor\\.removed_instance\\.(residue\\.(model_number|chain_auth|chain_label|seq_auth|seq_label|icode|resname)|atom_count))|(?:candidate_set_handle|parent_sdf_handle)|(?:box\\.(center_A|size_A)\\[[0-2]\\]|box\\.source|box\\.margin_A)|(?:parameters\\.(seed|exhaustiveness|num_modes|energy_range|conformers|cpu))|(?:ga\\.(seed|population_size|generations|elite_count|tournament_size|neighbor_count|random_fraction|patience|max_new_dockings|total_s))|(?:pool\\.(size|eligible_count|filter_excluded_count))|(?:generations_done|new_dockings_used|reused_count|reserved_units)|(?:generations\\[\\d+\\]\\.individuals)|(?:generations\\[\\d+\\]\\.(min_score|max_score))|(?:generations\\[\\d+\\]\\.individuals\\[\\d+\\]\\.score)|(?:modes\\[0\\]\\.score_kcal_mol)"
+      },
+      "referenceNote": null,
+      "modelResponseNote": null
+    },
+    "sequence_ga": {
+      "module": "mw.sequence_ga_reports",
+      "renderVersion": "sequence_ga_markdown@1",
+      "evidenceKinds": [
+        "computed"
+      ],
+      "fields": {
+        "computed": "(?:candidate_set)|(?:structure\\.(handle|model_number))|(?:ligand\\.(sdf_handle|sdf_sha256))|(?:box\\.(center_A|size_A)\\[[0-2]\\]|box\\.source|box\\.margin_A)|(?:parameters\\.(seed|exhaustiveness|num_modes|energy_range|conformers|cpu))|(?:ga\\.(seed|population_size|generations|elite_count|tournament_size|crossover_fraction|random_fraction|max_mutations|patience|max_new_evaluations|total_s))|(?:space\\.(positions|candidates|effective_max_mutations|size))|(?:generations_done|new_evaluations_used|reused_count|reserved_evaluations|reserved_units)|(?:generations\\[\\d+\\]\\.individuals)|(?:generations\\[\\d+\\]\\.(min_score|max_score))|(?:generations\\[\\d+\\]\\.individuals\\[\\d+\\]\\.score)|(?:modes\\[0\\]\\.score_kcal_mol)|(?:reference\\.score)|(?:modes\\[0\\]\\.score_kcal_mol)"
+      },
+      "referenceNote": null,
+      "modelResponseNote": null
+    },
+    "mutation_candidates": {
+      "module": "mw.mutation_reports",
+      "renderVersion": "mutation_candidates_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "reference_value"
+      ],
+      "fields": {
+        "computed": "(?:positions\\[\\*\\])|(?:positions\\[\\*\\]\\.status)|(?:positions\\[\\*\\]\\.protection\\.released)|(?:candidates\\[\\*\\])|(?:positions\\[\\*\\]\\.exclusion_reasons)|(?:positions\\[\\*\\]\\.sources\\.kind)|(?:positions\\[\\*\\]\\.numbering\\.status)|(?:positions\\[\\d+\\]\\.ligand_min_distance_A)|(?:protection_checks\\.(user_list|klifs_key_sites|metal_contact|disulfide|catalytic_residue_database)\\.status)|(?:protection_checks\\.(user_list\\.protected|user_list\\.released|klifs_key_sites\\.annotated_sites|klifs_key_sites\\.absent_sites|metal_contact\\.metal_residues|disulfide\\.pairs|catalytic_residue_database\\.matched_rows|catalytic_residue_database\\.conflict_rows|catalytic_residue_database\\.unmatched_rows))|(?:protection_checks\\.catalytic_residue_database\\.covered_chains)",
+        "reference_value": "positions\\[\\d+\\]\\.(numbering\\.(uniprot_accession|uniprot_position|uniprot_residue|klifs_index|klifs_label)|protection\\.klifs_sites\\[\\d+\\]|protection\\.catalytic\\[\\d+\\]\\.(mcsa_id|residue_index|is_reference))"
+      },
+      "referenceNote": "참조 스냅샷 값, 계산 아님",
+      "modelResponseNote": null
+    },
+    "mutation_model": {
+      "module": "mw.mutation_model_reports",
+      "renderVersion": "mutation_model_markdown@1",
+      "evidenceKinds": [
+        "computed"
+      ],
+      "fields": {
+        "computed": "(?:candidate\\.(candidate_set|candidate_index|from|to|mutant_resname|residue\\.(model_number|chain_auth|chain_label|seq_auth|seq_label|icode|resname)))|(?:structures\\.(wild_type_reference|mutant)\\.energy\\.(before|after)_kJ_mol)|(?:structures\\.(wild_type_reference|mutant)\\.sasa\\.value_A2)|(?:structures\\.(wild_type_reference|mutant)\\.contacts\\.cutoff_A)|(?:structures\\.(wild_type_reference|mutant)\\.contacts\\.rows)|(?:structures\\.(wild_type_reference|mutant)\\.contacts\\.rows\\[\\*\\]\\.partner_residue)|(?:structures\\.(wild_type_reference|mutant)\\.disulfide_bonds)|(?:protonation_differences)|(?:structures\\.mutant\\.added_heavy_atoms)"
+      },
+      "referenceNote": null,
+      "modelResponseNote": null
+    },
+    "jev_choice": {
+      "module": "mw.jev_reports",
+      "renderVersion": "jev_choice_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "model_response"
+      ],
+      "fields": {
+        "computed": "projection\\.body_bytes|selection\\[\\*\\]|usage\\.cost|usage\\.input_tokens|usage\\.output_tokens",
+        "model_response": "answer\\.choice_alias|answer\\.confidence|arrival\\.late|arrival\\.late_reason|served_model"
+      },
+      "referenceNote": null,
+      "modelResponseNote": "외부 모델의 응답, 제안이며 과학 증거가 아니다"
+    },
+    "jev_loop": {
+      "module": "mw.jev_loop_reports",
+      "renderVersion": "jev_loop_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "model_response"
+      ],
+      "fields": {
+        "computed": "(?:pool\\.candidates)|(?:pool\\.source\\.handle)|(?:loop_seed|iteration_cap|effective_cap|setup_sha256)|(?:setup\\.(parameters\\.(seed|exhaustiveness|num_modes|energy_range)|contact_cutoff_A))|(?:counts\\.(started|done|jev_decided|human_decided|sends_dispatched|units_charged|reused_count))|(?:candidates\\[\\d+\\]\\.score_kcal_mol)|(?:modes\\[0\\]\\.score_kcal_mol)",
+        "model_response": "(?:answer|arrival)\\..*"
+      },
+      "referenceNote": null,
+      "modelResponseNote": "외부 모델의 응답, 제안이며 과학 증거가 아니다"
+    },
+    "reaction_knowledge": {
+      "module": "mw.reaction_knowledge_reports",
+      "renderVersion": "reaction_knowledge_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "reference_value"
+      ],
+      "fields": {
+        "computed": "(?:chains\\[\\*\\])|(?:chains\\[\\d+\\]\\.flags\\[\\d+\\])|(?:chains\\[\\d+\\]\\.mcsa\\.status)|(?:chains\\[\\d+\\]\\.mcsa\\.coverage)|(?:chains\\[\\d+\\]\\.mcsa\\.rows\\[\\*\\]\\.status)|(?:chains\\[\\d+\\]\\.mcsa\\.rows\\[\\d+\\]\\.status)|(?:chains\\[\\*\\]\\.mcsa\\.rows\\[\\*\\]\\.status)|(?:chains\\[\\*\\]\\.mcsa\\.entries\\[\\*\\]\\.mcsa_id)|(?:chains\\[\\d+\\]\\.uniprot\\.status)|(?:chains\\[\\d+\\]\\.uniprot\\.(linked_via|link_reason))|(?:chains\\[\\d+\\]\\.uniprot\\.features\\[\\*\\]\\.type)|(?:chains\\[\\*\\]\\.uniprot\\.features\\[\\*\\]\\.type)|(?:chains\\[\\d+\\]\\.uniprot\\.features\\[\\d+\\]\\.links\\[\\*\\]\\.status)|(?:chains\\[\\*\\]\\.uniprot\\.features\\[\\*\\]\\.links\\[\\*\\]\\.status)|(?:chains\\[\\d+\\]\\.reactions\\.status)|(?:chains\\[\\d+\\]\\.reactions\\.uniprot_activities\\[\\d+\\]\\.rhea\\[\\d+\\]\\.in_snapshot)|(?:chains\\[\\*\\]\\.reactions\\.uniprot_activities\\[\\*\\]\\.rhea\\[\\*\\]\\.in_snapshot)|(?:chains\\[\\d+\\]\\.(mcsa\\.rows|uniprot\\.features|reactions\\.uniprot_activities)\\[\\*\\])",
+        "reference_value": "(?:snapshot_set\\.sources\\[\\d+\\]\\.files\\[\\d+\\]\\.rows)|(?:chains\\[\\d+\\]\\.mcsa\\.entries\\[\\d+\\]\\.(mcsa_id|enzyme_name|reference_uniprot_id))|(?:chains\\[\\d+\\]\\.(mcsa\\.entries\\[\\d+\\]\\.all_ecs\\[\\d+\\]|reactions\\.ecs\\.(mcsa|uniprot)\\[\\d+\\]|reactions\\.uniprot_activities\\[\\d+\\]\\.ec_number))|(?:chains\\[\\d+\\]\\.mcsa\\.rows\\[\\d+\\]\\.(mcsa_id|is_reference|listed\\.(pdb_id|chain_name|resid|auth_resid|code)))|(?:chains\\[\\d+\\]\\.mcsa\\.rows\\[\\d+\\]\\.reference\\.(roles_summary|function_location_abv|ptm|roles\\[\\d+\\]\\.(group_function|function_type|function|emo)))|(?:chains\\[\\d+\\]\\.uniprot\\.entry\\.(accession|entry_name|protein_name|organism))|(?:chains\\[\\d+\\]\\.uniprot\\.features\\[\\d+\\]\\.(type|start|end|description|ligand_name|ligand_id))|(?:chains\\[\\d+\\]\\.reactions\\.uniprot_activities\\[\\d+\\]\\.reaction_name)|(?:chains\\[\\d+\\]\\.reactions\\.uniprot_activities\\[\\d+\\]\\.rhea\\[\\d+\\]\\.rhea_id)|(?:reference_rows\\.rhea\\[\\d+\\]\\.equation)"
+      },
+      "referenceNote": "참조 스냅샷 값, 계산 아님",
+      "modelResponseNote": null
+    },
+    "kinase_precedents": {
+      "module": "mw.kinase_precedents_reports",
+      "renderVersion": "kinase_precedents_markdown@1",
+      "evidenceKinds": [
+        "computed",
+        "reference_value"
+      ],
+      "fields": {
+        "computed": "(?:chains\\[\\*\\])|(?:chains\\[\\*\\]\\.status)|(?:chains\\[\\*\\]\\.reason)|(?:chains\\[\\d+\\]\\.(status|reason))|(?:targets\\[\\*\\])|(?:include_flagged)|(?:targets\\[\\*\\]\\.records\\[\\*\\]\\.file)|(?:targets\\[\\*\\]\\.excluded_flagged)|(?:set_summary\\.unresolved_target_records\\.(moves|moves_flagged))|(?:set_summary\\.unresolved_target_records)|(?:targets\\[\\d+\\]\\.status)|(?:targets\\[\\d+\\]\\.records\\[\\*\\]\\.file)|(?:targets\\[\\d+\\]\\.excluded_flagged)|(?:targets\\[\\d+\\]\\.records\\[\\*\\]\\.record\\.target\\.variant)|(?:targets\\[\\d+\\]\\.records\\[\\*\\]\\.record\\.tags\\.(site|goal|tactic))|(?:targets\\[\\d+\\]\\.records\\[\\*\\]\\.record\\.target\\.resolution_basis)|(?:targets\\[\\d+\\]\\.records\\[\\*\\])|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.checks\\[\\*\\]\\.status)|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.integrity\\.(hash_verified|quotes_within_limit|locations_have_page))",
+        "reference_value": "(?:precedent_set\\.(files\\[\\d+\\]|bibliography_snapshot\\.file)\\.rows)|(?:targets\\[\\d+\\]\\.references\\[\\d+\\]\\.(ref_id|gene|klifs_name|group|family))|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.move_id)|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.file)|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.target\\.(resolution_basis|variant))|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.source\\.pmid)|(?:bibliography\\.[0-9]+\\.(title|journal|year|doi))|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.source\\.locations\\[\\d+\\]\\.(kind|page|table_index|row|figure_id|panel))|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.tags\\.(site|goal|tactic)\\[\\d+\\])|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.content_hash)|(?:targets\\[\\d+\\]\\.records\\[\\d+\\]\\.record\\.checks\\.(qualifier_consistency|tag_vocab|schema|target_in_reference|quote_in_source|cross_parser_numbers|chembl_crosscheck|pmid_exists|structure_ref_exists|duplicate)\\.status)"
+      },
+      "referenceNote": "kbase 가공본 값, 계산 아님",
+      "modelResponseNote": null
+    }
+  },
+  "sha256": "22513fe891897676e99a3c7d9d712fd2df0eec62f1fafb8bc751f0b4a432c76b"
+}

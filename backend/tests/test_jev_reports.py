@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -66,6 +67,20 @@ def _sent(base, tmp_path, which="mutation", responder=None, interrupt=None):
 
 def _claims(manifest):
     return {claim["statement_id"]: claim for claim in manifest["claims"]}
+
+
+def _number_in(value, text):
+    """``str(value)`` in ``text`` as a whole number, not as digits inside a longer one: the manifest's snapshot holds
+    the last event's ``time.time()`` (``time_utc``) and the used wall clock, whose digits can run ``…0.1234…`` by
+    chance (M28 T2)."""
+    return re.search(rf"(?<![\d.]){re.escape(str(value))}(?!\d)", text) is not None
+
+
+def test_the_probability_check_finds_the_values_but_not_their_digits_inside_other_numbers():
+    for leaked in ('{"p":0.1234}', '{"p":[1,0.4321]}', '"0.1234"', "p = 0.4321."):
+        assert any(_number_in(value, leaked) for value in PROBABILITY_VALUES), leaked
+    for other in ('{"time_utc":1760180000.12345}', '{"used":10.43211}', '{"x":0.12345}'):
+        assert not any(_number_in(value, other) for value in PROBABILITY_VALUES), other
 
 
 def _forge(run, manifest, markdown):
@@ -131,7 +146,7 @@ def test_the_report_cites_the_proposal_with_two_evidence_kinds_and_no_probabilit
     dumped = canonical_json(manifest).decode()
     assert '"probabilities"' not in dumped and "answer.probabilities" not in dumped   # no such key or field
     for value in PROBABILITY_VALUES:
-        assert str(value) not in dumped and str(value) not in markdown
+        assert not _number_in(value, dumped) and str(value) not in markdown
     assert set(manifest["snapshot"]) == {"event_seq", "time_utc", "run_egress_mode", "science_consent", "budget"}
     assert manifest["snapshot"]["science_consent"] is True and manifest["snapshot"]["run_egress_mode"] == "local_only"
     created = [e for e in run.events.read()][events_before:]

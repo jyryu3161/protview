@@ -1,0 +1,22 @@
+# M28 T1 (c) M7 사전 검사 표 (2026-10-11, 작업 브랜치 dryforge/m28-final-verification, HEAD 287a37a8)
+# 명령: PYTHONPATH=backend .venv/bin/python docs/qa/m28-final-20261011/m7_probe.py runs/m28-preflight-20261011/m7-probe-runs  -> exit 0
+# 방식: new_run -> load_structure(model 0) -> prepare_structure(altloc highest_occupancy, waters keep_all|strip_all, hydrogens strip, leave_gaps, ignore) -> mw.tools.openmm_method.preflight (제품 함수 그대로, 최소화 실행 없음, 네트워크 0)
+# 열 at = 실패를 낸 잔기(chain_auth/seq_auth+icode/resname). input_sha256 = 입력 cif SHA-256 앞 16자
+pdb	waters	input_sha256	result	heavy_atom_count	excluded	chains	failure_class	reason_code	message	at
+1M17	keep_all	849bd2548dffb7dd	fail				precondition	sequence_gap	protein chain has a sequence gap	A/977/LEU
+1M17	strip_all	849bd2548dffb7dd	fail				precondition	sequence_gap	protein chain has a sequence gap	A/977/LEU
+1FIN	keep_all	dfe5da37b2e28d3d	fail				input_invalid		duplicate author chain identity	
+1FIN	strip_all	dfe5da37b2e28d3d	fail				input_invalid		duplicate author chain identity	
+1MQ4	keep_all	0f99d0c2693225ab	fail				precondition	heavy_template_mismatch	protein heavy atoms do not match Amber template; heavy-atom repair is unsupported	A/126/ARG
+1MQ4	strip_all	0f99d0c2693225ab	fail				precondition	heavy_template_mismatch	protein heavy atoms do not match Amber template; heavy-atom repair is unsupported	A/126/ARG
+1S9I	keep_all	3db038cdfa23f9d2	fail				precondition	sequence_gap	protein chain has a sequence gap	A/228/VAL
+1S9I	strip_all	3db038cdfa23f9d2	fail				precondition	sequence_gap	protein chain has a sequence gap	A/228/VAL
+1A30	keep_all	40ab7868e9b40c19	fail				precondition	heavy_template_mismatch	protein heavy atoms do not match Amber template; heavy-atom repair is unsupported	A/41/ARG
+1A30	strip_all	40ab7868e9b40c19	fail				precondition	heavy_template_mismatch	protein heavy atoms do not match Amber template; heavy-atom repair is unsupported	A/41/ARG
+1A4I	keep_all	afa6bd62e3183d1e	fail				precondition	sequence_gap	protein chain has a sequence gap	A/251/LYS
+1A4I	strip_all	afa6bd62e3183d1e	fail				precondition	sequence_gap	protein chain has a sequence gap	A/251/LYS
+1UBQ	keep_all	056f98710cb2b36f	pass	602	58	1				
+1UBQ	strip_all	056f98710cb2b36f	pass	602	58	1				
+1HSG	keep_all	d2ba73b5c4be05c4	fail				precondition	missing_terminal_oxt	missing terminal OXT; heavy-atom repair is unsupported	A/99/PHE
+1HSG	strip_all	d2ba73b5c4be05c4	fail				precondition	missing_terminal_oxt	missing terminal OXT; heavy-atom repair is unsupported	A/99/PHE
+# runs=16 passed_structures=1UBQ same_result_both_water_policies=true

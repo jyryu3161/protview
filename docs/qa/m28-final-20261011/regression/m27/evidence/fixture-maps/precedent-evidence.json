@@ -1,0 +1,133 @@
+{
+  "schema": "m27_precedent_evidence@1",
+  "mode": "maps",
+  "stage": "fixture",
+  "runs": {
+    "A": "run_891cc7d39860448f9fdae486e0576d85"
+  },
+  "inputs": [
+    {
+      "name": "public_1mq4.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)"
+    },
+    {
+      "name": "derived_1mq4_two_chain_fixture.pdb",
+      "path": "<repo>/backend/tests/fixtures/structures_m15/derived_1mq4_two_chain_fixture.pdb",
+      "bytes": 101947,
+      "sha256": "8fc31481440291553e4cec03c4966a97a46f8bec3264097fc29a9c6c982e72f3",
+      "provenance": "DERIVED M15 test fixture from public 1MQ4 (chain A = residues 200-285, chain B = residues 126-199; structures_m15/provenance_fixture.json)"
+    }
+  ],
+  "handles": {
+    "structures": {
+      "mq4": "obj://run_891cc7d39860448f9fdae486e0576d85/structure/5c77a807149a5526d28d20842bb78be8dbddc97464a1e609d9e8f37253c19567",
+      "two": "obj://run_891cc7d39860448f9fdae486e0576d85/structure/279c2d70fb05ba67b3773345ef729073fa102a0f9718b9b58f740963eed9a02b"
+    },
+    "maps": {
+      "m1": "obj://run_891cc7d39860448f9fdae486e0576d85/residue_numbering_map/c130f59947d4036e2917ac700478d3701ba2eb7c6a0458499e3c9870fd87375f",
+      "m2": "obj://run_891cc7d39860448f9fdae486e0576d85/residue_numbering_map/a73020416b4c2d0fed34a8dc5ea1c54cead9c68daabe150c3a59849468249075",
+      "m3": "obj://run_891cc7d39860448f9fdae486e0576d85/residue_numbering_map/e5e628e1f3d39a7f8c4588fe96808160ba91e97e983b76feaa4ed749a87e28c1"
+    }
+  },
+  "fixtureLabels": [
+    "every precedent value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/precedent/t8/build_qa_set.py with precedent_fixture.py (SYNTHETIC-PROVENANCE-t8.md); the derived numbering maps are LABELLED SYNTHETIC variants of a real M15 map; observations are of the screen, never results",
+    "DERIVED M15 test fixture from public 1MQ4 (chain A = residues 200-285, chain B = residues 126-199; structures_m15/provenance_fixture.json)"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_891cc7d39860448f9fdae486e0576d85",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "numbering-chain": [
+      {
+        "map": "m1",
+        "checked": "A"
+      },
+      {
+        "map": "m2",
+        "checked": "A"
+      },
+      {
+        "map": "m2",
+        "checked": "B"
+      },
+      {
+        "map": "m3",
+        "checked": "A"
+      },
+      {
+        "map": "m3",
+        "checked": "B"
+      }
+    ],
+    "numbering-pdb-confirm": [
+      {
+        "map": "m1",
+        "pdbId": "1MQ4"
+      }
+    ],
+    "numbering-uniprot-pick": [
+      {
+        "map": "m2",
+        "chain": "A",
+        "accession": "O14965"
+      },
+      {
+        "map": "m2",
+        "chain": "B",
+        "accession": "Q8IU85"
+      },
+      {
+        "map": "m3",
+        "chain": "A",
+        "accession": "O14965"
+      },
+      {
+        "map": "m3",
+        "chain": "B",
+        "accession": "O14965"
+      }
+    ]
+  },
+  "observations": {
+    "P-maps-real-m15": [
+      {
+        "step": "A01-new-run",
+        "description": "Click 구조 분석, 새 run (run A)"
+      },
+      {
+        "step": "A02-upload-mq4",
+        "description": "Choose public_1mq4.cif, click 구조 불러오기"
+      },
+      {
+        "step": "A02-upload-two",
+        "description": "Choose derived_1mq4_two_chain_fixture.pdb, click 구조 불러오기"
+      },
+      {
+        "step": "A03-map-m1",
+        "description": "지식·보고서 잔기 번호 대응: choose mq4, chains A:SIFTS O14965, tick 이 PDB ID가 맞습니다 (1MQ4), 실행"
+      },
+      {
+        "step": "A03-map-m2",
+        "description": "지식·보고서 잔기 번호 대응: choose two, chains A:UniProt 검색 O14965 B:UniProt 검색 Q8IU85, PDB ID not confirmed, 실행"
+      },
+      {
+        "step": "A03-map-m3",
+        "description": "지식·보고서 잔기 번호 대응: choose two, chains A:UniProt 검색 O14965 B:UniProt 검색 O14965, PDB ID not confirmed, 실행"
+      }
+    ]
+  },
+  "startedAt": "2026-10-11T17:26:12.599Z",
+  "finishedAt": "2026-10-11T17:26:17.055Z",
+  "error": null,
+  "requestCount": 141
+}

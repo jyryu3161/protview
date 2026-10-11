@@ -1,0 +1,107 @@
+{
+  "schema": "m28_acceptance_summary@1",
+  "phase": "fixture",
+  "rehearsal": false,
+  "acceptance": true,
+  "rehearsalPassed": null,
+  "acceptanceParts": {
+    "allBranches": true,
+    "casesValid": true,
+    "requiredCases": true,
+    "trueCases": true,
+    "buildStamped": true,
+    "nothingLeft": true,
+    "external": true,
+    "exportChecks": true,
+    "runsClaimed": true
+  },
+  "branches": [
+    "a",
+    "b",
+    "c"
+  ],
+  "definitionItems": {
+    "1": "pass",
+    "2": "pass",
+    "3": "pass",
+    "4": "pass",
+    "5": "pending_live",
+    "6": "pass"
+  },
+  "external": {
+    "browser_non_loopback_requests": 0,
+    "provider_calls": 0,
+    "live_calls_counted": null,
+    "dispatchEvents": 6,
+    "product_key_resolver_calls": 0
+  },
+  "leftover": {
+    "processes": [],
+    "ports": []
+  },
+  "traceAudit": {
+    "status": "pass",
+    "reportCount": 28,
+    "byKind": {
+      "chemical_interactions": 1,
+      "inspection": 1,
+      "interface_sasa": 1,
+      "jev_choice": 2,
+      "jev_loop": 4,
+      "kinase_precedents": 2,
+      "ligand_candidates": 1,
+      "ligand_docking": 1,
+      "ligand_docking_batch": 1,
+      "ligand_ga": 2,
+      "mutation_candidates": 2,
+      "mutation_model": 1,
+      "openmm_protein_minimize": 1,
+      "pocket_detection": 1,
+      "reaction_knowledge": 3,
+      "reference_site_annotation": 1,
+      "residue_numbering": 1,
+      "sequence_ga": 2
+    },
+    "checks": {
+      "reopen": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "evidence_exists": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "claim_fields": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "reference_source": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      },
+      "no_mixing": {
+        "pass": 28,
+        "fail": 0,
+        "not_checked": 0
+      }
+    },
+    "partialProductRecheck": [
+      {
+        "kind": "inspection",
+        "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration"
+      },
+      {
+        "kind": "interface_sasa",
+        "note": "제품 재계산 전제 불성립: no Markdown regeneration"
+      }
+    ],
+    "noReports": false,
+    "failures": 0
+  },
+  "unobserved": [],
+  "sourceHead": "8e96c1421cb81839eb82dcca1f44e0843a561c26"
+}

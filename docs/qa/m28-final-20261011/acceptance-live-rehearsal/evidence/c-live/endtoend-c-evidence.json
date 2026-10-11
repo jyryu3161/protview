@@ -1,0 +1,320 @@
+{
+  "schema": "m28_branch_c_evidence@1",
+  "mode": "live",
+  "rehearsal": true,
+  "run": "run_57fb01a2c47f4e69976d92cf6cf1bdd7",
+  "parts": {
+    "L-pre-C2": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:42:05.886Z",
+      "finishedAt": "2026-10-11T18:42:48.830Z"
+    },
+    "L-C6": {
+      "status": "pass",
+      "startedAt": "2026-10-11T18:42:48.830Z",
+      "finishedAt": "2026-10-11T18:43:23.573Z"
+    }
+  },
+  "observed": {
+    "L-pre-C2": {
+      "m7": {
+        "heavyAtoms": 602,
+        "excluded": 58,
+        "approvalSeen": true
+      },
+      "set": {
+        "positions": 4,
+        "candidates": [
+          "LYS A:6 K→A",
+          "LYS A:6 K→W",
+          "ILE A:44 I→A",
+          "ILE A:44 I→W",
+          "GLY A:76 G→A",
+          "GLY A:76 G→W"
+        ]
+      },
+      "model": {
+        "target": {
+          "residue": "ILE A:44",
+          "from": "I",
+          "to": "W"
+        },
+        "energyUnit": "kJ/mol",
+        "sideBySideMismatches": 0,
+        "differenceKeys": [],
+        "energies": {
+          "wild_type_reference": {
+            "before": -10184.213905790195,
+            "after": -12792.052911304538
+          },
+          "mutant": {
+            "before": -8045.996542151248,
+            "after": -12717.486975922548
+          }
+        },
+        "sasa": {
+          "wild_type_reference": 29.349771360160197,
+          "mutant": 88.12585960950504
+        },
+        "contacts": {
+          "wild_type_reference": 27,
+          "mutant": 21
+        },
+        "hisCys": {
+          "protonationDifferences": 0,
+          "variants": {
+            "wild_type_reference": [
+              "HIS A:68:HID"
+            ],
+            "mutant": [
+              "HIS A:68:HID"
+            ]
+          }
+        },
+        "limitations": 5,
+        "contactMismatches": 0,
+        "reportValueClaims": 6
+      },
+      "units": [
+        1,
+        1
+      ]
+    },
+    "L-C6": {
+      "explore": {
+        "computedSent": 0,
+        "bodyHasScore": false,
+        "vacuous": true,
+        "vacuousReason": "live: L-pre-C2 models the target but docks nothing, so no pool candidate is computed before this round (the fixture C6 checks the explore body on a computed candidate)"
+      }
+    }
+  },
+  "reportsCreated": 4,
+  "reportHandles": [
+    {
+      "case": "L-pre-C2",
+      "kind": "openmm_protein_minimize",
+      "httpStatus": 201,
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/75f01feaa21dd2685889fc938bd4563eef9bc8a5e0de0ab3ac69518c645d5542"
+    },
+    {
+      "case": "L-pre-C2",
+      "kind": "mutation_candidates",
+      "httpStatus": 201,
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/a05180a824132710d2388dc4390d0919ee0725ac46018c558995f33d05402149"
+    },
+    {
+      "case": "L-pre-C2",
+      "kind": "mutation_model",
+      "httpStatus": 201,
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/2110d0e0c2e86384c79dbd67eefac926086e64fdb994b47e561727e54a0e1331"
+    },
+    {
+      "case": "L-C6",
+      "kind": "jev_loop",
+      "httpStatus": 201,
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/3cd373f6f2b4b504bceaf2ed26927730470281ba479916c82f82afb9cee2ace8"
+    }
+  ],
+  "x5": [
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position ILE A:3 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position LYS A:6 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position ILE A:44 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: position GLY A:76 catalytic cell \"— (이 체인의 촉매 잔기를 검사하지 않음)\" (not checked, no number)"
+    },
+    {
+      "ok": true,
+      "detail": "L-pre-C2 1UBQ set: the catalytic exclusion count reads \"M-CSA 촉매 잔기 주석 — (효소 반응 지식 결과를 고르지 않음 (annotation_not_given), 세지 않음)\" (not counted, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 pending row 0: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 pending row 1: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 pending row 2: score cell \"— (계산하지 않음)\" (no score, not 0)"
+    },
+    {
+      "ok": true,
+      "detail": "L-C6 ended loop: LJ8 shown for the candidates left without a score (no score, not 0)"
+    }
+  ],
+  "texts": {
+    "structure@L-pre-C2": "texts/structure_L-pre-C2.tabtext",
+    "protein@L-pre-C2": "texts/protein_L-pre-C2.tabtext",
+    "protein@L-C6": "texts/protein_L-C6.tabtext"
+  },
+  "units": [
+    {
+      "label": "C2-m7",
+      "before": {
+        "limit": 8,
+        "used": 0,
+        "wallLimit": 1800,
+        "wallUsed": 0.023035208694636822
+      },
+      "remaining": 8,
+      "planned": 1,
+      "plannedRemaining": 8,
+      "raisePlanned": 0,
+      "onPlan": true,
+      "remainingMatchesPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 10.788717958610505
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "C2-m21",
+      "before": {
+        "limit": 8,
+        "used": 1,
+        "wallLimit": 1800,
+        "wallUsed": 10.864640375599265
+      },
+      "remaining": 7,
+      "planned": 1,
+      "plannedRemaining": 7,
+      "raisePlanned": 0,
+      "onPlan": true,
+      "remainingMatchesPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 32.00765054160729
+      },
+      "usedUnits": 1
+    },
+    {
+      "label": "C6-explore",
+      "before": {
+        "limit": 8,
+        "used": 2,
+        "wallLimit": 1800,
+        "wallUsed": 32.333483333233744
+      },
+      "remaining": 6,
+      "planned": 2,
+      "plannedRemaining": 6,
+      "raisePlanned": 0,
+      "onPlan": true,
+      "remainingMatchesPlan": true,
+      "after": {
+        "limit": 8,
+        "used": 4,
+        "wallLimit": 1800,
+        "wallUsed": 56.159848040901124
+      },
+      "usedUnits": 2
+    }
+  ],
+  "raises": [],
+  "sends": [
+    {
+      "case": "L-C6",
+      "sendId": "82d2c173-e995-491e-af6f-b265203271a0",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "explore",
+      "bodySha256": "e44d1156ed31efa86d7ab3fcb1ca251f7e6b2680424ee42eb1108682bc4294be",
+      "transportSha256": "e44d1156ed31efa86d7ab3fcb1ca251f7e6b2680424ee42eb1108682bc4294be",
+      "bodyBytes": 3736
+    }
+  ],
+  "live": {
+    "rehearsal": true,
+    "sendAllowed": true,
+    "dispatchLimit": 2,
+    "send": {
+      "dispatched": true,
+      "status": "completed",
+      "reasonCode": null,
+      "sendId": "82d2c173-e995-491e-af6f-b265203271a0",
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "listPosition": 1,
+      "listSize": 3,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true
+      },
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 157,
+        "input_tokens": 137,
+        "output_tokens": 20
+      },
+      "bodyBytes": 3736
+    },
+    "compute": {
+      "state": "scored",
+      "model": "done",
+      "dock": "done"
+    },
+    "guard": null,
+    "egressStop": null,
+    "dispatchCounts": {
+      "run_57fb01a2c47f4e69976d92cf6cf1bdd7": 1,
+      "run_8e98de2b360c43ed97422f9b50a3a733": 1
+    }
+  },
+  "structures": {
+    "c1": "1A30",
+    "c2": "1UBQ",
+    "same": false
+  },
+  "planSha256": "e792297037bb844403fda2e555c145c6d1af2938b53f491a94c9fb7fdcf0bd6e",
+  "inputs": {
+    "a30": {
+      "name": "public_1a30.cif",
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "syntheticLabeled": false
+    },
+    "ubq": {
+      "name": "public_1ubq.cif",
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "syntheticLabeled": false
+    },
+    "phenol": {
+      "name": "synthetic-phenol-ligand.sdf",
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3",
+      "syntheticLabeled": true
+    }
+  },
+  "startedAt": "2026-10-11T18:42:05.154Z",
+  "fixture": {
+    "calls": 1,
+    "scripts": [
+      "good"
+    ],
+    "dispatched": 1,
+    "dispatchedBefore": 1,
+    "sentinelAuthorization": true,
+    "credentialReads": {
+      "productResolverReads": 0,
+      "sentinelReads": 2,
+      "updatedAt": "2026-10-11T18:42:52.323600+00:00"
+    }
+  },
+  "finishedAt": "2026-10-11T18:43:23.658Z",
+  "error": null,
+  "requestCount": 391
+}

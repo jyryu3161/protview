@@ -1,0 +1,60 @@
+{
+  "oracle": "backend/tests/fixtures/sequence_ga/independent_sequence_ga_oracle.py",
+  "scores": "backend/tests/fixtures/sequence_ga/expected.json#vectors.s4_tiny_observed.scores",
+  "checks": [
+    {
+      "name": "ga1",
+      "summary": "obj://run_58e883ab59114d019002064981448776/sequence_ga_result/e044154d130dc3bb9ad65dcf1e0dd871eb8fe415ad91179ec11e09004ef83b07",
+      "ga": {
+        "crossover_fraction": 0.5,
+        "elite_count": 1,
+        "generations": 4,
+        "max_mutations": 3,
+        "max_new_evaluations": 32,
+        "patience": 2,
+        "population_size": 4,
+        "random_fraction": 0.25,
+        "seed": 21,
+        "total_s": 7200,
+        "tournament_size": 2
+      },
+      "reusable": [],
+      "conditions": true,
+      "equal": true,
+      "differences": []
+    },
+    {
+      "name": "ga2",
+      "summary": "obj://run_58e883ab59114d019002064981448776/sequence_ga_result/9409418c509c874042b70bec0def645e2fef178169034b2d87768bf0d2143ba5",
+      "ga": {
+        "crossover_fraction": 0.5,
+        "elite_count": 1,
+        "generations": 2,
+        "max_mutations": 3,
+        "max_new_evaluations": 4,
+        "patience": 2,
+        "population_size": 4,
+        "random_fraction": 0.25,
+        "seed": 13,
+        "total_s": 600,
+        "tournament_size": 2
+      },
+      "reusable": [
+        "3",
+        "1-2-4",
+        "1",
+        "0-2-4",
+        "4",
+        "5",
+        "3-5",
+        "3-4",
+        "1-3",
+        "2-5",
+        "wild_type"
+      ],
+      "conditions": true,
+      "equal": true,
+      "differences": []
+    }
+  ]
+}

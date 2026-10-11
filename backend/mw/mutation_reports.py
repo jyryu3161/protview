@@ -31,6 +31,18 @@ distinct M-CSA entry IDs of the positions' ``protection.catalytic`` are referenc
 ``reaction_knowledge@1`` result. Creating and reopening re-validate that result
 (``reaction_knowledge.validated_result``) and compare the set's catalytic check and every ``protection.catalytic``
 with the ones the result gives (``mutation_catalytic_value_mismatch`` otherwise).
+
+M28 T3 (report format ``mutation_candidates_markdown@2``): a new report that cites reference values carries the
+snapshot source and terms table the M15 / M16 / M26 reports carry. It cites the numbering family when the set names a
+numbering map or an annotation (the set of the map; with an annotation alone, the map the annotation names), and the
+reaction family when a claim cites an M-CSA entry ID. Each cited set is one manifest entry of
+``reference_snapshot_sets``: the M15 ``snapshot_set`` record copied from the numbering map (checked with
+``numbering_reports.validated_numbering_map``, which also gives the run's ``reference_snapshot_set@1`` object) with the
+KLIFS terms, or the M26 ``snapshot_set`` record copied from the reaction result (validated once with the set). The
+Markdown adds one "참조 스냅샷" section before the limitations with the wording and fields of those reports' tables (no
+processed-row-count column and no active-set line); every other line is the @1 line. A new report that cites none
+keeps the @1 format and bytes, and stored @1 reports reopen with the @1 manifest keys and rendering. Claims, statement
+IDs, fixed sentences and the candidate set are the same in both versions.
 """
 from __future__ import annotations
 
@@ -68,7 +80,9 @@ from .reports import EvidenceError, _md, _provenance, _ref
 from .tools.mutations import catalytic_input
 
 ANALYSIS_TYPE = "mutation_candidates"
-RENDER_VERSION = "mutation_candidates_markdown@1"
+RENDER_VERSION = "mutation_candidates_markdown@1"      # stored reports, and new reports citing no reference value
+RENDER_VERSION_V2 = "mutation_candidates_markdown@2"   # M28 T3: new reports citing reference values (source table)
+NUMBERING_SET_SCHEMA = "reference_snapshot_set@1"
 REPORT_BYTES = nr.REPORT_BYTES
 REFERENCE_NOTE = nr.REFERENCE_NOTE
 POCKET_KIND = ("pocket_set", "pocket_set@1")
@@ -145,6 +159,8 @@ COPIED_FIELDS = ("method_version", "structure", "parameters", "ligand", "pockets
 MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
     "result_sha256", *COPIED_FIELDS, "claims", "provenance", "evidence_statement", "snapshot", "markdown_handle"})
+MANIFEST_KEYS_V2 = MANIFEST_KEYS | {"reference_snapshot_sets"}
+MANIFEST_KEYS_BY_VERSION = {RENDER_VERSION: MANIFEST_KEYS, RENDER_VERSION_V2: MANIFEST_KEYS_V2}
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -268,8 +284,8 @@ def _check_catalytic(content: dict[str, Any], result: dict[str, Any], handle: st
         raise EvidenceError("mutation_catalytic_value_mismatch")
 
 
-def validated_mutation_set(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Resolve a stored candidate set produced by the tool and the stored objects it names; (content, provenance)."""
+def _validated(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """(content, provenance, the stored numbering map / annotation / reaction result it names or None)."""
     try:
         meta = run.store.meta(handle)
         if (meta["kind"], meta["schema"]) != (KIND, SCHEMA):
@@ -281,20 +297,56 @@ def validated_mutation_set(run: Any, handle: str) -> tuple[dict[str, Any], dict[
         provenance = _provenance(list(run.events.read()), handle, expected_tool=TOOL)
         parameters = content["parameters"]
         pocket = parameters["sources"]["pocket"]
-        check_sources(
-            content,
-            None if parameters["numbering_map"] is None else
-            _source(run, parameters["numbering_map"], (nr.rn.KIND, nr.rn.SCHEMA), "mutation_numbering_map_kind"),
-            None if parameters["annotation"] is None else
-            _source(run, parameters["annotation"], (sa.KIND, sa.SCHEMA), "mutation_annotation_kind"),
-            None if pocket is None else _source(run, pocket["pocket_set"], POCKET_KIND, "mutation_pocket_set_kind"),
-            None if parameters.get("catalytic_annotation") is None else
-            _source(run, parameters["catalytic_annotation"], CATALYTIC_KIND, "mutation_catalytic_annotation_kind"))
-        return content, provenance
+        map_content = (None if parameters["numbering_map"] is None else
+                       _source(run, parameters["numbering_map"], (nr.rn.KIND, nr.rn.SCHEMA),
+                               "mutation_numbering_map_kind"))
+        annotation = (None if parameters["annotation"] is None else
+                      _source(run, parameters["annotation"], (sa.KIND, sa.SCHEMA), "mutation_annotation_kind"))
+        pocket_content = (None if pocket is None else
+                          _source(run, pocket["pocket_set"], POCKET_KIND, "mutation_pocket_set_kind"))
+        catalytic = (None if parameters.get("catalytic_annotation") is None else
+                     _source(run, parameters["catalytic_annotation"], CATALYTIC_KIND,
+                             "mutation_catalytic_annotation_kind"))
+        check_sources(content, map_content, annotation, pocket_content, catalytic)
+        return content, provenance, {"numbering_map": map_content, "annotation": annotation, "catalytic": catalytic}
     except EvidenceError:
         raise
     except (KeyError, ValueError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_evidence_unresolved") from exc
+
+
+def validated_mutation_set(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Resolve a stored candidate set produced by the tool and the stored objects it names; (content, provenance)."""
+    content, provenance, _ = _validated(run, handle)
+    return content, provenance
+
+
+def reference_snapshot_sets(run: Any, content: dict[str, Any], claims: list[dict[str, Any]],
+                            sources: dict[str, Any]) -> list[dict[str, Any]]:
+    """The snapshot set of each reference family the report cites (M28 T3), copied from the cited objects.
+
+    Numbering family: the set names a numbering map or an annotation. The record is the numbering map's
+    ``snapshot_set`` (with an annotation alone, the map the annotation names), checked with the M15 report's own
+    validation, which also finds the run's ``reference_snapshot_set@1`` object; an annotation must name the same set.
+    Reaction family: a claim cites an M-CSA entry ID; the record is the stored reaction result's ``snapshot_set`` (the
+    result was validated once with the set). Empty when nothing is cited (the report is then @1)."""
+    parameters, annotation = content["parameters"], sources["annotation"]
+    sets: list[dict[str, Any]] = []
+    map_handle = parameters["numbering_map"]
+    if map_handle is None and annotation is not None:
+        map_handle = annotation["numbering_map"]
+    if map_handle is not None:
+        map_content, context = nr.validated_numbering_map(run, map_handle)
+        snapshot_set = map_content["snapshot_set"]
+        if annotation is not None and annotation["snapshot_set_hash"] != snapshot_set["set_hash"]:
+            raise EvidenceError("mutation_reference_set_mismatch")
+        sets.append({"set_schema": NUMBERING_SET_SCHEMA, "copied_from": map_handle,
+                     "reference_set_handle": context["reference_set_handle"], "snapshot_set": snapshot_set,
+                     "klifs_terms": nr.KLIFS_TERMS})
+    if any(claim["statement_id"] == "reference_mcsa_entry_id" for claim in claims):
+        sets.append({"set_schema": rkc.SET_SCHEMA, "copied_from": parameters["catalytic_annotation"],
+                     "snapshot_set": sources["catalytic"]["snapshot_set"]})
+    return sets
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -470,19 +522,33 @@ def validate_mutation_claim(run: Any, result_handle: str, proposed: dict[str, An
 # ---------------------------------------------------------------------------------------------------------------
 # manifest, Markdown, build and saved read
 
-def _expected(run: Any, handle: str) -> dict[str, Any]:
-    """Every manifest field that follows from the validated stored set (not snapshot / markdown handle)."""
-    content, provenance = validated_mutation_set(run, handle)
+def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, Any]:
+    """Every manifest field that follows from the validated stored set (not snapshot / markdown handle).
+
+    ``version`` is the render version of a stored report; None picks it for a new report: @2 when the report cites
+    reference values, else @1. An @1 report is checked with the @1 fields only (no source table is looked up)."""
+    content, provenance, sources = _validated(run, handle)
     try:
-        return {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
-                "render_version": RENDER_VERSION, "generation_mode": "local_rules_no_egress", "result_handle": handle,
-                "result_schema": SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
-                **{key: content[key] for key in COPIED_FIELDS},
-                "claims": claims_for(handle, content),
-                "provenance": {key: provenance[key] for key in ("call_id", "tool", "tool_version",
-                                                                "created_event_seq", "completed_event_seq")},
-                "evidence_statement": (EVIDENCE_STATEMENT_V2 if content["method_version"] == METHOD_VERSION_V2
-                                       else EVIDENCE_STATEMENT)}
+        claims = claims_for(handle, content)
+        sets = [] if version == RENDER_VERSION else reference_snapshot_sets(run, content, claims, sources)
+        if version is None:
+            version = RENDER_VERSION_V2 if sets else RENDER_VERSION
+        elif version not in MANIFEST_KEYS_BY_VERSION:
+            raise EvidenceError("mutation_report_schema_invalid")
+        elif version == RENDER_VERSION_V2 and not sets:
+            raise EvidenceError("mutation_report_reference_sets_missing")   # an @2 report cites reference values
+        expected = {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
+                    "render_version": version, "generation_mode": "local_rules_no_egress", "result_handle": handle,
+                    "result_schema": SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
+                    **{key: content[key] for key in COPIED_FIELDS},
+                    "claims": claims,
+                    "provenance": {key: provenance[key] for key in ("call_id", "tool", "tool_version",
+                                                                    "created_event_seq", "completed_event_seq")},
+                    "evidence_statement": (EVIDENCE_STATEMENT_V2 if content["method_version"] == METHOD_VERSION_V2
+                                           else EVIDENCE_STATEMENT)}
+        if version == RENDER_VERSION_V2:
+            expected["reference_snapshot_sets"] = sets
+        return expected
     except (KeyError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_report_evidence_unresolved") from exc
 
@@ -615,6 +681,10 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
     if v2:
         lines.extend(["", f"## M-CSA 촉매 잔기 주석 ({REFERENCE_NOTE})", ""])
         lines.extend(_catalytic_reference_lines(parameters, checks["catalytic_residue_database"], claims, md))
+    if manifest["render_version"] == RENDER_VERSION_V2:   # M28 T3: the source table of each cited set
+        lines.extend(["", "## 참조 스냅샷"])
+        for entry in manifest["reference_snapshot_sets"]:
+            lines.extend(_reference_set_lines(entry, md))
     lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
@@ -664,6 +734,39 @@ def _catalytic_reference_lines(parameters: dict[str, Any], check: dict[str, Any]
     return lines
 
 
+def _reference_set_lines(entry: dict[str, Any], md: Any) -> list[str]:
+    """One cited set's table in the wording and fields of the M15 / M16 table (numbering family) or the M26 table
+    (reaction family, without the processed-row-count column and the active-set lines). Fixed labels are template
+    text (checked for forbidden words); values are slots."""
+    snapshot_set = entry["snapshot_set"]
+    if entry["set_schema"] == NUMBERING_SET_SCHEMA:
+        lines = ["", "### 번호 대응·주석의 참조 세트", "", f"Numbering map: {md(entry['copied_from'])}",
+                 (f"Reference snapshot set of the numbering map: {md(snapshot_set['set_hash'])} "
+                  f"(object {md(entry['reference_set_handle'])})"), "",
+                 "| 출처 | 버전 | 날짜 | 스냅샷 ID | 라이선스 | 가공 |", "| --- | --- | --- | --- | --- | --- |"]
+        for source in snapshot_set["sources"]:
+            label = nr.SOURCE_LABELS.get(source["source"])
+            version = source["version_hint"] if source["version_hint"] is not None else "none (null)"
+            terms = _md(entry["klifs_terms"]) if source["source"] == "klifs" else md(source["license"])
+            lines.append(f"| {_md(label) if label is not None else md(source['source'])} | {md(version)} | "
+                         f"{md(source['date'])} | {md(source['snapshot_id'])} | {terms} | {_md(nr.PROCESSED_LABEL)} |")
+        lines.extend(["", f"- Origin: {md(snapshot_set['origin'])}"])
+        return lines
+    if entry["set_schema"] == rkc.SET_SCHEMA:
+        # imported here: that module imports this one when it loads
+        from . import reaction_knowledge_reports as rkr
+        lines = ["", "### 촉매 잔기 주석의 반응 참조 세트", "", rkc.STATEMENTS["RK6"], "",
+                 "| 출처 | 날짜 | 세트 해시 | 라이선스 | 가공 |", "| --- | --- | --- | --- | --- |"]
+        for source in snapshot_set["sources"]:
+            lines.append(f"| {_md(rkr.SOURCE_LABELS[source['source']])} | {md(source['date'])} | "
+                         f"{md(snapshot_set['set_hash'])} | {rkr.LICENSE_LABEL} ({md(source['license'])}) | "
+                         f"{rkr.PROCESSED_LABEL} |")
+        lines.extend(["", (f"- 가져온 시각: {md(snapshot_set['imported_at'])} (importer "
+                           f"{md(snapshot_set['importer_version'])}, {_md(rkc.ORIGIN)})")])
+        return lines
+    raise EvidenceError("mutation_report_reference_set_invalid")
+
+
 def build_mutation_report(run: Any, result_handle: str) -> dict[str, Any]:
     """New report object from the stored candidate set (no candidate is generated again)."""
     with run._owner():
@@ -697,10 +800,12 @@ def saved_mutation_report(run: Any, report_handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"], meta["fmt"]) != ("method_report_manifest", "method_report_manifest@1", "json"):
         raise EvidenceError("mutation_report_type")
     report = run.store.load_bounded_json(report_handle, REPORT_BYTES)
-    if (type(report) is not dict or set(report) != MANIFEST_KEYS or report["analysis_type"] != ANALYSIS_TYPE or
-            type(report["result_handle"]) is not str or report["render_version"] != RENDER_VERSION):
+    version = report.get("render_version") if type(report) is dict else None
+    keys = MANIFEST_KEYS_BY_VERSION.get(version) if type(version) is str else None   # @1 and @2 are both read
+    if (keys is None or set(report) != keys or report["analysis_type"] != ANALYSIS_TYPE or
+            type(report["result_handle"]) is not str):
         raise EvidenceError("mutation_report_schema_invalid")
-    expected = _expected(run, report["result_handle"])
+    expected = _expected(run, report["result_handle"], version)
     if type(report["claims"]) is not list:
         raise EvidenceError("mutation_report_claims_invalid")
     for claim in report["claims"]:

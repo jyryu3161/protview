@@ -1,0 +1,46 @@
+{
+  "schema": "m27_precedent_evidence@1",
+  "mode": "stale",
+  "stage": "fixture",
+  "runs": {
+    "A": "run_891cc7d39860448f9fdae486e0576d85",
+    "D": "run_4e64003998cc419b9ca0eacf1b0c86f5"
+  },
+  "inputs": [],
+  "handles": {},
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_891cc7d39860448f9fdae486e0576d85",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_4e64003998cc419b9ca0eacf1b0c86f5",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {},
+  "observations": {
+    "P-stale": [
+      {
+        "step": "STALE-01",
+        "description": "Choose run run_891cc7d39860448f9fdae486e0576d85 in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+      },
+      {
+        "step": "STALE-02",
+        "description": "Choose run run_4e64003998cc419b9ca0eacf1b0c86f5 in 저장된 run, click 지식·보고서: snapshot block of the new set; every stored result listed with \"이전 스냅샷 기준\"; open each: it renders from events with the same mark"
+      }
+    ]
+  },
+  "startedAt": "2026-10-11T17:26:49.952Z",
+  "finishedAt": "2026-10-11T17:26:53.917Z",
+  "error": null,
+  "requestCount": 167
+}

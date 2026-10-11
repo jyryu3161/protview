@@ -37,7 +37,7 @@
 ```bash
 .venv/bin/python -m pytest backend/tests -q
 .venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
-.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py scripts/test_m23_offscreen_acceptance.py scripts/test_m24_offscreen_acceptance.py scripts/test_m25_offscreen_acceptance.py scripts/test_import_reaction_references.py scripts/test_m26_offscreen_acceptance.py scripts/test_import_precedent_snapshots.py scripts/test_m27_offscreen_acceptance.py -q
+.venv/bin/python -m pytest scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.py scripts/test_m13_offscreen_acceptance.py scripts/test_m14_offscreen_acceptance.py scripts/test_import_reference_snapshots.py scripts/test_m15_offscreen_acceptance.py scripts/test_measure_klifs_numbering.py scripts/test_m16_offscreen_acceptance.py scripts/test_m17_offscreen_acceptance.py scripts/test_m18_offscreen_acceptance.py scripts/test_m19_offscreen_acceptance.py scripts/test_setup_qvina.py scripts/test_setup_docking_worker.py scripts/test_m20_offscreen_acceptance.py scripts/test_m21_offscreen_acceptance.py scripts/test_m22_offscreen_acceptance.py scripts/test_m23_offscreen_acceptance.py scripts/test_m24_offscreen_acceptance.py scripts/test_m25_offscreen_acceptance.py scripts/test_import_reaction_references.py scripts/test_m26_offscreen_acceptance.py scripts/test_import_precedent_snapshots.py scripts/test_m27_offscreen_acceptance.py scripts/test_m28_offscreen_acceptance.py scripts/test_m28_branch_a.py scripts/test_m28_branch_b.py scripts/test_m28_branch_c.py -q
 node --check frontend/tests/offscreen/pocket-flow.cjs
 node --check frontend/tests/offscreen/workflows-flow.cjs
 node --check frontend/tests/offscreen/tabs-flow.cjs
@@ -54,20 +54,26 @@ node --check frontend/tests/offscreen/jev-flow.cjs
 node --check frontend/tests/offscreen/jev-loop-flow.cjs
 node --check frontend/tests/offscreen/reaction-knowledge-flow.cjs
 node --check frontend/tests/offscreen/kinase-precedents-flow.cjs
+node --check frontend/tests/offscreen/endtoend-a-flow.cjs
+node --check frontend/tests/offscreen/endtoend-b-flow.cjs
+node --check frontend/tests/offscreen/endtoend-c-flow.cjs
 npm --prefix frontend run test:events
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
 - typecheck와 build는 동시에 돌리지 않고 순서대로 실행한다. 둘 다 같은 프런트엔드 빌드 산출물(`tsconfig.tsbuildinfo`, `.next/`)을 쓴다.
-- 백엔드·실행기 pytest는 Stop 훅(`.codex/hooks/stop.py`)과 같은 그룹으로 나눠 돌릴 수 있다: ruff 다음 pytest 열여덟 그룹(`PYTEST_GROUPS` 열일곱 + 나머지 그룹, `CHECKS` 19개, M25에서 무거운 루프 테스트 두 그룹을 더함. M26은 그룹을 더하지 않고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다. M27은 M27 백엔드 일곱 파일 그룹과 `test_analysis_workflows.py`·`test_jev_loop_reports.py` 그룹을 더하고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다). 그룹 합집합은 위 백엔드 + 스크립트 pytest와 같다(목록은 `docs/operations.md`의 Stop 훅 문단).
+- 백엔드·실행기 pytest는 Stop 훅(`.codex/hooks/stop.py`)과 같은 그룹으로 나눠 돌릴 수 있다: ruff 다음 pytest 열여덟 그룹(`PYTEST_GROUPS` 열일곱 + 나머지 그룹, `CHECKS` 19개, M25에서 무거운 루프 테스트 두 그룹을 더함. M26은 그룹을 더하지 않고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다. M27은 M27 백엔드 일곱 파일 그룹과 `test_analysis_workflows.py`·`test_jev_loop_reports.py` 그룹을 더하고 실행기 테스트 둘을 `SCRIPT_TESTS`에 넣었다. M28은 그룹을 더하지 않고 종단 실행기·분기 단위 테스트 넷을 `SCRIPT_TESTS`에 넣었다). 그룹 합집합은 위 백엔드 + 스크립트 pytest와 같다(목록은 `docs/operations.md`의 Stop 훅 문단).
+- 게이트 기록은 위에 적은 하네스 말고도 `frontend/tests/offscreen/*.cjs` 전부를 `node --check`했다(M27 게이트 `docs/qa/m27-precedents-20261010/gate.txt`의 `node-check: files=31`, M28 종단 하네스 셋을 더하면 34개).
+- `scripts/test_m28_branch_a.py`는 저장소 옆 `../kbase_kinase/dist`와 `.deps/reaction_qa/import2`, `scripts/test_m28_branch_c.py`는 `.deps/reaction_qa/import2`를 읽고 없으면 skip이 아니라 실패한다. 그 자료가 있는 주 체크아웃에서 돌린다.
 - 사용 가능해야 하는 과학 엔진(FreeSASA, OpenMM, M11의 ProLIF 작업 프로세스, M12의 fpocket, M17의 RDKit 리간드 작업 프로세스, M18의 qvina 도킹 작업 프로세스, M19의 일괄 도킹 작업 프로세스, M22의 GA 작업 프로세스, M23의 서열 GA 작업 프로세스와 모델링 프로그램)의 네이티브 테스트는 엔진이 없을 때 조용히 skip하면 안 된다. 단계 수락 시점에는 실제 엔진으로 실행해야 한다.
 - UI를 바꾸면 실제 Electron 오프스크린 렌더러(`webContents.isOffscreen()===true`, GPU·WebGL 켜짐, paint 프레임 확인)에서 바뀐 컨트롤을 하나씩 실제 입력으로 눌러 보고 결과를 관찰해야 한다. 일반 headless 브라우저나 숨긴 탭은 이 증거로 인정하지 않는다. 계획만 세운 클릭을 테스트 완료로 부르지 않는다.
 - API와 프런트엔드 연동은 실제 입력 바이트로 확인한다. 공개 구조 fixture(`backend/tests/fixtures/public_1hsg.cif`, `public_1ubq.cif`, M15 번호 대응·M16 참조 주석용 `public_1mq4.cif`)나 표시된 합성 fixture를 쓴다.
 - 오프라인 흐름을 검증할 때는 loopback이 아닌 요청이 0건임을 기록한다.
-- 제품이 OpenRouter를 실제로 호출하는 검증은 사용자가 그때마다 정해 준 횟수 안에서만 한다. M8의 4회 할당, M24의 6회 할당(2026-10-06, calibrate 1회 + live 5회), M25의 8회 할당(2026-10-07, calibrate 1회 + live 7회, 저장소 대장 `runs/m25-live-ledger.json`)은 모두 썼다. 이후 실호출은 사용자가 새로 정해 줄 때만 한다. fixture transport 테스트와 오프스크린 fixture 서버에는 이 제한이 없다.
+- 제품이 OpenRouter를 실제로 호출하는 검증은 사용자가 그때마다 정해 준 횟수 안에서만 한다. M8의 4회 할당, M24의 6회 할당(2026-10-06, calibrate 1회 + live 5회), M25의 8회 할당(2026-10-07, calibrate 1회 + live 7회, 저장소 대장 `runs/m25-live-ledger.json`), M28의 2회 할당(2026-10-11, 리간드 루프 활용형 한 바퀴 + 단백질 루프 탐색형 한 바퀴, 보정 호출 없음, 저장소 대장 `runs/m28-live-ledger.json`, 둘 다 `completed`)은 모두 썼다. 이후 실호출은 사용자가 새로 정해 줄 때만 한다. fixture transport 테스트와 오프스크린 fixture 서버에는 이 제한이 없다.
 - M26 가져오기 명령의 실서버 검증도 사용자가 정한 한도 안에서만 한다. M26 할당(2026-10-08, 전체 가져오기 2회·탐색 요청 100건 이하·RCSB mmCIF 3개)은 전체 가져오기 2/2·탐색 48/100·RCSB 3/3을 썼고 장부는 `docs/qa/m26-reaction-20261008/network-ledger.txt`다(`docs/security.md` "반응 참조 스냅샷 (M26)"). 가져오기 명령의 시험은 전송 함수를 주입한 가짜 전송과 `127.0.0.1` 로컬 서버로만 하고, 그 밖의 테스트·오프스크린 QA의 외부 요청은 0건이다.
 - M27 가져오기 명령은 네트워크를 쓰지 않는다(로컬 파일과 읽기 전용 git만). M27 개발·검증 중 외부 요청은 사람이 허용한 RCSB 공개 구조 mmCIF 2개(`1M17`·`1FIN`, 2026-10-10)뿐이었고 장부는 `docs/qa/m27-precedents-20261010/network-ledger.txt`다. 그 밖의 테스트·오프스크린 QA의 외부 요청은 0건이다.
+- M28은 새 외부 요청 0건 규칙으로 검증했다(사용자 결정 ①, 결정 0036). 예외는 위 실호출 2회와 새 컴퓨터 설치 시험의 패키지 저장소 내려받기(README 명령 그대로: `pypi.org`·`files.pythonhosted.org`·`registry.npmjs.org`, Electron 실행 파일은 캐시에 있어 `github.com` 0건)뿐이었고 장부는 `docs/qa/m28-final-20261011/network-ledger.txt`다. 종단 fixture 단계·연습·회귀 사슬·게이트·테스트의 외부 요청은 0건이다(브라우저 비-loopback 요청 0, fixture 단계 제공자 호출 0, 구조 새로 받기·M26 다시 가져오기 없음, `docs/security.md` "M28 종단 검증의 외부 요청").
 
 ## 모듈 경계
 

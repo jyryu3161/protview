@@ -1,0 +1,80 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "rBBec44wIyXoIAtlHTe43",
+    "gitHead": "5a5ba3f2e9e2f4b572eb9e7dc27111598a52dbe3",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "e515176ada09faba74882b98ed8fbcf588eb59a652a1066842f188e61f1e0b41",
+    "dirtyFiles": [
+      "?? docs/qa/m28-final-20261011/regression/"
+    ],
+    "recordedAt": "2026-10-11T17:54:49.689297+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+      "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+    },
+    "runnerSha256": "a6b4a447d0898cf01009a28fbf1675bd6d68c1e2ba75f5aeba7ca452752576ba"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "runs": "<repo>/runs/m28-reg-m25-m18-regression/runs",
+      "code": "<repo>",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/backend/mw/__init__.py",
+      "startedAt": "2026-10-11T17:54:54.280352+00:00"
+    },
+    {
+      "name": "backend-worker-missing",
+      "runs": "<repo>/runs/m28-reg-m25-m18-regression/unavailable-runs",
+      "code": "<repo>/runs/m28-reg-m25-m18-regression/layout-worker-missing",
+      "python": "<repo>/.venv/bin/python",
+      "mw": "<repo>/runs/m28-reg-m25-m18-regression/layout-worker-missing/backend/mw/__init__.py",
+      "startedAt": "2026-10-11T17:55:59.708568+00:00"
+    }
+  ],
+  "layouts": {
+    "layout-worker-missing": {
+      "label": "labeled runtime layout: byte-identical backend/mw and config copy without .deps (locked docking environments absent: capability worker_missing)",
+      "files": 151,
+      "treeSha256": "d40ea990221efa0e3bdeefa7ba1f500d502ebba28a9321ee8467d0bee121a26e"
+    }
+  },
+  "environment": {
+    "dockingPython": true,
+    "dockingPythonPath": ".deps/docking/venv-locked/bin/python",
+    "qvina": true,
+    "qvinaPath": ".deps/qvina/env/bin/qvina2",
+    "ligandPython": true,
+    "ligandPythonPath": ".deps/prolif/venv-locked/bin/python",
+    "mainAvailable": true,
+    "candidatesAvailable": true,
+    "mainCapability": {
+      "available": true,
+      "status": "ready",
+      "reason_code": null,
+      "pins": {
+        "engine": "qvina",
+        "qvina_sha256": "caf5f22a3928be8adf3cb017508eaacbdcecf68ef29c5bca24fceea016c5f79c",
+        "qvina_package": "qvina-2.1.0-h4a521e9_8",
+        "versions": {
+          "meeko": "0.8.0",
+          "rdkit": "2026.03.6",
+          "MDAnalysis": "2.10.0",
+          "gemmi": "0.7.5"
+        },
+        "worker_sha256": "52c3cad6c217f95f3d10a6f3c3367c42a14a464ac64ef6cabea9a9f0f45ba706",
+        "constants_sha256": "5ab9e3da4a9beac4084c14c1c5334eea2455ec15870d435836c0977eba578fcf",
+        "lock_sha256": "ec38e8e80d5fc90c72324a45e36f60c47ca8a0e6381c2a25e146a537c8ea8c7f",
+        "qvina_lock_sha256": "f20e50c9240f53d4500ed1764d525b612c6e0603c11431283e7bb96bd7a32b53"
+      }
+    },
+    "layoutReason": "worker_missing"
+  }
+}

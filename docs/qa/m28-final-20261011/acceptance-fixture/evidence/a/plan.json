@@ -1,0 +1,1562 @@
+{
+  "schema": "m28_branch_a_plan@1",
+  "inputs": {
+    "m17": {
+      "path": "<repo>/backend/tests/fixtures/public_1m17.cif",
+      "name": "public_1m17.cif",
+      "bytes": 307709,
+      "sha256": "849bd2548dffb7ddcb7229a05202c1e2e41019a1fd69ec39483654cf984fc4d0",
+      "provenance": "public PDB entry 1M17 (RCSB CC0, M27 T1 download; EGFR kinase domain with AQ4)"
+    },
+    "fin": {
+      "path": "<repo>/backend/tests/fixtures/public_1fin.cif",
+      "name": "public_1fin.cif",
+      "bytes": 999052,
+      "sha256": "dfe5da37b2e28d3d74eefa0edee97d57ea127538beead9e68a8a42a5c363a1ac",
+      "provenance": "public PDB entry 1FIN (RCSB CC0, M27 T1 download; CDK2 / cyclin A)"
+    },
+    "mq4": {
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "name": "public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain)"
+    },
+    "s9i": {
+      "path": "<repo>/backend/tests/fixtures/public_1s9i.cif",
+      "name": "public_1s9i.cif",
+      "bytes": 565105,
+      "sha256": "3db038cdfa23f9d2b8d88e552162fa153c915402827cb4ebb24936171ef08810",
+      "provenance": "public PDB entry 1S9I (RCSB CC0, M26 T9a download)"
+    },
+    "a30": {
+      "path": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "name": "public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, M26 T9a download)"
+    },
+    "a4i": {
+      "path": "<repo>/backend/tests/fixtures/public_1a4i.cif",
+      "name": "public_1a4i.cif",
+      "bytes": 530681,
+      "sha256": "afa6bd62e3183d1e574ef4c61139148fe4d92c0a5bbac7575b5a418cd664e712",
+      "provenance": "public PDB entry 1A4I (RCSB CC0, M26 T9a download)"
+    }
+  },
+  "ligand": {
+    "model_number": 1,
+    "chain_auth": "A",
+    "chain_label": "B",
+    "seq_auth": 999,
+    "seq_label": null,
+    "icode": "",
+    "resname": "AQ4"
+  },
+  "a1": {
+    "policy": {
+      "altloc": "highest_occupancy",
+      "waters": "strip_all",
+      "hydrogens": "strip"
+    },
+    "residues": 313,
+    "atoms": 2526,
+    "removed": {
+      "waters": 20,
+      "hydrogens": 0,
+      "altlocs": 14
+    },
+    "input": {
+      "residues": 333,
+      "atoms": 2560
+    }
+  },
+  "contacts": {
+    "cutoff_A": 4.0,
+    "types": [
+      "contact",
+      "polar_contact",
+      "hydrophobic_contact"
+    ],
+    "pairs": [
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "O2",
+        "type": "polar_contact",
+        "distance_A": 3.269066533431216
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C12",
+        "type": "contact",
+        "distance_A": 3.985628808607243
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "C10",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.992525641746086
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "C9",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.9090328727192882
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "C13",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.5612391101974628
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "C17",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.604316023880261
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 694,
+          "seq_label": 29,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "C18",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.970000755667439
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 719,
+          "seq_label": 54,
+          "icode": "",
+          "resname": "ALA"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.8197477665416595
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 719,
+          "seq_label": 54,
+          "icode": "",
+          "resname": "ALA"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "C19",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.306510698606614
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 719,
+          "seq_label": 54,
+          "icode": "",
+          "resname": "ALA"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "N3",
+        "type": "contact",
+        "distance_A": 3.510599379023472
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "C1",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.8055793251488037
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "C2",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.837541400428147
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "CD",
+        "ligand_atom": "C2",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.855018676997559
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "CD",
+        "ligand_atom": "C3",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.835202862952623
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "CD",
+        "ligand_atom": "C22",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.7350536810064736
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "NZ",
+        "ligand_atom": "C21",
+        "type": "contact",
+        "distance_A": 3.8866126640044825
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 721,
+          "seq_label": 56,
+          "icode": "",
+          "resname": "LYS"
+        },
+        "protein_atom": "NZ",
+        "ligand_atom": "C22",
+        "type": "contact",
+        "distance_A": 3.7004130850487504
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 738,
+          "seq_label": 73,
+          "icode": "",
+          "resname": "GLU"
+        },
+        "protein_atom": "OE2",
+        "ligand_atom": "C22",
+        "type": "contact",
+        "distance_A": 3.805615456138467
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 764,
+          "seq_label": 99,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "C",
+        "ligand_atom": "C1",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.965727423815209
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 764,
+          "seq_label": 99,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C1",
+        "type": "contact",
+        "distance_A": 3.882583675852977
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 764,
+          "seq_label": 99,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "C1",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.431025065486991
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 766,
+          "seq_label": 101,
+          "icode": "",
+          "resname": "THR"
+        },
+        "protein_atom": "OG1",
+        "ligand_atom": "C1",
+        "type": "contact",
+        "distance_A": 3.405737805527608
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 766,
+          "seq_label": 101,
+          "icode": "",
+          "resname": "THR"
+        },
+        "protein_atom": "OG1",
+        "ligand_atom": "C2",
+        "type": "contact",
+        "distance_A": 3.5299096305712996
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 766,
+          "seq_label": 101,
+          "icode": "",
+          "resname": "THR"
+        },
+        "protein_atom": "CG2",
+        "ligand_atom": "C1",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.5293724654674747
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 767,
+          "seq_label": 102,
+          "icode": "",
+          "resname": "GLN"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C19",
+        "type": "contact",
+        "distance_A": 3.1464027078554326
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 768,
+          "seq_label": 103,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.639915658363527
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 768,
+          "seq_label": 103,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "C19",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.7468474748780465
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 768,
+          "seq_label": 103,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "C",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.623903420346628
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 768,
+          "seq_label": 103,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "C",
+        "ligand_atom": "C19",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.9179012238697384
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 768,
+          "seq_label": 103,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "C17",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.9933851554789945
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 768,
+          "seq_label": 103,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.4959134714692235
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "N",
+        "ligand_atom": "C18",
+        "type": "contact",
+        "distance_A": 3.8605358436362147
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "N",
+        "ligand_atom": "N2",
+        "type": "polar_contact",
+        "distance_A": 2.699139677749187
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "N",
+        "ligand_atom": "C19",
+        "type": "contact",
+        "distance_A": 3.195463816099314
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.5335412831888604
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "C",
+        "ligand_atom": "C17",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.854015827678964
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "C",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.7468183836423092
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C13",
+        "type": "contact",
+        "distance_A": 3.9261157649768763
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C17",
+        "type": "contact",
+        "distance_A": 3.0978568398168402
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C18",
+        "type": "contact",
+        "distance_A": 3.6257739863372587
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "N2",
+        "type": "polar_contact",
+        "distance_A": 3.6319841684676955
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "N2",
+        "type": "contact",
+        "distance_A": 3.5625189122305008
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "CB",
+        "ligand_atom": "C19",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.862067192579641
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 769,
+          "seq_label": 104,
+          "icode": "",
+          "resname": "MET"
+        },
+        "protein_atom": "CG",
+        "ligand_atom": "C19",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.778418981531821
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 770,
+          "seq_label": 105,
+          "icode": "",
+          "resname": "PRO"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "O4",
+        "type": "polar_contact",
+        "distance_A": 3.2077124247662856
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 770,
+          "seq_label": 105,
+          "icode": "",
+          "resname": "PRO"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "C16",
+        "type": "contact",
+        "distance_A": 3.106731079446695
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 771,
+          "seq_label": 106,
+          "icode": "",
+          "resname": "PHE"
+        },
+        "protein_atom": "C",
+        "ligand_atom": "O4",
+        "type": "contact",
+        "distance_A": 3.4464149488997995
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 771,
+          "seq_label": 106,
+          "icode": "",
+          "resname": "PHE"
+        },
+        "protein_atom": "O",
+        "ligand_atom": "O4",
+        "type": "polar_contact",
+        "distance_A": 3.84012408653679
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "N",
+        "ligand_atom": "O3",
+        "type": "polar_contact",
+        "distance_A": 3.969213902021404
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "N",
+        "ligand_atom": "C14",
+        "type": "contact",
+        "distance_A": 3.8109176060366354
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "N",
+        "ligand_atom": "O4",
+        "type": "polar_contact",
+        "distance_A": 3.2382926056797254
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "C13",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.8341079797001
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "O3",
+        "type": "contact",
+        "distance_A": 3.718917718906939
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "C14",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.243989673226474
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "C15",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.8573470157609604
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 772,
+          "seq_label": 107,
+          "icode": "",
+          "resname": "GLY"
+        },
+        "protein_atom": "CA",
+        "ligand_atom": "O4",
+        "type": "contact",
+        "distance_A": 3.5119471806962013
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 820,
+          "seq_label": 155,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "N1",
+        "type": "contact",
+        "distance_A": 3.729536432319705
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 820,
+          "seq_label": 155,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "C6",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.5225821495034015
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 820,
+          "seq_label": 155,
+          "icode": "",
+          "resname": "LEU"
+        },
+        "protein_atom": "CD1",
+        "ligand_atom": "N3",
+        "type": "contact",
+        "distance_A": 3.453122934388525
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 830,
+          "seq_label": 165,
+          "icode": "",
+          "resname": "THR"
+        },
+        "protein_atom": "OG1",
+        "ligand_atom": "C20",
+        "type": "contact",
+        "distance_A": 3.960874903351533
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 830,
+          "seq_label": 165,
+          "icode": "",
+          "resname": "THR"
+        },
+        "protein_atom": "OG1",
+        "ligand_atom": "C21",
+        "type": "contact",
+        "distance_A": 3.6522947580938725
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 831,
+          "seq_label": 166,
+          "icode": "",
+          "resname": "ASP"
+        },
+        "protein_atom": "CG",
+        "ligand_atom": "C21",
+        "type": "hydrophobic_contact",
+        "distance_A": 3.520251837582079
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 831,
+          "seq_label": 166,
+          "icode": "",
+          "resname": "ASP"
+        },
+        "protein_atom": "OD1",
+        "ligand_atom": "C21",
+        "type": "contact",
+        "distance_A": 3.7280913347180773
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 831,
+          "seq_label": 166,
+          "icode": "",
+          "resname": "ASP"
+        },
+        "protein_atom": "OD2",
+        "ligand_atom": "C20",
+        "type": "contact",
+        "distance_A": 3.2722001772507743
+      },
+      {
+        "residue": {
+          "model_number": 1,
+          "chain_auth": "A",
+          "chain_label": "A",
+          "seq_auth": 831,
+          "seq_label": 166,
+          "icode": "",
+          "resname": "ASP"
+        },
+        "protein_atom": "OD2",
+        "ligand_atom": "C21",
+        "type": "contact",
+        "distance_A": 3.1054514969646516
+      }
+    ],
+    "summary": {
+      "rows": 65,
+      "residues": 15,
+      "byType": {
+        "contact": 33,
+        "polar_contact": 7,
+        "hydrophobic_contact": 25
+      },
+      "minimumDistance": 2.699139677749187
+    }
+  },
+  "siteOracle": {
+    "[1,\"A\",\"A\",694,29,\"\",\"LEU\"]": {
+      "counts": {
+        "contact": 1,
+        "polar_contact": 1,
+        "hydrophobic_contact": 5
+      },
+      "min": 3.269066533431216,
+      "polar": [
+        {
+          "protein_atom": "O",
+          "ligand_atom": "O2",
+          "distance_A": 3.269066533431216
+        }
+      ]
+    },
+    "[1,\"A\",\"A\",719,54,\"\",\"ALA\"]": {
+      "counts": {
+        "contact": 2,
+        "polar_contact": 0,
+        "hydrophobic_contact": 1
+      },
+      "min": 3.306510698606614,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",721,56,\"\",\"LYS\"]": {
+      "counts": {
+        "contact": 2,
+        "polar_contact": 0,
+        "hydrophobic_contact": 5
+      },
+      "min": 3.7004130850487504,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",738,73,\"\",\"GLU\"]": {
+      "counts": {
+        "contact": 1,
+        "polar_contact": 0,
+        "hydrophobic_contact": 0
+      },
+      "min": 3.805615456138467,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",764,99,\"\",\"LEU\"]": {
+      "counts": {
+        "contact": 1,
+        "polar_contact": 0,
+        "hydrophobic_contact": 2
+      },
+      "min": 3.431025065486991,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",766,101,\"\",\"THR\"]": {
+      "counts": {
+        "contact": 2,
+        "polar_contact": 0,
+        "hydrophobic_contact": 1
+      },
+      "min": 3.405737805527608,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",767,102,\"\",\"GLN\"]": {
+      "counts": {
+        "contact": 1,
+        "polar_contact": 0,
+        "hydrophobic_contact": 0
+      },
+      "min": 3.1464027078554326,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",768,103,\"\",\"LEU\"]": {
+      "counts": {
+        "contact": 3,
+        "polar_contact": 0,
+        "hydrophobic_contact": 3
+      },
+      "min": 3.4959134714692235,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",769,104,\"\",\"MET\"]": {
+      "counts": {
+        "contact": 8,
+        "polar_contact": 2,
+        "hydrophobic_contact": 3
+      },
+      "min": 2.699139677749187,
+      "polar": [
+        {
+          "protein_atom": "N",
+          "ligand_atom": "N2",
+          "distance_A": 2.699139677749187
+        },
+        {
+          "protein_atom": "O",
+          "ligand_atom": "N2",
+          "distance_A": 3.6319841684676955
+        }
+      ]
+    },
+    "[1,\"A\",\"A\",770,105,\"\",\"PRO\"]": {
+      "counts": {
+        "contact": 1,
+        "polar_contact": 1,
+        "hydrophobic_contact": 0
+      },
+      "min": 3.106731079446695,
+      "polar": [
+        {
+          "protein_atom": "O",
+          "ligand_atom": "O4",
+          "distance_A": 3.2077124247662856
+        }
+      ]
+    },
+    "[1,\"A\",\"A\",771,106,\"\",\"PHE\"]": {
+      "counts": {
+        "contact": 1,
+        "polar_contact": 1,
+        "hydrophobic_contact": 0
+      },
+      "min": 3.4464149488997995,
+      "polar": [
+        {
+          "protein_atom": "O",
+          "ligand_atom": "O4",
+          "distance_A": 3.84012408653679
+        }
+      ]
+    },
+    "[1,\"A\",\"A\",772,107,\"\",\"GLY\"]": {
+      "counts": {
+        "contact": 3,
+        "polar_contact": 2,
+        "hydrophobic_contact": 3
+      },
+      "min": 3.2382926056797254,
+      "polar": [
+        {
+          "protein_atom": "N",
+          "ligand_atom": "O3",
+          "distance_A": 3.969213902021404
+        },
+        {
+          "protein_atom": "N",
+          "ligand_atom": "O4",
+          "distance_A": 3.2382926056797254
+        }
+      ]
+    },
+    "[1,\"A\",\"A\",820,155,\"\",\"LEU\"]": {
+      "counts": {
+        "contact": 2,
+        "polar_contact": 0,
+        "hydrophobic_contact": 1
+      },
+      "min": 3.453122934388525,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",830,165,\"\",\"THR\"]": {
+      "counts": {
+        "contact": 2,
+        "polar_contact": 0,
+        "hydrophobic_contact": 0
+      },
+      "min": 3.6522947580938725,
+      "polar": []
+    },
+    "[1,\"A\",\"A\",831,166,\"\",\"ASP\"]": {
+      "counts": {
+        "contact": 3,
+        "polar_contact": 0,
+        "hydrophobic_contact": 1
+      },
+      "min": 3.1054514969646516,
+      "polar": []
+    }
+  },
+  "maps": [
+    {
+      "id": "m17",
+      "structure": "m17",
+      "use": "prepared",
+      "pdbConfirm": "1M17",
+      "chains": [
+        {
+          "chain": "A",
+          "expect": "P00533"
+        }
+      ]
+    },
+    {
+      "id": "fin",
+      "structure": "fin",
+      "use": "loaded",
+      "pdbConfirm": "1FIN",
+      "chains": [
+        {
+          "chain": "A",
+          "expect": "P24941"
+        },
+        {
+          "chain": "C",
+          "expect": "P24941"
+        }
+      ]
+    },
+    {
+      "id": "mq4",
+      "structure": "mq4",
+      "use": "loaded",
+      "pdbConfirm": "1MQ4",
+      "chains": [
+        {
+          "chain": "A",
+          "expect": "O14965"
+        }
+      ]
+    }
+  ],
+  "precedent": {
+    "setHash": "45fb14107e6fc5a8b957c02c19eac3948a6367ae4628847d0e1e1187f45995fe",
+    "links": [
+      {
+        "id": "l-m17",
+        "map": "m17",
+        "chains": null,
+        "includeFlagged": false,
+        "expect": {
+          "nullResult": false,
+          "chains": {
+            "A": [
+              "linked",
+              null,
+              "P00533"
+            ]
+          },
+          "targets": {
+            "P00533": {
+              "status": "precedents_found",
+              "moves": 76,
+              "movesFlagged": null,
+              "excluded": 66,
+              "references": 1,
+              "variants": {
+                "L834R": 1,
+                "L858R": 15,
+                "T790M": 4,
+                "WT": 3,
+                "not_reported": 53
+              },
+              "chains": [
+                "A"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "l-fin",
+        "map": "fin",
+        "chains": null,
+        "includeFlagged": false,
+        "expect": {
+          "nullResult": false,
+          "chains": {
+            "A": [
+              "linked",
+              null,
+              "P24941"
+            ],
+            "C": [
+              "linked",
+              null,
+              "P24941"
+            ]
+          },
+          "targets": {
+            "P24941": {
+              "status": "precedents_found",
+              "moves": 32,
+              "movesFlagged": null,
+              "excluded": 24,
+              "references": 1,
+              "variants": {
+                "not_reported": 32
+              },
+              "chains": [
+                "A",
+                "C"
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "reaction": {
+    "setHash": "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47",
+    "links": [
+      {
+        "id": "s9i",
+        "structure": "s9i",
+        "use": "loaded",
+        "pdbId": {
+          "suggested": "1S9I"
+        },
+        "lookupEntries": [
+          282
+        ],
+        "chains": [
+          {
+            "chain": "A",
+            "accession": {
+              "suggestion": "P36507"
+            }
+          },
+          {
+            "chain": "B",
+            "accession": null
+          }
+        ],
+        "map": null,
+        "expect": {
+          "nullResult": false,
+          "chains": {
+            "A": {
+              "coverage": "covered",
+              "entries": [
+                282
+              ],
+              "rows": {
+                "282/0": "matched",
+                "282/1": "matched"
+              },
+              "uniprot": [
+                "checked",
+                null
+              ]
+            },
+            "B": {
+              "coverage": "chain_not_listed",
+              "uniprot": [
+                "not_checked",
+                "accession_not_given"
+              ]
+            }
+          }
+        },
+        "counts": {
+          "A": {
+            "matched": 2,
+            "unmatched": 0,
+            "conflict": 0
+          },
+          "B": null
+        },
+        "unknownRows": {}
+      },
+      {
+        "id": "a30",
+        "structure": "a30",
+        "use": "loaded",
+        "pdbId": {
+          "suggested": "1A30"
+        },
+        "lookupEntries": [
+          175
+        ],
+        "chains": [
+          {
+            "chain": "A",
+            "accession": null
+          },
+          {
+            "chain": "B",
+            "accession": null
+          }
+        ],
+        "map": null,
+        "expect": {
+          "nullResult": false,
+          "chains": {
+            "A": {
+              "coverage": "covered",
+              "entries": [
+                175
+              ],
+              "rows": {
+                "175/1": "matched",
+                "175/2": "matched",
+                "175/4": "matched"
+              },
+              "uniprot": [
+                "not_checked",
+                "accession_not_given"
+              ]
+            },
+            "B": {
+              "coverage": "covered",
+              "entries": [
+                175
+              ],
+              "rows": {
+                "175/0": "matched",
+                "175/3": "matched",
+                "175/5": "matched"
+              },
+              "uniprot": [
+                "not_checked",
+                "accession_not_given"
+              ]
+            }
+          }
+        },
+        "counts": {
+          "A": {
+            "matched": 3,
+            "unmatched": 0,
+            "conflict": 0
+          },
+          "B": {
+            "matched": 3,
+            "unmatched": 0,
+            "conflict": 0
+          }
+        },
+        "unknownRows": {}
+      },
+      {
+        "id": "a4i",
+        "structure": "a4i",
+        "use": "loaded",
+        "pdbId": {
+          "suggested": "1A4I"
+        },
+        "lookupEntries": [
+          389,
+          458
+        ],
+        "chains": [
+          {
+            "chain": "A",
+            "accession": null
+          },
+          {
+            "chain": "B",
+            "accession": null
+          }
+        ],
+        "map": null,
+        "expect": {
+          "nullResult": false,
+          "chains": {
+            "A": {
+              "coverage": "covered",
+              "entries": [
+                389,
+                458
+              ],
+              "rows": {
+                "389/0": "matched",
+                "389/1": "matched",
+                "389/2": "matched",
+                "458/0": "matched",
+                "458/1": "matched",
+                "458/2": "matched"
+              },
+              "uniprot": [
+                "not_checked",
+                "accession_not_given"
+              ]
+            },
+            "B": {
+              "coverage": "chain_not_listed",
+              "uniprot": [
+                "not_checked",
+                "accession_not_given"
+              ]
+            }
+          }
+        },
+        "counts": {
+          "A": {
+            "matched": 6,
+            "unmatched": 0,
+            "conflict": 0
+          },
+          "B": null
+        },
+        "unknownRows": {}
+      }
+    ]
+  }
+}

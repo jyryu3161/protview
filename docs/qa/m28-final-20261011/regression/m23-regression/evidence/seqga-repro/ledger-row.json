@@ -1,0 +1,638 @@
+{
+  "schema": "m23_case_ledger_row@1",
+  "mode": "repro",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "SG-repro-runs": "pass"
+  },
+  "runId": null,
+  "runs": {
+    "R1": "run_cfb9969d346b4b4faa1653e78f6b272d",
+    "R2": "run_7a35960fdbe04cb8bc4d513349bfb958"
+  },
+  "handles": {},
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+      "bytes": 1240,
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/m20-candidate-set-1ubq-tiny.json",
+      "bytes": 4741,
+      "sha256": "e591b1b947a45983e681b4297b0b680964385497f7b296227e434ceee1c7aa78"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/expected.json",
+      "bytes": 331744,
+      "sha256": "6872587e87b784ace709d17f8ec4d09d71be945ef863209b0e84946ea0156d95"
+    }
+  ],
+  "fixtureLabels": [],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/prepared_structure/940cb38ea44ea0bf0c5c4f866c4471ffaef442df88c96e87be85fb477043a36d"
+      },
+      {
+        "checked": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/prepared_structure/9f79044c75dea20e5b6bd8bc6714948f9f90d11882bea2940ae0026c9f45ca94"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      },
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      }
+    ],
+    "mutation-add-user": [
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      },
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      }
+    ],
+    "mutation-pick-protect": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "ILE A:3 · label A:3"
+      }
+    ],
+    "mutation-add-protect": [
+      {
+        "count": 1
+      },
+      {
+        "count": 1
+      }
+    ],
+    "mutation-allowed-none": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-allowed": [
+      {
+        "checked": "AW"
+      },
+      {
+        "checked": "AW"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "docking-file-ligand": [
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      },
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      }
+    ],
+    "docking-import": [
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      },
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      }
+    ],
+    "sequence-ga-prereq-refresh": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "handle": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/mutation_candidate_set/076187c14a79ba466d5f855221a90780edd61ea8f457acb18591160ed8b857c7"
+      },
+      {
+        "handle": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/mutation_candidate_set/44010915f84db95aac6a83f52ba7be7ac16894f5f35e2ab4bbc0d8f0ce834831"
+      }
+    ],
+    "sequence-ga-sdf": [
+      {
+        "handle": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      }
+    ],
+    "sequence-ga-box-source": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-margin": [
+      {
+        "value": "8"
+      },
+      {
+        "value": "8"
+      }
+    ],
+    "sequence-ga-seed": [
+      {
+        "value": "20261004"
+      },
+      {
+        "value": "20261004"
+      }
+    ],
+    "sequence-ga-exhaustiveness": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-num-modes": [
+      {
+        "value": "5"
+      },
+      {
+        "value": "5"
+      }
+    ],
+    "sequence-ga-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "sequence-ga-confirm-selection": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-confirm-hydrogen": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-keep_input_protonation": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-param-seed": [
+      {
+        "value": "21"
+      },
+      {
+        "value": "21"
+      }
+    ],
+    "sequence-ga-param-population_size": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-param-generations": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-param-elite_count": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "sequence-ga-param-tournament_size": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-crossover_fraction": [
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      }
+    ],
+    "sequence-ga-param-random_fraction": [
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.25"
+      }
+    ],
+    "sequence-ga-param-max_mutations": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "sequence-ga-param-patience": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-max_new_evaluations": [
+      {
+        "value": "32"
+      },
+      {
+        "value": "32"
+      }
+    ],
+    "sequence-ga-param-total_s": [
+      {
+        "value": "7200"
+      },
+      {
+        "value": "7200"
+      }
+    ],
+    "sequence-ga-preflight": [
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      }
+    ],
+    "sequence-ga-limit-approve": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-job-approve": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-job-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "gaArgs": null,
+  "gaRuns": null,
+  "repro": [
+    {
+      "label": "R1",
+      "run": "run_cfb9969d346b4b4faa1653e78f6b272d",
+      "set": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/mutation_candidate_set/076187c14a79ba466d5f855221a90780edd61ea8f457acb18591160ed8b857c7",
+      "sdf": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+      "job": "job_16bdd3844fba4babbf2498f2b6045e5a",
+      "summary": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/sequence_ga_result/2e6a3a25a86a46560c81f6a9ba5a5974955d08d6c60b23263f90f5f7f729caae",
+      "args": {
+        "candidate_set": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/mutation_candidate_set/076187c14a79ba466d5f855221a90780edd61ea8f457acb18591160ed8b857c7",
+        "ligand": {
+          "source": "sdf",
+          "sdf_handle": "obj://run_cfb9969d346b4b4faa1653e78f6b272d/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+        },
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 20261004,
+          "exhaustiveness": 4,
+          "num_modes": 5,
+          "energy_range": 3
+        },
+        "selection_policy": "protein_only",
+        "hydrogen_policy": "rebuild_pH7",
+        "acknowledgement": {
+          "keep_input_protonation": true,
+          "tool_assigned_types_charges": true,
+          "rigid_no_optimization": true
+        },
+        "ga": {
+          "seed": 21,
+          "population_size": 4,
+          "generations": 4,
+          "elite_count": 1,
+          "tournament_size": 2,
+          "crossover_fraction": 0.5,
+          "random_fraction": 0.25,
+          "max_mutations": 3,
+          "patience": 2,
+          "max_new_evaluations": 32,
+          "total_s": 7200
+        }
+      },
+      "timeoutS": 7800,
+      "status": "done"
+    },
+    {
+      "label": "R2",
+      "run": "run_7a35960fdbe04cb8bc4d513349bfb958",
+      "set": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/mutation_candidate_set/44010915f84db95aac6a83f52ba7be7ac16894f5f35e2ab4bbc0d8f0ce834831",
+      "sdf": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+      "job": "job_290d831131b44039af21e7a8277f2fb8",
+      "summary": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/sequence_ga_result/d93c2e94ba9496922f3436ce6ba63c9fb35bad88790778c0c308fe4642c5e5cb",
+      "args": {
+        "candidate_set": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/mutation_candidate_set/44010915f84db95aac6a83f52ba7be7ac16894f5f35e2ab4bbc0d8f0ce834831",
+        "ligand": {
+          "source": "sdf",
+          "sdf_handle": "obj://run_7a35960fdbe04cb8bc4d513349bfb958/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+        },
+        "box": {
+          "source": "ligand_range",
+          "margin_A": 8
+        },
+        "parameters": {
+          "seed": 20261004,
+          "exhaustiveness": 4,
+          "num_modes": 5,
+          "energy_range": 3
+        },
+        "selection_policy": "protein_only",
+        "hydrogen_policy": "rebuild_pH7",
+        "acknowledgement": {
+          "keep_input_protonation": true,
+          "tool_assigned_types_charges": true,
+          "rigid_no_optimization": true
+        },
+        "ga": {
+          "seed": 21,
+          "population_size": 4,
+          "generations": 4,
+          "elite_count": 1,
+          "tournament_size": 2,
+          "crossover_fraction": 0.5,
+          "random_fraction": 0.25,
+          "max_mutations": 3,
+          "patience": 2,
+          "max_new_evaluations": 32,
+          "total_s": 7200
+        }
+      },
+      "timeoutS": 7800,
+      "status": "done"
+    }
+  ],
+  "budget": {
+    "run_cfb9969d346b4b4faa1653e78f6b272d": {
+      "wall_clock_s": {
+        "used": 130.33327312767506,
+        "limit": 7860.307439710479
+      },
+      "expensive_calls": {
+        "used": 28,
+        "limit": 28
+      },
+      "external_tokens": {
+        "used": 0,
+        "limit": 120000
+      },
+      "usd": {
+        "used": 0,
+        "limit": 2
+      }
+    },
+    "run_7a35960fdbe04cb8bc4d513349bfb958": {
+      "wall_clock_s": {
+        "used": 130.53625529212877,
+        "limit": 7860.044624374714
+      },
+      "expensive_calls": {
+        "used": 28,
+        "limit": 28
+      },
+      "external_tokens": {
+        "used": 0,
+        "limit": 120000
+      },
+      "usd": {
+        "used": 0,
+        "limit": 2
+      }
+    }
+  },
+  "notObserved": [],
+  "buildId": "rBBec44wIyXoIAtlHTe43",
+  "harness": {
+    "sequence-ga-flow.cjs": "54e3e15c9a64f19b65113b098adaee69bbec12b5094e3d1f97d0182893a3e7d2",
+    "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 305,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m23/seqga-repro/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 561,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 9,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/regression/m25/regressions/m23/seqga-repro/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 59,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_cfb9969d346b4b4faa1653e78f6b272d",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_7a35960fdbe04cb8bc4d513349bfb958",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "sequence-ga-repro.jsonl",
+  "startedAt": "2026-10-11T17:38:11.606Z",
+  "finishedAt": "2026-10-11T17:43:13.728Z"
+}

@@ -12,10 +12,14 @@ M26 v2 (spec 8.5): every new set is v2, so a set without a catalytic annotation 
 "검사하지 않음 (not_checked)" with no number. Sets with an annotation use ``reaction_knowledge@1`` results made by the
 product tool over the LABELLED SYNTHETIC reaction reference set of ``m20_catalytic_fixture``. The v1 report bytes of
 stored v1 sets are compared with the T1 baseline in ``test_mutation_api.py``.
+
+M28 T3 (report format @2): reports citing reference values carry the snapshot source table; the stored @1 reports of
+``fixtures/mutation_report_v1`` (recorded before T3, see its SYNTHETIC-PROVENANCE.md) reopen byte for byte.
 """
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
@@ -28,10 +32,14 @@ from reference_fixture_set import build_fixture_set
 from mw import mutation_candidates as mc
 from mw import mutation_constants as K
 from mw import mutation_reports as mr
+from mw import numbering_reports as nr
 from mw import reaction_knowledge as rk
+from mw import reaction_knowledge_constants as rkc
+from mw import reaction_knowledge_reports as rkr
 from mw import reference_snapshots as rs
 from mw.api import app as api_module
-from mw.reports import EvidenceError
+from mw.core.handles import canonical_json
+from mw.reports import EvidenceError, _md
 from mw.workspace import new_run
 
 FIX = Path(__file__).resolve().parent / "fixtures"
@@ -95,6 +103,10 @@ def world(tmp_path_factory):
                                                   catalytic_annotation=made["knowledge_none"])).handle
         loaded_mq = run.call("load_structure", {"source": str(CIF_1MQ4), "model_index": 0}).handle
         made["knowledge_mq_raw"] = CF.link(run, loaded_mq, ["A"], pdb_id=CF.OTHER_PDB_ID)   # another structure
+        # M28 T3: the numbering map alone, the annotation alone (its map is not given to M20)
+        mq_residues = [res("A", 211, "GLU"), res("A", 230, "GLU")]
+        made["mq_map"] = run.call(K.TOOL, _args(mq, residues=mq_residues, numbering_map=numbering_map)).handle
+        made["mq_annotation"] = run.call(K.TOOL, _args(mq, residues=mq_residues, annotation=annotation)).handle
         CF.reset_caches()
         other = new_run(root, run_id=OTHER, dry_run=False)
         made["other"] = other.call(K.TOOL, _args(_prepared(other, CIF), residues=[res("A", 2, "ALA")])).handle
@@ -646,3 +658,274 @@ def test_v2_report_template_has_no_interpretive_wording(client, world):
         lines = [line for line in markdown.splitlines() if line not in mr.FIXED_LIMITATIONS]
         for word in ("점수", "순위", "추천", "활성", "중요", "핵심", "필수", "안정성", "효과"):
             assert not any(word in line for line in lines), (name, word)
+
+
+# --- M28 T3: report format @2 with the reference snapshot source table (spec M28 10.2) --------------------------------
+
+V2 = "mutation_candidates_markdown@2"
+V1_LOG = FIX / "mutation_report_v1" / "v1-cited-reports.events.jsonl"
+V1_LOG_SHA256 = "7a2e0c6d2e1ec8a8bbe20e4ae9d6d67204c6e66a5a128393869f7e4c80e403a7"
+V1_RID = "run_m28_t3_v1_cited"
+V1_MAP = (f"obj://{V1_RID}/residue_numbering_map/"
+          "bb5d86569f389ebe3ba756bbd76f762c8f5cc1e97066924468fc5903de513bf7")
+V1_ANNOTATION = (f"obj://{V1_RID}/reference_site_annotation/"
+                 "65a91e592cba7a1439ac2b8b1d5c99266fe28f04e9b8660d4b35d3c624b9f0df")
+V1_KNOWLEDGE = (f"obj://{V1_RID}/reaction_knowledge/"
+                "1597204750c1f57920c70e9d0ebf29fdb2b038da044c20881287618d5b945f69")
+V1_SETS = {   # name -> stored set handle in the frozen log
+    "map_annotation": f"obj://{V1_RID}/mutation_candidate_set/"
+                      "bcc72be44d833ac5e17c7e28bbe3d3b1897ca4c14744773fbf35788f4e86ba62",
+    "catalytic": f"obj://{V1_RID}/mutation_candidate_set/"
+                 "20008e224db662ce59fbf89c85ba9806c25f33773214f639fa23ffe8218b9886",
+    "plain": f"obj://{V1_RID}/mutation_candidate_set/c502d948fdef30ccc0a2bbe3d24d3f8b653ee86a1981182de141ff5a680ed60d",
+}
+V1_REPORTS = {   # name -> (stored @1 report handle, Markdown SHA-256, canonical manifest SHA-256), recorded before T3
+    "map_annotation": ((f"obj://{V1_RID}/method_report_manifest/"
+                        "dabea001401460367a40726bcf1bed4c1a80a9273181274e461c174d26820b23"),
+                       "a2ddcba8ef9f30a32525d85b47194f6536f38924ba5841ad8761c28881908a1d",
+                       "a5f71cb5983d2eb1fdc5886702313463ee600db0996b936f47b8ba1ae2a03f86"),
+    "catalytic": ((f"obj://{V1_RID}/method_report_manifest/"
+                   "f68061e6898316b9df11b6fbcbe35be65814932f6995bf236cd2c36fa4ca4330"),
+                  "55cadf549ace58bc477ba8d9babcd8db2376149101f42ba8eaf1c4b77c6cda75",
+                  "527577aa2d11825ffdd6fe92de49da911614147f41259e6ce0d9b87296af0c81"),
+}
+M15_HEADER = "| 출처 | 버전 | 날짜 | 스냅샷 ID | 라이선스 | 가공 |"
+M26_HEADER = "| 출처 | 날짜 | 세트 해시 | 가공 행 수 | 라이선스 | 가공 |"
+M20_REACTION_HEADER = "| 출처 | 날짜 | 세트 해시 | 라이선스 | 가공 |"
+
+
+@pytest.fixture
+def frozen(tmp_path, monkeypatch):
+    """The committed run log with two stored @1 reports that cite reference values (``fixtures/mutation_report_v1``,
+    recorded with the report code before T3), reopened events-only in a fresh root."""
+    raw = V1_LOG.read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == V1_LOG_SHA256
+    root = tmp_path / "runs"
+    (root / V1_RID).mkdir(parents=True)
+    (root / V1_RID / "events.jsonl").write_bytes(raw)
+    monkeypatch.setattr(api_module, "RUNS_DIR", root)
+    api_module.RUNS.clear()
+    return TestClient(api_module.app, base_url="http://127.0.0.1")
+
+
+def _table(markdown: str, header: str) -> list[str]:
+    lines = markdown.splitlines()
+    start = lines.index(header)
+    rows = []
+    for line in lines[start:]:
+        if not line.startswith("| "):
+            break
+        rows.append(line)
+    return rows
+
+
+def _cells(row: str) -> list[str]:
+    return [cell.strip() for cell in row.split(" | ")]
+
+
+def test_stored_v1_reports_citing_reference_values_reopen_with_the_same_bytes(frozen, monkeypatch):
+    run = api_module._run(V1_RID)
+
+    def boom(*_a, **_k):
+        raise AssertionError("an @1 report is reopened with the @1 rules only")
+
+    monkeypatch.setattr(nr, "validated_numbering_map", boom)   # the @2 table path is never taken for @1
+    for name, (handle, markdown_sha, manifest_sha) in V1_REPORTS.items():
+        stored = run.store.load(handle)
+        markdown = run.store.load(stored["markdown_handle"])
+        assert hashlib.sha256(markdown).hexdigest() == markdown_sha, name
+        assert hashlib.sha256(canonical_json(stored)).hexdigest() == manifest_sha, name
+        assert stored["render_version"] == mr.RENDER_VERSION and set(stored) == mr.MANIFEST_KEYS
+        assert [c for c in stored["claims"] if c["evidence_kind"] == "reference_value"], name   # it cites
+        assert stored["result_handle"] == V1_SETS[name]
+        response = _selected(frozen, handle, V1_RID)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["markdown"].encode() == markdown
+        assert canonical_json(body["manifest"]) == canonical_json(stored)
+        assert "## 참조 스냅샷" not in body["markdown"]
+        download = frozen.get(f"/runs/{V1_RID}/reports/download", params={"handle": handle})
+        assert download.status_code == 200 and download.content == markdown
+    listed = frozen.get(f"/runs/{V1_RID}/reports")
+    assert listed.status_code == 200
+    assert {row["handle"] for row in listed.json()} == {item[0] for item in V1_REPORTS.values()}
+
+
+def test_both_report_versions_coexist_in_one_run(frozen):
+    made = {name: _report(frozen, handle, V1_RID) for name, handle in V1_SETS.items()}
+    for name in ("map_annotation", "catalytic"):   # citing reference values: @2 with the table
+        manifest = made[name]["manifest"]
+        assert manifest["render_version"] == V2 and set(manifest) == mr.MANIFEST_KEYS_V2, name
+        assert "\n## 참조 스냅샷\n" in made[name]["markdown"]
+    plain = made["plain"]   # nothing cited: @1, no table, never "none" or 0 for it
+    assert plain["manifest"]["render_version"] == mr.RENDER_VERSION and set(plain["manifest"]) == mr.MANIFEST_KEYS
+    assert "참조 스냅샷\n" not in plain["markdown"] and "reference_snapshot_sets" not in plain["manifest"]
+    handles = [item[0] for item in V1_REPORTS.values()] + [created["handle"] for created in made.values()]
+    versions = []
+    for handle in handles:
+        response = _selected(frozen, handle, V1_RID)
+        assert response.status_code == 200, response.text
+        versions.append(response.json()["manifest"]["render_version"])
+    assert versions == [mr.RENDER_VERSION, mr.RENDER_VERSION, V2, V2, mr.RENDER_VERSION]
+    listed = frozen.get(f"/runs/{V1_RID}/reports")
+    assert listed.status_code == 200 and {row["handle"] for row in listed.json()} == set(handles)
+
+
+def test_v2_numbering_table_is_the_cited_map_set_in_the_m15_wording(frozen):
+    run = api_module._run(V1_RID)
+    created = _report(frozen, V1_SETS["map_annotation"], V1_RID)
+    manifest, markdown = created["manifest"], created["markdown"]
+    map_content, annotation = run.store.load(V1_MAP), run.store.load(V1_ANNOTATION)
+    (entry,) = manifest["reference_snapshot_sets"]
+    snapshot_set = map_content["snapshot_set"]
+    assert entry["snapshot_set"] == snapshot_set and snapshot_set["set_hash"] == annotation["snapshot_set_hash"]
+    set_handle = entry["reference_set_handle"]
+    assert run.store.meta(set_handle)["kind"] == "reference_snapshot_set"
+    assert hashlib.sha256(canonical_json(run.store.load(set_handle))).hexdigest() == snapshot_set["set_hash"]
+    assert entry == {"set_schema": "reference_snapshot_set@1", "copied_from": V1_MAP,
+                     "reference_set_handle": set_handle, "snapshot_set": snapshot_set, "klifs_terms": nr.KLIFS_TERMS}
+    # the M15 report of the same map: the source table rows and the Origin line appear verbatim
+    m15 = _report(frozen, V1_MAP, V1_RID)["markdown"]
+    rows = _table(markdown, M15_HEADER)
+    assert rows == _table(m15, M15_HEADER) and len(rows) == 2 + len(snapshot_set["sources"]) == 5
+    klifs = next(row for row in rows if row.startswith("| KLIFS |"))
+    assert _cells(klifs)[4] == _md(nr.KLIFS_TERMS)                       # "이용 조건 명시 없음(none-stated)"
+    origin = next(line for line in m15.splitlines() if line.startswith("- Origin: "))
+    assert origin in markdown.splitlines()
+    m15_set = next(line for line in m15.splitlines() if line.startswith("Reference snapshot set: "))
+    line = f"Reference snapshot set of the numbering map: {m15_set.removeprefix('Reference snapshot set: ')}"
+    assert line in markdown.splitlines() and f"Numbering map: {_md(V1_MAP)}" in markdown.splitlines()
+    assert snapshot_set["set_hash"] in markdown
+    assert "가공 행 수" not in markdown and "Active reference set" not in markdown   # no row count, no active-set line
+    assert _selected(frozen, created["handle"], V1_RID).json()["markdown"] == markdown
+
+
+def test_v2_reaction_table_is_the_cited_result_set_in_the_m26_wording(frozen):
+    run = api_module._run(V1_RID)
+    created = _report(frozen, V1_SETS["catalytic"], V1_RID)
+    manifest, markdown = created["manifest"], created["markdown"]
+    result = run.store.load(V1_KNOWLEDGE)
+    assert [c["exact_value"] for c in manifest["claims"] if c["statement_id"] == "reference_mcsa_entry_id"]
+    (entry,) = manifest["reference_snapshot_sets"]
+    assert entry == {"set_schema": rkc.SET_SCHEMA, "copied_from": V1_KNOWLEDGE, "snapshot_set": result["snapshot_set"]}
+    m26 = _report(frozen, V1_KNOWLEDGE, V1_RID)["markdown"]
+    assert rkc.STATEMENTS["RK6"] in markdown.splitlines()
+    imported = next(line for line in m26.splitlines() if line.startswith("- 가져온 시각: "))
+    assert imported in markdown.splitlines()
+    m26_rows = _table(m26, M26_HEADER)
+    ours = _table(markdown, M20_REACTION_HEADER)
+    # the M26 rows without the processed-row-count column (one file per source)
+    assert [_cells(row)[:3] + _cells(row)[4:] for row in m26_rows[2:]] == [_cells(row) for row in ours[2:]]
+    assert len(ours) == 2 + len(result["snapshot_set"]["sources"]) == 5
+    assert all(result["snapshot_set"]["set_hash"] in row for row in ours[2:])
+    assert f"| {rkr.LICENSE_LABEL} (" in ours[2] and ours[2].endswith(f"| {rkr.PROCESSED_LABEL} |")
+    assert "가공 행 수" not in markdown and "사용 중이던" not in markdown   # no row count, no active-set line
+    assert "### 번호 대응" not in markdown                                # no numbering map or annotation cited
+    assert _selected(frozen, created["handle"], V1_RID).json()["markdown"] == markdown
+
+
+@pytest.mark.parametrize(("name", "families"), [
+    ("mq", ["reference_snapshot_set@1"]), ("mq_map", ["reference_snapshot_set@1"]),
+    ("mq_annotation", ["reference_snapshot_set@1"]), ("cat", [rkc.SET_SCHEMA]), ("cat_partial", [rkc.SET_SCHEMA]),
+    ("cat_none", []), ("shell", []), ("plain", []), ("zero", [])])
+def test_report_version_follows_the_cited_reference_values(client, world, name, families):
+    created = _report(client, world[name])
+    manifest, markdown = created["manifest"], created["markdown"]
+    run = _run()
+    content = run.store.load(world[name])
+    references = [c for c in manifest["claims"] if c["evidence_kind"] == "reference_value"]
+    if not families:
+        # cat_none names a reaction result but cites no M-CSA ID (no chain covered): no table, the @1 bytes
+        assert manifest["render_version"] == mr.RENDER_VERSION and set(manifest) == mr.MANIFEST_KEYS
+        assert not references and "## 참조 스냅샷" not in markdown
+    else:
+        assert manifest["render_version"] == V2 and set(manifest) == mr.MANIFEST_KEYS_V2
+        sets = manifest["reference_snapshot_sets"]
+        assert [entry["set_schema"] for entry in sets] == families
+        for entry in sets:
+            assert entry["snapshot_set"]["set_hash"] in markdown
+            if entry["set_schema"] == rkc.SET_SCHEMA:
+                assert entry["copied_from"] == content["parameters"]["catalytic_annotation"]
+                assert entry["snapshot_set"] == run.store.load(entry["copied_from"])["snapshot_set"]
+            else:
+                assert entry["copied_from"] == world["map"]   # the map, also when only the annotation is given
+                assert entry["snapshot_set"] == run.store.load(world["map"])["snapshot_set"]
+                assert entry["snapshot_set"]["set_hash"] == run.store.load(world["annotation"])["snapshot_set_hash"]
+    assert _selected(client, created["handle"]).json()["markdown"] == markdown
+    # the M20 lines of @1 are kept as they are in @2: removing the table section gives the @1 rendering
+    as_v1 = {key: value for key, value in manifest.items() if key != "reference_snapshot_sets"}
+    as_v1["render_version"] = mr.RENDER_VERSION
+    v1_markdown = mr.render_mutation_report(as_v1)
+    if not families:
+        assert markdown == v1_markdown
+    else:
+        assert v1_markdown.split("\n## Limitations\n")[0] == markdown.split("\n## 참조 스냅샷\n")[0]
+
+
+def test_annotation_only_report_names_the_map_it_reached_through_the_annotation(client, world):
+    created = _report(client, world["mq_annotation"])
+    markdown = created["markdown"]
+    assert "- 번호 대응: 주지 않음" in markdown                          # the request: no map given to M20
+    assert f"Numbering map: {_md(world['map'])}" in markdown.splitlines()   # the set is named through the annotation
+
+
+def test_tampered_v2_reports_are_rejected_on_reopen(client, world):
+    run = _run()
+    created = _report(client, world["mq"])
+    manifest, markdown = created["manifest"], created["markdown"]
+    assert manifest["render_version"] == V2
+
+    def entry(forged):
+        return forged["reference_snapshot_sets"][0]
+
+    edits = [
+        lambda f: entry(f)["snapshot_set"].update(set_hash="0" * 64),
+        lambda f: entry(f)["snapshot_set"]["sources"][0].update(license="CC0-1.0"),
+        lambda f: entry(f)["snapshot_set"]["sources"][-1].update(date="2026-01-01"),
+        lambda f: entry(f).update(klifs_terms="CC-BY-4.0"),
+        lambda f: entry(f).update(reference_set_handle=world["annotation"]),   # another stored object
+        lambda f: entry(f).update(copied_from=world["annotation"]),
+        lambda f: entry(f).update(note="extra"),
+        lambda f: f["reference_snapshot_sets"].clear(),
+        lambda f: f["reference_snapshot_sets"].append(copy.deepcopy(entry(f))),
+        lambda f: f.pop("reference_snapshot_sets"),
+        lambda f: f.update(render_version=mr.RENDER_VERSION),
+        lambda f: f.update(render_version="mutation_candidates_markdown@3"),
+    ]
+    forged = [_forge(run, manifest, markdown, edit) for edit in edits]
+    # the table rows of the Markdown changed with the manifest kept
+    kbase = _md(nr.PROCESSED_LABEL)
+    assert kbase in markdown
+    forged.append(_forge(run, manifest, markdown.replace(kbase, "kbase\\_kinase 원본", 1), lambda _f: None))
+    forged.append(_forge(run, manifest, markdown.replace("\n## 참조 스냅샷\n", "\n## 참조\n"), lambda _f: None))
+    # an @2 manifest for a set that cites nothing
+    plain = _report(client, world["plain"])
+    forged.append(_forge(run, plain["manifest"], plain["markdown"],
+                         lambda f: f.update(render_version=V2, reference_snapshot_sets=[])))
+    for handle in forged:
+        response = _selected(client, handle)
+        assert response.status_code == 422, response.text
+        assert response.json()["detail"]["error"] == "report_evidence_invalid"
+    assert _selected(client, created["handle"]).status_code == 200
+
+
+def test_v2_table_template_is_checked_for_interpretive_wording(client, world, monkeypatch):
+    for name in ("mq", "mq_map", "mq_annotation", "cat", "cat_partial"):
+        markdown = _report(client, world[name])["markdown"]
+        assert "\n## 참조 스냅샷\n" in markdown
+        section = markdown.split("\n## 참조 스냅샷\n")[1].split("\n## Limitations\n")[0]
+        for word in ("점수", "순위", "추천", "활성", "중요", "핵심", "필수", "안정성", "효과", "결합"):
+            assert word not in section, (name, word)
+        mr.check_no_interpretation(section)
+    # the fixed table text is template text: a forbidden word in it refuses the report (create and reopen)
+    created = _report(client, world["mq"])
+    monkeypatch.setattr(nr, "PROCESSED_LABEL", "kbase_kinase 가공본 (추천)")
+    response = client.post(f"/runs/{RID}/method_reports", json={"result_handle": world["mq"]})
+    assert response.status_code == 422 and "interpretive_statement" in response.text
+    response = _selected(client, created["handle"])
+    assert response.status_code == 422 and "interpretive_statement" in response.text
+    monkeypatch.undo()
+    monkeypatch.setattr(api_module, "RUNS_DIR", world["root"])
+    monkeypatch.setitem(rkc.STATEMENTS, "RK6", rkc.STATEMENTS["RK6"] + " 활성")
+    response = client.post(f"/runs/{RID}/method_reports", json={"result_handle": world["cat"]})
+    assert response.status_code == 422 and "interpretive_statement" in response.text
