@@ -2,10 +2,11 @@
 
 ## 필요 조건
 
-- CPython 3.11 이상. 검증 환경은 3.11.11이다. M11 ProLIF 작업 프로세스와 M18 도킹 작업 환경은 **CPython 3.11, macOS arm64**에서만, M18 qvina 환경은 conda가 있는 macOS ≥ 11.0 arm64에서만 설치할 수 있다.
+- CPython 3.11 이상(`backend/pyproject.toml`의 `requires-python = ">=3.11"`). 검증 환경은 3.11.11이다. 가상환경은 `python3.11`로 만든다: 선택 작업 환경 설치 스크립트(`setup_prolif_worker.py`·`setup_docking_worker.py`)는 실행 인터프리터(아래 명령의 `.venv/bin/python`)가 **CPython 3.11, macOS arm64**가 아니면 거부하고 그 인터프리터로 작업 환경 venv를 만든다. `python3`은 다른 버전을 가리킬 수 있다(2026-10-11 검증 컴퓨터에서는 anaconda Python 3.10.9였고, 그 `.venv`로는 2단계가 `requires-python`에 걸린다).
 - Node.js 22 이상, npm. 검증 환경은 Node 24.3.0, npm 11.4.2다.
 - POSIX 운영체제(Darwin 또는 Linux). 작업 감독은 psutil 7.2.2 기반 프로세스 신원이 Darwin/Linux에서만 동작하므로, 다른 OS에서는 새 작업이 시작되지 않는다.
-- 설치할 때만 네트워크가 필요하다. 설치 후 구조 검사, 계산, 보고서 생성은 오프라인으로 동작한다.
+- 지원 환경: 구조 불러오기·전처리·기하 접촉·SASA·OpenMM·보고서는 위 POSIX 조건에서 쓰도록 설계되어 있으나 **검증은 macOS arm64 CPython 3.11에서만** 했다. 선택 작업 환경의 잠금은 macOS arm64 전용이다: M11·M17 ProLIF 작업 환경과 M18 도킹 작업 환경은 CPython 3.11 macOS arm64, M12 fpocket은 conda가 있는 macOS ≥ 14.5 arm64, M18 qvina는 conda가 있는 macOS ≥ 11.0 arm64에서만 설치되고(설치 스크립트가 그 밖의 플랫폼을 거부), Linux·Intel Mac용 잠금은 없다. 그래서 그 밖의 환경에서는 화학 상호작용·리간드 후보·포켓 후보·도킹·일괄 도킹·리간드 GA·서열 GA·같은 조건 도킹·JEV 루프 계산이 `/capabilities`와 화면에서 숫자 없이 사용할 수 없음과 이유로 보인다. M21 변이 구조 모델링의 OpenMM·PDBFixer는 프로젝트 `.venv`에 들어가 이 잠금에 묶이지 않지만 역시 macOS arm64에서만 검증했다. 한 사람이 자기 컴퓨터나 혼자 쓰는 서버에서 쓰는 전제는 그대로다(`docs/security.md`).
+- 설치할 때만 네트워크가 필요하다: PyPI(2단계, PDBFixer 1.12.0 sdist 빌드의 격리 빌드 환경 포함), npm 레지스트리(3단계, Electron 설치 스크립트가 실행 파일을 따로 받는다. 캐시가 있으면 받지 않을 수 있다). 설치 후 구조 검사, 계산, 보고서 생성은 오프라인으로 동작한다. 그 밖에 외부 요청을 하는 것은 사용자가 터미널에서 실행하는 M26 반응 참조 가져오기 명령(아래)과, run에서 사람이 명시적으로 켠 JEV 모델 호출(온라인으로 설정한 run의 뷰어 해석·M3 결정, M24·M25 과학 전송)뿐이다(`docs/security.md` "외부 요청 권한").
 
 ## 처음 설치 (프로젝트 루트에서, 순서대로)
 
@@ -16,9 +17,12 @@ npm --prefix frontend ci
 npm --prefix frontend run build
 ```
 
+- 1단계는 `python3.11`로 만든다(위 필요 조건). 표준 `venv`는 pip를 함께 넣으므로 2단계를 그대로 쓸 수 있다.
 - 2단계는 1단계의 `.venv`가 있어야 한다. 백엔드 코드와 훅은 `.venv/bin/python`을 기준으로 한다.
+- 2단계의 의존성: 과학 결과에 영향을 주는 여섯(gemmi 0.7.5, numpy 2.4.6, freesasa 2.2.1, openmm 8.6.0, pdbfixer 1.12.0, psutil 7.2.2)은 정확한 버전으로 고정되어 있고, 나머지(pydantic, pyyaml, httpx, anyio, fastapi, uvicorn, pyarrow와 `dev`의 pytest, ruff)는 하한만 있다. Python 잠금 파일은 없으므로 설치한 날 PyPI에서 범위 안의 버전을 받는다. 3단계 `npm ci`는 `frontend/package-lock.json` 그대로 설치한다.
 - 4단계(build)는 3단계 뒤에 실행한다. `start`는 build 산출물(`frontend/.next/`)이 필요하다.
 - `backend[science]` 추가 설치 항목(rdkit, prolif, plip, MDAnalysis)은 서버 환경에 설치하지 않는다. 화학 엔진은 아래의 별도 작업 프로세스 환경에만 둔다.
+- 여기까지가 핵심 설치다. 아래 선택 작업 환경과 참조 스냅샷을 설치하지 않으면 그것을 쓰는 기능만 `/capabilities`와 화면에서 숫자 없이 사용할 수 없음과 이유로 보이고 나머지 기능은 동작한다. 과학 엔진 테스트는 해당 환경이 없으면 skip이 아니라 실패한다(아래 "검증 명령").
 
 ### M11 화학 작업 프로세스 환경 (선택)
 
