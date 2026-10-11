@@ -1,0 +1,187 @@
+{
+  "schema": "m28_branch_c_row@1",
+  "mode": "live",
+  "rehearsal": true,
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "parts": {
+    "L-pre-C2": "pass",
+    "L-C6": "pass"
+  },
+  "runId": "run_57fb01a2c47f4e69976d92cf6cf1bdd7",
+  "reportsCreated": 4,
+  "buildId": "rBBec44wIyXoIAtlHTe43",
+  "harness": {
+    "endtoend-c-flow.cjs": "0be21366972a5f72d5a70b613e3dfff04c6945803d493561b7d59cd473d2888a",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "mutation-flow.cjs": "e971c3571d4a26b0584ddd29c58df76730e08a9d1d7385fb9992514fae200165",
+    "mutation-model-flow.cjs": "3e3c4b7fff5d0e134b17ddceecc54a96e36bc6841d58c3bbd8c3a6dd75ac0112",
+    "sequence-ga-flow.cjs": "54e3e15c9a64f19b65113b098adaee69bbec12b5094e3d1f97d0182893a3e7d2",
+    "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+    "jev-loop-flow.cjs": "6a4eef9223abb1c6bfc40be99c560379a1d37616780f06881511ac308022cea2",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 253,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/live-rehearsal/c-live/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 479,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 6,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m28-final/live-rehearsal/c-live/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 66,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "offscreenComplete": true,
+  "externalRequestCount": 0,
+  "fixtureProof": true,
+  "fixture": {
+    "calls": 1,
+    "scripts": [
+      "good"
+    ],
+    "dispatched": 1,
+    "dispatchedBefore": 1,
+    "sentinelAuthorization": true,
+    "credentialReads": {
+      "productResolverReads": 0,
+      "sentinelReads": 2,
+      "updatedAt": "2026-10-11T18:42:52.323600+00:00"
+    }
+  },
+  "units": [
+    {
+      "label": "C2-m7",
+      "remaining": 8,
+      "planned": 1,
+      "remainingMatchesPlan": true,
+      "used": 1
+    },
+    {
+      "label": "C2-m21",
+      "remaining": 7,
+      "planned": 1,
+      "remainingMatchesPlan": true,
+      "used": 1
+    },
+    {
+      "label": "C6-explore",
+      "remaining": 6,
+      "planned": 2,
+      "remainingMatchesPlan": true,
+      "used": 2
+    }
+  ],
+  "raises": [],
+  "sends": [
+    {
+      "case": "L-C6",
+      "sendId": "82d2c173-e995-491e-af6f-b265203271a0",
+      "status": "completed",
+      "reasonCode": null,
+      "goal": "explore",
+      "bodySha256": "e44d1156ed31efa86d7ab3fcb1ca251f7e6b2680424ee42eb1108682bc4294be",
+      "transportSha256": "e44d1156ed31efa86d7ab3fcb1ca251f7e6b2680424ee42eb1108682bc4294be",
+      "bodyBytes": 3736
+    }
+  ],
+  "live": {
+    "rehearsal": true,
+    "sendAllowed": true,
+    "dispatchLimit": 2,
+    "send": {
+      "dispatched": true,
+      "status": "completed",
+      "reasonCode": null,
+      "sendId": "82d2c173-e995-491e-af6f-b265203271a0",
+      "servedModel": "typesafe/jev-1.13-20260917",
+      "listPosition": 1,
+      "listSize": 3,
+      "responseShape": {
+        "confidence": true,
+        "probabilities": true
+      },
+      "usage": {
+        "cost": 0.0001,
+        "external_tokens": 157,
+        "input_tokens": 137,
+        "output_tokens": 20
+      },
+      "bodyBytes": 3736
+    },
+    "compute": {
+      "state": "scored",
+      "model": "done",
+      "dock": "done"
+    },
+    "guard": null,
+    "egressStop": null,
+    "dispatchCounts": {
+      "run_57fb01a2c47f4e69976d92cf6cf1bdd7": 1,
+      "run_8e98de2b360c43ed97422f9b50a3a733": 1
+    }
+  },
+  "structures": {
+    "c1": "1A30",
+    "c2": "1UBQ",
+    "same": false
+  },
+  "error": null,
+  "evidenceFile": "endtoend-c-evidence.json",
+  "stepsFile": "endtoend-c.jsonl",
+  "artifacts": "<repo>/frontend/tests/offscreen/artifacts/m28-final/live-rehearsal/c-live",
+  "startedAt": "2026-10-11T18:42:05.154Z",
+  "finishedAt": "2026-10-11T18:43:23.658Z"
+}

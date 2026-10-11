@@ -1,0 +1,720 @@
+{
+  "schema": "m28_trace_audit@1",
+  "status": "pass",
+  "reportCount": 8,
+  "byKind": {
+    "jev_loop": 2,
+    "ligand_candidates": 1,
+    "ligand_docking": 1,
+    "ligand_docking_batch": 1,
+    "mutation_candidates": 1,
+    "mutation_model": 1,
+    "openmm_protein_minimize": 1
+  },
+  "checks": {
+    "reopen": {
+      "pass": 8,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "evidence_exists": {
+      "pass": 8,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "claim_fields": {
+      "pass": 8,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "reference_source": {
+      "pass": 8,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "no_mixing": {
+      "pass": 8,
+      "fail": 0,
+      "not_checked": 0
+    }
+  },
+  "failures": [],
+  "noReports": false,
+  "units": {
+    "physical": [
+      "A",
+      "A2",
+      "Da",
+      "kJ/mol",
+      "kcal/mol"
+    ],
+    "unitless": [
+      "0-1",
+      "count",
+      "dimensionless",
+      "flag",
+      "handle",
+      "identifier",
+      "index",
+      "iterations",
+      "model_number",
+      "one_letter",
+      "position",
+      "residue_field",
+      "residue_name",
+      "sdf_atom_serial",
+      "seed",
+      "sha256",
+      "status",
+      "text"
+    ],
+    "unclassified": []
+  },
+  "partialProductRecheck": [],
+  "scope": [
+    "값 재계산은 하지 않는다(제품의 다시 열기 검증과 사례별 독립 기대값이 맡음)",
+    "Markdown 서술 속 숫자는 파싱하지 않는다",
+    "금지어는 이 감사의 검사 항목이 아니다(X4)"
+  ],
+  "adapters": [
+    {
+      "kind": "inspection",
+      "family": "inspection",
+      "versions": [
+        "inspection_markdown@1"
+      ],
+      "shape": "statement_id + operation; row claims row_index + row_fingerprint",
+      "source_kinds": [
+        "interaction_set",
+        "preparation_manifest"
+      ],
+      "evidence_kinds": null,
+      "aggregates": true,
+      "collective": "rows(?:\\..+)?",
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "no claim revalidation, no Markdown regeneration",
+      "exemptions": "aggregate claims (operation) on rows / rows.<field>",
+      "claims_optional": false,
+      "productRecheck": "no claim revalidation, no Markdown regeneration",
+      "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration"
+    },
+    {
+      "kind": "interface_sasa",
+      "family": "method",
+      "versions": [
+        "interface_sasa_markdown@1"
+      ],
+      "shape": "summary.X (row_index null) / residues[i].X (row_index + row_fingerprint), unit A2",
+      "source_kinds": [
+        "interface_sasa"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "no Markdown regeneration",
+      "exemptions": "",
+      "claims_optional": false,
+      "productRecheck": "no Markdown regeneration",
+      "note": "제품 재계산 전제 불성립: no Markdown regeneration"
+    },
+    {
+      "kind": "openmm_protein_minimize",
+      "family": "method",
+      "versions": [
+        "openmm_markdown@1"
+      ],
+      "shape": "three top-level fields, kJ/mol",
+      "source_kinds": [
+        "openmm_minimization"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "atom_distance",
+      "family": "method",
+      "versions": [
+        "comparison_markdown@1"
+      ],
+      "shape": "no quantity / statement_id; element paths [i]",
+      "source_kinds": [
+        "atom_distance"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": true,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "quantity = last field-path name",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "rigid_alignment",
+      "family": "method",
+      "versions": [
+        "comparison_markdown@1"
+      ],
+      "shape": "no quantity / statement_id; pairs[i].x",
+      "source_kinds": [
+        "rigid_alignment"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": true,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "quantity = last field-path name",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "chemical_interactions",
+      "family": "method",
+      "versions": [
+        "chemical_markdown@1"
+      ],
+      "shape": "total or rows.{i}.{distance_A|DHA_angle_deg}",
+      "source_kinds": [
+        "chemical_interaction_set"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "pocket_detection",
+      "family": "method",
+      "versions": [
+        "pocket_markdown@1",
+        "pocket_markdown@2"
+      ],
+      "shape": "statement_id, row_selector {rank} / null, operation",
+      "source_kinds": [
+        "pocket_set",
+        "pocket_detector_input"
+      ],
+      "evidence_kinds": null,
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "pocket_count (count), lining_residue_count (count_distinct)",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "residue_numbering",
+      "family": "method",
+      "versions": [
+        "residue_numbering_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS: evidence_kind, row_selector, operation, reference",
+      "source_kinds": [
+        "residue_numbering_map"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": "rows\\..+",
+      "quantity_exempt": false,
+      "reference": "m15",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "status / mismatch / ambiguous counts (count_kind)",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "reference_site_annotation",
+      "family": "method",
+      "versions": [
+        "reference_site_annotation_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS; selectors {status} {absent_reason} {chain_auth, klifs_item} {row_index, row_sha256}",
+      "source_kinds": [
+        "reference_site_annotation",
+        "interaction_set",
+        "residue_numbering_map"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": "(?:groups\\.sites|rows)\\..+",
+      "quantity_exempt": false,
+      "reference": "m15",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "site status / absent reason / contact counts (count_kind)",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_candidates",
+      "family": "method",
+      "versions": [
+        "ligand_candidates_markdown@1"
+      ],
+      "shape": "computed only; count_where",
+      "source_kinds": [
+        "ligand_candidate_set"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "candidates[*] count_where",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_docking",
+      "family": "method",
+      "versions": [
+        "ligand_docking_markdown@1"
+      ],
+      "shape": "computed only; {mode} / {mode, kind}",
+      "source_kinds": [
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "score minimum / maximum over modes[*], contact counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_docking_batch",
+      "family": "method",
+      "versions": [
+        "ligand_docking_batch_markdown@1"
+      ],
+      "shape": "computed; row_score / row_result_score {row_index}",
+      "source_kinds": [
+        "docking_batch_result",
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "row and state counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_ga",
+      "family": "method",
+      "versions": [
+        "ligand_ga_markdown@1"
+      ],
+      "shape": "computed; {generation, where} {generation} {generation, position}",
+      "source_kinds": [
+        "ligand_ga_result",
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "run / generation counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "sequence_ga",
+      "family": "method",
+      "versions": [
+        "sequence_ga_markdown@1"
+      ],
+      "shape": "computed; generation selectors + reference row",
+      "source_kinds": [
+        "sequence_ga_result",
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "run / generation counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "mutation_candidates",
+      "family": "method",
+      "versions": [
+        "mutation_candidates_markdown@1",
+        "mutation_candidates_markdown@2"
+      ],
+      "shape": "CLAIM_KEYS; reference {note, reference_object}",
+      "source_kinds": [
+        "mutation_candidate_set"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": "m20",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "positions[*] / candidates[*] count / count_where, catalytic_covered_chain_count",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "mutation_model",
+      "family": "method",
+      "versions": [
+        "mutation_model_markdown@1"
+      ],
+      "shape": "computed; {structure[, stage]}",
+      "source_kinds": [
+        "mutation_model"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "contact / pair / difference counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "jev_choice",
+      "family": "method",
+      "versions": [
+        "jev_choice_markdown@1"
+      ],
+      "shape": "computed / model_response {note, proposal_handle}",
+      "source_kinds": [
+        "jev_choice"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "model_response"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "selection_count",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "jev_loop",
+      "family": "method",
+      "versions": [
+        "jev_loop_markdown@1"
+      ],
+      "shape": "computed / model_response; {candidate} {iteration}",
+      "source_kinds": [
+        "jev_loop_result",
+        "docking_result",
+        "jev_loop_choice"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "model_response"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "pool_size",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "reaction_knowledge",
+      "family": "method",
+      "versions": [
+        "reaction_knowledge_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS; reference {note, set_hash, sources}; selectors row_index / row_sha256",
+      "source_kinds": [
+        "reaction_knowledge"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": "m26",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "chains[*] count / count_where / count_distinct, unlisted_line_count",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "kinase_precedents",
+      "family": "method",
+      "versions": [
+        "kinase_precedents_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS; reference {note, set_hash, kb_version, imported_at, source}",
+      "source_kinds": [
+        "kinase_precedents"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": "m27",
+      "reference_note": "kbase 가공본 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "chains[*] / targets[*] count / count_where / sum, unlisted / pass-check counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    }
+  ],
+  "reports": [
+    {
+      "run": "run_8e98de2b360c43ed97422f9b50a3a733",
+      "handle": "obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/4b7c00c082ccb614d610d317cfee880bdcdaec4600c599775befebaa81e9f35d",
+      "kind": "ligand_candidates",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "4b7c00c082ccb614d610d317cfee880bdcdaec4600c599775befebaa81e9f35d",
+        "manifestSha256": "5806157bee9aad5c1103eff62dffa04fd39c71b7f058239a59e83e30b306b107",
+        "markdownSha256": "3831da06fba196a076e4e1c700aa6b5296b8007ed06516aff8319b47d8b5d65e"
+      }
+    },
+    {
+      "run": "run_8e98de2b360c43ed97422f9b50a3a733",
+      "handle": "obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/de885fe6161b77c8bb037bdbdbe58135f2ccf0ca67d7c98e56a4741ac026b7f9",
+      "kind": "ligand_docking",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "de885fe6161b77c8bb037bdbdbe58135f2ccf0ca67d7c98e56a4741ac026b7f9",
+        "manifestSha256": "a2ae2801c351b7f61b27690a26db421f1381d21b79bd530e85204c86de3219a5",
+        "markdownSha256": "34adf8c6adf7ab0fdee0132805cf1077eec61d191f39ab1d36aecde5f434e815"
+      }
+    },
+    {
+      "run": "run_8e98de2b360c43ed97422f9b50a3a733",
+      "handle": "obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/85623e885d7c52864b545a31fedcbb9e1412cf1739688e56271e32301528887f",
+      "kind": "ligand_docking_batch",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "85623e885d7c52864b545a31fedcbb9e1412cf1739688e56271e32301528887f",
+        "manifestSha256": "f3bf00b365804868e6f49149b36a465275a2b2b9dfeef5243810da5cfb8d2b27",
+        "markdownSha256": "4f696ef65bb962e925a4e3cfa3822f159379a4d17a435b744eb7ea2392838796"
+      }
+    },
+    {
+      "run": "run_8e98de2b360c43ed97422f9b50a3a733",
+      "handle": "obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/f8e7a206d0d0cac9fc7d1817002d652cc23149768e159942ca265d0d7acad11c",
+      "kind": "jev_loop",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "f8e7a206d0d0cac9fc7d1817002d652cc23149768e159942ca265d0d7acad11c",
+        "manifestSha256": "ba4e3cb58b5ddad1326d3e7eab9959f7acad7c9a0d00eb9bee9566d279080100",
+        "markdownSha256": "f02b561607e2cc70a3ec90769a0384d6f4b9143eb9ec3c9d40fb4c84b948196a"
+      }
+    },
+    {
+      "run": "run_57fb01a2c47f4e69976d92cf6cf1bdd7",
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/75f01feaa21dd2685889fc938bd4563eef9bc8a5e0de0ab3ac69518c645d5542",
+      "kind": "openmm_protein_minimize",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "75f01feaa21dd2685889fc938bd4563eef9bc8a5e0de0ab3ac69518c645d5542",
+        "manifestSha256": "78a59299167daaf13fe35445c69c4e4e62bf4c2c5c1575209418566b2f679895",
+        "markdownSha256": "aee83a2f65f0bd11188e8784bd33c3bb1cfc85fe1f0ac60bad8170a441034082"
+      }
+    },
+    {
+      "run": "run_57fb01a2c47f4e69976d92cf6cf1bdd7",
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/a05180a824132710d2388dc4390d0919ee0725ac46018c558995f33d05402149",
+      "kind": "mutation_candidates",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "a05180a824132710d2388dc4390d0919ee0725ac46018c558995f33d05402149",
+        "manifestSha256": "b5c137da00ff16f2af409bf9f86b49126ec7cfd1db763acf16747bfe6d32a41f",
+        "markdownSha256": "025121515c9300cfd12ec24ff0e27031c9a7078fc5ea838a0bdb248c7cec5b98"
+      }
+    },
+    {
+      "run": "run_57fb01a2c47f4e69976d92cf6cf1bdd7",
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/2110d0e0c2e86384c79dbd67eefac926086e64fdb994b47e561727e54a0e1331",
+      "kind": "mutation_model",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "2110d0e0c2e86384c79dbd67eefac926086e64fdb994b47e561727e54a0e1331",
+        "manifestSha256": "77a4b540e7d92bc8e1db806bd1e79bf30ca8ccced47d4d348b12d00eb90eaab0",
+        "markdownSha256": "525a74f28840a09bf71cff30b335b4291ba71e1b6414f069bc452a2ccffe7c99"
+      }
+    },
+    {
+      "run": "run_57fb01a2c47f4e69976d92cf6cf1bdd7",
+      "handle": "obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/3cd373f6f2b4b504bceaf2ed26927730470281ba479916c82f82afb9cee2ace8",
+      "kind": "jev_loop",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "3cd373f6f2b4b504bceaf2ed26927730470281ba479916c82f82afb9cee2ace8",
+        "manifestSha256": "ef3031e3987a3ca52c1f5c2974afae7063e98ddc2ebaba826f140cfe275efb57",
+        "markdownSha256": "a7a1a6b0773fa3318650025639f1f5d18305424389bf098f47eb016a2a0097e0"
+      }
+    }
+  ],
+  "unclaimedRuns": []
+}

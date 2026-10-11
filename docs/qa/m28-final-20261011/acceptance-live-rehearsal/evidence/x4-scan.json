@@ -1,0 +1,290 @@
+{
+  "schema": "m28_x4_scan@1",
+  "scans": {
+    "b:screen:ligand@L-B7": {
+      "source": "screen",
+      "cases": [
+        "L-B7"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "c:screen:structure@L-pre-C2": {
+      "source": "screen",
+      "cases": [
+        "L-pre-C2"
+      ],
+      "hits": [],
+      "excepted": [
+        {
+          "line_sha256": "6c53f75d2b857df2bab04c487ee69a8c01141f1849b94cec93ace32934803ad8",
+          "template_sha256": "2b8eefeb282e582da5a0d0c8bb11b9dfbb361bf1e9232c67a962fe64dbfba85a",
+          "bytes": 219,
+          "part": "line",
+          "cases": [
+            "L-pre-C2"
+          ],
+          "exception": "2b8eefeb282e582da5a0d0c8bb11b9dfbb361bf1e9232c67a962fe64dbfba85a",
+          "match": "template",
+          "kind": "frontend_fixed_sentence",
+          "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)"
+        },
+        {
+          "line_sha256": "6f978dafb0f0ff00a19b27b0fffb8403d75be8f5ea4a23b1ec0776acaf3ad3d4",
+          "template_sha256": "6f978dafb0f0ff00a19b27b0fffb8403d75be8f5ea4a23b1ec0776acaf3ad3d4",
+          "bytes": 324,
+          "part": "line",
+          "cases": [
+            "L-pre-C2"
+          ],
+          "exception": "6f978dafb0f0ff00a19b27b0fffb8403d75be8f5ea4a23b1ec0776acaf3ad3d4",
+          "match": "line",
+          "kind": "frontend_fixed_sentence",
+          "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)"
+        },
+        {
+          "line_sha256": "01c5879e8930426a2a3f46e66d77883a319c76e29993975f3f5155817cc1a559",
+          "template_sha256": "01c5879e8930426a2a3f46e66d77883a319c76e29993975f3f5155817cc1a559",
+          "bytes": 97,
+          "part": "line",
+          "cases": [
+            "L-pre-C2"
+          ],
+          "exception": "01c5879e8930426a2a3f46e66d77883a319c76e29993975f3f5155817cc1a559",
+          "match": "line",
+          "kind": "frontend_fixed_sentence",
+          "reason": "프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 대상으로만 나온다(제품 문장, 단언 아님)"
+        },
+        {
+          "line_sha256": "d553ab0aab43d7e9481a0ac95b198d6ceb652a5e7e0ce991d25d356c89b9c455",
+          "template_sha256": "335d7ddba745a5bbe49c15c5cb9e8048b6468df52349936d1fe84255dbbcd4ad",
+          "bytes": 139,
+          "part": "line",
+          "cases": [
+            "L-pre-C2"
+          ],
+          "exception": "335d7ddba745a5bbe49c15c5cb9e8048b6468df52349936d1fe84255dbbcd4ad",
+          "match": "template",
+          "kind": "frontend_composed_line",
+          "reason": "화면이 SASA 방법 id·조각 수·단위와 제품 한계 문장(내보낸 인라인 고정 문장)을 한 줄로 합친 것: 핵심어는 그 한계 문장의 부정 대상으로만 나온다"
+        }
+      ]
+    },
+    "c:screen:protein@L-pre-C2": {
+      "source": "screen",
+      "cases": [
+        "L-pre-C2"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "c:screen:protein@L-C6": {
+      "source": "screen",
+      "cases": [
+        "L-C6"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/4b7c00c082ccb614d610d317cfee880bdcdaec4600c599775befebaa81e9f35d": {
+      "source": "report",
+      "cases": [
+        "L-pre-B2"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/de885fe6161b77c8bb037bdbdbe58135f2ccf0ca67d7c98e56a4741ac026b7f9": {
+      "source": "report",
+      "cases": [
+        "L-pre-B3"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/85623e885d7c52864b545a31fedcbb9e1412cf1739688e56271e32301528887f": {
+      "source": "report",
+      "cases": [
+        "L-pre-B4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_8e98de2b360c43ed97422f9b50a3a733/method_report_manifest/f8e7a206d0d0cac9fc7d1817002d652cc23149768e159942ca265d0d7acad11c": {
+      "source": "report",
+      "cases": [
+        "L-B7"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/75f01feaa21dd2685889fc938bd4563eef9bc8a5e0de0ab3ac69518c645d5542": {
+      "source": "report",
+      "cases": [
+        "L-pre-C2"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/a05180a824132710d2388dc4390d0919ee0725ac46018c558995f33d05402149": {
+      "source": "report",
+      "cases": [
+        "L-pre-C2"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/2110d0e0c2e86384c79dbd67eefac926086e64fdb994b47e561727e54a0e1331": {
+      "source": "report",
+      "cases": [
+        "L-pre-C2"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "report:obj://run_57fb01a2c47f4e69976d92cf6cf1bdd7/method_report_manifest/3cd373f6f2b4b504bceaf2ed26927730470281ba479916c82f82afb9cee2ace8": {
+      "source": "report",
+      "cases": [
+        "L-C6"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:b/plan.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:b-live/baseline.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:b-live/endtoend-b-evidence.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:b-live/endtoend-b.jsonl": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:b-live/ledger-row.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:b-live.log": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:c/plan.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:c-live/baseline.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:c-live/endtoend-c-evidence.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:c-live/endtoend-c.jsonl": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:c-live/ledger-row.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:c-live.log": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:runner-state.json": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    },
+    "evidence:runner-summary.jsonl": {
+      "source": "evidence",
+      "cases": [
+        "L-X4"
+      ],
+      "hits": [],
+      "excepted": []
+    }
+  },
+  "exceptionsUsed": {
+    "01c5879e8930426a2a3f46e66d77883a319c76e29993975f3f5155817cc1a559": 1,
+    "2b8eefeb282e582da5a0d0c8bb11b9dfbb361bf1e9232c67a962fe64dbfba85a": 1,
+    "335d7ddba745a5bbe49c15c5cb9e8048b6468df52349936d1fe84255dbbcd4ad": 1,
+    "6f978dafb0f0ff00a19b27b0fffb8403d75be8f5ea4a23b1ec0776acaf3ad3d4": 1
+  },
+  "exceptionsNotMet": [
+    "23e22c71350bb5340191bed6f15f94939caa3521aceff970f9df6d7a5f51ce0e",
+    "277d395ccd8e804186db3011d540b89ecbb0a614501da2a146166cc81a69fd8b",
+    "2f43624e7831ccc76770ccae749132af9bfc582f68a4db42e7af2bcd2a089299",
+    "3d7233ea3db963baca822963b231dc8b2cccfa15e29a115e3ee8b69d9bdb4bec",
+    "4d1d82bfdc9972fde983789777c4ad74f27d41b684fb72d9ba6589d6fe859565",
+    "506d98fbbf28fa3a5e25f1406224d99da2d5288c0331e7ce3b300e3defdb2bd9",
+    "66df641465c349154fc87fe7aa03fb79e82e4ca525f101d6b5bff9177d9101c8",
+    "6e31139099f7324f5c65bf328a2df7a593f2f9ef65d76193638203e42c536029",
+    "a1a92b6f0d63cafe9425b3edd4d30d5564a6aa6bf1a75e4891fd4a33093b5b91",
+    "a34f61a2588531732fe3e17aaeadcd22de674a23be8274df49e09424ee468025",
+    "b56ed9a4654dba9c88adc4dfcdfa7d72d00a7166e9f89e88f6aa6ef737715e58",
+    "c515bcae36c113886bf0049eff02cc6c10aba08cb1314339b3324980d5e40a66",
+    "c6f060a6e54833bbaf0be7bd961279e21936c3adf2ed3b535c0ce1544e9f6edd",
+    "e9796c94fd14a53e8f8df55196dac7f99daa368f8ae73b39716381521587716f",
+    "f6cce20dc517d4dd0ea5574992d3c0c159bdde9668a4b73738f1efa53d9b2021"
+  ],
+  "note": "줄 SHA·템플릿 SHA·사례·줄 종류·바이트 길이·이유만. 원문 줄은 Git 제외 x4-lines.json에만 있다."
+}
