@@ -2886,6 +2886,9 @@ async function main() {
   const rec = recorder(session, evidence, () => units.offPlan());
   const ctx = { ...session, input, plan, rec, evidence, units, log, state: {} };
   const callsBefore = input.control ? fixtureCalls(input.control).length : 0;
+  // The runner runs the branches one after another on one fixture server and one runs folder (T9): this
+  // harness owns only the calls and dispatch events made after it started.
+  const dispatchedBefore = input.control ? dispatchTotal(input["runs-dir"]) : 0;
   let error = null;
   let proof = null;
   try {
@@ -2902,8 +2905,8 @@ async function main() {
   if (input.control) {
     const calls = fixtureCalls(input.control).slice(callsBefore);
     const reads = credentialReads(input.control);
-    const dispatched = dispatchTotal(input["runs-dir"]);
-    evidence.fixture = { calls: calls.length, scripts: calls.map(call => call.script), dispatched,
+    const dispatched = dispatchTotal(input["runs-dir"]) - dispatchedBefore;
+    evidence.fixture = { calls: calls.length, scripts: calls.map(call => call.script), dispatched, dispatchedBefore,
       sentinelAuthorization: calls.every(call => call.authorizationIsSentinel === true), credentialReads: reads };
     fixtureProof = calls.length === dispatched && calls.every(call => call.authorizationIsSentinel === true) &&
       reads !== null && reads.productResolverReads === 0 && calls.every(call => ["good", "good_second"].includes(call.script));

@@ -7,12 +7,13 @@ they read the JSON this script writes.
 
 Output ``m28_fixed_sentences@1``:
   sentences   [{id, text}]  fixed sentences of the product (limitations, statements, screen notes, labels…): the
-              constants named in T1 preflight (k) plus every module-level constant of the report / constants modules
-              whose name says it is fixed wording (LIMITATION, STATEMENT, NOTE, WARNING, SCOPE, TERMS, LABEL),
-              flattened.
+              constants named in T1 preflight (k) and the fixed question instructions of M24 / M25
+              (``jev_constants.INSTRUCTIONS``, ``jev_loop_constants.INSTRUCTIONS``: the request body shows them) plus
+              every module-level constant of the report / constants modules whose name says it is fixed wording
+              (LIMITATION, STATEMENT, NOTE, WARNING, SCOPE, TERMS, LABEL), flattened.
   inline      [{id, text}]  string literals of the six older report paths (inspection, interface SASA, OpenMM,
-              comparison, chemical, pocket) that carry an X4 core forbidden word inside a negation sentence (T1 (k):
-              they are inline literals, not constants). Exact-line exemptions only.
+              comparison, chemical, pocket) and of the M11 report renderer that carry an X4 core forbidden word inside
+              a negation sentence (T1 (k): they are inline literals, not constants). Exact-line exemptions only.
   phrases     [{id, text}]  labels written inside a line (the qvina score labels): removed before the X4 check.
   reportRules {analysis_type: {module, renderVersion, evidenceKinds, fields: {kind: regex}, referenceNote,
               modelResponseNote}}  the product's field rules per evidence kind (check 4 of the trace audit).
@@ -49,8 +50,8 @@ NAMED = {
     "mutation_model_constants": ("L1", "L2", "L3", "L4", "L5", "L6", "L7", "LIMITATION_ORDER"),
     "ligand_ga_constants": ("STATEMENTS",),
     "sequence_ga_constants": ("STATEMENTS", "SCORE_LABEL"),
-    "jev_constants": ("STATEMENTS", "J6_BY_CATALYTIC_STATUS", "SCREEN_NOTES"),
-    "jev_loop_constants": ("STATEMENTS", "SCREEN_NOTES"),
+    "jev_constants": ("STATEMENTS", "J6_BY_CATALYTIC_STATUS", "SCREEN_NOTES", "INSTRUCTIONS"),
+    "jev_loop_constants": ("STATEMENTS", "SCREEN_NOTES", "INSTRUCTIONS"),
     "reaction_knowledge_constants": ("STATEMENTS", "LIMITATIONS", "SCREEN_NOTES"),
     "precedent_constants": ("STATEMENTS", "LIMITATIONS", "SCREEN_NOTES"),
 }
@@ -61,9 +62,10 @@ REPORT_MODULES = ("numbering_reports", "site_annotation_reports", "ligand_report
                   "kinase_precedents_reports", "pocket_reports", "method_reports", "openmm_reports",
                   "comparison_reports", "chemical_reports", "reports")
 WORDING_NAME = re.compile(r"(?:LIMITATION|STATEMENT|NOTE|WARNING|SCOPE|TERMS|LABEL)")
-# The inline literals of the six older report paths (T1 (k)).
+# The inline literals of the six older report paths (T1 (k)) and of the M11 report renderer (its native-assignment
+# sentence, T9).
 INLINE_FILES = ("reports.py", "method_reports.py", "tools/sasa.py", "openmm_reports.py", "tools/comparison.py",
-                "chemical_bundle.py", "pocket_reports.py")
+                "chemical_bundle.py", "chemical_reports.py", "pocket_reports.py")
 PHRASES = (("docking_constants", "SCORE_LABEL"), ("docking_constants", "SCORE_COLUMN_LABEL"),
            ("sequence_ga_constants", "SCORE_LABEL"))
 

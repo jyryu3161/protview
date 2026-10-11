@@ -41,12 +41,19 @@ Wording (X4, spec §4.4)
   CORE_FORBIDDEN: re.Pattern                the core forbidden words of X4 (Korean list of the spec + English forms)
   FixedText(sentences=(), phrases=())       product fixed lines (exact after normalization) and inline phrases removed
                                             from a line before the check (e.g. the qvina score label)
-  normalize_line(line) -> str               bullet / list marker / Markdown escape / HTML entity / whitespace
-                                            normal form
-  line_sha256(line) -> str                  SHA-256 of the normalized line (the key of an exception)
+  normalize_line(line) -> str               bullet / list marker / Markdown escape / HTML entity / whole-line bold /
+                                            whitespace normal form
+  line_template(line) -> str                the normalized line with every number (digits, decimals) written ``#``
+  line_sha256(line) -> str                  SHA-256 of the normalized line (the key of a ``line`` exception)
+  template_sha256(line) -> str              SHA-256 of the line template (the key of a ``template`` / ``label``
+                                            exception)
   forbidden_hits(text, fixed: FixedText, exceptions: dict[str, dict] | None = None)
       -> {"hits": [...], "excepted": [...]}
-      exceptions: {line_sha256: {"reason": str (required), "words": [...]}}; an exception without a reason raises
+      exceptions: {sha256: {"reason": str (required), "match": "line" | "template" | "label" (default line), ...}};
+      an exception without a reason or with another match raises. ``line``: the normalized line's SHA-256;
+      ``template``: the line template's SHA-256 (numbers that differ per run); ``label``: the template SHA-256 of
+      the text before the first ": " only, the rest of the line is checked as its own text. A line that is a JSON
+      object or array (a request body shown in a <pre>) is checked string by string (never skipped).
 
 Loopback API and runs
   API = "http://127.0.0.1:8000", WEB = "http://127.0.0.1:3000"
@@ -342,18 +349,32 @@ CORE_FORBIDDEN = re.compile(
     re.IGNORECASE)
 _BULLET = re.compile(r"^(?:[-*+>]\s+|\d+\.\s+)+")
 _MARKDOWN_ESCAPE = re.compile(r"\\([\\`*_{}\[\]()#+.!|>~-])")
+_NUMBER = re.compile(r"\d+(?:\.\d+)*")
+EXCEPTION_MATCHES = ("line", "template", "label")
 
 
 def normalize_line(line: str) -> str:
     """The form fixed sentences and screen / report lines are compared in: Markdown escapes and HTML entities undone,
-    list markers removed, whitespace collapsed."""
+    list markers removed, a whole-line bold wrapper (``**…**``) removed, whitespace collapsed."""
     text = html.unescape(_MARKDOWN_ESCAPE.sub(r"\1", str(line)))
-    text = " ".join(text.split())
-    return _BULLET.sub("", text).strip()
+    text = _BULLET.sub("", " ".join(text.split())).strip()
+    if len(text) > 4 and text.startswith("**") and text.endswith("**"):
+        text = text[2:-2].strip()
+    return text
+
+
+def line_template(line: str) -> str:
+    """The normalized line with every number written ``#`` (decision of the coordinating session, T9: an exception may
+    name a line kind whose numbers differ per run; never a pattern or wildcard)."""
+    return _NUMBER.sub("#", normalize_line(line))
 
 
 def line_sha256(line: str) -> str:
     return hashlib.sha256(normalize_line(line).encode("utf-8")).hexdigest()
+
+
+def template_sha256(line: str) -> str:
+    return hashlib.sha256(line_template(line).encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -375,28 +396,74 @@ class FixedText:
         return cls.build(texts, [item["text"] for item in exported.get("phrases") or []])
 
 
+def _words(text: str, fixed: FixedText) -> list[str]:
+    checked = text
+    for phrase in fixed.phrases:
+        checked = checked.replace(normalize_line(phrase), "")
+    return sorted({match.group(0) for match in CORE_FORBIDDEN.finditer(checked)})
+
+
+def _json_line(line: str) -> list[str] | None:
+    """The strings (keys and values, in order) of a line that is one JSON object or array, else None."""
+    if not line.startswith(("{", "[")):
+        return None
+    try:
+        value = json.loads(line)
+    except ValueError:
+        return None
+    return m25.json_strings(value) if isinstance(value, (dict, list)) else None
+
+
+def _check_line(line: str, fixed: FixedText, exceptions: dict[str, dict], part: str, hits: list,
+                excepted: list) -> None:
+    if not line or line in fixed.sentences:
+        return
+    strings = _json_line(line)
+    if strings is not None:                  # a JSON line: every string is checked as its own text
+        for item in strings:
+            for raw in str(item).split("\n"):
+                _check_line(normalize_line(raw), fixed, exceptions, "json_string", hits, excepted)
+        return
+    words = _words(line, fixed)
+    if not words:
+        return
+    digest = hashlib.sha256(line.encode("utf-8")).hexdigest()
+    template = hashlib.sha256(_NUMBER.sub("#", line).encode("utf-8")).hexdigest()
+    entry = {"line_sha256": digest, "template_sha256": template, "words": words, "chars": len(line),
+             "bytes": len(line.encode("utf-8")), "part": part, "text": line}
+    for key, mode in ((digest, "line"), (template, "template")):
+        found = exceptions.get(key)
+        if found is not None and found.get("match", "line") == mode:
+            excepted.append({**entry, "exception": key, "match": mode, "reason": found["reason"]})
+            return
+    label, colon, rest = line.partition(": ")
+    if colon:
+        key = hashlib.sha256(_NUMBER.sub("#", label).encode("utf-8")).hexdigest()
+        found = exceptions.get(key)
+        if found is not None and found.get("match") == "label":
+            left = _words(rest, fixed)
+            if not left:
+                excepted.append({**entry, "exception": key, "match": "label", "reason": found["reason"]})
+                return
+            entry = {**entry, "words": left, "labelException": key}
+    hits.append(entry)
+
+
 def forbidden_hits(text: str, fixed: FixedText, exceptions: dict[str, dict] | None = None) -> dict:
     """X4 core forbidden words in ``text`` line by line. A line equal to a fixed sentence is exempt; inline phrases are
-    removed first; a hit whose normalized line SHA-256 is in ``exceptions`` (each with a reason) is listed apart."""
+    removed first; a line that is a JSON object or array is checked string by string; a hit whose line SHA-256,
+    template SHA-256 or label template SHA-256 is an exception of that ``match`` (each with a reason) is listed
+    apart."""
     exceptions = exceptions or {}
     for key, entry in exceptions.items():
         if not (isinstance(entry, dict) and str(entry.get("reason") or "").strip()):
             raise ValueError(f"exception {key} has no reason")
-    hits, excepted = [], []
+        if entry.get("match", "line") not in EXCEPTION_MATCHES:
+            raise ValueError(f"exception {key} has an unknown match {entry.get('match')!r}")
+    hits: list[dict] = []
+    excepted: list[dict] = []
     for raw in str(text).split("\n"):
-        line = normalize_line(raw)
-        if not line or line in fixed.sentences:
-            continue
-        checked = line
-        for phrase in fixed.phrases:
-            checked = checked.replace(normalize_line(phrase), "")
-        words = sorted({match.group(0) for match in CORE_FORBIDDEN.finditer(checked)})
-        if not words:
-            continue
-        digest = hashlib.sha256(line.encode("utf-8")).hexdigest()
-        entry = {"line_sha256": digest, "words": words, "chars": len(line), "text": line}
-        (excepted if digest in exceptions else hits).append(
-            {**entry, "reason": exceptions[digest]["reason"]} if digest in exceptions else entry)
+        _check_line(normalize_line(raw), fixed, exceptions, "line", hits, excepted)
     return {"hits": hits, "excepted": excepted}
 
 

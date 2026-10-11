@@ -7,8 +7,8 @@ frontend/node_modules are). Like the M27 runner it needs free 8000/3000 ports, b
 backend on 127.0.0.1:8000 for the phase, ``PYTHONPATH=<code root>/backend``, ``MW_RUNS_DIR=<root>/<phase>/runs``,
 ``MW_REFERENCE_DIR`` = a read-only copy of --m15-reference, ``MW_REACTION_REFERENCE_DIR`` = an isolated copy of
 --reaction-set, ``MW_PRECEDENT_REFERENCE_DIR`` = an isolated folder the branch-A module installs into from --kbase),
-runs the registered branch modules (``BRANCH_REGISTRY``: ``scripts/m28_branch_{a,b,c}.py``, wired in T9) and writes the
-case ledger ``m28_case_ledger@1`` of the phase.
+runs the registered branch modules (``BRANCH_REGISTRY``: ``scripts/m28_branch_{a,b,c}.py``) one after another, each in
+its own new run, and writes the case ledger ``m28_case_ledger@1`` of the phase.
 
 Phases (``--phase``):
   fixture  (default) every case of spec §4 (A1–A8, B1–B8, C1–C7, X1-A/B/C, X2–X6). The backend is the M25 fixture
@@ -26,8 +26,10 @@ Phases (``--phase``):
            (spec §6.3, m28_common.live_outcome). No retry, no new run; a round that was dispatched and did not complete
            ends the plan (the next branch gets ``send_allowed`` false and its harness is stopped at a new dispatch).
   --rehearse (live only) the same live code path against the fixture server (the product backend is never started),
-           the ledger is <root>/rehearsal-live-ledger.json, --live-calls defaults to 2, real calls 0. A rehearsal
-           ledger never says acceptance true (``rehearsalPassed`` says whether it passed).
+           the ledger is <root>/rehearsal-live-ledger.json, --live-calls defaults to 2, real calls 0, and the product
+           key resolver is never run (the key-present step is skipped; the evidence search looks for the placeholders
+           and key patterns only). A rehearsal ledger never says acceptance true (``rehearsalPassed`` says whether it
+           passed). The plan counts the rounds of the selected branches only (b → L-B7, c → L-C6).
 
 ``acceptance`` (spec §3.1, §5): every required case of the phase is pass, or not_observed with a closed reason
 (no_public_input, unreachable_by_ui, engine_unavailable_by_design) and a named covering unit test; the true cases
@@ -39,8 +41,9 @@ absolute path.
 
 Evidence (--out, text only, decision 0020): README, summary, cases, SHA256SUMS, binary-artifacts.json (git-ignored
 files with path, size and SHA-256 only), evidence/ (ledger, rows, plans). Screenshots, paint frames, downloads,
-failure panels, text above 256 KiB and any text with real kbase strings, a key, a placeholder or an absolute path
-stay in --artifacts (git-ignored). The root must be new and outside /tmp. This script never imports mw (the fixed
+failure panels, text above 256 KiB, the X4 lines as found (x4-lines.json; x4-scan.json keeps hashes, cases, line kinds,
+byte lengths and reasons only) and any text with real kbase strings, a key, a placeholder or an absolute path stay in
+--artifacts (git-ignored). The root must be new and outside /tmp. This script never imports mw (the fixed
 sentences come from the subprocess scripts/m28_export_fixed_sentences.py), never calls a limit-raising route and
 never posts to a /jev route (approvals, raises and sends are the harness's clicks).
 
@@ -80,6 +83,11 @@ import m25_offscreen_acceptance as m25
 
 # Real kbase text matching and the precedent-set strings of the M27 runner (memory only).
 import m27_offscreen_acceptance as m27
+
+# The branch modules (standard library and m28_common only; none of them imports mw).
+import m28_branch_a as branch_a
+import m28_branch_b as branch_b
+import m28_branch_c as branch_c
 import m28_common as c
 import m28_trace_audit as audit
 
@@ -107,12 +115,98 @@ KEY_PATTERNS = re.compile(r"sk-or-v1-[0-9A-Za-z]{16,}|\bsk-[0-9A-Za-z_-]{24,}|Be
                           r"OPENROUTER_API_KEY\s*=\s*\S+")
 ABSOLUTE_PATH = re.compile(r"(?<![\w.:/<-])/(?:Users|home)/[^\s\"'<>`|)/]+")
 # Runner-written analysis files the evidence wording scan leaves out (they quote what they found or list fixed text).
-WORDING_SKIP = {"x4-scan.json", "fixed-sentences.json", "trace-audit.json"}
-# X4 line exceptions: {normalized line SHA-256: {"reason": why the product body line is not a claim, "words": [...]}}.
-# Filled (with reasons) when the fixture phase meets product identifiers / names / reference strings; reviewed.
-X4_EXCEPTIONS: dict[str, dict] = {}
-# The branch modules (T9 wires scripts/m28_branch_{a,b,c}.py here): branch → run(ctx) -> m28_common.BranchResult.
-BRANCH_REGISTRY: dict[str, Callable[[c.BranchContext], c.BranchResult]] = {}
+X4_LINES = "x4-lines.json"              # the X4 lines as found (raw text): git-ignored artifacts only, never exported
+WORDING_SKIP = {"x4-scan.json", X4_LINES, "fixed-sentences.json", "trace-audit.json"}
+# X4 line exceptions (spec §4.4 X4; coordinating-session decision of T9). Each entry is ONE line kind the X4 core words
+# meet in product text that makes no claim, keyed by the SHA-256 of the normalized line (``line``), of the line with its
+# numbers written # (``template``: numbers that differ per run) or of the text before the first ": " (``label``: only
+# that label is excepted, the rest of the line is still checked). Every entry names its line kind, the cases it was
+# seen in, the code that writes it (found in the source, T9) and its reason. No raw line text here or in committed
+# evidence (reference text such as M-CSA roles stays in the git-ignored artifacts). Reviewed by the independent evidence
+# review. Not here: product fixed sentences (exported by scripts/m28_export_fixed_sentences.py) and JSON request
+# bodies (checked string by string).
+_FRONTEND_NEGATION = ("프런트엔드 고정 부정문: 이 화면 값이 그 해석의 근거가 아님을 밝히는 제품 문장이며 핵심어는 부정 "
+                      "대상으로만 나온다(제품 문장, 단언 아님)")
+_POCKET_LABEL = ("fpocket이 매기는 공동 번호 라벨(엔진 고유 필드 이름)을 제품이 그대로 쓰는 줄: 엔진 출력의 번호이며 "
+                 "제품의 평가나 주장이 아니다")
+X4_EXCEPTIONS: dict[str, dict] = {
+    "4d1d82bfdc9972fde983789777c4ad74f27d41b684fb72d9ba6589d6fe859565": {
+        "match": "template", "kind": "fpocket_rank_label", "cases": ["A4"],
+        "source": "frontend/app/page.tsx:1690 (뷰어 오버레이 이름표)", "reason": _POCKET_LABEL},
+    "a34f61a2588531732fe3e17aaeadcd22de674a23be8274df49e09424ee468025": {
+        "match": "template", "kind": "fpocket_rank_label", "cases": ["A4"],
+        "source": "frontend/src/components/PocketPanel.tsx:497 (오버레이 표시 확인 줄)", "reason": _POCKET_LABEL},
+    "e9796c94fd14a53e8f8df55196dac7f99daa368f8ae73b39716381521587716f": {
+        "match": "line", "kind": "fpocket_rank_label", "cases": ["A4", "A6"],
+        "source": "frontend/src/components/PocketPanel.tsx:461 (포켓 표 머리글, CSS 대문자)", "reason": _POCKET_LABEL},
+    "23e22c71350bb5340191bed6f15f94939caa3521aceff970f9df6d7a5f51ce0e": {
+        "match": "line", "kind": "fpocket_rank_label", "cases": ["A4"],
+        "source": "backend/mw/pocket_reports.py:264 (포켓 보고서 표 머리글)", "reason": _POCKET_LABEL},
+    "f6cce20dc517d4dd0ea5574992d3c0c159bdde9668a4b73738f1efa53d9b2021": {
+        "match": "label", "kind": "fpocket_rank_label", "cases": ["A4"],
+        "source": "backend/mw/pocket_reports.py:276 (주변 잔기 목록 줄의 공동 번호 머리; 뒤의 잔기 목록은 계속 검사)",
+        "reason": _POCKET_LABEL + ". 잔기 목록은 fpocket 실행마다 달라 줄 전체가 아니라 머리 라벨만 예외"},
+    "6e31139099f7324f5c65bf328a2df7a593f2f9ef65d76193638203e42c536029": {
+        "match": "template", "kind": "fpocket_rank_label", "cases": ["A4"],
+        "source": "backend/mw/pocket_reports.py:281 (보고서 끝 JSON 안내, 주장 수는 실행마다 다름)",
+        "reason": "포켓 보고서가 JSON의 공동 번호 선택자(fpocket 필드 이름)를 안내하는 제품 문장"},
+    "6f978dafb0f0ff00a19b27b0fffb8403d75be8f5ea4a23b1ec0776acaf3ad3d4": {
+        "match": "line", "kind": "frontend_fixed_sentence", "cases": ["A2", "A3", "A4", "B1", "C2"],
+        "source": "frontend/src/lib/pockets.ts:101 LIMITATION_NOTE + :103 NONDETERMINISM_NOTE (한 줄로 표시)",
+        "reason": _FRONTEND_NEGATION},
+    "01c5879e8930426a2a3f46e66d77883a319c76e29993975f3f5155817cc1a559": {
+        "match": "line", "kind": "frontend_fixed_sentence", "cases": ["A2", "A3", "A4", "A6", "C2"],
+        "source": "frontend/src/lib/site-annotation.ts:27 PANEL_LEGEND_TEXT", "reason": _FRONTEND_NEGATION},
+    "3d7233ea3db963baca822963b231dc8b2cccfa15e29a115e3ee8b69d9bdb4bec": {
+        "match": "line", "kind": "frontend_fixed_sentence", "cases": ["A2", "A4", "A6"],
+        "source": "frontend/app/page.tsx:1878", "reason": _FRONTEND_NEGATION},
+    "c515bcae36c113886bf0049eff02cc6c10aba08cb1314339b3324980d5e40a66": {
+        "match": "template", "kind": "frontend_fixed_sentence", "cases": ["A3"],
+        "source": "frontend/app/page.tsx:1919", "reason": _FRONTEND_NEGATION},
+    "2b8eefeb282e582da5a0d0c8bb11b9dfbb361bf1e9232c67a962fe64dbfba85a": {
+        "match": "template", "kind": "frontend_fixed_sentence", "cases": ["A2", "A3", "A4", "C2"],
+        "source": "frontend/app/page.tsx:1961 (OpenMM 방법 안내)", "reason": _FRONTEND_NEGATION},
+    "b56ed9a4654dba9c88adc4dfcdfa7d72d00a7166e9f89e88f6aa6ef737715e58": {
+        "match": "template", "kind": "frontend_fixed_sentence", "cases": ["B3"],
+        "source": "frontend/src/lib/docking.ts:80 CONTACT_NOTE", "reason": _FRONTEND_NEGATION},
+    "335d7ddba745a5bbe49c15c5cb9e8048b6468df52349936d1fe84255dbbcd4ad": {
+        "match": "template", "kind": "frontend_composed_line", "cases": ["A2", "A3", "A4", "C2"],
+        "source": "frontend/app/page.tsx:2060 (방법 id · 알고리즘 · 단위 · backend/mw/tools/sasa.py:61 limitations)",
+        "reason": "화면이 SASA 방법 id·조각 수·단위와 제품 한계 문장(내보낸 인라인 고정 문장)을 한 줄로 합친 것: "
+                  "핵심어는 그 한계 문장의 부정 대상으로만 나온다"},
+    "a1a92b6f0d63cafe9425b3edd4d30d5564a6aa6bf1a75e4891fd4a33093b5b91": {
+        "match": "template", "kind": "product_criterion_definition", "cases": ["B1"],
+        "source": "backend/mw/chemical_reports.py:152 (ProLIF 범주 판정 기준, 기준값이 들어간 f-string)",
+        "reason": "M11 화학 상호작용(ProLIF 고유 판정)의 해당 범주 판정 기준(D···A 거리·D–H···A 각도) 정의 줄: 기하 "
+                  "접촉에 대한 말이 아니고 값의 단언도 아니다"},
+    "66df641465c349154fc87fe7aa03fb79e82e4ca525f101d6b5bff9177d9101c8": {
+        "match": "line", "kind": "reference_text", "cases": ["A8"],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 A GLY 27, 항목 175)",
+        "reason": "M-CSA 역할 원문(roles_summary·roles, 참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 "
+                  "대한 판정이 아니다"},
+    "2f43624e7831ccc76770ccae749132af9bfc582f68a4db42e7af2bcd2a089299": {
+        "match": "line", "kind": "reference_text", "cases": ["A8"],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 B GLY 27, 항목 175)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다"},
+    "506d98fbbf28fa3a5e25f1406224d99da2d5288c0331e7ce3b300e3defdb2bd9": {
+        "match": "line", "kind": "reference_text", "cases": ["A8"],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 A ASP 25, 항목 175)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다"},
+    "277d395ccd8e804186db3011d540b89ecbb0a614501da2a146166cc81a69fd8b": {
+        "match": "line", "kind": "reference_text", "cases": ["A8"],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1A30 B ASP 25, 항목 175)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다"},
+    "c6f060a6e54833bbaf0be7bd961279e21936c3adf2ed3b535c0ce1544e9f6edd": {
+        "match": "line", "kind": "reference_text", "cases": ["A8"],
+        "source": "backend/mw/reaction_knowledge_reports.py:700-711 (M-CSA 행 표: 1S9I A ASP 194, 항목 282)",
+        "reason": "M-CSA 역할 원문(참조값, 계산 아님): 촉매 잔기의 문헌 역할 어휘이며 기하 접촉에 대한 판정이 아니다"},
+}
+# The branch modules: branch → run(ctx) -> m28_common.BranchResult.
+BRANCH_REGISTRY: dict[str, Callable[[c.BranchContext], c.BranchResult]] = {
+    "a": branch_a.run, "b": branch_b.run, "c": branch_c.run}
+# Kinds whose product reopen does not recompute (trace audit partialProductRecheck, handoff decision 5) → the case
+# whose independent expectations supplement the audit for that kind.
+AUDIT_SUPPLEMENTS = {"inspection": "A2", "interface_sasa": "A3"}
 
 # Live plan (spec §6; T1 (e) §5): run B = L-pre-B2 (M17 inspect + enumerate, 2 units) + L-pre-B3 (M18, 1) + L-pre-B4
 # (M19: 3 new rows + the parent row, 4) then L-B7 (1); run C = L-pre-C2 (at most M7 + M21, 2) then L-C6 (model + dock,
@@ -239,9 +333,16 @@ def ledger_admission(before_others: int, mine: int, planned: int, live_calls: in
     return None
 
 
-def live_plan_budget(plan: Iterable[dict] = LIVE_PLAN) -> dict:
+def live_plan(branches: Iterable[str] = PHASE_BRANCHES["live"]) -> tuple[dict, ...]:
+    """The rounds of the selected live branches (b → L-B7, c → L-C6): a run of one branch plans one call."""
+    chosen = {str(name).lower() for name in branches}
+    return tuple(entry for entry in LIVE_PLAN if entry["run"].lower() in chosen)
+
+
+def live_plan_budget(plan: Iterable[dict] | None = None) -> dict:
     """Per run (B, C) the plan's needs against the run defaults (8 units, 1800 s, 120,000 tokens, USD 2.00,
-    10 sends)."""
+    10 sends). ``None`` = the whole LIVE_PLAN, read when called (never bound at definition time)."""
+    plan = LIVE_PLAN if plan is None else tuple(plan)
     runs: dict[str, dict] = {}
     for entry in plan:
         need = runs.setdefault(entry["run"], {**{axis: 0 for axis in RUN_BUDGET}, **LIVE_SETUP[entry["run"]]})
@@ -267,11 +368,29 @@ def x1_case(branch: str, events: int, opened: int, created_by_cases: int | None,
                          evidence_refs=list(refs), detail=detail)
 
 
-def x2_case(summary: dict | None, refs: Iterable[str] = ()) -> dict:
-    ok = isinstance(summary, dict) and summary.get("status") == "pass"
-    return c.case_record("X2", "pass" if ok else "fail", None if ok else "trace_audit_failed",
-                         evidence_refs=list(refs), detail={"status": (summary or {}).get("status"),
-                                                            "failures": len((summary or {}).get("failures") or [])})
+def audit_supplements(summary: dict | None, records: dict[str, dict]) -> list[dict]:
+    """Every kind the audit marks partialProductRecheck with the case that supplements it (AUDIT_SUPPLEMENTS) and that
+    case's status; a kind without a supplementing case has ``case`` None."""
+    out = []
+    for item in (summary or {}).get("partialProductRecheck") or []:
+        case = AUDIT_SUPPLEMENTS.get(item.get("kind"))
+        out.append({"kind": item.get("kind"), "note": item.get("note"), "supplementedBy": case,
+                    "caseStatus": (records.get(case) or {}).get("status") if case else None})
+    return out
+
+
+def x2_case(summary: dict | None, records: dict[str, dict] | None = None, refs: Iterable[str] = ()) -> dict:
+    """X2: the trace audit passed, and every kind it could check only partly (the product reopen does not recompute:
+    inspection, interface_sasa) is supplemented by a passing case with independent expectations (A2, A3)."""
+    supplements = audit_supplements(summary, records or {})
+    unsupported = [item["kind"] for item in supplements if item["caseStatus"] != "pass"]
+    ok = isinstance(summary, dict) and summary.get("status") == "pass" and not unsupported
+    reason = None if ok else ("trace_audit_failed" if not (isinstance(summary, dict) and summary.get("status") ==
+                                                           "pass") else "partial_recheck_not_supplemented")
+    return c.case_record("X2", "pass" if ok else "fail", reason, evidence_refs=list(refs),
+                         detail={"status": (summary or {}).get("status"),
+                                 "failures": len((summary or {}).get("failures") or []),
+                                 "partialProductRecheck": supplements, "notSupplemented": unsupported})
 
 
 def fixture_provider_calls(server: dict | None, calls: list[dict], dispatched: int, reads: dict | None) -> int | None:
@@ -370,7 +489,8 @@ def judge_phase(phase: str, cases: dict[str, dict], branches: list[str], *, buil
                      (external.get("provider_calls") == 0 if phase == "fixture" else
                       isinstance(external.get("live_calls_counted"), int)
                       and external["live_calls_counted"] <= MAX_LIVE_CALLS
-                      and (not rehearsal or external.get("provider_calls") == 0))),
+                      and (not rehearsal or (external.get("provider_calls") == 0
+                                             and external.get("product_key_resolver_calls") == 0)))),
         "exportChecks": bool(export_ok),
     }
     passed = all(parts.values())
@@ -449,6 +569,8 @@ def hold_reason(artifacts: Path, path: Path, real: m27.RealText | None) -> str |
     rel = path.relative_to(artifacts)
     if "downloads" in rel.parts:
         return "download"
+    if path.name == X4_LINES:
+        return "raw_lines"
     if path.name.endswith(m27.FAILURE_PANEL_SUFFIX):
         return "failure_panel"
     if path.stat().st_size > MAX_TEXT_BYTES and path.name not in LEDGER_NAMES:
@@ -467,6 +589,66 @@ def scan_evidence(folder: Path, real: m27.RealText | None = None) -> dict[str, l
             if found:
                 hits[str(path.relative_to(folder))] = found
     return hits
+
+
+# X4 case attribution of a reopened report: the case that makes that report kind in its branch (spec §4).
+REPORT_CASES = {
+    "fixture": {"a": {"inspection": ["A2"], "interface_sasa": ["A3"], "pocket_detection": ["A4"],
+                      "residue_numbering": ["A5"], "reference_site_annotation": ["A6"], "kinase_precedents": ["A7"],
+                      "reaction_knowledge": ["A8"]},
+                "b": {"chemical_interactions": ["B1"], "ligand_candidates": ["B2"], "ligand_docking": ["B3"],
+                      "ligand_docking_batch": ["B4"], "ligand_ga": ["B5"], "jev_choice": ["B6"], "jev_loop": ["B7"]},
+                "c": {"mutation_candidates": ["C1", "C2"], "openmm_protein_minimize": ["C2"],
+                      "mutation_model": ["C2"], "sequence_ga": ["C4"], "jev_choice": ["C5"], "jev_loop": ["C6"]}},
+    "live": {"b": {"ligand_candidates": ["L-pre-B2"], "ligand_docking": ["L-pre-B3"],
+                   "ligand_docking_batch": ["L-pre-B4"], "jev_loop": ["L-B7"]},
+             "c": {"openmm_protein_minimize": ["L-pre-C2"], "mutation_candidates": ["L-pre-C2"],
+                   "mutation_model": ["L-pre-C2"], "jev_loop": ["L-C6"]}},
+}
+
+
+def report_cases(phase: str, branch: str | None, kind: str | None) -> list[str]:
+    found = REPORT_CASES.get(phase, {}).get(branch or "", {}).get(kind or "")
+    if found:
+        return list(found)
+    return [f"branch-{branch}"] if branch else []
+
+
+def screen_cases(name: str) -> list[str]:
+    """The case of a tab-area text named ``<tab>@<case>`` by the harness."""
+    case = str(name).rpartition("@")[2]
+    return [case] if case in c.CASE_BRANCH else []
+
+
+def x4_committed(scans: dict[str, dict], origin: dict[str, tuple[str, list[str]]],
+                 exceptions: dict[str, dict] | None = None) -> dict:
+    """The committed form of the X4 scan (coordinating-session decision, T9): per line found, its line SHA-256,
+    template SHA-256, cases, line kind, byte length and reason only, never the line or its words (reference text such
+    as M-CSA roles and real kbase strings stay in the git-ignored ``x4-lines.json``); with how often each exception
+    matched and which were not met in this run."""
+    exceptions = X4_EXCEPTIONS if exceptions is None else exceptions
+    used: dict[str, int] = {}
+    out: dict[str, dict] = {}
+    for name, scan in scans.items():
+        source, cases = origin.get(name, ("unknown", []))
+
+        def row(entry: dict, excepted: bool, cases: list[str] = cases) -> dict:
+            item = {"line_sha256": entry.get("line_sha256"), "template_sha256": entry.get("template_sha256"),
+                    "bytes": entry.get("bytes"), "part": entry.get("part"), "cases": list(cases)}
+            if excepted:
+                key = entry.get("exception")
+                used[key] = used.get(key, 0) + 1
+                item.update({"exception": key, "match": entry.get("match"),
+                             "kind": (exceptions.get(key) or {}).get("kind"), "reason": entry.get("reason")})
+            else:
+                item.update({"kind": "not_excepted", "reason": None,
+                             "labelException": entry.get("labelException")})
+            return item
+        out[name] = {"source": source, "cases": list(cases), "hits": [row(hit, False) for hit in scan["hits"]],
+                     "excepted": [row(hit, True) for hit in scan["excepted"]]}
+    return {"schema": "m28_x4_scan@1", "scans": out, "exceptionsUsed": dict(sorted(used.items())),
+            "exceptionsNotMet": sorted(set(exceptions) - set(used)),
+            "note": "줄 SHA·템플릿 SHA·사례·줄 종류·바이트 길이·이유만. 원문 줄은 Git 제외 x4-lines.json에만 있다."}
 
 
 def text_items(path: Path) -> list[str]:
@@ -569,6 +751,10 @@ class Runner(m18.Runner):
         self.ledger_file: Path | None = None
         self.ledger_open = False
         self.send_allowed = True
+        self.resolver_calls = 0                  # runs of the product key resolver (a rehearsal must have none)
+        self.markdowns: dict[str, str] = {}
+        self.report_cases: dict[str, list[str]] = {}
+        self.x4_record: dict | None = None
 
     # ----- inputs and folders ------------------------------------------------------------------
     def resolve_input(self, value: str) -> Path:
@@ -741,7 +927,7 @@ class Runner(m18.Runner):
     def ledger_guard(self) -> None:
         """Before anything starts: refuse (SystemExit) when the ledger cannot be found, read or counted, or the plan
         does not fit; otherwise record this phase as started (unfinished until ledger_close)."""
-        planned = live_plan_budget()["planned"]
+        planned = live_plan_budget(live_plan(self.branches))["planned"]
         try:
             self.ledger_file = self.ledger_location()
             if self.rehearse:
@@ -788,17 +974,30 @@ class Runner(m18.Runner):
         return mine
 
     def key_present(self) -> bool:
-        """Key presence as a boolean only (the product resolver in a child) and the root .env private (os.lstat
-        only)."""
+        """Real live phase only: key presence as a boolean only (the product resolver in a child) and the root .env
+        private (os.lstat only). A rehearsal needs no key (the fixture server has a placeholder): the step is skipped
+        and the product key resolver is never run (T8 / T9)."""
+        if self.rehearse:
+            self.checks["key"] = {"skipped": "rehearsal", "rehearsal": True}
+            self.record("key-present", "pass", skipped="rehearsal")
+            return True
         scan = self.key_scan([])
         dotenv = m25.dotenv_status(self.code)
         ok = scan.get("keyAvailable") is True and dotenv["private"]
         self.checks["key"] = {"keyAvailable": scan.get("keyAvailable") is True, "dotenv": dotenv,
                               "rehearsal": self.rehearse}
-        self.record("key-present", "pass" if ok or self.rehearse else "fail", detail=self.checks["key"])
-        return ok or self.rehearse
+        self.record("key-present", "pass" if ok else "fail", detail=self.checks["key"])
+        return ok
 
     def key_scan(self, roots: list[Path]) -> dict:
+        """The files under ``roots`` holding the key (the product resolver in a child prints booleans and paths only)
+        or a fixture placeholder. In a rehearsal the resolver is never run: the placeholders are searched here and the
+        key search is recorded as skipped (a rehearsal touches no key)."""
+        if self.rehearse:
+            hits = m25.files_containing(roots, [sentinel.encode() for sentinel in SENTINELS])
+            return {"ok": not hits, "keyAvailable": None, "keySearch": "skipped: rehearsal", "keyHits": [],
+                    "sentinelHits": hits}
+        self.resolver_calls += 1
         env = m13.child_env({"PYTHONPATH": str(self.code / "backend")})
         done = subprocess.run([str(self.python), "-c", m25.KEY_SCAN, m25.SENTINEL, *map(str, roots)], cwd=self.code,
                               env=env, capture_output=True, text=True, check=False)
@@ -868,11 +1067,14 @@ class Runner(m18.Runner):
         runs = [rid for result in self.results.values() for rid in result.runs]
         summary = audit.audit_runs(fetch, runs, rules)
         self.markdowns = summary.pop("_markdown", {})
+        branch_of = {rid: branch for branch, result in self.results.items() for rid in result.runs}
+        self.report_cases = {report["handle"]: report_cases(self.phase, branch_of.get(report["run"]), report["kind"])
+                             for report in summary["reports"]}
         (self.artifacts / "trace-audit.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n")
         self.checks["traceAudit"] = summary
         if self.phase != "fixture":
             return
-        records["X2"] = x2_case(summary, ["trace-audit.json"])
+        records["X2"] = x2_case(summary, records, ["trace-audit.json"])
         for branch in self.branches:
             result = self.results.get(branch) or c.BranchResult()
             events = sum(1 for report in summary["reports"] if report["run"] in result.runs)
@@ -882,15 +1084,27 @@ class Runner(m18.Runner):
                                                        ["trace-audit.json"])
 
     def x4_scans(self) -> dict[str, dict]:
+        """X4 over the tab-area texts, the reopened report Markdown and the evidence text. The lines as found go to
+        ``x4-lines.json`` (git-ignored artifacts only, held from the export); ``x4-scan.json`` keeps hashes, cases,
+        line kinds, byte lengths and reasons only (x4_committed)."""
         fixed = c.FixedText.from_export(self.fixed or {})
-        scans = {}
+        scans: dict[str, dict] = {}
+        origin: dict[str, tuple[str, list[str]]] = {}
         for branch, result in self.results.items():
             for name, text in result.texts.items():
-                scans[f"{branch}:screen:{name}"] = c.forbidden_hits(text, fixed, X4_EXCEPTIONS)
-        for handle, text in getattr(self, "markdowns", {}).items():
-            scans[f"report:{handle}"] = c.forbidden_hits(text, fixed, X4_EXCEPTIONS)
-        scans.update(evidence_wording(self.artifacts, fixed, X4_EXCEPTIONS))
-        (self.artifacts / "x4-scan.json").write_text(json.dumps(scans, indent=2, ensure_ascii=False) + "\n")
+                key = f"{branch}:screen:{name}"
+                scans[key] = c.forbidden_hits(text, fixed, X4_EXCEPTIONS)
+                origin[key] = ("screen", screen_cases(name))
+        for handle, text in self.markdowns.items():
+            key = f"report:{handle}"
+            scans[key] = c.forbidden_hits(text, fixed, X4_EXCEPTIONS)
+            origin[key] = ("report", self.report_cases.get(handle) or [])
+        for key, scan in evidence_wording(self.artifacts, fixed, X4_EXCEPTIONS).items():
+            scans[key] = scan
+            origin[key] = ("evidence", ["L-X4" if self.phase == "live" else "X4"])
+        (self.artifacts / X4_LINES).write_text(json.dumps(scans, indent=2, ensure_ascii=False) + "\n")
+        self.x4_record = x4_committed(scans, origin)
+        (self.artifacts / "x4-scan.json").write_text(json.dumps(self.x4_record, indent=2, ensure_ascii=False) + "\n")
         return scans
 
     def external(self) -> dict:
@@ -912,7 +1126,7 @@ class Runner(m18.Runner):
         live = m25.dispatch_total(counts) if self.phase == "live" else None
         return {"browser_non_loopback_requests": browser, "provider_calls": provider if self.phase == "fixture"
                 else (0 if self.rehearse and provider == 0 else None), "live_calls_counted": live,
-                "dispatchEvents": m25.dispatch_total(counts)}
+                "dispatchEvents": m25.dispatch_total(counts), "product_key_resolver_calls": self.resolver_calls}
 
     # ----- phase -------------------------------------------------------------------------------
     def run(self) -> int:
@@ -920,7 +1134,7 @@ class Runner(m18.Runner):
         if any(busy.values()):
             raise SystemExit(f"ports must be free before the runner starts its own services: {busy}")
         if self.phase == "live":
-            budget = live_plan_budget()
+            budget = live_plan_budget(live_plan(self.branches))
             if not budget["ok"]:
                 raise SystemExit(f"the live plan does not fit the run defaults: {budget['short']}")
             self.ledger_guard()          # nothing has started yet; refused past the allocation
@@ -995,7 +1209,14 @@ class Runner(m18.Runner):
     def write_ledger(self, cases: dict[str, dict], external: dict, leftover: dict, export_ok: bool) -> dict:
         build = self.state.get("build") or {}
         audit_summary = self.checks.get("traceAudit")
-        extra = {"x4": {"exceptions": [{"line_sha256": key, **value} for key, value in X4_EXCEPTIONS.items()]},
+        x4 = self.x4_record or {}
+        matched = x4.get("exceptionsUsed") or {}
+        extra = {"x4": {"exceptions": [{"sha256": key, **value, "matched": matched.get(key, 0)}
+                                       for key, value in X4_EXCEPTIONS.items()],
+                        "notMetInThisRun": x4.get("exceptionsNotMet"), "committedScan": "x4-scan.json",
+                        "rawLines": f"{X4_LINES} (git-ignored artifacts only)"},
+                 "auditSupplements": audit_supplements(self.checks.get("traceAudit"), {
+                     record["id"]: record for record in cases.values()}),
                  "checks": {key: value for key, value in self.checks.items() if key != "traceAudit"},
                  "flowRows": self.flow_rows, "fixedSentencesSha256": (self.fixed or {}).get("sha256"),
                  "liveCalls": self.live_calls if self.phase == "live" else None,
@@ -1065,10 +1286,15 @@ class Runner(m18.Runner):
         (self.out / "SHA256SUMS").write_text("\n".join(sums) + "\n")
         found = scan_evidence(self.out, real)
         key = self.key_scan([self.out, self.artifacts, self.root])     # spec §6.2: evidence, QA root, export
-        ok = not found and key.get("ok") is True
+        ok = not found and key.get("ok") is True and not (self.rehearse and self.resolver_calls)
         self.checks["exportScan"] = {"ok": ok, "files": found, "keyScanOk": key.get("ok"),
-                                     "keyHits": key.get("keyHits", []), "sentinelHits": key.get("sentinelHits", [])}
-        self.record("export-evidence", "pass" if ok else "fail", output=str(self.out), leaks=found)
+                                     "keySearch": key.get("keySearch", "product resolver in a child"),
+                                     "keyHits": key.get("keyHits", []), "sentinelHits": key.get("sentinelHits", []),
+                                     "productKeyResolverCalls": self.resolver_calls}
+        self.record("export-evidence", "pass" if ok else "fail", output=str(self.out), leaks=found,
+                    keyScanOk=key.get("ok"), keySearch=self.checks["exportScan"]["keySearch"],
+                    keyHits=len(key.get("keyHits", [])), sentinelHits=len(key.get("sentinelHits", [])),
+                    productKeyResolverCalls=self.resolver_calls)
         return ok
 
     def readme(self, ledger: dict, held: list[dict]) -> str:

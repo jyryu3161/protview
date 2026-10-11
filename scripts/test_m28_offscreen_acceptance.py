@@ -6,6 +6,7 @@ scripts/m28_export_fixed_sentences.py with synthetic input (.dryforge/spec.md §
 
 import argparse
 import ast
+import hashlib
 import json
 import os
 import re
@@ -248,12 +249,15 @@ def test_live_acceptance_and_rehearsal():
     assert _judge(phase="live")["acceptance"] is True
     over = {"browser_non_loopback_requests": 0, "provider_calls": None, "live_calls_counted": 3}
     assert _judge(phase="live", external=over)["acceptance"] is False
-    rehearsal = _judge(phase="live", rehearsal=True, external={"browser_non_loopback_requests": 0,
-                                                               "provider_calls": 0, "live_calls_counted": 2})
+    clean = {"browser_non_loopback_requests": 0, "provider_calls": 0, "live_calls_counted": 2,
+             "product_key_resolver_calls": 0}
+    rehearsal = _judge(phase="live", rehearsal=True, external=clean)
     assert rehearsal["acceptance"] is False and rehearsal["rehearsalPassed"] is True
-    real_calls = _judge(phase="live", rehearsal=True, external={"browser_non_loopback_requests": 0,
-                                                                "provider_calls": None, "live_calls_counted": 2})
+    real_calls = _judge(phase="live", rehearsal=True, external={**clean, "provider_calls": None})
     assert real_calls["rehearsalPassed"] is False
+    for resolver in (1, None):                      # a rehearsal never runs the product key resolver (T8 / T9)
+        assert _judge(phase="live", rehearsal=True, external={**clean, "product_key_resolver_calls": resolver})[
+            "rehearsalPassed"] is False
     cases = _all(phase="live")
     cases["L-C6"] = c.case_record("L-C6", "not_observed", "not_sent:earlier_provider_failed")
     assert _judge(cases, phase="live")["acceptance"] is False
@@ -484,6 +488,94 @@ def test_ledger_guard_refuses_when_full_or_unreadable(inputs, tmp_path, monkeypa
     assert not runner.root.exists()
 
 
+def test_the_live_plan_counts_the_selected_branches_only(monkeypatch):
+    assert [entry["id"] for entry in m28.live_plan(["b"])] == ["L-B7"]
+    assert [entry["id"] for entry in m28.live_plan(["c"])] == ["L-C6"]
+    assert [entry["id"] for entry in m28.live_plan(["b", "c"])] == ["L-B7", "L-C6"]
+    assert m28.live_plan() == m28.LIVE_PLAN
+    assert m28.live_plan_budget(m28.live_plan(["b"]))["planned"] == 1
+    assert m28.live_plan_budget(m28.live_plan(["c"]))["planned"] == 1
+    both = m28.live_plan_budget(m28.live_plan(["b", "c"]))
+    assert both == m28.live_plan_budget() and both["planned"] == 2          # the default plan is unchanged
+    # The default is read when called (it used to be bound when the function was defined).
+    monkeypatch.setattr(m28, "LIVE_PLAN", m28.LIVE_PLAN[:1])
+    assert m28.live_plan_budget()["planned"] == 1 and m28.live_plan(["b", "c"]) == m28.LIVE_PLAN[:1]
+
+
+@pytest.mark.parametrize("branches,live_calls,planned", [(["b"], 1, 1), (["c"], 1, 1), (["b", "c"], 2, 2),
+                                                         (["b"], 2, 1)])
+def test_a_one_branch_rehearsal_plans_one_call(inputs, tmp_path, branches, live_calls, planned):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, branches=branches,
+                              live_calls=live_calls))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.ledger_guard()
+    entry = json.loads((runner.root / m28.REHEARSAL_LEDGER_NAME).read_text())["roots"][str(runner.root)]
+    assert entry["phases"][0]["planned"] == planned == runner.checks["liveLedger"]["planned"]
+    runner.ledger_close()
+
+
+def test_both_branches_with_one_live_call_are_refused(inputs, tmp_path):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, live_calls=1))
+    with pytest.raises(SystemExit, match="plans 2 calls but --live-calls is 1"):
+        runner.ledger_guard()
+
+
+@pytest.mark.parametrize("recorded,branches,live_calls,refused", [
+    (2, ["b"], None, True), (1, ["b", "c"], None, True), (1, ["c"], 1, False), (1, ["c"], 2, True)])
+def test_the_rehearsal_ledger_keeps_the_cap_of_two(inputs, tmp_path, recorded, branches, live_calls, refused):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, branches=branches,
+                              live_calls=live_calls))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.root.mkdir(parents=True, exist_ok=True)
+    other = str(tmp_path / "earlier-root")
+    (runner.root / m28.REHEARSAL_LEDGER_NAME).write_text(json.dumps({"schema": "m28_live_ledger@1", "roots": {
+        other: {"phases": [{"phase": "live", "startedAt": "t", "finishedAt": "t"}],
+                "dispatch": {"run_a": recorded}}}}))
+    if refused:
+        with pytest.raises(SystemExit, match="refused, nothing started"):
+            runner.ledger_guard()
+        assert set(json.loads((runner.root / m28.REHEARSAL_LEDGER_NAME).read_text())["roots"]) == {other}
+    else:
+        runner.ledger_guard()
+        runner.ledger_close()
+    (runner.root / m28.REHEARSAL_LEDGER_NAME).write_text("{unreadable")
+    with pytest.raises(SystemExit, match="refused, nothing started"):
+        runner.ledger_guard()
+
+
+def test_a_rehearsal_never_runs_the_product_key_resolver(inputs, tmp_path, monkeypatch):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True))
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("the product key resolver ran in a rehearsal")
+    monkeypatch.setattr(m28.subprocess, "run", refuse)
+    runner.records = []
+    monkeypatch.setattr(m28.Runner, "record", lambda self, step, status, **extra: self.records.append(
+        (step, status, extra)))
+    assert runner.key_present() is True
+    assert runner.checks["key"] == {"skipped": "rehearsal", "rehearsal": True}
+    assert runner.records == [("key-present", "pass", {"skipped": "rehearsal"})]
+    folder = tmp_path / "scan"
+    folder.mkdir()
+    (folder / "clean.txt").write_text("nothing here")
+    scan = runner.key_scan([folder])
+    assert scan["ok"] is True and scan["keySearch"] == "skipped: rehearsal" and runner.resolver_calls == 0
+    (folder / "leak.txt").write_text(m28.SENTINELS[0])
+    assert runner.key_scan([folder])["sentinelHits"] == [str(folder / "leak.txt")]
+    assert runner.resolver_calls == 0
+
+
+def test_the_real_live_phase_counts_its_key_resolver_runs(inputs, tmp_path, monkeypatch):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2))
+
+    class Done:
+        returncode, stdout = 0, json.dumps({"keyAvailable": True, "files": 0, "hits": {"key": [], "sentinel": []}})
+    monkeypatch.setattr(m28.subprocess, "run", lambda *a, **k: Done())
+    assert runner.key_scan([])["keyAvailable"] is True and runner.resolver_calls == 1
+
+
 # ---------------------------------------------------------------------------------------------------- runner options
 @pytest.mark.parametrize("field", ["root", "artifacts", "out"])
 def test_tmp_paths_are_refused(inputs, tmp_path, field):
@@ -549,8 +641,12 @@ def test_prepared_folders_are_read_only_copies(inputs, tmp_path):
     assert {p: p.read_bytes() for p in Path(inputs["reaction_set"]).rglob("*") if p.is_file()} == before
 
 
-def test_the_registry_is_empty_and_an_unregistered_branch_fails(inputs, tmp_path):
-    assert m28.BRANCH_REGISTRY == {}
+def test_the_registry_holds_the_three_branch_modules_and_an_unregistered_branch_fails(inputs, tmp_path,
+                                                                                    monkeypatch):
+    assert m28.BRANCH_REGISTRY == {"a": m28.branch_a.run, "b": m28.branch_b.run, "c": m28.branch_c.run}
+    assert [Path(module.__file__).name for module in (m28.branch_a, m28.branch_b, m28.branch_c)] == [
+        "m28_branch_a.py", "m28_branch_b.py", "m28_branch_c.py"]
+    monkeypatch.setattr(m28, "BRANCH_REGISTRY", {})
     runner = m28.Runner(_args(inputs, tmp_path))
     runner.artifacts = tmp_path / "artifacts"
     runner.artifacts.mkdir()
@@ -642,6 +738,27 @@ def test_x1_compares_events_openings_and_the_case_code_count():
     assert m28.x1_case("c", 2, 2, 2)["id"] == "X1-C"
 
 
+def test_x2_needs_the_audit_and_the_cases_that_supplement_its_partial_kinds():
+    partial = [{"kind": "inspection", "note": "제품 재계산 전제 불성립: x"},
+               {"kind": "interface_sasa", "note": "제품 재계산 전제 불성립: y"}]
+    summary = {"status": "pass", "failures": [], "partialProductRecheck": partial}
+    records = {"A2": c.case_record("A2", "pass"), "A3": c.case_record("A3", "pass")}
+    case = m28.x2_case(summary, records)
+    assert case["status"] == "pass"
+    assert [(item["kind"], item["supplementedBy"], item["caseStatus"])
+            for item in case["detail"]["partialProductRecheck"]] == [("inspection", "A2", "pass"),
+                                                                     ("interface_sasa", "A3", "pass")]
+    failed = m28.x2_case(summary, {**records, "A3": c.case_record("A3", "fail", "x")})
+    assert (failed["status"], failed["reason"]) == ("fail", "partial_recheck_not_supplemented")
+    assert failed["detail"]["notSupplemented"] == ["interface_sasa"]
+    unknown = {**summary, "partialProductRecheck": [{"kind": "openmm_protein_minimize", "note": "n"}]}
+    assert m28.x2_case(unknown, records)["status"] == "fail"
+    assert m28.x2_case({"status": "fail", "failures": [1]}, records)["reason"] == "trace_audit_failed"
+    assert m28.x2_case({"status": "pass", "failures": []}, {})["status"] == "pass"
+    assert m28.AUDIT_SUPPLEMENTS == {"inspection": "A2", "interface_sasa": "A3"}
+    assert set(m28.AUDIT_SUPPLEMENTS) == {a.kind for a in audit.ADAPTERS.values() if a.reopen != audit.FULL}
+
+
 def test_x3_x5_x6_rules():
     ok = {"browser_non_loopback_requests": 0, "provider_calls": 0, "live_calls_counted": None}
     assert m28.x3_case("fixture", ok)["status"] == "pass"
@@ -701,6 +818,107 @@ def test_core_forbidden_words_cover_the_spec_list():
 def test_normalize_line_undoes_markdown_and_list_markers():
     assert c.normalize_line(r"- a\_b \(c\) &amp; d") == "a_b (c) & d"
     assert c.normalize_line("  1.   text  here ") == "text here"
+    assert c.normalize_line("**a bold fixed sentence.**") == "a bold fixed sentence."
+    assert c.normalize_line("- **x** and **y**") == "x** and **y"          # only a whole-line wrapper goes
+    assert c.normalize_line("****") == "****"
+
+
+def test_line_templates_write_every_number_as_hash():
+    assert c.line_template("- Rank 12: GLU auth A/981 model 1; 0.00 Å² (254 claims) v1.2.3") == \
+        "Rank #: GLU auth A/# model #; # Å² (# claims) v#"
+    assert c.template_sha256("x 1") == c.template_sha256("x 22") != c.template_sha256("y 1")
+    assert c.line_sha256("x 1") != c.line_sha256("x 22")
+
+
+def test_template_label_and_line_exceptions_match_only_their_kind():
+    fixed = c.FixedText.build()
+    template = {c.template_sha256("Exact rank selectors (12 claims)."): {"match": "template", "reason": "r"}}
+    found = c.forbidden_hits("Exact rank selectors (254 claims).\nExact rank selectors (254 notes).", fixed, template)
+    assert len(found["excepted"]) == 1 and [hit["words"] for hit in found["hits"]] == [["rank"]]
+    assert found["excepted"][0]["match"] == "template" and found["excepted"][0]["reason"] == "r"
+    line = {c.line_sha256("Exact rank selectors (12 claims)."): {"match": "line", "reason": "r"}}
+    assert len(c.forbidden_hits("Exact rank selectors (254 claims).", fixed, line)["hits"]) == 1
+    assert len(c.forbidden_hits("Exact rank selectors (12 claims).", fixed, line)["excepted"]) == 1
+    label = {hashlib.sha256(b"Rank #").hexdigest(): {"match": "label", "reason": "fpocket label"}}
+    found = c.forbidden_hits("- Rank 3: GLU auth A/1 label A/1 model 1\nRank 4: the best pocket\nRank 5 best: x",
+                             fixed, label)
+    assert [hit["exception"] for hit in found["excepted"]] == [hashlib.sha256(b"Rank #").hexdigest()]
+    assert [hit["words"] for hit in found["hits"]] == [["best"], ["Rank", "best"]]
+    assert found["hits"][0]["labelException"] == hashlib.sha256(b"Rank #").hexdigest()
+    # A label key never excepts a whole line, a template key never a label.
+    assert c.forbidden_hits("Rank 3", fixed, label)["hits"]
+    as_template = {hashlib.sha256(b"Rank #").hexdigest(): {"match": "template", "reason": "r"}}
+    assert c.forbidden_hits("Rank 3: GLU", fixed, as_template)["hits"]
+    with pytest.raises(ValueError, match="unknown match"):
+        c.forbidden_hits("x", fixed, {"k": {"match": "regex", "reason": "r"}})
+
+
+def test_a_json_line_is_checked_string_by_string():
+    sentence = "This is a queue-order choice only; it is not a prediction of affinity or stability."
+    fixed = c.FixedText.build([sentence])
+    body = json.dumps({"model": "m", "questions": {"q": {"instructions": sentence, "criteria": {"c01": "the best"}}},
+                       "best_key": ["x\nrecommended"]}, ensure_ascii=False)
+    found = c.forbidden_hits(f"<pre>\n{body}\n</pre>", fixed)
+    assert [hit["words"] for hit in found["hits"]] == [["best"], ["recommended"]]
+    assert {hit["part"] for hit in found["hits"]} == {"json_string"}
+    assert not c.forbidden_hits(json.dumps({"instructions": sentence}), fixed)["hits"]
+    assert c.forbidden_hits("{not json, the best}", fixed)["hits"][0]["part"] == "line"
+
+
+def test_the_x4_exceptions_name_kind_cases_source_and_reason():
+    kinds = {"fpocket_rank_label", "frontend_fixed_sentence", "frontend_composed_line",
+             "product_criterion_definition", "reference_text"}
+    assert m28.X4_EXCEPTIONS
+    for key, entry in m28.X4_EXCEPTIONS.items():
+        assert re.fullmatch(r"[0-9a-f]{64}", key), key
+        assert set(entry) == {"match", "kind", "cases", "source", "reason"}, key
+        assert entry["match"] in c.EXCEPTION_MATCHES and entry["kind"] in kinds, key
+        assert entry["cases"] and set(entry["cases"]) <= set(c.FIXTURE_CASES), key
+        assert entry["source"].startswith(("frontend/", "backend/mw/")), key
+        for field in ("reason", "source", "kind"):          # the committed ledger lists them: no core word
+            assert not c.CORE_FORBIDDEN.search(entry[field]), (key, field)
+    assert sum(entry["match"] == "label" for entry in m28.X4_EXCEPTIONS.values()) == 1
+    c.forbidden_hits("x", c.FixedText.build(), m28.X4_EXCEPTIONS)        # a valid exception table
+
+
+def test_x4_committed_holds_hashes_only_and_the_raw_lines_stay_held(tmp_path):
+    reference = ("roles_summary: synthetic stand-in for a reference role text, hydrogen bond donor and acceptor, long "
+                 "enough to be real text")
+    quote = "A synthetic stand-in for a real kbase quotation that has the best observed change in it."
+    key = c.line_sha256(reference)
+    exceptions = {key: {"match": "line", "kind": "reference_text", "cases": ["A8"], "source": "backend/mw/x.py",
+                        "reason": "reference role vocabulary"}}
+    scans = {"report:obj://run_1/method_report/" + "a" * 64: c.forbidden_hits(reference, c.FixedText.build(),
+                                                                              exceptions),
+             "a:screen:knowledge@A7": c.forbidden_hits(quote, c.FixedText.build(), exceptions)}
+    origin = {name: ("report" if name.startswith("report") else "screen", ["A8"] if "report" in name else ["A7"])
+              for name in scans}
+    record = m28.x4_committed(scans, origin, exceptions)
+    text = json.dumps(record, ensure_ascii=False)
+    assert reference not in text and quote not in text and "hydrogen" not in text and "best" not in text
+    assert m28.leak_kinds(text, m27.RealText([reference, quote])) == []          # the realSafe rule (M27)
+    report = record["scans"]["report:obj://run_1/method_report/" + "a" * 64]
+    assert report["excepted"][0] == {"line_sha256": key, "template_sha256": c.template_sha256(reference),
+                                     "bytes": len(reference.encode()), "part": "line", "cases": ["A8"],
+                                     "exception": key, "match": "line", "kind": "reference_text",
+                                     "reason": "reference role vocabulary"}
+    screen = record["scans"]["a:screen:knowledge@A7"]
+    assert screen["hits"][0]["kind"] == "not_excepted" and screen["hits"][0]["cases"] == ["A7"]
+    assert record["exceptionsUsed"] == {key: 1} and record["exceptionsNotMet"] == []
+    (tmp_path / m28.X4_LINES).write_text(json.dumps(scans, ensure_ascii=False))
+    (tmp_path / "x4-scan.json").write_text(text)
+    assert m28.hold_reason(tmp_path, tmp_path / m28.X4_LINES, None) == "raw_lines"
+    assert m28.hold_reason(tmp_path, tmp_path / "x4-scan.json", m27.RealText([reference, quote])) is None
+    assert {m28.X4_LINES, "x4-scan.json"} <= m28.WORDING_SKIP
+
+
+def test_case_attribution_of_screen_texts_and_reports():
+    assert m28.screen_cases("structure@A3") == ["A3"] and m28.screen_cases("ligand@L-B7") == ["L-B7"]
+    assert m28.screen_cases("no-case") == []
+    assert m28.report_cases("fixture", "a", "interface_sasa") == ["A3"]
+    assert m28.report_cases("fixture", "c", "mutation_candidates") == ["C1", "C2"]
+    assert m28.report_cases("live", "c", "jev_loop") == ["L-C6"]
+    assert m28.report_cases("fixture", "b", "unknown_kind") == ["branch-b"] and m28.report_cases("live", None, "x") == []
 
 
 def test_evidence_wording_scans_json_strings_and_skips_service_logs(tmp_path):
@@ -1109,6 +1327,13 @@ def test_export_holds_fixed_sentences_inline_literals_phrases_and_rules(exported
         assert name in ids, name
     inline = {item["text"] for item in exported["inline"]}
     assert "Geometric proximity does not establish a hydrogen bond, affinity, stability, or energy." in inline
+    assert ("These are chemistry-dependent native assignments, not experimental bond validation, affinity or energy."
+            in inline)                                                       # the M11 report literal (T9)
+    for name in ("mw.jev_constants.INSTRUCTIONS[ligand_candidate_choice@1]",
+                 "mw.jev_constants.INSTRUCTIONS[mutation_candidate_choice@1]",
+                 "mw.jev_loop_constants.INSTRUCTIONS[('ligand', 'exploit')]",
+                 "mw.jev_loop_constants.INSTRUCTIONS[('mutation', 'explore')]"):
+        assert name in ids, name
     assert {item["id"] for item in exported["phrases"]} == {"mw.docking_constants.SCORE_LABEL",
                                                              "mw.docking_constants.SCORE_COLUMN_LABEL",
                                                              "mw.sequence_ga_constants.SCORE_LABEL"}
@@ -1126,6 +1351,22 @@ def test_export_holds_fixed_sentences_inline_literals_phrases_and_rules(exported
     fixed = c.FixedText.from_export(exported)
     g1 = next(item["text"] for item in exported["sentences"] if item["id"] == "mw.ligand_ga_constants.STATEMENTS[G1]")
     assert c.CORE_FORBIDDEN.search(g1) and not c.forbidden_hits(f"- {g1}", fixed)["hits"]
+
+
+def test_a_request_body_line_passes_by_its_exported_instructions(exported):
+    """The M24 / M25 request body shown in a <pre> is one JSON line: its instructions are exported fixed sentences
+    and every other string is checked on its own (T9; the line is never skipped)."""
+    fixed = c.FixedText.from_export(exported)
+    texts = {item["id"]: item["text"] for item in exported["sentences"]}
+    instructions = texts["mw.jev_constants.INSTRUCTIONS[ligand_candidate_choice@1]"]
+    assert c.CORE_FORBIDDEN.search(instructions)
+    body = {"model": "m", "questions": {"candidate_choice": {"type": "choice", "instructions": instructions,
+                                                             "criteria": {"c01": "Candidate c01."}}}}
+    assert not c.forbidden_hits(json.dumps(body), fixed)["hits"]
+    body["questions"]["candidate_choice"]["criteria"]["c01"] = "Candidate c01 is the best."
+    assert [hit["words"] for hit in c.forbidden_hits(json.dumps(body), fixed)["hits"]] == [["best"]]
+    evidence = "**" + texts["mw.pocket_reports.EVIDENCE_STATEMENT"] + "**"       # the pocket report's bold line
+    assert not c.forbidden_hits(evidence, fixed)["hits"]
 
 
 def test_exported_field_rules_separate_the_kinds(exported):
@@ -1171,6 +1412,13 @@ def test_the_runner_posts_nothing_to_limit_or_jev_routes():
         c.Api("http://example.org:8000")
     with pytest.raises(ValueError):
         audit.http_fetch("http://10.0.0.1:8000")
+
+
+def test_the_npm_script_runs_this_runner_from_the_repository_root():
+    scripts = json.loads((REPO / "frontend/package.json").read_text())["scripts"]
+    assert scripts["test:offscreen:endtoend"] == "cd .. && .venv/bin/python scripts/m28_offscreen_acceptance.py"
+    for branch in "abc":
+        assert (REPO / f"frontend/tests/offscreen/endtoend-{branch}-flow.cjs").is_file()
 
 
 def test_stop_hook_runs_this_test():
