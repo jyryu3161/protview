@@ -4,7 +4,7 @@
 
 계산 결과는 바뀌지 않는 객체 handle과 run 이벤트 기록에 연결되고, 저장된 결과와 보고서는 도구를 다시 실행하지 않고 다시 열립니다. 구현하지 않았거나 설치되지 않은 기능은 숫자 없이 "사용할 수 없음"과 이유로 보입니다.
 
-M0–M27 단계를 마쳤고, 마지막 단계 M28(종단 검증과 마감)의 판정은 `검증 통과, 사용자 확인 대기`입니다([M28 종단 검증 기록](docs/tracking/m28-acceptance.md)). 단계별 기능·검증 기록과 진행 중인 단계는 [진행 현황](docs/tracking/status.md)과 [로드맵](docs/tracking/roadmap.md)에 있습니다.
+M0–M27 단계를 마쳤고, 마지막 단계 M28(종단 검증과 마감)의 판정은 `완성(범위 명시)`입니다(사용자 확인 2026-10-12, [M28 종단 검증 기록](docs/tracking/m28-acceptance.md)). 단계별 기능·검증 기록과 진행 중인 단계는 [진행 현황](docs/tracking/status.md)과 [로드맵](docs/tracking/roadmap.md)에 있습니다.
 
 ## 화면 구성 (탭 네 개)
 
@@ -101,6 +101,6 @@ npm --prefix frontend run build
 
 - 프로젝트 개요와 필수 규칙 요약: [CLAUDE.md](CLAUDE.md)(= [AGENTS.md](AGENTS.md)), 전체 규칙 [docs/standards.md](docs/standards.md)
 - 구조와 규칙: [시스템 구조](docs/system-architecture.md), [과학·도메인 규칙](docs/business-rules.md), [API 계약](docs/contracts.md), [보안 정책](docs/security.md), [운영](docs/operations.md), [알려진 함정](docs/engineering-notes.md)
-- 상태와 결정: [진행 현황](docs/tracking/status.md), [로드맵](docs/tracking/roadmap.md), [결정 기록](docs/tracking/decisions/index.md), [미해결 문제](docs/tracking/findings.md), 단계 완료 기록 `docs/tracking/m11-acceptance.md` … [`m27-acceptance.md`](docs/tracking/m27-acceptance.md), [`m28-acceptance.md`](docs/tracking/m28-acceptance.md)(M28 종단 검증, 판정 `검증 통과, 사용자 확인 대기`)
+- 상태와 결정: [진행 현황](docs/tracking/status.md), [로드맵](docs/tracking/roadmap.md), [결정 기록](docs/tracking/decisions/index.md), [미해결 문제](docs/tracking/findings.md), 단계 완료 기록 `docs/tracking/m11-acceptance.md` … [`m27-acceptance.md`](docs/tracking/m27-acceptance.md), [`m28-acceptance.md`](docs/tracking/m28-acceptance.md)(M28 종단 검증, 판정 `완성(범위 명시)`)
 - 모듈 안내: [backend/AGENTS.md](backend/AGENTS.md), [frontend/AGENTS.md](frontend/AGENTS.md), [scripts/AGENTS.md](scripts/AGENTS.md)
 - 과거 기록(수정·이동 금지): M0–M13 원본 설계·계약·검토(대문자 `docs/*.md`), 단계 실행기 기록 [phases/index.json](phases/index.json)(끝난 단계의 `--verify`는 운영 문서 "과거 단계 재검증"), 원본 참고 자료 `agent_protein_viewer_plan_v05.md`·`molecular-workspace.zip`·`references/molecular-workspace/`
