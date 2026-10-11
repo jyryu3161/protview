@@ -1,0 +1,1134 @@
+{
+  "schema": "m28_trace_audit@1",
+  "status": "pass",
+  "reportCount": 28,
+  "byKind": {
+    "chemical_interactions": 1,
+    "inspection": 1,
+    "interface_sasa": 1,
+    "jev_choice": 2,
+    "jev_loop": 4,
+    "kinase_precedents": 2,
+    "ligand_candidates": 1,
+    "ligand_docking": 1,
+    "ligand_docking_batch": 1,
+    "ligand_ga": 2,
+    "mutation_candidates": 2,
+    "mutation_model": 1,
+    "openmm_protein_minimize": 1,
+    "pocket_detection": 1,
+    "reaction_knowledge": 3,
+    "reference_site_annotation": 1,
+    "residue_numbering": 1,
+    "sequence_ga": 2
+  },
+  "checks": {
+    "reopen": {
+      "pass": 28,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "evidence_exists": {
+      "pass": 28,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "claim_fields": {
+      "pass": 28,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "reference_source": {
+      "pass": 28,
+      "fail": 0,
+      "not_checked": 0
+    },
+    "no_mixing": {
+      "pass": 28,
+      "fail": 0,
+      "not_checked": 0
+    }
+  },
+  "failures": [],
+  "noReports": false,
+  "units": {
+    "physical": [
+      "A",
+      "A2",
+      "A3",
+      "Da",
+      "angstrom",
+      "degree",
+      "kJ/mol",
+      "kcal/mol",
+      "s"
+    ],
+    "unitless": [
+      "0-1",
+      "bytes",
+      "count",
+      "dimensionless",
+      "flag",
+      "fraction",
+      "handle",
+      "identifier",
+      "index",
+      "iterations",
+      "klifs_pocket_index",
+      "mcsa_residue_number",
+      "model_number",
+      "one_letter",
+      "paper_page",
+      "percent",
+      "position",
+      "residue_field",
+      "residue_identity",
+      "residue_name",
+      "sdf_atom_serial",
+      "seed",
+      "sha256",
+      "status",
+      "text",
+      "tokens",
+      "uniprot_sequence_position",
+      "usd"
+    ],
+    "unclassified": []
+  },
+  "partialProductRecheck": [
+    {
+      "kind": "inspection",
+      "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration"
+    },
+    {
+      "kind": "interface_sasa",
+      "note": "제품 재계산 전제 불성립: no Markdown regeneration"
+    }
+  ],
+  "scope": [
+    "값 재계산은 하지 않는다(제품의 다시 열기 검증과 사례별 독립 기대값이 맡음)",
+    "Markdown 서술 속 숫자는 파싱하지 않는다",
+    "금지어는 이 감사의 검사 항목이 아니다(X4)"
+  ],
+  "adapters": [
+    {
+      "kind": "inspection",
+      "family": "inspection",
+      "versions": [
+        "inspection_markdown@1"
+      ],
+      "shape": "statement_id + operation; row claims row_index + row_fingerprint",
+      "source_kinds": [
+        "interaction_set",
+        "preparation_manifest"
+      ],
+      "evidence_kinds": null,
+      "aggregates": true,
+      "collective": "rows(?:\\..+)?",
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "no claim revalidation, no Markdown regeneration",
+      "exemptions": "aggregate claims (operation) on rows / rows.<field>",
+      "claims_optional": false,
+      "productRecheck": "no claim revalidation, no Markdown regeneration",
+      "note": "제품 재계산 전제 불성립: no claim revalidation, no Markdown regeneration"
+    },
+    {
+      "kind": "interface_sasa",
+      "family": "method",
+      "versions": [
+        "interface_sasa_markdown@1"
+      ],
+      "shape": "summary.X (row_index null) / residues[i].X (row_index + row_fingerprint), unit A2",
+      "source_kinds": [
+        "interface_sasa"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "no Markdown regeneration",
+      "exemptions": "",
+      "claims_optional": false,
+      "productRecheck": "no Markdown regeneration",
+      "note": "제품 재계산 전제 불성립: no Markdown regeneration"
+    },
+    {
+      "kind": "openmm_protein_minimize",
+      "family": "method",
+      "versions": [
+        "openmm_markdown@1"
+      ],
+      "shape": "three top-level fields, kJ/mol",
+      "source_kinds": [
+        "openmm_minimization"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "atom_distance",
+      "family": "method",
+      "versions": [
+        "comparison_markdown@1"
+      ],
+      "shape": "no quantity / statement_id; element paths [i]",
+      "source_kinds": [
+        "atom_distance"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": true,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "quantity = last field-path name",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "rigid_alignment",
+      "family": "method",
+      "versions": [
+        "comparison_markdown@1"
+      ],
+      "shape": "no quantity / statement_id; pairs[i].x",
+      "source_kinds": [
+        "rigid_alignment"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": true,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "quantity = last field-path name",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "chemical_interactions",
+      "family": "method",
+      "versions": [
+        "chemical_markdown@1"
+      ],
+      "shape": "total or rows.{i}.{distance_A|DHA_angle_deg}",
+      "source_kinds": [
+        "chemical_interaction_set"
+      ],
+      "evidence_kinds": null,
+      "aggregates": false,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "pocket_detection",
+      "family": "method",
+      "versions": [
+        "pocket_markdown@1",
+        "pocket_markdown@2"
+      ],
+      "shape": "statement_id, row_selector {rank} / null, operation",
+      "source_kinds": [
+        "pocket_set",
+        "pocket_detector_input"
+      ],
+      "evidence_kinds": null,
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "pocket_count (count), lining_residue_count (count_distinct)",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "residue_numbering",
+      "family": "method",
+      "versions": [
+        "residue_numbering_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS: evidence_kind, row_selector, operation, reference",
+      "source_kinds": [
+        "residue_numbering_map"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": "rows\\..+",
+      "quantity_exempt": false,
+      "reference": "m15",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "status / mismatch / ambiguous counts (count_kind)",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "reference_site_annotation",
+      "family": "method",
+      "versions": [
+        "reference_site_annotation_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS; selectors {status} {absent_reason} {chain_auth, klifs_item} {row_index, row_sha256}",
+      "source_kinds": [
+        "reference_site_annotation",
+        "interaction_set",
+        "residue_numbering_map"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": "(?:groups\\.sites|rows)\\..+",
+      "quantity_exempt": false,
+      "reference": "m15",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "site status / absent reason / contact counts (count_kind)",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_candidates",
+      "family": "method",
+      "versions": [
+        "ligand_candidates_markdown@1"
+      ],
+      "shape": "computed only; count_where",
+      "source_kinds": [
+        "ligand_candidate_set"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "candidates[*] count_where",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_docking",
+      "family": "method",
+      "versions": [
+        "ligand_docking_markdown@1"
+      ],
+      "shape": "computed only; {mode} / {mode, kind}",
+      "source_kinds": [
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "score minimum / maximum over modes[*], contact counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_docking_batch",
+      "family": "method",
+      "versions": [
+        "ligand_docking_batch_markdown@1"
+      ],
+      "shape": "computed; row_score / row_result_score {row_index}",
+      "source_kinds": [
+        "docking_batch_result",
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "row and state counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "ligand_ga",
+      "family": "method",
+      "versions": [
+        "ligand_ga_markdown@1"
+      ],
+      "shape": "computed; {generation, where} {generation} {generation, position}",
+      "source_kinds": [
+        "ligand_ga_result",
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "run / generation counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "sequence_ga",
+      "family": "method",
+      "versions": [
+        "sequence_ga_markdown@1"
+      ],
+      "shape": "computed; generation selectors + reference row",
+      "source_kinds": [
+        "sequence_ga_result",
+        "docking_result"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "run / generation counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "mutation_candidates",
+      "family": "method",
+      "versions": [
+        "mutation_candidates_markdown@1",
+        "mutation_candidates_markdown@2"
+      ],
+      "shape": "CLAIM_KEYS; reference {note, reference_object}",
+      "source_kinds": [
+        "mutation_candidate_set"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": "m20",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "positions[*] / candidates[*] count / count_where, catalytic_covered_chain_count",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "mutation_model",
+      "family": "method",
+      "versions": [
+        "mutation_model_markdown@1"
+      ],
+      "shape": "computed; {structure[, stage]}",
+      "source_kinds": [
+        "mutation_model"
+      ],
+      "evidence_kinds": [
+        "computed"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "contact / pair / difference counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "jev_choice",
+      "family": "method",
+      "versions": [
+        "jev_choice_markdown@1"
+      ],
+      "shape": "computed / model_response {note, proposal_handle}",
+      "source_kinds": [
+        "jev_choice"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "model_response"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "selection_count",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "jev_loop",
+      "family": "method",
+      "versions": [
+        "jev_loop_markdown@1"
+      ],
+      "shape": "computed / model_response; {candidate} {iteration}",
+      "source_kinds": [
+        "jev_loop_result",
+        "docking_result",
+        "jev_loop_choice"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "model_response"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": null,
+      "reference_note": null,
+      "reopen": "full",
+      "exemptions": "pool_size",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "reaction_knowledge",
+      "family": "method",
+      "versions": [
+        "reaction_knowledge_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS; reference {note, set_hash, sources}; selectors row_index / row_sha256",
+      "source_kinds": [
+        "reaction_knowledge"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": "m26",
+      "reference_note": "참조 스냅샷 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "chains[*] count / count_where / count_distinct, unlisted_line_count",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    },
+    {
+      "kind": "kinase_precedents",
+      "family": "method",
+      "versions": [
+        "kinase_precedents_markdown@1"
+      ],
+      "shape": "CLAIM_KEYS; reference {note, set_hash, kb_version, imported_at, source}",
+      "source_kinds": [
+        "kinase_precedents"
+      ],
+      "evidence_kinds": [
+        "computed",
+        "reference_value"
+      ],
+      "aggregates": true,
+      "collective": null,
+      "quantity_exempt": false,
+      "reference": "m27",
+      "reference_note": "kbase 가공본 값, 계산 아님",
+      "reopen": "full",
+      "exemptions": "chains[*] / targets[*] count / count_where / sum, unlisted / pass-check counts",
+      "claims_optional": false,
+      "productRecheck": "full",
+      "note": null
+    }
+  ],
+  "reports": [
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/report_manifest/210efbb9cbe6a5519650866db7f3df75aee6885f27b54cd413da6a9d49d45379",
+      "kind": "inspection",
+      "event": "report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "no claim revalidation, no Markdown regeneration",
+      "hashes": {
+        "handleSha256": "210efbb9cbe6a5519650866db7f3df75aee6885f27b54cd413da6a9d49d45379",
+        "manifestSha256": "f24464081dd11069bafa15168038b1dab4701ebfbb8a3a31d57c5df99af5539d",
+        "markdownSha256": "e370e7884321d08fa9776ff73635941ccc826b74a4d45de88a2a7397c39e4ae4"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/e59a7bff1199bba90b05c299182a92703b7a81ceaad93860b6748f62f25d85af",
+      "kind": "interface_sasa",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "no Markdown regeneration",
+      "hashes": {
+        "handleSha256": "e59a7bff1199bba90b05c299182a92703b7a81ceaad93860b6748f62f25d85af",
+        "manifestSha256": "66ed45bb6ce6e4fe2d9c141b7f18fd27922f61fc310d378bf0094b8b2c53e38f",
+        "markdownSha256": "2a00dc78c1b22dec47e2fb0d7b3a2616e08b987f9ae44c37b64e1545100ed620"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/2a9451a0e5b8f176138fd26093549998572e382830a5c2d819c200790a7bd1cf",
+      "kind": "pocket_detection",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "2a9451a0e5b8f176138fd26093549998572e382830a5c2d819c200790a7bd1cf",
+        "manifestSha256": "dee8cc2e17ad65f4e8cc6ab1206def97e337e6782b1f20648de06fd3707d8e3f",
+        "markdownSha256": "9e0734c5232cbbdcbff7e48a42e2990306d38e3df964608bd13f689c8f44a19a"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/62c271e7e4cc8c3884f6da5edd82e753caf7beeb77537c362f5c029423e90a1d",
+      "kind": "residue_numbering",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "62c271e7e4cc8c3884f6da5edd82e753caf7beeb77537c362f5c029423e90a1d",
+        "manifestSha256": "589388f79be5b1eda0f376b5b9382ca9b4a9c8fc0cbf70dc55da574b588bccab",
+        "markdownSha256": "939fe39885b1f626012006752f4bd2fc64754c46eee3570d69c59e3fcc5136dd"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/d7a0fdf5e9058c2d5b5cdfa5cbfe212544e15e31d7fa6a5446b12087bca83311",
+      "kind": "reference_site_annotation",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "d7a0fdf5e9058c2d5b5cdfa5cbfe212544e15e31d7fa6a5446b12087bca83311",
+        "manifestSha256": "87ffd050b388bd0fecf0c5a4e32438bae539066361f50c05125c45ef6da057f4",
+        "markdownSha256": "bbbf384a966269149485e3b159143334a1d6568bab6a20915936ec67a95e2689"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/e721ccb20c04be8643075d59eb2ad778ca34407b13bbef393eabd45ca2363455",
+      "kind": "kinase_precedents",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "e721ccb20c04be8643075d59eb2ad778ca34407b13bbef393eabd45ca2363455",
+        "manifestSha256": "2e5c8966845eac8fdb348ada19c52a0fb1fe0851a24165657d85da98294e2b92",
+        "markdownSha256": "120d529cacda004c52d93e107d20ce00b48d52eafc6a80d985f676f0fa6a8c83"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/50cac06aa0e1c57f6ea96d93a824ebce94a428c531a9c6884b5c78c76b7de7bf",
+      "kind": "kinase_precedents",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "50cac06aa0e1c57f6ea96d93a824ebce94a428c531a9c6884b5c78c76b7de7bf",
+        "manifestSha256": "69bd30e93c39bfbddba7c10548b4f91b7548e4fc61e161be862ad070d5660b81",
+        "markdownSha256": "6a8a1fffd92510a652c2271e6c8ebe12456f8a5ba14be540fff05722ad5b22a8"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/757e8eb500fe18a6bfb38f3372d41a56c4701217f5ae406206be292cb9a3fe5d",
+      "kind": "reaction_knowledge",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "757e8eb500fe18a6bfb38f3372d41a56c4701217f5ae406206be292cb9a3fe5d",
+        "manifestSha256": "29d052961101efe49883fb01ab329dcf46367a7cd4f540c85369e15fa47540e3",
+        "markdownSha256": "9ab751aff2071b75c19481d71011686d4ff6857c8cc419f47c21b79a61e8987d"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/7ff7fad2ea5c48e48900a42a6faf05f387205a6865aa67c7c3376e289cfd5e4e",
+      "kind": "reaction_knowledge",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "7ff7fad2ea5c48e48900a42a6faf05f387205a6865aa67c7c3376e289cfd5e4e",
+        "manifestSha256": "035919d730aeec5e4ff8dd23fca007ba047103338028aaecc47eeb1169d8eda7",
+        "markdownSha256": "87075fdb9aed2b4e482d83fabcc5bd269a69a965e448bb7112b7206a01c9b69f"
+      }
+    },
+    {
+      "run": "run_9ec911a3bdf348fcaf7d607ad1d289e0",
+      "handle": "obj://run_9ec911a3bdf348fcaf7d607ad1d289e0/method_report_manifest/62763ad0696b5b4a22833d44821baaf89428df5fdacf5ecb23a983796ef45ef6",
+      "kind": "reaction_knowledge",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "62763ad0696b5b4a22833d44821baaf89428df5fdacf5ecb23a983796ef45ef6",
+        "manifestSha256": "1f0ceafb539f2805260a7f3febd6cf6e92b481442c9458ceb3238fc8a05f87e6",
+        "markdownSha256": "9ef34c05b3ccb752655476e418d55101a305541015fd419d8f84068b8683d8c2"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/c6573065f81909c1c0ab26f29ea09846764b2dc3bef82d5679133f37b80b5d7b",
+      "kind": "chemical_interactions",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "c6573065f81909c1c0ab26f29ea09846764b2dc3bef82d5679133f37b80b5d7b",
+        "manifestSha256": "25ddbf47b39b067de3e295965c947775495515dfd7901e10db9c03cfe2c0adbb",
+        "markdownSha256": "36945072b161f0d0cb5818aebfd96437168817f824e95e2518107a74d9641834"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/4aa0a13422c4a44c49fc756a87752c52f8a1d3d363cf76731b59597ce02c47b8",
+      "kind": "ligand_candidates",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "4aa0a13422c4a44c49fc756a87752c52f8a1d3d363cf76731b59597ce02c47b8",
+        "manifestSha256": "f16730e70b834c20e67e39e3334b7d0e1975c9dc21b7991a239d7574c9a18421",
+        "markdownSha256": "9a6e6ca33877b49ca76ac28da4e83645f1c62073d66f3c3e40003cfc11df6b41"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/f4d09d6b09c8b68c3392bd9d96b54af7027039b093268d23e608090486361827",
+      "kind": "ligand_docking",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "f4d09d6b09c8b68c3392bd9d96b54af7027039b093268d23e608090486361827",
+        "manifestSha256": "2660e6b2dbf4a0b0e502c55fd0646d85557656dc441d51a985389346246b9e5b",
+        "markdownSha256": "3327788a4956afb5f890ead96aa24c1c59cbc164d42d84a38e544a232133dad1"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/92789bbdd498501455f462bcbb36f86c839dad9bf43dba8937ecbff014a0c215",
+      "kind": "jev_choice",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "92789bbdd498501455f462bcbb36f86c839dad9bf43dba8937ecbff014a0c215",
+        "manifestSha256": "fe5786503b9f227a40273b3ddd6dcda92624df5f0b5c7e90267515cf5aa0f0c8",
+        "markdownSha256": "b8379ffad1fb34f9047f0c419ecd787347d01f7a74d81b4842a1967b585f49c1"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/513bbe1fbcf0834e9912cb86ac4a1aa458a27b4f68f24eb7714d6cd5c3ac75fd",
+      "kind": "jev_loop",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "513bbe1fbcf0834e9912cb86ac4a1aa458a27b4f68f24eb7714d6cd5c3ac75fd",
+        "manifestSha256": "058af1c46afcde1b9fe29477ec468455f68b309883c84b5abdc1cd77683df2a2",
+        "markdownSha256": "290e49c627fd91641b95946a1340207a21f6ec81f8840109477974caf432d44b"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/60cb909b94e3669aae1160f3570ceaad376c25a385be1547259be7f07010d217",
+      "kind": "jev_loop",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "60cb909b94e3669aae1160f3570ceaad376c25a385be1547259be7f07010d217",
+        "manifestSha256": "9c5e9c1bcb3a96f2e2480297b73b76630e29d1b0a09bc63c58be65614d0128d3",
+        "markdownSha256": "fbcce75826684f2fb8b6b07a2c45eceefd699f4a3ee08186e1a028d5f50dfdf0"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/b3deb561d918924eb5c0e8adf6c3a8f838cbe89fef1c0658f863a80f97be6341",
+      "kind": "ligand_docking_batch",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "b3deb561d918924eb5c0e8adf6c3a8f838cbe89fef1c0658f863a80f97be6341",
+        "manifestSha256": "186b404822b3cd36a74448319956cafa289ac88dc307b1ac4a71d8271c8642bc",
+        "markdownSha256": "76098a32364030965934ffcb6af8d82e7d4c6fa17c77f34f58bae2794d39524d"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/6eaa843cab4fa4e08f97d89574d24f0872e6fdaf843cd231b3a315e8f525738f",
+      "kind": "ligand_ga",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "6eaa843cab4fa4e08f97d89574d24f0872e6fdaf843cd231b3a315e8f525738f",
+        "manifestSha256": "4d6f7b35f37495540c2d110d7d8a67d747ccbfc78ba8fcd835be23ec126a8fab",
+        "markdownSha256": "2db03312a6199d0f5af8279b72d9ee726fefd6292a502fca0f42d53d8a11df21"
+      }
+    },
+    {
+      "run": "run_f9526adf4d40493aa4d85825959f6384",
+      "handle": "obj://run_f9526adf4d40493aa4d85825959f6384/method_report_manifest/53c808f041401ab9f1452b3d756abc665c9172a812b378ebbec195ca1508de53",
+      "kind": "ligand_ga",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "53c808f041401ab9f1452b3d756abc665c9172a812b378ebbec195ca1508de53",
+        "manifestSha256": "0d2793621ce84074cf788a416d46b3f82147f944dde03d12677ca48eaf5a3c00",
+        "markdownSha256": "9513beb235a16e8f781bd51be8344e51483460c9c5cc86fea5f808d9dfa899d7"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/96aac184b8de747391b6cd244887eeadb1850751a4d5a1eaf47fc9c8034c15c3",
+      "kind": "mutation_candidates",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "96aac184b8de747391b6cd244887eeadb1850751a4d5a1eaf47fc9c8034c15c3",
+        "manifestSha256": "ea1a2781a780d00e6523fbf9d8857d981509443a9cffa81409431e4e7731f56a",
+        "markdownSha256": "f23614b9164bd84c201a9893c8569c01ba7ba3c937c77a28ed71f7bb325f5747"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/63cbc762d6dd408e05c3c6d24136e95c99d2925d536f61088c7a88400b1a825d",
+      "kind": "openmm_protein_minimize",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "63cbc762d6dd408e05c3c6d24136e95c99d2925d536f61088c7a88400b1a825d",
+        "manifestSha256": "a84a42fa88580a15bff9547e338c42e7a1dbe4912a5aa063ebf356108dff39d6",
+        "markdownSha256": "3d61da305243acf6994fac41200dad567cae448bd18f2d82e856035edf7ab080"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/f8100903b0228c3d275479e93c456832cbeec1cd34b2f07cf6c759fff6c283d1",
+      "kind": "mutation_candidates",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "f8100903b0228c3d275479e93c456832cbeec1cd34b2f07cf6c759fff6c283d1",
+        "manifestSha256": "856818f0704292873b75a13fe7c2a3d00e36b92a97ad4aa858fb9cbf2436fb9a",
+        "markdownSha256": "41e96d7363066ea48239edd91a1c2a22cc98dad1c48a481d1669c49ac5c167ac"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/754b2dc1b330f22d23ee398dab51dd2be92089b9cf928fe9c64a1a7a00d572f0",
+      "kind": "mutation_model",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "754b2dc1b330f22d23ee398dab51dd2be92089b9cf928fe9c64a1a7a00d572f0",
+        "manifestSha256": "8a1711a20822f0ea7481541660e8115b6295b3f9f2d67a963884aabb75bcab41",
+        "markdownSha256": "caeb004c206f16d69be6e6672732c90c5b85e87396196e888bc216b14ad7e79b"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/b5d064cddf32e6aa6acd26126b05e528cc73ff6de79a685468d8117f9fcb763a",
+      "kind": "jev_choice",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "b5d064cddf32e6aa6acd26126b05e528cc73ff6de79a685468d8117f9fcb763a",
+        "manifestSha256": "91e1370fcb308cae6fcfc2bb4e4cc23b5d86fd86e2d19ff21c068f8556f701e9",
+        "markdownSha256": "dc3f917e329a57f1dabe6b66d26714db443340156cccdc1502e8691102a01d1d"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/6ad08e0dbef4b35694c994990fd23d4ff17c65d6a3bccf29c629ae8ff1849594",
+      "kind": "jev_loop",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "6ad08e0dbef4b35694c994990fd23d4ff17c65d6a3bccf29c629ae8ff1849594",
+        "manifestSha256": "0f2979051981cef6f7a477b51111dcfb329ccf30798377231cb20b19d9c2e1ea",
+        "markdownSha256": "2e8872d858cb153eefbfee8b9e9fe8cfbbe39ecc87922fd4623b62bbab0b0c3d"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/c299f773607a2325b27844376112b0005cd314f762cf74e5b556a9590afe0d8b",
+      "kind": "jev_loop",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "c299f773607a2325b27844376112b0005cd314f762cf74e5b556a9590afe0d8b",
+        "manifestSha256": "5b9bc7161db1e4712e2b6a6f265e24a768a296fe22a2765cebecd148f2d1bae7",
+        "markdownSha256": "f7692c7f9744d9bf0f2cb3ae1d025c74e8cf07ddb8a2a5372d1cb4c2902d9726"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/87f66225b89a6294c420c48b4915ab68af3467541a0ef0e7838317ba73339e23",
+      "kind": "sequence_ga",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "87f66225b89a6294c420c48b4915ab68af3467541a0ef0e7838317ba73339e23",
+        "manifestSha256": "1bb2527c15ec62d1782f80c4bde652b98b381851e046832785cb2803a77fd8ac",
+        "markdownSha256": "e2d0186e7ea01947efbdd27ade959834ecee3113f150f2ff1293d276746631ab"
+      }
+    },
+    {
+      "run": "run_1f25a766bcc647e9b650728bfe6cb2a1",
+      "handle": "obj://run_1f25a766bcc647e9b650728bfe6cb2a1/method_report_manifest/92f62506f2b9bbe61726c9e7b577e0ec32549c9caa59f9fb48901cd52a7d0835",
+      "kind": "sequence_ga",
+      "event": "method_report_created",
+      "checks": {
+        "reopen": "pass",
+        "evidence_exists": "pass",
+        "claim_fields": "pass",
+        "reference_source": "pass",
+        "no_mixing": "pass"
+      },
+      "productRecheck": "full",
+      "hashes": {
+        "handleSha256": "92f62506f2b9bbe61726c9e7b577e0ec32549c9caa59f9fb48901cd52a7d0835",
+        "manifestSha256": "e8358f65b27fc41869415a15f9c30030d21a03793f142e414de9e01c23e3157d",
+        "markdownSha256": "491f0519f075d7fd02f4c6c87847648b634433f34243cd19997b90acd3787002"
+      }
+    }
+  ],
+  "unclaimedRuns": []
+}
