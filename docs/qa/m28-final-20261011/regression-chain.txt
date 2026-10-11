@@ -26,7 +26,7 @@ M27: acceptance true, external requests total 0, import network attempts [0,0], 
 M26: acceptance true, real-server requests 0 (the real stage copies the archived set), browser non-loopback requests 0.
 M25 chain: every regression step exit 0 (regression-m24 ... regression-m13), browser non-loopback requests 0, real calls 0 (fixture phase, --live-calls 0).
 Old-stage harness or runner changes needed: none. git diff --name-only a18dd488..HEAD lists only docs/**, README.md and scripts/AGENTS.md / frontend/AGENTS.md (documents); regression-harness-changes.txt was therefore not needed.
-Evidence larger than 256 KiB (53 text files, about 318 MB: M13 regression 51, M14 1, M15 1) is archived under frontend/tests/offscreen/artifacts/m28-final/export-full/ (decision 0020) with hashes in each folder's ARCHIVED-EVIDENCE.sha256. A leak search over the committed regression folder (absolute paths /Users/ and /home/, key patterns) found nothing.
+Evidence larger than 256 KiB (53 text files, about 318 MB: M13 regression 51, M14 1, M15 1) is archived under frontend/tests/offscreen/artifacts/m28-final/export-full/ (decision 0020) with hashes in each folder's ARCHIVED-EVIDENCE.sha256. A leak search over the committed regression folder (absolute home-directory paths, key patterns) found nothing.
 The M13 README has no acceptance line of its own; the M13 regression step is listed by the M25 runner log (regression-m13 exit 0) and its 28/28 pass table.
 
 Literal ls lines of .deps/precedent_reference and .deps/reaction_reference (recorded by the chain script; its "start=" tag in the private log is the step end time):
