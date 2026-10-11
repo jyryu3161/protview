@@ -462,3 +462,5 @@ sys.exit(0 if ok else 1)
 
 - 명령 1: `git ls-files | grep -v '^\.dryforge/' | xargs grep -lE '<명세 §3.3 정규식>'` → 걸린 추적 파일 0개(작업 트리 기준. 이 파일은 아직 추적 전이라 따로 `grep -cE`로 검사해 0줄)
 - 명령 2: 이번에 고친 문서 여덟(`docs/system-architecture.md`·`operations.md`·`standards.md`·`business-rules.md`·`contracts.md`·`engineering-notes.md`·`scripts/AGENTS.md`·`frontend/AGENTS.md`)에 `grep -cE` → 합계 0줄
+
+Note (T20): the SHA-256 of docs/system-architecture.md printed above is that of the T17 version; the T20 edit of one line (the product key resolver sentence in the tools table, no module names added) changed the file hash. Every module name in the table was checked against the files as listed here; the one-line edit adds none.

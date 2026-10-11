@@ -52,7 +52,7 @@ call-key hash files: git diff --name-only 287a37a8 HEAD -- backend/mw lists only
 
 == notes ==
 The intermittent failures seen on 2026-10-11 before T2 (SystemError in proc_cmdline, the SIGTERM [qvina-worker] test, the substring collision in the JEV report test, the pocket [output_files] test) did not occur in any of the three rounds on this source. No test failed in the gate; nothing was re-run to pass.
-Raw per-group logs and summaries are in the session scratch area (not committed); the numbers above are copied from the group summaries.
+Raw per-group logs and summaries were first kept in the session scratch area; they were committed afterwards under gate-raw/ (see the note at the end of this file); the numbers above are copied from the group summaries.
 
 == note on the post-freeze path set ==
 The document edits of T17 include scripts/AGENTS.md and frontend/AGENTS.md (spec 11.1 names them as documents to close). Spec 8.2 lists "AGENTS.md" among the allowed post-freeze documents; this record reads that as every file named AGENTS.md (they are documents; no test, hook or gate reads them: scripts/execute.py only mentions the file name for its own prompts, and cmp CLAUDE.md AGENTS.md compares the two root files). This is an interpretation of the allowed set and is listed in the completion record.
