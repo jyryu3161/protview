@@ -696,12 +696,13 @@ def test_live_rounds_come_from_the_result_values(inputs, tmp_path):
     runner.results = {"b": c.BranchResult(cases=[c.case_record("L-pre-B2", "fail")])}
     records = runner.branch_records()
     assert records["L-B7"]["reason"] == "not_sent:prerequisite_failed:L-pre-B2"
-    assert records["L-C6"]["reason"] == "not_sent:prerequisite_failed:L-pre-C2"
+    # the plan ended at L-B7 (spec §6.1): L-C6 names that round, never ledger_refused or its own prerequisite only
+    assert records["L-C6"]["reason"] == "not_sent:prerequisite_failed:L-B7"
     assert records["L-B7"]["status"] == records["L-C6"]["status"] == "not_observed"
 
 
 def test_the_live_flow_is_capped_by_the_runner(inputs, tmp_path, monkeypatch):
-    runner = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=1))
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2))
     runner.artifacts = tmp_path / "artifacts"
     seen = {}
 
@@ -713,8 +714,8 @@ def test_the_live_flow_is_capped_by_the_runner(inputs, tmp_path, monkeypatch):
     monkeypatch.setattr(m28.m25, "watch_process", watch)
     monkeypatch.setattr(m28.subprocess, "Popen", lambda *a, **k: real_popen([PYTHON, "-c", "0"]))
     runner.flow("step", "x.cjs", "m", [], limit=None)
-    assert seen["limit"] == 1
-    runner.flow("step", "x.cjs", "m", [], limit=5)
+    assert seen["limit"] == 2
+    runner.flow("step", "x.cjs", "m", [], limit=1)
     assert seen["limit"] == 1
     events = runner.runs / "run_b"
     events.mkdir(parents=True)
@@ -796,8 +797,9 @@ def _dispatch(runs, run="run_aa", count=1):
             out.write(json.dumps({"type": "jev_science_dispatch_started"}) + "\n")
 
 
-def _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run):
-    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True))
+def _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run, rehearse=True, branches=None):
+    runner = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=rehearse, branches=branches,
+                              live_calls=None if rehearse else 2))
     runner.artifacts = tmp_path / "artifacts"
     runner.artifacts.mkdir()
     runner.runs.mkdir(parents=True)
@@ -846,22 +848,96 @@ def test_a_dispatched_round_without_evidence_is_product_failed(inputs, tmp_path,
     assert (records["L-C6"]["status"], records["L-C6"]["reason"]) == ("fail", "product_failed")
 
 
-def test_no_dispatch_and_no_result_is_not_sent(inputs, tmp_path, monkeypatch):
+def _c_branch(allowed, dispatches=1):
+    """A C branch the way m28_branch_c.run behaves: it sends (one dispatch, completed) only when allowed."""
+    def c_run(ctx):
+        allowed.append(ctx.send_allowed)
+        if not ctx.send_allowed:
+            return c.BranchResult(cases=[c.case_record("L-pre-C2", "pass")])     # the runner names the cause
+        _dispatch(ctx.runs, "run_cc", dispatches)
+        return c.BranchResult(cases=[c.case_record("L-pre-C2", "pass")], live={"L-C6": "completed"})
+    return c_run
+
+
+@pytest.mark.parametrize("rehearse", [True, False])
+def test_no_dispatch_and_no_result_is_not_sent_and_ends_the_plan(inputs, tmp_path, monkeypatch, rehearse):
+    """BLOCKING 2: a ligand round that was not sent (here the branch died before the send) ends the plan: C sends
+    nothing and L-C6 is not_sent:prerequisite_failed:L-B7."""
     allowed = []
 
     def b_run(ctx):
         raise RuntimeError("the harness died before the send")
-
-    def c_run(ctx):
-        allowed.append(ctx.send_allowed)
-        return c.BranchResult(cases=[c.case_record("L-pre-C2", "pass")], live={"L-C6": "completed"})
-    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, c_run)
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, _c_branch(allowed), rehearse=rehearse)
     runner.run_branches()
-    assert allowed == [True] and runner.send_allowed is True
+    assert allowed == [False] and runner.send_allowed is False
+    assert m28.m25.dispatch_total(m28.m25.count_events(runner.runs)) == 0
     records = runner.branch_records()
     assert (records["L-B7"]["status"], records["L-B7"]["reason"]) == ("not_observed",
                                                                      "not_sent:prerequisite_failed:L-pre-B2")
-    assert records["L-C6"]["status"] == "pass"
+    assert (records["L-C6"]["status"], records["L-C6"]["reason"]) == ("not_observed",
+                                                                     "not_sent:prerequisite_failed:L-B7")
+
+
+@pytest.mark.parametrize("rehearse", [True, False])
+def test_a_failed_ligand_prerequisite_sends_nothing_in_branch_c(inputs, tmp_path, monkeypatch, rehearse):
+    """BLOCKING 2: L-pre-B4 failed (e.g. a unit shortfall), so L-B7 was not_sent; C must not use a real call."""
+    allowed = []
+    pre = [c.case_record("L-pre-B2", "pass"), c.case_record("L-pre-B3", "pass"), c.case_record("L-pre-B4", "fail")]
+
+    def b_run(ctx):
+        return c.BranchResult(cases=[*pre, c.case_record("L-B7", "not_observed",
+                                                         "not_sent:prerequisite_failed:L-pre-B4")],
+                              live={"L-B7": "not_sent"}, not_sent_causes={"L-B7": "prerequisite_failed:L-pre-B4"})
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, _c_branch(allowed), rehearse=rehearse)
+    runner.run_branches()
+    assert allowed == [False] and m28.m25.dispatch_total(m28.m25.count_events(runner.runs)) == 0
+    records = runner.branch_records()
+    assert records["L-B7"]["reason"] == "not_sent:prerequisite_failed:L-pre-B4"
+    assert records["L-C6"]["reason"] == "not_sent:prerequisite_failed:L-B7"
+    assert c.reason_class(records["L-C6"]["reason"]) == "not_sent"
+
+
+def test_only_a_completed_ligand_round_with_one_dispatch_lets_c_send(inputs, tmp_path, monkeypatch):
+    allowed = []
+
+    def b_run(ctx):
+        _dispatch(ctx.runs, "run_bb")
+        return c.BranchResult(cases=[c.case_record(case, "pass") for case in ("L-pre-B2", "L-pre-B3", "L-pre-B4")],
+                              live={"L-B7": "completed"})
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, _c_branch(allowed))
+    runner.run_branches()
+    records = runner.branch_records()
+    assert allowed == [True] and records["L-B7"]["status"] == records["L-C6"]["status"] == "pass"
+
+
+@pytest.mark.parametrize("b_dispatches,c_dispatches", [(0, 1), (2, 1), (1, 0), (1, 2)])
+def test_a_round_counts_only_with_exactly_one_dispatch(inputs, tmp_path, monkeypatch, b_dispatches, c_dispatches):
+    """Recommendation 1: completed / provider_failed stand only when the round added exactly one dispatch event;
+    0 (nothing was sent) or 2+ (more than the round's one send) is product_failed and ends the plan."""
+    allowed = []
+
+    def b_run(ctx):
+        _dispatch(ctx.runs, "run_bb", b_dispatches)
+        return c.BranchResult(cases=[c.case_record(case, "pass") for case in ("L-pre-B2", "L-pre-B3", "L-pre-B4")],
+                              live={"L-B7": "completed" if b_dispatches else "provider_failed"})
+    runner = _live_runner(inputs, tmp_path, monkeypatch, b_run, _c_branch(allowed, c_dispatches))
+    runner.run_branches()
+    records = runner.branch_records()
+    if b_dispatches != 1:
+        assert allowed == [False] and (records["L-B7"]["status"], records["L-B7"]["reason"]) == ("fail",
+                                                                                                 "product_failed")
+        assert records["L-C6"]["reason"] == "not_sent:earlier_product_failed"
+        assert runner.checks["liveOutcome"]["waivable"] is False                # never a waivable provider failure
+    else:
+        assert allowed == [True] and records["L-B7"]["status"] == "pass"
+        assert (records["L-C6"]["status"], records["L-C6"]["reason"]) == ("fail", "product_failed")
+
+
+def test_a_one_branch_rehearsal_still_sends(inputs, tmp_path, monkeypatch):
+    allowed = []
+    runner = _live_runner(inputs, tmp_path, monkeypatch, None, _c_branch(allowed), branches=["c"])
+    runner.run_branches()
+    assert allowed == [True] and runner.branch_records()["L-C6"]["status"] == "pass"
 
 
 def test_a_lock_without_its_ledger_is_refused(inputs, tmp_path, monkeypatch):
@@ -882,6 +958,112 @@ def test_a_lock_without_its_ledger_is_refused(inputs, tmp_path, monkeypatch):
     fresh.write_text(json.dumps({"schema": "m28_live_ledger@1", "roots": {}}))
     fresh.with_name(fresh.name + ".lock").write_text("")
     m28.ledger_precheck(fresh)
+
+
+def test_a_real_live_phase_needs_both_calls_before_touching_the_ledger(inputs, tmp_path, monkeypatch):
+    """BLOCKING 1 (b): the real live phase plans both rounds, so --live-calls must be 2; 1 is refused in __init__,
+    before the ledger or its lock file exists. A rehearsal keeps 1..2."""
+    touched = []
+    monkeypatch.setattr(m28.Runner, "ledger_location", lambda self: touched.append(1) or tmp_path / "never.json")
+    with pytest.raises(SystemExit, match="--live-calls 2"):
+        m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=1))
+    assert touched == [] and not list(tmp_path.glob("never.json*"))
+    assert m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, live_calls=1, branches=["b"])).live_cap == 1
+    parser = m28.build_parser()
+    live_help = next(action.help for action in parser._actions if "--live-calls" in action.option_strings)
+    assert "real live phase: 2" in live_help and "rehearsal: 1..2" in live_help
+    assert "--live-calls N (1..2) is required" not in m28.__doc__
+
+
+def test_a_first_live_phase_refused_at_admission_leaves_a_usable_ledger(inputs, tmp_path, monkeypatch):
+    """BLOCKING 1 (a): the first read-and-write makes the ledger and its lock together, so a phase refused at the
+    admission leaves an empty m28_live_ledger@1 (never a lock alone) and a later admitted phase can use it."""
+    ledger = tmp_path / "shared" / "m28-live-ledger.json"
+    ledger.parent.mkdir()
+    monkeypatch.setattr(m28.Runner, "ledger_location", lambda self: ledger)
+    real_admission = m28.ledger_admission
+    refuse = [True]
+    monkeypatch.setattr(m28, "ledger_admission", lambda *a: "refused for the test" if refuse[0] else real_admission(*a))
+    first = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2, root=str(tmp_path / "root-1")))
+    with pytest.raises(SystemExit, match="refused, nothing started"):
+        first.ledger_guard()
+    assert json.loads(ledger.read_text()) == {"schema": "m28_live_ledger@1", "roots": {}}
+    assert ledger.with_name(ledger.name + ".lock").exists()
+    m28.ledger_precheck(ledger)                              # ledger and lock together: not damaged
+    refuse[0] = False
+    second = m28.Runner(_args(inputs, tmp_path, phase="live", live_calls=2, root=str(tmp_path / "root-2")))
+    second.artifacts = tmp_path / "artifacts"
+    second.artifacts.mkdir()
+    second.ledger_guard()
+    entry = json.loads(ledger.read_text())["roots"][str(second.root)]
+    assert entry["phases"][0]["planned"] == 2 and str(first.root) not in json.loads(ledger.read_text())["roots"]
+
+
+def test_a_rehearsal_refused_at_admission_also_leaves_its_ledger(inputs, tmp_path, monkeypatch):
+    ledger = tmp_path / "shared" / "rehearsal-live-ledger.json"
+    ledger.parent.mkdir()
+    monkeypatch.setattr(m28.Runner, "ledger_location", lambda self: ledger)
+    refused = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, live_calls=1, root=str(tmp_path / "r1")))
+    with pytest.raises(SystemExit, match="plans 2 calls but --live-calls is 1"):
+        refused.ledger_guard()
+    assert json.loads(ledger.read_text())["roots"] == {}
+    again = m28.Runner(_args(inputs, tmp_path, phase="live", rehearse=True, live_calls=2, root=str(tmp_path / "r2")))
+    again.artifacts = tmp_path / "artifacts"
+    again.artifacts.mkdir()
+    again.ledger_guard()
+    assert str(again.root) in json.loads(ledger.read_text())["roots"]
+
+
+def test_a_second_export_that_raises_leaves_no_acceptance(inputs, tmp_path, monkeypatch):
+    """Recommendation 2: the final export raising rewrites the case ledger with the export not passed."""
+    runner = m28.Runner(_args(inputs, tmp_path))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.state["build"] = {"buildCurrentWithSource": True}
+    runner.audited = True
+    cases = m28.complete_cases("fixture", _all())
+    passing = {"browser_non_loopback_requests": 0, "provider_calls": 0, "live_calls_counted": None}
+    calls = []
+
+    def export(self, ledger):
+        calls.append(ledger["acceptance"])
+        if len(calls) == 2:
+            raise OSError("disk full in the second export")
+        return True
+    monkeypatch.setattr(m28.Runner, "export", export)
+    with pytest.raises(OSError, match="second export"):
+        runner.finish(cases, passing, {"processes": [], "ports": []})
+    assert calls == [False, True, False]                     # the not-accepted ledger is exported once more
+    assert json.loads((runner.artifacts / "case-ledger.json").read_text())["acceptance"] is False
+
+
+def test_a_leaking_sha256sums_goes_back_to_the_artifacts_too(inputs, tmp_path):
+    """Recommendation 3: when the list itself holds a leak (here an artifact path with a /home/… part), it is moved
+    back as well; nothing the search finds stays in --out."""
+    runner = m28.Runner(_args(inputs, tmp_path))
+    runner.artifacts = tmp_path / "artifacts"
+    odd = runner.artifacts / "step x /home" / "bob"
+    odd.mkdir(parents=True)
+    (odd / "clean.txt").write_text("nothing here")
+    cases = m28.complete_cases("fixture", _all())
+    ledger = m28.assemble_ledger("fixture", cases, ["a", "b", "c"], build={"buildCurrentWithSource": True},
+                                 leftover={"processes": [], "ports": []}, external={}, trace_audit=None,
+                                 export_ok=False)
+    assert runner.export(ledger) is False
+    assert "SHA256SUMS" in runner.checks["exportScan"]["movedToArtifacts"]
+    assert not (runner.out / "SHA256SUMS").exists() and (runner.artifacts / "held-from-out/SHA256SUMS").is_file()
+    assert m28.scan_evidence(runner.out) == {}
+
+
+def test_x4_without_texts_counts_every_requested_branch(inputs, tmp_path):
+    """Recommendation 4: a requested branch that left no result (or no tab text) fails X4."""
+    runner = m28.Runner(_args(inputs, tmp_path))
+    runner.artifacts = tmp_path / "artifacts"
+    runner.artifacts.mkdir()
+    runner.fixed = {}
+    runner.results = {"a": c.BranchResult(texts={"structure@A1": "x"}), "b": c.BranchResult(texts={"ligand@B1": "y"})}
+    runner.x4_scans()
+    assert runner.without_texts == ["c"]
 
 
 def test_the_branch_dispatch_limit_reaches_the_flow(inputs, tmp_path, monkeypatch):

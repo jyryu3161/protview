@@ -311,16 +311,17 @@ def _live(send=None, compute=None, guard=None, egress=None):
 def test_live_result_follows_spec_6_3():
     ok = {f"L-pre-B{n}": {"status": "pass"} for n in (2, 3, 4)}
     done = {"dispatched": True, "status": "completed"}
-    assert b.live_result(_live(done, {"state": "scored"}), ok, True) == ("completed", None)
-    assert b.live_result(_live(done, {"state": "null_result"}), ok, True) == ("completed", None)
-    assert b.live_result(_live(done, {"state": "failed"}), ok, True) == ("product_failed", None)
-    assert b.live_result(_live(done, {"state": "scored"}, egress="usage_unknown"), ok, True) == ("product_failed", None)
+
+    def sent(evidence, records=ok):                       # a send: exactly one dispatch event during the flow
+        return b.live_result(evidence, records, True, dispatched=1)
+    assert sent(_live(done, {"state": "scored"})) == ("completed", None)
+    assert sent(_live(done, {"state": "null_result"})) == ("completed", None)
+    assert sent(_live(done, {"state": "failed"})) == ("product_failed", None)
+    assert sent(_live(done, {"state": "scored"}, egress="usage_unknown")) == ("product_failed", None)
     for reason in b.PROVIDER_FAILURES:
-        assert b.live_result(_live({"dispatched": True, "status": "failed", "reasonCode": reason}), ok, True)[0] == \
-            "provider_failed"
+        assert sent(_live({"dispatched": True, "status": "failed", "reasonCode": reason}))[0] == "provider_failed"
     for reason in ("response_invalid", "model_mismatch", "missing_model", "outcome_not_recorded"):
-        assert b.live_result(_live({"dispatched": True, "status": "failed", "reasonCode": reason}), ok, True)[0] == \
-            "product_failed"
+        assert sent(_live({"dispatched": True, "status": "failed", "reasonCode": reason}))[0] == "product_failed"
     assert b.live_result(_live({"dispatched": True, "status": "rejected", "reasonCode": "missing_credential"}), ok,
                          True)[0] == "product_failed"
     blocked = {**ok, "L-pre-B4": {"status": "fail"}}
@@ -595,3 +596,18 @@ def test_evidence_of_another_plan_or_mode_fails_every_case(tmp_path):
     result = b.run(_ctx(tmp_path, flow=flow))
     assert {(record["status"], record["reason"]) for record in result.cases} == {("fail", "evidence_not_of_this_step")}
     assert result.notes["evidenceCheck"]["planSha256"] is False and result.notes["evidenceCheck"]["mode"] is True
+
+
+def test_a_round_result_needs_exactly_one_dispatch():
+    """Recommendation 1: completed and provider_failed stand only with exactly one dispatch event during the flow;
+    none (the harness says it sent, the events do not) or two and more is product_failed (never a waivable
+    provider failure)."""
+    ok = {f"L-pre-B{n}": {"status": "pass"} for n in (2, 3, 4)}
+    done = {"dispatched": True, "status": "completed"}
+    failed = {"dispatched": True, "status": "failed", "reasonCode": b.PROVIDER_FAILURES[0]}
+    for dispatched in (0, 2, 3):
+        assert b.live_result(_live(done, {"state": "scored"}), ok, True, dispatched=dispatched) == ("product_failed",
+                                                                                                         None)
+        assert b.live_result(_live(failed), ok, True, dispatched=dispatched) == ("product_failed", None)
+    assert b.live_result(_live(done, {"state": "scored"}), ok, True, dispatched=1) == ("completed", None)
+    assert b.live_result(_live(failed), ok, True, dispatched=1) == ("provider_failed", None)

@@ -547,7 +547,9 @@ def live_result(evidence: dict[str, Any] | None, records: dict[str, dict[str, An
     """Spec §6.3 result of the explore round and, for not_sent, its closed cause (None, None = leave it to the
     runner: the send was not allowed by the plan). Completed means the round's computation (model, then docking)
     ended with a stored result after the compute approval. ``dispatched`` = the dispatch events the runs folder
-    gained while the harness ran (T11 R2): a dispatch without the harness's send evidence is product_failed."""
+    gained while the harness ran (T11 R2): a dispatch without the harness's send evidence is product_failed; a send
+    the harness reports (completed, provider_failed) stands only with exactly one dispatch event, none or two and more
+    is product_failed (never a waivable provider failure)."""
     live = (evidence or {}).get("live") or {}
     send = live.get("send") or {}
     if dispatched and not send.get("dispatched"):
@@ -562,6 +564,8 @@ def live_result(evidence: dict[str, Any] | None, records: dict[str, dict[str, An
             return "not_sent", "ledger_refused"
         return "product_failed", None              # nothing sent although it was allowed: the product path broke
     status, reason = send.get("status"), send.get("reasonCode")
+    if dispatched != 1:
+        return "product_failed", None              # a sent round has exactly one dispatch event (none, 2+: not it)
     if status == "completed":
         if live.get("egressStop"):
             return "product_failed", None          # usage unknown stops the run's egress (spec §6.3)
