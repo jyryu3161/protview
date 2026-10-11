@@ -28,3 +28,10 @@ M25 chain: every regression step exit 0 (regression-m24 ... regression-m13), bro
 Old-stage harness or runner changes needed: none. git diff --name-only a18dd488..HEAD lists only docs/**, README.md and scripts/AGENTS.md / frontend/AGENTS.md (documents); regression-harness-changes.txt was therefore not needed.
 Evidence larger than 256 KiB (53 text files, about 318 MB: M13 regression 51, M14 1, M15 1) is archived under frontend/tests/offscreen/artifacts/m28-final/export-full/ (decision 0020) with hashes in each folder's ARCHIVED-EVIDENCE.sha256. A leak search over the committed regression folder (absolute paths /Users/ and /home/, key patterns) found nothing.
 The M13 README has no acceptance line of its own; the M13 regression step is listed by the M25 runner log (regression-m13 exit 0) and its 28/28 pass table.
+
+Literal ls lines of .deps/precedent_reference and .deps/reaction_reference (recorded by the chain script; its "start=" tag in the private log is the step end time):
+  before:  ls: .deps/precedent_reference: No such file or directory; ls: .deps/reaction_reference: No such file or directory
+  between m27 and m26: the same two lines
+  between m26 and m25: the same two lines
+  after:   the same two lines
+Committed download files: regression/ holds the exports of the older runners as they write them (report downloads 110: markdown 53, json 57, the same shape as the M27 regression evidence); spec 5 keeps report downloads of the M28 runner out of Git, the older runners' exports follow their own rules (decision 0020 for oversize text). No real kbase text is in them (searched).

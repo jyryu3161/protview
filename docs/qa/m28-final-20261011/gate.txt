@@ -56,3 +56,7 @@ Raw per-group logs and summaries are in the session scratch area (not committed)
 
 == note on the post-freeze path set ==
 The document edits of T17 include scripts/AGENTS.md and frontend/AGENTS.md (spec 11.1 names them as documents to close). Spec 8.2 lists "AGENTS.md" among the allowed post-freeze documents; this record reads that as every file named AGENTS.md (they are documents; no test, hook or gate reads them: scripts/execute.py only mentions the file name for its own prompts, and cmp CLAUDE.md AGENTS.md compares the two root files). This is an interpretation of the allowed set and is listed in the completion record.
+
+== note on the three rounds ==
+Spec 13.2 asks for the intermittent-test set three times in a row and spec 8.2 for a final gate that passes without re-running. Round 1 served as the final gate and as the first of the three consecutive rounds; rounds 2 and 3 followed on the same unchanged source, so the final gate also has two further passes. This reads the text a little differently from "three rounds, then a final gate" and is listed as an interpretation in the completion record.
+Raw per-group logs, the per-command logs and the round summaries (absolute paths replaced by <repo>/<scratch>) are in docs/qa/m28-final-20261011/gate-raw/.
