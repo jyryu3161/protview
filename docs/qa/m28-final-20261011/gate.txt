@@ -1,0 +1,55 @@
+M28 gate record (source freeze a18dd488, 2026-10-12)
+
+Source freeze: a18dd488 (M28 T11: second review fixes on the real-call path). The tree was clean (git status: 0 lines) when the gate started. Commits after it change only docs/**, README.md, CLAUDE.md, AGENTS.md (spec 8.2 (a)) and, when the regression chain needs it, old-stage harness expectations recorded in regression-harness-changes.txt (spec 8.2 (b)); the check is git diff --name-only a18dd488..HEAD.
+
+== pytest groups on a18dd488 (stop.py CHECKS[1:], 18 groups started together, no per-group time limit); three consecutive rounds, no re-run, no skipped test ==
+round 1: all 18 groups exit=0 True, 6379 passed, 0 skipped, wall time 360.7 s, longest group 360.2 s (limit per group 480 s)
+round 2: all 18 groups exit=0 True, 6379 passed, 0 skipped, wall time 359.2 s, longest group 358.7 s (limit per group 480 s)
+round 3: all 18 groups exit=0 True, 6379 passed, 0 skipped, wall time 358.6 s, longest group 358.1 s (limit per group 480 s)
+
+round 1 groups (the official gate run):
+group 01: exit=0 24 passed, 359.2 s  (backend/tests/test_chemical_interactions.py ...)
+group 02: exit=0 25 passed, 1 warning, 304.8 s  (backend/tests/test_m11_job_api.py ...)
+group 03: exit=0 220 passed, 1 warning, 347.5 s  (backend/tests/test_docking_inputs.py ...)
+group 04: exit=0 120 passed, 1 warning, 336.8 s  (backend/tests/test_docking_batch_worker.py ...)
+group 05: exit=0 390 passed, 1 warning, 343.4 s  (backend/tests/test_docking_batch_inputs.py ...)
+group 06: exit=0 12 passed, 1 warning, 360.2 s  (backend/tests/test_ligand_ga_jobs.py ...)
+group 07: exit=0 15 passed, 324.6 s  (backend/tests/test_ligand_ga_worker.py ...)
+group 08: exit=0 2 passed, 1 warning, 323.6 s  (backend/tests/test_sequence_ga_jobs.py::test_product_path_publication_m18_identity_reuse_duplicates_and_events_only ...)
+group 09: exit=0 12 passed, 1 warning, 283.5 s  (backend/tests/test_sequence_ga_jobs.py::test_registration_capability_and_protocol_timeout_bound ...)
+group 10: exit=0 24 passed, 1 warning, 326.1 s  (backend/tests/test_sequence_ga_api.py ...)
+group 11: exit=0 20 passed, 1 warning, 349.0 s  (backend/tests/test_sequence_ga_reports.py ...)
+group 12: exit=0 419 passed, 1 warning, 289.5 s  (backend/tests/test_sequence_ga_worker.py ...)
+group 13: exit=0 247 passed, 1 warning, 319.0 s  (backend/tests/test_mutation_model_worker.py ...)
+group 14: exit=0 202 passed, 1 warning, 195.0 s  (backend/tests/test_jev_loops_read.py ...)
+group 15: exit=0 43 passed, 1 warning, 241.0 s  (backend/tests/test_jev_loops_compute.py ...)
+group 16: exit=0 557 passed, 1 warning, 44.1 s  (backend/tests/test_precedent_constants.py ...)
+group 17: exit=0 129 passed, 1 warning, 235.8 s  (backend/tests/test_analysis_workflows.py ...)
+group 18: exit=0 3918 passed, 1 warning, 340.9 s  (backend/tests ...)
+group 12 (sequence GA worker) includes test_sigterm_cancels_the_running_step_and_leaves_no_process[qvina-worker] and the pocket output-file process test sits in group 03: both passed in all three rounds (spec 10.1: the intermittent test set passed three times in a row on this source).
+total passed over 18 groups: 6379 (M27 gate 6037 + the M28 tests: scripts/test_m28_*.py and the four test fixes). M28 script tests are in group 18 (3918 tests).
+
+== other commands on a18dd488 (sequential) ==
+head: a18dd488db77fb9070337780bbe245b08e97c884
+status-lines:        0
+ruff: exit=0 0s
+node-check: files=34 fails=0
+frontend-test-events: exit=0 1s
+frontend-typecheck: exit=0 6s
+frontend-build: exit=0 15s
+golden-science-m24: exit=0 6s
+golden-egress: exit=0 1s
+golden-call-keys-record: exit=0 44s
+golden-call-keys-equal: exit=0
+done
+npm --prefix frontend run test:events: tests 534 pass 534 fail 0
+typecheck then build were run one after the other, not at the same time.
+ruff command: ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py
+node-check: every frontend/tests/offscreen/*.cjs (31 older harnesses + endtoend-a/b/c-flow.cjs = 34 files)
+golden_call_keys.json: prototype_golden_call_keys.py re-recorded into a new runs folder and compared with the committed file by cmp (exit 0); not rewritten
+golden_science_m24.json and golden_egress_events.json: --check exit 0 (a fresh recording equals the stored file)
+call-key hash files: git diff --name-only 287a37a8 HEAD -- backend/mw lists only backend/mw/mutation_reports.py (not a hashed file, not in also_hashed_files); backend/tests/test_kinase_precedents_ast.py (BASELINE_BLOBS) is in group 16 and passed in all three rounds.
+
+== notes ==
+The intermittent failures seen on 2026-10-11 before T2 (SystemError in proc_cmdline, the SIGTERM [qvina-worker] test, the substring collision in the JEV report test, the pocket [output_files] test) did not occur in any of the three rounds on this source. No test failed in the gate; nothing was re-run to pass.
+Raw per-group logs and summaries are in the session scratch area (not committed); the numbers above are copied from the group summaries.
