@@ -44,6 +44,7 @@ from .. import (
     reaction_knowledge_reads,
     sequence_ga_jobs,
     sequence_ga_reads,
+    structure_origin_reads,
     structure_repair_jobs,
     structure_repair_reads,
 )
@@ -2026,24 +2027,37 @@ def docking_receptor_instances(rid: str, request: Request, handle: str) -> Any:
 
 @app.get("/runs/{rid}/docking/results")
 def docking_results(rid: str, request: Request, offset: int = Query(0, ge=0),
-                    limit: int = Query(50, ge=1, le=100)) -> dict[str, Any]:
+                    limit: int = Query(50, ge=1, le=100)) -> Any:
+    """M29: a row on a repaired structure's model also carries ``structure_origin``; an unavailable environment is
+    the 412 ``precondition`` of the whole list (spec 4.6, 6.1)."""
     _only_query(request, {"offset", "limit"})
     run = _run(rid)
     try:
         return docking_reads.list_results(run, offset, limit)
+    except ToolFailure as exc:
+        return _tool_error(exc)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid docking object record"}) from exc
 
 
 @app.get("/runs/{rid}/docking/results/detail")
-def docking_result_detail(rid: str, request: Request, handle: str) -> dict[str, Any]:
+def docking_result_detail(rid: str, request: Request, handle: str) -> Any:
+    """M29: a result whose receptor is a model on a repaired structure also carries ``structure_origin`` (spec 6.1),
+    added here so the M23 individual read, which nests ``result_detail``, keeps its bytes."""
     _only_query(request, {"handle"})
     run = _run(rid)
     meta = _docking_result(run, handle)
     try:
-        return {**docking_reads.result_detail(run, handle), "meta": meta}
+        detail = docking_reads.result_detail(run, handle)
+        origin = docking_reads.result_origin(structure_origin_reads.Origins(run.store), detail["result"])
     except docking_bundle.DockingEvidenceError as exc:
         raise _docking_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
+    out = {**detail, "meta": meta}
+    if origin is not None:
+        out[structure_origin_reads.KEY] = origin
+    return out
 
 
 @app.get("/runs/{rid}/docking/results/contacts")
@@ -2093,6 +2107,60 @@ def docking_poses_sdf(rid: str, request: Request, handle: str) -> Response:
         raise _docking_mode_unknown(exc) from exc
 
 
+# ----------------------------------------------------------------- M29 structure origin of downstream reads (spec 6.1)
+# The response layer adds ``structure_origin`` (and JW1 on the JEV preview and approval) where the read module cannot:
+# the M23 reads (hash files), the M24 send and M25 loop reads (import limits) and the M18 detail. A result on any other
+# structure gets no key: its bytes are what they were.
+ORIGIN_INVALID_MESSAGE = "the repaired structure of this result does not validate"
+
+
+def _origin_invalid(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": ORIGIN_INVALID_MESSAGE})
+
+
+def _origins_of(store: Any, sets: list[Any]) -> Any:
+    """The ``structure_origin`` field (or None) of each candidate set handle (None: no set) of one read, or the error
+    response: 412 ``precondition`` for an unavailable environment (never invalid evidence); a record that does not
+    validate raises 422 ``method_evidence_invalid``."""
+    origins = structure_origin_reads.Origins(store)
+    try:
+        return [None if handle is None else origins.of_candidate_set(handle) for handle in sets]
+    except structure_origin_reads.OriginInvalid as exc:
+        raise _origin_invalid(exc) from exc
+    except ToolFailure as exc:
+        if exc.cls is not FailureClass.precondition:
+            raise
+        return _tool_error(exc)
+
+
+def _with_origins(store: Any, items: list[dict[str, Any]], set_of: Any) -> Any:
+    """``items`` with ``structure_origin`` on each one whose candidate set (``set_of(item)``, None for none) is on a
+    repaired structure; the whole read fails as ``_origins_of`` says (these answers have no per-row ``valid``)."""
+    found = _origins_of(store, [set_of(item) for item in items])
+    if isinstance(found, Response):
+        return found
+    for item, origin in zip(items, found, strict=True):
+        if origin is not None:
+            item[structure_origin_reads.KEY] = origin
+    return items
+
+
+def _jev_set(record: dict[str, Any]) -> Any:
+    """The candidate set of a mutation-kind JEV preview or send record (None for a ligand one)."""
+    return record["source"]["handle"] if record.get("kind") == "mutation" else None
+
+
+def _jev_warning(run: Run, record: Any) -> dict[str, str] | None:
+    """JW1 for the approval answer of a mutation send whose candidate set is on a repaired structure (by the mark;
+    the send has already been decided, so nothing here raises)."""
+    try:
+        handle = _jev_set(record)
+        return None if handle is None else structure_origin_reads.warning(
+            run.store, run.store.load(handle)["structure"]["handle"])
+    except (KeyError, TypeError, ValueError, OSError):
+        return None
+
+
 # ----------------------------------------------------------------- M20 mutation candidate reads (no event, job or tool)
 def _mutation_set(run: Run, handle: str) -> dict[str, Any]:
     meta = _object(run, handle)
@@ -2108,12 +2176,15 @@ def _mutation_evidence_error(exc: Exception) -> HTTPException:
 @app.get("/runs/{rid}/mutation_candidate_sets")
 def mutation_candidate_sets(rid: str, request: Request, offset: int = Query(0, ge=0),
                             limit: int = Query(mutation_reads.LIST_LIMIT_DEFAULT, ge=1,
-                                               le=mutation_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
-    """This run's mutation candidate sets, newest first; each row re-validated."""
+                                               le=mutation_reads.LIST_LIMIT_MAX)) -> Any:
+    """This run's mutation candidate sets, newest first; each row re-validated. M29: an unavailable environment while
+    a repaired structure's record is re-verified is the 412 ``precondition`` of the whole list (spec 4.6)."""
     _only_query(request, {"offset", "limit"})
     run = _run(rid)
     try:
         return mutation_reads.list_sets(run, offset, limit)
+    except ToolFailure as exc:
+        return _tool_error(exc)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid mutation object record"}) from exc
 
@@ -2124,7 +2195,7 @@ def mutation_candidate_positions(rid: str, handle: str, request: Request, status
                                  source: str | None = None, exclusion_reason: str | None = None,
                                  chain_auth: str | None = None, sort: str = "order", offset: int = Query(0, ge=0),
                                  limit: int = Query(mutation_reads.POSITION_LIMIT_DEFAULT, ge=1,
-                                                    le=mutation_reads.POSITION_LIMIT_MAX)) -> dict[str, Any]:
+                                                    le=mutation_reads.POSITION_LIMIT_MAX)) -> Any:
     """Stored position rows, filtered and sorted on stored values (ligand_distance: ascending, nulls last)."""
     _only_query(request, {"status", "source", "exclusion_reason", "chain_auth", "sort", "offset", "limit"})
     run = _run(rid)
@@ -2137,6 +2208,8 @@ def mutation_candidate_positions(rid: str, handle: str, request: Request, status
         raise _read_invalid(exc) from exc
     except mutation_reads.MutationEvidenceError as exc:
         raise _mutation_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/mutation_candidate_sets/{handle:path}/candidates")
@@ -2159,7 +2232,7 @@ def mutation_candidate_rows(rid: str, handle: str, request: Request,
 
 
 @app.get("/runs/{rid}/mutation_candidate_sets/{handle:path}")
-def mutation_candidate_set_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+def mutation_candidate_set_detail(rid: str, handle: str, request: Request) -> Any:
     """One validated set without positions/candidates, with their totals."""
     _only_query(request, set())
     run = _run(rid)
@@ -2168,6 +2241,8 @@ def mutation_candidate_set_detail(rid: str, handle: str, request: Request) -> di
         return {**mutation_reads.set_detail(run, handle), "meta": meta}
     except mutation_reads.MutationEvidenceError as exc:
         raise _mutation_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 # ----------------------------------------------------------------- M21 mutation model reads (no event, job or tool)
@@ -2185,12 +2260,15 @@ def _mutation_model_evidence_error(exc: Exception) -> HTTPException:
 @app.get("/runs/{rid}/mutation_models")
 def mutation_models(rid: str, request: Request, offset: int = Query(0, ge=0),
                     limit: int = Query(mutation_model_reads.LIST_LIMIT_DEFAULT, ge=1,
-                                       le=mutation_model_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
-    """This run's mutation models, newest first; each row re-validated."""
+                                       le=mutation_model_reads.LIST_LIMIT_MAX)) -> Any:
+    """This run's mutation models, newest first; each row re-validated. M29: an unavailable environment while a
+    repaired structure's record is re-verified is the 412 ``precondition`` of the whole list (spec 4.6)."""
     _only_query(request, {"offset", "limit"})
     run = _run(rid)
     try:
         return mutation_model_reads.list_models(run, offset, limit)
+    except ToolFailure as exc:
+        return _tool_error(exc)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid mutation model record"}) from exc
 
@@ -2247,7 +2325,7 @@ def mutation_model_docking_pairs(rid: str, handle: str, request: Request) -> dic
 
 
 @app.get("/runs/{rid}/mutation_models/{handle:path}")
-def mutation_model_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+def mutation_model_detail(rid: str, handle: str, request: Request) -> Any:
     """One validated model without contact rows, final_bonds or atom_mapping."""
     _only_query(request, set())
     run = _run(rid)
@@ -2256,6 +2334,8 @@ def mutation_model_detail(rid: str, handle: str, request: Request) -> dict[str, 
         return {**mutation_model_reads.model_detail(run, handle), "meta": meta}
     except mutation_model_reads.MutationEvidenceError as exc:
         raise _mutation_model_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 # ----------------------------------------------------------------- M29 structure repair reads (no event, job or tool)
@@ -2506,14 +2586,33 @@ async def sequence_ga_preflight(rid: str, request: Request) -> dict[str, Any]:
 @app.get("/runs/{rid}/sequence_ga/results")
 def sequence_ga_results(rid: str, request: Request, offset: int = Query(0, ge=0),
                         limit: int = Query(sequence_ga_reads.LIST_LIMIT_DEFAULT, ge=1,
-                                           le=sequence_ga_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
-    """This run's sequence GA summaries, newest first; each row re-validated (one event-log read)."""
+                                           le=sequence_ga_reads.LIST_LIMIT_MAX)) -> Any:
+    """This run's sequence GA summaries, newest first; each row re-validated (one event-log read). M29 (spec 6.1,
+    6.3): a valid row whose candidate set is on a repaired structure also carries ``structure_origin``, added here
+    (the read module is a call-key hash file); one whose record does not validate is ``valid: false`` with null
+    fields like any other evidence failure; an unavailable environment is the 412 ``precondition`` of the list."""
     _only_query(request, {"offset", "limit"})
     run = _run(rid)
     try:
-        return sequence_ga_reads.list_summaries(run, offset, limit)
+        listed = sequence_ga_reads.list_summaries(run, offset, limit)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid sequence GA record"}) from exc
+    origins = structure_origin_reads.Origins(run.store)
+    for row in listed["rows"]:
+        if row["valid"] is not True:
+            continue
+        try:
+            origin = origins.of_candidate_set(row["candidate_set"])
+        except structure_origin_reads.OriginInvalid:
+            row.update(valid=False, reason_code="evidence_invalid", **dict.fromkeys(sequence_ga_reads.LIST_FIELDS))
+            continue
+        except ToolFailure as exc:
+            if exc.cls is not FailureClass.precondition:
+                raise
+            return _tool_error(exc)
+        if origin is not None:
+            row[structure_origin_reads.KEY] = origin
+    return listed
 
 
 def _sequence_ga_summary(run: Run, handle: str) -> dict[str, Any]:
@@ -2531,23 +2630,42 @@ def _sequence_ga_row_unknown(exc: Exception) -> HTTPException:
     return HTTPException(404, detail={"error": "not_found", "message": str(exc)})
 
 
+def _sequence_ga_origin(run: Run, out: dict[str, Any], candidate_set: Any) -> Any:
+    """M29 (spec 6.1, 6.3): ``out`` plus ``structure_origin`` when the GA's candidate set is on a repaired structure
+    (added here: the M23 read and report modules are call-key hash files and stay unchanged)."""
+    try:
+        origin = structure_origin_reads.Origins(run.store).of_candidate_set(candidate_set)
+    except structure_origin_reads.OriginInvalid as exc:
+        raise _sequence_ga_evidence_error(exc) from exc
+    except ToolFailure as exc:
+        if exc.cls is not FailureClass.precondition:
+            raise
+        return _tool_error(exc)
+    if origin is not None:
+        out[structure_origin_reads.KEY] = origin
+    return out
+
+
 # The handle (obj://<run>/<kind>/<sha>) contains slashes: the sub-resource routes (/individual, /structure) are
 # registered before the detail route.
 @app.get("/runs/{rid}/sequence_ga/results/{handle:path}/individual")
-def sequence_ga_individual(rid: str, handle: str, request: Request, key: str | None = None) -> dict[str, Any]:
+def sequence_ga_individual(rid: str, handle: str, request: Request, key: str | None = None) -> Any:
     """One individual (key ``12-57-203``) or the wild-type reference row (``wild_type``): stored row, stored model
-    without atom and bond rows, appearances and the M18 detail read of its result."""
+    without atom and bond rows, appearances and the M18 detail read of its result. M29: plus ``structure_origin`` on a
+    repaired structure (the summary's candidate set)."""
     _only_query(request, {"key"})
     run = _run(rid)
     _sequence_ga_summary(run, handle)
     try:
-        return sequence_ga_reads.individual(run, handle, key)
+        out = sequence_ga_reads.individual(run, handle, key)
+        candidate_set = run.store.load(handle)["candidate_set"]   # the summary the read has just validated
     except sequence_ga_reads.ReadInvalid as exc:
         raise _read_invalid(exc) from exc
     except sequence_ga_reads.RowUnknown as exc:
         raise _sequence_ga_row_unknown(exc) from exc
     except (sequence_ga_reads.SequenceGaEvidenceError, docking_bundle.DockingEvidenceError) as exc:
         raise _sequence_ga_evidence_error(exc) from exc
+    return _sequence_ga_origin(run, out, candidate_set)
 
 
 @app.get("/runs/{rid}/sequence_ga/results/{handle:path}/structure")
@@ -2570,16 +2688,17 @@ def sequence_ga_structure(rid: str, handle: str, request: Request, key: str | No
 
 
 @app.get("/runs/{rid}/sequence_ga/results/{handle:path}")
-def sequence_ga_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+def sequence_ga_detail(rid: str, handle: str, request: Request) -> Any:
     """One validated sequence GA summary with its generations and its reference row; individual results open in the
-    M18 /docking/results/* reads."""
+    M18 /docking/results/* reads. M29: plus ``structure_origin`` on a repaired structure (its candidate set)."""
     _only_query(request, set())
     run = _run(rid)
     meta = _sequence_ga_summary(run, handle)
     try:
-        return {**sequence_ga_reads.summary_detail(run, handle), "meta": meta}
+        detail = sequence_ga_reads.summary_detail(run, handle)
     except sequence_ga_reads.SequenceGaEvidenceError as exc:
         raise _sequence_ga_evidence_error(exc) from exc
+    return _sequence_ga_origin(run, {**detail, "meta": meta}, detail["summary"]["candidate_set"])
 
 
 # ----------------------------------------------------------------- M24 JEV science sends (one human-approved send route)
@@ -2674,15 +2793,25 @@ async def jev_consent(rid: str, request: Request) -> dict[str, Any]:
 
 
 @app.post("/runs/{rid}/jev/preview")
-async def jev_preview(rid: str, request: Request) -> dict[str, Any]:
+async def jev_preview(rid: str, request: Request) -> Any:
     """``jev_preview@1``: the exact body string, its SHA-256 and bytes, the alias table (local only), the reservation,
     the cap use and every refusal that holds now. A read: no event, tool, job or external request. A loop projection
-    (M25) adds ``loop`` and ``loop_blocks`` from its loop record (one log read for both)."""
+    (M25) adds ``loop`` and ``loop_blocks`` from its loop record (one log read for both). M29 (spec 6.1, 6.4): mutation
+    candidates on a repaired structure also carry ``structure_origin`` and ``repair_warning`` (JW1); the body, its
+    hash and every other key are unchanged (the body never says the structure was repaired)."""
     body = await _jev_request(request, JevPreviewRequest)
 
-    def read() -> dict[str, Any]:
+    def read() -> Any:
         run = _run(rid)
-        return jev_sends.preview_for(run, body.projection, list(run.events.read()))
+        preview = jev_sends.preview_for(run, body.projection, list(run.events.read()))
+        found = _origins_of(run.store, [_jev_set(preview)])
+        if isinstance(found, Response):
+            return found
+        if found[0] is not None:
+            preview[structure_origin_reads.KEY] = found[0]
+            preview[structure_origin_reads.WARNING_KEY] = structure_origin_reads.warning(
+                run.store, found[0]["repaired_structure"])
+        return preview
 
     try:
         return await run_in_threadpool(read)
@@ -2703,8 +2832,8 @@ async def jev_send_create(rid: str, request: Request) -> Any:
     body = await _jev_request(request, JevSendRequest)
     run = _run(rid)
     try:
-        return await jev_sends.run_send(run, SCIENCE_GATE, send_id=body.send_id, projection=body.projection,
-                                        body_sha256=body.body_sha256, confirm=body.confirm)
+        record = await jev_sends.run_send(run, SCIENCE_GATE, send_id=body.send_id, projection=body.projection,
+                                          body_sha256=body.body_sha256, confirm=body.confirm)
     except jev_sends.JevSendError as exc:
         raise _jev_error(exc) from exc
     except ToolFailure as exc:
@@ -2721,23 +2850,32 @@ async def jev_send_create(rid: str, request: Request) -> Any:
         # body, never the exception text. The send record keeps the replay rule (delivery_unknown /
         # outcome_not_recorded).
         raise HTTPException(500, detail={"error": "internal_error", "message": JEV_INTERNAL_MESSAGE}) from exc
+    # M29 spec 6.4: the approval answer of mutation candidates on a repaired structure carries JW1 (never the body,
+    # the audit row or a stored event).
+    warning = await run_in_threadpool(lambda: _jev_warning(run, record)) if isinstance(record, dict) else None
+    if warning is not None:
+        record = {**record, structure_origin_reads.WARNING_KEY: warning}
+    return record
 
 
 @app.get("/runs/{rid}/jev/sends")
-def jev_send_list(rid: str, request: Request) -> list[dict[str, Any]]:
-    """This run's sends, oldest first; each row a ``jev_send@1`` derived from events only (one log read)."""
+def jev_send_list(rid: str, request: Request) -> Any:
+    """This run's sends, oldest first; each row a ``jev_send@1`` derived from events only (one log read). M29 (spec
+    6.1): a mutation send whose candidate set is on a repaired structure also carries ``structure_origin``."""
     _only_query(request, set())
     run = _run(rid)
     try:
-        return jev_sends.list_sends(list(run.events.read()))
+        records = jev_sends.list_sends(list(run.events.read()))
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid science send record"}) from exc
+    return _with_origins(run.store, records, _jev_set)
 
 
 @app.get("/runs/{rid}/jev/sends/{send_id}")
-def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
+def jev_send_detail(rid: str, send_id: str, request: Request) -> Any:
     """One ``jev_send@1`` plus, when completed, its ``jev_choice@1`` proposal re-validated against the projection and
-    the candidate set (``choice``, ``local_display``; null otherwise). One log read, no event."""
+    the candidate set (``choice``, ``local_display``; null otherwise). One log read, no event. M29 (spec 6.1): plus
+    ``structure_origin`` for a mutation send whose candidate set is on a repaired structure."""
     _only_query(request, set())
     view = _JevReadView(_run(rid))
     try:
@@ -2754,7 +2892,9 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> dict[str, Any]:
         except (jev_sends.ChoiceInvalid, jev_sends.JevSendError) as exc:
             raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                              "message": "the stored JEV choice does not validate"}) from exc
-    return {**record, "choice": choice, "local_display": None if choice is None else choice["answer"]["local_display"]}
+    out = {**record, "choice": choice, "local_display": None if choice is None else choice["answer"]["local_display"]}
+    found = _with_origins(view.store, [out], _jev_set)
+    return found if isinstance(found, Response) else out
 
 
 # ----------------------------------------------------------------- M25 JEV design loops (record and creation)
@@ -2941,17 +3081,30 @@ def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:
 
 
 @app.get("/runs/{rid}/jev_loops")
-def jev_loop_list(rid: str, request: Request) -> list[dict[str, Any]]:
-    """This run's loops, newest first: one row each (spec 3.2), every loop derived and checked from one log read."""
-    return _jev_loop_read(rid, request, lambda view, budget, active: jev_loop_store.list_loops(
-        view, budget=budget, send_active=active))
+def jev_loop_list(rid: str, request: Request) -> Any:
+    """This run's loops, newest first: one row each (spec 3.2), every loop derived and checked from one log read.
+    M29 (spec 6.1): a protein loop whose candidate set is on a repaired structure also carries ``structure_origin``
+    (the pool's set, read from the loop's created event in the same log read)."""
+    def read(view: Any, budget: Any, active: bool) -> Any:
+        rows = jev_loop_store.list_loops(view, budget=budget, send_active=active)
+        sets = {row["loop_id"]: jev_loop_store.created_payload(view.read(), row["loop_id"])["pool"]["source"]["handle"]
+                for row in rows if row["branch"] == "protein"}
+        return rows, sets, view.store
+
+    rows, sets, store = _jev_loop_read(rid, request, read)
+    return _with_origins(store, rows, lambda row: sets.get(row["loop_id"]))
 
 
 @app.get("/runs/{rid}/jev_loops/{loop_id}")
-def jev_loop_detail(rid: str, loop_id: str, request: Request) -> dict[str, Any]:
-    """``jev_loop@1`` of one loop (404 ``loop_not_found`` when this run has none with that id)."""
-    return _jev_loop_read(rid, request, lambda view, budget, active: jev_loop_store.read_loop(
-        view, loop_id, budget=budget, send_active=active).record)
+def jev_loop_detail(rid: str, loop_id: str, request: Request) -> Any:
+    """``jev_loop@1`` of one loop (404 ``loop_not_found`` when this run has none with that id). M29 (spec 6.1): a
+    protein loop whose candidate set is on a repaired structure also carries ``structure_origin``; the loop's action
+    answers (create, compute, abandon, end) do not (a loop's pool never changes, so its origin is this read's)."""
+    record, store = _jev_loop_read(rid, request, lambda view, budget, active: (jev_loop_store.read_loop(
+        view, loop_id, budget=budget, send_active=active).record, view.store))
+    found = _with_origins(store, [record], lambda item: (
+        item["pool"]["source"]["handle"] if item["branch"] == "protein" else None))
+    return found if isinstance(found, Response) else record
 
 
 @app.get("/runs/{rid}/interface_sasa")

@@ -21,6 +21,9 @@
   e.g. ``openmm_unavailable`` when the installed template cannot be read) is raised as it is, never as invalid
   evidence (spec 4.6). The stored set is never changed; for any other set no key is added and nothing is re-verified
   (the bytes are what they were).
+* M29 T8b (spec 6.1, 6.2): for such a set the list row (valid rows), the detail and the position page also carry
+  ``structure_origin`` (``structure_origin_reads.field``: the record, repaired and original structure handles, the
+  record's ``counts`` and SO1), from the same re-verification; the candidate page is unchanged.
 
 Every read loads the stored object from the store (content-hash check) and runs ``mutation_candidates.validated_set``;
 any failure raises ``MutationEvidenceError``. The caller checks the handle's run, kind and schema first.
@@ -31,9 +34,10 @@ from collections.abc import Callable
 from typing import Any
 
 from . import mutation_candidates as mc
-from . import mutation_handoff
+from . import mutation_handoff, structure_origin_reads
 from .core.errors import FailureClass, ToolFailure
 from .mutation_constants import EXCLUSION_REASONS_V2, KIND, ONE_LETTER_ORDER, POSITION_STATUSES, SCHEMA, SOURCE_KINDS
+from .structure_origin import structure_origin
 
 LIST_LIMIT_DEFAULT, LIST_LIMIT_MAX = 50, 100
 POSITION_LIMIT_DEFAULT, POSITION_LIMIT_MAX = 50, 100
@@ -71,14 +75,14 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run)
     newest = list(reversed(created))
     rows = []
-    verified: dict[str, bool] = {}   # repaired structure -> its record verified (once per list read)
+    verified: dict[str, Any] = {}   # structure -> its structure_origin field (None) or False (once per list read)
     for handle in newest[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]}
         try:
             if run.store.meta(handle)["schema"] != SCHEMA:
                 raise MutationEvidenceError("unexpected schema")
             content = validated(run, handle)
-            _verify_repair(run, content["structure"]["handle"], verified)
+            origin = _verify_repair(run, content["structure"]["handle"], verified)
             parameters, sources = content["parameters"], content["parameters"]["sources"]
             row.update(valid=True, structure=content["structure"]["handle"],
                        model_number=content["structure"]["model_number"], ligand=content["ligand"],
@@ -89,6 +93,8 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
                        numbering_map=parameters["numbering_map"], annotation=parameters["annotation"],
                        counts=content["counts"], null_result=content["null_result"],
                        catalytic_status=catalytic_status(content))
+            if origin is not None:
+                row[structure_origin_reads.KEY] = origin
         except MutationEvidenceError:
             row.update(valid=False, **dict.fromkeys(_LIST_FIELDS))
         rows.append(row)
@@ -114,16 +120,23 @@ def _repair_checked(call: Callable[..., Any], *args: Any) -> Any:
         raise MutationEvidenceError("the repaired structure of the set does not validate") from exc
 
 
-def _verify_repair(run: Any, structure: str, verified: dict[str, bool]) -> None:
-    """A list row's repair re-verification (``validated_origin``); nothing for a structure that is not repaired."""
+def _verify_repair(run: Any, structure: str, verified: dict[str, Any]) -> dict[str, Any] | None:
+    """A list row's repair re-verification (``validated_origin``): the row's ``structure_origin`` field, None for a
+    structure that is not repaired."""
     if structure not in verified:
         try:
-            _repair_checked(mutation_handoff.validated_origin, run.store, structure)
-            verified[structure] = True
+            origin = _repair_checked(mutation_handoff.validated_origin, run.store, structure)
+            verified[structure] = None if origin is None else structure_origin_reads.field(origin)
         except MutationEvidenceError:
             verified[structure] = False
-    if not verified[structure]:
+    if verified[structure] is False:
         raise MutationEvidenceError("the repaired structure of the set does not validate")
+    return verified[structure]
+
+
+def _origin(run: Any, content: dict[str, Any]) -> dict[str, Any]:
+    """The ``structure_origin`` field of a set whose repair ``repair_view`` has just re-verified."""
+    return structure_origin_reads.field(_repair_checked(structure_origin, run.store, content["structure"]["handle"]))
 
 
 def repair_view(run: Any, content: dict[str, Any]) -> dict[str, Any] | None:
@@ -140,6 +153,7 @@ def set_detail(run: Any, handle: str) -> dict[str, Any]:
     view = repair_view(run, content)
     if view is not None:
         detail["repair_handoff"] = view["repair_handoff"]
+        detail[structure_origin_reads.KEY] = _origin(run, content)
     return detail
 
 
@@ -177,6 +191,7 @@ def position_page(run: Any, handle: str, *, status: str | None, source: str | No
     if view is not None:
         page["rows"] = [{**row, **view["positions"][row["index"]]} for row in page["rows"]]
         page["repair_handoff"] = view["repair_handoff"]
+        page[structure_origin_reads.KEY] = _origin(run, content)
     return page
 
 
