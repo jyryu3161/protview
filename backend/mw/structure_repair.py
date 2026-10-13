@@ -357,26 +357,29 @@ def analyze(inputs: RepairInputs) -> dict[str, Any]:
             if len(set(names)) != len(names) or any(not ATOM_NAME.fullmatch(n) for n in names):
                 block("m7_condition_unsupported", ref, m7_reason=M7_ATOM_IDENTITY)
             if res.name not in STANDARD and not mse:
+                # no template check for this residue, but the link to the previous residue (a gap before it) is
+                # still checked below so the preflight lists every blocker
                 block("unsupported_residue", ref, resname=res.name, in_gap=False)
-                continue
-            if mse:
-                nonstandard.append({"residue": ref, "to_resname": K.NONSTANDARD_REPLACEMENT["MSE"]})
-            last = index == len(polymer) - 1
-            template = template_heavy(res.name, last)
-            extra = sorted(n for n, el in heavy.items() if n not in template or el not in K.HEAVY_ELEMENTS)
-            if extra:
-                block("unexpected_atoms", ref, atoms=extra)
-            missing_backbone = [n for n in K.BACKBONE_ATOMS if n not in heavy]
-            if missing_backbone:
-                block("backbone_atoms_missing", ref, missing=missing_backbone)
             else:
-                missing = [n for n in template if n not in heavy and n not in K.BACKBONE_ATOMS and n != K.TERMINAL_OXT]
-                if missing:
-                    side_chain.append({"residue": ref, "missing_atoms": missing})
-                    added_heavy += len(missing)
-                if last and K.TERMINAL_OXT not in heavy:
-                    oxt.append({"residue": ref})
-                    added_heavy += 1
+                if mse:
+                    nonstandard.append({"residue": ref, "to_resname": K.NONSTANDARD_REPLACEMENT["MSE"]})
+                last = index == len(polymer) - 1
+                template = template_heavy(res.name, last)
+                extra = sorted(n for n, el in heavy.items() if n not in template or el not in K.HEAVY_ELEMENTS)
+                if extra:
+                    block("unexpected_atoms", ref, atoms=extra)
+                missing_backbone = [n for n in K.BACKBONE_ATOMS if n not in heavy]
+                if missing_backbone:
+                    block("backbone_atoms_missing", ref, missing=missing_backbone)
+                else:
+                    missing = [n for n in template
+                               if n not in heavy and n not in K.BACKBONE_ATOMS and n != K.TERMINAL_OXT]
+                    if missing:
+                        side_chain.append({"residue": ref, "missing_atoms": missing})
+                        added_heavy += len(missing)
+                    if last and K.TERMINAL_OXT not in heavy:
+                        oxt.append({"residue": ref})
+                        added_heavy += 1
             if not index:
                 continue
             (_, prev), prev_ref = polymer[index - 1], refs[index - 1]

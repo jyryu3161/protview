@@ -184,6 +184,68 @@ def test_synthetic_blocker_details():
     assert sr.refusal(broken)["m7_reason"] == "peptide_geometry"
 
 
+STANDARD_NAMES = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE",
+                  "PRO", "SER", "THR", "TRP", "TYR", "VAL"}   # spec 2.2 (20 standard names), copied
+SPEC_ORDER = ("chain_identity_duplicate", "unsupported_residue", "unexpected_atoms", "backbone_atoms_missing",
+              "gap_listing_missing", "gap_too_long", "m7_condition_unsupported", "atom_limit_exceeded")
+
+
+def _file_view(file: str) -> dict:
+    """From the SYNTHETIC mmCIF text only: the listed internal gap (rows between the first and last observed label),
+    the polymer residues whose name is not standard, and whether the file carries _entity_poly_seq."""
+    block = gemmi.cif.read_string((C.SR_FIX / file).read_text()).sole_block()
+    observed, unsupported = set(), set()
+    for row in block.find("_atom_site.", ["group_PDB", "label_seq_id", "label_comp_id", "auth_seq_id"]):
+        if row[0] == "ATOM" and not _null(row[1]):
+            observed.add(int(row[1]))
+            if row[2] not in STANDARD_NAMES:
+                unsupported.add((int(row[3]), row[2]))
+    listed = [(int(r[0]), r[1], int(r[2])) for r in block.find("_pdbx_unobs_or_zero_occ_residues.",
+                                                                 ["auth_seq_id", "label_comp_id", "label_seq_id"])]
+    gap = [row for row in listed if min(observed) < row[2] < max(observed)]
+    return {"gap": gap, "unsupported": sorted(unsupported), "after_gap": min(n for n in observed if n > gap[-1][2])
+            if gap else None, "sequence_rows": len(block.find("_entity_poly_seq.", ["num"]))}
+
+
+@pytest.mark.parametrize("file", ["synthetic-gap-20.cif", "synthetic-gap-21.cif",
+                                  "synthetic-gap-21-before-unsupported.cif"])
+def test_gap_length_boundary_and_a_gap_before_an_unsupported_residue_are_listed(file):
+    view = _file_view(file)
+    expected_codes = [code for code in SPEC_ORDER
+                      if (code == "unsupported_residue" and view["unsupported"])
+                      or (code == "gap_too_long" and len(view["gap"]) > 20)]
+    analysis = sr.analyze(C.synthetic(file))
+    assert [b["reason_code"] for b in analysis["blockers"] if b["reason_code"] != "nothing_to_repair"] == expected_codes
+    assert analysis["reason_code"] == (expected_codes[0] if expected_codes else None)
+    assert analysis["repairable"] is (not expected_codes)
+    (gap,) = analysis["defects"]["gaps"]
+    assert [(r["seq_auth"], r["resname"], r["seq_label"]) for r in gap["residues"]] == view["gap"]
+    assert (gap["length"], gap["before_residue"]["seq_auth"]) == (len(view["gap"]), view["after_gap"])
+    if len(view["gap"]) > 20:
+        too_long = next(b for b in analysis["blockers"] if b["reason_code"] == "gap_too_long")
+        assert (too_long["residue"]["seq_auth"], too_long["detail"]["length"]) == (view["after_gap"], len(view["gap"]))
+    else:
+        assert analysis["classes"] == [GAP]
+    assert [(b["residue"]["seq_auth"], b["residue"]["resname"]) for b in analysis["blockers"]
+            if b["reason_code"] == "unsupported_residue"] == view["unsupported"]
+
+
+def test_chain_ends_stay_null_without_a_sequence_and_rp4_is_not_added():
+    file = "synthetic-no-sequence-c-tail.cif"
+    view = _file_view(file)
+    assert view["sequence_rows"] == 0   # the file carries no _entity_poly_seq
+    inputs = C.synthetic(file)
+    analysis = sr.analyze(inputs)
+    assert (analysis["repairable"], analysis["classes"]) == (True, [OXT])
+    assert [(e["observed_last"]["seq_auth"], e["first_is_sequence_start"], e["last_is_sequence_end"])
+            for e in analysis["chain_ends"]] == [(74, None, None)]
+    assert K.RP4 not in analysis["statements"]
+    # the record path keeps the same null flags and no RP4 (built without new atoms: only the record rule is tested)
+    _raw, record = sr.build_repaired(inputs, [])
+    assert [(e["first_is_sequence_start"], e["last_is_sequence_end"]) for e in record["chain_ends"]] == [(None, None)]
+    assert K.RP4 not in record["limitations"]
+
+
 def test_pdb_format_gap_is_determined_from_remark_465_seqres_and_cn_distance():
     analysis = sr.analyze(C.synthetic("synthetic-gap.pdb"))
     assert (analysis["repairable"], analysis["classes"]) == (True, [GAP])

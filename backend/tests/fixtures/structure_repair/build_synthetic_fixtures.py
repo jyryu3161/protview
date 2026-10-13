@@ -49,10 +49,26 @@ def _residue(st: gemmi.Structure, number: int):
     return next(res for res in st[0]["A"] if res.seqid.num == number)
 
 
-def _cif(st: gemmi.Structure) -> bytes:
-    text = st.make_mmcif_document().as_string()
+def _labelled(text: str) -> bytes:
     head, rest = text.split("\n", 1)
     return f"{head}\n# {NOTE}\n{rest}".encode()
+
+
+def _cif(st: gemmi.Structure) -> bytes:
+    return _labelled(st.make_mmcif_document().as_string())
+
+
+def _cif_with_listing(st: gemmi.Structure, removed: list[int]) -> bytes:
+    """mmCIF plus a ``_pdbx_unobs_or_zero_occ_residues`` row (polymer, occupancy flag 1, model 1) per removed
+    residue, with 1UBQ's own name and numbering (author number = label number in 1UBQ chain A)."""
+    names = {res.seqid.num: res.name for res in _ubq("names")[0]["A"]}
+    doc = st.make_mmcif_document()
+    loop = doc.sole_block().init_loop("_pdbx_unobs_or_zero_occ_residues.", [
+        "id", "PDB_model_num", "polymer_flag", "occupancy_flag", "auth_asym_id", "auth_comp_id", "auth_seq_id",
+        "PDB_ins_code", "label_asym_id", "label_comp_id", "label_seq_id"])
+    for row, number in enumerate(removed, 1):
+        loop.add_row([str(row), "1", "Y", "1", "A", names[number], str(number), "?", "A", names[number], str(number)])
+    return _labelled(doc.as_string())
 
 
 def _pdb(st: gemmi.Structure, remark465: list[tuple[int, str]] | None = None) -> bytes:
@@ -105,12 +121,42 @@ def backbone_atoms_missing() -> bytes:
     return _cif(st)
 
 
-def _without_gap(name: str) -> gemmi.Structure:
+def _without_gap(name: str, numbers: tuple[int, ...] = GAP) -> gemmi.Structure:
     st = _ubq(name)
     chain = st[0]["A"]
-    for index in sorted((i for i, res in enumerate(chain) if res.seqid.num in GAP), reverse=True):
+    for index in sorted((i for i, res in enumerate(chain) if res.seqid.num in numbers), reverse=True):
         del chain[index]
     return st
+
+
+def gap_20() -> bytes:
+    """Residues A/30-49 deleted (20 residues) and listed in _pdbx_unobs_or_zero_occ_residues: the longest gap the
+    repair accepts."""
+    numbers = tuple(range(30, 50))
+    return _cif_with_listing(_without_gap("SYNTHETIC_M29_GAP_20", numbers), list(numbers))
+
+
+def gap_21() -> bytes:
+    """Residues A/30-50 deleted (21 residues) and listed in _pdbx_unobs_or_zero_occ_residues: one over the limit."""
+    numbers = tuple(range(30, 51))
+    return _cif_with_listing(_without_gap("SYNTHETIC_M29_GAP_21", numbers), list(numbers))
+
+
+def gap_21_before_unsupported() -> bytes:
+    """As the 21-residue gap file, and residue A/51 GLU renamed SEP (atoms unchanged): the gap sits right before an
+    unsupported residue."""
+    numbers = tuple(range(30, 51))
+    st = _without_gap("SYNTHETIC_M29_GAP_21_BEFORE_UNSUPPORTED", numbers)
+    _residue(st, 51).name = "SEP"
+    return _cif_with_listing(st, list(numbers))
+
+
+def no_sequence_c_tail() -> bytes:
+    """Residues A/75-76 deleted (an unobserved C-terminal tail, no OXT on A/74) and the _entity_poly_seq category
+    erased: the file does not determine the chain's sequence ends."""
+    doc = _without_gap("SYNTHETIC_M29_NO_SEQUENCE_C_TAIL", (75, 76)).make_mmcif_document()
+    doc.sole_block().find_mmcif_category("_entity_poly_seq.").erase()
+    return _labelled(doc.as_string())
 
 
 def gap_listing_missing() -> bytes:
@@ -157,6 +203,10 @@ BUILDERS = {
     "synthetic-gap.pdb": gap_pdb,
     "synthetic-chain-break.pdb": chain_break_pdb,
     "synthetic-calc-flag.cif": calc_flag,
+    "synthetic-gap-20.cif": gap_20,
+    "synthetic-gap-21.cif": gap_21,
+    "synthetic-gap-21-before-unsupported.cif": gap_21_before_unsupported,
+    "synthetic-no-sequence-c-tail.cif": no_sequence_c_tail,
 }
 REACHES = {
     "synthetic-chain-identity-duplicate.cif": "refusal chain_identity_duplicate",
@@ -167,6 +217,10 @@ REACHES = {
     "synthetic-gap.pdb": "PDB-format internal gap from REMARK 465 + SEQRES + C-N distance (in scope)",
     "synthetic-chain-break.pdb": "refusal m7_condition_unsupported (m7_reason peptide_geometry) in PDB format",
     "synthetic-calc-flag.cif": "input calc_flag values normalised to '.' and counted (unchanged.input_calc_flag_cleared)",
+    "synthetic-gap-20.cif": "gap length boundary: 20 residues is repairable (internal_gap_filled)",
+    "synthetic-gap-21.cif": "gap length boundary: 21 residues is refusal gap_too_long",
+    "synthetic-gap-21-before-unsupported.cif": "refusal unsupported_residue first, gap_too_long still listed",
+    "synthetic-no-sequence-c-tail.cif": "chain_ends flags null (sequence not determined) and no RP4",
 }
 
 

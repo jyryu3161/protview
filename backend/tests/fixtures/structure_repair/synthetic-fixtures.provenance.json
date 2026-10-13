@@ -29,6 +29,24 @@
    "rule": "A second copy of the chain A protein, shifted +60 A along x and numbered 1001-1076, as label chain B under     author chain A (distinct author numbers, else a reader merges the two copies' atoms into one residue).",
    "sha256": "419386784fcc895de966859c310ba27567b6420768e6293e837b85d9d173ceba"
   },
+  "synthetic-gap-20.cif": {
+   "bytes": 34461,
+   "reaches": "gap length boundary: 20 residues is repairable (internal_gap_filled)",
+   "rule": "Residues A/30-49 deleted (20 residues) and listed in _pdbx_unobs_or_zero_occ_residues: the longest gap the     repair accepts.",
+   "sha256": "8d5fdfb141b1cbde23b664e68ea4370d8d7d6d401ce8d5f2638f99b7f8f456df"
+  },
+  "synthetic-gap-21-before-unsupported.cif": {
+   "bytes": 34084,
+   "reaches": "refusal unsupported_residue first, gap_too_long still listed",
+   "rule": "As the 21-residue gap file, and residue A/51 GLU renamed SEP (atoms unchanged): the gap sits right before an     unsupported residue.",
+   "sha256": "5134a7172d1df5cf8b3ce5d2d56c2daf462358f0b004f6021be464f5ccaeab99"
+  },
+  "synthetic-gap-21.cif": {
+   "bytes": 33964,
+   "reaches": "gap length boundary: 21 residues is refusal gap_too_long",
+   "rule": "Residues A/30-50 deleted (21 residues) and listed in _pdbx_unobs_or_zero_occ_residues: one over the limit.",
+   "sha256": "c07db8aa0d846cadae1f2fdf37efcd6461c5e83f0084af2b136b29d0cd01471c"
+  },
   "synthetic-gap-listing-missing.cif": {
    "bytes": 42443,
    "reaches": "refusal gap_listing_missing (mmCIF without _pdbx_unobs_or_zero_occ_residues)",
@@ -40,6 +58,12 @@
    "reaches": "PDB-format internal gap from REMARK 465 + SEQRES + C-N distance (in scope)",
    "rule": "PDB format (gemmi writer, SEQRES kept), residues A/30-32 deleted and listed in REMARK 465.",
    "sha256": "5a602a5e59939eaecc27e969552aed2a08ad31549ba637a749f98bef9fcf204d"
+  },
+  "synthetic-no-sequence-c-tail.cif": {
+   "bytes": 42525,
+   "reaches": "chain_ends flags null (sequence not determined) and no RP4",
+   "rule": "Residues A/75-76 deleted (an unobserved C-terminal tail, no OXT on A/74) and the _entity_poly_seq category     erased: the file does not determine the chain's sequence ends.",
+   "sha256": "4996c1bec24b5e28ab9fc44eeb0c033bd01c0737b806ee45d35d3019fc3776a5"
   },
   "synthetic-unexpected-atoms.cif": {
    "bytes": 44068,

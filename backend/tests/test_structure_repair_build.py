@@ -149,6 +149,24 @@ def test_8vf6_collisions_follow_the_independent_count():
     assert set(pair) == {"new_residue", "new_atom", "partner_residue", "partner_atom"}
 
 
+def test_1cll_metal_collisions_follow_the_independent_count():
+    """1CLL keeps its calcium ions: nearest Ca atom (element read from the repaired file) to each new heavy atom."""
+    _inputs, raw, record = built("1cll")
+    out = C.structure(raw)
+    new = np.array([(a.pos.x, a.pos.y, a.pos.z) for c in out[0] for r in c for a in r
+                    if a.calc_flag == gemmi.CalcFlag.Calculated])
+    ions = [(r.name, a.name, (a.pos.x, a.pos.y, a.pos.z)) for c in out[0] for r in c for a in r
+            if r.het_flag == "H" and a.element.name == "Ca"]
+    assert len(new) == 5 and len(ions) == 4
+    distances = np.linalg.norm(new[:, None, :] - np.array([xyz for _, _, xyz in ions])[None, :, :], axis=2)
+    nearest = distances.min(axis=1)
+    got = record["collisions"]["metal"]
+    assert got["min_distance_A"] == pytest.approx(float(nearest.min()), abs=1e-9)
+    assert (got["count_lt_2_0"], got["count_lt_1_5"]) == (int((nearest < 2.0).sum()), int((nearest < 1.5).sum()))
+    closest = ions[int(np.unravel_index(distances.argmin(), distances.shape)[1])]
+    assert (got["min_pair"]["partner_residue"]["resname"], got["min_pair"]["partner_atom"]) == closest[:2]
+
+
 def test_1rnh_mse_becomes_met_with_its_map_and_unchanged_coordinates():
     inputs, raw, record = built("1rnh", "keep_all")
     assert [(r["from"]["seq_auth"], r["from"]["resname"], r["to"]["resname"], r["atom_map"], r["record_type"])
