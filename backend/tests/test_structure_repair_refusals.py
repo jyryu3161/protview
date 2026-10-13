@@ -20,6 +20,7 @@ happens before fpocket, ProLIF, a reference set or the OpenMM preflight would be
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import uuid
 from pathlib import Path
@@ -30,7 +31,10 @@ from fastapi.testclient import TestClient
 
 from mw import structure_repair as sr
 from mw import structure_repair_constants as K
+from mw import structure_repair_jobs as RJ
 from mw.api import app as api_module
+from mw.jobs.queue import JobQueue
+from mw.runtime.orchestrator import ApprovalRequired
 
 FIX = Path(__file__).parent / "fixtures"
 SR_FIX = FIX / "structure_repair"
@@ -49,22 +53,37 @@ def _command(client: TestClient, rid: str, tool: str, args: dict) -> str:
     return response.json()["handle"]["handle"]
 
 
+def _simulated_worker(additions: list[dict]):
+    """LABELLED SIMULATED GUARDIAN (as in T7's hand-off tests): writes a worker output whose ``added_atoms`` are the
+    PDBFixer-measured ``additions`` for the job's own method record and reports a clean RESULT; no process is launched."""
+    def supervise(self, job, attempt_id, nonce, attempt_dir, deadline, dispatch):
+        fixed = sr.fixed_method()
+        output = {"schema": RJ.OUTPUT_SCHEMA, "method": job["method"]["method"],
+                  "engine": {key: fixed[key] for key in RJ.ENGINE_KEYS}, "added_atoms": additions,
+                  "diagnostics": {"simulated_guardian": "M29 T6 test, no PDBFixer run"}}
+        raw = json.dumps(output, allow_nan=False, sort_keys=True, separators=(",", ":")).encode()
+        (attempt_dir / "result.json").write_bytes(raw)
+        return {"kind": "RESULT", "reason": "completed", "returncode": 0, "clean": True, "direct_child_reaped": True,
+                "unexpected_members": False,
+                "payload": {"output_sha256": hashlib.sha256(raw).hexdigest(), "output_bytes": len(raw)}}, None
+    return supervise
+
+
 def _store_repaired(run: Any, prepared: str) -> str:
-    """T4's splice builder on the measured 1HSG additions, stored in the spec order (as T7's hand-off tests do)."""
-    store = run.store
+    """The repaired structure of ``prepared`` published by the product repair job (T5), with the measured 1HSG
+    additions through a labelled simulated guardian: reads, reports and the M20 admission need the publication."""
     additions = json.loads((SR_FIX / "1hsg-additions.pdbfixer-measured.json").read_text())["added_atoms"]
-    raw, record = sr.build_repaired(sr.load_inputs(store, prepared), additions)
-    coordinates = store.put(K.COORDINATES_KIND, K.COORDINATES_SCHEMA, raw, fmt=K.COORDINATES_FMT,
-                            produced_by="test").handle
-    record_handle = store.put(K.KIND, K.SCHEMA, record, produced_by="test").handle
-    original = store.load(prepared)
-    manifest = {**store.load(original["manifest"]),
-                "missing_residues": K.MISSING_RESIDUES_FILLED if record["gaps"] else K.MISSING_RESIDUES_LEFT,
-                K.MANIFEST_REPAIR_KEY: {"record": record_handle, "source": prepared}}
-    manifest_handle = store.put(K.MANIFEST_KIND, K.MANIFEST_SCHEMA, manifest, produced_by="test").handle
-    return store.put(K.STRUCTURE_KIND, K.STRUCTURE_SCHEMA, {
-        "coordinates": coordinates, "manifest": manifest_handle, "model_index": original["model_index"],
-        "model_number": original["model_number"]}, produced_by="test").handle
+    queue = JobQueue(run)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(JobQueue, "_supervise", _simulated_worker(additions))
+        job = queue.submit(K.PROTOCOL, {"structure": prepared, "repair_policy": K.REPAIR_POLICY}, timeout_s=240)
+        try:
+            done = queue.start(job["job_id"])
+        except ApprovalRequired:
+            run.approve("expensive_first_call", by="test")
+            done = queue.start(job["job_id"])
+    assert done["status"] == "done", done
+    return done["output_handles"][1]
 
 
 @pytest.fixture(scope="module")
