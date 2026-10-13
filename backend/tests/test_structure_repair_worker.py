@@ -279,3 +279,23 @@ def test_the_output_bound_and_the_script_error_envelope(tmp_path, monkeypatch):
     error = json.loads((tmp_path / "error.json").read_text())
     assert error["reason_code"] == "engine_failed" and error["detail"] == {"reason_code": "engine_failed"}
     assert jobs.worker_error(tmp_path)["reason_code"] == "engine_failed"
+
+
+def test_a_long_engine_error_message_is_cut_whole_and_stays_engine_failed(tmp_path):
+    # LABELLED payload: a 400-character element symbol passes the payload check and makes OpenMM's element lookup raise
+    # a KeyError whose text alone is longer than the 300 characters the server's envelope check takes. The whole
+    # message (type prefix included) is cut to 300, so the job is the closed ``engine_failed``, never ``fatal``.
+    payload = _payload()
+    payload["chains"][0]["residues"][0]["atoms"][0]["element"] = "Q" * 400
+    raw = canonical_json(payload)
+    (tmp_path / "structure.json").write_bytes(raw)
+    (tmp_path / "input.json").write_text(json.dumps({"input_sha256": W._digest(raw)}))
+    out = subprocess.run([sys.executable, "-I", str(jobs.WORKER)], cwd=tmp_path, capture_output=True, timeout=120,
+                         check=False, env={"PATH": "/usr/bin:/bin"})
+    assert out.returncode == 1, out.stderr
+    error = json.loads((tmp_path / "error.json").read_text())
+    assert error["reason_code"] == "engine_failed" and error["detail"] == {"reason_code": "engine_failed"}
+    assert error["message"].startswith("KeyError: 'QQQ") and len(error["message"]) == 300
+    assert jobs.worker_error(tmp_path) == {"error": jobs.FAILURE_CLASSES["engine_failed"],
+                                           "reason_code": "engine_failed", "message": error["message"],
+                                           "detail": {"reason_code": "engine_failed"}}

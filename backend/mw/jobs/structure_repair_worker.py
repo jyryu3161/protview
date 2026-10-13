@@ -283,7 +283,8 @@ if __name__ == "__main__":
         raise SystemExit(1)
     except (ValueError, TypeError, KeyError, IndexError, AttributeError, ArithmeticError, OSError, RuntimeError,
             ImportError, openmm.OpenMMException) as exc:   # engines or payload: the closed engine failure
+        # The whole message, prefix included, within the 300 characters ``structure_repair_jobs.worker_error`` takes.
         Path("error.json").write_text(json.dumps({"reason_code": "engine_failed",
-                                                  "message": f"{type(exc).__name__}: {str(exc)[:300]}",
+                                                  "message": f"{type(exc).__name__}: {exc}"[:300],
                                                   "detail": {"reason_code": "engine_failed"}}))
         raise SystemExit(1)
