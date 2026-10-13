@@ -25,12 +25,13 @@ JOB_PROTOCOLS = {**PROTOCOLS, "openmm_protein_minimize": ("openmm_protein_minimi
                  "qvina_batch_dock_v1": ("qvina_dock_batch", "qvina"),
                  "openmm_mutation_model_v1": ("openmm_mutation_model", "openmm"),
                  "qvina_ga_dock_v1": ("qvina_ga_design", "qvina"),
-                 "sequence_ga_dock_v1": ("sequence_ga_design", "qvina")}
+                 "sequence_ga_dock_v1": ("sequence_ga_design", "qvina"),
+                 "pdbfixer_repair_v1": ("repair_structure", "pdbfixer")}
 JOB_ONLY_TOOLS = frozenset({"openmm_protein_minimize", "prepare_chemical_structure",
                             "compute_chemical_interactions", "detect_pockets",
                             "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand",
                             "qvina_dock_batch", "openmm_mutation_model", "qvina_ga_design",
-                            "sequence_ga_design"})
+                            "sequence_ga_design", "repair_structure"})
 
 
 def protocol_capabilities() -> dict[str, Any]:

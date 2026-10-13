@@ -568,7 +568,8 @@ def test_only_the_worker_imports_pdbfixer_and_no_module_imports_the_worker():
                 importers.append(path.relative_to(REPO).as_posix())
             if any("openmm_mutation_worker" in n for n in names):
                 worker_importers.append(path.relative_to(REPO).as_posix())
-    assert importers == ["backend/mw/jobs/openmm_mutation_worker.py"]
+    # M29: the structure-repair worker is the other PDBFixer importer (its own job module; nothing imports it).
+    assert importers == ["backend/mw/jobs/openmm_mutation_worker.py", "backend/mw/jobs/structure_repair_worker.py"]
     # M23 (spec 4 (1)): the sequence GA modeling program, itself a project-environment child program that no module
     # imports (test_sequence_model_worker.py), calls the unmodified M21 functions; no server module imports either.
     assert worker_importers == ["backend/mw/jobs/sequence_model_worker.py"]

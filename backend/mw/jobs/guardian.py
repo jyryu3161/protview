@@ -66,9 +66,13 @@ DOCKING_ADAPTERS = {DOCKING_ADAPTER, DOCKING_BATCH_ADAPTER, LIGAND_GA_ADAPTER, S
 MUTATION_MODEL = Path(__file__).with_name("openmm_mutation_worker.py")
 MUTATION_MODEL_ADAPTER = "openmm_mutation_model_v1"
 MUTATION_MODEL_OUTPUT_LIMIT = 64_000_000  # = openmm_mutation_worker.MAX_OUTPUT_BYTES (the worker never writes more)
+# M29: fixed PDBFixer structure-repair worker in this (project) interpreter, as the M7 and M21 workers.
+STRUCTURE_REPAIR = Path(__file__).with_name("structure_repair_worker.py")
+STRUCTURE_REPAIR_ADAPTER = "pdbfixer_repair_v1"
+STRUCTURE_REPAIR_OUTPUT_LIMIT = 4_000_000  # = structure_repair_worker.MAX_OUTPUT_BYTES (the worker never writes more)
 # Adapters whose running worker tree is sampled for memory and output limits.
 MONITORED_ADAPTERS = (CHEMICAL_ADAPTERS | {POCKET_ADAPTER} | LIGAND_ADAPTERS | DOCKING_ADAPTERS |
-                      {MUTATION_MODEL_ADAPTER})
+                      {MUTATION_MODEL_ADAPTER, STRUCTURE_REPAIR_ADAPTER})
 RSS_LIMIT = 2 * 1024 * 1024 * 1024
 STREAM_LIMIT = 1024 * 1024
 # fpocket job root, private TMPDIR and engine streams written by pocket_worker.py in the attempt directory.
@@ -250,7 +254,8 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
     if (set(input_data) != expected or
             not isinstance(input_data["nonce"], str) or not re.fullmatch(r"[0-9a-f]{32}", input_data["nonce"]) or
             adapter not in {"internal_lifecycle_fixture", "openmm_protein_minimize_v1", *CHEMICAL_ADAPTERS,
-                            POCKET_ADAPTER, *LIGAND_ADAPTERS, *DOCKING_ADAPTERS, MUTATION_MODEL_ADAPTER} or
+                            POCKET_ADAPTER, *LIGAND_ADAPTERS, *DOCKING_ADAPTERS, MUTATION_MODEL_ADAPTER,
+                            STRUCTURE_REPAIR_ADAPTER} or
             (adapter == "internal_lifecycle_fixture" and input_data["fixture_mode"] not in FIXTURE_MODES) or
             (adapter != "internal_lifecycle_fixture" and
              not re.fullmatch(r"[0-9a-f]{64}", input_data["input_sha256"])) or
@@ -288,7 +293,8 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
               LIGAND if adapter in LIGAND_ADAPTERS else DOCKING if adapter == DOCKING_ADAPTER else
               DOCKING_BATCH if adapter == DOCKING_BATCH_ADAPTER else LIGAND_GA if adapter == LIGAND_GA_ADAPTER else
               SEQUENCE_GA if adapter == SEQUENCE_GA_ADAPTER else
-              MUTATION_MODEL if adapter == MUTATION_MODEL_ADAPTER else OPENMM)
+              MUTATION_MODEL if adapter == MUTATION_MODEL_ADAPTER else
+              STRUCTURE_REPAIR if adapter == STRUCTURE_REPAIR_ADAPTER else OPENMM)
     interpreter = (str(CHEMICAL_PYTHON) if adapter in PINNED_PYTHON_ADAPTERS else
                    str(DOCKING_PYTHON) if adapter in DOCKING_ADAPTERS else sys.executable)
     if adapter in PINNED_PYTHON_ADAPTERS and not CHEMICAL_PYTHON.is_file():
@@ -370,7 +376,8 @@ def main(fd: int, global_fd: int | None = None, go_wait_s: float = DEFAULT_GO_WA
                             DOCKING_BATCH_OUTPUT_LIMIT if adapter == DOCKING_BATCH_ADAPTER else
                             LIGAND_GA_OUTPUT_LIMIT if adapter == LIGAND_GA_ADAPTER else
                             SEQUENCE_GA_OUTPUT_LIMIT if adapter == SEQUENCE_GA_ADAPTER else
-                            MUTATION_MODEL_OUTPUT_LIMIT if adapter == MUTATION_MODEL_ADAPTER else 64_000_000)
+                            MUTATION_MODEL_OUTPUT_LIMIT if adapter == MUTATION_MODEL_ADAPTER else
+                            STRUCTURE_REPAIR_OUTPUT_LIMIT if adapter == STRUCTURE_REPAIR_ADAPTER else 64_000_000)
             if path.is_symlink() or not path.is_file() or path.stat().st_size > output_limit:
                 raise ValueError("invalid scientific output")
             raw = path.read_bytes()

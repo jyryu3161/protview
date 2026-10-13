@@ -44,6 +44,8 @@ from .. import (
     reaction_knowledge_reads,
     sequence_ga_jobs,
     sequence_ga_reads,
+    structure_repair_jobs,
+    structure_repair_reads,
 )
 from .. import site_annotation as site_annotations
 from ..chemical_bundle import atom_catalog as chemical_atom_catalog
@@ -100,11 +102,13 @@ from ..saved_scenes import (
 from ..sequence_ga_constants import PROTOCOL as SEQUENCE_GA_PROTOCOL
 from ..sequence_ga_reports import build_sequence_ga_report, saved_sequence_ga_report
 from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
+from ..structure_repair_constants import PROTOCOL as REPAIR_PROTOCOL
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
 from ..tools.openmm_method import preflight as openmm_preflight
 from ..tools.structural import structure_bytes, structure_residues, validate_upload
+from ..tools.structure_repair import preflight as structure_repair_preflight
 from ..viewer_intents import (
     ACTIVE_INTENTS,
     ViewerError,
@@ -401,6 +405,9 @@ def _public_job(job: dict[str, Any], run: Run | None = None) -> dict[str, Any]:
         result["artifacts"] = {"sequence_ga_result": job["output_handles"][0]}
     elif job.get("protocol_id") == "openmm_mutation_model_v1" and job.get("status") == "done":
         result["artifacts"] = {"mutation_model": job["output_handles"][0]}
+    elif job.get("protocol_id") == REPAIR_PROTOCOL and job.get("status") == "done":
+        result["artifacts"] = dict(zip(("structure_repair", "prepared_structure"), job["output_handles"],
+                                       strict=True))
     else:
         result["artifacts"] = {}
     if job.get("protocol_id") == "qvina_batch_dock_v1" and run is not None:
@@ -690,6 +697,8 @@ def capabilities() -> dict[str, Any]:
     methods["mutation_model"] = mutation_model_bundle.capability()
     # M23: mutation_model + ligand_docking + the sequence GA modules, project interpreter and GA worker handshake.
     methods["sequence_ga_design"] = sequence_ga_jobs.capability(methods["ligand_docking"], methods["mutation_model"])
+    # M29: fixed OpenMM 8.6.0 (M7 dependencies()) + PDBFixer 1.12.0 (metadata only) + process-identity adapter.
+    methods["structure_repair"] = structure_repair_jobs.capability()
     # M24: local conditions only (tool exposed, pins equal the gate's); never reads a credential or a run's consent.
     methods["jev_choice"] = _jev_choice_capability()
     # M25: per branch, the loop projection tool, the science pins (as jev_choice), then that branch's engines.
@@ -926,6 +935,9 @@ def tools(levels: str = "L2,L4") -> list[dict[str, Any]]:
         # M21: the job-only mutation model tool (JobQueue protocol, not Run.call).
         records.append({**REGISTRY.specs["openmm_mutation_model"].model_dump(),
                         "execution_lane": "durable_job", "submit_protocol_id": "openmm_mutation_model_v1"})
+        # M29: the job-only structure repair tool (JobQueue protocol, not Run.call).
+        records.append({**REGISTRY.specs["repair_structure"].model_dump(),
+                        "execution_lane": "durable_job", "submit_protocol_id": REPAIR_PROTOCOL})
     return records
 
 
@@ -1489,7 +1501,8 @@ def approve_job(rid: str) -> dict[str, Any]:
     pending = decisions[-1] if decisions else None
     approved_tools = {"openmm_protein_minimize", "prepare_chemical_structure", "compute_chemical_interactions",
                       "detect_pockets", "rdkit_inspect_ligand", "rdkit_enumerate_ligands", "qvina_dock_ligand",
-                      "qvina_dock_batch", "openmm_mutation_model", "qvina_ga_design", "sequence_ga_design"}
+                      "qvina_dock_batch", "openmm_mutation_model", "qvina_ga_design", "sequence_ga_design",
+                      "repair_structure"}
     active = {job["tool_id"] for job in JobQueue(run).list() if job["status"] in {"queued", "claimed"}}
     if (pending is None or pending["type"] != "approval_requested" or
             pending.get("tool") not in approved_tools or pending["tool"] not in active):
@@ -1520,8 +1533,8 @@ async def submit_job(rid: str, request: Request) -> Any:
     try:
         body = JobSubmit.model_validate(data)
     except PydanticValidationError as exc:
-        # M21 keeps its closed admission reason for the request model's own timeout_s / args refusals.
-        if data.get("protocol_id") == MUTATION_MODEL_PROTOCOL and all(
+        # M21 (and M29) keep their closed admission reason for the request model's own timeout_s / args refusals.
+        if data.get("protocol_id") in (MUTATION_MODEL_PROTOCOL, REPAIR_PROTOCOL) and all(
                 error["loc"] and error["loc"][0] in {"timeout_s", "args"} for error in exc.errors()):
             return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid job timeout or arguments",
                                            detail={"reason_code": "argument_invalid"}))
@@ -2191,6 +2204,85 @@ def mutation_model_detail(rid: str, handle: str, request: Request) -> dict[str, 
         return {**mutation_model_reads.model_detail(run, handle), "meta": meta}
     except mutation_model_reads.MutationEvidenceError as exc:
         raise _mutation_model_evidence_error(exc) from exc
+
+
+# ----------------------------------------------------------------- M29 structure repair reads (no event, job or tool)
+@app.get("/runs/{rid}/structure_repair/preflight")
+def structure_repair_preflight_read(rid: str, request: Request, structure: str) -> dict[str, Any]:
+    """``structure_repair_preflight@1``: defects, budget and the admission outcome of POST /jobs for this structure;
+    a refused admission or an unavailable environment is ``admission.admitted: false`` (200), never a job."""
+    _only_query(request, {"structure"})
+    return structure_repair_preflight(_run(rid), structure)
+
+
+def _structure_repair(run: Run, handle: str) -> dict[str, Any]:
+    meta = _object(run, handle)
+    if (meta["kind"], meta["schema"]) != (structure_repair_reads.KIND, structure_repair_reads.SCHEMA):
+        raise HTTPException(422, detail={"error": "input_invalid", "message": "handle is not a structure_repair"})
+    return meta
+
+
+def _structure_repair_evidence_error(exc: Exception) -> HTTPException:
+    return HTTPException(422, detail={"error": "method_evidence_invalid", "message": "invalid structure repair"})
+
+
+@app.get("/runs/{rid}/structure_repairs")
+def structure_repairs(rid: str, request: Request, offset: int = Query(0, ge=0),
+                      limit: int = Query(structure_repair_reads.LIST_LIMIT_DEFAULT, ge=1,
+                                         le=structure_repair_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
+    """This run's structure repair records, newest first; each row re-validated (``valid: false`` without values)."""
+    _only_query(request, {"offset", "limit"})
+    run = _run(rid)
+    try:
+        return structure_repair_reads.list_repairs(run, offset, limit)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid structure repair record"}) from exc
+
+
+# The handle (obj://<run>/<kind>/<sha>) contains slashes: every sub-resource route (/atoms, /structure) is registered
+# before the detail route.
+@app.get("/runs/{rid}/structure_repairs/{handle:path}/atoms")
+def structure_repair_atoms(rid: str, handle: str, request: Request, page: int = Query(1, ge=1),
+                           page_size: int = Query(structure_repair_reads.ATOM_PAGE_SIZE_DEFAULT,
+                                                  ge=structure_repair_reads.ATOM_PAGE_SIZE_MIN,
+                                                  le=structure_repair_reads.ATOM_PAGE_SIZE_MAX)) -> dict[str, Any]:
+    """The record's added atoms (stored structure order), by page."""
+    _only_query(request, {"page", "page_size"})
+    run = _run(rid)
+    _structure_repair(run, handle)
+    try:
+        return structure_repair_reads.atom_page(run, handle, page=page, page_size=page_size)
+    except structure_repair_reads.ReadInvalid as exc:
+        raise _read_invalid(exc) from exc
+    except structure_repair_reads.RepairEvidenceError as exc:
+        raise _structure_repair_evidence_error(exc) from exc
+
+
+@app.get("/runs/{rid}/structure_repairs/{handle:path}/structure")
+def structure_repair_structure(rid: str, handle: str, request: Request) -> Response:
+    """The repaired structure's stored mmCIF bytes, byte for byte (SHA-256 checked against the record)."""
+    _only_query(request, set())
+    run = _run(rid)
+    _structure_repair(run, handle)
+    try:
+        raw, filename = structure_repair_reads.structure_download(run, handle)
+    except structure_repair_reads.RepairEvidenceError as exc:
+        raise _structure_repair_evidence_error(exc) from exc
+    return Response(raw, media_type="chemical/x-mmcif", headers={
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/runs/{rid}/structure_repairs/{handle:path}")
+def structure_repair_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+    """One validated record without its added-atom rows, with the four handles of its publication."""
+    _only_query(request, set())
+    run = _run(rid)
+    meta = _structure_repair(run, handle)
+    try:
+        return {**structure_repair_reads.repair_detail(run, handle), "meta": meta}
+    except structure_repair_reads.RepairEvidenceError as exc:
+        raise _structure_repair_evidence_error(exc) from exc
 
 
 # ----------------------------------------------------------------- M19 batch limit raise (human UI action only)
