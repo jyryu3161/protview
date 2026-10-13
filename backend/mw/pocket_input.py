@@ -18,6 +18,7 @@ import gemmi
 import numpy as np
 
 from .core.errors import FailureClass, ToolFailure
+from .structure_origin import reject_if_repaired
 from .tools.comparison import atom_rows
 from .tools.registry import ToolContext
 from .tools.structural import _parse, structure_bytes
@@ -98,6 +99,9 @@ def _load_source(store: Any, handle: str) -> dict[str, Any]:
     if kind_schema not in SOURCE_KINDS:
         raise _invalid("unsupported_source_kind", "unsupported pocket input source kind",
                        source_kind=meta["kind"])
+    # M29 spec 5.2: a repaired structure is no pocket source (job submission and re-projection; the preflight route
+    # refuses it before this read, so no M12 preflight ``reject`` ever carries this code).
+    reject_if_repaired(store, handle)
     if meta["kind"] == "chemical_structure":
         from .chemical_bundle import validated_source
 

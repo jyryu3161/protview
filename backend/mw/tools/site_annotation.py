@@ -13,6 +13,7 @@ from typing import Any
 from .. import site_annotation as sa
 from ..core.errors import FailureClass, ToolFailure
 from ..core.handles import Handle
+from ..structure_origin import reject_if_repaired
 from .registry import ToolRegistry
 from .structural import structure_residues
 
@@ -44,6 +45,10 @@ def precheck(store: Any, args: dict[str, Any], bound: Any = None) -> tuple[dict[
     if unknown:
         raise _invalid(f"unknown parameters: {sorted(unknown)}", "unknown_field")
     map_content = _object(store, args.get("numbering_map"), MAP_KIND, "numbering_map_invalid")
+    # M29 spec 5.2: the annotation reads the map's structure; a repaired one is refused (map_residue_numbering already
+    # refuses it, so only a map made otherwise reaches this).
+    structure = map_content.get("structure") if isinstance(map_content, dict) else None
+    reject_if_repaired(store, structure.get("handle") if isinstance(structure, dict) else None)
     contacts = args.get("contacts")
     if contacts is not None:
         contacts_content = _object(store, contacts, CONTACTS_KIND, "contacts_invalid")
