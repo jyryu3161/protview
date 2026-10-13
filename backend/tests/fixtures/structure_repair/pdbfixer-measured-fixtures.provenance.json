@@ -1,0 +1,56 @@
+{
+ "files": {
+  "1cll-additions.pdbfixer-measured.json": {
+   "added_atoms": 5,
+   "bytes": 4274,
+   "command": ".venv/bin/python docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py additions backend/tests/fixtures/public_1cll.cif --out backend/tests/fixtures/structure_repair/1cll-additions.pdbfixer-measured.json",
+   "input": {
+    "file": "backend/tests/fixtures/public_1cll.cif",
+    "sha256": "a8be375d00d2d5d47ffacae491f775167d1c0488ab8485cabd269410e596d3aa",
+    "size_bytes": 192662
+   },
+   "sha256": "f1bfce6f1e10a4a1a8a05ef2b17cedf3dc1783bd5a99f063f079653680c69d6c",
+   "water_policy_independent": true
+  },
+  "1hsg-additions.pdbfixer-measured.json": {
+   "added_atoms": 2,
+   "bytes": 3156,
+   "command": ".venv/bin/python docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py additions backend/tests/fixtures/public_1hsg.cif --out backend/tests/fixtures/structure_repair/1hsg-additions.pdbfixer-measured.json",
+   "input": {
+    "file": "backend/tests/fixtures/public_1hsg.cif",
+    "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+    "size_bytes": 212124
+   },
+   "sha256": "64e211967e98266a9bec97edfa791d038a9fcb8d118511d00daac3967aeecb55",
+   "water_policy_independent": true
+  },
+  "1mq4-additions.pdbfixer-measured.json": {
+   "added_atoms": 55,
+   "bytes": 24163,
+   "command": ".venv/bin/python docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py additions backend/tests/fixtures/public_1mq4.cif --out backend/tests/fixtures/structure_repair/1mq4-additions.pdbfixer-measured.json",
+   "input": {
+    "file": "backend/tests/fixtures/public_1mq4.cif",
+    "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+    "size_bytes": 301781
+   },
+   "sha256": "52f927ce10ccee6f5f83f221aaa665c7908ad1e170d546a0acea0ab8a4dfe543",
+   "water_policy_independent": true
+  },
+  "1rnh-additions.pdbfixer-measured.json": {
+   "added_atoms": 1,
+   "bytes": 2640,
+   "command": ".venv/bin/python docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py additions backend/tests/fixtures/public_1rnh.cif --out backend/tests/fixtures/structure_repair/1rnh-additions.pdbfixer-measured.json",
+   "input": {
+    "file": "backend/tests/fixtures/public_1rnh.cif",
+    "sha256": "e405f66958c4ff2870eaa693ee1056ef492d99aa7f8ad7d7a39fb29116516dcf",
+    "size_bytes": 181695
+   },
+   "sha256": "a78978bda41b6c3341495037ff864fc18282e075eed43ebce477502477459cea",
+   "water_policy_independent": true
+  }
+ },
+ "label": "PDBFixer 측정 고정 자료(제품 값 아님) / PDBFixer-measured fixtures, not product values",
+ "made": "2026-10-13, M29 T4, with the unchanged T1 probe script (docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py, mode 'additions': PDBFixer 1.12.0 / OpenMM 8.6.0 CPU Threads=1, seed 1, strip_all, missingResidues set explicitly from the file listing, full-precision coordinates; probe/netguard.py blocked non-loopback connects, attempts 0). The 'produced_by' field inside each file names that T1 script.",
+ "purpose": "test input of the structure-repair splice builder (real PDBFixer output for real public structures: 1RNH three MSE + OXT, 1CLL side chain + OXT, 1HSG two OXT, 1MQ4 side chains + gap + OXT)",
+ "same_form_as": "8vf6-additions.pdbfixer-measured.json (M29 T1 (j), copied by T3a)"
+}

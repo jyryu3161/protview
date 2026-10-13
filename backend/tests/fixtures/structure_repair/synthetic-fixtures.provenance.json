@@ -1,0 +1,59 @@
+{
+ "base": {
+  "file": "backend/tests/fixtures/public_1ubq.cif",
+  "note": "public RCSB 1UBQ fixture, unmodified; hydrogens and waters removed before every edit",
+  "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+ },
+ "files": {
+  "synthetic-backbone-atoms-missing.cif": {
+   "bytes": 44036,
+   "reaches": "refusal backbone_atoms_missing",
+   "rule": "Atom O of A/30 ILE deleted.",
+   "sha256": "47aa5eaa5e606db529995c91c3084ef70e6d42b0c93e2b38a83328da03ad2af5"
+  },
+  "synthetic-calc-flag.cif": {
+   "bytes": 45114,
+   "reaches": "input calc_flag values normalised to '.' and counted (unchanged.input_calc_flag_cleared)",
+   "rule": "``_atom_site.calc_flag`` already set on input atoms (A/1 MET ``d``, A/2 GLN ``c``) and atoms CE, NZ of A/6 LYS     deleted (a side-chain repair is needed).",
+   "sha256": "eccc549f55667bc69417020461dd8d7fe505542a34455b02a7309f4b2a583ee5"
+  },
+  "synthetic-chain-break.pdb": {
+   "bytes": 50481,
+   "reaches": "refusal m7_condition_unsupported (m7_reason peptide_geometry) in PDB format",
+   "rule": "PDB format, residues A/40-76 rigidly shifted +6 A along x: consecutive author numbers, broken C-N distance.",
+   "sha256": "f60e3f4626af411227bae1dfd5f810797b87f81ee8ade1b280566703c24d75bd"
+  },
+  "synthetic-chain-identity-duplicate.cif": {
+   "bytes": 85152,
+   "reaches": "refusal chain_identity_duplicate",
+   "rule": "A second copy of the chain A protein, shifted +60 A along x and numbered 1001-1076, as label chain B under     author chain A (distinct author numbers, else a reader merges the two copies' atoms into one residue).",
+   "sha256": "419386784fcc895de966859c310ba27567b6420768e6293e837b85d9d173ceba"
+  },
+  "synthetic-gap-listing-missing.cif": {
+   "bytes": 42443,
+   "reaches": "refusal gap_listing_missing (mmCIF without _pdbx_unobs_or_zero_occ_residues)",
+   "rule": "Residues A/30-32 deleted; the file keeps _entity_poly_seq but has no unobserved-residue listing.",
+   "sha256": "fc1d1ed0c302c8a0190d7fa8edc6a9a42231173cb5fbf0c2e336a49325e3aefd"
+  },
+  "synthetic-gap.pdb": {
+   "bytes": 48607,
+   "reaches": "PDB-format internal gap from REMARK 465 + SEQRES + C-N distance (in scope)",
+   "rule": "PDB format (gemmi writer, SEQRES kept), residues A/30-32 deleted and listed in REMARK 465.",
+   "sha256": "5a602a5e59939eaecc27e969552aed2a08ad31549ba637a749f98bef9fcf204d"
+  },
+  "synthetic-unexpected-atoms.cif": {
+   "bytes": 44068,
+   "reaches": "refusal unexpected_atoms (a name outside the template; an unsupported element)",
+   "rule": "A/12 THR atom CG2 renamed XG2 (a name outside the template) and A/14 THR atom OG1 relabelled element Cl.",
+   "sha256": "85a4193a2cd8ab52d9bdf77eb7cef26a4b86ee6913b27d2d36dd7aa0fc6077ba"
+  },
+  "synthetic-unsupported-residue.cif": {
+   "bytes": 44088,
+   "reaches": "refusal unsupported_residue",
+   "rule": "Residue A/20 SER renamed SEP (atoms unchanged): a polymer residue that is neither standard nor MSE.",
+   "sha256": "8a9cb50dd3e261f39b3e066b7068038a0c31503c0b397577a2abe1a08d442d69"
+  }
+ },
+ "label": "SYNTHETIC test fixtures (M29 T4 structure repair); not experimental structures",
+ "made_by": "backend/tests/fixtures/structure_repair/build_synthetic_fixtures.py (gemmi 0.7.5)"
+}

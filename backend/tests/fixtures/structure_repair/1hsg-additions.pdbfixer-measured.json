@@ -1,0 +1,127 @@
+{
+ "added_atoms": [
+  {
+   "atom_name": "OXT",
+   "coordinates_A": [
+    26.937066115310735,
+    34.170167314523255,
+    -9.427968513637277
+   ],
+   "element": "O",
+   "origin": "oxt",
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "PHE",
+    "seq_auth": 99,
+    "seq_label": 99
+   }
+  },
+  {
+   "atom_name": "OXT",
+   "coordinates_A": [
+    26.099862080636143,
+    42.96119594730311,
+    4.7897812188336895
+   ],
+   "element": "O",
+   "origin": "oxt",
+   "residue": {
+    "chain_auth": "B",
+    "chain_label": "B",
+    "icode": "",
+    "model_number": 1,
+    "resname": "PHE",
+    "seq_auth": 99,
+    "seq_label": 99
+   }
+  }
+ ],
+ "clash": {
+  "ligand_keep_all": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 20.512104555928325,
+   "partners": 45
+  },
+  "metal_keep_all": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": null,
+   "partners": 0
+  },
+  "protein": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 4.2371963275819
+  },
+  "water_keep_all": {
+   "count_lt_1_5": 0,
+   "count_lt_2_0": 0,
+   "min_distance_A": 2.5779653804046077,
+   "partners": 127
+  }
+ },
+ "counts": {
+  "added_atoms": 2,
+  "added_hydrogens": 0,
+  "added_residues": 0,
+  "gaps": 0,
+  "observed_atoms_returned": 1514,
+  "protein_heavy_after": 1516,
+  "side_chain_residues": 0,
+  "terminal_oxt": 2
+ },
+ "gaps": [],
+ "input": {
+  "file": "backend/tests/fixtures/public_1hsg.cif",
+  "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268",
+  "size_bytes": 212124
+ },
+ "label": "PDBFixer \uce21\uc815 \uace0\uc815 \uc790\ub8cc(\uc81c\ud488 \uac12 \uc544\ub2d8) / PDBFixer-measured fixture, not a product value",
+ "observed_max_delta_A": 8.702335715267317e-15,
+ "peptide_links": {
+  "count": 196,
+  "max_A": 1.3461775514396341,
+  "min_A": 1.3113184205218817,
+  "outside_1_1_to_1_7": 0
+ },
+ "procedure": {
+  "coordinates": "full float precision (Angstrom = PDBFixer nm * 10), not rounded",
+  "engine": "PDBFixer 1.12.0 / OpenMM 8.6.0 CPU Threads=1",
+  "missing_residues": "set explicitly from _entity_poly_seq + _pdbx_unobs_or_zero_occ_residues (occupancy_flag 1) internal gaps only; findMissingResidues not used",
+  "pdbfixer_input": "protein polymer residues only, chain parts merged by author chain, M21-style PDBx text (chain id str(index), residue id str(global index + 1))",
+  "prepared_view": "gemmi re-implementation of prepare_structure (model 0, hydrogens strip, altloc highest_occupancy, waters strip_all)",
+  "seed": 1
+ },
+ "produced_by": "docs/qa/m29-repair-20261013/probe/pdbfixer_measure.py additions (M29 T1 (j), prototype)",
+ "schema": "m29_t1_pdbfixer_measured_additions@1",
+ "side_chain_repairs": [],
+ "terminal_oxt": [
+  {
+   "residue": {
+    "chain_auth": "A",
+    "chain_label": "A",
+    "icode": "",
+    "model_number": 1,
+    "resname": "PHE",
+    "seq_auth": 99,
+    "seq_label": 99
+   }
+  },
+  {
+   "residue": {
+    "chain_auth": "B",
+    "chain_label": "B",
+    "icode": "",
+    "model_number": 1,
+    "resname": "PHE",
+    "seq_auth": 99,
+    "seq_label": 99
+   }
+  }
+ ],
+ "water_policy_independent": true
+}
