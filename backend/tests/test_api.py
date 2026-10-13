@@ -284,7 +284,8 @@ def test_invalid_upload_command_handle_and_run(api, pdb_path, monkeypatch):
             "build_jev_projection",  # M24 adds one cheap L2 tool (local JEV projection, no egress)
             "build_jev_loop_projection",  # M25 adds one cheap L2 tool (local JEV loop projection, no egress)
             "link_reaction_knowledge",  # M26 adds one cheap L2 tool (pinned local reaction reference set)
-            "link_kinase_precedents"}  # M27 adds one cheap L2 tool (pinned local precedent reference set)
+            "link_kinase_precedents",  # M27 adds one cheap L2 tool (pinned local precedent reference set)
+            "repair_structure"}  # M29 lists its job-only tool at L3 (durable_job lane, not SUPPORTED_TOOLS)
 
 
 def test_upload_parent_symlink_never_reads_or_writes_outside(api, pdb_path, tmp_path):

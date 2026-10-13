@@ -422,7 +422,8 @@ def test_capability_ready_and_existing_methods_unchanged(client, world):
                                           "ligand_ga_design", "sequence_ga_design",
                                           "jev_choice", "jev_loop",  # M18-M23; M24 jev_choice; M25 jev_loop
                                           "reaction_knowledge",  # M26 reaction_knowledge
-                                          "kinase_precedents"}  # M27 kinase_precedents
+                                          "kinase_precedents",  # M27 kinase_precedents
+                                          "structure_repair"}  # M29 structure_repair
     ligand = methods["ligand_candidates"]
     assert ligand == ligand_bundle.capability()
     assert ligand["available"] is True and ligand["status"] == "ready" and ligand["reason"] is None
@@ -458,7 +459,8 @@ def test_capability_unavailable_paths(client, world, monkeypatch, tmp_path, case
                                           "ligand_ga_design", "sequence_ga_design",
                                           "jev_choice", "jev_loop",  # M18-M23; M24 jev_choice; M25 jev_loop
                                           "reaction_knowledge",  # M26 reaction_knowledge
-                                          "kinase_precedents"}  # M27 kinase_precedents
+                                          "kinase_precedents",  # M27 kinase_precedents
+                                          "structure_repair"}  # M29 structure_repair
         prereq = client.get(f"/runs/{world['rid']}/ligand/prerequisites").json()
         assert prereq["capability"]["available"] is False and prereq["capability"]["reason_code"] == reason
         # Reads of stored results stay available: they never run RDKit.
