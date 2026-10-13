@@ -92,8 +92,10 @@ PYTEST_GROUPS = [
      T + "test_kinase_precedents_tool.py", T + "test_kinase_precedents_api.py",
      T + "test_kinase_precedents_reports.py", T + "test_kinase_precedents_ast.py"],
     [T + "test_analysis_workflows.py", T + "test_jev_loop_reports.py"],
-    # M29 structure repair job lane: real PDBFixer worker processes (8VF6 about 25-35 s alone).
-    [T + "test_structure_repair_jobs.py", T + "test_structure_repair_lane.py", T + "test_structure_repair_worker.py"],
+    # M29 structure repair job lane: real PDBFixer worker processes (8VF6 about 25-35 s alone); T8a downstream reports
+    # (two real repairs, two M21 models and dockings, about 100 s alone).
+    [T + "test_structure_repair_jobs.py", T + "test_structure_repair_lane.py", T + "test_structure_repair_worker.py",
+     T + "test_structure_repair_reports_downstream.py"],
 ]
 
 
