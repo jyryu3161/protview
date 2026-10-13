@@ -10,6 +10,7 @@ locks, pre-filled in-progress sets and edited pins are fault injection, marked w
 from __future__ import annotations
 
 import json
+import re
 
 import httpx
 import pytest
@@ -28,6 +29,20 @@ SEND_KEYS = {"schema", "send_id", "status", "reason_code", "projection_handle", 
              "choice_handle", "late", "late_reason", "approved_event_seq", "outcome_event_seq"}
 PROBABILITY_VALUES = (0.4321, 0.1234)   # fixture reply values, never a provider output
 JSON = {"content-type": "application/json"}   # raw-content posts name their media type (the routes take JSON only)
+
+
+def _number_in(value, text):
+    """``str(value)`` in ``text`` as a whole number, not as digits inside a longer one: the report manifest's snapshot
+    holds the last event's ``time.time()`` (``time_utc``) and the budget's wall clock, whose digits can run
+    ``…0.1234…`` by chance (the M24 ``test_jev_reports`` failure, fixed there in M28 T2; here in M29 T2)."""
+    return re.search(rf"(?<![\d.]){re.escape(str(value))}(?!\d)", text) is not None
+
+
+def test_the_probability_check_finds_the_values_but_not_their_digits_inside_other_numbers():
+    for leaked in ('{"p":0.1234}', '{"p":[1,0.4321]}', '"0.1234"', "p = 0.4321."):
+        assert any(_number_in(value, leaked) for value in PROBABILITY_VALUES), leaked
+    for other in ('{"time_utc":1760180000.12345}', '{"used":10.43211}', '{"x":0.12345}'):
+        assert not any(_number_in(value, other) for value in PROBABILITY_VALUES), other
 
 
 @pytest.fixture(scope="module")
@@ -158,7 +173,7 @@ def test_consent_projection_preview_send_list_detail_and_report_through_the_api(
     dumped = canonical_json(manifest).decode()
     assert '"probabilities"' not in dumped and "answer.probabilities" not in dumped   # no such key or field
     for value in PROBABILITY_VALUES:
-        assert str(value) not in dumped and str(value) not in markdown
+        assert not _number_in(value, dumped) and str(value) not in markdown
     rows = keep(client.get(f"/runs/{rid}/reports")).json()
     assert [(row["handle"], row["analysis_type"], row["result_handle"]) for row in rows] == [
         (report["handle"], "jev_choice", record["choice_handle"])]
