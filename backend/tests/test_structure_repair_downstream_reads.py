@@ -283,8 +283,11 @@ def _reads(w: dict[str, Any]) -> list[tuple[str, str, dict[str, Any] | None]]:
     return [("m20_list", f"{base}/mutation_candidate_sets", None), ("m20_detail", sets, None),
             ("m20_positions", f"{sets}/positions", None), ("m20_candidates", f"{sets}/candidates", None),
             ("m21_list", f"{base}/mutation_models", None), ("m21_detail", f"{base}/mutation_models/{w['model']}", None),
+            ("m21_contacts", f"{base}/mutation_models/{w['model']}/contacts?structure=mutant", None),
+            ("m21_pairs", f"{base}/mutation_models/{w['model']}/docking_pairs", None),
             ("m18_list", f"{base}/docking/results", None),
             ("m18_detail", f"{base}/docking/results/detail?handle={w['dock']}", None),
+            ("m18_contacts", f"{base}/docking/results/contacts?handle={w['dock']}&mode=1", None),
             ("m23_list", f"{base}/sequence_ga/results", None),
             ("m23_detail", f"{base}/sequence_ga/results/{w['ga']}", None),
             ("m23_individual", f"{base}/sequence_ga/results/{w['ga']}/individual?key=wild_type", None),
@@ -349,10 +352,11 @@ def test_every_read_on_the_repaired_structure_carries_structure_origin(world, cl
         response = _get(client, url, body)
         assert response.status_code == 200, (name, response.text)
         got[name] = response.json()
-    for name in ("m20_detail", "m20_positions", "m21_detail", "m18_detail", "m23_detail", "m23_individual",
-                 "jev_preview", "loop_preview", "jev_send", "loop"):
+    for name in ("m20_detail", "m20_positions", "m20_candidates", "m21_detail", "m21_contacts", "m21_pairs",
+                 "m18_detail", "m18_contacts", "m23_detail", "m23_individual", "jev_preview", "loop_preview",
+                 "jev_send", "loop"):
         assert got[name]["structure_origin"] == expected, name
-    assert "structure_origin" not in got["m20_candidates"]   # the candidate page carries no field (the detail does)
+    assert got["m18_contacts"]["rows"] and got["m21_contacts"]["rows"] and got["m21_pairs"]["pairs"]
     rows = {row["handle"]: row for row in got["m20_list"]["rows"]}
     assert rows[w["set"]]["structure_origin"] == expected and rows[w["set"]]["valid"] is True
     assert "structure_origin" not in rows[w["original_set"]]  # the unrepaired original: no key
@@ -364,7 +368,8 @@ def test_every_read_on_the_repaired_structure_carries_structure_origin(world, cl
         assert row["structure_origin"] == expected, name
     assert got["jev_preview"]["repair_warning"] == JW1 and got["loop_preview"]["repair_warning"] == JW1
     # the loop's action answer (create) is the record a read gives, the field included
-    assert w["loop_created"]["structure_origin"] == expected and "structure_origin" not in world["plain"]["loop_created"]
+    assert w["loop_created"]["structure_origin"] == expected
+    assert "structure_origin" not in world["plain"]["loop_created"]
     assert got["loop_preview"]["loop"]["loop_id"] == w["loop"] and got["loop_preview"]["kind"] == "mutation"
     assert all('"repair_warning"' not in json.dumps(got[name]) for name in got if not name.endswith("preview"))
     assert _state(world["root"], w["rid"]) == before                    # reads write nothing
@@ -415,7 +420,7 @@ def test_repaired_reads_differ_from_the_baseline_commit_only_by_the_m29_fields(w
         new, base = _get(current, url, body), _get(old, url, body)
         assert (new.status_code, base.status_code) == (200, 200), (name, new.text, base.text)
         assert not any(f'"{key}"' in base.text for key in M29_KEYS), name      # the baseline modules were served
-        assert ('"structure_origin"' in new.text) == (name != "m20_candidates"), name
+        assert '"structure_origin"' in new.text, name
         assert json.dumps(_strip(new.json())) == json.dumps(base.json()), name
 
 
@@ -440,14 +445,11 @@ def _unavailable():
 
 
 def test_an_unavailable_environment_is_412_precondition_on_repaired_reads_only(world, client, stand_in, monkeypatch):
-    """LABELLED FAULT: the installed template cannot be read (``openmm_unavailable``). M20's three reads answer 412
-    instead of 500 (the T7 hand-over), like every other read of a result on a repaired structure."""
+    """LABELLED FAULT: the installed template cannot be read (``openmm_unavailable``). M20's reads answer 412 instead
+    of 500 (the T7 hand-over), like every other read (sub-pages included) of a result on a repaired structure."""
     monkeypatch.setattr(sr, "_templates", _unavailable)
     for name, url, body in _reads(world["repaired"]):
         response = _get(client, url, body)
-        if name == "m20_candidates":
-            assert response.status_code == 200, response.text      # no record check on this page
-            continue
         assert response.status_code == 412, (name, response.status_code, response.text)
         assert response.json()["error"] == "precondition", name
         assert response.json()["detail"]["reason_code"] == "openmm_unavailable", name
@@ -459,16 +461,17 @@ def test_a_record_that_no_longer_re_derives_shows_no_values(world, client, stand
     """LABELLED FAULT: the record does not re-derive (``repair_record_mismatch``, e.g. after an upgrade). List rows are
     ``valid: false`` with null fields; details and lists without row validity are 422 ``method_evidence_invalid``."""
     def mismatch(*_args, **_kwargs):
-        raise ToolFailure(FailureClass.input_invalid, "record differs", detail={"reason_code": "repair_record_mismatch"})
+        raise ToolFailure(FailureClass.input_invalid, "record differs",
+                          detail={"reason_code": "repair_record_mismatch"})
     monkeypatch.setattr(sr, "validated_repair", mismatch)
     w = world["repaired"]
     got = {name: _get(client, url, body) for name, url, body in _reads(w)}
-    for name in ("m20_detail", "m20_positions", "m21_detail", "m18_detail", "m23_detail", "m23_individual",
-                 "jev_preview", "loop_preview", "jev_sends", "jev_send", "loops", "loop"):
+    for name in ("m20_detail", "m20_positions", "m20_candidates", "m21_detail", "m21_contacts", "m21_pairs",
+                 "m18_detail", "m18_contacts", "m23_detail", "m23_individual", "jev_preview", "loop_preview",
+                 "jev_sends", "jev_send", "loops", "loop"):
         assert got[name].status_code == 422, (name, got[name].text)
         assert got[name].json()["detail"]["error"] == "method_evidence_invalid", name
         assert "counts" not in got[name].text and "structure_origin" not in got[name].text, name
-    assert got["m20_candidates"].status_code == 200
     rows = {row["handle"]: row for row in got["m20_list"].json()["rows"]}
     assert rows[w["set"]]["valid"] is False and rows[w["set"]]["counts"] is None
     assert "structure_origin" not in rows[w["set"]] and rows[w["original_set"]]["valid"] is True

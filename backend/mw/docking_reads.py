@@ -21,9 +21,10 @@ M29 T8b (spec .dryforge/spec.md 6.1): ``result_origin()`` is the ``structure_ori
 source is a mutation model (M21 ``mutation_model@1``, or M23 ``mutation_set_model@1``) on a repaired structure (model
 -> its structure, which the model's validation keeps equal to its candidate set's); None for an imported receptor or
 any other structure, after the downstream reports' check (``structure_origin_reads``). ``list_results()`` adds it to
-valid rows only when it is not None (a repaired structure that fails the check makes the row ``valid: false`` like any
-other evidence failure; an unavailable environment is raised as its ``precondition`` ``ToolFailure``). ``result_detail()`` is unchanged (the detail route adds the field, so the M23
-individual read, which nests this detail, keeps its bytes).
+valid rows and ``contact_page()`` to its page, only when it is not None (a repaired structure that fails the check is
+the row's ``valid: false`` or the page's ``DockingEvidenceError``, like any other evidence failure; an unavailable
+environment is raised as its ``precondition`` ``ToolFailure``). ``result_detail()`` is unchanged (the detail route
+adds the field, so the M23 individual read, which nests this detail, keeps its bytes).
 """
 from __future__ import annotations
 
@@ -184,10 +185,14 @@ def _mode(content: dict[str, Any], mode: int) -> dict[str, Any]:
 
 def contact_page(run: Any, handle: str, mode: int, offset: int, limit: int) -> dict[str, Any]:
     content = result(run, handle)
+    origin = result_origin(origin_reads.Origins(run), content)
     contacts = _mode(content, mode)["contacts"]
-    return {"schema": "docking_contact_page@1", "handle": handle, "mode": mode, "method": content["method"],
+    page = {"schema": "docking_contact_page@1", "handle": handle, "mode": mode, "method": content["method"],
             "cutoff_A": C.CONTACT_CUTOFF_A, "total": len(contacts), "offset": offset, "limit": limit,
             "rows": contacts[offset:offset + limit]}
+    if origin is not None:
+        page[origin_reads.KEY] = origin
+    return page
 
 
 def _file_stem(handle: str) -> str:

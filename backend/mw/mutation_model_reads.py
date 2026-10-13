@@ -18,11 +18,11 @@ run, kind and schema first.
 
 M29 T8b (spec .dryforge/spec.md 6.1): a model whose structure (the one its candidate set holds, which
 ``validated_result`` keeps equal) is a repaired structure also carries ``structure_origin`` in its list row (valid
-rows) and its detail (``structure_origin_reads``: record and structure handles, the record's ``counts``, SO1), after
-the downstream reports' check (the link, the record's publication and its re-derivation from the original structure);
-a repaired structure that fails it is ``MutationEvidenceError`` (a list row ``valid: false`` with null fields); an
-unavailable environment is raised as its ``precondition`` ``ToolFailure``. Any other model gets no key (its bytes are
-what they were).
+rows), its detail, its contact page and its docking pairs (``structure_origin_reads``: record and structure handles,
+the record's ``counts``, SO1), after the downstream reports' check (the link, the record's publication and its
+re-derivation from the original structure); a repaired structure that fails it is ``MutationEvidenceError`` (a list
+row ``valid: false`` with null fields); an unavailable environment is raised as its ``precondition`` ``ToolFailure``.
+Any other model gets no key (its bytes are what they were).
 """
 from __future__ import annotations
 
@@ -121,13 +121,17 @@ def model_detail(run: Any, handle: str) -> dict[str, Any]:
 def contact_page(run: Any, handle: str, *, structure: Any, page: int, page_size: int) -> dict[str, Any]:
     side = _side(structure, "structure")
     content = bundle.validated_result(run, handle)
+    origin = _origin(origin_reads.Origins(run), content)
     contacts = content["structures"][side]["contacts"]
     start = (page - 1) * page_size
     rows = [{"index": index, **row} for index, row in enumerate(contacts["rows"])][start:start + page_size]
-    return {"schema": "mutation_model_contact_page@1", "handle": handle, "structure": side,
-            "mutated_residue": content["structures"][side]["sasa"]["residue"], "cutoff_A": contacts["cutoff_A"],
-            "excluded_bond_distance": contacts["excluded_bond_distance"], "total": contacts["count"],
-            "page": page, "page_size": page_size, "rows": rows}
+    out = {"schema": "mutation_model_contact_page@1", "handle": handle, "structure": side,
+           "mutated_residue": content["structures"][side]["sasa"]["residue"], "cutoff_A": contacts["cutoff_A"],
+           "excluded_bond_distance": contacts["excluded_bond_distance"], "total": contacts["count"],
+           "page": page, "page_size": page_size, "rows": rows}
+    if origin is not None:
+        out[origin_reads.KEY] = origin
+    return out
 
 
 def structure_download(run: Any, handle: str, side: Any) -> tuple[bytes, str]:
@@ -206,7 +210,7 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
     and a ``PAIR_REASONS`` code. Groups are ordered by the earliest submission event of their jobs. Nothing is
     subtracted, ranked or chosen. M25: a group whose mutant job is a JEV loop docking step's (``_loop_docking``) also
     has ``loop: {loop_id, iteration}`` (no new reason; every other group is unchanged, without the key)."""
-    bundle.validated_result(run, handle)
+    origin = _origin(origin_reads.Origins(run), bundle.validated_result(run, handle))
     jobs = [job for job in JobQueue(run).list()
             if job["protocol_id"] == DC.PROTOCOL and job["tool_id"] == DC.TOOL and
             type(job["parameters"]) is dict and type(job["parameters"].get("receptor_source")) is dict and
@@ -251,5 +255,8 @@ def docking_pairs(run: Any, handle: str) -> dict[str, Any]:
         if loop is not None:
             pair["loop"] = loop
         pairs.append(pair)
-    return {"schema": "mutation_model_docking_pairs@1", "handle": handle, "score_label": DC.SCORE_LABEL,
-            "total": len(pairs), "pairs": pairs, "starts_job": False}
+    out = {"schema": "mutation_model_docking_pairs@1", "handle": handle, "score_label": DC.SCORE_LABEL,
+           "total": len(pairs), "pairs": pairs, "starts_job": False}
+    if origin is not None:
+        out[origin_reads.KEY] = origin
+    return out

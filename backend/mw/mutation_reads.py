@@ -22,9 +22,9 @@
   environment failure (``ToolFailure`` of class ``precondition``, e.g. ``openmm_unavailable`` when the installed
   template cannot be read) is raised as it is, never as invalid evidence (spec 4.6). The stored set is never changed;
   for any other set no key is added and nothing is re-verified (the bytes are what they were).
-* M29 T8b (spec 6.1, 6.2): for such a set the list row (valid rows), the detail and the position page also carry
-  ``structure_origin`` (``structure_origin_reads.field``: the record, repaired and original structure handles, the
-  record's ``counts`` and SO1) from that check; the candidate page is unchanged.
+* M29 T8b (spec 6.1, 6.2): for such a set the list row (valid rows), the detail, the position page and the candidate
+  page also carry ``structure_origin`` (``structure_origin_reads.field``: the record, repaired and original structure
+  handles, the record's ``counts`` and SO1) from that check (the candidate page re-checks like the detail).
 
 Every read loads the stored object from the store (content-hash check) and runs ``mutation_candidates.validated_set``;
 any failure raises ``MutationEvidenceError``. The caller checks the handle's run, kind and schema first.
@@ -193,6 +193,7 @@ def candidate_page(run: Any, handle: str, *, position_index: int | None, to: str
                    limit: int) -> dict[str, Any]:
     _closed(to, tuple(ONE_LETTER_ORDER), "to")
     content = validated(run, handle)
+    origin = _origin(structure_origin_reads.Origins(run), content)
     positions = content["positions"]
     rows = [{"index": item["index"], "position_index": item["position_index"],
              "residue": positions[item["position_index"]]["residue"],
@@ -200,6 +201,9 @@ def candidate_page(run: Any, handle: str, *, position_index: int | None, to: str
              "from": item["from"], "to": item["to"]}
             for item in content["candidates"]
             if (position_index is None or item["position_index"] == position_index) and (to is None or item["to"] == to)]
-    return {"schema": "mutation_candidate_page@1", "handle": handle,
+    page = {"schema": "mutation_candidate_page@1", "handle": handle,
             "filters": {"position_index": position_index, "to": to},
             "total": len(rows), "offset": offset, "limit": limit, "rows": rows[offset:offset + limit]}
+    if origin is not None:
+        page[structure_origin_reads.KEY] = origin
+    return page
