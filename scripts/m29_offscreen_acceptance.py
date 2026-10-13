@@ -33,7 +33,7 @@ only pass counts and a case that did not run is not_observed (never pass). ``acc
 of ``m29_common.CASES`` passed, every gate held (fresh build stamp, browser non-loopback requests 0, provider calls and
 product credential resolver reads 0, dispatch events 0, no 5xx answer to a runner request or on a harness page (except
 a job start the frontend proxy cut, ``classify_server_errors``, whose job then ended), nothing left (processes and
-8000/3000 listeners; an lsof that cannot tell is not "none"), default reference folders absent before and after, the product's fixed
+8000/3000 listeners; an lsof that cannot tell is not "none"), every backend service log read with no traceback, default reference folders absent before and after, the product's fixed
 sentences exported, the evidence searches clean with no text held back for a leak), the whole step list ran and this is
 not ``--rehearse``.
 
@@ -163,25 +163,25 @@ PROXY_FAILURE = re.compile(r"Failed to proxy https?://127\.0\.0\.1:8000/runs/(ru
                            r"(?![\w/]).*?(socket hang up|ECONNRESET)")
 
 
-def proxy_failures(log_text: str) -> dict[tuple[str, str], str]:
-    """(run, job) -> a summary of the frontend log line where the proxy lost that job start (``Failed to proxy`` and
-    ``socket hang up`` / ``ECONNRESET`` on the same line). The summary is rebuilt from the match with ``<run>`` /
+def proxy_failures(log_text: str) -> dict[tuple[str, str], list[str]]:
+    """(run, job) -> one summary per frontend log line where the proxy lost that job start (``Failed to proxy`` and
+    ``socket hang up`` / ``ECONNRESET`` on the same line). Each summary is rebuilt from the match with ``<run>`` /
     ``<job>``: never the raw line, so no path of the log reaches the evidence."""
-    found: dict[tuple[str, str], str] = {}
+    found: dict[tuple[str, str], list[str]] = {}
     for line in log_text.splitlines():
         match = PROXY_FAILURE.search(line)
         if match:
-            found.setdefault((match[1], match[2]), "Failed to proxy http://127.0.0.1:8000/runs/<run>/jobs/<job>/start "
-                                                   f"[{match[3]}]")
+            found.setdefault((match[1], match[2]), []).append(
+                f"Failed to proxy http://127.0.0.1:8000/runs/<run>/jobs/<job>/start [{match[3]}]")
     return found
 
 
 def classify_server_errors(errors: Any, run: str | None, log_text: str) -> tuple[list[dict] | None, list[dict] | None]:
     """The 5xx answers one harness page got (its row's ``serverErrors``) as (proxy timeouts, other server errors); the
     product's busy 503 is neither. A proxy timeout is exactly: POST, status 500, not busy, path
-    ``/api/runs/<run>/jobs/<job>/start`` and a frontend log line of the proxy losing that start of the same run and job.
-    Anything else (another path or method, no log line, a 500 the backend gave) stays a server error. (None, None) when
-    the row holds no list (the harness wrote no row)."""
+    ``/api/runs/<run>/jobs/<job>/start`` and a frontend log line of the proxy losing that start of the same run and job,
+    one line per 500 (a job's starts beyond its log lines stay server errors). Anything else (another path or method, no
+    log line, a 500 the backend gave) stays a server error. (None, None) when the row holds no list (no harness row)."""
     if not isinstance(errors, list):
         return None, None
     lines = proxy_failures(log_text)
@@ -192,13 +192,32 @@ def classify_server_errors(errors: Any, run: str | None, log_text: str) -> tuple
         if item.get("busy") is True and item.get("status") == 503:
             continue
         match = START_PATH.fullmatch(str(item.get("path")))
-        summary = lines.get((run, match[1])) if match and run else None
-        if item.get("method") == "POST" and item.get("status") == 500 and item.get("busy") is False and summary:
+        unused = lines.get((run, match[1])) if match and run else None
+        summary = unused.pop(0) if unused and item.get("method") == "POST" and item.get("status") == 500 \
+            and item.get("busy") is False else None
+        if summary:
             proxied.append({"job": match[1], "method": "POST", "path": "/api/runs/<run>/jobs/<job>/start", "status": 500,
                             "frontendLogLine": True, "frontendLog": summary, "finalJobStatus": None})
         else:
             other.append({key: item.get(key) for key in ("method", "path", "status", "busy")})
     return proxied, other
+
+
+BACKEND_FAILURE = re.compile(r"Traceback|Exception in ASGI application|Internal Server Error")
+
+
+def backend_log_failures(paths: list[Path]) -> dict[str, int | None]:
+    """File name -> the number of lines of that backend service log naming a Python traceback, an ASGI exception or an
+    internal server error (None when the file is missing or unreadable). Names and counts only, never a line."""
+    out: dict[str, int | None] = {}
+    for path in paths:
+        try:
+            text = path.read_text(errors="replace")
+        except OSError:
+            out[path.name] = None
+            continue
+        out[path.name] = sum(1 for line in text.splitlines() if BACKEND_FAILURE.search(line))
+    return out
 
 
 def proxy_timeouts_ended(items: Any) -> bool:
@@ -225,6 +244,10 @@ def gate_values(external: dict, *, left: list[str], listening: dict, folders_bef
         # the frontend proxy cut (``classify_server_errors``) whose job then ended
         "noServerError": external.get("apiServerErrors") == [] and external.get("harnessServerErrors") == 0
         and proxy_timeouts_ended(external.get("proxyTimeouts")),
+        # every backend service log of this run read, none naming a traceback / ASGI exception / internal error (a
+        # proxy-timeout 500 is only the proxy's when the backend logged nothing for it)
+        "noBackendTraceback": isinstance(external.get("backendLogFailures"), dict)
+        and bool(external["backendLogFailures"]) and all(value == 0 for value in external["backendLogFailures"].values()),
         "nothingLeft": not left and not listening,
         "defaultFoldersAbsent": not any(folders_before.values()) and not any(folders_after.values()),
         "fixedSentencesExported": fixed is not None,
@@ -321,6 +344,7 @@ class Runner(m15.Runner):
         self.lab: cases.Lab | None = None
         self.done: set[str] = set()
         self.external: dict = {}
+        self.backend_logs: list[Path] = []
 
     def resolve(self, value: str) -> Path:
         path = Path(value)
@@ -374,6 +398,7 @@ class Runner(m15.Runner):
                                  str(runs), "--control", str(control)], cwd=self.code, env=env, stdout=log.open("a"),
                                 stderr=subprocess.STDOUT, start_new_session=True)
         self.services["backend"] = proc
+        self.backend_logs.append(log)           # read by the noBackendTraceback gate, even if the start fails below
         self.wait_http(f"{c.API}/capabilities")
         try:
             server = json.loads((control / "server.json").read_text())
@@ -790,6 +815,7 @@ class Runner(m15.Runner):
         folders_after = self.default_folders()
         self.external["apiServerErrors"] = [{key: item[key] for key in ("method", "path", "status")}
                                             for item in self.api.server_errors()]
+        self.external["backendLogFailures"] = backend_log_failures(self.backend_logs)
         gates = gate_values(self.external, left=left, listening=listening, folders_before=folders_before,
                             folders_after=folders_after, build=self.state.get("build"), fixed=self.fixed)
         cases_out = c.complete_cases(self.records, self.selected_cases())

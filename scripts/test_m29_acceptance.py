@@ -468,7 +468,7 @@ def _gates(**over):
     import m29_offscreen_acceptance as runner
     external = {"browserNonLoopbackRequests": 0, "providerCalls": 0, "productResolverReads": 0, "dispatchEvents": 0,
                 "harnessDispatchGuard": False, "apiForbiddenSent": 0, "apiServerErrors": [], "harnessServerErrors": 0,
-                "proxyTimeouts": [], **over.pop("external", {})}
+                "proxyTimeouts": [], "backendLogFailures": {"backend-main.log": 0}, **over.pop("external", {})}
     base = {"left": [], "listening": {}, "folders_before": {"a": False}, "folders_after": {"a": False},
             "build": {"buildCurrentWithSource": True}, "fixed": {"sentences": {}}, **over}
     return runner.gate_values(external, **base)
@@ -526,6 +526,39 @@ def test_only_that_exact_shape_is_a_proxy_timeout():
     assert _gates(external={"harnessServerErrors": 1})["noServerError"] is False
 
 
+def test_each_proxy_log_line_covers_one_start_500_only():
+    two_lines = PROXY_LINE + "\n" + PROXY_LINE.replace("socket hang up", "other") + "\n"
+    proxied, other = _classify([CUT, {**CUT, "at": 2}])                                     # two 500s, one line
+    assert len(proxied) == 1 and other == [{"method": "POST", "path": CUT["path"], "status": 500, "busy": False}]
+    proxied, other = _classify([CUT, {**CUT, "at": 2}], log=two_lines)                       # two 500s, two lines
+    assert len(proxied) == 2 and other == []
+    proxied, other = _classify([{**CUT, "method": "GET"}, CUT])                               # a GET never uses the line
+    assert len(proxied) == 1 and len(other) == 1
+
+
+def test_backend_logs_must_be_read_and_hold_no_traceback(tmp_path):
+    import m29_offscreen_acceptance as runner
+    empty = tmp_path / "backend-main.log"
+    empty.write_text("")
+    bad = tmp_path / "backend-reopen.log"
+    bad.write_text("INFO ok\nTraceback (most recent call last):\n  File \"/Users/someone/x.py\", line 1\n"
+                   "ERROR:    Exception in ASGI application\n")
+    assert runner.backend_log_failures([empty]) == {"backend-main.log": 0}
+    assert _gates(external={"backendLogFailures": runner.backend_log_failures([empty])})["noBackendTraceback"] is True
+    found = runner.backend_log_failures([empty, bad])
+    assert found == {"backend-main.log": 0, "backend-reopen.log": 2}                       # names and counts only
+    assert "Traceback" not in json.dumps(found) and "/Users" not in json.dumps(found)
+    assert _gates(external={"backendLogFailures": found})["noBackendTraceback"] is False
+    missing = runner.backend_log_failures([tmp_path / "backend-gone.log"])
+    assert missing == {"backend-gone.log": None}
+    assert _gates(external={"backendLogFailures": missing})["noBackendTraceback"] is False
+    unreadable = runner.backend_log_failures([tmp_path])                                     # a directory: read fails
+    assert list(unreadable.values()) == [None]
+    assert _gates(external={"backendLogFailures": unreadable})["noBackendTraceback"] is False
+    assert _gates(external={"backendLogFailures": {}})["noBackendTraceback"] is False       # no backend log at all
+    assert _gates(external={"backendLogFailures": None})["noBackendTraceback"] is False
+
+
 def test_a_proxy_timeout_whose_job_did_not_end_fails_the_gate():
     proxied, _other = _classify([CUT])
     for status in ("running", "queued", "claimed", None):                                  # (e), and a failed read
@@ -570,7 +603,7 @@ def test_the_proxy_log_summary_never_carries_a_path():
             "{ code: 'ECONNRESET' }")
     summaries = runner.proxy_failures(line)                                                 # (g)
     assert list(summaries) == [(RUN, JOB)]
-    text = summaries[(RUN, JOB)]
+    [text] = summaries[(RUN, JOB)]
     assert c.leak_kinds(text) == [] and "/Users" not in text and RUN not in text and JOB not in text
     proxied, _other = _classify([CUT], log=line)
     assert c.leak_kinds(json.dumps(proxied)) == []
