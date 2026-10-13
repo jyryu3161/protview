@@ -142,7 +142,7 @@ class TestStop:
     def test_measured_check_budgets_fit_outer_hook_deadline(self):
         stop = _load("stop")
         assert stop.check_timeout(stop.CHECKS[0][0]) == 45
-        assert len(stop.CHECKS) == 20
+        assert len(stop.CHECKS) == 21
         assert all(stop.check_timeout(command) == 480 for command, _ in stop.CHECKS[1:])
         assert 45 + max(stop.check_timeout(command) for command, _ in stop.CHECKS[1:]) + 4 < 600
         for config in (REPO / ".claude" / "settings.json", REPO / ".codex" / "hooks.json"):

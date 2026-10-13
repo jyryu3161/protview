@@ -16,6 +16,14 @@ no tool, no job, no event.
 
 Every result read goes through ``docking_bundle.validated_result`` (bounded load with the store's content-hash
 check, single completed publication, inputs, closed sets); failures raise ``DockingEvidenceError``.
+
+M29 T8b (spec .dryforge/spec.md 6.1): ``result_origin()`` is the ``structure_origin`` field of a result whose receptor
+source is a mutation model (M21 ``mutation_model@1``, or M23 ``mutation_set_model@1``) on a repaired structure (model
+-> its structure, which the model's validation keeps equal to its candidate set's); None for an imported receptor or
+any other structure, after the downstream reports' check (``structure_origin_reads``). ``list_results()`` adds it to
+valid rows only when it is not None (a repaired structure that fails the check makes the row ``valid: false`` like any
+other evidence failure; an unavailable environment is raised as its ``precondition`` ``ToolFailure``). ``result_detail()`` is unchanged (the detail route adds the field, so the M23
+individual read, which nests this detail, keeps its bytes).
 """
 from __future__ import annotations
 
@@ -24,6 +32,7 @@ from typing import Any
 
 from . import docking_bundle, docking_inputs
 from . import docking_constants as C
+from . import structure_origin_reads as origin_reads
 from .ligand_bundle import LigandEvidenceError, validated_candidate_set
 
 RESULT = docking_bundle.OUTPUT_KIND
@@ -121,13 +130,25 @@ def result(run: Any, handle: Any) -> dict[str, Any]:
     return docking_bundle.validated_result(run, handle)
 
 
+def result_origin(origins: origin_reads.Origins, content: dict[str, Any]) -> dict[str, Any] | None:
+    """The ``structure_origin`` field of a validated result (``content``, or its detail ``result``): None unless its
+    receptor source is a mutation model on a repaired structure; ``DockingEvidenceError`` when that does not
+    validate."""
+    try:
+        return origins.of_receptor_source(content["inputs"]["receptor"].get("source"))
+    except origin_reads.OriginInvalid as exc:
+        raise docking_bundle.DockingEvidenceError("the repaired structure of the receptor does not validate") from exc
+
+
 def list_results(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run, RESULT)
     rows = []
+    origins = origin_reads.Origins(run)
     for handle in list(created)[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]["seq"]}
         try:
             content = result(run, handle)
+            origin = result_origin(origins, content)
             ligand = content["inputs"]["ligand"]
             receptor = content["inputs"]["receptor"]   # M21 mutation-model source: no import handle (null)
             row.update(valid=True, reason_code=None, job_id=docking_bundle.producer(run, handle)["job_id"],
@@ -135,6 +156,8 @@ def list_results(run: Any, offset: int, limit: int) -> dict[str, Any]:
                        candidate_id=ligand["candidate_id"], receptor_handle=receptor.get("handle"),
                        seed=content["parameters"]["seed"], box_source=content["box"]["source"],
                        modes=content["counts"]["modes"], null_result=content["counts"]["null_result"])
+            if origin is not None:
+                row[origin_reads.KEY] = origin
         except docking_bundle.DockingEvidenceError:
             row.update(valid=False, reason_code="evidence_invalid", job_id=None, method=None, mode=None,
                        ligand_source=None, candidate_id=None, receptor_handle=None, seed=None, box_source=None,

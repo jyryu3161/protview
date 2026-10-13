@@ -15,12 +15,16 @@
   detail and the position page also carry ``repair_handoff`` (``references``: the set's reference results made on the
   original structure; ``statements``: SO2 / SO3 as ``{id, text}``), and every position row of the page also carries
   ``modeled_basis`` (bool) and ``reference_not_checked`` (the stored fields shown as not checked, modeled residue).
-  Every read of such a set, the list row included, re-verifies the repair record against the original and repaired
-  structures (``mutation_handoff.validated_origin``): a record or structure mismatch is ``MutationEvidenceError`` (a
-  list row ``valid: false`` with null fields); an environment failure (``ToolFailure`` of class ``precondition``,
-  e.g. ``openmm_unavailable`` when the installed template cannot be read) is raised as it is, never as invalid
-  evidence (spec 4.6). The stored set is never changed; for any other set no key is added and nothing is re-verified
-  (the bytes are what they were).
+  Every read of such a set, the list row included, re-verifies the repair record with the downstream reports' check
+  (``structure_origin_reads.Origins``: the link, ``structure_repair_bundle.validated_result`` with its publication,
+  and the published structure; M29 T8b), so a read never calls valid what the M20 report refuses: a record,
+  publication or structure mismatch is ``MutationEvidenceError`` (a list row ``valid: false`` with null fields); an
+  environment failure (``ToolFailure`` of class ``precondition``, e.g. ``openmm_unavailable`` when the installed
+  template cannot be read) is raised as it is, never as invalid evidence (spec 4.6). The stored set is never changed;
+  for any other set no key is added and nothing is re-verified (the bytes are what they were).
+* M29 T8b (spec 6.1, 6.2): for such a set the list row (valid rows), the detail and the position page also carry
+  ``structure_origin`` (``structure_origin_reads.field``: the record, repaired and original structure handles, the
+  record's ``counts`` and SO1) from that check; the candidate page is unchanged.
 
 Every read loads the stored object from the store (content-hash check) and runs ``mutation_candidates.validated_set``;
 any failure raises ``MutationEvidenceError``. The caller checks the handle's run, kind and schema first.
@@ -31,7 +35,7 @@ from collections.abc import Callable
 from typing import Any
 
 from . import mutation_candidates as mc
-from . import mutation_handoff
+from . import mutation_handoff, structure_origin_reads
 from .core.errors import FailureClass, ToolFailure
 from .mutation_constants import EXCLUSION_REASONS_V2, KIND, ONE_LETTER_ORDER, POSITION_STATUSES, SCHEMA, SOURCE_KINDS
 
@@ -71,14 +75,14 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run)
     newest = list(reversed(created))
     rows = []
-    verified: dict[str, bool] = {}   # repaired structure -> its record verified (once per list read)
+    origins = structure_origin_reads.Origins(run)   # one check per repaired structure of the page
     for handle in newest[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]}
         try:
             if run.store.meta(handle)["schema"] != SCHEMA:
                 raise MutationEvidenceError("unexpected schema")
             content = validated(run, handle)
-            _verify_repair(run, content["structure"]["handle"], verified)
+            origin = _origin(origins, content)
             parameters, sources = content["parameters"], content["parameters"]["sources"]
             row.update(valid=True, structure=content["structure"]["handle"],
                        model_number=content["structure"]["model_number"], ligand=content["ligand"],
@@ -89,6 +93,8 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
                        numbering_map=parameters["numbering_map"], annotation=parameters["annotation"],
                        counts=content["counts"], null_result=content["null_result"],
                        catalytic_status=catalytic_status(content))
+            if origin is not None:
+                row[structure_origin_reads.KEY] = origin
         except MutationEvidenceError:
             row.update(valid=False, **dict.fromkeys(_LIST_FIELDS))
         rows.append(row)
@@ -114,16 +120,13 @@ def _repair_checked(call: Callable[..., Any], *args: Any) -> Any:
         raise MutationEvidenceError("the repaired structure of the set does not validate") from exc
 
 
-def _verify_repair(run: Any, structure: str, verified: dict[str, bool]) -> None:
-    """A list row's repair re-verification (``validated_origin``); nothing for a structure that is not repaired."""
-    if structure not in verified:
-        try:
-            _repair_checked(mutation_handoff.validated_origin, run.store, structure)
-            verified[structure] = True
-        except MutationEvidenceError:
-            verified[structure] = False
-    if not verified[structure]:
-        raise MutationEvidenceError("the repaired structure of the set does not validate")
+def _origin(origins: structure_origin_reads.Origins, content: dict[str, Any]) -> dict[str, Any] | None:
+    """The set's ``structure_origin`` field (None unless its structure is a repaired structure): the reports' check,
+    ``MutationEvidenceError`` when it fails; an environment failure is raised as it is."""
+    try:
+        return origins.of_structure(content["structure"]["handle"])
+    except structure_origin_reads.OriginInvalid as exc:
+        raise MutationEvidenceError("the repaired structure of the set does not validate") from exc
 
 
 def repair_view(run: Any, content: dict[str, Any]) -> dict[str, Any] | None:
@@ -137,9 +140,12 @@ def set_detail(run: Any, handle: str) -> dict[str, Any]:
               "result": {key: value for key, value in content.items() if key not in ("positions", "candidates")},
               "total_positions": len(content["positions"]), "total_candidates": len(content["candidates"]),
               "catalytic_status": catalytic_status(content)}
+    origin = _origin(structure_origin_reads.Origins(run), content)
     view = repair_view(run, content)
     if view is not None:
         detail["repair_handoff"] = view["repair_handoff"]
+    if origin is not None:
+        detail[structure_origin_reads.KEY] = origin
     return detail
 
 
@@ -173,10 +179,13 @@ def position_page(run: Any, handle: str, *, status: str | None, source: str | No
             "filters": {"status": status, "source": source, "exclusion_reason": exclusion_reason,
                         "chain_auth": chain_auth},
             "sort": sort, "total": len(rows), "offset": offset, "limit": limit, "rows": rows[offset:offset + limit]}
+    origin = _origin(structure_origin_reads.Origins(run), content)
     view = repair_view(run, content)
     if view is not None:
         page["rows"] = [{**row, **view["positions"][row["index"]]} for row in page["rows"]]
         page["repair_handoff"] = view["repair_handoff"]
+    if origin is not None:
+        page[structure_origin_reads.KEY] = origin
     return page
 
 

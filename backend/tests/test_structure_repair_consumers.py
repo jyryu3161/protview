@@ -182,6 +182,8 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "tools/mutations.py", "_admit"): (R, (), "M20 admission (T7 hand-off checks the repair link)"),
     (M + "tools/mutations.py", "register.generate_mutation_candidates"): (R, (), "M20 tool (Run.call allow-list)"),
     (M + "mutation_handoff.py", "read_view"): (R, (), "M20 hand-off read of a repaired set (T7)"),
+    (M + "mutation_handoff.py", "checked_origin"): (
+        R, (), "M29 T8b: the repaired structure check of the M20 admission, the reads and (same steps) the reports"),
     (M + "mutation_candidates.py", "*"): (R, (), HASH + "M20 build and set check"),
     (M + "mutation_model_constants.py", "<module>"): (R, (), HASH + "M21 STRUCTURE_KIND"),
     (M + "mutation_model_math.py", "_validated"): (R, (), HASH + "M21 content structure kind"),
