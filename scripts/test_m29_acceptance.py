@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import sys
+import types
 import uuid
 from pathlib import Path
 
@@ -435,7 +436,7 @@ def _gates(**over):
     import m29_offscreen_acceptance as runner
     external = {"browserNonLoopbackRequests": 0, "providerCalls": 0, "productResolverReads": 0, "dispatchEvents": 0,
                 "harnessDispatchGuard": False, "apiForbiddenSent": 0, "apiServerErrors": [], "harnessServerErrors": 0,
-                **over.pop("external", {})}
+                "proxyTimeouts": [], **over.pop("external", {})}
     base = {"left": [], "listening": {}, "folders_before": {"a": False}, "folders_after": {"a": False},
             "build": {"buildCurrentWithSource": True}, "fixed": {"sentences": {}}, **over}
     return runner.gate_values(external, **base)
@@ -450,6 +451,97 @@ def test_gates_never_read_a_missing_count_as_zero():
     assert _gates(external={"apiServerErrors": [{"method": "GET", "path": "/x", "status": 500}]})["noServerError"] is False
     assert _gates(listening={"8000": ["123"]})["nothingLeft"] is False
     assert _gates(left=["123 guardian"])["nothingLeft"] is False
+
+
+# A job start Next's rewrite proxy cut (rehearsal 07b, 1HSG R4a: the M21 start answers after about 114 s): the page got
+# 500, the frontend log names the start; ids here are made up.
+RUN, JOB = "run_" + "a1" * 16, "job_" + "b2" * 16
+PROXY_LINE = (f"Failed to proxy http://127.0.0.1:8000/runs/{RUN}/jobs/{JOB}/start [Error: socket hang up] "
+              "{ code: 'ECONNRESET' }")
+CUT = {"at": 1, "method": "POST", "path": f"/api/runs/<run>/jobs/{JOB}/start", "status": 500, "busy": False}
+
+
+def _classify(errors, log=PROXY_LINE + "\n[Error: socket hang up] { code: 'ECONNRESET' }\n", run=RUN):
+    import m29_offscreen_acceptance as runner
+    return runner.classify_server_errors(errors, run, log)
+
+
+def test_a_job_start_the_frontend_proxy_cut_is_a_proxy_timeout():
+    proxied, other = _classify([CUT])                                                      # (a)
+    assert other == [] and proxied == [{"job": JOB, "method": "POST", "path": "/api/runs/<run>/jobs/<job>/start",
+                                        "status": 500, "frontendLogLine": True, "finalJobStatus": None,
+                                        "frontendLog": "Failed to proxy http://127.0.0.1:8000/runs/<run>/jobs/<job>/start "
+                                                       "[socket hang up]"}]
+    ended = [{**proxied[0], "finalJobStatus": "done"}]
+    assert _gates(external={"proxyTimeouts": ended})["noServerError"] is True
+    assert _gates(external={"proxyTimeouts": ended, "harnessServerErrors": len(other)})["noServerError"] is True
+
+
+def test_only_that_exact_shape_is_a_proxy_timeout():
+    assert _classify([CUT], log="ready on 127.0.0.1:3000\n") == ([], [{"method": "POST", "path": CUT["path"],
+                                                                       "status": 500, "busy": False}])     # (b)
+    other_job = PROXY_LINE.replace(JOB, "job_" + "c3" * 16)
+    assert _classify([CUT], log=other_job)[0] == []                                       # the log names another job
+    assert _classify([CUT], run="run_" + "d4" * 16)[0] == []                              # ... or another run
+    for path in (f"/api/runs/<run>/jobs/{JOB}", "/api/runs/<run>/jobs", "/api/runs/<run>/jobs/approve",
+                 f"/api/runs/<run>/jobs/{JOB}/start/x", f"/api/runs/<run>/jobs/{JOB}/cancel", "/api/runs/<run>/commands"):
+        proxied, other = _classify([{**CUT, "path": path}])                               # (c)
+        assert proxied == [] and len(other) == 1, path
+    assert _classify([{**CUT, "method": "GET"}])[0] == []                                 # (d)
+    assert _classify([{**CUT, "status": 502}])[0] == [] and _classify([{**CUT, "busy": True}])[0] == []
+    assert _classify([{**CUT, "status": 503, "busy": True}]) == ([], [])                  # the busy 503 stays exempt
+    assert _classify(None) == (None, None)
+    assert _gates(external={"harnessServerErrors": 1})["noServerError"] is False
+
+
+def test_a_proxy_timeout_whose_job_did_not_end_fails_the_gate():
+    proxied, _other = _classify([CUT])
+    for status in ("running", "queued", "claimed", None):                                  # (e), and a failed read
+        assert _gates(external={"proxyTimeouts": [{**proxied[0], "finalJobStatus": status}]})["noServerError"] is False
+    assert _gates(external={"proxyTimeouts": None})["noServerError"] is False
+    assert _gates(external={"proxyTimeouts": [{**proxied[0], "finalJobStatus": "done", "frontendLogLine": False}]})[
+        "noServerError"] is False
+
+
+def test_the_proxy_timeouts_and_their_job_states_reach_the_evidence():
+    import m29_offscreen_acceptance as runner
+    reference = REPO / "runs" / f"m29-unit-reference-{uuid.uuid4().hex}"
+    reference.mkdir(parents=True)
+    try:
+        (reference / "active.json").write_text('{"set_hash": "unit"}')
+        made = runner.Runner(_runner_args(reference, rehearse=True, only=["r4a"])[1])
+
+        def get(path):
+            if JOB not in path:
+                raise OSError("no backend")
+            return 200, {"status": "done"}
+        made.api = types.SimpleNamespace(sent=[], get=get)
+        assert made.final_job_status(RUN, JOB) == "done" and made.final_job_status(RUN, "job_x") is None
+        assert made.final_job_status(None, JOB) is None
+        proxied, other = _classify([CUT])
+        proxied[0]["finalJobStatus"] = made.final_job_status(RUN, JOB)
+        made.flow_rows = [{"externalRequestCount": 0, "serverErrorResponses": len(other), "proxyTimeouts": proxied,
+                           "dispatchGuard": False}]
+        external = made.external_counts()                                                   # (f)
+        assert external["proxyTimeouts"] == proxied and external["harnessServerErrors"] == 0
+        assert runner.gate_values(external | {"apiServerErrors": []}, left=[], listening={}, folders_before={},
+                                  folders_after={}, build=None, fixed=None)["noServerError"] is True
+    finally:
+        (reference / "active.json").unlink()
+        reference.rmdir()
+
+
+def test_the_proxy_log_summary_never_carries_a_path():
+    import m29_offscreen_acceptance as runner
+    line = (f"Failed to proxy http://127.0.0.1:8000/runs/{RUN}/jobs/{JOB}/start [Error: socket hang up] at "
+            "/Users/someone/protview/frontend/node_modules/next/dist/server/lib/router-utils/proxy-request.js:122 "
+            "{ code: 'ECONNRESET' }")
+    summaries = runner.proxy_failures(line)                                                 # (g)
+    assert list(summaries) == [(RUN, JOB)]
+    text = summaries[(RUN, JOB)]
+    assert c.leak_kinds(text) == [] and "/Users" not in text and RUN not in text and JOB not in text
+    proxied, _other = _classify([CUT], log=line)
+    assert c.leak_kinds(json.dumps(proxied)) == []
 
 
 def test_export_is_not_clean_when_a_text_was_held_for_a_leak():

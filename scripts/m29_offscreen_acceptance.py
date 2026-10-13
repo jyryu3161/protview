@@ -31,8 +31,9 @@ Expectations come from ``scripts/m29_oracle.py`` (input files + the installed te
 ``scripts/m29_common.py``; never from a product answer. Every case is pass | fail | not_observed (+ closed reason);
 only pass counts and a case that did not run is not_observed (never pass). ``acceptance`` is true only when every case
 of ``m29_common.CASES`` passed, every gate held (fresh build stamp, browser non-loopback requests 0, provider calls and
-product credential resolver reads 0, dispatch events 0, no 5xx answer to a runner request or on a harness page, nothing
-left (processes and 8000/3000 listeners), default reference folders absent before and after, the product's fixed
+product credential resolver reads 0, dispatch events 0, no 5xx answer to a runner request or on a harness page (except
+a job start the frontend proxy cut, ``classify_server_errors``, whose job then ended), nothing left (processes and
+8000/3000 listeners), default reference folders absent before and after, the product's fixed
 sentences exported, the evidence searches clean with no text held back for a leak), the whole step list ran and this is
 not ``--rehearse``.
 
@@ -59,6 +60,7 @@ import ast
 import hashlib
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -152,6 +154,60 @@ def blob_check(code: Path) -> dict:
             "changed": changed, "m23ReportFiles": m23}
 
 
+# A job start the page sent through Next's rewrite proxy (``frontend/next.config``) that the proxy cut while the backend
+# was still answering it (the start route answers when the job ends; an M21 start takes about 2 minutes): the page gets
+# 500 and the frontend log says "Failed to proxy .../jobs/<job>/start [Error: socket hang up] { code: 'ECONNRESET' }".
+# The screens already recover from a lost start answer (the stored job decides). Pre-M29 behaviour, not a backend 5xx.
+START_PATH = re.compile(r"/api/runs/<run>/jobs/(job_[0-9a-f]+)/start")
+PROXY_FAILURE = re.compile(r"Failed to proxy https?://127\.0\.0\.1:8000/runs/(run_[0-9a-f]+)/jobs/(job_[0-9a-f]+)/start"
+                           r"(?![\w/]).*?(socket hang up|ECONNRESET)")
+
+
+def proxy_failures(log_text: str) -> dict[tuple[str, str], str]:
+    """(run, job) -> a summary of the frontend log line where the proxy lost that job start (``Failed to proxy`` and
+    ``socket hang up`` / ``ECONNRESET`` on the same line). The summary is rebuilt from the match with ``<run>`` /
+    ``<job>``: never the raw line, so no path of the log reaches the evidence."""
+    found: dict[tuple[str, str], str] = {}
+    for line in log_text.splitlines():
+        match = PROXY_FAILURE.search(line)
+        if match:
+            found.setdefault((match[1], match[2]), "Failed to proxy http://127.0.0.1:8000/runs/<run>/jobs/<job>/start "
+                                                   f"[{match[3]}]")
+    return found
+
+
+def classify_server_errors(errors: Any, run: str | None, log_text: str) -> tuple[list[dict] | None, list[dict] | None]:
+    """The 5xx answers one harness page got (its row's ``serverErrors``) as (proxy timeouts, other server errors); the
+    product's busy 503 is neither. A proxy timeout is exactly: POST, status 500, not busy, path
+    ``/api/runs/<run>/jobs/<job>/start`` and a frontend log line of the proxy losing that start of the same run and job.
+    Anything else (another path or method, no log line, a 500 the backend gave) stays a server error. (None, None) when
+    the row holds no list (the harness wrote no row)."""
+    if not isinstance(errors, list):
+        return None, None
+    lines = proxy_failures(log_text)
+    proxied: list[dict] = []
+    other: list[dict] = []
+    for item in errors:
+        item = item if isinstance(item, dict) else {}
+        if item.get("busy") is True and item.get("status") == 503:
+            continue
+        match = START_PATH.fullmatch(str(item.get("path")))
+        summary = lines.get((run, match[1])) if match and run else None
+        if item.get("method") == "POST" and item.get("status") == 500 and item.get("busy") is False and summary:
+            proxied.append({"job": match[1], "method": "POST", "path": "/api/runs/<run>/jobs/<job>/start", "status": 500,
+                            "frontendLogLine": True, "frontendLog": summary, "finalJobStatus": None})
+        else:
+            other.append({key: item.get(key) for key in ("method", "path", "status", "busy")})
+    return proxied, other
+
+
+def proxy_timeouts_ended(items: Any) -> bool:
+    """Every proxy timeout has its frontend log line and its job ended (a terminal state read from the API after the
+    harness step; queued / claimed / running or a failed read is not)."""
+    return isinstance(items, list) and all(isinstance(item, dict) and item.get("frontendLogLine") is True
+                                           and item.get("finalJobStatus") in cases.TERMINAL for item in items)
+
+
 def gate_values(external: dict, *, left: list[str], listening: dict, folders_before: dict, folders_after: dict,
                 build: dict | None, fixed: dict | None) -> dict[str, bool]:
     """The run-level gates (``exportClean`` is added after the export). A count that was never recorded (None) is
@@ -165,8 +221,10 @@ def gate_values(external: dict, *, left: list[str], listening: dict, folders_bef
         and external.get("productResolverReads") == 0 and external.get("reopenResolverReads", 0) == 0,
         "dispatchEvents0": external.get("dispatchEvents") == 0 and not external.get("harnessDispatchGuard"),
         "noForbiddenRequest": external.get("apiForbiddenSent") == 0,
-        # spec 10.2 "크래시·500 0": no 5xx answer to a runner request, none seen by a harness page
-        "noServerError": external.get("apiServerErrors") == [] and external.get("harnessServerErrors") == 0,
+        # spec 10.2 "크래시·500 0": no 5xx answer to a runner request, none seen by a harness page other than a job start
+        # the frontend proxy cut (``classify_server_errors``) whose job then ended
+        "noServerError": external.get("apiServerErrors") == [] and external.get("harnessServerErrors") == 0
+        and proxy_timeouts_ended(external.get("proxyTimeouts")),
         "nothingLeft": not left and not listening,
         "defaultFoldersAbsent": not any(folders_before.values()) and not any(folders_after.values()),
         "fixedSentencesExported": fixed is not None,
@@ -402,15 +460,31 @@ class Runner(m15.Runner):
         if row is None:
             row = {"schema": "m29_harness_row@1", "mode": plan["mode"], "status": "fail", "parts": {}, "observed": {},
                    "externalRequestCount": None, "error": f"harness exited {rc} without a ledger row"}
+        log_file = self.artifacts / "services" / "frontend.log"
+        proxied, other = classify_server_errors(row.get("serverErrors"), row.get("run"),
+                                                log_file.read_text(errors="replace") if log_file.is_file() else "")
+        for item in proxied or []:
+            item["finalJobStatus"] = self.final_job_status(row.get("run"), item["job"])
         self.flow_rows.append({"step": step, "status": row.get("status"), "exitCode": rc,
                                "externalRequestCount": row.get("externalRequestCount"),
-                               "serverErrorResponses": row.get("serverErrorResponses"),
+                               "serverErrorResponses": None if other is None else len(other),
+                               "serverErrors": other, "proxyTimeouts": proxied,
                                "dispatchedDuringFlow": row.get("dispatchedDuringFlow"),
                                "dispatchGuard": exceeded is not None, "parts": row.get("parts")})
         self.record(f"harness-{step}", "pass" if rc == 0 and row.get("status") == "pass" else "fail", exitCode=rc,
                     parts=row.get("parts"))
         self.rows[step] = row
         return row
+
+    def final_job_status(self, run: str | None, job: str) -> str | None:
+        """The stored state of a job after its harness step (the backend still runs); None when it cannot be read."""
+        if not run:
+            return None
+        try:
+            status, body = self.api.get(f"/runs/{run}/jobs/{job}")
+        except OSError:
+            return None
+        return body.get("status") if status == 200 and isinstance(body, dict) else None
 
     def input_ref(self, name: str) -> dict:
         path = self.code / c.FIXTURES / f"public_{name}.cif"
@@ -668,7 +742,8 @@ class Runner(m15.Runner):
                     row["dispatchGuard"] for row in rows), "apiRequests": len(self.api.sent),
                 "apiForbiddenSent": sum(1 for item in self.api.sent if item["method"] != "GET" and any(
                     part in item["path"] for part in c.FORBIDDEN_POST_PARTS)),
-                "harnessServerErrors": server}
+                "harnessServerErrors": server,
+                "proxyTimeouts": [item for row in rows for item in row.get("proxyTimeouts") or []]}
 
     def finish(self, folders_before: dict) -> int:
         lab = self.lab
