@@ -59,3 +59,21 @@ call-key hash files: the 27 git blobs at HEAD equal BASELINE_BLOBS (baseline-blo
 Number of pytest groups: 20 (19 named groups + the rest group) plus the ruff check = 21 checks in .codex/hooks/stop.py. M28 had 18 groups. Total tests: 6703 (M28 gate 6379). The longest group of the diagnostic trial before the freeze was the rest group (414.3 s, limit 480 s); six mid-size test files (test_jobs, test_ligand_worker, test_ligand_jobs, test_mutation_tool, test_jev_ast, test_site_annotation_reports) then moved to the precedent group and the longest group fell to about 371 s. The trials were diagnostics, not gate runs.
 The intermittent test set fixed in T2 (spec 12) passed in all three rounds. No test failed in any round; the Stop-hook failures seen during M29 (load and concurrent edits) are summarized in docs/qa/m29-repair-20261013/t2-flaky-tests.md (the raw failure records are in the coordinating session's git-ignored notes) and none occurred on this source.
 Raw per-group records (absolute paths replaced by <repo>/<scratch>) and per-command logs are in docs/qa/m29-repair-20261013/gate-raw/.
+
+== completion check on the final head bb6403ad (2026-10-14; not one of the three gate rounds) ==
+After the documents of T17-T20 and the one old-harness expectation were committed, all pytest groups were run once more together (same script, same bound): ruff + 20 groups, 6703 passed, 0 skipped, wall time 373.0 s, longest group 372.9 s, failed checks 0. The other commands were run again too:
+head: bb6403ad3dc03bd287ddf9041e13e3364a3bd2cd
+status-lines:        0
+ruff: exit=0 0s
+node-check: files=35 fails=0
+frontend-test-events: exit=0 1s
+frontend-typecheck: exit=0 7s
+frontend-build: exit=0 16s
+golden-science-m24: exit=0 6s
+golden-egress: exit=0 1s
+golden-call-keys-record: exit=0 45s
+golden-call-keys-equal: exit=0
+golden-runs-root: runs/m29-gate-golden-keys-20261014031233
+baseline-blobs: files=27 equal=True
+status-lines-after:        0
+git diff --name-only 52aa4265..bb6403ad lists only docs/**, README.md, CLAUDE.md, AGENTS.md documents and frontend/tests/offscreen/jev-loop-flow.cjs (the old M25 harness expectation, regression-harness-changes.txt); no product code, hash file or golden file differs from the freeze.
