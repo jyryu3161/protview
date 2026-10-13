@@ -214,6 +214,8 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "api/app.py", "structure_repair_preflight_read"): (
         RO, (), "M29 repair preflight read: a repaired structure gets its own already_repaired (spec 4.2)"),
     (M + "structure_repair_reads.py", "*"): (RO, (), "M29 repair record reads (spec 4.5)"),
+    (M + "structure_repair_reports.py", "*"): (
+        RO, (), "M29 T9 repair report (spec 7): the stored record and its publication, re-validated; never repairs"),
     (M + "structure_origin.py", "*"): (RO, (), "M29 origin judge behind reject_if_repaired (spec 6.1)"),
     # ---- shared helpers used by receive and read paths (T1 judgement: no refusal here)
     (M + "tools/structural.py", "structure_residues"): (J, (), "residue catalog (reads, viewer, M20, M21)"),
