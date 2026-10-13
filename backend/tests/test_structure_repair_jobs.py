@@ -28,6 +28,7 @@ from mw import structure_repair_bundle as bundle
 from mw import structure_repair_constants as K
 from mw import structure_repair_jobs as jobs
 from mw.api import app as api_module
+from mw.core.errors import ToolFailure
 from mw.core.handles import canonical_json
 from mw.jobs.queue import JobQueue
 from mw.runtime.orchestrator import Run
@@ -432,8 +433,8 @@ def test_every_closed_failure_stores_nothing_and_charges_one_unit(real, tmp_path
 
 
 def test_a_failed_publication_leaves_the_event_log_and_objects_byte_identical(real, tmp_path, monkeypatch):
-    """``publish`` itself on a copy of the run (events only): each refusal leaves events.jsonl and the object folder
-    exactly as they were."""
+    """The publication's pure part (``prepare``) on a copy of the run (events only): each refusal leaves events.jsonl
+    and the object folder exactly as they were."""
     rid = real["world"]["rid"]
     copy = tmp_path / "copy"
     (copy / rid).mkdir(parents=True)
@@ -456,7 +457,7 @@ def test_a_failed_publication_leaves_the_event_log_and_objects_byte_identical(re
             if hook is not None:
                 patch.setattr(sr, "build_repaired", _faulty_build(hook))
             with pytest.raises(jobs.RepairJobFailure) as caught:
-                jobs.publish(run, job, "attempt_copy", attempt_dir, descriptor)
+                jobs.prepare(run, job, attempt_dir, descriptor)
         assert caught.value.reason_code == code
         assert (copy / rid / "events.jsonl").read_bytes() == before, code
         assert sorted(p.name for p in (copy / rid / "objects").iterdir()) == objects, code
@@ -502,3 +503,112 @@ def test_timeout_and_cancel_publish_nothing_and_charge_once(tmp_path, monkeypatc
     finally:
         F.kill_leftovers(root, rid)
         F.kill_leftovers(root, other["rid"])
+
+
+# ----------------------------------------------------------------- the publication window, the overlay, the environment
+def test_a_cancel_after_the_m7_check_stores_nothing_and_ends_cancelled(real, tmp_path, monkeypatch):
+    """A cancel requested after the pure part (assembly, validator, overlay M7) and before storing is seen in the one
+    critical section that stores: the job ends cancelled and the run store is unchanged (LABELLED hook: the real
+    ``m7_check`` followed by a user cancel from another queue object; simulated guardian, no process)."""
+    root = tmp_path / "runs"
+    client = F.client(root, monkeypatch)
+    world = F.world(client, f"{LABEL}, cancel during publication", VF6, "public_8vf6.cif")
+    rid = world["rid"]
+    submitted = F.submit(client, rid, F.args(world["structure"])).json()
+    before = F.store_state(root, rid)
+    real_m7 = jobs.m7_check
+    calls = []
+
+    def m7_then_cancel(run, objects):
+        real_m7(run, objects)
+        calls.append(JobQueue(new_run(root, run_id=rid, dry_run=False)).request_cancel(submitted["job_id"])["status"])
+
+    with monkeypatch.context() as patch:
+        patch.setattr(JobQueue, "_supervise", F.simulated(real["raw"]))
+        patch.setattr(jobs, "m7_check", m7_then_cancel)
+        done = F.approve_start(client, rid, submitted["job_id"]).json()
+    assert calls == ["accepted"]
+    assert done["status"] == "cancelled" and done["output_handles"] == [], done
+    assert F.store_state(root, rid) == before and F.used(client, rid) == 1
+    assert not any(e["type"] == "job_result_candidate" for e in F.events(root, rid))
+    assert client.get(f"/runs/{rid}/structure_repairs").json()["rows"] == []
+
+
+def _verdict(store, handle: str, seed: int) -> tuple:
+    try:
+        return ("pass", canonical_json(openmm_method.preflight(store, handle, seed=seed)))
+    except ToolFailure as exc:
+        return ("fail", exc.cls.value, exc.message, canonical_json(exc.detail))
+
+
+def test_the_overlay_m7_verdict_equals_the_verdict_after_storing(real, tmp_path):
+    """Check 4 runs on the read-only overlay; storing the same four objects and running M7 on the store gives the
+    same verdict byte for byte, for the genuine 8VF6 output and for one with A/100 NZ removed (refused)."""
+    rid = real["world"]["rid"]
+    copy = tmp_path / "copy"
+    (copy / rid).mkdir(parents=True)
+    (copy / rid / "events.jsonl").write_bytes((real["root"] / rid / "events.jsonl").read_bytes())
+    run = new_run(copy, run_id=rid, dry_run=False)
+    inputs = sr.load_inputs(run.store, real["world"]["structure"])
+    genuine = json.loads(real["raw"])["added_atoms"]
+    broken = [a for a in genuine if not (a["residue"]["chain_auth"] == "A" and a["residue"]["seq_auth"] == 100 and
+                                         a["atom_name"] == "NZ")]
+    verdicts = {}
+    for label, rows in (("genuine", genuine), ("without A/100 NZ", broken)):
+        raw, record = sr.build_repaired(inputs, rows)
+        objects = bundle.pending(run, inputs, raw, record)
+        before = (copy / rid / "events.jsonl").read_bytes()
+        overlay = _verdict(bundle.Overlay(run.store, objects), objects.structure, run.seed)
+        assert (copy / rid / "events.jsonl").read_bytes() == before, label
+        if label == "genuine":   # the job of the shared run stored exactly these objects
+            assert objects.structure == real["done"]["output_handles"][1]
+        else:                    # LABELLED: really store the refused objects in the copy, then run M7 on the store
+            bundle.store(run, objects, "job_labelled_copy", "attempt_labelled_copy")
+        stored = _verdict(run.store, objects.structure, run.seed)
+        assert overlay == stored, label
+        verdicts[label] = overlay
+    assert verdicts["genuine"][0] == "pass"
+    assert verdicts["without A/100 NZ"][0] == "fail"
+    assert json.loads(verdicts["without A/100 NZ"][3])["reason_code"] == "heavy_template_mismatch"
+
+
+def _unavailable_templates():
+    raise sr._unavailable()
+
+
+def test_an_unavailable_template_is_a_precondition_never_invalid_evidence(real, tmp_path, monkeypatch):
+    """Spec 4.6: re-verifying a stored record needs the installed template XML. Without it (LABELLED hook: the core's
+    template loader raises its own ``openmm_unavailable``) every read answers the 412 ``precondition`` envelope, the
+    list included, and a publication fails with that precondition, storing nothing."""
+    root, world, done = real["root"], real["world"], real["done"]
+    rid = world["rid"]
+    client = F.client(root, monkeypatch)
+    record_handle = done["output_handles"][0]
+    before = (root / rid / "events.jsonl").read_bytes()
+    with monkeypatch.context() as patch:
+        patch.setattr(sr, "_templates", _unavailable_templates)
+        for sub in ("", "/atoms", "/structure"):
+            response = client.get(f"/runs/{rid}/structure_repairs/{record_handle}{sub}")
+            assert response.status_code == 412, (sub, response.text)
+            assert response.json()["error"] == "precondition"
+            assert response.json()["detail"]["reason_code"] == "openmm_unavailable", sub
+        listing = client.get(f"/runs/{rid}/structure_repairs")
+        assert listing.status_code == 412 and listing.json()["detail"]["reason_code"] == "openmm_unavailable"
+        with pytest.raises(ToolFailure) as caught:
+            bundle.validated_result(new_run(root, run_id=rid, dry_run=False), record_handle)
+        assert caught.value.detail["reason_code"] == "openmm_unavailable"
+    assert (root / rid / "events.jsonl").read_bytes() == before
+    assert client.get(f"/runs/{rid}/structure_repairs").json()["rows"][0]["valid"] is True
+    # Publication: submitted while the template was readable; it becomes unreadable before the output is assembled.
+    other_root = tmp_path / "runs"
+    client = F.client(other_root, monkeypatch)
+    other = F.world(client, f"{LABEL}, template unavailable at publication", VF6, "public_8vf6.cif")
+    submitted = F.submit(client, other["rid"], F.args(other["structure"])).json()
+    state = F.store_state(other_root, other["rid"])
+    with monkeypatch.context() as patch:
+        patch.setattr(JobQueue, "_supervise", F.simulated(real["raw"]))
+        patch.setattr(sr, "_templates", _unavailable_templates)
+        failed = F.approve_start(client, other["rid"], submitted["job_id"]).json()
+    assert failed["status"] == "failed" and failed["output_handles"] == [], failed
+    assert (failed["failure"]["error"], failed["failure"]["reason_code"]) == ("precondition", "openmm_unavailable")
+    assert F.store_state(other_root, other["rid"]) == state and F.used(client, other["rid"]) == 1

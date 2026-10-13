@@ -8,7 +8,10 @@
 * ``structure_download()``: the stored repaired mmCIF bytes, hash-checked against the record.
 
 Every read goes through ``structure_repair_bundle.validated_result`` / ``structure_bytes`` (single completed
-publication, job selection, the four objects, the core validator); any failure raises ``RepairEvidenceError``.
+publication, job selection, the four objects, the core validator); any failure raises ``RepairEvidenceError``, except an
+unavailable environment (``ToolFailure`` of class ``precondition``, e.g. ``openmm_unavailable`` when the installed
+template cannot be read), which is raised as it is (spec 4.6): the list then ends as that precondition as soon as one
+record needs re-validation; only genuine mismatches are ``valid: false`` rows.
 Nothing is recomputed: values are the stored ones. The caller checks the handle's run, kind and schema first.
 """
 from __future__ import annotations

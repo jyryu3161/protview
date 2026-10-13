@@ -453,3 +453,42 @@ def test_an_unpublished_record_never_reads(tmp_path, monkeypatch):
         with pytest.raises(bundle.RepairEvidenceError):
             bundle.validated_result(run, wrong)
     assert reads.list_repairs(run, 0, 50)["rows"][0]["valid"] is False
+
+
+def test_the_overlay_offers_meta_and_load_only(tmp_path, monkeypatch):
+    """Spec 3.4: the pre-publication view gives ``meta`` and ``load`` and nothing else (no write, no event log)."""
+    from mw import structure_repair as sr
+
+    client = F.client(tmp_path / "runs", monkeypatch)
+    world = F.world(client, "M29 overlay surface (public 1CLL)", CLL, "public_1cll.cif")
+    run = api_module._run(world["rid"])
+    inputs = sr.load_inputs(run.store, world["structure"])
+    raw, record = sr.build_repaired(inputs, C.additions("1cll"))   # PDBFixer-measured rows (T1 fixture)
+    objects = bundle.pending(run, inputs, raw, record)
+    overlay = bundle.Overlay(run.store, objects)
+    assert {name for name in dir(overlay) if not name.startswith("_")} == {"meta", "load"}
+    for name in ("put", "events", "run_id", "store", "handles", "rebuild_from_events", "__dict__"):
+        assert not hasattr(overlay, name), name
+    with pytest.raises(AttributeError):
+        overlay.events = run.store.events
+    assert overlay.meta(objects.structure)["kind"] == K.STRUCTURE_KIND and overlay.load(objects.coordinates) == raw
+    assert overlay.meta(world["structure"]) == run.store.meta(world["structure"])
+    with pytest.raises(KeyError):
+        run.store.meta(objects.structure)        # nothing reached the store
+
+
+def test_a_list_without_repairs_needs_no_template(tmp_path, monkeypatch):
+    """Spec 4.6: the list re-validates only existing records, so an unavailable template (LABELLED hook) does not
+    refuse a run that has none."""
+    from mw import structure_repair as sr
+
+    client = F.client(tmp_path / "runs", monkeypatch)
+    world = F.world(client, "M29 empty list (public 1UBQ)", UBQ, "public_1ubq.cif")
+
+    def unavailable():
+        raise sr._unavailable()
+
+    with monkeypatch.context() as patch:
+        patch.setattr(sr, "_templates", unavailable)
+        listing = client.get(f"/runs/{world['rid']}/structure_repairs")
+    assert listing.status_code == 200 and listing.json()["rows"] == [] and listing.json()["total"] == 0

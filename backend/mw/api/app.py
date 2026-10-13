@@ -2229,12 +2229,15 @@ def _structure_repair_evidence_error(exc: Exception) -> HTTPException:
 @app.get("/runs/{rid}/structure_repairs")
 def structure_repairs(rid: str, request: Request, offset: int = Query(0, ge=0),
                       limit: int = Query(structure_repair_reads.LIST_LIMIT_DEFAULT, ge=1,
-                                         le=structure_repair_reads.LIST_LIMIT_MAX)) -> dict[str, Any]:
-    """This run's structure repair records, newest first; each row re-validated (``valid: false`` without values)."""
+                                         le=structure_repair_reads.LIST_LIMIT_MAX)) -> Any:
+    """This run's structure repair records, newest first; each row re-validated (``valid: false`` without values).
+    An unavailable environment (the installed template) is the 412 ``precondition`` of the whole list (spec 4.6)."""
     _only_query(request, {"offset", "limit"})
     run = _run(rid)
     try:
         return structure_repair_reads.list_repairs(run, offset, limit)
+    except ToolFailure as exc:
+        return _tool_error(exc)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid structure repair record"}) from exc
 
@@ -2245,7 +2248,7 @@ def structure_repairs(rid: str, request: Request, offset: int = Query(0, ge=0),
 def structure_repair_atoms(rid: str, handle: str, request: Request, page: int = Query(1, ge=1),
                            page_size: int = Query(structure_repair_reads.ATOM_PAGE_SIZE_DEFAULT,
                                                   ge=structure_repair_reads.ATOM_PAGE_SIZE_MIN,
-                                                  le=structure_repair_reads.ATOM_PAGE_SIZE_MAX)) -> dict[str, Any]:
+                                                  le=structure_repair_reads.ATOM_PAGE_SIZE_MAX)) -> Any:
     """The record's added atoms (stored structure order), by page."""
     _only_query(request, {"page", "page_size"})
     run = _run(rid)
@@ -2256,6 +2259,8 @@ def structure_repair_atoms(rid: str, handle: str, request: Request, page: int = 
         raise _read_invalid(exc) from exc
     except structure_repair_reads.RepairEvidenceError as exc:
         raise _structure_repair_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/structure_repairs/{handle:path}/structure")
@@ -2268,13 +2273,15 @@ def structure_repair_structure(rid: str, handle: str, request: Request) -> Respo
         raw, filename = structure_repair_reads.structure_download(run, handle)
     except structure_repair_reads.RepairEvidenceError as exc:
         raise _structure_repair_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
     return Response(raw, media_type="chemical/x-mmcif", headers={
         "Content-Disposition": f'attachment; filename="{filename}"',
         "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @app.get("/runs/{rid}/structure_repairs/{handle:path}")
-def structure_repair_detail(rid: str, handle: str, request: Request) -> dict[str, Any]:
+def structure_repair_detail(rid: str, handle: str, request: Request) -> Any:
     """One validated record without its added-atom rows, with the four handles of its publication."""
     _only_query(request, set())
     run = _run(rid)
@@ -2283,6 +2290,8 @@ def structure_repair_detail(rid: str, handle: str, request: Request) -> dict[str
         return {**structure_repair_reads.repair_detail(run, handle), "meta": meta}
     except structure_repair_reads.RepairEvidenceError as exc:
         raise _structure_repair_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 # ----------------------------------------------------------------- M19 batch limit raise (human UI action only)

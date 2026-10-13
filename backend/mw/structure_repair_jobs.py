@@ -20,14 +20,19 @@ Submission order (``JobQueue.submit``), every refusal before any job, reservatio
    published content depends on (``DEPENDENCIES``) + the fixed method record; never the timeout. One prepared
    structure has one call key (the seed is the constant ``REPAIR_SEED``), so the same input returns the same job.
 
-Publication (``publish``), after the worker's group is verified empty: the worker output is read within its bound and
-must carry the job's pinned method and the fixed engine values; the core splices the added atoms into the prepared
-structure (``build_repaired``) and re-validates (``validated_repair``, checks 1, 2, 3 and 5); the M7 ``preflight``
-then runs on a read-only overlay of the four pending objects (check 4; its refusal is ``repair_incomplete`` with
-``detail.m7_reason``). Only then are the four objects stored and the published event appended
-(``structure_repair_bundle.store``). A closed failure is ``RepairJobFailure`` (the job fails with that reason and
-stores nothing; the reserved unit is not refunded); any other mismatch in the worker output raises and the queue ends
-the attempt as ``fatal`` (``invalid scientific output``), again storing nothing.
+Publication, after the worker's group is verified empty, in two parts:
+1. ``prepare`` (pure; writes nothing, takes no lock): the worker output is read within its bound and must carry the
+   job's pinned method and the fixed engine values; the core splices the added atoms into the prepared structure
+   (``build_repaired``) and re-validates (``validated_repair``, checks 1, 2, 3 and 5); the M7 ``preflight`` then runs
+   on a read-only overlay of the four pending objects (check 4; its refusal is ``repair_incomplete`` with
+   ``detail.m7_reason``).
+2. ``structure_repair_bundle.store`` (the queue calls it under the run's transition lock, after re-checking
+   cancellation and the attempt, and commits the done terminal in the same critical section): the four objects and
+   the published event.
+A closed failure is ``RepairJobFailure`` (the job fails with that reason and stores nothing; the reserved unit is not
+refunded). An environment failure (``ToolFailure`` of class ``precondition``: the installed template or the M7
+engines are unavailable, spec 4.6) is raised as it is, never as invalid output. Any other mismatch in the worker output
+raises and the queue ends the attempt as ``fatal`` (``invalid scientific output``), again storing nothing.
 """
 from __future__ import annotations
 
@@ -337,14 +342,14 @@ def _closed(exc: ToolFailure) -> RepairJobFailure:
 
 def m7_check(run: Any, objects: bundle.Pending) -> None:
     """Check 4: the M7 preflight on the read-only overlay (nothing is written); its refusal is
-    ``repair_incomplete`` with ``detail.m7_reason`` (M7 unavailability mid-job is ``engine_failed``)."""
+    ``repair_incomplete`` with ``detail.m7_reason``. M7 unavailability (``openmm_unavailable``,
+    ``process_identity_unavailable``) is the environment and is raised as it is (412 ``precondition``)."""
     try:
         openmm_method.preflight(bundle.Overlay(run.store, objects), objects.structure, seed=run.seed)
     except ToolFailure as exc:
         code = exc.detail.get("reason_code") if isinstance(exc.detail, dict) else None
         if exc.cls is FailureClass.precondition and code in ("openmm_unavailable", "process_identity_unavailable"):
-            raise RepairJobFailure("engine_failed", f"the M7 preflight could not run: {exc.message}",
-                                   {"m7_reason": code}) from exc
+            raise
         detail = {"m7_reason": sr.m7_reason(exc)}
         if isinstance(exc.detail.get("residue"), dict):
             detail["residue"] = exc.detail["residue"]
@@ -354,7 +359,8 @@ def m7_check(run: Any, objects: bundle.Pending) -> None:
 
 def prepared_objects(run: Any, job: dict[str, Any], data: dict[str, Any]) -> bundle.Pending:
     """The four validated pending objects of one worker output (checks 1-5); raises ``RepairJobFailure`` with a
-    closed reason or ``ValueError`` for an output that does not belong to this job. Stores nothing."""
+    closed reason, the environment's ``precondition`` ``ToolFailure`` as it is, or ``ValueError`` for an output that
+    does not belong to this job. Stores nothing."""
     selected = job["selected"]
     staged = selected["payload"]
     fixed = sr.fixed_method()
@@ -368,13 +374,15 @@ def prepared_objects(run: Any, job: dict[str, Any], data: dict[str, Any]) -> bun
         sr.validated_repair(inputs, raw, json.loads(canonical_json(record)))
         objects = bundle.pending(run, inputs, raw, record)
     except ToolFailure as exc:
+        if exc.cls is FailureClass.precondition:   # the installed template is unavailable: the environment
+            raise
         raise _closed(exc) from exc
     m7_check(run, objects)
     return objects
 
 
-def publish(run: Any, job: dict[str, Any], attempt_id: str, attempt_dir: Path, descriptor: Any) -> list[str]:
-    """Validate this attempt's worker output, then store the four objects and the published event (or raise,
-    storing nothing). Output handles: ``[record, repaired prepared_structure]``."""
-    objects = prepared_objects(run, job, _read_result(attempt_dir, descriptor))
-    return bundle.store(run, objects, job["job_id"], attempt_id)
+def prepare(run: Any, job: dict[str, Any], attempt_dir: Path, descriptor: Any) -> bundle.Pending:
+    """Part 1 of publication: this attempt's worker output, validated into the four pending objects. Writes nothing;
+    the caller stores them with ``structure_repair_bundle.store`` (output handles ``[record, repaired
+    prepared_structure]``)."""
+    return prepared_objects(run, job, _read_result(attempt_dir, descriptor))

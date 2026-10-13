@@ -1044,37 +1044,44 @@ class JobQueue:
         if status not in TERMINAL:
             raise ValueError("invalid terminal status")
         with self.run._transition():
-            job = self._rebuild()[job_id]
-            if job["status"] in TERMINAL:
-                return job
-            if job["attempt_id"] != attempt_id:
-                raise ValueError("stale attempt terminal")
-            if job["cancel_requested"] or self.run._cancel_path.exists():
-                status, handles = "cancelled", []
-                failure = {"error": "cancelled", "message": "cancellation accepted before terminal commit"}
-            events = list(self.run.events.read())
-            if attempt_id is not None and not any(e["type"] == "job_cleanup_verified" and
-                                                   e.get("attempt_id") == attempt_id and
-                                                   e.get("group_empty") is True for e in events):
-                raise ValueError("terminal attempt lacks verified group cleanup")
-            if status == "done":
-                if not handles or not any(e["type"] == "job_result_candidate" and
-                           e.get("attempt_id") == attempt_id and e.get("output_handles") == (handles or [])
-                           for e in events):
-                    raise ValueError("done attempt lacks matching result candidate")
-                for handle in handles or []:
-                    kind = self.run.store.meta(handle)["kind"]
-                    if kind in CHEMICAL_DERIVED_KINDS:
-                        limit = (8 * 1024 * 1024 if kind in
-                                 {"chemical_preparation_manifest", "chemical_interaction_set"}
-                                 else 32 * 1024 * 1024)
-                        self.run.store.load_bounded_json(handle, limit)
-                    else:
-                        self.run.store.load(handle)
-            self.run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
-                                   status=status, failure=failure, output_handles=handles or [],
-                                   **link_fields(job.get("execution_link")))
-            return self._rebuild()[job_id]
+            return self._terminal_locked(job_id, attempt_id, status, failure, handles)
+
+    def _terminal_locked(self, job_id: str, attempt_id: str | None, status: str,
+                         failure: dict[str, Any] | None = None, handles: list[str] | None = None) -> dict[str, Any]:
+        """``_terminal`` for a caller that already holds the run's transition lock (it is not reentrant)."""
+        if status not in TERMINAL:
+            raise ValueError("invalid terminal status")
+        job = self._rebuild()[job_id]
+        if job["status"] in TERMINAL:
+            return job
+        if job["attempt_id"] != attempt_id:
+            raise ValueError("stale attempt terminal")
+        if job["cancel_requested"] or self.run._cancel_path.exists():
+            status, handles = "cancelled", []
+            failure = {"error": "cancelled", "message": "cancellation accepted before terminal commit"}
+        events = list(self.run.events.read())
+        if attempt_id is not None and not any(e["type"] == "job_cleanup_verified" and
+                                               e.get("attempt_id") == attempt_id and
+                                               e.get("group_empty") is True for e in events):
+            raise ValueError("terminal attempt lacks verified group cleanup")
+        if status == "done":
+            if not handles or not any(e["type"] == "job_result_candidate" and
+                       e.get("attempt_id") == attempt_id and e.get("output_handles") == (handles or [])
+                       for e in events):
+                raise ValueError("done attempt lacks matching result candidate")
+            for handle in handles or []:
+                kind = self.run.store.meta(handle)["kind"]
+                if kind in CHEMICAL_DERIVED_KINDS:
+                    limit = (8 * 1024 * 1024 if kind in
+                             {"chemical_preparation_manifest", "chemical_interaction_set"}
+                             else 32 * 1024 * 1024)
+                    self.run.store.load_bounded_json(handle, limit)
+                else:
+                    self.run.store.load(handle)
+        self.run.events.append("job_terminal", job_id=job_id, attempt_id=attempt_id,
+                               status=status, failure=failure, output_handles=handles or [],
+                               **link_fields(job.get("execution_link")))
+        return self._rebuild()[job_id]
 
     def _cleanup_owned(self, identity: dict[str, Any]) -> bool:
         """Signal only members admitted while this launch's guardian is still alive."""
@@ -2070,21 +2077,43 @@ class JobQueue:
             return {"status": "failed", "failure": failure.to_error()}
 
     def _publish_structure_repair(self, job: dict[str, Any], attempt_id: str, attempt_dir: Path,
-                                  descriptor: dict[str, Any]) -> list[str] | dict[str, Any]:
-        """Same guard as M21: stale or cancelled completions store nothing; a closed failure (the pre-publication
-        checks, the M7 preflight on the read-only overlay, the record bound) is a typed (charged) failure."""
-        from ..structure_repair_jobs import RepairJobFailure, publish
+                                  descriptor: dict[str, Any]) -> dict[str, Any]:
+        """M29: the pure part first (assembly, the core validator and the M7 preflight on the read-only overlay; no
+        write, no lock), then ONE transition critical section that re-checks cancellation and the attempt and only
+        then stores the four objects and the published event, appends the result candidate and commits the done
+        terminal. A cancel or a stale completion seen there stores nothing; a cancel requested after it finds the job
+        terminal. A closed failure (``RepairJobFailure``) or an environment failure (``precondition``) is a typed
+        (charged) failure that stores nothing. Returns the outcome dict; for ``done`` it is the committed job record,
+        so the caller's ``_terminal`` returns it unchanged."""
+        from ..structure_repair_bundle import store
+        from ..structure_repair_jobs import RepairJobFailure, prepare
 
+        job_id = job["job_id"]
         with self.run._transition():
-            current = self.get(job["job_id"])
+            current = self.get(job_id)
             if current["cancel_requested"] or self.run._cancel_path.exists():
                 return {"status": "cancelled"}
             if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
                 return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
         try:
-            return publish(self.run, job, attempt_id, attempt_dir, descriptor)
+            objects = prepare(self.run, job, attempt_dir, descriptor)
         except RepairJobFailure as failure:
             return {"status": "failed", "failure": failure.to_error()}
+        except ToolFailure as exc:
+            if exc.cls is not FailureClass.precondition:
+                raise
+            return {"status": "failed", "failure": {"error": exc.cls.value, "reason_code": exc.detail.get("reason_code"),
+                                                    "message": exc.message, "detail": exc.detail}}
+        with self.run._transition():
+            current = self.get(job_id)
+            if current["cancel_requested"] or self.run._cancel_path.exists():
+                return {"status": "cancelled"}
+            if current["status"] in TERMINAL or current["attempt_id"] != attempt_id:
+                return {"status": "failed", "failure": {"error": "fatal", "message": "stale attempt completion"}}
+            handles = store(self.run, objects, job_id, attempt_id)
+            self.run.events.append("job_result_candidate", job_id=job_id, attempt_id=attempt_id,
+                                   output_handles=handles)
+            return self._terminal_locked(job_id, attempt_id, "done", handles=handles)
 
     def _existing_attempt_dir(self, job_id: str, attempt_id: str) -> Path | None:
         path = self.run.run_dir / "jobs" / job_id / attempt_id

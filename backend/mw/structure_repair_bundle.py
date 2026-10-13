@@ -17,9 +17,11 @@ the manifest and there is no cycle):
 ``pending()`` computes the four objects and handles without storing anything; ``Overlay`` is the read-only view
 (the store plus these pending objects, ``meta``/``load`` only) the M7 preflight runs on before publication;
 ``store()`` puts the four objects in that order and appends ``structure_repair_published`` (``job_id``,
-``attempt_id`` and the four handles). Nothing calls ``store()`` before every check passed.
+``attempt_id`` and the four handles). Nothing calls ``store()`` before every check passed; the queue calls it under the
+run's transition lock (cancellation re-checked first, the done terminal committed in the same critical section).
 
-``validated_result(run, handle)`` re-validates a stored record on every read: its single completed publication (the
+``validated_result(run, handle)`` re-validates a stored record on every read (an unavailable environment is raised as
+its ``precondition`` ``ToolFailure``, never as invalid evidence): its single completed publication (the
 published event, the job's done terminal with output handles ``[record, prepared_structure]``, its result candidate,
 cleanup and reservation), the job selection, the four objects' kinds and contents (manifest and structure rebuilt
 from the source), the coordinates bytes against ``result.coordinates_sha256`` and the core validator
@@ -35,7 +37,7 @@ from typing import Any
 
 from . import structure_repair as sr
 from . import structure_repair_constants as K
-from .core.errors import ToolFailure
+from .core.errors import FailureClass, ToolFailure
 from .core.handles import HANDLE_PREFIX, canonical_json, object_sha
 from .structure_origin import is_repaired
 
@@ -115,33 +117,35 @@ def pending(run: Any, inputs: sr.RepairInputs, raw: bytes, record: dict[str, Any
 
 
 class Overlay:
-    """Read-only view: the run's store plus the pending objects (``meta`` and ``load`` only, no write method)."""
+    """Read-only view: the run's store plus the pending objects. Only ``meta`` and ``load`` are provided (no write
+    method, no event log, no other store attribute); the two private slots are name-mangled."""
+
+    __slots__ = ("__pending", "__store")
 
     def __init__(self, store: Any, objects: Pending) -> None:
-        self._store = store
-        self._pending = objects.objects
-        self.run_id = store.run_id
-        self.events = store.events
+        self.__store = store
+        self.__pending = objects.objects
 
     def meta(self, handle: str) -> dict[str, Any]:
-        found = self._pending.get(handle)
+        found = self.__pending.get(handle)
         if found is None:
-            return self._store.meta(handle)
+            return self.__store.meta(handle)
         kind, schema, fmt, content, summary = found
         raw = content if isinstance(content, bytes) else canonical_json(content)
         return {"handle": handle, "kind": kind, "schema": schema, "path": None, "fmt": fmt, "size": len(raw),
                 "produced_by": None, "summary": summary, "null_result": False}
 
     def load(self, handle: str) -> Any:
-        found = self._pending.get(handle)
+        found = self.__pending.get(handle)
         if found is None:
-            return self._store.load(handle)
+            return self.__store.load(handle)
         content = found[3]
         return content if isinstance(content, bytes) else json.loads(canonical_json(content))
 
 
 def store(run: Any, objects: Pending, job_id: str, attempt_id: str) -> list[str]:
-    """Put the four objects in order (coordinates, record, manifest, structure), then the published event."""
+    """Put the four objects in order (coordinates, record, manifest, structure), then the published event. The queue
+    calls this under the run's transition lock after re-checking cancellation and the attempt."""
     for handle in (objects.coordinates, objects.record, objects.manifest, objects.structure):
         kind, schema, fmt, content, summary = objects.objects[handle]
         stored = run.store.put(kind, schema, content, fmt=fmt, produced_by=attempt_id, summary=summary)
@@ -200,7 +204,9 @@ def _object(run: Any, handle: Any, kind: str, schema: str, fmt: str) -> None:
 
 def validated_result(run: Any, handle: Any) -> dict[str, Any]:
     """The stored ``structure_repair@1`` of this run, re-validated on every read (no engine, no event):
-    ``{record, handle, prepared_structure, coordinates, manifest, source_structure, published_seq, job_id}``."""
+    ``{record, handle, prepared_structure, coordinates, manifest, source_structure, published_seq, job_id}``.
+    An environment failure (``ToolFailure`` of class ``precondition``, e.g. ``openmm_unavailable`` when the installed
+    template cannot be read) is raised as it is, never as invalid evidence (spec 4.6)."""
     try:
         _require(type(handle) is str, "handle must be a string")
         _object(run, handle, K.KIND, K.SCHEMA, "json")
@@ -235,7 +241,11 @@ def validated_result(run: Any, handle: Any) -> dict[str, Any]:
                 "job_id": job["job_id"]}
     except RepairEvidenceError:
         raise
-    except (ToolFailure, KeyError, TypeError, ValueError, IndexError, AttributeError, OSError, RecursionError) as exc:
+    except ToolFailure as exc:
+        if exc.cls is FailureClass.precondition:
+            raise
+        raise RepairEvidenceError("structure repair evidence is invalid") from exc
+    except (KeyError, TypeError, ValueError, IndexError, AttributeError, OSError, RecursionError) as exc:
         raise RepairEvidenceError("structure repair evidence is invalid") from exc
 
 
