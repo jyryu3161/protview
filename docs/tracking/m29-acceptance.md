@@ -1,10 +1,10 @@
 # M29 구조 보완 기록
 
-- 판정: **검증 통과, 사용자 확인 대기** (기록 초안 T18, 2026-10-14). 이 초안을 쓸 때 정의 항목 ⑥-2(독립 증거·기록 검토, T19)·⑦(`CLAUDE.md`·`AGENTS.md`, T20)은 아직 끝나지 않았다(⑤ 회귀 사슬은 T16에서 채웠다)(아래 "정의 항목"의 `대기`). 위 판정 값은 그 둘이 통과했을 때의 값이고, 판정 문구를 바꾸는 확인 권한은 사용자에게만 있다. 사용자 확인 뒤의 판정 문구와 병합 정보는 메인 세션이 한 커밋에서 바꾼다.
+- 판정: **검증 통과, 사용자 확인 대기** (기록 초안 T18, 2026-10-14; 독립 증거·기록 검토(T19)는 세 갈래(증거·기록, 문서-코드 사실 대조, 하네스)였고 첫 결과는 모두 `needs-fix`(막는 지적 13건)였으며 전부 고쳤다. 같은 검토자 셋의 읽기 전용 재확인은 이 줄을 쓸 때 진행 중이다). 판정 문구를 바꾸는 확인 권한은 사용자에게만 있다. 사용자 확인 뒤의 판정 문구와 병합 정보는 메인 세션이 한 커밋에서 바꾼다.
 - 목적: 변이 구조 모델링(M21)·서열 GA(M23)·단백질 JEV 루프(M25)·M21 수용체 출처 도킹(M18)의 입구인 OpenMM 사전 검사(M7)에서 막히던 실제 결정구조를, 사용자가 명시적으로 요청할 때 승인된 결손 다섯 종류(체인 조각 합치기·곁사슬 원자·C 말단 OXT·내부 틈 1–20잔기·MSE→MET)만 PDBFixer로 채운 새 전처리 구조로 만들어 모델링 경로에만 들이고, 무엇을 더하고 바꿨는지를 보완 기록 `structure_repair@1`과 화면·보고서의 "보완 구조 기준" 표시로 남긴다. 관측 원자는 하나도 바꾸지 않는다(좌표 1e-9 Å 이내, 식별자 유지, MSE→MET만 예외).
 - 브랜치: `dryforge/m29-structure-repair`(main `3c5994e4` "Record the M28 merge hash"에서 분기).
 - 소스 고정: `52aa4265`(M29 T14: source freeze). 게이트는 이 커밋에서 돌았다(`gate.txt` 머리, 작업 트리 변경 0). 수락은 고정에 게이트 기록만 더한 `1802a32f` 위에서 돌았다(`git diff --name-only 52aa4265 1802a32f`는 `docs/qa/m29-repair-20261013/gate.txt`와 `gate-raw/`의 파일 12개, 모두 13개뿐, 수락 대장의 빌드 도장 `gitHead` `1802a32f`·`buildCurrentWithSource: true`·`dirtyFiles: []`). 두 커밋은 문서·증거만 다르다.
-- 고정 뒤 변경: `git diff --name-only 52aa4265..HEAD`는 `docs/**`, `README.md`, `backend/`·`frontend/`·`scripts/` 아래 `AGENTS.md` 셋, 그리고 옛 단계 하네스의 기대 수정 하나(`frontend/tests/offscreen/jev-loop-flow.cjs`, 이유 `docs/qa/m29-repair-20261013/regression-harness-changes.txt`, 명세 §11.2 (b), 회귀 사슬 T16에서 M25 하네스가 새 `repair-panel` 영역을 첫 항목으로 기대하도록 한 줄)만이다. 명세 §11.2 (a)가 `backend/`·`frontend/`·`scripts/` 아래 `AGENTS.md`를 허용 경로로 적었으므로 해석이 필요 없다. 루트 `CLAUDE.md`·`AGENTS.md`는 T20에서 바꾼다.
+- 고정 뒤 변경: `git diff --name-only 52aa4265..HEAD`는 `docs/**`, `README.md`, `backend/`·`frontend/`·`scripts/` 아래 `AGENTS.md` 셋, 그리고 옛 단계 하네스의 기대 수정 하나(`frontend/tests/offscreen/jev-loop-flow.cjs`, 이유 `docs/qa/m29-repair-20261013/regression-harness-changes.txt`, 명세 §11.2 (b), 회귀 사슬 T16에서 M25 하네스가 새 `repair-panel` 영역을 첫 항목으로 기대하도록 한 줄)만이다. 명세 §11.2 (a)가 `backend/`·`frontend/`·`scripts/` 아래 `AGENTS.md`를 허용 경로로 적었으므로 해석이 필요 없다. 루트 `CLAUDE.md`·`AGENTS.md`도 바꿨다(머리말 한 문장, 트리 세 줄 표기, 작업 전 확인의 M29 항, `cmp` 동일). 문서 밖 변경은 위 하네스 한 줄뿐이다.
 - 결정: 0037(사용자 결정 2026-10-12~13, `docs/tracking/decisions/0037-m29-structure-repair.md`). 요약은 아래 "사용자 결정".
 - 수락 증거: `docs/qa/m29-repair-20261013/`(아래 "증거 위치"). 스크린숏 68개·화면 글자 17개·내려받은 mmCIF 1개는 Git 제외 `frontend/tests/offscreen/artifacts/m29-repair/acceptance-20261014/`에 있고 커밋 증거에는 경로·크기·SHA-256만 있다(`acceptance/binary-artifacts.json`, 보류 텍스트 0).
 - 외부 요청: RCSB 공개 구조 GET 5회(모두 HTTP 200, 재시도·검색·헤더·키 없음)뿐이다. 8VF6 1회(STK33 점검 때 사용자 요청, 장부는 Git 제외 `runs/stk33-8vf6-20261013/network-ledger.txt`, 내용은 `backend/tests/fixtures/public_8vf6.provenance.json`의 `download_note`)와 사용자가 승인한 1RNH·4INS·1AY7·1CLL 각 1회(`network-ledger.txt`). 실제 JEV 호출 0, 제품·시험·QA의 그 밖의 외부 요청 0(수락 브라우저 비-loopback 0, 제공자 호출 0, 제품 키 해석기 읽기 0, dispatch 이벤트 0).
@@ -28,9 +28,9 @@ M29는 새 작업 전용 도구 `repair_structure`(프로토콜 `pdbfixer_repair
 | ③ §3.4 게시 전 검증·§5.2 인벤토리·§6 표시와 보고서 형식 버전 시험 | **pass** — 게이트 3회에 모두 들어 있다: §3.4는 `test_structure_repair_build.py`(빌더·기록·순수 검증기)·`test_structure_repair_jobs.py`(8VF6 실제 작업, 닫힌 실패·시간 초과·취소에서 객체 0)·`test_structure_repair_lane.py`, §5.2는 `test_structure_repair_consumers.py`(정의마다 선언)·`test_structure_repair_refusals.py`, §6은 `test_structure_repair_downstream_reads.py`·`test_structure_repair_reports_downstream.py`(새 형식 버전은 보완 구조일 때만, 옛 저장 보고서 같은 바이트). 수락의 pytest 단계가 다시 돌렸다: R6 10 passed, R9 79 passed, R10 1 passed, 해시 파일 27개 blob 변경 0(`acceptance/evidence/evidence/pytest.json`) |
 | ④ 수락 사례 전부 `pass` + 구조 분류 표 + 독립 기대값 대조(§10) | **pass** — `acceptance: true`, 사례 12개 모두 `pass`(`fail` 0, `not_observed` 0), 관문 11개 모두 참, 모든 단계·13구조를 돈 연습 아닌 실행. 사례 안의 허용된 관찰 공백은 R4b 도킹 하나(`no_model_time_limit`). 분류 표 26행(13구조 × 물 정책 둘) 모두 문서 = 독립 분류 = 제품. 증거 `acceptance/README.md`·`summary.json`·`cases.json`·`classification-table.md`·`.json` |
 | ⑤ 회귀 사슬(§11.1) | **pass** — 소스 고정 뒤 문서·증거 커밋 위에서(실행기마다 빌드 도장의 git head가 다르다: M28 `ccd4a900`, M27 `993138bb`, M26·M25 첫 실행·M24·M23 `5fe7f208`, M22 `7572a986`, M21 … M13·M25 재실행 `b7e637cc`; 모두 고정 `52aa4265`과 문서·`README.md`·`AGENTS.md`만 다르다) M28 종단 실행기 `--phase fixture` → M27 `--stages fixture,real` → M26 `--stages fixture,real` → M25 `--phase fixture --regressions`(M24 … M13)를 한 번에 하나, 8000·3000 비움, `.deps/precedent_reference`·`.deps/reaction_reference` 없음(앞·사이·뒤 `ls` 기록). 기준 사례 수와 같다: M28 fixture 31 → 31, M27 46, M26 58, M25 57, M24 26, M23 35, M22 25, M21 23, M20 24, M19 26, M18 24, M17 21, M16 19, M15 14, M14 15, M13 28(M27 … M13 합 441 → 441), 모두 `pass`, 사례 증감 0. **옛 단계 하네스 기대 수정 하나**: 첫 M25 실행에서 M25 자체 fixture 단계만 실패했다(같은 실행의 M24 … M13 회귀 단계 열둘은 모두 exit 0). `frontend/tests/offscreen/jev-loop-flow.cjs`가 단백질 공학 탭 영역 목록을 정확히 비교하는데 M29의 새 첫 영역 `repair-panel`이 더해져 리간드 갈래 사례가 시작에서 중단(리간드 갈래 `L-*` 28개와 증거 문구 검사 `S-wording-evidence` 1개, 모두 29개 실패; 단백질 갈래 `P-*` 22개와 `X-*` 3개·`S-*` 3개, 모두 28개 통과). 그 한 줄 기대를 고치고(제품 코드 아님, 명세 §11.2 (b)) M25 fixture 단계만 새 root에서 다시 돌려 57/57 `pass`, 실호출 0. 첫 실행의 증거도 그대로 둔다. 증거 `regression/`, `regression-chain.txt`, `regression-harness-changes.txt`(256 KiB 넘는 텍스트 54개 약 334 MB는 Git 제외 `export-full/`에 두고 해시는 폴더별 `ARCHIVED-EVIDENCE.sha256`) |
-| ⑥-1 독립 코드 검토(T12, 고정 전) | **pass**(남은 막는 지적 0) — 세 갈래 중 둘(A 서버 코어, B 하류·읽기·보고서)은 `approved`, 화면·실행기 갈래(C)는 `needs-fix`(막는 지적 1건: R4a 도킹 공백 판정이 원자 상한이 아닌 거절까지 받아들임). T13에서 고친 뒤 새 검토자 한 명이 수정분을 다시 보고 `approved`(막는 지적 0, 권고 넷). 아래 "독립 검토 요약". 검토 기록은 Git 제외 조율 메모 `.dryforge/run-notes.md`의 "T12 독립 검토 결과"·"T13 재검토" 절 |
-| ⑥-2 독립 증거·기록 검토(T19, 고정 뒤) | **대기** — 아직 하지 않았다 |
-| ⑦ `CLAUDE.md`와 `AGENTS.md` 바이트 동일, 구조·절 순서 불변 | **대기** — T20에서 M29 줄과 작업 전 확인 항목을 넣고 `cmp`로 확인한다(이 초안을 쓸 때 두 파일은 `cmp` 동일이고 M29 줄은 아직 없다) |
+| ⑥-1 독립 코드 검토(T12, 고정 전) | **pass**(남은 막는 지적 0) — 세 갈래 중 둘(A 서버 코어, B 하류·읽기·보고서)은 `approved`, 화면·실행기 갈래(C)는 `needs-fix`(막는 지적 1건: R4a 도킹 공백 판정이 원자 상한이 아닌 거절까지 받아들임). T13에서 고친 뒤 새 검토자 한 명이 수정분을 다시 보고 `approved`(막는 지적 0, 권고 넷). 아래 "독립 검토 요약". 검토 원문은 커밋 증거에 없고 조율 세션의 Git 제외 메모에만 있다 |
+| ⑥-2 독립 증거·기록 검토(T19, 고정 뒤) | **진행 중(첫 결과 `needs-fix`, 막는 지적 13건 모두 고침)** — 증거·기록 검토(막는 지적 5: 회귀 단계 수 12, 첫 M25 실행의 사례 내역, 실행기별 빌드 도장 커밋, M23 서술 과장, 로드맵 예시), 문서-코드 사실 대조(주장 83개 중 79개 일치, 막는 지적 4: M25 모델 단계 120초 고정, M23 단정, import 방향 서술, 실행기 POST 범위), 하네스 검토(막는 지적 4: 진행 기록 어긋남, 작업 공간 경로, 루트 문서의 `mw` import 서술, M28 시점 문장). 같은 검토자 셋의 재확인 결과는 이 줄을 쓸 때 진행 중이고 끝나면 이 줄을 바꾼다 |
+| ⑦ `CLAUDE.md`와 `AGENTS.md` 바이트 동일, 구조·절 순서 불변 | **pass** — `cmp` 동일, 절 구조와 순서는 M28 때와 같다(바뀐 것: 머리말 한 문장, 트리 세 줄 표기 `M13–M29`·`m29-acceptance.md`·`0001–0037`, 작업 전 확인의 "M29 구조 보완 작업" 항). 판정 문구는 `검증 통과, 사용자 확인 대기`이고 M28 판정 `완성(범위 명시)`는 그대로다 |
 
 ## 수락 사례 (`acceptance/`, 2026-10-13 15:14–15:42 UTC = 한국 시각 10-14 00:14–00:42)
 실행기 `scripts/m29_offscreen_acceptance.py`(fixture 단계만, 단계 `r1`·`r3`·`r4a`·`table`·`r8`·`r7`·`r6`·`r4b`·`pytest`·`r9`), 실제 Electron 오프스크린, 서버는 M25 fixture 서버(제품 앱 그대로이고 외부 게이트만 스크립트 없는 `MockTransport`). 기대값은 제품 답이 아니라 `scripts/m29_oracle.py`(입력 파일과 설치된 Amber14 템플릿만)와 `scripts/m29_common.py`의 문서 값에서 왔다. 관측값은 `cases.json`·`acceptance/evidence/evidence/*.json`에서 옮겼다.
@@ -104,13 +104,13 @@ M29는 새 작업 전용 도구 `repair_structure`(프로토콜 `pdbfixer_repair
 | 시험의 합성 M23 결과 대역(`sequence_ga_result` 하나)과 합성 `residue_numbering_map@1` 대역 | 합성 | M23 읽기 응답의 `structure_origin`(응답 계층만), 거절 시험 | 실제 GA는 몇 분 걸리고 M23 읽기 모듈은 해시 고정이다. 보완 구조로는 번호 대응을 만들 수 없다 |
 
 ## 독립 검토 요약 (Opus 5.5, 구현하지 않은 서브에이전트)
-근거는 Git 제외 조율 메모 `.dryforge/run-notes.md`(검토 원문은 커밋 증거에 없다).
+근거는 조율 세션의 Git 제외 메모이고 검토 원문은 커밋 증거에 없다.
 - 구현 중 작업별 검토: T4(코어) 명세 위반 0, T7(M20 인계) 명세 위반 0, T5(작업·API)는 `needs-fix` 1건(게시 중 취소가 결과를 남기는 틈)과 권고(겹침 보기가 이벤트를 드러냄, 환경 없음이 증거 무효로 보임)를 T5 재작업에서 고쳤다(`docs/engineering-notes.md` M29 "게시와 끝 상태 기록은 한 전이 잠금 안에서 한다"·"게시 전 M7 사전 검사는 읽기 전용 겹침 보기로 돈다").
 - 독립 코드 검토(T12, 고정 전, 세 갈래): 해시 파일 27개·`also_hashed_files`·골든·M13 변경 0을 A·B가 따로 확인했고, 닫힌 집합·고정 문장(RP1–RP6·SO1–SO3·JW1)이 명세 원문과 같으며, 고아 객체 없음 경로 시험(실패·취소·시간 초과·환경 없음)이 실효가 있다고 봤다. 막는 지적은 C1 하나였다: R4a 도킹 공백 판정이 정규식 때문에 원자 상한이 아닌 거절도 허용 공백으로 분류 → 정확한 코드·메시지 일치로(`24a4647f`).
 - T13에서 고친 권고: A1 엔진 오류 메시지 300자 초과가 `fatal` 분류 오류(`43742f19`), B1 M20 `@3` 보고서에 "검사 안 함(모델링 잔기)" 사실 없음 → 주장 `repair_modeled_residue_position_count`와 줄 셋(`600c7e69`, 결정 0037 조율 17), B2 인벤토리 `*` 선언이 새 소비 지점을 통과시킴 → 정의별 선언(`46273bc9`), C2–C11 실행기·하네스 판정 보강(`24a4647f`·`b68a5533`). 같은 시기 T13 연습에서 드러난 프록시 시간 초과는 실행기 분류로(`5b01c72f`·`ac9e03ea`, N6), A3(나머지 그룹 시간)은 `12636a4b`와 고정 커밋의 재균형으로 처리했다(N13).
 - T13 수정분 재검토(새 검토자 한 명): `approved`, 막는 지적 0. 권고 넷 중 셋은 고쳤고(R3 "정확히 일곱"이 fpocket 비결정성에 거짓 실패할 수 있음 → 그 밖의 제외를 설명하는 계산 `f357993b`, 인벤토리 클래스 단위 선언 → 정확한 qualname `90e57b56`, `nothingLeft`의 `lsof` 실패 처리 `f357993b`), 하나(새 statement id·subject 키·줄 셋의 문서화)는 T17 문서(결정 0037 조율 17, `docs/business-rules.md`, `docs/contracts.md`)로 반영했다.
 - 고치지 않고 기록으로 옮긴 T12 관찰: 아래 "알려진 한계" 1·2·3·4·14·15와 결정 0037 조율 16. `scripts/AGENTS.md`의 그룹 수는 T17(`366edb29`)에서 고쳤다.
-- 독립 증거·기록 검토(T19)는 아직 하지 않았다.
+- 독립 증거·기록 검토(T19)는 위 ⑥-2에 요약했다(첫 결과의 막는 지적은 모두 고쳤고 재확인은 진행 중).
 
 ## 알려진 한계
 1. 게시 직전 환경 상실(설치 템플릿·M7 엔진·프로세스 신원)은 명세 §4.4 닫힌 실패 집합 밖의 `error: precondition` + `reason_code` `openmm_unavailable`·`process_identity_unavailable`로 기록된다(의도, 결정 0037 조율 16, 객체 0, 환불 없음).
@@ -157,7 +157,7 @@ M29는 새 작업 전용 도구 `repair_structure`(프로토콜 `pdbfixer_repair
 2. 화면(단백질 공학 탭의 "구조 보완" 영역 등)과 `config/tools.yaml`(새 도구 `repair_structure`)이 바뀌었으므로 프런트엔드를 다시 빌드하고(`npm --prefix frontend run build`) 백엔드를 다시 시작한다.
 3. 이미 저장된 보고서(M20 `@1`·`@2`, M21·M18·M24·M25 `@1`)는 같은 바이트로 다시 열린다. 새 형식 버전(M20 `mutation_candidates_markdown@3`, M21 `mutation_model_markdown@2`, M18 `ligand_docking_markdown@2`, M24 변이 `jev_choice_markdown@2`, M25 단백질 `jev_loop_markdown@2`)은 보완 구조에서 나온 결과의 보고서를 새로 만들 때만 쓰인다.
 4. 보완 작업의 호출 키에는 작업 모듈 `jobs/structure_repair_worker.py`와 의존 파일 다섯(`structure_repair.py`·`structure_repair_constants.py`·`jobs/openmm_worker.py`·`tools/openmm_method.py`·`mutation_model_constants.py`)의 해시가 들어간다. 다음 업그레이드에서 이 중 하나가 바뀌면 같은 전처리 구조의 보완은 재사용되지 않고 새 작업(1단위)이 되며, 큐에 있던 보완 작업은 시작 때 예약 전에 412 `worker_version_invalid`로 막히므로 취소하고 다시 제출한다.
-5. 옛 단계 수락 실행기(M13–M26)를 돌릴 때는 `.deps/precedent_reference`·`.deps/reaction_reference`를 없는 채로 둔다(M26–M28과 같음). 다른 사람과 공유할 때 `runs/`(M29 QA 격리 root `runs/m29-*` 포함), `.deps/`, `.env`, `frontend/tests/offscreen/artifacts/`(M29 `m29-repair/` 포함)를 뺀다.
+5. 옛 단계 수락 실행기(M13–M28)를 돌릴 때는 `.deps/precedent_reference`·`.deps/reaction_reference`를 없는 채로 둔다(M26–M28과 같음). 다른 사람과 공유할 때 `runs/`(M29 QA 격리 root `runs/m29-*` 포함), `.deps/`, `.env`, `frontend/tests/offscreen/artifacts/`(M29 `m29-repair/` 포함)를 뺀다.
 6. 후속 사용자 결정 후보(이번 단계에서 하지 않음): M21 시간 상한 상향(해시 파일 `mutation_model_constants.py` 변경이라 M21·M23 호출 키·골든 재기록이 따르고, 8VF6은 M21 작업 하나(구조 둘)에 17분 이상이다. M23 개체 모델링은 구조 하나라 측정하지 않았다). 1MQ4 보완 곁사슬과 리간드의 1.24 Å 근접은 기록만 했다(충돌로 보완을 거절하지 않는다는 사용자 결정 ①).
 
 ## 증거 위치
@@ -172,7 +172,7 @@ M29는 새 작업 전용 도구 `repair_structure`(프로토콜 `pdbfixer_repair
 | `acceptance/` | 수락 T15(`README.md`·`summary.json`·`cases.json`·`classification-table.md`·`.json`·`binary-artifacts.json`·`SHA256SUMS`·`evidence/`: 대장 `case-ledger.json`, 단계 기록 `steps/`, 계획 `plans/`, 사례 증거 `evidence/`, pytest 로그 `pytest/`) |
 | `regression/` | 회귀 사슬 T16(결과는 위 정의 항목 ⑤) |
 
-Git 제외: 수락 스크린숏·화면 글자·내려받은 mmCIF `frontend/tests/offscreen/artifacts/m29-repair/acceptance-20261014/`, QA run `runs/m29-acceptance-20261014/`, 조율 메모 `.dryforge/run-notes.md`. 커밋한 검증 입력은 `backend/tests/fixtures/public_{8vf6,1rnh,4ins,1ay7,1cll}.cif`(+ `.provenance.json`)와 `backend/tests/fixtures/structure_repair/`다.
+Git 제외: 수락 스크린숏·화면 글자·내려받은 mmCIF `frontend/tests/offscreen/artifacts/m29-repair/acceptance-20261014/`, QA run `runs/m29-acceptance-20261014/`, 조율 세션 메모(작업 공간, 커밋하지 않음). 커밋한 검증 입력은 `backend/tests/fixtures/public_{8vf6,1rnh,4ins,1ay7,1cll}.cif`(+ `.provenance.json`)와 `backend/tests/fixtures/structure_repair/`다.
 
 ## 다시 돌리는 방법 (주 체크아웃 루트, 8000·3000 포트 비움, 한 번에 하나)
 ```bash
@@ -184,6 +184,6 @@ Git 제외: 수락 스크린숏·화면 글자·내려받은 mmCIF `frontend/tes
 필요한 것(프로젝트 `.venv`의 OpenMM·PDBFixer, `.deps/fpocket`·`.deps/docking`·`.deps/qvina`, M15 활성 세트, M28 fixture 단계 폴더)과 연습·회귀 사슬 명령은 `docs/operations.md` "M29 구조 보완 수락 QA"에 있다.
 
 ## 남은 일
-- 독립 증거·기록 검토(T19)와 그 반영(T20), `CLAUDE.md`·`AGENTS.md`의 M29 줄(정의 항목 ⑦), `docs/tracking/status.md`·`roadmap.md` 마무리.
+- 독립 증거·기록 검토(T19)의 재확인 결과를 정의 항목 ⑥-2에 채운다.
 - 해석 메모 N1–N14와 결정 0037의 "조율 세션이 정한 것"에 대한 사용자 확인. 판정 문구와 병합은 사용자 확인 뒤 메인 세션이 한다.
 - 새 미해결 문제(위 "알려진 한계")는 `docs/tracking/findings.md`의 M29 절에 있다.
