@@ -12,7 +12,8 @@ normalized args (the call key, ``catalytic_annotation`` always included) and no 
 
 M29 (spec 5.3): a repaired structure (manifest ``repair`` key) is accepted as ``structure`` only when its repair record
 re-validates against its original prepared structure (``mutation_handoff.validated_origin``; else
-``structure_invalid``), and for it ``structure_mismatch`` also accepts a reference result made on that original
+``structure_invalid``, while an environment failure such as ``openmm_unavailable`` stays its own ``precondition``),
+and for it ``structure_mismatch`` also accepts a reference result made on that original
 structure (``repair.source``); the rows then join by the exact 7-field identity in ``mutation_candidates`` as before.
 For any other structure the checks are unchanged.
 
@@ -118,10 +119,14 @@ def catalytic_input(result: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def _origin(store: Any, structure: str) -> dict[str, Any] | None:
-    """M29 spec 5.3: None, or the validated repair link of a repaired structure (``structure_invalid`` otherwise)."""
+    """M29 spec 5.3: None, or the validated repair link of a repaired structure; a record or structure mismatch is
+    ``structure_invalid``, an environment failure (class ``precondition``, e.g. ``openmm_unavailable``) is raised as
+    it is (spec 4.6: unavailable with its reason, never an invalid structure)."""
     try:
         return mutation_handoff.validated_origin(store, structure)
-    except ToolFailure:
+    except ToolFailure as exc:
+        if exc.cls is FailureClass.precondition:
+            raise
         raise _invalid("the repaired structure does not validate against its repair record",
                        "structure_invalid") from None
 

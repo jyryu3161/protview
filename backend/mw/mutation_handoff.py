@@ -14,7 +14,9 @@ Public API:
     None unless ``structure`` is a repaired structure (``preparation_manifest@1`` key ``repair``). Otherwise the
     ``structure_origin`` dict plus ``"record"`` (the stored ``structure_repair@1``), after
     ``structure_repair.validated_repair`` re-derived the record from the original prepared structure (``repair.source``)
-    and the repaired coordinates. ``ToolFailure`` when the link or the record does not validate.
+    and the repaired coordinates. ``ToolFailure`` when the link or the record does not validate, or a ``ToolFailure``
+    of class ``precondition`` (``openmm_unavailable``) when the installed template the check reads is unavailable;
+    callers pass that one through as the environment failure it is (spec 4.6).
 ``reference_structures(structure, origin) -> tuple[str, ...]``
     The structures whose pocket set / numbering map / annotation / catalytic annotation an M20 call on ``structure``
     accepts: the structure itself and, for a repaired structure, its original prepared structure (spec 5.3).
@@ -37,7 +39,8 @@ Public API:
       a position's ``modeled_basis`` is true, SO3 when ``references`` is not empty.
 
     ``ToolFailure`` (link or record), ``KeyError`` / ``TypeError`` / ``ValueError`` (a stored object of another shape)
-    when it cannot be computed; the caller maps them to its evidence error.
+    when it cannot be computed; the caller maps them to its evidence error, except a ``precondition`` failure (the
+    environment, see ``validated_origin``), which it passes through.
 ``basis_reasons(st, record, content) -> list[tuple[str, ...]]``
     The ``BASIS_REASONS`` behind each position's ``modeled_basis`` (stored order); ``st`` is the parsed repaired
     structure (``tools.structural._parse``). Used by ``read_view``; exposed for tests.
