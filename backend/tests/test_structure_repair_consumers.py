@@ -17,14 +17,16 @@ A consumer is any function, class or route of ``backend/mw`` that
   (``structure_handle``, ``prepared_handle``, ``input_handle``) on a model, or is a route with a ``structure`` query.
 
 Each consumer must be DECLARED below (receive | refuse | read_only | blocked_upstream | judgement | unrelated, one
-reason line each) or call the refusal itself. A ``refuse`` or ``blocked_upstream`` declaration names the guard
-functions it relies on, and each named guard must contain a refusal call (``reject_if_repaired``, or the API helper
-``_repaired_refusal`` that calls it). ``receive``, ``read_only`` and ``judgement`` points must not refuse. The tool
-contracts that accept a prepared structure (or a numbering map, which only a structure makes) are declared per lane,
-and the ``Run.call`` allow-list is exactly the modeling entry ``generate_mutation_candidates``. The self-tests at the
-end check that the inventory catches a new undeclared consumer, a removed refusal call, a widened allow-list, a refusing
-receive point and an undeclared tool contract. The behaviour of every refusal target is in
-``test_structure_repair_refusals.py``.
+reason line each) or call the refusal itself. A declaration names one definition (T12, review B2: no file wildcard
+``*``, which would let a new consumer function of the file pass; a wildcard is reported), so a new consumer function
+in any file is undeclared until it is declared or refuses. A ``refuse`` or ``blocked_upstream`` declaration names the
+guard functions it relies on, and each named guard must contain a refusal call (``reject_if_repaired``, or the API
+helper ``_repaired_refusal`` that calls it). ``receive``, ``read_only`` and ``judgement`` points must not refuse. The
+tool contracts that accept a prepared structure (or a numbering map, which only a structure makes) are declared per
+lane, and the ``Run.call`` allow-list is exactly the modeling entry ``generate_mutation_candidates``. The self-tests at
+the end check that the inventory catches a new undeclared consumer (a new file, or a new function of any declared
+file), a removed refusal call, a widened allow-list, a refusing receive point and an undeclared tool contract. The
+behaviour of every refusal target is in ``test_structure_repair_refusals.py``.
 """
 from __future__ import annotations
 
@@ -91,8 +93,18 @@ G_PLAN = f"{APP}::analysis_plan_create"
 M = "backend/mw/"
 HASH = "[call-key hash file, unchanged] "
 
+
+def _each(rel: str, names: tuple[str, ...], category: str, guards: tuple[str, ...],
+          reason: str) -> dict[tuple[str, str], tuple[str, tuple[str, ...], str]]:
+    """One declaration per consumer definition of a file (``<module>``: its module-level code), sharing one reason.
+    T12 (review B2): there is no file wildcard, so a new consumer function of the file is undeclared until it is
+    declared or calls the refusal (spec 5.2)."""
+    return {(rel, name): (category, guards, reason) for name in names}
+
+
 # --- the declaration table: (file, qualname) -> (category, guards, reason) -----------------------------------------
-# A qualname matches itself, then its top-level definition, then ``register.<name>``, then the file wildcard ``*``.
+# A qualname matches itself, then its top-level definition, then ``register.<name>``. A file wildcard ``*`` matches
+# nothing and is reported: each consumer definition is declared on its own.
 DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     # ---- Run.call tools (POST /commands, the M13 driver, the inspect_complex pipeline): refused in _validated_bound
     (M + "tools/structural.py", "register.compute_interactions"): (F, (G_RUN,), "compute_interactions"),
@@ -163,19 +175,25 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "workflows.py", "_verified_content"): (BU, (G_INSPECT,), "replay check of a pipeline's recorded steps"),
     # ---- M13 analysis flows: refused at the plan route; the M13 modules are unchanged (spec 5.2)
     (M + "api/app.py", "analysis_plan_create"): (F, (G_PLAN,), "POST /analysis/plans walks the inputs"),
-    (M + "analysis_plans.py", "*"): (BU, (G_PLAN,), "M13 plan compile: only reached through the plan route"),
-    (M + "analysis_executions.py", "*"): (
-        BU, (G_PLAN, G_RUN, G_JOB), "M13 driver: runs stored plans only; its calls and jobs pass the guards again"),
+    **_each(M + "analysis_plans.py", (
+        "<module>", "Preparation", "_compatibility", "_structure_meta", "_output", "_inspect_ligand", "_measure_atoms",
+        "_compare", "_chemical", "_find_cavities", "_minimize", "compile_plan", "validate_plan"),
+        BU, (G_PLAN,), "M13 plan compile: only reached through the plan route"),
+    **_each(M + "analysis_executions.py", ("_identity_check", "_dispatch_record", "_report_outcome"),
+            BU, (G_PLAN, G_RUN, G_JOB),
+            "M13 driver: runs stored plans only; its calls and jobs pass the guards again"),
     # ---- results and reports whose producing tool or job refuses
-    (M + "method_reports.py", "*"): (BU, (G_RUN,), "interface_sasa report: compute_interface_sasa refuses"),
+    **_each(M + "method_reports.py", ("_source_links", "validated_sasa", "build_method_report", "render_method_report"),
+            BU, (G_RUN,), "interface_sasa report: compute_interface_sasa refuses"),
     (M + "comparison_reports.py", "_catalog"): (BU, (G_RUN,), "distance / alignment report atom catalog"),
     (M + "numbering_reports.py", "validated_numbering_map"): (BU, (G_RUN,), "M15 report: the map tool refuses"),
     (M + "site_annotation_reports.py", "validated_annotation"): (BU, (G_M16, G_RUN), "M16 report of an annotation"),
     (M + "reaction_knowledge.py", "_validate"): (BU, (G_RUN,), "M26 result check: the link tool refuses"),
-    (M + "kinase_precedents.py", "*"): (
-        BU, (G_RUN,), "M27 reads only a numbering map, which map_residue_numbering refuses to make (T1 (b))"),
+    **_each(M + "kinase_precedents.py", ("<module>", "_validate"),
+            BU, (G_RUN,), "M27 reads only a numbering map, which map_residue_numbering refuses to make (T1 (b))"),
     (M + "openmm_bundle.py", "_selected_source"): (BU, (G_JOB,), "M7 result check: the M7 job refuses"),
-    (M + "openmm_reports.py", "*"): (BU, (G_JOB,), "M7 report: the M7 job refuses"),
+    **_each(M + "openmm_reports.py", ("validated_openmm", "_markdown", "build_openmm_report", "saved_openmm_report"),
+            BU, (G_JOB,), "M7 report: the M7 job refuses"),
     (M + "jobs/queue.py", "JobQueue._publish_openmm"): (BU, (G_JOB,), "M7 result publication of an admitted job"),
     # ---- the modeling path (spec 5.1): M20 and what uses its candidate sets
     (M + "mutation_constants.py", "<module>"): (R, (), "M20 STRUCTURE_KIND"),
@@ -184,39 +202,45 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "mutation_handoff.py", "read_view"): (R, (), "M20 hand-off read of a repaired set (T7)"),
     (M + "mutation_handoff.py", "checked_origin"): (
         R, (), "M29 T8b: the repaired structure check of the M20 admission, the reads and (same steps) the reports"),
-    (M + "mutation_candidates.py", "*"): (R, (), HASH + "M20 build and set check"),
+    **_each(M + "mutation_candidates.py", ("build_candidate_set", "validated_set"),
+            R, (), HASH + "M20 build and set check"),
     (M + "mutation_model_constants.py", "<module>"): (R, (), HASH + "M21 STRUCTURE_KIND"),
     (M + "mutation_model_math.py", "_validated"): (R, (), HASH + "M21 content structure kind"),
-    (M + "mutation_model_inputs.py", "*"): (R, (), "M21 admission of a candidate set's structure"),
-    (M + "mutation_model_bundle.py", "*"): (R, (), "M21 selection (M7 preflight) and model check"),
+    **_each(M + "mutation_model_inputs.py", ("<module>", "check_structure"),
+            R, (), "M21 admission of a candidate set's structure"),
+    **_each(M + "mutation_model_bundle.py", ("_residues", "selection", "_check_relations"),
+            R, (), "M21 selection (M7 preflight) and model check"),
     (M + "sequence_ga_jobs.py", "projection"): (R, (), HASH + "M23 -> M7 preflight"),
     (M + "sequence_ga_bundle.py", "_check_model"): (R, (), HASH + "M23 model structure kind"),
-    (M + "jobs/sequence_ga_worker.py", "*"): (R, (), HASH + "M23 worker input structure kind"),
+    **_each(M + "jobs/sequence_ga_worker.py", ("<module>", "validate_manifest"),
+            R, (), HASH + "M23 worker input structure kind"),
     (M + "jev_constants.py", "<module>"): (R, (), "M24 STRUCTURE_KIND (variant projection of a set)"),
     (M + "tools/jev.py", "_structure"): (R, (), "M24 projection parses the set's structure"),
     (M + "jev_projection.py", "_validate_projection"): (R, (), "M24 projection check"),
     (M + "jev_loop_projection.py", "_validate_header"): (R, (), "M25 loop projection check"),
     (M + "jev_loops.py", "parse_created"): (R, (), "M25 pool structure kind"),
-    (M + "jev_loop_store.py", "*"): (R, (), "M25 protein loop -> M21 selection"),
+    **_each(M + "jev_loop_store.py", ("_admit_setup", "step_job"), R, (), "M25 protein loop -> M21 selection"),
     (M + "tools/openmm_method.py", "preflight"): (
         R, (), HASH + "M7 preflight: the modeling path's entry check (M21 / M23 / M25, the repair check); its "
                       "standalone callers refuse (job_preflight, the generic job branch)"),
-    (M + "structure_origin_reports.py", "*"): (
+    (M + "structure_origin_reports.py", "origin"): (
         R, (), "M29 T8a: the structure origin section of the M20 / M21 / M24 / M25 / M18 reports (spec 6.3)"),
     # ---- reads (spec 5.2: listing and downloading are not refused)
     (M + "api/app.py", "residues"): (RO, (), "GET /structures/residues"),
     (M + "api/app.py", "coordinates"): (RO, (), "GET /structures/bytes (download)"),
     (M + "api/app.py", "atoms"): (RO, (), "GET /structures/atoms"),
     (M + "api/app.py", "reference_pdb_id_hint"): (RO, (), "GET /reference/pdb_id_hint (original source PDB ID)"),
-    (M + "numbering_reads.py", "*"): (RO, (), "PDB ID hint read of the manifest's source"),
+    **_each(M + "numbering_reads.py", ("<module>", "pdb_id_hint"), RO, (), "PDB ID hint read of the manifest's source"),
     (M + "api/app.py", "site_annotation_list"): (RO, (), "M16 list filtered by a structure handle"),
     (M + "api/app.py", "mutation_model_contacts"): (RO, (), "M21 read; 'structure' names a model side"),
     (M + "api/app.py", "structure_repair_preflight_read"): (
         RO, (), "M29 repair preflight read: a repaired structure gets its own already_repaired (spec 4.2)"),
-    (M + "structure_repair_reads.py", "*"): (RO, (), "M29 repair record reads (spec 4.5)"),
-    (M + "structure_repair_reports.py", "*"): (
-        RO, (), "M29 T9 repair report (spec 7): the stored record and its publication, re-validated; never repairs"),
-    (M + "structure_origin.py", "*"): (RO, (), "M29 origin judge behind reject_if_repaired (spec 6.1)"),
+    **_each(M + "structure_repair_reads.py", ("<module>", "list_repairs", "repair_detail"),
+            RO, (), "M29 repair record reads (spec 4.5)"),
+    **_each(M + "structure_repair_reports.py", ("claims_for", "_expected"), RO, (),
+            "M29 T9 repair report (spec 7): the stored record and its publication, re-validated; never repairs"),
+    **_each(M + "structure_origin.py", ("_manifest", "structure_origin"),
+            RO, (), "M29 origin judge behind reject_if_repaired (spec 6.1)"),
     # ---- shared helpers used by receive and read paths (T1 judgement: no refusal here)
     (M + "tools/structural.py", "structure_residues"): (J, (), "residue catalog (reads, viewer, M20, M21)"),
     (M + "tools/structural.py", "structure_bytes"): (J, (), "structure bytes (download, pocket, comparison)"),
@@ -234,11 +258,13 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "jobs/queue.py", "JobQueue._state"): (U, (), "M7 attempt preparation handles (not a preparation manifest)"),
     (M + "reference_snapshots.py", "_validate_manifest"): (U, (), "M15 reference set manifest (another object)"),
     (M + "structure_repair_constants.py", "<module>"): (U, (), "M29 constants (kinds, schemas)"),
-    (M + "structure_repair.py", "*"): (
-        U, (), "M29 repair core: input of the repair lane, a repaired input is already_repaired (spec 4.2)"),
-    (M + "structure_repair_bundle.py", "*"): (U, (), "M29 repair publication (producer of repaired structures)"),
-    (M + "structure_repair_jobs.py", "*"): (
-        U, (), "M29 repair admission (already_repaired) and its pre-publication M7 check (spec 3.4 4)"),
+    **_each(M + "structure_repair.py", ("RepairInputs", "load_inputs", "coordinates_handle", "_record"), U, (),
+            "M29 repair core: input of the repair lane, a repaired input is already_repaired (spec 4.2)"),
+    **_each(M + "structure_repair_bundle.py", ("repaired_manifest", "Pending", "pending", "producer",
+                                               "validated_result"),
+            U, (), "M29 repair publication (producer of repaired structures)"),
+    **_each(M + "structure_repair_jobs.py", ("admission", "m7_check"), U, (),
+            "M29 repair admission (already_repaired) and its pre-publication M7 check (spec 3.4 4)"),
 }
 
 # --- tool contracts that accept a prepared structure or a numbering map: tool -> (lane, category, guards, reason) ----
@@ -502,10 +528,13 @@ def calls(node: ast.AST, names: Iterable[str]) -> bool:
     return False
 
 
+def _keys(rel: str, qual: str) -> tuple[tuple[str, str], ...]:
+    """Exact (file, qualname), then the top-level definition, then ``register.<name>`` (no file wildcard, T12)."""
+    return (rel, qual), (rel, qual.split(".")[0]), (rel, "register." + qual.split(".")[-1])
+
+
 def classify(rel: str, qual: str, declared: dict) -> tuple[str, tuple[str, ...], str] | None:
-    """Exact (file, qualname), then the top-level definition, then ``register.<name>``, then the file wildcard."""
-    top = qual.split(".")[0]
-    for key in ((rel, qual), (rel, top), (rel, "register." + qual.split(".")[-1]), (rel, "*")):
+    for key in _keys(rel, qual):
         if key in declared:
             return declared[key]
     return None
@@ -569,17 +598,16 @@ def problems(sources: dict[str, str], declared: dict, tool_lanes: dict, tools: l
         entry = classify(hit.rel, hit.qual, declared)
         if entry is None:
             if not refuses(hit.rel, hit.qual):
-                found.append(f"undeclared consumer {hit.rel}:{hit.line} {hit.qual} ({hit.pattern})")
+                found.append(f"undeclared consumer {hit.rel}:{hit.line} {hit.qual} ({hit.pattern}): a new function "
+                             "needs a declaration of its own or a refusal call")
             continue
-        top = hit.qual.split(".")[0]
-        for key in ((hit.rel, hit.qual), (hit.rel, top), (hit.rel, "register." + hit.qual.split(".")[-1]),
-                    (hit.rel, "*")):
-            if key in declared:
-                used.add(key)
-                break
+        used.add(next(key for key in _keys(hit.rel, hit.qual) if key in declared))
     for key, (category, guards, reason) in sorted(declared.items()):
         rel, qual = key
         where = f"{rel}::{qual}"
+        if qual == "*":   # T12 (review B2): a file wildcard would let a new function of the file pass undeclared
+            found.append(f"file wildcard {where}: declare each consumer definition (a new function needs a "
+                         "declaration of its own)")
         if key not in used:
             found.append(f"stale declaration {where}")
         if category not in CATEGORIES or not reason.strip():
@@ -587,7 +615,7 @@ def problems(sources: dict[str, str], declared: dict, tool_lanes: dict, tools: l
         if category in (F, BU) and not guards:
             found.append(f"{category} without a guard {where}")
         found.extend(f"guard without a refusal call {guard} (for {where})" for guard in guards if not guard_ok(guard))
-        scope = trees.get(rel) if qual == "*" else None if qual == "<module>" else node(key)
+        scope = None if qual == "<module>" else node(key)
         if category in (R, RO, J) and scope is not None and calls(scope, REFUSAL_CALLS):
             found.append(f"{category} point refuses {where}")
     helper = node((APP, API_HELPER))
@@ -734,3 +762,35 @@ def test_a_refusing_receive_point_a_missing_and_a_stale_declaration_are_caught()
     assert any(item.startswith(f"undeclared consumer {M}tools/sasa.py:") and " calculate " in item for item in found)
     assert f"stale declaration {M}m29_t6_probe_gone.py::gone" in found
     assert len(found) == 3, found
+
+
+def test_a_new_consumer_function_in_any_declared_file_is_caught():
+    """T12 (review B2): a declaration names one definition, never a whole file, so a new consumer function added to a
+    file with declared consumers is undeclared until it is declared or calls the refusal (in-memory sources only)."""
+    sources, _tools = _real()
+    files = sorted({rel for rel, _qual in DECLARED})
+    assert all(qual != "*" for _rel, qual in DECLARED)
+    probe = '\n\ndef m29_t12_probe(store, handle):\n    return store.meta(handle)["kind"] == "prepared_structure"\n'
+    found = _check({**sources, **{rel: sources[rel] + probe for rel in files}})
+    assert found and all(item.startswith("undeclared consumer ") and " m29_t12_probe " in item and
+                         item.endswith("a new function needs a declaration of its own or a refusal call")
+                         for item in found), found
+    assert {item.split()[2].rsplit(":", 1)[0] for item in found} == set(files)
+    # the review's probe: a new read function of numbering_reads.py (once a file wildcard) calling the structure
+    # parser, and a new app.py route calling it (the route itself matches no consumer pattern)
+    rel = M + "numbering_reads.py"
+    reads = sources[rel] + ("\n\nfrom .tools.structural import _parse as m29_t12_parse\n\n\n"
+                            "def m29_t12_probe(store, handle):\n"
+                            "    return m29_t12_parse(store, handle)\n")
+    route = sources[APP] + ('\n\n@app.get("/runs/{rid}/m29_t12_probe")\n'
+                            "def m29_t12_probe_route(rid: str, handle: str):\n"
+                            "    return numbering_reads.m29_t12_probe(_run(rid).store, handle)\n")
+    found = _check({**sources, rel: reads, APP: route})
+    assert len(found) == 1 and found[0].startswith(f"undeclared consumer {rel}:"), found
+    assert " m29_t12_probe (call:tools/structural._parse()" in found[0], found
+    # declaring that one definition passes; a file wildcard covers nothing and is itself reported
+    assert _check({**sources, rel: reads, APP: route},
+                  declared={**DECLARED, (rel, "m29_t12_probe"): (RO, (), "probe")}) == []
+    found = _check({**sources, rel: reads}, declared={**DECLARED, (rel, "*"): (RO, (), "probe wildcard")})
+    assert sorted(item.split(":")[0] for item in found) == sorted([
+        f"file wildcard {rel}", f"stale declaration {rel}", f"undeclared consumer {rel}"]), found
