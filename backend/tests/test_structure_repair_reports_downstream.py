@@ -21,6 +21,8 @@ Inputs (labelled; REAL product objects unless marked):
   same set request on the unrepaired structure (an M28 ``@2`` report); and an M26 result on the unrepaired structure
   from the LABELLED SYNTHETIC reaction reference set of the T7 tests (made-up PDB ID 0SY9 naming 1MQ4 A274 Asp and
   the gap residue A286 Arg), handed off as the catalytic annotation of another M20 set on the repaired structure.
+  T12: one more M20 set on the repaired structure (A274 Asp and the gap residue A286 Arg as user residues) with the
+  same map and annotation handed off.
 * The baseline is the report modules of commit ``ea166565`` (``git show``; the five files are unchanged from there to
   the T8a start), loaded under other module names: for inputs that are not repaired the new code gives the same
   manifest and Markdown bytes, reports stored by the baseline reopen with the new code and new reports reopen with the
@@ -76,10 +78,10 @@ from mw import jev_sends as S
 from mw import mutation_model_bundle as mmb
 from mw import mutation_model_constants as MC
 from mw import mutation_model_reports as mmr
+from mw import mutation_reads, sequence_ga_bundle
 from mw import mutation_reports as mr
 from mw import reaction_knowledge_constants as RKC
 from mw import reference_snapshots as rs
-from mw import sequence_ga_bundle
 from mw import structure_origin_reports as origin_reports
 from mw import structure_repair as sr
 from mw import structure_repair_constants as K
@@ -280,6 +282,11 @@ def _mq4(base: Path, root: Path) -> dict:
                    "numbering_map": w["map"], "annotation": w["annotation"]}
         w["set_rep"] = run.call("generate_mutation_candidates", {"structure": w["structure"], **request}).handle
         w["set_plain"] = run.call("generate_mutation_candidates", {"structure": w["prepared"], **request}).handle
+        # T12: an observed residue and the gap residue A286 ARG with the original's map and annotation handed off
+        w["set_gap"] = run.call("generate_mutation_candidates", {
+            "structure": w["structure"], "sources": {"pocket": None, "ligand_shell": None,
+                                                     "residues": CATALYTIC_POSITIONS[:2]},
+            "numbering_map": w["map"], "annotation": w["annotation"]}).handle
         w["cat"] = run.call("link_reaction_knowledge", {
             "structure": w["prepared"], "pdb_id": "0SY9", "chains": [{"chain_auth": "A", "uniprot_accession": None}],
             "numbering_map": None}).handle
@@ -445,6 +452,137 @@ def test_the_repaired_m20_set_takes_reference_results_of_the_original_structure_
     mr.check_sources(with_catalytic, None, None, None, result, found)
 
 
+# --- T12: the modeled-residue positions of an M20 @3 report (spec 5.3) ---------------------------------------------------
+
+MODELED_NOT_CHECKED = "검사 안 함(모델링 잔기)"
+COUNT_LINE = ("- 모델링 잔기 위치 수 (보완 기록 " + _md("gaps[*].residues") + "·" + _md("replaced[*].to") +
+              "와 잔기 식별자가 같은 위치, ProtView 계산): {}")
+NUMBERING_LINE = (f"- 모델링 잔기 위치의 번호 대응: {MODELED_NOT_CHECKED}. 위 지도에 없음 ({_md('not_in_map')}) 위치 수는 "
+                  "저장값을 센 것이며 모델링 잔기 위치가 들어 있다.")
+PROTECTION_LINE = (f"- 모델링 잔기 위치의 {{}} 검사: {MODELED_NOT_CHECKED}. 위 표의 상태와 개수는 저장값이며 이 위치를 "
+                   "검사했다는 뜻이 아니다.")
+CHECK_NAMES = {"klifs_sites": "KLIFS 주요 부위", "catalytic": "촉매 잔기 데이터베이스"}
+REFERENCE_ORDER = ("numbering", "klifs_sites", "catalytic")
+# case -> (world, set key, modeled-residue positions (None: the 1MQ4 ADP shell, from the files only), the stored fields
+# the reads show as "검사 안 함(모델링 잔기)" at those positions (None: map and annotation fields when there is one))
+MODELED = {"ubq_i44": ("rep", "set", 0, []),
+           "mq4_adp_shell": ("mq", "set_rep", None, None),
+           "mq4_gap_numbering_annotation": ("mq", "set_gap", 1, ["numbering", "klifs_sites"]),
+           "mq4_gap_catalytic": ("mq", "set_cat", 1, ["catalytic"])}
+
+
+def _modeled_residues(store, repaired: str, original: str) -> set:
+    """From the stored mmCIF bytes with gemmi (not the record): the residues (chain, author number, insertion code,
+    name) of the repaired structure that the original prepared structure does not have (gap residues, MSE now MET)."""
+    def keys(handle):
+        raw = store.load(store.load(handle)["coordinates"])
+        model = gemmi.make_structure_from_block(gemmi.cif.read_string(raw.decode()).sole_block())[0]
+        return {(chain.name, res.seqid.num, res.seqid.icode.strip(), res.name) for chain in model for res in chain}
+    return keys(repaired) - keys(original)
+
+
+def _lines_of(markdown: str, heading: str) -> list[str]:
+    """The lines of the one section ``heading``, up to the next "## " heading."""
+    assert markdown.count(f"\n{heading}\n") == 1
+    start = markdown.index(f"\n{heading}\n") + 1
+    return markdown[start:markdown.index("\n## ", start)].split("\n")
+
+
+@pytest.mark.parametrize("case", sorted(MODELED))
+def test_the_v3_report_counts_the_modeled_residue_positions_and_says_they_were_not_checked(case, world, client):
+    key, result, count, fields = MODELED[case]
+    w = world[key]
+    run = api_module._run(w["rid"])
+    content = run.store.load(w[result])
+    new = _modeled_residues(run.store, w["structure"], w["prepared"])
+    modeled = [p for p in content["positions"] if (p["residue"]["chain_auth"], p["residue"]["seq_auth"],
+                                                   p["residue"]["icode"], p["residue"]["resname"]) in new]
+    assert count is None or len(modeled) == count
+    if fields is None:
+        fields = ["numbering", "klifs_sites"] if modeled else []
+    # the stored set keeps "checked, none" at those positions (spec 5.3: the stored values are never changed)
+    for position in modeled:
+        assert ("numbering" not in fields) or position["numbering"]["status"] == "not_in_map"
+        assert ("klifs_sites" not in fields) or position["protection"]["klifs_sites"] == []
+        assert ("catalytic" not in fields) or position["protection"]["catalytic"] == []
+    # the reads make the same judgment (their per-position fields, joined)
+    page = mutation_reads.position_page(run, w[result], status=None, source=None, exclusion_reason=None,
+                                        chain_auth=None, sort="order", offset=0, limit=100)
+    assert page["total"] <= 100
+    shown = {field for row in page["rows"] for field in row["reference_not_checked"]}
+    assert [field for field in REFERENCE_ORDER if field in shown] == fields
+    # the claim: computed, the set's positions, the record in its subject, the value exact
+    built = _report(client, w["rid"], w[result])
+    manifest, markdown = built["manifest"], built["markdown"]
+    assert manifest["render_version"] == "mutation_candidates_markdown@3"
+    claims = manifest["claims"]
+    assert [claim["statement_id"] for claim in claims[-3:]] == [mr.MODELED_STATEMENT, *STATEMENTS]
+    assert sum(claim["statement_id"] == mr.MODELED_STATEMENT for claim in claims) == 1
+    claim = claims[-3]
+    assert (claim["evidence_kind"], claim["source_handle"], claim["source_kind"], claim["source_schema"],
+            claim["source_sha256"], claim["field_path"], claim["row_selector"], claim["unit"], claim["rounding"],
+            claim["reference"]) == ("computed", w[result], "mutation_candidate_set", "mutation_candidate_set@1",
+                                    w[result].rsplit("/", 1)[-1], "positions[*].residue",
+                                    {"repair_modeled_residue": True}, "count", "integer", None)
+    assert (claim["exact_value"], claim["rendered_value"]) == (len(modeled), str(len(modeled)))
+    assert claim["subject"] == {"candidate_set_handle": w[result], "repair_record_handle": w["record"],
+                                "repaired_structure_handle": w["structure"], "reference_not_checked": fields}
+    # the Markdown: the count in the structure origin section, one line in each section whose stored values hold them
+    assert _section(markdown)[-2] == COUNT_LINE.format(len(modeled))
+    lines = markdown.split("\n")
+    numbering = _lines_of(markdown, "## 번호 대응 (참조 스냅샷 값, 계산 아님)")
+    assert (NUMBERING_LINE in numbering) is ("numbering" in fields)
+    assert lines.count(NUMBERING_LINE) == ("numbering" in fields)
+    names = [CHECK_NAMES[field] for field in ("klifs_sites", "catalytic") if field in fields]
+    found = [line for line in lines if line.startswith("- 모델링 잔기 위치의 ") and line.endswith("뜻이 아니다.")]
+    assert found == ([PROTECTION_LINE.format("·".join(names))] if names else [])
+    assert all(line in _lines_of(markdown, "## 보호 검사") for line in found)
+    for line in (COUNT_LINE.format(len(modeled)), NUMBERING_LINE, *found):
+        assert not [word for word in FORBIDDEN if word.lower() in line.lower()], line
+        mr.check_no_interpretation(line)
+    # reopening gives the stored bytes
+    again = _selected(client, w["rid"], built["handle"])
+    assert again.status_code == 200 and again.json()["markdown"] == markdown
+
+
+def test_edited_modeled_residue_claims_and_lines_are_refused(world, client, tmp_path, monkeypatch):
+    w = world["mq"]
+    built = _report(client, w["rid"], w["set_gap"])
+    manifest, markdown = built["manifest"], built["markdown"]
+    claims, claim = manifest["claims"], manifest["claims"][-3]
+    assert claim["statement_id"] == mr.MODELED_STATEMENT and mr.match_claim(claims, copy.deepcopy(claim)) == claim
+    other = world["rep"]["set"]   # another run's set
+    for reason, change in (("binding_mismatch", {"exact_value": claim["exact_value"] + 1}),
+                           ("binding_mismatch", {"subject": {**claim["subject"],
+                                                             "reference_not_checked": list(REFERENCE_ORDER[::-1])}}),
+                           ("evidence_kind_mismatch", {"evidence_kind": "reference_value"}),
+                           ("computed_field_rule", {"field_path": "positions[*].status"}),
+                           ("source_mismatch", {"source_handle": other, "source_sha256": other.rsplit("/", 1)[-1]})):
+        with pytest.raises(EvidenceError, match=reason):
+            mr.match_claim(claims, {**copy.deepcopy(claim), **change})
+    # an @1 / @2 report's claims hold no such claim
+    with pytest.raises(EvidenceError, match="field_not_allowed"):
+        mr.match_claim([c for c in claims if c["statement_id"] != mr.MODELED_STATEMENT], copy.deepcopy(claim))
+    # stored edited reports (fault injection, events-only copy)
+    root = _copy(world, w["rid"], tmp_path)
+    monkeypatch.setattr(api_module, "RUNS_DIR", root)
+    api_module.RUNS.clear()
+    run = api_module._run(w["rid"])
+    edited = copy.deepcopy(manifest)
+    edited["claims"][-3].update(exact_value=claim["exact_value"] + 1, rendered_value=str(claim["exact_value"] + 1))
+    protection = next(line for line in markdown.split("\n") if line.startswith("- 모델링 잔기 위치의 KLIFS"))
+    analysis = mr.ANALYSIS_TYPE
+    forged = {"mutation_claim_binding_mismatch": _forge(run, edited, mr.render_mutation_report(edited), analysis),
+              "mutation_report_markdown_mismatch": _forge(run, manifest, markdown.replace(NUMBERING_LINE + "\n", "", 1),
+                                                          analysis)}
+    dropped = _forge(run, manifest, markdown.replace(protection + "\n", "", 1), analysis)
+    served = TestClient(api_module.app, base_url="http://127.0.0.1")
+    for reason, handle in forged.items():
+        assert reason in _refused(_selected(served, w["rid"], handle))
+    assert "mutation_report_markdown_mismatch" in _refused(_selected(served, w["rid"], dropped))
+    assert _selected(served, w["rid"], built["handle"]).status_code == 200
+
+
 # --- refusals ---------------------------------------------------------------------------------------------------------
 
 def _edits(world, w: dict, manifest: dict, module) -> list[tuple[str, dict]]:
@@ -557,7 +695,8 @@ def test_a_forged_new_version_for_a_structure_that_is_not_repaired_is_refused(ca
     donor = _report(client, world[donor_key]["rid"], world[donor_key][donor_result])["manifest"]
     forged = copy.deepcopy(built["manifest"])
     forged.update(render_version=new_version, structure_origin=donor["structure_origin"])
-    forged["claims"] = forged["claims"] + donor["claims"][-2:]
+    # the donor's origin claims (M20 @3: with its modeled-residue position count before them, T12)
+    forged["claims"] = forged["claims"] + donor["claims"][-3 if module is mr else -2:]
     if module is mr:
         forged.setdefault("reference_snapshot_sets", [])
     root = _copy(world, w["rid"], tmp_path)

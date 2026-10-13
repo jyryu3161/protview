@@ -53,6 +53,16 @@ present, the same list as @2, possibly empty, and the "참조 스냅샷" section
 structure). For @3 only, ``check_sources`` / ``_check_catalytic`` also accept a reference result made on that original
 structure (``repair.source``, ``mutation_handoff.reference_structures``); @1 and @2 accept the set's own structure only,
 and an @1, @2 manifest for a repaired structure or an @3 one for another structure is refused.
+
+M29 T12 (@3 only, spec 5.3: the report shows the modeled residues as not checked; the stored set is unchanged): one
+more computed claim, ``repair_modeled_residue_position_count`` (before the two record-count claims), counts the
+positions whose residue is a modeled residue of the repair record (a gap residue or an MSE residue replaced by MET) with
+the reads' judgment (``mutation_handoff.modeled_residue_view``); it cites the set's ``positions[*].residue`` with the
+record named in its subject and operation, and its subject lists the stored fields that judgment shows as "검사 안
+함(모델링 잔기)". The "구조 출처" section gives the count; the numbering section (when ``numbering`` is listed) and the
+protection-check section (when ``klifs_sites`` / ``catalytic`` is listed) each add one line saying that the stored
+counts and states there include those positions and do not mean they were checked. The fixed sentences SO1-SO3 are
+unchanged and @1 / @2 manifests and Markdown are the bytes they were.
 """
 from __future__ import annotations
 
@@ -156,6 +166,13 @@ STATEMENTS = {
     "reference_mcsa_entry_id": ("reference_value", re.compile(
         r"positions\[\d+\]\.protection\.catalytic\[\d+\]\.mcsa_id")),
 }
+# M29 T12 (@3 only): the positions whose residue is a modeled residue of the repair record (a gap residue or an MSE
+# residue replaced by MET), judged as the reads judge them (``mutation_handoff.modeled_residue_view``). Kept apart from
+# ``STATEMENTS`` (the M20 statements are unchanged); only an @3 report's expected claims hold it.
+MODELED_STATEMENT = "repair_modeled_residue_position_count"
+V3_STATEMENTS = {MODELED_STATEMENT: ("computed", re.compile(r"positions\[\*\]\.residue"))}
+MODELED_NOT_CHECKED = "검사 안 함(모델링 잔기)"   # the reads' and the screen's wording (SO2 / SO3 vocabulary)
+NOT_CHECKED_CHECKS = (("klifs_sites", "klifs_key_sites"), ("catalytic", "catalytic_residue_database"))
 REFERENCE_FIELDS = re.compile(r"positions\[\d+\]\.(numbering\.(uniprot_accession|uniprot_position|uniprot_residue|"
                               r"klifs_index|klifs_label)|protection\.klifs_sites\[\d+\]|"
                               r"protection\.catalytic\[\d+\]\.(mcsa_id|residue_index|is_reference))")
@@ -377,7 +394,8 @@ def reference_snapshot_sets(run: Any, content: dict[str, Any], claims: list[dict
 def _claim(statement_id: str, handle: str, path: str, selector: dict[str, Any] | None, subject: dict[str, Any],
            quantity: str, unit: str, value: Any, rounding: str, operation: str | None,
            reference: dict[str, Any] | None = None) -> dict[str, Any]:
-    return {"statement_id": statement_id, "evidence_kind": STATEMENTS[statement_id][0], "source_handle": handle,
+    kind = (STATEMENTS.get(statement_id) or V3_STATEMENTS[statement_id])[0]
+    return {"statement_id": statement_id, "evidence_kind": kind, "source_handle": handle,
             "source_kind": KIND, "source_schema": SCHEMA, "source_sha256": handle.rsplit("/", 1)[-1],
             "field_path": path, "row_selector": selector, "subject": subject, "quantity": quantity, "unit": unit,
             "exact_value": value, "rendered_value": _render(value, rounding), "rounding": rounding,
@@ -494,6 +512,21 @@ def claims_for(handle: str, content: dict[str, Any]) -> list[dict[str, Any]]:
     return claims
 
 
+def modeled_claim(run: Any, handle: str, content: dict[str, Any], origin: dict[str, Any]) -> dict[str, Any]:
+    """M29 T12 (@3 only): the count of stored positions whose residue is a modeled residue of the repair record, from
+    ``mutation_handoff.modeled_residue_view`` (the reads' judgment). The subject names the record and the stored
+    fields that judgment shows as not checked (modeled residue) at one or more of those positions."""
+    _references, modeled = mutation_handoff.modeled_residue_view(run.store, content, origin)
+    shown = {field for fields in modeled if fields for field in fields}
+    subject = {"candidate_set_handle": handle, "repair_record_handle": origin["repair_record"],
+               "repaired_structure_handle": origin["repaired_structure"],
+               "reference_not_checked": [field for field in mutation_handoff.REFERENCE_FIELDS if field in shown]}
+    return _claim(MODELED_STATEMENT, handle, "positions[*].residue", {"repair_modeled_residue": True}, subject,
+                  "repair_modeled_residue_positions", "count", sum(fields is not None for fields in modeled),
+                  "integer", "count_where(residue in structure_repair@1 gaps[*].residues[*] or replaced[*].to; "
+                             "stored rows)")
+
+
 def _key(claim: dict[str, Any]) -> tuple[str, str, bytes]:
     return claim["statement_id"], claim["field_path"], canonical_json(claim["row_selector"])
 
@@ -505,9 +538,9 @@ def match_claim(expected_claims: list[dict[str, Any]], proposed: Any) -> dict[st
     statement = proposed["statement_id"]
     if statement in origin_reports.STATEMENT_IDS:   # M29 @3: the record counts of a repaired structure
         return origin_reports.match_claim(expected_claims, proposed, "mutation")
-    if statement not in STATEMENTS:
+    if statement not in STATEMENTS and statement not in V3_STATEMENTS:
         raise EvidenceError("mutation_claim_statement_not_allowed")
-    kind, rule = STATEMENTS[statement]
+    kind, rule = STATEMENTS.get(statement) or V3_STATEMENTS[statement]
     if proposed["evidence_kind"] not in EVIDENCE_KINDS or proposed["evidence_kind"] != kind:
         raise EvidenceError("mutation_claim_evidence_kind_mismatch")
     path = proposed["field_path"]
@@ -566,7 +599,7 @@ def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, An
         if (version == RENDER_VERSION_V3) is (origin is None):
             raise EvidenceError("mutation_report_structure_origin_mismatch")  # @3 is a repaired structure's set only
         if version == RENDER_VERSION_V3:
-            claims = claims + origin_reports.claims(origin)
+            claims = claims + [modeled_claim(run, handle, content, origin)] + origin_reports.claims(origin)
         expected = {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
                     "render_version": version, "generation_mode": "local_rules_no_egress", "result_handle": handle,
                     "result_schema": SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
@@ -630,6 +663,10 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
     pocket, shell = sources["pocket"], sources["ligand_shell"]
     v2 = manifest["method_version"] == METHOD_VERSION_V2
     catalytic_given = parameters.get("catalytic_annotation")   # v2 only
+    v3 = manifest["render_version"] == RENDER_VERSION_V3
+    modeled = [c for c in claims if c["statement_id"] == MODELED_STATEMENT]
+    # M29 T12 (@3): the stored fields the reads show as not checked (modeled residue) at modeled-residue positions
+    not_checked = modeled[0]["subject"]["reference_not_checked"] if v3 and len(modeled) == 1 else []
     lines = ["# 변이 후보 보고서 (mutation candidates)", "", "Status: complete", "",
              f"Result: {md(manifest['result_handle'])}",
              (f"Structure: {md(structure['handle'])} ({md(structure['structure_kind'])}, "
@@ -705,6 +742,10 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
         else:
             detail = f"이유: {CHECK_REASON_KO[check['reason']]} ({md(check['reason'])}). 촉매 잔기를 판정하지 않았다."
         lines.append(f"| {CHECK_KO[key]} ({md(key)}) | {md(status)} | {detail} |")
+    names = [CHECK_KO[key] for field, key in NOT_CHECKED_CHECKS if field in not_checked]
+    if names:   # M29 T12 (@3): the table states the stored values, not a check of the modeled-residue positions
+        lines.extend(["", (f"- 모델링 잔기 위치의 {'·'.join(names)} 검사: {MODELED_NOT_CHECKED}. 위 표의 상태와 개수는 "
+                           "저장값이며 이 위치를 검사했다는 뜻이 아니다.")])
     lines.extend(["", "## 번호 대응 (참조 스냅샷 값, 계산 아님)", ""])
     if parameters["numbering_map"] is None:
         lines.append(f"- 번호 대응: {NOT_GIVEN}. 위치별 UniProt·KLIFS 번호가 없다.")
@@ -712,6 +753,9 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
         for status in NUMBERING_STATUSES:
             lines.append(f"- {NUMBERING_KO[status]} ({md(status)}) 위치 (ProtView 계산): "
                          f"{value('numbering_status_count', {'numbering_status': status})}")
+        if "numbering" in not_checked:   # M29 T12 (@3): the stored not_in_map count holds modeled-residue positions
+            lines.append(f"- 모델링 잔기 위치의 번호 대응: {MODELED_NOT_CHECKED}. 위 {NUMBERING_KO['not_in_map']} "
+                         f"({md('not_in_map')}) 위치 수는 저장값을 센 것이며 모델링 잔기 위치가 들어 있다.")
         accessions = [c["rendered_value"] for c in claims if c["statement_id"] == "reference_uniprot_accession"]
         lines.append(f"- UniProt accession ({REFERENCE_NOTE}): "
                      f"{md(', '.join(accessions)) if accessions else 'none (null)'}")
@@ -727,8 +771,10 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
         lines.extend(["", "## 참조 스냅샷"])
         for entry in manifest["reference_snapshot_sets"]:
             lines.extend(_reference_set_lines(entry, md))
-    if manifest["render_version"] == RENDER_VERSION_V3:   # M29 T8: the structure origin section
+    if v3:   # M29 T8: the structure origin section (T12: and the count of modeled-residue positions)
         lines.extend(origin_reports.section_lines(manifest["structure_origin"], claims, md))
+        lines.append(f"- 모델링 잔기 위치 수 (보완 기록 {md('gaps[*].residues')}·{md('replaced[*].to')}와 잔기 식별자가 "
+                     f"같은 위치, ProtView 계산): {value(MODELED_STATEMENT)}")
     lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])

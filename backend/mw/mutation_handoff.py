@@ -49,6 +49,11 @@ Public API:
     ``ToolFailure`` (link or record), ``KeyError`` / ``TypeError`` / ``ValueError`` (a stored object of another shape)
     when it cannot be computed; the caller maps them to its evidence error, except a ``precondition`` failure (the
     environment, see ``validated_origin``), which it passes through.
+``modeled_residue_view(store, content, origin) -> (references, per position None | reference_not_checked)``
+    The modeled-residue part of ``read_view`` for an already checked ``origin``: ``references`` as above and, per
+    stored position, None unless its residue is a modeled residue (gap or replaced), else its ``reference_not_checked``
+    list. The M20 @3 report counts and describes those positions with it (M29 T12), so the reads and the report make
+    one judgment.
 ``basis_reasons(st, record, content) -> list[tuple[str, ...]]``
     The ``BASIS_REASONS`` behind each position's ``modeled_basis`` (stored order); ``st`` is the parsed repaired
     structure (``tools.structural._parse``). Used by ``read_view``; exposed for tests.
@@ -193,19 +198,29 @@ def _not_checked(position: dict[str, Any], handed: list[str]) -> list[str]:
     return [field for field in REFERENCE_FIELDS if shown[field]]
 
 
+def modeled_residue_view(store: Any, content: dict[str, Any],
+                         origin: dict[str, Any]) -> tuple[list[str], list[list[str] | None]]:
+    """(``references``: the set's reference results made on the original structure, ``HANDOFF_KEYS`` order; per stored
+    position, None when its residue is not a modeled residue of the record, else its ``reference_not_checked``).
+
+    ``origin`` is a checked origin of the set's repaired structure (``checked_origin`` or
+    ``structure_origin_reports.origin``: ``source_structure`` and the validated ``record``). This is the one judgment
+    of the reads (``read_view``) and of the M20 @3 report (``mutation_reports``)."""
+    handed = _handed_off(store, content["parameters"], origin["source_structure"])
+    _with_atoms, new = _modeled_keys(origin["record"])
+    return handed, [_not_checked(position, handed) if mc.identity(position["residue"]) in new else None
+                    for position in content["positions"]]
+
+
 def read_view(store: Any, content: dict[str, Any]) -> dict[str, Any] | None:
     structure = content["structure"]["handle"]
     origin = validated_origin(store, structure)
     if origin is None:
         return None
-    record = origin["record"]
-    handed = _handed_off(store, content["parameters"], origin["source_structure"])
-    reasons = basis_reasons(_parse(ToolContext(store=store, call_id="metadata"), structure), record, content)
-    _with_atoms, new = _modeled_keys(record)
-    positions = [{"modeled_basis": bool(found),
-                  "reference_not_checked": (_not_checked(position, handed)
-                                            if mc.identity(position["residue"]) in new else [])}
-                 for position, found in zip(content["positions"], reasons, strict=True)]
+    handed, modeled = modeled_residue_view(store, content, origin)
+    reasons = basis_reasons(_parse(ToolContext(store=store, call_id="metadata"), structure), origin["record"], content)
+    positions = [{"modeled_basis": bool(found), "reference_not_checked": fields or []}
+                 for fields, found in zip(modeled, reasons, strict=True)]
     statements = ([{"id": "SO2", "text": K.SO2}] if any(row["modeled_basis"] for row in positions) else [])
     statements += [{"id": "SO3", "text": K.SO3}] if handed else []
     return {"positions": positions, "repair_handoff": {"references": handed, "statements": statements}}
