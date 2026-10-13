@@ -21,14 +21,16 @@ Inputs (every one labelled):
 * Baseline: ``app.py``, ``mutation_reads.py``, ``mutation_model_reads.py`` and ``docking_reads.py`` of commit
   ``ea166565`` (before T5-T8b) read from git and served next to the current app on the same runs.
 * Each run also gets the M20, M21 and M18 method reports of its results (T8a's versions for the repaired run), and a
-  scratch run holds an UNPUBLISHED repaired structure (the four objects put with ``store.put`` as the T7 tests do, no
-  repair job): the reads must call it invalid exactly when the reports refuse it.
+  scratch run holds an UNPUBLISHED repaired structure (a labelled partial store: the four objects put with
+  ``store.put``, no repair job): the M20 admission refuses it and the reads call a set forged on it invalid exactly as
+  the reports refuse it.
 
 Expected values come from the input edit (one NZ atom on A48) and from the stored record, never from the field itself.
 """
 from __future__ import annotations
 
 import ast
+import copy
 import importlib.abc
 import importlib.util
 import json
@@ -49,6 +51,7 @@ from test_kinase_precedents_ast import BASELINE_BLOBS, _blob
 from mw import docking_constants as DC
 from mw import docking_reads, mutation_handoff, sequence_ga_reads, structure_origin_reads, structure_origin_reports
 from mw import jev_constants as J
+from mw import mutation_candidates as mc
 from mw import mutation_model_constants as MC
 from mw import sequence_ga_constants as SC
 from mw import structure_repair as sr
@@ -525,9 +528,8 @@ def _imports(rel: str) -> tuple[set[str], set[str]]:
 def test_import_boundaries_of_the_new_module_and_its_importers():
     absolute, relative = _imports("structure_origin_reads.py")
     assert absolute == {"__future__", "typing"}
-    assert relative == {".structure_repair_bundle", ".structure_repair_constants", ".core.errors.FailureClass",
-                        ".core.errors.ToolFailure", ".structure_origin.is_repaired",
-                        ".structure_origin.structure_origin"}
+    assert relative == {".mutation_handoff", ".structure_repair_constants", ".core.errors.FailureClass",
+                        ".core.errors.ToolFailure", ".structure_origin.is_repaired"}
     source = (MW / "structure_origin_reads.py").read_text(encoding="utf-8")
     for banned in ("raise_limits", "limit_approval", "subprocess", "jev_sends", "egress", "__import__", "API_KEY"):
         assert banned not in source, banned
@@ -584,10 +586,13 @@ def test_report_reopen_routes_answer_an_unavailable_environment_with_412(world, 
         assert client.get(f"/runs/{plain['rid']}/reports/selected", params={"handle": handle}).status_code == 200
 
 
-def test_an_unpublished_repaired_structure_reads_invalid_like_its_report(tmp_path, monkeypatch):
-    """LABELLED: the repaired objects put with ``store.put`` and no repair job (the T7 test construction). The M20
-    admission (``mutation_handoff.validated_origin``) accepts it, but the reports refuse it, so every read calls it
-    invalid too (never ``valid: true`` with another verdict than the report's)."""
+def test_an_unpublished_repaired_structure_is_refused_at_admission_and_reads_invalid_like_its_report(tmp_path,
+                                                                                                     monkeypatch):
+    """LABELLED FAULT (a partial store): the four repaired objects put with ``store.put`` and no repair job, so there is
+    no ``structure_repair_published`` event. T4's re-derivation alone passes, but the M20 admission refuses the
+    structure (``structure_invalid``, nothing stored), and a set forged around the admission (a set of the original
+    structure with its structure handle swapped, put with ``store.put``) reads invalid exactly as its report is
+    refused (never ``valid: true`` with another verdict than the report's)."""
     root = tmp_path / "runs"
     run = new_run(root, dry_run=False, run_id="run_m29_t8b_unpublished")
     loaded = run.call("load_structure", {"source": "SYNTHETIC-1ubq-A48-NZ-removed.cif", "model_index": 0},
@@ -615,15 +620,35 @@ def test_an_unpublished_repaired_structure_reads_invalid_like_its_report(tmp_pat
     structure = run.store.put(K.STRUCTURE_KIND, K.STRUCTURE_SCHEMA, {
         "coordinates": coordinates, "manifest": manifest, "model_index": original["model_index"],
         "model_number": original["model_number"]}).handle
-    assert mutation_handoff.validated_origin(run.store, structure) is not None   # T4's re-derivation passes
-    cset = run.call("generate_mutation_candidates", {
-        "structure": structure, "sources": {"pocket": None, "ligand_shell": None, "residues": [I44]}}).handle
+    stored_record = run.store.load(record_handle)
+    assert sr.validated_repair(inputs, repaired_raw, stored_record) == stored_record   # T4's re-derivation alone passes
+    with pytest.raises(ToolFailure) as caught:
+        mutation_handoff.validated_origin(run.store, structure)
+    assert (caught.value.cls, caught.value.detail) == (FailureClass.input_invalid,
+                                                       {"reason_code": "repair_record_mismatch"})
+    request = {"structure": structure, "sources": {"pocket": None, "ligand_shell": None, "residues": [I44]}}
+    with pytest.raises(ToolFailure) as caught:
+        run.call("generate_mutation_candidates", request)
+    assert (caught.value.cls, caught.value.detail) == (FailureClass.input_invalid, {"reason_code": "structure_invalid"})
     client = _serve(api_module, root, monkeypatch)
     rid = run.run_id
+    refused = client.post(f"/runs/{rid}/commands", json={"tool": "generate_mutation_candidates", "args": request})
+    assert refused.status_code == 422 and refused.json()["detail"] == {"reason_code": "structure_invalid"}
+    assert not [event for event in new_run(root, run_id=rid, dry_run=False).events.read()
+                if event.get("kind") == "mutation_candidate_set"]   # nothing stored
+    # FAULT: a set stored around the admission (the original structure's set with the structure handle swapped)
+    made = run.call("generate_mutation_candidates", {**request, "structure": prepared}).handle
+    forged = copy.deepcopy(run.store.load(made))
+    forged["structure"]["handle"] = structure
+    assert mc.validated_set(forged)   # the content alone validates
+    cset = run.store.put("mutation_candidate_set", "mutation_candidate_set@1", forged,
+                         produced_by="forged_test_set").handle
+    client = _serve(api_module, root, monkeypatch)
     report = client.post(f"/runs/{rid}/method_reports", json={"result_handle": cset})
     assert report.status_code == 422 and report.json()["detail"]["error"] == "report_evidence_invalid"
-    (row,) = client.get(f"/runs/{rid}/mutation_candidate_sets").json()["rows"]
-    assert row["valid"] is False and row["counts"] is None and "structure_origin" not in row
+    rows = {row["handle"]: row for row in client.get(f"/runs/{rid}/mutation_candidate_sets").json()["rows"]}
+    assert rows[cset]["valid"] is False and rows[cset]["counts"] is None and "structure_origin" not in rows[cset]
+    assert rows[made]["valid"] is True and "structure_origin" not in rows[made]
     for url in (f"/runs/{rid}/mutation_candidate_sets/{cset}", f"/runs/{rid}/mutation_candidate_sets/{cset}/positions"):
         response = client.get(url)
         assert response.status_code == 422 and response.json()["detail"]["error"] == "method_evidence_invalid", url

@@ -10,13 +10,21 @@ read layer shows those fields as not checked (modeled residue) from the repair r
 
 Public API:
 
-``validated_origin(store, structure) -> dict | None``
+``checked_origin(run, structure) -> dict | None``
     None unless ``structure`` is a repaired structure (``preparation_manifest@1`` key ``repair``). Otherwise the
-    ``structure_origin`` dict plus ``"record"`` (the stored ``structure_repair@1``), after
-    ``structure_repair.validated_repair`` re-derived the record from the original prepared structure (``repair.source``)
-    and the repaired coordinates. ``ToolFailure`` when the link or the record does not validate, or a ``ToolFailure``
-    of class ``precondition`` (``openmm_unavailable``) when the installed template the check reads is unavailable;
-    callers pass that one through as the environment failure it is (spec 4.6).
+    ``structure_origin`` dict plus ``"record"`` (the stored ``structure_repair@1``), after the check the downstream
+    reports and reads make (M29 T8b, the steps of ``structure_origin_reports.origin``): the link, then
+    ``structure_repair_bundle.validated_result`` over ``run`` (a run or a view: ``store`` and ``events.read()``): the
+    record's single completed repair-job publication (``structure_repair_published`` and the job's done
+    terminal), its four objects and ``structure_repair.validated_repair`` re-deriving the record from the original
+    prepared structure (``repair.source``) and the stored repaired bytes; and the published structure must be
+    ``structure`` from that source. A repaired structure without publication evidence (e.g. objects left by a partial
+    store) therefore fails. ``ToolFailure`` (``repair_record_mismatch``) when the link, the publication or the record
+    does not validate, or a ``ToolFailure`` of class ``precondition`` (``openmm_unavailable``) when the installed
+    template the check reads is unavailable; callers pass that one through as the environment failure it is (spec 4.6).
+``validated_origin(store, structure) -> dict | None``
+    ``checked_origin`` over the store and the run's own event log (``store.events``): the M20 admission's and the
+    reads' check.
 ``reference_structures(structure, origin) -> tuple[str, ...]``
     The structures whose pocket set / numbering map / annotation / catalytic annotation an M20 call on ``structure``
     accepts: the structure itself and, for a repaired structure, its original prepared structure (spec 5.3).
@@ -52,8 +60,9 @@ from typing import Any
 import numpy as np
 
 from . import mutation_candidates as mc
-from . import structure_repair as sr
+from . import structure_repair_bundle as bundle
 from . import structure_repair_constants as K
+from .core.errors import FailureClass, ToolFailure
 from .mutation_constants import CYSTEINE, DISULFIDE_SG_A
 from .structure_origin import structure_origin
 from .tools.registry import ToolContext
@@ -64,15 +73,32 @@ HANDOFF_KEYS = ("pocket_set", "numbering_map", "annotation", "catalytic_annotati
 BASIS_REASONS = ("modeled_atoms", "ligand_shell", "metal_contact", "disulfide")
 
 
-def validated_origin(store: Any, structure: Any) -> dict[str, Any] | None:
-    origin = structure_origin(store, structure)
+def _mismatch(message: str) -> ToolFailure:
+    return ToolFailure(FailureClass.input_invalid, message, detail={"reason_code": "repair_record_mismatch"})
+
+
+def checked_origin(run: Any, structure: Any) -> dict[str, Any] | None:
+    origin = structure_origin(run.store, structure)
     if origin is None:
         return None
-    record = store.load(origin["repair_record"])
-    coordinates = store.load(structure)["coordinates"]
-    inputs = sr.load_inputs(store, origin["source_structure"])
-    sr.validated_repair(inputs, store.load(coordinates), record)
-    return {**origin, "record": record}
+    try:
+        repair = bundle.validated_result(run, origin["repair_record"])
+    except bundle.RepairEvidenceError as exc:   # the environment's precondition ToolFailure passes through as it is
+        raise _mismatch("the repaired structure has no valid published repair record") from exc
+    if (repair["prepared_structure"], repair["source_structure"]) != (structure, origin["source_structure"]):
+        raise _mismatch("the repair record published another structure")
+    return {**origin, "record": repair["record"]}
+
+
+class _StoreRun:
+    """A run view of a store and its own event log (the M20 admission hook gets the store only)."""
+
+    def __init__(self, store: Any) -> None:
+        self.store, self.events, self.run_id = store, store.events, store.run_id
+
+
+def validated_origin(store: Any, structure: Any) -> dict[str, Any] | None:
+    return checked_origin(_StoreRun(store), structure)
 
 
 def reference_structures(structure: str, origin: dict[str, Any] | None) -> tuple[str, ...]:

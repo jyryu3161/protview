@@ -182,6 +182,8 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "tools/mutations.py", "_admit"): (R, (), "M20 admission (T7 hand-off checks the repair link)"),
     (M + "tools/mutations.py", "register.generate_mutation_candidates"): (R, (), "M20 tool (Run.call allow-list)"),
     (M + "mutation_handoff.py", "read_view"): (R, (), "M20 hand-off read of a repaired set (T7)"),
+    (M + "mutation_handoff.py", "checked_origin"): (
+        R, (), "M29 T8b: the repaired structure check of the M20 admission, the reads and (same steps) the reports"),
     (M + "mutation_candidates.py", "*"): (R, (), HASH + "M20 build and set check"),
     (M + "mutation_model_constants.py", "<module>"): (R, (), HASH + "M21 STRUCTURE_KIND"),
     (M + "mutation_model_math.py", "_validated"): (R, (), HASH + "M21 content structure kind"),
@@ -201,8 +203,6 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
                       "standalone callers refuse (job_preflight, the generic job branch)"),
     (M + "structure_origin_reports.py", "*"): (
         R, (), "M29 T8a: the structure origin section of the M20 / M21 / M24 / M25 / M18 reports (spec 6.3)"),
-    (M + "structure_origin_reads.py", "*"): (
-        R, (), "M29 T8b: the structure_origin field of the M20 / M21 / M23 / M24 / M25 / M18 reads (spec 6.1)"),
     # ---- reads (spec 5.2: listing and downloading are not refused)
     (M + "api/app.py", "residues"): (RO, (), "GET /structures/residues"),
     (M + "api/app.py", "coordinates"): (RO, (), "GET /structures/bytes (download)"),
