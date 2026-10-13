@@ -97,8 +97,8 @@ PYTEST_GROUPS = [
     [T + "test_structure_repair_jobs.py", T + "test_structure_repair_lane.py", T + "test_structure_repair_worker.py",
      T + "test_structure_repair_reports_downstream.py"],
     # M29 T8b downstream reads: a real repair, M21 and qvina workers on 1UBQ (about 75 s alone; the group above is
-    # about 175 s and the rest group is near its bound).
-    [T + "test_structure_repair_downstream_reads.py"],
+    # about 175 s and the rest group is near its bound); T9 repair report (three published repairs, about 20 s alone).
+    [T + "test_structure_repair_downstream_reads.py", T + "test_structure_repair_report.py"],
 ]
 
 

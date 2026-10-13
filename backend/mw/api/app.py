@@ -105,6 +105,7 @@ from ..sequence_ga_reports import build_sequence_ga_report, saved_sequence_ga_re
 from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
 from ..structure_origin import reject_if_repaired
 from ..structure_repair_constants import PROTOCOL as REPAIR_PROTOCOL
+from ..structure_repair_reports import build_structure_repair_report, saved_structure_repair_report
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
 from ..tools.openmm_method import capability as openmm_capability
@@ -1399,6 +1400,10 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
             # reference set at creation is recorded in the report snapshot only.
             return build_precedent_report(run, body.result_handle,
                                           active_set_hash=kinase_precedents_reads.capability()["set_hash"])
+        if kind == structure_repair_reads.KIND:
+            # M29: reads the stored repair record only (re-validated with its publication); nothing is repaired again.
+            # An unavailable environment is the 412 precondition above, never invalid evidence.
+            return build_structure_repair_report(run, body.result_handle)
         raise EvidenceError("wrong_method_result_kind")
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1434,7 +1439,7 @@ def list_reports(rid: str) -> Any:
                                         "reference_site_annotation", "ligand_candidates", "ligand_docking",
                                         "ligand_docking_batch", "mutation_candidates", "mutation_model",
                                         "ligand_ga", "sequence_ga", "jev_choice", "jev_loop",
-                                        "reaction_knowledge", "kinase_precedents"}
+                                        "reaction_knowledge", "kinase_precedents", "structure_repair"}
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
@@ -1458,7 +1463,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
                                                               "ligand_docking", "ligand_docking_batch",
                                                               "mutation_candidates", "mutation_model", "ligand_ga",
                                                               "sequence_ga", "jev_choice", "jev_loop",
-                                                              "reaction_knowledge", "kinase_precedents"}
+                                                              "reaction_knowledge", "kinase_precedents",
+                                                              "structure_repair"}
                   else run.store.load(handle))
         if report.get("analysis_type") == "interface_sasa":
             return saved_method_report(run, handle)
@@ -1497,6 +1503,8 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
             return saved_reaction_report(run, handle)
         if report.get("analysis_type") == "kinase_precedents":
             return saved_precedent_report(run, handle)
+        if report.get("analysis_type") == "structure_repair":
+            return saved_structure_repair_report(run, handle)
         raise EvidenceError("unknown_method_report_type")
     raise EvidenceError("wrong_report_kind")
 
