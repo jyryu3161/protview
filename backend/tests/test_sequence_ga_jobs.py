@@ -170,11 +170,13 @@ def no_strays(run: Run) -> None:
         if event["type"] == "job_worker_started" and process_identity.matches(event["pid"], event["start_identity"]):
             assert psutil.Process(event["pid"]).status() == psutil.STATUS_ZOMBIE, "worker survived"
     jobs = str(run.run_dir / "jobs")
-    for proc in psutil.process_iter(["name"]):
+    # Nothing is prefetched: a prefetch runs inside process_iter, outside the try, where psutil's SystemError from a
+    # process ending mid-read escaped under load; it means the process is gone, as psutil.Error does (M28/M29 T2).
+    for proc in psutil.process_iter():
         try:
             if proc.pid != os.getpid() and proc.cwd().startswith(jobs) and proc.status() != psutil.STATUS_ZOMBIE:
-                raise AssertionError(f"stray process {proc.pid} {proc.info['name']} under the job directories")
-        except (psutil.Error, OSError):
+                raise AssertionError(f"stray process {proc.pid} {proc.name()} under the job directories")
+        except (psutil.Error, OSError, SystemError):
             continue
 
 
