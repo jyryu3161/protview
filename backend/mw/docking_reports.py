@@ -29,6 +29,19 @@ claim is compared with the one rebuilt from the stored result, and the Markdown 
 re-render. Every Markdown line is checked for interpretive wording; the only exemptions are a line exactly equal to
 one of the fixed limitation sentences, and the exact score-name text (``SCORE_LABEL``), which is removed from a line
 before that line is checked (the rest of the line is still checked).
+
+M29 T8 (report format ``ligand_docking_markdown@2``, spec .dryforge/spec.md 6.1, 6.3): the report of a result whose
+receptor came from a mutation model made on a repaired structure is @2, and only such a result's report is. The
+receptor source model's stored structure decides (an imported receptor and any other structure read nothing more);
+for a repaired one the chain is checked: an M21 ``mutation_model@1`` (``mutation_model_bundle.validated_result``) -> its
+candidate set -> the set's structure, or an M23 ``mutation_set_model@1`` (``sequence_ga_jobs.set_model``, the M18
+receptor path's check) -> its sequence GA job's candidate set -> the set's structure, the model's own structure being
+that one. A repaired structure (``structure_origin_reports.origin``, the record re-validated with its
+publication) adds ``structure_origin`` to the @1 manifest keys, the two computed record-count claims (citing the
+``structure_repair@1`` record; no ``reference`` key, as every claim here) after the @1 claims, and a "구조 출처"
+section (SO1, the handles, the two counts) before the limitations. Every other result keeps @1 and its bytes. The
+names this module shares with the hash-file report modules (``STATEMENTS``, ``CLAIM_KEYS``, ``INTERPRETIVE``,
+``SNAPSHOT_KEYS``, ``render_score``, ``_render`` ...) are unchanged.
 """
 from __future__ import annotations
 
@@ -42,6 +55,7 @@ from typing import Any
 from . import docking_bundle as db
 from . import ligand_reports as lr
 from . import numbering_reports as nr
+from . import structure_origin_reports as origin_reports
 from .core.handles import canonical_json
 from .docking_constants import CONTACT_CUTOFF_A, CONTACT_KINDS, METHODS, SCORE_COLUMN_LABEL, SCORE_LABEL
 from .docking_constants import LIMITATIONS as FIXED_LIMITATIONS
@@ -50,6 +64,8 @@ from .reports import EvidenceError, _md
 
 ANALYSIS_TYPE = "ligand_docking"
 RENDER_VERSION = "ligand_docking_markdown@1"
+RENDER_VERSION_V2 = "ligand_docking_markdown@2"   # M29 T8: a receptor modelled on a repaired structure
+SET_MODEL = ("mutation_set_model", "mutation_set_model@1")   # M23 receptor source model (sequence_ga_constants)
 RESULT_KIND = db.OUTPUT_KIND
 RESULT_SCHEMA = "docking_result@1"
 REPORT_BYTES = nr.REPORT_BYTES
@@ -94,6 +110,7 @@ MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
     "result_sha256", *COPIED_FIELDS, "mode", "null_result", "score_label", "claims", "provenance",
     "evidence_statement", "limitations", "snapshot", "markdown_handle"})
+MANIFEST_KEYS_BY_VERSION = {RENDER_VERSION: MANIFEST_KEYS, RENDER_VERSION_V2: MANIFEST_KEYS | {"structure_origin"}}
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -148,7 +165,7 @@ def check_no_interpretation(text: str) -> str:
     """Refuse interpretive wording on every line. A line exactly equal to a fixed limitation sentence is exempt; on
     any other line only the exact score-name text is removed before the check (the rest of the line is checked)."""
     for line in text.split("\n"):
-        if line in FIXED_LIMITATIONS:
+        if line in FIXED_LIMITATIONS or line in origin_reports.FIXED_LINES:   # M29: the SO1 line of @2
             continue
         match = INTERPRETIVE.search(line.replace(SCORE_LABEL, ""))
         if match is not None:
@@ -294,6 +311,8 @@ def match_claim(expected_claims: list[dict[str, Any]], proposed: Any) -> dict[st
     if type(proposed) is not dict or set(proposed) != CLAIM_KEYS:
         raise EvidenceError("docking_claim_shape")
     statement = proposed["statement_id"]
+    if statement in origin_reports.STATEMENT_IDS:   # M29 @2: the record counts of a repaired structure
+        return origin_reports.match_claim(expected_claims, proposed, "docking")
     if statement not in STATEMENTS:
         raise EvidenceError("docking_claim_statement_not_allowed")
     if proposed["evidence_kind"] not in EVIDENCE_KINDS:
@@ -325,26 +344,77 @@ def validate_docking_claim(run: Any, result_handle: str, proposed: dict[str, Any
 # ---------------------------------------------------------------------------------------------------------------
 # source validation, manifest
 
-def _expected(run: Any, handle: str) -> dict[str, Any]:
-    """Every manifest field that follows from the validated stored result (not snapshot/markdown)."""
+def _receptor_origin(run: Any, receptor: dict[str, Any]) -> dict[str, Any] | None:
+    """M29: the validated structure origin of the structure a mutation-model receptor was modelled on (None for an
+    imported receptor and for a model whose stored structure is not a repaired structure, which is all this reads of
+    it). For a repaired structure the chain is checked: model -> its candidate set (M23: model -> its sequence GA job
+    -> the GA's candidate set) -> the set's structure, which must be the model's own structure."""
+    source = receptor.get("source")
+    if source is None:
+        return None
+    model = source["mutation_model"]
+    origin = origin_reports.origin(run, run.store.load(model)["structure"]["handle"])
+    if origin is None:
+        return None
+    meta = run.store.meta(model)
+    try:
+        if (meta["kind"], meta["schema"]) == SET_MODEL:
+            # imported here, as docking_bundle does (M23 receptor path)
+            from .sequence_ga_jobs import set_model
+
+            content, _publication = set_model(run, model)
+            candidate_set = content["candidate_set"]
+        else:
+            from . import mutation_model_bundle as mmb
+
+            content = mmb.validated_result(run, model)
+            candidate_set = content["candidate"]["candidate_set"]
+    except ValueError as exc:   # MutationEvidenceError / SequenceGaEvidenceError
+        raise EvidenceError("docking_report_receptor_model_invalid") from exc
+    structure = run.store.load(candidate_set)["structure"]["handle"]
+    if not structure == content["structure"]["handle"] == origin["repaired_structure"]:
+        raise EvidenceError("docking_report_receptor_structure_mismatch")
+    return origin
+
+
+def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, Any]:
+    """Every manifest field that follows from the validated stored result (not snapshot/markdown).
+
+    ``version`` is the render version of a stored report; None picks it for a new report: @2 when the receptor came
+    from a mutation model made on a repaired structure, else @1."""
     try:
         content = db.validated_result(run, handle)
         source = db.producer(run, handle)
     except db.DockingEvidenceError as exc:
         raise EvidenceError(f"docking_result_invalid: {exc}") from exc
     try:
-        return {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
-                "render_version": RENDER_VERSION, "generation_mode": "local_rules_no_egress", "result_handle": handle,
+        origin = _receptor_origin(run, content["inputs"]["receptor"])
+    except (KeyError, TypeError, AttributeError) as exc:
+        raise EvidenceError("docking_report_evidence_unresolved") from exc
+    if version is None:
+        version = RENDER_VERSION if origin is None else RENDER_VERSION_V2
+    if version not in MANIFEST_KEYS_BY_VERSION:
+        raise EvidenceError("docking_report_schema_invalid")
+    if (version == RENDER_VERSION_V2) is (origin is None):
+        raise EvidenceError("docking_report_structure_origin_mismatch")   # @2 is a repaired structure's only
+    try:
+        expected = {
+                "schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
+                "render_version": version, "generation_mode": "local_rules_no_egress", "result_handle": handle,
                 "result_schema": RESULT_SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
                 **{key: content[key] for key in COPIED_FIELDS}, "mode": content["inputs"]["mode"],
                 "null_result": content["counts"]["null_result"], "score_label": SCORE_LABEL,
-                "claims": claims_for(handle, content),
+                "claims": claims_for(handle, content) + ([] if origin is None else
+                                                         origin_reports.claims(origin, with_reference=False)),
                 "provenance": {"docking": {"job_id": source["job_id"], "attempt_id": source["attempt_id"],
                                            "protocol_id": source["job"]["protocol_id"],
                                            "tool_id": source["job"]["tool_id"],
                                            "created_event_seq": source["created_seq"],
                                            "completed_event_seq": source["published_seq"]}},
                 "evidence_statement": EVIDENCE_STATEMENT, "limitations": list(content["limitations"])}
+        if origin is not None:
+            expected["structure_origin"] = origin_reports.manifest_field(origin)
+        return expected
     except (KeyError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("docking_report_evidence_unresolved") from exc
 
@@ -469,8 +539,10 @@ def render_docking_report(manifest: dict[str, Any]) -> str:
             lines.append("| " + " | ".join(cells) + " |")
     lines.extend(["", "## 접촉 기준", "",
                   (f"- 포즈 리간드 중원자와 수용체 중원자 사이 거리 {CONTACT_CUTOFF_A:.1f} Å 이하. 종류: polar\\_contact "
-                   "(둘 다 N/O), hydrophobic\\_contact (둘 다 C), contact (그 밖)."),
-                  "", "## Limitations", ""])
+                   "(둘 다 N/O), hydrophobic\\_contact (둘 다 C), contact (그 밖).")])
+    if manifest["render_version"] == RENDER_VERSION_V2:   # M29 T8: the structure origin section
+        lines.extend(origin_reports.section_lines(manifest["structure_origin"], claims, _md))
+    lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
     lines.extend([("Exact values, units, field paths and contact conditions are in the JSON download "
@@ -516,10 +588,12 @@ def saved_docking_report(run: Any, report_handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"], meta["fmt"]) != ("method_report_manifest", "method_report_manifest@1", "json"):
         raise EvidenceError("docking_report_type")
     report = run.store.load_bounded_json(report_handle, REPORT_BYTES)
-    if (type(report) is not dict or set(report) != MANIFEST_KEYS or report["analysis_type"] != ANALYSIS_TYPE or
-            type(report["result_handle"]) is not str or report["render_version"] != RENDER_VERSION):
+    version = report.get("render_version") if type(report) is dict else None
+    keys = MANIFEST_KEYS_BY_VERSION.get(version) if type(version) is str else None   # @1 and @2 are read
+    if (keys is None or set(report) != keys or report["analysis_type"] != ANALYSIS_TYPE or
+            type(report["result_handle"]) is not str):
         raise EvidenceError("docking_report_schema_invalid")
-    expected = _expected(run, report["result_handle"])
+    expected = _expected(run, report["result_handle"], version)
     if type(report["claims"]) is not list:
         raise EvidenceError("docking_report_claims_invalid")
     for claim in report["claims"]:

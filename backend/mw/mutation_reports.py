@@ -43,6 +43,16 @@ Markdown adds one "참조 스냅샷" section before the limitations with the wor
 processed-row-count column and no active-set line); every other line is the @1 line. A new report that cites none
 keeps the @1 format and bytes, and stored @1 reports reopen with the @1 manifest keys and rendering. Claims, statement
 IDs, fixed sentences and the candidate set are the same in both versions.
+
+M29 T8 (report format ``mutation_candidates_markdown@3``, spec .dryforge/spec.md 5.3, 6.3): a new report of a set made
+on a repaired structure (``structure_origin_reports.origin``: the manifest ``repair`` key, the record re-validated with
+its publication) is @3 and only such a set's report is: the @2 manifest keys (``reference_snapshot_sets`` always
+present, the same list as @2, possibly empty, and the "참조 스냅샷" section only when it is not empty) plus
+``structure_origin``, the two record-count claims after the @2 claims, and a "구조 출처" section before the limitations
+(SO1, plus SO3 when the set uses a pocket set, numbering map, annotation or catalytic annotation made on the original
+structure). For @3 only, ``check_sources`` / ``_check_catalytic`` also accept a reference result made on that original
+structure (``repair.source``, ``mutation_handoff.reference_structures``); @1 and @2 accept the set's own structure only,
+and an @1, @2 manifest for a repaired structure or an @3 one for another structure is refused.
 """
 from __future__ import annotations
 
@@ -54,10 +64,12 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from . import mutation_candidates as mc
+from . import mutation_handoff
 from . import numbering_reports as nr
 from . import reaction_knowledge as rk
 from . import reaction_knowledge_constants as rkc
 from . import site_annotation as sa
+from . import structure_origin_reports as origin_reports
 from .core.handles import canonical_json
 from .mutation_constants import (
     CHECKED,
@@ -82,6 +94,7 @@ from .tools.mutations import catalytic_input
 ANALYSIS_TYPE = "mutation_candidates"
 RENDER_VERSION = "mutation_candidates_markdown@1"      # stored reports, and new reports citing no reference value
 RENDER_VERSION_V2 = "mutation_candidates_markdown@2"   # M28 T3: new reports citing reference values (source table)
+RENDER_VERSION_V3 = "mutation_candidates_markdown@3"   # M29 T8: new reports of a set on a repaired structure
 NUMBERING_SET_SCHEMA = "reference_snapshot_set@1"
 REPORT_BYTES = nr.REPORT_BYTES
 REFERENCE_NOTE = nr.REFERENCE_NOTE
@@ -160,7 +173,9 @@ MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
     "result_sha256", *COPIED_FIELDS, "claims", "provenance", "evidence_statement", "snapshot", "markdown_handle"})
 MANIFEST_KEYS_V2 = MANIFEST_KEYS | {"reference_snapshot_sets"}
-MANIFEST_KEYS_BY_VERSION = {RENDER_VERSION: MANIFEST_KEYS, RENDER_VERSION_V2: MANIFEST_KEYS_V2}
+MANIFEST_KEYS_V3 = MANIFEST_KEYS_V2 | {"structure_origin"}
+MANIFEST_KEYS_BY_VERSION = {RENDER_VERSION: MANIFEST_KEYS, RENDER_VERSION_V2: MANIFEST_KEYS_V2,
+                            RENDER_VERSION_V3: MANIFEST_KEYS_V3}
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -193,9 +208,10 @@ def _render(value: Any, rounding: str) -> str:
 
 
 def check_no_interpretation(text: str) -> str:
-    """Refuse interpretive wording on any line that is not exactly one of the five fixed limitation sentences."""
+    """Refuse interpretive wording on any line that is not exactly one of the fixed limitation sentences or one of the
+    M29 structure origin sentences (SO1, SO3)."""
     for line in text.split("\n"):
-        if line in FIXED_LIMITATIONS:
+        if line in FIXED_LIMITATIONS or line in origin_reports.FIXED_LINES:
             continue
         match = INTERPRETIVE.search(line)
         if match is not None:
@@ -215,10 +231,11 @@ def _source(run: Any, handle: str, kind: tuple[str, str], error: str) -> dict[st
 
 def check_sources(content: dict[str, Any], map_content: dict[str, Any] | None,
                   annotation: dict[str, Any] | None, pocket_content: dict[str, Any] | None,
-                  catalytic_result: dict[str, Any] | None = None) -> None:
+                  catalytic_result: dict[str, Any] | None = None, origin: dict[str, Any] | None = None) -> None:
     """The validated set against the stored map, annotation and pocket set it names; raises ``EvidenceError``.
 
-    Same structure for each; the copied numbering values equal the map row of the same residue (7 fields) or
+    Same structure for each (M29: or, with the validated ``origin`` of a set on a repaired structure, its original
+    structure ``repair.source``); the copied numbering values equal the map row of the same residue (7 fields) or
     ``not_in_map``; the KLIFS site counts and each position's site labels equal the stored annotation's sites. For a
     v2 set with a ``catalytic_annotation``, the stored ``reaction_knowledge@1`` result must pass
     ``reaction_knowledge.validated_result``, be of the same structure, and give exactly the set's catalytic check
@@ -226,13 +243,14 @@ def check_sources(content: dict[str, Any], map_content: dict[str, Any] | None,
     """
     try:
         structure = content["structure"]["handle"]
+        allowed = mutation_handoff.reference_structures(structure, origin)
         parameters = content["parameters"]
         if (map_content is None) is not (parameters["numbering_map"] is None) or \
                 (annotation is None) is not (parameters["annotation"] is None) or \
                 (pocket_content is None) is not (parameters["sources"]["pocket"] is None):
             raise EvidenceError("mutation_sources_missing")
         if map_content is not None:
-            if map_content["structure"]["handle"] != structure:
+            if map_content["structure"]["handle"] not in allowed:
                 raise EvidenceError("mutation_numbering_map_structure_mismatch")
             rows = {mc.identity(row["residue"]): row for row in map_content["rows"]}
             for position in content["positions"]:
@@ -242,7 +260,7 @@ def check_sources(content: dict[str, Any], map_content: dict[str, Any] | None,
                 if canonical_json(position["numbering"]) != canonical_json(expected):
                     raise EvidenceError("mutation_numbering_value_mismatch")
         if annotation is not None:
-            if annotation["structure"]["handle"] != structure:
+            if annotation["structure"]["handle"] not in allowed:
                 raise EvidenceError("mutation_annotation_structure_mismatch")
             if parameters["numbering_map"] is not None and annotation["numbering_map"] != parameters["numbering_map"]:
                 raise EvidenceError("mutation_annotation_map_mismatch")
@@ -253,25 +271,26 @@ def check_sources(content: dict[str, Any], map_content: dict[str, Any] | None,
             for position in content["positions"]:
                 if position["protection"]["klifs_sites"] != labels.get(mc.identity(position["residue"]), []):
                     raise EvidenceError("mutation_klifs_site_label_mismatch")
-        if pocket_content is not None and pocket_content["source_handle"] != structure:
+        if pocket_content is not None and pocket_content["source_handle"] not in allowed:
             raise EvidenceError("mutation_pocket_set_structure_mismatch")
         catalytic_handle = parameters.get("catalytic_annotation")   # a v1 set has no such parameter
         if (catalytic_result is None) is not (catalytic_handle is None):
             raise EvidenceError("mutation_sources_missing")
         if catalytic_result is not None:
-            _check_catalytic(content, catalytic_result, catalytic_handle)
+            _check_catalytic(content, catalytic_result, catalytic_handle, allowed)
     except EvidenceError:
         raise
     except (KeyError, ValueError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_sources_unresolved") from exc
 
 
-def _check_catalytic(content: dict[str, Any], result: dict[str, Any], handle: str) -> None:
+def _check_catalytic(content: dict[str, Any], result: dict[str, Any], handle: str,
+                     allowed: tuple[str, ...] | None = None) -> None:
     try:
         rk.validated_result(result)
     except rk.ResultInvalid as exc:
         raise EvidenceError("mutation_catalytic_annotation_invalid") from exc
-    if result["structure"]["handle"] != content["structure"]["handle"]:
+    if result["structure"]["handle"] not in (allowed or (content["structure"]["handle"],)):
         raise EvidenceError("mutation_catalytic_annotation_structure_mismatch")
     positions = content["positions"]
     try:
@@ -285,7 +304,8 @@ def _check_catalytic(content: dict[str, Any], result: dict[str, Any], handle: st
 
 
 def _validated(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """(content, provenance, the stored numbering map / annotation / reaction result it names or None)."""
+    """(content, provenance, the stored numbering map / annotation / reaction result / pocket set it names or None and
+    the validated M29 ``origin`` of its structure or None)."""
     try:
         meta = run.store.meta(handle)
         if (meta["kind"], meta["schema"]) != (KIND, SCHEMA):
@@ -307,8 +327,10 @@ def _validated(run: Any, handle: str) -> tuple[dict[str, Any], dict[str, Any], d
         catalytic = (None if parameters.get("catalytic_annotation") is None else
                      _source(run, parameters["catalytic_annotation"], CATALYTIC_KIND,
                              "mutation_catalytic_annotation_kind"))
-        check_sources(content, map_content, annotation, pocket_content, catalytic)
-        return content, provenance, {"numbering_map": map_content, "annotation": annotation, "catalytic": catalytic}
+        origin = origin_reports.origin(run, content["structure"]["handle"])
+        check_sources(content, map_content, annotation, pocket_content, catalytic, origin)
+        return content, provenance, {"numbering_map": map_content, "annotation": annotation, "catalytic": catalytic,
+                                     "pocket": pocket_content, "origin": origin}
     except EvidenceError:
         raise
     except (KeyError, ValueError, TypeError, IndexError, AttributeError) as exc:
@@ -481,6 +503,8 @@ def match_claim(expected_claims: list[dict[str, Any]], proposed: Any) -> dict[st
     if type(proposed) is not dict or set(proposed) != CLAIM_KEYS:
         raise EvidenceError("mutation_claim_shape")
     statement = proposed["statement_id"]
+    if statement in origin_reports.STATEMENT_IDS:   # M29 @3: the record counts of a repaired structure
+        return origin_reports.match_claim(expected_claims, proposed, "mutation")
     if statement not in STATEMENTS:
         raise EvidenceError("mutation_claim_statement_not_allowed")
     kind, rule = STATEMENTS[statement]
@@ -525,18 +549,24 @@ def validate_mutation_claim(run: Any, result_handle: str, proposed: dict[str, An
 def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, Any]:
     """Every manifest field that follows from the validated stored set (not snapshot / markdown handle).
 
-    ``version`` is the render version of a stored report; None picks it for a new report: @2 when the report cites
-    reference values, else @1. An @1 report is checked with the @1 fields only (no source table is looked up)."""
+    ``version`` is the render version of a stored report; None picks it for a new report: @3 for a set on a repaired
+    structure, else @2 when the report cites reference values, else @1. An @1 report is checked with the @1 fields only
+    (no source table is looked up); @3 is the report of a repaired structure's set and only of one."""
     content, provenance, sources = _validated(run, handle)
+    origin = sources["origin"]
     try:
         claims = claims_for(handle, content)
         sets = [] if version == RENDER_VERSION else reference_snapshot_sets(run, content, claims, sources)
         if version is None:
-            version = RENDER_VERSION_V2 if sets else RENDER_VERSION
+            version = (RENDER_VERSION_V3 if origin is not None else RENDER_VERSION_V2 if sets else RENDER_VERSION)
         elif version not in MANIFEST_KEYS_BY_VERSION:
             raise EvidenceError("mutation_report_schema_invalid")
         elif version == RENDER_VERSION_V2 and not sets:
             raise EvidenceError("mutation_report_reference_sets_missing")   # an @2 report cites reference values
+        if (version == RENDER_VERSION_V3) is (origin is None):
+            raise EvidenceError("mutation_report_structure_origin_mismatch")  # @3 is a repaired structure's set only
+        if version == RENDER_VERSION_V3:
+            claims = claims + origin_reports.claims(origin)
         expected = {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
                     "render_version": version, "generation_mode": "local_rules_no_egress", "result_handle": handle,
                     "result_schema": SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
@@ -546,11 +576,22 @@ def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, An
                                                                     "created_event_seq", "completed_event_seq")},
                     "evidence_statement": (EVIDENCE_STATEMENT_V2 if content["method_version"] == METHOD_VERSION_V2
                                            else EVIDENCE_STATEMENT)}
-        if version == RENDER_VERSION_V2:
+        if version in (RENDER_VERSION_V2, RENDER_VERSION_V3):
             expected["reference_snapshot_sets"] = sets
+        if version == RENDER_VERSION_V3:
+            expected["structure_origin"] = origin_reports.manifest_field(origin, handoff=_handed_off(sources, origin))
         return expected
     except (KeyError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("mutation_report_evidence_unresolved") from exc
+
+
+def _handed_off(sources: dict[str, Any], origin: dict[str, Any]) -> bool:
+    """Whether the set uses a reference result (pocket set, numbering map, annotation, catalytic annotation) made on
+    the repaired structure's original structure (spec 5.3; the report then carries SO3)."""
+    made_on = [None if sources["pocket"] is None else sources["pocket"]["source_handle"],
+               *(None if sources[key] is None else sources[key]["structure"]["handle"]
+                 for key in ("numbering_map", "annotation", "catalytic"))]
+    return origin["source_structure"] in made_on
 
 
 _SLOT = re.compile("\x00(\\d+)\x00")
@@ -681,10 +722,13 @@ def render_mutation_report(manifest: dict[str, Any]) -> str:
     if v2:
         lines.extend(["", f"## M-CSA 촉매 잔기 주석 ({REFERENCE_NOTE})", ""])
         lines.extend(_catalytic_reference_lines(parameters, checks["catalytic_residue_database"], claims, md))
-    if manifest["render_version"] == RENDER_VERSION_V2:   # M28 T3: the source table of each cited set
+    if manifest["render_version"] == RENDER_VERSION_V2 or (   # M28 T3: the source table of each cited set
+            manifest["render_version"] == RENDER_VERSION_V3 and manifest["reference_snapshot_sets"]):
         lines.extend(["", "## 참조 스냅샷"])
         for entry in manifest["reference_snapshot_sets"]:
             lines.extend(_reference_set_lines(entry, md))
+    if manifest["render_version"] == RENDER_VERSION_V3:   # M29 T8: the structure origin section
+        lines.extend(origin_reports.section_lines(manifest["structure_origin"], claims, md))
     lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
@@ -801,7 +845,7 @@ def saved_mutation_report(run: Any, report_handle: str) -> dict[str, Any]:
         raise EvidenceError("mutation_report_type")
     report = run.store.load_bounded_json(report_handle, REPORT_BYTES)
     version = report.get("render_version") if type(report) is dict else None
-    keys = MANIFEST_KEYS_BY_VERSION.get(version) if type(version) is str else None   # @1 and @2 are both read
+    keys = MANIFEST_KEYS_BY_VERSION.get(version) if type(version) is str else None   # @1, @2 and @3 are read
     if (keys is None or set(report) != keys or report["analysis_type"] != ANALYSIS_TYPE or
             type(report["result_handle"]) is not str):
         raise EvidenceError("mutation_report_schema_invalid")

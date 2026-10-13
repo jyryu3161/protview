@@ -24,6 +24,13 @@ again) and bound to its send events (approval, dispatch, the one completed outco
 from event order up to that outcome). The renderer refuses interpretive wording on the fixed template text with every
 identifier and value slot left empty, except the lines that are exactly a fixed sentence J1-J7 or one of the M26
 J6 variants J6N / J6C.
+
+M29 T8 (report format ``jev_choice_markdown@2``, spec .dryforge/spec.md 6.3, 6.4): the report of a mutation-kind
+proposal whose candidate set's structure is a repaired structure (``structure_origin_reports.origin``, the record
+re-validated with its publication) is @2, and only such a proposal's report is: the @1 manifest keys plus
+``structure_origin``, the two computed record-count claims (citing the ``structure_repair@1`` record) after the @1
+claims, and a "구조 출처" section (SO1, the handles, the two counts) before the limitations. Ligand-kind reports and
+every other mutation-kind report are @1 with the @1 bytes; the proposal, its send and the sent body are unchanged.
 """
 from __future__ import annotations
 
@@ -35,11 +42,13 @@ from typing import Any
 from . import jev_constants as J
 from . import jev_sends as S
 from . import numbering_reports as nr
+from . import structure_origin_reports as origin_reports
 from .core.handles import canonical_json
 from .reports import EvidenceError, _md, _ref
 
 ANALYSIS_TYPE = "jev_choice"
 RENDER_VERSION = "jev_choice_markdown@1"
+RENDER_VERSION_V2 = "jev_choice_markdown@2"   # M29 T8: a mutation-kind proposal on a repaired structure
 GENERATION_MODE = "local_rules_no_egress"
 REPORT_BYTES = nr.REPORT_BYTES
 EXTERNAL_RESPONSE = {"kind": "jev_choice", "scientific_evidence": False}
@@ -89,6 +98,7 @@ MANIFEST_KEYS = frozenset({
     "schema", "analysis_type", "status", "render_version", "generation_mode", "result_handle", "result_schema",
     "result_sha256", "external_response", "kind", *COPIED_FIELDS, "chosen", "claims", "provenance",
     "evidence_statement", "snapshot", "markdown_handle"})
+MANIFEST_KEYS_BY_VERSION = {RENDER_VERSION: MANIFEST_KEYS, RENDER_VERSION_V2: MANIFEST_KEYS | {"structure_origin"}}
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -109,9 +119,10 @@ def _render(value: Any, rounding: str) -> str:
 
 
 def check_no_interpretation(text: str) -> str:
-    """Refuse interpretive wording on any line that is not exactly one of the fixed sentences J1-J7, J6N, J6C."""
+    """Refuse interpretive wording on any line that is not exactly one of the fixed sentences J1-J7, J6N, J6C or the
+    M29 structure origin sentence (SO1)."""
     for line in text.split("\n"):
-        if line in FIXED_LIMITATIONS:
+        if line in FIXED_LIMITATIONS or line in origin_reports.FIXED_LINES:
             continue
         match = INTERPRETIVE.search(line)
         if match is not None:
@@ -221,6 +232,8 @@ def match_claim(expected_claims: list[dict[str, Any]], proposed: Any) -> dict[st
     if type(proposed) is not dict or set(proposed) != CLAIM_KEYS:
         raise EvidenceError("jev_claim_shape")
     statement = proposed["statement_id"]
+    if statement in origin_reports.STATEMENT_IDS:   # M29 @2: the record counts of a repaired structure
+        return origin_reports.match_claim(expected_claims, proposed, "jev")
     if type(statement) is not str or statement not in STATEMENTS:
         raise EvidenceError("jev_claim_statement_not_allowed")
     kind, path = STATEMENTS[statement][:2]
@@ -255,20 +268,41 @@ def match_claim(expected_claims: list[dict[str, Any]], proposed: Any) -> dict[st
 # ---------------------------------------------------------------------------------------------------------------
 # manifest, Markdown, build and saved read
 
-def _expected(run: Any, handle: str) -> dict[str, Any]:
-    """Every manifest field that follows from the validated proposal (not snapshot / markdown handle)."""
+def _origin(run: Any, content: dict[str, Any]) -> dict[str, Any] | None:
+    """M29: the validated structure origin of a mutation-kind proposal's candidate set (None for the ligand kind and
+    for a set whose structure is not a repaired structure)."""
+    if KIND_FOR_SOURCE_SCHEMA[content["source"]["schema"]] != "mutation":
+        return None
+    return origin_reports.origin(run, run.store.load(content["source"]["handle"])["structure"]["handle"])
+
+
+def _expected(run: Any, handle: str, version: str | None = None) -> dict[str, Any]:
+    """Every manifest field that follows from the validated proposal (not snapshot / markdown handle).
+
+    ``version`` is the render version of a stored report; None picks it for a new report: @2 for a mutation-kind
+    proposal whose candidate set's structure is a repaired structure, else @1."""
     content, provenance = validated_jev_choice(run, handle)
     try:
-        return {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
-                "render_version": RENDER_VERSION, "generation_mode": GENERATION_MODE, "result_handle": handle,
-                "result_schema": J.CHOICE_SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
-                "external_response": dict(EXTERNAL_RESPONSE),
-                "kind": KIND_FOR_SOURCE_SCHEMA[content["source"]["schema"]],
-                **{key: content[key] for key in COPIED_FIELDS},
-                "chosen": {key: content["answer"][key] for key in ("local_ref", "local_display")},
-                "claims": claims_for(handle, content),
-                "provenance": {key: provenance[key] for key in PROVENANCE_KEYS},
-                "evidence_statement": EVIDENCE_STATEMENT}
+        origin = _origin(run, content)
+        if version is None:
+            version = RENDER_VERSION if origin is None else RENDER_VERSION_V2
+        if version not in MANIFEST_KEYS_BY_VERSION:
+            raise EvidenceError("jev_report_schema_invalid")
+        if (version == RENDER_VERSION_V2) is (origin is None):
+            raise EvidenceError("jev_report_structure_origin_mismatch")   # @2 is a repaired structure's only
+        expected = {"schema": "method_report_manifest@1", "analysis_type": ANALYSIS_TYPE, "status": "complete",
+                    "render_version": version, "generation_mode": GENERATION_MODE, "result_handle": handle,
+                    "result_schema": J.CHOICE_SCHEMA, "result_sha256": handle.rsplit("/", 1)[-1],
+                    "external_response": dict(EXTERNAL_RESPONSE),
+                    "kind": KIND_FOR_SOURCE_SCHEMA[content["source"]["schema"]],
+                    **{key: content[key] for key in COPIED_FIELDS},
+                    "chosen": {key: content["answer"][key] for key in ("local_ref", "local_display")},
+                    "claims": claims_for(handle, content) + ([] if origin is None else origin_reports.claims(origin)),
+                    "provenance": {key: provenance[key] for key in PROVENANCE_KEYS},
+                    "evidence_statement": EVIDENCE_STATEMENT}
+        if origin is not None:
+            expected["structure_origin"] = origin_reports.manifest_field(origin)
+        return expected
     except (KeyError, TypeError, IndexError, AttributeError) as exc:
         raise EvidenceError("jev_report_evidence_unresolved") from exc
 
@@ -329,8 +363,10 @@ def render_jev_report(manifest: dict[str, Any]) -> str:
              f"- 응답 모델: {value('served_model')}",
              f"- 늦은 응답: {late}",
              "- 고른 이유: 알 수 없음 (응답에 이유가 없다)",
-             "- 후보별 확률은 저장된 제안 객체에만 있고 이 보고서에는 넣지 않는다.", "",
-             "## Limitations", ""]
+             "- 후보별 확률은 저장된 제안 객체에만 있고 이 보고서에는 넣지 않는다."]
+    if manifest["render_version"] == RENDER_VERSION_V2:   # M29 T8: the structure origin section
+        lines.extend(origin_reports.section_lines(manifest["structure_origin"], claims, md))
+    lines.extend(["", "## Limitations", ""])
     for item in manifest["limitations"]:
         lines.extend([item, ""])
     lines.extend([f"Exact values, evidence kinds and field paths are in the JSON download ({len(claims)} claims).",
@@ -374,10 +410,12 @@ def saved_jev_report(run: Any, report_handle: str) -> dict[str, Any]:
     if (meta["kind"], meta["schema"], meta["fmt"]) != ("method_report_manifest", "method_report_manifest@1", "json"):
         raise EvidenceError("jev_report_type")
     report = run.store.load_bounded_json(report_handle, REPORT_BYTES)
-    if (type(report) is not dict or set(report) != MANIFEST_KEYS or report["analysis_type"] != ANALYSIS_TYPE or
-            type(report["result_handle"]) is not str or report["render_version"] != RENDER_VERSION):
+    version = report.get("render_version") if type(report) is dict else None
+    keys = MANIFEST_KEYS_BY_VERSION.get(version) if type(version) is str else None   # @1 and @2 are read
+    if (keys is None or set(report) != keys or report["analysis_type"] != ANALYSIS_TYPE or
+            type(report["result_handle"]) is not str):
         raise EvidenceError("jev_report_schema_invalid")
-    expected = _expected(run, report["result_handle"])
+    expected = _expected(run, report["result_handle"], version)
     if type(report["claims"]) is not list:
         raise EvidenceError("jev_report_claims_invalid")
     for claim in report["claims"]:
