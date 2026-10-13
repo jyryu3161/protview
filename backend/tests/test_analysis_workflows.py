@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+import time
 import uuid
 from pathlib import Path
 
@@ -1458,9 +1459,24 @@ def test_stop_during_owned_real_job_cancels_only_that_job(client, ubq_run, monke
     finally:
         release.set()
         worker.join(60)
+    assert not worker.is_alive(), "the owner's advance did not return within 60 s"
     record = _get(client, rid, eid)
-    job = JobQueue(run).get(record["steps"][0]["job_id"])
-    assert job["status"] == "cancelled" and job["cleanup_status"] == "verified"
+    job_id = record["steps"][0]["job_id"]
+    job = JobQueue(run).get(job_id)
+    # M29 T2: the queue waits 4 s for the guardian's answer to STOP. Under Stop-hook load the guardian (which lists
+    # every system process before it signals) can answer later; the queue then records job_cleanup_pending and leaves
+    # the job running until the run is reconciled, which the API does when it reopens the run (api._run). Measured
+    # under doubled load: 69 and 10 of 95 trials in two runs ended that way (guardian_result_missing where recorded),
+    # and each recorded one closed as cancelled with its group verified on the first reconciliation. The test then
+    # reconciles as the API would; the cancel must still end the job cancelled with its group verified empty.
+    pending = [e["reason"] for e in run.events.read() if e["type"] == "job_cleanup_pending" and e["job_id"] == job_id]
+    if job["status"] == "running":
+        assert pending and set(pending) <= {"guardian_result_missing", "group_not_verified_empty"}, (job, pending)
+        end = time.monotonic() + 120
+        while job["status"] == "running" and time.monotonic() < end:
+            JobQueue(run).reconcile_run()
+            job = JobQueue(run).get(job_id)
+    assert job["status"] == "cancelled" and job["cleanup_status"] == "verified", (job, pending)
     assert record["steps"][0]["status"] == "cancelled" and record["steps"][1]["status"] == "pending"
     assert len(_types(run, "budget_reserved")) == 1  # the started attempt stays charged
     assert any(e["type"] == "job_cancel_requested" and e["execution_link"]["execution_id"] == eid
