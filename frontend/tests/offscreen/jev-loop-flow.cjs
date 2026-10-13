@@ -1207,7 +1207,7 @@ async function ligandBranch(session, input, setup, rec_, evidence, log) {
     }, async value => {
       assert.deepEqual(value.ligand.areas.map(item => item.id), ["ligand-panel", "docking-panel", "docking-batch-panel",
         "ligand-ga-panel", "jev-loop-panel"]);
-      assert.deepEqual(value.protein.areas.map(item => item.id), ["mutation-panel", "mutation-model-panel",
+      assert.deepEqual(value.protein.areas.map(item => item.id), ["repair-panel", "mutation-panel", "mutation-model-panel",
         "sequence-ga-panel", "jev-loop-panel"]);
       for (const sig of Object.values(value)) assert.deepEqual(sig.posts, [], "entering a tab posted");
       return { ligand: value.ligand.areas.map(item => item.id), protein: value.protein.areas.map(item => item.id) };
