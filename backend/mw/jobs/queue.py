@@ -47,6 +47,7 @@ from ..runtime.orchestrator import (
     checked_link,
     link_fields,
 )
+from ..structure_origin import reject_if_repaired
 from ..structure_repair_constants import PROTOCOL as REPAIR_PROTOCOL
 from ..structure_repair_constants import TIMEOUT_DEFAULT_S as REPAIR_TIMEOUT_DEFAULT_S
 from ..structure_repair_constants import TIMEOUT_MAX_S as REPAIR_TIMEOUT_MAX_S
@@ -728,6 +729,9 @@ class JobQueue:
                 value = normalized[name]
                 for handle in value if isinstance(value, list) else [value]:
                     self.run.store.load(handle)
+                    # M29 spec 5.2: M7 minimization and the PyRosetta protocols refuse a repaired structure before
+                    # the dry-run plan, the M7 preflight and the protocol check (nothing recorded or reserved).
+                    reject_if_repaired(self.run.store, handle)
         if self.run.dry_run:
             return {"plan_only": True, "protocol_id": protocol, "reason_code": "dry_run",
                     "available": False, "output_handles": [], "normalized_parameters": normalized}

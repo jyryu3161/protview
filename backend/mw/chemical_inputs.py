@@ -18,6 +18,7 @@ from .core.errors import FailureClass, ToolFailure
 from .core.handles import object_sha
 from .ligand_constants import BLOCK_IMPORT_KINDS
 from .ligand_inputs import import_raw as import_block_raw
+from .structure_origin import reject_if_repaired
 from .tools.comparison import AtomRefV1, CompleteResidueRef, atom_rows
 from .tools.registry import ToolContext
 from .tools.structural import _parse, _res_ref
@@ -295,6 +296,8 @@ def _source_rows(store: Any, req: dict[str, Any]) -> tuple[list[dict[str, Any]],
     if (meta["kind"], meta["schema"]) not in {("structure", "structure_selection@2"),
                                                ("prepared_structure", "prepared_structure@1")}:
         raise invalid("attach requires one exact prepared complex source kind/schema")
+    # M29 spec 5.2: one place for the preview route, the prolif_prepare_v1 submission and the M13 plan.
+    reject_if_repaired(store, handle)
     st = _parse(ToolContext(store=store, call_id="chemical_preview"), handle)
     if st[0].num != req["complex_model_number"]:
         raise invalid("complex model does not match exact selected source")

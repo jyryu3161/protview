@@ -21,11 +21,15 @@ from ..core.contracts import check_args
 from ..core.errors import FailureClass, ToolFailure
 from ..core.events import DecisionSource, EventLog, idempotency_key
 from ..core.handles import Handle, ObjectStore
+from ..structure_origin import reject_if_repaired
 from ..tools.energetic import JOB_ONLY_TOOLS
 from ..tools.registry import ToolContext, ToolRegistry
 from .guards import TRANSIENT_DELAYS_S, Budget, BudgetLimits, LoopGuard, LoopStop
 
 ExecutionMode = Literal["human", "autonomous"]
+# M29 spec 5.1: the only Run.call tool that takes a repaired prepared structure as a handle argument (the modeling
+# path's entry). Every other tool refuses one before its pre-check (spec 5.2, repaired_structure_not_accepted).
+REPAIRED_STRUCTURE_TOOLS = frozenset({"generate_mutation_candidates"})
 _LOCAL_LOCKS: dict[str, threading.Lock] = {}
 _LOCAL_LOCKS_GUARD = threading.Lock()
 _MODEL_ID = re.compile(r"[A-Za-z0-9._/-]{1,100}\Z")
@@ -595,6 +599,13 @@ class Run:
                               detail={"reason_code": "job_only_tool"})
         if not isinstance(args, dict):
             raise ToolFailure(FailureClass.input_invalid, "tool args must be an object")
+        if tool not in REPAIRED_STRUCTURE_TOOLS:
+            # M29 spec 5.2: refused on every call path before the pre-check (no reference set is pinned, nothing
+            # parsed). Reads one manifest per prepared structure handle; any other value is left to the checks below.
+            for name in spec.accepts:
+                value = args.get(name)
+                for handle in value if isinstance(value, list) else [value]:
+                    reject_if_repaired(self.store, handle)
         precheck = self.registry.prechecks.get(tool)
         if precheck is not None:
             args, bound = precheck(self.store, args, bound)

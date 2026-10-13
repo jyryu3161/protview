@@ -102,6 +102,7 @@ from ..saved_scenes import (
 from ..sequence_ga_constants import PROTOCOL as SEQUENCE_GA_PROTOCOL
 from ..sequence_ga_reports import build_sequence_ga_report, saved_sequence_ga_report
 from ..site_annotation_reports import build_site_annotation_report, saved_site_annotation_report
+from ..structure_origin import reject_if_repaired
 from ..structure_repair_constants import PROTOCOL as REPAIR_PROTOCOL
 from ..tools.comparison import atom_rows
 from ..tools.energetic import protocol_capabilities
@@ -339,6 +340,29 @@ def _tool_error(error: ToolFailure) -> JSONResponse:
               FailureClass.resource_exceeded: 429, FailureClass.transient: 503,
               FailureClass.fatal: 503}[error.cls]
     return JSONResponse(status_code=status, content={"ok": False, **error.to_dict()})
+
+
+def _repaired_refusal(run: Run, *values: Any) -> JSONResponse | None:
+    """M29 spec 5.2 at a route entry: the 422 ``repaired_structure_not_accepted`` response when a prepared structure
+    handle of this run found in ``values`` (strings, walked through lists and dict values) is a repaired structure,
+    else None. Reads one manifest per such handle and writes nothing; any other value is left to the route, and so is
+    an object that cannot be read (the route's own reads answer it as before)."""
+    prefix = f"obj://{run.run_id}/prepared_structure/"
+    pending = list(values)
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+        elif isinstance(value, str) and value.startswith(prefix):
+            try:
+                reject_if_repaired(run.store, value)
+            except ToolFailure as exc:
+                return _tool_error(exc)
+            except (KeyError, ValueError, TypeError):
+                continue
+    return None
 
 
 async def _bounded_chemical_body(request: Request, limit: int) -> bytes:
@@ -749,9 +773,14 @@ async def analysis_plan_create(rid: str, request: Request) -> Any:
     except (HTTPException, PydanticValidationError):
         return _tool_error(ToolFailure(FailureClass.input_invalid, "invalid analysis plan request"))
     run = _run(rid)
+
+    def create() -> Any:
+        # M29 spec 5.2: the M13 flow refuses a repaired structure here, at the plan route (M13 code is unchanged).
+        refused = _repaired_refusal(run, body.inputs)
+        return refused if refused is not None else analysis_plans.create_plan(run, body.request_id, body.goal,
+                                                                              body.inputs)
     try:
-        return await run_in_threadpool(lambda: analysis_plans.create_plan(run, body.request_id, body.goal,
-                                                                          body.inputs))
+        return await run_in_threadpool(create)
     except analysis_plans.AnalysisConflict as exc:
         return _analysis_conflict(exc)
     except ToolFailure as exc:
@@ -973,6 +1002,9 @@ def get_run(rid: str) -> dict[str, Any]:
 @app.post("/runs/{rid}/viewer/sessions", status_code=201)
 def viewer_session_create(rid: str, body: ViewerSessionRequest) -> dict[str, Any]:
     run = _run(rid)
+    refused = _repaired_refusal(run, body.structure_handle)   # M29 spec 5.2: never shown in the viewer
+    if refused is not None:
+        return refused
     try:
         session = create_session(run, **body.model_dump())
         return {**session, "projection": projection_preview(session)}
@@ -1020,7 +1052,12 @@ async def _bounded_scene_body(request: Request, limit: int) -> bytes:
 async def viewer_scene_save(rid: str, request: Request) -> dict[str, Any]:
     try:
         body = parse_scene_save(await _bounded_scene_body(request, SCENE_BODY_LIMIT))
-        return await run_in_threadpool(lambda: save_scene(_run(rid), body))
+
+        def save() -> Any:
+            run = _run(rid)
+            refused = _repaired_refusal(run, body.structure_handle)   # M29 spec 5.2
+            return refused if refused is not None else save_scene(run, body)
+        return await run_in_threadpool(save)
     except PydanticValidationError as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid scene payload"}) from exc
     except ViewerError as exc:
@@ -1047,7 +1084,12 @@ def viewer_scene_selected(rid: str, handle: str) -> dict[str, Any]:
 async def viewer_figure_save(rid: str, request: Request) -> dict[str, Any]:
     try:
         body = parse_figure_save(await _bounded_scene_body(request, FIGURE_BODY_LIMIT))
-        return await run_in_threadpool(lambda: save_figure(_run(rid), body))
+
+        def save() -> Any:
+            run = _run(rid)
+            refused = _repaired_refusal(run, body.structure_handle)   # M29 spec 5.2
+            return refused if refused is not None else save_figure(run, body)
+        return await run_in_threadpool(save)
     except PydanticValidationError as exc:
         raise HTTPException(422, detail={"error": "input_invalid", "message": "invalid figure payload"}) from exc
     except ViewerError as exc:
@@ -1251,6 +1293,10 @@ def command(rid: str, cmd: Command) -> Any:
 @app.post("/runs/{rid}/inspect_complex")
 def inspection(rid: str, body: InspectionRequest) -> dict[str, Any]:
     run = _run(rid)
+    # M29 spec 5.2: before the fixed pipeline records anything (it would reach compute_interactions).
+    refused = _repaired_refusal(run, body.input_handle)
+    if refused is not None:
+        return refused
     raw = None
     fmt = None
     if body.upload_id is not None:
@@ -1275,8 +1321,11 @@ def inspection(rid: str, body: InspectionRequest) -> dict[str, Any]:
 @app.post("/runs/{rid}/reports", status_code=201)
 def create_report(rid: str, body: ReportRequest) -> dict[str, Any]:
     try:
-        result = build_inspection_report(_run(rid), body.interaction_handle,
-                                         prepared_handle=body.prepared_handle)
+        run = _run(rid)
+        refused = _repaired_refusal(run, body.prepared_handle)   # M29 spec 5.2
+        if refused is not None:
+            return refused
+        result = build_inspection_report(run, body.interaction_handle, prepared_handle=body.prepared_handle)
         return result
     except ToolFailure as exc:
         return _tool_error(exc)
@@ -1481,6 +1530,9 @@ def budget(rid: str) -> dict[str, Any]:
 @app.get("/runs/{rid}/jobs/preflight")
 def job_preflight(rid: str, structure: str) -> dict[str, Any]:
     run = _run(rid)
+    refused = _repaired_refusal(run, structure)   # M29 spec 5.2: the M7 standalone minimization read
+    if refused is not None:
+        return refused
     try:
         selected = openmm_preflight(run.store, structure, seed=run.seed)
         return {"available": True, "structure": structure, "selection_policy": "protein_only",
@@ -2930,7 +2982,10 @@ def _pocket_evidence_error(exc: Exception) -> HTTPException:
 def pockets_preflight(rid: str, structure: str,
                       chains: Annotated[list[str] | None, Query()] = None) -> dict[str, Any]:
     """Read-only projection/capability/budget/retention summary; runs no tool, job or engine."""
-    return pocket_preflight(_run(rid), structure, chains)
+    run = _run(rid)
+    # M29 spec 5.2: the same 422 as every other refusal, not a 200 ``reject`` (M12's closed reasons are unchanged).
+    refused = _repaired_refusal(run, structure)
+    return refused if refused is not None else pocket_preflight(run, structure, chains)
 
 
 @app.get("/runs/{rid}/pockets")
