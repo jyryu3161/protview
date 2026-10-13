@@ -19,11 +19,11 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 400 | run ID 형식 오류, 경로 오류, 잘못된 Content-Length |
 | 404 | 이 run에 없는 handle/job, M25 루프 라우트의 `loop_not_found` |
 | 409 | `approval`(비싼 계산 승인 필요), `loop_stop`(자율 분기 가드), `cancelled`, `run_corrupt`(이벤트·payload 손상), `upload_conflict`, 멱등 요청 UUID 충돌, 뷰어 `stale_scene`·`stale_revision`(세션·세대·revision 불일치), 작업 시작의 `global_concurrency_busy`·`global_job_cleanup_pending`·`global_job_ledger_unavailable`(전역 heavy-worker 게이트), 분석 흐름의 `stale_revision`·`request_id_conflict`·`busy`, M24 과학 전송의 `preview_mismatch`·`send_id_conflict`·`send_in_progress`, M25 루프의 `loop_id_conflict`·`loop_active`·`loop_ended`·`send_in_progress`·`iteration_invalid`·`phase_invalid`·`iteration_cap_reached`·`proposal_invalid`·`proposal_late`·`candidate_unavailable`·`candidate_computed`·`step_unavailable`·`job_running`·`docking_pending`, 루프 전송의 `loop_send_invalid` |
-| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음, M15·M26·M27 참조 스냅샷 없음·손상 `not_installed`·`snapshot_invalid`, M27 호출 때 레코드 해시 불일치 `snapshot_invalid`), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등), M24 dry-run run의 과학 전송 동의 켜기(`dry_run`), M25 루프 만들기의 `dry_run`·`capability_unavailable`, 루프 계산 시작의 `capability_unavailable`, 루프 투영의 상태 거절(`loop_ended`·`iteration_mismatch`·`selection_done`·`phase_invalid`·`cap_reached`·`too_few_candidates`) |
+| 412 | `precondition`(선행 조건 부족, 예: 리간드 선택 필요, 승인할 작업 없음, M15·M26·M27 참조 스냅샷 없음·손상 `not_installed`·`snapshot_invalid`, M27 호출 때 레코드 해시 불일치 `snapshot_invalid`), 분석 흐름의 상태 거절(`plan_blocked`, `dry_run_plan_only` 등), M24 dry-run run의 과학 전송 동의 켜기(`dry_run`), M25 루프 만들기의 `dry_run`·`capability_unavailable`, 루프 계산 시작의 `capability_unavailable`, 루프 투영의 상태 거절(`loop_ended`·`iteration_mismatch`·`selection_done`·`phase_invalid`·`cap_reached`·`too_few_candidates`), M29 구조 보완 작업의 환경 이유(`process_identity_unavailable`·`openmm_unavailable`·`pdbfixer_unavailable`)·`worker_version_invalid`, 보완 기록을 다시 검증하는 읽기·보고서·M20 입장에서 설치 템플릿을 읽지 못할 때의 `openmm_unavailable` |
 | 413 | 본문 크기 초과(`resource_exceeded`) |
 | 415 | M11·M17 가져오기에 `application/octet-stream`이 아닌 본문, M24 JEV POST(`/jev/consent`·`/jev/preview`·`/jev/sends`)와 M25 루프 POST(`/jev_loops`, `/jev_loops/{loop_id}/compute`·`/abandon_docking`·`/end`)에 `application/json`이 아닌 본문(`unsupported_media_type`, 본문을 읽기 전) |
 | 422 | `input_invalid`, `report_evidence_invalid`, `method_evidence_invalid`, `scene_invalid` |
-| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`·`catalytic_list_too_long`, M24·M25 투영의 `payload_too_large`, M26 반응 지식의 `result_too_large`·`too_many_links`, M27 키나아제 전례의 `result_too_large`), M25 루프 계산 시작의 `budget_blocked` |
+| 429 | 도구의 `resource_exceeded`(예산·한도 소진, 저장 보기·그림 개수 초과, M19 일괄 제출의 `batch_limit_raise_required`, M22 GA 제출의 `ga_limit_raise_required`, M23 서열 GA 제출의 `ga_limit_raise_required`·`staged_input_bytes`, M20 변이 후보의 `too_many_positions`·`catalytic_list_too_long`, M24·M25 투영의 `payload_too_large`, M26 반응 지식의 `result_too_large`·`too_many_links`, M27 키나아제 전례의 `result_too_large`, M29 구조 보완 제출의 스테이징 크기 `detail.limit: "staged_input_bytes"`), M25 루프 계산 시작의 `budget_blocked` |
 | 500 | M24 과학 전송 라우트의 `internal_error`(기록 중 디스크 오류·승인 대조 실패, 고정 문장만, 예외 텍스트 없음), M25 루프 라우트·루프 투영의 미리보기·전송에서 루프 라우트가 쓰지 않는 이벤트 순서(`internal_error`, 고정 문장) |
 | 503 | 도구의 `transient` 또는 `fatal`, M24 과학 전송·M25 루프 쓰기 라우트의 `busy`(run 실행 잠금이 잡혀 있음, 아무것도 쓰지 않음) |
 
@@ -37,17 +37,19 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 |---|---|---|---|
 | `POST /runs` | `{goal?, context?, dry_run?: bool, egress?: "local_only"}`. egress에는 `local_only`만 넣을 수 있다 | 201, run 요약 | 422 |
 | `GET /runs`, `GET /runs/{id}` | — | run 요약 목록/단건 | 400, 404 |
-| `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, …모델·체인 요약}` | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
+| `POST /runs/{id}/uploads?filename=x.pdb` | 원본 바이트(최대 25 MiB), 확장자 `.pdb/.cif/.mmcif` | 201, `{upload_id, sha256, size, format, n_models, model_numbers}`(형식·모델 요약뿐이고 체인 요약은 없다) | 413, 422(형식·파싱), 409(같은 해시인데 다른 내용) |
 | `POST /runs/{id}/commands` | `{tool, args, decided_by?: "human"\|"rule"}`. tool은 `load_structure`, `prepare_structure`, `compute_interactions`, `compute_interface_sasa`, `measure_distance`, `align_structures`, `compile_state`, `map_residue_numbering`(M15), `annotate_reference_sites`(M16), `generate_mutation_candidates`(M20), `build_jev_projection`(M24), `build_jev_loop_projection`(M25), `link_reaction_knowledge`(M26), `link_kinase_precedents`(M27) 중 하나 | 200, `{ok: true, handle: <envelope>}` | 도구 실패 본문(422/412/429/503), 409 |
 | `POST /runs/{id}/inspect_complex` | 업로드 ID 또는 같은 run의 구조 handle, 모델, 전처리 정책, 선택적 리간드, cutoff | 완료된 handle 목록 또는 `needs_selection`/`no_ligand` | 412, 422, 409 |
 
 `load_structure`의 `source`는 이 run의 업로드 ID여야 한다. 파일 경로나 URL은 받지 않는다. `decided_by`는 기록용 출처 정보일 뿐이며, 승인 권한을 주지 않는다.
 
+체인 요약은 `load_structure` envelope의 summary `chains_auth`이며, 고른 모델의 저자 체인 이름을 처음 나온 순서로 **한 번씩만** 담는다. 같은 저자 체인 이름이 단백질·리간드·물 조각으로 갈라져 있어도(gemmi가 조각마다 체인을 따로 읽음, 예: 8VF6 `A,B,A,B,A,B`) 이름은 하나로 보이므로 이 목록으로 조각 분리를 알 수 없다. 조각 수는 M29 구조 보완 사전 검사의 `defects.chain_parts`로 본다. 조각이 갈라진 전처리 구조는 M7 사전 검사가 `duplicate author chain identity`(이유 코드 없는 `input_invalid`)로 거절하며, 같은 저자 이름을 쓰는 서로 다른 단백질 폴리머 체인(label 체인이 다름)이 없으면 구조 보완이 이름을 바꾸지 않고 한 체인으로 합친다(아래 "M29 구조 보완").
+
 ## 읽기
 
 | 호출 | 설명 |
 |---|---|
-| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reaction_knowledge, kinase_precedents, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch, ligand_ga_design, jev_choice, jev_loop}` 사용 가능 여부와 이유(`jev_loop`은 갈래별), 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
+| `GET /capabilities` | 모드, 에너지 프로토콜 표, `methods.{interface_sasa, openmm_protein_minimize, chemical_interactions, pocket_detection, analysis_workflows, residue_numbering, reaction_knowledge, kinase_precedents, reference_site_annotation, mutation_candidates, ligand_candidates, ligand_docking, ligand_docking_batch, ligand_ga_design, jev_choice, jev_loop, structure_repair}` 사용 가능 여부와 이유(`jev_loop`은 갈래별), 지원·미지원 기능 목록. 무거운 엔진을 import하지 않는다 |
 | `GET /tools?levels=L2,L4` | 노출된 도구 명세. `L3`을 넣으면 OpenMM 작업 프로토콜이 `execution_lane: durable_job`으로 추가된다 |
 | `GET /runs/{id}/objects?handle=…`, `/objects/meta` | 객체 내용(페이지·열 선택)과 메타 |
 | `GET /runs/{id}/structures/bytes?handle=…` | 뷰어용 구조 원본 바이트. 로컬 뷰어 전용 |
@@ -62,7 +64,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 | 호출 | 입력 | 출력 |
 |---|---|---|
 | `POST /runs/{id}/reports` | `{interaction_handle}` | 201, `report_manifest@1` handle |
-| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·리간드 GA 설계 요약·변이 후보·변이 구조 모델 결과·서열 GA 설계 요약·JEV 판정 제안·JEV 루프 요약·효소 반응 지식 결과·키나아제 전례 결과 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
+| `POST /runs/{id}/method_reports` | SASA·OpenMM·거리·정렬·화학·포켓·번호 대응·참조 주석·리간드 후보·리간드 도킹·리간드 도킹 일괄·리간드 GA 설계 요약·변이 후보·변이 구조 모델 결과·서열 GA 설계 요약·JEV 판정 제안·JEV 루프 요약·효소 반응 지식 결과·키나아제 전례 결과·구조 보완 기록 handle(`filters`는 리간드 후보에만) | 201, 방법 보고서 handle |
 | `GET /runs/{id}/reports` | — | 저장된 보고서 목록 |
 | `GET /runs/{id}/reports/selected?handle=…` | — | 보고서 manifest |
 | `GET /runs/{id}/reports/download?handle=…&format=markdown\|json` | — | UTF-8 Markdown 또는 JSON 파일 |
@@ -73,7 +75,7 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 순서(실제 UI 흐름):
 1. (OpenMM만) `GET /jobs/preflight?structure=<handle>`: 입력 적합성, 제외 항목, 필요한 확인.
-2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하, M22 `qvina_ga_dock_v1`과 M23 `sequence_ga_dock_v1`은 기본값 없이 `ga.total_s + 600` 이상 15000 이하이고 범위 밖이면 422 `invalid_job_arguments`, M21 `openmm_mutation_model_v1`은 기본 120·240 이하이고 범위 밖이면 422 `argument_invalid`), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
+2. `POST /jobs`: `{protocol_id, args, timeout_s?}`(timeout_s 기본 60, 0 초과 900 이하(OpenMM·화학·포켓·리간드 후보는 120 이하, M19 `qvina_batch_dock_v1`만 7800 이하, M22 `qvina_ga_dock_v1`과 M23 `sequence_ga_dock_v1`은 기본값 없이 `ga.total_s + 600` 이상 15000 이하이고 범위 밖이면 422 `invalid_job_arguments`, M21 `openmm_mutation_model_v1`과 M29 `pdbfixer_repair_v1`은 기본 120·240 이하이고 범위 밖이면 422 `argument_invalid`), 다른 필드는 거부). 본문은 최대 512 KiB. 실행 파일·경로·환경변수는 받지 않는다. 200으로 queued 작업을 돌려주고, dry-run run이면 계획만 돌려준다. 형식 오류는 422다.
 3. `POST /jobs/{job_id}/start`: run에서 첫 비싼 계산이면 409 `{"ok": false, "approval": {gate: "expensive_first_call", tool, reason}}`를 돌려주고 승인 요청을 기록한다.
 4. `POST /jobs/approve`: 대기 중인 승인 요청이 있고 해당 도구의 queued 작업이 있을 때만 승인을 기록한다. 없으면 412다.
 5. `POST /jobs/{job_id}/start`를 다시 부른다. 전역 heavy-worker 게이트에 걸리면 409와 reason_code를 돌려준다.
@@ -257,6 +259,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 규칙은 `docs/business-rules.md` "리간드 도킹 (M18, `qvina_dock_v1`)". 읽기 호출은 run 객체(수용체 인스턴스 목록은 가져오기 바이트를 gemmi로)만 읽고 도구·작업·이벤트·RDKit·Meeko·qvina·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 가져오기는 M11 `kind=receptor|receptor_bonds|ligand_sdf` 그대로다.
 
+M29: 수용체 출처 모델(M21 `mutation_model@1`, M23 `mutation_set_model@1`)이 보완 구조에서 나왔으면 결과 목록 행·`/detail`·`/contacts`에 `structure_origin`이 붙고 새 보고서는 `ligand_docking_markdown@2`다. 인자·이유 집합은 그대로다(아래 "M29 구조 보완"의 하류 읽기 필드·보고서 형식 버전).
+
 ### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
 - `{protocol_id: "qvina_dock_v1", args, timeout_s}`. `timeout_s` 상한은 공통 900이고 화면은 600을 보낸다(인자가 아니며 호출 키에 들어가지 않음). 완료 작업의 `artifacts.docking_result`.
 - `args`(고정 모양, 알 수 없거나 빠진 키는 `invalid_job_arguments`):
@@ -365,6 +369,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 규칙은 `docs/business-rules.md` "변이 후보 (M20, `generate_mutation_candidates`)". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 읽기 라우트의 handle은 쿼리(`?handle=`)가 아니라 **URL 경로**에 그대로 넣는다(`obj://…`의 슬래시 포함, `{handle:path}`). 새 쓰기 라우트는 없다.
 
+M29: `structure`에 이 run의 게시·검증된 보완 구조를 받는다(모델링 경로의 유일한 `Run.call` 입구. 보완 기록이 검증되지 않으면 `structure_invalid`, 환경 없음은 412). 그때 포켓·번호 대응·주석·촉매 결과는 보완 구조나 그 원본 전처리 구조(`repair.source`)에서 만든 것을 받고(그 밖은 `structure_mismatch`) 잔기 7필드 정확 일치로 잇는다. 저장 형식·닫힌 집합은 그대로이며, 읽기에 `structure_origin`·`repair_handoff`·`modeled_basis`·`reference_not_checked`가 붙고 새 보고서는 `mutation_candidates_markdown@3`이다(아래 "M29 구조 보완").
+
 ### 계산: `POST /runs/{id}/commands` `{tool: "generate_mutation_candidates", args}`
 ```json
 {"structure": "obj://…/prepared_structure/…",
@@ -411,6 +417,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 ## M21 변이 구조 모델링
 
 규칙은 `docs/business-rules.md` "변이 구조 모델링 (M21, `openmm_mutation_model_v1`)". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·OpenMM·PDBFixer·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. handle은 URL **경로**에 그대로 넣는다(`{handle:path}`, M20과 같음). 새 쓰기 라우트는 없다(같은 조건 도킹은 기존 `POST /jobs`로 M18 작업 둘).
+
+M29: 후보 집합의 구조가 보완 구조여도 인자·입장·호출 키는 그대로다. 읽기(목록 행·상세·`/contacts`·`/docking_pairs`)에 `structure_origin`이 붙고(`/structure` 바이트에는 없음) 새 보고서는 `mutation_model_markdown@2`다. 시간 상한 240초는 그대로라 보완 뒤 단백질 중원자가 약 2,100을 넘는 구조는 시간 안에 끝나지 않을 수 있다(아래 "M29 구조 보완").
 
 ### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
 ```json
@@ -515,6 +523,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 규칙은 `docs/business-rules.md` "서열 GA 설계 (M23, `sequence_ga_dock_v1`)". 읽기 호출(시작 전 확인 POST 포함)은 run 객체와 가져오기 바이트(리간드 SDF, 이 run의 M7 사전 검사 투영)만 읽고 도구·작업·이벤트·예약·한도 변경·PDBFixer·RDKit·Meeko·qvina·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. 요약 handle은 URL **경로**에 그대로 넣는다(`{handle:path}`, 하위 경로 라우트가 상세보다 먼저 등록되어 있다). 새 가져오기 종류는 없다(리간드 SDF는 M11 `ligand_sdf` 가져오기). 개체 도킹 결과는 M18 `/docking/results/*`로 읽는다.
 
+M29: 후보 집합의 구조가 보완 구조면 서버 응답 계층이 읽기(목록 행·상세·`/individual` 최상위)에 `structure_origin`을 더한다(`/structure` 바이트와 `/individual`의 `m18_detail`에는 없음). 서열 GA 읽기·보고서 모듈과 보고서 `sequence_ga_markdown@1`은 바뀌지 않는다(아래 "M29 구조 보완").
+
 ### GA 인자 (`args`, 시작 전 확인·증액 승인·작업 제출이 같은 본문)
 ```json
 {"candidate_set": "obj://…/mutation_candidate_set/…",
@@ -573,6 +583,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 
 규칙은 `docs/business-rules.md` "JEV 과학 전송 (M24, `build_jev_projection` / `request_science`)". JEV 라우트(`/runs/{id}/jev/*`)는 알 수 없는 쿼리 파라미터를 422 `input_invalid`로 거부한다. POST 셋(`/jev/consent`·`/jev/preview`·`/jev/sends`)은 `Content-Type: application/json`(대소문자 무시, 파라미터 허용)만 받고 아니면 본문을 읽기 전에 415 `unsupported_media_type`이며, 본문은 최대 4 KiB(413 `resource_exceeded`), 정해진 키·타입만 담은 JSON 객체 하나다(중복 키·알 수 없는 키·타입 오류는 422 `input_invalid`). 오류는 HTTP 경계 형태(`{"detail": {"error", "message", …}}`)이고 투영 거절은 `detail.reason_code: "projection_invalid"`를 담는다. 읽기(상태·미리보기·목록·상세)는 이벤트·도구·작업·외부 요청을 만들지 않고 키를 읽지 않으며 run 실행 잠금 없이 이벤트 로그를 한 번만 읽는다. 형식이 틀린 run ID는 400, 없는 run은 404다.
 
+M29: 변이 후보 집합이 보완 구조에 있으면 `POST /jev/preview` 응답에 `structure_origin`·`repair_warning`(JW1), `POST /jev/sends` 응답에 `repair_warning`, `GET /jev/sends`·`/jev/sends/{send_id}`에 `structure_origin`이 붙는다. 본문·`body_sha256`·와이어 허용 필드·`jev_choice@1`·감사 열·이벤트는 그대로이고, 새 보고서(변이 종류만)는 `jev_choice_markdown@2`다(아래 "M29 구조 보완").
+
 ### 투영: `POST /runs/{id}/commands` `{tool: "build_jev_projection", args}`
 ```json
 {"source": "obj://…/ligand_candidate_set/…" | "obj://…/mutation_candidate_set/…",
@@ -615,6 +627,8 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 ## M25 JEV 설계 루프
 
 규칙은 `docs/business-rules.md` "JEV 설계 루프 (M25, `build_jev_loop_projection` / 루프 라우트)". 루프 라우트(`/runs/{id}/jev_loops…`)는 알 수 없는 쿼리 파라미터를 422 `input_invalid`로 거부한다. 쓰기 라우트 넷(만들기·`compute`·`abandon_docking`·`end`)은 `Content-Type: application/json`(대소문자 무시, 파라미터 허용)만 받고 아니면 본문을 읽기 전에 415 `unsupported_media_type`이며, 본문은 만들기 16 KiB·나머지 4 KiB 이하(413 `resource_exceeded`), 중복 키 없는 JSON 객체 하나다. 루프 거절은 HTTP 경계 형태 `{"detail": {"error", "reason_code", "message", …}}`이고 `error`는 422면 `input_invalid`, 그 밖에는 이유 이름 자체다. run 실행 잠금을 잡지 못한 쓰기는 503 `busy`이고 아무것도 쓰지 않는다. 루프 라우트가 쓰지 않는 이벤트 순서는 500 `internal_error`(고정 문장), 다시 읽히지 않는 루프·저장 객체는 409 `run_corrupt`다. 읽기(목록·상세)는 run 실행 잠금 없이 이벤트 로그를 한 번만 읽고 이벤트·작업·도구·외부 요청을 만들지 않으며 키를 읽지 않는다. 라우트 사이에 호출 관계는 없고 어느 루프 라우트도 `request_science`·`run_send`·`Run.raise_limits`를 부르지 않는다. 하위 경로(`/compute`·`/abandon_docking`·`/end`)는 상세보다 먼저 등록되어 있다.
+
+M29: 단백질 루프의 풀 후보 집합이 보완 구조에 있으면 루프 목록 행·상세와 만들기·`compute`·`abandon_docking`·`end` 응답에 `structure_origin`이 붙고, 루프 투영의 M24 미리보기·승인에는 M24와 같이 JW1(`repair_warning`)이 붙는다. 새 보고서(단백질 갈래만)는 `jev_loop_markdown@2`다. 보완 기록이 검증되지 않으면 쓰기 라우트도 이벤트를 남긴 뒤 422 `method_evidence_invalid`(환경 없음은 412)로 답할 수 있다(아래 "M29 구조 보완").
 
 ### 투영: `POST /runs/{id}/commands` `{tool: "build_jev_loop_projection", args}`
 ```json
@@ -752,6 +766,121 @@ ProtView의 외부 인터페이스는 loopback HTTP API(`http://127.0.0.1:8000`,
 - 종료 코드: 0 설치 완료, 1 거절(표준 오류에 거절 종류와 이유, `active.json`·이전 세트는 그대로), 2 인자 오류(argparse). 거절 종류(닫힌 집합 `REFUSAL_KINDS`): `invalid_input`, `target_invalid`, `dist_manifest`, `pins`, `dist_files`, `records`, `bibliography`, `git`, `manifest_invalid`, `cancelled`, `set_exists`, `install_failed`.
 - 라이브러리 함수 `run_import(kbase_dir, dest, *, yes=False, now=None, input_fn=None)`는 시계(`now`, 시간대가 있는 `datetime`)와 입력 함수를 주입받고 출력 요약을 dict로 돌려준다(시험용, CLI는 이것을 부름).
 
+## M29 구조 보완
+
+규칙은 `docs/business-rules.md` "구조 보완 (M29, `repair_structure`)"와 결정 0037. 읽기 호출(사전 검사 포함)은 run 객체·이벤트와 설치된 Amber14 단백질 템플릿 XML(파일로 읽음)만 쓰고 도구·작업·이벤트·예약·PDBFixer·OpenMM 계산·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`(HTTP 경계 형태)다. 보완 기록 handle은 URL **경로**에 그대로 넣는다(`{handle:path}`, 하위 경로 `/atoms`·`/structure`가 상세보다 먼저 등록되어 있다). 새 쓰기 라우트는 없다: 계산은 공통 작업 경로(`/runs/{id}/jobs…`), 보고서는 공통 `/method_reports`다. 템플릿을 읽지 못하는 등 환경이 없으면 보완 기록을 다시 검증하는 모든 곳(이 절의 읽기·보고서, 아래 하류 읽기·보고서, M20 입장)은 증거 무효가 아니라 412 `precondition`(도구 실패 본문, `detail.reason_code: "openmm_unavailable"`)으로 답한다.
+
+### 보완 구조와 객체
+- 보완 구조는 기존 형식 그대로의 새 `prepared_structure@1`(좌표 `prepared_coordinates@1` fmt `cif`, 전처리 기록 `preparation_manifest@1`)이다. 전처리 기록은 원본 전처리 기록에 키 `repair: {record: <structure_repair@1 handle>, source: <원본 prepared_structure handle>}`를 더한 것이고, 이 키가 보완 구조의 유일한 표지다(서버의 모든 판별·거절이 이것을 본다). `missing_residues`는 틈을 메웠을 때만 `"modeled_internal_gaps"`이고 아니면 원본 값 그대로다. 도구 `prepare_structure`의 입력은 여전히 `leave_gaps`만 받는다. 원본 전처리 구조·불러온 구조의 객체 바이트는 바뀌지 않는다.
+- 새 객체 종류는 보완 기록 `structure_repair@1`(fmt `json`, summary `{prepared_structure(원본), added_residues, added_atoms}`) 하나다. 최상위 키는 정확히 `schema`, `method_version`(`mw.structure_repair/v1`), `source{prepared_structure, model_number}`, `result{coordinates, coordinates_sha256}`, `parameters{repair_policy, seed, max_gap_residues, waters, hydrogens, new_atom_coordinate_decimals}`, `method{engine: "PDBFixer", pdbfixer_version, openmm_distribution_version, forcefield_files_sha256}`, `classes_applied`, `chain_parts`, `chain_ends`, `side_chain_repairs`, `terminal_oxt`, `gaps`, `replaced`, `added_atoms`, `counts{added_residues, added_atoms, side_chain_residues, terminal_oxt, gaps, replaced, chain_parts_merged, protein_heavy_atoms}`, `unchanged{atom_count, max_delta_A, input_calc_flag_cleared}`, `new_atom_rounding{decimals, max_abs_delta_A}`, `zero_occupancy_input_atoms{count, residues}`, `collisions`, `limitations`이고 값의 뜻은 business-rules와 같다. 기록은 보완 구조·manifest handle을 담지 않으므로(내용 해시 순환 없음) 기록에서 구조로는 게시 이벤트로 간다. 기록이 4,000,000 B를 넘으면 자르지 않고 `resource_exceeded`다.
+- 보완 구조 mmCIF에서 관측 원자는 이름(MSE→MET의 SE→SD만 예외)·원소·altloc·잔기 7필드·좌표(1e-9 Å 이내)가 입력과 같고, `_atom_site.id`는 gemmi가 구조 순서로 다시 매긴다(보존 항목 아님). 새 원자는 좌표 소수 넷째 자리, 점유율 1.0, B 0.0, `_atom_site.calc_flag` `c`이고 나머지 원자는 `.`다(입력에 있던 `calc_flag` 값은 `.`로 바꾸고 그 수를 `unchanged.input_calc_flag_cleared`에 남긴다). 점유율 0은 새 원자의 표지가 아니다.
+
+### 사전 검사: `GET /runs/{id}/structure_repair/preflight?structure=<handle>`
+- 200 `structure_repair_preflight@1`: `{schema, starts_job: false, capability(methods.structure_repair와 같음), structure(요청 값), repairable, blockers, defects{chain_parts:[{chain_auth, parts}], side_chain_residues:[{residue, missing_atoms}], terminal_oxt:[{residue}], gaps:[{chain_auth, after_residue, before_residue, length, residues}], nonstandard:[{residue, to_resname}]}, expected_added_residues, expected_added_heavy_atoms, budget{expensive_calls, wall_clock_s}, remaining{expensive_calls, wall_clock_s}, shortfall{expensive_calls}, admission{admitted, error, reason_code, message, detail}, statements}`. 이벤트·도구·작업을 만들지 않는다.
+- `defects`의 잔기는 입력 식별자(MSE는 MSE)이고 개수는 목록 길이와 `expected_*`로 읽는다. `chain_parts`는 조각이 둘 이상인 저자 체인만, `gaps`는 잔기 이름·번호를 파일의 서열·미관측 목록으로 확정한 틈만 담는다. `statements`는 조건이 성립하는 한계 문장 RP1–RP6의 문자열(이 순서)이다.
+- `blockers`는 모든 걸림돌 `{reason_code, residue?, chain_auth?, detail}`을 `REFUSAL_REASONS` 순서(같은 이유 안에서는 구조 순서)로 담고, `repairable`은 걸림돌이 없을 때 true다. `detail`: `chain_identity_duplicate` `{label_chains}`, `unsupported_residue` `{resname, in_gap}`, `unexpected_atoms` `{atoms}`, `backbone_atoms_missing` `{missing}`, `gap_listing_missing` `{after_residue, missing_label_positions}`(확정하지 못한 label 번호, PDB 형식 등 번호가 없으면 null), `gap_too_long` `{after_residue, length, max_gap_residues: 20}`, `m7_condition_unsupported` `{m7_reason[, distance_A]}`(M7 코드 `sequence_gap`·`peptide_geometry` 또는 코드 없는 M7 메시지 원문), `atom_limit_exceeded` `{protein_heavy_atoms_after, limit: 6000}`, `nothing_to_repair` `{}`(잔기 없는 걸림돌 하나).
+- `repairable`·`defects`·`expected_*`가 null이고 `blockers`·`statements`가 `[]`인 때: 입장 1단계에서 거절될 때(`argument_invalid`·`structure_invalid`·`already_repaired`, 분석 전)와 분석이 설치 템플릿을 읽지 못할 때. null은 "분석하지 않음"이며 0이 아니다.
+- `admission`은 `POST /runs/{id}/jobs`가 이 구조에 답할 입장 결과를 작업 순서(입장 1단계 → 412 환경 → 422 `repair_not_possible` → 429 스테이징 크기)대로 보인다. 거절과 환경 없음도 200이며 `admitted: false`와 도구 실패 본문의 `error`·`reason_code`·`message`·`detail`을 담는다. dry-run 여부는 보지 않는다(dry-run run의 `POST /jobs`는 입장 1단계 뒤 계획만 돌려준다). 예산 부족은 거절이 아니라 `shortfall.expensive_calls`(작업 하나 = 1단위)다.
+- 오류: 422 모르는 파라미터·`structure` 없음, 404 없는 run.
+
+### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
+```json
+{"protocol_id": "pdbfixer_repair_v1",
+ "args": {"structure": "obj://…/prepared_structure/…", "repair_policy": "complete_missing_atoms_v1"},
+ "timeout_s": 120}
+```
+- `args`는 두 키만 받는다. `repair_policy`는 리터럴 `"complete_missing_atoms_v1"`(모델링 좌표가 든 구조를 만든다는 명시적 확인)이어야 한다. 시드 `1`·틈 상한 20잔기·새 원자 소수 넷째 자리는 상수이고 인자가 아니다. `timeout_s`는 빼면 120, 0 초과 240 이하이며 호출 키에 들어가지 않는다. 본문은 최대 512 KiB. 도구 `repair_structure`는 작업 전용이라 `/commands`로 실행되지 않는다(422 `unsupported tool`).
+- 입장 거절(작업을 만들지 않음, 예약·과금 없음, 도구 실패 본문 `detail.reason_code`), 이 순서로 첫 실패만:
+  1. 422 `input_invalid`: `unknown_field`(큐가 막는 `argv`·`executable`·`module`·`env`·`path`·`cwd`·`fixture` 키 포함) → `confirmation_missing` → `argument_invalid`(`structure`가 비었거나 문자열이 아님, 객체가 아닌 `args`, 범위 밖 `timeout_s`) → `structure_invalid`(이 run의 `prepared_structure@1`이 아님) → `already_repaired`(manifest에 `repair`가 있음). `timeout_s`가 0 이하·15000 초과·숫자 아님이거나 `args`가 객체가 아니면 요청 모델 단계의 `argument_invalid`가 `unknown_field`보다 먼저 날 수 있다(M21과 같음). 본문 최상위에 모르는 키가 있으면 HTTP 경계 형태 422 `{"detail": {"error": "input_invalid", "message": "invalid job request"}}`다.
+  2. (dry-run run은 여기서 계획만 돌려준다.)
+  3. 412 `precondition`: `process_identity_unavailable` → `openmm_unavailable` → `pdbfixer_unavailable`.
+  4. 422 `input_invalid`, `message` "structure repair is not possible (<코드>)", `detail: {error: "repair_not_possible", reason_code, blockers, m7_reason?}`. `reason_code`는 닫힌 집합 `REFUSAL_REASONS`(검사 순서) `chain_identity_duplicate`, `unsupported_residue`(틈 잔기면 `in_gap: true`, 틈 안의 MSE 포함), `unexpected_atoms`, `backbone_atoms_missing`, `gap_listing_missing`, `gap_too_long`, `m7_condition_unsupported`, `atom_limit_exceeded`, `nothing_to_repair` 중 첫 걸림돌이고, `blockers`는 사전 검사와 같은 모든 걸림돌, `m7_reason`은 첫 걸림돌이 `m7_condition_unsupported`일 때만이다.
+  5. 429 `resource_exceeded`: 스테이징 입력 4,000,000 B 초과, `detail: {reason_code: "resource_exceeded", limit: "staged_input_bytes", bytes, max_bytes: 4000000}`.
+- 호출 키 = 정규화 인자 `{structure, repair_policy}` + 작업 모듈 `jobs/structure_repair_worker.py`의 SHA-256 + 의존 모듈 다섯(`structure_repair.py`·`structure_repair_constants.py`·`jobs/openmm_worker.py`·`tools/openmm_method.py`·`mutation_model_constants.py`)의 SHA-256 + 고정 방법 기록(M7 `dependencies()` + `pdbfixer_version`). 같은 호출 키의 작업이 있으면 상태와 무관하게 그 작업을 200으로 돌려준다(새 작업·과금 없음, 한 전처리 구조의 보완은 하나). 작업 모듈·의존 모듈이 바뀌면 호출 키가 달라져 옛 작업을 재사용하지 않는다.
+- 첫 비싼 계산이면 `POST /jobs/{job_id}/start`가 409 `approval`(`tool: "repair_structure"`)을 돌려주고 `POST /jobs/approve`가 기록한다(작업 승인 허용 목록에 `repair_structure`). `/start`는 작업이 끝날 때까지 응답하지 않는다. 시작 때 고정 pin(작업 모듈·의존 모듈 해시·방법 기록)이 바뀌었으면 412 `worker_version_invalid`, 환경이 없으면 412 환경 이유다. 작업 하나 = 비싼 계산 1단위(M7·M21과 같은 승인·예산·guardian 경로). `POST /jobs/{job_id}/cancel`은 공통 규칙 그대로이고, `POST /jobs/{job_id}/retry`는 공통 규칙(`failed`·`interrupted`만, 시도 4회까지, 새 1단위)이다.
+- 작업 실패(과금됨, 예약 1단위 환불 없음, 결과 객체 없음, `failure{error, reason_code, message, detail}`), `reason_code`는 닫힌 집합 `FAILURE_REASON_CODES`: `input_invalid` — `repair_incomplete`(게시 전 M7 사전 검사 거절, `detail.m7_reason`, 있으면 `detail.residue`), `repair_modeling_failed`(PDBFixer 예외), `coordinates_changed`, `unexpected_atoms_added`, `repair_identity_mismatch`, `repair_record_mismatch`; `resource_exceeded` — `resource_exceeded`(작업 출력·기록 4,000,000 B 초과, `detail.limit` `output_bytes`·`record_bytes`); `fatal` — `engine_failed`. 잘못된 오류 봉투(메시지 300자 초과 포함)·이 작업에 속하지 않는 출력은 `reason_code` 없는 `{error: "fatal", message}`다. 시간 초과는 `{error: "resource_exceeded", message: "job timeout"}`(`reason_code` 없음), 취소는 `cancelled`이고 둘 다 결과가 없다.
+- **예외(게시 직전 환경 상실)**: 작업 프로세스가 끝난 뒤 게시 전 검증(기록을 다시 만들 때의 템플릿 읽기, 저장 없는 겹침 보기에서의 M7 사전 검사) 중에 환경이 사라지면 작업은 `failure{error: "precondition", reason_code: "openmm_unavailable" | "process_identity_unavailable", message, detail}`로 끝난다. 이 두 코드는 `FAILURE_REASON_CODES` 밖이며, 환경 없음을 증거 무효(`repair_record_mismatch` 등)로 보이지 않기 위한 결정 0037의 예외다(과금됨, 아무것도 저장하지 않음).
+- 성공: 작업 프로세스 그룹 정리 확인 뒤 게시 전 검증 다섯(관측 원자 불변, 나머지 원자 = `added_atoms`, 새 잔기 식별자, 겹침 보기에서 M7 사전 검사 통과, 기록 재생성 바이트 일치)을 모두 통과하면, run 전이 잠금 안에서 취소·시도를 다시 확인하고 객체 넷을 좌표 → 기록 → manifest → 보완 구조 순서로 저장한 뒤 `structure_repair_published` → `job_result_candidate` → `job_terminal`(done)을 쓴다. 검증 실패·취소·시간 초과는 run 저장소에 새 객체를 남기지 않는다. 완료 작업의 `output_handles`는 `[보완 기록, 보완 구조]`, `artifacts`는 `{structure_repair, prepared_structure}`다.
+
+### 읽기
+
+| 호출 | 입력 | 출력 | 오류 |
+|---|---|---|---|
+| `GET /runs/{id}/structure_repairs?offset&limit` | limit 1–100(기본 50) | `structure_repair_list@1`: `{schema, total, offset, limit, rows:[{handle, created_seq, valid, prepared_structure, source_structure, classes_applied, counts}]}`. 최신 순(`created_seq`는 기록 객체를 만든 이벤트 순번). 행마다 다시 검증하고 실패한 행(게시 증거 없는 부분 저장 포함)은 `valid: false`, 나머지 null | 422 모르는 파라미터, 409 `run_corrupt`, 412 환경(목록 전체) |
+| `GET /runs/{id}/structure_repairs/{handle}` | — (쿼리 없음) | `structure_repair_detail@1`: `{schema, handle, prepared_structure(보완 구조), source_structure, coordinates, manifest, published_seq, added_atom_count, result(저장 기록에서 `added_atoms`만 뺀 것), meta}` | 404 없는 handle, 422 `input_invalid`(다른 종류·형식), 422 `method_evidence_invalid`, 412 환경 |
+| `GET /runs/{id}/structure_repairs/{handle}/atoms?page&page_size` | `page` ≥ 1(기본 1), `page_size` 1–200(기본 100) | `structure_repair_atom_page@1`: `{schema, handle, total, page, page_size, rows:[{index, residue(7필드, 보완 구조 식별자), atom_name, element, coordinates_A, origin}]}`. 저장(구조) 순서 그대로, `origin` ∈ `side_chain`·`oxt`·`gap_residue` | 404, 422, 422 `method_evidence_invalid`, 412 환경 |
+| `GET /runs/{id}/structure_repairs/{handle}/structure` | — (쿼리 없음) | 보완 구조의 저장 mmCIF 바이트 그대로(기록의 `result.coordinates_sha256`과 대조), `chemical/x-mmcif`, 첨부 이름 `protview-structure-repair-<기록 handle 해시 앞 12>.cif`, `Cache-Control: private, no-store` | 404, 422, 422 `method_evidence_invalid`, 412 환경 |
+
+- 모든 읽기는 매번 저장 기록을 `structure_repair_bundle.validated_result`로 다시 검증한다: 기록의 완료된 `pdbfixer_repair_v1` 게시 한 건(`budget_reserved` → `job_cleanup_verified` → `structure_repair_published` → `job_result_candidate` → `job_terminal` done 순서, 출력 handle `[기록, 보완 구조]`), 작업 선택, 객체 넷의 종류·내용(manifest·구조는 원본에서 다시 만든 것과 같음), 좌표 바이트 해시, 원본 전처리 구조와 저장 바이트로 다시 만든 기록. 원본 입력·네트워크·엔진 없이 이벤트만으로 다시 열린다(설치 템플릿 XML은 파일로 읽는다). 아무것도 다시 계산해 저장하지 않는다.
+- 일반 `GET /runs/{id}/objects`·`/objects/meta`도 이 종류를 읽을 수 있지만 검증을 거치지 않는다(M12·M17–M27과 같은 관례). 보완 구조 handle은 `/structures/residues`·`/structures/bytes`·`/structures/atoms`·`/reference/pdb_id_hint`로도 읽힌다(읽기는 거절하지 않는다).
+
+### 이벤트·capability·도구 목록
+- `structure_repair_published {job_id, attempt_id, record, prepared_structure, coordinates, manifest}`: 객체 넷 저장(각각 기존 `object_created`) 뒤, 같은 전이 잠금 안에서 `job_result_candidate`·`job_terminal`(done) 앞에 쓴다. 이 이벤트가 보완 기록의 게시 증거이고, 읽기·보고서·하류 소비자·events-only 복구는 이것으로 기록에서 보완 구조를 찾는다.
+- `/capabilities`의 `methods.structure_repair`(`structure_repair_capability@1`): `{schema, protocol_id: "pdbfixer_repair_v1", tool_id: "repair_structure", execution_lane: "durable_job", result_schema: "structure_repair@1", method_version, timeout_s{default: 120, max: 240}, limits{max_gap_residues: 20, protein_heavy_atoms: 6000, staged_input_bytes: 4000000, record_bytes: 4000000}, available, reason_code, reason, versions{openmm, openmm_engine_build, pdbfixer} | null}`. 프로세스 신원 어댑터·고정 OpenMM 8.6.0 포스필드(M7 `dependencies()`)·PDBFixer 1.12.0이 모두 있을 때만 `available: true`이고, 아니면 `reason_code`는 `process_identity_unavailable | openmm_unavailable | pdbfixer_unavailable`(M21과 같은 이유 문장), `versions`는 null이다. 서버는 PDBFixer를 import하지 않고 `importlib.metadata`로 버전만 읽는다.
+- `GET /tools?levels=…L3…`에 `repair_structure`(L3, `emits: structure_repair`, `cost_class: expensive`, `execution_lane: "durable_job"`, `submit_protocol_id: "pdbfixer_repair_v1"`)가 나온다(기본 `levels=L2,L4`에는 없음).
+
+### 보고서
+- `POST /runs/{id}/method_reports` `{result_handle: <structure_repair>}` → 201 `{handle, markdown_handle, manifest, markdown}`. manifest는 `method_report_manifest@1`, `analysis_type: "structure_repair"`, `status: "complete"`, `render_version: "structure_repair_markdown@1"`, `generation_mode: "local_rules_no_egress"`, `result_handle`, `result_schema: "structure_repair@1"`, `result_sha256`, 기록에서 복사한 `method_version, source, result, parameters, method, classes_applied, chain_parts, chain_ends, side_chain_repairs, terminal_oxt, gaps, replaced, counts, unchanged, new_atom_rounding, zero_occupancy_input_atoms, collisions, limitations`(`added_atoms` 행은 빼고 `/atoms`로 읽음), `repaired_structure`, `source_structure`, `claims`, `provenance{structure_repair{job_id, attempt_id, protocol_id, tool_id, published_event_seq, coordinates, manifest}}`, `evidence_statement`, `snapshot{event_seq, time_utc, run_egress_mode, budget}`, `markdown_handle`이고 기존 `/reports`, `/reports/selected`, `/reports/download`로 읽는다(보고서 목록 이름 "구조 보완 보고서"). manifest·Markdown 상한 8 MiB(넘으면 `structure_repair_report_too_large`).
+- 주장은 모두 `computed`. statement ID(닫힌 집합, 이 순서): `repair_scope`(`classes_applied`), `added_residue_count`(`counts.added_residues`), `added_atom_count`(`counts.added_atoms`·`added_atoms[*].origin`), `side_chain_residue_count`, `terminal_oxt_count`, `gap_count`(`counts.gaps`·`gaps[i].length`), `replaced_count`, `chain_parts_merged_count`, `unchanged_atom_count`(`unchanged.atom_count`·`unchanged.max_delta_A`), `collision_min_distance`(`collisions.<분류>.min_distance_A`, 상대가 있는 분류만, Å, 0.01 `ROUND_HALF_UP`), `zero_occupancy_input_atom_count`(`zero_occupancy_input_atoms.count`·`.residues`). 개수는 기록의 행을 다시 센 값과 정확히 같다. 상대가 없는 충돌 분류는 주장 없이 "—"와 이유로 보이고 저장 개수는 0이다(근접 원자가 없다는 판정으로 읽지 않는다). 충돌 표의 `count_lt_*`·`min_pair`, 표의 잔기 식별자, 체인 끝 표시는 기록 값을 manifest에 옮긴 것이다. 한계 문장은 저장된 `limitations`(RP1–RP6, 조건이 성립하는 것만, 이 순서) 그대로다. 다른 statement의 필드 경로, 틀린 값·개수·반올림, 다른 증거 종류, 해석 문장, 다른 run·다른 종류의 결과, 변조된 기록·보고서는 422 `report_evidence_invalid`. 만들기·다시 열기·다운로드는 보완을 다시 하지 않는다(기록을 다시 검증할 뿐이고 환경 없음은 412).
+
+### 기본 거절 `repaired_structure_not_accepted`
+- 보완 구조를 받는 곳(모델링 경로)은 M20 `generate_mutation_candidates`의 `structure`(`Run.call` 허용 목록은 이 도구 하나)와, 그 후보 집합을 쓰는 M21 작업·M23 서열 GA·M25 단백질 루프·M24 변이 후보 투영, M21·M23 모델을 수용체 출처로 쓰는 M18 도킹뿐이다. 보완 구조는 후보 집합의 구조로만 들어온다.
+- 그 밖의 곳에 이 run의 보완 구조 handle을 넣으면 아래 모두 **422** 도구 실패 본문 `{"ok": false, "error": "input_invalid", "message": "보완 구조는 모델링 경로에서만 쓴다", "fix": null, "detail": {"reason_code": "repaired_structure_not_accepted"}}`로 엔진·작업·예약·객체 전에 거절한다. `/commands` 거절은 다른 도구 거절처럼 `proposal_rejected` 이벤트만 남기고, 그 밖의 라우트는 아무것도 쓰지 않는다.
+
+| 경로 | 대상(보는 인자) |
+|---|---|
+| `POST /runs/{id}/commands` | `compute_interactions`·`compute_interface_sasa`·`measure_distance`·`map_residue_numbering`·`link_reaction_knowledge`(`structure`), `align_structures`(`reference`·`moving`), `compile_state`(`inputs`): `Run.call`이 사전 검사 전에 거절. `annotate_reference_sites`: 사전 검사 훅이 번호 대응의 `structure.handle`을 보고 거절 |
+| `POST /runs/{id}/jobs` | `openmm_protein_minimize`(M7), PyRosetta `relax`·`interface_analyzer`, `fpocket_detect_v1`(M12), `prolif_prepare_v1`(M11, `complex_handle`) |
+| 그 밖의 라우트 | `GET /jobs/preflight`(M7), `GET /pockets/preflight`(M12, 200 `reject`가 아니라 같은 422이며 M12 이유 집합은 그대로), `POST /chemical/preview`(M11), `POST /viewer/sessions`·`/viewer/scenes`·`/viewer/figures`(`structure_handle`), `POST /reports`(`prepared_handle`), `POST /inspect_complex`(`input_handle`), `POST /analysis/plans`(M13, `inputs` 안의 모든 handle, M13 코드는 그대로) |
+
+- 상위에서 막혀 닿지 않는 곳: `link_kinase_precedents`(번호 대응만 받음), 뷰어 의도·세션 상태(거절된 세션이 필요), `/method_reports`(거절된 도구·작업의 결과만 받음). 소비 지점 전부의 선언은 `backend/tests/test_structure_repair_consumers.py`가 고정한다.
+- 거절하지 않는 것: 구조 보완 작업 자신(보완 구조는 `already_repaired`), 위 읽기, M20 이후의 모델링 경로. 화면의 뷰어 소스 목록은 `structure_repair_published` 이벤트로 보완 구조를 거른다(게시 이벤트 없이 부분 저장된 구조는 목록에 보일 수 있으나 고르면 서버가 위 422로 거절한다).
+
+### 하류 읽기 필드 (보완 구조일 때만)
+결과의 구조가 보완 구조일 때만 읽기 응답에 아래 키를 더하고, 다른 구조의 결과는 키를 더하지 않아 응답 바이트가 M28과 같다. 저장 객체·이벤트·JEV 본문에는 어느 키도 들어가지 않는다. 키를 더하기 전에 보고서와 같은 검사(manifest `repair` 연결 → `validated_result` → 그 게시가 바로 이 구조를 `repair.source`에서 만들었는지)를 한다.
+
+- `structure_origin`: `{repair_record, repaired_structure, source_structure, counts(기록의 counts), statements: [{id: "SO1", text}]}`.
+- `repair_handoff`(M20 상세·`/positions`): `{references, statements}`. `references`는 집합이 쓴 참조 결과 중 원본 전처리 구조(`repair.source`)에서 만든 것의 인자 이름(`pocket_set`·`numbering_map`·`annotation`·`catalytic_annotation` 순서), `statements`는 집합의 어느 위치든 `modeled_basis`가 참이면 SO2, `references`가 비지 않으면 SO3(`{id, text}`, 집합 단위 문장).
+- `modeled_basis`(M20 `/positions`의 각 행, bool): 그 위치 잔기에 모델링 원자(새 곁사슬 원자·OXT·틈 잔기)가 있거나, 리간드 껍질·금속(저장된 `metal_contact_A`)·이황화(2.5 Å) 판정을 보완 기록의 새 원자를 뺀 관측 원자만으로 다시 냈을 때 결과가 달라지면 true.
+- `reference_not_checked`(M20 `/positions`의 각 행, 목록): 모델링 잔기(틈 잔기, MSE→MET 치환 잔기) 위치에서 "검사 안 함(모델링 잔기)"으로 보일 저장 필드. `numbering`(번호 대응이 인계됐고 저장 상태 `not_in_map`), `klifs_sites`(주석이 인계됐고 저장 `[]`), `catalytic`(촉매 결과가 인계됐고 저장 `[]`) 순서이고, 그 밖의 위치는 `[]`다. 저장된 후보 집합은 바뀌지 않으므로 저장 객체만 읽으면 이 위치가 "검사함, 해당 없음"으로 보인다.
+- `repair_warning`(JW1): `{id: "JW1", text}`. 후보 집합 구조의 표지(manifest `repair`)만으로 정한다(승인 응답은 전송 뒤에 나가므로 기록 검증으로 실패하지 않는다).
+
+| 결과 | 키가 붙는 읽기 | 붙지 않는 읽기 | 보완 기록이 검증되지 않을 때 |
+|---|---|---|---|
+| M20 후보 집합 | 목록 행(유효 행), 상세(+`repair_handoff`), `/positions`(+`repair_handoff`, 행마다 `modeled_basis`·`reference_not_checked`), `/candidates` | — | 목록 행 `valid: false`(필드 null), 그 밖 422 `method_evidence_invalid` |
+| M21 변이 모델 | 목록 행, 상세, `/contacts`, `/docking_pairs` | `/structure`(바이트) | 같음 |
+| M23 서열 GA 결과 | 목록 행, 상세, `/individual`(최상위) | `/structure`(바이트), `/individual`의 `m18_detail` | 목록 행 `valid: false`·`reason_code: "evidence_invalid"`, 그 밖 422 `method_evidence_invalid` |
+| M18 도킹 결과(수용체 출처가 보완 구조 위 M21·M23 모델) | `/docking/results` 목록 행, `/detail`, `/contacts` | `/pose_sdf`·`/poses_sdf`(바이트) | 목록 행 `valid: false`, 그 밖 422 `method_evidence_invalid` |
+| M24 JEV 전송(변이 종류) | `POST /jev/preview`(+`repair_warning`), `GET /jev/sends`의 행, `GET /jev/sends/{send_id}`. `POST /jev/sends` 응답(거절·실패의 200 포함)에는 `repair_warning`만 | 리간드 종류 | 읽기 전체 422 `method_evidence_invalid`("the repaired structure of this result does not validate") |
+| M25 단백질 루프 | `GET /jev_loops`의 행, `GET /jev_loops/{loop_id}`, 만들기·`compute`·`abandon_docking`·`end` 응답, 루프 투영의 M24 미리보기(+`repair_warning`)·승인 응답(`repair_warning`)·전송 기록 | 리간드 루프 | 같음(쓰기 라우트는 이벤트를 남긴 뒤 이 오류로 답할 수 있다) |
+
+환경 없음(설치 템플릿을 읽지 못함)은 어느 읽기에서든 행 단위 `valid: false`가 아니라 읽기 전체의 412 `precondition`이다.
+
+### 하류 보고서 형식 버전
+결과의 구조가 보완 구조일 때만 새 보고서가 새 형식 버전이 되고, 그 밖의 결과는 이전 버전과 바이트 그대로다. 요청·응답 모양·라우트는 같고, `/reports`·`/reports/selected`·`/reports/download`는 모든 버전을 받으며 이미 저장된 이전 버전 보고서는 같은 바이트로 다시 열린다.
+
+| 보고서 | 이전 버전 | 보완 구조일 때 | 조건 | 버전과 구조가 맞지 않을 때(422 `report_evidence_invalid`) |
+|---|---|---|---|---|
+| M20 변이 후보 | `mutation_candidates_markdown@1`·`@2` | `mutation_candidates_markdown@3` | 집합의 구조가 보완 구조 | `mutation_report_structure_origin_mismatch` |
+| M21 변이 구조 모델 | `mutation_model_markdown@1` | `mutation_model_markdown@2` | 모델의 구조(후보 집합의 구조)가 보완 구조 | `mutation_model_report_structure_origin_mismatch` |
+| M24 JEV 판정 | `jev_choice_markdown@1` | `jev_choice_markdown@2` | 변이 종류 제안의 후보 집합 구조가 보완 구조 | `jev_report_structure_origin_mismatch` |
+| M25 JEV 루프 | `jev_loop_markdown@1` | `jev_loop_markdown@2` | 단백질 갈래 풀 후보 집합의 구조가 보완 구조 | `jev_loop_report_structure_origin_mismatch` |
+| M18 리간드 도킹 | `ligand_docking_markdown@1` | `ligand_docking_markdown@2` | 수용체 출처 모델(M21 `mutation_model@1` → 후보 집합, 또는 M23 `mutation_set_model@1` → 서열 GA → 후보 집합)의 구조가 보완 구조 | `docking_report_structure_origin_mismatch` |
+| M23 서열 GA | `sequence_ga_markdown@1` | 바뀌지 않음 | — | — |
+
+- 새 버전 공통: 이전 버전의 manifest 키 + `structure_origin{repair_record, repaired_structure, source_structure, statements:[{id, text}]}`(SO1, M20 `@3`은 원본 구조의 참조 결과를 쓸 때 SO3도), 이전 주장 뒤에 보완 기록(`source_kind: "structure_repair"`, `source_schema: "structure_repair@1"`)을 인용하는 `computed` 주장 둘 `repair_added_residue_count`(`counts.added_residues`)·`repair_added_atom_count`(`counts.added_atoms`)(`row_selector` null, subject `{repair_record_handle, repaired_structure_handle}`, 단위 `count`, 기록의 행을 다시 센 값과 같아야 함, M18 주장에는 `reference` 키가 없고 나머지는 `reference: null`), Markdown "## Limitations" 바로 앞의 "## 구조 출처" 절(고정 문장, 보완 기록·보완 구조·원본 구조 handle, 추가 잔기 수·추가 원자 수).
+- M20 `@3`만: `@2` 키 전부(`reference_snapshot_sets`는 늘 있고 빈 목록일 수 있으며, "## 참조 스냅샷" 절은 비지 않을 때만), 원본 구조(`repair.source`)에서 만든 참조 결과도 출처 검사에서 받음(`@1`·`@2`는 집합 자신의 구조만), 새 statement ID `repair_modeled_residue_position_count`(두 기록 개수 주장 앞, 후보 집합의 `field_path` `positions[*].residue` 인용, `row_selector` `{"repair_modeled_residue": true}`, quantity `repair_modeled_residue_positions`, 모델링 잔기 위치 수를 읽기와 같은 판정으로 셈, subject `{candidate_set_handle, repair_record_handle, repaired_structure_handle, reference_not_checked}`의 `reference_not_checked`는 그 판정이 한 위치 이상에서 "검사 안 함(모델링 잔기)"으로 보이는 저장 필드 목록). Markdown은 "구조 출처" 절에 모델링 잔기 위치 수 줄을, 번호 대응 절(`numbering`이 목록에 있을 때)과 보호 검사 절(`klifs_sites`·`catalytic`이 있을 때)에 저장 개수가 그 위치를 검사했다는 뜻이 아니라는 줄을 하나씩 더한다.
+- M23 예외: 서열 GA 읽기·보고서 모듈은 호출 키 해시 파일이라 바꾸지 않는다. 보완 구조 기준이라는 사실은 화면과 읽기 응답의 `structure_origin`, 같은 후보 집합의 M20 `@3` 보고서와 구조 보완 보고서에만 실린다.
+- 보완 기록이 검증되지 않으면 이 보고서들을 만들거나 다시 열 때 422 `report_evidence_invalid`(`structure_origin_record_invalid…`·`structure_origin_record_mismatch` 등), 환경 없음은 412다.
+
+### API에서 보이는 한계
+- 취소된 보완 작업은 재시도 대상이 아니고 같은 호출 키는 그 작업을 돌려주므로, 같은 코드에서는 그 전처리 구조를 다시 보완할 수 없다.
+- 입력 좌표가 소수 다섯째 자리 이상이면 작업 모듈이 PDBFixer에 넘기는 PDBx 텍스트(OpenMM `PDBxFile.writeFile`, 소수 넷째 자리) 왕복 때문에 보완 작업이 `coordinates_changed`로 끝나고 1단위가 과금된다(로컬 검증 구조는 셋째 자리).
+- 보완 뒤 단백질 중원자가 약 2,100을 넘으면 M21 작업이 시간 상한 240초 안에 끝나지 않는다(8VF6 측정 1,035초, 수락 R4b 관측 `failed`·`resource_exceeded` "job timeout", 1단위 환불 없음). 상한은 사용자 결정으로 그대로다.
+- 내려받은 보완 mmCIF를 다시 올리면 `calc_flag` `c`가 남아 있어도 manifest `repair` 표지가 없으므로 일반 구조로 다뤄진다.
+
 ## 과거 단계 실행기 (CLI)
 
 `scripts/execute.py <phase> [--dry-run | --resume | --verify | --record-review N --review-report … --reviewed-files … --reviewer-model gpt-6-astra]`. `--verify`는 모델을 호출하지 않고 검토 해시와 수락 명령을 다시 확인한다. 실패하면 0이 아닌 값으로 끝나고 단계 상태를 `error`로, 통과하면 새 `completed_at`을 `phases/index.json`과 그룹 `index.json`에 기록한다. 기본 실행과 `--record-review`는 Codex·GPT-6 전용이다.
+
+M29 수락 실행기: `.venv/bin/python scripts/m29_offscreen_acceptance.py --root <새 QA 루트> --artifacts <새 증거 폴더> [--out <커밋 증거 폴더>] [--rehearse] [--only r1,r3,…] [--structures 1hsg,8vf6,…] [--build auto|always|never] [--m15-reference .deps/reference] [--saved-report-runs runs/m28-fixture-20261012/fixture] [--code-root <dir>]`. 주 체크아웃에서 8000·3000 포트가 빈 채로 돌리며 단계는 fixture 하나다(외부 요청·실호출 0). `--root`(필수)는 Git 제외이고 비어 있는 새 폴더(저장소 `runs/` 자체는 거절), `--artifacts`(필수)는 Git 제외의 새(빈) 폴더, `--out`은 커밋할 텍스트 증거 폴더(기본 `docs/qa/m29-repair-<YYYYMMDD>/acceptance`, `--rehearse`면 `<root>/out-rehearsal`, 비어 있지 않으면 거절)이고 셋 다 `/tmp` 아래는 거절한다. `--rehearse`는 연습이라 `acceptance`가 늘 false이고 결과는 `passed`로만 말하며, `--only`(단계 `r1, r3, r4a, table, r8, r7, r6, r4b, pytest, r9`의 부분집합, 순서는 이 순서로 고정, `r3`·`r9`는 `r1`, `r8`·`r6`·`r4b`는 `table`이 먼저 돌지 않으면 그 단계가 `fail`)와 `--structures`(13개 검증 구조 이름의 부분집합, `table` 단계에만)는 `--rehearse`와 함께일 때만 받는다. `--build auto`(기본)는 `frontend/.next/BUILD_ID`가 지금 프런트 소스로 찍힌 것이 아니면 typecheck 다음 build를 하고, `always`는 늘 하며 `never`는 하지 않는다(그때 찍힌 build가 소스와 다르면 `buildStamped` 관문이 거짓). 실행기는 `mw`를 import하지 않고 loopback API만 부르며(UI 사례의 승인·시작은 하네스의 실제 클릭), GET이 아닌 요청 중 경로에 `limit_approval`·`raise_limits`·`/jev`가 든 것(한도 증액, `/jev`·`/jev_loops` 쓰기)은 보내기 전에 스스로 거절한다(`m29_common.Api`). 판정: `acceptance`는 사례 12개(`R1, R2, R3, R4a, R4b, R5, R6, R7, R8, R9, R10, R11`)가 모두 `pass`(`not_observed`·`fail`은 통과로 세지 않음)이고 관문 11개(`buildStamped`, `browserNonLoopback0`, `providerCalls0`, `dispatchEvents0`, `noForbiddenRequest`, `noServerError`, `noBackendTraceback`, `nothingLeft`, `defaultFoldersAbsent`, `fixedSentencesExported`, `exportClean`)가 모두 true이며 단계 전부를 돌았고 연습이 아닐 때만 true다. 끝에 표준 출력으로 `{acceptance, passed, counts, notPassing, gates, out}` JSON 한 줄을 쓰고, `--out`에 `README.md`·`summary.json`·`cases.json`·`classification-table.{json,md}`·`evidence/`·`binary-artifacts.json`·`SHA256SUMS`를 쓴다. 종료 코드: 0 `acceptance` true(연습은 `passed` true), 1 그 밖(시작 전 폴더·포트·인자 조합 거절 포함), 2 인자 형식 오류(argparse). M29 수락 증거는 `docs/qa/m29-repair-20261013/acceptance/`(소스 고정 `52aa4265` 위의 문서 커밋 `1802a32f`에서 실행, `acceptance: true`, 12사례 `pass`, 관문 11개 true)다.
