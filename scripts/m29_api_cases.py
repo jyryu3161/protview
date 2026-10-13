@@ -782,14 +782,33 @@ def _positions(lab: Lab, rid: str, handle: str, query: str = "") -> list[dict]:
     return rows
 
 
-def klifs_seven_part(repaired_set: dict, original_set: dict) -> tuple[dict, dict]:
-    """Spec 5.3 / R3: the original structure's ``klifs_key_site`` exclusions are exactly the seven documented 8VF6
-    sites, and the set on the repaired structure (same pocket, shell and maps of the original) excludes the same."""
+def klifs_explanations(lab: Lab, events: list[dict], setup: dict) -> dict[str, list[str]]:
+    """Where the original set's positions came from, recomputed by the runner (never the product's protection answer):
+    the lining residues of the stored original pocket set at the ranks the runner asked for (fpocket uses a clock seed,
+    so this run's pocket decides), the 5.0 A ligand shell from the input file, and the runner's own user residue."""
+    pocket: set[str] = set()
+    if setup.get("pocketSet"):
+        content = json.loads(c.stored_object(events, setup["pocketSet"]))
+        pocket = {c.short_ref(residue) for item in content["pockets"] if item["rank"] in setup["pocketRanks"]
+                  for residue in item["lining_residues"]}
+    shell = {c.short_ref(item) for item in oracle.shell_residues(lab.path("8vf6").read_bytes(), "strip_all",
+                                                                  setup["ligand"], setup["radiusA"])}
+    return {"pocket": sorted(pocket), "shell": sorted(shell), "user": [c.short_ref(setup["sideChainResidue"])]}
+
+
+def klifs_seven_part(repaired_set: dict, original_set: dict, explained: dict[str, list[str]]) -> tuple[dict, dict]:
+    """Spec 5.3 / R3: the original structure's ``klifs_key_site`` exclusions hold the seven documented 8VF6 sites (a
+    5.0 A shell probe), every other one is a residue the runner's sources explain (``klifs_explanations``: the run's
+    fpocket lining may add a key site), and the set on the repaired structure excludes exactly the same."""
     def klifs(item: dict) -> list[str]:
         return sorted(c.short_ref(p["residue"]) for p in item["positions"]
                       if "klifs_key_site" in p["exclusion_reasons"])
-    facts = {"repaired": klifs(repaired_set), "original": klifs(original_set), "documented": list(c.KLIFS_SEVEN)}
-    ok = facts["original"] == sorted(c.KLIFS_SEVEN) and facts["repaired"] == facts["original"]
+    original, repaired = klifs(original_set), klifs(repaired_set)
+    extra = sorted(set(original) - set(c.KLIFS_SEVEN))
+    facts = {"repaired": repaired, "original": original, "documented": list(c.KLIFS_SEVEN),
+             "extra": {item: [kind for kind, refs in explained.items() if item in refs] for item in extra}}
+    facts["unexplained"] = [item for item, kinds in facts["extra"].items() if not kinds]
+    ok = set(c.KLIFS_SEVEN) <= set(original) and not facts["unexplained"] and repaired == original
     return c.check("klifs_seven", ok, _fail_text(facts)), facts
 
 
@@ -804,7 +823,7 @@ def r3_case(lab: Lab, row: dict | None, setup: dict | None) -> tuple[dict, dict]
         events = lab.events(rid)
         content = json.loads(c.stored_object(events, seen["set"]))
         original = json.loads(c.stored_object(events, setup["originalSet"]))
-        part, facts["klifs"] = klifs_seven_part(content, original)
+        part, facts["klifs"] = klifs_seven_part(content, original, klifs_explanations(lab, events, setup))
         parts.append(part)
         parts.append(c.check("pocket_handoff", setup.get("pocketSet") is not None, "no pocket set of the original"))
         parts.append(c.check("stored_set_bytes", c.handle_matches(events, seen["set"]),

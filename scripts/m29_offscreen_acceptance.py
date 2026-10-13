@@ -33,7 +33,7 @@ only pass counts and a case that did not run is not_observed (never pass). ``acc
 of ``m29_common.CASES`` passed, every gate held (fresh build stamp, browser non-loopback requests 0, provider calls and
 product credential resolver reads 0, dispatch events 0, no 5xx answer to a runner request or on a harness page (except
 a job start the frontend proxy cut, ``classify_server_errors``, whose job then ended), nothing left (processes and
-8000/3000 listeners), default reference folders absent before and after, the product's fixed
+8000/3000 listeners; an lsof that cannot tell is not "none"), default reference folders absent before and after, the product's fixed
 sentences exported, the evidence searches clean with no text held back for a leak), the whole step list ran and this is
 not ``--rehearse``.
 
@@ -231,6 +231,25 @@ def gate_values(external: dict, *, left: list[str], listening: dict, folders_bef
     }
 
 
+def lsof_listeners(port: int, run=subprocess.run) -> list[str] | None:
+    """The pids listening on ``port`` as lsof reports them (``m13.listening`` reads lsof without its exit code, so a
+    failing lsof would read as "nothing"): exit 0 with pids = listening, exit 1 with no output = nothing; lsof missing,
+    any other exit code or output, or a message on stderr = None (cannot tell)."""
+    try:
+        done = run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"], capture_output=True, text=True, check=False,
+                   timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    pids = (done.stdout or "").split()
+    if (done.stderr or "").strip():
+        return None
+    if done.returncode == 0 and pids:
+        return pids
+    if done.returncode == 1 and not pids:
+        return []
+    return None
+
+
 def held_for_leak(held: list[dict]) -> list[dict]:
     """Texts the export held back for a key pattern, placeholder or user path (size alone is not a leak)."""
     return [item for item in held if item["held"] != "over_256KiB"]
@@ -407,12 +426,17 @@ class Runner(m15.Runner):
         return left
 
     @staticmethod
-    def listeners() -> dict[str, list[str]]:
-        """The processes still listening on 8000 / 3000 once every service of the runner was stopped (waits up to 5 s
-        for a socket to close)."""
-        found: dict[str, list[str]] = {}
-        for _ in range(10):
-            found = {str(port): pids for port in (8000, 3000) if (pids := m13.listening(port))}
+    def listeners(probe=None, tries: int = 10) -> dict[str, list[str] | None]:
+        """The ports of 8000 / 3000 still listened on once every service of the runner was stopped (their pids), or that
+        could not be checked (None); waits up to 5 s for a socket to close. Empty only when lsof said "none" for both."""
+        probe = probe or lsof_listeners
+        found: dict[str, list[str] | None] = {}
+        for _ in range(tries):
+            found = {}
+            for port in (8000, 3000):
+                pids = probe(port)
+                if pids is None or pids:
+                    found[str(port)] = pids
             if not found:
                 break
             time.sleep(0.5)
@@ -770,7 +794,8 @@ class Runner(m15.Runner):
                             folders_after=folders_after, build=self.state.get("build"), fixed=self.fixed)
         cases_out = c.complete_cases(self.records, self.selected_cases())
         judged = c.judge(cases_out, {**gates, "exportClean": True}, rehearsal=self.rehearse, subset=self.subset)
-        remaining = left + [f"listening:{port} {pids}" for port, pids in listening.items()]
+        remaining = left + [f"listening:{port} {pids}" if pids is not None else f"listener_check_failed:{port}"
+                            for port, pids in listening.items()]
         ledger = self.ledger(cases_out, gates, judged, remaining, folders_before, folders_after)
         clean = self.export(ledger)
         gates["exportClean"] = clean

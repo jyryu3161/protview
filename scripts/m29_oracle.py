@@ -19,6 +19,9 @@ runner compares these values with what the product stored. Ported from the T1 pr
     A lower bound of the M18 receptor atoms (hydrogens included) of a one-point M21 model on the repaired structure:
     the fewest-atom template form of every residue after repair (R4a: the receptor atom cap may only explain a refused
     docking when this bound is above the cap).
+``shell_residues(raw, waters, ligand, radius_A) -> list[dict]``
+    The M20 ligand shell recomputed from the input file: the polymer residues of the prepared view with a heavy atom
+    within ``radius_A`` of a heavy atom of the ligand residue (R3: what may explain a key-site exclusion).
 ``mutable_residue(row, skip=()) -> dict | None``
     A residue to put a mutation on (the third standard residue of the first chain that is not GLY / PRO / CYS / MSE and
     has a complete side chain): a deterministic choice of the runner, not a design suggestion.
@@ -353,6 +356,30 @@ def receptor_atoms_lower_bound(row: dict, tpl: Templates) -> int:
     if not counts:
         return 0
     return sum(counts) - max(counts) + min(tpl.fewest_atoms(name) for name in STANDARD)
+
+
+def shell_residues(raw: bytes, waters: str, ligand: dict, radius_A: float) -> list[dict]:
+    """The polymer residues (``het_flag`` A, as the M20 walk) of the prepared view of ``raw`` whose heavy atoms come
+    within ``radius_A`` of the heavy atoms of the ligand residue ``ligand`` (model, chain_auth, seq_auth, icode,
+    resname), in file order; empty when the ligand is not in the file."""
+    st, _text = prepared_view(raw, waters)
+    model = st[0]
+
+    def heavy(res: Any) -> list[tuple]:
+        return [(a.pos.x, a.pos.y, a.pos.z) for a in res if a.element.name not in HYDROGENS]
+    want = (ligand["chain_auth"], ligand["seq_auth"], ligand.get("icode") or "", ligand["resname"])
+    target = [xyz for chain in model for res in chain
+              if (chain.name, res.seqid.num, res.seqid.icode.strip(), res.name) == want for xyz in heavy(res)]
+    if not target:
+        return []
+    out = []
+    for chain in model:
+        for res in chain:
+            own = heavy(res)
+            if res.het_flag == "A" and not res.is_water() and own and \
+                    min(math.dist(a, b) for a in own for b in target) <= radius_A:
+                out.append(ref(chain, res, model.num))
+    return out
 
 
 def mutable_residue(row: dict, skip: tuple[str, ...] = ()) -> dict | None:

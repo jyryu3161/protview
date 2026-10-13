@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import base64
 import json
 import os
 import re
@@ -374,13 +375,44 @@ def _set(*klifs: str) -> dict:
     return {"positions": positions}
 
 
-def test_r3_klifs_needs_exactly_the_seven_documented_sites():
+def test_r3_klifs_needs_the_seven_and_explains_every_other_key_site():
+    explained = {"pocket": ["A/163/GLU"], "shell": list(c.KLIFS_SEVEN), "user": ["A/100/LYS"]}
     seven = _set(*c.KLIFS_SEVEN)
-    assert cases.klifs_seven_part(seven, seven)[0]["status"] == "pass"
-    eight = _set(*c.KLIFS_SEVEN, "A/150/VAL")
-    assert cases.klifs_seven_part(eight, eight)[0]["status"] == "fail"      # a superset of the seven is not the seven
-    six = _set(*c.KLIFS_SEVEN[:6])
-    assert cases.klifs_seven_part(six, seven)[0]["status"] == "fail"
+    assert cases.klifs_seven_part(seven, seven, explained)[0]["status"] == "pass"            # the seven only
+    pocketed = _set(*c.KLIFS_SEVEN, "A/163/GLU")                                               # + a pocket lining site
+    part, facts = cases.klifs_seven_part(pocketed, pocketed, explained)
+    assert part["status"] == "pass" and facts["extra"] == {"A/163/GLU": ["pocket"]} and facts["unexplained"] == []
+    stray = _set(*c.KLIFS_SEVEN, "A/266/PHE")                                                  # + a site no source holds
+    part, facts = cases.klifs_seven_part(stray, stray, explained)
+    assert part["status"] == "fail" and facts["unexplained"] == ["A/266/PHE"]
+    six = _set(*c.KLIFS_SEVEN[:6])                                                             # one of the seven missing
+    assert cases.klifs_seven_part(six, six, explained)[0]["status"] == "fail"
+    assert cases.klifs_seven_part(seven, pocketed, explained)[0]["status"] == "fail"          # repaired != original
+    assert cases.klifs_seven_part(pocketed, pocketed, {})[0]["status"] == "fail"
+
+
+def test_r3_explanations_come_from_the_stored_pocket_the_input_shell_and_the_users_residue():
+    raw = (FIX / "public_8vf6.cif").read_bytes()
+    shell = {c.short_ref(item) for item in oracle.shell_residues(raw, "strip_all", c.LIGAND_8VF6, 5.0)}
+    assert set(c.KLIFS_SEVEN) <= shell                       # the documented seven are the 5.0 A shell's (T1 probe S1)
+    assert not shell & {"A/163/GLU", "A/266/PHE", "A/267/GLY"}         # the 12 A probe's extra sites are not
+    assert oracle.shell_residues(raw, "strip_all", {**c.LIGAND_8VF6, "seq_auth": 9999}, 5.0) == []
+    pocket = {"pockets": [{"rank": 1, "lining_residues": [{"model_number": 1, "chain_auth": "A", "chain_label": "A",
+                                                            "seq_auth": 163, "seq_label": 66, "icode": "",
+                                                            "resname": "GLU"}]},
+                          {"rank": 2, "lining_residues": [{"model_number": 1, "chain_auth": "A", "chain_label": "A",
+                                                            "seq_auth": 266, "seq_label": 169, "icode": "",
+                                                            "resname": "PHE"}]}]}
+    handle = "obj://run_x/pocket_set/" + "0" * 64
+    events = [{"type": "object_created", "handle": handle,
+               "payload_b64": base64.b64encode(json.dumps(pocket).encode()).decode()}]
+    lab = types.SimpleNamespace(path=lambda name: FIX / f"public_{name}.cif")
+    setup = {"pocketSet": handle, "pocketRanks": [1], "ligand": c.LIGAND_8VF6, "radiusA": 5.0,
+             "sideChainResidue": {"chain_auth": "A", "seq_auth": 100, "icode": "", "resname": "LYS"}}
+    explained = cases.klifs_explanations(lab, events, setup)
+    assert explained["pocket"] == ["A/163/GLU"] and explained["user"] == ["A/100/LYS"]          # rank 2 not asked for
+    assert set(explained["shell"]) == shell
+    assert cases.klifs_explanations(lab, events, {**setup, "pocketSet": None})["pocket"] == []
 
 
 def test_r6_viewer_needs_the_original_structure_offered():
@@ -542,6 +574,36 @@ def test_the_proxy_log_summary_never_carries_a_path():
     assert c.leak_kinds(text) == [] and "/Users" not in text and RUN not in text and JOB not in text
     proxied, _other = _classify([CUT], log=line)
     assert c.leak_kinds(json.dumps(proxied)) == []
+
+
+def _lsof(returncode=None, stdout="", stderr="", raises=None):
+    def run(argv, **kwargs):
+        assert argv[0] == "lsof" and kwargs.get("check") is False
+        if raises is not None:
+            raise raises
+        return types.SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
+    return run
+
+
+def test_lsof_answers_listening_none_or_cannot_tell():
+    import m29_offscreen_acceptance as runner
+    assert runner.lsof_listeners(8000, _lsof(0, "4321\n")) == ["4321"]                    # exit 0 + output: listening
+    assert runner.lsof_listeners(8000, _lsof(1, "")) == []                                 # exit 1 + nothing: none
+    assert runner.lsof_listeners(8000, _lsof(2, "")) is None                               # another exit code
+    assert runner.lsof_listeners(8000, _lsof(raises=FileNotFoundError("lsof"))) is None    # lsof missing
+    assert runner.lsof_listeners(8000, _lsof(1, "", "lsof: WARNING: can't stat()")) is None
+    assert runner.lsof_listeners(8000, _lsof(0, "")) is None
+    assert runner.lsof_listeners(8000, _lsof(1, "4321\n")) is None
+
+
+def test_nothing_left_is_false_when_the_listener_check_cannot_tell():
+    import m29_offscreen_acceptance as runner
+    assert runner.Runner.listeners(lambda port: [], tries=1) == {}
+    assert runner.Runner.listeners(lambda port: ["4321"] if port == 3000 else [], tries=1) == {"3000": ["4321"]}
+    unknown = runner.Runner.listeners(lambda port: None, tries=1)
+    assert unknown == {"8000": None, "3000": None}
+    assert _gates(listening=unknown)["nothingLeft"] is False
+    assert _gates(listening={})["nothingLeft"] is True
 
 
 def test_export_is_not_clean_when_a_text_was_held_for_a_leak():
