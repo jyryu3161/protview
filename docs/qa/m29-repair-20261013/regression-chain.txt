@@ -24,6 +24,6 @@ Cases (baseline from the M28 record -> now; counts equal for every runner):
   m13 (M8-M12 included): 28 -> 28 pass
 Total 441 -> 441 (M27 .. M13) and 31 -> 31 (M28 fixture). No case was added or removed.
 External requests: M28 fixture browser non-loopback requests 0, provider calls 0 (fixture server only, product key resolver calls 0); M27 and M26 flow rows 0 non-loopback browser requests and zero provider calls; M25 re-run real calls 0 (fixture server only).
-Old-stage harness or runner changes needed: one expectation in frontend/tests/offscreen/jev-loop-flow.cjs (docs/qa/m29-repair-20261013/regression-harness-changes.txt). git diff --name-only 52aa4265..HEAD lists docs/**, README.md, the AGENTS.md documents and that one harness file.
+Old-stage harness or runner changes needed: one expectation in frontend/tests/offscreen/jev-loop-flow.cjs (docs/qa/m29-repair-20261013/regression-harness-changes.txt). git diff --name-only 52aa4265..HEAD lists docs/**, README.md, CLAUDE.md, the AGENTS.md documents and that one harness file.
 Evidence larger than 256 KiB (54 text files, about 334 MB: M13 regression 52, M14 1, M15 1) is archived under frontend/tests/offscreen/artifacts/m29-repair/export-full/ (decision 0020, git-ignored) with hashes in each folder's ARCHIVED-EVIDENCE.sha256. A leak search over the committed regression folder (absolute home-directory paths, key patterns) found 0 hits.
 Raw per-runner stdout logs of this chain are not committed (the same information is in each runner's committed README and case ledger).
