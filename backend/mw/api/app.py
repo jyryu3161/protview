@@ -2087,8 +2087,9 @@ def docking_result_contacts(rid: str, request: Request, handle: str,
                             mode: int = Query(..., ge=1, le=docking_reads.MODE_MAX),
                             offset: int = Query(0, ge=0),
                             limit: int = Query(docking_reads.CONTACT_LIMIT_DEFAULT, ge=1,
-                                               le=docking_reads.CONTACT_LIMIT_MAX)) -> dict[str, Any]:
-    """One mode's stored geometric contact rows (ligand_serial, site_index order), paged."""
+                                               le=docking_reads.CONTACT_LIMIT_MAX)) -> Any:
+    """One mode's stored geometric contact rows (ligand_serial, site_index order), paged. M29: plus
+    ``structure_origin`` when the receptor is a model on a repaired structure, re-checked as on the detail."""
     _only_query(request, {"handle", "mode", "offset", "limit"})
     run = _run(rid)
     _docking_result(run, handle)
@@ -2098,6 +2099,8 @@ def docking_result_contacts(rid: str, request: Request, handle: str,
         raise _docking_evidence_error(exc) from exc
     except docking_reads.ModeUnknown as exc:
         raise _docking_mode_unknown(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/docking/results/pose_sdf")
@@ -2239,8 +2242,9 @@ def mutation_candidate_rows(rid: str, handle: str, request: Request,
                             position_index: int | None = Query(None, ge=0), to: str | None = None,
                             offset: int = Query(0, ge=0),
                             limit: int = Query(mutation_reads.CANDIDATE_LIMIT_DEFAULT, ge=1,
-                                               le=mutation_reads.CANDIDATE_LIMIT_MAX)) -> dict[str, Any]:
-    """Stored candidate rows (residue copied from the position row), filtered on stored values."""
+                                               le=mutation_reads.CANDIDATE_LIMIT_MAX)) -> Any:
+    """Stored candidate rows (residue copied from the position row), filtered on stored values. M29: plus
+    ``structure_origin`` for a set on a repaired structure, re-checked as on the detail."""
     _only_query(request, {"position_index", "to", "offset", "limit"})
     run = _run(rid)
     _mutation_set(run, handle)
@@ -2251,6 +2255,8 @@ def mutation_candidate_rows(rid: str, handle: str, request: Request,
         raise _read_invalid(exc) from exc
     except mutation_reads.MutationEvidenceError as exc:
         raise _mutation_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/mutation_candidate_sets/{handle:path}")
@@ -2301,8 +2307,9 @@ def mutation_models(rid: str, request: Request, offset: int = Query(0, ge=0),
 def mutation_model_contacts(rid: str, handle: str, request: Request, structure: str,
                             page: int = Query(1, ge=1),
                             page_size: int = Query(mutation_model_reads.CONTACT_PAGE_SIZE_DEFAULT, ge=1,
-                                                   le=mutation_model_reads.CONTACT_PAGE_SIZE_MAX)) -> dict[str, Any]:
-    """One structure's stored contact rows (stored order), by page."""
+                                                   le=mutation_model_reads.CONTACT_PAGE_SIZE_MAX)) -> Any:
+    """One structure's stored contact rows (stored order), by page. M29: plus ``structure_origin`` for a model on a
+    repaired structure, re-checked as on the detail."""
     _only_query(request, {"structure", "page", "page_size"})
     run = _run(rid)
     _mutation_model(run, handle)
@@ -2312,6 +2319,8 @@ def mutation_model_contacts(rid: str, handle: str, request: Request, structure: 
         raise _read_invalid(exc) from exc
     except mutation_model_reads.MutationEvidenceError as exc:
         raise _mutation_model_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
 
 
 @app.get("/runs/{rid}/mutation_models/{handle:path}/structure")
@@ -2332,9 +2341,10 @@ def mutation_model_structure(rid: str, handle: str, request: Request, side: str)
 
 
 @app.get("/runs/{rid}/mutation_models/{handle:path}/docking_pairs")
-def mutation_model_docking_pairs(rid: str, handle: str, request: Request) -> dict[str, Any]:
+def mutation_model_docking_pairs(rid: str, handle: str, request: Request) -> Any:
     """Same-condition M18 docking on the two structures, every condition group listed; scores only when both
-    sides are published results (spec 7)."""
+    sides are published results (spec 7). M29: plus ``structure_origin`` for a model on a repaired structure,
+    re-checked as on the detail."""
     _only_query(request, set())
     run = _run(rid)
     _mutation_model(run, handle)
@@ -2342,6 +2352,8 @@ def mutation_model_docking_pairs(rid: str, handle: str, request: Request) -> dic
         return mutation_model_reads.docking_pairs(run, handle)
     except mutation_model_reads.MutationEvidenceError as exc:
         raise _mutation_model_evidence_error(exc) from exc
+    except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
+        return _tool_error(exc)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid docking job record"}) from exc
 
