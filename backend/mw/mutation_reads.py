@@ -11,14 +11,28 @@
 * ``candidate_page()``: stored candidate rows filtered by ``position_index`` / ``to``, each with the residue and
   ``standard_resname`` copied from its position row; ``total`` after the filter.
 
+* M29 (spec 5.3, 5.4), only for a set whose structure is a repaired structure (``mutation_handoff.read_view``): the
+  detail and the position page also carry ``repair_handoff`` (``references``: the set's reference results made on the
+  original structure; ``statements``: SO2 / SO3 as ``{id, text}``), and every position row of the page also carries
+  ``modeled_basis`` (bool) and ``reference_not_checked`` (the stored fields shown as not checked, modeled residue).
+  Every read of such a set, the list row included, re-verifies the repair record against the original and repaired
+  structures (``mutation_handoff.validated_origin``): a record or structure mismatch is ``MutationEvidenceError`` (a
+  list row ``valid: false`` with null fields); an environment failure (``ToolFailure`` of class ``precondition``,
+  e.g. ``openmm_unavailable`` when the installed template cannot be read) is raised as it is, never as invalid
+  evidence (spec 4.6). The stored set is never changed; for any other set no key is added and nothing is re-verified
+  (the bytes are what they were).
+
 Every read loads the stored object from the store (content-hash check) and runs ``mutation_candidates.validated_set``;
 any failure raises ``MutationEvidenceError``. The caller checks the handle's run, kind and schema first.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from . import mutation_candidates as mc
+from . import mutation_handoff
+from .core.errors import FailureClass, ToolFailure
 from .mutation_constants import EXCLUSION_REASONS_V2, KIND, ONE_LETTER_ORDER, POSITION_STATUSES, SCHEMA, SOURCE_KINDS
 
 LIST_LIMIT_DEFAULT, LIST_LIMIT_MAX = 50, 100
@@ -57,12 +71,14 @@ def list_sets(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run)
     newest = list(reversed(created))
     rows = []
+    verified: dict[str, bool] = {}   # repaired structure -> its record verified (once per list read)
     for handle in newest[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]}
         try:
             if run.store.meta(handle)["schema"] != SCHEMA:
                 raise MutationEvidenceError("unexpected schema")
             content = validated(run, handle)
+            _verify_repair(run, content["structure"]["handle"], verified)
             parameters, sources = content["parameters"], content["parameters"]["sources"]
             row.update(valid=True, structure=content["structure"]["handle"],
                        model_number=content["structure"]["model_number"], ligand=content["ligand"],
@@ -85,12 +101,46 @@ def catalytic_status(content: dict[str, Any]) -> str:
     return content["protection_checks"]["catalytic_residue_database"]["status"]
 
 
+def _repair_checked(call: Callable[..., Any], *args: Any) -> Any:
+    """``call(*args)`` with the M29 read mapping: a ``precondition`` failure (the environment) is raised as it is;
+    any other failure (record, structure or stored object) is ``MutationEvidenceError``."""
+    try:
+        return call(*args)
+    except ToolFailure as exc:
+        if exc.cls is FailureClass.precondition:
+            raise
+        raise MutationEvidenceError("the repaired structure of the set does not validate") from exc
+    except (KeyError, TypeError, ValueError) as exc:
+        raise MutationEvidenceError("the repaired structure of the set does not validate") from exc
+
+
+def _verify_repair(run: Any, structure: str, verified: dict[str, bool]) -> None:
+    """A list row's repair re-verification (``validated_origin``); nothing for a structure that is not repaired."""
+    if structure not in verified:
+        try:
+            _repair_checked(mutation_handoff.validated_origin, run.store, structure)
+            verified[structure] = True
+        except MutationEvidenceError:
+            verified[structure] = False
+    if not verified[structure]:
+        raise MutationEvidenceError("the repaired structure of the set does not validate")
+
+
+def repair_view(run: Any, content: dict[str, Any]) -> dict[str, Any] | None:
+    """``mutation_handoff.read_view`` of a validated set (None unless its structure is a repaired structure)."""
+    return _repair_checked(mutation_handoff.read_view, run.store, content)
+
+
 def set_detail(run: Any, handle: str) -> dict[str, Any]:
     content = validated(run, handle)
-    return {"schema": "mutation_candidate_set_detail@1", "handle": handle,
-            "result": {key: value for key, value in content.items() if key not in ("positions", "candidates")},
-            "total_positions": len(content["positions"]), "total_candidates": len(content["candidates"]),
-            "catalytic_status": catalytic_status(content)}
+    detail = {"schema": "mutation_candidate_set_detail@1", "handle": handle,
+              "result": {key: value for key, value in content.items() if key not in ("positions", "candidates")},
+              "total_positions": len(content["positions"]), "total_candidates": len(content["candidates"]),
+              "catalytic_status": catalytic_status(content)}
+    view = repair_view(run, content)
+    if view is not None:
+        detail["repair_handoff"] = view["repair_handoff"]
+    return detail
 
 
 def _closed(value: str | None, closed: tuple[str, ...], name: str) -> None:
@@ -119,10 +169,15 @@ def position_page(run: Any, handle: str, *, status: str | None, source: str | No
             and (exclusion_reason is None or exclusion_reason in row["exclusion_reasons"])
             and (chain_auth is None or row["residue"]["chain_auth"] == chain_auth)]
     rows = position_order(rows, sort)
-    return {"schema": "mutation_position_page@1", "handle": handle,
+    page = {"schema": "mutation_position_page@1", "handle": handle,
             "filters": {"status": status, "source": source, "exclusion_reason": exclusion_reason,
                         "chain_auth": chain_auth},
             "sort": sort, "total": len(rows), "offset": offset, "limit": limit, "rows": rows[offset:offset + limit]}
+    view = repair_view(run, content)
+    if view is not None:
+        page["rows"] = [{**row, **view["positions"][row["index"]]} for row in page["rows"]]
+        page["repair_handoff"] = view["repair_handoff"]
+    return page
 
 
 def candidate_page(run: Any, handle: str, *, position_index: int | None, to: str | None, offset: int,
