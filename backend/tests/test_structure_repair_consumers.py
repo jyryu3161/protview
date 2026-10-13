@@ -17,9 +17,12 @@ A consumer is any function, class or route of ``backend/mw`` that
   (``structure_handle``, ``prepared_handle``, ``input_handle``) on a model, or is a route with a ``structure`` query.
 
 Each consumer must be DECLARED below (receive | refuse | read_only | blocked_upstream | judgement | unrelated, one
-reason line each) or call the refusal itself. A declaration names one definition (T12, review B2: no file wildcard
-``*``, which would let a new consumer function of the file pass; a wildcard is reported), so a new consumer function
-in any file is undeclared until it is declared or refuses. A ``refuse`` or ``blocked_upstream`` declaration names the
+reason line each) or call the refusal itself. A declaration names exactly one definition (T12, review B2: no file
+wildcard ``*``, which would let a new consumer function of the file pass, and a wildcard is reported; a declared class
+or function covers only its own body, so a method ``Class.method`` or a nested ``outer.inner`` is declared on its own,
+and "calls the refusal itself" is the consumer's own definition, never its enclosing class). A new consumer function
+or method in any file is therefore undeclared until it is declared or refuses. A ``refuse`` or ``blocked_upstream``
+declaration names the
 guard functions it relies on, and each named guard must contain a refusal call (``reject_if_repaired``, or the API
 helper ``_repaired_refusal`` that calls it). ``receive``, ``read_only`` and ``judgement`` points must not refuse. The
 tool contracts that accept a prepared structure (or a numbering map, which only a structure makes) are declared per
@@ -103,8 +106,8 @@ def _each(rel: str, names: tuple[str, ...], category: str, guards: tuple[str, ..
 
 
 # --- the declaration table: (file, qualname) -> (category, guards, reason) -----------------------------------------
-# A qualname matches itself, then its top-level definition, then ``register.<name>``. A file wildcard ``*`` matches
-# nothing and is reported: each consumer definition is declared on its own.
+# A hit matches the declaration of exactly its qualname (T12): a class or a function declaration covers its own body
+# only, never a method or nested function added to it. A file wildcard ``*`` matches nothing and is reported.
 DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     # ---- Run.call tools (POST /commands, the M13 driver, the inspect_complex pipeline): refused in _validated_bound
     (M + "tools/structural.py", "register.compute_interactions"): (F, (G_RUN,), "compute_interactions"),
@@ -158,8 +161,8 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "saved_scenes.py", "scene_detail"): (BU, (G_SCENE,), "reopen of a saved view"),
     (M + "saved_scenes.py", "FigureSave"): (F, (G_FIGURE,), "figure request structure_handle"),
     (M + "saved_scenes.py", "FigureArtifact"): (BU, (G_FIGURE, G_SCENE), "stored figure model of a saved view"),
-    (M + "api/app.py", "viewer_scene_save"): (F, (G_SCENE,), "POST /viewer/scenes"),
-    (M + "api/app.py", "viewer_figure_save"): (F, (G_FIGURE,), "POST /viewer/figures"),
+    (M + "api/app.py", "viewer_scene_save.save"): (F, (G_SCENE,), "POST /viewer/scenes (its inner writer call)"),
+    (M + "api/app.py", "viewer_figure_save.save"): (F, (G_FIGURE,), "POST /viewer/figures (its inner writer call)"),
     # ---- inspection report and the fixed inspect_complex pipeline (T1: outside the spec list)
     (M + "api/app.py", "create_report"): (F, (G_REPORT,), "POST /reports prepared_handle"),
     (M + "api/app.py", "ReportRequest"): (F, (G_REPORT,), "report request prepared_handle"),
@@ -174,7 +177,8 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "workflows.py", "inspect_complex"): (F, (G_INSPECT, G_RUN), "pipeline (its steps are Run.call)"),
     (M + "workflows.py", "_verified_content"): (BU, (G_INSPECT,), "replay check of a pipeline's recorded steps"),
     # ---- M13 analysis flows: refused at the plan route; the M13 modules are unchanged (spec 5.2)
-    (M + "api/app.py", "analysis_plan_create"): (F, (G_PLAN,), "POST /analysis/plans walks the inputs"),
+    (M + "api/app.py", "analysis_plan_create.create"): (
+        F, (G_PLAN,), "POST /analysis/plans walks the inputs (its inner plan call)"),
     **_each(M + "analysis_plans.py", (
         "<module>", "Preparation", "_compatibility", "_structure_meta", "_output", "_inspect_ligand", "_measure_atoms",
         "_compare", "_chemical", "_find_cavities", "_minimize", "compile_plan", "validate_plan"),
@@ -260,7 +264,7 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "structure_repair_constants.py", "<module>"): (U, (), "M29 constants (kinds, schemas)"),
     **_each(M + "structure_repair.py", ("RepairInputs", "load_inputs", "coordinates_handle", "_record"), U, (),
             "M29 repair core: input of the repair lane, a repaired input is already_repaired (spec 4.2)"),
-    **_each(M + "structure_repair_bundle.py", ("repaired_manifest", "Pending", "pending", "producer",
+    **_each(M + "structure_repair_bundle.py", ("repaired_manifest", "Pending.handles", "pending", "producer",
                                                "validated_result"),
             U, (), "M29 repair publication (producer of repaired structures)"),
     **_each(M + "structure_repair_jobs.py", ("admission", "m7_check"), U, (),
@@ -528,16 +532,10 @@ def calls(node: ast.AST, names: Iterable[str]) -> bool:
     return False
 
 
-def _keys(rel: str, qual: str) -> tuple[tuple[str, str], ...]:
-    """Exact (file, qualname), then the top-level definition, then ``register.<name>`` (no file wildcard, T12)."""
-    return (rel, qual), (rel, qual.split(".")[0]), (rel, "register." + qual.split(".")[-1])
-
-
 def classify(rel: str, qual: str, declared: dict) -> tuple[str, tuple[str, ...], str] | None:
-    for key in _keys(rel, qual):
-        if key in declared:
-            return declared[key]
-    return None
+    """The declaration of exactly (file, qualname) (T12): no file wildcard, and a declared class or function never
+    covers a method or a nested function added to it."""
+    return declared.get((rel, qual))
 
 
 def _module_constant(tree: ast.Module, name: str) -> Any:
@@ -586,7 +584,8 @@ def problems(sources: dict[str, str], declared: dict, tool_lanes: dict, tools: l
         return defs.get(rel, {}).get(qual) if qual != "<module>" else trees.get(rel)
 
     def refuses(rel: str, qual: str) -> bool:
-        target = node((rel, qual.split(".")[0])) if qual != "<module>" else None
+        """The consumer's own definition calls the refusal (T12: never another method of its class)."""
+        target = node((rel, qual)) if qual != "<module>" else None
         return target is not None and calls(target, REFUSAL_CALLS)
 
     def guard_ok(guard: str) -> bool:
@@ -599,9 +598,9 @@ def problems(sources: dict[str, str], declared: dict, tool_lanes: dict, tools: l
         if entry is None:
             if not refuses(hit.rel, hit.qual):
                 found.append(f"undeclared consumer {hit.rel}:{hit.line} {hit.qual} ({hit.pattern}): a new function "
-                             "needs a declaration of its own or a refusal call")
+                             "or method needs a declaration of its own or a refusal call")
             continue
-        used.add(next(key for key in _keys(hit.rel, hit.qual) if key in declared))
+        used.add((hit.rel, hit.qual))
     for key, (category, guards, reason) in sorted(declared.items()):
         rel, qual = key
         where = f"{rel}::{qual}"
@@ -773,7 +772,7 @@ def test_a_new_consumer_function_in_any_declared_file_is_caught():
     probe = '\n\ndef m29_t12_probe(store, handle):\n    return store.meta(handle)["kind"] == "prepared_structure"\n'
     found = _check({**sources, **{rel: sources[rel] + probe for rel in files}})
     assert found and all(item.startswith("undeclared consumer ") and " m29_t12_probe " in item and
-                         item.endswith("a new function needs a declaration of its own or a refusal call")
+                         item.endswith("a new function or method needs a declaration of its own or a refusal call")
                          for item in found), found
     assert {item.split()[2].rsplit(":", 1)[0] for item in found} == set(files)
     # the review's probe: a new read function of numbering_reads.py (once a file wildcard) calling the structure
@@ -794,3 +793,48 @@ def test_a_new_consumer_function_in_any_declared_file_is_caught():
     found = _check({**sources, rel: reads}, declared={**DECLARED, (rel, "*"): (RO, (), "probe wildcard")})
     assert sorted(item.split(":")[0] for item in found) == sorted([
         f"file wildcard {rel}", f"stale declaration {rel}", f"undeclared consumer {rel}"]), found
+
+
+KIND_PROBE = ('{indent}def {name}({args}store, handle):\n'
+              '{indent}    return store.meta(handle)["kind"] == "prepared_structure"\n')
+
+
+def _with_method(text: str, rel: str, cls: str) -> str:
+    """The source with a probe method reading a prepared structure's kind added at the end of class ``cls``."""
+    node = definitions(rel, text)[cls]
+    lines = text.splitlines(keepends=True)
+    lines.insert(node.end_lineno, "\n" + KIND_PROBE.format(indent=" " * (node.col_offset + 4), name="m29_t12_probe",
+                                                           args="self, "))
+    return "".join(lines)
+
+
+def test_a_new_consumer_method_or_nested_function_of_a_declared_definition_is_caught():
+    """T12 (re-review): a declared class covers its own body only (its fields), so a new method reading a prepared
+    structure is undeclared even when another method of the class refuses (``JobQueue.submit``,
+    ``Run._validated_bound``), and a nested function added to a declared function is undeclared too (in-memory
+    sources only)."""
+    sources, _tools = _real()
+    classes = sorted({(rel, qual.split(".")[0]) for rel, qual in DECLARED
+                      if isinstance(definitions(rel, sources[rel]).get(qual.split(".")[0]), ast.ClassDef)})
+    assert len(classes) == 13 and {(ORCHESTRATOR, "Run"), (M + "jobs/queue.py", "JobQueue"),
+                                   (M + "structure_repair_bundle.py", "Pending"),
+                                   (M + "saved_scenes.py", "SceneSave")} <= set(classes), classes
+    edited = dict(sources)
+    for rel, cls in classes:
+        edited[rel] = _with_method(edited[rel], rel, cls)
+    found = _check(edited)
+    assert all(item.startswith("undeclared consumer ") for item in found), found
+    assert {(item.split()[2].rsplit(":", 1)[0], item.split()[3]) for item in found} == {
+        (rel, f"{cls}.m29_t12_probe") for rel, cls in classes}, found
+    # a nested function at the start of a declared function's body
+    rel, outer = M + "numbering_reads.py", "pdb_id_hint"
+    first = definitions(rel, sources[rel])[outer].body[0]
+    lines = sources[rel].splitlines(keepends=True)
+    lines.insert(first.lineno - 1, KIND_PROBE.format(indent=" " * first.col_offset, name="m29_t12_inner", args=""))
+    found = _check({**sources, rel: "".join(lines)})
+    assert len(found) == 2 and all(item.startswith(f"undeclared consumer {rel}:") and
+                                   f" {outer}.m29_t12_inner " in item for item in found), found
+    # declaring exactly the new method passes
+    rel, cls = M + "saved_scenes.py", "SceneSave"
+    assert _check({**sources, rel: _with_method(sources[rel], rel, cls)},
+                  declared={**DECLARED, (rel, f"{cls}.m29_t12_probe"): (F, (G_SCENE,), "probe")}) == []
