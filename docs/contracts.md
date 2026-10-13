@@ -418,7 +418,7 @@ M29: `structure`에 이 run의 게시·검증된 보완 구조를 받는다(모�
 
 규칙은 `docs/business-rules.md` "변이 구조 모델링 (M21, `openmm_mutation_model_v1`)". 읽기 호출은 run 객체만 읽고 도구·작업·이벤트·OpenMM·PDBFixer·외부 요청을 만들지 않으며, 알 수 없는 쿼리 파라미터는 422 `input_invalid`다. handle은 URL **경로**에 그대로 넣는다(`{handle:path}`, M20과 같음). 새 쓰기 라우트는 없다(같은 조건 도킹은 기존 `POST /jobs`로 M18 작업 둘).
 
-M29: 후보 집합의 구조가 보완 구조여도 인자·입장·호출 키는 그대로다. 읽기(목록 행·상세·`/contacts`·`/docking_pairs`)에 `structure_origin`이 붙고(`/structure` 바이트에는 없음) 새 보고서는 `mutation_model_markdown@2`다. 시간 상한 240초는 그대로라 보완 뒤 단백질 중원자가 약 2,100을 넘는 구조는 시간 안에 끝나지 않을 수 있다(아래 "M29 구조 보완").
+M29: 후보 집합의 구조가 보완 구조여도 인자·입장·호출 키는 그대로다. 읽기(목록 행·상세·`/contacts`·`/docking_pairs`)에 `structure_origin`이 붙고(`/structure` 바이트에는 없음) 새 보고서는 `mutation_model_markdown@2`다. 시간 상한 240초는 그대로라 보완 뒤 단백질 중원자가 약 2,100을 넘는 구조는 시간 안에 끝나지 않을 수 있다(T1 측정: 중원자 2,160개 233초, 2,594개 310초. 아래 "M29 구조 보완").
 
 ### 계산: 작업 경로 (`POST /jobs` → `/start` → `/approve` → `/start`, 공통 작업 규칙)
 ```json
@@ -876,7 +876,7 @@ M29: 단백질 루프의 풀 후보 집합이 보완 구조에 있으면 루프 
 ### API에서 보이는 한계
 - 취소된 보완 작업은 재시도 대상이 아니고 같은 호출 키는 그 작업을 돌려주므로, 같은 코드에서는 그 전처리 구조를 다시 보완할 수 없다.
 - 입력 좌표가 소수 다섯째 자리 이상이면 작업 모듈이 PDBFixer에 넘기는 PDBx 텍스트(OpenMM `PDBxFile.writeFile`, 소수 넷째 자리) 왕복 때문에 보완 작업이 `coordinates_changed`로 끝나고 1단위가 과금된다(로컬 검증 구조는 셋째 자리).
-- 보완 뒤 단백질 중원자가 약 2,100을 넘으면 M21 작업이 시간 상한 240초 안에 끝나지 않는다(8VF6 측정 1,035초, 수락 R4b 관측 `failed`·`resource_exceeded` "job timeout", 1단위 환불 없음). 상한은 사용자 결정으로 그대로다.
+- 보완 뒤 단백질 중원자가 약 2,100을 넘으면 M21 작업이 시간 상한 240초 안에 끝나지 않을 수 있다(T1 측정: 2,160개 233초, 2,594개 310초, 8VF6 4,538개 1,035초. 수락 R4b 8VF6 관측 `failed`·`resource_exceeded` "job timeout", 1단위 환불 없음). 상한은 사용자 결정으로 그대로다. M25 단백질 루프의 모델 단계 작업은 `timeout_s` 120초 고정이라 그보다 작은 구조(T1 측정 1A30 123초)에서도 끝나지 않을 수 있다(`docs/business-rules.md`의 M25 절 M29 메모).
 - 내려받은 보완 mmCIF를 다시 올리면 `calc_flag` `c`가 남아 있어도 manifest `repair` 표지가 없으므로 일반 구조로 다뤄진다.
 
 ## 과거 단계 실행기 (CLI)
