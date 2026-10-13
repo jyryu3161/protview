@@ -789,7 +789,7 @@ def _held_engine(worker_pid: int, attempt_dir: Path, timeout: float = 60) -> psu
     stream files, just before it starts fpocket, the guardian's process group (guardian, worker, fpocket) is stopped
     for each look and run 5 ms between looks; the first look that sees fpocket holds it for good, then the guardian and
     the worker go on and only fpocket stays stopped, the worker waiting on it. M29 T2: a look lists only the worker's
-    own children (``engine_hold``: one system call, where listing every system process took 0.4-8 s under load), so an
+    own children (``engine_hold``: one system call; listing every system process took seconds under load), so an
     fpocket that escaped the group stop (it was being forked or was still in exec) cannot run to its end during it."""
     return EH.hold_job_engine(worker_pid, "fpocket", start=attempt_dir / "engine.stderr", gap_s=0.005,
                               timeout_s=timeout)[0]

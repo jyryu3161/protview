@@ -7,8 +7,9 @@ Measured on this macOS machine while the Stop hook's eighteen pytest groups ran 
   ``exec``, running: psutil reports the leader stopped as soon as the signal is posted while its thread can still be
   on a CPU, and in 800-stop runs some group members were running 50 ms after the stop, some even after every member
   had been seen stopped once.
-- One psutil pass over every system process (``Process.children``) took 0.4 s (median) to 8 s there, so a qvina2 run
-  (about 0.9 s) that escaped the stop finished while the test was still looking for it.
+- Listing every system process with psutil (``Process.children``) took up to 2.35 s per pass there (two passes: 0.37 s
+  median, 8.1 s at most), so a qvina2 run (about 0.9 s) that escaped the stop finished while the test was still looking
+  for it.
 
 So a look here lists only the worker's direct children (macOS libproc ``proc_listchildpids``: one system call), and a
 step counts as held only once it is stopped, no thread of it is on a CPU and its CPU time stays the same over 20 ms.

@@ -567,7 +567,7 @@ def test_output_cap_stops_without_storing_the_result(seed7, tmp_path):
 
 def _held_docking(proc: subprocess.Popen, root: Path, eval_index: int) -> psutil.Process:
     """The qvina2 of new docking ``eval_index``, held (M29 T2). The test used to send SIGTERM once a pass over every
-    system process had seen a qvina2; under Stop-hook load such a pass took 0.4-8 s while this docking
+    system process had seen a qvina2; under Stop-hook load such a pass took up to seconds while this docking
     (exhaustiveness 1) is far shorter, so it could end and the run go on before the signal. From
     ``individuals/<eval_index>.started`` the worker's process group (the worker and qvina2) is stopped for each look
     (the worker's own children, ``engine_hold``) and run 10 ms between looks; the first look that sees qvina2 holds it

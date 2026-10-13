@@ -1070,7 +1070,7 @@ def test_a_finished_docking_survives_a_late_sigterm(first, batch):
 # M28 T2: the signal used to be sent as soon as a polling pass had seen the step's process; the step is held first.
 # M29 T2 (docs/qa/m29-repair-20261013/t2-flaky-tests.md): under Stop-hook load the hold itself still missed. A group
 # stop that lands while the worker forks (or while qvina2 is still in exec) can leave the newborn qvina2 running, and
-# the look then listed every system process (0.4-8 s under load), long enough for that qvina2 (about 0.9 s) to end
+# the look then listed every system process (up to 2.35 s a pass under load), long enough for that qvina2 to end
 # individual 0. A look now lists only the worker's own children (one system call, ``engine_hold``), qvina2 is held at
 # the first look that sees it (it is never resumed), and the worker's block is read from its threads' run state.
 def _step_processes(worker_pid: int, what: str) -> list[psutil.Process]:

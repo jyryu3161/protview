@@ -651,7 +651,7 @@ def _qvina_watcher(found: list) -> object:
 
     def watch(worker_pid: int) -> None:
         # M29 T2: a look lists only the worker's own children (qvina2 is one; ``engine_hold``, one system call). A pass
-        # over every system process took 0.4-8 s under Stop-hook load, all of it inside the 15 s timeout case's budget.
+        # over every system process took up to seconds under Stop-hook load, inside the 15 s timeout case's budget.
         end = time.monotonic() + 60
         while time.monotonic() < end and not found:
             try:
