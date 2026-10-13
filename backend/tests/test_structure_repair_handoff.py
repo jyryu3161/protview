@@ -463,12 +463,13 @@ def test_reads_and_routes_add_fields_only_for_a_repaired_structure(world, client
         assert mutation_reads.repair_view(world["run"], content) is None
     for name in ("s2_rep", "mq_rep", "rnh_rep", "cll_rep", "ins_rep"):
         detail = mutation_reads.set_detail(world["run"], world[name])
-        assert set(detail) == DETAIL_KEYS | {"repair_handoff"}
+        assert set(detail) == DETAIL_KEYS | {"repair_handoff", "structure_origin"}   # M29 T8b adds structure_origin
         page = _page(world, world[name])
         stored = store.load(world[name])["positions"]
         assert [{k: v for k, v in row.items() if k not in ("modeled_basis", "reference_not_checked")}
                 for row in page["rows"]] == stored[:100]
         assert detail["repair_handoff"] == page["repair_handoff"]
+        assert detail["structure_origin"] == page["structure_origin"]
     events = (world["root"] / RID / "events.jsonl").read_bytes()
     objects = sorted(p.name for p in (world["root"] / RID).rglob("*") if p.is_file())
     base = f"/runs/{RID}/mutation_candidate_sets/{world['s2_rep']}"
