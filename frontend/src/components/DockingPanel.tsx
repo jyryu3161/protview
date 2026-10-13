@@ -19,6 +19,7 @@ import { ACKNOWLEDGEMENT_KEYS, ACKNOWLEDGEMENT_LABEL, BOX_FRAME_NOTE, BOX_SIDE_M
 import { CANDIDATE_PAGE_LIMIT, candidateRowsQuery, emptyAppliedFilter, LIGAND_APPROVAL_NOTICE, ligandNoticeAfterJob,
   ligandStartProgressed } from "@/lib/ligand";
 import { Button } from "./primitives";
+import { RepairOriginNote } from "./StructureRepairPanel";
 
 /**
  * M18 docking area of the "리간드 설계·탐색" tab (spec section 8), mounted next to the candidate area (`LigandPanel`).
@@ -35,6 +36,8 @@ export interface DockingPanelProps {
   onReportCreated: (runId: string) => void;
   /** M19: "상세 열기" of a batch row opens that stored result here (a new `seq` per click; same run only). */
   openRequest?: { runId: string; handle: string; seq: number } | null;
+  /** M29: "보완 기록 열기" of a result whose receptor is a model on a repaired structure (opened in the repair area). */
+  onOpenRepairRecord?: (runId: string, record: string) => void;
 }
 
 type Load<T> = { status: "idle" } | { status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string };
@@ -95,12 +98,12 @@ export function DockingPanel(p: DockingPanelProps) {
     </section>;
   }
   return <DockingWorkspace run={p.run} capability={p.capability} onReportCreated={p.onReportCreated}
-    openRequest={p.openRequest ?? null} />;
+    openRequest={p.openRequest ?? null} onOpenRepairRecord={p.onOpenRepairRecord} />;
 }
 
-function DockingWorkspace({ run, capability, onReportCreated, openRequest }: { run: RunSummary;
+function DockingWorkspace({ run, capability, onReportCreated, openRequest, onOpenRepairRecord }: { run: RunSummary;
   capability: DockingCapability; onReportCreated: (runId: string) => void;
-  openRequest: DockingPanelProps["openRequest"] }) {
+  openRequest: DockingPanelProps["openRequest"]; onOpenRepairRecord?: DockingPanelProps["onOpenRepairRecord"] }) {
   const runId = run.run_id;
   const [form, setForm] = useState<DockingForm>(initialDockingForm);
   const [files, setFiles] = useState<Record<Slot, File | null>>({ receptor: null, bonds: null, ligand: null });
@@ -704,6 +707,8 @@ function DockingWorkspace({ run, capability, onReportCreated, openRequest }: { r
             <input type="radio" name={`docking-result-${runId}`} checked={selectedResult === row.handle} disabled={!row.valid}
               onChange={() => openResult(row.handle)} />
             <span className="mw-mono">{shortHandle(row.handle)} · {dockingResultRowText(row)}</span>
+            {row.structure_origin && <span className="mw-catalytic-mark" data-testid="docking-result-repaired"
+              data-repair-record={row.structure_origin.repair_record}><span className="mw-catalytic-badge">보완 구조</span></span>}
           </label>)}
         </fieldset>)}
       {results.status !== "loading" && <Button size="sm" data-testid="docking-results-refresh"
@@ -711,6 +716,8 @@ function DockingWorkspace({ run, capability, onReportCreated, openRequest }: { r
       {detail?.handle === selectedResult && detail.load.status === "loading" && <p className="mw-ligand-note" aria-busy="true">도킹 결과를 읽는 중</p>}
       {detail?.handle === selectedResult && detail.load.status === "error" &&
         <ErrorLine message={detail.load.message} onRetry={() => selectedResult && openResult(selectedResult)} />}
+      {opened && <RepairOriginNote origin={opened.structure_origin} testId="docking-repair-origin"
+        onOpenRecord={onOpenRepairRecord ? record => onOpenRepairRecord(runId, record) : undefined} />}
       {opened && <ResultView detail={opened} runId={runId} selectedMode={selectedMode}
         onMode={mode => { setSelectedMode(mode); setContactOffset(0); }} />}
       {opened && selectedMode !== null && <div className="mw-docking-contacts" data-testid="docking-contacts" data-mode={selectedMode}>

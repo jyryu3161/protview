@@ -254,6 +254,11 @@ export const JEV_TEXT = {
   headerHash: "본문 해시 앞부분",
   headerLate: "늦은 응답",
   headerActions: "동작",
+  // M29: marks of mutation candidates on a repaired structure (the sentences SO1 / JW1 come from the server as given).
+  repairedBadge: "보완 구조",
+  repairRecord: "보완 기록",
+  repairSource: "원본",
+  repairOpen: "보완 기록 열기",
 } as const;
 
 /** A preview's `send_in_progress` that a status read after that preview no longer reports (see `jevPreviewBlockers`). */

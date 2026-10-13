@@ -446,12 +446,16 @@ export interface DockingResult { schema: "docking_result@1"; protocol: "qvina_do
   limitations: string[] }
 export interface DockingResultDetail { schema: "docking_result_detail@1"; handle: string; job_id: string;
   score_label: string; result: Omit<DockingResult, "modes"> & { modes: DockingModeSummary[] };
-  meta: Record<string, unknown> }
+  meta: Record<string, unknown>;
+  /** M29: only when the receptor is a model on a repaired structure. */
+  structure_origin?: StructureOrigin }
 /** Creation order (oldest first). A row that does not validate has `valid: false` and null fields. */
 export interface DockingResultListRow { handle: string; created_seq: number; valid: boolean; reason_code: string | null;
   job_id: string | null; method: DockingMethod | null; mode: DockingMode | null;
   ligand_source: DockingLigandSource | null; candidate_id: string | null; receptor_handle: string | null;
-  seed: number | null; box_source: DockingBoxSource | null; modes: number | null; null_result: boolean | null }
+  seed: number | null; box_source: DockingBoxSource | null; modes: number | null; null_result: boolean | null;
+  /** M29: only when the receptor is a model on a repaired structure. */
+  structure_origin?: StructureOrigin }
 export interface DockingResultList { schema: "docking_result_list@1"; total: number; offset: number; limit: number;
   rows: DockingResultListRow[] }
 export interface DockingContactPage { schema: "docking_contact_page@1"; handle: string; mode: number;
@@ -721,6 +725,8 @@ export interface MutationPosition {
     /** v2 only (absent in v1): null = this chain was not checked; [] = checked, no `matched` M-CSA row names it. */
     catalytic?: MutationCatalyticEntry[] | null };
   exclusion_reasons: MutationExclusionReason[]; status: MutationPositionStatus; candidate_count: number;
+  /** M29 page rows of a set on a repaired structure only (read layer, never stored). */
+  modeled_basis?: boolean; reference_not_checked?: RepairReferenceField[];
 }
 export interface MutationCandidate { index: number; position_index: number; from: string; to: string }
 /** One `matched` M-CSA row protecting a v2 position (reference identifiers, not computed). */
@@ -780,22 +786,28 @@ export interface MutationCandidateSetListRow { handle: string; created_seq: numb
   sources_used: Record<MutationSourceKind, boolean> | null; klifs_status: "checked" | "not_checked" | null;
   numbering_map: string | null; annotation: string | null; counts: MutationCounts | null; null_result: boolean | null;
   /** M26 spec 8.5: the stored catalytic check status (v1 `not_available`); null for a row that does not validate. */
-  catalytic_status: MutationCatalyticStatus | null }
+  catalytic_status: MutationCatalyticStatus | null;
+  /** M29: only for a valid row whose structure is a repaired structure. */
+  structure_origin?: StructureOrigin }
 export interface MutationCandidateSetList { schema: "mutation_candidate_set_list@1"; total: number; offset: number;
   limit: number; rows: MutationCandidateSetListRow[] }
 /** `GET /runs/{id}/mutation_candidate_sets/{handle}`: the validated set without positions and candidates. */
 export interface MutationCandidateSetDetail { schema: "mutation_candidate_set_detail@1"; handle: string;
   result: Omit<MutationCandidateSet, "positions" | "candidates">; total_positions: number; total_candidates: number;
-  meta: Record<string, unknown>; catalytic_status: MutationCatalyticStatus }
+  meta: Record<string, unknown>; catalytic_status: MutationCatalyticStatus;
+  /** M29: only for a set on a repaired structure. */
+  structure_origin?: StructureOrigin; repair_handoff?: RepairHandoff }
 export interface MutationPositionPage { schema: "mutation_position_page@1"; handle: string;
   filters: { status: MutationPositionStatus | null; source: MutationSourceKind | null;
     exclusion_reason: MutationExclusionReason | null; chain_auth: string | null };
-  sort: MutationPositionSort; total: number; offset: number; limit: number; rows: MutationPosition[] }
+  sort: MutationPositionSort; total: number; offset: number; limit: number; rows: MutationPosition[];
+  /** M29: only for a set on a repaired structure. */
+  structure_origin?: StructureOrigin; repair_handoff?: RepairHandoff }
 export interface MutationCandidateRow { index: number; position_index: number; residue: ExactResidueRef;
   standard_resname: string | null; from: string; to: string }
 export interface MutationCandidatePage { schema: "mutation_candidate_page@1"; handle: string;
   filters: { position_index: number | null; to: string | null }; total: number; offset: number; limit: number;
-  rows: MutationCandidateRow[] }
+  rows: MutationCandidateRow[]; structure_origin?: StructureOrigin }
 export interface MutationReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "mutation_candidates"; result_handle: string;
   snapshot: { event_seq: number } } & Record<string, unknown>; markdown: string }
@@ -853,11 +865,14 @@ export interface MutationModelResult { schema: "mutation_model@1"; method_versio
   protonation_differences: { residue: ExactResidueRef; wild_type_reference: string | null; mutant: string | null }[];
   limitations: string[] }
 export interface MutationModelDetail { schema: "mutation_model_detail@1"; handle: string; result: MutationModelResult;
-  meta: Record<string, unknown> }
+  meta: Record<string, unknown>;
+  /** M29: only for a model on a repaired structure. */
+  structure_origin?: StructureOrigin }
 /** `GET /runs/{id}/mutation_models` row, newest first; a row that does not validate: `valid: false`, nulls. */
 export interface MutationModelListRow { handle: string; created_seq: number; valid: boolean;
   candidate: Omit<MutationModelCandidate, "position_index"> | null;
-  structure: MutationModelResult["structure"] | null; parameters: MutationModelParameters | null }
+  structure: MutationModelResult["structure"] | null; parameters: MutationModelParameters | null;
+  structure_origin?: StructureOrigin }
 export interface MutationModelList { schema: "mutation_model_list@1"; total: number; offset: number; limit: number;
   rows: MutationModelListRow[] }
 /** One stored contact row (heavy atoms, distance in Å, float64 as stored; not a hydrogen bond). */
@@ -989,13 +1004,16 @@ export interface SequenceGaDetail { schema: "sequence_ga_detail@1"; handle: stri
   statements: SequenceGaStatement[]; summary: SequenceGaResult;
   generations: (Omit<SequenceGaGeneration, "individuals"> & {
     individuals: (SequenceGaIndividual & { detail_available: boolean })[] })[];
-  reference: SequenceGaReference & { detail_available: boolean }; meta: Record<string, unknown> }
+  reference: SequenceGaReference & { detail_available: boolean }; meta: Record<string, unknown>;
+  /** M29: only when the GA's candidate set is on a repaired structure (screen only; the report is unchanged). */
+  structure_origin?: StructureOrigin }
 /** Newest first. A summary that does not validate has `valid: false` and null fields. */
 export interface SequenceGaListRow { handle: string; published_seq: number; valid: boolean; reason_code: string | null;
   job_id: string | null; attempt_id: string | null; status: SequenceGaStatus | null;
   stop_reason: SequenceGaStopReason | null; generations_done: number | null; new_evaluations_used: number | null;
   reused_count: number | null; reserved_units: number | null; space: SequenceGaSpace | null;
-  candidate_set: string | null; selection_sha256: string | null; ga: SequenceGaParameters | null }
+  candidate_set: string | null; selection_sha256: string | null; ga: SequenceGaParameters | null;
+  structure_origin?: StructureOrigin }
 export interface SequenceGaList { schema: "sequence_ga_list@1"; total: number; offset: number; limit: number;
   rows: SequenceGaListRow[] }
 
@@ -1075,7 +1093,9 @@ export interface JevPreviewV1 { schema: "jev_preview@1"; projection_handle: stri
   body: string; body_sha256: string; body_bytes: number; selection: JevSelectionItem[]; selection_sent: false;
   reservation: { external_tokens: number; usd: number }; send_cap: number; used: number; remaining: number;
   budget_remaining: { external_tokens: number; usd: number }; blocked_by: JevPreviewBlockReason[];
-  previous_sends: number }
+  previous_sends: number;
+  /** M29: mutation candidates on a repaired structure only (never in the body). */
+  structure_origin?: StructureOrigin; repair_warning?: RepairWarning }
 /** Reported usage; every value null when the reply did not report it (never 0). */
 export interface JevUsage { input_tokens: number | null; output_tokens: number | null; external_tokens: number | null;
   cost: number | null }
@@ -1087,7 +1107,9 @@ export interface JevSendV1 { schema: "jev_send@1"; send_id: string; status: JevS
   source: { handle: string; schema: string }; kind: JevKind; question_id: JevQuestionId; selection_count: number;
   body_sha256: string; body_bytes: number | null; audit_id: string | null; requested_model: string | null;
   served_model: string | null; usage: JevUsage | null; choice_handle: string | null; late: boolean;
-  late_reason: JevLateReason | null; approved_event_seq: number; outcome_event_seq: number | null }
+  late_reason: JevLateReason | null; approved_event_seq: number; outcome_event_seq: number | null;
+  /** M29: reads of a mutation send on a repaired structure; JW1 on the approval answer only. */
+  structure_origin?: StructureOrigin; repair_warning?: RepairWarning }
 /** The 7 identity fields as stored (null kept; an empty insertion code stays ""). */
 export interface JevResidue { model_number: number; chain_auth: string | null; chain_label: string | null;
   seq_auth: number; seq_label: number | null; icode: string | null; resname: string }
@@ -1169,10 +1191,13 @@ export interface JevLoopV1 { schema: "jev_loop@1"; loop_id: string; branch: JevL
   end_reason: JevLoopEndReason | null; exhausted_reason: JevLoopExhaustedReason | null; goal: JevLoopGoal;
   loop_seed: number; iteration_cap: number; effective_cap: number; pool: JevLoopPool; setup: Record<string, unknown>;
   setup_sha256: string; pins: Record<string, unknown>; counts: JevLoopCounts; candidates: JevLoopCandidate[];
-  iterations: JevLoopIteration[]; current: JevLoopCurrent; result_handle: string | null; limitations: string[] }
+  iterations: JevLoopIteration[]; current: JevLoopCurrent; result_handle: string | null; limitations: string[];
+  /** M29: a protein loop whose candidate set is on a repaired structure. */
+  structure_origin?: StructureOrigin }
 /** `GET /runs/{id}/jev_loops` row (newest first). */
 export interface JevLoopListRow { loop_id: string; branch: JevLoopBranch; status: "active" | "ended";
-  end_reason: JevLoopEndReason | null; goal: JevLoopGoal; pool_size: number; counts: JevLoopCounts; created_seq: number }
+  end_reason: JevLoopEndReason | null; goal: JevLoopGoal; pool_size: number; counts: JevLoopCounts; created_seq: number;
+  structure_origin?: StructureOrigin }
 /** `methods.jev_loop` of `/capabilities`: per branch, reasons only when unavailable. */
 export type JevLoopCapability = Record<JevLoopBranch, { available: boolean; reason_code: string | null;
   reason: string | null }>;
@@ -1491,4 +1516,102 @@ export interface KinasePrecedentsList { items: KinasePrecedentsListItem[]; total
 export interface KinasePrecedentsReportArtifact { handle: string; markdown_handle: string; manifest: {
   schema: "method_report_manifest@1"; analysis_type: "kinase_precedents"; result_handle: string;
   precedent_set: PrecedentSetRecord; snapshot: { event_seq: number; active_set_hash: string | null } } &
+  Record<string, unknown>; markdown: string }
+
+// ---- M29 structure repair (backend/mw/structure_repair_constants.py, structure_repair_reads.py,
+// tools/structure_repair.py, structure_origin_reads.py, mutation_handoff.py; `.dryforge/spec.md` 3–8) ----
+/** The 7 identity fields as stored in a repair record (null kept; the insertion code as stored). */
+export interface RepairResidue { model_number: number; chain_auth: string; chain_label: string | null; seq_auth: number;
+  seq_label: number | null; icode: string | null; resname: string }
+export type RepairClass = "chain_parts_merged" | "side_chain_atoms_added" | "terminal_oxt_added" | "internal_gap_filled" |
+  "nonstandard_replaced";
+export type RepairCollisionClass = "protein" | "ligand" | "metal" | "water" | "other";
+export type RepairAddedAtomOrigin = "side_chain" | "oxt" | "gap_residue";
+/** A fixed sentence the server chose for this read (shown verbatim; the browser never words it). */
+export interface RepairStatement { id: string; text: string }
+/** Read-only field of a result on a repaired structure (never stored; absent for any other structure). */
+export interface StructureOrigin { repair_record: string; repaired_structure: string; source_structure: string;
+  counts: StructureRepairCounts; statements: RepairStatement[] }
+/** JW1 on the JEV preview and approval answers of candidates on a repaired structure. */
+export interface RepairWarning { id: "JW1"; text: string }
+/** M20 reads of a set on a repaired structure: reference results made on the original structure and SO2 / SO3. */
+export interface RepairHandoff { references: ("pocket_set" | "numbering_map" | "annotation" | "catalytic_annotation")[];
+  statements: RepairStatement[] }
+export type RepairReferenceField = "numbering" | "klifs_sites" | "catalytic";
+/** `methods.structure_repair` of `/capabilities`: reasons only when unavailable (no versions). */
+export interface StructureRepairCapability { schema: "structure_repair_capability@1"; protocol_id: "pdbfixer_repair_v1";
+  tool_id: "repair_structure"; execution_lane: string; result_schema: "structure_repair@1"; method_version: string;
+  timeout_s: { default: number; max: number };
+  limits: { max_gap_residues: number; protein_heavy_atoms: number; staged_input_bytes: number; record_bytes: number };
+  available: boolean; reason_code: string | null; reason: string | null;
+  versions: { openmm: string; openmm_engine_build: string; pdbfixer: string } | null }
+export interface StructureRepairBlocker { reason_code: string; residue?: RepairResidue; chain_auth?: string;
+  detail: Record<string, unknown> }
+export interface StructureRepairGap { chain_auth: string; after_residue: RepairResidue; before_residue: RepairResidue;
+  length: number; residues: RepairResidue[] }
+/** `GET /runs/{id}/structure_repair/preflight?structure=`: a free read (no event, tool or job); refusals are 200. */
+export interface StructureRepairPreflight { schema: "structure_repair_preflight@1"; starts_job: false;
+  capability: StructureRepairCapability; structure: string; repairable: boolean | null;
+  blockers: StructureRepairBlocker[];
+  defects: { chain_parts: { chain_auth: string; parts: number }[];
+    side_chain_residues: { residue: RepairResidue; missing_atoms: string[] }[]; terminal_oxt: { residue: RepairResidue }[];
+    gaps: StructureRepairGap[]; nonstandard: { residue: RepairResidue; to_resname: string }[] } | null;
+  expected_added_residues: number | null; expected_added_heavy_atoms: number | null;
+  budget: Record<string, { limit: number; used: number }>; remaining: Record<string, number>;
+  shortfall: { expensive_calls: number };
+  admission: { admitted: boolean; error: string | null; reason_code: string | null; message: string | null;
+    detail: Record<string, unknown> | null } | null;
+  /** The RP sentences whose condition holds (plain strings). */
+  statements: string[] }
+export interface StructureRepairCounts { added_residues: number; added_atoms: number; side_chain_residues: number;
+  terminal_oxt: number; gaps: number; replaced: number; chain_parts_merged: number; protein_heavy_atoms: number }
+export interface StructureRepairCollision { min_distance_A: number | null; count_lt_2_0: number; count_lt_1_5: number;
+  min_pair: { new_residue: RepairResidue; new_atom: string; partner_residue: RepairResidue; partner_atom: string } | null }
+export interface StructureRepairAddedAtom { residue: RepairResidue; atom_name: string; element: string;
+  coordinates_A: [number, number, number]; origin: RepairAddedAtomOrigin }
+/** `structure_repair@1` without `added_atoms` (the detail read; atoms come by page). */
+export interface StructureRepairRecord { schema: "structure_repair@1"; method_version: string;
+  source: { prepared_structure: string; model_number: number };
+  result: { coordinates: string; coordinates_sha256: string };
+  parameters: { repair_policy: string; seed: number; max_gap_residues: number; waters: string; hydrogens: string;
+    new_atom_coordinate_decimals: number };
+  method: { engine: string; pdbfixer_version: string; openmm_distribution_version: string;
+    forcefield_files_sha256: Record<string, string> };
+  classes_applied: RepairClass[];
+  chain_parts: { chain_auth: string; parts: number; merged: boolean }[];
+  chain_ends: { chain_auth: string; observed_first: RepairResidue; observed_last: RepairResidue;
+    first_is_sequence_start: boolean | null; last_is_sequence_end: boolean | null }[];
+  side_chain_repairs: { residue: RepairResidue; added_atoms: string[] }[];
+  terminal_oxt: { residue: RepairResidue }[];
+  gaps: StructureRepairGap[];
+  replaced: { from: RepairResidue; to: RepairResidue; atom_map: { from: string; to: string }[];
+    record_type: { from: string; to: string } }[];
+  counts: StructureRepairCounts;
+  unchanged: { atom_count: number; max_delta_A: number; input_calc_flag_cleared: number };
+  new_atom_rounding: { decimals: number; max_abs_delta_A: number };
+  zero_occupancy_input_atoms: { count: number; residues: RepairResidue[] };
+  collisions: Record<RepairCollisionClass, StructureRepairCollision>;
+  limitations: string[] }
+/** `GET /runs/{id}/structure_repairs` row, newest first; a row that does not validate: `valid: false`, nulls. */
+export interface StructureRepairListRow { handle: string; created_seq: number; valid: boolean;
+  prepared_structure: string | null; source_structure: string | null; classes_applied: RepairClass[] | null;
+  counts: StructureRepairCounts | null }
+export interface StructureRepairList { schema: "structure_repair_list@1"; total: number; offset: number; limit: number;
+  rows: StructureRepairListRow[] }
+export interface StructureRepairDetail { schema: "structure_repair_detail@1"; handle: string; prepared_structure: string;
+  source_structure: string; coordinates: string; manifest: string; published_seq: number; added_atom_count: number;
+  result: StructureRepairRecord; meta: Record<string, unknown> }
+export interface StructureRepairAtomPage { schema: "structure_repair_atom_page@1"; handle: string; total: number;
+  page: number; page_size: number; rows: (StructureRepairAddedAtom & { index: number })[] }
+export interface StructureRepairJob { job_id: string; run_id: string; protocol_id: "pdbfixer_repair_v1"; tool_id: string;
+  status: string; blocked_reason: string | null;
+  failure: { error: string; message: string; reason_code?: string; detail?: Record<string, unknown> } | null;
+  input_handles: string[]; output_handles: string[]; attempt_ordinal: number; cancel_requested: boolean;
+  timeout_s: number; artifacts?: { structure_repair?: string; prepared_structure?: string } }
+/** Dry-run submission: a plan only, no job and no result object. */
+export interface StructureRepairPlanOnly { plan_only: true; protocol_id: "pdbfixer_repair_v1"; reason_code: "dry_run";
+  available: false; output_handles: []; normalized_parameters: Record<string, unknown> }
+export type StructureRepairSubmission = StructureRepairJob | StructureRepairPlanOnly;
+export interface StructureRepairReportArtifact { handle: string; markdown_handle: string; manifest: {
+  schema: "method_report_manifest@1"; analysis_type: "structure_repair"; result_handle: string } &
   Record<string, unknown>; markdown: string }

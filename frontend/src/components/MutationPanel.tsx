@@ -5,13 +5,14 @@ import { api, ApiError, type ResidueList, type RunSummary } from "@/lib/api";
 import type { ExactResidueRef, MutationCandidatePage, MutationCandidateRow, MutationCandidateSetDetail, MutationCandidateSetList,
   MutationExclusionReason, MutationPosition, MutationPositionPage, MutationPositionSort, MutationPositionStatus,
   MutationReportArtifact, MutationSourceKind, ReactionKnowledgeCounts, ReactionKnowledgeDetail, ReactionKnowledgeListItem,
-  RunEvent, SiteAnnotationListRow } from "@/lib/contracts";
+  RunEvent, SiteAnnotationListRow, StructureOrigin } from "@/lib/contracts";
 import type { NumberingMapListRow } from "@/lib/numbering";
 import type { PocketSetRow, PocketSummary } from "@/lib/pockets";
 import { annotationMapConflict, annotationsForStructure, candidateQuery, candidateText, CATALYTIC_NOTE,
   catalyticAnnotationsForStructure, catalyticBadge, catalyticCheckView, catalyticChoices, catalyticProtectionText,
   catalyticRequestNotices,
-  chainOptions, countsText, disulfideText, draftForStructure, EMPTY_CANDIDATE_FILTERS, EMPTY_POSITION_FILTERS,
+  chainOptions, countsText, disulfideText, draftForReferences, draftForStructure, EMPTY_CANDIDATE_FILTERS,
+  EMPTY_POSITION_FILTERS,
   exactResidue, exclusionReasonCountText, exclusionReasonsOf, exclusionReasonsText,
   initialMutationDraft, klifsNotice, klifsSitesText, LIGAND_SHELL_RADIUS_RANGE_A, ligandDistanceText, ligandOptions,
   LIST_LIMIT_MAX, LIST_ORDER_NOTE, mapsForStructure, METAL_CONTACT_RANGE_A, metalText, MODELING_NOTE, mutationErrorText,
@@ -24,7 +25,10 @@ import { annotationMapConflict, annotationsForStructure, candidateQuery, candida
   type CatalyticItemView, type MutationDraft, type MutationStamp, type PositionFilters } from "@/lib/mutations";
 import { CHAIN_LIMIT_MAX, DEFAULT_DETAIL_PAGING, reactionDetailMatches, reactionDetailQuery,
   reactionListItemText } from "@/lib/reaction-knowledge";
+import { modeledBasisText, mutationStructureRows, referenceNotCheckedText, referenceStructures, REPAIRED_BADGE,
+  REPAIRED_POCKET_NOTE, REPAIRED_REFERENCE_NOTE, repairLinks, shortHandle as repairShortHandle } from "@/lib/structure-repair";
 import { Button } from "./primitives";
+import { RepairOriginNote } from "./StructureRepairPanel";
 
 /**
  * M20 "단백질 공학" tab body: 변이 후보 (spec section 10). Every number shown is a stored backend value read through
@@ -44,7 +48,11 @@ export interface MutationPanelProps {
   /** M21: "변이 구조 모델링" of a candidate row hands that candidate (by its integer index) to the model area, with the
    * set's "촉매 잔기 검사 안 함" mark (M26, from the stored catalytic check status; null when checked). */
   onModelCandidate?: (pick: { runId: string; candidateSet: string; candidate: MutationCandidateRow;
-    catalytic: CatalyticBadge | null }) => void;
+    catalytic: CatalyticBadge | null; origin?: StructureOrigin | null }) => void;
+  /** M29: "보완 기록 열기" of a set on a repaired structure (the page opens it in the repair area). */
+  onOpenRepairRecord?: (runId: string, record: string) => void;
+  /** M29: raised by the page after a new repaired structure; the structure choices re-read the run's event log. */
+  structuresReloadToken?: number;
 }
 
 const STATE_TEXT = { loading: "불러오는 중", ready: "준비", scientific_null: "빈 결과 (후보 0개)", failed: "실패",
@@ -109,12 +117,15 @@ export function MutationPanel(p: MutationPanelProps) {
     </section>;
   }
   return <MutationWorkspace run={p.run} capability={p.capability} onObjectsChanged={p.onObjectsChanged}
-    onReportCreated={p.onReportCreated} onModelCandidate={p.onModelCandidate} />;
+    onReportCreated={p.onReportCreated} onModelCandidate={p.onModelCandidate} onOpenRepairRecord={p.onOpenRepairRecord}
+    structuresReloadToken={p.structuresReloadToken ?? 0} />;
 }
 
-function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated, onModelCandidate }: { run: RunSummary;
+function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated, onModelCandidate,
+  onOpenRepairRecord, structuresReloadToken }: { run: RunSummary;
   capability: { available: boolean; reason: string | null }; onObjectsChanged: (runId: string) => void;
-  onReportCreated: (runId: string) => void; onModelCandidate?: MutationPanelProps["onModelCandidate"] }) {
+  onReportCreated: (runId: string) => void; onModelCandidate?: MutationPanelProps["onModelCandidate"];
+  onOpenRepairRecord?: MutationPanelProps["onOpenRepairRecord"]; structuresReloadToken: number }) {
   const runId = run.run_id;
   const [events, setEvents] = useState<Load<RunEvent[]>>({ status: "idle" });
   const [eventsReload, setEventsReload] = useState(0);
@@ -181,7 +192,7 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   // stamp/current read live refs; each read is keyed by run and its reload counter.
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => listRead("events", setEvents, signal => api.allEvents(runId, signal), "run 기록 읽기 실패"),
-    [runId, eventsReload]);
+    [runId, eventsReload, structuresReloadToken]);
   useEffect(() => listRead("pockets", setPocketSets, signal => api.allPocketSets(runId, signal).then(list => list.rows),
     "포켓 결과 목록 읽기 실패"), [runId, pocketsReload]);
   useEffect(() => listRead("maps", setMaps, signal => allPages(offset => api.numberingMaps(runId, offset, LIST_LIMIT_MAX,
@@ -219,7 +230,13 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
       [handle]: { status: "error", message: `포켓 결과 읽기 실패: ${errorText(e)}` } })); });
   }
 
-  const structures = events.status === "ready" ? preparedStructures(events.value) : undefined;
+  // M29: the prepared structures plus this run's repaired structures (badge); a repaired structure's reference results
+  // may also be those of its original prepared structure (spec 5.3).
+  const links = events.status === "ready" ? repairLinks(events.value) : [];
+  const structures = events.status === "ready" ? mutationStructureRows(preparedStructures(events.value), links) : undefined;
+  const references = referenceStructures(draft.structure, links);
+  const chosenRepair = structures?.find(row => row.handle === draft.structure)?.repair ?? null;
+  const openRecord = onOpenRepairRecord ? (record: string) => onOpenRepairRecord(runId, record) : undefined;
   const pocketRows = pocketSets.status === "ready" ? pocketSets.value : [];
   const mapRows = maps.status === "ready" ? maps.value : [];
   const annotationRows = annotations.status === "ready" ? annotations.value : [];
@@ -232,13 +249,14 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
   const residueList = structureResidues?.status === "ready" ? structureResidues.value : null;
   const proteinOptions = residueList ? proteinResidueOptions(residueList) : [];
   const ligandChoices = residueList ? ligandOptions(residueList) : [];
-  const offeredPockets = pocketSetsForStructure(pocketRows, draft.structure);
-  const offeredMaps = mapsForStructure(mapRows, draft.structure);
-  const offeredAnnotations = annotationsForStructure(annotationRows, draft.structure);
+  const offeredPockets = pocketSetsForStructure(pocketRows, references);
+  const offeredMaps = mapsForStructure(mapRows, references);
+  const offeredAnnotations = annotationsForStructure(annotationRows, references);
   const pocketSummary = draft.pocketSet ? pocketCache[draft.pocketSet] ?? null : null;
-  const offeredReactions = catalyticAnnotationsForStructure(reactionRows, draft.structure);
+  const offeredReactions = catalyticAnnotationsForStructure(reactionRows, references);
   const check = mutationRequestArgs(draft, { pocketSets: pocketRows, maps: mapRows, annotations: annotationRows,
-    ligands: ligandChoices, reactionResults: reactionRows });
+    ligands: ligandChoices, reactionResults: reactionRows, referenceStructures: references });
+  const madeOn = (handle: string | null) => chosenRepair && handle !== draft.structure ? " · 보완 전 원본 구조" : "";
   const conflict = annotationMapConflict(draft.annotation, draft.numberingMap, annotationRows);
   const notice = draft.structure ? klifsNotice(draft.annotation) : null;
 
@@ -288,7 +306,9 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
       uniprotNotice: uniprotSitesNotice(catalyticValue?.counts ?? null) });
 
   function chooseStructure(handle: string) {
-    setDraft(previous => draftForStructure(previous, handle, annotationRows, mapRows, reactionRows));
+    const refs = referenceStructures(handle, links);
+    setDraft(previous => draftForReferences(draftForStructure(previous, handle, annotationRows, mapRows, reactionRows),
+      refs, annotationRows, mapRows, reactionRows));
     setCreateState({ status: "idle" });
     ensureResidues(handle);
   }
@@ -437,12 +457,20 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
       <fieldset className="mw-mutation-choices" data-testid="mutation-structures">
         <legend>전처리 구조 (이 run, 자동으로 고르지 않음)</legend>
         {!listsReady && <p className="mw-mutation-note" aria-busy="true">포켓·번호 대응·참조 주석·효소 반응 지식 결과 목록을 읽은 뒤 고를 수 있습니다.</p>}
-        {structures.map(row => <label key={row.handle} data-mutation-structure={row.handle}>
+        {structures.map(row => <label key={row.handle} data-mutation-structure={row.handle}
+          data-repaired={row.repair ? "true" : undefined}>
           <input type="radio" name={`mutation-structure-${runId}`} checked={draft.structure === row.handle} disabled={!listsReady}
             aria-label={`전처리 구조 ${shortHandle(row.handle)}`} onChange={() => chooseStructure(row.handle)} />
           <span className="mw-mono">prepared_structure · 이벤트 #{row.seq} · {shortHandle(row.handle)}</span>
+          {row.repair && <span className="mw-catalytic-mark" data-testid="mutation-structure-repaired"
+            data-repair-record={row.repair.record} data-source-structure={row.repair.source ?? undefined}>
+            <span className="mw-catalytic-badge">{REPAIRED_BADGE}</span>
+            <span className="mw-catalytic-detail">원본 {row.repair.source ? repairShortHandle(row.repair.source) : NULL_TEXT} ·
+              보완 기록 {repairShortHandle(row.repair.record)}</span></span>}
         </label>)}
       </fieldset>
+      {chosenRepair && <p className="mw-mutation-notice" role="status" data-testid="mutation-repair-reference-note">
+        {REPAIRED_REFERENCE_NOTE}</p>}
       {[pocketSets, maps, annotations].map((load, index) => load.status === "error" ? <ErrorLine key={index}
         message={load.message} onRetry={() => [setPocketsReload, setMapsReload, setAnnotationsReload][index](value => value + 1)} />
         : null)}
@@ -457,14 +485,16 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
           <label className="mw-mutation-check"><input type="checkbox" data-testid="mutation-source-pocket" checked={draft.pocketOn}
             onChange={event => patch({ pocketOn: event.target.checked })} /> {SOURCE_LABEL.pocket}: 저장된 포켓 결과의 안쪽 잔기</label>
           {draft.pocketOn && <div className="mw-mutation-sub" data-testid="mutation-pocket-area">
+            {chosenRepair && <p className="mw-mutation-note" data-testid="mutation-repair-pocket-note">{REPAIRED_POCKET_NOTE}</p>}
             {!offeredPockets.length ? <p className="mw-mutation-note" data-testid="mutation-no-pockets">
-              이 구조로 검출한 포켓 있는 결과가 없습니다. 구조 분석 탭에서 포켓 검출을 먼저 실행하세요.</p>
+              {chosenRepair ? "보완 전 원본 구조로 검출한 포켓 있는 결과가 없습니다. 구조 분석 탭에서 원본 구조의 포켓 검출을 먼저 실행하세요."
+                : "이 구조로 검출한 포켓 있는 결과가 없습니다. 구조 분석 탭에서 포켓 검출을 먼저 실행하세요."}</p>
               : <fieldset className="mw-mutation-choices" data-testid="mutation-pocket-sets">
                 <legend>포켓 결과 (같은 구조, 자동으로 고르지 않음)</legend>
                 {offeredPockets.map(row => <label key={row.handle} data-mutation-pocket-set={row.handle}>
                   <input type="radio" name={`mutation-pocket-set-${runId}`} checked={draft.pocketSet === row.handle}
                     onChange={() => { patch({ pocketSet: row.handle, pocketRanks: [] }); ensurePocket(row.handle); }} />
-                  <span className="mw-mono">이벤트 #{row.created_seq} · 포켓 {nullableCount(row.total_count)}개 · 체인 {row.selected_chains?.join(", ") ?? NULL_TEXT} · {shortHandle(row.handle)}</span>
+                  <span className="mw-mono">이벤트 #{row.created_seq} · 포켓 {nullableCount(row.total_count)}개 · 체인 {row.selected_chains?.join(", ") ?? NULL_TEXT} · {shortHandle(row.handle)}{madeOn(row.source_handle)}</span>
                 </label>)}
               </fieldset>}
             {pocketSummary?.status === "loading" && <p className="mw-mutation-note" aria-busy="true">포켓 결과를 읽는 중</p>}
@@ -537,7 +567,7 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
               value={draft.catalyticAnnotation ?? ""} onChange={event => patch({ catalyticAnnotation: event.target.value || null })}>
               <option value="">고르지 않음</option>
               {offeredReactions.map(item => <option key={item.handle} value={item.handle}>
-                {shortHandle(item.handle)} · {reactionListItemText(item)}</option>)}
+                {shortHandle(item.handle)} · {reactionListItemText(item)}{madeOn(item.structure_handle)}</option>)}
             </select></label>
           {reactionChoices.error && <ErrorLine message={reactionChoices.error} testId="mutation-catalytic-list-error"
             onRetry={() => setReactionsReload(value => value + 1)} />}
@@ -563,14 +593,14 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
               onChange={event => chooseAnnotation(event.target.value || null)}>
               <option value="">고르지 않음</option>
               {offeredAnnotations.map(row => <option key={row.handle} value={row.handle}>
-                이벤트 #{row.created_seq} · 주석됨 {row.counts.annotated} · 대응 {shortHandle(row.numbering_map)} · {shortHandle(row.handle)}</option>)}
+                이벤트 #{row.created_seq} · 주석됨 {row.counts.annotated} · 대응 {shortHandle(row.numbering_map)} · {shortHandle(row.handle)}{madeOn(row.structure)}</option>)}
             </select></label>
           <label className="mw-mutation-check">번호 대응 (같은 구조)
             <select className="mw-select" data-testid="mutation-numbering-map" aria-label="번호 대응 선택" value={draft.numberingMap ?? ""}
               onChange={event => patch({ numberingMap: event.target.value || null })}>
               <option value="">고르지 않음</option>
               {offeredMaps.map(row => <option key={row.handle} value={row.handle}>
-                {row.structure_kind} · 체인 {row.chains.join(", ")} · 이벤트 #{row.created_seq} · {shortHandle(row.handle)}</option>)}
+                {row.structure_kind} · 체인 {row.chains.join(", ")} · 이벤트 #{row.created_seq} · {shortHandle(row.handle)}{madeOn(row.structure)}</option>)}
             </select></label>
           {notice && <p className="mw-mutation-notice" role="status" data-testid="mutation-klifs-notice">{notice}</p>}
           {conflict && <p className="mw-mutation-error" role="alert" data-testid="mutation-map-conflict">{conflict}</p>}
@@ -604,6 +634,9 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
             <span className="mw-mono">이벤트 #{row.created_seq} · 구조 {row.structure ? shortHandle(row.structure) : NULL_TEXT} · {setRowText(row)}
               {row.null_result ? " · 후보 0개 (빈 결과)" : ""} · {shortHandle(row.handle)}</span>
             <CatalyticMark badge={catalyticBadge(row.catalytic_status)} testId="mutation-set-catalytic" />
+            {row.structure_origin && <span className="mw-catalytic-mark" data-testid="mutation-set-repaired"
+              data-repair-record={row.structure_origin.repair_record}>
+              <span className="mw-catalytic-badge">{REPAIRED_BADGE}</span></span>}
           </label>)}
         </fieldset>)}
       {sets.status !== "loading" && <Button size="sm" data-testid="mutation-sets-refresh" onClick={() => setSetsReload(value => value + 1)}>결과 목록 다시 읽기</Button>}
@@ -613,6 +646,12 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
     </Section>
 
     {opened && <Section area="detail" title="③ 상세">
+      <RepairOriginNote origin={opened.structure_origin} testId="mutation-repair-origin" onOpenRecord={openRecord} />
+      {opened.repair_handoff && opened.repair_handoff.statements.length > 0 && <div className="mw-mutation-notice"
+        role="status" data-testid="mutation-repair-statements"
+        data-references={opened.repair_handoff.references.join(",")}>
+        {opened.repair_handoff.statements.map(item => <p key={item.id} data-statement={item.id}>{item.text}</p>)}
+      </div>}
       <SetSummary detail={opened} />
 
       <div className="mw-mutation-group" aria-label="위치 표" data-testid="mutation-positions-area">
@@ -689,7 +728,8 @@ function MutationWorkspace({ run, capability, onObjectsChanged, onReportCreated,
                 aria-label={`후보 ${row.index} 변이 구조 모델링`}
                 onClick={() => onModelCandidate({ runId, candidateSet: opened.handle, candidate: row,
                   catalytic: catalyticBadge(opened.catalytic_status,
-                    opened.result.protection_checks.catalytic_residue_database.reason) })}>변이 구조 모델링</Button></td>}
+                    opened.result.protection_checks.catalytic_residue_database.reason),
+                  origin: opened.structure_origin ?? null })}>변이 구조 모델링</Button></td>}
             </tr>)}</tbody></table></div>)}
         {candidatesLoad?.status === "ready" && <Pager testId="mutation-candidates" page={candidatesLoad.value} onPage={setCandOffset} />}
       </div>
@@ -859,22 +899,26 @@ function SetSummary({ detail }: { detail: MutationCandidateSetDetail }) {
 function PositionTable({ page, ligandGiven, onCandidates }: { page: MutationPositionPage; ligandGiven: boolean;
   onCandidates: (index: number) => void }) {
   if (!page.rows.length) return <p className="mw-mutation-note" data-testid="mutation-positions-empty">이 조건에 맞는 위치 없음</p>;
+  // M29: a set on a repaired structure carries the read-layer marks (never stored); other sets keep their columns.
+  const repaired = page.repair_handoff !== undefined;
   return <div className="mw-mutation-table-wrap"><table className="mw-mutation-table" data-testid="mutation-positions">
     <thead><tr><th>파일 순서 번호</th><th>잔기 (auth)</th><th>label</th><th>표준 이름</th><th>출처</th><th>리간드까지 최소 거리</th>
       <th>번호 대응 (참조값)</th><th>보호 사유</th><th>KLIFS 주요 부위</th><th>금속</th><th>이황화 짝</th><th>제외 사유</th><th>상태</th><th>후보 수</th>
-      <th>M-CSA 촉매 잔기 (항목 ID, 참조값)</th><th /></tr></thead>
+      <th>M-CSA 촉매 잔기 (항목 ID, 참조값)</th><th />{repaired && <th>모델링 원자·잔기 (SO2)</th>}</tr></thead>
     <tbody>{page.rows.map((row: MutationPosition) => <tr key={row.index} data-mutation-position={row.index} data-status={row.status}
       data-exclusion-reasons={row.exclusion_reasons.join(",")} data-residue={residueText(row.residue)}
-      data-ligand-distance={row.ligand_min_distance_A ?? ""}>
+      data-ligand-distance={row.ligand_min_distance_A ?? ""}
+      data-modeled-basis={row.modeled_basis === undefined ? undefined : String(row.modeled_basis)}
+      data-reference-not-checked={row.reference_not_checked?.length ? row.reference_not_checked.join(",") : undefined}>
       <td className="mw-mono">{row.index}</td>
       <td className="mw-mono">{residueText(row.residue)}</td>
       <td className="mw-mono">{residueLabelText(row.residue)}</td>
       <td className="mw-mono">{row.standard_resname ?? NULL_TEXT} / {row.one_letter ?? NULL_TEXT}</td>
       <td>{sourcesText(row.sources)}</td>
       <td className="mw-mono" data-cell="ligand-distance">{ligandDistanceText(row.ligand_min_distance_A, ligandGiven)}</td>
-      <td>{numberingText(row.numbering)}</td>
+      <td data-cell="numbering">{referenceNotCheckedText(row, "numbering") ?? numberingText(row.numbering)}</td>
       <td>{protectionText(row.protection)}</td>
-      <td>{klifsSitesText(row.protection.klifs_sites)}</td>
+      <td data-cell="klifs">{referenceNotCheckedText(row, "klifs_sites") ?? klifsSitesText(row.protection.klifs_sites)}</td>
       <td className="mw-mono">{metalText(row.protection.metal)}</td>
       <td className="mw-mono">{disulfideText(row.protection.disulfide_partner)}</td>
       <td>{exclusionReasonsText(row.exclusion_reasons)}</td>
@@ -883,9 +927,11 @@ function PositionTable({ page, ligandGiven, onCandidates }: { page: MutationPosi
       {/* M26: after the existing columns so earlier cell positions stay as they were. */}
       <td data-cell="catalytic" data-catalytic={row.protection.catalytic === undefined ? "v1"
         : row.protection.catalytic === null ? "not_checked" : row.protection.catalytic.length ? "matched" : "checked_empty"}
-        data-released={row.protection.released || undefined}>{catalyticProtectionText(row.protection)}</td>
+        data-released={row.protection.released || undefined}>{referenceNotCheckedText(row, "catalytic") ??
+          catalyticProtectionText(row.protection)}</td>
       <td>{row.status === "candidate" && <Button size="sm" data-testid="mutation-position-candidates" data-position-index={row.index}
         aria-label={`${residueText(row.residue)} 위치의 후보 보기`} onClick={() => onCandidates(row.index)}>후보 보기</Button>}</td>
+      {repaired && <td data-cell="modeled-basis">{modeledBasisText(row) ?? NULL_TEXT}</td>}
     </tr>)}</tbody>
   </table></div>;
 }
