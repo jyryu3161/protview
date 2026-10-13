@@ -1,0 +1,241 @@
+{
+ "label": "round1",
+ "total_s": 377.9,
+ "checks": 21,
+ "passed_tests": 6703,
+ "skipped_tests": 0,
+ "longest_group_s": 377.9,
+ "failed_checks": 0,
+ "ok": true,
+ "records": [
+  {
+   "label": "<repo>/.venv/bin/python -m ruff check backend/mw backend/tests scripts .codex/hooks design/build_tokens.py",
+   "timeout_s": 45,
+   "exit": 0,
+   "tail": "All checks passed!",
+   "ok": true,
+   "seconds": 0.0,
+   "counts": {}
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_chemical_interactions.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "........................                                                 [100%]\n24 passed in 374.99s (0:06:14)",
+   "ok": true,
+   "seconds": 375.3,
+   "counts": {
+    "passed": 24
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_m11_job_api.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "...........                                                [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n25 passed, 1 warning in 326.98s (0:05:26)",
+   "ok": true,
+   "seconds": 327.5,
+   "counts": {
+    "passed": 25
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_docking_inputs.py backend/tests/test_docking_worker.py backend/tests/test_d",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "                                                          [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n220 passed, 1 warning in 375.60s (0:06:15)",
+   "ok": true,
+   "seconds": 376.1,
+   "counts": {
+    "passed": 220
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_docking_batch_worker.py backend/tests/test_docking_batch_jobs.py backend/te",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": ".................................                         [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n120 passed, 1 warning in 361.62s (0:06:01)",
+   "ok": true,
+   "seconds": 362.1,
+   "counts": {
+    "passed": 120
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_docking_batch_inputs.py backend/tests/test_docking_batch_bundle.py backend/",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "...............                                           [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n390 passed, 1 warning in 365.55s (0:06:05)",
+   "ok": true,
+   "seconds": 365.9,
+   "counts": {
+    "passed": 390
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_ligand_ga_jobs.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "                                                           [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 377.46s (0:06:17)",
+   "ok": true,
+   "seconds": 377.9,
+   "counts": {
+    "passed": 12
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_ligand_ga_worker.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "...............                                                          [100%]\n15 passed in 340.37s (0:05:40)",
+   "ok": true,
+   "seconds": 340.7,
+   "counts": {
+    "passed": 15
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_sequence_ga_jobs.py::test_product_path_publication_m18_identity_reuse_dupli",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "                                                            [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n2 passed, 1 warning in 344.10s (0:05:44)",
+   "ok": true,
+   "seconds": 344.5,
+   "counts": {
+    "passed": 2
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_sequence_ga_jobs.py::test_registration_capability_and_protocol_timeout_boun",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "                                                           [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 296.99s (0:04:56)",
+   "ok": true,
+   "seconds": 297.5,
+   "counts": {
+    "passed": 12
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_sequence_ga_api.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "..........                                                 [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n24 passed, 1 warning in 349.30s (0:05:49)",
+   "ok": true,
+   "seconds": 349.7,
+   "counts": {
+    "passed": 24
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_sequence_ga_reports.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "......                                                     [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n20 passed, 1 warning in 372.18s (0:06:12)",
+   "ok": true,
+   "seconds": 372.5,
+   "counts": {
+    "passed": 20
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_sequence_ga_worker.py backend/tests/test_sequence_model_worker.py backend/t",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "............................................              [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n419 passed, 1 warning in 309.17s (0:05:09)",
+   "ok": true,
+   "seconds": 309.6,
+   "counts": {
+    "passed": 419
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_mutation_model_worker.py backend/tests/test_mutation_model_jobs.py backend/",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "................                                          [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n247 passed, 1 warning in 346.99s (0:05:46)",
+   "ok": true,
+   "seconds": 347.5,
+   "counts": {
+    "passed": 247
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_jev_loops_read.py backend/tests/test_jev_loop_sends.py backend/tests/test_j",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "...........................................               [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n202 passed, 1 warning in 219.56s (0:03:39)",
+   "ok": true,
+   "seconds": 220.2,
+   "counts": {
+    "passed": 202
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_jev_loops_compute.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": ".............................                              [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n43 passed, 1 warning in 272.15s (0:04:32)",
+   "ok": true,
+   "seconds": 272.6,
+   "counts": {
+    "passed": 43
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_precedent_constants.py backend/tests/test_precedent_snapshots.py backend/te",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": ".......................                                   [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n758 passed, 1 warning in 196.01s (0:03:16)",
+   "ok": true,
+   "seconds": 196.5,
+   "counts": {
+    "passed": 758
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_analysis_workflows.py backend/tests/test_jev_loop_reports.py",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "...........................................               [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n130 passed, 1 warning in 260.55s (0:04:20)",
+   "ok": true,
+   "seconds": 261.2,
+   "counts": {
+    "passed": 130
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_structure_repair_jobs.py backend/tests/test_structure_repair_lane.py backen",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "................                                          [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n103 passed, 1 warning in 272.23s (0:04:32)",
+   "ok": true,
+   "seconds": 272.8,
+   "counts": {
+    "passed": 103
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests/test_structure_repair_downstream_reads.py backend/tests/test_structure_repair_re",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": ".............................                              [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n43 passed, 1 warning in 176.89s (0:02:56)",
+   "ok": true,
+   "seconds": 177.6,
+   "counts": {
+    "passed": 43
+   }
+  },
+  {
+   "label": "<repo>/.venv/bin/python -m pytest -q backend/tests scripts/test_execute.py scripts/test_codex_hooks.py scripts/test_setup_fpocket.p",
+   "timeout_s": 480,
+   "exit": 0,
+   "tail": "                                                         [ 93%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  <repo>/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n3894 passed, 1 warning in 319.90s (0:05:19)",
+   "ok": true,
+   "seconds": 323.8,
+   "counts": {
+    "passed": 3894
+   }
+  }
+ ]
+}
