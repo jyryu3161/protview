@@ -1,0 +1,88 @@
+{
+  "schema": "m29_case_ledger@1",
+  "phase": "fixture",
+  "rehearsal": false,
+  "subset": false,
+  "steps": [
+    "r1",
+    "r3",
+    "r4a",
+    "table",
+    "r8",
+    "r7",
+    "r6",
+    "r4b",
+    "pytest",
+    "r9"
+  ],
+  "acceptance": true,
+  "passed": true,
+  "counts": {
+    "pass": 12,
+    "fail": 0,
+    "not_observed": 0
+  },
+  "notPassing": [],
+  "gates": {
+    "buildStamped": true,
+    "browserNonLoopback0": true,
+    "providerCalls0": true,
+    "dispatchEvents0": true,
+    "noForbiddenRequest": true,
+    "noServerError": true,
+    "noBackendTraceback": true,
+    "nothingLeft": true,
+    "defaultFoldersAbsent": true,
+    "fixedSentencesExported": true,
+    "exportClean": true
+  },
+  "external": {
+    "browserNonLoopbackRequests": 0,
+    "providerCalls": 0,
+    "productResolverReads": 0,
+    "dispatchEvents": 0,
+    "harnessDispatchGuard": false,
+    "apiRequests": 508,
+    "apiForbiddenSent": 0,
+    "harnessServerErrors": 0,
+    "proxyTimeouts": [
+      {
+        "job": "job_3b64933a485349b886631904c1f6e36d",
+        "method": "POST",
+        "path": "/api/runs/<run>/jobs/<job>/start",
+        "status": 500,
+        "frontendLogLine": true,
+        "frontendLog": "Failed to proxy http://127.0.0.1:8000/runs/<run>/jobs/<job>/start [socket hang up]",
+        "finalJobStatus": "done"
+      }
+    ],
+    "reopenProviderCalls": 0,
+    "reopenResolverReads": 0,
+    "apiServerErrors": [],
+    "backendLogFailures": {
+      "backend-main.log": 0,
+      "backend-reopen.log": 0
+    }
+  },
+  "leftover": [],
+  "defaultFolders": {
+    "before": {
+      ".deps/precedent_reference": false,
+      ".deps/reaction_reference": false
+    },
+    "after": {
+      ".deps/precedent_reference": false,
+      ".deps/reaction_reference": false
+    }
+  },
+  "build": {
+    "buildId": "zHxijM08Zpd_R8U7RDu8X",
+    "gitHead": "1802a32f8711728155a8accef67c5e6c304eba06",
+    "buildCurrentWithSource": true,
+    "dirtyFiles": [],
+    "recordedAt": "2026-10-13T15:14:24.019225+00:00",
+    "runnerSha256": "9a2531fb6a58e39bb73583dc202cebc7afdb3c342fa4ce6dca39f5782765a296",
+    "harnessSha256": "a1f9f62965160b05fc5157efdc5ba9be9b92323464e0773b91f70e498a06fc89"
+  },
+  "generatedAt": "2026-10-13T15:42:52.193650+00:00"
+}

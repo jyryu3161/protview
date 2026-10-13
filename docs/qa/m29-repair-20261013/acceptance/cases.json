@@ -1,0 +1,1091 @@
+{
+  "schema": "m29_acceptance_cases@1",
+  "acceptance": true,
+  "cases": [
+    {
+      "id": "R1",
+      "title": "8VF6 종단(UI): 불러오기·전처리·사전 검사·승인·작업·결과·내려받기·보완 보고서",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "harness",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r1-load",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r1-preflight",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r1-job",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r1-result",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r1-download",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r1-report",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "preflight_expected",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "record_vs_oracle",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "download_bytes",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "repair_report",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "steps/r1",
+        "evidence/r1.json"
+      ],
+      "detail": {
+        "record": "obj://run_b712fb03c11848f899f96ca598ae486d/structure_repair/6181da0c27dd479a3a5b2cd4ea4f090eb8599ce97154965554acbd9d2b0257a7",
+        "counts": {
+          "added_atoms": 266,
+          "added_residues": 24,
+          "chain_parts_merged": 2,
+          "gaps": 2,
+          "protein_heavy_atoms": 4538,
+          "replaced": 0,
+          "side_chain_residues": 23,
+          "terminal_oxt": 2
+        },
+        "invariance": {
+          "inputAtoms": 4338,
+          "outputAtoms": 4604,
+          "newAtoms": 266,
+          "newResidues": 24,
+          "maxObservedDeltaA": 0.0,
+          "problems": []
+        },
+        "problems": [],
+        "reportClaims": {
+          "counts": {
+            "counts.added_residues": 24,
+            "counts.added_atoms": 266,
+            "counts.side_chain_residues": 23,
+            "counts.terminal_oxt": 2,
+            "counts.gaps": 2,
+            "counts.replaced": 0,
+            "unchanged.atom_count": 4338
+          },
+          "byOrigin": {
+            "side_chain": 91,
+            "oxt": 2,
+            "gap_residue": 173
+          }
+        },
+        "report": "obj://run_b712fb03c11848f899f96ca598ae486d/method_report_manifest/300795507e2cfab4980a0796378f1f4ffd1690cec350db42412a671d4a5f7f33"
+      }
+    },
+    {
+      "id": "R2",
+      "title": "M7 통과: 보완 8VF6이 두 물 정책에서 게시되고 M21 입장이 openmm_preflight_failed 없이 열림",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "8VF6-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "published": true,
+            "m21Admission": {
+              "status": 200,
+              "jobStatus": "queued",
+              "reason": null
+            }
+          }
+        },
+        {
+          "name": "8VF6-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "published": true,
+            "m21Admission": {
+              "status": 200,
+              "jobStatus": "queued",
+              "reason": null
+            }
+          }
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/classification-table.json"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R3",
+      "title": "M20 인계(UI): 원본 기준 번호 대응·주석·포켓, KLIFS 일곱 자리, 모델링 잔기 표시, SO1–SO3, @3",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "harness",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r3-m20",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r3-detail",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r3-report",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "klifs_seven",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "pocket_handoff",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "stored_set_bytes",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "modeled_basis",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "modeled_residue_not_checked",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "modeled_residue_screen",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "so1_so3_shown",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "original_references",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "m20_report_v3",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "steps/r3",
+        "evidence/r3.json"
+      ],
+      "detail": {
+        "klifs": {
+          "repaired": [
+            "A/145/LYS",
+            "A/192/MET",
+            "A/193/GLU",
+            "A/194/LEU",
+            "A/195/CYS",
+            "A/264/THR",
+            "A/265/ASP"
+          ],
+          "original": [
+            "A/145/LYS",
+            "A/192/MET",
+            "A/193/GLU",
+            "A/194/LEU",
+            "A/195/CYS",
+            "A/264/THR",
+            "A/265/ASP"
+          ],
+          "documented": [
+            "A/145/LYS",
+            "A/192/MET",
+            "A/193/GLU",
+            "A/194/LEU",
+            "A/195/CYS",
+            "A/264/THR",
+            "A/265/ASP"
+          ],
+          "extra": {},
+          "unexplained": []
+        },
+        "modeledBasis": {
+          "true": 3,
+          "positions": 37,
+          "expectedTrue": 3
+        },
+        "gapResidue": {
+          "residue": "A/279/MET",
+          "readNotChecked": [
+            "numbering",
+            "klifs_sites"
+          ]
+        },
+        "set": "obj://run_b712fb03c11848f899f96ca598ae486d/mutation_candidate_set/bde8dc4af59427f2c42e229e7840749f0bc778edb3e4848277e0453c562dc48a",
+        "report": "obj://run_b712fb03c11848f899f96ca598ae486d/method_report_manifest/3b973f86569ad735c7a5300da19135d91d4e4aa198ac88587f7d5be161d112f9",
+        "positions": 37,
+        "recordCounts": {
+          "added_atoms": 266,
+          "added_residues": 24,
+          "chain_parts_merged": 2,
+          "gaps": 2,
+          "protein_heavy_atoms": 4538,
+          "replaced": 0,
+          "side_chain_residues": 23,
+          "terminal_oxt": 2
+        }
+      }
+    },
+    {
+      "id": "R4a",
+      "title": "completes 구조(1HSG, UI): M21 작업 완료(240초)·M21 보고서 @2·같은 조건 도킹·M18 보고서 구조 출처",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "harness",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r4a-repair",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r4a-m20",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r4a-m21",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r4a-model-report",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "record_vs_oracle",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "m21_completed_240",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "model_origin_shown",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "m21_report_v2",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "docking",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "syntheticLigand": "synthetic-phenol-ligand.sdf (SYNTHETIC-FIXTURE, mechanical path)"
+          }
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "steps/r4a",
+        "evidence/r4a.json"
+      ],
+      "detail": {
+        "record": "obj://run_5d649e11d4894bfebf5edd7a66690355/structure_repair/38f34bf3074558bb9e4b9e54b23566f2e205904e7429190e22488809cc9ea707",
+        "model": "obj://run_5d649e11d4894bfebf5edd7a66690355/mutation_model/3c466c3f5ddb9aaaa29d3f2c04819ddcf1fb841b39eff460d39685dfcd897cc1",
+        "modelJob": {
+          "status": "done",
+          "timeoutS": 240,
+          "jobId": "job_3b64933a485349b886631904c1f6e36d",
+          "phases": [
+            "running",
+            "done"
+          ]
+        },
+        "dockingJobs": {
+          "wild_type_reference": "done",
+          "mutant": "done"
+        },
+        "dockingRefused": null,
+        "counts": {
+          "added_atoms": 2,
+          "added_residues": 0,
+          "chain_parts_merged": 0,
+          "gaps": 0,
+          "protein_heavy_atoms": 1516,
+          "replaced": 0,
+          "side_chain_residues": 0,
+          "terminal_oxt": 2
+        }
+      }
+    },
+    {
+      "id": "R4b",
+      "title": "시간 상한 관측(8VF6 M21, 240초): 작업 실패·결과 없음·모델 0·1단위 환불 없음·프로세스 정리",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "job_state",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "no_result",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "unit_not_refunded",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "worker_cleaned",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "timed_at_limit",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "docking",
+          "status": "not_observed",
+          "reason": "no_model_time_limit",
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [
+        {
+          "part": "docking",
+          "reason": "no_model_time_limit"
+        }
+      ],
+      "evidence_refs": [
+        "evidence/r4b.json"
+      ],
+      "detail": {
+        "run": "run_b0d9e281d6cf4188a7cac4b8d4beeb27",
+        "jobId": "job_be1caf29e1c54d7db75c471e05b132ff",
+        "status": "failed",
+        "failure": {
+          "error": "resource_exceeded",
+          "message": "job timeout"
+        },
+        "outputHandles": [],
+        "artifacts": {},
+        "unitsBefore": 1,
+        "unitsAfter": 2,
+        "modelsBefore": 0,
+        "modelsAfter": 0,
+        "seconds": 242.4,
+        "timeoutS": 240,
+        "approvedNow": false,
+        "workersLeft": [],
+        "repairedHeavyAtoms": 4538
+      }
+    },
+    {
+      "id": "R5",
+      "title": "분류 표(13구조 × 물 정책 둘) = 독립 분류, in_scope 사슬(보완 → M20 → M21 입장), out_of_scope 거절",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "1M17-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1M17-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1FIN-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1FIN-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1MQ4-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1MQ4-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1S9I-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1S9I-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1A30-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1A30-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1A4I-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1A4I-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1UBQ-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1UBQ-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1HSG-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1HSG-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "8VF6-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "8VF6-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1RNH-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1RNH-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "4INS-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "4INS-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1AY7-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1AY7-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1CLL-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "1CLL-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "table_complete",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/classification-table.json"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R6",
+      "title": "기본 거절: §5.2 소비자 전부 repaired_structure_not_accepted, 인벤토리 시험, 뷰어 경로 없음",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "api_targets",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "targets": 22,
+            "nothingStored": {
+              "objects": true,
+              "jobs": true,
+              "units": true,
+              "plans": true,
+              "scenes": true,
+              "reports": true
+            }
+          }
+        },
+        {
+          "name": "pytest:test_structure_repair_consumers.py,test_structure_repair_refusals.py",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "summary": "10 passed, 1 warning in 12.39s"
+          }
+        },
+        {
+          "name": "viewer_path",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "selects": 15,
+            "optionsWithRepaired": 0,
+            "optionsWithPrepared": 3,
+            "viewerSource": "obj://run_b712fb03c11848f899f96ca598ae486d/prepared_structure/3282f8f80dd75f022057b10e2d43ecf86c70b6c60cf8a6c77bdfb901035fa413",
+            "repaired": "obj://run_b712fb03c11848f899f96ca598ae486d/prepared_structure/738c60961ec98efa312ec13ee3f63d7754458aaa812dcf449e0728b5c26cdc24"
+          }
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/r6.json"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R7",
+      "title": "입장 거절: nothing_to_repair·already_repaired·gap_too_long·합성 표시 다섯, 예산·작업 0",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "1UBQ-nothing_to_repair",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "submit": {
+              "status": 422,
+              "error": "input_invalid",
+              "detailError": "repair_not_possible",
+              "reason": "nothing_to_repair",
+              "jobsAdded": 0,
+              "unitsAdded": 0
+            }
+          }
+        },
+        {
+          "name": "1S9I-gap_too_long",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "submit": {
+              "status": 422,
+              "error": "input_invalid",
+              "detailError": "repair_not_possible",
+              "reason": "gap_too_long",
+              "jobsAdded": 0,
+              "unitsAdded": 0
+            }
+          }
+        },
+        {
+          "name": "SYNTHETIC-chain_identity_duplicate",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "file": "synthetic-chain-identity-duplicate.cif",
+            "synthetic": true,
+            "run": "run_7e24048528914d11b794e6db9947ba57",
+            "oracle": "chain_identity_duplicate",
+            "preflight": "chain_identity_duplicate",
+            "submit": 422
+          }
+        },
+        {
+          "name": "SYNTHETIC-unsupported_residue",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "file": "synthetic-unsupported-residue.cif",
+            "synthetic": true,
+            "run": "run_2fc1563aa48d43c681700c46759509ce",
+            "oracle": "unsupported_residue",
+            "preflight": "unsupported_residue",
+            "submit": 422
+          }
+        },
+        {
+          "name": "SYNTHETIC-unexpected_atoms",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "file": "synthetic-unexpected-atoms.cif",
+            "synthetic": true,
+            "run": "run_30763442242d4cc4a069c423d992f1bc",
+            "oracle": "unexpected_atoms",
+            "preflight": "unexpected_atoms",
+            "submit": 422
+          }
+        },
+        {
+          "name": "SYNTHETIC-backbone_atoms_missing",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "file": "synthetic-backbone-atoms-missing.cif",
+            "synthetic": true,
+            "run": "run_271455061aa24a3b99fee3837e8a03b8",
+            "oracle": "backbone_atoms_missing",
+            "preflight": "backbone_atoms_missing",
+            "submit": 422
+          }
+        },
+        {
+          "name": "SYNTHETIC-gap_listing_missing",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "file": "synthetic-gap-listing-missing.cif",
+            "synthetic": true,
+            "run": "run_22ca542e40604d71ae5b9bb1cf0af83f",
+            "oracle": "gap_listing_missing",
+            "preflight": "gap_listing_missing",
+            "submit": 422
+          }
+        },
+        {
+          "name": "already_repaired",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "run": "run_b712fb03c11848f899f96ca598ae486d"
+          }
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/r7.json"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R8",
+      "title": "MSE: 1RNH의 MSE 세 개 → MET, 대응표·RP5·치환 잔기 표시",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "1RNH-strip_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "replaced": [
+              "A/47/MSE",
+              "A/50/MSE",
+              "A/142/MSE"
+            ],
+            "fileMse": [
+              "A/47/MSE",
+              "A/50/MSE",
+              "A/142/MSE"
+            ]
+          }
+        },
+        {
+          "name": "1RNH-keep_all",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "replaced": [
+              "A/47/MSE",
+              "A/50/MSE",
+              "A/142/MSE"
+            ],
+            "fileMse": [
+              "A/47/MSE",
+              "A/50/MSE",
+              "A/142/MSE"
+            ]
+          }
+        },
+        {
+          "name": "screen",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "replacedRows": 3,
+            "rp5Shown": true,
+            "record": "obj://run_3c3d7f50fb09485aa45f0a3f3edfc700/structure_repair/e1ebbbd52fd98bba0ae64ca6c55a9e464eb890018652431c56d0651d05558d06"
+          }
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/classification-table.json",
+        "steps/r8"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R9",
+      "title": "재열기: 이벤트만으로 보완 기록·구조·보고서, 저장된 M20 @1·@2·M21 @1 같은 바이트, 비보완 응답 바이트",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "repair_events_only",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "reads": [
+              "atoms",
+              "detail",
+              "list",
+              "report:obj://run_b712fb03c11848f899f96ca598ae486d/method_report_manifest/300795507e2cfab4980a0796378f1f4ffd1690cec350db42412a671d4a5f7f33",
+              "report:obj://run_b712fb03c11848f899f96ca598ae486d/method_report_manifest/3b973f86569ad735c7a5300da19135d91d4e4aa198ac88587f7d5be161d112f9",
+              "structure"
+            ]
+          }
+        },
+        {
+          "name": "saved:mutation_candidates_markdown@1:174d26820b23",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "render": "mutation_candidates_markdown@1"
+          }
+        },
+        {
+          "name": "saved:mutation_candidates_markdown@1:c36fa4ca4330",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "render": "mutation_candidates_markdown@1"
+          }
+        },
+        {
+          "name": "saved:mutation_candidates_markdown@2:c9c8034c15c3",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "render": "mutation_candidates_markdown@2"
+          }
+        },
+        {
+          "name": "saved:mutation_candidates_markdown@1:59fff6c283d1",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "render": "mutation_candidates_markdown@1"
+          }
+        },
+        {
+          "name": "saved:mutation_model_markdown@1:1a7a00d572f0",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "render": "mutation_model_markdown@1"
+          }
+        },
+        {
+          "name": "saved_versions_covered",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "pytest:test_structure_repair_downstream_reads.py,test_structure_repair_reports_downstream.py",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/r9.json"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R10",
+      "title": "JEV 경고(UI): 미리보기·승인 화면 JW1, 전송 0, M23 화면 표시, M23 보고서 바이트 불변",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "harness",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r10-jev",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r10-loop",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "ui:r10-m23",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "jw1_preview",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "jw1_approval",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "jw1_loop_preview",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "jw1_loop_approval",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "body_unchanged_wording",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "no_send",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "m23_screen",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "pytest:test_structure_repair_downstream_reads.py",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "m23_report_files",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "steps/r3",
+        "evidence/r10.json"
+      ],
+      "detail": null
+    },
+    {
+      "id": "R11",
+      "title": "금지어: 새 화면·보고서·고정 문장에 금지어 0, 비폭로",
+      "status": "pass",
+      "reason": null,
+      "parts": [
+        {
+          "name": "wording",
+          "status": "pass",
+          "reason": null,
+          "detail": {
+            "scanned": 21
+          }
+        },
+        {
+          "name": "fixed_sentences",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        },
+        {
+          "name": "fixed_sentences_wording",
+          "status": "pass",
+          "reason": null,
+          "detail": {}
+        }
+      ],
+      "allowedGaps": [],
+      "evidence_refs": [
+        "evidence/r11.json"
+      ],
+      "detail": null
+    }
+  ]
+}
