@@ -7,8 +7,8 @@ import type { RepairWarning, RunEvent, StructureOrigin, StructureRepairAtomPage,
   StructureRepairReportArtifact } from "@/lib/contracts";
 import { preparedStructures } from "@/lib/mutations";
 import { atomPageCount, atomPageText, atomQuery, ATOM_PAGE_DEFAULT, BUDGET_NOTE, chainEndRows, collisionRows,
-  COLLISION_NOTE, CONFIRM_TEXT, coordinatesText, detailMatches, gapRowText, METHOD_NOTE, NO_AUTO_NOTE, NULL_TEXT,
-  NUMBER_NOTE, OPEN_RECORD_TEXT, ORIGIN_LABEL, PANEL_TITLE, preflightMatches, preflightView, RECORD_LABEL,
+  COLLISION_NOTE, CONFIRM_TEXT, coordinatesText, detailMatches, gapRowText, METHOD_NOTE, NO_AUTO_NOTE,
+  NOT_ANALYSED_TEXT, NULL_TEXT, NUMBER_NOTE, OPEN_RECORD_TEXT, ORIGIN_LABEL, PANEL_TITLE, preflightMatches, preflightView, RECORD_LABEL,
   repairActiveJob, repairApprovalRequired, repairCancelEnabled, repairClassRows, repairInputStructures,
   repairJobActive, repairJobResult, repairJobText, repairListRowText, repairOpenPending, repairPanelState,
   repairReasonText, repairReportMatches, repairReportSavedForRun, repairResponseCurrent, repairStartProgressed,
@@ -546,8 +546,9 @@ function RepairWorkspace({ run, capability, onObjectsChanged, onReportCreated, o
 
 const APPROVED_NOTICE = "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다.";
 
-function Table({ testId, head, rows, empty }: { testId: string; head: string[]; rows: (string | ReactNode)[][];
-  empty: string }) {
+function Table({ testId, head, rows, empty, unknown }: { testId: string; head: string[]; rows: (string | ReactNode)[][];
+  empty: string; unknown?: string }) {
+  if (unknown !== undefined) return <p className="mw-mutation-note" data-testid={`${testId}-unknown`}>{unknown}</p>;
   if (!rows.length) return <p className="mw-mutation-note" data-testid={`${testId}-empty`}>{empty}</p>;
   return <div className="mw-mutation-table-wrap"><table className="mw-mutation-table" data-testid={testId}
     data-count={rows.length}>
@@ -557,30 +558,35 @@ function Table({ testId, head, rows, empty }: { testId: string; head: string[]; 
   </table></div>;
 }
 
-function PreflightBlock({ preflight, view }: { preflight: StructureRepairPreflight; view: ReturnType<typeof preflightView> }) {
+/** The free preflight read. Without a defect analysis (`defects` null) the blocker and defect tables say so instead of
+ * showing a count of 0. */
+export function PreflightBlock({ preflight, view }: { preflight: StructureRepairPreflight;
+  view: ReturnType<typeof preflightView> }) {
   const admissionCode = preflight.admission?.reason_code ?? preflight.admission?.error ?? undefined;
+  const unknown = view.analysed ? undefined : NOT_ANALYSED_TEXT;
   return <div className="mw-mutation-group" data-testid="repair-preflight" data-structure={preflight.structure}
     data-repairable={preflight.repairable === null ? "null" : String(preflight.repairable)}
     data-admitted={String(view.admitted)} data-reason-code={view.admitted ? undefined : admissionCode}>
     <p data-testid="repair-preflight-repairable">{view.repairableText}</p>
     <p className={view.admitted ? "mw-mutation-note" : "mw-mutation-notice"} role="status"
       data-testid="repair-preflight-admission">{view.admissionText}</p>
-    <span className="mw-eyebrow">걸림돌 ({view.blockers.length}개)</span>
-    <Table testId="repair-blockers" head={["이유", "위치", "내용"]} empty="걸림돌 없음 (0개)"
+    <span className="mw-eyebrow">{view.blockersHeading}</span>
+    <Table testId="repair-blockers" head={["이유", "위치", "내용"]} empty="걸림돌 없음 (0개)" unknown={unknown}
       rows={view.blockers.map(item => [<span key="r" data-reason-code={item.code}>{item.reason}</span>, item.where,
         item.detail || NULL_TEXT])} />
     <span className="mw-eyebrow">결함 (사전 검사 목록 그대로)</span>
     <p className="mw-mutation-note" data-testid="repair-preflight-expected">{view.expectedText}</p>
     <Table testId="repair-defect-chain-parts" head={["저자 체인", "조각 수"]} empty="조각으로 나뉜 체인 0개"
-      rows={view.chainParts.map(item => [item.chain, item.parts])} />
+      unknown={unknown} rows={view.chainParts.map(item => [item.chain, item.parts])} />
     <Table testId="repair-defect-side-chain" head={["잔기", "잔기 7필드", "빠진 곁사슬 원자"]} empty="곁사슬 결손 잔기 0개"
-      rows={view.sideChain.map(item => [item.residue, item.fields, item.missing])} />
+      unknown={unknown} rows={view.sideChain.map(item => [item.residue, item.fields, item.missing])} />
     <Table testId="repair-defect-oxt" head={["C 말단 잔기 (OXT 없음)", "잔기 7필드"]} empty="OXT 없는 C 말단 0개"
-      rows={view.oxt.map(item => [item.residue, item.fields])} />
+      unknown={unknown} rows={view.oxt.map(item => [item.residue, item.fields])} />
     <Table testId="repair-defect-gaps" head={["체인", "앞 잔기", "뒤 잔기", "길이 (잔기)", "틈 잔기 (파일 목록)"]}
-      empty="내부 틈 0개" rows={view.gaps.map(item => [item.chain, item.after, item.before, item.length, item.residues])} />
+      empty="내부 틈 0개" unknown={unknown}
+      rows={view.gaps.map(item => [item.chain, item.after, item.before, item.length, item.residues])} />
     <Table testId="repair-defect-nonstandard" head={["MSE 잔기", "잔기 7필드", "바꿀 이름"]} empty="MSE 잔기 0개"
-      rows={view.nonstandard.map(item => [item.residue, item.fields, item.to])} />
+      unknown={unknown} rows={view.nonstandard.map(item => [item.residue, item.fields, item.to])} />
     {view.statements.length > 0 && <div data-testid="repair-preflight-statements">
       <span className="mw-eyebrow">한계 (고정 문장, 보완하면 기록에 들어감)</span>
       {view.statements.map(text => <p key={text} className="mw-mutation-note">{text}</p>)}

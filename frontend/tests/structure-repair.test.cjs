@@ -321,6 +321,10 @@ test("preflight view: defect lists as given, blockers \"한국어 (code)\", admi
   assert.equal(blind.expectedText, "— (결함 분석 없음)");
   assert.equal(blind.repairableText, "— (결함 분석 없음)");
   assert.deepEqual([blind.chainParts, blind.sideChain, blind.oxt, blind.gaps, blind.nonstandard], [[], [], [], [], []]);
+  assert.equal(blind.analysed, false);
+  assert.equal(blind.blockersHeading, "걸림돌 (— (결함 분석 없음))");
+  assert.equal(view.analysed, true);
+  assert.equal(view.blockersHeading, "걸림돌 (0개)");
 });
 
 test("job: the literal policy only after the confirmation; blocked reasons in order; approval, re-attach, result", () => {
@@ -491,7 +495,8 @@ test("wording: every module text and every panel literal passes the check; fixed
   for (const text of literals) assert.deepEqual(plain(lib.repairForbiddenWords(text)), [], text);
   assert.ok(ids.length > 40, String(ids.length));
   for (const id of ids) assert.ok(id.startsWith("repair-") || ["<testId>", "<`${testId}-open`>",
-    "<`${testId}-empty`>", "<runId === null ? \"repair-no-run\" : \"repair-unavailable\">"].includes(id), id);
+    "<`${testId}-empty`>", "<`${testId}-unknown`>", "<runId === null ? \"repair-no-run\" : \"repair-unavailable\">"]
+    .includes(id), id);
   // No fixed sentence is retyped in the panel; values are not computed or sorted there; no HTML strings.
   for (const sentence of lib.REPAIR_FIXED_LINES) assert.ok(!source.includes(sentence.slice(0, 18)), sentence);
   assert.ok(!/\.sort\(|toFixed\(|Math\.|<progress|<meter|style=|dangerouslySetInnerHTML|innerHTML/.test(source));
@@ -575,4 +580,57 @@ test("shared notes: SO1 and JW1 exactly as the server gave them, with the record
     testId: "x-warning" }));
   assert.ok(warning.includes(`>${lib.JW1}</p>`) && warning.includes('data-statement="JW1"'));
   assert.equal(renderToStaticMarkup(React.createElement(panel.RepairWarningNote, { warning: undefined, testId: "x" })), "");
+});
+
+
+test("preflight block: without a defect analysis the blocker and five defect tables say so and never show 0", () => {
+  const tables = ["repair-blockers", "repair-defect-chain-parts", "repair-defect-side-chain", "repair-defect-oxt",
+    "repair-defect-gaps", "repair-defect-nonstandard"];
+  const block = preflight => renderToStaticMarkup(React.createElement(panel.PreflightBlock, { preflight,
+    view: lib.preflightView(preflight) }));
+  const blindPreflight = { ...PREFLIGHT, repairable: null, blockers: [], defects: null, expected_added_residues: null,
+    expected_added_heavy_atoms: null, statements: [], admission: { admitted: false, error: "precondition",
+      reason_code: "openmm_unavailable", message: "m", detail: null } };
+  const blind = block(blindPreflight);
+  const blindText = blind.replace(/<[^>]+>/g, "\n");
+  for (const id of tables) {
+    assert.ok(blind.includes(`data-testid="${id}-unknown"`), id);
+    assert.ok(!blind.includes(`data-testid="${id}-empty"`) && !blind.includes(`data-testid="${id}"`), id);
+  }
+  assert.equal(blindText.split(lib.NOT_ANALYSED_TEXT).length - 1, 9);    // heading, six tables, repairable, expected
+  assert.ok(!/0개/.test(blindText), blindText);
+  // With the analysis, an empty list is a real "0" (the server listed none).
+  const analysed = block({ ...PREFLIGHT, defects: { ...PREFLIGHT.defects, nonstandard: [] } });
+  assert.ok(analysed.includes('data-testid="repair-defect-nonstandard-empty"') && analysed.includes("MSE 잔기 0개"));
+  assert.ok(analysed.includes('data-testid="repair-blockers-empty"') && analysed.includes("걸림돌 (0개)"));
+  assert.ok(!analysed.includes("-unknown\""));
+  assert.deepEqual(plain(lib.repairForbiddenWords(blindText + analysed.replace(/<[^>]+>/g, "\n"))), []);
+});
+
+// The user-facing strings M29 added to the other screens (git diff 3c5994e4.. of frontend/src: badges, SO1 notes with
+// the record, "보완 전 원본 구조" choices, the modeled-basis column, the M23 screen-only note): each is still in its file and
+// none holds a forbidden word (the panel's own literals are checked above).
+const M29_SCREEN_STRINGS = {
+  "frontend/src/components/MutationPanel.tsx": [" · 보완 전 원본 구조", "보완 전 원본 구조로 검출한 포켓 있는 결과가 " +
+    "없습니다. 구조 분석 탭에서 원본 구조의 포켓 검출을 먼저 실행하세요.", "이 구조로 검출한 포켓 있는 결과가 없습니다. " +
+    "구조 분석 탭에서 포켓 검출을 먼저 실행하세요.", "모델링 원자·잔기 (SO2)", "원본", "보완 기록"],
+  "frontend/src/components/SequenceGaPanel.tsx": [" · 보완 구조", "보완 구조", "보완 기록", "원본",
+    "(화면 표시만, 서열 GA 보고서에는 이 사실이 들어가지 않음)", "보완 기록 열기"],
+  "frontend/src/components/MutationModelPanel.tsx": ["보완 구조", "보완 기록", "원본", "보완 기록 열기"],
+  "frontend/src/components/JevLoopPanel.tsx": ["보완 구조", "보완 기록", "원본", "보완 기록 열기"],
+  "frontend/src/components/DockingPanel.tsx": ["보완 구조"],
+  "frontend/src/lib/jev.ts": ["보완 구조", "보완 기록", "원본", "보완 기록 열기"],
+  "frontend/src/lib/report-library.ts": ["구조 보완 보고서"],
+};
+
+test("wording: the M29 strings on the other screens pass the check", () => {
+  for (const [file, strings] of Object.entries(M29_SCREEN_STRINGS)) {
+    const source = read(file);
+    for (const text of strings) {
+      assert.ok(source.includes(text), `${file}: ${text}`);
+      assert.deepEqual(plain(lib.repairForbiddenWords(text)), [], `${file}: ${text}`);
+    }
+  }
+  assert.deepEqual(plain(lib.repairForbiddenWords([lib.MODELED_NOT_CHECKED_TEXT, lib.modeledBasisText({ modeled_basis: true }),
+    lib.modeledBasisText({ modeled_basis: false }), lib.REPAIRED_POCKET_NOTE, lib.REPAIRED_REFERENCE_NOTE].join("\n"))), []);
 });

@@ -70,6 +70,8 @@ export const REPAIRED_BADGE = "보완 구조";
 export const RECORD_LABEL = "보완 기록";
 export const OPEN_RECORD_TEXT = "보완 기록 열기";
 export const MODELED_NOT_CHECKED_TEXT = "검사 안 함(모델링 잔기)";
+/** The preflight read without a defect analysis (refused before it, or the template unreadable): no count, never "0". */
+export const NOT_ANALYSED_TEXT = `${NULL_TEXT} (결함 분석 없음)`;
 export const UNDETERMINED_TEXT = "—(판정 불가)";
 export const STATE_TEXT = { loading: "불러오는 중", ready: "준비", empty: "빈 결과", failed: "실패",
   unavailable: "사용할 수 없음" } as const;
@@ -339,6 +341,9 @@ export function preflightMatches(value: unknown, structure: string): value is St
 
 export interface PreflightView {
   admitted: boolean; admissionText: string; repairableText: string;
+  /** False when the read carries no defect analysis (`defects` null): the blocker and defect tables show
+   * NOT_ANALYSED_TEXT instead of a count. */
+  analysed: boolean; blockersHeading: string;
   blockers: { reason: string; where: string; detail: string; code: string }[];
   chainParts: { chain: string; parts: string }[];
   sideChain: { residue: string; fields: string; missing: string }[];
@@ -362,13 +367,15 @@ export function preflightView(preflight: StructureRepairPreflight): PreflightVie
     : admitted ? "입장 통과: 보완 작업을 제출할 수 있습니다."
       : `입장 거절: ${admissionCode ? repairReasonText(admissionCode) : NULL_TEXT}${admission.message
         ? ` · ${admission.message}` : ""}`;
-  const repairableText = preflight.repairable === null ? `${NULL_TEXT} (결함 분석 없음)`
+  const repairableText = preflight.repairable === null ? NOT_ANALYSED_TEXT
     : preflight.repairable ? "보완할 수 있음" : "보완할 수 없음";
   const defects = preflight.defects;
+  const analysed = defects !== null;
   const remaining = preflight.remaining.expensive_calls;
   const shortfall = preflight.shortfall.expensive_calls;
   return {
-    admitted, admissionText, repairableText,
+    admitted, admissionText, repairableText, analysed,
+    blockersHeading: analysed ? `걸림돌 (${preflight.blockers.length}개)` : `걸림돌 (${NOT_ANALYSED_TEXT})`,
     blockers: preflight.blockers.map(blocker => ({ ...blockerText(blocker), code: blocker.reason_code })),
     chainParts: defects ? defects.chain_parts.map(item => ({ chain: item.chain_auth, parts: valueText(item.parts) })) : [],
     sideChain: defects ? defects.side_chain_residues.map(item => ({ residue: residueText(item.residue),
@@ -378,7 +385,7 @@ export function preflightView(preflight: StructureRepairPreflight): PreflightVie
     gaps: defects ? defects.gaps.map(gapRowText) : [],
     nonstandard: defects ? defects.nonstandard.map(item => ({ residue: residueText(item.residue),
       fields: residueFieldsText(item.residue), to: item.to_resname })) : [],
-    expectedText: defects === null ? `${NULL_TEXT} (결함 분석 없음)`
+    expectedText: defects === null ? NOT_ANALYSED_TEXT
       : `더할 잔기 ${valueText(preflight.expected_added_residues)}개 · 더할 중원자 ` +
         `${valueText(preflight.expected_added_heavy_atoms)}개 (사전 검사 값)`,
     budgetText: `비싼 계산 남은 예산 ${valueText(remaining)}단위`,
