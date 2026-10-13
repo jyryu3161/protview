@@ -1,6 +1,6 @@
 # M29 구조 보완 기록
 
-- 판정: **검증 통과, 사용자 확인 대기** (기록 초안 T18, 2026-10-14). 이 초안을 쓸 때 정의 항목 ⑤(회귀 사슬, T16)·⑥-2(독립 증거·기록 검토, T19)·⑦(`CLAUDE.md`·`AGENTS.md`, T20)은 아직 끝나지 않았다(아래 "정의 항목"의 `대기`). 위 판정 값은 그 셋이 통과했을 때의 값이고, 판정 문구를 바꾸는 확인 권한은 사용자에게만 있다. 사용자 확인 뒤의 판정 문구와 병합 정보는 메인 세션이 한 커밋에서 바꾼다.
+- 판정: **검증 통과, 사용자 확인 대기** (기록 초안 T18, 2026-10-14). 이 초안을 쓸 때 정의 항목 ⑥-2(독립 증거·기록 검토, T19)·⑦(`CLAUDE.md`·`AGENTS.md`, T20)은 아직 끝나지 않았다(⑤ 회귀 사슬은 T16에서 채웠다)(아래 "정의 항목"의 `대기`). 위 판정 값은 그 셋이 통과했을 때의 값이고, 판정 문구를 바꾸는 확인 권한은 사용자에게만 있다. 사용자 확인 뒤의 판정 문구와 병합 정보는 메인 세션이 한 커밋에서 바꾼다.
 - 목적: 변이 구조 모델링(M21)·서열 GA(M23)·단백질 JEV 루프(M25)·M21 수용체 출처 도킹(M18)의 입구인 OpenMM 사전 검사(M7)에서 막히던 실제 결정구조를, 사용자가 명시적으로 요청할 때 승인된 결손 다섯 종류(체인 조각 합치기·곁사슬 원자·C 말단 OXT·내부 틈 1–20잔기·MSE→MET)만 PDBFixer로 채운 새 전처리 구조로 만들어 모델링 경로에만 들이고, 무엇을 더하고 바꿨는지를 보완 기록 `structure_repair@1`과 화면·보고서의 "보완 구조 기준" 표시로 남긴다. 관측 원자는 하나도 바꾸지 않는다(좌표 1e-9 Å 이내, 식별자 유지, MSE→MET만 예외).
 - 브랜치: `dryforge/m29-structure-repair`(main `3c5994e4` "Record the M28 merge hash"에서 분기).
 - 소스 고정: `52aa4265`(M29 T14: source freeze). 게이트는 이 커밋에서 돌았다(`gate.txt` 머리, 작업 트리 변경 0). 수락은 고정에 게이트 기록만 더한 `1802a32f` 위에서 돌았다(`git diff --name-only 52aa4265 1802a32f`는 `docs/qa/m29-repair-20261013/gate.txt`와 `gate-raw/`의 파일 12개, 모두 13개뿐, 수락 대장의 빌드 도장 `gitHead` `1802a32f`·`buildCurrentWithSource: true`·`dirtyFiles: []`). 두 커밋은 문서·증거만 다르다.
@@ -27,7 +27,7 @@ M29는 새 작업 전용 도구 `repair_structure`(프로토콜 `pdbfixer_repair
 | ② 간헐 실패 시험 셋(§12) 연속 3회 | **pass** — T2가 시험 쪽만 고쳤다(`backend/tests/`, `e1da210b`·`16aa05d8`·`ea608e33`·`0218cfa5`·`0a9a602a`·`cddc638a`, 제품 코드·해시 파일 변경 없음). T2 계열 C(`cddc638a`, 열아홉 그룹)가 다시 돌리기 없이 연속 3회 통과(6,531개, 가장 긴 그룹 385.6·388.0·390.0초, 회 밖 pytest 그룹 프로세스 최대 0·2·3으로 오염 없음), 고정 게이트 3회(스무 그룹)에서도 그 셋이 모두 통과. 증거 `t2-flaky-tests.md`, `t2-flaky-tests.txt`("VERDICT" 절), `gate.txt` 끝 메모 |
 | ③ §3.4 게시 전 검증·§5.2 인벤토리·§6 표시와 보고서 형식 버전 시험 | **pass** — 게이트 3회에 모두 들어 있다: §3.4는 `test_structure_repair_build.py`(빌더·기록·순수 검증기)·`test_structure_repair_jobs.py`(8VF6 실제 작업, 닫힌 실패·시간 초과·취소에서 객체 0)·`test_structure_repair_lane.py`, §5.2는 `test_structure_repair_consumers.py`(정의마다 선언)·`test_structure_repair_refusals.py`, §6은 `test_structure_repair_downstream_reads.py`·`test_structure_repair_reports_downstream.py`(새 형식 버전은 보완 구조일 때만, 옛 저장 보고서 같은 바이트). 수락의 pytest 단계가 다시 돌렸다: R6 10 passed, R9 79 passed, R10 1 passed, 해시 파일 27개 blob 변경 0(`acceptance/evidence/evidence/pytest.json`) |
 | ④ 수락 사례 전부 `pass` + 구조 분류 표 + 독립 기대값 대조(§10) | **pass** — `acceptance: true`, 사례 12개 모두 `pass`(`fail` 0, `not_observed` 0), 관문 11개 모두 참, 모든 단계·13구조를 돈 연습 아닌 실행. 사례 안의 허용된 관찰 공백은 R4b 도킹 하나(`no_model_time_limit`). 분류 표 26행(13구조 × 물 정책 둘) 모두 문서 = 독립 분류 = 제품. 증거 `acceptance/README.md`·`summary.json`·`cases.json`·`classification-table.md`·`.json` |
-| ⑤ 회귀 사슬(§11.1) | <!-- T16-RESULT --> |
+| ⑤ 회귀 사슬(§11.1) | **pass** — 소스 고정 뒤 기록 커밋 `ccd4a900` 위에서 M28 종단 실행기 `--phase fixture` → M27 `--stages fixture,real` → M26 `--stages fixture,real` → M25 `--phase fixture --regressions`(M24 … M13)를 한 번에 하나, 8000·3000 비움, `.deps/precedent_reference`·`.deps/reaction_reference` 없음(앞·사이·뒤 `ls` 기록). 기준 사례 수와 같다: M28 fixture 31 → 31, M27 46, M26 58, M25 57, M24 26, M23 35, M22 25, M21 23, M20 24, M19 26, M18 24, M17 21, M16 19, M15 14, M14 15, M13 28(M27 … M13 합 441 → 441), 모두 `pass`, 사례 증감 0. **옛 단계 하네스 기대 수정 하나**: 첫 M25 실행에서 M25 자체 fixture 단계만 실패했다(같은 실행의 M24 … M13 회귀 단계 열다섯은 모두 exit 0). `frontend/tests/offscreen/jev-loop-flow.cjs`가 단백질 공학 탭 영역 목록을 정확히 비교하는데 M29의 새 첫 영역 `repair-panel`이 더해져 리간드 갈래 사례가 시작에서 중단(29개 실패, 단백질 갈래 28개 통과). 그 한 줄 기대를 고치고(제품 코드 아님, 명세 §11.2 (b)) M25 fixture 단계만 새 root에서 다시 돌려 57/57 `pass`, 실호출 0. 첫 실행의 증거도 그대로 둔다. 증거 `regression/`, `regression-chain.txt`, `regression-harness-changes.txt`(256 KiB 넘는 텍스트 54개 약 334 MB는 Git 제외 `export-full/`에 두고 해시는 폴더별 `ARCHIVED-EVIDENCE.sha256`) |
 | ⑥-1 독립 코드 검토(T12, 고정 전) | **pass**(남은 막는 지적 0) — 세 갈래 중 둘(A 서버 코어, B 하류·읽기·보고서)은 `approved`, 화면·실행기 갈래(C)는 `needs-fix`(막는 지적 1건: R4a 도킹 공백 판정이 원자 상한이 아닌 거절까지 받아들임). T13에서 고친 뒤 새 검토자 한 명이 수정분을 다시 보고 `approved`(막는 지적 0, 권고 넷). 아래 "독립 검토 요약". 검토 기록은 Git 제외 조율 메모 `.dryforge/run-notes.md`의 "T12 독립 검토 결과"·"T13 재검토" 절 |
 | ⑥-2 독립 증거·기록 검토(T19, 고정 뒤) | **대기** — 아직 하지 않았다 |
 | ⑦ `CLAUDE.md`와 `AGENTS.md` 바이트 동일, 구조·절 순서 불변 | **대기** — T20에서 M29 줄과 작업 전 확인 항목을 넣고 `cmp`로 확인한다(이 초안을 쓸 때 두 파일은 `cmp` 동일이고 M29 줄은 아직 없다) |
@@ -184,7 +184,6 @@ Git 제외: 수락 스크린숏·화면 글자·내려받은 mmCIF `frontend/tes
 필요한 것(프로젝트 `.venv`의 OpenMM·PDBFixer, `.deps/fpocket`·`.deps/docking`·`.deps/qvina`, M15 활성 세트, M28 fixture 단계 폴더)과 연습·회귀 사슬 명령은 `docs/operations.md` "M29 구조 보완 수락 QA"에 있다.
 
 ## 남은 일
-- 회귀 사슬(T16)의 결과를 정의 항목 ⑤에 채운다(메인 세션).
 - 독립 증거·기록 검토(T19)와 그 반영(T20), `CLAUDE.md`·`AGENTS.md`의 M29 줄(정의 항목 ⑦), `docs/tracking/status.md`·`roadmap.md` 마무리.
 - 해석 메모 N1–N14와 결정 0037의 "조율 세션이 정한 것"에 대한 사용자 확인. 판정 문구와 병합은 사용자 확인 뒤 메인 세션이 한다.
 - 새 미해결 문제(위 "알려진 한계")는 `docs/tracking/findings.md`의 M29 절에 있다.
