@@ -1,0 +1,20 @@
+pdb	waters	original_M7	repaired_M7
+1M17	strip_all	fail precondition sequence_gap 'protein chain has a sequence gap' at A/977/LEU	pass heavy=2594 chains=A
+1M17	keep_all	fail precondition sequence_gap 'protein chain has a sequence gap' at A/977/LEU	pass heavy=2594 chains=A
+1FIN	strip_all	fail input_invalid None 'duplicate author chain identity'	fail resource_exceeded None 'protein atom count is empty or exceeds fixed limit'
+1FIN	keep_all	fail input_invalid None 'duplicate author chain identity'	fail resource_exceeded None 'protein atom count is empty or exceeds fixed limit'
+1MQ4	strip_all	fail precondition heavy_template_mismatch 'protein heavy atoms do not match Amber template; heavy-atom repair is unsupported' at A/126/ARG	pass heavy=2160 chains=A
+1MQ4	keep_all	fail precondition heavy_template_mismatch 'protein heavy atoms do not match Amber template; heavy-atom repair is unsupported' at A/126/ARG	pass heavy=2160 chains=A
+1S9I	strip_all	fail precondition sequence_gap 'protein chain has a sequence gap' at A/228/VAL	not spliced (gap > 20 residues)
+1S9I	keep_all	fail precondition sequence_gap 'protein chain has a sequence gap' at A/228/VAL	not spliced (gap > 20 residues)
+1A30	strip_all	fail precondition heavy_template_mismatch 'protein heavy atoms do not match Amber template; heavy-atom repair is unsupported' at A/41/ARG	pass heavy=1542 chains=A,B,C
+1A30	keep_all	fail precondition heavy_template_mismatch 'protein heavy atoms do not match Amber template; heavy-atom repair is unsupported' at A/41/ARG	pass heavy=1542 chains=A,B,C
+1A4I	strip_all	fail precondition sequence_gap 'protein chain has a sequence gap' at A/251/LYS	pass heavy=4476 chains=A,B
+1A4I	keep_all	fail precondition sequence_gap 'protein chain has a sequence gap' at A/251/LYS	pass heavy=4476 chains=A,B
+1UBQ	strip_all	pass heavy=602 chains=A	pass heavy=602 chains=A
+1UBQ	keep_all	pass heavy=602 chains=A	pass heavy=602 chains=A
+1HSG	strip_all	fail precondition missing_terminal_oxt 'missing terminal OXT; heavy-atom repair is unsupported' at A/99/PHE	pass heavy=1516 chains=A,B
+1HSG	keep_all	fail precondition missing_terminal_oxt 'missing terminal OXT; heavy-atom repair is unsupported' at A/99/PHE	pass heavy=1516 chains=A,B
+8VF6	strip_all	fail precondition heavy_template_mismatch 'protein heavy atoms do not match Amber template; heavy-atom repair is unsupported' at A/100/LYS	pass heavy=4538 chains=A,B
+8VF6	keep_all	fail precondition heavy_template_mismatch 'protein heavy atoms do not match Amber template; heavy-atom repair is unsupported' at A/100/LYS	pass heavy=4538 chains=A,B
+# non_loopback_connect_attempts=0

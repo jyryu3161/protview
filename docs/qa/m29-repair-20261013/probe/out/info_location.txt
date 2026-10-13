@@ -1,0 +1,21 @@
+## mmCIF inputs: categories in structure_source vs prepared_coordinates (-1 = category absent)
+8VF6	strip_all	source_is_input_bytes=True	source={'_entity_poly_seq.': 286, '_pdbx_unobs_or_zero_occ_residues.': 28, '_pdbx_unobs_or_zero_occ_atoms.': 91, '_pdbx_poly_seq_scheme.': 572, '_struct_asym.': 6, '_entity_poly.': 1, '_entity.': 3}
+8VF6	strip_all	prepared_fmt=cif	prepared={'_entity_poly_seq.': 286, '_pdbx_unobs_or_zero_occ_residues.': 0, '_pdbx_unobs_or_zero_occ_atoms.': 0, '_pdbx_poly_seq_scheme.': 0, '_struct_asym.': 4, '_entity_poly.': 1, '_entity.': 3}
+8VF6	strip_all	manifest_source_handle_is_structure_source=True	manifest_keys=['altloc', 'altloc_choices', 'hydrogens', 'input', 'missing_residues', 'model_index', 'model_number', 'protonation', 'removed', 'source_handle', 'symmetry_mates', 'waters']
+8VF6	keep_all	source_is_input_bytes=True	source={'_entity_poly_seq.': 286, '_pdbx_unobs_or_zero_occ_residues.': 28, '_pdbx_unobs_or_zero_occ_atoms.': 91, '_pdbx_poly_seq_scheme.': 572, '_struct_asym.': 6, '_entity_poly.': 1, '_entity.': 3}
+8VF6	keep_all	prepared_fmt=cif	prepared={'_entity_poly_seq.': 286, '_pdbx_unobs_or_zero_occ_residues.': 0, '_pdbx_unobs_or_zero_occ_atoms.': 0, '_pdbx_poly_seq_scheme.': 0, '_struct_asym.': 6, '_entity_poly.': 1, '_entity.': 3}
+8VF6	keep_all	manifest_source_handle_is_structure_source=True	manifest_keys=['altloc', 'altloc_choices', 'hydrogens', 'input', 'missing_residues', 'model_index', 'model_number', 'protonation', 'removed', 'source_handle', 'symmetry_mates', 'waters']
+1M17	strip_all	source_is_input_bytes=True	source={'_entity_poly_seq.': 333, '_pdbx_unobs_or_zero_occ_residues.': 22, '_pdbx_unobs_or_zero_occ_atoms.': 28, '_pdbx_poly_seq_scheme.': 333, '_struct_asym.': 3, '_entity_poly.': 1, '_entity.': 3}
+1M17	strip_all	prepared_fmt=cif	prepared={'_entity_poly_seq.': 333, '_pdbx_unobs_or_zero_occ_residues.': 0, '_pdbx_unobs_or_zero_occ_atoms.': 0, '_pdbx_poly_seq_scheme.': 0, '_struct_asym.': 2, '_entity_poly.': 1, '_entity.': 3}
+1M17	strip_all	manifest_source_handle_is_structure_source=True	manifest_keys=['altloc', 'altloc_choices', 'hydrogens', 'input', 'missing_residues', 'model_index', 'model_number', 'protonation', 'removed', 'source_handle', 'symmetry_mates', 'waters']
+1M17	keep_all	source_is_input_bytes=True	source={'_entity_poly_seq.': 333, '_pdbx_unobs_or_zero_occ_residues.': 22, '_pdbx_unobs_or_zero_occ_atoms.': 28, '_pdbx_poly_seq_scheme.': 333, '_struct_asym.': 3, '_entity_poly.': 1, '_entity.': 3}
+1M17	keep_all	prepared_fmt=cif	prepared={'_entity_poly_seq.': 333, '_pdbx_unobs_or_zero_occ_residues.': 0, '_pdbx_unobs_or_zero_occ_atoms.': 0, '_pdbx_poly_seq_scheme.': 0, '_struct_asym.': 3, '_entity_poly.': 1, '_entity.': 3}
+1M17	keep_all	manifest_source_handle_is_structure_source=True	manifest_keys=['altloc', 'altloc_choices', 'hydrogens', 'input', 'missing_residues', 'model_index', 'model_number', 'protonation', 'removed', 'source_handle', 'symmetry_mates', 'waters']
+## PDB-format input (8VF6 written as PDB text by gemmi)
+gemmi_pdb_writer: SEQRES_lines=44 REMARK_465_lines=0
+prepared_fmt=pdb
+prepared_pdb: SEQRES_lines=44 REMARK_465_lines=0
+product _parse on prepared PDB: polymer residues=544 label_seq_none=544 chain_label_empty=0 distinct_subchains_all_residues=['Ax1', 'Axp', 'Bx1', 'Bxp']
+gemmi read of a PDB without SEQRES (backend/tests/fixtures/mini_complex.pdb): distinct_subchains=[''] label_seq_none=True
+product _parse on PDB structure selection: label_seq_none=544 of 544
+PDB-format chain breaks seen only by C-N distance (M7 peptide_geometry): ['A/272->286 C-N 19.33A', 'B/273->285 C-N 12.75A']
