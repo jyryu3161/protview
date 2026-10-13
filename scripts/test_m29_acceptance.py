@@ -11,6 +11,7 @@ import argparse
 import ast
 import json
 import os
+import re
 import subprocess
 import sys
 import uuid
@@ -71,9 +72,13 @@ def test_no_limit_raising_or_jev_write_route_is_named_outside_the_refusal_list()
     for name in MODULES:
         text = (SCRIPTS / name).read_text()
         for word in ("raise_limits", "limit_approval", "jev/sends", "jev_loops/"):
-            if name == "m29_common.py" and word in ("raise_limits", "limit_approval"):
+            # m29_common names the refused routes (FORBIDDEN_POST_PARTS) and the send route R10 looks for among the
+            # page's requests (JEV_SEND_ROUTE, never sent: Api refuses every non-GET /jev route)
+            if name == "m29_common.py" and word in ("raise_limits", "limit_approval", "jev/sends"):
                 continue
             assert word not in text, (name, word)
+    with pytest.raises(PermissionError):
+        c.Api("http://127.0.0.1:9").post(f"/runs/r{c.JEV_SEND_ROUTE}", {})
     harness = (REPO / "frontend/tests/offscreen/structure-repair-flow.cjs").read_text()
     assert '"jev-send"' not in harness and "jev-confirm\").check" not in harness
     assert "page.request.post" not in harness and "fetch(" not in harness
@@ -131,6 +136,51 @@ def test_the_oracle_finds_the_three_mse_of_1rnh_and_the_synthetic_codes(tpl):
         found = oracle.classify((FIX / "structure_repair" / filename).read_bytes(), "strip_all", tpl)
         assert found["code"] == code, filename
         assert "SYNTHETIC" in (FIX / "structure_repair/synthetic-fixtures.provenance.json").read_text()
+
+
+_CLASSIFIED: dict[str, dict] = {}
+
+
+def _classified(name: str, tpl) -> dict:
+    if name not in _CLASSIFIED:
+        _CLASSIFIED[name] = oracle.classify((FIX / f"public_{name}.cif").read_bytes(), "strip_all", tpl)
+    return _CLASSIFIED[name]
+
+
+def _doc_table(section: str, end: str, header: str) -> list[list[str]]:
+    """The rows of the first Markdown table after ``header`` in one section of preflight.md (cells stripped)."""
+    text = (QA / "preflight.md").read_text().split(section, 1)[1].split(end, 1)[0]
+    text = text.split(header, 1)[1]
+    rows = []
+    for line in text.splitlines()[1:]:
+        if not line.startswith("|"):
+            if rows:
+                break
+            continue
+        cells = [cell.strip().strip("*") for cell in line.strip().strip("|").split("|")]
+        if set("".join(cells)) <= {"-", ":"}:
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _number(cell: str) -> float:
+    return float(cell.split("(")[0].replace(",", "").strip("* "))
+
+
+def test_the_measured_m21_rows_are_the_documented_s1_table_and_the_oracle_heavy_atoms(tpl):
+    """``M21_BAND_MEASURED`` is the S1 table of preflight.md (heavy atoms after repair, seconds), its band follows the
+    spec 10.1 rule on those heavy atoms, and the oracle's protein heavy atoms after repair of each input file are the
+    documented ones."""
+    rows = _doc_table("### S1.", "## 사용자 결정", "| 구조(보완 뒤) |")
+    documented = {cells[0].split("(")[0].strip().lower(): (int(_number(cells[1])), _number(cells[2])) for cells in rows}
+    assert set(documented) == set(c.M21_BAND_MEASURED)
+    for name, (band, heavy, seconds) in c.M21_BAND_MEASURED.items():
+        assert documented[name][0] == heavy, name
+        assert abs(documented[name][1] - seconds) < 0.5, name
+        rule = "completes" if heavy <= 1600 else "near_limit" if heavy <= 2200 else "exceeds"
+        assert band == rule, name
+        assert _classified(name, tpl)["protein_heavy_after"] == heavy, name
 
 
 def test_m21_bands_are_the_measured_table_or_the_rule():
@@ -218,6 +268,224 @@ def test_r5_fails_on_a_bad_or_missing_row():
 def test_r6_and_r9_without_their_inputs_are_not_pass():
     assert cases.r6_case({"ok": None, "reason": "prerequisite_failed:R5"}, [], None)["status"] == "not_observed"
     assert cases.r9_case(None, None, [], [], True)["status"] == "not_observed"
+
+
+# ---------------------------------------------------------------------------------------------------- R4a docking gap
+HARNESS = REPO / "frontend/tests/offscreen/structure-repair-flow.cjs"
+# Refusal bodies (the product's 422 envelope) the old rule /receptor.*atom|atom.*limit/ over the whole JSON took for the
+# receptor atom cap: none of them is.
+NOT_THE_CAP = {
+    "box_no_receptor_atoms": {"ok": False, "error": "input_invalid", "message": "no receptor heavy atom lies inside the box",
+                              "fix": None, "detail": {"reason_code": "box_no_receptor_atoms"}},
+    "receptor_altloc_present": {"ok": False, "error": "input_invalid", "message": "receptor has alternate locations",
+                                "fix": None, "detail": {"reason_code": "receptor_altloc_present", "items": [
+                                    {"residue": {"chain_auth": "A", "seq_auth": 25}, "atom_name": "CB", "altloc": "A"}],
+                                    "total": 1}},
+    "receptor_invalid_other": {"ok": False, "error": "input_invalid", "message": "receptor has no atoms", "fix": None,
+                               "detail": {"reason_code": "receptor_invalid", "receptor_atom_count": 0}},
+}
+THE_CAP = {"ok": False, "error": "input_invalid", "message": "receptor atom count must be 1-10000", "fix": None,
+           "detail": {"reason_code": "receptor_invalid"}}
+
+
+def _harness_judgement(bodies: list[dict]) -> dict:
+    """The harness's own refusal summary and gap decision (node requires the harness module; nothing is launched)."""
+    script = ("const h = require(process.argv[1]); const bodies = JSON.parse(process.argv[2]);"
+              "const summaries = bodies.map(body => h.refusalSummary({ status: 422, body }));"
+              "process.stdout.write(JSON.stringify({ summaries, gap: h.receptorAtomLimitGap(summaries),"
+              " each: summaries.map(item => h.receptorAtomLimitGap([item])), cap: h.RECEPTOR_ATOM_LIMIT }));")
+    done = subprocess.run(["node", "-e", script, str(HARNESS), json.dumps(bodies)], capture_output=True, text=True,
+                          check=True, cwd=REPO / "frontend", timeout=120)
+    return json.loads(done.stdout)
+
+
+def test_the_receptor_atom_cap_is_the_products_refusal():
+    tree = ast.parse((REPO / "backend/mw/docking_constants.py").read_text())
+    caps = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+            and any(getattr(target, "id", None) == "MAX_RECEPTOR_ATOMS" for target in node.targets)]
+    assert caps == [c.M18_MAX_RECEPTOR_ATOMS]
+    source = (REPO / "backend/mw/docking_inputs.py").read_text()
+    assert 'raise _fail("receptor_invalid", f"receptor atom count must be 1-{C.MAX_RECEPTOR_ATOMS}")' in source
+    assert c.RECEPTOR_ATOM_LIMIT_MESSAGE == "receptor atom count must be 1-10000" == THE_CAP["message"]
+    cap = _harness_judgement([])["cap"]
+    assert cap == {"status": 422, "error": "input_invalid", "reason": c.RECEPTOR_ATOM_LIMIT_REASON,
+                   "message": c.RECEPTOR_ATOM_LIMIT_MESSAGE}
+
+
+def test_only_the_exact_cap_refusal_is_a_harness_gap():
+    old_rule = re.compile(r"receptor.*atom|atom.*limit", re.IGNORECASE)
+    for body in NOT_THE_CAP.values():
+        assert old_rule.search(json.dumps(body))          # the old rule's misclassification
+    judged = _harness_judgement([*NOT_THE_CAP.values(), THE_CAP])
+    assert judged["each"] == [False, False, False, True]
+    assert judged["gap"] is False                          # one other refusal among them: not a gap
+    assert _harness_judgement([THE_CAP, THE_CAP])["gap"] is True
+    assert _harness_judgement([])["gap"] is False
+    summary = judged["summaries"][1]
+    assert summary == {"status": 422, "error": "input_invalid", "reason": "receptor_altloc_present",
+                       "message": "receptor has alternate locations"}             # code and message only, no detail
+
+
+def _summary(body: dict) -> dict:
+    return {"status": 422, "error": body["error"], "reason": body["detail"]["reason_code"], "message": body["message"]}
+
+
+def test_r4a_docking_gap_needs_the_cap_refusal_and_a_receptor_above_the_cap(tpl):
+    bound_1hsg = oracle.receptor_atoms_lower_bound(_classified("1hsg", tpl), tpl)
+    assert bound_1hsg <= c.M18_MAX_RECEPTOR_ATOMS
+    passing = [c.part("harness", "pass"), c.part("m21_completed_240", "pass")]
+    for name, body in NOT_THE_CAP.items():
+        docking = {"refused": [_summary(body)]}                       # the harness failed the part, no notObserved
+        part = cases.receptor_limit_part(docking, "fail", bound_1hsg)
+        assert part["status"] == "fail", name
+        forged = {"notObserved": "receptor_atom_limit", "refused": [_summary(body)]}
+        assert cases.receptor_limit_part(forged, "pass", 20000)["status"] == "fail", name
+        assert c.case_record("R4a", [*passing, part])["status"] == "fail"
+    exact = {"notObserved": "receptor_atom_limit", "refused": [_summary(THE_CAP), _summary(THE_CAP)]}
+    on_1hsg = cases.receptor_limit_part(exact, "pass", bound_1hsg)
+    assert on_1hsg["status"] == "fail" and "not implied by the input" in on_1hsg["reason"]
+    assert c.case_record("R4a", [*passing, on_1hsg])["status"] == "fail"
+    above = cases.receptor_limit_part(exact, "pass", c.M18_MAX_RECEPTOR_ATOMS + 1)
+    assert above["status"] == "not_observed" and above["reason"] == "receptor_atom_limit"
+    assert c.case_record("R4a", [*passing, above])["status"] == "pass"
+    assert cases.receptor_limit_part({"notObserved": "receptor_atom_limit", "refused": []}, "pass",
+                                     c.M18_MAX_RECEPTOR_ATOMS + 1)["status"] == "fail"
+
+
+def test_the_receptor_atom_bound_is_below_every_documented_receptor_count(tpl):
+    """preflight.md (g): the measured M18 receptor atoms (hydrogens included) of the M21 models on the repaired
+    structures; the oracle's bound never exceeds them (it is a lower bound) and keeps every one under the cap."""
+    rows = _doc_table("## (g)", "## (h)", "| 구조 | 변이형 | 야생형 참조 |")
+    measured = {cells[0].lower(): int(_number(cells[1])) for cells in rows}
+    assert set(measured) == {"8vf6", "1mq4", "1m17", "1a4i", "1hsg", "1a30"} and measured["1hsg"] == 3119
+    for name, count in measured.items():
+        bound = oracle.receptor_atoms_lower_bound(_classified(name, tpl), tpl)
+        assert 0.9 * count <= bound <= count <= c.M18_MAX_RECEPTOR_ATOMS, (name, bound, count)
+
+
+# ---------------------------------------------------------------------------------------------------- other case parts
+def _set(*klifs: str) -> dict:
+    positions = []
+    for key in klifs:
+        chain, seq, resname = key.split("/")
+        positions.append({"residue": {"chain_auth": chain, "seq_auth": int(seq), "icode": "", "resname": resname},
+                          "exclusion_reasons": ["klifs_key_site"]})
+    return {"positions": positions}
+
+
+def test_r3_klifs_needs_exactly_the_seven_documented_sites():
+    seven = _set(*c.KLIFS_SEVEN)
+    assert cases.klifs_seven_part(seven, seven)[0]["status"] == "pass"
+    eight = _set(*c.KLIFS_SEVEN, "A/150/VAL")
+    assert cases.klifs_seven_part(eight, eight)[0]["status"] == "fail"      # a superset of the seven is not the seven
+    six = _set(*c.KLIFS_SEVEN[:6])
+    assert cases.klifs_seven_part(six, seven)[0]["status"] == "fail"
+
+
+def test_r6_viewer_needs_the_original_structure_offered():
+    viewer = {"selects": 15, "optionsWithRepaired": 0, "optionsWithPrepared": 3, "viewerSource": "p", "repaired": "r"}
+    api = {"ok": True, "targets": [], "nothingStored": {}, "count": 0}
+    part = next(p for p in cases.r6_case(api, [], {"observed": {"viewer": viewer}})["parts"] if p["name"] == "viewer_path")
+    assert part["status"] == "pass"
+    part = next(p for p in cases.r6_case(api, [], {"observed": {"viewer": {**viewer, "optionsWithPrepared": 0}}})[
+        "parts"] if p["name"] == "viewer_path")
+    assert part["status"] == "fail"
+
+
+def _r10_no_send(posts, sends=0) -> str:
+    row = {"status": "pass", "externalRequestCount": 0, "parts": {}, "requestedPostPaths": posts,
+           "observed": {"r10": {"sends": sends}}}
+    record = cases.r10_case(None, row, [], {"ok": True}, 0, 0)
+    return next(p for p in record["parts"] if p["name"] == "no_send")["status"]
+
+
+def test_r10_no_send_is_read_from_the_pages_own_post_requests():
+    preview = ["/api/runs/<run>/commands", "/api/runs/<run>/jev/preview"]
+    assert _r10_no_send(preview) == "pass"
+    assert _r10_no_send([*preview, "/api/runs/<run>/jev/sends"]) == "fail"
+    assert _r10_no_send(["/api/runs/<run>/commands"]) == "fail"             # the list did not see the JEV writes
+    assert _r10_no_send(None) == "fail"
+    assert _r10_no_send(preview, sends=1) == "fail"
+    harness = HARNESS.read_text()
+    assert "sendClicked" not in harness and "requestedPostPaths" in harness
+
+
+def test_r9_needs_every_compared_read_to_be_200():
+    ok = {"list": (200, []), "detail": (200, {}), "atoms": (200, {}), "structure": [200, "x"]}
+    assert cases.r9_case(ok, dict(ok), [], [], True)["parts"][0]["status"] == "pass"
+    refused = {**ok, "atoms": (404, {"error": "not_found"})}
+    assert cases.r9_case(refused, dict(refused), [], [], True)["parts"][0]["status"] == "fail"   # same, but not 200
+    missing = {**ok, "structure": [500, None]}
+    assert cases.r9_case(ok, missing, [], [], True)["parts"][0]["status"] == "fail"
+
+
+def test_r11_fixed_sentence_wording_can_fail():
+    def wording(sentences: dict) -> str:
+        record, _scans = cases.r11_case({"s": "보완 구조"}, {"r": "## 구조 출처"}, {"sentences": sentences})
+        return next(p for p in record["parts"] if p["name"] == "fixed_sentences_wording")["status"]
+    assert wording(dict(c.FIXED)) == "pass"
+    assert wording({**c.FIXED, "SO2": c.FIXED["SO2"] + " 추천"}) == "fail"
+    assert c.forbidden_hits(c.FIXED["SO1"]) == [] and c.forbidden_hits(c.FIXED["SO1"] + "\n최적 위치", skip_fixed=False)
+    record, _scans = cases.r11_case({"s": "x"}, {"r": "y"}, None)
+    assert next(p for p in record["parts"] if p["name"] == "fixed_sentences_wording")["status"] == "fail"
+
+
+# ---------------------------------------------------------------------------------------------------- gates
+def _gates(**over):
+    import m29_offscreen_acceptance as runner
+    external = {"browserNonLoopbackRequests": 0, "providerCalls": 0, "productResolverReads": 0, "dispatchEvents": 0,
+                "harnessDispatchGuard": False, "apiForbiddenSent": 0, "apiServerErrors": [], "harnessServerErrors": 0,
+                **over.pop("external", {})}
+    base = {"left": [], "listening": {}, "folders_before": {"a": False}, "folders_after": {"a": False},
+            "build": {"buildCurrentWithSource": True}, "fixed": {"sentences": {}}, **over}
+    return runner.gate_values(external, **base)
+
+
+def test_gates_never_read_a_missing_count_as_zero():
+    assert all(_gates().values())
+    assert _gates(external={"productResolverReads": None})["providerCalls0"] is False
+    assert _gates(external={"reopenResolverReads": None})["providerCalls0"] is False
+    assert _gates(external={"reopenResolverReads": 0, "reopenProviderCalls": 0})["providerCalls0"] is True
+    assert _gates(external={"harnessServerErrors": None})["noServerError"] is False
+    assert _gates(external={"apiServerErrors": [{"method": "GET", "path": "/x", "status": 500}]})["noServerError"] is False
+    assert _gates(listening={"8000": ["123"]})["nothingLeft"] is False
+    assert _gates(left=["123 guardian"])["nothingLeft"] is False
+
+
+def test_export_is_not_clean_when_a_text_was_held_for_a_leak():
+    import m29_offscreen_acceptance as runner
+    assert runner.held_for_leak([{"path": "a", "held": "over_256KiB"}]) == []
+    assert runner.held_for_leak([{"path": "b", "held": "absolute_path"}]) == [{"path": "b", "held": "absolute_path"}]
+
+
+def test_the_api_keeps_each_answers_status():
+    api = c.Api("http://127.0.0.1:9")
+    with pytest.raises(OSError):
+        api.get("/x")                                    # nothing listens on port 9: no HTTP answer, status None
+    assert api.sent == [{"method": "GET", "path": "/x", "status": None}] and api.server_errors() == []
+    api.sent.append({"method": "GET", "path": "/y", "status": 503, "busy": False})
+    api.sent.append({"method": "POST", "path": "/z", "status": 503, "busy": True})
+    assert api.server_errors() == [{"method": "GET", "path": "/y", "status": 503, "busy": False}]
+
+
+BUSY_CASES = [  # (status, body, busy)
+    (503, {"ok": False, "error": "transient", "message": "run execution owner is busy", "detail": {"busy": True}}, True),
+    (503, {"detail": {"error": "busy", "message": "m"}}, True),
+    (503, {"ok": False, "error": "transient", "message": "m", "detail": {"reason_code": "global_concurrency_busy"}}, True),
+    (503, {"ok": False, "error": "fatal", "message": "invalid error envelope", "detail": {}}, False),
+    (500, {"detail": {"error": "internal_error", "message": "m"}}, False),
+    (502, {"detail": {"busy": True}}, False),
+    (503, "Service Unavailable", False),
+]
+
+
+def test_only_the_products_busy_503_is_not_a_server_error():
+    assert [c.busy_answer(status, body) for status, body, _ in BUSY_CASES] == [busy for *_, busy in BUSY_CASES]
+    script = ("const h = require(process.argv[1]); const cases = JSON.parse(process.argv[2]);"
+              "process.stdout.write(JSON.stringify(cases.map(([status, body]) => h.busyAnswer(status, body))));")
+    done = subprocess.run(["node", "-e", script, str(HARNESS), json.dumps([[s, b] for s, b, _ in BUSY_CASES])],
+                          capture_output=True, text=True, check=True, cwd=REPO / "frontend", timeout=120)
+    assert json.loads(done.stdout) == [busy for *_, busy in BUSY_CASES]          # the harness applies the same rule
 
 
 def test_expected_limitations_follow_the_conditions():

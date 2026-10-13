@@ -15,6 +15,10 @@ runner compares these values with what the product stored. Ported from the T1 pr
     written and read back), then the spec 2.2 refusal checks in order. ``verdict`` is ``in_scope`` or
     ``out_of_scope(<code>)``; the defect lists carry each residue's 7-field identity (``ref``) and the gap residues
     come from the file's ``_entity_poly_seq`` + ``_pdbx_unobs_or_zero_occ_residues`` (occupancy_flag 1) only.
+``receptor_atoms_lower_bound(row, tpl) -> int``
+    A lower bound of the M18 receptor atoms (hydrogens included) of a one-point M21 model on the repaired structure:
+    the fewest-atom template form of every residue after repair (R4a: the receptor atom cap may only explain a refused
+    docking when this bound is above the cap).
 ``mutable_residue(row, skip=()) -> dict | None``
     A residue to put a mutation on (the third standard residue of the first chain that is not GLY / PRO / CYS / MSE and
     has a complete side chain): a deterministic choice of the runner, not a design suggestion.
@@ -60,6 +64,9 @@ CLASSES = ("chain_parts_merged", "side_chain_atoms_added", "terminal_oxt_added",
            "nonstandard_replaced")
 FIELDS = ("model_number", "chain_auth", "chain_label", "seq_auth", "seq_label", "icode", "resname")
 ATOM_NAME = re.compile(r"[A-Za-z0-9']{1,4}")
+# The Amber14 template names a residue can take once hydrogens are added at a pH (MSE is MET after the repair).
+VARIANTS = {"HIS": ("HID", "HIE", "HIP"), "CYS": ("CYS", "CYX", "CYM"), "ASP": ("ASP", "ASH"), "GLU": ("GLU", "GLH"),
+            "LYS": ("LYS", "LYN"), "MSE": ("MET",)}
 
 
 # ---------------------------------------------------------------------------------------------------- template
@@ -76,13 +83,21 @@ class Templates:
         root = ET.fromstring(raw)
         elements = {node.attrib["name"]: node.attrib["element"] for node in root.findall("./AtomTypes/Type")}
         self.heavy: dict[str, set[str]] = {}
+        self.atoms: dict[str, int] = {}          # every atom of the template, hydrogens included
         for node in root.findall("./Residues/Residue"):
             self.heavy[node.attrib["name"]] = {atom.attrib["name"] for atom in node.findall("Atom")
                                                if elements[atom.attrib["type"]] not in HYDROGENS}
+            self.atoms[node.attrib["name"]] = len(node.findall("Atom"))
 
     def expected(self, resname: str, terminal: bool) -> set[str]:
         key = {"HIS": "HID", "MSE": "MET"}.get(resname, resname)
         return set(self.heavy[("C" if terminal else "") + key])
+
+    def fewest_atoms(self, resname: str) -> int:
+        """The fewest atoms (hydrogens included) of any template form ``resname`` can take in a protonated model: its
+        protonation variants, each plain, N-terminal and C-terminal (0 for a name without a template)."""
+        forms = [prefix + base for base in VARIANTS.get(resname, (resname,)) for prefix in ("", "N", "C")]
+        return min((self.atoms[form] for form in forms if form in self.atoms), default=0)
 
 
 def templates(path: Path | None = None) -> Templates:
@@ -325,6 +340,19 @@ def summary(row: dict) -> dict:
             "zeroOccupancyAtoms": row["zero_occupancy_atoms"], "expectedAddedResidues": row["expected_added_residues"],
             "expectedAddedHeavyAtoms": row["expected_added_heavy_atoms"],
             "proteinHeavyAfter": row["protein_heavy_after"]}
+
+
+def receptor_atoms_lower_bound(row: dict, tpl: Templates) -> int:
+    """A lower bound of the M18 receptor atom count (hydrogens included) of a one-point M21 model on the repaired
+    structure of ``row``: every protein residue after repair (the observed polymer residues and the listed gap residues)
+    at its fewest-atom template form, and the one mutated residue at the fewest-atom form of any standard residue. The
+    model can only hold more (another protonation, a ligand or water kept); never fewer."""
+    names = [item["resname"] for item in row["polymer"]]
+    names += [residue["resname"] for gap in row["gaps"] if gap["determined"] for residue in gap["residues"]]
+    counts = [tpl.fewest_atoms(name) for name in names]
+    if not counts:
+        return 0
+    return sum(counts) - max(counts) + min(tpl.fewest_atoms(name) for name in STANDARD)
 
 
 def mutable_residue(row: dict, skip: tuple[str, ...] = ()) -> dict | None:

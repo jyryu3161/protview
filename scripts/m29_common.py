@@ -28,9 +28,11 @@ Expectations that are documents, not computations
   KLIFS_SEVEN               spec 5.3 / 10.3 R3: the seven 8VF6 key-site exclusions of the original structure
   FIXED                     RP1-RP6, SO1-SO3, JW1 verbatim from the spec (compared with the product's exported
                             constants by the runner)
+  M18_MAX_RECEPTOR_ATOMS    the M18 receptor atom cap and (RECEPTOR_ATOM_LIMIT_*) its exact refusal, from the product
+                            source read as text by a unit test (R4a docking gap)
 
 Loopback API: ``Api`` (127.0.0.1 only; POST refuses the limit-raising and ``/jev`` / ``/jev_loops`` routes: those are
-never the runner's), ``enc``.
+never the runner's; every request's status is kept for the "no 5xx" gate), ``enc``.
 Events: ``read_events(runs, rid)``, ``stored_object(events, handle)`` (bytes of an ``object_created`` payload),
 ``handle_matches(events, handle)`` (the stored bytes still hash to the handle: never altered since they were stored).
 Evidence hygiene: ``leak_kinds(text)`` (key patterns, placeholders, user absolute paths), ``forbidden_hits(text)``
@@ -119,6 +121,12 @@ def band_for(name: str, heavy_after: int | None) -> dict:
 
 
 KLIFS_SEVEN = ("A/145/LYS", "A/192/MET", "A/193/GLU", "A/194/LEU", "A/195/CYS", "A/264/THR", "A/265/ASP")
+# The M18 receptor atom cap and its one refusal (backend/mw/docking_constants.py MAX_RECEPTOR_ATOMS and the
+# ``receptor_invalid`` raise of backend/mw/docking_inputs.py; a unit test reads both files as text). Spec 10.3 R4a: only
+# this refusal, on a receptor the oracle's lower bound puts above the cap, may leave the docking part not_observed.
+M18_MAX_RECEPTOR_ATOMS = 10000
+RECEPTOR_ATOM_LIMIT_REASON = "receptor_invalid"
+RECEPTOR_ATOM_LIMIT_MESSAGE = f"receptor atom count must be 1-{M18_MAX_RECEPTOR_ATOMS}"
 LIGAND_8VF6 = {"model_number": 1, "chain_auth": "A", "seq_auth": 600, "icode": "", "resname": "A1AAY"}
 M21_TIMEOUT_S = 240
 COORDINATE_TOLERANCE_A = 1e-9
@@ -239,10 +247,10 @@ def normalize_line(line: str) -> str:
 FIXED_LINES = frozenset(normalize_line(text) for text in FIXED.values())
 
 
-def forbidden_hits(text: str, exempt: Iterable[str] = ()) -> list[dict]:
-    """R11: the forbidden words line by line; a line equal to a fixed sentence (or to one of ``exempt``) is skipped.
-    Each hit keeps the words, the line's SHA-256 and length (never the line itself)."""
-    skip = FIXED_LINES | {normalize_line(item) for item in exempt}
+def forbidden_hits(text: str, exempt: Iterable[str] = (), *, skip_fixed: bool = True) -> list[dict]:
+    """R11: the forbidden words line by line; a line equal to a fixed sentence (unless ``skip_fixed`` is false) or to
+    one of ``exempt`` is skipped. Each hit keeps the words, the line's SHA-256 and length (never the line itself)."""
+    skip = (FIXED_LINES if skip_fixed else frozenset()) | {normalize_line(item) for item in exempt}
     hits = []
     for raw in str(text).split("\n"):
         line = normalize_line(raw)
@@ -274,6 +282,20 @@ def leak_kinds(text: str) -> list[str]:
 
 # ---------------------------------------------------------------------------------------------------- loopback API
 FORBIDDEN_POST_PARTS = ("limit_approval", "raise_limits", "/jev")
+# The JEV send route, only ever LOOKED FOR among the page's own requests (R10 "no send"); ``Api`` refuses to send it.
+JEV_SEND_ROUTE = "/jev/sends"
+
+
+BUSY_REASONS = ("global_concurrency_busy", "global_job_cleanup_pending")
+
+
+def busy_answer(status: int, body: Any) -> bool:
+    """The product's designed 503 "busy, try again" (a held run or worker lock: ``ToolFailure`` transient with
+    ``detail.busy``, or the JEV routes' ``{"detail": {"error": "busy"}}``): not a crash, so never a spec 10.2 5xx."""
+    if status != 503 or not isinstance(body, dict):
+        return False
+    detail = body.get("detail") if isinstance(body.get("detail"), dict) else {}
+    return detail.get("busy") is True or detail.get("error") == "busy" or detail.get("reason_code") in BUSY_REASONS
 
 
 def enc(value: str) -> str:
@@ -282,7 +304,9 @@ def enc(value: str) -> str:
 
 class Api:
     """Loopback API (127.0.0.1 only). Any request other than GET to a limit-raising route or a ``/jev`` /
-    ``/jev_loops`` route raises before it is sent: approvals of limits and JEV sends are never the runner's."""
+    ``/jev_loops`` route raises before it is sent: approvals of limits and JEV sends are never the runner's. Every
+    request sent is kept in ``sent`` with its answer's status (None when no HTTP answer came) for the spec 10.2 "no
+    5xx" gate (``server_errors``)."""
 
     def __init__(self, base: str = API, timeout: float = 900) -> None:
         if not base.startswith("http://127.0.0.1:"):
@@ -290,25 +314,33 @@ class Api:
         self.base, self.timeout = base.rstrip("/"), timeout
         self.sent: list[dict] = []
 
+    def server_errors(self) -> list[dict]:
+        """Every 5xx answer except the product's "busy, try again" 503 (``busy_answer``, kept in ``sent``)."""
+        return [item for item in self.sent if isinstance(item.get("status"), int) and item["status"] >= 500
+                and not item.get("busy")]
+
     def request(self, method: str, path: str, body: Any = None, *, raw: bool = False,
                 ctype: str = "application/json") -> tuple[int, Any]:
         if method != "GET" and any(item in path for item in FORBIDDEN_POST_PARTS):
             raise PermissionError(f"the runner never sends {method} {path}")
         data = None if body is None else body if isinstance(body, bytes) else json.dumps(body).encode()
-        self.sent.append({"method": method, "path": path.split("?", 1)[0]})
+        sent = {"method": method, "path": path.split("?", 1)[0], "status": None}
+        self.sent.append(sent)
         request = urllib.request.Request(self.base + path, data=data, method=method, headers={"content-type": ctype})
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 payload = response.read()
+                sent["status"] = response.status
                 return response.status, (payload if raw else json.loads(payload or b"null"))
         except urllib.error.HTTPError as exc:
+            sent["status"] = exc.code
             payload = exc.read()
-            if raw:
-                return exc.code, payload
             try:
-                return exc.code, json.loads(payload or b"null")
+                answer: Any = json.loads(payload or b"null")
             except ValueError:
-                return exc.code, payload.decode(errors="replace")
+                answer = payload.decode(errors="replace")
+            sent["busy"] = busy_answer(exc.code, answer)
+            return exc.code, (payload if raw else answer)
 
     def get(self, path: str, raw: bool = False) -> tuple[int, Any]:
         return self.request("GET", path, raw=raw)

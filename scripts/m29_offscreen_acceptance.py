@@ -30,9 +30,11 @@ this order (``STEPS``):
 Expectations come from ``scripts/m29_oracle.py`` (input files + the installed template) and the documents in
 ``scripts/m29_common.py``; never from a product answer. Every case is pass | fail | not_observed (+ closed reason);
 only pass counts and a case that did not run is not_observed (never pass). ``acceptance`` is true only when every case
-of ``m29_common.CASES`` passed, every gate held (fresh build stamp, browser non-loopback requests 0, provider calls 0,
-dispatch events 0, nothing left, default reference folders absent before and after, the product's fixed sentences
-exported, the evidence searches clean), the whole step list ran and this is not ``--rehearse``.
+of ``m29_common.CASES`` passed, every gate held (fresh build stamp, browser non-loopback requests 0, provider calls and
+product credential resolver reads 0, dispatch events 0, no 5xx answer to a runner request or on a harness page, nothing
+left (processes and 8000/3000 listeners), default reference folders absent before and after, the product's fixed
+sentences exported, the evidence searches clean with no text held back for a leak), the whole step list ran and this is
+not ``--rehearse``.
 
 This runner never imports ``mw`` (the product constants come from the subprocess ``m29_export_fixed_sentences.py``),
 never calls a limit-raising route and never sends to a ``/jev`` / ``/jev_loops`` write route (``m29_common.Api``
@@ -148,6 +150,32 @@ def blob_check(code: Path) -> dict:
     m23 = {rel: current[rel] == baseline[rel] for rel in M23_FILES}
     return {"ok": not changed and len(baseline) == 27 and all(m23.values()), "files": len(baseline),
             "changed": changed, "m23ReportFiles": m23}
+
+
+def gate_values(external: dict, *, left: list[str], listening: dict, folders_before: dict, folders_after: dict,
+                build: dict | None, fixed: dict | None) -> dict[str, bool]:
+    """The run-level gates (``exportClean`` is added after the export). A count that was never recorded (None) is
+    never read as zero."""
+    return {
+        "buildStamped": bool((build or {}).get("buildCurrentWithSource")),
+        "browserNonLoopback0": external.get("browserNonLoopbackRequests") == 0,
+        # the fixture server writes credentials.json when it starts: a missing count is not a zero (the reopen keys
+        # exist only when the r9 step ran)
+        "providerCalls0": external.get("providerCalls") == 0 and external.get("reopenProviderCalls", 0) == 0
+        and external.get("productResolverReads") == 0 and external.get("reopenResolverReads", 0) == 0,
+        "dispatchEvents0": external.get("dispatchEvents") == 0 and not external.get("harnessDispatchGuard"),
+        "noForbiddenRequest": external.get("apiForbiddenSent") == 0,
+        # spec 10.2 "크래시·500 0": no 5xx answer to a runner request, none seen by a harness page
+        "noServerError": external.get("apiServerErrors") == [] and external.get("harnessServerErrors") == 0,
+        "nothingLeft": not left and not listening,
+        "defaultFoldersAbsent": not any(folders_before.values()) and not any(folders_after.values()),
+        "fixedSentencesExported": fixed is not None,
+    }
+
+
+def held_for_leak(held: list[dict]) -> list[dict]:
+    """Texts the export held back for a key pattern, placeholder or user path (size alone is not a leak)."""
+    return [item for item in held if item["held"] != "over_256KiB"]
 
 
 def pytest_summary(output: str) -> str:
@@ -296,7 +324,7 @@ class Runner(m15.Runner):
 
     def leftovers(self) -> list[str]:
         """Workers (guardian, repair / model / docking workers, fpocket, qvina2, the fixture server, the harness's
-        Electron) whose command or working directory is inside the root, and 8000/3000 listeners."""
+        Electron) whose command or working directory is inside the root. The 8000/3000 listeners are ``listeners``."""
         root = self.root.resolve()
         left: list[str] = []
         for _ in range(10):
@@ -319,6 +347,18 @@ class Runner(m15.Runner):
                 break
             time.sleep(0.5)
         return left
+
+    @staticmethod
+    def listeners() -> dict[str, list[str]]:
+        """The processes still listening on 8000 / 3000 once every service of the runner was stopped (waits up to 5 s
+        for a socket to close)."""
+        found: dict[str, list[str]] = {}
+        for _ in range(10):
+            found = {str(port): pids for port in (8000, 3000) if (pids := m13.listening(port))}
+            if not found:
+                break
+            time.sleep(0.5)
+        return found
 
     def worker_leftovers(self) -> list[str]:
         """While the backend runs: worker processes only (the fixture server itself names the root)."""
@@ -364,6 +404,7 @@ class Runner(m15.Runner):
                    "externalRequestCount": None, "error": f"harness exited {rc} without a ledger row"}
         self.flow_rows.append({"step": step, "status": row.get("status"), "exitCode": rc,
                                "externalRequestCount": row.get("externalRequestCount"),
+                               "serverErrorResponses": row.get("serverErrorResponses"),
                                "dispatchedDuringFlow": row.get("dispatchedDuringFlow"),
                                "dispatchGuard": exceeded is not None, "parts": row.get("parts")})
         self.record(f"harness-{step}", "pass" if rc == 0 and row.get("status") == "pass" else "fail", exitCode=rc,
@@ -535,6 +576,9 @@ class Runner(m15.Runner):
             self.stop_backend()
         calls = reopen / "fixture-control" / "calls.jsonl"
         self.external["reopenProviderCalls"] = len(calls.read_text().splitlines()) if calls.is_file() else 0
+        reads = reopen / "fixture-control" / "credentials.json"
+        self.external["reopenResolverReads"] = (json.loads(reads.read_text()) or {}).get("productResolverReads") \
+            if reads.is_file() else None
         self.evidence["r9"] = {"copiedRuns": sorted(copies), "m28Runs": m28, "saved": saved,
                                "differs": sorted(k for k in (before or {}) if (before or {}).get(k) != (after or {}).get(k))}
         self.write("r9.json", self.evidence["r9"])
@@ -616,12 +660,15 @@ class Runner(m15.Runner):
         rows = self.flow_rows
         browser = (sum(row["externalRequestCount"] for row in rows)
                    if rows and all(isinstance(row["externalRequestCount"], int) for row in rows) else None)
+        server = (sum(row["serverErrorResponses"] for row in rows)
+                  if rows and all(isinstance(row["serverErrorResponses"], int) for row in rows) else None)
         return {"browserNonLoopbackRequests": browser, "providerCalls": len(calls),
                 "productResolverReads": (reads or {}).get("productResolverReads"),
                 "dispatchEvents": m25.dispatch_total(counts), "harnessDispatchGuard": any(
                     row["dispatchGuard"] for row in rows), "apiRequests": len(self.api.sent),
                 "apiForbiddenSent": sum(1 for item in self.api.sent if item["method"] != "GET" and any(
-                    part in item["path"] for part in c.FORBIDDEN_POST_PARTS))}
+                    part in item["path"] for part in c.FORBIDDEN_POST_PARTS)),
+                "harnessServerErrors": server}
 
     def finish(self, folders_before: dict) -> int:
         lab = self.lab
@@ -640,27 +687,20 @@ class Runner(m15.Runner):
             self.records["R11"] = record
             self.write("r11.json", scans)
         left = self.leftovers()
+        listening = self.listeners()
         folders_after = self.default_folders()
-        gates = {
-            "buildStamped": bool((self.state.get("build") or {}).get("buildCurrentWithSource")),
-            "browserNonLoopback0": self.external.get("browserNonLoopbackRequests") == 0,
-            "providerCalls0": self.external.get("providerCalls") == 0
-            and self.external.get("reopenProviderCalls", 0) == 0
-            and self.external.get("productResolverReads") in (0, None),
-            "dispatchEvents0": self.external.get("dispatchEvents") == 0
-            and not self.external.get("harnessDispatchGuard"),
-            "noForbiddenRequest": self.external.get("apiForbiddenSent") == 0,
-            "nothingLeft": not left,
-            "defaultFoldersAbsent": not any(folders_before.values()) and not any(folders_after.values()),
-            "fixedSentencesExported": self.fixed is not None,
-        }
+        self.external["apiServerErrors"] = [{key: item[key] for key in ("method", "path", "status")}
+                                            for item in self.api.server_errors()]
+        gates = gate_values(self.external, left=left, listening=listening, folders_before=folders_before,
+                            folders_after=folders_after, build=self.state.get("build"), fixed=self.fixed)
         cases_out = c.complete_cases(self.records, self.selected_cases())
         judged = c.judge(cases_out, {**gates, "exportClean": True}, rehearsal=self.rehearse, subset=self.subset)
-        ledger = self.ledger(cases_out, gates, judged, left, folders_before, folders_after)
+        remaining = left + [f"listening:{port} {pids}" for port, pids in listening.items()]
+        ledger = self.ledger(cases_out, gates, judged, remaining, folders_before, folders_after)
         clean = self.export(ledger)
         gates["exportClean"] = clean
         judged = c.judge(cases_out, gates, rehearsal=self.rehearse, subset=self.subset)
-        ledger = self.ledger(cases_out, gates, judged, left, folders_before, folders_after)
+        ledger = self.ledger(cases_out, gates, judged, remaining, folders_before, folders_after)
         self.export(ledger)
         print(json.dumps({"acceptance": judged["acceptance"], "passed": judged["passed"], "counts": judged["counts"],
                           "notPassing": judged["notPassing"], "gates": gates, "out": str(self.out)},
@@ -808,8 +848,12 @@ class Runner(m15.Runner):
             target = self.artifacts / "held-from-out" / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(self.out / name), str(target))
-        self.record("export-evidence", "pass" if not found else "fail", leaks=found, held=len(held))
-        return not found
+        # Clean only when nothing was left out for a leak: a text held back for a key pattern, placeholder or user path
+        # (size alone is not a leak), or a written file moved out after the final search.
+        leaked = held_for_leak(held)
+        self.record("export-evidence", "pass" if not found and not leaked else "fail", leaks=found, held=len(held),
+                    heldForLeak=[{"path": item["path"], "held": item["held"]} for item in leaked])
+        return not found and not leaked
 
 
 def build_parser() -> argparse.ArgumentParser:

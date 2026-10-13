@@ -95,17 +95,25 @@ class Lab:
             raise RuntimeError(f"preflight answered {status}: {_fail_text(body)}")
         return body
 
+    def read(self, path: str) -> Any:
+        """A GET whose answer must be 200 (any other status raises: a refused or failed read is never read as a
+        value)."""
+        status, body = self.api.get(path)
+        if status != 200:
+            raise RuntimeError(f"GET {path.split('?', 1)[0]} answered {status}: {_fail_text(body)}")
+        return body
+
     def budget(self, rid: str) -> dict:
-        return self.api.get(f"/runs/{rid}/budget")[1]
+        return self.read(f"/runs/{rid}/budget")
 
     def used_units(self, rid: str) -> int:
         return self.budget(rid)["expensive_calls"]["used"]
 
     def jobs(self, rid: str) -> list[dict]:
-        return self.api.get(f"/runs/{rid}/jobs")[1]
+        return self.read(f"/runs/{rid}/jobs")
 
     def job(self, rid: str, job_id: str) -> dict:
-        return self.api.get(f"/runs/{rid}/jobs/{job_id}")[1]
+        return self.read(f"/runs/{rid}/jobs/{job_id}")
 
     def submit(self, rid: str, protocol: str, args: dict, timeout_s: float) -> tuple[int, Any]:
         return self.api.post(f"/runs/{rid}/jobs", {"protocol_id": protocol, "args": args, "timeout_s": timeout_s})
@@ -564,7 +572,7 @@ def r6_api(lab: Lab) -> dict:
     if row is None or not row.get("repaired"):
         return {"ok": None, "reason": "prerequisite_failed:R5", "targets": []}
     rid, repaired, original = row["run"], row["repaired"], row["prepared"]
-    ligands = lab.api.get(f"/runs/{rid}/structures/residues?handle={c.enc(original)}")[1]["ligands"]
+    ligands = lab.read(f"/runs/{rid}/structures/residues?handle={c.enc(original)}")["ligands"]
     ligand = {key: ligands[0][key] for key in ("model_number", "chain_auth", "seq_auth", "icode", "resname")
               if key in ligands[0]}
     ligand.setdefault("model_number", 1)
@@ -590,9 +598,9 @@ def _state(lab: Lab, rid: str) -> dict:
     events = lab.events(rid)
     return {"objects": sum(1 for event in events if event.get("type") == "object_created"),
             "jobs": len(lab.jobs(rid)), "units": lab.used_units(rid),
-            "plans": json.dumps(lab.api.get(f"/runs/{rid}/analysis/plans")[1], sort_keys=True),
-            "scenes": json.dumps(lab.api.get(f"/runs/{rid}/viewer/scenes")[1], sort_keys=True),
-            "reports": len(lab.api.get(f"/runs/{rid}/reports")[1])}
+            "plans": json.dumps(lab.read(f"/runs/{rid}/analysis/plans"), sort_keys=True),
+            "scenes": json.dumps(lab.read(f"/runs/{rid}/viewer/scenes"), sort_keys=True),
+            "reports": len(lab.read(f"/runs/{rid}/reports"))}
 
 
 def r6_case(api_part: dict, pytest_rows: list[dict], ui_row: dict | None) -> dict:
@@ -609,8 +617,9 @@ def r6_case(api_part: dict, pytest_rows: list[dict], ui_row: dict | None) -> dic
     if ui_row is None or viewer is None:
         parts.append(c.part("viewer_path", "not_observed", "prerequisite_failed:R3"))
     else:
+        # the selects are read (they offer the original prepared structure) and none offers the repaired one
         ok = viewer.get("optionsWithRepaired") == 0 and viewer.get("viewerSource") != viewer.get("repaired") and \
-            viewer.get("selects", 0) > 0
+            viewer.get("selects", 0) > 0 and viewer.get("optionsWithPrepared", 0) >= 1
         parts.append(c.check("viewer_path", ok, _fail_text(viewer), **viewer))
     return c.case_record("R6", parts, refs=["evidence/r6.json"])
 
@@ -773,6 +782,17 @@ def _positions(lab: Lab, rid: str, handle: str, query: str = "") -> list[dict]:
     return rows
 
 
+def klifs_seven_part(repaired_set: dict, original_set: dict) -> tuple[dict, dict]:
+    """Spec 5.3 / R3: the original structure's ``klifs_key_site`` exclusions are exactly the seven documented 8VF6
+    sites, and the set on the repaired structure (same pocket, shell and maps of the original) excludes the same."""
+    def klifs(item: dict) -> list[str]:
+        return sorted(c.short_ref(p["residue"]) for p in item["positions"]
+                      if "klifs_key_site" in p["exclusion_reasons"])
+    facts = {"repaired": klifs(repaired_set), "original": klifs(original_set), "documented": list(c.KLIFS_SEVEN)}
+    ok = facts["original"] == sorted(c.KLIFS_SEVEN) and facts["repaired"] == facts["original"]
+    return c.check("klifs_seven", ok, _fail_text(facts)), facts
+
+
 def r3_case(lab: Lab, row: dict | None, setup: dict | None) -> tuple[dict, dict]:
     parts = _row_parts(row, ("r3-m20", "r3-detail", "r3-report"))
     seen = ((row or {}).get("observed") or {}).get("r3") or {}
@@ -784,13 +804,8 @@ def r3_case(lab: Lab, row: dict | None, setup: dict | None) -> tuple[dict, dict]
         events = lab.events(rid)
         content = json.loads(c.stored_object(events, seen["set"]))
         original = json.loads(c.stored_object(events, setup["originalSet"]))
-        def klifs(item: dict) -> list[str]:
-            return sorted(c.short_ref(p["residue"]) for p in item["positions"] if "klifs_key_site" in p["exclusion_reasons"])
-        facts["klifs"] = {"repaired": klifs(content), "original": klifs(original), "documented": list(c.KLIFS_SEVEN)}
-        # the original's exclusions are kept (same pocket, shell and maps on the original structure), and they hold
-        # the seven documented key-site exclusions of 8VF6 (spec 5.3)
-        parts.append(c.check("klifs_seven", klifs(content) == klifs(original) and set(c.KLIFS_SEVEN) <= set(
-            klifs(content)), _fail_text(facts["klifs"])))
+        part, facts["klifs"] = klifs_seven_part(content, original)
+        parts.append(part)
         parts.append(c.check("pocket_handoff", setup.get("pocketSet") is not None, "no pocket set of the original"))
         parts.append(c.check("stored_set_bytes", c.handle_matches(events, seen["set"]),
                              "the stored set no longer hashes to its handle"))
@@ -851,6 +866,31 @@ def _origin_report(lab: Lab, rid: str, handle: str | None, version: str, record:
     return ok, f"{manifest.get('render_version')} origin {origin.get('repair_record') == record} claims {claims}"
 
 
+def is_receptor_limit_refusal(item: Any) -> bool:
+    """One refused docking submission as the harness recorded it (``{status, error, reason, message}``) is exactly the
+    M18 receptor atom cap refusal (``m29_common.RECEPTOR_ATOM_LIMIT_*``)."""
+    return isinstance(item, dict) and item.get("status") == 422 and item.get("error") == "input_invalid" and \
+        item.get("reason") == c.RECEPTOR_ATOM_LIMIT_REASON and item.get("message") == c.RECEPTOR_ATOM_LIMIT_MESSAGE
+
+
+def receptor_limit_part(docking: dict, harness_part: str | None, lower_bound: int) -> dict:
+    """Spec 10.3 R4a: the docking part may stay not_observed ``receptor_atom_limit`` only when the harness saw the
+    product refuse the docking submissions, every refusal is exactly the M18 receptor atom cap refusal, and the oracle's
+    lower bound of the model's receptor atoms (input file + installed template) is above the cap, so the refusal is what
+    the input implies. Any other refusal, or the cap refusal on a receptor the bound keeps under the cap (1HSG: about
+    3,100), is a fail."""
+    refused = docking.get("refused") or []
+    detail = {"refused": refused, "receptorAtomsLowerBound": lower_bound, "cap": c.M18_MAX_RECEPTOR_ATOMS}
+    if docking.get("notObserved") != "receptor_atom_limit" or harness_part != "pass":
+        return c.part("docking", "fail", f"docking refused (harness {harness_part}): {_fail_text(refused)}", **detail)
+    if not refused or not all(is_receptor_limit_refusal(item) for item in refused):
+        return c.part("docking", "fail", f"a refusal is not the receptor atom cap: {_fail_text(refused)}", **detail)
+    if lower_bound <= c.M18_MAX_RECEPTOR_ATOMS:
+        return c.part("docking", "fail", f"the receptor atom cap refusal is not implied by the input (receptor atoms "
+                      f"lower bound {lower_bound} <= {c.M18_MAX_RECEPTOR_ATOMS})", **detail)
+    return c.part("docking", "not_observed", "receptor_atom_limit", **detail)
+
+
 def r4a_case(lab: Lab, row: dict | None) -> tuple[dict, dict]:
     parts = _row_parts(row, ("r4a-repair", "r4a-m20", "r4a-m21", "r4a-model-report"))
     seen = ((row or {}).get("observed") or {}).get("r4a") or {}
@@ -868,8 +908,9 @@ def r4a_case(lab: Lab, row: dict | None) -> tuple[dict, dict]:
         ok, text = _origin_report(lab, rid, seen.get("modelReport"), "mutation_model_markdown@2", seen["record"], found)
         parts.append(c.check("m21_report_v2", ok, text))
         docking = seen.get("docking") or {}
-        if docking.get("notObserved") == "receptor_atom_limit":
-            parts.append(c.part("docking", "not_observed", "receptor_atom_limit", **docking))
+        if docking.get("notObserved") is not None or docking.get("refused"):
+            parts.append(receptor_limit_part(docking, (row or {}).get("parts", {}).get("r4a-docking"),
+                                             oracle.receptor_atoms_lower_bound(found, lab.tpl)))
         else:
             ok, text = _origin_report(lab, rid, docking.get("report"), "ligand_docking_markdown@2", seen["record"],
                                       found)
@@ -878,7 +919,8 @@ def r4a_case(lab: Lab, row: dict | None) -> tuple[dict, dict]:
                                  and docking.get("so1") == c.FIXED["SO1"] and ok, f"jobs {docking.get('jobs')}; {text}",
                                  syntheticLigand="synthetic-phenol-ligand.sdf (SYNTHETIC-FIXTURE, mechanical path)"))
         facts = {"record": seen["record"], "model": seen.get("model"), "modelJob": job,
-                 "dockingJobs": docking.get("jobs"), "counts": checked["counts"]}
+                 "dockingJobs": docking.get("jobs"), "dockingRefused": docking.get("refused"),
+                 "counts": checked["counts"]}
     return c.case_record("R4a", parts, refs=["steps/r4a", "evidence/r4a.json"], detail=facts), facts
 
 
@@ -895,9 +937,14 @@ def r10_case(lab: Lab, row: dict | None, pytest_rows: list[dict], blob_check: di
                              f"warning shown {shown}"))
     body_clean = seen.get("bodyMentions") == [] and loop.get("bodyMentions") == []
     parts.append(c.check("body_unchanged_wording", body_clean, f"body mentions {seen.get('bodyMentions')}"))
-    parts.append(c.check("no_send", dispatch_total == 0 and fixture_calls == 0 and seen.get("sendClicked") is False
+    # The page's own POSTs (every renderer request the harness saw): the JEV preview was built (the list does hold the
+    # JEV writes) and no send route was ever requested.
+    posts = (row or {}).get("requestedPostPaths")
+    observed = isinstance(posts, list) and any(path.endswith("/jev/preview") for path in posts)
+    send_posts = sorted(path for path in posts or [] if path.endswith(c.JEV_SEND_ROUTE))
+    parts.append(c.check("no_send", dispatch_total == 0 and fixture_calls == 0 and observed and not send_posts
                          and seen.get("sends") == 0, f"dispatch {dispatch_total}, provider calls {fixture_calls}, "
-                         f"sends {seen.get('sends')}"))
+                         f"send requests {send_posts}, preview request seen {observed}, sends {seen.get('sends')}"))
     parts.append(c.check("m23_screen", seen.get("m23Repaired") is True, f"M23 option {seen.get('m23Option')}"))
     for item in pytest_rows:
         parts.append(c.check(f"pytest:{item['name']}", item["ok"], item["summary"]))
@@ -919,6 +966,11 @@ def reopen_reads(api: c.Api, rid: str, record: str, reports: list[str]) -> dict:
     return out
 
 
+def _status(read: Any) -> Any:
+    """The status of one ``reopen_reads`` value (``(status, body)`` or ``[status, sha256]``)."""
+    return read[0] if isinstance(read, (list, tuple)) and read else None
+
+
 def stored_reports(events: list[dict]) -> list[dict]:
     """Every saved method report of a log with its stored Markdown and manifest bytes (decoded from the events)."""
     out = []
@@ -938,8 +990,11 @@ def r9_case(before: dict | None, after: dict | None, saved: list[dict], pytest_r
         parts.append(c.part("repair_events_only", "not_observed", "prerequisite_failed:R1"))
     else:
         diff = sorted(key for key in before if before[key] != after.get(key))
-        parts.append(c.check("repair_events_only", not diff and before["detail"][0] == 200,
-                             f"reads that differ after the events-only reopen: {diff}", reads=sorted(before)))
+        # every read compared (list, detail, atoms, structure download, reports) answered 200 on both sides
+        not_ok = sorted(f"{side}:{key}" for side, reads in (("before", before), ("after", after)) for key in before
+                        if _status(reads.get(key)) != 200)
+        parts.append(c.check("repair_events_only", not diff and not not_ok, f"reads that differ after the events-only "
+                             f"reopen: {diff}; reads not 200: {not_ok}", reads=sorted(before)))
     if missing_fixture:
         parts.append(c.part("saved_reports", "not_observed", "saved_report_fixture_missing"))
     for item in saved:
@@ -974,8 +1029,12 @@ def r11_case(texts: dict[str, str], reports: dict[str, str], fixed_export: dict 
     differ = sorted(key for key, text in c.FIXED.items() if exported.get(key) != text)
     parts.append(c.check("fixed_sentences", fixed_export is not None and not differ,
                          f"product constants differ from the spec text: {differ}"))
-    own = c.forbidden_hits("\n".join(c.FIXED.values()), exempt=())
-    parts.append(c.check("fixed_sentences_wording", not own, "a fixed sentence holds a forbidden word"))
+    # The fixed sentences themselves (the spec text and the product's exported constants), WITHOUT the fixed-line
+    # exemption the scans above use: a forbidden word in a fixed sentence fails here.
+    own = c.forbidden_hits("\n".join([*c.FIXED.values(), *(str(text) for text in exported.values())]),
+                           skip_fixed=False)
+    parts.append(c.check("fixed_sentences_wording", fixed_export is not None and not own,
+                         f"a fixed sentence holds a forbidden word: {[hit['words'] for hit in own]}"))
     return c.case_record("R11", parts, refs=["evidence/r11.json"]), scans
 
 

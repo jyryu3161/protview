@@ -144,10 +144,12 @@ function offscreenComplete(proof) {
     proof.hardwareAccelerationEnabled === true && proof.paintCount > 0 && !!proof.webgl &&
     !!proof.firstPaint && proof.firstPaint.onDiskBytes > 0 && proof.firstPaint.onDiskSha256 === proof.firstPaint.sha256;
 }
-/** Renderer requests and the JSON answers of the API writes (adapted from endtoend-c-flow.cjs requestLog). */
+/** Renderer requests, the JSON answers of the API writes and every 5xx answer the page got (adapted from
+ * endtoend-c-flow.cjs requestLog; spec 10.2 "크래시·500 0"). */
 function requestLog(page) {
   const rows = [];
   const api = [];
+  const serverErrors = [];
   page.on("request", request => {
     const url = new URL(request.url());
     rows.push({ at: Date.now(), method: request.method(), path: url.pathname });
@@ -155,6 +157,11 @@ function requestLog(page) {
   page.on("response", async response => {
     const request = response.request();
     const url = new URL(response.url());
+    if (response.status() >= 500) {
+      const entry = { at: Date.now(), method: request.method(), path: url.pathname, status: response.status(), busy: false };
+      serverErrors.push(entry);
+      try { entry.busy = busyAnswer(response.status(), await response.json()); } catch { entry.busy = false; }
+    }
     if (request.method() !== "POST" || !url.pathname.startsWith("/api/")) return;
     let body = null;
     try { body = request.postDataJSON(); } catch { body = null; }
@@ -162,7 +169,36 @@ function requestLog(page) {
     api.push(entry);
     try { entry.json = await response.json(); } catch { entry.json = null; }
   });
-  return { rows, api };
+  return { rows, api, serverErrors };
+}
+const runPath = text => text.replace(/\/runs\/run_[0-9a-f]+/, "/runs/<run>");
+/** The product's designed 503 "busy, try again" (held run or worker lock), not a crash (same rule as
+ * scripts/m29_common.py busy_answer). */
+function busyAnswer(status, body) {
+  if (status !== 503 || !body || typeof body !== "object") return false;
+  const detail = body.detail && typeof body.detail === "object" ? body.detail : {};
+  return detail.busy === true || detail.error === "busy" ||
+    ["global_concurrency_busy", "global_job_cleanup_pending"].includes(detail.reason_code);
+}
+
+// ------------------------------------------------------------------ R4a docking refusals (spec 10.3 R4a)
+// The M18 receptor atom cap refusal, copied from backend/mw/docking_inputs.py (``receptor_invalid``, message with
+// docking_constants.MAX_RECEPTOR_ATOMS = 10000; scripts/test_m29_acceptance.py reads both files and this value).
+const RECEPTOR_ATOM_LIMIT = { status: 422, error: "input_invalid", reason: "receptor_invalid",
+  message: "receptor atom count must be 1-10000" };
+/** One refused docking submission as recorded: status, error, reason code and message (no detail, no path). */
+function refusalSummary(item) {
+  const body = item?.body && typeof item.body === "object" ? item.body : {};
+  return { status: item?.status ?? null, error: typeof body.error === "string" ? body.error : null,
+    reason: typeof body.detail?.reason_code === "string" ? body.detail.reason_code : null,
+    message: typeof body.message === "string" ? body.message.slice(0, 300) : null };
+}
+/** True only when there is a refusal and every one is exactly the receptor atom cap refusal; any other refusal (a box
+ * reason such as box_no_receptor_atoms, receptor_altloc_present, another receptor_invalid message) is not. */
+function receptorAtomLimitGap(refusals) {
+  return Array.isArray(refusals) && refusals.length > 0 && refusals.every(item => item &&
+    item.status === RECEPTOR_ATOM_LIMIT.status && item.error === RECEPTOR_ATOM_LIMIT.error &&
+    item.reason === RECEPTOR_ATOM_LIMIT.reason && item.message === RECEPTOR_ATOM_LIMIT.message);
 }
 
 // ------------------------------------------------------------------ evidence (adapted from endtoend-c-flow.cjs recorder)
@@ -226,13 +262,23 @@ function summarize(value) {
 }
 /** A screen text for the runner's R11 scan (texts/<name>.screentext: not a text suffix of the runner's export, kept
  * in the git-ignored artifacts; the row names the file, its size and digest). */
-async function keepText(page, evidence, artifacts, name, locator) {
-  const text = await locator.innerText({ timeout: 15000 });
+function writeText(evidence, artifacts, name, text) {
   const rel = path.join("texts", `${name.replace(/[^a-z0-9_-]/gi, "_")}.screentext`);
   fs.mkdirSync(path.join(artifacts, "texts"), { recursive: true });
   fs.writeFileSync(path.join(artifacts, rel), text);
   evidence.texts[name] = rel;
   return { name, bytes: Buffer.byteLength(text), sha256: sha(Buffer.from(text)) };
+}
+async function keepText(page, evidence, artifacts, name, locator) {
+  return writeText(evidence, artifacts, name, await locator.innerText({ timeout: 15000 }));
+}
+/** The M29 marks other areas add (badges, SO1 notes with the record, "보완 전 원본 구조" choices, the modeled-residue
+ * cells): the text of every match of the locators, read once without waiting (a mark that is not on screen adds no
+ * line); kept for the runner's R11 scan like keepText. */
+async function keepAll(page, evidence, artifacts, name, locators) {
+  const texts = [];
+  for (const locator of locators) texts.push(...(await locator.allTextContents()).map(clean).filter(Boolean));
+  return { ...writeText(evidence, artifacts, name, texts.join("\n")), lines: texts.length };
 }
 
 // ------------------------------------------------------------------ tabs, runs, structure screen (copied from endtoend-c-flow.cjs)
@@ -815,7 +861,8 @@ async function modeR3(ctx) {
   const S = plan.r3;
   const run = plan.run;
   const seen = evidence.observed.r3 = { run, record: S.record, repaired: S.repaired };
-  const r10 = evidence.observed.r10 = { sendClicked: false };
+  // No send is observed from the page's own requests (the row's requestedPostPaths), never asserted by a constant here.
+  const r10 = evidence.observed.r10 = {};
   evidence.run = run;
   await rec.part("r3-m20", [], async () => {
     await rec.step("r3-00", "Open the r1 run (its address): the page reopens that run", async () => {
@@ -849,8 +896,12 @@ async function modeR3(ctx) {
       for (const residue of [S.sideChainResidue, S.gapResidue]) await pickResidueAt(page, "user", residue);
       await testId(page, "mutation-annotation").selectOption(S.annotation);
       await testId(page, "mutation-numbering-map").selectOption(S.numberingMap);
+      const marks = await keepAll(page, evidence, artifacts, "r3-m20-repair-marks", [
+        panel(page).locator('[data-testid="mutation-structure-repaired"], [data-testid="mutation-repair-reference-note"], ' +
+          '[data-testid="mutation-repair-pocket-note"]'),
+        panel(page).locator("label[data-mutation-pocket-set], option").filter({ hasText: "보완 전 원본 구조" })]);
       const created = await create(page, run);
-      return { badgeView, referenceNote, created };
+      return { badgeView, referenceNote, created, marks };
     }, async value => {
       assert.deepEqual(value.badgeView, { record: S.record, source: S.prepared });
       assert.equal(value.referenceNote, 1);
@@ -896,7 +947,12 @@ async function modeR3(ctx) {
         gapRow: seen.gapRow, klifsRows: seen.klifsRows.length };
     });
     seen.texts = [await keepText(page, evidence, artifacts, "r3-repair-origin", testId(page, "mutation-repair-origin")),
-      await keepText(page, evidence, artifacts, "r3-repair-statements", testId(page, "mutation-repair-statements"))];
+      await keepText(page, evidence, artifacts, "r3-repair-statements", testId(page, "mutation-repair-statements")),
+      await keepAll(page, evidence, artifacts, "r3-positions-modeled", [
+        testId(page, "mutation-positions").locator("th").filter({ hasText: "SO2" }),
+        testId(page, "mutation-positions").locator('[data-cell="modeled-basis"]'),
+        testId(page, "mutation-positions").locator("td").filter({ hasText: MODELED_NOT_CHECKED_TEXT }),
+        panel(page).locator('[data-testid="mutation-set-repaired"]')])];
   });
   await rec.part("r3-report", ["r3-detail"], async () => {
     seen.report = await rec.step("r3-03", "보고서 만들기 for the set on the repaired structure: saved (201); the format is " +
@@ -955,7 +1011,9 @@ async function modeR3(ctx) {
         bodyBytes: Buffer.byteLength(value.body), projection: value.command.handle.handle };
     });
     Object.assign(r10, shown);
-    r10.texts = [await keepText(page, evidence, artifacts, "r10-jev-approval", jarea(page, "approval"))];
+    r10.texts = [await keepText(page, evidence, artifacts, "r10-jev-approval", jarea(page, "approval")),
+      await keepAll(page, evidence, artifacts, "r10-jev-repair-marks", [jev(page).locator(
+        '[data-testid="jev-source-repaired"], [data-testid="jev-repair-origin"]')])];
     const sends = await readApi(page, `/runs/${run}/jev/sends`);
     r10.sends = Array.isArray(sends) ? sends.length : (sends.rows ?? sends.sends ?? []).length;
     r10.dispatchAdded = dispatchTotal(ctx.input["runs-dir"]) - before;
@@ -1023,7 +1081,9 @@ async function modeR3(ctx) {
     });
     r10.loop = loop;
     r10.texts = [...(r10.texts ?? []), await keepText(page, evidence, artifacts, "r10-loop-approval",
-      lp(page).locator('[data-testid="jev-loop-approval-repair-warning"]'))];
+      lp(page).locator('[data-testid="jev-loop-approval-repair-warning"]')),
+    await keepAll(page, evidence, artifacts, "r10-loop-repair-marks", [lp(page).locator(
+      '[data-testid="jev-loop-source-repaired"], [data-testid="jev-loop-repair-origin"], [data-testid="jev-loop-list-repaired"]')])];
     r10.loopDispatchAdded = dispatchTotal(ctx.input["runs-dir"]) - before;
     assert.equal(r10.loopDispatchAdded, 0, "a dispatch event was recorded");
   });
@@ -1039,6 +1099,7 @@ async function modeR3(ctx) {
     }, async option => ({ text: option.text, repaired: option.text.endsWith(REPAIRED_SUFFIX) }));
     r10.m23Option = m23.text;
     r10.m23Repaired = m23.repaired;
+    r10.texts = [...(r10.texts ?? []), writeText(evidence, artifacts, "r10-m23-option", m23.text)];
     assert.equal(m23.repaired, true);
   });
   await rec.part("r6-viewer", [], async () => {
@@ -1100,6 +1161,9 @@ async function modeR4a(ctx) {
       await panel(page).locator('[data-testid="mutation-candidate-model"][data-candidate-index="0"]').click();
       await mt(page, "mutation-model-candidate").waitFor({ timeout: 15000 });
       const requestOrigin = await mt(page, "mutation-model-request-repair-origin").count();
+      await keepAll(page, evidence, artifacts, "r4a-m20-m21-request-marks", [
+        panel(page).locator('[data-testid="mutation-structure-repaired"], [data-testid="mutation-set-repaired"]'),
+        mt(page, "mutation-model-request-repair-origin")]);
       await mt(page, "mutation-model-seed").fill(P.model.seed);
       await mt(page, "mutation-model-confirm-selection").check();
       await mt(page, "mutation-model-confirm-hydrogen").check();
@@ -1131,7 +1195,8 @@ async function modeR4a(ctx) {
       assert.equal(value.record, seen.record);
       return { record: value.record };
     });
-    seen.texts = [await keepText(page, evidence, artifacts, "r4a-model-origin", mt(page, "mutation-model-repair-origin"))];
+    seen.texts = [await keepText(page, evidence, artifacts, "r4a-model-origin", mt(page, "mutation-model-repair-origin")),
+      await keepAll(page, evidence, artifacts, "r4a-model-list-marks", [mt(page, "mutation-model-list-repaired")])];
   });
   await rec.part("r4a-model-report", ["r4a-m21"], async () => {
     seen.modelReport = await rec.step("r4a-07", "보고서 만들기 for the model: saved (201) as mutation_model_markdown@2", async () => {
@@ -1171,13 +1236,17 @@ async function modeR4a(ctx) {
       await fillPair(page, phenol, P.docking);
       const sent = await submitPair(page, seen.run);
       const refused = sent.responses.filter(item => item.status !== 200);
-      if (refused.length) return { refused: refused.map(item => item.body), sent };
+      if (refused.length) {
+        docking.refused = refused.map(refusalSummary);       // recorded before the judgement (a fail keeps it too)
+        return { refused: docking.refused };
+      }
       return { sent, driven: await drivePair(page, sent.responses.map(item => item.body.job_id)) };
     }, async value => {
       if (value.refused) {
-        const text = JSON.stringify(value.refused);
-        if (/receptor.*atom|atom.*limit/i.test(text)) return { notObserved: "receptor_atom_limit", refused: value.refused };
-        throw new Error(`docking refused: ${text.slice(0, 400)}`);
+        // Spec 10.3 R4a: only the exact M18 receptor atom cap refusal leaves the docking part not observed (the
+        // runner checks it again, with the receptor atom lower bound of the input); any other refusal is a fail.
+        if (receptorAtomLimitGap(value.refused)) return { notObserved: "receptor_atom_limit", refused: value.refused };
+        throw new Error(`docking refused: ${JSON.stringify(value.refused).slice(0, 600)}`);
       }
       for (const side of SIDES) assert.equal(value.driven.jobs[side].status, "done", JSON.stringify(value.driven.jobs));
       return { jobs: Object.fromEntries(SIDES.map(side => [side, value.driven.jobs[side].status])) };
@@ -1196,6 +1265,7 @@ async function modeR4a(ctx) {
       const label = dock.locator(`label${attr("data-docking-result", result)}`);
       await label.waitFor({ timeout: 60000 });
       const badge = await label.locator('[data-testid="docking-result-repaired"]').count();
+      await keepAll(page, evidence, artifacts, "r4a-docking-list-marks", [dock.locator('[data-testid="docking-result-repaired"]')]);
       await label.locator("input").check();
       const origin = dock.locator('[data-testid="docking-repair-origin"]');
       await origin.waitFor({ timeout: 60000 });
@@ -1275,13 +1345,17 @@ async function main() {
   const parts = Object.fromEntries(Object.entries(evidence.parts).map(([name, value]) => [name, value.status]));
   const dispatched = dispatchTotal(input["runs-dir"]) - dispatchedBefore;
   const complete = offscreenComplete(proof);
-  const posts = log.api.map(entry => entry.path.replace(/\/runs\/run_[0-9a-f]+/, "/runs/<run>"));
+  const posts = log.api.map(entry => runPath(entry.path));
   const passed = !error && complete && proof.nonLoopbackRequests === 0 && dispatched === 0 &&
     Object.keys(parts).length > 0 && Object.values(parts).every(value => value === "pass");
   evidence.finishedAt = new Date().toISOString();
   evidence.error = error ? String(error.stack ?? error).slice(0, 4000) : null;
   evidence.requestCount = log.rows.length;
   evidence.postPaths = [...new Set(posts)].sort();
+  // Every POST the page itself requested (answered or not): the runner's R10 "no send" reads this list.
+  evidence.requestedPostPaths = [...new Set(log.rows.filter(item => item.method === "POST").map(item =>
+    runPath(item.path)))].sort();
+  evidence.serverErrors = log.serverErrors.map(item => ({ ...item, path: runPath(item.path) }));
   fs.writeFileSync(path.join(input.artifacts, "structure-repair-evidence.json"), JSON.stringify(evidence, null, 2) + "\n");
   const harness = Object.fromEntries(["structure-repair-flow.cjs", "driver.cjs", "main.cjs", "normal-flow.cjs"]
     .map(name => [name, sha(fs.readFileSync(path.join(__dirname, name)))]));
@@ -1289,7 +1363,9 @@ async function main() {
     status: passed ? "pass" : "fail", parts, run: evidence.run, observed: evidence.observed, texts: evidence.texts,
     buildId: buildId(), harness, offscreen: proof, offscreenComplete: complete,
     externalRequestCount: proof ? proof.nonLoopbackRequests : null, dispatchedDuringFlow: dispatched,
-    postPaths: evidence.postPaths, error: evidence.error ? "see structure-repair-evidence.json" : null,
+    postPaths: evidence.postPaths, requestedPostPaths: evidence.requestedPostPaths,
+    serverErrorResponses: evidence.serverErrors.filter(item => !item.busy).length, serverErrors: evidence.serverErrors,
+    error: evidence.error ? "see structure-repair-evidence.json" : null,
     evidenceFile: "structure-repair-evidence.json", stepsFile: path.basename(rec.file), artifacts: input.artifacts,
     startedAt: evidence.startedAt, finishedAt: evidence.finishedAt };
   fs.writeFileSync(path.join(input.artifacts, "ledger-row.json"), JSON.stringify(row, null, 2) + "\n");
@@ -1303,4 +1379,5 @@ if (require.main === module) main().catch(error => {
   process.exitCode = 1;
 });
 
-module.exports = { options, main, MODES, BODY_FORBIDDEN, MODELED_NOT_CHECKED_TEXT };
+module.exports = { options, main, MODES, BODY_FORBIDDEN, MODELED_NOT_CHECKED_TEXT, RECEPTOR_ATOM_LIMIT, refusalSummary,
+  receptorAtomLimitGap, busyAnswer };
