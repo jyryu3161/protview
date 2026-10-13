@@ -1406,8 +1406,15 @@ def create_method_report(rid: str, body: MethodReportRequest) -> dict[str, Any]:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
+def _report_environment(exc: ToolFailure) -> JSONResponse | None:
+    """M29 (spec 3.1, 4.6): a ``precondition`` failure while a saved report is re-opened (e.g. ``openmm_unavailable``
+    when the installed template a repaired structure's record check reads is missing) is the 412 envelope of the
+    environment, as on the create route; any other ``ToolFailure`` stays invalid evidence (None: the caller's 422)."""
+    return _tool_error(exc) if exc.cls is FailureClass.precondition else None
+
+
 @app.get("/runs/{rid}/reports")
-def list_reports(rid: str) -> list[dict[str, Any]]:
+def list_reports(rid: str) -> Any:
     run = _run(rid)
     records = [e for e in run.events.read() if e["type"] in {"report_created", "method_report_created"}]
     try:
@@ -1431,7 +1438,12 @@ def list_reports(rid: str) -> list[dict[str, Any]]:
                                        else run.store.load(e["report_handle"]))["analysis_type"]}),
                  "markdown_handle": e["markdown_handle"], "created_seq": e["seq"],
                  "snapshot_event_seq": e["snapshot_event_seq"]} for e in records]
-    except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
+    except ToolFailure as exc:
+        environment = _report_environment(exc)
+        if environment is not None:
+            return environment
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+    except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
@@ -1490,10 +1502,15 @@ def _saved_any_report(run: Run, handle: str) -> dict[str, Any]:
 
 
 @app.get("/runs/{rid}/reports/selected")
-def report_detail(rid: str, handle: str) -> dict[str, Any]:
+def report_detail(rid: str, handle: str) -> Any:
     try:
         return _saved_any_report(_run(rid), handle)
-    except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
+    except ToolFailure as exc:
+        environment = _report_environment(exc)
+        if environment is not None:
+            return environment
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+    except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
 
 
@@ -1501,7 +1518,12 @@ def report_detail(rid: str, handle: str) -> dict[str, Any]:
 def report_download(rid: str, handle: str, format: Literal["markdown", "json"] = "markdown") -> Response:
     try:
         result = _saved_any_report(_run(rid), handle)
-    except (EvidenceError, KeyError, ValueError, ToolFailure) as exc:
+    except ToolFailure as exc:
+        environment = _report_environment(exc)
+        if environment is not None:
+            return environment
+        raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
+    except (EvidenceError, KeyError, ValueError) as exc:
         raise HTTPException(422, detail={"error": "report_evidence_invalid", "message": str(exc)}) from exc
     suffix = handle.rsplit("/", 1)[-1][:12]
     if format == "markdown":
@@ -2049,7 +2071,7 @@ def docking_result_detail(rid: str, request: Request, handle: str) -> Any:
     meta = _docking_result(run, handle)
     try:
         detail = docking_reads.result_detail(run, handle)
-        origin = docking_reads.result_origin(structure_origin_reads.Origins(run.store), detail["result"])
+        origin = docking_reads.result_origin(structure_origin_reads.Origins(run), detail["result"])
     except docking_bundle.DockingEvidenceError as exc:
         raise _docking_evidence_error(exc) from exc
     except ToolFailure as exc:   # the environment (412 precondition), never invalid evidence
@@ -2118,11 +2140,11 @@ def _origin_invalid(exc: Exception) -> HTTPException:
     return HTTPException(422, detail={"error": "method_evidence_invalid", "message": ORIGIN_INVALID_MESSAGE})
 
 
-def _origins_of(store: Any, sets: list[Any]) -> Any:
-    """The ``structure_origin`` field (or None) of each candidate set handle (None: no set) of one read, or the error
-    response: 412 ``precondition`` for an unavailable environment (never invalid evidence); a record that does not
-    validate raises 422 ``method_evidence_invalid``."""
-    origins = structure_origin_reads.Origins(store)
+def _origins_of(run: Any, sets: list[Any]) -> Any:
+    """The ``structure_origin`` field (or None) of each candidate set handle (None: no set) of one read of ``run`` (a
+    run or a one-log-read view), or the error response: 412 ``precondition`` for an unavailable environment (never
+    invalid evidence); a record that does not pass the reports' check raises 422 ``method_evidence_invalid``."""
+    origins = structure_origin_reads.Origins(run)
     try:
         return [None if handle is None else origins.of_candidate_set(handle) for handle in sets]
     except structure_origin_reads.OriginInvalid as exc:
@@ -2133,10 +2155,10 @@ def _origins_of(store: Any, sets: list[Any]) -> Any:
         return _tool_error(exc)
 
 
-def _with_origins(store: Any, items: list[dict[str, Any]], set_of: Any) -> Any:
+def _with_origins(run: Any, items: list[dict[str, Any]], set_of: Any) -> Any:
     """``items`` with ``structure_origin`` on each one whose candidate set (``set_of(item)``, None for none) is on a
     repaired structure; the whole read fails as ``_origins_of`` says (these answers have no per-row ``valid``)."""
-    found = _origins_of(store, [set_of(item) for item in items])
+    found = _origins_of(run, [set_of(item) for item in items])
     if isinstance(found, Response):
         return found
     for item, origin in zip(items, found, strict=True):
@@ -2597,7 +2619,7 @@ def sequence_ga_results(rid: str, request: Request, offset: int = Query(0, ge=0)
         listed = sequence_ga_reads.list_summaries(run, offset, limit)
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid sequence GA record"}) from exc
-    origins = structure_origin_reads.Origins(run.store)
+    origins = structure_origin_reads.Origins(run)
     for row in listed["rows"]:
         if row["valid"] is not True:
             continue
@@ -2634,7 +2656,7 @@ def _sequence_ga_origin(run: Run, out: dict[str, Any], candidate_set: Any) -> An
     """M29 (spec 6.1, 6.3): ``out`` plus ``structure_origin`` when the GA's candidate set is on a repaired structure
     (added here: the M23 read and report modules are call-key hash files and stay unchanged)."""
     try:
-        origin = structure_origin_reads.Origins(run.store).of_candidate_set(candidate_set)
+        origin = structure_origin_reads.Origins(run).of_candidate_set(candidate_set)
     except structure_origin_reads.OriginInvalid as exc:
         raise _sequence_ga_evidence_error(exc) from exc
     except ToolFailure as exc:
@@ -2804,7 +2826,7 @@ async def jev_preview(rid: str, request: Request) -> Any:
     def read() -> Any:
         run = _run(rid)
         preview = jev_sends.preview_for(run, body.projection, list(run.events.read()))
-        found = _origins_of(run.store, [_jev_set(preview)])
+        found = _origins_of(run, [_jev_set(preview)])
         if isinstance(found, Response):
             return found
         if found[0] is not None:
@@ -2868,7 +2890,7 @@ def jev_send_list(rid: str, request: Request) -> Any:
         records = jev_sends.list_sends(list(run.events.read()))
     except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid science send record"}) from exc
-    return _with_origins(run.store, records, _jev_set)
+    return _with_origins(run, records, _jev_set)
 
 
 @app.get("/runs/{rid}/jev/sends/{send_id}")
@@ -2893,7 +2915,7 @@ def jev_send_detail(rid: str, send_id: str, request: Request) -> Any:
             raise HTTPException(422, detail={"error": "method_evidence_invalid",
                                              "message": "the stored JEV choice does not validate"}) from exc
     out = {**record, "choice": choice, "local_display": None if choice is None else choice["answer"]["local_display"]}
-    found = _with_origins(view.store, [out], _jev_set)
+    found = _with_origins(view, [out], _jev_set)
     return found if isinstance(found, Response) else out
 
 
@@ -2922,6 +2944,16 @@ async def _jev_loop_request(request: Request, limit: int) -> dict[str, Any]:
     return _chemical_json(await _bounded_chemical_body(request, limit))
 
 
+def _with_loop_origin(run: Any, record: Any) -> Any:
+    """M29 (spec 6.1): a protein loop's ``jev_loop@1`` (a read's or an action's answer, so both stay equal) plus
+    ``structure_origin`` when its pool's candidate set is on a repaired structure; any other record unchanged. The
+    error answers are ``_with_origins``'s (422 invalid evidence, 412 environment)."""
+    if not isinstance(record, dict) or record.get("branch") != "protein":
+        return record
+    found = _with_origins(run, [record], lambda item: item["pool"]["source"]["handle"])
+    return found if isinstance(found, Response) else record
+
+
 @app.post("/runs/{rid}/jev_loops")
 async def jev_loop_create(rid: str, request: Request) -> Any:
     """``jev_loop@1`` of a new loop (spec 3.1): the closed admission in order, then one ``jev_loop_created`` event; the
@@ -2930,7 +2962,7 @@ async def jev_loop_create(rid: str, request: Request) -> Any:
     run = _run(rid)
     send_active = jev_sends.send_active(rid)
     try:
-        return await run_in_threadpool(lambda: jev_loop_store.create(run, body, send_active=send_active))
+        record = await run_in_threadpool(lambda: jev_loop_store.create(run, body, send_active=send_active))
     except jev_loop_store.LoopRequestError as exc:
         raise HTTPException(exc.http_status, detail=exc.detail) from exc
     except ToolFailure as exc:
@@ -2941,6 +2973,7 @@ async def jev_loop_create(rid: str, request: Request) -> Any:
         raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
     except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+    return await run_in_threadpool(lambda: _with_loop_origin(run, record))
 
 
 JEV_LOOP_START_RACE = {"global_concurrency_busy", "global_job_cleanup_pending", "global_job_ledger_unavailable"}
@@ -3013,8 +3046,9 @@ async def jev_loop_compute(rid: str, loop_id: str, request: Request) -> Any:
             if error.detail.get("reason_code") in JEV_LOOP_START_RACE:
                 return JSONResponse(status_code=409, content={"ok": False, **error.to_dict()})
             return _tool_error(error)
-    return await run_in_threadpool(lambda: _jev_loop_read(rid, request, lambda view, budget, active: (
-        jev_loop_store.read_loop(view, loop_id, budget=budget, send_active=active).record)))
+    record, view = await run_in_threadpool(lambda: _jev_loop_read(rid, request, lambda view, budget, active: (
+        jev_loop_store.read_loop(view, loop_id, budget=budget, send_active=active).record, view)))
+    return await run_in_threadpool(lambda: _with_loop_origin(view, record))
 
 
 @app.post("/runs/{rid}/jev_loops/{loop_id}/abandon_docking")
@@ -3025,7 +3059,7 @@ async def jev_loop_abandon_docking(rid: str, loop_id: str, request: Request) -> 
     run = _run(rid)
     send_active = jev_sends.send_active(rid)
     try:
-        return await run_in_threadpool(lambda: jev_loop_store.abandon_docking(run, loop_id, body,
+        record = await run_in_threadpool(lambda: jev_loop_store.abandon_docking(run, loop_id, body,
                                                                              send_active=send_active))
     except jev_loop_store.LoopRequestError as exc:
         raise HTTPException(exc.http_status, detail=exc.detail) from exc
@@ -3037,6 +3071,7 @@ async def jev_loop_abandon_docking(rid: str, loop_id: str, request: Request) -> 
         raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
     except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record that does not read back
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+    return await run_in_threadpool(lambda: _with_loop_origin(run, record))
 
 
 @app.post("/runs/{rid}/jev_loops/{loop_id}/end")
@@ -3047,7 +3082,7 @@ async def jev_loop_end(rid: str, loop_id: str, request: Request) -> Any:
     run = _run(rid)
     send_active = jev_sends.send_active(rid)
     try:
-        return await run_in_threadpool(lambda: jev_loop_store.end_loop(run, loop_id, body, send_active=send_active))
+        record = await run_in_threadpool(lambda: jev_loop_store.end_loop(run, loop_id, body, send_active=send_active))
     except jev_loop_store.LoopRequestError as exc:
         raise HTTPException(exc.http_status, detail=exc.detail) from exc
     except ToolFailure as exc:
@@ -3058,6 +3093,7 @@ async def jev_loop_end(rid: str, loop_id: str, request: Request) -> Any:
         raise HTTPException(500, detail={"error": "internal_error", "message": JEV_LOOP_INTERNAL_MESSAGE}) from exc
     except (KeyError, TypeError, ValueError) as exc:   # a loop or stored record (its summary) that does not read back
         raise HTTPException(409, detail={"error": "run_corrupt", "message": "invalid JEV loop record"}) from exc
+    return await run_in_threadpool(lambda: _with_loop_origin(run, record))
 
 
 def _jev_loop_read(rid: str, request: Request, read: Any) -> Any:
@@ -3089,22 +3125,20 @@ def jev_loop_list(rid: str, request: Request) -> Any:
         rows = jev_loop_store.list_loops(view, budget=budget, send_active=active)
         sets = {row["loop_id"]: jev_loop_store.created_payload(view.read(), row["loop_id"])["pool"]["source"]["handle"]
                 for row in rows if row["branch"] == "protein"}
-        return rows, sets, view.store
+        return rows, sets, view
 
-    rows, sets, store = _jev_loop_read(rid, request, read)
-    return _with_origins(store, rows, lambda row: sets.get(row["loop_id"]))
+    rows, sets, view = _jev_loop_read(rid, request, read)
+    return _with_origins(view, rows, lambda row: sets.get(row["loop_id"]))
 
 
 @app.get("/runs/{rid}/jev_loops/{loop_id}")
 def jev_loop_detail(rid: str, loop_id: str, request: Request) -> Any:
     """``jev_loop@1`` of one loop (404 ``loop_not_found`` when this run has none with that id). M29 (spec 6.1): a
-    protein loop whose candidate set is on a repaired structure also carries ``structure_origin``; the loop's action
-    answers (create, compute, abandon, end) do not (a loop's pool never changes, so its origin is this read's)."""
-    record, store = _jev_loop_read(rid, request, lambda view, budget, active: (jev_loop_store.read_loop(
-        view, loop_id, budget=budget, send_active=active).record, view.store))
-    found = _with_origins(store, [record], lambda item: (
-        item["pool"]["source"]["handle"] if item["branch"] == "protein" else None))
-    return found if isinstance(found, Response) else record
+    protein loop whose candidate set is on a repaired structure also carries ``structure_origin``, as do the loop's
+    action answers (create, compute, abandon, end), which stay equal to this read."""
+    record, view = _jev_loop_read(rid, request, lambda view, budget, active: (jev_loop_store.read_loop(
+        view, loop_id, budget=budget, send_active=active).record, view))
+    return _with_loop_origin(view, record)
 
 
 @app.get("/runs/{rid}/interface_sasa")

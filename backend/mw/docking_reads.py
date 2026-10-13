@@ -20,9 +20,9 @@ check, single completed publication, inputs, closed sets); failures raise ``Dock
 M29 T8b (spec .dryforge/spec.md 6.1): ``result_origin()`` is the ``structure_origin`` field of a result whose receptor
 source is a mutation model (M21 ``mutation_model@1``, or M23 ``mutation_set_model@1``) on a repaired structure (model
 -> its structure, which the model's validation keeps equal to its candidate set's); None for an imported receptor or
-any other structure. ``list_results()`` adds it to valid rows only when it is not None (a record that does not
-validate makes the row ``valid: false`` like any other evidence failure; an unavailable environment is raised as its
-``precondition`` ``ToolFailure``). ``result_detail()`` is unchanged (the detail route adds the field, so the M23
+any other structure, after the downstream reports' check (``structure_origin_reads``). ``list_results()`` adds it to
+valid rows only when it is not None (a repaired structure that fails the check makes the row ``valid: false`` like any
+other evidence failure; an unavailable environment is raised as its ``precondition`` ``ToolFailure``). ``result_detail()`` is unchanged (the detail route adds the field, so the M23
 individual read, which nests this detail, keeps its bytes).
 """
 from __future__ import annotations
@@ -143,7 +143,7 @@ def result_origin(origins: origin_reads.Origins, content: dict[str, Any]) -> dic
 def list_results(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run, RESULT)
     rows = []
-    origins = origin_reads.Origins(run.store)
+    origins = origin_reads.Origins(run)
     for handle in list(created)[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]["seq"]}
         try:

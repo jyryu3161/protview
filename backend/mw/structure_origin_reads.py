@@ -1,18 +1,22 @@
 """M29 downstream reads: the ``structure_origin`` read field and the JEV warning JW1 (spec .dryforge/spec.md 6.1, 6.2,
 6.4).
 
-Read-only helpers over one run's object store (``meta`` / ``load`` only): nothing is written and no event, job, tool or
-engine runs (the record check reads the installed Amber14 template XML as a file). A result whose structure is a
-repaired structure (a ``prepared_structure@1`` whose manifest has ``repair``, the only mark) carries in its READ
-response, never in a stored object, event or JEV body::
+Read-only helpers over one run's stored objects and events (``meta`` / ``load`` / ``events.read()`` only): nothing is
+written and no event, job, tool or engine runs (the record check reads the installed Amber14 template XML as a file).
+A result whose structure is a repaired structure (a ``prepared_structure@1`` whose manifest has ``repair``, the only
+mark) carries in its READ response, never in a stored object, event or JEV body::
 
     "structure_origin": {"repair_record": <structure_repair@1 handle>, "repaired_structure": <that structure>,
                          "source_structure": <the original prepared structure>, "counts": <the record's counts>,
                          "statements": [{"id": "SO1", "text": SO1}]}
 
-once the record was re-derived from the original prepared structure and the repaired coordinates
-(``mutation_handoff.validated_origin``: the check the M20 admission and every M20 read make). A result on any other
-structure gets no key, so its response bytes are what they were.
+once the record passed the check the downstream reports make (``structure_origin_reports.origin``, the same steps):
+the link (``structure_origin``), then ``structure_repair_bundle.validated_result`` (its single completed
+``pdbfixer_repair_v1`` publication, the four objects and the record re-derived from the original prepared structure
+and the stored repaired bytes), which must have published exactly this structure from the link's source. A read and
+a report therefore never disagree about a repaired structure: one that fails either is invalid in both (an
+unpublished repaired structure included, which ``mutation_handoff.validated_origin`` alone would pass). A result on any
+other structure gets no key, so its response bytes are what they were.
 
 Public API:
 
@@ -20,9 +24,10 @@ Public API:
     The response keys ``structure_origin`` and ``repair_warning``.
 ``field(origin) -> dict``
     The field of a ``structure_origin.structure_origin`` dict (SO1 verbatim from ``structure_repair_constants``).
-``Origins(store)``
-    One read's resolver (memo per structure, candidate set and model; a structure that does not verify stays invalid
-    for the read). Each method returns the field or None:
+``Origins(run)``
+    One read's resolver over ``run`` (a run or a one-log-read view: ``store`` and ``events.read()``; memo per
+    structure, candidate set and model; a structure that does not verify stays invalid for the read). Each method
+    returns the field or None:
     ``of_structure(handle)``; ``of_candidate_set(handle)`` (an M20 ``mutation_candidate_set@1``: its
     ``structure.handle``); ``of_model(handle)`` (an M21 ``mutation_model@1`` or an M23 ``mutation_set_model@1``: its
     ``structure.handle``, which the model's own validation keeps equal to its candidate set's, and for a set model
@@ -42,10 +47,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import mutation_handoff
+from . import structure_repair_bundle as bundle
 from . import structure_repair_constants as K
 from .core.errors import FailureClass, ToolFailure
-from .structure_origin import is_repaired
+from .structure_origin import is_repaired, structure_origin
 
 KEY = "structure_origin"
 WARNING_KEY = "repair_warning"
@@ -71,30 +76,35 @@ def warning(store: Any, structure: Any) -> dict[str, str] | None:
         return None
 
 
-def _verified(store: Any, structure: Any) -> dict[str, Any] | None:
+def _verified(run: Any, structure: Any) -> dict[str, Any] | None:
     try:
-        origin = mutation_handoff.validated_origin(store, structure)
+        found = structure_origin(run.store, structure)
+        if found is None:
+            return None
+        repair = bundle.validated_result(run, found["repair_record"])
     except ToolFailure as exc:
         if exc.cls is FailureClass.precondition:
             raise
         raise OriginInvalid("the repaired structure does not validate") from exc
-    except _BROKEN as exc:
+    except _BROKEN as exc:   # RepairEvidenceError is a ValueError
         raise OriginInvalid("the repaired structure does not validate") from exc
-    return None if origin is None else field(origin)
+    if (repair["prepared_structure"], repair["source_structure"]) != (structure, found["source_structure"]):
+        raise OriginInvalid("the repair record published another structure")
+    return field({**found, "counts": repair["record"]["counts"]})
 
 
 class Origins:
     """The ``structure_origin`` field of the results of one read (see the module docstring)."""
 
-    def __init__(self, store: Any) -> None:
-        self.store = store
+    def __init__(self, run: Any) -> None:
+        self.run, self.store = run, run.store
         self._structures: dict[Any, dict[str, Any] | None | OriginInvalid] = {}
         self._handles: dict[Any, Any] = {}
 
     def of_structure(self, structure: Any) -> dict[str, Any] | None:
         if structure not in self._structures:
             try:
-                self._structures[structure] = _verified(self.store, structure)
+                self._structures[structure] = _verified(self.run, structure)
             except OriginInvalid as exc:
                 self._structures[structure] = exc
         found = self._structures[structure]

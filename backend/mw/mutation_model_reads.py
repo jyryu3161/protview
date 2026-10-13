@@ -19,9 +19,10 @@ run, kind and schema first.
 M29 T8b (spec .dryforge/spec.md 6.1): a model whose structure (the one its candidate set holds, which
 ``validated_result`` keeps equal) is a repaired structure also carries ``structure_origin`` in its list row (valid
 rows) and its detail (``structure_origin_reads``: record and structure handles, the record's ``counts``, SO1), after
-the record is re-derived from the original structure; a record that does not validate is ``MutationEvidenceError``
-(a list row ``valid: false`` with null fields); an unavailable environment is raised as its ``precondition``
-``ToolFailure``. Any other model gets no key (its bytes are what they were).
+the downstream reports' check (the link, the record's publication and its re-derivation from the original structure);
+a repaired structure that fails it is ``MutationEvidenceError`` (a list row ``valid: false`` with null fields); an
+unavailable environment is raised as its ``precondition`` ``ToolFailure``. Any other model gets no key (its bytes are
+what they were).
 """
 from __future__ import annotations
 
@@ -85,7 +86,7 @@ def list_models(run: Any, offset: int, limit: int) -> dict[str, Any]:
     created = _created(run)
     newest = list(reversed(created))
     rows = []
-    origins = origin_reads.Origins(run.store)
+    origins = origin_reads.Origins(run)
     for handle in newest[offset:offset + limit]:
         row: dict[str, Any] = {"handle": handle, "created_seq": created[handle]}
         try:
@@ -111,7 +112,7 @@ def model_detail(run: Any, handle: str) -> dict[str, Any]:
     result = {key: value for key, value in content.items() if key != "structures"}
     result["structures"] = {side: structure_summary(content["structures"][side]) for side in STRUCTURE_SIDES}
     detail = {"schema": "mutation_model_detail@1", "handle": handle, "result": result}
-    origin = _origin(origin_reads.Origins(run.store), content)
+    origin = _origin(origin_reads.Origins(run), content)
     if origin is not None:
         detail[origin_reads.KEY] = origin
     return detail
