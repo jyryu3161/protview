@@ -1,0 +1,54 @@
+{
+  "buildCommands": {
+    "skipped": true,
+    "reason": "--build auto, BUILD_ID stamped from the current source"
+  },
+  "build": {
+    "buildId": "zHxijM08Zpd_R8U7RDu8X",
+    "gitHead": "5fe7f208c0e544e92382fc0f87f93c0795c9245c",
+    "buildCurrentWithSource": true,
+    "gitStatusPorcelainSha256": "b9355b8ac813f75d14bf5ab2e03af96da626d3610e6bca03386154cbd5193c70",
+    "dirtyFiles": [
+      "?? docs/qa/m29-repair-20261013/regression/"
+    ],
+    "recordedAt": "2026-10-13T16:08:02.372015+00:00",
+    "codeRoot": "<repo>",
+    "harnessSha256": {
+      "jev-flow.cjs": "3fa77454cba84914570de78dad662187f9b52ca7fa0ca727ceeff5e89e7a0521",
+      "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+      "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+    },
+    "fixtureServerSha256": "03b316c610c567af6c1c13b8069577b4c264bd2c007c426d625fdc21b3a96455",
+    "runnerSha256": "9e839455a10619d2d770ead97501445b193c7aa8864c23f94d50ad33a31e0a38"
+  },
+  "services": [
+    {
+      "name": "fixture-backend",
+      "runs": "<repo>/runs/m29-chain-m25-20261014-m24-regression/runs",
+      "control": "<repo>/runs/m29-chain-m25-20261014-m24-regression/fixture-control",
+      "startedAt": "2026-10-13T16:08:07.110903+00:00"
+    }
+  ],
+  "environment": {
+    "workerPython": true,
+    "fixtureServer": true,
+    "fixtureServerRecord": {
+      "schema": "m24_jev_fixture_server@1",
+      "scienceGate": "EgressGate(httpx.MockTransport scripted, sentinel credential)",
+      "viewerGate": "EgressGate(httpx.MockTransport refusing, no credential)",
+      "scripts": [
+        "good",
+        "good_no_extras",
+        "alias_outside",
+        "http_500",
+        "no_usage",
+        "model_mismatch",
+        "slow"
+      ]
+    },
+    "ligandAvailable": true,
+    "mutationAvailable": true,
+    "jevAvailable": true,
+    "setup": true
+  }
+}

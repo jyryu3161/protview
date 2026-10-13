@@ -1,0 +1,570 @@
+{
+  "schema": "m28_branch_a_evidence@1",
+  "mode": "fixture",
+  "run": "run_71a4714b2dba4ae1bdfd8198608d35ce",
+  "inputs": [
+    {
+      "name": "public_1m17.cif",
+      "bytes": 307709,
+      "sha256": "849bd2548dffb7ddcb7229a05202c1e2e41019a1fd69ec39483654cf984fc4d0",
+      "provenance": "public PDB entry 1M17 (RCSB CC0, M27 T1 download; EGFR kinase domain with AQ4)"
+    },
+    {
+      "name": "public_1fin.cif",
+      "bytes": 999052,
+      "sha256": "dfe5da37b2e28d3d74eefa0edee97d57ea127538beead9e68a8a42a5c363a1ac",
+      "provenance": "public PDB entry 1FIN (RCSB CC0, M27 T1 download; CDK2 / cyclin A)"
+    },
+    {
+      "name": "public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934",
+      "provenance": "public PDB entry 1MQ4 (repository fixture; Aurora A kinase domain)"
+    },
+    {
+      "name": "public_1s9i.cif",
+      "bytes": 565105,
+      "sha256": "3db038cdfa23f9d2b8d88e552162fa153c915402827cb4ebb24936171ef08810",
+      "provenance": "public PDB entry 1S9I (RCSB CC0, M26 T9a download)"
+    },
+    {
+      "name": "public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, M26 T9a download)"
+    },
+    {
+      "name": "public_1a4i.cif",
+      "bytes": 530681,
+      "sha256": "afa6bd62e3183d1e574ef4c61139148fe4d92c0a5bbac7575b5a418cd664e712",
+      "provenance": "public PDB entry 1A4I (RCSB CC0, M26 T9a download)"
+    }
+  ],
+  "handles": {
+    "m17": {
+      "loaded": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/structure/96ed4246757eb8f4842a13a501aeb55ce2ab87a4c771ade4c76f7181e6fd5f4c",
+      "prepared": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/prepared_structure/3109ef08b378c261e9c638a921b0ab9f195e20bf285a8b9a972ab37a2b64ba84"
+    },
+    "contacts": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/interaction_set/33bb40636bde8e599edf3e618a8d56f3de0218b26037cc57680754bc0d60c35b",
+    "sasa": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/interface_sasa/c6e8f3f0d04005a20d54aed007510bf8d932ccae243350ad9c170ee666c48efc",
+    "pockets": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/pocket_set/ae0906b1f461fc45dd555a7e261b2b77d82a25931a349d27305a2a8c3cc061e1",
+    "maps": {
+      "m17": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/residue_numbering_map/dff1ee12e622694eb0465758bce497b533beaac9ba7a24441a4a67a36529ea0e",
+      "fin": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/residue_numbering_map/25d92316c104c1f876aa8e553b0ee33df87b042baf340ec2acea9b9f4d0ab1f3",
+      "mq4": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/residue_numbering_map/9d0b07b593cd752627c38dbb57c345ddbaeb80c20cc479a349c7f6ea16e2a5e7"
+    },
+    "annotation": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/reference_site_annotation/2637372c6d0c9c568e300b0bc02dea1acdb73ceae9d68f057178710f38a5b6eb",
+    "fin": {
+      "loaded": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/structure/08479e84f197c0ca94a0d785dde0cb3376f4e6c6158068790b4247570be87695"
+    },
+    "mq4": {
+      "loaded": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/structure/e851b16f76e3fadb27053b1a2951605f82823956fee780846464ca46f65d5af1"
+    },
+    "s9i": {
+      "loaded": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/structure/1154fc1ea81add8c900433c75cb9ecdbb4856b4b5d9203e25c93b3560c993755"
+    },
+    "a30": {
+      "loaded": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/structure/73f71155ca0e7cc51aa630bf917a0873d14d3eae73cd394abe7244ad11f4acbf"
+    },
+    "a4i": {
+      "loaded": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/structure/bc97d47925dc2741b95b831e8d92e41cc7dd2a1725ea9b7bfc84e1ca6d219a98"
+    }
+  },
+  "parts": {
+    "A1": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:44:50.524Z",
+      "finishedAt": "2026-10-13T15:44:53.333Z"
+    },
+    "A2": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:44:53.333Z",
+      "finishedAt": "2026-10-13T15:44:55.368Z"
+    },
+    "A3": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:44:55.368Z",
+      "finishedAt": "2026-10-13T15:45:00.444Z"
+    },
+    "A4": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:45:00.444Z",
+      "finishedAt": "2026-10-13T15:45:07.233Z"
+    },
+    "A5-m17": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:45:07.233Z",
+      "finishedAt": "2026-10-13T15:45:09.400Z"
+    },
+    "A6": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:45:09.400Z",
+      "finishedAt": "2026-10-13T15:45:14.552Z"
+    },
+    "A5-others": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:45:14.552Z",
+      "finishedAt": "2026-10-13T15:45:27.500Z"
+    },
+    "A7": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:45:27.500Z",
+      "finishedAt": "2026-10-13T15:45:34.567Z"
+    },
+    "A8": {
+      "status": "pass",
+      "startedAt": "2026-10-13T15:45:34.567Z",
+      "finishedAt": "2026-10-13T15:45:56.308Z"
+    }
+  },
+  "observed": {
+    "A1": {
+      "residues": 313,
+      "atoms": 2526,
+      "removed": {
+        "waters": 20,
+        "hydrogens": 0,
+        "altlocs": 14
+      },
+      "prepared": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/prepared_structure/3109ef08b378c261e9c638a921b0ab9f195e20bf285a8b9a972ab37a2b64ba84"
+    },
+    "A2": {
+      "rows": 65,
+      "byType": {
+        "contact": 33,
+        "polar_contact": 7,
+        "hydrophobic_contact": 25
+      },
+      "unmatchedRows": 0,
+      "residues": 15,
+      "screenRows": 50
+    },
+    "A3": {
+      "residues": 312,
+      "summaryFields": 6
+    },
+    "A4": {
+      "total": 27,
+      "displayed": 10,
+      "descriptorUnits": {
+        "score": "dimensionless",
+        "druggability_score": "dimensionless",
+        "alpha_sphere_count": "count",
+        "total_sasa_A2": "A2",
+        "volume_A3": "A3"
+      }
+    },
+    "A5": {
+      "maps": {
+        "m17": {
+          "A": {
+            "mapped": 311,
+            "unmapped": 0,
+            "conflict": 1,
+            "klifsApplied": [
+              "true"
+            ],
+            "crossCheck": "true",
+            "storedRows": {
+              "mapped": 311,
+              "unmapped": 0,
+              "conflict": 1
+            }
+          }
+        },
+        "fin": {
+          "A": {
+            "mapped": 298,
+            "unmapped": 0,
+            "conflict": 0,
+            "klifsApplied": [
+              "true"
+            ],
+            "crossCheck": "true",
+            "storedRows": {
+              "mapped": 298,
+              "unmapped": 0,
+              "conflict": 0
+            }
+          },
+          "C": {
+            "mapped": 298,
+            "unmapped": 0,
+            "conflict": 0,
+            "klifsApplied": [
+              "true"
+            ],
+            "crossCheck": "true",
+            "storedRows": {
+              "mapped": 298,
+              "unmapped": 0,
+              "conflict": 0
+            }
+          }
+        },
+        "mq4": {
+          "A": {
+            "mapped": 260,
+            "unmapped": 0,
+            "conflict": 1,
+            "klifsApplied": [
+              "true"
+            ],
+            "crossCheck": "true",
+            "storedRows": {
+              "mapped": 260,
+              "unmapped": 0,
+              "conflict": 1
+            }
+          }
+        }
+      }
+    },
+    "A6": {
+      "sites": [
+        {
+          "klifs": "III.17",
+          "status": "annotated",
+          "counts": {
+            "contact": "2",
+            "polar_contact": "0",
+            "hydrophobic_contact": "5"
+          },
+          "min": "3.70 Å"
+        },
+        {
+          "klifs": "αC.24",
+          "status": "annotated",
+          "counts": {
+            "contact": "1",
+            "polar_contact": "0",
+            "hydrophobic_contact": "0"
+          },
+          "min": "3.81 Å"
+        },
+        {
+          "klifs": "GK.45",
+          "status": "annotated",
+          "counts": {
+            "contact": "2",
+            "polar_contact": "0",
+            "hydrophobic_contact": "1"
+          },
+          "min": "3.41 Å"
+        },
+        {
+          "klifs": "hinge.46",
+          "status": "annotated",
+          "counts": {
+            "contact": "1",
+            "polar_contact": "0",
+            "hydrophobic_contact": "0"
+          },
+          "min": "3.15 Å"
+        },
+        {
+          "klifs": "hinge.47",
+          "status": "annotated",
+          "counts": {
+            "contact": "3",
+            "polar_contact": "0",
+            "hydrophobic_contact": "3"
+          },
+          "min": "3.50 Å"
+        },
+        {
+          "klifs": "hinge.48",
+          "status": "annotated",
+          "counts": {
+            "contact": "8",
+            "polar_contact": "2",
+            "hydrophobic_contact": "3"
+          },
+          "min": "2.70 Å"
+        },
+        {
+          "klifs": "xDFG.80",
+          "status": "annotated",
+          "counts": {
+            "contact": "2",
+            "polar_contact": "0",
+            "hydrophobic_contact": "0"
+          },
+          "min": "3.65 Å"
+        },
+        {
+          "klifs": "xDFG.81",
+          "status": "annotated",
+          "counts": {
+            "contact": "3",
+            "polar_contact": "0",
+            "hydrophobic_contact": "1"
+          },
+          "min": "3.11 Å"
+        },
+        {
+          "klifs": "xDFG.82",
+          "status": "annotated",
+          "counts": {
+            "contact": "0",
+            "polar_contact": "0",
+            "hydrophobic_contact": "0"
+          },
+          "min": "계산한 종류·cutoff 안 접촉 없음"
+        },
+        {
+          "klifs": "xDFG.83",
+          "status": "annotated",
+          "counts": {
+            "contact": "0",
+            "polar_contact": "0",
+            "hydrophobic_contact": "0"
+          },
+          "min": "계산한 종류·cutoff 안 접촉 없음"
+        }
+      ],
+      "polarLines": 2,
+      "figure": {
+        "width": 1200,
+        "height": 800,
+        "pngBytes": 457086,
+        "pngSha256": "f63d4a32ac3b802ca23d62908884c4e719195dc0bd8e60ec16a6d8d08511519b"
+      }
+    },
+    "A7": {
+      "links": {
+        "l-m17": {
+          "nullResult": false,
+          "includeFlagged": false,
+          "chains": {
+            "A": [
+              "linked",
+              null,
+              "P00533"
+            ]
+          },
+          "targets": {
+            "P00533": {
+              "status": "precedents_found",
+              "moves": 76,
+              "movesFlagged": null,
+              "excluded": 66,
+              "references": 1,
+              "variants": {
+                "L834R": 1,
+                "L858R": 15,
+                "T790M": 4,
+                "WT": 3,
+                "not_reported": 53
+              }
+            }
+          }
+        },
+        "l-fin": {
+          "nullResult": false,
+          "includeFlagged": false,
+          "chains": {
+            "A": [
+              "linked",
+              null,
+              "P24941"
+            ],
+            "C": [
+              "linked",
+              null,
+              "P24941"
+            ]
+          },
+          "targets": {
+            "P24941": {
+              "status": "precedents_found",
+              "moves": 32,
+              "movesFlagged": null,
+              "excluded": 24,
+              "references": 1,
+              "variants": {
+                "not_reported": 32
+              }
+            }
+          }
+        }
+      }
+    },
+    "A8": {
+      "links": {
+        "s9i": {
+          "chains": {
+            "A": {
+              "coverage": "covered",
+              "counts": {
+                "conflict": 0,
+                "matched": 2,
+                "unmatched": 0
+              }
+            },
+            "B": {
+              "coverage": "chain_not_listed",
+              "counts": null
+            }
+          }
+        },
+        "a30": {
+          "chains": {
+            "A": {
+              "coverage": "covered",
+              "counts": {
+                "conflict": 0,
+                "matched": 3,
+                "unmatched": 0
+              }
+            },
+            "B": {
+              "coverage": "covered",
+              "counts": {
+                "conflict": 0,
+                "matched": 3,
+                "unmatched": 0
+              }
+            }
+          }
+        },
+        "a4i": {
+          "chains": {
+            "A": {
+              "coverage": "covered",
+              "counts": {
+                "conflict": 0,
+                "matched": 6,
+                "unmatched": 0
+              }
+            },
+            "B": {
+              "coverage": "chain_not_listed",
+              "counts": null
+            }
+          }
+        }
+      }
+    }
+  },
+  "reportsCreated": 10,
+  "reportHandles": [
+    {
+      "case": "A2",
+      "kind": "inspection",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/report_manifest/4c4f55c1caef2ccf74daa3f029f75b21e0deee3199af4efe2aa99ddbf55296ed"
+    },
+    {
+      "case": "A3",
+      "kind": "interface_sasa",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/d9463b543e0383aa0874cc0838e9587a0f9a273b30c62e2d01334c074a525d42"
+    },
+    {
+      "case": "A4",
+      "kind": "pocket_detection",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/0b60da7d36fa34a5bcf1a1f0cf1338a2b3f31b7e8e52a712548cefa939004fc4"
+    },
+    {
+      "case": "A5",
+      "kind": "residue_numbering",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/fd184b303fd3f68775f98a7e142e74a2d53fa92912ab37eae416c03b46e41ad4"
+    },
+    {
+      "case": "A6",
+      "kind": "reference_site_annotation",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/77c6420192dbba4e28f00d6c242cbcc72eedda2858349c72767b5e4680898892"
+    },
+    {
+      "case": "A7",
+      "kind": "kinase_precedents",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/21983019272ed5dde1d56c361c6b0c8ca83ac4a2f21e89d77d53c88835f8ca65"
+    },
+    {
+      "case": "A7",
+      "kind": "kinase_precedents",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/7ab647d1b6cdccbc9d5a03730b247f063dfa27513e4c392b17ae34792f9d57bd"
+    },
+    {
+      "case": "A8",
+      "kind": "reaction_knowledge",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/82f86773db5b29304b1ba600028507441199a6fc2c07adae4aee77dca705ec34"
+    },
+    {
+      "case": "A8",
+      "kind": "reaction_knowledge",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/3c9842783b15b3f90e41bfc31a6842295b95e567ad5db242f44098cc0a70a28b"
+    },
+    {
+      "case": "A8",
+      "kind": "reaction_knowledge",
+      "httpStatus": 201,
+      "handle": "obj://run_71a4714b2dba4ae1bdfd8198608d35ce/method_report_manifest/7dd6fa97094c0abb52017602fce96f1fc30f5e33d375ff679ce5caff205df128"
+    }
+  ],
+  "x5": [
+    {
+      "ok": true,
+      "detail": "A6 site xDFG.82: no contact within the cutoff shown as a sentence, not 0"
+    },
+    {
+      "ok": true,
+      "detail": "A6 site xDFG.83: no contact within the cutoff shown as a sentence, not 0"
+    },
+    {
+      "ok": true,
+      "detail": "A7 l-m17: moves_flagged count shown as not included, not 0"
+    },
+    {
+      "ok": true,
+      "detail": "A7 l-m17: no bare 0 or 없음 in the area"
+    },
+    {
+      "ok": true,
+      "detail": "A7 l-fin: moves_flagged count shown as not included, not 0"
+    },
+    {
+      "ok": true,
+      "detail": "A7 l-fin: no bare 0 or 없음 in the area"
+    },
+    {
+      "ok": true,
+      "detail": "A8 s9i B chain_not_listed: counts shown as not checked, not 0"
+    },
+    {
+      "ok": true,
+      "detail": "A8 a4i B chain_not_listed: counts shown as not checked, not 0"
+    }
+  ],
+  "texts": {
+    "structure@A2": "texts/structure_A2.tabtext",
+    "structure@A3": "texts/structure_A3.tabtext",
+    "structure@A4": "texts/structure_A4.tabtext",
+    "structure@A6": "texts/structure_A6.tabtext",
+    "knowledge@A5": "texts/knowledge_A5.tabtext",
+    "knowledge@A7": "texts/knowledge_A7.tabtext",
+    "knowledge@A8": "texts/knowledge_A8.tabtext"
+  },
+  "providerCalls": [
+    {
+      "run": "run_71a4714b2dba4ae1bdfd8198608d35ce",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "planSha256": "6a6635952523bdf91049b86f9b4e20f19a2c2220276ce67811a18f446bd5bfad",
+  "startedAt": "2026-10-13T15:44:49.910Z",
+  "finishedAt": "2026-10-13T15:45:56.466Z",
+  "error": null,
+  "requestCount": 619
+}

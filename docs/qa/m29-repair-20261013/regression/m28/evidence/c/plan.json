@@ -1,0 +1,493 @@
+{
+  "schema": "m28_branch_c_plan@1",
+  "phase": "fixture",
+  "inputs": {
+    "a30": {
+      "path": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "name": "public_1a30.cif",
+      "rel": "public_1a30.cif",
+      "bytes": 222024,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, M26 T9a download; HIV-1 protease, M-CSA entry 175)",
+      "syntheticLabeled": false
+    },
+    "ubq": {
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "name": "public_1ubq.cif",
+      "rel": "public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "provenance": "public PDB entry 1UBQ (repository fixture; SHA-256 recorded in docs/M7_OPENMM.md)",
+      "syntheticLabeled": false
+    },
+    "phenol": {
+      "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+      "name": "synthetic-phenol-ligand.sdf",
+      "rel": "mutation_model/synthetic-phenol-ligand.sdf",
+      "bytes": 1240,
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3",
+      "provenance": "SYNTHETIC-FIXTURE hand-built phenol (mutation_model/SYNTHETIC-PROVENANCE.md); a mechanical path check, not a biological pose",
+      "syntheticLabeled": true
+    }
+  },
+  "c1": {
+    "pdbId": "1A30",
+    "chainsPartial": [
+      "A"
+    ],
+    "chainsAll": [
+      "A",
+      "B"
+    ],
+    "residues": [
+      {
+        "resname": "ARG",
+        "chain": "A",
+        "seq": 8
+      },
+      {
+        "resname": "ASP",
+        "chain": "A",
+        "seq": 25
+      },
+      {
+        "resname": "THR",
+        "chain": "A",
+        "seq": 26
+      },
+      {
+        "resname": "ASP",
+        "chain": "B",
+        "seq": 25
+      },
+      {
+        "resname": "GLY",
+        "chain": "B",
+        "seq": 27
+      }
+    ],
+    "release": {
+      "resname": "ASP",
+      "chain": "A",
+      "seq": 25
+    },
+    "expect": {
+      "setHash": "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47",
+      "pdbId": "1A30",
+      "positionChains": [
+        "A",
+        "B"
+      ],
+      "coverage": {
+        "A": "covered",
+        "B": "covered"
+      },
+      "rowCounts": {
+        "A": {
+          "matched": 3,
+          "unmatched": 0,
+          "conflict": 0
+        },
+        "B": {
+          "matched": 3,
+          "unmatched": 0,
+          "conflict": 0
+        }
+      },
+      "catalytic": {
+        "ARG A:8": [],
+        "ASP A:25": [
+          [
+            175,
+            1,
+            true
+          ]
+        ],
+        "THR A:26": [
+          [
+            175,
+            2,
+            true
+          ]
+        ],
+        "ASP B:25": [
+          [
+            175,
+            5,
+            true
+          ]
+        ],
+        "GLY B:27": [
+          [
+            175,
+            0,
+            true
+          ]
+        ]
+      },
+      "partial": {
+        "status": "not_checked",
+        "reason": "chains_not_covered",
+        "covered": [
+          "A"
+        ],
+        "uncovered": [
+          {
+            "chain_auth": "B",
+            "coverage": "not_in_annotation"
+          }
+        ],
+        "counts": {
+          "matched_rows": 3,
+          "conflict_rows": 0,
+          "unmatched_rows": 0
+        },
+        "protected": [
+          "ASP A:25",
+          "THR A:26"
+        ]
+      },
+      "all": {
+        "status": "checked",
+        "reason": null,
+        "covered": [
+          "A",
+          "B"
+        ],
+        "uncovered": [],
+        "counts": {
+          "matched_rows": 6,
+          "conflict_rows": 0,
+          "unmatched_rows": 0
+        },
+        "protected": [
+          "ASP A:25",
+          "ASP B:25",
+          "GLY B:27",
+          "THR A:26"
+        ]
+      },
+      "release": {
+        "residue": "ASP A:25",
+        "catalytic": [
+          [
+            175,
+            1,
+            true
+          ]
+        ]
+      },
+      "reportRender": "mutation_candidates_markdown@2"
+    }
+  },
+  "c2": {
+    "waters": "keep_all",
+    "residues": [
+      [
+        "ILE",
+        3
+      ],
+      [
+        "LYS",
+        6
+      ],
+      [
+        "ILE",
+        44
+      ],
+      [
+        "GLY",
+        76
+      ]
+    ],
+    "protect": [
+      [
+        "ILE",
+        3
+      ]
+    ],
+    "allowed": [
+      "A",
+      "W"
+    ],
+    "model": {
+      "residue": [
+        "ILE",
+        44
+      ],
+      "to": "W",
+      "seed": "20261004",
+      "cutoff": "4.0",
+      "timeout": "240"
+    },
+    "expect": {
+      "proteinHeavyAtoms": 602,
+      "waters": 58,
+      "residueNames": {
+        "3": "ILE",
+        "6": "LYS",
+        "44": "ILE",
+        "76": "GLY"
+      },
+      "positions": 4,
+      "candidatePositions": 3,
+      "candidates": [
+        {
+          "residue": "LYS A:6",
+          "resname": "LYS",
+          "seq": 6,
+          "from": "K",
+          "to": "A"
+        },
+        {
+          "residue": "LYS A:6",
+          "resname": "LYS",
+          "seq": 6,
+          "from": "K",
+          "to": "W"
+        },
+        {
+          "residue": "ILE A:44",
+          "resname": "ILE",
+          "seq": 44,
+          "from": "I",
+          "to": "A"
+        },
+        {
+          "residue": "ILE A:44",
+          "resname": "ILE",
+          "seq": 44,
+          "from": "I",
+          "to": "W"
+        },
+        {
+          "residue": "GLY A:76",
+          "resname": "GLY",
+          "seq": 76,
+          "from": "G",
+          "to": "A"
+        },
+        {
+          "residue": "GLY A:76",
+          "resname": "GLY",
+          "seq": 76,
+          "from": "G",
+          "to": "W"
+        }
+      ],
+      "candidateCount": 6,
+      "space": {
+        "positions": 3,
+        "candidates": 6,
+        "effective_max_mutations": 3,
+        "size": 26
+      },
+      "modelTarget": {
+        "residue": "ILE A:44",
+        "from": "I",
+        "to": "W"
+      },
+      "loopPool": [
+        "LYS A:6 K→A",
+        "LYS A:6 K→W",
+        "ILE A:44 I→A"
+      ],
+      "loopPoolFixture": [
+        "LYS A:6 K→A",
+        "LYS A:6 K→W",
+        "ILE A:44 I→A",
+        "ILE A:44 I→W"
+      ]
+    }
+  },
+  "docking": {
+    "margin": "8",
+    "seed": "20261004",
+    "exhaustiveness": "4",
+    "numModes": "5",
+    "energyRange": "3"
+  },
+  "ga": {
+    "settings": {
+      "1": {
+        "seed": 21,
+        "population_size": 4,
+        "generations": 3,
+        "elite_count": 1,
+        "tournament_size": 2,
+        "crossover_fraction": 0.5,
+        "random_fraction": 0.25,
+        "max_mutations": 3,
+        "patience": 3,
+        "max_new_evaluations": 10,
+        "total_s": 600
+      },
+      "2": {
+        "seed": 21,
+        "population_size": 6,
+        "generations": 2,
+        "elite_count": 2,
+        "tournament_size": 2,
+        "crossover_fraction": 0.5,
+        "random_fraction": 0.5,
+        "max_mutations": 3,
+        "patience": 3,
+        "max_new_evaluations": 6,
+        "total_s": 600
+      }
+    },
+    "need": {
+      "1": {
+        "reservedEvaluations": 10,
+        "reserved": 22,
+        "neededWall": 1200,
+        "mayBePartial": true
+      },
+      "2": {
+        "reservedEvaluations": 6,
+        "reserved": 14,
+        "neededWall": 1200,
+        "mayBePartial": true
+      }
+    },
+    "differ": [
+      "population_size",
+      "generations",
+      "random_fraction"
+    ],
+    "ranges": {
+      "seed": [
+        0,
+        2147483647,
+        null
+      ],
+      "population_size": [
+        4,
+        16,
+        8
+      ],
+      "generations": [
+        1,
+        8,
+        5
+      ],
+      "elite_count": [
+        0,
+        4,
+        2
+      ],
+      "tournament_size": [
+        2,
+        4,
+        2
+      ],
+      "crossover_fraction": [
+        0.0,
+        1.0,
+        0.5
+      ],
+      "random_fraction": [
+        0.0,
+        0.5,
+        0.2
+      ],
+      "max_mutations": [
+        1,
+        4,
+        3
+      ],
+      "patience": [
+        1,
+        8,
+        3
+      ],
+      "max_new_evaluations": [
+        4,
+        64,
+        32
+      ],
+      "total_s": [
+        600,
+        14400,
+        7200
+      ]
+    }
+  },
+  "loops": {
+    "explore": {
+      "goal": "explore",
+      "seed": "31",
+      "cap": "1",
+      "script": "good"
+    },
+    "exploit": {
+      "goal": "exploit",
+      "seed": "37",
+      "cap": "1",
+      "script": "good_second"
+    }
+  },
+  "loopPoolExcludedResnames": [
+    "GLY",
+    "PRO",
+    "CYS"
+  ],
+  "send": {
+    "script": "good",
+    "pick": 3
+  },
+  "units": {
+    "units": {
+      "C2-m7": 1,
+      "C2-m21": 1,
+      "C3-pair": 2,
+      "C6-explore": 2,
+      "C6-exploit": 2,
+      "C4-1": 22,
+      "C4-2": 14
+    },
+    "raises": {
+      "C4-1": 22,
+      "C4-2": 14
+    },
+    "remainingBefore": {
+      "C2-m7": 8,
+      "C2-m21": 7,
+      "C3-pair": 6,
+      "C6-explore": 4,
+      "C6-exploit": 2,
+      "C4-1": 0,
+      "C4-2": 0
+    },
+    "totalUsed": 44,
+    "finalLimit": 44,
+    "finalRemaining": 0
+  },
+  "reports": {
+    "C1": {
+      "mutation_candidates": 1
+    },
+    "C2": {
+      "openmm_protein_minimize": 1,
+      "mutation_candidates": 1,
+      "mutation_model": 1
+    },
+    "C3": {},
+    "C4": {
+      "sequence_ga": 2
+    },
+    "C5": {
+      "jev_choice": 1
+    },
+    "C6": {
+      "jev_loop": 2
+    },
+    "C7": {}
+  },
+  "structures": {
+    "c1": "1A30",
+    "c2": "1UBQ",
+    "same": false
+  },
+  "live": null
+}

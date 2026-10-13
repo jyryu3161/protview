@@ -1,0 +1,365 @@
+{
+  "schema": "m13_workflows_evidence@1",
+  "mode": "minimize",
+  "run": "run_81f2735736d441f68ed78ad2e51c323f",
+  "inputs": [
+    {
+      "name": "public_1ubq.cif",
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6",
+      "provenance": "public PDB entry 1UBQ (repository fixture; OpenMM input, 1HSG is refused by OpenMM)"
+    }
+  ],
+  "handles": {
+    "minPlan": "obj://run_81f2735736d441f68ed78ad2e51c323f/analysis_plan/f5ef4e19fbeff33b6b25c95a6e99a709aa1238c6cd7d9ff94a5fdb38ef64002a",
+    "minimize": {
+      "plan": "obj://run_81f2735736d441f68ed78ad2e51c323f/analysis_plan/f5ef4e19fbeff33b6b25c95a6e99a709aa1238c6cd7d9ff94a5fdb38ef64002a",
+      "execution": "exec_9c14e277f9b247e4b1981dacde38b5ba",
+      "summary": "obj://run_81f2735736d441f68ed78ad2e51c323f/workflow_summary/f281489549ea41060492fa4924f55b3213216b090a84311cfb3df966b63b0bfe",
+      "record": {
+        "schema": "analysis_execution@1",
+        "execution_id": "exec_9c14e277f9b247e4b1981dacde38b5ba",
+        "run_id": "run_81f2735736d441f68ed78ad2e51c323f",
+        "plan_handle": "obj://run_81f2735736d441f68ed78ad2e51c323f/analysis_plan/f5ef4e19fbeff33b6b25c95a6e99a709aa1238c6cd7d9ff94a5fdb38ef64002a",
+        "plan_sha256": "bc62879c68ec7589df1e9628ddb6731a9e52689b651fd1bc0681032a0510c3a6",
+        "goal": "minimize_protein",
+        "template_version": "minimize_protein@1",
+        "source": "local_rules",
+        "planner": "local_rules@1",
+        "dry_run": false,
+        "status": "complete",
+        "retryable_step": null,
+        "revision": 25,
+        "created_seq": 21,
+        "current_step": null,
+        "plan_approval": {
+          "approved": true,
+          "event_seq": 23,
+          "plan_sha256": "bc62879c68ec7589df1e9628ddb6731a9e52689b651fd1bc0681032a0510c3a6",
+          "revocations": []
+        },
+        "scientific_approval": {
+          "required": true,
+          "run_approved": true,
+          "state": "already_approved_in_run",
+          "pending_tool": null,
+          "recorded_seqs": [
+            36
+          ]
+        },
+        "blocked_reason": null,
+        "stop": null,
+        "notice": null,
+        "driver": {
+          "in_progress": false,
+          "request_ids": []
+        },
+        "recovery_pending": false,
+        "steps": [
+          {
+            "step_id": "s01",
+            "operation": "openmm_protein_minimize",
+            "lane": "durable_job",
+            "status": "completed",
+            "null_result": false,
+            "operation_id": "op_ba47f2610bda4330a0aa998fcaa0ed61",
+            "dispatch_seqs": [
+              26,
+              51
+            ],
+            "completed_seq": 71,
+            "attempts": 2,
+            "retries_used": 1,
+            "outputs": {
+              "openmm_minimization": "obj://run_81f2735736d441f68ed78ad2e51c323f/openmm_minimization/89a6945de567ca250b51e96e2784ad50154ccee3632cdef8f27d8f7746cebf3c"
+            },
+            "report_handle": null,
+            "child_call_ids": [],
+            "job_id": "job_93f108b052e94dd487a7bbe3c1bed5a7",
+            "job_ownership": "owned",
+            "job_status": "done",
+            "job_cleanup_status": "verified",
+            "job_blocked_reason": null,
+            "job_cancel_requested": false,
+            "shared_job_notice": null,
+            "deferred_reason": null,
+            "failure": {
+              "status": "failed",
+              "error": "fatal",
+              "reason_code": "job_failed",
+              "message": null,
+              "retryable": true
+            }
+          },
+          {
+            "step_id": "s02",
+            "operation": "method_report",
+            "lane": "report",
+            "status": "completed",
+            "null_result": false,
+            "operation_id": "op_310fc3e5aaaf40cf8fcaf0386b5c3557",
+            "dispatch_seqs": [
+              74
+            ],
+            "completed_seq": 78,
+            "attempts": 0,
+            "retries_used": 0,
+            "outputs": {
+              "report": "obj://run_81f2735736d441f68ed78ad2e51c323f/method_report_manifest/62a5c56d8e645d23af35cbb60be4b0706c9912456e7b7bc5b80ef9e3d0c4a02d"
+            },
+            "report_handle": "obj://run_81f2735736d441f68ed78ad2e51c323f/method_report_manifest/62a5c56d8e645d23af35cbb60be4b0706c9912456e7b7bc5b80ef9e3d0c4a02d",
+            "child_call_ids": [],
+            "job_id": null,
+            "job_ownership": null,
+            "job_status": null,
+            "job_cleanup_status": null,
+            "job_blocked_reason": null,
+            "job_cancel_requested": null,
+            "shared_job_notice": null,
+            "deferred_reason": null,
+            "failure": null
+          }
+        ],
+        "physical_attempts": 2,
+        "active_wall_s": 12.452182415872812,
+        "limits": {
+          "max_active_wall_s": 1800,
+          "max_physical_attempts": 24,
+          "max_retries_per_step": 1,
+          "max_steps": 8
+        },
+        "summary_handle": "obj://run_81f2735736d441f68ed78ad2e51c323f/workflow_summary/f281489549ea41060492fa4924f55b3213216b090a84311cfb3df966b63b0bfe",
+        "event_seqs": [
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          31,
+          32,
+          33,
+          36,
+          37,
+          38,
+          39,
+          48,
+          49,
+          50,
+          51,
+          54,
+          71,
+          72,
+          73,
+          74,
+          78,
+          80,
+          81
+        ],
+        "jobs_readable": true
+      }
+    },
+    "sharedExecution": "exec_d8d3b5c086fd4e988355be173eb6f66c"
+  },
+  "fixtureLabels": [
+    "labeled OS fault fixture: SIGKILL of this QA run's own openmm_worker.py (scoped by cwd to the QA runs root); no result is produced by the fixture"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_81f2735736d441f68ed78ad2e51c323f",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "startedAt": "2026-10-13T16:40:26.399Z",
+  "faults": {
+    "killed": {
+      "killed": [
+        {
+          "pid": 36956,
+          "command": "<repo>/.venv/bin/python -I <repo>/backend/mw/jobs/openmm_worker.py",
+          "cwd": "<repo>/runs/m29-chain-m25-20261014-m13-regression/runs/run_81f2735736d441f68ed78ad2e51c323f/jobs/job_93f108b052e94dd487a7bbe3c1bed5a7/attempt_7116ab7c11624d57b58bdcf7ea453af4"
+        }
+      ],
+      "job": {
+        "job_id": "job_93f108b052e94dd487a7bbe3c1bed5a7",
+        "run_id": "run_81f2735736d441f68ed78ad2e51c323f",
+        "root_call_id": "job_93f108b052e94dd487a7bbe3c1bed5a7",
+        "call_key": "b2de5c1a94db31f2f23ab2cf6bad71d4c0a3e9a9c35ed72316cef78ba16e9fb2",
+        "protocol_id": "openmm_protein_minimize",
+        "tool_id": "openmm_protein_minimize",
+        "status": "failed",
+        "created": 1791909632.440402,
+        "finished": 1791909634.935719,
+        "timeout_s": 120,
+        "attempt_id": "attempt_7116ab7c11624d57b58bdcf7ea453af4",
+        "attempt_ordinal": 1,
+        "blocked_reason": null,
+        "cancel_requested": false,
+        "cleanup_status": "verified",
+        "failure": {
+          "error": "fatal",
+          "message": "worker exit or abandoned helper"
+        },
+        "input_handles": [
+          "obj://run_81f2735736d441f68ed78ad2e51c323f/prepared_structure/487d1e21741e3a8839430c4691199ead0b2f3ff1d1482ceb99069a555f2a1ac0"
+        ],
+        "output_handles": [],
+        "preparation_handle": null,
+        "preparation_attempt_id": null,
+        "started": 1791909633.293432,
+        "remaining_wall_s_at_dispatch": 1799.9727052501403,
+        "artifacts": {}
+      },
+      "advance": {
+        "status": 200,
+        "body": {
+          "execution": {
+            "schema": "analysis_execution@1",
+            "execution_id": "exec_9c14e277f9b247e4b1981dacde38b5ba",
+            "run_id": "run_81f2735736d441f68ed78ad2e51c323f",
+            "plan_handle": "obj://run_81f2735736d441f68ed78ad2e51c323f/analysis_plan/f5ef4e19fbeff33b6b25c95a6e99a709aa1238c6cd7d9ff94a5fdb38ef64002a",
+            "plan_sha256": "bc62879c68ec7589df1e9628ddb6731a9e52689b651fd1bc0681032a0510c3a6",
+            "goal": "minimize_protein",
+            "template_version": "minimize_protein@1",
+            "source": "local_rules",
+            "planner": "local_rules@1",
+            "dry_run": false,
+            "status": "failed",
+            "retryable_step": "s01",
+            "revision": 15,
+            "created_seq": 21,
+            "current_step": "s01",
+            "plan_approval": {
+              "approved": true,
+              "event_seq": 23,
+              "plan_sha256": "bc62879c68ec7589df1e9628ddb6731a9e52689b651fd1bc0681032a0510c3a6",
+              "revocations": []
+            },
+            "scientific_approval": {
+              "required": true,
+              "run_approved": true,
+              "state": "already_approved_in_run",
+              "pending_tool": null,
+              "recorded_seqs": [
+                36
+              ]
+            },
+            "blocked_reason": null,
+            "stop": null,
+            "notice": {
+              "code": "scientific_approval_required",
+              "step_id": "s01",
+              "message": "작업 시작에 run의 첫 비싼 계산 승인이 필요합니다."
+            },
+            "driver": {
+              "in_progress": false,
+              "request_ids": []
+            },
+            "recovery_pending": false,
+            "steps": [
+              {
+                "step_id": "s01",
+                "operation": "openmm_protein_minimize",
+                "lane": "durable_job",
+                "status": "failed",
+                "null_result": null,
+                "operation_id": "op_56953e41588642c697d99ada56b6dcea",
+                "dispatch_seqs": [
+                  26
+                ],
+                "completed_seq": null,
+                "attempts": 1,
+                "retries_used": 0,
+                "outputs": {},
+                "report_handle": null,
+                "child_call_ids": [],
+                "job_id": "job_93f108b052e94dd487a7bbe3c1bed5a7",
+                "job_ownership": "owned",
+                "job_status": "failed",
+                "job_cleanup_status": "verified",
+                "job_blocked_reason": null,
+                "job_cancel_requested": false,
+                "shared_job_notice": null,
+                "deferred_reason": "scientific_approval_required",
+                "failure": {
+                  "status": "failed",
+                  "error": "fatal",
+                  "reason_code": "job_failed",
+                  "message": null,
+                  "retryable": true
+                }
+              },
+              {
+                "step_id": "s02",
+                "operation": "method_report",
+                "lane": "report",
+                "status": "pending",
+                "null_result": null,
+                "operation_id": null,
+                "dispatch_seqs": [],
+                "completed_seq": null,
+                "attempts": 0,
+                "retries_used": 0,
+                "outputs": {},
+                "report_handle": null,
+                "child_call_ids": [],
+                "job_id": null,
+                "job_ownership": null,
+                "job_status": null,
+                "job_cleanup_status": null,
+                "job_blocked_reason": null,
+                "job_cancel_requested": null,
+                "shared_job_notice": null,
+                "deferred_reason": null,
+                "failure": null
+              }
+            ],
+            "physical_attempts": 1,
+            "active_wall_s": 1.6530335410498083,
+            "limits": {
+              "max_active_wall_s": 1800,
+              "max_physical_attempts": 24,
+              "max_retries_per_step": 1,
+              "max_steps": 8
+            },
+            "summary_handle": null,
+            "event_seqs": [
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              31,
+              32,
+              33,
+              36,
+              37,
+              38,
+              39,
+              48,
+              49
+            ],
+            "jobs_readable": true
+          },
+          "replayed": false,
+          "request": {
+            "request_id": "0f163e4b-6045-4bc6-86a0-f3f860c1032e",
+            "action": "advance",
+            "state": "completed",
+            "outcome": "advanced"
+          }
+        }
+      },
+      "runningStatus": "waiting_job",
+      "panelWaitingJob": true
+    }
+  },
+  "finishedAt": "2026-10-13T16:41:05.615Z",
+  "error": null
+}

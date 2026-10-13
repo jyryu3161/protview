@@ -1,0 +1,66 @@
+{
+  "schema": "m24_jev_setup@1",
+  "label": "rehearsal",
+  "runs": {
+    "L1": {
+      "run": "run_38b41aa3005d4e47961f9cb7bbd65e90",
+      "sets": {
+        "ligand": {
+          "handle": "obj://run_38b41aa3005d4e47961f9cb7bbd65e90/ligand_candidate_set/7f4119d14f2a2e26118115ad701139f37d64b99da854f4c6ad877001a9f20371",
+          "candidates": 10,
+          "inspection": "obj://run_38b41aa3005d4e47961f9cb7bbd65e90/ligand_inspection/96d82c4cf76e9fd84fd9d045da187c66073bf7ebb7306776396deb0bf42c0f55",
+          "inputs": {
+            "parent": "backend/tests/fixtures/docking/public-derived-parent-record0.sdf",
+            "blocks": "backend/tests/fixtures/ligand_ga/synthetic-ga-small-blocks.smi",
+            "site_atoms": [
+              22
+            ],
+            "use_fixed": true
+          }
+        },
+        "ubq": {
+          "handle": "obj://run_38b41aa3005d4e47961f9cb7bbd65e90/mutation_candidate_set/a7b011bed9a34b7bbfea5c1d178b0ab325e62d1b7545fbd6e71164b41bfc9db5",
+          "candidates": 22,
+          "structure": "obj://run_38b41aa3005d4e47961f9cb7bbd65e90/prepared_structure/adb945085272e5f48e4cdf06b9155b7169b0dcaf85d523178cf05e932b7ec3ab",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1ubq.cif",
+            "positions": 22,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        }
+      }
+    },
+    "L2": {
+      "run": "run_2ca9bb7a05ed492c88d52c7d4d57319b",
+      "sets": {
+        "mq4": {
+          "handle": "obj://run_2ca9bb7a05ed492c88d52c7d4d57319b/mutation_candidate_set/b4a2d121f1a4af86edce09a46447a276f1814c95f8c82fb0739948fe039f1a09",
+          "candidates": 24,
+          "structure": "obj://run_2ca9bb7a05ed492c88d52c7d4d57319b/prepared_structure/bbe98051866d09850cb243f1daa613cde23699372aafec6d6f5a7f217478e2ae",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1mq4.cif",
+            "positions": 24,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        },
+        "ubq": {
+          "handle": "obj://run_2ca9bb7a05ed492c88d52c7d4d57319b/mutation_candidate_set/962d40363179a42e15a2d0e38b28d3645c6dea3be3ff67730022328d746667af",
+          "candidates": 22,
+          "structure": "obj://run_2ca9bb7a05ed492c88d52c7d4d57319b/prepared_structure/58671a35e618c11dcbc92a6af5f03af6a95510a2951505cc091ff3d1d45fd635",
+          "inputs": {
+            "structure": "backend/tests/fixtures/public_1ubq.cif",
+            "positions": 22,
+            "allowed_residues": [
+              "A"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "madeAt": "2026-10-13T16:08:09.708407+00:00"
+}

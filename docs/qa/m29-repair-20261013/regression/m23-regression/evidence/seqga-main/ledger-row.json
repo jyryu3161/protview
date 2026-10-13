@@ -1,0 +1,1016 @@
+{
+  "schema": "m23_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "SG-no-run": "pass",
+    "SG-load-prepare": "pass",
+    "SG-no-candidate-set": "pass",
+    "SG-candidate-sets": "pass",
+    "SG-ligand-imports": "pass",
+    "SG-initial-state": "pass",
+    "SG-param-guards": "pass",
+    "SG-cross-rules": "pass",
+    "SG-defaults": "pass",
+    "SG-confirmations": "pass",
+    "SG-refusals": "pass",
+    "SG-preflight": "pass",
+    "SG-limit-approval": "pass",
+    "SG-run": "pass",
+    "SG-progress": "pass",
+    "SG-results": "pass",
+    "SG-oracle-path": "pass",
+    "SG-sort": "pass",
+    "SG-detail": "pass",
+    "SG-download": "pass",
+    "SG-dedupe": "pass",
+    "SG-reuse": "pass",
+    "SG-partial": "pass",
+    "SG-cancel": "pass",
+    "SG-reference-failed": "pass",
+    "SG-late-response": "pass",
+    "SG-report": "pass",
+    "SG-tabs": "pass",
+    "SG-processes": "pass",
+    "SG-wording": "pass"
+  },
+  "runId": "run_c4096681408b4c87863e291744b9b4f9",
+  "runs": {
+    "A": "run_c4096681408b4c87863e291744b9b4f9"
+  },
+  "handles": {
+    "structure": "obj://run_c4096681408b4c87863e291744b9b4f9/structure/31b8a9da74a2b1c826a07a3d15005ffd724352616890a7d94ef48f9b32eea182",
+    "prepared": "obj://run_c4096681408b4c87863e291744b9b4f9/prepared_structure/a2871bb1feb17a4c0745d117f33c47c46de21968afa7f71d7a46788b70ea7fb7",
+    "tiny": "obj://run_c4096681408b4c87863e291744b9b4f9/mutation_candidate_set/1dac19416f5e161ae3c0edc8a223807576fee28a6840cbf6e56002385e4bd1f9",
+    "small": "obj://run_c4096681408b4c87863e291744b9b4f9/mutation_candidate_set/0d3e687b393f59a81ba52dc544c78fe04ddef0bfc653e8f79bc1cdc55c1bb990",
+    "phenol": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267",
+    "planar": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/58b79a6299f2917d0bba92fe08219adf6091daf8a9cc1bc934bfcd31242fb086",
+    "implicitH": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/1f0485eab86948ba73e6dce33c955d3d63033a6e7454fea46cf9473088b8564e",
+    "ga1": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/d0315d8986dde09bc9465a447d1463e1a2106a5743a27a850260885f60c48d30",
+    "ga2": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/744c3fbb8740d3766188722880190bff8d9256266f6903906998535bcc21945a"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "bytes": 103220,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/mutation_model/synthetic-phenol-ligand.sdf",
+      "bytes": 1240,
+      "sha256": "997c7d6f0a73142118df375bf5a09ec79b0083c1916db6f69ecfe3df9a0852a3"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-planar-z0.sdf",
+      "bytes": 6829,
+      "sha256": "ad531eae2446c0baebf1f8d0ddb648677c0b1d6c4053d2224d404f7f1c7b4573"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/docking/synthetic-ligand-implicit-h.sdf",
+      "bytes": 3857,
+      "sha256": "eca0d17066a3f00075805b79a1864782a5e11b721d28a341bda2da78a7d2e387"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/m20-candidate-set-1ubq-tiny.json",
+      "bytes": 4741,
+      "sha256": "e591b1b947a45983e681b4297b0b680964385497f7b296227e434ceee1c7aa78"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/sequence_ga/expected.json",
+      "bytes": 331744,
+      "sha256": "6872587e87b784ace709d17f8ec4d09d71be945ef863209b0e84946ea0156d95"
+    }
+  ],
+  "fixtureLabels": [
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "controls": {
+    "mutation-structures": [
+      {
+        "checked": "obj://run_c4096681408b4c87863e291744b9b4f9/prepared_structure/a2871bb1feb17a4c0745d117f33c47c46de21968afa7f71d7a46788b70ea7fb7"
+      }
+    ],
+    "mutation-source-user": [
+      {
+        "checked": true
+      }
+    ],
+    "mutation-pick-user": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      },
+      {
+        "picked": "LYS A:6 · label A:6"
+      },
+      {
+        "picked": "ILE A:44 · label A:44"
+      },
+      {
+        "picked": "GLY A:76 · label A:76"
+      }
+    ],
+    "mutation-add-user": [
+      {
+        "count": 1
+      },
+      {
+        "count": 2
+      },
+      {
+        "count": 3
+      },
+      {
+        "count": 4
+      }
+    ],
+    "mutation-pick-protect": [
+      {
+        "picked": "ILE A:3 · label A:3"
+      }
+    ],
+    "mutation-add-protect": [
+      {
+        "count": 1
+      }
+    ],
+    "mutation-allowed-none": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-allowed": [
+      {
+        "checked": "AW"
+      },
+      {
+        "checked": "W"
+      }
+    ],
+    "mutation-create": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "mutation-remove-user": [
+      {
+        "removed": "ILE A:3",
+        "count": 3
+      },
+      {
+        "removed": "LYS A:6",
+        "count": 2
+      },
+      {
+        "removed": "GLY A:76",
+        "count": 1
+      }
+    ],
+    "mutation-remove-protect": [
+      {
+        "removed": "ILE A:3",
+        "count": 0
+      }
+    ],
+    "docking-file-ligand": [
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      },
+      {
+        "file": "synthetic-ligand-planar-z0.sdf"
+      },
+      {
+        "file": "synthetic-ligand-implicit-h.sdf"
+      }
+    ],
+    "docking-import": [
+      {
+        "file": "synthetic-phenol-ligand.sdf"
+      },
+      {
+        "file": "synthetic-ligand-planar-z0.sdf"
+      },
+      {
+        "file": "synthetic-ligand-implicit-h.sdf"
+      }
+    ],
+    "sequence-ga-prereq-refresh": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-candidate-set": [
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/mutation_candidate_set/1dac19416f5e161ae3c0edc8a223807576fee28a6840cbf6e56002385e4bd1f9"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/mutation_candidate_set/0d3e687b393f59a81ba52dc544c78fe04ddef0bfc653e8f79bc1cdc55c1bb990"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/mutation_candidate_set/1dac19416f5e161ae3c0edc8a223807576fee28a6840cbf6e56002385e4bd1f9"
+      }
+    ],
+    "sequence-ga-sdf": [
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/58b79a6299f2917d0bba92fe08219adf6091daf8a9cc1bc934bfcd31242fb086"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/1f0485eab86948ba73e6dce33c955d3d63033a6e7454fea46cf9473088b8564e"
+      }
+    ],
+    "sequence-ga-box-source": [
+      {
+        "checked": true
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-margin": [
+      {
+        "value": "8"
+      }
+    ],
+    "sequence-ga-seed": [
+      {
+        "value": "20261004"
+      },
+      {
+        "value": "7"
+      },
+      {
+        "value": "20261004"
+      }
+    ],
+    "sequence-ga-exhaustiveness": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-num-modes": [
+      {
+        "value": "5"
+      },
+      {
+        "value": "5"
+      }
+    ],
+    "sequence-ga-energy-range": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "sequence-ga-confirm-selection": [
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-confirm-hydrogen": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-keep_input_protonation": [
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-tool_assigned_types_charges": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-ack-rigid_no_optimization": [
+      {
+        "checked": true
+      }
+    ],
+    "sequence-ga-param-seed": [
+      {
+        "value": "21"
+      },
+      {
+        "value": "2147483648"
+      },
+      {
+        "value": "21"
+      },
+      {
+        "value": ""
+      },
+      {
+        "value": "21"
+      },
+      {
+        "value": "21"
+      },
+      {
+        "value": "13"
+      },
+      {
+        "value": "21"
+      },
+      {
+        "value": "21"
+      }
+    ],
+    "sequence-ga-param-population_size": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "17"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "8"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "6"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-param-generations": [
+      {
+        "value": "4"
+      },
+      {
+        "value": "9"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-elite_count": [
+      {
+        "value": "1"
+      },
+      {
+        "value": "5"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "1"
+      }
+    ],
+    "sequence-ga-param-tournament_size": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-crossover_fraction": [
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "1.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      },
+      {
+        "value": "0.5"
+      }
+    ],
+    "sequence-ga-param-random_fraction": [
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.6"
+      },
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.1"
+      },
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.25"
+      },
+      {
+        "value": "0.25"
+      }
+    ],
+    "sequence-ga-param-max_mutations": [
+      {
+        "value": "3"
+      },
+      {
+        "value": "5"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "1"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      },
+      {
+        "value": "3"
+      }
+    ],
+    "sequence-ga-param-patience": [
+      {
+        "value": "2"
+      },
+      {
+        "value": "0"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      },
+      {
+        "value": "2"
+      }
+    ],
+    "sequence-ga-param-max_new_evaluations": [
+      {
+        "value": "32"
+      },
+      {
+        "value": "65"
+      },
+      {
+        "value": "32"
+      },
+      {
+        "value": "6"
+      },
+      {
+        "value": "32"
+      },
+      {
+        "value": "32"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      },
+      {
+        "value": "4"
+      }
+    ],
+    "sequence-ga-param-total_s": [
+      {
+        "value": "7200"
+      },
+      {
+        "value": "599"
+      },
+      {
+        "value": "7200"
+      },
+      {
+        "value": "900"
+      },
+      {
+        "value": "7200"
+      },
+      {
+        "value": "600"
+      },
+      {
+        "value": "600"
+      },
+      {
+        "value": "600"
+      }
+    ],
+    "sequence-ga-defaults": [
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-preflight": [
+      {
+        "status": 200,
+        "admitted": false,
+        "reason": "ga_space_too_small"
+      },
+      {
+        "status": 200,
+        "admitted": false,
+        "reason": "ga_space_too_small"
+      },
+      {
+        "status": 200,
+        "admitted": false,
+        "reason": "ligand_not_3d"
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      },
+      {
+        "status": 200,
+        "admitted": true,
+        "reason": null
+      }
+    ],
+    "sequence-ga-limit-approve": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-start": [
+      {
+        "clicked": true
+      },
+      {
+        "identical": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-job-approve": [
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-job-start": [
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-summary-radio": [
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/d0315d8986dde09bc9465a447d1463e1a2106a5743a27a850260885f60c48d30"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/744c3fbb8740d3766188722880190bff8d9256266f6903906998535bcc21945a"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/0b74718e8f4051229127360d9d6d9fa1a0302916be00c96b8a27bfdbe5f1d1f1"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/e20796d431833afece2442d9735d163366220dda0db1c888596b0a54aceb34da"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/744c3fbb8740d3766188722880190bff8d9256266f6903906998535bcc21945a",
+        "held": true
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/d0315d8986dde09bc9465a447d1463e1a2106a5743a27a850260885f60c48d30"
+      },
+      {
+        "handle": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/744c3fbb8740d3766188722880190bff8d9256266f6903906998535bcc21945a"
+      }
+    ],
+    "sequence-ga-generation-tab": [
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 3
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 1
+      },
+      {
+        "index": 2
+      },
+      {
+        "index": 1
+      }
+    ],
+    "sequence-ga-mutations": [
+      {
+        "generation": 1,
+        "position": 1
+      }
+    ],
+    "sequence-ga-sort-score": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "sequence-ga-sort-key": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "sequence-ga-sort-slot": [
+      {
+        "direction": "asc"
+      },
+      {
+        "direction": "desc"
+      }
+    ],
+    "sequence-ga-open-1-1": [
+      {
+        "key": "1-2-4"
+      }
+    ],
+    "sequence-ga-detail-download": [
+      {
+        "key": "1-2-4"
+      },
+      {
+        "key": "wild_type"
+      }
+    ],
+    "sequence-ga-reference-open": [
+      {
+        "key": "wild_type"
+      },
+      {
+        "key": "wild_type"
+      }
+    ],
+    "sequence-ga-job-cancel": [
+      {
+        "finishedBefore": 1
+      }
+    ],
+    "sequence-ga-manual-box": [
+      {
+        "center": [
+          "23.66925",
+          "36.57215",
+          "24.91205"
+        ],
+        "size": [
+          "20",
+          "20",
+          "20"
+        ]
+      }
+    ],
+    "sequence-ga-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-report-markdown": [
+      {
+        "clicked": true
+      }
+    ],
+    "sequence-ga-report-json": [
+      {
+        "clicked": true
+      }
+    ]
+  },
+  "gaArgs": {
+    "run": "run_c4096681408b4c87863e291744b9b4f9",
+    "args": {
+      "candidate_set": "obj://run_c4096681408b4c87863e291744b9b4f9/mutation_candidate_set/1dac19416f5e161ae3c0edc8a223807576fee28a6840cbf6e56002385e4bd1f9",
+      "ligand": {
+        "source": "sdf",
+        "sdf_handle": "obj://run_c4096681408b4c87863e291744b9b4f9/chemical_raw_input/b7558afe27072c629d8f5ca8a5e774d9578750471d5bb19561481e219d70e267"
+      },
+      "box": {
+        "source": "ligand_range",
+        "margin_A": 8
+      },
+      "parameters": {
+        "seed": 20261004,
+        "exhaustiveness": 4,
+        "num_modes": 5,
+        "energy_range": 3
+      },
+      "selection_policy": "protein_only",
+      "hydrogen_policy": "rebuild_pH7",
+      "acknowledgement": {
+        "keep_input_protonation": true,
+        "tool_assigned_types_charges": true,
+        "rigid_no_optimization": true
+      },
+      "ga": {
+        "seed": 21,
+        "population_size": 4,
+        "generations": 4,
+        "elite_count": 1,
+        "tournament_size": 2,
+        "crossover_fraction": 0.5,
+        "random_fraction": 0.25,
+        "max_mutations": 3,
+        "patience": 2,
+        "max_new_evaluations": 32,
+        "total_s": 7200
+      }
+    },
+    "timeoutS": 7800,
+    "job": "job_198895a2501b476bb3e99ff1a834c3d6",
+    "summary": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/d0315d8986dde09bc9465a447d1463e1a2106a5743a27a850260885f60c48d30"
+  },
+  "gaRuns": {
+    "ga1": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/d0315d8986dde09bc9465a447d1463e1a2106a5743a27a850260885f60c48d30",
+    "ga2": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/744c3fbb8740d3766188722880190bff8d9256266f6903906998535bcc21945a",
+    "ga3": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/0b74718e8f4051229127360d9d6d9fa1a0302916be00c96b8a27bfdbe5f1d1f1",
+    "ga4": "obj://run_c4096681408b4c87863e291744b9b4f9/sequence_ga_result/e20796d431833afece2442d9735d163366220dda0db1c888596b0a54aceb34da"
+  },
+  "repro": null,
+  "budget": {
+    "wall_clock_s": {
+      "used": 219.77883841795847,
+      "limit": 7990.270285125356
+    },
+    "expensive_calls": {
+      "used": 58,
+      "limit": 58
+    },
+    "external_tokens": {
+      "used": 0,
+      "limit": 120000
+    },
+    "usd": {
+      "used": 0,
+      "limit": 2
+    }
+  },
+  "notObserved": [
+    {
+      "case": "SG-individual-without-score",
+      "reason": "every individual of the 1UBQ + phenol GAs is scored (T1: all 26 keys and the reference row scored), so no individual row without a score (null_result/failed) is shown; nothing is forged. The reference row without a score (—, never 0) is observed (SG-reference-failed). Covered by frontend/tests/sequence-ga.test.cjs ('individuals table: score-less rows last…', 'space lines and score cells…') and backend/tests/test_sequence_ga_api.py::test_rows_without_a_score_are_null_never_zero."
+    },
+    {
+      "case": "SG-heavy-atom-warning",
+      "reason": "1UBQ projects 602 heavy atoms (< 4,890), so the server flag is false and the warning line is absent (asserted on every preflight); no local public structure passing M7 exceeds it. Covered by backend/tests/test_sequence_ga_inputs.py (heavy_atom_warning 4890/4891) and frontend/tests/sequence-ga.test.cjs ('preflight lines: …')."
+    },
+    {
+      "case": "SG-other-stop-reasons",
+      "reason": "generations_complete, space_exhausted, time_exhausted, worker_failed, resource_exceeded and repeated_failure need other scores, hours, a killed worker, oversized output or five failing models; covered by backend/tests/test_sequence_ga_worker.py (oracle vectors, clock, output bound, failures) and test_sequence_ga_jobs.py (time_exhausted, worker_failed, recovery)."
+    },
+    {
+      "case": "SG-model-conditional-sentences",
+      "reason": "SL5 (HIS/CYS state differing from the reference outside the mutated residues) and L6 (a new disulfide) need such a difference; the observed 1UBQ tiny-set models have none (no Cys; the flow asserts each stored condition against the shown sentences and the empty difference text). Covered by backend/tests/test_sequence_model_bundle.py (…_adds_sl5, …_adds_both_rows_and_l6) and test_sequence_model_worker.py::test_protonation_and_disulfide_records_are_against_the_reference."
+    },
+    {
+      "case": "SG-dry-run",
+      "reason": "a dry-run run plans only and has no limit to raise; covered by backend/tests/test_sequence_ga_jobs.py::test_dry_run_plans_only and frontend/tests/sequence-ga.test.cjs."
+    }
+  ],
+  "buildId": "zHxijM08Zpd_R8U7RDu8X",
+  "harness": {
+    "sequence-ga-flow.cjs": "54e3e15c9a64f19b65113b098adaee69bbec12b5094e3d1f97d0182893a3e7d2",
+    "docking-flow.cjs": "93ab8a165cdd0c0e82d53a5897085ba9ca8a1bfb5ebbda9d9a7af61085218473",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 452,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m23/seqga-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 478,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 9,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m23/seqga-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_c4096681408b4c87863e291744b9b4f9",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "sequence-ga-main.jsonl",
+  "startedAt": "2026-10-13T16:09:01.651Z",
+  "finishedAt": "2026-10-13T16:14:36.177Z"
+}

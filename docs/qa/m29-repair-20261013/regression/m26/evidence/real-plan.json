@@ -1,0 +1,741 @@
+{
+  "schema": "m26_qa_plan@1",
+  "stage": "real",
+  "setHash": "1a7b131a102684f1f735bb96e6461bd13796c3b13a6d2203d289299cb57acf47",
+  "synthetic": null,
+  "structures": {
+    "s9i": {
+      "file": "<repo>/backend/tests/fixtures/public_1s9i.cif",
+      "name": "public_1s9i.cif",
+      "provenance": "public PDB entry 1S9I (RCSB CC0, T9a download)",
+      "prepare": true,
+      "sha256": "3db038cdfa23f9d2b8d88e552162fa153c915402827cb4ebb24936171ef08810"
+    },
+    "a30": {
+      "file": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "name": "public_1a30.cif",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, T9a download)",
+      "prepare": false,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47"
+    },
+    "a4i": {
+      "file": "<repo>/backend/tests/fixtures/public_1a4i.cif",
+      "name": "public_1a4i.cif",
+      "provenance": "public PDB entry 1A4I (RCSB CC0, T9a download)",
+      "prepare": false,
+      "sha256": "afa6bd62e3183d1e574ef4c61139148fe4d92c0a5bbac7575b5a418cd664e712"
+    },
+    "s9i_derived": {
+      "file": "<repo>/backend/tests/fixtures/reaction/t9/derived_1s9i_A194_asp_to_glu.cif",
+      "name": "derived_1s9i_A194_asp_to_glu.cif",
+      "provenance": "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)",
+      "prepare": false,
+      "sha256": "c7ffea5813ae8b74d8e457a9e04ab97d16d2d2d023f0eabdef958d31251969ad"
+    },
+    "ubq": {
+      "file": "<repo>/backend/tests/fixtures/public_1ubq.cif",
+      "name": "public_1ubq.cif",
+      "provenance": "public PDB entry 1UBQ (repository fixture)",
+      "prepare": false,
+      "sha256": "056f98710cb2b36f633c45e41902a02eb446e82871da21ff2dd44f74a56ca0f6"
+    },
+    "hsg": {
+      "file": "<repo>/backend/tests/fixtures/public_1hsg.cif",
+      "name": "public_1hsg.cif",
+      "provenance": "public PDB entry 1HSG (repository fixture)",
+      "prepare": false,
+      "sha256": "d2ba73b5c4be05c45275571bbb4dd042347927f91c6c05038c0df5d1ce23c268"
+    },
+    "mq4": {
+      "file": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "name": "public_1mq4.cif",
+      "provenance": "public PDB entry 1MQ4 (repository fixture)",
+      "prepare": true,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    }
+  },
+  "maps": [
+    {
+      "id": "s9i-map",
+      "structure": "s9i",
+      "use": "prepared",
+      "pdbId": "1S9I",
+      "chain": "A",
+      "accession": "P36507"
+    },
+    {
+      "id": "mq4-map",
+      "structure": "mq4",
+      "use": "prepared",
+      "pdbId": "1MQ4",
+      "chain": "A",
+      "accession": "O14965"
+    }
+  ],
+  "links": [
+    {
+      "id": "s9i",
+      "structure": "s9i",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1S9I"
+      },
+      "lookupEntries": [
+        282
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "suggestion": "P36507"
+          }
+        },
+        {
+          "chain": "B",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-matched-real",
+        "X-no-zero"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              282
+            ],
+            "rows": {
+              "282/0": "matched",
+              "282/1": "matched"
+            },
+            "isReference": {
+              "282/0": true,
+              "282/1": true
+            },
+            "rolesGiven": [
+              "282/0",
+              "282/1"
+            ],
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": "numbering_map_not_given",
+            "flags": [],
+            "reactions": "checked",
+            "reactionsFilled": true,
+            "rheaInSnapshot": [
+              true
+            ]
+          },
+          "B": {
+            "coverage": "chain_not_listed",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "a30",
+      "structure": "a30",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1A30"
+      },
+      "lookupEntries": [
+        175
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        },
+        {
+          "chain": "B",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-two-chains"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              175
+            ],
+            "rows": {
+              "175/1": "matched",
+              "175/2": "matched",
+              "175/4": "matched"
+            },
+            "isReference": {
+              "175/1": true,
+              "175/2": true,
+              "175/4": true
+            },
+            "rolesGiven": [
+              "175/1",
+              "175/2",
+              "175/4"
+            ],
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          },
+          "B": {
+            "coverage": "covered",
+            "entries": [
+              175
+            ],
+            "rows": {
+              "175/0": "matched",
+              "175/3": "matched",
+              "175/5": "matched"
+            },
+            "isReference": {
+              "175/0": true,
+              "175/3": true,
+              "175/5": true
+            },
+            "rolesGiven": [
+              "175/0",
+              "175/3",
+              "175/5"
+            ],
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "a4i",
+      "structure": "a4i",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1A4I"
+      },
+      "lookupEntries": [
+        389,
+        458
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        },
+        {
+          "chain": "B",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-two-entries"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              389,
+              458
+            ],
+            "rows": {
+              "389/0": "matched",
+              "389/1": "matched",
+              "389/2": "matched",
+              "458/0": "matched",
+              "458/1": "matched",
+              "458/2": "matched"
+            },
+            "isReference": {
+              "389/0": true,
+              "389/1": true,
+              "389/2": true,
+              "458/0": true,
+              "458/1": true,
+              "458/2": true
+            },
+            "rolesGiven": [
+              "389/0",
+              "389/1",
+              "389/2",
+              "458/0",
+              "458/1",
+              "458/2"
+            ],
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          },
+          "B": {
+            "coverage": "chain_not_listed",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "s9i-derived",
+      "structure": "s9i_derived",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1S9I"
+      },
+      "lookupEntries": [
+        282
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-conflict-derived"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              282
+            ],
+            "rows": {
+              "282/0": "conflict:residue_name_differs",
+              "282/1": "matched"
+            },
+            "rowsInclude": {
+              "282/A194": "conflict:residue_name_differs"
+            },
+            "structureResname": {
+              "282/0": "GLU"
+            },
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "ubq",
+      "structure": "ubq",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1UBQ"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-pdb-not-in-snapshot",
+        "X-no-zero"
+      ],
+      "expect": {
+        "nullResult": true,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "hsg",
+      "structure": "hsg",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1HSG"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        },
+        {
+          "chain": "B",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-pdb-not-in-snapshot",
+        "X-no-zero"
+      ],
+      "expect": {
+        "nullResult": true,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          },
+          "B": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "not_checked",
+              "accession_not_given"
+            ],
+            "flags": [],
+            "reactions": "not_checked"
+          }
+        }
+      }
+    },
+    {
+      "id": "mq4-linked",
+      "structure": "mq4",
+      "use": "prepared",
+      "pdbId": {
+        "suggested": "1MQ4"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "map": "O14965"
+          }
+        }
+      ],
+      "map": "mq4-map",
+      "cases": [
+        "X-uniprot-link",
+        "X-pdb-not-in-snapshot"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": null,
+            "flags": [],
+            "linkedPositions": {
+              "mapped": 9,
+              "not_in_map": 0
+            },
+            "reactions": "checked",
+            "rheaInSnapshot": [
+              true
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "s9i-linked",
+      "structure": "s9i",
+      "use": "prepared",
+      "pdbId": {
+        "suggested": "1S9I"
+      },
+      "lookupEntries": [
+        282
+      ],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": {
+            "map": "P36507"
+          }
+        }
+      ],
+      "map": "s9i-map",
+      "cases": [
+        "X-uniprot-link",
+        "X-matched-real"
+      ],
+      "expect": {
+        "nullResult": false,
+        "chains": {
+          "A": {
+            "coverage": "covered",
+            "entries": [
+              282
+            ],
+            "rows": {
+              "282/0": "matched",
+              "282/1": "matched"
+            },
+            "uniprot": [
+              "checked",
+              null
+            ],
+            "link": null,
+            "flags": [],
+            "linkedPositions": {
+              "mapped": 11,
+              "not_in_map": 2
+            },
+            "reactions": "checked"
+          }
+        }
+      }
+    }
+  ],
+  "fieldErrors": null,
+  "refusals": null,
+  "paging": null,
+  "report": "s9i",
+  "uk3": {
+    "structure": "s9i",
+    "link": "s9i-linked"
+  },
+  "dryRun": {
+    "run": "run_e74ed908db2d41a99e5c150344947c85",
+    "structure": "ubq",
+    "link": {
+      "id": "dry-ubq",
+      "structure": "ubq",
+      "use": "loaded",
+      "pdbId": {
+        "suggested": "1UBQ"
+      },
+      "lookupEntries": [],
+      "chains": [
+        {
+          "chain": "A",
+          "accession": null
+        }
+      ],
+      "map": null,
+      "cases": [
+        "X-dry-run"
+      ],
+      "expect": {
+        "nullResult": true,
+        "chains": {
+          "A": {
+            "coverage": "pdb_not_in_snapshot",
+            "reactions": "not_checked"
+          }
+        }
+      }
+    }
+  },
+  "mutation": {
+    "structure": {
+      "file": "<repo>/backend/tests/fixtures/public_1a30.cif",
+      "name": "public_1a30.cif",
+      "provenance": "public PDB entry 1A30 (RCSB CC0, T9a download)",
+      "prepare": false,
+      "sha256": "40ab7868e9b40c19ca2aec74dc7f13364e523fb76854ac46aeeb319f2001eb47"
+    },
+    "pdbId": "1A30",
+    "chainsPartial": [
+      "A"
+    ],
+    "chainsAll": [
+      "A",
+      "B"
+    ],
+    "positions": {
+      "residues": [
+        {
+          "resname": "ARG",
+          "chain": "A",
+          "seq": 8
+        },
+        {
+          "resname": "ASP",
+          "chain": "A",
+          "seq": 25
+        },
+        {
+          "resname": "THR",
+          "chain": "A",
+          "seq": 26
+        },
+        {
+          "resname": "ASP",
+          "chain": "B",
+          "seq": 25
+        },
+        {
+          "resname": "GLY",
+          "chain": "B",
+          "seq": 27
+        }
+      ]
+    },
+    "release": {
+      "resname": "ASP",
+      "chain": "A",
+      "seq": 25
+    },
+    "expect": {
+      "partialUncovered": [
+        {
+          "chain_auth": "B",
+          "coverage": "not_in_annotation"
+        }
+      ],
+      "allUncovered": [],
+      "catalytic": {
+        "ARG A:8": [],
+        "ASP A:25": [
+          [
+            175,
+            1,
+            true
+          ]
+        ],
+        "THR A:26": [
+          [
+            175,
+            2,
+            true
+          ]
+        ],
+        "ASP B:25": [
+          [
+            175,
+            5,
+            true
+          ]
+        ],
+        "GLY B:27": [
+          [
+            175,
+            0,
+            true
+          ]
+        ]
+      },
+      "partialCounts": {
+        "matched_rows": 3,
+        "conflict_rows": 0,
+        "unmatched_rows": 0
+      },
+      "allCounts": {
+        "matched_rows": 6,
+        "conflict_rows": 0,
+        "unmatched_rows": 0
+      },
+      "conflicts": [],
+      "unmatched": []
+    },
+    "derived": {
+      "structure": {
+        "file": "<repo>/backend/tests/fixtures/reaction/t9/derived_1s9i_A194_asp_to_glu.cif",
+        "name": "derived_1s9i_A194_asp_to_glu.cif",
+        "provenance": "SYNTHETIC derived from public 1S9I: ASP A194 renamed GLU (SYNTHETIC-PROVENANCE-t9.md)",
+        "prepare": false,
+        "sha256": "c7ffea5813ae8b74d8e457a9e04ab97d16d2d2d023f0eabdef958d31251969ad"
+      },
+      "pdbId": "1S9I",
+      "chains": [
+        "A"
+      ],
+      "positions": {
+        "residues": [
+          {
+            "resname": "GLU",
+            "chain": "A",
+            "seq": 194
+          },
+          {
+            "resname": "ASP",
+            "chain": "A",
+            "seq": 221
+          }
+        ]
+      },
+      "expect": {
+        "status": "checked",
+        "reason": null,
+        "covered": [
+          "A"
+        ],
+        "uncovered": [],
+        "counts": {
+          "matched_rows": 1,
+          "conflict_rows": 1,
+          "unmatched_rows": 0
+        },
+        "catalytic": {
+          "GLU A:194": [],
+          "ASP A:221": [
+            [
+              282,
+              1,
+              true
+            ]
+          ]
+        },
+        "conflicts": [
+          [
+            "A",
+            282,
+            0
+          ]
+        ],
+        "unmatched": []
+      }
+    },
+    "v1Run": null,
+    "pickers": [
+      "m20",
+      "m21",
+      "m23",
+      "m24",
+      "m25"
+    ]
+  }
+}

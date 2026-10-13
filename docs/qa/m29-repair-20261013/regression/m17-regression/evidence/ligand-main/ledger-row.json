@@ -1,0 +1,313 @@
+{
+  "schema": "m17_case_ledger_row@1",
+  "mode": "main",
+  "evidenceKind": "real_electron_offscreen",
+  "status": "pass",
+  "cases": {
+    "L-run-create": "pass",
+    "L-structure-kept": "pass",
+    "L-inputs-import": "pass",
+    "L-inspect-job": "pass",
+    "L-inspection-figure": "pass",
+    "L-atom-numbering": "pass",
+    "L-rules-status": "pass",
+    "L-invalid-rule": "pass",
+    "L-site-check": "pass",
+    "L-enumerate-job": "pass",
+    "L-candidates-oracle": "pass",
+    "L-filters": "pass",
+    "L-passes-only": "pass",
+    "L-sort": "pass",
+    "L-report": "pass",
+    "L-zero-candidates": "pass",
+    "L-paging": "pass",
+    "L-run-switch-late": "pass"
+  },
+  "runId": "run_bfcff517cc454d8e87f968122a0b541b",
+  "runs": {
+    "A": "run_bfcff517cc454d8e87f968122a0b541b",
+    "B": "run_38dbfce93b2646049ec1fb74988e1eab"
+  },
+  "handles": {
+    "structureA": "obj://run_bfcff517cc454d8e87f968122a0b541b/structure/f0a7b836b021d63240f03c63879f87c5c74f6d58c9e7cc33553ea2f040de978f",
+    "imports": {
+      "ligand_sdf": "obj://run_bfcff517cc454d8e87f968122a0b541b/chemical_raw_input/36ad998a130618e7065bfe1595bde32d4c0c516189cb96f2a7079725ce1d222f",
+      "building_blocks_sdf": "obj://run_bfcff517cc454d8e87f968122a0b541b/chemical_raw_input/fa1727f4bf554aeeb6a89a6a94dab53b0af8c366d5ae1007ec418a4c12ab24b7",
+      "building_blocks_smiles": "obj://run_bfcff517cc454d8e87f968122a0b541b/chemical_raw_input/18dfa16655b73a2115961fc1b338b3c50b1e1e6189fc233b50b972e10933b91c"
+    },
+    "inspection": "obj://run_bfcff517cc454d8e87f968122a0b541b/ligand_inspection/10525e5e02c10d29cbe4035372d952282be983746e1b0a9e4f01e9f4bb0b48f2",
+    "candidateSet": "obj://run_bfcff517cc454d8e87f968122a0b541b/ligand_candidate_set/110a8bef69f97a8d2fe01485a1cf0cc23bcf93996e9fc051a79c7e280a03432d",
+    "report": "obj://run_bfcff517cc454d8e87f968122a0b541b/method_report_manifest/c427136439069e3d981cec0a46c0cab0fa2159503e388fd4dd6c97988b033e5c",
+    "zeroSet": "obj://run_bfcff517cc454d8e87f968122a0b541b/ligand_candidate_set/d440afec3a1a24d06d1f156446135cadd6037735569a284dd1bff71b47fb23b2",
+    "pagingSet": "obj://run_bfcff517cc454d8e87f968122a0b541b/ligand_candidate_set/998cd287da9e499dc03dae0c75f17afbbefb3b45d84e76415650c01861d4eb68"
+  },
+  "inputs": [
+    {
+      "path": "<repo>/backend/tests/fixtures/public_1mq4.cif",
+      "bytes": 301781,
+      "sha256": "0f99d0c2693225ab7bd24af088fe5ab0867b76b9e4c36650d68beb726be76934"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-parent-methacetin-explicit-h.sdf",
+      "bytes": 2148,
+      "sha256": "2e4f5b395f92a12b6a3a15a898e18d744345f5203da76c2489ebb0e7ef463d8e"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.sdf",
+      "bytes": 3173,
+      "sha256": "0bfeb73474ede8b1f372b69072774fc9e2fd1398e8d0b24b31768e69fc9bda11"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-blocks.smi",
+      "bytes": 535,
+      "sha256": "fc603c4b9d2e3cf48ab0521963369a270f73a78b354977af6c4d4d452d85c976"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/expected.json",
+      "bytes": 35355,
+      "sha256": "5d6790aa0d2f9a4a91a1810fb766cd9c6e4e3fb63bdd3122a146ec0cea607606"
+    },
+    {
+      "path": "<repo>/backend/tests/fixtures/ligand/synthetic-reaction-rules.json",
+      "bytes": 8683,
+      "sha256": "cc27e69029c68d1481c1237cefaec5e6b6d8001dd6d0e08bcd0015ebca9bd66c"
+    },
+    {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m17/ligand-main/qa-generated-chain-blocks.smi",
+      "bytes": 2812,
+      "sha256": "2bc043b8522bac86e871dd26dd722f2197bf4690bcf99298729b541ceffa4c9f",
+      "label": "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons"
+    }
+  ],
+  "fixtureLabels": [
+    "QA-GENERATED SYNTHETIC building-block list (labeled; written by ligand-flow.cjs for paging, not a scientific input): *C…C chains of 1–60 carbons",
+    "QA held-response fixture (labeled renderer route; unchanged backend bytes released late)"
+  ],
+  "controls": {
+    "ligand-import": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-file-parent": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-file-blockSdf": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-file-blockSmiles": [
+      {
+        "chosen": true
+      }
+    ],
+    "ligand-rules": [
+      {
+        "lines": 6
+      }
+    ],
+    "ligand-inspect-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-job-approve": [
+      {
+        "phaseAfter": "saved",
+        "notice": "승인을 기록했습니다. 작업 시작을 누르면 실제 계산이 실행됩니다."
+      }
+    ],
+    "ligand-job-start": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-inspection-radio": [
+      {
+        "handle": "obj://run_bfcff517cc454d8e87f968122a0b541b/ligand_inspection/10525e5e02c10d29cbe4035372d952282be983746e1b0a9e4f01e9f4bb0b48f2"
+      }
+    ],
+    "ligand-atom-checkbox": [
+      {
+        "serial": 19
+      }
+    ],
+    "ligand-rule-user_1": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-rule-user_2": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-rule-user_3": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-use-fixed": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      }
+    ],
+    "ligand-enumerate-start": [
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      },
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-candidate-set-radio": [
+      {
+        "handle": "obj://run_bfcff517cc454d8e87f968122a0b541b/ligand_candidate_set/110a8bef69f97a8d2fe01485a1cf0cc23bcf93996e9fc051a79c7e280a03432d"
+      }
+    ],
+    "ligand-filter-apply": [
+      {
+        "query": "?handle=obj%3A%2F%2Frun_bfcff517cc454d8e87f968122a0b541b%2Fligand_candidate_set%2F110a8bef69f97a8d2fe01485a1cf0cc23bcf93996e9fc051a79c7e280a03432d&heavy_atoms_min=12&heavy_atoms_max=14&sort=generation_order&direction=asc&offset=0&limit=50"
+      }
+    ],
+    "ligand-filter-pains": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-passes-only": [
+      {
+        "checked": true
+      }
+    ],
+    "ligand-sort": [
+      {
+        "value": "mol_weight"
+      }
+    ],
+    "ligand-direction": [
+      {
+        "value": "desc"
+      }
+    ],
+    "ligand-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "ligand-page-next": [
+      {
+        "offset": 50
+      }
+    ],
+    "ligand-page-prev": [
+      {
+        "offset": 0
+      }
+    ]
+  },
+  "buildId": "zHxijM08Zpd_R8U7RDu8X",
+  "harness": {
+    "ligand-flow.cjs": "61f6503a72b57d0255281afbda7b3c563edde0e6dbb5cc5d656adb27792c3000",
+    "driver.cjs": "92af5114465812a096f88dfee0fe6ef73d851f051f25cef61139b3e72467b8eb",
+    "main.cjs": "afb73f99c288d0040759a511210b6d63e07f7c47178f68940747731c9f17174a",
+    "normal-flow.cjs": "fa5712e698b94c26ec5b1853b3029e151ae4f43b9a4a9a1f1f314ff3e288be3d"
+  },
+  "offscreen": {
+    "offscreen": true,
+    "visible": false,
+    "painting": true,
+    "hardwareAccelerationEnabled": true,
+    "paintCount": 317,
+    "firstPaint": {
+      "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m17/ligand-main/paint-first.png",
+      "paintOrdinal": 1,
+      "size": {
+        "width": 1440,
+        "height": 960
+      },
+      "bytes": 93209,
+      "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+      "onDiskBytes": 93209,
+      "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+    },
+    "webgl": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+    },
+    "nonLoopbackRequests": 0,
+    "blockedRequests": [],
+    "loopbackRequestCount": 417,
+    "versions": {
+      "electron": "44.4.5",
+      "chrome": "152.0.7977.130",
+      "node": "24.21.0"
+    },
+    "atStart": {
+      "offscreen": true,
+      "visible": false,
+      "painting": true,
+      "hardwareAccelerationEnabled": true,
+      "paintCount": 10,
+      "firstPaint": {
+        "path": "<repo>/frontend/tests/offscreen/artifacts/m29-repair/chain-m25/regressions/m17/ligand-main/paint-first.png",
+        "paintOrdinal": 1,
+        "size": {
+          "width": 1440,
+          "height": 960
+        },
+        "bytes": 93209,
+        "sha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9",
+        "onDiskBytes": 93209,
+        "onDiskSha256": "28002b95c1f2b6347188a0a78998bb2ea096eccb9840288c8558a2c1c692f6d9"
+      },
+      "webgl": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Ultra, Unspecified Version)"
+      },
+      "nonLoopbackRequests": 0,
+      "blockedRequests": [],
+      "loopbackRequestCount": 61,
+      "versions": {
+        "electron": "44.4.5",
+        "chrome": "152.0.7977.130",
+        "node": "24.21.0"
+      }
+    }
+  },
+  "externalRequestCount": 0,
+  "providerCalls": [
+    {
+      "run": "run_bfcff517cc454d8e87f968122a0b541b",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_38dbfce93b2646049ec1fb74988e1eab",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "providerCallsZero": true,
+  "partFailures": [],
+  "error": null,
+  "evidenceFile": "ligand-main.jsonl",
+  "startedAt": "2026-10-13T16:32:43.409Z",
+  "finishedAt": "2026-10-13T16:35:30.651Z"
+}

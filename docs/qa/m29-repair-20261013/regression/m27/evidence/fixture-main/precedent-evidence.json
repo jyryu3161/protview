@@ -1,0 +1,521 @@
+{
+  "schema": "m27_precedent_evidence@1",
+  "mode": "main",
+  "stage": "fixture",
+  "runs": {
+    "A": "run_7c568fd4d44d450099ad10bf0354dae5",
+    "D": "run_58d77b581b9948a691bdf15dcead922b"
+  },
+  "inputs": [],
+  "handles": {
+    "maps": {
+      "m1": "obj://run_7c568fd4d44d450099ad10bf0354dae5/residue_numbering_map/cbb4a18cc946e005610e30ea4c14115cb6858da4d403f963565a03ceaf06a654",
+      "m2": "obj://run_7c568fd4d44d450099ad10bf0354dae5/residue_numbering_map/6c2398d21a6f7050f73206f29a89562228522a2b34abfe1cefb7b779c87a6415",
+      "m3": "obj://run_7c568fd4d44d450099ad10bf0354dae5/residue_numbering_map/f179dc6bb0f2fb7fd36e00def8c88dcaabec81de07e41c9794d0e8b0bc73cd3d",
+      "d-two": "obj://run_7c568fd4d44d450099ad10bf0354dae5/residue_numbering_map/8ae4316562f59750e219438164bd1a7331730fd60bbec7368bfeb29324b26574",
+      "d-fusion": "obj://run_7c568fd4d44d450099ad10bf0354dae5/residue_numbering_map/a404e5f0b46a1df66c0910fbda31423d8f2bea342652740400b5290deeea1c15",
+      "d-big": "obj://run_7c568fd4d44d450099ad10bf0354dae5/residue_numbering_map/28caba2316e593137649b6c54e447a555a927c9da5f594d158cf33eeac4be578"
+    },
+    "links": {
+      "l-m1": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/9bfa740cd104b0374d1720789d507e6e3330c947c726591fdc1a775ff858e0a6",
+      "l-m2": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/530008600c9597985b5392c2273d3b21e017ce3ea1ad045edad58e7628a332b2",
+      "l-m2-a": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/77c96cc58ada999fd935c37a667f8713d660948ed4455ac4951231ab9c80794f",
+      "l-m2-b": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/a3333a44b3c9909ebb0cf37c005a20d422870095cc8d5369ef22643c388f5d55",
+      "l-two": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/c315966efcce445a5cf659dcb729671a04af9066f8954869f4f74135d57adada",
+      "l-two-incl": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/65241400030b153a0901830a1abc6926c02560564bfc3429bc347443cca609b7",
+      "l-fusion": "obj://run_7c568fd4d44d450099ad10bf0354dae5/kinase_precedents/7b43945009f0ae82880bdcce0233ecac7f6c00590c3294aca8c15173e19ca6b6",
+      "l-dry": "obj://run_58d77b581b9948a691bdf15dcead922b/kinase_precedents/81a6f82a506be6258fe785a5d1a2f35304162f71b5dc6292df4bfd557a6d79ca"
+    },
+    "report": "obj://run_7c568fd4d44d450099ad10bf0354dae5/method_report_manifest/305404c9702d8b7383622f10922f049634528618c5f5342b833025d10fd5b279"
+  },
+  "fixtureLabels": [
+    "every precedent value of the fixture stage is SYNTHETIC (made up, labelled): backend/tests/fixtures/precedent/t8/build_qa_set.py with precedent_fixture.py (SYNTHETIC-PROVENANCE-t8.md); the derived numbering maps are LABELLED SYNTHETIC variants of a real M15 map; observations are of the screen, never results",
+    "SYNTHETIC derived from a real M15 map of the derived two-chain 1MQ4 fixture: the mapped rows' accession replaced by made-up accessions (M27 T8 QA, SYNTHETIC-PROVENANCE-t8.md)",
+    "QA refusal fixture (labeled renderer route): the link_kinase_precedents request body is altered in flight so that the real server refuses it; the server reply is shown unchanged",
+    "QA setup record: the dry-run run was made through POST /runs by the runner (the UI has no dry-run control); every step on it here is a real click"
+  ],
+  "providerCalls": [
+    {
+      "run": "run_58d77b581b9948a691bdf15dcead922b",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_7c568fd4d44d450099ad10bf0354dae5",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {
+    "kinase-precedents-unresolved-names": [
+      {
+        "opened": true
+      }
+    ],
+    "kinase-precedents-numbering-map": [
+      {
+        "chosen": "m2"
+      },
+      {
+        "chosen": "d-fusion"
+      },
+      {
+        "chosen": "m1"
+      },
+      {
+        "chosen": "m2"
+      },
+      {
+        "chosen": "d-two"
+      },
+      {
+        "chosen": "d-fusion"
+      },
+      {
+        "chosen": "d-big"
+      }
+    ],
+    "kinase-precedents-link": [
+      {
+        "clicked": "l-m1"
+      },
+      {
+        "clicked": "l-m2"
+      },
+      {
+        "clicked": "l-m2-a"
+      },
+      {
+        "clicked": "l-m2-b"
+      },
+      {
+        "clicked": "l-two"
+      },
+      {
+        "clicked": "l-two-incl"
+      },
+      {
+        "clicked": "l-fusion"
+      },
+      {
+        "clicked": "too-large d-big"
+      },
+      {
+        "clicked": "l-dry"
+      }
+    ],
+    "kinase-precedents-chain": [
+      {
+        "map": "m2",
+        "chain": "B",
+        "checked": false
+      },
+      {
+        "map": "m2",
+        "chain": "A",
+        "checked": false
+      },
+      {
+        "map": "m2",
+        "chain": "B",
+        "checked": true
+      }
+    ],
+    "kinase-precedents-include-flagged": [
+      {
+        "checked": true
+      },
+      {
+        "checked": false
+      },
+      {
+        "checked": true
+      }
+    ],
+    "kinase-precedents-filter-file": [
+      {
+        "chosen": "moves_flagged"
+      }
+    ],
+    "kinase-precedents-filters-clear": [
+      {},
+      {},
+      {},
+      {}
+    ],
+    "kinase-precedents-filter-term": [
+      {
+        "axis": "site",
+        "term": "gate"
+      },
+      {
+        "axis": "site",
+        "term": "back"
+      },
+      {
+        "axis": "goal",
+        "term": "potency"
+      }
+    ],
+    "kinase-precedents-filter-variant": [
+      {
+        "chosen": "SYN-A1V"
+      }
+    ],
+    "kinase-precedents-search": [
+      {
+        "typed": "QA-SEARCH-ALPHA",
+        "applied": "button"
+      },
+      {
+        "typed": "qa-title-beta",
+        "applied": "Enter"
+      },
+      {
+        "typed": "101 characters",
+        "applied": "button"
+      }
+    ],
+    "kinase-precedents-sort": [
+      {
+        "chosen": "pmid"
+      },
+      {
+        "chosen": "year"
+      }
+    ],
+    "kinase-precedents-order": [
+      {
+        "chosen": "desc"
+      },
+      {
+        "chosen": "asc"
+      }
+    ],
+    "kinase-precedents-page-next": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-page-prev": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-target-tab": [
+      {
+        "clicked": "P0QA02"
+      }
+    ],
+    "kinase-precedents-record-toggle": [
+      {
+        "opened": "MOVE-7001"
+      },
+      {
+        "opened": "MOVE-7009"
+      },
+      {
+        "closed": "MOVE-7001"
+      }
+    ],
+    "kinase-precedents-kbase-fields": [
+      {
+        "opened": "MOVE-7001"
+      },
+      {
+        "opened": "MOVE-7009"
+      }
+    ],
+    "kinase-precedents-results-refresh": [
+      {
+        "clicked": true
+      }
+    ],
+    "kinase-precedents-report": [
+      {
+        "clicked": true
+      }
+    ],
+    "numbering-chain": [
+      {
+        "map": "dm1",
+        "checked": "A"
+      }
+    ],
+    "numbering-pdb-confirm": [
+      {
+        "map": "dm1",
+        "pdbId": "1MQ4"
+      }
+    ]
+  },
+  "observations": {
+    "P-tabs": [
+      {
+        "step": "M02-tabs-before",
+        "description": "Click 단백질 공학 and 리간드 설계·탐색: record their areas and digit-masked text before any link"
+      },
+      {
+        "step": "M50-tabs",
+        "description": "Click 지식·보고서: 구조 분석 hidden and inert, no run choice here; click 단백질 공학 and 리간드 설계·탐색: areas and masked text equal the record before the precedent work"
+      }
+    ],
+    "P-snapshot-ready": [
+      {
+        "step": "M03-snapshot",
+        "description": "Click 지식·보고서: the snapshot block of the active set; open the unresolved-name table"
+      }
+    ],
+    "P-request-defaults": [
+      {
+        "step": "M04-defaults",
+        "description": "The newest numbering map is pre-selected, nothing posted; every chain ticked; the toggle off; 전례 연결 enabled"
+      }
+    ],
+    "P-chain-previews": [
+      {
+        "step": "M05-preview-m2",
+        "description": "Choose map m2: the chain previews before the request"
+      },
+      {
+        "step": "M05-preview-d-fusion",
+        "description": "Choose map d-fusion: the chain previews before the request"
+      }
+    ],
+    "P-refusals": [
+      {
+        "step": "F-unknown_field",
+        "description": "Click 전례 연결 with the labelled alteration for unknown_field: the refusal \"알 수 없는 요청 항목 (unknown_field)\" shows beside the request line; nothing stored"
+      },
+      {
+        "step": "F-numbering_map_invalid",
+        "description": "Click 전례 연결 with the labelled alteration for numbering_map_invalid: the refusal \"이 run의 번호 대응이 아니거나 도구가 읽는 항목이 없음 (numbering_map_invalid)\" shows beside numbering_map; nothing stored"
+      },
+      {
+        "step": "F-include_flagged_invalid",
+        "description": "Click 전례 연결 with the labelled alteration for include_flagged_invalid: the refusal \"moves_flagged 파일 전례 포함 여부가 true/false가 아님 (include_flagged_invalid)\" shows beside include_flagged; nothing stored"
+      },
+      {
+        "step": "F-chains_invalid",
+        "description": "Click 전례 연결 with the labelled alteration for chains_invalid: the refusal \"체인 목록 오류(비었음·문자열 아님·중복) (chains_invalid)\" shows beside chains; nothing stored"
+      },
+      {
+        "step": "F-chain_not_in_map",
+        "description": "Click 전례 연결 with the labelled alteration for chain_not_in_map: the refusal \"번호 대응에 없는 체인 (chain_not_in_map)\" shows beside chains; nothing stored"
+      }
+    ],
+    "P-target-states": [
+      {
+        "step": "L-l-m1",
+        "description": "Link l-m1: map m1, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-two",
+        "description": "Link l-two: map d-two, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-fusion",
+        "description": "Link l-fusion: map d-fusion, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "P-no-zero": [
+      {
+        "step": "L-l-m1",
+        "description": "Link l-m1: map m1, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-m2-b",
+        "description": "Link l-m2-b: map m2, chains B, moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-two",
+        "description": "Link l-two: map d-two, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-two-incl",
+        "description": "Link l-two-incl: map d-two, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "M30-results",
+        "description": "Click 전례 결과 목록 다시 읽기: the list equals the stored list (newest first); a file not included is — with the reason"
+      }
+    ],
+    "P-fixed-notes": [
+      {
+        "step": "L-l-m1",
+        "description": "Link l-m1: map m1, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-two",
+        "description": "Link l-two: map d-two, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "M23-expand-MOVE-7001",
+        "description": "Click 상세 펼치기 on MOVE-7001: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M23-expand-MOVE-7009",
+        "description": "Click 상세 펼치기 on MOVE-7009: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      }
+    ],
+    "P-chain-states": [
+      {
+        "step": "L-l-m2",
+        "description": "Link l-m2: map m2, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-m2-b",
+        "description": "Link l-m2-b: map m2, chains B, moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      },
+      {
+        "step": "L-l-fusion",
+        "description": "Link l-fusion: map d-fusion, chains all (default), moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "P-chain-select": [
+      {
+        "step": "L-l-m2-a",
+        "description": "Link l-m2-a: map m2, chains A, moves_flagged off; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "P-flagged-toggle": [
+      {
+        "step": "L-l-two-incl",
+        "description": "Link l-two-incl: map d-two, chains all (default), moves_flagged on; 전례 연결 → the opened result equals the stored result and the plan"
+      }
+    ],
+    "P-too-large": [
+      {
+        "step": "M10-too-large",
+        "description": "Choose map d-big, tick the moves_flagged toggle, click 전례 연결: 429 result_too_large with the size advice; nothing stored"
+      }
+    ],
+    "P-filters": [
+      {
+        "step": "M11-file",
+        "description": "Choose 파일 moves_flagged"
+      },
+      {
+        "step": "M12-site-gate",
+        "description": "Tick site gate"
+      },
+      {
+        "step": "M13-site-or",
+        "description": "Also tick site back (OR inside the axis)"
+      },
+      {
+        "step": "M14-goal-and",
+        "description": "Tick goal potency (AND across axes)"
+      },
+      {
+        "step": "M15-variant",
+        "description": "Choose 변이 표기 SYN-A1V"
+      },
+      {
+        "step": "M16-search",
+        "description": "Type QA-SEARCH-ALPHA, click 검색"
+      },
+      {
+        "step": "M17-search-title",
+        "description": "Type qa-title-beta (bibliography title, lower case), press Enter"
+      },
+      {
+        "step": "M18-search-too-long",
+        "description": "Type 101 characters, click 검색: refused on the screen, no read sent"
+      }
+    ],
+    "P-sort": [
+      {
+        "step": "M19-sort-pmid",
+        "description": "Choose 열 정렬 PMID, then 방향 내림차순"
+      },
+      {
+        "step": "M19-sort-year",
+        "description": "Choose 열 정렬 서지 연도, 방향 오름차순 (no integer year last)"
+      }
+    ],
+    "P-paging": [
+      {
+        "step": "M21-page-next",
+        "description": "Click 다음 쪽: the next server page"
+      },
+      {
+        "step": "M22-page-prev",
+        "description": "Click 이전 쪽: back to the first page"
+      }
+    ],
+    "P-target-tabs": [
+      {
+        "step": "M20-target-tab",
+        "description": "Open l-two, click the target tab P0QA02"
+      }
+    ],
+    "P-detail": [
+      {
+        "step": "M23-expand-MOVE-7001",
+        "description": "Click 상세 펼치기 on MOVE-7001: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M23-expand-MOVE-7009",
+        "description": "Click 상세 펼치기 on MOVE-7009: every stored field as written, the two check channels apart, UP1, UP4; click 그 밖의 kbase 필드: the rest of the stored copy"
+      },
+      {
+        "step": "M24-collapse",
+        "description": "Click 상세 접기 on MOVE-7001"
+      }
+    ],
+    "P-results-list": [
+      {
+        "step": "M30-results",
+        "description": "Click 전례 결과 목록 다시 읽기: the list equals the stored list (newest first); a file not included is — with the reason"
+      }
+    ],
+    "P-report": [
+      {
+        "step": "M31-report",
+        "description": "Open the result, click 보고서 만들기"
+      },
+      {
+        "step": "M32-download-markdown",
+        "description": "Click report-markdown: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M32-download-json",
+        "description": "Click report-json: bytes non-empty and equal the backend bytes"
+      },
+      {
+        "step": "M33-library",
+        "description": "The knowledge-tab report list shows 키나아제 전례 보고서; click it; content = stored Markdown"
+      }
+    ],
+    "P-dry-run": [
+      {
+        "step": "M40-dry-run-upload",
+        "description": "Choose the dry-run run in 저장된 run, upload public_1mq4.cif"
+      },
+      {
+        "step": "M41-dry-run-map",
+        "description": "In the dry-run run: the M15 map by clicks"
+      },
+      {
+        "step": "M42-dry-run-link",
+        "description": "In the dry-run run: 전례 연결 (real clicks); the result is stored and opens"
+      }
+    ],
+    "P-wording": [
+      {
+        "step": "M51-wording",
+        "description": "Open each stored result: no rank / recommendation / verified / effect wording outside the fixed sentences and the stored strings"
+      }
+    ]
+  },
+  "startedAt": "2026-10-13T16:02:59.554Z",
+  "finishedAt": "2026-10-13T16:03:19.633Z",
+  "error": null,
+  "requestCount": 446
+}

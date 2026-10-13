@@ -1,0 +1,46 @@
+{
+  "schema": "m27_precedent_evidence@1",
+  "mode": "invalid",
+  "stage": "fixture",
+  "runs": {
+    "A": "run_7c568fd4d44d450099ad10bf0354dae5",
+    "D": "run_58d77b581b9948a691bdf15dcead922b"
+  },
+  "inputs": [],
+  "handles": {},
+  "fixtureLabels": [],
+  "providerCalls": [
+    {
+      "run": "run_7c568fd4d44d450099ad10bf0354dae5",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    },
+    {
+      "run": "run_58d77b581b9948a691bdf15dcead922b",
+      "egressEvents": 0,
+      "externalTokensUsed": 0,
+      "usdUsed": 0,
+      "zero": true
+    }
+  ],
+  "partFailures": [],
+  "controls": {},
+  "observations": {
+    "P-invalid": [
+      {
+        "step": "INVALID-01",
+        "description": "Choose run run_7c568fd4d44d450099ad10bf0354dae5 in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+      },
+      {
+        "step": "INVALID-02",
+        "description": "Choose run run_58d77b581b9948a691bdf15dcead922b in 저장된 run, click 지식·보고서: snapshot block snapshot_invalid; every stored result listed with \"사용 중 스냅샷 없음\"; open each: it renders from events with the same mark"
+      }
+    ]
+  },
+  "startedAt": "2026-10-13T16:03:24.089Z",
+  "finishedAt": "2026-10-13T16:03:28.147Z",
+  "error": null,
+  "requestCount": 167
+}
