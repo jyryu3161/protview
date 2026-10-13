@@ -199,6 +199,8 @@ DECLARED: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {
     (M + "tools/openmm_method.py", "preflight"): (
         R, (), HASH + "M7 preflight: the modeling path's entry check (M21 / M23 / M25, the repair check); its "
                       "standalone callers refuse (job_preflight, the generic job branch)"),
+    (M + "structure_origin_reports.py", "*"): (
+        R, (), "M29 T8a: the structure origin section of the M20 / M21 / M24 / M25 / M18 reports (spec 6.3)"),
     # ---- reads (spec 5.2: listing and downloading are not refused)
     (M + "api/app.py", "residues"): (RO, (), "GET /structures/residues"),
     (M + "api/app.py", "coordinates"): (RO, (), "GET /structures/bytes (download)"),
