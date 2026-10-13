@@ -20,6 +20,9 @@ Inputs (every one labelled):
   ``repair_record_mismatch``) and a malformed repair link stored in a scratch run.
 * Baseline: ``app.py``, ``mutation_reads.py``, ``mutation_model_reads.py`` and ``docking_reads.py`` of commit
   ``ea166565`` (before T5-T8b) read from git and served next to the current app on the same runs.
+* Each run also gets the M20, M21 and M18 method reports of its results (T8a's versions for the repaired run), and a
+  scratch run holds an UNPUBLISHED repaired structure (the four objects put with ``store.put`` as the T7 tests do, no
+  repair job): the reads must call it invalid exactly when the reports refuse it.
 
 Expected values come from the input edit (one NZ atom on A48) and from the stored record, never from the field itself.
 """
@@ -44,7 +47,7 @@ from jev_send_fixture import SENTINEL, Fake, reply
 from test_kinase_precedents_ast import BASELINE_BLOBS, _blob
 
 from mw import docking_constants as DC
-from mw import docking_reads, mutation_handoff, sequence_ga_reads, structure_origin_reads
+from mw import docking_reads, mutation_handoff, sequence_ga_reads, structure_origin_reads, structure_origin_reports
 from mw import jev_constants as J
 from mw import mutation_model_constants as MC
 from mw import sequence_ga_constants as SC
@@ -155,6 +158,11 @@ def _chain(client: TestClient, fake: Fake, label: str, raw: bytes, name: str, *,
     w["loop_created"] = loop.json()
     # the M25 protein loop's first send projection (real tool); it is previewed, not sent
     w["loop_projection"] = F.command(client, rid, "build_jev_loop_projection", {"loop_id": w["loop"], "iteration": 1})
+    w["reports"] = {}
+    for key in ("set", "model", "dock"):
+        made = client.post(f"/runs/{rid}/method_reports", json={"result_handle": w[key]})
+        assert made.status_code == 201, made.text
+        w["reports"][key] = made.json()["handle"]
     # LABELLED STAND-IN for the M23 summary (see the module docstring): it names the run's candidate set only.
     w["ga"] = api_module._run(rid).store.put(SC.OUTPUT_KIND, SC.SUMMARY_SCHEMA, {
         "schema": SC.SUMMARY_SCHEMA, "candidate_set": w["set"],
@@ -352,6 +360,8 @@ def test_every_read_on_the_repaired_structure_carries_structure_origin(world, cl
         (row,) = got[name]
         assert row["structure_origin"] == expected, name
     assert got["jev_preview"]["repair_warning"] == JW1 and got["loop_preview"]["repair_warning"] == JW1
+    # the loop's action answer (create) is the record a read gives, the field included
+    assert w["loop_created"]["structure_origin"] == expected and "structure_origin" not in world["plain"]["loop_created"]
     assert got["loop_preview"]["loop"]["loop_id"] == w["loop"] and got["loop_preview"]["kind"] == "mutation"
     assert all('"repair_warning"' not in json.dumps(got[name]) for name in got if not name.endswith("preview"))
     assert _state(world["root"], w["rid"]) == before                    # reads write nothing
@@ -481,7 +491,7 @@ def test_a_malformed_repair_link_is_origin_invalid_and_jw1_needs_only_the_mark(t
                                                                                  "source": prepared}}
     manifest_handle = run.store.put(K.MANIFEST_KIND, K.MANIFEST_SCHEMA, manifest).handle
     broken = run.store.put(K.STRUCTURE_KIND, K.STRUCTURE_SCHEMA, {**original, "manifest": manifest_handle}).handle
-    origins = structure_origin_reads.Origins(run.store)
+    origins = structure_origin_reads.Origins(run)
     with pytest.raises(structure_origin_reads.OriginInvalid):
         origins.of_structure(broken)
     with pytest.raises(structure_origin_reads.OriginInvalid):   # stays invalid for the read (memo)
@@ -515,8 +525,9 @@ def _imports(rel: str) -> tuple[set[str], set[str]]:
 def test_import_boundaries_of_the_new_module_and_its_importers():
     absolute, relative = _imports("structure_origin_reads.py")
     assert absolute == {"__future__", "typing"}
-    assert relative == {".mutation_handoff", ".structure_repair_constants", ".core.errors.FailureClass",
-                        ".core.errors.ToolFailure", ".structure_origin.is_repaired"}
+    assert relative == {".structure_repair_bundle", ".structure_repair_constants", ".core.errors.FailureClass",
+                        ".core.errors.ToolFailure", ".structure_origin.is_repaired",
+                        ".structure_origin.structure_origin"}
     source = (MW / "structure_origin_reads.py").read_text(encoding="utf-8")
     for banned in ("raise_limits", "limit_approval", "subprocess", "jev_sends", "egress", "__import__", "API_KEY"):
         assert banned not in source, banned
@@ -525,8 +536,8 @@ def test_import_boundaries_of_the_new_module_and_its_importers():
                        and path.name != "structure_origin_reads.py")
     assert importers == ["api/app.py", "docking_reads.py", "mutation_model_reads.py", "mutation_reads.py"]
     for rel in ("jev_sends.py", "jev_loops.py", "jev_loop_store.py", "jev_loop_reports.py", "jev_reports.py",
-                "sequence_ga_reads.py", "sequence_ga_reports.py"):
-        assert "structure_origin" not in (MW / rel).read_text(encoding="utf-8"), rel
+                "sequence_ga_reads.py", "sequence_ga_reports.py"):   # the send, loop and M23 modules never import it
+        assert "structure_origin_reads" not in (MW / rel).read_text(encoding="utf-8"), rel
     code = ("import sys, mw.structure_origin_reads, mw.docking_reads, mw.mutation_model_reads, mw.mutation_reads\n"
             "print([m for m in ('httpx', 'mw.jev_sends', 'mw.egress', 'mw.jev_reports', 'rdkit', 'openmm', "
             "'pdbfixer', 'meeko') if m in sys.modules])\n")
@@ -534,9 +545,87 @@ def test_import_boundaries_of_the_new_module_and_its_importers():
     assert out.stdout.strip() == "[]", out.stdout + out.stderr
 
 
-def test_the_m20_handoff_verification_is_the_one_the_field_rides_on():
-    """The field is built from ``mutation_handoff.validated_origin`` (the M20 admission's and reads' check), so a set
-    the M20 admission accepted and the field agree on what a valid repaired structure is."""
-    assert structure_origin_reads.mutation_handoff is mutation_handoff
-    source = (MW / "structure_origin_reads.py").read_text(encoding="utf-8")
-    assert "mutation_handoff.validated_origin(store, structure)" in source
+def test_the_field_rides_on_the_check_of_the_downstream_reports(world):
+    """The read field and the T8a report section agree on a repaired structure: same handles, the same record."""
+    w = world["repaired"]
+    run = new_run(world["root"], run_id=w["rid"], dry_run=False)
+    found = structure_origin_reports.origin(run, w["structure"])
+    field = structure_origin_reads.Origins(run).of_structure(w["structure"])
+    assert {key: found[key] for key in ("repair_record", "repaired_structure", "source_structure")} == {
+        key: field[key] for key in ("repair_record", "repaired_structure", "source_structure")}
+    assert field["counts"] == found["record"]["counts"]
+    assert structure_origin_reports.origin(run, w["prepared"]) is None
+    assert structure_origin_reads.Origins(run).of_structure(w["prepared"]) is None
+
+
+def test_report_reopen_routes_answer_an_unavailable_environment_with_412(world, client, monkeypatch):
+    """LABELLED FAULT (installed template unavailable): the list, the selected report and its download answer the 412
+    ``precondition`` envelope (as the create route does), never ``report_evidence_invalid``; the plain run's reports
+    need no template."""
+    for key in ("repaired", "plain"):
+        w = world[key]
+        assert client.get(f"/runs/{w['rid']}/reports").status_code == 200
+    monkeypatch.setattr(sr, "_templates", _unavailable)
+    w = world["repaired"]
+    for kind, handle in w["reports"].items():
+        for url, params in ((f"/runs/{w['rid']}/reports/selected", {"handle": handle}),
+                            (f"/runs/{w['rid']}/reports/download", {"handle": handle}),
+                            (f"/runs/{w['rid']}/reports/download", {"handle": handle, "format": "json"})):
+            response = client.get(url, params=params)
+            assert response.status_code == 412, (kind, url, response.text)
+            body = response.json()
+            assert (body["ok"], body["error"], body["detail"]["reason_code"]) == (False, "precondition",
+                                                                                  "openmm_unavailable"), kind
+    listed = client.get(f"/runs/{w['rid']}/reports")
+    assert listed.status_code == 412 and listed.json()["detail"]["reason_code"] == "openmm_unavailable"
+    plain = world["plain"]
+    assert client.get(f"/runs/{plain['rid']}/reports").status_code == 200
+    for handle in plain["reports"].values():
+        assert client.get(f"/runs/{plain['rid']}/reports/selected", params={"handle": handle}).status_code == 200
+
+
+def test_an_unpublished_repaired_structure_reads_invalid_like_its_report(tmp_path, monkeypatch):
+    """LABELLED: the repaired objects put with ``store.put`` and no repair job (the T7 test construction). The M20
+    admission (``mutation_handoff.validated_origin``) accepts it, but the reports refuse it, so every read calls it
+    invalid too (never ``valid: true`` with another verdict than the report's)."""
+    root = tmp_path / "runs"
+    run = new_run(root, dry_run=False, run_id="run_m29_t8b_unpublished")
+    loaded = run.call("load_structure", {"source": "SYNTHETIC-1ubq-A48-NZ-removed.cif", "model_index": 0},
+                      source_bytes=synthetic_1ubq_without_a48_nz(), source_format="cif").handle
+    prepared = run.call("prepare_structure", {"structure": loaded, "altloc": "highest_occupancy",
+                                              "waters": "strip_all", "hydrogens": "strip",
+                                              "missing_residues": "leave_gaps", "symmetry_mates": "ignore"}).handle
+    raw = run.store.load(run.store.load(prepared)["coordinates"]).decode()
+    model = gemmi.make_structure_from_block(gemmi.cif.read_string(raw).sole_block())[0]
+    residue = next(res for chain in model for res in chain if chain.name == "A" and res.seqid.num == 48)
+    lys48 = {"model_number": model.num, "chain_auth": "A", "chain_label": residue.subchain or None, "seq_auth": 48,
+             "seq_label": residue.label_seq, "icode": "", "resname": "LYS"}
+    ubq = gemmi.make_structure_from_block(gemmi.cif.read_string(UBQ.decode()).sole_block())[0]
+    nz = next(res for chain in ubq for res in chain if chain.name == "A" and res.seqid.num == 48)["NZ"][0].pos
+    additions = [{"residue": lys48, "atom_name": "NZ", "element": "N", "coordinates_A": [nz.x, nz.y, nz.z],
+                  "origin": "side_chain"}]   # the removed atom's own file coordinates (not a PDBFixer output)
+    inputs = sr.load_inputs(run.store, prepared)
+    repaired_raw, record = sr.build_repaired(inputs, additions)
+    coordinates = run.store.put(K.COORDINATES_KIND, K.COORDINATES_SCHEMA, repaired_raw, fmt=K.COORDINATES_FMT).handle
+    record_handle = run.store.put(K.KIND, K.SCHEMA, record).handle
+    original = run.store.load(prepared)
+    manifest = run.store.put(K.MANIFEST_KIND, K.MANIFEST_SCHEMA, {
+        **run.store.load(original["manifest"]), K.MANIFEST_REPAIR_KEY: {"record": record_handle,
+                                                                       "source": prepared}}).handle
+    structure = run.store.put(K.STRUCTURE_KIND, K.STRUCTURE_SCHEMA, {
+        "coordinates": coordinates, "manifest": manifest, "model_index": original["model_index"],
+        "model_number": original["model_number"]}).handle
+    assert mutation_handoff.validated_origin(run.store, structure) is not None   # T4's re-derivation passes
+    cset = run.call("generate_mutation_candidates", {
+        "structure": structure, "sources": {"pocket": None, "ligand_shell": None, "residues": [I44]}}).handle
+    client = _serve(api_module, root, monkeypatch)
+    rid = run.run_id
+    report = client.post(f"/runs/{rid}/method_reports", json={"result_handle": cset})
+    assert report.status_code == 422 and report.json()["detail"]["error"] == "report_evidence_invalid"
+    (row,) = client.get(f"/runs/{rid}/mutation_candidate_sets").json()["rows"]
+    assert row["valid"] is False and row["counts"] is None and "structure_origin" not in row
+    for url in (f"/runs/{rid}/mutation_candidate_sets/{cset}", f"/runs/{rid}/mutation_candidate_sets/{cset}/positions"):
+        response = client.get(url)
+        assert response.status_code == 422 and response.json()["detail"]["error"] == "method_evidence_invalid", url
+    with pytest.raises(structure_origin_reads.OriginInvalid):
+        structure_origin_reads.Origins(run).of_structure(structure)

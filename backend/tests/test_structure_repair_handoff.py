@@ -4,8 +4,10 @@
 Inputs (every one labelled):
 
 * 8VF6 (public fixture) repaired with the PDBFixer-measured additions (T1 (j), copied by T3a) through T4's splice
-  builder. The repaired objects are stored in the spec order (coordinates -> record -> manifest -> structure), as
-  T4's origin test does; T5 owns the product publication path.
+  builder. Since M29 T8b the repaired objects are PUBLISHED through the product repair job (``pdbfixer_repair_v1``:
+  admission, approval, the server's checks 1-5 and the M7 preflight, then the four objects and
+  ``structure_repair_published``), the worker being a LABELLED simulated guardian whose output carries those
+  additions instead of launching PDBFixer: the reads (and the reports) accept only a published repair.
 * An M15 reference FIXTURE set: the M15 fixture rows plus verbatim 8VF6 / STK33 / Q9BYT3 rows
   (``fixtures/structure_repair/reference-8vf6/provenance.json``), so the numbering map and annotation of the original
   8VF6 are made by the product tools without ``.deps``.
@@ -49,10 +51,12 @@ from mw import reaction_knowledge_constants as RKC
 from mw import reference_snapshots as rs
 from mw import structure_repair as sr
 from mw import structure_repair_constants as K
+from mw import structure_repair_jobs as RJ
 from mw.api import app as api_module
 from mw.core.errors import ToolFailure
 from mw.core.handles import canonical_json
 from mw.jobs.queue import JobQueue
+from mw.runtime.orchestrator import ApprovalRequired
 from mw.tools.registry import ToolContext
 from mw.tools.structural import _parse, structure_residues
 from mw.workspace import new_run
@@ -98,21 +102,43 @@ def _prepared(run, raw: bytes, name: str, waters: str = "strip_all") -> str:
                                           "symmetry_mates": "ignore"}).handle
 
 
+def _simulated_worker(additions: list[dict]):
+    """LABELLED SIMULATED GUARDIAN: writes a worker output whose ``added_atoms`` are ``additions`` (PDBFixer-measured
+    rows, or a SYNTHETIC edit's removed atoms) for the job's own method record, and reports a clean RESULT; no
+    process is launched."""
+    def supervise(self, job, attempt_id, nonce, attempt_dir, deadline, dispatch):
+        fixed = sr.fixed_method()
+        output = {"schema": RJ.OUTPUT_SCHEMA, "method": job["method"]["method"],
+                  "engine": {key: fixed[key] for key in RJ.ENGINE_KEYS}, "added_atoms": additions,
+                  "diagnostics": {"simulated_guardian": "M29 T7/T8b test, no PDBFixer run"}}
+        raw = json.dumps(output, allow_nan=False, sort_keys=True, separators=(",", ":")).encode()
+        (attempt_dir / "result.json").write_bytes(raw)
+        return {"kind": "RESULT", "reason": "completed", "returncode": 0, "clean": True, "direct_child_reaped": True,
+                "unexpected_members": False,
+                "payload": {"output_sha256": hashlib.sha256(raw).hexdigest(), "output_bytes": len(raw)}}, None
+    return supervise
+
+
 def _store_repaired(run, prepared: str, additions: list[dict]) -> dict:
-    store = run.store
-    inputs = sr.load_inputs(store, prepared)
-    raw, record = sr.build_repaired(inputs, additions)
-    coordinates = store.put(K.COORDINATES_KIND, K.COORDINATES_SCHEMA, raw, fmt=K.COORDINATES_FMT,
-                            produced_by="test").handle
-    record_handle = store.put(K.KIND, K.SCHEMA, record, produced_by="test").handle
-    original = store.load(prepared)
-    manifest = {**store.load(original["manifest"]),
-                "missing_residues": K.MISSING_RESIDUES_FILLED if record["gaps"] else K.MISSING_RESIDUES_LEFT,
-                K.MANIFEST_REPAIR_KEY: {"record": record_handle, "source": prepared}}
-    manifest_handle = store.put(K.MANIFEST_KIND, K.MANIFEST_SCHEMA, manifest, produced_by="test").handle
-    structure = store.put(K.STRUCTURE_KIND, K.STRUCTURE_SCHEMA, {
-        "coordinates": coordinates, "manifest": manifest_handle, "model_index": original["model_index"],
-        "model_number": original["model_number"]}, produced_by="test").handle
+    """The repaired structure of ``prepared`` published by the product repair job (see the module docstring)."""
+    store, queue = run.store, JobQueue(run)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(JobQueue, "_supervise", _simulated_worker(additions))
+        job = queue.submit(K.PROTOCOL, {"structure": prepared, "repair_policy": K.REPAIR_POLICY}, timeout_s=240)
+        try:
+            done = queue.start(job["job_id"])
+        except ApprovalRequired:
+            run.approve("expensive_first_call", by="test")
+            done = queue.start(job["job_id"])
+    assert done["status"] == "done", done
+    record_handle, structure = done["output_handles"]
+    record = store.load(record_handle)
+    published = store.load(structure)
+    manifest = store.load(published["manifest"])
+    assert manifest[K.MANIFEST_REPAIR_KEY] == {"record": record_handle, "source": prepared}
+    # the same objects T4's builder gives (the job publishes exactly the splice of these additions)
+    raw, built = sr.build_repaired(sr.load_inputs(store, prepared), additions)
+    assert canonical_json(record) == canonical_json(built) and store.load(published["coordinates"]) == raw
     return {"structure": structure, "record": record, "record_handle": record_handle, "raw": raw,
             "manifest": manifest, "source": prepared}
 
