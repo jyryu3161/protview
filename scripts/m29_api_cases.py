@@ -685,7 +685,8 @@ def r1_case(lab: Lab, row: dict | None) -> tuple[dict, dict]:
                              and pf.get("sideChainRows") == len(found["side_chain"]) == 23
                              and pf.get("gapRows") == 2 and sorted(pf.get("gapLengths") or []) == [11, 13]
                              and pf.get("oxtRows") == len(found["terminal_oxt"]) == 2
-                             and pf.get("chainPartRows") == 2 and pf.get("blockerRows") == 0,
+                             and pf.get("chainPartRows") == sum(1 for n in found["parts_per_chain"].values() if n > 1)
+                             and pf.get("blockerRows") == 0,
                              f"preflight shown {_fail_text(pf)}"))
         checked = lab.check_repair(rid, "8vf6", "strip_all", seen["prepared"], seen["record"])
         facts = {"record": seen["record"], "counts": checked["counts"], "invariance": checked["invariance"],
@@ -883,14 +884,16 @@ def r4a_case(lab: Lab, row: dict | None) -> tuple[dict, dict]:
 
 def r10_case(lab: Lab, row: dict | None, pytest_rows: list[dict], blob_check: dict, dispatch_total: int,
              fixture_calls: int) -> dict:
-    parts = _row_parts(row, ("r10-jev", "r10-m23"))
+    parts = _row_parts(row, ("r10-jev", "r10-loop", "r10-m23"))
     seen = ((row or {}).get("observed") or {}).get("r10") or {}
+    loop = seen.get("loop") or {}
     jw = c.FIXED["JW1"]
-    parts.append(c.check("jw1_preview", (seen.get("previewWarning") or {}).get("text") == jw,
-                         f"preview warning {seen.get('previewWarning')}"))
-    parts.append(c.check("jw1_approval", (seen.get("approvalWarning") or {}).get("text") == jw,
-                         f"approval warning {seen.get('approvalWarning')}"))
-    body_clean = seen.get("bodyMentions") == []
+    for name, shown in (("jw1_preview", seen.get("previewWarning")), ("jw1_approval", seen.get("approvalWarning")),
+                        ("jw1_loop_preview", loop.get("previewWarning")),
+                        ("jw1_loop_approval", loop.get("approvalWarning"))):
+        parts.append(c.check(name, (shown or {}).get("text") == jw and (shown or {}).get("id") == "JW1",
+                             f"warning shown {shown}"))
+    body_clean = seen.get("bodyMentions") == [] and loop.get("bodyMentions") == []
     parts.append(c.check("body_unchanged_wording", body_clean, f"body mentions {seen.get('bodyMentions')}"))
     parts.append(c.check("no_send", dispatch_total == 0 and fixture_calls == 0 and seen.get("sendClicked") is False
                          and seen.get("sends") == 0, f"dispatch {dispatch_total}, provider calls {fixture_calls}, "

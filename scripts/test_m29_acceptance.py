@@ -295,6 +295,9 @@ def test_the_runner_refuses_tmp_roots_and_subsets_without_rehearsal():
         runner, args = _runner_args(reference, root="runs")
         with pytest.raises(SystemExit, match="new folder"):
             runner.Runner(args)
+        runner, args = _runner_args(reference, out=str(reference))      # an --out holding files it did not write
+        with pytest.raises(SystemExit, match="not empty"):
+            runner.Runner(args)
     finally:
         (reference / "active.json").unlink()
         reference.rmdir()

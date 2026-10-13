@@ -396,8 +396,10 @@ class Runner(m15.Runner):
         self.write("r3-setup.json", setup)
         row = None
         if setup is not None:
+            phenol = self.code / PHENOL
             plan = {"mode": "r3", "run": r1["run"], "r3": {**setup, "record": r1["record"], "repaired": r1["repaired"],
-                                                         "prepared": r1["prepared"]}}
+                                                         "prepared": r1["prepared"]},
+                    "phenol": {"path": str(phenol), "sha256": c.sha256(phenol.read_bytes())}, "docking": DOCKING}
             row = self.flow("r3", plan)
         record, facts = cases.r3_case(self.lab, row, setup)
         self.records["R3"] = record
@@ -463,6 +465,7 @@ class Runner(m15.Runner):
         env = m13.child_env({"PYTHONPATH": str(self.code / "backend")})
         for case, targets in PYTEST.items():
             base = self.root / "pytest-tmp" / case
+            base.parent.mkdir(parents=True, exist_ok=True)
             started = time.monotonic()
             done = subprocess.run([str(self.python), "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rs",
                                    f"--basetemp={base}", *targets], cwd=self.code, env=env, capture_output=True,

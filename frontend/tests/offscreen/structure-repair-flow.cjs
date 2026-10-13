@@ -705,6 +705,40 @@ async function waitApi(page, log, since, match, label, timeout = 120000) {
     match(entry)) ?? null, label, timeout);
 }
 
+// ------------------------------------------------------------------ JEV loop area, protein (adapted from endtoend-c-flow.cjs)
+const lp = page => page.locator('#mw-app-panel-protein [data-testid="jev-loop-panel"][data-branch="protein"]');
+const lpt = (page, id) => lp(page).locator(`[data-testid="${id}"]`);
+async function openLoopArea(page) {
+  await enterTab(page, TAB.protein);
+  await lp(page).waitFor({ timeout: 30000 });
+  await waitFor(page, async () => {
+    const state = await lp(page).getAttribute("data-jev-loop-state");
+    if (!["ready", "empty"].includes(state)) return null;
+    if (await lp(page).locator('[data-jev-loop-area="status"]').getAttribute("data-state") !== "ready") return null;
+    if (await lp(page).locator('[data-jev-loop-field="pool"] [aria-busy="true"]').count()) return null;
+    if (await lp(page).locator('[data-jev-loop-field="setup"] [aria-busy="true"]').count()) return null;
+    return true;
+  }, "protein loop area ready", 60000);
+}
+async function loopFill(page, id, value) { await lpt(page, id).fill(String(value)); }
+async function loopProteinSetup(page, phenol, docking) {
+  await lpt(page, "jev-loop-confirm-selection").check();
+  await lpt(page, "jev-loop-confirm-hydrogen").check();
+  await loopFill(page, "jev-loop-cutoff", "4.0");
+  await lp(page).locator('[data-testid="jev-loop-setup-ligand-source"] label[data-pair-ligand-source="sdf"] input').check();
+  await waitFor(page, async () => await lpt(page, "jev-loop-setup-sdf").locator(`option${attr("value", phenol)}`).count()
+    ? true : null, "phenol SDF listed", 30000);
+  await lpt(page, "jev-loop-setup-sdf").selectOption(phenol);
+  await lp(page).locator('[data-testid="jev-loop-setup-box-source"] label[data-pair-box="ligand_range"] input').check();
+  await loopFill(page, "jev-loop-setup-margin", docking.margin);
+  await loopFill(page, "jev-loop-setup-seed", docking.seed);
+  await loopFill(page, "jev-loop-setup-exhaustiveness", docking.exhaustiveness);
+  await loopFill(page, "jev-loop-setup-num-modes", docking.numModes);
+  await loopFill(page, "jev-loop-setup-energy-range", docking.energyRange);
+  for (const key of ACK_KEYS)
+    await lp(page).locator(`[data-testid="jev-loop-setup-acknowledgement"] label[data-pair-ack="${key}"] input`).check();
+}
+
 // ------------------------------------------------------------------ modes
 async function modeR1(ctx) {
   const { page, plan, rec, evidence, artifacts } = ctx;
@@ -927,6 +961,71 @@ async function modeR3(ctx) {
     r10.dispatchAdded = dispatchTotal(ctx.input["runs-dir"]) - before;
     assert.equal(r10.sends, 0, "a send was recorded");
     assert.equal(r10.dispatchAdded, 0, "a dispatch event was recorded");
+  });
+  await rec.part("r10-loop", ["r3-m20"], async () => {
+    const before = dispatchTotal(ctx.input["runs-dir"]);
+    const phenol = await rec.step("r10-03", "리간드 설계·탐색 도킹: import the LABELED SYNTHETIC phenol SDF (the protein loop's " +
+      "computation inputs need a 3D ligand; nothing is docked here)", () => importLigandSdf(page, run, plan.phenol.path),
+    async handle => handle);
+    const loop = await rec.step("r10-04", "단백질 공학 JEV 루프 (단백질): the repaired set, a pool of its first two candidates, " +
+      "탐색형, loop seed and cap 1, the computation inputs; 루프 만들기; consent on (run-level switch); 보낼 내용 만들기: the " +
+      "loop preview and the approval area show JW1 as the server gives it; the confirmation box and the send button are NOT " +
+      "touched (no send)", async () => {
+      await openLoopArea(page);
+      const radio = lp(page).locator(`input[data-testid="jev-loop-source"]${attr("data-jev-loop-source", seen.set)}`);
+      await radio.waitFor({ timeout: 30000 });
+      await radio.check();
+      await waitFor(page, async () => await lpt(page, "jev-loop-candidates").count() === 1 ? true : null, "loop rows", 30000);
+      const keys = (await lp(page).locator("tr[data-jev-loop-candidate-row]").evaluateAll(items =>
+        items.map(item => item.getAttribute("data-jev-loop-candidate-row")))).slice(0, 2);
+      for (const key of keys)
+        await lp(page).locator(`input[data-testid="jev-loop-candidate"]${attr("data-jev-loop-candidate", key)}`).check();
+      await lpt(page, "jev-loop-goal-explore").check();
+      await loopFill(page, "jev-loop-seed", "31");
+      await loopFill(page, "jev-loop-iteration-cap", "1");
+      await loopProteinSetup(page, phenol, plan.docking);
+      await waitFor(page, async () => await lpt(page, "jev-loop-create").isEnabled() ? true : null, "create enabled", 15000);
+      let since = Date.now();
+      await lpt(page, "jev-loop-create").click();
+      const created = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev_loops`, "loop created", 120000);
+      await waitFor(page, async () => await lpt(page, "jev-loop-record").getAttribute("data-loop-id") === created.json?.loop_id
+        ? true : null, "loop opened", 30000);
+      if (await lpt(page, "jev-loop-consent-label").getAttribute("data-consent") !== "on") {
+        since = Date.now();
+        await lpt(page, "jev-loop-consent").click();
+        await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev/consent`, "consent answer", 30000);
+        await waitFor(page, async () => await lpt(page, "jev-loop-consent-label").getAttribute("data-consent") === "on"
+          ? true : null, "consent shown", 15000);
+      }
+      await waitFor(page, async () => await lpt(page, "jev-loop-build").isEnabled() ? true : null, "build enabled", 15000);
+      since = Date.now();
+      await lpt(page, "jev-loop-build").click();
+      const command = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/commands` &&
+        item.request?.tool === "build_jev_loop_projection", "loop projection command", 120000);
+      const preview = await waitApi(page, log, since, item => item.path === `/api/runs/${run}/jev/preview`, "loop preview", 60000);
+      await lpt(page, "jev-loop-preview-repair-warning").waitFor({ timeout: 30000 });
+      await lpt(page, "jev-loop-approval-repair-warning").waitFor({ timeout: 30000 });
+      const read = node => node.evaluate(item => ({ id: item.getAttribute("data-statement"),
+        text: item.textContent.replace(/\s+/g, " ").trim() }));
+      return { created: created.json, status: created.status, command: command.json, preview: preview.json,
+        previewWarning: await read(lpt(page, "jev-loop-preview-repair-warning")),
+        approvalWarning: await read(lpt(page, "jev-loop-approval-repair-warning")),
+        body: await lpt(page, "jev-loop-preview-body").textContent(), confirmChecked: await lpt(page, "jev-loop-confirm").isChecked() };
+    }, async value => {
+      assert.equal(value.status, 200, JSON.stringify(value.created).slice(0, 400));
+      assert.equal(value.command.ok, true, JSON.stringify(value.command).slice(0, 400));
+      assert.deepEqual(value.previewWarning, value.preview.repair_warning);
+      assert.deepEqual(value.approvalWarning, value.preview.repair_warning);
+      assert.equal(value.body, value.preview.body);
+      assert.equal(value.confirmChecked, false);
+      return { loopId: value.created.loop_id, previewWarning: value.previewWarning, approvalWarning: value.approvalWarning,
+        bodyMentions: BODY_FORBIDDEN.filter(word => value.body.includes(word)), bodySha256: sha(Buffer.from(value.body)) };
+    });
+    r10.loop = loop;
+    r10.texts = [...(r10.texts ?? []), await keepText(page, evidence, artifacts, "r10-loop-approval",
+      lp(page).locator('[data-testid="jev-loop-approval-repair-warning"]'))];
+    r10.loopDispatchAdded = dispatchTotal(ctx.input["runs-dir"]) - before;
+    assert.equal(r10.loopDispatchAdded, 0, "a dispatch event was recorded");
   });
   await rec.part("r10-m23", ["r3-m20"], async () => {
     const m23 = await rec.step("r10-02", "단백질 공학 서열 GA: the candidate-set choice of the repaired set ends with ' · 보완 " +
